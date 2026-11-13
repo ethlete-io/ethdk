@@ -71,7 +71,7 @@ describe('render check progress', () => {
   it('draws a part that timed out once more alone and keeps that answer', async () => {
     const frame = (part: string) => ({ address: { product: 'shop', part, sketch: null } }) as never;
     const timeout = { rule: 'RENDER-TIMEOUT', product: 'shop', part: 'components/one', sketch: null } as RenderIssue;
-    const other = { ...timeout, rule: 'CONTRAST', part: 'components/two' };
+    const other = { ...timeout, rule: 'CLIPPED', part: 'components/two' };
     const calls: string[][] = [];
     const inspectOf = async (options: { frames: { address: { part: string } }[] }) => {
       calls.push(options.frames.map((each) => each.address.part));

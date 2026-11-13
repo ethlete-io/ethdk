@@ -31,7 +31,7 @@ describe('checkDesign', () => {
       hero,
       readFileSync(hero, 'utf8').replace(
         '<h1>${film.title}</h1>',
-        '<h1>${film.title}</h1><button type="button" style="height: 8px; border: 1px solid var(--acme-surface)"></button>',
+        '<h1>${film.title}</h1><div style="width: 100px; overflow: hidden"><p style="margin: 0; width: 300px">Wide</p></div>',
       ),
     );
 
@@ -41,7 +41,7 @@ describe('checkDesign', () => {
 
     expect(code).toBe(1);
     expect(lines).toContainEqual(expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/));
-    expect(lines).toContainEqual(expect.stringMatching(/^CONTRAST acme elements\/hero default at /));
+    expect(lines).toContainEqual(expect.stringMatching(/^CLIPPED acme elements\/hero default at /));
     expect(lines.filter((line) => line.startsWith('RENDER CHECK NOT RUN'))).toEqual([]);
   }, 120_000);
 

@@ -968,7 +968,7 @@ const checkProductTail = async (
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
  * render rule a drawing breaks, also when a static rule failed, and warns of each merged part that changed outside a sketch. A part that does not
  * draw, each state that does not draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
- * It then lists the open points of each product's parts, with the contrasts the drawing found and the missing states
+ * It then lists the open points of each product's parts, with the missing states
  * of each component part as `design complete` draws them, the blockers `design ready` refuses on; they do not change
  * the exit code.
  */

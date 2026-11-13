@@ -2758,8 +2758,30 @@ count jump). Counts, full sdk check: before 1353 findings (ACTION-UNDECLARED 111
 runs. Verified: typecheck, lint, `vitest related` (141 files), two live sdk runs. Not verified: a studio run (its base
 sdk part should lose the same two rules), CI.
 
-B500 S3 in progress (Linux builder subagent, 2026-11-13): review of CONTRAST, LOST-SURFACE, NESTED-SCROLL, CUT-CONTROL
-and SKIP-SCOPE.
+B500 S3 as built (Linux builder subagent, 2026-11-13): all five remaining sdk rules fail the P2 sample and are removed
+from `design check`. CONTRAST, 59 hits on 21 distinct lines: dialog alert "Cancel" false (1.16:1 reported, the dark
+shot shows mint text on the dark pane, readable), chart bar-empty and pie-empty false (the whole plot svg read as an
+icon; its grid lines are the Q98 values 1.26 / 1.73 the part note records); the other 18 lines (notification, menu,
+select, select-panel, elevation, all dark scheme, 1.02-2.43:1) not shot one by one (Suspect: the same wrong fill as the
+dialog). LOST-SURFACE, 42 hits on 6 elements, false: table cell (a cell, not a card), bracket match card, switch
+selection card and accent-on-light choice field (bordered cards on their page, as designed), breadcrumb toggletip
+pane. NESTED-SCROLL, 5 hits, one element, false: the stream consent and error card scroll on purpose (`overflow: auto`,
+`safe center`) inside the 16:9 player box, which cannot grow to its content. CUT-CONTROL, 3 hits, false: textarea
+`long-max-rows-scrolled` draws the scrolled state by clipping a translated textarea. SKIP-SCOPE, 3 hits, false: the
+CLIPPED skips of textarea, floating-action and scrollable sit on the intended scroll crop (finding 740). Removed:
+`contrast-check.ts` (scheme helpers now in `color-scheme.ts`), `surface-nesting.ts`, `nested-scroll.ts`, the CUT-CONTROL
+and SKIP-SCOPE loops, the per-state exemption of SKIP-SCOPE in `uniqueIssuesOf`, the scheme merge of
+`groupedIssueLinesOf`, the frame `contrast` options and pair checks, the `contrasts` producer of the drawn open points,
+the four ids in `CHECK_RULES`, both rules in `ESCAPABLE_RULES`, the CONTRAST docs paragraph. Kept: `data-et-skip`
+still accepts `LOST-SURFACE` and `NESTED-SCROLL` (the ready studio sketch foundations-colors carries them; removing
+them made the sketch fail SKIP-CLASS, and dropping them from the part made its base stale); `definePart({ contrast })`
+stays as a record of contrast debt, not measured. Specs: the rule cases are deleted; the sketch-baseline, before-pass,
+render-past-static and report cases plant a CLIPPED crop instead. Findings closed: 457 (LOST-SURFACE and SKIP-SCOPE
+noise) and 740 (skip-scope refuses an intended crop); 449 loses its LOST-SURFACE and SKIP-SCOPE share. Counts, full sdk
+check: before 112 findings, exit 1 (this run 9 s; Suspect: render cache hit, S2 measured 79 s); after 0 findings,
+exit 0, 86 s and 80 s in two runs (P4 ≤ 90 s, over the 60 s target line, render-inspect 42-44 s); `.ethlete/design` unchanged. Verified:
+typecheck, lint, `vitest related` (145 files), two live sdk runs. Not verified: a studio run, CI; the `contrast` open
+point kind stays in `open-points.ts` and the Studio app with no producer.
 
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.

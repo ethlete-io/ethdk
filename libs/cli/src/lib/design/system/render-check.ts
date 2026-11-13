@@ -5,14 +5,7 @@ import { WarmDraw } from '../warm-draw';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../design-config';
 import { viteCacheOf } from '../vite-cache';
-import {
-  ColorScheme,
-  ContrastOptions,
-  schemesOf,
-  CONTRAST_STATEMENTS,
-  contrastExceptionsOf,
-  contrastPairsOf,
-} from './contrast-check';
+import { ColorScheme, schemesOf } from './color-scheme';
 import { introducedControlStateGapsOf, PLAIN_CONTROL_SELECTOR, SDK_CONTROLS } from './complete';
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { ARROW_ANCHOR_STATEMENTS } from './arrow-anchor';
@@ -38,10 +31,7 @@ import { createSystemModules, productModuleIdOf, SketchVariant } from './system-
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
 import { FONT_FACES_SCRIPT } from './font-faces';
-import { SURFACE_STATEMENTS } from './surface-nesting';
-import { NESTED_SCROLL_STATEMENTS } from './nested-scroll';
 import { ESCAPABLE_RULES } from './skip-classes';
-import { INTERACTIVE_SELECTOR } from './actions';
 import { loadScaledMs, NoVerdict, noVerdictOf } from './no-verdict';
 import { REACH_STATEMENTS } from './reach';
 import { REACHABLE_CONTROLS_STATEMENTS } from './reachable-controls';
@@ -115,7 +105,7 @@ type Frame = {
   fit: boolean;
   skips: Record<string, string[]>;
   namespaces: string[];
-  contrast: ContrastOptions;
+  scheme: ColorScheme | null;
   controlInputs: boolean;
   embedControls: string[];
 };
@@ -127,7 +117,6 @@ type PartModule = {
     widths?: unknown;
     grid?: unknown;
     checks?: { skip?: unknown };
-    contrast?: { pairs?: unknown; exceptions?: unknown };
     frame?: unknown;
   };
 };
@@ -142,8 +131,6 @@ export const renderIssueLineOf = (issue: RenderIssue) =>
 export const ownerPartOf = (issue: RenderIssue) =>
   [...issue.path.matchAll(/\[data-et-part=([^\]]+)\]/gu)].pop()?.[1] ?? issue.part;
 
-const SCHEME_IN_DETAIL = / in the (light|dark) scheme/u;
-
 /** The render issues as lines, one per finding that repeats across states, sizes, schemes and variants, with where it was found. */
 export const groupedIssueLinesOf = (issues: RenderIssue[]) => {
   const groups = new Map<string, { first: RenderIssue; issues: RenderIssue[] }>();
@@ -155,7 +142,7 @@ export const groupedIssueLinesOf = (issues: RenderIssue[]) => {
       issue.product,
       issue.part,
       issue.path,
-      issue.detail.replace(SCHEME_IN_DETAIL, ''),
+      issue.detail,
     ]);
     const group = groups.get(key) ?? { first: issue, issues: [] };
 
@@ -166,13 +153,11 @@ export const groupedIssueLinesOf = (issues: RenderIssue[]) => {
   const listOf = (values: string[]) => [...new Set(values)].join(', ');
 
   return [...groups.values()].map(({ first, issues: found }) => {
-    const schemes = [...new Set(found.flatMap((issue) => SCHEME_IN_DETAIL.exec(issue.detail)?.[1] ?? []))];
-    const detail = first.detail.replace(SCHEME_IN_DETAIL, ` in the ${schemes.join(' and ')} scheme`);
     const variants = listOf(found.map((issue) => issue.sketch?.variant ?? ''));
     const where = `${listOf(found.map((issue) => issue.state))} at ${listOf(found.map((issue) => issue.size))}`;
     const times = found.length > 1 ? ` (${found.length} times)` : '';
 
-    return `${first.sketch?.target ?? ''} ${variants}: ${first.rule} ${first.product} ${first.part} ${where}: ${first.path} - ${detail}${times}`;
+    return `${first.sketch?.target ?? ''} ${variants}: ${first.rule} ${first.product} ${first.part} ${where}: ${first.path} - ${first.detail}${times}`;
   });
 };
 
@@ -200,7 +185,6 @@ const inspectFrame = (options: {
   fit: boolean;
   skips: Record<string, string[]>;
   namespaces: string[];
-  contrast: ContrastOptions;
   part: string | null;
   embedControls: string[];
   sdkStylesOnly?: boolean;
@@ -377,7 +361,6 @@ ${VISUALLY_HIDDEN_STATEMENTS}
     if (panel)
       report('CANVAS-UNDER-PANEL', clipper, 'clips the pan viewport ' + pathOf(viewport) + ' from x=' + Math.round(clipLeft) + ', right of the floating panel ' + pathOf(panel) + ' at x=' + Math.round(panel.getBoundingClientRect().left) + ', so the canvas stops at the panel instead of running under it - clip at the edge of the panel\\'s container and pad the content by the panel width');
   }
-${NESTED_SCROLL_STATEMENTS}
 
   const px = (value) => parseFloat(value) || 0;
   const invisible = (colour) => colour === 'transparent' || /^rgba\\(.*,\\s*0\\)$/.test(colour);
@@ -468,29 +451,6 @@ ${NESTED_SCROLL_STATEMENTS}
     return false;
   };
 ${REACHABLE_CONTROLS_STATEMENTS}
-  const interactive = ${JSON.stringify(INTERACTIVE_SELECTOR)};
-  for (const element of reachableControlsOf(root, interactive)) {
-    const rect = element.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) continue;
-    const clip = clipOf(element.parentElement);
-    if (!clip.style || unseen(element)) continue;
-    const shown = {
-      width: Math.min(rect.right, clip.box.right) - Math.max(rect.left, clip.box.left),
-      height: Math.min(rect.bottom, clip.box.bottom) - Math.max(rect.top, clip.box.top),
-    };
-    if (shown.width <= 0 || shown.height <= 0) continue;
-    const cuts = [];
-    if (clips(clip.style.overflowX) && rect.width - shown.width > 1) cuts.push(Math.round(rect.width - shown.width) + 'px of its width');
-    if (clips(clip.style.overflowY) && rect.height - shown.height > 1) cuts.push(Math.round(rect.height - shown.height) + 'px of its height');
-    if (cuts.length) report('CUT-CONTROL', element, cuts.join(' and ') + ' is cut by ' + clip.name + ', so the control is only partly reachable');
-  }
-  for (const element of root.querySelectorAll('[data-et-skip~="CLIPPED"]')) {
-    if (reachableControlsOf(element, interactive).length === 0) continue;
-    const path = pathOf(element);
-    if (seen.has('SKIP-SCOPE' + path)) continue;
-    seen.add('SKIP-SCOPE' + path);
-    found.push({ rule: 'SKIP-SCOPE', path, detail: 'data-et-skip=CLIPPED on ' + path + ' covers interactive controls - put the skip on the clipped element itself' });
-  }
 ${REACH_STATEMENTS}
 
   const metrics = document.createElement('canvas').getContext('2d');
@@ -552,9 +512,7 @@ ${REACH_STATEMENTS}
       report('WRAP', block, '"' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '" breaks onto ' + lines.length + ' lines');
     }
   }
-${CONTRAST_STATEMENTS}
 ${SEE_THROUGH_STATEMENTS}
-${SURFACE_STATEMENTS}
   const ownedOf = (element) => {
     const slotted = (element.getAttribute('data-et-slot') ?? '').split(' ').filter(Boolean);
     for (let at = element; at && at !== root; at = at.parentElement)
@@ -623,13 +581,12 @@ export const uniqueIssuesOf = (issues: RenderIssue[]) => {
   const seen = new Set<string>();
 
   return issues.filter((issue) => {
-    const perState = issue.rule !== 'SKIP-SCOPE';
     const key = JSON.stringify([
       issue.product,
       issue.part,
       issue.sketch,
-      perState ? issue.state : null,
-      perState ? issue.size : null,
+      issue.state,
+      issue.size,
       issue.rule,
       issue.path,
       issue.detail,
@@ -722,7 +679,6 @@ const inspectedOptionsOf = (frame: Frame) => ({
   fit: frame.fit,
   skips: frame.skips,
   namespaces: frame.namespaces,
-  contrast: frame.contrast,
   part: frame.controlInputs ? frame.address.part : null,
   embedControls: frame.embedControls,
 });
@@ -736,7 +692,7 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
 
   const booted = bootKeyOf(first.search);
 
-  await page.emulateMedia({ colorScheme: first.contrast.scheme });
+  await page.emulateMedia({ colorScheme: first.scheme });
   await page.setViewportSize(first.viewport);
 
   if (lane.booted !== booted || !(await switchFrame(page, first.address.state))) {
@@ -750,7 +706,7 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
   const inFrame: Found[][] = [];
 
   for (const [at, frame] of frames.entries()) {
-    if (at > 0) await schemeSwitched(page, frame.contrast.scheme);
+    if (at > 0) await schemeSwitched(page, frame.scheme);
 
     inFrame.push((await page.evaluate(inspectFrame(inspectedOptionsOf(frame)))) as Found[]);
   }
@@ -763,7 +719,7 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
   for (let at = frames.length - 1; at >= 0; at--) {
     const frame = frames[at] as Frame;
 
-    if (at < frames.length - 1) await schemeSwitched(page, frame.contrast.scheme);
+    if (at < frames.length - 1) await schemeSwitched(page, frame.scheme);
 
     unstyled[at] = (await page.evaluate(
       inspectFrame({ ...inspectedOptionsOf(frame), sdkStylesOnly: true }),
@@ -1093,13 +1049,6 @@ export const renderIssuesOf = async (options: {
           );
         }
 
-        const exceptions = contrastExceptionsOf(definition?.contrast?.exceptions);
-        const pairs = contrastPairsOf(definition?.contrast?.pairs);
-
-        exceptions.problems.forEach((detail) =>
-          issues.push({ rule: 'CONTRAST', product, part: key, state: '-', size: '-', path: '-', detail, sketch }),
-        );
-
         const sizesOf = (widths: number[], presets: Record<string, unknown>) =>
           part.layer === 'pages'
             ? Object.keys(presets).map((preset) => ({ preset, width: null }))
@@ -1117,12 +1066,6 @@ export const renderIssuesOf = async (options: {
         framed.set(JSON.stringify([product, key, sketch]), typeof definition?.frame === 'function');
 
         if (merged && mergedPart && !baselines.has(baselineKey)) {
-          const mergedContrast = {
-            exceptions: contrastExceptionsOf(mergedDefinition?.contrast?.exceptions).selectors,
-            pairs: contrastPairsOf(mergedDefinition?.contrast?.pairs),
-          };
-          const measured = new Set<ColorScheme | null>();
-
           mergedSkips.set(baselineKey, stringsOf(mergedDefinition?.checks?.skip));
           framed.set(JSON.stringify([product, key, null]), typeof mergedDefinition?.frame === 'function');
           baselines.set(
@@ -1135,10 +1078,6 @@ export const renderIssuesOf = async (options: {
 
                   if (frame instanceof Error) return [];
 
-                  const pairs = measured.has(scheme) ? [] : mergedContrast.pairs;
-
-                  measured.add(scheme);
-
                   return [
                     {
                       address,
@@ -1149,7 +1088,7 @@ export const renderIssuesOf = async (options: {
                       fit: frame.size === null,
                       skips,
                       namespaces,
-                      contrast: { exceptions: mergedContrast.exceptions, pairs, scheme },
+                      scheme,
                       controlInputs,
                       embedControls,
                     },
@@ -1159,8 +1098,6 @@ export const renderIssuesOf = async (options: {
             ),
           );
         }
-
-        const measuresPairs = new Set<ColorScheme | null>();
 
         for (const state of states.filter((name) => !unchanged?.[key]?.includes(name))) {
           for (const { preset, width } of sizes) {
@@ -1181,13 +1118,8 @@ export const renderIssuesOf = async (options: {
                 namespaces,
                 controlInputs,
                 embedControls,
-                contrast: {
-                  exceptions: exceptions.selectors,
-                  pairs: measuresPairs.has(scheme) ? [] : pairs,
-                  scheme,
-                },
+                scheme,
               });
-              measuresPairs.add(scheme);
             }
           }
         }
@@ -1282,7 +1214,7 @@ export const renderIssuesOf = async (options: {
         ),
       ),
       drawn: frames
-        .filter(({ contrast }) => contrast.scheme !== 'dark')
+        .filter(({ scheme }) => scheme !== 'dark')
         .map(({ address }) => ({
           product: address.product,
           part: address.part,

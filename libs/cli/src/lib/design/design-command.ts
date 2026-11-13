@@ -71,7 +71,7 @@ const helpOf = (invocation: string) =>
     "  Check a product's design system: layer dependencies, hard-coded colours, var() tokens nothing defines,",
     '  copied components, scripted motion, then tsc. Without any flag, check checks every product in config.json.',
     '  Then it prints the open points of each part: open comments, unmerged sketches, no controls',
-    '  declared, the contrasts the render check found under the rule, and each control of a component part that lacks',
+    '  declared, and each control of a component part that lacks',
     '  a drawn state or surface as complete draws it - what ready refuses on. Open points never fail.',
     '  It also lists each view of the harness app (*-view.component.ts) that no part implements and the parts',
     '  without an implements link (UNLINKED, not an open point), and ends with one',

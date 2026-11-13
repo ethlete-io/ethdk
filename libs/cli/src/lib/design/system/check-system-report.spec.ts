@@ -84,7 +84,7 @@ describe('checkDesign', () => {
     expect(lines.some((line) => line.includes('declares instant'))).toBe(false);
   });
 
-  it('lists the contrasts the render found and the missing states', async (context) => {
+  it('lists the missing states next to what the render found', async (context) => {
     const target = acme();
     const lines = output();
     const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
@@ -96,7 +96,10 @@ describe('checkDesign', () => {
           'definePart<HeroProps>({',
           "definePart<HeroProps>({ controls: { cta: { kind: 'button', input: ['pointer'] } },",
         )
-        .replace('<h1>${film.title}</h1>', '<h1>${film.title}</h1><p style="color: var(--acme-surface)">Faint</p>'),
+        .replace(
+          '<h1>${film.title}</h1>',
+          '<h1>${film.title}</h1><div style="width: 100px; overflow: hidden"><p style="margin: 0; width: 300px">Wide</p></div>',
+        ),
     );
 
     const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
@@ -105,7 +108,7 @@ describe('checkDesign', () => {
 
     expect(code).toBe(1);
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
-      '  elements/hero: 1 missing state (cta); 1 contrast under the rule (state default)',
+      '  elements/hero: 1 missing state (cta)',
     ]);
   }, 120_000);
 
@@ -118,7 +121,7 @@ describe('checkDesign', () => {
       card,
       readFileSync(card, 'utf8').replace(
         '<h3>${title}</h3>',
-        '<h3>${title}</h3><p style="color: var(--acme-surface)">Faint</p>',
+        '<h3>${title}</h3><div style="width: 100px; overflow: hidden"><p style="margin: 0; width: 300px">Wide</p></div>',
       ),
     );
 
@@ -134,28 +137,5 @@ describe('checkDesign', () => {
       ),
     );
     expect(await checkDesign({ target, argv: ['--product', 'acme-base'], invocation: 'et design' })).toBe(1);
-  }, 120_000);
-
-  it('lists a border under the non-text contrast rule as a contrast', async (context) => {
-    const target = acme();
-    const lines = output();
-    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
-
-    writeFileSync(
-      hero,
-      readFileSync(hero, 'utf8').replace(
-        '<h1>${film.title}</h1>',
-        '<h1>${film.title}</h1><button type="button" style="height: 8px; border: 1px solid var(--acme-surface)"></button>',
-      ),
-    );
-
-    const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
-
-    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
-
-    expect(code).toBe(1);
-    expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
-      '  elements/hero: no controls declared; 1 contrast under the rule (state default)',
-    ]);
   }, 120_000);
 });

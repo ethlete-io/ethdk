@@ -27,21 +27,21 @@ const acme = () => {
   return target;
 };
 
-const contrast = {
-  rule: 'CONTRAST',
+const clipped = {
+  rule: 'CLIPPED',
   product: 'acme',
   sketch: null,
   part: 'elements/hero',
   state: 'default',
   path: 'p',
   size: 'fitted',
-  detail: 'under the rule',
+  detail: 'outline 3px past the frame',
 };
 
 describe('design check shows what design ready refuses', () => {
   afterEach(() => vi.clearAllMocks());
 
-  it('lists the same missing states, contrasts and undrawable parts as ready', async () => {
+  it('lists the same missing states and undrawable parts as ready', async () => {
     const target = acme();
     const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
 
@@ -56,7 +56,7 @@ describe('design check shows what design ready refuses', () => {
     const config = readConfig(target) ?? {};
     const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
 
-    vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [contrast], warnings: [] } as never);
+    vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [clipped], warnings: [] } as never);
     vi.mocked(partsCompletenessOf).mockResolvedValue({
       gaps: new Map<string, never[] | string>([
         ['elements/hero', [{ code: 'CONTROL-UNDRAWN', target: 'elements/hero.cta', detail: '' }] as never],
@@ -87,7 +87,7 @@ describe('design check shows what design ready refuses', () => {
       'CANNOT DRAW acme components/card: it threw while drawing - et design ready refuses the part until it draws',
     );
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
-      expect.stringMatching(/1 missing state \(cta\); 1 contrast under the rule \(state default\)/),
+      expect.stringMatching(/: 1 missing state \(cta\)(;|$)/),
     ]);
   }, 120_000);
 
@@ -96,7 +96,7 @@ describe('design check shows what design ready refuses', () => {
     const config = readConfig(target) ?? {};
     const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
     const undrawn = {
-      ...contrast,
+      ...clipped,
       rule: 'RENDER',
       part: 'pages/home',
       state: 'empty',

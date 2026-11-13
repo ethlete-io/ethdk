@@ -120,6 +120,8 @@ export default definePart({
   return target;
 };
 
+const CUT_LOW = '<div style="width: 100px; overflow: hidden"><p style="margin: 0; width: 300px">Low</p></div>';
+
 const cwd = process.cwd();
 
 afterEach(() => {
@@ -578,18 +580,7 @@ export default definePart({
     expect([...new Set(rendered.issues.map((issue) => `${issue.rule} ${issue.state}`))].sort()).toEqual([
       'CLIPPED b',
       'CLIPPED e',
-      'CONTRAST a',
-      'CONTRAST b',
-      'CONTRAST c',
-      'CONTRAST d',
-      'CONTRAST e',
-      'CONTRAST f',
     ]);
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'CONTRAST')
-        .every((issue) => issue.detail.includes(' in the dark scheme')),
-    ).toBe(true);
     expect(navigations.length).toBeGreaterThan(0);
     expect(navigations.length).toBeLessThanOrEqual(INSPECTS_AT_ONCE);
   }, 120_000);
@@ -612,186 +603,6 @@ export default definePart({
     expect(rendered.issues.filter((issue) => issue.rule === 'BUSY')).toEqual([]);
   }, 120_000);
 
-  it('measures the contrast of text in an inert preview, which stays visible', async (context) => {
-    const tile = (inner: string) =>
-      `<div style="background: rgb(220 220 220); padding: 8px; width: 200px">${inner}</div>`;
-    const target = checkout({
-      'components/inert-tile': {
-        body: tile('<div inert><p style="margin: 0; color: rgb(240 240 240)">Linux close</p></div>'),
-      },
-      'components/plain-tile': {
-        body: tile('<div><p style="margin: 0; color: rgb(240 240 240)">Linux close</p></div>'),
-      },
-    });
-    const config = readConfig(target) ?? {};
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'CONTRAST')
-        .map((issue) => issue.part)
-        .sort(),
-    ).toEqual(['components/inert-tile', 'components/plain-tile']);
-  }, 120_000);
-
-  it('flags a nested scroll box whose content outgrows it, unless the part declares that it scrolls', async (context) => {
-    const rows = '<p style="margin: 0; height: 40px">Row one</p><p style="margin: 0; height: 40px">Row two</p>';
-    const target = checkout({
-      'components/scrolls': {
-        body: `<div style="width: 200px"><div style="height: 50px; overflow-y: auto">${rows}</div></div>`,
-      },
-      'components/scrolls-x': {
-        body: '<div style="width: 100px; overflow-x: scroll"><div style="width: 300px">Wide</div></div>',
-      },
-      'components/fits': {
-        body: `<div style="width: 200px"><div style="height: 100px; overflow: auto">${rows}</div></div>`,
-      },
-      'components/sdk-scroller': {
-        body: `<div style="width: 200px"><et-scrollable style="display: block"><div style="height: 50px; overflow-y: auto">${rows}</div></et-scrollable></div>`,
-      },
-      'components/declared': {
-        body: `<div style="width: 200px"><div style="height: 50px; overflow-y: auto">${rows}</div></div>`,
-        extra: "checks: { skip: ['NESTED-SCROLL'] },",
-      },
-      'components/declared-element': {
-        body: `<div style="width: 200px"><div data-et-skip="NESTED-SCROLL" style="height: 50px; overflow-y: auto">${rows}</div></div>`,
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'NESTED-SCROLL')
-        .map((issue) => [issue.part, issue.path, issue.detail.split(';')[0]])
-        .sort(),
-    ).toEqual([
-      [
-        'components/scrolls',
-        'div[data-et-part=components/scrolls] > div',
-        'scrolls its content 200x80 in a 200x50 box, so no shot shows all of it - size the box to its content',
-      ],
-      [
-        'components/scrolls-x',
-        'div[data-et-part=components/scrolls-x]',
-        'scrolls its content 300x18 in a 100x18 box, so no shot shows all of it - size the box to its content',
-      ],
-    ]);
-  }, 120_000);
-
-  it('flags a card whose fill equals the surface around it, but not the only card of a pane with the same fill', async (context) => {
-    const card = (fill: string, edge = 'border: 1px solid rgb(90 90 90)') =>
-      `<div class="card" style="background: ${fill}; ${edge}; padding: 8px"><p style="margin: 0">Kommentar</p></div>`;
-    const pane = (inner: string) =>
-      `<div class="pane" role="dialog" style="width: 300px; background: rgb(30 30 30); padding: 12px">${inner}</div>`;
-    const target = checkout({
-      'components/doubled': { body: pane(card('rgb(30 30 30)')) },
-      'components/raised': { body: pane(card('rgb(50 50 50)')) },
-      'components/beside-title': { body: pane(`<h2 style="margin: 0">Titel</h2>${card('rgb(30 30 30)')}`) },
-      'components/on-canvas': {
-        body: `<div style="width: 300px">${card('rgb(255 255 255)', 'box-shadow: 0 1px 3px rgb(0 0 0 / 0.3)')}</div>`,
-      },
-      'components/field': {
-        body: '<div style="width: 300px"><textarea style="width: 200px; height: 60px; background: white; border: 1px solid gray"></textarea></div>',
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'LOST-SURFACE')
-        .map((issue) => [issue.rule, issue.part, issue.path, issue.detail.split(';')[0]])
-        .sort(),
-    ).toEqual([
-      [
-        'LOST-SURFACE',
-        'components/beside-title',
-        'div[data-et-part=components/beside-title] > div.card',
-        'fills with rgb(30, 30, 30), the fill of div[data-et-part=components/beside-title] around it, so only its edge shows the card - give it the surface it is placed on (data-et-auto-surface) or drop the fill',
-      ],
-      [
-        'LOST-SURFACE',
-        'components/on-canvas',
-        'div[data-et-part=components/on-canvas] > div.card',
-        'fills with rgb(255, 255, 255), the fill of the canvas around it, so only its edge shows the card - give it the surface it is placed on (data-et-auto-surface) or drop the fill',
-      ],
-    ]);
-  }, 120_000);
-
-  it('does not flag a card that hides the dot pattern of the surface around it, also over panning content, as a lost surface', async (context) => {
-    const card = `<div class="card" style="width: 200px; background: rgb(30 30 30); border: 1px solid rgb(90 90 90); padding: 8px"><p style="margin: 0">Shot</p></div>`;
-    const dots =
-      'background-color: rgb(30 30 30); background-image: radial-gradient(rgb(90 90 90) 1px, transparent 1px); background-size: 8px 8px';
-    const overContent = (pan: string) =>
-      `<div style="position: relative; width: 300px; height: 160px; background: rgb(30 30 30)"><main style="position: absolute; inset: 0; overflow: clip; ${pan}; ${dots}"><div style="width: 280px; height: 140px; background: rgb(30 30 30)"></div></main><aside style="position: absolute; top: 12px; left: 12px">${card}</aside></div>`;
-    const target = checkout({
-      'components/on-dots': {
-        body: `<div style="width: 300px; padding: 12px; ${dots}"><h2 style="margin: 0">Titel</h2>${card}</div>`,
-      },
-      'components/on-plain': {
-        body: `<div style="width: 300px; padding: 12px; background: rgb(30 30 30)"><h2 style="margin: 0">Titel</h2>${card}</div>`,
-      },
-      'components/over-dotted-sibling': {
-        body: `<div style="position: relative; width: 300px; height: 120px; background: rgb(30 30 30)"><main style="position: absolute; inset: 0; ${dots}"></main><aside style="position: absolute; top: 12px; left: 12px">${card}</aside></div>`,
-      },
-      'components/over-panned-content': {
-        body: overContent('cursor: grab'),
-      },
-      'components/over-static-content': {
-        body: overContent(''),
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(rendered.issues.filter((issue) => issue.rule === 'LOST-SURFACE').map((issue) => issue.part)).toEqual([
-      'components/on-plain',
-      'components/over-static-content',
-    ]);
-  }, 120_000);
-
-  it('does not flag a full-width bar with a one-side divider as a lost surface, but a boxed one', async (context) => {
-    const bar = (edge: string) =>
-      `<div class="bar" style="width: 300px; background: rgb(255 255 255); ${edge}; padding: 8px"><p style="margin: 0">Titel</p></div>`;
-    const target = checkout({
-      'components/title-bar': { body: bar('border-bottom: 1px solid rgb(90 90 90)') },
-      'components/boxed-bar': { body: bar('border: 1px solid rgb(90 90 90)') },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(rendered.issues.filter((issue) => issue.rule === 'LOST-SURFACE').map((issue) => issue.part)).toEqual([
-      'components/boxed-bar',
-    ]);
-  }, 120_000);
-
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
     const config = readConfig(target) ?? {};
@@ -811,8 +622,6 @@ export default definePart({
       'CLIPPED components/ring-frame fitted',
       'CLIPPED components/shadow-cut fitted',
       'CLIPPED components/underline-cut fitted',
-      'CONTRAST components/styled fitted',
-      'CONTRAST components/themed fitted',
       'GRID components/gridded -',
       'OVERFLOW pages/tall desktop',
       'UNKNOWN-THEME components/themed fitted',
@@ -849,52 +658,6 @@ export default definePart({
     expect(rendered.issues.find((issue) => issue.part === 'components/cut')?.detail).toBe(
       'content 300x18 in 100x18; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
     );
-  }, 120_000);
-
-  it('flags a control cut by its clip, and a CLIPPED skip over controls', async (context) => {
-    const pan = (style: string, inner = '<button>Übernehmen</button>', skip = '') =>
-      `<div${skip} style="position: relative; width: 300px; height: 80px; ${style}"><div style="transform: translateX(-60px)">${inner}</div></div>`;
-    const target = checkout({
-      'components/pan-cut': { body: pan('overflow: clip', undefined, ' data-et-skip="CLIPPED"') },
-      'components/pan-scrolls': { body: pan('overflow: auto') },
-      'components/pan-gone': {
-        body: '<div style="width: 300px; height: 80px; overflow: clip"><div style="transform: translateX(-400px)"><button>Übernehmen</button></div></div>',
-      },
-      'components/pan-hidden': {
-        body: `<div style="visibility: hidden">${pan('overflow: clip')}</div>`,
-      },
-      'components/pan-faded': { body: `<div style="opacity: 0">${pan('overflow: clip')}</div>` },
-      'components/pan-inert': { body: `<div inert>${pan('overflow: clip')}</div>` },
-      'components/pan-aria-hidden': { body: `<div aria-hidden="true">${pan('overflow: clip')}</div>` },
-      'components/pan-skipped': { body: `<div data-et-skip="CUT-CONTROL">${pan('overflow: clip')}</div>` },
-      'components/pan-sticky': {
-        body: '<div style="width: 300px; height: 80px; overflow: auto"><div style="display: flex; width: 600px"><button style="position: sticky; left: 0">Übernehmen</button></div></div>',
-      },
-      'components/pan-skip-over-inert': {
-        body: pan('overflow: clip', '<div inert><button>Übernehmen</button></div>', ' data-et-skip="CLIPPED"'),
-      },
-      'components/pan-skip-on-clip': {
-        body: '<div><div data-et-skip="CLIPPED" style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div></div>',
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'CUT-CONTROL' || issue.rule === 'SKIP-SCOPE')
-        .map((issue) => `${issue.rule} ${issue.part}: ${issue.path} - ${issue.detail}`)
-        .sort(),
-    ).toEqual([
-      'CUT-CONTROL components/pan-cut: div[data-et-part=components/pan-cut] > div > button - 60px of its width is cut by div[data-et-part=components/pan-cut], so the control is only partly reachable',
-      'SKIP-SCOPE components/pan-cut: div[data-et-part=components/pan-cut] - data-et-skip=CLIPPED on div[data-et-part=components/pan-cut] covers interactive controls - put the skip on the clipped element itself',
-    ]);
   }, 120_000);
 
   it('flags a pan viewport clipped right of a floating panel, also under a CLIPPED skip', async (context) => {
@@ -1055,28 +818,6 @@ export default definePart({
     ]);
   }, 120_000);
 
-  it('measures text contrast in the dark scheme of a product that renders one', async (context) => {
-    const target = checkout({
-      'components/mode': {
-        body: '<p class="mode" style="margin: 0">Selected</p>',
-        css: '.mode { color: #222; background: #fff; } @media (prefers-color-scheme: dark) { .mode { color: #222; background: #111; } }',
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part}: ${issue.detail.split(';')[0]}`)).toEqual([
-      expect.stringMatching(/^CONTRAST components\/mode: "Selected" 1\.\d+:1 in the dark scheme, needs 4\.50:1$/),
-    ]);
-    expect(rendered.drawn).toHaveLength(1);
-  });
-
   it('blocks only interaction states a sketch adds, not merged ones it redraws', async (context) => {
     const target = checkout({
       'elements/shell': {
@@ -1186,7 +927,7 @@ export default definePart({
 
   it('blocks only issues a sketch adds, also when it moves its demo frame out of render', async (context) => {
     const card =
-      '<div class="card"><p style="margin: 0; color: #f00">Low</p><button data-et-action="emit:go">Go</button></div>';
+      '<div class="card"><div style="width: 100px; overflow: hidden"><p style="margin: 0; width: 300px">Low</p></div><button data-et-action="emit:go">Go</button></div>';
     const target = checkout({
       'components/card': { body: `<div class="card-frame" style="padding: 8px">${card}</div>` },
     });
@@ -1202,7 +943,10 @@ export default definePart({
           'render:',
           'frame: (body: string) => `<div class="card-frame" style="padding: 8px">${body}</div>`,\n  render:',
         ),
-      fresh: source.replace('<button ', '<span style="color: #f88">New</span><button '),
+      fresh: source.replace(
+        '<button ',
+        '<p style="margin: 0; width: 50px; overflow: hidden"><span style="display: block; width: 200px">New</span></p><button ',
+      ),
     };
 
     for (const [variant, file] of Object.entries(variants)) {
@@ -1228,21 +972,21 @@ export default definePart({
         (issue) => `${issue.sketch?.variant ?? '-'} ${issue.rule}: ${issue.detail.split(' ')[0]} ${issue.path}`,
       ),
     ).toEqual([
-      '- CONTRAST: "Low" div[data-et-part=components/card] > div.card > p',
-      'fresh CONTRAST: "New" div[data-et-part=components/card] > div.card > span',
+      '- CLIPPED: content div[data-et-part=components/card] > div.card > div',
+      'fresh CLIPPED: content div[data-et-part=components/card] > div.card > p',
     ]);
   }, 120_000);
 
   it('answers the issues the product part has now when asked for them before a sketch that fixes them', async (context) => {
     const target = checkout({
-      'components/card': { body: '<p style="margin: 0; color: #f00">Low</p>' },
+      'components/card': { body: CUT_LOW },
     });
     const shop = join(target, DESIGN_DIR, 'shop');
     const dir = join(shop, 'sketches', 'components-card');
     const source = readFileSync(join(shop, 'components/card/card.ts'), 'utf8');
 
     mkdirSync(join(dir, 'fixed', 'components/card'), { recursive: true });
-    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('color: #f00', 'color: #000'));
+    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('width: 300px', 'width: 100px'));
     writeFileSync(join(dir, 'sketch.json'), JSON.stringify({ target: 'components/card', status: 'ready' }));
 
     const rendered = await renderIssuesOf({
@@ -1257,19 +1001,19 @@ export default definePart({
     expect(rendered.issues).toEqual([]);
     expect(
       rendered.before?.map((issue) => `${issue.sketch?.variant ?? '-'} ${issue.rule}: ${issue.detail.split(' ')[0]}`),
-    ).toEqual(['- CONTRAST: "Low"']);
+    ).toEqual(['- CLIPPED: content']);
   }, 120_000);
 
   it('draws the product part asked for before alongside the sketch, in one pass instead of two', async (context) => {
     const target = checkout({
-      'components/card': { body: '<p style="margin: 0; color: #f00">Low</p>', states: 'default: {}, other: {}' },
+      'components/card': { body: CUT_LOW, states: 'default: {}, other: {}' },
     });
     const shop = join(target, DESIGN_DIR, 'shop');
     const dir = join(shop, 'sketches', 'components-card');
     const source = readFileSync(join(shop, 'components/card/card.ts'), 'utf8');
 
     mkdirSync(join(dir, 'fixed', 'components/card'), { recursive: true });
-    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('color: #f00', 'color: #000'));
+    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('width: 300px', 'width: 100px'));
     writeFileSync(join(dir, 'sketch.json'), JSON.stringify({ target: 'components/card', status: 'ready' }));
 
     let open = 0;
@@ -1317,22 +1061,22 @@ export default definePart({
     if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(rendered.before?.map((issue) => `${issue.state} ${issue.rule}`)).toEqual([
-      'default CONTRAST',
-      'other CONTRAST',
+      'default CLIPPED',
+      'other CLIPPED',
     ]);
     expect(mostOpen).toBe(2);
   }, 120_000);
 
   it('answers no verdict instead of a before problem when the product part does not draw in time', async (context) => {
     const target = checkout({
-      'components/card': { body: '<p style="margin: 0; color: #f00">Low</p>' },
+      'components/card': { body: CUT_LOW },
     });
     const shop = join(target, DESIGN_DIR, 'shop');
     const dir = join(shop, 'sketches', 'components-card');
     const source = readFileSync(join(shop, 'components/card/card.ts'), 'utf8');
 
     mkdirSync(join(dir, 'fixed', 'components/card'), { recursive: true });
-    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('color: #f00', 'color: #000'));
+    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('width: 300px', 'width: 100px'));
     writeFileSync(join(dir, 'sketch.json'), JSON.stringify({ target: 'components/card', status: 'ready' }));
 
     const rendered = await renderIssuesOf({
@@ -1495,7 +1239,7 @@ export default definePart({
 
 describe('groupedIssueLinesOf', () => {
   const issue = (variant: string, state: string, detail: string) => ({
-    rule: 'CONTRAST',
+    rule: 'CLIPPED',
     product: 'studio',
     part: 'pages/inbox',
     state,
@@ -1505,45 +1249,38 @@ describe('groupedIssueLinesOf', () => {
     sketch: { target: 'elements/shell', variant },
   });
 
-  it('prints a finding that repeats across states, schemes and variants once, with where it was found', () => {
-    const light = 'border 1.63:1 in the light scheme, needs 3.00:1';
-    const dark = 'border 1.63:1 in the dark scheme, needs 3.00:1';
+  it('prints a finding that repeats across states and variants once, with where it was found', () => {
+    const cut = 'outline 3px past the frame';
 
     expect(
       groupedIssueLinesOf([
-        issue('a', 'open', light),
-        issue('a', 'open', dark),
-        issue('a', 'empty', light),
-        issue('b', 'open', light),
-        issue('b', 'open', 'border 2.10:1 in the light scheme, needs 3.00:1'),
+        issue('a', 'open', cut),
+        issue('a', 'open', cut),
+        issue('a', 'empty', cut),
+        issue('b', 'open', cut),
+        issue('b', 'open', 'outline 6px past the frame'),
       ]),
     ).toEqual([
-      'elements/shell a, b: CONTRAST studio pages/inbox open, empty at desktop: nav.rail - border 1.63:1 in the light and dark scheme, needs 3.00:1 (4 times)',
-      'elements/shell b: CONTRAST studio pages/inbox open at desktop: nav.rail - border 2.10:1 in the light scheme, needs 3.00:1',
+      'elements/shell a, b: CLIPPED studio pages/inbox open, empty at desktop: nav.rail - outline 3px past the frame (4 times)',
+      'elements/shell b: CLIPPED studio pages/inbox open at desktop: nav.rail - outline 6px past the frame',
     ]);
   });
 });
 
 describe('uniqueIssuesOf', () => {
   const issue = {
-    rule: 'LOST-SURFACE',
+    rule: 'CLIPPED',
     product: 'app',
     part: 'card',
     state: 'default',
     size: 'md',
     path: 'div > span',
-    detail: 'surface lost',
+    detail: 'outline 3px past the frame',
     sketch: null,
   };
 
   it('keeps one issue found in both colour schemes', () => {
     expect(uniqueIssuesOf([issue, { ...issue }])).toEqual([issue]);
-  });
-
-  it('keeps one SKIP-SCOPE for a skip site found in two states', () => {
-    const skip = { ...issue, rule: 'SKIP-SCOPE' };
-
-    expect(uniqueIssuesOf([skip, { ...skip, state: 'hover', size: 'lg' }])).toEqual([skip]);
   });
 
   it('keeps issues whose detail differs', () => {

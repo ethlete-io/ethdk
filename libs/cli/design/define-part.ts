@@ -45,7 +45,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
- * `contrast` feeds the contrast check of `design check`, see `PartContrast`.
+ * `contrast` records known contrast exceptions and token pairs, see `PartContrast`.
  * `implements` links the part to the code that builds it, see `PartLink`.
  * `sample` makes an embedded instance of the part comparable across the states of its host, see `PartSample`.
  * `coverage` names the real input range and the view states the design must draw, see `PartCoverage`.
@@ -181,10 +181,8 @@ export type Control<TState extends string = string> = (
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
 
 /**
- * The contrast check measures every text of every state against its drawn background, to WCAG 2 AA: 4.5:1, or
- * 3:1 for large text; disabled text is exempt. `pairs` names token pairs it also computes, each `text` token on
- * each `on` token of an entry, for example `{ text: ['--text', '--text-muted'], on: ['--surface'] }`.
- * `exceptions` exempts the text inside each `selector`, with the `reason` it may stay below the limit.
+ * Known contrast debt of a part: `exceptions` names each `selector` whose text may stay below WCAG 2 AA and the
+ * `reason`; `pairs` names text tokens and the `on` tokens they are drawn on. `design check` does not measure them.
  */
 export type PartContrast = {
   pairs?: { text: string[]; on: string[] }[];

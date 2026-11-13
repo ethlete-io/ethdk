@@ -328,15 +328,6 @@ selectors all end on an SDK `.et-*` element passes. A file of a `shared/` folder
 A product whose stylesheets import no `tailwindcss` is not checked. `sketch check` and `sketch ready` run both rules
 on each variant, the sketch's `shared/` folder included.
 
-`et design check` fails with `CONTRAST` when a text in a drawn state is below WCAG 2 AA against its
-drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for large text (24px, or
-18.66px bold). Text inside a disabled control, or in the label of one, is exempt: a `<label for>` or wrapping label, or an `aria-labelledby` target. A part lists token pairs to compute in
-`contrast: { pairs: [{ text: ['--text'], on: ['--surface'] }] }`, and exempts text with
-`contrast: { exceptions: [{ selector: '.watermark', reason: 'decorative' }] }`.
-The border of a control, or of a frame that hugs one, needs 3:1. The outer border of a floating panel is not
-checked, because its surface step and its shadow set it apart: an SDK overlay pane (`.et-overlay`), or an element
-with a shadow and an `et-surface--<name>` class unlike that of its nearest surface ancestor.
-
 A part names the code that builds it in `implements`: a component or element names the path of its
 `.component.ts` from the repository root, `implements: 'apps/app/src/app/tree-row.component.ts'`, and a page
 names its route, `implements: { route: '/system' }`, and for compare the presentational component the route renders,
@@ -667,7 +658,7 @@ next to the first, in its own folder (`sketches/components-card.alt`), with its 
 `sketch ready` refuses while a target of a live variant does not load. It also runs the render check on the variants and refuses on a render issue the merged part does not already show (same rule, detail and element, also when the part moved its demo frame into `frame`); `design check` still lists the old ones. An element marked `data-et-skip` stays out, and a missing browser skips the check with a `RENDER CHECK SKIPPED` line.
 
 `sketch ready` also refuses while a live variant adds an open point the sketch can close itself to a target: no
-controls declared or a missing motion (contrasts and missing control states already fail the render check). A point
+controls declared or a missing motion (missing control states already fail the render check). A point
 the merged part already has is listed as a `NOTE` and does not block; a new part blocks on all of its points. Points
 that exist only outside the sketch do not count: the sketch itself, no `implements`, open comments.
 

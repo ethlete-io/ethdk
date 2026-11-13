@@ -33,7 +33,7 @@ import { designReady } from './ready-command';
 import { resolveProduct } from './resolve-product';
 
 vi.mock('./drawn-open-points', () => ({
-  drawnFindingsOf: vi.fn(async () => ({ contrasts: [], missingStates: [] })),
+  drawnFindingsOf: vi.fn(async () => ({ missingStates: [] })),
 }));
 
 vi.mock('./actions-command', async (importOriginal) => {
@@ -174,8 +174,7 @@ describe('part ready', () => {
     const { target, dir } = checkout();
 
     vi.mocked(drawnFindingsOf).mockResolvedValueOnce({
-      contrasts: [{ part: 'components/chip', state: 'default', path: 'span' }],
-      missingStates: [],
+      missingStates: [{ part: 'components/chip', control: 'remove' }],
       busyStates: [],
     });
 
@@ -183,7 +182,7 @@ describe('part ready', () => {
       status: 422,
       body: {
         error: 'components/chip has 1 open point - close them before ready',
-        points: [{ kind: 'contrast', state: 'default', path: 'span' }],
+        points: [{ kind: 'missing-state', control: 'remove' }],
       },
     });
     expect((await post(target, { part: 'components/tag', hash: hashOf(target, 'components/tag') })).status).toBe(422);
