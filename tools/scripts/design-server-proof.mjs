@@ -1,14 +1,18 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
+import { HOLD_LISTINGS_MS, runOnce } from './studio-e2e-repeat.mjs';
 
 const USAGE =
-  'usage: node tools/scripts/design-server-proof.mjs [--target <checkout>] [--cli <index.js>] [--part <sketch>] [--only P1]';
+  'usage: node tools/scripts/design-server-proof.mjs [--target <checkout>] [--cli <index.js>] [--part <sketch>] [--only P1] [--load <busy processes>]';
 
 export const P1_TARGETS = { coldMs: 10_000, warmMs: 5_000, warmRuns: 3 };
+export const P5_TARGETS = { runs: 5 };
+export const P5_CASE = 'B498 R3';
 
 /** The proofs of B499 (plan `plans/ethlete-studio/design-to-code.md`, "B499 proof"); a proof without `run` is not built yet. */
 export const PROOFS = [
@@ -62,14 +66,14 @@ export const runLineOf = (label, run) => {
 };
 
 export const argsOf = (argv) => {
-  const options = { target: process.cwd(), cli: null, part: 'components/command-palette', only: null };
+  const options = { target: process.cwd(), cli: null, part: 'components/command-palette', only: null, load: '0' };
 
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
     const value = argv[index + 1];
 
     if (flag === '--help' || flag === '-h') return { error: USAGE, code: 0 };
-    if (!['--target', '--cli', '--part', '--only'].includes(flag))
+    if (!['--target', '--cli', '--part', '--only', '--load'].includes(flag))
       return { error: `unknown flag ${flag}\n${USAGE}`, code: 2 };
     if (!value || value.startsWith('--')) return { error: `${flag} needs a value\n${USAGE}`, code: 2 };
 
@@ -78,8 +82,11 @@ export const argsOf = (argv) => {
   }
 
   const target = resolve(options.target);
+  const load = Number(options.load);
 
-  return { ...options, target, cli: resolve(options.cli ?? join(target, 'dist/libs/cli/src/index.js')) };
+  if (!Number.isInteger(load) || load < 0) return { error: `--load needs a whole number\n${USAGE}`, code: 2 };
+
+  return { ...options, load, target, cli: resolve(options.cli ?? join(target, 'dist/libs/cli/src/index.js')) };
 };
 
 const design = ({ target, cli }, args, env) => {
@@ -139,9 +146,82 @@ const proveP1 = (options) => {
   return results.every(Boolean);
 };
 
-const RUNNERS = { P1: proveP1 };
+/** Reads one canvas e2e run of the P5 case: did it pass, how many empty cell samples and columns, how many ECONNRESET. */
+export const p5RunOf = (output) => {
+  const row = output.split('\n').find((line) => /^ {2}[✓✘] +\d+ \[[^\]]+\] › /.test(line) && line.includes(P5_CASE));
+  const columns = /columns with no cell: ([^;|]+?)(?:;|$)/m.exec(row ?? '')?.[1].split(', ').length ?? 0;
 
-const main = () => {
+  return {
+    passed: !!row && row.startsWith('  ✓'),
+    empty: Number(/(\d+) empty samples of cells/.exec(row ?? '')?.[1] ?? 0) + columns,
+    resets: output.match(/ECONNRESET/g)?.length ?? 0,
+  };
+};
+
+export const judgeP5 = (runs, targets = P5_TARGETS) => {
+  const failures = [
+    ...(runs.length < targets.runs ? [`${runs.length} runs, need ${targets.runs}`] : []),
+    ...runs.flatMap((run, index) => [
+      ...(run.passed ? [] : [`run ${index + 1} did not pass`]),
+      ...(run.empty ? [`run ${index + 1}: ${run.empty} empty cells`] : []),
+      ...(run.resets ? [`run ${index + 1}: ${run.resets} ECONNRESET`] : []),
+    ]),
+  ];
+
+  return { pass: failures.length === 0, failures };
+};
+
+const burn = (count) =>
+  Array.from({ length: count }, () =>
+    spawn(process.execPath, ['-e', 'const e=Date.now()+36e5;while(Date.now()<e);'], { stdio: 'ignore' }),
+  );
+
+const proveP5 = async (options) => {
+  const runner = join(options.target, 'apps/ethlete-studio/e2e/canvas.e2e.mjs');
+  const built = mkdtempSync(join(tmpdir(), 'design-server-proof-p5-'));
+  const hogs = burn(options.load);
+
+  try {
+    execFileSync(
+      'npx',
+      ['nx', 'build', 'ethlete-studio', `--outputPath=${built}`, '--excludeTaskDependencies', '--skip-nx-cache'],
+      { cwd: options.target, stdio: 'ignore', env: { ...process.env, NX_NO_CLOUD: 'true' } },
+    );
+
+    const runs = [];
+
+    for (let index = 0; index < P5_TARGETS.runs; index += 1) {
+      const hold = index === P5_TARGETS.runs - 1 ? ['--hold-listings', String(HOLD_LISTINGS_MS)] : [];
+      const output = await runOnce(
+        runner,
+        ['--proof', 'B498', '--case', P5_CASE, '--built', built, ...hold],
+        options.target,
+      );
+
+      runs.push(p5RunOf(output));
+    }
+
+    const verdict = judgeP5(runs);
+
+    console.log(
+      `P5${options.load ? ` (--load ${options.load})` : ''}: ${verdict.pass ? 'pass' : `FAIL - ${verdict.failures.join('; ')}`}`,
+    );
+    runs.forEach((run, index) =>
+      console.log(
+        `  run ${index + 1}${index === P5_TARGETS.runs - 1 ? ` (--hold-listings ${HOLD_LISTINGS_MS})` : ''}: ${run.passed ? 'pass' : 'FAIL'}, ${run.empty} empty cells, ${run.resets} ECONNRESET`,
+      ),
+    );
+
+    return verdict.pass;
+  } finally {
+    hogs.forEach((hog) => hog.kill());
+    rmSync(built, { recursive: true, force: true });
+  }
+};
+
+const RUNNERS = { P1: proveP1, P5: proveP5 };
+
+const main = async () => {
   const options = argsOf(process.argv.slice(2));
 
   if (options.error) {
@@ -153,22 +233,21 @@ const main = () => {
     process.exit(2);
   }
 
-  console.log(
-    `cold = no design process, no node_modules/.cache/ethlete-design and no ${WORK_ROOT}/*.tsbuildinfo in ${options.target}`,
-  );
+  if (!options.only || options.only === 'P1')
+    console.log(
+      `cold = no design process, no node_modules/.cache/ethlete-design and no ${WORK_ROOT}/*.tsbuildinfo in ${options.target}`,
+    );
 
-  const passed = PROOFS.filter(({ id }) => !options.only || id === options.only).map(({ id, title }) => {
+  const passed = [];
+
+  for (const { id, title } of PROOFS.filter(({ id }) => !options.only || id === options.only)) {
     const run = RUNNERS[id];
 
-    if (!run) {
-      console.log(`${id} not built yet: ${title}`);
-      return true;
-    }
-
-    return run(options);
-  });
+    if (run) passed.push(await run(options));
+    else console.log(`${id} not built yet: ${title}`);
+  }
 
   process.exit(passed.every(Boolean) ? 0 : 1);
 };
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main();
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main();

@@ -149,6 +149,31 @@ describe('a design serve that hosts the resident', () => {
     expect(createDesignServer).not.toHaveBeenCalled();
   });
 
+  it('forgets what the serve drew before a hosted run, so a run after an edit draws the edit', async () => {
+    const target = checkoutOf();
+    const shared = sharedOf();
+    const { client } = clientOf();
+    const run = () =>
+      runThroughResident({ target, argv: ['sketch', 'check', 'pages/start'], invocation: 'et', client });
+
+    const forgetDrawn = vi.mocked(shared.server.forgetDrawn);
+    const drawing = async ({ warm }: { warm: { server: (options: object) => Promise<unknown> } }) => {
+      await warm.server({});
+
+      return 0;
+    };
+
+    designSketch.mockImplementationOnce(drawing).mockImplementationOnce(drawing);
+    closers.push(await hostResidentInServe({ target, shared, client, log: () => undefined }));
+
+    await run();
+    const forgotten = forgetDrawn.mock.calls.length;
+
+    await run();
+
+    expect(forgetDrawn.mock.calls.length).toBeGreaterThan(forgotten);
+  });
+
   it('leaves the resident to a serve that already hosts one', async () => {
     const target = checkoutOf();
     const first = await startFake({ target, owner: 'serve' });

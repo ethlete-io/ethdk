@@ -2059,6 +2059,31 @@ const CASES = [
     },
   },
   {
+    name: 'a sketch opens with one /__design/system request until its first cell',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const asked = [];
+      const count = (request) => {
+        if (new URL(request.url()).pathname === '/__design/system') asked.push(request.url());
+      };
+
+      page.on('request', count);
+      try {
+        await page.reload();
+        await page.waitForSelector('ethlete-sketch-view [data-shot]');
+      } finally {
+        page.off('request', count);
+      }
+      await listingAnswered(page);
+
+      return {
+        ok: asked.length === 1,
+        detail: `${asked.length} /__design/system request(s) until the first cell${asked.length > 1 ? `: ${asked.join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
     name: 'a sketch first paints the frame count it settles on',
     pages: ['Sketches'],
     labels: ['Large'],

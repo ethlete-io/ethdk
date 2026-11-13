@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { argsOf, judgeP1, P1_TARGETS, phasesOf, runLineOf } from './design-server-proof.mjs';
+import { argsOf, judgeP1, judgeP5, P1_TARGETS, p5RunOf, phasesOf, runLineOf } from './design-server-proof.mjs';
 
 const COLD_RUN = readFileSync(join(import.meta.dirname, 'fixtures/design-server-proof/sketch-check-cold.log'), 'utf8');
+
+const P5_PASS = readFileSync(join(import.meta.dirname, 'fixtures/design-server-proof/b498-r3-pass.log'), 'utf8');
 
 const run = (ms, ok = true) => ({ ms, ok, status: ok ? 0 : 1, phases: [] });
 
@@ -82,5 +84,45 @@ describe('argsOf', () => {
   it('refuses an unknown flag and a flag without a value', () => {
     assert.equal(argsOf(['--fast']).code, 2);
     assert.equal(argsOf(['--part']).code, 2);
+  });
+});
+
+describe('p5RunOf', () => {
+  it('reads a captured passing B498 R3 run as passed with no empty cell and no ECONNRESET', () => {
+    assert.deepEqual(p5RunOf(P5_PASS), { passed: true, empty: 0, resets: 0 });
+  });
+
+  it('counts empty samples, empty columns and every ECONNRESET of a failed run', () => {
+    const failed = P5_PASS.replace(
+      / {2}✓ (.*empty) 32 of 32 cells.*$/m,
+      '  ✘ $1 3 empty samples of cells that had a picture: x; columns with no cell: a, b (44.0s)\n' +
+        'Error: apiRequestContext.get: read ECONNRESET',
+    );
+
+    assert.deepEqual(p5RunOf(failed), { passed: false, empty: 5, resets: 1 });
+  });
+
+  it('reads a run without the case row as not passed', () => {
+    assert.equal(p5RunOf('').passed, false);
+  });
+});
+
+describe('judgeP5', () => {
+  const clean = { passed: true, empty: 0, resets: 0 };
+
+  it('passes five clean runs', () => {
+    assert.deepEqual(judgeP5(Array(5).fill(clean)), { pass: true, failures: [] });
+  });
+
+  it('names each failed run, each empty cell count and each ECONNRESET, and too few runs', () => {
+    const verdict = judgeP5([clean, { passed: false, empty: 2, resets: 1 }]);
+
+    assert.equal(verdict.pass, false);
+    assert.deepEqual(verdict.failures, [
+      '2 runs, need 5',
+      'run 2 did not pass',
+      'run 2: 2 empty cells',
+      'run 2: 1 ECONNRESET',
+    ]);
   });
 });
