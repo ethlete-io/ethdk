@@ -124,6 +124,7 @@
 
   .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card {
     cursor: grab;
+    -webkit-user-select: none;
     user-select: none;
   }
 
