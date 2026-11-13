@@ -2689,6 +2689,17 @@ Bite: `tailwind-facts-merge.spec.ts` red on HEAD (`p-other` lost), `sync-pool.sp
 144 files green; spec:stress 4/4 each (the three new specs and `slow-run.spec.ts`, `--load 2`). Verified: P6 on Linux on a scratch copy, twice. Not verified: P6 in CI, the
 Mac, the main checkout, a pool worker that dies mid-batch (only the stall timeout, 60 s, catches it).
 
+ci-red 1113b as built (Linux builder, 2026-11-13): CI run 43362984133, Checks: `scratch-checkout.spec.mjs` left
+`scratch-spec-*` in its spec TMPDIR, all 9 tests green. Cause (git-level probe, not reproduced at spec level): `git
+commit` starts `git maintenance run --auto --quiet --detach` (GIT_TRACE, git 2.56); a repo made like `makeRepo` and
+removed with `rmSync(force)` right after the commit stays in /tmp with its `.git` (no error thrown) in 2/200 and 3/400
+runs under 32 busy loops, and 0/400 with `-c maintenance.auto=false`. Fix: the spec commits with
+`maintenance.auto=false` and removes every temp dir in `t.after` instead of inline at the test end. Bite: the old spec
+and the new one under 16 busy loops, 8 parallel loops each, own TMPDIR per run: 0/320 leaks both, so the spec-level
+bite did not bite; the git-level probe is the bite. Verified: the spec green with the tmp-leak hook. Not verified: CI;
+the orphan `sh`/`sleep` processes in the job end are not from this spec. Other specs that commit in a temp repo through
+`gitEnv` may leak the same way.
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
