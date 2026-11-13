@@ -13,7 +13,13 @@ type TreePart = {
   nested?: TreePart[];
 };
 type TreeLayer = { title: string; open: boolean; parts: TreePart[] };
-export type OpenSketch = { part: string; name?: string; status: 'in-progress' | 'ready' };
+export type OpenSketch = {
+  part: string;
+  name?: string;
+  status: 'in-progress' | 'ready';
+  selected?: boolean;
+  nested?: TreePart[];
+};
 type LegacyProject = { name: string; open?: boolean; calls: string[] };
 
 export type Props = {
@@ -32,7 +38,7 @@ const group = (label: string, expanded: boolean): Row => ({
   action: 'emit:expandedChange',
 });
 
-const partRows = (part: TreePart, depth: number): Row[] => {
+export const partRows = (part: TreePart, depth: number): Row[] => {
   const host = part.nested !== undefined && part.nested.length > 0;
   const open = host && part.open !== false;
 

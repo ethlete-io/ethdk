@@ -113,23 +113,23 @@ const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
 const foldedLabel = (count: number) =>
   count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`;
 
-const sketchLayer = (multi: MultiTargets) => ({
-  title: 'Sketches',
+const multiSketchOf = (multi: MultiTargets, status: SketchStatus) => ({
   open: true,
-  parts: [
+  items: [
     {
+      part: 'badge',
       name: 'kopf-tags',
+      status: status === 'waiting' || status === 'picked' ? ('ready' as const) : ('in-progress' as const),
       selected: true,
-      open: true,
       nested: targetsOf(multi).map((target) => ({ name: target, leaf: true })),
     },
   ],
 });
 
-const treeOf = (key: string, multi?: MultiTargets) =>
+const treeOf = (key: string, multi: MultiTargets | undefined, status: SketchStatus) =>
   partTree.render({
+    ...(multi ? { sketches: multiSketchOf(multi, status) } : {}),
     layers: [
-      ...(multi ? [sketchLayer(multi)] : []),
       {
         title: 'Components',
         open: true,
@@ -627,7 +627,7 @@ export default definePart<Props>({
     const rowStyles = await prepareShots(full);
     const hidden = comparing ? [] : unchangedStates(full);
     const part = hidden.length > 0 ? { ...full, states: full.states.filter((state) => !hidden.includes(state)) } : full;
-    const side = await treeOf(screen ? SCREEN_KEY : part.key, multi);
+    const side = await treeOf(screen ? SCREEN_KEY : part.key, multi, status);
     const all = rowsOf(part, fresh);
     const rows = visibleRows(all, withdrawn);
     const hiddenCount = withdrawnCount(all, withdrawn);

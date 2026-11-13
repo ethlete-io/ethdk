@@ -1,15 +1,24 @@
 import { definePart } from '@design-system';
 import treeRow, { type Row } from '@system/components/tree-row';
-import { type OpenSketch, type Props, segments, treeGrid, treeStates } from './shared/tree';
+import { type OpenSketch, type Props, partRows, segments, treeGrid, treeStates } from './shared/tree';
 
 const sketchRows = (items: OpenSketch[]): Row[] =>
-  items.map((item) => ({
-    label: item.name ? `${item.part}@${item.name}` : item.part,
-    depth: 1,
-    kind: 'leaf',
-    action: 'emit:activate',
-    status: item.status,
-  }));
+  items.flatMap((item): Row[] => {
+    const host = (item.nested?.length ?? 0) > 0;
+
+    return [
+      {
+        label: item.name ? `${item.part}@${item.name}` : item.part,
+        depth: 1,
+        kind: host ? 'part' : 'leaf',
+        action: host ? 'emit:expandedChange' : 'emit:activate',
+        ...(host ? { expanded: true } : {}),
+        ...(item.selected ? { selected: true } : {}),
+        status: item.status,
+      },
+      ...(item.nested ?? []).flatMap((child) => partRows(child, 2)),
+    ];
+  });
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/part-tree/part-tree.component.ts',
