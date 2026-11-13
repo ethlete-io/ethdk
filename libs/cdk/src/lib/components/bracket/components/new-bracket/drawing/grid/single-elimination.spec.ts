@@ -95,6 +95,25 @@ describe('createSingleEliminationGrid with a third place match', () => {
     expect(continueElementCount(grid)).toBe(1);
   });
 
+  it('keeps the third place column out of the line from the final to the continue element', () => {
+    const grid = createGrid(source(), BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, {
+      continueElement: { columnWidth: 100, elementHeight: 50 },
+    });
+
+    const final = grid.matchElementMap.getOrThrow('r2m0' as never).dimensions;
+    const thirdPlace = grid.matchElementMap.getOrThrow('thirdm0' as never).dimensions;
+    const continueElement = grid.columns
+      .flatMap((column) => column.elements)
+      .find((element) => element.type === 'continue');
+
+    if (!continueElement) throw new Error('No continue element');
+
+    const lineStart = final.left + final.width;
+    const lineEnd = continueElement.dimensions.left;
+
+    expect(thirdPlace.left + thirdPlace.width <= lineStart || thirdPlace.left >= lineEnd).toBe(true);
+  });
+
   it("places it in the final's column, that many px below the final's card", () => {
     const grid = createGrid(source(), BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, { thirdPlaceTopOffset: 100 });
     const final = grid.matchElementMap.getOrThrow('r2m0' as never).dimensions;
