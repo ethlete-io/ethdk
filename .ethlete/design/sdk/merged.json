@@ -89,7 +89,13 @@
   "components/toolbar": "8963a8ba9a488f1b",
   "components/tooltip": "d8d78f8928e32679",
   "components/tree": "7826d5e508a8602c",
-  "foundations/colors": "928c53ae4cba5a3e",
+  "foundations/colors": {
+    "hash": "cc2fdce4fabe8bd8",
+    "variant": "new",
+    "decidedBy": "plan: B508 slice 2 (ADR 0292)",
+    "at": "2026-11-13T14:33:44.377Z",
+    "note": "merged without a pick: allowed by B508 slice 2 (ADR 0292) - merged: contrast chips measured by measureContrastPairs per scheme"
+  },
   "foundations/elevation": "1cb38802221872b5",
   "foundations/icons": "693a3ae986c6ad3f"
 }
