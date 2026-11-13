@@ -829,8 +829,10 @@ const renderSystem = async (
 
     return { code: ci ? code : 1, rendered: null, notDrawn: rendered.unavailable };
   }
-  const isInBase = (issue: RenderIssue) =>
-    resolved.some((product) => product.name === issue.product && isBasePartKey(product, ownerPartOf(issue)));
+  const isBaseOf = (issue: RenderIssue, key: string) =>
+    resolved.some((product) => product.name === issue.product && isBasePartKey(product, key));
+  const countedPartOf = (issue: RenderIssue) => (isBaseOf(issue, ownerPartOf(issue)) ? issue.part : ownerPartOf(issue));
+  const isInBase = (issue: RenderIssue) => isBaseOf(issue, countedPartOf(issue));
   const own = rendered.issues.filter((issue) => !isInBase(issue));
   const baselined = resolved.map((product) => {
     const baselinedOwn = own.filter(
@@ -876,7 +878,7 @@ const renderSystem = async (
     .filter((issue) => !isInBase(issue))
     .forEach((issue) => {
       console.warn(`WARNING ${renderIssueLineOf(issue)}`);
-      const counted = tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) });
+      const counted = tallyOf(options.tally, { product: issue.product, part: countedPartOf(issue) });
 
       if (counted) counted.warnings += 1;
     });
@@ -889,7 +891,7 @@ const renderSystem = async (
 
   issues.forEach((issue) => {
     console.error(old.has(issue) ? `OLD ${renderIssueLineOf(issue)}` : renderIssueLineOf(issue));
-    tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) })?.problems.push(issue.rule);
+    tallyOf(options.tally, { product: issue.product, part: countedPartOf(issue) })?.problems.push(issue.rule);
   });
   printUndrawn(issues.filter((issue) => isPartUndrawn(issue) || isStateUndrawn(issue)));
 

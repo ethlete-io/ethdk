@@ -31,7 +31,6 @@ import { SEE_THROUGH_STATEMENTS } from './see-through';
 import { FONT_FACES_SCRIPT } from './font-faces';
 import { ESCAPABLE_RULES } from './skip-classes';
 import { loadScaledMs, NoVerdict, noVerdictOf } from './no-verdict';
-import { REACH_STATEMENTS } from './reach';
 import { REACHABLE_CONTROLS_STATEMENTS } from './reachable-controls';
 import { browserVersionOf, cacheKeyOf } from './compare-cache';
 import { isControlInput, PATH_DEPTH, sameRenderIssueKeyOf } from './render-issue-key';
@@ -449,7 +448,6 @@ ${VISUALLY_HIDDEN_STATEMENTS}
     return false;
   };
 ${REACHABLE_CONTROLS_STATEMENTS}
-${REACH_STATEMENTS}
 
   const metrics = document.createElement('canvas').getContext('2d');
   for (const element of root.querySelectorAll('*')) {

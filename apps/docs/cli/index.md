@@ -400,21 +400,8 @@ it, for example `NOT CHECKED studio render rules on 1 part: components/menu - it
 and without a browser one line counts every part, `NOT CHECKED studio render rules on all 80 parts - <why>`. A
 finding in a part the product takes from its base, before or in the render, does not fail the product: one line
 counts them, for example `94 findings in base product sdk (UTILITY-CSS 94) - they do not block this product; run et design check --product sdk for the base's own`. A part the product
-overrides is checked as its own.
-
-The render check also asks whether each declared action can be reached in every state that draws it. `UNREACHABLE`
-fails an element with `data-et-action` that the state hides (`visibility: hidden`, or `display: none` from CSS - a
-`hidden` attribute is left out), fades to `opacity: 0`, draws at zero size, gives `pointer-events: none`, or buries
-so that a click at every point of its unclipped box lands on another element, for example `UNREACHABLE studio
-pages/sketches far-out at desktop: … - "Übernehmen" (emit:merge) is hidden (visibility: hidden) in a state that
-declares it`. `COVERED` fails an action where another element takes the click at any of its sample points, opaque or
-transparent (a transparent button laid over it counts), or an opaque element of another subtree paints above one; a
-projected region (`slot(...)`, `data-et-projected`) fails only under an opaque element. Open overlay panes and
-tooltips do not count. Neither rule is silenced by a `CLIPPED` skip; an element panned or clipped fully out of view is
-not judged. A canvas whose content pans on the wheel is swept: the check pans each clipping ancestor of an action
-in 32 px steps right, left, down and up to its end and judges the actions at every position, so an action that a
-sticky column or a header covers only after a pan fails with the position in the finding (`… when <canvas> is
-panned 384px right`).
+overrides is checked as its own, and a render finding inside a base component that one of the product's own parts
+draws counts on that part.
 
 `CONTROL-HEIGHT` fails a control sized by a `--control-*` token whose rendered height differs from that token by more
 than 0.5 px, for example `CONTROL-HEIGHT studio components/title-search default at desktop: button.et-button - renders

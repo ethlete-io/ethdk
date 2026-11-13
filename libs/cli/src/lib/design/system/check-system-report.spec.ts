@@ -3,7 +3,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR } from '../design-config';
-import { acme, output, withoutOpenPoints } from './check-system.fixtures';
+import { acme, output } from './check-system.fixtures';
 
 describe('checkDesign', () => {
   afterEach(() => {
@@ -112,7 +112,7 @@ describe('checkDesign', () => {
     ]);
   }, 120_000);
 
-  it('leaves what the render finds in a base part to the base', async (context) => {
+  it('counts what the render finds in a base component on the product part that draws it', async (context) => {
     const target = acme();
     const lines = output();
     const card = join(target, DESIGN_DIR, 'acme-base/components/card/card.ts');
@@ -129,11 +129,11 @@ describe('checkDesign', () => {
 
     if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
-    expect(code).toBe(0);
-    expect(withoutOpenPoints(lines).filter((line) => line.includes('components/card'))).toEqual([]);
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^CLIPPED acme pages\/home /));
     expect(lines).toContainEqual(
       expect.stringMatching(
-        /^\d+ findings? in base product acme-base \((?:[A-Z-]+ \d+(?:, )?)+\) - they do not block this product; run et design check --product acme-base for the base's own$/,
+        /^\d+ findings? in base product acme-base \(CLIPPED \d+\) - they do not block this product;/,
       ),
     );
     expect(await checkDesign({ target, argv: ['--product', 'acme-base'], invocation: 'et design' })).toBe(1);

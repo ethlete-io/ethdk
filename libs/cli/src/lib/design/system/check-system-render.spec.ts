@@ -45,6 +45,29 @@ describe('checkDesign', () => {
     expect(lines.filter((line) => line.startsWith('RENDER CHECK NOT RUN'))).toEqual([]);
   }, 120_000);
 
+  it('counts a render issue inside a base component on its own drawn part, not the base', async (context) => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8').replace(
+        '<h1>${film.title}</h1>',
+        '<h1>${film.title}</h1><div data-et-part="components/card" style="width: 100px; overflow: hidden"><p style="margin: 0; width: 300px">Wide</p></div>',
+      ),
+    );
+
+    const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
+
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
+
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^CLIPPED acme elements\/hero default at /));
+    expect(lines).toContainEqual(expect.stringMatching(/^PART acme elements\/hero: .*CLIPPED/));
+    expect(lines.filter((line) => line.includes('in base product'))).toEqual([]);
+  }, 120_000);
+
   it('names a part that does not draw as not checked by the render rules', async (context) => {
     const target = acme();
     const lines = output();
