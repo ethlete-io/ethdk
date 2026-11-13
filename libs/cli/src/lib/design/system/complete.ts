@@ -1313,12 +1313,15 @@ export const seeFrame = (options: {
     return element.innerText.trim() !== '' || !!element.querySelector('img, svg, canvas, video, iframe, input, select, textarea');
   };
   const LOOK = ${JSON.stringify(LOOK_PROPERTIES)};
+  const drawnLookOf = (element) =>
+    [null, '::before', '::after']
+      .map((pseudo) => getComputedStyle(element, pseudo))
+      .filter((style, index) => index === 0 || !['none', 'normal'].includes(style.content))
+      .map((style) => LOOK.map((name) => style.getPropertyValue(name)).join(' '))
+      .join(' | ');
   const lookOf = (element) => {
-    const own = LOOK.map((name) => getComputedStyle(element).getPropertyValue(name));
-    const inside = [...element.querySelectorAll('*')].map((child) => {
-      const style = getComputedStyle(child);
-      return LOOK.map((name) => style.getPropertyValue(name)).join(' ');
-    });
+    const own = drawnLookOf(element);
+    const inside = [...element.querySelectorAll('*')].map(drawnLookOf);
     return JSON.stringify([own, [...new Set(inside)].sort()]);
   };
   const named = new Set([...root.querySelectorAll('[aria-activedescendant]')].filter((element) => ownerOf(element) === null).map((element) => element.getAttribute('aria-activedescendant')));
