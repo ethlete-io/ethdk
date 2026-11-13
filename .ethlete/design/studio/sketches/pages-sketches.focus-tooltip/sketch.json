@@ -117,11 +117,11 @@
     }
   },
   "readyContent": {
-    "a": "8d5ffd18b75fd8e6",
-    "b": "72cc59dcf6119d36"
+    "a": "e0a48b2cd0c1f9de",
+    "b": "629197979dcb652f"
   },
   "mergeHold": {
     "reason": "variant a changes narrow-part, comparing-narrow, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole; variant b changes narrow-part, comparing-narrow, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole",
-    "at": "2026-11-13T07:29:50.245Z"
+    "at": "2026-11-13T09:11:36.915Z"
   }
 }
