@@ -2580,6 +2580,7 @@ red on HEAD (2 of 9), green after; spec:stress 4/4 each; vitest related 140 file
 after it 1 design process and 8 Chromium processes (1 root); 99 s after the run 0 and 0, log "exits: idle for 60 s".
 Not verified: abort through a real HTTP close on a running serve, a serve-hosted resident over 30 min, CI, the Studio
 e2e. Terminating a running rules worker drops its check cache (`cachedCheckOf`), so the next run is cold.
+B499 S4 in progress (Linux builder, 2026-11-13): slow checks and class facts move into the rules worker.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
