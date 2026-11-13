@@ -27,6 +27,7 @@
     "components/chart": "ac3f5741017eb4dc",
     "components/checkbox": "c1eb1c126ffeb175",
     "components/chip": "5540413702b08af7",
+    "components/command-palette": "d4fcb7a7892674ce",
     "components/comment-draft": "ad14ceb6f41d913d",
     "components/comment-pin": "7822b65218699dfc",
     "components/comment-row": "867500b6ec9a7948",
@@ -83,9 +84,9 @@
     "components/update-dialog": "13930e89cc84f437",
     "components/zoom-chip": "51bd9a1615d87220",
     "elements/canvas-frames": "3a487354d74113f2",
-    "elements/part-tree": "dae9f86aab07e116",
-    "elements/shell-main": "8b721f55a6439559",
-    "elements/studio-menu": "1aaa41df671aa8ea",
+    "elements/part-tree": "be7a34ab36d35028",
+    "elements/shell-main": "6ec78ec36bc18075",
+    "elements/studio-menu": "9ca3b2c07fbef55d",
     "elements/variant-cell": "b5d9dccbef712939",
     "pages/flows": "df04c02df74ca95e",
     "pages/inbox": "0e0fc08e618a94a0",
@@ -96,7 +97,7 @@
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "809303ed0997783ab2492aed3da67efa01d2b6aa",
+  "baselineTree": "bcf873451b4dfea6b83c84b5fbd2f201b73ba860",
   "rounds": [
     {
       "key": "r1",
@@ -119,6 +120,12 @@
   "readyContent": {
     "a": "e0a48b2cd0c1f9de",
     "b": "629197979dcb652f"
+  },
+  "portAfterMerge": {
+    "merged": ["pages/sketches"],
+    "parts": ["pages/sketches"],
+    "reasons": ["a: pages/sketches/shared/change-crop.ts - the variant and the product both changed it"],
+    "at": "2026-11-13T10:22:12.282Z"
   },
   "mergeHold": {
     "reason": "variant a changes narrow-part, comparing-narrow, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole; variant b changes narrow-part, comparing-narrow, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole",

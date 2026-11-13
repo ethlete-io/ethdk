@@ -98,6 +98,14 @@
     "fixtures.ts": "909089fbef7b8f34"
   },
   "baselineTree": "aca736488c915c206e691e918326aed0a92d2208",
+  "decision": {
+    "kind": "pick",
+    "variant": "a",
+    "by": "designer",
+    "cmd": "POST /__design/sketch-decision",
+    "pid": 708615,
+    "decidedAt": "2026-11-13T10:23:59.413Z"
+  },
   "rounds": [
     {
       "key": "r1",
@@ -121,6 +129,20 @@
   "readyContent": {
     "a": "66e5ca5a547ae710",
     "b": "45cd50e922faa29d"
+  },
+  "portAfterMerge": {
+    "merged": ["elements/studio-menu"],
+    "parts": ["elements/shell-main", "elements/studio-menu"],
+    "reasons": [
+      "a: elements/shell-main/shared/shell-main.ts - the variant and the product both changed it",
+      "a: elements/shell-main/shell-main.ts - the variant and the product both changed it",
+      "a: elements/studio-menu/studio-menu.ts - the variant and the product both changed it",
+      "b: elements/shell-main/shared/shell-main.ts - the variant and the product both changed it",
+      "b: elements/shell-main/shell-main.ts - the variant and the product both changed it",
+      "b: elements/studio-menu/studio-menu.css - the variant and the product both changed it",
+      "b: elements/studio-menu/studio-menu.ts - the variant and the product both changed it"
+    ],
+    "at": "2026-11-13T10:20:48.541Z"
   },
   "mergeHold": {
     "reason": "variant a changes elements/shell-main server-stopped, server-starting, server-unanswered, open, open-focus-visible, section, section-hover, section-active, section-focus-visible, product, product-hover, product-active, product-focus-visible, system.hover, system.active, system-picker, system-picker-focus-visible, system-picker.option-hover, system-picker.option-focus-visible; variant b changes elements/shell-main server-stopped, server-starting, server-unanswered, open, open-focus-visible, section, section-hover, section-active, section-focus-visible, product, product-hover, product-active, product-focus-visible, system.hover, system.active, system.selected-hover",
