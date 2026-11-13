@@ -52,7 +52,7 @@ describe('TitleSearchComponent', () => {
     );
   });
 
-  it('does nothing on click yet', () => {
+  it('does nothing on click outside a view with a command palette', () => {
     const { button } = render({ product: 'shop', part: 'Cart' });
 
     expect(() => button?.click()).not.toThrow();

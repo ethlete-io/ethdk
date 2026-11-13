@@ -35,6 +35,18 @@ export const STUDIO_LABELS = {
       close: 'Schließen',
     },
   },
+  commandPalette: {
+    label: 'Befehlsrahmen',
+    placeholder: 'Parts, Seiten, Skizzen und Befehle suchen',
+    recent: 'Zuletzt geöffnet',
+    groups: { part: 'Parts', page: 'Seiten', sketch: 'Skizzen', command: 'Befehle' },
+    hints: { part: 'Part', page: 'Seite', sketch: 'Skizze', command: 'Befehl' },
+    none: 'Nichts gefunden',
+    noneFor: (query: string) => `Für „${query}“ gibt es keinen Part, keine Seite und keine Skizze.`,
+    select: '↑↓ wählen',
+    open: '↵ öffnen',
+    close: 'Esc schließen',
+  },
   updateDialog: {
     label: 'Update installieren',
     question: (version: string) => `Update auf v${version} installieren?`,

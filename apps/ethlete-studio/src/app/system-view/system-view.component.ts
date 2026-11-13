@@ -92,6 +92,11 @@ import { OpenPointsChipComponent } from '../design-parts/system-page/open-points
 import { CommentDraftComponent } from '../design-parts/system-page/comment-draft.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
+import { PaletteEntry } from '../components/command-palette/command-palette.component';
+import {
+  injectCommandPaletteStore,
+  provideCommandPaletteStore,
+} from '../components/command-palette/command-palette-store';
 import { ListedFlow, flowChanges$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
@@ -110,6 +115,8 @@ const NO_OPEN_POINTS: { groups: OpenPointGroup[]; buildReady: BuildReadyStatus |
 const PART_ZOOM_CHIP_CLASS = 'absolute right-space-3 bottom-space-3';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
+
+const PALETTE_SERVER_ACTIONS: readonly DesignServerAction[] = ['restart', 'stop'];
 
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
 
@@ -370,13 +377,14 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     OpenPointsChipComponent,
     CommentDraftComponent,
   ],
-  providers: [provideCommentStore()],
+  providers: [provideCommentStore(), provideCommandPaletteStore()],
   host: { class: 'block size-full min-h-0' },
 })
 export class SystemViewComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
+  private palette = injectCommandPaletteStore();
   private injector = inject(Injector);
   protected failedShots = injectFailedShots();
   public port = input<number | null>(null);
@@ -1047,7 +1055,27 @@ export class SystemViewComponent {
 
   protected activePart = computed(() => inboxPartOf(this.shownPart() ?? ''));
 
+  private paletteEntries = computed((): PaletteEntry[] => [
+    ...(this.product()?.parts ?? []).map((part) => ({
+      kind: part.layer === 'pages' ? ('page' as const) : ('part' as const),
+      key: partKeyOf(part),
+      label: part.name,
+    })),
+    ...this.sketches().map((sketch) => ({
+      kind: 'sketch' as const,
+      key: sketchKeyOf(sketch.target),
+      label: sketch.name,
+    })),
+    ...PALETTE_SERVER_ACTIONS.map((action) => ({
+      kind: 'command' as const,
+      key: action,
+      label: STUDIO_LABELS.designServer[action],
+    })),
+  ]);
+
   constructor() {
+    this.palette.connect(this.paletteEntries, (entry) => this.openPaletteEntry(entry));
+
     const source = computed(() => {
       const port = this.port();
       const product = this.product()?.name;
@@ -1273,6 +1301,19 @@ export class SystemViewComponent {
       case 'sketch':
         return this.openSketch(part, target);
     }
+  }
+
+  private openPaletteEntry(entry: PaletteEntry) {
+    const action = PALETTE_SERVER_ACTIONS.find((candidate) => candidate === entry.key);
+
+    if (entry.kind === 'command') {
+      if (action) this.serverAction.emit(action);
+
+      return;
+    }
+
+    this.pickSection(entry.kind === 'sketch' ? 'Sketches' : 'System');
+    this.activate(entry.key);
   }
 
   private focusState(part: string, state: string) {

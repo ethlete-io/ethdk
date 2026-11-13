@@ -1,13 +1,25 @@
-import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { BUTTON_IMPORTS, KBD_IMPORTS } from '@ethlete/components';
 import { WindowChrome } from '../../../host/window';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { injectCommandPaletteStore } from '../command-palette/command-palette-store';
 
 @Component({
   selector: 'ethlete-title-search',
   template: `
     <button
+      #field
       [attr.aria-label]="LABELS.search(product(), part())"
+      (click)="palette?.open()"
       class="w-2xl justify-start px-space-2 text-et-surface-muted [--et-button-gap:var(--space-2)] hover:text-et-surface focus-visible:text-et-surface active:text-et-surface"
       et-button
       stretchContents
@@ -48,11 +60,25 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
   host: { class: 'contents' },
 })
 export class TitleSearchComponent {
+  protected palette = injectCommandPaletteStore({ optional: true });
   public product = input('');
   public part = input('');
   public os = input<WindowChrome['os']>();
 
+  private field = viewChild.required('field', { read: ElementRef<HTMLButtonElement> });
+
   protected readonly LABELS = STUDIO_LABELS.titleBar;
 
   protected platform = computed(() => (this.os() === 'macos' ? 'apple' : 'other'));
+
+  constructor() {
+    const palette = this.palette;
+
+    if (!palette) return;
+
+    const field = () => this.field().nativeElement;
+
+    palette.attachField(field);
+    inject(DestroyRef).onDestroy(() => palette.detachField(field));
+  }
 }
