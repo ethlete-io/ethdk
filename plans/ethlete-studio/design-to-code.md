@@ -2757,6 +2757,10 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   variant stylesheet replaces it. data-et-skip keeps one named exception (its 2 OFF-CENTRE skips) until then.
 - Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);
   spec-level bite 0/320; orphan `sh`/`sleep` at the CI job end unexplained.
+- B501: `sketch ready` 57 s and 70 s (target 10 s), phase "undeclared" 23 s and 37 s.
+- B501: S1 dropped the "embedded X changed" hint of the `design ready` 422 (S4); `design ready` writes other parts'
+  cached records (S2).
+- B504: slow run fails every poll: `state "project-picker" of "elements/shell-main" failed`.
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
