@@ -318,6 +318,19 @@ const probe = (page) =>
     { CANVAS, FRAME },
   );
 
+const NOT_PART_GROUPS = ['Sketches', 'Legacy'];
+
+const markPartLeaves = (page) =>
+  page.evaluate((outside) => {
+    let inPartGroup = true;
+
+    for (const row of document.querySelectorAll('[role="treeitem"]')) {
+      if (row.getAttribute('data-kind') === 'group')
+        inPartGroup = !outside.some((label) => row.textContent.trim().startsWith(label));
+      row.toggleAttribute('data-e2e-part', inPartGroup && row.getAttribute('data-kind') === 'leaf');
+    }
+  }, NOT_PART_GROUPS);
+
 const settle = (page) => page.waitForTimeout(SETTLE_MS);
 
 const underPanel = (page) =>
@@ -346,7 +359,7 @@ const underPanel = (page) =>
         }
       }
 
-      const x = panel.right + 2;
+      const x = panel.right + 8;
       const straddling = [...canvas.querySelectorAll(FRAME)]
         .map((frame) => ({ frame, rect: frame.getBoundingClientRect() }))
         .filter(
@@ -1600,7 +1613,8 @@ const CASES = [
         asked.push(new URL(request.url()).searchParams.get('part'));
         log.add('open-points request', request.url(), `switch ${switched}`);
       };
-      const leaves = page.locator('[role="treeitem"][data-kind="leaf"]:not([data-selected])');
+      await markPartLeaves(page);
+      const leaves = page.locator('[data-e2e-part]:not([data-selected])');
 
       if ((await leaves.count()) < 1) return { ok: false, detail: 'no other part in the tree' };
 
@@ -1633,15 +1647,18 @@ const CASES = [
     delayPictures: false,
     pages: ['System'],
     run: async (page) => {
-      const leafTexts = () =>
-        page.evaluate(() =>
-          [...document.querySelectorAll('[role="treeitem"][data-kind="leaf"]')].map((leaf) => leaf.textContent.trim()),
+      const leafTexts = async () => {
+        await markPartLeaves(page);
+
+        return page.evaluate(() =>
+          [...document.querySelectorAll('[data-e2e-part]')].map((leaf) => leaf.textContent.trim()),
         );
+      };
       const open = async (text) => {
         const at = (await leafTexts()).indexOf(text);
 
         if (at < 0) throw new Error(`no part ${text} in the tree`);
-        await page.locator('[role="treeitem"][data-kind="leaf"]').nth(at).click();
+        await page.locator('[data-e2e-part]').nth(at).click();
       };
       const pictures = () =>
         page.evaluate(
@@ -1663,11 +1680,13 @@ const CASES = [
 
         return pictures();
       };
-      const firstPaint = (text) =>
-        page.evaluate(
+      const firstPaint = async (text) => {
+        await markPartLeaves(page);
+
+        return page.evaluate(
           ({ CANVAS, text }) =>
             new Promise((done) => {
-              const leaves = [...document.querySelectorAll('[role="treeitem"][data-kind="leaf"]')];
+              const leaves = [...document.querySelectorAll('[data-e2e-part]')];
               const started = performance.now();
               let frames = 0;
               const sample = () => {
@@ -1687,6 +1706,7 @@ const CASES = [
             }),
           { CANVAS, text },
         );
+      };
       const unranked = (src) => src.replace(/&(view|rank)=[^&]*/gu, '');
       const texts = (await leafTexts()).filter((text) => text);
 
