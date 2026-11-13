@@ -241,6 +241,8 @@ export type ListedPart = {
   kitUses?: number;
   /** The pages that use the part, in its product and in products built on it. Missing from an `@ethlete/cli` older than page uses. */
   usedIn?: { product: string; part: string }[];
+  /** The keys of the product's parts that import the part directly. Missing from an `@ethlete/cli` older than part users. */
+  usedBy?: string[];
   /** Set on a base part no part of the product imports. Missing from an `@ethlete/cli` older than unused base parts. */
   unusedInProduct?: true;
   /** Whether the part changed since its last sketch merge while no open sketch holds it. Missing from an `@ethlete/cli` older than merge records. */

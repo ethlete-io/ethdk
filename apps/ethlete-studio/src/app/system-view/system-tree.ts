@@ -86,6 +86,7 @@ export type TreeEntry = {
   comments?: number;
   count?: number;
   frames?: TreeFrame[];
+  nested?: TreeEntry[];
 };
 
 export type TreeSection = { key: string; label: string; entries: TreeEntry[] };
@@ -245,6 +246,40 @@ export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
 
 const UNUSED_KEY: SystemGroupKey = 'unused';
 
+/** The key of the one part of its own layer that imports a part of the product's own, `null` for any other part. */
+export const nestingHostOf = (part: Pick<ListedPart, 'layer' | 'origin' | 'usedBy'>): string | null => {
+  const [user, ...others] = part.usedBy ?? [];
+
+  return part.origin !== 'base' && user !== undefined && others.length === 0 && user.startsWith(`${part.layer}/`)
+    ? user
+    : null;
+};
+
+/** The entries of the parts no other listed part hosts, each with the entries of the parts it hosts as `nested`. */
+const nestedEntriesOf = (parts: ListedPart[], entryOf: (part: ListedPart) => TreeEntry): TreeEntry[] => {
+  const byKey = new Map(parts.map((part) => [partKeyOf(part), part]));
+  const hostOf = (part: ListedPart) => {
+    const host = nestingHostOf(part);
+
+    for (let above = host; above !== null;) {
+      const next = byKey.get(above);
+
+      if (!next || next === part) return null;
+
+      above = nestingHostOf(next);
+    }
+
+    return host;
+  };
+  const entryWith = (part: ListedPart): TreeEntry => {
+    const nested = parts.filter((candidate) => hostOf(candidate) === partKeyOf(part)).map(entryWith);
+
+    return nested.length > 0 ? { ...entryOf(part), nested } : entryOf(part);
+  };
+
+  return parts.filter((part) => hostOf(part) === null).map(entryWith);
+};
+
 /** The base parts no part of the product imports, in one group with a section per layer. */
 const unusedGroupOf = (
   parts: ListedPart[],
@@ -259,23 +294,42 @@ const unusedGroupOf = (
     sections: [...new Set(parts.map((part) => part.layer))].map((layer) => ({
       key: `${UNUSED_KEY}/${layer}`,
       label: SYSTEM_GROUPS.find((group) => group.key === layer)?.label ?? layer,
-      entries: parts.filter((part) => part.layer === layer).map(entryOf),
+      entries: nestedEntriesOf(
+        parts.filter((part) => part.layer === layer),
+        entryOf,
+      ),
     })),
   };
 };
 
 export type OpenContext = { remembered: Record<string, boolean>; hasProducts: boolean };
 
-/** The keys of the group and the section that hold the entry, outermost first. */
+const hostsOf = (entries: TreeEntry[], key: string): string[] | null => {
+  for (const entry of entries) {
+    if (entry.key === key) return [];
+
+    const inner = hostsOf(entry.nested ?? [], key);
+
+    if (inner) return [entry.key, ...inner];
+  }
+
+  return null;
+};
+
+/** The keys of the group, the section and the host entries that hold the entry, outermost first. */
 export const holdersOf = (tree: TreeGroup[], key: string | null): string[] => {
   if (key === null) return [];
 
   for (const group of tree) {
-    if (group.entries.some((entry) => entry.key === key)) return [group.key];
+    const inGroup = hostsOf(group.entries, key);
 
-    const section = group.sections?.find((candidate) => candidate.entries.some((entry) => entry.key === key));
+    if (inGroup) return [group.key, ...inGroup];
 
-    if (section) return [group.key, section.key];
+    for (const section of group.sections ?? []) {
+      const inSection = hostsOf(section.entries, key);
+
+      if (inSection) return [group.key, section.key, ...inSection];
+    }
   }
 
   return [];
@@ -363,7 +417,7 @@ export const treeOf = (
 
     if (key === 'unused') return [unusedGroupOf(parts.filter(holds), { product, entryOf })];
 
-    return [{ key, label, entries: parts.filter(holds).map(entryOf) }];
+    return [{ key, label, entries: nestedEntriesOf(parts.filter(holds), entryOf) }];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
 
   const sketchGroups = groups.filter((group) => group.key === 'sketches');

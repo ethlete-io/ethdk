@@ -896,6 +896,38 @@ describe('SystemViewComponent on a merge', () => {
     ]);
   });
 
+  it('nests a part under its one user of the same layer in the tree, open, and picks it from there', async () => {
+    const product: ListedProduct = {
+      ...PRODUCT,
+      parts: [
+        { ...part('components', 'title-bar'), usedBy: ['elements/shell'] },
+        { ...part('components', 'title-search'), usedBy: ['components/title-bar'] },
+      ],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([product]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const view = fixture.componentInstance;
+
+    expect(view['partTree']().layers.find((layer) => layer.key === 'components')?.parts).toMatchObject([
+      { name: 'title-bar', key: 'components/title-bar', open: true, nested: [{ name: 'title-search' }] },
+    ]);
+
+    view['activate']('components/title-search');
+    fixture.detectChanges();
+
+    expect(view.shownPart()).toBe('components/title-search');
+  });
+
   it('shows the part a merged sketch targeted, once the sketches list no longer has the sketch', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',

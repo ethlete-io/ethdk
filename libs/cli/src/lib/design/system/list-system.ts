@@ -2,7 +2,7 @@ import { dirname, relative, resolve, sep } from 'path';
 import { Interaction, INTERACTIONS } from '../force-interactions';
 import { DesignColorScheme, DesignPreset } from '../design-config';
 import { ruleProblemsOf } from './check-system';
-import { partsReachedFrom } from './imports';
+import { partsReachedFrom, partUsersOf } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -38,6 +38,8 @@ export type ListedPart = {
   kitUses: number;
   /** The pages that import the part, directly or through another part: of its own product, and of each product that draws it as its base part. */
   usedIn: PageUse[];
+  /** The keys of the product's parts that import the part directly. */
+  usedBy: string[];
   /** Set on a base part that no part of the product imports, directly, through other parts, or through its `@ethlete/<lib>/design` module. */
   unusedInProduct?: true;
   /** Whether the part changed since its last sketch merge while no open sketch holds it. */
@@ -243,6 +245,7 @@ export const listSystem = async (options: {
       const ruled = problemsOf(name, product);
       const changedOutsideSketch = new Set(openDirectEditPartsOf(product));
       const unused = unusedBasePartsOf(product);
+      const users = partUsersOf(product);
 
       return [
         (async (): Promise<ListedProduct> => {
@@ -276,6 +279,7 @@ export const listSystem = async (options: {
                   interactions,
                   kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
                   usedIn: usedInOf(part),
+                  usedBy: [...(users.get(partKeyOf(part)) ?? [])],
                   ...(unused.has(partKeyOf(part)) ? { unusedInProduct: true as const } : {}),
                   changedOutsideSketch: changedOutsideSketch.has(partKeyOf(part)),
                   problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(

@@ -269,6 +269,21 @@ export const importProblemsOf = (product: ResolvedProduct & SharedDirs & { asset
   ]);
 };
 
+/** The keys of the product's parts that import each part directly, by the imported part's key. */
+export const partUsersOf = (product: ResolvedProduct) => {
+  const users = new Map<string, Set<string>>();
+
+  for (const part of product.parts) {
+    for (const dependency of partDependenciesOf(part)) {
+      const key = partKeyOf(dependency);
+
+      if (key !== partKeyOf(part)) users.set(key, (users.get(key) ?? new Set()).add(partKeyOf(part)));
+    }
+  }
+
+  return users;
+};
+
 /** The parts `from` imports, directly or through another part, as the product resolves them. */
 export const partsReachedFrom = (options: { product: ResolvedProduct; from: ResolvedPart }): ResolvedPart[] => {
   const parts = new Map(options.product.parts.map((part) => [partKeyOf(part), part]));

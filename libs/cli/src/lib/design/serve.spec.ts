@@ -500,6 +500,7 @@ describe('the design server for a design system', () => {
       interactions: [],
       kitUses: 0,
       usedIn: [],
+      usedBy: [],
       changedOutsideSketch: false,
       problems: [],
     });

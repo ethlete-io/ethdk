@@ -728,16 +728,16 @@ export class SystemViewComponent {
     const leaf = (entry: TreeEntry): TreeNode<string> => {
       entries.set(entry.key, entry);
 
-      if (!entry.frames) return { value: entry.key, label: entry.name, isLeaf: true };
+      if (!entry.frames && !entry.nested) return { value: entry.key, label: entry.name, isLeaf: true };
 
-      children.set(
-        entry.key,
-        entry.frames.map((frame) => {
+      children.set(entry.key, [
+        ...(entry.frames ?? []).map((frame) => {
           frames.set(frame.key, frame);
 
           return leaf({ key: frame.key, name: frame.name, badges: [] });
         }),
-      );
+        ...(entry.nested ?? []).map(leaf),
+      ]);
 
       return { value: entry.key, label: entry.name };
     };
@@ -919,8 +919,14 @@ export class SystemViewComponent {
   public expandedValues = computed(() => {
     const context = this.openContext();
     const open = (node: TreeGroup | TreeSection, isOpen: boolean) => (isOpen ? [node.key] : []);
-    const openParts = (node: TreeGroup | TreeSection) =>
-      node.entries.flatMap((entry) => (entry.frames && context.remembered[entry.key] ? [entry.key] : []));
+    const openEntries = (entries: TreeEntry[]): string[] =>
+      entries.flatMap((entry) => [
+        ...((entry.nested ? context.remembered[entry.key] !== false : entry.frames && context.remembered[entry.key])
+          ? [entry.key]
+          : []),
+        ...openEntries(entry.nested ?? []),
+      ]);
+    const openParts = (node: TreeGroup | TreeSection) => openEntries(node.entries);
 
     return this.tree().flatMap((group) => [
       ...open(group, isGroupOpen(group, context)),
@@ -947,7 +953,11 @@ export class SystemViewComponent {
       selected: entry.key === selected,
       ...(entry.badges.includes('error') ? { warns: entry.title ?? true } : {}),
     });
-    const partOf = (entry: TreeEntry): PartTreePart => ({ name: entry.name, ...marksOf(entry) });
+    const partOf = (entry: TreeEntry): PartTreePart => ({
+      name: entry.name,
+      ...marksOf(entry),
+      ...(entry.nested ? { open: open.has(entry.key), nested: entry.nested.map(partOf) } : {}),
+    });
     const sectionOf = (section: TreeSection): PartTreePart => ({
       name: section.label,
       key: section.key,

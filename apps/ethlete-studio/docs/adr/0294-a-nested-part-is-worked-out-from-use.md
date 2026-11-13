@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B509
+built: a033f9de1
 decided: 2026-11-13
 source: doc agent chat 2026-11-13, afternoon (A36 remainder)
 ---

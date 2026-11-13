@@ -1,11 +1,14 @@
 import { ListedCall, ListedPart, ListedProduct, ListedSketch, ListedSketches, SHOT_SESSION } from '../../host/design';
 import listing from './__fixtures__/studio-listing.json';
+import studioPartUsers from './__fixtures__/studio-part-users.json';
 import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import {
   callFramesOf,
   CURRENT,
   canPick,
   holdersOf,
+  nestingHostOf,
+  partKeyOf,
   isGroupOpen,
   isSectionOpen,
   framesOf,
@@ -314,6 +317,68 @@ describe('isGroupOpen and isSectionOpen', () => {
     expect(holdersOf(tree, parts!.entries[0]!.key)).toEqual([parts!.key]);
     expect(holdersOf(tree, 'missing')).toEqual([]);
     expect(holdersOf(tree, null)).toEqual([]);
+  });
+});
+
+describe('a part nested under its one user', () => {
+  const studio = (studioPartUsers as Partial<ListedPart>[]).map((listed) => part(listed));
+  const keysOf = (entries: TreeEntry[]): unknown[] =>
+    entries.map((entry) => (entry.nested ? [entry.key, keysOf(entry.nested)] : entry.key));
+  const components = (parts: ListedPart[]) => treeOf(parts).find((group) => group.key === 'components')!;
+
+  it('nests only components/title-search, under components/title-bar, in a captured studio listing', () => {
+    const own = studio.filter((listed) => listed.origin !== 'base');
+    const single = own.filter((listed) => listed.usedBy?.length === 1);
+
+    expect(own).toHaveLength(38);
+    expect(single).toHaveLength(11);
+    expect(studio.filter((listed) => nestingHostOf(listed) !== null).map(partKeyOf)).toEqual([
+      'components/title-search',
+    ]);
+
+    const tree = treeOf(studio);
+    const nested = tree.flatMap((group) => group.entries).filter((entry) => entry.nested);
+
+    expect(nested.map((entry) => [entry.key, keysOf(entry.nested!)])).toEqual([
+      ['components/title-bar', ['components/title-search']],
+    ]);
+    expect(components(studio).entries.map((entry) => entry.key)).not.toContain('components/title-search');
+    expect(holdersOf(tree, 'components/title-search')).toEqual(['components', 'components/title-bar']);
+  });
+
+  it('keeps a part whose one user is in another layer in its own layer', () => {
+    const tree = treeOf([
+      part({ name: 'badge', usedBy: ['elements/card'] }),
+      part({ layer: 'elements', name: 'card', usedBy: [] }),
+    ]);
+
+    expect(tree.map((group) => [group.key, keysOf(group.entries)])).toEqual([
+      ['elements', ['elements/card']],
+      ['components', ['components/badge']],
+    ]);
+  });
+
+  it('moves a part back to its layer once a second part uses it', () => {
+    const host = part({ name: 'title-bar', usedBy: [] });
+    const nested = part({ name: 'title-search', usedBy: ['components/title-bar'] });
+
+    expect(keysOf(components([host, nested]).entries)).toEqual([['components/title-bar', ['components/title-search']]]);
+    expect(
+      keysOf(components([host, { ...nested, usedBy: ['components/title-bar', 'components/command-palette'] }]).entries),
+    ).toEqual(['components/title-bar', 'components/title-search']);
+  });
+
+  it('keeps a base part and each part of an import cycle in its layer', () => {
+    expect(
+      keysOf(
+        components([
+          part({ name: 'comment-draft', usedBy: [] }),
+          part({ name: 'textarea', origin: 'base', usedBy: ['components/comment-draft'] }),
+          part({ name: 'a', usedBy: ['components/b'] }),
+          part({ name: 'b', usedBy: ['components/a'] }),
+        ]).entries,
+      ),
+    ).toEqual(['components/comment-draft', 'components/textarea', 'components/a', 'components/b']);
   });
 });
 

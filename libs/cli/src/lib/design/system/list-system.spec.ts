@@ -94,6 +94,20 @@ describe('listSystem', () => {
     expect(usedIn(base, 'components/button')).toEqual([]);
   });
 
+  it("lists the parts of the product that import a part directly as the part's users", async () => {
+    const [product] = await list(acme(), ['acme']);
+    const usedBy = (key: string) =>
+      product?.parts
+        .find((part) => `${part.layer}/${part.name}` === key)
+        ?.usedBy.slice()
+        .sort();
+
+    expect(usedBy('components/button')).toEqual(['components/card', 'elements/hero']);
+    expect(usedBy('components/card')).toEqual(['pages/home']);
+    expect(usedBy('elements/hero')).toEqual(['pages/home']);
+    expect(usedBy('pages/home')).toEqual([]);
+  });
+
   it('flags the base parts no part of the product imports as unused in the product', async () => {
     const target = acme();
     const home = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
