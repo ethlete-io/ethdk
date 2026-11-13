@@ -2783,29 +2783,36 @@ exit 0, 86 s and 80 s in two runs (P4 ≤ 90 s, over the 60 s target line, rende
 typecheck, lint, `vitest related` (145 files), two live sdk runs. Not verified: a studio run, CI; the `contrast` open
 point kind stays in `open-points.ts` and the Studio app with no producer.
 B500 open (doc agent, 2026-11-13): `design complete` keeps its own ACTION-UNDECLARED check (not reviewed).
-B500 S4 part 1 (Linux builder subagent, 2026-11-13, 243c8aa21): studio full check at c09b7b368, two runs, the same
-23 findings, exit 1, 163 s and 26 s (render cache): UNBOUND-INPUT 14, OFF-CENTRE 5, DROPPED-PROP 3,
-DISABLED-INTERACTION 1; VISIBLE-CHANGE 0 (a slow rule: plain `design check` does not run it, finding 718).
-UNBOUND-INPUT, all 14 reviewed, removed: `sketches` `pointsClosed` false (a `model()` the open-points chip toggles inside
-the component, the state is reachable); the 13 `design-canvas` inputs keep their defaults in the app. `tagsOf`/`isBound`
-moved into `dropped-props.ts`; `KNOWN_UNBOUND_INPUTS` stays for STATE-NO-SOURCE. Verdicts, not yet built:
-OFF-CENTRE 5/5 false (one element, `div.st-title-bar` in the `*-cli-dirty` states: the box is the 32 px title bar
-with search field and buttons, the dirty label sits on the row line like its neighbours; the rule takes it for a one-line
-text box) - remove; it is entangled with `sdk/rule-baseline.json` (18 baselined sdk hits), `BASELINED_RENDER_RULES`,
-`ESCAPABLE_RULES` and `data-et-skip="... OFF-CENTRE"` in ready and merged studio files (keep the skip name like S3).
-DISABLED-INTERACTION 4/4 false (title-bar `linux-full-notice-pending`, base: comment-draft `busy`, merge `merging`,
-system `send-busy`): each is a loading SDK button (`aria-disabled` + `data-loading`), which keeps its normal colours on
-purpose since 6700dfd3d - remove. DROPPED-PROP 3/3 true, keep (spec exists): `pages/sketches` `change-crop` and
-`change-crop-whole` set `screen`, the app toggles crop/whole per group with no input (finding 872); `pages/system`
-`listing-error` sets `listingError`, the app has no listing-error view (merged 514dbc881). Their fix is app work
-(a `screen` input plus harness crop data; the listing-error view) and is left for the human to schedule.
-P1 base sdk: Cause (probe of the base issue lines): the studio run's "base sdk" count is not the sdk product's run. It
-holds (a) sdk parts drawn with studio styles (OFF-CENTRE 55: pagination 15, sketches 36 select frames, chart, table,
-skeleton, flows), which the sdk run baselines in `sdk/rule-baseline.json`, and (b) studio page issues whose innermost
-`data-et-part` is an sdk component (`isBasePartKey(ownerPartOf(issue))` in `check-system.ts`): DISABLED-INTERACTION 3,
-UNREACHABLE 4 (inventory open/approved/loading, merge merging: loading buttons), COVERED 1 (sketches sticky-names
-"Übernehmen" under the shell side). After OFF-CENTRE and DISABLED-INTERACTION go, (b) stays: attribute by the drawn part
-instead, then review UNREACHABLE and COVERED under P2.
+B500 S4 as built (Linux builder subagents, 2026-11-13; 243c8aa21, 4610c2a8c and the commit "fix(cli): Drop the UNREACHABLE
+and COVERED check rules and count base issues on the drawn part"): every remaining studio render rule with a hit fails
+the P2 sample and is removed from `design check`; DROPPED-PROP stays. Start at c09b7b368: studio exit 1, 23 findings
+(UNBOUND-INPUT 14, OFF-CENTRE 5, DROPPED-PROP 3, DISABLED-INTERACTION 1). UNBOUND-INPUT, all 14 false, removed (part 1):
+`sketches` `pointsClosed` is a `model()` the open-points chip toggles, the 13 `design-canvas` inputs keep their app
+defaults; `tagsOf`/`isBound` moved into `dropped-props.ts`. OFF-CENTRE, 5/5 false, removed: one element,
+`div.st-title-bar` in the `*-cli-dirty` states, the 32 px title bar with search and buttons read as a one-line text box;
+`sdk/rule-baseline.json` (its 18 OFF-CENTRE entries, findings 629-631 and siblings) is deleted, `BASELINED_RENDER_RULES`
+keeps CONTROL-HEIGHT only. DISABLED-INTERACTION, 4/4 false, removed: title-bar `linux-full-notice-pending`, comment-draft
+`busy`, merge `merging`, system `send-busy` are loading SDK buttons that keep their colours on purpose since 6700dfd3d.
+P1 base attribution: Cause (probe, part 1): the studio run counted an issue as base when its innermost `data-et-part`
+was a base component (`isBasePartKey(ownerPartOf(issue))`), so studio page issues on SDK buttons fell into "base sdk".
+Fix: `check-system.ts` counts such an issue on the drawn part (`countedPartOf`); a base part drawn on its own stays base.
+Bite: `check-system-render.spec.ts` "counts a render issue inside a base component on its own drawn part" red on the old
+attribution (exit 0), green after; the report case now expects a base card defect drawn in `pages/home` on that page.
+That surfaced UNREACHABLE 4 and COVERED 1 as studio findings, reviewed under P2 (all hits). UNREACHABLE, 4/4 false,
+removed: `pages/inventory` open/approved ("Inventory freigeben"), loading ("Neu laden"), `pages/merge` merging ("Merge")
+are disabled SDK buttons (`pointer-events: none`) that carry their action in every state; disabled is the design.
+COVERED, 1/1 false, removed: `pages/sketches` `sticky-names` "Übernehmen" lies under the floating shell side panel
+because the state's camera pans the row head there; the canvas runs under the panel by design (CANVAS-UNDER-PANEL) and
+the user pans back (not shot: no server on :4402). Both lived in `reach.ts`, deleted with its spec; `data-et-skip`
+still accepts `COVERED` and `OFF-CENTRE` (ready studio parts carry them), they escape nothing. The docs drop the
+reach paragraph and say where a base component's render finding counts. Findings closed: 634 and 691 (OFF-CENTRE).
+Result: studio exit 1, 3 findings, the same in three runs (DROPPED-PROP 3), 136 s cold, 25 s and 19 s warm (render
+cache); no "base product sdk" line, so base sdk = 0 = the own sdk run (P1 base part met). sdk exit 0, 0 findings, 77 s.
+P4 met (≤ 180 s, ≤ 90 s). `.ethlete/design` unchanged by all runs. VISIBLE-CHANGE not measured: a slow rule a plain
+`design check` does not run (finding 718). Open: DROPPED-PROP 3/3 true, app work, not built: `pages/sketches`
+`change-crop` and `change-crop-whole` need a `screen` input plus harness crop data (finding 872); `pages/system`
+`listing-error` needs a listing-error view. Until then studio P1 (exit 0) is not met. Verified: typecheck, lint,
+`vitest related` (139 files), spec:stress 4/4. Not verified: CI, the COVERED verdict in a live shot.
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
