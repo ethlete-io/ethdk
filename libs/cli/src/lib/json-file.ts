@@ -50,10 +50,8 @@ const dropDeadTmpFiles = (file: string) => {
  * Writes `text` to `file` through a temporary file in the same folder and a rename, so a reader or a killed writer
  * sees either the old or the new text, never a part of it; the next write drops a dead writer's temporary file. An equal file is left untouched and keeps its mtime.
  */
-export const writeChangedFile = (file: string, text: string | Buffer) => {
-  const bytes = typeof text === 'string' ? Buffer.from(text, 'utf8') : text;
-
-  if (existsSync(file) && readFileSync(file).equals(bytes)) return;
+export const writeChangedFile = (file: string, text: string) => {
+  if (existsSync(file) && readFileSync(file, 'utf8') === text) return;
 
   noteWrite(file);
   mkdirSync(dirname(file), { recursive: true });
@@ -67,7 +65,7 @@ export const writeChangedFile = (file: string, text: string | Buffer) => {
     const fd = openSync(tmp, 'wx');
 
     try {
-      writeSync(fd, bytes);
+      writeSync(fd, text, null, 'utf8');
       // fsync before the rename: a crash after it must not leave an empty file under the real name.
       fsyncSync(fd);
     } finally {
