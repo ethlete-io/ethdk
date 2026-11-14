@@ -43,7 +43,7 @@ Component domains under `/components/`:
 
 `accordion` `avatar` `badge` `banner` `bracket` `bracket-prediction` `bracket-rounds-list`
 `breadcrumb` `button` `calendar` `card` `carousel` `cascader` `chart` `chip`
-`choice-inputs` `command-palette` `copy-button` `date-time-inputs` `description-list`
+`choice-inputs` `collapse` `command-palette` `copy-button` `date-time-inputs` `description-list`
 `divider` `dropzone` `empty-state` `error-codes` `filter-overlay` `floating-action`
 `focus-ring` `forms` `grid` `icon` `kbd` `line-chart` `loader` `localization` `masonry`
 `match` `menu` `mixed-state` `notification` `overlay-openers` `overlays` `paged-query-trigger`
