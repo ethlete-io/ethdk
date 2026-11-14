@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync, fork, spawn, spawnSync } from 'node:child_process';
+import { execFile, execFileSync, fork, spawn, spawnSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
@@ -17,6 +17,7 @@ import { createServer } from 'node:net';
 import { availableParallelism, hostname, loadavg, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { holderLine, takeHeavyLock } from '../../../tools/scripts/heavy-run-lock.mjs';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
@@ -782,12 +783,17 @@ const settled = async (page, selector) => {
 
 const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) => {
   const part = GONE_TARGETS[target.name];
-  const ask = (path, body) =>
-    fetch(`http://[::1]:${designPort}/__design/${path}?product=studio&sketch=${encodeURIComponent(part)}`, {
+  const ask = (path, body) => {
+    const url = `http://[::1]:${designPort}/__design/${path}?product=studio&sketch=${encodeURIComponent(part)}`;
+
+    return fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
+    }).catch((error) => {
+      throw new Error(`POST ${url}: ${error.message}`, { cause: error.cause ?? error });
     });
+  };
   const overlays = () =>
     Promise.all(page.frames().map((frame) => frame.locator('vite-error-overlay').count())).then((counts) =>
       counts.reduce((sum, count) => sum + count, 0),
@@ -1114,10 +1120,11 @@ const CASES = [
     pages: ['Merge'],
     run: (page, _state, target, context) =>
       goneSketchLeavesToThePart(page, context, target, async (ask) => {
-        execFileSync(
+        // A sync exec here blocks the event loop past the server's keep-alive timeout, so the next POST reuses a closed socket.
+        await promisify(execFile)(
           process.execPath,
           [cliEntry, 'design', 'sketch', 'rebase', GONE_TARGETS.Merge, '--product', 'studio', '--by', 'canvas-e2e'],
-          { cwd: checkout, stdio: 'pipe' },
+          { cwd: checkout },
         );
 
         const picked = await ask('sketch-decision', { kind: 'pick', variant: 'a' });
