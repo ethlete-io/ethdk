@@ -16,7 +16,7 @@ import {
 import { DESCRIPTION_IMPORTS } from '../../description/description.imports';
 import { InputPrefixDirective, InputSuffixDirective } from '../../form-field/partials';
 import { INPUT_TYPES } from '../headless/input.directive';
-import { INPUT_IMPORTS } from '../input.imports';
+import { INPUT_CLEAR_IMPORTS, INPUT_IMPORTS } from '../input.imports';
 
 @Component({
   selector: 'et-sb-form-field-input',
@@ -38,7 +38,7 @@ import { INPUT_IMPORTS } from '../input.imports';
           [mixedLabel]="mixedLabel()"
           [type]="type()"
           [placeholder]="placeholder()"
-          [clearable]="clearable()"
+          [etInputClear]="clearable()"
           [aria-label]="label() ? null : ariaLabel()"
         />
         @if (showSuffix()) {
@@ -67,6 +67,8 @@ import { INPUT_IMPORTS } from '../input.imports';
   imports: [
     ...FORM_FIELD_IMPORTS,
     ...INPUT_IMPORTS,
+    ...INPUT_CLEAR_IMPORTS,
+    ...INPUT_CLEAR_IMPORTS,
     ...ICON_IMPORTS,
     ...DESCRIPTION_IMPORTS,
     InputPrefixDirective,

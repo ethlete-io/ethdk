@@ -17,20 +17,3 @@
   (blur)="inputDir.focused.set(false); inputDir.touched.set(true)"
   class="et-input-native"
 />
-
-<ng-template etControlSuffix>
-  @if (showClear()) {
-    <button
-      [attr.aria-label]="resolvedClearLabel()"
-      (click)="handleClearClick($event)"
-      (mousedown)="$event.preventDefault()"
-      class="et-input-clear"
-      animate.enter="et-input-clear--enter"
-      animate.leave="et-input-clear--leave"
-      tabindex="-1"
-      type="button"
-    >
-      <i etIcon="et-times"></i>
-    </button>
-  }
-</ng-template>

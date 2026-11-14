@@ -2,4 +2,4 @@
 '@ethlete/components': minor
 ---
 
-Add a `clearable` clear button and a `clear()` method to `et-input`.
+Add `etInputClear` (`INPUT_CLEAR_IMPORTS`), an opt-in clear button for `et-input`, and a `clear()` method on `et-input`.

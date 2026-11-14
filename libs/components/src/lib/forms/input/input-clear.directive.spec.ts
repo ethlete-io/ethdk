@@ -1,19 +1,20 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { InputClearDirective } from './input-clear.directive';
 import { InputComponent } from './input.component';
 
 @Component({
   template: `
     <et-input
       [(value)]="value"
-      [clearable]="clearable()"
+      [etInputClear]="clearable()"
       [readonly]="readonly()"
       (valueChange)="changes.push($event)"
       aria-label="Search"
     />
   `,
-  imports: [InputComponent],
+  imports: [InputComponent, InputClearDirective],
 })
 class InputHost {
   value = signal('kickoff');
@@ -22,7 +23,7 @@ class InputHost {
   changes: string[] = [];
 }
 
-describe('InputComponent - clear button', () => {
+describe('InputClearDirective', () => {
   const mount = () => {
     const fixture = TestBed.createComponent(InputHost);
     fixture.detectChanges();

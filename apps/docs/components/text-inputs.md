@@ -55,13 +55,15 @@ affix gap:
 [rich text editor](/components/rich-text-editor). A `search` input hides the
 browser's native clear button.
 
-`clearable` adds a clear (×) button to the suffix stack while the focused input
-holds a value. It empties the value, emits the change and keeps focus in the
-input; `clearLabel` overrides its accessible name (the shared `clear` label from
-`provideFormFieldLabels`). `clear()` does the same from code.
+`etInputClear` (from `INPUT_CLEAR_IMPORTS`) adds a clear (×) button to the
+suffix stack while the focused input holds a value. It empties the value, emits
+the change and keeps focus in the input; `clearLabel` overrides its accessible
+name (the shared `clear` label from `provideFormFieldLabels`). It is a separate
+import so a plain `et-input` does not ship the button. `clear()` on `et-input`
+empties the value from code.
 
 ```html
-<et-input [formField]="demoForm.search" type="search" clearable placeholder="Search…" />
+<et-input [formField]="demoForm.search" etInputClear type="search" placeholder="Search…" />
 ```
 
 A **read-only** text field (set `readonly` in the field schema) draws its frame
