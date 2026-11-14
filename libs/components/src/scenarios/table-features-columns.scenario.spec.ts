@@ -33,6 +33,7 @@ import {
   TableStickyColumnsDirective,
   TableStickyColumnsStylesComponent,
 } from '../index';
+import { createFakeViewport } from '../lib/table/testing/fake-viewport';
 import { Scenario, useScenario } from './harness';
 
 const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
@@ -174,6 +175,22 @@ class WideInventoryComponent {
   resize = viewChild.required(TableResizeDirective);
   dragScroll = viewChild.required(TableDragScrollDirective);
   stickyHeader = viewChild.required(TablePageStickyHeaderDirective);
+}
+
+@Component({
+  selector: 'et-scenario-responsive-inventory',
+  imports: [TABLE_IMPORTS, TABLE_COLUMN_CHOOSER_IMPORTS],
+  template: `
+    <et-table #table [data]="products" [columns]="columns" />
+    <et-table-column-chooser [table]="table" />
+  `,
+})
+class ResponsiveInventoryComponent {
+  products = PRODUCTS;
+  columns = {
+    ...COLUMNS,
+    category: { ...COLUMNS.category, visibleFrom: 'md' },
+  } satisfies TableColumns<Product>;
 }
 
 describe('table feature scenarios: columns', () => {
@@ -400,5 +417,38 @@ describe('table feature scenarios: columns', () => {
     s.flush();
     expect(table.style.getPropertyValue('--et-table-sticky-header-offset')).toBe('0px');
     expect(fixture.componentInstance.stickyHeader()).toBeInstanceOf(TablePageStickyHeaderDirective);
+  });
+
+  describe('visibleFrom', () => {
+    const viewport = createFakeViewport(400);
+    let uninstall = () => false;
+
+    beforeEach(() => {
+      uninstall = viewport.install();
+      viewport.resize(400);
+    });
+
+    afterEach(() => uninstall());
+
+    it('renders a breakpoint column only from its breakpoint and keeps it out of the chooser below it', () => {
+      const s = scenario();
+      const fixture = TestBed.createComponent(ResponsiveInventoryComponent);
+      const host = fixture.nativeElement as HTMLElement;
+
+      s.flush();
+      expect(headerKeys(host)).toEqual(['name', 'stock']);
+
+      openMenu(s, query(host, '.et-table-column-chooser-trigger'));
+      expect(queryAll(document, '[role^="menuitem"]').some((item) => item.textContent?.trim() === 'Category')).toBe(
+        false,
+      );
+
+      s.keydown('Escape', document.activeElement ?? document.body);
+      s.flush();
+
+      viewport.resize(768);
+      s.flush();
+      expect(headerKeys(host)).toEqual(['name', 'category', 'stock']);
+    });
   });
 });

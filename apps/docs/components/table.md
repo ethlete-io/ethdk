@@ -230,6 +230,7 @@ Each value of the `TableColumns<T>` record:
 | `align`            | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                    |
 | `width`            | `'minmax(96px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                               |
 | `minWidth`         | `96`                  | The column's floor in px, for squeezing and resizing alike. See the notes below.                                                   |
+| `visibleFrom`      | -                     | A breakpoint (`'xs'` to `'2xl'`) - the column renders only from it up. See [below](#show-a-column-from-a-breakpoint).              |
 | `hidden`           | `false`               | Hide the column. A new `columns` value that changes it applies, like `setColumnVisible` - the last write wins.                     |
 | `disabled`         | `false`               | Turn off this column's header controls: its sortable header, its filter menu and its column menu.                                  |
 
@@ -1501,6 +1502,18 @@ binding - but keep it a lookup rather than a search. An errored cell also carrie
 `data-state="error"`, which an app can style further.
 
 @example table/table-cell-states 360px
+
+### Show a column from a breakpoint
+
+`visibleFrom` renders a column only at that breakpoint and above. Below it the column is left out of the
+header, the cells, the footer, the [column chooser](#column-chooser) and a `'visible'` [CSV export](#csv-export):
+
+```ts
+role: { header: 'Role', value: (user) => user.role, visibleFrom: 'md' },
+```
+
+It is a separate layer from the user's hidden columns and never writes into them, so a column a user hid
+stays hidden after the viewport crosses the breakpoint, and one they revealed reappears.
 
 ## Column visibility & reordering
 

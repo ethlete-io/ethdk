@@ -33,6 +33,8 @@ import {
   signalDeferredLoading,
   signalHostElementDimensions,
   mountEasingTokens,
+  BREAKPOINT_ORDER,
+  injectCurrentBreakpoint,
 } from '@ethlete/core';
 import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
 import { injectOptionalSemanticTheme } from '../internals/semantic-theme';
@@ -328,6 +330,8 @@ export class TableComponent<T> implements TableFeatureHost {
    * just to render a list, so the error UI then stays on the surface's own colors.
    */
   public errorColorTheme = injectOptionalSemanticTheme('error');
+
+  private currentBreakpoint = injectCurrentBreakpoint();
 
   /** The rows to render. */
   public data = input<readonly T[]>([]);
@@ -731,7 +735,6 @@ export class TableComponent<T> implements TableFeatureHost {
 
     return { sortTo, sortFrom, filterTo, filterFrom };
   });
-
   // Column order, visibility and user-resized widths (px). All three are reconciled rather than
   // reset when the `columns` input changes identity, so a reorder / resize / hidden column (or a
   // restoreState()) survives a consumer rebuilding its definitions - see `table-column-state.ts`.
@@ -760,6 +763,7 @@ export class TableComponent<T> implements TableFeatureHost {
         },
       ),
   });
+
   /**
    * The user's width overrides (px) per column. Public because it is part of the feature contract -
    * `etTableStickyColumns` re-measures its offsets when a resize changes the tracks without changing the
@@ -817,12 +821,20 @@ export class TableComponent<T> implements TableFeatureHost {
       .filter((column): column is TableColumnDef<T> => column !== undefined);
   });
 
+  private breakpointColumns = computed(() => {
+    const current = BREAKPOINT_ORDER.indexOf(this.currentBreakpoint());
+
+    return this.orderedColumns().filter(
+      (column) => !column.visibleFrom || current >= BREAKPOINT_ORDER.indexOf(column.visibleFrom),
+    );
+  });
+
   /**
    * Columns currently displayed, in order. While a feature pins columns, each carries its effective
    * `sticky` (a runtime pin wins over the declared one) and the pinned ones render in their edge's block.
    */
   public visibleColumns = computed(() => {
-    const visible = this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key));
+    const visible = this.breakpointColumns().filter((column) => !this.hiddenColumns().has(column.key));
     const pinning = this.columnPinning();
 
     if (!pinning) return visible;
@@ -1327,7 +1339,7 @@ export class TableComponent<T> implements TableFeatureHost {
    * Every declared column in the current order, hidden ones included - the counterpart to
    * {@link visibleColumns}, and the list a "columns" chooser iterates.
    */
-  public allColumns = computed(() => this.orderedColumns());
+  public allColumns = computed(() => this.breakpointColumns());
 
   // Which feature owns the drag each live pointer started - see claimPointerGesture.
   private pointerGestureClaims = new Map<number, string>();

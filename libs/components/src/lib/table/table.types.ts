@@ -1,4 +1,5 @@
 import { Signal, TemplateRef } from '@angular/core';
+import { Breakpoint } from '@ethlete/core';
 import { FieldTree } from '@angular/forms/signals';
 
 /** The inline edge a column is pinned to - see {@link TableColumn.sticky}. */
@@ -293,6 +294,12 @@ export type TableColumn<T, TValue = unknown> = {
    * @default 96
    */
   minWidth?: number;
+
+  /**
+   * Render this column only from this breakpoint up. Below it the column is left out everywhere - header, cells,
+   * footer, the column chooser and a `'visible'` CSV export - without touching the user's hidden columns.
+   */
+  visibleFrom?: Breakpoint;
 
   /** Hide the column initially. Toggle later via table state. @default false */
   hidden?: boolean;
