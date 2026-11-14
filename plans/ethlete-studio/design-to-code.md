@@ -411,6 +411,8 @@ change, check "change readable on open"); (2) B346: the state name keeps a floor
 sketch gives the sample other variant names (Tom picks), and B362 gets a rule that a part which draws the tool itself
 uses sample labels that differ from the live chrome.
 As built (finding 431, B504): rows carry an optional display label (design `Row`, app `SketchRow`); the sample rows read Stand / Entwurf 1 / Entwurf 2 (/ 3), live rows keep Aktuell / Variante a. State names keep a 12 px floor down to fit like the heads (`textAt` in the app, `textAt` in `mountFit`). Verified: `vitest related` for the sketches component (154 tests green, new specs for the label and the 12 px floor at fit), design tsc, lint. Not verified: `design check` baseline (not run before the change), the below-fit hiding of state names in a spec (jsdom fit is tiny), and the live look at fit.
+Verified live (B504, 2026-11-14): `pages/system@canvas-note` at Fit (13 %) shows every state name at 12 px and the heads at
+their fixed `text-ui-sm`; below Fit (3 %) the state names hide as built.
 
 432\. Tom (2026-11-04, screenshot of `agent-failed` and `question-only` in `pages/sketches@merge-port`): "dann
 funktioniert die unveränderte screens erkennung noch nicht korrekt. bzw screens wurden mixed". The compare itself is
