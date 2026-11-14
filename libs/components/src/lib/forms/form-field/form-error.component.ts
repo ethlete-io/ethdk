@@ -131,7 +131,7 @@ const warnMessagelessError = (kind: string) => {
 
   warnedMessagelessKinds.add(kind);
   console.warn(
-    `[FormErrorComponent] The validation error "${kind}" has no message, so the field shows an empty error. ` +
+    `[FormErrorComponent] The validation error "${kind}" has no message, so the field shows the generic fallback text. ` +
       `Pass { message } to the validator, or map the kind to a text app-wide with provideFormErrorMessageResolver().`,
   );
 };
@@ -151,16 +151,20 @@ export class FormErrorComponent {
 
   public error = input.required<ValidationError.WithOptionalFieldTree>();
 
-  protected message = computed(() => {
+  private specificMessage = computed(() => {
     const error = this.error();
 
-    return this.messageResolver?.(error) ?? error.message ?? defaultMessage(this.labels(), error) ?? '';
+    return this.messageResolver?.(error) ?? error.message ?? defaultMessage(this.labels(), error) ?? null;
+  });
+
+  protected message = computed(() => {
+    return this.specificMessage() ?? this.labels().errorFallback;
   });
 
   constructor() {
     if (ngDevMode) {
       effect(() => {
-        if (!this.message()) {
+        if (this.specificMessage() === null) {
           warnMessagelessError(this.error().kind);
         }
       });

@@ -35,6 +35,8 @@ export type FormFieldLabels = {
   errorPattern: (error: { pattern: RegExp }) => string;
   /** Error text for an `email` validator without a `message`. */
   errorEmail: string;
+  /** Error text for an error `kind` with no resolver text, no `message` and no built-in default. */
+  errorFallback: string;
 };
 
 /** The built-in English labels. */
@@ -54,6 +56,7 @@ export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
   errorMaxLength: (error) => `Must be at most ${error.maxLength} characters`,
   errorPattern: () => 'Invalid format',
   errorEmail: 'Enter a valid email address',
+  errorFallback: 'This value is invalid',
 };
 
 /** The built-in German labels, used when the current locale is a German one. */
@@ -73,6 +76,7 @@ export const GERMAN_FORM_FIELD_LABELS: FormFieldLabels = {
   errorMaxLength: (error) => `Darf höchstens ${error.maxLength} Zeichen lang sein`,
   errorPattern: () => 'Ungültiges Format',
   errorEmail: 'Gültige E-Mail-Adresse eingeben',
+  errorFallback: 'Dieser Wert ist ungültig',
 };
 
 /** The label set for a locale. Anything other than English and German needs {@link provideFormFieldLabels}. */

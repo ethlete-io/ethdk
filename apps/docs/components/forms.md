@@ -687,8 +687,9 @@ shapes are documented in the
 [`FORM_FIELD_LABELS`](/components/localization). The ones that carry a parameter are
 functions of the error (`errorMin: (error) => 'Must be at least ' + error.min`), and
 `provideFormFieldLabels({ errorRequired: 'Pflichtfeld' })` localizes them. Any
-other kind without a message renders an empty row, and dev mode warns once per
-error `kind` when that happens. To centralize or override texts per kind, provide a
+other kind without a message renders the `errorFallback` label ("This value is
+invalid"; override it with `provideFormFieldLabels({ errorFallback: '...' })`), and
+dev mode warns once per error `kind` when that happens. To centralize or override texts per kind, provide a
 resolver - it sees every `ValidationError` (including the bridge's
 `etServerViolation` kind) and returns the text to show, or `null` to fall back:
 

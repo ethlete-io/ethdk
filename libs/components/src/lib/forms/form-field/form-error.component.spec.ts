@@ -34,11 +34,18 @@ describe('FormErrorComponent', () => {
     expect(renderError({ kind: 'required', message: 'This field is required' })).toBe('This field is required');
   });
 
-  it('should render an empty string for a message-less error by default', () => {
+  it('should render the fallback text for a message-less error by default', () => {
     TestBed.configureTestingModule({});
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    expect(renderError({ kind: 'customKind' })).toBe('');
+    expect(renderError({ kind: 'customKind' })).toBe('This value is invalid');
+  });
+
+  it('should render an overridden fallback text', () => {
+    TestBed.configureTestingModule({ providers: [provideFormFieldLabels({ errorFallback: 'Check this field' })] });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect(renderError({ kind: 'customKind' })).toBe('Check this field');
   });
 
   it.each([
