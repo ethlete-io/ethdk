@@ -2552,6 +2552,10 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B502: pages/sketches harness sample drifts from the design (after B502c: stack-edge corners 1369 px, wide head note size in some states).
 - B503 (twice): a foundation sketch copy loses its relative `@import` (type `./faces.css`; colors@edit old variant
   EDIT-OLD-NOT-DRAWN, Cause); a copy that rewrites relative imports makes it impossible.
+- B503-1 (a9acbf9ff, night 14.11.): 944 `--name` refuses a bad name and a known flag as value (Cause: name checked
+  only via target parse); 974 one REFUSED MISSING DESIGN MOCKS line (guard never checked folder existence); 570
+  mappedSubpathOf no longer swallows the build error (Suspect: a consumer that fell back now gets it, not live); 871
+  check summary names the cli build dir and sha. Open: studio:e2e --help side issue.
 - Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);
   orphan `sh`/`sleep` at the CI job end unexplained.
 - B501: `sketch ready` 57/70 s (target 10 s), phase "undeclared" 23/37 s.
