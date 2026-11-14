@@ -38,6 +38,11 @@ export const SYSTEM_TREE: PartTree = {
   layers: [
     { title: 'Foundations', open: false, parts: [{ name: 'colors' }, { name: 'tokens' }] },
     {
+      title: 'Elements',
+      open: false,
+      parts: [{ name: 'part-tree' }, { name: 'shell-main' }, { name: 'studio-menu' }],
+    },
+    {
       title: 'Components',
       open: true,
       parts: [
@@ -46,11 +51,6 @@ export const SYSTEM_TREE: PartTree = {
         { name: 'title-bar', open: true, nested: [{ name: 'title-search' }] },
         { name: 'tree-row', selected: true },
       ],
-    },
-    {
-      title: 'Elements',
-      open: false,
-      parts: [{ name: 'part-tree' }, { name: 'shell-main' }, { name: 'studio-menu' }],
     },
     { title: 'Pages', open: false, parts: [{ name: 'inventory' }, { name: 'system' }] },
   ],
@@ -114,7 +114,7 @@ const manyBlockers = (openCount: number): BuildBlocker[] => [
   { kind: 'compare', text: 'hover weicht vom Design ab' },
 ];
 
-export type BuildReadySample = 'one-blocker' | 'checking' | 'direct-edit' | 'ready' | 'blocked';
+export type BuildReadySample = 'one-blocker' | 'checking' | 'blocked-checking' | 'direct-edit' | 'ready' | 'blocked';
 
 export const buildReadySampleOf = (sample: BuildReadySample, openCount: number): BuildReadyStatus => {
   switch (sample) {
@@ -124,6 +124,8 @@ export const buildReadySampleOf = (sample: BuildReadySample, openCount: number):
       return { state: 'ready' };
     case 'one-blocker':
       return { state: 'blocked', blockers: [EMBEDDED_BLOCKER] };
+    case 'blocked-checking':
+      return { state: 'blocked', blockers: [{ kind: 'problem', text: 'HARDCODED-COLOR: button.component.css' }] };
     case 'direct-edit':
       return {
         state: 'blocked',
