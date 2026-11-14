@@ -302,7 +302,7 @@ describe('table state persistence scenarios', () => {
         columns: [{ key: 'a' }, { key: 'b' }],
         hidden: new Set(['a']),
       }),
-    ).toEqual(new Set(['a', 'c']));
+    ).toEqual(new Set(['a', 'b', 'c']));
     expect(reconcileHiddenColumns([{ key: 'a', hidden: true }], undefined)).toEqual(new Set(['a']));
     expect(reconcileColumnWidths([{ key: 'a' }], { a: 120, gone: 80 })).toEqual({ a: 120 });
     expect(reconcileColumnWidths([{ key: 'a' }], undefined)).toEqual({});

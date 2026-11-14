@@ -47,12 +47,16 @@ export const reconcileColumnOrder = (keys: string[], previous: string[] | undefi
 };
 
 /**
- * The hidden-column set after a `columns` change: a column the user hid stays hidden and one they
- * revealed stays visible, while a column that wasn't there before takes its declared `hidden`.
+ * The hidden-column set after a `columns` change: the last write wins. A column whose declared `hidden`
+ * changed takes the new declaration; otherwise a column the user hid stays hidden and one they revealed
+ * stays visible, while a column that wasn't there before takes its declared `hidden`. With
+ * `columnsAreRestored`, `previous.columns` carry a restored state rather than a declaration, so no
+ * declared change is read from them.
  */
 export const reconcileHiddenColumns = (
   columns: readonly ReconcilableColumn[],
-  previous: { columns: readonly ReconcilableColumn[]; hidden: ReadonlySet<string> } | undefined,
+  previous:
+    { columns: readonly ReconcilableColumn[]; hidden: ReadonlySet<string>; columnsAreRestored?: boolean } | undefined,
 ) => {
   const hidden = new Set<string>();
 
@@ -64,12 +68,16 @@ export const reconcileHiddenColumns = (
     return hidden;
   }
 
-  const known = new Set(previous.columns.map((column) => column.key));
+  const previouslyDeclared = new Map(previous.columns.map((column) => [column.key, !!column.hidden]));
 
   for (const column of columns) {
-    const wasHidden = known.has(column.key) ? previous.hidden.has(column.key) : column.hidden;
+    const declaredBefore = previouslyDeclared.get(column.key);
+    const isHidden =
+      declaredBefore === undefined || (!previous.columnsAreRestored && declaredBefore !== !!column.hidden)
+        ? column.hidden
+        : previous.hidden.has(column.key);
 
-    if (wasHidden) hidden.add(column.key);
+    if (isHidden) hidden.add(column.key);
   }
 
   return hidden;

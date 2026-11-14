@@ -230,7 +230,7 @@ Each value of the `TableColumns<T>` record:
 | `align`            | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                    |
 | `width`            | `'minmax(96px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                               |
 | `minWidth`         | `96`                  | The column's floor in px, for squeezing and resizing alike. See the notes below.                                                   |
-| `hidden`           | `false`               | Hide the column initially; toggle later via table state.                                                                           |
+| `hidden`           | `false`               | Hide the column. A new `columns` value that changes it applies, like `setColumnVisible` - the last write wins.                     |
 | `disabled`         | `false`               | Turn off this column's header controls: its sortable header, its filter menu and its column menu.                                  |
 
 `filterable`, `sticky`, `group` and `editable` are read by an opt-in feature; setting one on a table

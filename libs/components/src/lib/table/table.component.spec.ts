@@ -237,6 +237,46 @@ describe('TableComponent', () => {
 
       expect(table.hiddenColumnKeys()).toEqual(['name', 'role']);
     });
+
+    it('applies a changed declared hidden from a new columns value, and the last write wins', () => {
+      const fixture = create(columns());
+      const table = fixture.componentInstance;
+      const setColumns = (roleHidden: boolean) => {
+        fixture.componentRef.setInput('columns', columns(roleHidden));
+        fixture.detectChanges();
+      };
+
+      setColumns(true);
+      expect(table.isColumnVisible('role')).toBe(false);
+
+      setColumns(false);
+      expect(table.isColumnVisible('role')).toBe(true);
+
+      table.setColumnVisible('role', false);
+      setColumns(false);
+      expect(table.isColumnVisible('role')).toBe(false);
+
+      setColumns(true);
+      setColumns(false);
+      expect(table.isColumnVisible('role')).toBe(true);
+    });
+
+    it('keeps a restored visibility when the columns value is rebuilt with the same declared hidden', () => {
+      const fixture = create(columns(true));
+      const table = fixture.componentInstance;
+
+      table.restoreState({
+        ...table.state(),
+        columns: [
+          { key: 'name', hidden: false },
+          { key: 'role', hidden: false },
+        ],
+      });
+      fixture.componentRef.setInput('columns', columns(true));
+      fixture.detectChanges();
+
+      expect(table.isColumnVisible('role')).toBe(true);
+    });
   });
 
   it('captures a versioned state snapshot of order + visibility', () => {

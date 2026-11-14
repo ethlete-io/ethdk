@@ -756,6 +756,7 @@ export class TableComponent<T> implements TableFeatureHost {
         previous && {
           columns: previous.source.length ? previous.source : this.restoredColumns,
           hidden: previous.value,
+          columnsAreRestored: !previous.source.length,
         },
       ),
   });
@@ -1832,7 +1833,11 @@ export class TableComponent<T> implements TableFeatureHost {
         ),
       );
       this.hiddenColumns.set(
-        reconcileHiddenColumns(declared, { columns: this.restoredColumns, hidden: restoredHidden }),
+        reconcileHiddenColumns(declared, {
+          columns: this.restoredColumns,
+          hidden: restoredHidden,
+          columnsAreRestored: true,
+        }),
       );
     } else {
       this.columnOrder.set(restoredOrder);
