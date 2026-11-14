@@ -56,9 +56,9 @@ Color (from the nearest `[etProvideColor]` scope):
 | Token | Use for |
 | --- | --- |
 | `--et-theme-color-primary` | filled backgrounds on an element you do **not** tint. To tint per state, set `--et-theme-color-primary-opacity: 0.16` and compose the color yourself: `rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))` (see button tonal/outline variants). The alias is substituted at the `et-color--*` scope, so an inherited value carries the scope's opacity, never the element's |
-| `--et-theme-color-primary-solid` | accents at full strength: focus borders, selected marks, spinners |
+| `--et-theme-color-primary-solid` | accents at full strength: focus borders, selected marks |
 | `--et-theme-color-on-primary` | text/icons on a primary-filled background |
-| `--et-theme-color-ink-solid` | primary-tinted text/border on transparent/tonal fills |
+| `--et-theme-color-ink-solid` | primary-tinted text/border on transparent/tonal fills, the strokes of a `color`-set spinner and progress bar |
 
 Interaction-state variants (`--et-surface-interaction-{hover,focus,active,disabled}-solid`)
 resolve automatically per CSS state when the element has `[etSurfaceInteractive]`;
