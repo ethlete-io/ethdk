@@ -2799,6 +2799,11 @@ removes the sketch folder before its gate and commit, so the view closes and the
 while the first one still held it, and `openJournal` threw at once. Fix: `openJournal` waits (merge 5 min, else 10 s), one
 journal per thread, journal before product lock in discard/rebase, rebase-after-merge outside the merge's try. Verified:
 write-journal.spec bites, e2e case green with the hold and 5/5 with `--hold-listings 14000 --load 8`. Not verified: CI shard 7/7.
+Recheck of the CI red on 48a0f259a (run 43540261307, 2026-11-14): the same Cause, that commit still had the throwing
+`openJournal`. Trace of the built CLI: merge 1 holds the journal 13-15 s and the second pick asks 29-30 s after it, so no
+overlap locally (6/7 green with `--hold-listings 14000 --load 8`, the red one from a dist rebuild mid-run). With merge 1
+held 45 s: 9ec027eb2 waits 15 s and goes green, a throw at once goes red with the CI alert. No new change. CI run
+43541995496 on dd806e482: Studio e2e 7/7 green.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
