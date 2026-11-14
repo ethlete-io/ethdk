@@ -1,6 +1,6 @@
 {
   "target": "components/empty-state@row-layout",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-14T08:04:29.574Z",
   "baseline": {
     "foundations/colors": "cc2fdce4fabe8bd8",
@@ -67,7 +67,7 @@
     {
       "key": "r1",
       "title": "",
-      "note": ""
+      "note": "Icon beside the text block: a top-aligned with the title, b centered to the text"
     }
   ],
   "variantInfo": {
@@ -81,5 +81,13 @@
       "round": "r1",
       "note": "Icon beside the text block, vertically centered to it"
     }
+  },
+  "readyContent": {
+    "a": "6aca87d09c4cad3c",
+    "b": "6a7db1341d761027"
+  },
+  "mergeHold": {
+    "reason": "variant a changes default, without-action, errored, action-hover, action-active, action-focus-visible; variant b changes default, without-action, errored, action-hover, action-active, action-focus-visible",
+    "at": "2026-11-14T08:10:15.892Z"
   }
 }

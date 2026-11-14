@@ -21,5 +21,10 @@
     white-space: normal;
     text-align: center;
     overflow-wrap: anywhere;
+    padding-block: 4px;
+  }
+
+  .et-badge[data-long-label] .et-badge-label {
+    text-box: normal;
   }
 }
