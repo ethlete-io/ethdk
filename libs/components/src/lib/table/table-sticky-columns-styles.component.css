@@ -34,7 +34,7 @@
      real `.et-table-sticky-*` classes (not `:where`) give these the specificity to win over the
      translucent stripe/hover rules. */
   .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
-    background: var(--_et-table-row-surface);
+    background: var(--et-table-row-background, var(--_et-table-row-surface));
   }
 
   .et-table-row--stripe .et-table-cell.et-table-sticky-start,
@@ -46,7 +46,7 @@
   @media (hover: hover) {
     .et-table-row:hover .et-table-cell.et-table-sticky-start,
     .et-table-row:hover .et-table-cell.et-table-sticky-end {
-      background: var(--_et-table-row-hover-solid);
+      background: var(--et-table-row-hover-background, var(--_et-table-row-hover-solid));
     }
   }
 

@@ -22,7 +22,7 @@
      corner, whichever column happens to be first after a reorder or a hidden column. */
   .et-table-row {
     margin-block-end: var(--_et-table-row-gap-block);
-    background: var(--_et-table-row-paint);
+    background: var(--et-table-row-background, var(--_et-table-row-paint));
     border-radius: var(--_et-table-row-corner);
   }
 
@@ -31,7 +31,7 @@
      has to be declared here rather than in the appearance block - a `var()` in the block would resolve
      against the host, which is the surface the card is meant to stand off. */
   .et-table-row--card {
-    --_et-table-row-paint: var(--et-surface-background-solid, Canvas);
+    --_et-table-row-paint: var(--et-table-row-background, var(--et-surface-background-solid, Canvas));
     --_et-table-row-surface: var(--_et-table-row-paint);
     --_et-table-stripe-solid: var(--_et-table-row-paint);
     --_et-table-row-hover-solid: color-mix(
@@ -52,7 +52,7 @@
      top of the ladder (see etTableCardSurface). Back to a tint, so the card is still marked off from the
      table under it. Only the paint needs saying: every knob above reads it. */
   .et-table-row--card:where(.et-table-row--card-tint) {
-    --_et-table-row-paint: var(--_et-table-band);
+    --_et-table-row-paint: var(--et-table-row-background, var(--_et-table-band));
   }
 
   /* The card's 1px ring, drawn out of flow instead of as a border on the row, and that is load-bearing: a
@@ -104,6 +104,18 @@
   .et-table-row > .et-table-cell:nth-last-child(1 of .et-table-cell) {
     border-start-end-radius: inherit;
     border-end-end-radius: inherit;
+  }
+
+  @media (hover: hover) {
+    .et-table-row:hover > :first-child {
+      border-start-start-radius: var(--et-table-row-hover-radius, inherit);
+      border-end-start-radius: var(--et-table-row-hover-radius, inherit);
+    }
+
+    .et-table-row:hover > .et-table-cell:nth-last-child(1 of .et-table-cell) {
+      border-start-end-radius: var(--et-table-row-hover-radius, inherit);
+      border-end-end-radius: var(--et-table-row-hover-radius, inherit);
+    }
   }
 
   /* A card's leading and trailing corners belong to whichever box is holding that edge, which stops

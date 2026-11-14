@@ -2238,13 +2238,22 @@ it, so recolouring one cannot leave the other behind. Reach for it where the app
 own band is too close to the surface under it to read as a header: `cards` on a near-black
 page, for one, where the band and the page are the same near-black.
 
-Three more knobs cover what apps restyle most:
+These knobs cover what apps restyle most:
 
-| Property                        | Default                          | Sets                                                                                                                  |
-| ------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `--et-table-header-color`       | `--et-surface-color-muted-solid` | The header labels' ink.                                                                                               |
-| `--et-table-row-min-block-size` | `auto`                           | A height floor for every body row, skeleton placeholder rows included. Taller content still grows the row.            |
-| `--et-table-row-selected-tint`  | `--et-theme-color-primary-solid` | The accent a selected row mixes in: 32% / 12% at rest, 38% / 18% hovered, and 44% / 26% held in light / dark schemes. |
+| Property                           | Default                          | Sets                                                                                                                  |
+| ---------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--et-table-header-color`          | `--et-surface-color-muted-solid` | The header labels' ink.                                                                                               |
+| `--et-table-header-font-size`      | inherited                        | The header labels' font size.                                                                                         |
+| `--et-table-header-font-weight`    | `600`                            | The header labels' weight.                                                                                            |
+| `--et-table-header-line-height`    | inherited                        | The header labels' line height.                                                                                       |
+| `--et-table-header-letter-spacing` | inherited                        | The header labels' letter spacing.                                                                                    |
+| `--et-table-header-text-transform` | inherited                        | The header labels' text transform, e.g. `uppercase`.                                                                  |
+| `--et-table-header-row-min-height` | `auto`                           | A height floor for the header row's cells.                                                                            |
+| `--et-table-row-background`        | the row's surface                | The paint of a card row, and of a pinned cell. Set it on a row (or a class) to colour that row alone.                 |
+| `--et-table-row-hover-background`  | the hover tint                   | The paint of a hovered row's cells, and of its pinned cells. Wins over the table-level default when set on a row.     |
+| `--et-table-row-hover-radius`      | the row's corner                 | The outer corners of a hovered row's paint.                                                                           |
+| `--et-table-row-min-block-size`    | `auto`                           | A height floor for every body row, skeleton placeholder rows included. Taller content still grows the row.            |
+| `--et-table-row-selected-tint`     | `--et-theme-color-primary-solid` | The accent a selected row mixes in: 32% / 12% at rest, 38% / 18% hovered, and 44% / 26% held in light / dark schemes. |
 
 The header's filter and column-menu triggers are `xs` icon buttons with a 24px floor, so an
 app that scales its own `xs` below the [WCAG 2.2 target size

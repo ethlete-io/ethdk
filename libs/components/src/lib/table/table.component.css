@@ -304,7 +304,12 @@
        is taken out of the label's own width, and a wider one truncates a narrow header. */
     gap: 4px;
     z-index: 1;
-    font-weight: 600;
+    font-size: var(--et-table-header-font-size);
+    font-weight: var(--et-table-header-font-weight, 600);
+    line-height: var(--et-table-header-line-height);
+    letter-spacing: var(--et-table-header-letter-spacing);
+    text-transform: var(--et-table-header-text-transform);
+    min-block-size: var(--et-table-header-row-min-height, auto);
     color: var(--et-table-header-color, var(--et-surface-color-muted-solid, CanvasText));
     /* Opaque (band or plain surface) so scrolling rows pass behind the pinned header. */
     background: var(--_et-table-header-bg);
@@ -342,8 +347,9 @@
      Reserve its box on every header cell instead. `max()` and the `+ 1px` mirror the rule above: the
      button never goes under 24px, and the block-end border counts towards a border-box height. */
   .et-table-host--header-adornments .et-table-header-cell {
-    min-block-size: calc(
-      max(var(--_et-table-header-adornment-size), 24px) + 2 * var(--et-table-cell-padding-block) + 1px
+    min-block-size: max(
+      calc(max(var(--_et-table-header-adornment-size), 24px) + 2 * var(--et-table-cell-padding-block) + 1px),
+      var(--et-table-header-row-min-height, 0px)
     );
   }
 
@@ -529,7 +535,7 @@
      (A hovered *selected* row keeps its accent instead — see the selection feature's styles.) */
   @media (hover: hover) {
     .et-table-row:hover .et-table-cell {
-      background: var(--_et-table-row-hover);
+      background: var(--et-table-row-hover-background, var(--_et-table-row-hover));
     }
   }
 
