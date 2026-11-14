@@ -52,6 +52,10 @@ announcement text, so a screen reader hears the outer container's `loadingConten
 `et-skeleton-text` takes `lines` (default `3`) and `lastLineWidth` (default `60`%); a
 full-width last line reads as a block rather than a paragraph.
 
+A `rect` stays full width when you set both a height and an `aspect-ratio`, so the ratio has no
+width left to set. Set `inline-size: auto` (`w-auto`) on that item too, and the ratio derives the
+width from the height: `40px` tall at `16 / 9` is `71px` wide, inside an `et-skeleton` column too.
+
 ::: info Coming from the CDK
 The cdk's `<et-skeleton-item>` had no `shape` at all: it was a plain block sized entirely by your own
 CSS, which makes **`shape="rect"` the equivalent - not the default**. Swapping the import alone leaves
