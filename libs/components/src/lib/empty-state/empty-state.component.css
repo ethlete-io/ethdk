@@ -51,7 +51,9 @@
       flex-shrink: 0;
       width: var(--et-empty-state-icon-size);
       height: var(--et-empty-state-icon-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      /* `--et-empty-state-icon-color` must stay unregistered: an `@property` initial value cannot hold `var()`,
+         and a registered token always has a value, so this surface fallback would never apply. */
+      color: var(--et-empty-state-icon-color, var(--et-surface-color-muted-solid, currentColor));
     }
 
     > [etEmptyStateAction] {

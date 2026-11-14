@@ -1,5 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import '../../test-helpers';
 import { EMPTY_STATE_IMPORTS } from './empty-state.imports';
 
@@ -54,5 +56,16 @@ describe('EmptyStateComponent', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     expect(host.querySelector('[etEmptyStateAction]')?.textContent).toBe('Retry');
+  });
+});
+
+describe('EmptyStateComponent styles', () => {
+  const css = readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, 'empty-state.component.css'), 'utf8');
+
+  it('colours the icon from the public token, falling back to the muted surface colour', () => {
+    expect(css).toContain(
+      'color: var(--et-empty-state-icon-color, var(--et-surface-color-muted-solid, currentColor));',
+    );
+    expect(css).not.toContain('@property --et-empty-state-icon-color');
   });
 });
