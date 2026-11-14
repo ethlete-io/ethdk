@@ -162,6 +162,9 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 `provideStreamPip()` in scope, no player yet (consent gate still up), or the player is already in (or not in) PiP.
 Register `provideStreamPip()` where the slots are provided, alongside `STREAM_PIP_IMPORTS`; without it, slots
 still play normally, and a PiP call reports `ET1612` in development.
+Provide it in `app.config.ts` so the floating player survives navigation: the PiP window and its controls
+live as long as the injector that provides them, so `provideStreamPip()` in a routed component's
+`providers` removes them when you navigate away from that component.
 While the player floats, the slot it left shows a placeholder (a "playing in picture-in-picture" message with a back button). `provideStreamPip()` registers `PipSlotPlaceholderComponent` for it by default, whatever the order of the providers. Set `pipSlotPlaceholderComponent` in `provideStreamConfig()` to change that: `null` opts out and leaves the slot an empty box, a component replaces the default. Without `provideStreamPip()` no placeholder renders unless you set one:
 
 ```ts
@@ -236,7 +239,7 @@ All stream chrome resolves its colors from the [surface/color theme systems](/co
 
 - Slot: `--et-stream-player-slot-radius` (`12px`).
 - PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind, which fills the slot with its content centred on it. These inherit, so a value set on `et-pip-window`, `et-pip-slot-placeholder` or any ancestor reaches the title bar, content and placeholder that read it. The glass background derives from the surface theme; override it via `--et-pip-bg`.
-- PiP placement: the window opens in the bottom right corner, `--et-pip-window-offset-right` and `--et-pip-window-offset-bottom` (`24px`) from the edges (reduced to the viewport padding where the window would not fit), at `--et-pip-window-z-index` (`1000`). Dragging takes over once it has opened. The body-level container that holds players between slots ships its own off-screen rule.
+- PiP placement: the window opens in the bottom right corner, `--et-pip-window-offset-right` and `--et-pip-window-offset-bottom` (`24px`) from the edges (reduced to the viewport padding where the window would not fit), at `--et-pip-window-z-index` (`1000`). SDK overlays (`defineOverlay`, menus, tooltips, dialogs) mount in a fixed root at `z-index: 2147483003`, so they cover the PiP window at that default; set the token above it (e.g. `2147483004`) to float PiP over them. Neither value reaches the browser top layer: a `<dialog>` opened with `showModal()` or a CDK overlay in popover mode always paints above the PiP window. Dragging takes over once it has opened. The body-level container that holds players between slots ships its own off-screen rule.
 - PiP grid: the featured-cell ring uses the color theme's primary; override via `--et-stream-pip-chrome-featured-ring-color`.
 - Consent gate and error overlay: `--et-stream-consent-*` and `--et-stream-player-error-*` families covering padding, gap, icon size, border radius and heading/description typography. Both fill the player area with their content centred on it (the icon hides when the player is under 200px tall). The tokens inherit, so a value set on the gate, the error overlay or any ancestor reaches the content that reads it.
 
