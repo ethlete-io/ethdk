@@ -23,3 +23,7 @@ The human answered "beides ok" to the summary. `built` names HEAD at the decisio
 
 Addendum, 01:50: the human: "um 15 uhr dann wollen wir nur noch angebrochene arbeit beenden. nicht mehr full ham mode
 dann." From 15:00 the sessions only finish work already started and start nothing new.
+
+Addendum, 02:00: the human: "ich erlaube dir auch den nötigen merge auf gh für den pre release den die fifa session
+braucht sobald dort alles drin ist." The doc agent merges the prerelease PR on GitHub (`changeset-release/next`) once
+the SDK fixes the fifagg session needs are on `next` and its CI is green.
