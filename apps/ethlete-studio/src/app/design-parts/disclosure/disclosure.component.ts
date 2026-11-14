@@ -1,4 +1,4 @@
-import { Component, input, model, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, input, model, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { SurfaceInteractiveDirective } from '@ethlete/core';
 
@@ -10,11 +10,12 @@ export const DISCLOSURE_BODY_CLASS =
   templateUrl: './disclosure.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, SurfaceInteractiveDirective],
-  host: { class: 'block font-ui text-ui-md' },
+  host: { class: 'font-ui text-ui-md', '[class.block]': '!hug()', '[class.contents]': 'hug()' },
 })
 export class DisclosureComponent {
   public label = input.required<string>();
   public body = input<string | null>(null);
   public open = model(false);
   public size = input<'sm' | 'xs'>('sm');
+  public hug = input(false, { transform: booleanAttribute });
 }

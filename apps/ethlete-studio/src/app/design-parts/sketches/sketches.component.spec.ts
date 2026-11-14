@@ -186,6 +186,18 @@ describe('SketchesComponent', () => {
     expect(framesOf()).toEqual(['x rest', 'x open', 'x busy']);
   });
 
+  it('sizes the fold toggle to its label instead of its row', async () => {
+    const rows: SketchRow[] = [
+      { ...ROWS[0]!, shots: [...ROWS[0]!.shots, { state: 'busy', changed: false, height: 90 }] },
+      { ...ROWS[1]!, shots: [...ROWS[1]!.shots, { state: 'busy', changed: false, height: 90 }] },
+    ];
+    const root: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
+    const toggle = root.querySelector('[data-sk-folded] button');
+
+    expect(toggle?.classList.contains('w-fit')).toBe(true);
+    expect(toggle?.classList.contains('w-full')).toBe(false);
+  });
+
   it('draws the same state set in Aktuell and every variant row', async () => {
     const rows: SketchRow[] = [
       { ...ROWS[0]!, shots: [...ROWS[0]!.shots, { state: 'busy', changed: false, height: 90 }] },
