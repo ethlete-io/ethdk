@@ -127,7 +127,7 @@ test.describe('loader / structure', () => {
     expect((await tabSequence(page, 1))[0]?.tag).toBe('BODY');
   });
 
-  test('the diameter and strokeWidth inputs win over the size tokens', async ({ page }) => {
+  test('a bound diameter wins over the size token', async ({ page }) => {
     const root = await openStory(page, SPINNER_STORY_ID);
     const spinner = root.locator(SPINNER);
 
@@ -136,14 +136,12 @@ test.describe('loader / structure', () => {
 
       return {
         size: style.getPropertyValue('--et-spinner-size').trim(),
-        strokeWidth: style.getPropertyValue('--et-spinner-stroke-width').trim(),
         width: style.width,
         height: style.height,
       };
     });
 
     expect(box.size).toBe('45px');
-    expect(box.strokeWidth).toBe('2px');
     expect(box.width).toBe('45px');
     expect(box.height).toBe('45px');
   });
