@@ -115,6 +115,7 @@ export const spinner = (options: SpinnerMockOptions = {}) => {
   const attributes = [
     options.attributes,
     `class="${classes}"`,
+    `diameter="${diameter}" strokeWidth="${strokeWidth}"`,
     `role="progressbar" aria-label="Loading"${progressAttributes(options.value)}`,
     `data-et-frozen-at style="--et-spinner-size: ${diameter}px; --et-spinner-stroke-width: ${strokeWidth}px; --et-spinner-frozen-at: ${options.frozenAt ?? 0.3}"`,
   ].filter(Boolean);

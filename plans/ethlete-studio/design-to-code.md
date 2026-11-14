@@ -1891,6 +1891,12 @@ DIFF 187 px from that size. A frozen-at rule would not catch it. Tool fix propos
 `libs/components/design/loader.ts` also emits `diameter`/`strokeWidth` attributes, so an ng-rendered mock keeps its
 size. Not verified: other parts with ng-rendered sized spinners; the finding-789 sweep (no rule built).
 
+733(b) as built (Linux builder, 2026-11-14): `spinner()` emits `diameter` and `strokeWidth`. The design server reads
+`dist/libs/components/design`, so the mock change needs `nx build components` before a live run. Live `compare
+components/title-bar --working-tree`: `linux-full-notice-pending` DIFF 187 px -> ok; the eight notice states keep their
+DIFF 529-534 px (the tooltip arrow, sketch). Only title-bar renders a sized spinner through `ng()` (grep of
+`.ethlete/design`); every other spinner mock is plain HTML and keeps its picture. Related specs green.
+
 736\. Linux builder (2026-11-10, 732 sketch `pages/system@footer-open-points`, 6c2fc5cc0): `design shot
 pages/system@footer-open-points` fails "has no open sketch in product studio", and `shot pages/system --variants` draws
 the other open `pages-system` sketch. Cause (measured by the subagent): `sketchHoldingOf` in
