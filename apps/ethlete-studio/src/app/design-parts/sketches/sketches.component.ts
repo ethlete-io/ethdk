@@ -84,17 +84,22 @@ const statesOf = (rows: readonly SketchRow[]) => [
   ...new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state))),
 ];
 
-/** The states every variant row draws the same as Current (`changed === false`); a state still compared (`null`) never folds. */
-export const foldedStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> => {
-  const variants = rows.filter((row) => row.key !== SKETCH_CURRENT);
+const isBaseRow = (row: SketchRow) => row.key === SKETCH_CURRENT || row.key === 'old';
 
-  return new Set(
-    statesOf(rows).filter(
-      (state) =>
-        variants.length > 0 &&
-        variants.every((row) => row.shots.some((shot) => shot.state === state && shot.changed === false)),
-    ),
+/**
+ * The states every variant row draws the same as Current (`changed === false`); a state still compared (`null`) never
+ * folds, and none folds when every state would.
+ */
+export const foldedStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> => {
+  const variants = rows.filter((row) => !isBaseRow(row));
+  const states = statesOf(rows);
+  const folded = states.filter(
+    (state) =>
+      variants.length > 0 &&
+      variants.every((row) => row.shots.some((shot) => shot.state === state && shot.changed === false)),
   );
+
+  return new Set(folded.length < states.length ? folded : []);
 };
 
 /** The states Current and every variant row draw: all of them while `open`, else only the ones a variant changes. */
@@ -350,7 +355,7 @@ export class SketchesComponent {
 
       return rows.filter(
         (row) =>
-          row.key !== SKETCH_CURRENT &&
+          !isBaseRow(row) &&
           row.key !== drawn &&
           shotsOf(row.key).length > 0 &&
           shotsOf(row.key).every((shot) => shot.changed === false || (shot.changed === null && wasSame.has(row.key))),
@@ -366,15 +371,12 @@ export class SketchesComponent {
     () =>
       new Set(
         this.listedRows()
-          .filter(
-            (row) =>
-              row.key !== SKETCH_CURRENT && row.shots.length > 0 && row.shots.every((shot) => shot.changed === false),
-          )
+          .filter((row) => !isBaseRow(row) && row.shots.length > 0 && row.shots.every((shot) => shot.changed === false))
           .map((row) => row.key),
       ),
   );
   protected heldMerge = computed(() => {
-    const variants = this.listedRows().filter((row) => row.key !== SKETCH_CURRENT);
+    const variants = this.listedRows().filter((row) => !isBaseRow(row));
     const same = this.sameKeys();
 
     return variants.length > 0 && variants.every((row) => same.has(row.key)) ? this.mergeHold() : null;
@@ -543,7 +545,7 @@ export class SketchesComponent {
   }
 
   protected isSame(row: SketchRow, unchanged: boolean | null) {
-    return row.key !== SKETCH_CURRENT && unchanged === false && !isPending(row);
+    return !isBaseRow(row) && unchanged === false && !isPending(row);
   }
 
   protected isPending(row: SketchRow) {
@@ -551,9 +553,7 @@ export class SketchesComponent {
   }
 
   protected firstChangeOf(row: SketchRow) {
-    return row.key === SKETCH_CURRENT || isPending(row)
-      ? null
-      : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
+    return isBaseRow(row) || isPending(row) ? null : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
   }
 
   protected pinOf(key: string) {

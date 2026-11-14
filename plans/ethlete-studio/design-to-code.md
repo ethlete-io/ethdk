@@ -793,6 +793,24 @@ variant's shot viewed; `design check --part pages/sketches` and `--part pages/sy
 the built look against a live app screenshot (read from the templates only); variant a of canvas-note draws
 `text-ui-sm` for the app's `text-small` (13 px).
 
+**B502b as built (Linux builder subagent, 2026-11-14, commit "fix(repo): Draw the edit-sketch harness sample and fold no state when all are unchanged"):** Cause (measured): app harness drift, not a compare bug.
+`compare pages/sketches --product studio` on f6231d4b8: 140 actions missed, 139 in `edit-sketch` (71 "the design
+draws no element of this name", 68 click timeouts, all on title-bar buttons such as Sucheninstudio,Titlebar, Update,
+Minimieren) and 1 in `all-unchanged` (button AlleZuständezeigen, "the design draws no such element"). `design dom
+--app` showed why: the design prop `part: 'edit'` had no case in `DESIGN_HARNESS_SAMPLES['pages/sketches']`, so the
+harness fell back to the title-bar rows and drew 24 live title-bar frames where the design draws the 8-frame
+`components/zoom-chip@edit` sketch; and the app folded every state when no variant changes one, while the merged
+design (`unchangedStates`, all-states variant a, ff1213561) folds none then and draws no fold row. Bisect: at
+b9802b4d6 (scratch copy) 19 actions missed in 19 other states, `all-unchanged` already the same miss, `edit-sketch`
+absent; its parent draws the same part (b9802b4d6 only adds the sketch folder). `edit-sketch` arrived with b685abce7
+(ADR 0270 edit sketch) and never had a harness sample; the `all-unchanged` miss predates b9802b4d6. Fix: an
+`SKETCH_EDIT_SAMPLE` (rows old/new) for `part: 'edit'`, `foldedStatesOf` folds none when every state would, and old
+of an @edit sketch is a base row like Current (the design's `isBase`), never folded as "Unverändert: Variante old".
+After: every declared action works; DIFF `edit-sketch` 96350 to 8805 px, `all-unchanged` 64399 to 12474 px; the
+other DIFFs unchanged (31 DIFF states before and after). Verified: specs red on HEAD sources, green after;
+`design check --part pages/sketches` 0 findings, no part file rewritten. Not verified: the real server's old row of
+an @edit sketch in the live app; the remaining DIFFs (B502 harness sample drift line); CI.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
@@ -2500,7 +2518,6 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B500: 12 rules removed with their findings (list in ee5000b5d); contrast decided in ADR 0292.
 - B501: an idle `yarn design` serve rewrites tracked `.ethlete/design/*/ready.json` within 2 min (Cause, pid probe).
 - B502: pages/sketches harness sample drifts from the design (zoom-chip@edit row, avatar, stack edges, fold width).
-- B502: 140 missed actions in edit-sketch and all-unchanged (again 13.11. pm).
 - B503 (twice): a foundation sketch copy loses its relative `@import` (type `./faces.css`; colors@edit old variant
   EDIT-OLD-NOT-DRAWN, Cause); a copy that rewrites relative imports makes it impossible.
 - Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);

@@ -178,6 +178,22 @@ export const SKETCH_NARROW_SAMPLE = {
   } satisfies PartTree,
 };
 
+export const SKETCH_EDIT_SAMPLE = {
+  ...SKETCH_NARROW_SAMPLE,
+  part: 'components/zoom-chip@edit',
+  rows: [
+    { key: 'old', note: 'Stand vor der direkten Änderung', width: 176, shots: chipShotsOf([]) },
+    {
+      key: 'new',
+      note: 'Direkte Änderung: Prozentzahl in Halbfett.',
+      width: 176,
+      shots: chipShotsOf(CHIP_STATES.filter((state) => state.startsWith('reset'))),
+    },
+  ] satisfies SketchRow[],
+  looks: {} as Record<string, string>,
+  rounds: [{ value: 'edit', label: 'Direkte Änderung' }] satisfies SketchRound[],
+};
+
 const MULTI_TARGETS = ['components/badge', 'components/sketch-status-badge', 'elements/variant-cell'];
 
 const MANY_TARGETS = [

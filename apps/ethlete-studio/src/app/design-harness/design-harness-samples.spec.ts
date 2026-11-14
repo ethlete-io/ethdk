@@ -33,6 +33,13 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(sketchesOf({ part: 'narrow' })['part']).toBe('components/zoom-chip');
   });
 
+  it('feeds the edit part an @edit chip sample with the rows old and new', () => {
+    const props = sketchesOf({ camera: 'fit', part: 'edit' });
+
+    expect(props['part']).toBe('components/zoom-chip@edit');
+    expect((props['rows'] as SketchRow[]).map((row) => row.key)).toEqual(['old', 'new']);
+  });
+
   it('turns the listing-error flag into the server reason', () => {
     const sample = DESIGN_HARNESS_SAMPLES['pages/system'];
 

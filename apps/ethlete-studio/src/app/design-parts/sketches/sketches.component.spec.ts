@@ -203,11 +203,10 @@ describe('SketchesComponent', () => {
     const unchanged = rows.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
     const same: HTMLElement = (await render({ rows: unchanged, camera: '100' })).nativeElement;
 
-    expect(statesOf(same, 'current')).toEqual([]);
-    expect(statesOf(same, 'x')).toEqual(statesOf(same, 'current'));
+    expect(statesOf(same, 'current')).toEqual(['rest', 'open', 'busy']);
   });
 
-  it('shows only the question and the folded count, no Übernehmen, when every state draws like Aktuell', async () => {
+  it('folds no state, draws every state of Aktuell and offers no Übernehmen when every state draws like Aktuell', async () => {
     const rows = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
     const fixture = await render({
       rows,
@@ -219,15 +218,7 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = fixture.nativeElement;
 
     expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
-    expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.foldedStates(2));
-    expect(root.querySelector('[data-sk-state]')).toBeNull();
-    expect(root.querySelector('[data-sk-stage]')).toBeNull();
-    expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
-    expect(root.querySelector('[data-sk-merge]')).toBeNull();
-
-    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
-    await fixture.whenStable();
-
+    expect(root.querySelector('[data-sk-folded]')).toBeNull();
     expect(root.querySelectorAll('[data-sk-row="current"] [data-sk-state]').length).toBe(2);
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
@@ -548,6 +539,18 @@ describe('SketchesComponent', () => {
     );
     expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
     expect(root.querySelector('ethlete-comment-pin')).toBeNull();
+  });
+
+  it('draws old of an @edit sketch as the base row, never folded as an unchanged variant', async () => {
+    const unchanged = (row: SketchRow) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) });
+    const rows = [
+      { ...unchanged(ROWS[0] as SketchRow), key: 'old' },
+      { ...(ROWS[1] as SketchRow), key: 'new' },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows, part: 'components/chip@edit' })).nativeElement;
+
+    expect(root.querySelector('[data-sk-same]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="old"]')).not.toBeNull();
   });
 
   it('keeps a folded variant folded while a quick listing knows nothing about its compare', async () => {

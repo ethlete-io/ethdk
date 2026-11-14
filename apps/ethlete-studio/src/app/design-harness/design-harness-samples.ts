@@ -13,6 +13,7 @@ import {
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
 import {
   SKETCH_CURRENT,
+  SKETCH_EDIT_SAMPLE,
   SKETCH_NARROW_SAMPLE,
   SKETCH_POINTS_SAMPLE,
   SKETCH_ROWS,
@@ -56,7 +57,9 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ? { ...screenSample, looks: {}, wholeScreens: screen === 'whole' ? [wholeScreen] : [] }
       : part === 'narrow'
         ? SKETCH_NARROW_SAMPLE
-        : { rows: SKETCH_ROWS, looks: {} };
+        : part === 'edit'
+          ? SKETCH_EDIT_SAMPLE
+          : { rows: SKETCH_ROWS, looks: {} };
     const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true }).map(
       (row) => (withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row),
     );
