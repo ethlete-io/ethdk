@@ -398,22 +398,6 @@ and the live cap on a still view; none scrolls. Fix (B365): an e2e that scrolls 
 on any cell that had a picture or a loaded frame before and now shows neither. App: keep the last picture under a
 frame until its iframe reports loaded, and keep a far shot's picture instead of removing it.
 
-431\. Tom (2026-11-04, `pages/sketches@merge-port`): "ich seh da zudem keinen unterschied zwischen a und b. ich glaub b
-hat a übernommen und nur noch mehr states hinzugefügt oder? das erklärt so einiges". Facts (builder, live listing): the
-sketch has one variant; the columns are "Aktuell" and "Variante a". 16 of 30 states fold; 14 differ: the 2 new port
-states, and 12 states whose only change is three dimmed "unverändert" sample cells. Three causes: (1) a changed state
-shows whole at fit (about 24 %), so a change in three 3 px cells is invisible; (2) at fit the state names (13 px ×
-zoom, about 3 px) hide below the 9 px floor, so no row tells which state it is, while the column heads keep a 12 px
-floor; (3) every frame draws the sample Sketches page, whose own rows read "Aktuell", "Variante a", "Variante b", the
-same words as the real columns. Why no tool caught it: no check measures whether a change is readable at the zoom the
-view opens with, and no check flags sample text that repeats the live chrome around it. Fix: (1) B345 (cut-out of the
-change, check "change readable on open"); (2) B346: the state name keeps a floor like the column heads; (3) the B346
-sketch gives the sample other variant names (Tom picks), and B362 gets a rule that a part which draws the tool itself
-uses sample labels that differ from the live chrome.
-As built (finding 431, B504): rows carry an optional display label (design `Row`, app `SketchRow`); the sample rows read Stand / Entwurf 1 / Entwurf 2 (/ 3), live rows keep Aktuell / Variante a. State names keep a 12 px floor down to fit like the heads (`textAt` in the app, `textAt` in `mountFit`). Verified: `vitest related` for the sketches component (154 tests green, new specs for the label and the 12 px floor at fit), design tsc, lint. Not verified: `design check` baseline (not run before the change), the below-fit hiding of state names in a spec (jsdom fit is tiny), and the live look at fit.
-Verified live (B504, 2026-11-14): `pages/system@canvas-note` at Fit (13 %) shows every state name at 12 px and the heads at
-their fixed `text-ui-sm`; below Fit (3 %) the state names hide as built.
-
 432\. Tom (2026-11-04, screenshot of `agent-failed` and `question-only` in `pages/sketches@merge-port`): "dann
 funktioniert die unveränderte screens erkennung noch nicht korrekt. bzw screens wurden mixed". The compare itself is
 right: in both states, "Aktuell" marks fit-hover, fit-active and fit-focus-visible of sample variant a as changed, and
@@ -928,6 +912,24 @@ As built (b1 approved "Empfehlung gebaut"): the design's `matrixFit` in `pages/s
 the closed fold column plus one gap, like the app. Compare: 24 ok / 7 DIFF as before, unchanged-matrix 39861 to 13040,
 the other DIFF states unchanged. Not verified: a live shot.
 
+**B502g as built (Linux builder subagent, 2026-11-14, 67993cd08 and the design commit after it):** Full compare on
+361d25ac7 (2 runs, same): 24 ok / 7 DIFF / 7 FAILED (489). After (2 of 2 runs): 27 ok / 4 DIFF. Per state, before to
+after (px): change-crop 9510 to 792, change-crop-whole 29182 to ok, narrow-far-out 24954 to ok, unchanged-open 9807 to
+ok; unchanged: unchanged-matrix 13040, unchanged-matrix-open 21846 to 20408, withdrawn-shown 131. Causes, measured with
+`design dom` and the diff shots: (1) the screen crop matrix (`screenWorld`) passes no `first` and has no `auto` fold
+column, the app drew "erste Änderung" and an empty fold column (matrix 24 px wider, fold row 1084 not 1076 px); (2) the
+app's stacked crop wrapper stretched to the grid row (91 not 73.7 px) and drew the stack edges unscaled (radius, 2 px
+shadow), the design draws them inside the scaled shot box; (3) narrow-far-out: the fit pass wrote the full head width
+(144 px) over the head-hidden `max-content` columns; (4) unchanged-open: the design offered Übernehmen on an unchanged
+sketch, which the app never does since 30a5c27b9 ("an unchanged sketch never offers a manual merge"); the design's
+`headOf` now drops it for `isSame` rows. Specs "draws the crop matrix like the screen design" and "sizes a hidden head to
+its tag after the fit pass" red on 361d25ac7 sources in a scratch copy, green after (only the first assertion of the crop
+spec is shown to bite). Left: change-crop 792, Suspect: sub-pixel offset of the first stack edge (1 px line at y 352);
+withdrawn-shown 131, Suspect: the design switch track draws its `light-dark(ink, transparent)` inset ring (light edge),
+the app's does not, so the color scheme differs at the switch; unchanged-matrix and unchanged-matrix-open not measured.
+`design check --part pages/sketches`: 4 findings, all OLD CANVAS-UNDER-PANEL. vitest related 158 green; lint, tsc clean.
+Not verified: no design spec for (4); CI; the live app.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
@@ -1310,11 +1312,6 @@ spec used a mocked page. Tool fix (technical): each Playwright-backed spec gets 
 returns the same note as the CLI (`x-et-note`), new row.
 569 as built (Linux builder subagent, 2026-11-14, B503): the throw was already gone (`shot.ts` answers a crop outside the content with a blank picture and a note, covered by a mocked spec). Built: the serve route sends that note as `x-et-note` (`sendShot` in `thumb.ts` takes `{ png, note }`). Cause: the route returned `picture.png` only and dropped the note. Verified: the new route case in `shot.spec.ts` was red on the old code (no note), green after. Commit a78186d96; not run live. Not built: a real-page case for each Playwright-backed spec (the finding's "new row").
 
-570\. Builder (2026-11-07, B360): on a missing `dist`, `mappedSubpathOf` swallows the error, so the listing never names
-the build command. Tool fix (technical): the listing names `nx build <name>` for a missing `dist`.
-
-570 as built (Linux builder subagent, 2026-11-14, B503): `mappedSubpathOf` (`libs/cli/src/lib/design/render-packages.ts`) no longer swallows a missing mapped `dist`: when the package folder has no `package.json` it throws `entryOf`'s error, which names `nx build <name>` (or that the build is running); a built package that does not export the subpath still answers null. Cause: the catch-all `try` turned the missing build into a fallback to the checkout. Verified: the new case in `render.spec.ts` was red on the old code (no throw), green after; not seen live in the Studio listing.
-
 571\. Builder (2026-11-07): rows from worktree branches cannot land by merge commit (the PreToolUse hook allows only
 `git commit -m … -- <paths>`, and git refuses a partial commit during a merge), so they land by cherry-pick and their
 `built: <sha>` goes stale. Tool fix (technical): the integration step writes each `built:` sha itself after the
@@ -1390,38 +1387,6 @@ Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its 
 button has no `implements` link. ADR 0105 says an unlinked part must not block. Tool fix (technical, inside B249): the
 build-ready computation treats an embedded part without app code as ready when its own checks pass, with a spec.
 
-586\. Tom (2026-11-07): "--slow? was? ich denke den mist gibts in der ci nicht mehr". CI and the hooks run no design
-check (checked: `.github/workflows`, `.husky`). But the builder put the new rule IMPLEMENTS-UNRENDERED (B430) into the
-manual `design check --slow` batch, against ADR 0226: a check runs live and fast, and construction that makes it
-unnecessary wins over the check. Tool fix (technical, applies ADR 0226): Studio derives a part's `implements` link
-from the component the page harness renders at the part's slot instead of checking a hand-written link; the
-`--slow` batch gets no new rule, and every rule already in it gets a STATUS row "live or delete".
-As built (586, B502 S1, Linux builder, 2026-11-14): the live pass (`check --slow` with a live spec, and `check --live`)
-measures which app components the page draws at each slot of an embedded part (`slotComponentsOnPage`), keeps the
-components common to all slots of the part, drops the page's own component, and writes the one left into the part
-file as `implements` (`derived-links.ts`), then regenerates the harness map. A part drawn inline keeps its link; two
-candidates print UNDERIVED and keep it. IMPLEMENTS-UNRENDERED, its spec and its three baseline entries (583) are
-deleted. Verified: specs for the browser measurement, the derivation and the write. Not verified: a live run on the
-studio product; that run writes the derived links of the five 583 parts.
-As built (586, B502 live links, Linux builder, 2026-11-14): the first live run on studio linked `components/list-row` to
-the disclosure (merge draws the disclosure where the design draws the row) and `foundations/agent-logos` to the one-logo
-component (new DROPPED-PROP: the gallery states have no input there), and printed eight UNDERIVED pages and
-canvas-viewport, whose candidates were the live host and the views around it. Cause, measured per slot: the host and its
-ancestors cover every full-page slot, and a component another part links counted as free. Fixed with specs: the live host
-and the components around it never count, a component another part links stays with it, and a foundation gets no link.
-The re-run prints no LINKED and no UNDERIVED. The five 583 parts keep their links: canvas-viewport, disclosure and
-comment-pin name components the app renders (flows/sketches, merge/sketches, design-canvas); pages/system is a route
-link the derivation leaves alone, still `system-page` (open); tree-row matches part-tree on three pages and
-`[ethlete-tree-row-item]` on flows, so no common host (open). Verified: specs, the live run on a scratch copy and in the
-main checkout. Commit 9f2594cbd.
-As built (586, B502 page links, Linux builder, 2026-11-14): pages are never embedded in a slot, so the live pass now
-also measures the app components at and around the live host of each page state (`hostComponentsOnPage`) and writes the
-innermost one common to every state into the `component` of the page's route link; the shared host, the shell and a
-component another part links never count. A candidate must take every design prop of the page, by the DROPPED-PROP
-check (`takesEveryPropOf`), so `system-view`, which takes none, never replaces `system-page`; without that check no page
-link is derived. Verified: specs (the guard spec fails without it), and `design check --live --product studio` in the
-main checkout derives no change; `pages/system` stays `system-page`.
-
 588\. Builder (2026-11-07, B434): the Studio e2e job (added in 94606402c) never passed in CI. It built only `cli`, so
 the design server answered `/__design/system` with 503 "missing build" and Studio stayed on "Design-Server startet".
 A green run hid it because the job only runs when the push changed Studio or design files. A new CI job had no proof
@@ -1458,18 +1423,6 @@ suite takes all runner cores in CI, and the B377 row and the rows that wait on i
 fix of 589 waits behind B434 (ADR 0228), and the doc-agent skill still says "Tom's words verbatim", so the doc agent
 wrote the name again. Tool fix (technical): the 589 fix moves into the current slice of the doc agent's own files: the
 doc-agent skill says "the human's words verbatim", and the doc agent runs `yarn lint:person-names` before each commit.
-
-595\. Builder (2026-11-08, B434, 219961e3e): the e2e case "hiding the panel keeps the frames" failed for two causes.
-(1) The test measured against the canvas origin, which moves by the panel width; the app shifts the camera as decided
-(finding 212, B120), so the case now compares screen positions. (2) App bug: `sketches.component.ts` sized the labels
-from the fit scale, which is measured again on each width change, so a wider viewport moved the frames 6-43 px at a user
-zoom (fix: a `noteFit` linkedSignal). Check, compare and verify render at one fixed viewport, and nothing changes the
-width while a camera is set. Tool fix (technical): `design verify` hides the panel (or resizes) at a non-Fit zoom on
-each canvas part and needs the first frame rect to stay within 1 px; `design check` flags a layout size (font size,
-grid column) derived from a fit or viewport measurement. Open risk: `transposed` also depends on the width.
-Built (B504, 2026-11-14): no new `design verify` command or lint rule (doc agent: no-new-gate default; the e2e
-cases "hiding the panel …" cover the bug class). `transposed` in `sketches.component.ts` is a linkedSignal that holds its
-value while a user zoom is set, like `noteFit`; spec bitten. Not verified: a live shot.
 
 597\. Builder (2026-11-08, B434, 4f00e0311): the sketch view used one revision for the whole sketch, so an edit of one
 variant renewed the iframe and picture URLs of the Aktuell row too, and its cells stayed empty until the new
@@ -3502,14 +3455,6 @@ only version+build, spec with the captured body (bite first), never cache a no-a
 the smoke. Side: user-facing; part of B480, which runs in parallel (ADR 0268). Built 2f8743432 (bites: real-body
 spec and no-answer spec fail on old code); on rack `stale: false` now.
 
-871\. Mac builder (2026-11-11, B345 slice 1, 82c6e3025): `et:design check` runs the committed CLI build, so it cannot see
-an uncommitted server change; a builder checks the old server and reads the result as a check of its own change.
-Suspect: the check resolves the CLI from the build output, not from source. Lesson: a check that cannot see the change
-under test must say so, not pass. Tool fix: the check prints which CLI build it runs and warns when `libs/cli` has
-uncommitted or unbuilt changes. Side: user-facing (every Studio project), after B249 (ADR 0269).
-
-871 as built (Linux builder subagent, 2026-11-14, B503): the warning half was already built by f15c2cf25 (904, `builtCliChangedWarning`: commits or uncommitted changes in `libs/cli` since the build commit, also for the `tmp/studio-cli` copies `et:design` runs; its `build-commit.spec.ts` cases pass). New: the check summary always prints `cli: runs the build at <dir> (built from <sha9>)` or `(no build commit)` (`runningCliBuildLine` in `stale-cli-dist.ts`). Verified: `build-commit.spec.ts` and the wiring assertion in `check-system-render.spec.ts` were red on the old code, green after; not run live through `yarn et:design check`.
-
 872\. Mac builder (2026-11-11, B345 slice 1): design check cannot drive the change-crop states of pages/sketches
 ("undrivable", 16 same aria-labels), so no design compare covered the new view before the live shot. Suspect: the harness
 samples feed no crop data. Lesson: a state the harness cannot drive is a hole in compare, and it was found by the
@@ -3753,12 +3698,6 @@ refused variant a: the part's contrast rule wants 4.5:1 for every ink chip. Deci
 disabled controls; the look choice stays with the human): variant a declares `definePart({ contrast: { exceptions } })`
 for its 4 disabled chips, so the human compares both floors.
 
-944\. Linux builder (2026-11-12 night, 933): `sketch new --name "..."` parses the name as a target. Tool fix (builder
-default, tool backlog): `--name` takes a value, with a spec. Same class (Linux, 900): `yarn studio:e2e --help` has no help and
-starts the full suite.
-
-944 as built (Linux builder subagent, 2026-11-14, B503): `--name` always took a value; measured (spec, old code): `--name "Disabled labels"` failed as `"components/button@Disabled labels" is no target`, and `--name --round` took `--round` as the name. Cause: `sketch new` only checked the name by parsing `<target>@<name>`. Now `sketchNameProblemOf` refuses a name outside lowercase letters, digits and dashes with the name it could take (`--name disabled-labels`), and `argsOf` refuses any known flag as a flag's value (`--name needs a value`), for every command that uses it. Verified: both cases in `sketch-usage-exit.spec.ts` red on the old code, green after; the `studio:e2e --help` side is not in this slice.
-
 933 update 3 (Linux, 63d53b7b6): the sketch `foundations/colors` (studio) is ready, variants a (4 disabled-label chips
 with a contrast exception, WCAG 1.4.3, ratios 3.1-3.4) and b (no exception, 4.7-5.1). It waits for the human's pick by
 merge. After a pick, `generate-studio-themes.mjs` must read the new `--on-surface-disabled` token (DARK_INTERACTION onColor).
@@ -3826,12 +3765,6 @@ log when the target is gone. The spec fails without the fix; one e2e case on 4 w
 `node_modules/.design-explore/part-shots` written after the rm. Suspect (code read): the shot store recreates the checkout
 like the crash log did. Tool fix (builder default, tool backlog): the shot store writes nothing into a removed checkout,
 with a biting spec.
-
-974\. Linux builder (2026-11-12 night, 927): with `dist/libs/components/design` missing, the design-mocks guard says the
-folder "differs from" the source and lists 55 files; the build command it names is right. Cause (seen live). Tool fix
-(builder default, tool backlog): a missing folder gives one line that names it missing, with a biting spec.
-
-974 as built (Linux builder subagent, 2026-11-14, B503): `staleDesignMocksOf` (`libs/cli/src/lib/design/system/stale-design-mocks.ts`) answers one line when `dist/libs/components/design` itself is missing: `REFUSED MISSING DESIGN MOCKS - dist/libs/components/design is missing; the drawings need the built mocks - run NX_NO_CLOUD=true npx nx build components`; a folder that exists but differs keeps the file list. Cause: the guard compared file by file and never asked whether the folder exists. Verified: the new case in `stale-design-mocks.spec.ts` was red on the old code (the "differs from" line), green after; not run live on a checkout without the build.
 
 976\. Mac builder (2026-11-12 night, 926): a merge refusal advice ("run sketch rebase") could not fix its cause, and no spec
 applied the advice. Tool fix (builder default, tool backlog): every merge refusal that names a remedy gets a spec that

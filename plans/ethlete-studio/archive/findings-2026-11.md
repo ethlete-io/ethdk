@@ -9806,3 +9806,88 @@ today's format; the budget gate names `archive-findings.mjs` in its refusal.
 
 997 built (Linux, 0509d4f23; archive run a07a9df66): the script counts "NNN built|closed|withdrawn|as built" paragraphs
 and parked-suspects.md lines as done; the budget refusal names the script; 47 findings archived.
+
+431\. Tom (2026-11-04, `pages/sketches@merge-port`): "ich seh da zudem keinen unterschied zwischen a und b. ich glaub b
+hat a übernommen und nur noch mehr states hinzugefügt oder? das erklärt so einiges". Facts (builder, live listing): the
+sketch has one variant; the columns are "Aktuell" and "Variante a". 16 of 30 states fold; 14 differ: the 2 new port
+states, and 12 states whose only change is three dimmed "unverändert" sample cells. Three causes: (1) a changed state
+shows whole at fit (about 24 %), so a change in three 3 px cells is invisible; (2) at fit the state names (13 px ×
+zoom, about 3 px) hide below the 9 px floor, so no row tells which state it is, while the column heads keep a 12 px
+floor; (3) every frame draws the sample Sketches page, whose own rows read "Aktuell", "Variante a", "Variante b", the
+same words as the real columns. Why no tool caught it: no check measures whether a change is readable at the zoom the
+view opens with, and no check flags sample text that repeats the live chrome around it. Fix: (1) B345 (cut-out of the
+change, check "change readable on open"); (2) B346: the state name keeps a floor like the column heads; (3) the B346
+sketch gives the sample other variant names (Tom picks), and B362 gets a rule that a part which draws the tool itself
+uses sample labels that differ from the live chrome.
+As built (finding 431, B504): rows carry an optional display label (design `Row`, app `SketchRow`); the sample rows read Stand / Entwurf 1 / Entwurf 2 (/ 3), live rows keep Aktuell / Variante a. State names keep a 12 px floor down to fit like the heads (`textAt` in the app, `textAt` in `mountFit`). Verified: `vitest related` for the sketches component (154 tests green, new specs for the label and the 12 px floor at fit), design tsc, lint. Not verified: `design check` baseline (not run before the change), the below-fit hiding of state names in a spec (jsdom fit is tiny), and the live look at fit.
+Verified live (B504, 2026-11-14): `pages/system@canvas-note` at Fit (13 %) shows every state name at 12 px and the heads at
+their fixed `text-ui-sm`; below Fit (3 %) the state names hide as built.
+
+570\. Builder (2026-11-07, B360): on a missing `dist`, `mappedSubpathOf` swallows the error, so the listing never names
+the build command. Tool fix (technical): the listing names `nx build <name>` for a missing `dist`.
+
+570 as built (Linux builder subagent, 2026-11-14, B503): `mappedSubpathOf` (`libs/cli/src/lib/design/render-packages.ts`) no longer swallows a missing mapped `dist`: when the package folder has no `package.json` it throws `entryOf`'s error, which names `nx build <name>` (or that the build is running); a built package that does not export the subpath still answers null. Cause: the catch-all `try` turned the missing build into a fallback to the checkout. Verified: the new case in `render.spec.ts` was red on the old code (no throw), green after; not seen live in the Studio listing.
+
+586\. Tom (2026-11-07): "--slow? was? ich denke den mist gibts in der ci nicht mehr". CI and the hooks run no design
+check (checked: `.github/workflows`, `.husky`). But the builder put the new rule IMPLEMENTS-UNRENDERED (B430) into the
+manual `design check --slow` batch, against ADR 0226: a check runs live and fast, and construction that makes it
+unnecessary wins over the check. Tool fix (technical, applies ADR 0226): Studio derives a part's `implements` link
+from the component the page harness renders at the part's slot instead of checking a hand-written link; the
+`--slow` batch gets no new rule, and every rule already in it gets a STATUS row "live or delete".
+As built (586, B502 S1, Linux builder, 2026-11-14): the live pass (`check --slow` with a live spec, and `check --live`)
+measures which app components the page draws at each slot of an embedded part (`slotComponentsOnPage`), keeps the
+components common to all slots of the part, drops the page's own component, and writes the one left into the part
+file as `implements` (`derived-links.ts`), then regenerates the harness map. A part drawn inline keeps its link; two
+candidates print UNDERIVED and keep it. IMPLEMENTS-UNRENDERED, its spec and its three baseline entries (583) are
+deleted. Verified: specs for the browser measurement, the derivation and the write. Not verified: a live run on the
+studio product; that run writes the derived links of the five 583 parts.
+As built (586, B502 live links, Linux builder, 2026-11-14): the first live run on studio linked `components/list-row` to
+the disclosure (merge draws the disclosure where the design draws the row) and `foundations/agent-logos` to the one-logo
+component (new DROPPED-PROP: the gallery states have no input there), and printed eight UNDERIVED pages and
+canvas-viewport, whose candidates were the live host and the views around it. Cause, measured per slot: the host and its
+ancestors cover every full-page slot, and a component another part links counted as free. Fixed with specs: the live host
+and the components around it never count, a component another part links stays with it, and a foundation gets no link.
+The re-run prints no LINKED and no UNDERIVED. The five 583 parts keep their links: canvas-viewport, disclosure and
+comment-pin name components the app renders (flows/sketches, merge/sketches, design-canvas); pages/system is a route
+link the derivation leaves alone, still `system-page` (open); tree-row matches part-tree on three pages and
+`[ethlete-tree-row-item]` on flows, so no common host (open). Verified: specs, the live run on a scratch copy and in the
+main checkout. Commit 9f2594cbd.
+As built (586, B502 page links, Linux builder, 2026-11-14): pages are never embedded in a slot, so the live pass now
+also measures the app components at and around the live host of each page state (`hostComponentsOnPage`) and writes the
+innermost one common to every state into the `component` of the page's route link; the shared host, the shell and a
+component another part links never count. A candidate must take every design prop of the page, by the DROPPED-PROP
+check (`takesEveryPropOf`), so `system-view`, which takes none, never replaces `system-page`; without that check no page
+link is derived. Verified: specs (the guard spec fails without it), and `design check --live --product studio` in the
+main checkout derives no change; `pages/system` stays `system-page`.
+
+595\. Builder (2026-11-08, B434, 219961e3e): the e2e case "hiding the panel keeps the frames" failed for two causes.
+(1) The test measured against the canvas origin, which moves by the panel width; the app shifts the camera as decided
+(finding 212, B120), so the case now compares screen positions. (2) App bug: `sketches.component.ts` sized the labels
+from the fit scale, which is measured again on each width change, so a wider viewport moved the frames 6-43 px at a user
+zoom (fix: a `noteFit` linkedSignal). Check, compare and verify render at one fixed viewport, and nothing changes the
+width while a camera is set. Tool fix (technical): `design verify` hides the panel (or resizes) at a non-Fit zoom on
+each canvas part and needs the first frame rect to stay within 1 px; `design check` flags a layout size (font size,
+grid column) derived from a fit or viewport measurement. Open risk: `transposed` also depends on the width.
+Built (B504, 2026-11-14): no new `design verify` command or lint rule (doc agent: no-new-gate default; the e2e
+cases "hiding the panel …" cover the bug class). `transposed` in `sketches.component.ts` is a linkedSignal that holds its
+value while a user zoom is set, like `noteFit`; spec bitten. Not verified: a live shot.
+
+871\. Mac builder (2026-11-11, B345 slice 1, 82c6e3025): `et:design check` runs the committed CLI build, so it cannot see
+an uncommitted server change; a builder checks the old server and reads the result as a check of its own change.
+Suspect: the check resolves the CLI from the build output, not from source. Lesson: a check that cannot see the change
+under test must say so, not pass. Tool fix: the check prints which CLI build it runs and warns when `libs/cli` has
+uncommitted or unbuilt changes. Side: user-facing (every Studio project), after B249 (ADR 0269).
+
+871 as built (Linux builder subagent, 2026-11-14, B503): the warning half was already built by f15c2cf25 (904, `builtCliChangedWarning`: commits or uncommitted changes in `libs/cli` since the build commit, also for the `tmp/studio-cli` copies `et:design` runs; its `build-commit.spec.ts` cases pass). New: the check summary always prints `cli: runs the build at <dir> (built from <sha9>)` or `(no build commit)` (`runningCliBuildLine` in `stale-cli-dist.ts`). Verified: `build-commit.spec.ts` and the wiring assertion in `check-system-render.spec.ts` were red on the old code, green after; not run live through `yarn et:design check`.
+
+944\. Linux builder (2026-11-12 night, 933): `sketch new --name "..."` parses the name as a target. Tool fix (builder
+default, tool backlog): `--name` takes a value, with a spec. Same class (Linux, 900): `yarn studio:e2e --help` has no help and
+starts the full suite.
+
+944 as built (Linux builder subagent, 2026-11-14, B503): `--name` always took a value; measured (spec, old code): `--name "Disabled labels"` failed as `"components/button@Disabled labels" is no target`, and `--name --round` took `--round` as the name. Cause: `sketch new` only checked the name by parsing `<target>@<name>`. Now `sketchNameProblemOf` refuses a name outside lowercase letters, digits and dashes with the name it could take (`--name disabled-labels`), and `argsOf` refuses any known flag as a flag's value (`--name needs a value`), for every command that uses it. Verified: both cases in `sketch-usage-exit.spec.ts` red on the old code, green after; the `studio:e2e --help` side is not in this slice.
+
+974\. Linux builder (2026-11-12 night, 927): with `dist/libs/components/design` missing, the design-mocks guard says the
+folder "differs from" the source and lists 55 files; the build command it names is right. Cause (seen live). Tool fix
+(builder default, tool backlog): a missing folder gives one line that names it missing, with a biting spec.
+
+974 as built (Linux builder subagent, 2026-11-14, B503): `staleDesignMocksOf` (`libs/cli/src/lib/design/system/stale-design-mocks.ts`) answers one line when `dist/libs/components/design` itself is missing: `REFUSED MISSING DESIGN MOCKS - dist/libs/components/design is missing; the drawings need the built mocks - run NX_NO_CLOUD=true npx nx build components`; a folder that exists but differs keeps the file list. Cause: the guard compared file by file and never asked whether the folder exists. Verified: the new case in `stale-design-mocks.spec.ts` was red on the old code (the "differs from" line), green after; not run live on a checkout without the build.
