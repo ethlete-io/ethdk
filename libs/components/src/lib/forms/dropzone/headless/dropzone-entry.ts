@@ -18,7 +18,7 @@ export type DropzoneEntryStatus = (typeof DROPZONE_ENTRY_STATUSES)[keyof typeof 
 
 export type DropzoneEntrySource<TValue = unknown> = { type: 'file'; file: File } | { type: 'existing'; value: TValue };
 
-export type DropzoneEntry<TValue = unknown> = {
+export type DropzoneEntry<TValue = unknown, TResponse = unknown> = {
   /** Unique id of this entry. Stable for the lifetime of the entry. */
   id: string;
 
@@ -30,6 +30,12 @@ export type DropzoneEntry<TValue = unknown> = {
 
   /** File size in bytes. `null` when unknown. */
   size: Signal<number | null>;
+
+  /** The file's MIME type, e.g. `image/png`. `null` when unknown. */
+  mimeType: Signal<string | null>;
+
+  /** When the file was uploaded, as far as the server's display info says. `null` when unknown. */
+  uploadedAt: Signal<Date | null>;
 
   /**
    * Preview URL: a `data:` URL for image files, read asynchronously so it starts as `null`, or the
@@ -51,11 +57,22 @@ export type DropzoneEntry<TValue = unknown> = {
   /** The form control value of this entry. `null` until the upload succeeded. */
   value: Signal<TValue | null>;
 
+  /** The server's response to this entry's upload. `null` until the upload succeeded, and for existing entries. */
+  response: Signal<TResponse | null>;
+
   /** @internal The upload handle driving this entry. `null` for existing entries. */
   handle: DropzoneUploadHandle<TValue> | null;
 
   /** @internal Stops reading the preview, called when the entry is disposed. */
   disposePreview: (() => void) | null;
+};
+
+const toUploadDate = (value: DropzoneExistingFileInfo['uploadedAt']) => {
+  if (value === null || value === undefined || value === '') return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  return Number.isNaN(date.getTime()) ? null : date;
 };
 
 /** A `data:` URL rather than an object URL: a strict `img-src` rarely allows `blob:`. */
@@ -107,17 +124,22 @@ export const createFileDropzoneEntry = <TValue>(
     }
   });
 
+  const info = computed(() => handle.fileInfo?.() ?? null);
+
   return {
     id: randomId(),
     source: { type: 'file', file },
-    name: computed(() => file.name),
-    size: computed(() => file.size),
-    previewUrl: preview?.url ?? computed(() => null),
+    name: computed(() => info()?.name ?? file.name),
+    size: computed(() => info()?.size ?? file.size),
+    mimeType: computed(() => info()?.mimeType ?? (file.type || null)),
+    uploadedAt: computed(() => toUploadDate(info()?.uploadedAt)),
+    previewUrl: computed(() => info()?.previewUrl ?? preview?.url() ?? null),
     status,
     progress: handle.progress,
     error: handle.error,
     errorMessage: handle.errorMessage,
     value: handle.value,
+    response: computed(() => handle.response?.() ?? null),
     handle,
     disposePreview: preview?.dispose ?? null,
   };
@@ -140,12 +162,15 @@ export const createExistingDropzoneEntry = <TValue>(
     source: { type: 'existing', value },
     name: computed(() => info().name ?? (typeof value === 'object' && value !== null ? '' : String(value))),
     size: computed(() => info().size ?? null),
+    mimeType: computed(() => info().mimeType ?? null),
+    uploadedAt: computed(() => toUploadDate(info().uploadedAt)),
     previewUrl: computed(() => info().previewUrl ?? null),
     status: computed(() => DROPZONE_ENTRY_STATUSES.EXISTING),
     progress: computed(() => null),
     error: computed(() => null),
     errorMessage: computed(() => null),
     value: computed(() => value),
+    response: computed(() => null),
     handle: null,
     disposePreview: null,
   };

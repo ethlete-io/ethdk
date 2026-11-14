@@ -32,6 +32,8 @@ export type DropzoneLabels = {
   uploadFailed: string;
   /** The full message of a failed upload, rendered below the field. */
   uploadFailedMessage: (context: DropzoneUploadFailedContext) => string;
+  /** Shown on a failed entry in the file list when the server sent no error message. */
+  entryUploadFailed: string;
   /** A file rejected by the `accept` constraint of `dropzoneFiles()`. */
   unsupportedFileType: (fileName: string) => string;
   /** A file rejected by `maxFileSize`. */
@@ -58,6 +60,7 @@ export const DEFAULT_DROPZONE_LABELS: DropzoneLabels = {
   remove: 'Remove',
   replaceFile: 'Replace file',
   uploadFailed: 'failed to upload',
+  entryUploadFailed: 'Upload failed',
   uploadFailedMessage: ({ fileName, serverMessage, uploadFailed }) =>
     serverMessage ? `"${fileName}": ${serverMessage}` : `"${fileName}" ${uploadFailed}.`,
   unsupportedFileType: (fileName) => `"${fileName}" has an unsupported file type.`,
@@ -80,6 +83,7 @@ export const GERMAN_DROPZONE_LABELS: DropzoneLabels = {
   remove: 'Entfernen',
   replaceFile: 'Datei ersetzen',
   uploadFailed: 'konnte nicht hochgeladen werden',
+  entryUploadFailed: 'Hochladen fehlgeschlagen',
   uploadFailedMessage: ({ fileName, serverMessage, uploadFailed }) =>
     serverMessage ? `"${fileName}": ${serverMessage}` : `"${fileName}" ${uploadFailed}.`,
   unsupportedFileType: (fileName) => `"${fileName}" hat einen nicht unterstützten Dateityp.`,

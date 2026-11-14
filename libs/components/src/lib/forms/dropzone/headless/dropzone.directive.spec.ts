@@ -1082,6 +1082,103 @@ describe('DropzoneDirective', () => {
     });
   });
 
+  describe('with file data and server responses', () => {
+    type MediaResponse = { uuid: string; thumbnail: string; createdAt: string; mime: string };
+    type MediaArgs = { response: MediaResponse; body: FormData };
+
+    let driver: MountedDropzoneDriver<DropzoneTestHost>;
+
+    beforeEach(() => {
+      driver = mountDropzone(DropzoneTestHost, {
+        upload: (query) =>
+          createDropzoneUpload<MediaArgs, string>({
+            queryCreator: query.createPost<MediaArgs>('/upload'),
+            selectValue: (response) => response.uuid,
+            selectFileInfo: (response) => ({
+              previewUrl: response.thumbnail,
+              mimeType: response.mime,
+              uploadedAt: response.createdAt,
+            }),
+            resolveExisting: (value) => ({
+              name: `${value}.pdf`,
+              size: 2048,
+              mimeType: 'application/pdf',
+              previewUrl: `https://cdn.test.com/${value}.png`,
+              uploadedAt: '2026-03-01T10:00:00.000Z',
+            }),
+          }),
+      });
+    });
+
+    afterEach(() => {
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
+    });
+
+    it('should expose the display data of an initial value', () => {
+      driver.host.value.set('e1');
+      driver.tick();
+
+      const entry = driver.dropzone.entries()[0]!;
+
+      expect(entry.name()).toBe('e1.pdf');
+      expect(entry.size()).toBe(2048);
+      expect(entry.mimeType()).toBe('application/pdf');
+      expect(entry.previewUrl()).toBe('https://cdn.test.com/e1.png');
+      expect(entry.uploadedAt()?.toISOString()).toBe('2026-03-01T10:00:00.000Z');
+      expect(entry.response()).toBe(null);
+    });
+
+    it('should expose the server response per entry and map it to the value and display data', () => {
+      driver.dropzone.selectFiles([createFile('scan.png', 'image/png', 4)]);
+      driver.tick();
+
+      const entry = driver.dropzone.entries()[0]!;
+
+      expect(entry.response()).toBe(null);
+      expect(entry.mimeType()).toBe('image/png');
+      expect(entry.uploadedAt()).toBe(null);
+
+      const response: MediaResponse = {
+        uuid: 'uuid-1',
+        thumbnail: 'https://cdn.test.com/thumb-1.png',
+        createdAt: '2026-11-14T08:30:00.000Z',
+        mime: 'image/webp',
+      };
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush(response);
+      driver.tick();
+
+      expect(entry.response()).toEqual(response);
+      expect(entry.value()).toBe('uuid-1');
+      expect(driver.host.value()).toBe('uuid-1');
+      expect(entry.name()).toBe('scan.png');
+      expect(entry.size()).toBe(4);
+      expect(entry.previewUrl()).toBe('https://cdn.test.com/thumb-1.png');
+      expect(entry.mimeType()).toBe('image/webp');
+      expect(entry.uploadedAt()?.toISOString()).toBe('2026-11-14T08:30:00.000Z');
+    });
+
+    it('should surface the error message of a failed upload body on its entry', () => {
+      driver.host.multiple.set(true);
+      driver.tick();
+      driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
+      driver.tick();
+
+      const [first, second] = driver.query.httpTesting.match(UPLOAD_URL);
+      first!.flush({ message: 'File is too dark' }, { status: 422, statusText: 'Unprocessable Entity' });
+      second!.flush(null, { status: 500, statusText: 'Server Error' });
+      driver.tick();
+
+      const [a, b] = driver.dropzone.entries();
+
+      expect(a!.status()).toBe('error');
+      expect(a!.errorMessage()).toBe('File is too dark');
+      expect(a!.response()).toBe(null);
+      expect(b!.status()).toBe('error');
+      expect(b!.errorMessage()).toBe(null);
+    });
+  });
+
   describe('with a preview size cap', () => {
     it('should preview images up to maxPreviewFileSize and skip larger ones', async () => {
       const driver = mountDropzone(DropzonePreviewCapTestHost, { upload: (query) => createUploadConfig(query) });

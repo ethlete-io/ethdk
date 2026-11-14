@@ -655,3 +655,72 @@ describe('DropzoneComponent crop step', () => {
     expect(stage.style.getPropertyValue('--_et-dropzone-crop-left')).toBe('26%');
   });
 });
+
+describe('DropzoneComponent with file data and server responses', () => {
+  type MediaResponse = { uuid: string; thumbnail: string };
+  type MediaArgs = { response: MediaResponse; body: FormData };
+
+  let driver: MountedDropzoneDriver<DropzoneComponentTestHost>;
+  const element = () => driver.fixture.nativeElement as HTMLElement;
+  const item = (index: number) => element().querySelectorAll<HTMLElement>('et-dropzone-item')[index]!;
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
+    URL.revokeObjectURL = vi.fn();
+
+    driver = mountDropzone(DropzoneComponentTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<MediaArgs, string>({
+          queryCreator: query.createPost<MediaArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+          selectFileInfo: (response) => ({ previewUrl: response.thumbnail }),
+          resolveExisting: (value) => ({
+            name: `${value}.jpg`,
+            size: 1536,
+            previewUrl: `https://cdn.test.com/${value}.jpg`,
+            uploadedAt: '2026-03-01T10:00:00.000Z',
+          }),
+        }),
+    });
+    driver.host.multiple.set(true);
+    driver.tick();
+  });
+
+  afterEach(() => {
+    driver.fixture.destroy();
+    driver.query.httpTesting.verify();
+  });
+
+  it('should render the name, size, upload date and thumbnail of an existing file', () => {
+    driver.host.value.set(['e1']);
+    driver.tick();
+
+    expect(item(0).querySelector('.et-dropzone-entry-name')?.textContent).toBe('e1.jpg');
+    expect(item(0).querySelector('.et-dropzone-entry-size')?.textContent).toBe('1.5 KB');
+    expect(item(0).querySelector('.et-dropzone-entry-date')?.getAttribute('datetime')).toBe('2026-03-01T10:00:00.000Z');
+    expect(item(0).querySelector('.et-dropzone-entry-date')?.textContent).toContain('2026');
+    expect(item(0).querySelector('img')?.getAttribute('src')).toBe('https://cdn.test.com/e1.jpg');
+  });
+
+  it('should render the thumbnail mapped from the server response', () => {
+    driver.pickFiles([createFile('a.png')]);
+    driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a', thumbnail: 'https://cdn.test.com/a.jpg' });
+    driver.tick();
+
+    expect(driver.host.value()).toEqual(['uuid-a']);
+    expect(item(0).querySelector('img')?.getAttribute('src')).toBe('https://cdn.test.com/a.jpg');
+  });
+
+  it('should show the server message of a failed file on its entry, or the fallback label', () => {
+    driver.pickFiles([createFile('a.png'), createFile('b.png')]);
+    const [first, second] = driver.query.httpTesting.match(UPLOAD_URL);
+    first!.flush({ message: 'Too dark' }, { status: 422, statusText: 'Unprocessable Entity' });
+    second!.flush(null, { status: 500, statusText: 'Server Error' });
+    driver.tick();
+
+    expect(item(0).querySelector('.et-dropzone-entry-error')?.textContent?.trim()).toBe('Too dark');
+    expect(item(1).querySelector('.et-dropzone-entry-error')?.textContent?.trim()).toBe('Upload failed');
+    expect(driver.internalErrorsText()).toContain('"a.png": Too dark');
+    expect(driver.internalErrorsText()).toContain('"b.png" failed to upload.');
+  });
+});

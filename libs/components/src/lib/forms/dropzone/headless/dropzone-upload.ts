@@ -22,8 +22,9 @@ import {
 } from '@ethlete/query';
 
 /**
- * Display information for a value that is already part of the form control
- * (e.g. media uploaded in a previous session inside an edit form).
+ * Display information for a file: one already part of the form control (from `resolveExisting`, e.g.
+ * media uploaded in a previous session inside an edit form) or one uploaded in this session (from
+ * `selectFileInfo`). Every field is optional; an unset field falls back to what the dropzone knows.
  */
 export type DropzoneExistingFileInfo = {
   /** URL rendered as a preview thumbnail. */
@@ -34,6 +35,12 @@ export type DropzoneExistingFileInfo = {
 
   /** File size in bytes. */
   size?: number | null;
+
+  /** The file's MIME type, e.g. `image/png`. */
+  mimeType?: string | null;
+
+  /** When the file was uploaded, as a `Date`, an ISO string or epoch milliseconds. */
+  uploadedAt?: Date | string | number | null;
 };
 
 /** The upload error of a failed entry. */
@@ -61,6 +68,12 @@ export type DropzoneUploadHandle<TValue> = {
 
   /** The resolved form control value. `null` until the upload succeeded. */
   value: Signal<TValue | null>;
+
+  /** The server's response to the upload. `null` until the upload succeeded. */
+  response?: Signal<unknown>;
+
+  /** Display information mapped from the response by `selectFileInfo`. `null` until the upload succeeded. */
+  fileInfo?: Signal<DropzoneExistingFileInfo | null>;
 
   /** (Re)runs the upload with the frozen request args. */
   execute: () => void;
@@ -171,6 +184,12 @@ export type DropzoneUploadConfig<
   selectValue: (response: NonNullable<ResponseType<TArgs>>) => TValue;
 
   /**
+   * Maps the upload response to display information for the uploaded entry (e.g. a server
+   * thumbnail URL or the upload date). Set fields override what the dropzone read from the file.
+   */
+  selectFileInfo?: (response: NonNullable<ResponseType<TArgs>>) => DropzoneExistingFileInfo;
+
+  /**
    * Maps a value that is already part of the form control (edit forms) to display info.
    * Called in a reactive context - reading signals inside it is supported, so async
    * lookups can be modeled as signals updating over time.
@@ -238,6 +257,9 @@ export type V2DropzoneUploadConfig<
    */
   selectValue: (response: NonNullable<QueryDataOf<TCreator>>) => TValue;
 
+  /** @see DropzoneUploadConfig.selectFileInfo */
+  selectFileInfo?: (response: NonNullable<QueryDataOf<TCreator>>) => DropzoneExistingFileInfo;
+
   /**
    * Maps a value that is already part of the form control (edit forms) to display info.
    * Called in a reactive context - reading signals inside it is supported, so async
@@ -258,7 +280,7 @@ export type V2DropzoneUploadConfig<
 const firstNewQueryErrorMessage = (error: QueryErrorResponse): string | null => {
   const message = error.isList ? error.errors[0]?.message : error.error?.message;
 
-  return message ?? null;
+  return message && message !== error.raw?.message ? message : null;
 };
 
 const firstV2ErrorMessage = (error: RequestError): string | null => {
@@ -294,9 +316,10 @@ const createNewQueryUploadHandle = <TArgs extends QueryArgs, TValue>(
     queryCreator: QueryCreator<TArgs>;
     createArgs?: (file: File) => RequestArgs<TArgs>;
     selectValue: (response: NonNullable<ResponseType<TArgs>>) => TValue;
+    selectFileInfo?: (response: NonNullable<ResponseType<TArgs>>) => DropzoneExistingFileInfo;
   },
 ): DropzoneUploadHandle<TValue> => {
-  const { file, injector, queryCreator, createArgs, selectValue } = options;
+  const { file, injector, queryCreator, createArgs, selectValue, selectFileInfo } = options;
 
   const query = queryCreator({ injector, silenceMissingWithArgsFeatureError: true });
   const args = (createArgs ?? (createDefaultDropzoneArgs as (file: File) => RequestArgs<TArgs>))(file);
@@ -328,6 +351,12 @@ const createNewQueryUploadHandle = <TArgs extends QueryArgs, TValue>(
 
       return response === null || response === undefined ? null : selectValue(response);
     }),
+    response: computed(() => query.response() ?? null),
+    fileInfo: computed(() => {
+      const response = query.response();
+
+      return response === null || response === undefined ? null : (selectFileInfo?.(response) ?? null);
+    }),
     execute: () => query.execute({ args }),
     dispose: () => query.subtle.destroy(),
   };
@@ -338,11 +367,14 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
     queryCreator: TCreator;
     createArgs?: (file: File) => V2DropzonePrepareArgsOf<TCreator>;
     selectValue: (response: NonNullable<QueryDataOf<TCreator>>) => TValue;
+    selectFileInfo?: (response: NonNullable<QueryDataOf<TCreator>>) => DropzoneExistingFileInfo;
   },
 ): DropzoneUploadHandle<TValue> =>
   // `queryStateSignal` sets up a `toObservable` subscription and thus needs an injection context.
   runInInjectionContext(options.injector, () => {
-    const { file, injector, queryCreator, createArgs, selectValue } = options;
+    const { file, injector, queryCreator, createArgs, selectValue, selectFileInfo } = options;
+    const successResponse = (current: V2QueryState | null) =>
+      isQueryStateSuccess(current) ? (current.response as NonNullable<QueryDataOf<TCreator>>) : null;
 
     const args = (createArgs ?? (createDefaultDropzoneArgs as (file: File) => V2DropzonePrepareArgsOf<TCreator>))(file);
     const currentQuery = signal<AnyV2Query | AnyLegacyQuery | null>(null);
@@ -390,6 +422,12 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
         return isQueryStateSuccess(current)
           ? selectValue(current.response as NonNullable<QueryDataOf<TCreator>>)
           : null;
+      }),
+      response: computed(() => successResponse(state())),
+      fileInfo: computed(() => {
+        const response = successResponse(state());
+
+        return response === null ? null : (selectFileInfo?.(response) ?? null);
       }),
       execute: () => {
         releaseCurrent();
@@ -480,6 +518,7 @@ export const createDropzoneUpload = <TArgs extends QueryArgs, TValue, TDeleteArg
       queryCreator: config.queryCreator,
       createArgs: config.createArgs,
       selectValue: config.selectValue,
+      selectFileInfo: config.selectFileInfo,
     }),
   executeDelete: config.delete
     ? createNewQueryDeleteExecutor({ queryCreator: config.delete.queryCreator, createArgs: config.delete.createArgs })
@@ -515,6 +554,7 @@ export const createV2DropzoneUpload = <
       queryCreator: config.queryCreator,
       createArgs: config.createArgs,
       selectValue: config.selectValue,
+      selectFileInfo: config.selectFileInfo,
     }),
   executeDelete: config.delete
     ? createV2QueryDeleteExecutor({ queryCreator: config.delete.queryCreator, createArgs: config.delete.createArgs })

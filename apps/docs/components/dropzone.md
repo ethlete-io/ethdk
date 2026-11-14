@@ -71,13 +71,14 @@ The value type `TValue` is whatever your `selectValue` returns - typically a uui
 
 The `upload` input takes a config object; create it with the `createDropzoneUpload()` helper so `TArgs` and `TValue` are inferred:
 
-| Property          | Required | Description                                                                                                                                                          |
-| ----------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `queryCreator`    | yes      | A `QueryCreator` for the upload route (usually `createPostQuery(client)<Args>('/route', { reportProgress: true })`). One query is created and executed per file.     |
-| `selectValue`     | yes      | Maps the upload response to the control value, e.g. `(media) => media.uuid`.                                                                                         |
-| `createArgs`      | no       | Builds the request args for a file. Default: `FormData` with the file appended under the field name `file`. Override to rename the field or add extra fields/params. |
-| `resolveExisting` | no       | Maps a value already present in the control (edit forms) to display info (`name`, `previewUrl`, `size`). Required as soon as the control can start with a value.     |
-| `delete`          | no       | Runs a request when an entry uploaded in this session is removed - see [Deleting on remove](#deleting-on-remove).                                                    |
+| Property          | Required | Description                                                                                                                                                                                |
+| ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `queryCreator`    | yes      | A `QueryCreator` for the upload route (usually `createPostQuery(client)<Args>('/route', { reportProgress: true })`). One query is created and executed per file.                           |
+| `selectValue`     | yes      | Maps the upload response to the control value, e.g. `(media) => media.uuid`.                                                                                                               |
+| `createArgs`      | no       | Builds the request args for a file. Default: `FormData` with the file appended under the field name `file`. Override to rename the field or add extra fields/params.                       |
+| `resolveExisting` | no       | Maps a value already present in the control (edit forms) to display info (`name`, `size`, `mimeType`, `previewUrl`, `uploadedAt`). Required as soon as the control can start with a value. |
+| `selectFileInfo`  | no       | Maps the upload response to display info for the uploaded entry - see [File data and server responses](#file-data-and-server-responses).                                                   |
+| `delete`          | no       | Runs a request when an entry uploaded in this session is removed - see [Deleting on remove](#deleting-on-remove).                                                                          |
 
 `resolveExisting` runs in a reactive context - it may read signals, so asynchronously loaded display data (e.g. an id → media map filled by another query) updates the entry as it arrives.
 
@@ -210,7 +211,7 @@ gesture it will refuse:
 - With no file at all the box shrinks to `--et-dropzone-readonly-min-height` and reads
   the `empty` label ("No files") in place of the prompt.
 
-The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, `cropArea` / `cropConfirm` / `cropCancel` for the crop step, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall` and `tooManyFiles` (each called with the file name, the size ones also with the limit in bytes). Per instance, the `labels` input overrides any of them, except that the four rejection messages of a `dropzoneFiles()` field error come from the token only, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
+The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the `entryUploadFailed` text on a failed entry without a server message, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, `cropArea` / `cropConfirm` / `cropCancel` for the crop step, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall` and `tooManyFiles` (each called with the file name, the size ones also with the limit in bytes). Per instance, the `labels` input overrides any of them, except that the four rejection messages of a `dropzoneFiles()` field error come from the token only, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
 
 ## Validation
 
@@ -245,6 +246,44 @@ When the form starts with existing values (edit forms), the dropzone renders the
 @example dropzone/dropzone-existing-media 560px
 
 Initializing the control with a value **without** providing `resolveExisting` throws `ET2401` in dev mode.
+
+## File data and server responses
+
+The control value is usually just an id, so the dropzone never re-downloads a file to describe it. Display info (`DropzoneExistingFileInfo`) comes from two places, and every field is optional:
+
+- `resolveExisting(value)` describes a value the control started with.
+- `selectFileInfo(response)` describes a file uploaded in this session, from the server's response. A field it sets overrides what the dropzone read from the picked file, so a server thumbnail replaces the local preview.
+
+```ts
+upload = createDropzoneUpload<UploadMediaArgs, string>({
+  queryCreator: uploadMedia,
+  selectValue: (media) => media.uuid,
+  selectFileInfo: (media) => ({ previewUrl: media.thumbnailUrl, uploadedAt: media.createdAt }),
+  resolveExisting: (uuid) => {
+    const media = mediaById()[uuid];
+
+    return {
+      name: media?.fileName,
+      size: media?.bytes,
+      mimeType: media?.mimeType,
+      previewUrl: media?.thumbnailUrl,
+      uploadedAt: media?.createdAt,
+    };
+  },
+});
+```
+
+| Field        | Type                               | Rendered as                                   |
+| ------------ | ---------------------------------- | --------------------------------------------- |
+| `name`       | `string`                           | the entry name                                |
+| `size`       | `number \| null`                   | the size in bytes, formatted (`1.5 KB`)       |
+| `mimeType`   | `string \| null`                   | not rendered; read it from `entry.mimeType()` |
+| `previewUrl` | `string \| null`                   | the thumbnail                                 |
+| `uploadedAt` | `Date \| string \| number \| null` | the date, formatted for `injectLocale()`      |
+
+Each entry also carries the server's raw response as `entry.response()` - `null` until its upload succeeded, and for existing values. A failed upload whose body carries a message (`{ message }`, a list of `{ message }` items, or a `detail` string) shows that message on the entry in the file list, and in the `"name": <server message>` sentence below the field. Without one the entry shows the `entryUploadFailed` label (`Upload failed`):
+
+@example dropzone/dropzone-file-data 560px
 
 ## Crop
 
@@ -284,7 +323,7 @@ Per-file progress requires `reportProgress: true` on the query creator **and** t
 
 ## Headless usage
 
-All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive`, `lastRejections` and `unhandledRejections` (the rejections no `dropzoneFiles()` rule reports as field errors). Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `resolvedAccept()` gives you the `accept` string in effect (the schema's, else the `accept` input) for it. With `crop` set, picked images wait in `pendingCrops()` (`{ id, file }`) until you call `confirmCrop(id, croppedFile)` or `cancelCrop(id)`. The `etDropzoneCrop` directive holds the crop state for one file (`file` and `config` inputs; `imageSrc()`, `rect()` in image pixels, `ready()`, and `export()` to render the crop into a `File`); put `etDropzoneCropRect` on the frame and `etDropzoneCropHandle="nw|ne|sw|se"` on its corners, and position them with the `--_et-dropzone-crop-{left,top,right,bottom}` percentages the directive sets on its host. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `mimeType`, `uploadedAt`, `previewUrl`, `status`, `progress`, `error`, `errorMessage`, `value` and `response` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive`, `lastRejections` and `unhandledRejections` (the rejections no `dropzoneFiles()` rule reports as field errors). Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `resolvedAccept()` gives you the `accept` string in effect (the schema's, else the `accept` input) for it. With `crop` set, picked images wait in `pendingCrops()` (`{ id, file }`) until you call `confirmCrop(id, croppedFile)` or `cancelCrop(id)`. The `etDropzoneCrop` directive holds the crop state for one file (`file` and `config` inputs; `imageSrc()`, `rect()` in image pixels, `ready()`, and `export()` to render the crop into a `File`); put `etDropzoneCropRect` on the frame and `etDropzoneCropHandle="nw|ne|sw|se"` on its corners, and position them with the `--_et-dropzone-crop-{left,top,right,bottom}` percentages the directive sets on its host. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
 
 To build an entry outside the directive - an upload history, a paste target - create a handle from the
 upload config and turn it into an entry with `createFileDropzoneEntry`. The handle uploads on

@@ -9,8 +9,21 @@
 <div class="et-dropzone-item-info">
   <span class="et-dropzone-entry-name">{{ entry().name() }}</span>
 
-  @if (entry().size(); as size) {
-    <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
+  @if (entry().size() || uploadedAt()) {
+    <span class="et-dropzone-entry-meta">
+      @if (entry().size(); as size) {
+        <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
+      }
+      @if (uploadedAt(); as uploadedAt) {
+        <time [attr.datetime]="uploadedAt.iso" class="et-dropzone-entry-date">{{ uploadedAt.label }}</time>
+      }
+    </span>
+  }
+
+  @if (entry().status() === 'error' && errorMessage()) {
+    <span [etProvideColor]="errorColorTheme()" class="et-dropzone-entry-error" aria-hidden="true">{{
+      errorMessage()
+    }}</span>
   }
 
   @if (entry().source.type === 'file') {

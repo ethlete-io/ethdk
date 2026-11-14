@@ -47,5 +47,21 @@
       min-inline-size: 0;
       flex: 1;
     }
+
+    .et-dropzone-entry-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 8px;
+      font-size: 12px;
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    .et-dropzone-entry-error {
+      overflow: hidden;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--et-theme-color-ink-solid, currentColor);
+    }
   }
 }

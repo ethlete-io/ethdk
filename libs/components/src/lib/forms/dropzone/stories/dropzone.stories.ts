@@ -22,6 +22,7 @@ export default {
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
     flaky: { table: { disable: true } },
+    serverResponse: { table: { disable: true } },
     v2: { table: { disable: true } },
     initialValue: { table: { disable: true } },
     cropAspectRatio: { control: 'number' },
@@ -36,6 +37,7 @@ export default {
     readonly: false,
     required: false,
     flaky: false,
+    serverResponse: false,
     v2: false,
     initialValue: null,
     cropAspectRatio: null,
@@ -92,5 +94,21 @@ export const Crop: Story = {
   args: {
     cropAspectRatio: 16 / 9,
     hint: 'Images open a 16:9 crop step before they upload, scaled to at most 512px wide.',
+  },
+};
+
+export const ExistingFiles: Story = {
+  args: {
+    multiple: true,
+    initialValue: ['mountain', 'contract.pdf'],
+    hint: 'Name, size, upload date and thumbnail come from resolveExisting - no file is downloaded.',
+  },
+};
+
+export const ServerResponse: Story = {
+  args: {
+    multiple: true,
+    serverResponse: true,
+    hint: 'The server response sets the thumbnail and upload date. Files named "fail…" are rejected by the server.',
   },
 };

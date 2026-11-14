@@ -16,7 +16,9 @@ export const mockUploadInterceptor: HttpInterceptorFn = (request, next) => {
 
   const file = request.body instanceof FormData ? (request.body.get('file') as File | null) : null;
   const isFlaky = request.url.includes('/upload-flaky');
+  const isMedia = request.url.includes('/upload-media');
   const shouldFail = isFlaky && !!file && !failedOnce.has(file.name);
+  const isRejected = isMedia && !!file && file.name.toLowerCase().includes('fail');
 
   if (shouldFail && file) {
     failedOnce.add(file.name);
@@ -39,6 +41,18 @@ export const mockUploadInterceptor: HttpInterceptorFn = (request, next) => {
           });
         }
 
+        if (isRejected) {
+          return throwError(
+            () =>
+              new HttpErrorResponse({
+                status: 422,
+                statusText: 'Unprocessable Entity',
+                url: request.url,
+                error: { message: 'The server does not accept this file.' },
+              }),
+          );
+        }
+
         if (shouldFail) {
           return throwError(
             () =>
@@ -51,11 +65,20 @@ export const mockUploadInterceptor: HttpInterceptorFn = (request, next) => {
           );
         }
 
+        const uuid = randomId();
+
         return of<HttpEvent<unknown>>(
           new HttpResponse({
             body: {
-              uuid: randomId(),
+              uuid,
               name: file?.name ?? 'unknown',
+              ...(isMedia
+                ? {
+                    thumbnailUrl: `https://picsum.photos/seed/${uuid}/160/160`,
+                    mimeType: file?.type || 'application/octet-stream',
+                    createdAt: new Date().toISOString(),
+                  }
+                : {}),
             },
           }),
         );

@@ -10,13 +10,14 @@ import { createDropzoneUpload, createV2DropzoneUpload } from '../headless/dropzo
 import { dropzoneFiles } from '../headless/dropzone-validation';
 import { MOCK_UPLOAD_BASE_URL } from './upload-mock';
 
-type MediaLikeView = { uuid: string; name: string };
+type MediaLikeView = { uuid: string; name: string; thumbnailUrl?: string; mimeType?: string; createdAt?: string };
 type UploadMediaArgs = { response: MediaLikeView; body: FormData };
 
 const client = createQueryClient({ baseUrl: MOCK_UPLOAD_BASE_URL, name: 'dropzoneDemo' });
 
 const uploadMedia = createPostQuery(client)<UploadMediaArgs>('/upload', { reportProgress: true });
 const uploadMediaFlaky = createPostQuery(client)<UploadMediaArgs>('/upload-flaky', { reportProgress: true });
+const uploadMediaWithFileData = createPostQuery(client)<UploadMediaArgs>('/upload-media', { reportProgress: true });
 
 // the legacy client issues raw XHRs (bypassing Angular interceptors), so the demo drives it
 // through the built-in `mock` mechanism instead of the story's HTTP interceptor
@@ -38,7 +39,7 @@ const uploadMediaV2 = v2Client.post({
         }
       </et-dropzone>
 
-      <pre class="text-xs opacity-60">form value: {{ demoForm.media().value() | json }}</pre>
+      <pre class="text-small opacity-60">form value: {{ demoForm.media().value() | json }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -54,6 +55,7 @@ export class DropzoneStorybookComponent {
   public readonly = input(false);
   public required = input(false);
   public flaky = input(false);
+  public serverResponse = input(false);
   public v2 = input(false);
   public initialValue = input<string | string[] | null>(null);
   public cropAspectRatio = input<number | null>(null);
@@ -65,11 +67,16 @@ export class DropzoneStorybookComponent {
   });
 
   protected upload = computed(() => {
-    const resolveExisting = (uuid: string) => ({
-      name: `media-${uuid}.jpg`,
-      previewUrl: `https://picsum.photos/seed/${uuid}/640/480`,
-      size: 123456,
-    });
+    const resolveExisting = (uuid: string) =>
+      uuid.endsWith('.pdf')
+        ? { name: uuid, size: 482_133, mimeType: 'application/pdf', uploadedAt: '2026-02-11T09:12:00.000Z' }
+        : {
+            name: `media-${uuid}.jpg`,
+            previewUrl: `https://picsum.photos/seed/${uuid}/640/480`,
+            size: 123456,
+            mimeType: 'image/jpeg',
+            uploadedAt: '2026-03-01T10:00:00.000Z',
+          };
 
     if (this.v2()) {
       return createV2DropzoneUpload({
@@ -88,6 +95,19 @@ export class DropzoneStorybookComponent {
           };
         },
         selectValue: (media) => media.uuid,
+        resolveExisting,
+      });
+    }
+
+    if (this.serverResponse()) {
+      return createDropzoneUpload<UploadMediaArgs, string>({
+        queryCreator: uploadMediaWithFileData,
+        selectValue: (media) => media.uuid,
+        selectFileInfo: (media) => ({
+          previewUrl: media.thumbnailUrl,
+          mimeType: media.mimeType,
+          uploadedAt: media.createdAt,
+        }),
         resolveExisting,
       });
     }

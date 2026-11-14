@@ -10,4 +10,6 @@ export const DROPZONE_EXAMPLES = {
   'dropzone/dropzone-failing-uploads': () =>
     import('./dropzone-failing-uploads.example').then((m) => m.DropzoneFailingUploadsExampleComponent),
   'dropzone/dropzone-crop': () => import('./dropzone-crop.example').then((m) => m.DropzoneCropExampleComponent),
+  'dropzone/dropzone-file-data': () =>
+    import('./dropzone-file-data.example').then((m) => m.DropzoneFileDataExampleComponent),
 };

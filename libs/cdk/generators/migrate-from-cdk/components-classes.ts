@@ -313,6 +313,8 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-dropzone-crop-stage',
   'et-dropzone-crop-viewport',
   'et-dropzone-empty',
+  'et-dropzone-entry-error',
+  'et-dropzone-entry-meta',
   'et-dropzone-entry-name',
   'et-dropzone-entry-progress',
   'et-dropzone-entry-progress-inner',

@@ -151,6 +151,7 @@
         [interactive]="dropzoneDir.interactive()"
         [retryLabel]="resolvedLabels().retry"
         [removeLabel]="resolvedLabels().remove"
+        [errorMessage]="entry.errorMessage() ?? resolvedLabels().entryUploadFailed"
         (retry)="dropzoneDir.retryEntry(entry.id)"
         (remove)="removeEntryAnimated(entry, entryEl.elementRef.nativeElement)"
       />
