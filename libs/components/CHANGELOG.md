@@ -1,5 +1,63 @@
 # Changelog
 
+## 1.0.0-next.83
+
+### Minor Changes
+
+- Add `--et-banner-border-width` (borderless banners and query errors) and the stat tile label tokens `--et-stat-tile-label-text-transform` and `--et-stat-tile-label-letter-spacing`.
+- `et-breadcrumb` takes `--et-breadcrumb-*` tokens for its item, hover, current and separator colours, font size, line height and letter spacing.
+- Add carousel colour tokens for the dots, the countdown ring track and the controls row.
+- `et-carousel` takes `controlsPosition: 'below' | 'overlay'` to lay its control bar over the track, and `pauseTogglePosition` to place the always-rendered autoplay pause control at either end of the bar or in a top corner of the track.
+- Add `labelPosition` and `layout="subgrid"` to `et-choice-field`, and a `--et-select-option-outline-color-active` token to the select
+- Add et-collapse, a height-expand wrapper with an etCollapse headless directive.
+- `et-dropzone` gets a `layout` input: `'row'` shows a single file as one compact input-height row with thumbnail, size, upload date, status and actions. The single-file preview now shows the upload date and the server error too.
+- Dropzone entries show size, upload date and thumbnail from `resolveExisting` or the new `selectFileInfo` response mapping, expose `response()`, `mimeType()` and `uploadedAt()`, and show a failed file's server message on the entry.
+- `et-dropzone` takes a `crop` config: picked images open an aspect-locked crop step (drag, corner handles, arrow keys) and upload as the cropped file. The headless `etDropzoneCrop` directives hold the crop state.
+- `et-empty-state` exposes `--et-empty-state-icon-color` for its icon.
+- Badge exposes `--et-badge-letter-spacing` and `--et-badge-max-width`, and avatar exposes `--et-avatar-size`. A badge no longer sets `align-self` / `justify-self: start`, so it follows its parent's `align-items` / `justify-items` instead of sitting at the start of the cross axis.
+- Tooltip and toggletip expose public CSS tokens: `--et-floating-tip-radius`, `--et-floating-tip-max-width`, `--et-toggletip-letter-spacing` and `--et-toggletip-min-width`. Defaults are unchanged.
+- Tooltip and toggletip expose `--et-floating-tip-background`, `--et-floating-tip-color` and `--et-floating-tip-border`.
+- `et-form-error` shows a generic fallback text (`errorFallback` in the form field labels) instead of an empty row for an error kind without a text.
+- Add `labelPosition` and a `--et-form-field-label-gap` token to `et-form-field`
+- Add `et-form-field` tokens for the border colour at rest, on hover and on focus, the focus ring width, the value colour, the label font weight and letter spacing, and the value letter spacing
+- Add `etInputClear` (`INPUT_CLEAR_IMPORTS`), an opt-in clear button for `et-input`, and a `clear()` method on `et-input`.
+- The match card padding tokens take a `block inline` pair, e.g. `--et-match-card-compact-padding: 12px 8px`.
+- Add a `loading` input to `et-menu-item`, `et-menu-checkbox-item` and `et-menu-radio-item` that shows a spinner, sets `aria-busy` and blocks activation while the item stays focusable.
+- Add `backdropClick()` to the overlay ref and a `backdropClick` output to the headless overlay directive, emitting on every backdrop click whether or not the overlay closes.
+- Add a `position` input to `et-picture` that sets the focal point a `fit` crop keeps in view.
+- `et-progress-bar` takes a `roundedEnd` input that rounds the end of the determinate fill with `--et-progress-bar-border-radius`. The default fill still ends square.
+- Add `--et-progress-step-marker-ring-width` and `--et-progress-step-marker-ring-color` tokens to `et-progress-step`.
+- Breaking: `ProgressStepLabels` needs a `skipped` key, and `ProgressStepsComponent.orientation` moved to its `etProgressSteps` host directive; pin `orientation="horizontal"` to keep the old row.
+- Add headless `etProgressSteps`/`etProgressStep` and `etTimeline`/`etTimelineItem` directives, a `skipped` progress step state, a `status` on `et-timeline-item`, `[etProgressStepContent]`/`[etProgressStepMarker]` slots, and an `auto` progress steps orientation (the new default) that stacks into a column instead of overflowing.
+- `[formControl]` and `[(ngModel)]` on `et-*` form controls are now supported through Angular's custom control mode; the forms guide lists the known gaps and workarounds.
+- Add `et-select` tokens for the panel colours, the option hover, active and selected colours, the check colour and position, an option divider and the load-more row colours, and `provideSelectIcons()` to swap the chevron, clear and check glyphs
+- `et-spinner` without a bound `diameter` now takes its size from an inherited `--et-spinner-size`. The unread `--et-spinner-stroke-width` token is removed.
+- `et-standings` rows expand: an `ng-template[etStandingsRowDetail]` adds a chevron toggle per row and renders its own column-aligned rows underneath. `expandedRows` is two-way bindable, `expandMode` picks `'single'` or `'multiple'` (default).
+- `et-stat-tile` gets `align`, `labelPosition`, a registered `--et-stat-tile-label-letter-spacing` token and a `'rank'` format that shows `#<n>`.
+- Add `visibleFrom` to table columns to render a column only from a breakpoint up, and `availableColumns()` for the columns a chooser lists.
+- Add table tokens for the header typography and row min height, per-row background and hover background, and the hover radius.
+- Let an `et-table` `rowLink` answer with `{ commands, queryParams?, fragment?, title? }` or `{ href, title? }`, rendering `title` on the row anchor.
+- The select search, date, time, range, duration, tag and phone inputs take an `autocomplete` input like `et-input`.
+- Add `provideFormErrorMessages()` and `formErrorContext()`, which hand a form error resolver the validator value typed per error kind.
+
+### Patch Changes
+
+- The `spinner()` design mock sets `diameter` and `strokeWidth` on `et-spinner`, so a mock that `ng()` renders as the real component keeps its size.
+- `et-button` centres its icon on the label's cap height instead of the line box, so the icon no longer sits up to 3 px low (lg/xl, any font).
+- The dropzone crop stage now also sets `-webkit-user-select: none`, so Safari 18.6 no longer selects the image while you drag the crop frame.
+- Declare `FormCheckboxControl` on `et-switch` and `FormValueControl` on the radio group and segmented button group so the `[formField]` contract is compile-checked.
+- The icons generator now imports the generated icon name types from the icons file, so an app build checks `etIcon` names instead of accepting any `string`.
+- New `--et-menu-border-radius` token (default `10px`) sets the menu panel's corner radius.
+- `--et-menu-item-font-weight` is unregistered: unset, menu items keep the inherited page weight.
+- New `--et-menu-item-font-weight` token (default `400`) sets the menu item weight.
+- The public menu, menu search, cascader panel, date range presets and command palette tokens now inherit, so a value set on `:root` reaches the detached overlay panel.
+- New `--et-overlay-backdrop-filter` token (default `none`) sets the overlay backdrop's `backdrop-filter`.
+- `--et-overlay-backdrop-color` set on `:root` or an ancestor now reaches the backdrop.
+- The built-in error texts show the bound of a reactive `min`, `max`, `minlength` and `maxlength` error.
+- `et-segmented-button-group` keeps its button row inside the container: short labels keep their width, longer labels truncate with an ellipsis instead of overflowing.
+- Skeleton: add `--et-skeleton-color`, `--et-skeleton-highlight-color`, `--et-skeleton-display` and `--et-skeleton-direction`, keep a nested skeleton silent, and let a `shape="rect"` item keep its `aspect-ratio`.
+- Apply a changed `hidden` from a new `et-table` `columns` value; the last write between it and `setColumnVisible` wins.
+
 ## 1.0.0-next.82
 
 ### Minor Changes
