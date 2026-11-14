@@ -32,7 +32,9 @@ release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
 
 On Linux both apps, and on macOS Studio, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
 branch (ADR 0249); Timetrack on macOS and both apps on Windows run on wry. The Studio macOS bundle is
-built by `@tauri-apps/cli-cef` too and is about 147 MiB larger. The branch's `tauri` has no runtime of its own, so `lib.rs` names one per platform, and
+built by `@tauri-apps/cli-cef` too and is about 147 MiB larger. Studio's `tauri`, `tauri:dev` and `tauri:build` targets go through
+`tools/scripts/studio-tauri.mjs`, which picks cli-cef off Windows: the plain CLI starts a bare binary
+that cannot find the CEF framework. The branch's `tauri` has no runtime of its own, so `lib.rs` names one per platform, and
 a plugin whose crates.io release asks for tauri's `wry` feature is patched to plugins-workspace's
 `feat/cef` branch. Building needs the GTK 4
 headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first build downloads CEF

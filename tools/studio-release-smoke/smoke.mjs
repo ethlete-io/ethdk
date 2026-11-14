@@ -13,6 +13,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { studioTauriArgs } from '../scripts/studio-tauri.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const args = process.argv.slice(2);
@@ -36,7 +37,6 @@ in a git worktree, not from the working tree (macOS, CEF, a few minutes when war
   process.exit(0);
 }
 
-const CEF_CLI = '@tauri-apps/cli-cef@3.0.0-alpha.27';
 const LOG_ENV = 'ETHLETE_STUDIO_CONSOLE_LOG';
 const VIEW_ENV = 'ETHLETE_STUDIO_SMOKE_VIEW';
 const MARKER = '[studio-release-smoke]';
@@ -112,7 +112,7 @@ const build = () => {
   try {
     symlinkSync(join(root, 'node_modules'), join(worktree, 'node_modules'));
 
-    const buildArgs = ['--yes', `--package=${CEF_CLI}`, 'tauri', 'build', '--bundles', 'app', '--no-sign'];
+    const buildArgs = studioTauriArgs(['build', '--bundles', 'app', '--no-sign']);
 
     if (cspFrom) {
       const configFile = join(worktree, 'smoke-config.json');
