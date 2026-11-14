@@ -60,7 +60,7 @@ const openedByHover = (markup: string) => markup.replace('<button ', '<button da
 
 const withHint = (markup: string, text: string | undefined, { force }: Props) =>
   text
-    ? `<span class="relative inline-flex">${force?.control === 'notice' ? markup : openedByHover(markup)}<span class="absolute top-full right-0 z-10 mt-2">${tooltip({ text, placement: 'bottom-end' })}</span></span>`
+    ? `<span class="relative inline-flex">${force?.control === 'notice' ? markup : openedByHover(markup)}<span class="st-notice-hint absolute top-full right-0 left-0 z-10 mt-2 flex justify-end">${tooltip({ text, placement: 'bottom-end' })}</span></span>`
     : markup;
 
 const dirtyText = ({ notice, noticeText }: Props) =>
