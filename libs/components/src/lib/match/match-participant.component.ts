@@ -66,6 +66,21 @@ import { NormalizedMatchParticipant } from './match.types';
           {{ displayName() }}
         </span>
 
+        @if (country(); as participantCountry) {
+          <span class="et-match-participant-country">
+            @if (participantCountry.flag; as flag) {
+              <et-picture
+                [sources]="flag.sources ?? []"
+                [defaultSrc]="flag.defaultSrc ?? null"
+                class="et-match-participant-flag"
+                alt=""
+                fit="cover"
+              />
+            }
+            <span class="et-match-participant-country-name">{{ participantCountry.name }}</span>
+          </span>
+        }
+
         @if (subtitle(); as subtitle) {
           <span class="et-match-participant-subtitle">{{ subtitle }}</span>
         }
@@ -135,6 +150,8 @@ export class MatchParticipantComponent {
    * The quieter second line, where there is one. Dropped in compact: the point of compact is that the
    * row fits a bracket column, and a second line is the first thing that stops fitting.
    */
+  protected country = computed(() => (this.compact() ? null : this.participant()?.country) ?? null);
+
   protected subtitle = computed(() => (this.compact() ? null : this.participant()?.subtitle) ?? null);
 
   /**

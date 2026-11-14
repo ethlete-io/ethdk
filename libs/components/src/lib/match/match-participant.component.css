@@ -17,6 +17,12 @@
     initial-value: 14px;
   }
 
+  @property --et-match-participant-flag-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
   .et-match-participant {
     display: flex;
     align-items: center;
@@ -105,6 +111,31 @@
     font-size: max(10px, calc(var(--et-match-participant-font-size) - 4px));
     line-height: 1.3;
     color: var(--et-surface-color-muted-solid, currentColor);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-match-participant-country {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-inline-size: 0;
+    font-size: max(10px, calc(var(--et-match-participant-font-size) - 3px));
+    line-height: 1.3;
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-match-participant-flag {
+    flex: none;
+    inline-size: var(--et-match-participant-flag-size);
+    block-size: calc(var(--et-match-participant-flag-size) * 0.75);
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  .et-match-participant-country-name {
+    min-inline-size: 0;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

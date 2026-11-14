@@ -13,3 +13,23 @@ describe('match-card.component.css padding tokens', () => {
     },
   );
 });
+
+describe('match-card.component.css font tokens', () => {
+  it.each([
+    'meta-font-size',
+    'versus-font-size',
+    'games-font-size',
+    'name-font-weight',
+    'winner-name-font-weight',
+    'score-font-weight',
+    'outcome-font-weight',
+    'status-font-weight',
+  ])('registers --et-match-card-%s and reads it', (token) => {
+    expect(css).toMatch(new RegExp(`@property --et-match-card-${token}\\s*\\{`));
+    expect(css).toContain(`var(--et-match-card-${token})`);
+  });
+
+  it.each(['font-family', 'score-font-family'])('reads --et-match-card-%s with an inherit fallback', (token) => {
+    expect(css).toContain(`var(--et-match-card-${token}, inherit)`);
+  });
+});

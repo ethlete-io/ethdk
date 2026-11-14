@@ -4,4 +4,6 @@ export const MATCH_EXAMPLES = {
   'match/match-states': () => import('./match-states.example').then((m) => m.MatchStatesExampleComponent),
   'match/match-live': () => import('./match-live.example').then((m) => m.MatchLiveExampleComponent),
   'match/match-badges': () => import('./match-badges.example').then((m) => m.MatchBadgesExampleComponent),
+  'match/match-loading-cancelled': () =>
+    import('./match-loading-cancelled.example').then((m) => m.MatchLoadingCancelledExampleComponent),
 };

@@ -58,6 +58,20 @@ type MatchScoreTransition = {
 
 const NO_TRANSITION: MatchScoreTransition = { home: null, away: null };
 
+const PENDING_MATCH: NormalizedMatch = {
+  id: '',
+  status: 'scheduled',
+  startTime: null,
+  home: null,
+  away: null,
+  homeScore: null,
+  awayScore: null,
+  resultKind: 'score',
+  gameScores: null,
+  winnerSide: null,
+  label: null,
+};
+
 const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): MatchScoreChange => ({
   side,
   from,
@@ -93,9 +107,11 @@ const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): Match
     '[attr.data-status]': 'match().status',
     '[attr.data-size]': 'size()',
     '[attr.data-result-kind]': 'match().resultKind',
-    '[attr.data-winner]': 'match().winnerSide',
+    '[attr.data-winner]': 'isCancelled() ? null : match().winnerSide',
     '[attr.data-interactive]': 'isInteractive() ? "" : null',
     '[attr.data-hide-names]': 'hideNames() ? "" : null',
+    '[attr.data-loading]': 'loading() ? "" : null',
+    '[attr.aria-busy]': 'loading() ? "true" : null',
     '[attr.aria-label]': 'accessibleName()',
     // A card that isn't a link is still one thing rather than six loose fragments - but an unlabelled
     // `div` can't carry a name, so it becomes a group. A link or button already has a role of its own.
@@ -107,8 +123,17 @@ export class MatchCardDirective {
   private injectedLabels = injectMatchLabels();
   private dateLocale = injectDateLocaleSignal();
 
-  /** The match to draw, already normalized - see {@link NormalizedMatch} and the `integrations/` adapters. */
-  public match = input.required<NormalizedMatch>();
+  /**
+   * The match to draw, already normalized - see {@link NormalizedMatch} and the `integrations/` adapters.
+   * `null` while it has not arrived; pair that with `loading`.
+   */
+  public matchInput = input<NormalizedMatch | null>(null, { alias: 'match' });
+
+  /**
+   * Draw a placeholder card while the match loads: `aria-busy`, the `loading` label as the accessible name,
+   * and no participant, result or kick-off content. @default false
+   */
+  public loading = input(false, { transform: booleanAttribute });
 
   /**
    * Which layout to render. `auto` (the default) lets the card's own inline size decide via a container
@@ -165,6 +190,9 @@ export class MatchCardDirective {
    */
   public scoreChange = output<MatchScoreChange>();
 
+  /** The match in effect: the `match` input, or an empty scheduled match while there is none. */
+  public match = computed(() => this.matchInput() ?? PENDING_MATCH);
+
   private badgeLabelsByElement = signal<ReadonlyMap<HTMLElement, () => string>>(new Map());
 
   /** The labels of the `etMatchCardBadge` badges inside the card, in document order. */
@@ -194,6 +222,7 @@ export class MatchCardDirective {
   public isLive = computed(() => this.match().status === 'live');
   public isFinished = computed(() => this.match().status === 'finished');
   public isScheduled = computed(() => this.match().status === 'scheduled');
+  public isCancelled = computed(() => this.match().status === 'cancelled');
 
   /**
    * Whether participants render as short codes. Tied to an explicit `compact`, not to the rendered
@@ -219,14 +248,19 @@ export class MatchCardDirective {
    * this is false for an `outcome` match however many numbers happen to be on it.
    */
   public drawsScore = computed(
-    () => !this.isOutcomeResult() && this.match().homeScore !== null && this.match().awayScore !== null,
+    () =>
+      !this.loading() &&
+      !this.isCancelled() &&
+      !this.isOutcomeResult() &&
+      this.match().homeScore !== null &&
+      this.match().awayScore !== null,
   );
 
   /**
    * Whether the card draws W/L/D letters. Only once the match is over - before that an `outcome`
    * competition has nothing to say about it, and the kick-off carries the card instead.
    */
-  public drawsOutcome = computed(() => this.isOutcomeResult() && this.isFinished());
+  public drawsOutcome = computed(() => !this.loading() && this.isOutcomeResult() && this.isFinished());
 
   /** The winning side's display name, or `null` while the match is undecided or drawn. */
   public winnerName = computed(() => {
@@ -330,18 +364,20 @@ export class MatchCardDirective {
    * is why nothing inside it needs one: a screen reader reads the match, not six unrelated fragments.
    */
   public accessibleName = computed(() =>
-    this.resolvedLabels().matchName({
-      home: this.homeName(),
-      away: this.awayName(),
-      result: this.result(),
-      resultKind: this.match().resultKind,
-      winner: this.winnerName(),
-      startTime: this.formattedStartTime(),
-      status: this.match().status,
-      label: this.label(),
-      badges: this.badgeLabels(),
-      labels: this.resolvedLabels(),
-    }),
+    this.loading()
+      ? this.resolvedLabels().loading
+      : this.resolvedLabels().matchName({
+          home: this.homeName(),
+          away: this.awayName(),
+          result: this.result(),
+          resultKind: this.match().resultKind,
+          winner: this.winnerName(),
+          startTime: this.formattedStartTime(),
+          status: this.match().status,
+          label: this.label(),
+          badges: this.badgeLabels(),
+          labels: this.resolvedLabels(),
+        }),
   );
 
   constructor() {

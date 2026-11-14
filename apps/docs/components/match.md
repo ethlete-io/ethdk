@@ -35,7 +35,7 @@ view-model owned by this library - and an **adapter** maps whatever your backend
 ```ts
 type NormalizedMatch = {
   id: string;
-  status: 'scheduled' | 'live' | 'finished';
+  status: 'scheduled' | 'live' | 'finished' | 'cancelled';
   startTime: Date | null; // null = unscheduled; an invalid Date draws no kick-off
   home: NormalizedMatchParticipant | null; // null = a TBD slot
   away: NormalizedMatchParticipant | null;
@@ -57,6 +57,7 @@ type NormalizedMatchParticipant = {
   subtitle: string | null; // the org behind the roster, the club behind the squad
   emblem: { sources?: (PictureSource | string)[]; defaultSrc?: PictureSource | string | null } | null;
   seed: number | null;
+  country?: { code: string; name: string; flag: NormalizedMedia | null } | null; // flag + name under the name
 };
 ```
 
@@ -218,6 +219,25 @@ badge means: the meta row is hidden from assistive tech, so each badge label joi
 
 The dense row has no meta row, so it draws no badges; their labels stay in the composed name.
 
+## Loading
+
+While the match is still on its way, set `loading`. The card draws skeleton bones in place of both sides,
+sets `aria-busy`, and names itself with the `loading` label (`"Loading match"`) - no participant, result or
+kick-off is drawn, even when `match` already holds a stale one. `match` may be `null` until it arrives.
+
+```html
+<et-match-card [match]="match()" [loading]="query.loading()" />
+```
+
+@example match/match-loading-cancelled 360px
+
+## Cancelled matches
+
+`status: 'cancelled'` draws a `cancelled` tag (`"Cancelled"`) in the meta row, next to the kick-off, and no
+result, even when the match carries scores. Both sides step back to the muted color with dimmed emblems, and no
+winner is emphasized. The composed name ends in the `cancelled` label, so a screen reader hears it too. The
+dense row keeps its meta row for the tag, as it does for the live badge.
+
 ## The card is the link
 
 In a real app a match card is almost always a click target. Rather than owning that, the card puts its whole
@@ -258,7 +278,8 @@ wired to an [overlay opener](/components/overlay-openers) with its own `role` an
 
 | Input                 | Type                                             | Default  | What it does                                                                                           |
 | --------------------- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
-| `match`               | `NormalizedMatch`                                | -        | Required. The match to draw.                                                                           |
+| `match`               | `NormalizedMatch \| null`                        | `null`   | The match to draw. `null` while it has not arrived (pair it with `loading`).                           |
+| `loading`             | `boolean`                                        | `false`  | Draw the skeleton card; see [Loading](#loading).                                                       |
 | `size`                | `'auto' \| 'compact' \| 'expanded' \| 'wide'`    | `'auto'` | Layout; see above.                                                                                     |
 | `showSeeds`           | `boolean`                                        | `false`  | Draw each participant's seeding position when they have one.                                           |
 | `hideNames`           | `boolean`                                        | `false`  | Emblems and results only, no names. The names stay in the accessible name.                             |
@@ -318,6 +339,11 @@ handler and a remembered broken `src` in application code can go.
 The emblem is drawn with `fit="contain"`, so a logo that is not square is letterboxed inside the round frame
 rather than cropped by it.
 
+A participant's `country` renders as a line under the name: its flag (decorative, `alt=""`) and the country
+name, or the name alone when `flag` is `null`. Like the subtitle, it is dropped by `compact` and in a dense row,
+and it is drawn only - never part of the card's composed name. The Ethlete adapter maps no country; set it after
+normalizing.
+
 A participant's `subtitle` renders as a quieter second line under the name - the org behind an esports roster,
 the club behind a squad. It is dropped in a dense row (and by `compact`), where a second line would double
 every row's height.
@@ -345,6 +371,8 @@ provideMatchLabels({
 | `live`           | `'Live'`                    | The live badge                                             |
 | `finished`       | `'Finished'`                | The finished state, where a status word is drawn           |
 | `scheduled`      | `'Scheduled'`               | The not-started state                                      |
+| `cancelled`      | `'Cancelled'`               | The cancelled tag, and the end of a cancelled card's name  |
+| `loading`        | `'Loading match'`           | The card's accessible name while `loading`                 |
 | `scoreSeparator` | `' : '`                     | Between the two scores, in the card name and the breakdown |
 | `versus`         | `'vs'`                      | Between the two sides in the wide row, before a result     |
 | `outcomeWin`     | `'W'`                       | The winning side's letter, for `resultKind: 'outcome'`     |
@@ -368,11 +396,11 @@ Two of them do the composing, and they are where you change phrasing rather than
   card's whole accessible name, taking `resultName`'s output as `result`. The default reads
   `"Grand Final: FC Berlin vs Neon Esports, 2 : 1, 05/02/2026 8:30 PM, Finished"` - which match, who is
   playing, how it stands, when it kicks off, whether it is still going. The kick-off is in the name wherever
-  the card draws it, which is every status but `live`, where the badge takes its place. The labels of the card's
-  `etMatchCardBadge` badges follow at the end.
+  the card draws it, which is every status but `live`, where the badge takes its place. A cancelled match ends
+  in `cancelled` instead of a state word. The labels of the card's `etMatchCardBadge` badges follow at the end.
 
-Both get `labels`, the whole set in effect, and the default `matchName` speaks its `versus`, `live` and
-`finished` - so localizing those three localizes the name without rewriting `matchName`.
+Both get `labels`, the whole set in effect, and the default `matchName` speaks its `versus`, `live`,
+`finished` and `cancelled` - so localizing those localizes the name without rewriting `matchName`.
 
 ## Build your own card
 
@@ -402,12 +430,14 @@ the card and read the state off it.
 | `formattedStartTime()`                        | `string \| null`                | Kick-off in the active locale, `null` for an invalid date |
 | `accessibleName()`                            | `string`                        | The composed name (also bound to the host's `aria-label`) |
 | `badgeLabels()`                               | `string[]`                      | The labels of the `etMatchCardBadge` badges, in DOM order |
-| `isLive()` / `isFinished()` / `isScheduled()` | `boolean`                       | The status, as three predicates                           |
+| `isLive()` / `isFinished()` / `isScheduled()` | `boolean`                       | The status, as predicates                                 |
+| `isCancelled()`                               | `boolean`                       | Whether the match is cancelled (draws no result)          |
+| `loading()`                                   | `boolean`                       | Whether the card waits for its match                      |
 | `showsShortNames()`                           | `boolean`                       | Whether participants render as codes                      |
 | `isInteractive()`                             | `boolean`                       | Whether the card is a click target                        |
 
-The host also carries `data-status`, `data-size`, `data-result-kind`, `data-winner`, `data-interactive` and
-`data-hide-names` - the layout rules are written against those, so your own can be too.
+The host also carries `data-status`, `data-size`, `data-result-kind`, `data-winner`, `data-interactive`,
+`data-hide-names` and `data-loading` (with `aria-busy`) - the layout rules are written against those, so your own can be too.
 
 Four optional parts wire the accessibility that is easy to get wrong:
 
@@ -477,15 +507,32 @@ reuses the featured card's tokens and changes only the arrangement:
 | `--et-match-card-minimal-name-font-size`   | `11px`  | Participant name size, minimal layout                     |
 | `--et-match-card-minimal-score-font-size`  | `12px`  | Score size, minimal layout                                |
 
-The participant primitive has its own three, which apply wherever it is used standalone:
+Typography has its own tokens, so an app can restyle the card's type without overriding a selector. Families
+are unregistered and fall back to `inherit`; weights take a number:
 
-| Token                                | Default | What it sets       |
-| ------------------------------------ | ------- | ------------------ |
-| `--et-match-participant-emblem-size` | `28px`  | The emblem frame   |
-| `--et-match-participant-gap`         | `10px`  | Emblem-to-name gap |
-| `--et-match-participant-font-size`   | `14px`  | The name           |
+| Token                                     | Default   | What it sets                                    |
+| ----------------------------------------- | --------- | ----------------------------------------------- |
+| `--et-match-card-font-family`             | `inherit` | The whole card's font                           |
+| `--et-match-card-score-font-family`       | `inherit` | The scores and W/L/D letters                    |
+| `--et-match-card-meta-font-size`          | `11px`    | The meta row: label, badges, live tag, kick-off |
+| `--et-match-card-versus-font-size`        | `11px`    | The separator between the sides in the wide row |
+| `--et-match-card-games-font-size`         | `11px`    | The per-game breakdown                          |
+| `--et-match-card-name-font-weight`        | `400`     | Participant names                               |
+| `--et-match-card-winner-name-font-weight` | `600`     | The winning side's name                         |
+| `--et-match-card-score-font-weight`       | `600`     | The scores                                      |
+| `--et-match-card-outcome-font-weight`     | `700`     | The W/L/D letters                               |
+| `--et-match-card-status-font-weight`      | `600`     | The live and cancelled tags                     |
 
-Inside a card those three are driven by the card's own density tokens, so set the card's when theming a card.
+The participant primitive has its own tokens, which apply wherever it is used standalone:
+
+| Token                                | Default | What it sets                   |
+| ------------------------------------ | ------- | ------------------------------ |
+| `--et-match-participant-emblem-size` | `28px`  | The emblem frame               |
+| `--et-match-participant-gap`         | `10px`  | Emblem-to-name gap             |
+| `--et-match-participant-font-size`   | `14px`  | The name                       |
+| `--et-match-participant-flag-size`   | `16px`  | The country flag's width (4:3) |
+
+Inside a card the first three are driven by the card's own density tokens, so set the card's when theming a card.
 
 ## Error codes
 

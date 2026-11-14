@@ -11,6 +11,16 @@ export type NormalizedMedia = {
   defaultSrc?: PictureSource | string | null;
 };
 
+/** The country a participant represents, as a national team, a player's nationality, or a club's league. */
+export type NormalizedMatchCountry = {
+  /** An identifier for the country, e.g. an ISO 3166 code (`'DE'`). */
+  code: string;
+  /** The country's display name, drawn next to its flag. */
+  name: string;
+  /** The flag. `null` draws the name alone. */
+  flag: NormalizedMedia | null;
+};
+
 /** One side of a match: a team, a player, a club. `null` on a match stands for a TBD slot. */
 export type NormalizedMatchParticipant = {
   id: string;
@@ -28,13 +38,18 @@ export type NormalizedMatchParticipant = {
   emblem: NormalizedMedia | null;
   /** Seeding position, when the competition has one. */
   seed: number | null;
+  /**
+   * The country this side represents, drawn as a flag and a name under the participant's name. Dropped in a
+   * dense row, like `subtitle`, and not part of the card's accessible name.
+   */
+  country?: NormalizedMatchCountry | null;
 };
 
 /**
- * How far along a match is. Three states, because that is what presentation turns on - an API's
- * richer lifecycle (`preparing`/`published`/`hidden`/…) is the adapter's to collapse.
+ * How far along a match is: the states presentation turns on. An API's richer lifecycle
+ * (`preparing`/`published`/`hidden`/…) is the adapter's to collapse. A `cancelled` match draws no result.
  */
-export type NormalizedMatchStatus = 'scheduled' | 'live' | 'finished';
+export type NormalizedMatchStatus = 'scheduled' | 'live' | 'finished' | 'cancelled';
 
 /** One game of a series (a map, a leg), as its two scores. */
 export type NormalizedGameScore = {

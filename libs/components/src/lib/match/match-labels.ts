@@ -57,6 +57,10 @@ export type MatchLabels = {
   finished: string;
   /** Announced for a match that hasn't started. */
   scheduled: string;
+  /** The tag a cancelled match draws, also announced in its accessible name. */
+  cancelled: string;
+  /** The card's accessible name while it waits for its match (`loading`). */
+  loading: string;
   /** Separates the two scores, e.g. `' : '`. Also used to build the accessible name. */
   scoreSeparator: string;
   /**
@@ -96,6 +100,8 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   live: 'Live',
   finished: 'Finished',
   scheduled: 'Scheduled',
+  cancelled: 'Cancelled',
+  loading: 'Loading match',
   scoreSeparator: ' : ',
   resultName: ({ home, away, kind, winner, separator }) => {
     // Nothing numeric to read: a competition that reports only wins and losses still has an outcome,
@@ -115,7 +121,14 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   matchNumber: (number) => `Match ${number}`,
   matchName: ({ home, away, result, startTime, status, label, badges, labels }) => {
     const kickOff = status === 'live' ? null : startTime;
-    const state = status === 'live' ? labels.live : status === 'finished' ? labels.finished : null;
+    const state =
+      status === 'live'
+        ? labels.live
+        : status === 'finished'
+          ? labels.finished
+          : status === 'cancelled'
+            ? labels.cancelled
+            : null;
     const pairing = `${home} ${labels.versus} ${away}`;
     const matchUp = label ? `${label}: ${pairing}` : pairing;
 
@@ -131,6 +144,8 @@ export const GERMAN_MATCH_LABELS: MatchLabels = {
   live: 'Live',
   finished: 'Beendet',
   scheduled: 'Angesetzt',
+  cancelled: 'Abgesagt',
+  loading: 'Spiel wird geladen',
   scoreSeparator: ' : ',
   resultName: ({ home, away, kind, winner, separator }) => {
     if (home === null || away === null) return winner ? `${winner} hat gewonnen` : 'Unentschieden';
@@ -146,7 +161,14 @@ export const GERMAN_MATCH_LABELS: MatchLabels = {
   matchNumber: (number) => `Spiel ${number}`,
   matchName: ({ home, away, result, startTime, status, label, badges, labels }) => {
     const kickOff = status === 'live' ? null : startTime;
-    const state = status === 'live' ? labels.live : status === 'finished' ? labels.finished : null;
+    const state =
+      status === 'live'
+        ? labels.live
+        : status === 'finished'
+          ? labels.finished
+          : status === 'cancelled'
+            ? labels.cancelled
+            : null;
     const pairing = `${home} ${labels.versus} ${away}`;
     const matchUp = label ? `${label}: ${pairing}` : pairing;
     return [matchUp, result, kickOff, state, ...badges].filter(Boolean).join(', ');

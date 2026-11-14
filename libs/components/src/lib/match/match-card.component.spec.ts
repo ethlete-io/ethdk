@@ -93,6 +93,15 @@ class BadgeHostComponent {
   public highlighted = signal(true);
 }
 
+@Component({
+  template: `<et-match-card [match]="match()" [loading]="loading()" />`,
+  imports: [MATCH_CARD_IMPORTS],
+})
+class LoadingHostComponent {
+  public match = signal<NormalizedMatch | null>(null);
+  public loading = signal(true);
+}
+
 const create = () => mountMatchCard(HostComponent);
 
 describe('MatchCardComponent', () => {
@@ -354,6 +363,75 @@ describe('MatchCardComponent', () => {
       driver.detectChanges();
 
       expect(driver.query('.et-match-card-meta')).toBeNull();
+    });
+  });
+
+  describe('loading', () => {
+    it('draws bones instead of participants, busy and named by the loading label', () => {
+      const driver = mountMatchCard(LoadingHostComponent);
+      const card = driver.card();
+
+      expect(card.getAttribute('aria-busy')).toBe('true');
+      expect(card.hasAttribute('data-loading')).toBe(true);
+      expect(card.getAttribute('aria-label')).toBe('Loading match');
+      expect(driver.queryAll('.et-match-participant-bone')).toHaveLength(2);
+      expect(driver.queryAll('.et-match-participant-name')).toHaveLength(0);
+      expect(driver.query('.et-match-card-meta')).toBeNull();
+    });
+
+    it('draws nothing of a match it already has while loading, and all of it once loading ends', () => {
+      const driver = mountMatchCard(LoadingHostComponent);
+
+      driver.host.match.set(FINISHED);
+      driver.detectChanges();
+
+      expect(driver.queryAll('.et-match-card-score')).toHaveLength(0);
+      expect(driver.text('.et-match-card-announcement')).toBe('');
+
+      driver.host.loading.set(false);
+      driver.detectChanges();
+
+      expect(driver.card().hasAttribute('aria-busy')).toBe(false);
+      expect(driver.queryAll('.et-match-participant-name').map((element) => element.textContent?.trim())).toEqual([
+        'FC Berlin',
+        'Neon Esports',
+      ]);
+      expect(driver.card().getAttribute('aria-label')).toContain('FC Berlin vs Neon Esports');
+    });
+  });
+
+  describe('a cancelled match', () => {
+    const cancelled = (driver: MatchCardDriver<HostComponent>) => {
+      driver.host.match.set({ ...FINISHED, status: 'cancelled', winnerSide: null });
+      driver.detectChanges();
+    };
+
+    it('draws the cancelled tag and no result, even with scores on the match', () => {
+      const driver = create();
+
+      cancelled(driver);
+
+      expect(driver.text('.et-match-card-cancelled')).toBe('Cancelled');
+      expect(driver.queryAll('.et-match-card-score')).toHaveLength(0);
+      expect(driver.text('.et-match-card-announcement')).toBe('');
+      expect(driver.card().getAttribute('data-status')).toBe('cancelled');
+    });
+
+    it('says it is cancelled in the composed name', () => {
+      const driver = create();
+
+      cancelled(driver);
+
+      expect(driver.card().getAttribute('aria-label')).toBe('Match 3: FC Berlin vs Neon Esports, 2026, Cancelled');
+    });
+
+    it('drops the winner emphasis', () => {
+      const driver = create();
+
+      driver.host.match.set({ ...FINISHED, status: 'cancelled' });
+      driver.detectChanges();
+
+      expect(driver.card().hasAttribute('data-winner')).toBe(false);
     });
   });
 

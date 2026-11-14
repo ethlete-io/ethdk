@@ -101,6 +101,54 @@
     initial-value: 12px;
   }
 
+  @property --et-match-card-meta-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 11px;
+  }
+
+  @property --et-match-card-versus-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 11px;
+  }
+
+  @property --et-match-card-games-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 11px;
+  }
+
+  @property --et-match-card-name-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 400;
+  }
+
+  @property --et-match-card-winner-name-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 600;
+  }
+
+  @property --et-match-card-score-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 600;
+  }
+
+  @property --et-match-card-outcome-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 700;
+  }
+
+  @property --et-match-card-status-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 600;
+  }
+
   .et-match-card {
     container-type: inline-size;
     container-name: et-match-card;
@@ -135,6 +183,7 @@
     padding: var(--_et-match-card-padding);
     background: var(--et-surface-background-solid, transparent);
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    font-family: var(--et-match-card-font-family, inherit);
     border-radius: inherit;
   }
 
@@ -204,7 +253,7 @@
   /* The dense row is two rows and nothing else — its round is named by the column it sits in and its
      kick-off by the list around it. The one exception is a live badge, which is the whole reason someone
      is looking at the thing. */
-  .et-match-card:where([data-status='live']) .et-match-card-content {
+  .et-match-card:where([data-status='live'], [data-status='cancelled']) .et-match-card-content {
     --_et-match-card-meta-display: flex;
   }
 
@@ -229,7 +278,7 @@
     justify-content: space-between;
     gap: 8px;
     min-inline-size: 0;
-    font-size: 11px;
+    font-size: var(--et-match-card-meta-font-size);
     line-height: 1.4;
     color: var(--et-surface-color-muted-solid, currentColor);
   }
@@ -263,12 +312,27 @@
     align-items: center;
     gap: 5px;
     padding-inline: 6px;
-    font-weight: 600;
+    font-weight: var(--et-match-card-status-font-weight);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--et-theme-color-ink-solid, currentColor);
     background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 14%, transparent);
     border-radius: 4px;
+  }
+
+  .et-match-card-cancelled {
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline: 6px;
+    font-weight: var(--et-match-card-status-font-weight);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+    border-radius: 4px;
+  }
+
+  .et-match-card-badges ~ .et-match-card-cancelled {
+    margin-inline-start: 0;
   }
 
   .et-match-card-live-dot {
@@ -347,7 +411,7 @@
     display: var(--_et-match-card-versus-display, none);
     flex: none;
     padding-inline: 4px;
-    font-size: 11px;
+    font-size: var(--et-match-card-versus-font-size);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -358,8 +422,9 @@
   .et-match-card-outcome {
     flex: none;
     min-inline-size: 1.2em;
+    font-family: var(--et-match-card-score-font-family, inherit);
     font-size: var(--_et-match-card-score-font-size);
-    font-weight: 700;
+    font-weight: var(--et-match-card-outcome-font-weight);
     line-height: 1.2;
     color: var(--_et-match-card-side-color);
     text-align: center;
@@ -379,14 +444,20 @@
   /* A participant's second line is the first thing a dense row has no space for — it would make every row
      two lines tall, which is the whole point of the dense row gone. Off by default here, back on in the
      roomier layouts. The primitive keeps showing it when used standalone. */
-  .et-match-card-content .et-match-participant-subtitle {
+  .et-match-card-content .et-match-participant-subtitle,
+  .et-match-card-content .et-match-participant-country {
     display: var(--_et-match-card-subtitle-display, none);
+  }
+
+  .et-match-card-content .et-match-participant-name {
+    font-weight: var(--et-match-card-name-font-weight);
   }
 
   .et-match-card-score {
     flex: none;
+    font-family: var(--et-match-card-score-font-family, inherit);
     font-size: var(--_et-match-card-score-font-size);
-    font-weight: 600;
+    font-weight: var(--et-match-card-score-font-weight);
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
     color: var(--_et-match-card-side-color);
@@ -410,8 +481,23 @@
     --_et-match-card-side-marker-display: block;
 
     .et-match-participant-name {
-      font-weight: 600;
+      font-weight: var(--et-match-card-winner-name-font-weight);
     }
+  }
+
+  /* Called off: no result to emphasize, so both sides step back and neither gets a bar. */
+  .et-match-card:where([data-status='cancelled']) .et-match-card-side {
+    --_et-match-card-side-color: var(--et-surface-color-muted-solid, currentColor);
+    --_et-match-card-side-marker-display: none;
+  }
+
+  .et-match-card:where([data-status='cancelled']) .et-match-participant-emblem {
+    opacity: 0.6;
+  }
+
+  .et-match-card-content .et-match-card-skeleton {
+    display: grid;
+    gap: var(--_et-match-card-gap);
   }
 
   .et-match-card-games {
@@ -420,7 +506,7 @@
     gap: 4px;
     margin: 0;
     padding: 0;
-    font-size: 11px;
+    font-size: var(--et-match-card-games-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
     list-style: none;
   }

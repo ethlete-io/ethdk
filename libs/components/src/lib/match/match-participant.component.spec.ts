@@ -242,6 +242,46 @@ describe('MatchParticipantComponent', () => {
     });
   });
 
+  describe('the country', () => {
+    const GERMANY = { code: 'DE', name: 'Germany', flag: { defaultSrc: '/flags/de.svg' } };
+
+    it('draws a decorative flag beside the country name', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, country: GERMANY });
+      fixture.detectChanges();
+
+      const country = host(fixture).querySelector('.et-match-participant-country');
+
+      expect(country?.querySelector('.et-match-participant-country-name')?.textContent?.trim()).toBe('Germany');
+      expect(country?.querySelector('img')?.getAttribute('alt')).toBe('');
+    });
+
+    it('draws the name alone without a flag', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, country: { ...GERMANY, flag: null } });
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-country img')).toBeNull();
+      expect(host(fixture).querySelector('.et-match-participant-country')?.textContent?.trim()).toBe('Germany');
+    });
+
+    it('is dropped when compact, like the subtitle', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, country: GERMANY });
+      fixture.componentInstance.compact.set(true);
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-country')).toBeNull();
+    });
+
+    it('is absent for a participant without one', () => {
+      expect(host(create()).querySelector('.et-match-participant-country')).toBeNull();
+    });
+  });
+
   describe('on an interactive host', () => {
     const link = () => {
       const fixture = TestBed.createComponent(LinkHostComponent);

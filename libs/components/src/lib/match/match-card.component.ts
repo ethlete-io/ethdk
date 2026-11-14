@@ -56,6 +56,7 @@ import { MatchScoreComponent } from './match-score.component';
         'interactive',
         'labels',
         'animateScoreChanges',
+        'loading',
       ],
       outputs: ['scoreChange'],
     },
