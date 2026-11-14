@@ -340,7 +340,7 @@ export class SketchesComponent {
         : previous.value,
   });
   private cropGroups = computed(() => (this.transposed() ? cropGroupsOf(this.shownRows()) : []));
-  private screenMode = computed(() => this.cropGroups().length > 0);
+  protected screenMode = computed(() => this.cropGroups().length > 0);
   protected groupOfState = computed(
     () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),
   );

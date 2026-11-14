@@ -452,6 +452,15 @@ describe('SketchesComponent', () => {
     expect(unsized.querySelector('[data-sk-matrix]')).toBeNull();
   });
 
+  it('sizes the world of a wide part to its matrix, not to the list, like the design', async () => {
+    const wide = ROWS.map((row) => ({ ...row, width: 4000 }));
+    const root: HTMLElement = (await render({ rows: wide })).nativeElement;
+    const world = root.querySelector<HTMLElement>('[data-sk-matrix]')?.parentElement;
+
+    expect(world?.classList.contains('w-max')).toBe(true);
+    expect(world?.classList.contains('min-w-full')).toBe(false);
+  });
+
   it('keeps a variant name in the fold label on one line so no letter is left alone', () => {
     const label = LABELS.sameVariants(['Variante a', 'Variante b']);
 
@@ -940,6 +949,17 @@ describe('SketchesComponent', () => {
       expect(root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns).not.toMatch(/auto$/);
       expect(frame?.parentElement?.classList.contains('self-start')).toBe(true);
       expect(edges?.style.transform).toBe('scale(1)');
+    });
+
+    it('draws the stack edges below a shot-high spacer in one scaled box under the frame, like the screen design', async () => {
+      const root: HTMLElement = (await render({ rows: cropRows, camera: '100' })).nativeElement;
+      const frame = root.querySelector<HTMLElement>('[data-sk-frame="x open"]');
+      const edges = root.querySelector('[data-sk-state="open"] [data-sk-crop-stack]')?.parentElement;
+
+      expect(frame?.classList.contains('z-1')).toBe(true);
+      expect(edges?.classList.contains('absolute')).toBe(true);
+      expect((edges?.firstElementChild as HTMLElement | null)?.style.height).toBe(frame?.style.height);
+      expect(root.querySelector('[data-sk-matrix]')?.parentElement?.classList.contains('min-w-full')).toBe(true);
     });
 
     it('switches one crop group to the whole screen and back', async () => {

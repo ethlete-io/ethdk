@@ -159,8 +159,9 @@
         <div
           #world
           [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
+          [class.min-w-full]="!transposed() || screenMode()"
           [style.transform]="canvas.transform()"
-          class="flex min-w-full origin-top-left flex-col gap-space-2 pb-16"
+          class="flex origin-top-left flex-col gap-space-2 pb-16"
         >
           @if (transposed()) {
             <div
@@ -531,7 +532,7 @@
     @let stacked = !!cropTransform && !!mark && (groupOfState().get(item.state)?.states?.length ?? 0) > 1;
     <div
       [class]="stacked ? 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]' : ''"
-      class="row-start-2 flex min-w-0 flex-col self-start"
+      class="relative row-start-2 flex min-w-0 flex-col self-start"
     >
       <div
         #frame
@@ -540,7 +541,7 @@
         [attr.data-sk-frame]="key"
         [attr.data-selected]="key === selectedFrame() ? '' : null"
         [attr.data-sk-cropped]="cropTransform ? '' : null"
-        [class]="stacked ? '' : 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]'"
+        [class]="stacked ? 'z-1' : 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]'"
         class="relative overflow-clip [overflow-clip-margin:8px]"
       >
         <div
@@ -582,16 +583,20 @@
         ></span>
       </div>
       @if (stacked) {
-        <div [style.height.px]="STACK_INSETS.length * 20 * scale()">
-          <div [style.width.px]="row.width" [style.transform]="'scale(' + scale() + ')'" class="origin-top-left">
-            @for (inset of STACK_INSETS; track inset) {
-              <div
-                [style.margin-inline.px]="inset"
-                class="h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
-                data-sk-crop-stack
-              ></div>
-            }
-          </div>
+        <div [style.height.px]="STACK_INSETS.length * 20 * scale()"></div>
+        <div
+          [style.width.px]="row.width"
+          [style.transform]="'scale(' + scale() + ')'"
+          class="absolute top-0 left-0 origin-top-left"
+        >
+          <div [style.height.px]="shownHeight"></div>
+          @for (inset of STACK_INSETS; track inset) {
+            <div
+              [style.margin-inline.px]="inset"
+              class="h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+              data-sk-crop-stack
+            ></div>
+          }
         </div>
       }
     </div>
