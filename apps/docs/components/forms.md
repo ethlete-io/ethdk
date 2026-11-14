@@ -809,11 +809,11 @@ opens a picker, or selects an option.
 
 ## Coming from reactive forms {#coming-from-reactive-forms}
 
-The controls have no `ControlValueAccessor`, so `[formControl]`, `formControlName` and
-`[(ngModel)]` do not bind to them. Each control implements the signal-forms
-`FormValueControl` (or `FormCheckboxControl`) contract instead: a `value` (or `checked`)
-model the `[formField]` directive reads and writes, plus the field state - `disabled`,
-`readonly`, `required`, `invalid`, `touched` - as inputs.
+Each control implements the signal-forms `FormValueControl` (or `FormCheckboxControl`)
+contract: a `value` (or `checked`) model the `[formField]` directive reads and writes, plus
+the field state - `disabled`, `readonly`, `required`, `invalid`, `touched` - as inputs. Signal
+forms are the recommended path for new code. A `FormControl` still binds through Angular's
+custom control mode - see [Reactive forms on `et-*` controls](#reactive-forms-on-et-controls).
 
 A `@ethlete/cdk` text field on reactive forms:
 
@@ -884,12 +884,60 @@ What moves:
 
 Names of the schema rules are Angular's; check them against the signal forms version you have installed.
 
-### Not a bridge: reactive forms into `et-*` controls
+### Reactive forms on `et-*` controls {#reactive-forms-on-et-controls}
 
-Angular's reactive-forms and signal-forms interop is **not a supported way to bind a `FormControl` to an
-`et-*` control**. The controls have no `ControlValueAccessor`, and this library does not wrap, adapt or
-test any interop layer around them. A screen is either reactive forms with the cdk controls, or signal forms
-with the components controls - never a `FormControl` on an `et-*` control.
+`[formControl]`, `formControlName` and `[(ngModel)]` bind directly to every `et-*` control. The controls
+have no `ControlValueAccessor`; Angular's `NgControl` drives them in its custom control mode instead and
+writes the value (or `checked`), `touched`, `dirty`, `invalid`, `disabled`, `required` and `errors` into
+the control. Typing, clicking and blurring flow back into the `FormControl`, and `reset()` restores the
+untouched, pristine state.
+
+```ts
+import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+
+@Component({ imports: [FORM_FIELD_IMPORTS, INPUT_IMPORTS, ReactiveFormsModule] })
+export class SignupComponent {
+  protected email = new FormControl('', [Validators.required, Validators.email]);
+}
+```
+
+```html
+<et-form-field>
+  <et-label>E-mail</et-label>
+  <et-input [formControl]="email" type="email" />
+</et-form-field>
+```
+
+Put every validator on the `FormControl`. Template validators do not work in this mode:
+
+| Gap                                                                                    | Workaround                                                                             |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| A template `required` beside `[formControl]` switches itself off: no marker, no error. | `Validators.required` on the `FormControl`, no `required` in the template.             |
+| With `[(ngModel)]`, a template `required` shows the marker but never validates.        | Use `[formControl]` with `Validators.required`, or signal forms.                       |
+| `Validators.requiredTrue` on a checkbox or switch shows the error but no marker.       | Add `Validators.required` beside it: `[Validators.required, Validators.requiredTrue]`. |
+
+Error texts:
+
+- A bare `et-checkbox` or `et-switch` renders no error text. Wrap it in an
+  [`et-choice-field`](/components/choice-inputs) to show the message.
+- The built-in texts fit `required`, `email` and `pattern`. Reactive forms report the other kinds in
+  their own spelling and shape - `minlength` with `{ requiredLength, actualLength }`, `maxlength`,
+  `min` and `max` (whose built-in text then lacks the bound), and any key you pass to `setErrors()`.
+  Map them with a [custom error resolver](#custom-error-messages); the reactive error's object
+  arrives as `error.context`:
+
+```ts
+provideFormErrorMessageResolver((error) => {
+  const context = (error as { context?: unknown }).context;
+
+  if (error.kind === 'minlength')
+    return `At least ${(context as { requiredLength: number }).requiredLength} characters`;
+  if (error.kind === 'backend') return String(context);
+
+  return null;
+});
+```
 
 ### Migrating screen by screen
 
