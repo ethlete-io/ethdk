@@ -884,6 +884,21 @@ narrow-below-fit, picked, sketch-only-points, multi-part, multi-part-many (4525/
 withdrawn-shown 4525 to 131, withdrawn-hidden 59791 to 59779, unchanged-open 9820 to 9807, unchanged-matrix 34639 to
 34623, unchanged-matrix-open 40865 to 40964, narrow-far-out 29481 to 24954, change-crop 14054 to 9510, change-crop-whole
 29041 to 29182; unchanged: zoomed-page 82405, sticky-names 58240, below-fit 63183, far-out 11733; comparing ok.
+(B) Fold specs of 78af9a6d5 bitten in a scratch copy with the da9d62b3d `sketches.component.ts` and `studio-labels.ts`:
+"folds the states neither old nor new of an @edit sketch changes" and "names a folded variant by its label like its row
+head" go red (with 4 label specs), all 51 green on the current code; nothing to strengthen, no commit. (C) withdrawn fold: `foldedStates` folds by `listedRows()` plus the withdrawn rows it hides. Attempt 1 passed
+`[...listedRows(), ...rows().filter(isWithdrawn)]`: comparing and withdrawn-hidden ok (2 of 2), but paused-reason DIFF
+52630 and new-part DIFF 14599 (2 of 2, ok with the f56f9a01c component swapped in), though neither state has a withdrawn
+row, so the folded set was the same (new-part's diff shows the variant columns shifted).
+Attempt 2: a `hiddenWithdrawnRows` computed that counts two empty lists as equal, and `foldedStates` passes
+`listedRows()` itself while it is empty; `compare --state comparing,withdrawn-hidden,paused-reason,new-part` 2 of 2 runs
+all ok, but the full compare 2 of 2 runs: comparing DIFF 51440 (as in B502d), withdrawn-hidden ok, 19 ok. Both attempts
+reverted (no commit; spec "keeps a state a hidden withdrawn variant changes unfolded" was red on f56f9a01c, 2 folded
+not 1, green with either attempt, reverted with it). Cause: a `foldedStates` that re-runs on anything beyond
+`listedRows()` moves the fit result of comparing in a full compare and of paused-reason/new-part, though the folded set
+stays equal; the state result also depends on the run order (targeted vs full). Suspect: the fit pass measures before
+the fold re-layout settles (B502d's head-note race). Open: make the fit pass settle-safe first (`noteFit`/fit after the
+last layout), then redo the fold. Not verified: CI, the 7 FAILED states.
 
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
