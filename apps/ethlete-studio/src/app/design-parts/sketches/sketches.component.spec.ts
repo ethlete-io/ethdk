@@ -844,4 +844,83 @@ describe('SketchesComponent', () => {
       expect(root.querySelectorAll('[data-sk-state="hover"]')).toHaveLength(2);
     });
   });
+  it('fits again when the list gets its width after the first measure while the camera is in Fit', async () => {
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+    });
+    const observers: (() => void)[] = [];
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          observers.push(() => callback.call(this, [{ target: listOf() }] as never));
+        }
+        observe = () => undefined;
+        disconnect = () => undefined;
+        unobserve = () => undefined;
+      },
+    );
+    let width = 0;
+    let root: HTMLElement | null = null;
+    const listOf = () => root?.querySelector('[data-sk-rows]');
+
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? width : 0;
+    });
+    const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
+    const fixture = await render({ rows: wide, camera: 'fit' });
+
+    root = fixture.nativeElement;
+    const columnWidth = () =>
+      parseFloat(
+        root
+          ?.querySelector<HTMLElement>('[data-sk-matrix]')
+          ?.style.gridTemplateColumns.match(/repeat\(4, ([\d.]+)px\)/)?.[1] ?? '0',
+      );
+    const before = columnWidth();
+
+    width = 12000;
+    observers.forEach((notify) => notify());
+    await fixture.whenStable();
+
+    expect(before).toBe(0);
+    expect(columnWidth()).toBe(2978);
+  });
+
+  it('fits the grid again when the viewport widens', async () => {
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+    });
+    const observers: (() => void)[] = [];
+    let root: HTMLElement | null = null;
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: (entries: unknown) => void) {
+          observers.push(() => callback([{ target: root?.querySelector('[data-sk-rows]') }]));
+        }
+        observe = () => undefined;
+        disconnect = () => undefined;
+        unobserve = () => undefined;
+      },
+    );
+    let width = 300;
+
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? width : this.hasAttribute('data-sk-stage') ? width - 100 : 0;
+    });
+    const fixture = await render({ camera: 'fit' });
+
+    root = fixture.nativeElement;
+    const chip = () => textOf(root?.querySelector('ethlete-zoom-chip'));
+    const before = chip();
+
+    width = 1200;
+    observers.forEach((notify) => notify());
+    await fixture.whenStable();
+    expect(before).toContain('33');
+    expect(chip()).toContain('100');
+  });
 });
