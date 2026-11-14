@@ -472,6 +472,17 @@ describe('SelectDirective', () => {
     expect(driver.host.value()).toBeNull();
   });
 
+  it('keeps the selection on Escape while closed and leaves the key to an enclosing handler', () => {
+    driver.host.value.set('banana');
+    driver.detectChanges();
+
+    const event = pressKey(driver.fixture.nativeElement.querySelector('[etselecttrigger]') as HTMLElement, 'Escape');
+
+    expect(driver.select.open()).toBe(false);
+    expect(driver.host.value()).toBe('banana');
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it('selects via closed typeahead without opening', () => {
     driver.press('b');
 
@@ -982,6 +993,23 @@ describe('SelectDirective (search)', () => {
 
     expect(driver.host.value()).toBe('banana');
     expect(driver.select.open()).toBe(false);
+  });
+
+  it('keeps the selection and its label on Escape in the closed search input', () => {
+    driver.host.value.set('banana');
+    driver.detectChanges();
+
+    const search = driver.fixture.nativeElement.querySelector('input[etSelectSearch]') as HTMLInputElement;
+    const label = search.value;
+
+    expect(label).not.toBe('');
+
+    const event = driver.pressInSearch('Escape');
+
+    expect(driver.select.open()).toBe(false);
+    expect(driver.host.value()).toBe('banana');
+    expect(search.value).toBe(label);
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it('clears the query on the first Escape and closes on the second', async () => {
