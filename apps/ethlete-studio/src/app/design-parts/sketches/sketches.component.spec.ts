@@ -520,6 +520,17 @@ describe('SketchesComponent', () => {
     expect(root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-note]')?.style.fontSize).toBe('12px');
   });
 
+  it('sizes a hidden head to its tag after the fit pass', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') || this.hasAttribute('data-sk-stage') ? LIST_WIDTH : 0;
+    });
+    const root: HTMLElement = (await render({ camera: { zoom: 0.1, x: 0, y: 0 } })).nativeElement;
+    const section = root.querySelector<HTMLElement>('section[data-sk-row="x"]');
+
+    expect(section?.hasAttribute('data-sk-head-hidden')).toBe(true);
+    expect(section?.style.gridTemplateColumns).toBe('max-content minmax(0, 1fr)');
+  });
+
   it('fits the matrix again when a font loads after the first fit', async () => {
     const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
     const fixture = await render({ rows: wide, camera: 'fit' });
@@ -918,6 +929,17 @@ describe('SketchesComponent', () => {
       );
       expect(root.querySelectorAll('[data-sk-state="open"] [data-sk-crop-stack]')).toHaveLength(2);
       expect(root.querySelectorAll('[data-sk-state="moved"] [data-sk-crop-stack]')).toHaveLength(0);
+    });
+
+    it('draws the crop matrix like the screen design: no first change, no fold column, scaled stack edges', async () => {
+      const root: HTMLElement = (await render({ rows: cropRows, camera: '100' })).nativeElement;
+      const frame = root.querySelector<HTMLElement>('[data-sk-frame="x open"]');
+      const edges = root.querySelector('[data-sk-state="open"] [data-sk-crop-stack]')?.parentElement;
+
+      expect(root.querySelector('[data-sk-first-change]')).toBeNull();
+      expect(root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns).not.toMatch(/auto$/);
+      expect(frame?.parentElement?.classList.contains('self-start')).toBe(true);
+      expect(edges?.style.transform).toBe('scale(1)');
     });
 
     it('switches one crop group to the whole screen and back', async () => {

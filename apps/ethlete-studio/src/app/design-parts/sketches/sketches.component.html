@@ -531,7 +531,7 @@
     @let stacked = !!cropTransform && !!mark && (groupOfState().get(item.state)?.states?.length ?? 0) > 1;
     <div
       [class]="stacked ? 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]' : ''"
-      class="row-start-2 flex min-w-0 flex-col"
+      class="row-start-2 flex min-w-0 flex-col self-start"
     >
       <div
         #frame
@@ -582,14 +582,17 @@
         ></span>
       </div>
       @if (stacked) {
-        @for (inset of STACK_INSETS; track inset) {
-          <div
-            [style.margin-inline.px]="inset * scale()"
-            [style.height.px]="20 * scale()"
-            class="rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
-            data-sk-crop-stack
-          ></div>
-        }
+        <div [style.height.px]="STACK_INSETS.length * 20 * scale()">
+          <div [style.width.px]="row.width" [style.transform]="'scale(' + scale() + ')'" class="origin-top-left">
+            @for (inset of STACK_INSETS; track inset) {
+              <div
+                [style.margin-inline.px]="inset"
+                class="h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+                data-sk-crop-stack
+              ></div>
+            }
+          </div>
+        </div>
       }
     </div>
   </div>

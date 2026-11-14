@@ -340,6 +340,7 @@ export class SketchesComponent {
         : previous.value,
   });
   private cropGroups = computed(() => (this.transposed() ? cropGroupsOf(this.shownRows()) : []));
+  private screenMode = computed(() => this.cropGroups().length > 0);
   protected groupOfState = computed(
     () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),
   );
@@ -368,9 +369,7 @@ export class SketchesComponent {
   });
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
-  protected headColumns = computed(() =>
-    this.headHidden() ? 'max-content minmax(0, 1fr)' : `${(HEAD_WIDTH * this.noteSize()) / NOTE_TEXT}px minmax(0, 1fr)`,
-  );
+  protected headColumns = computed(() => this.headColumnsAt(this.noteSize()));
   protected labelFont = computed(() => textAt(LABEL_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected labelSize = computed(() => (this.labelFont() < MIN_LABEL ? null : this.labelFont()));
   protected shownStatus = computed(() =>
@@ -423,9 +422,7 @@ export class SketchesComponent {
   );
   protected matrixTop = computed(() => (this.sameRows().length > 0 && this.sameOpen() ? 2 : 1));
   protected sameColumn = computed(() => this.changedRows().length + 2);
-  protected matrixColumns = computed(
-    () => `max-content repeat(${this.matrixRows().length}, ${this.widest() * this.scale()}px) auto`,
-  );
+  protected matrixColumns = computed(() => this.matrixColumnsAt(this.matrixRows().length, this.scale()));
   protected percent = computed(() => {
     return Math.round(this.shownZoom() * 100);
   });
@@ -593,7 +590,9 @@ export class SketchesComponent {
   }
 
   protected firstChangeOf(row: SketchRow) {
-    return isBaseRow(row) || isPending(row) ? null : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
+    return isBaseRow(row) || isPending(row) || this.screenMode()
+      ? null
+      : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
   }
 
   protected pinOf(key: string) {
@@ -661,6 +660,14 @@ export class SketchesComponent {
     return scale;
   }
 
+  private headColumnsAt(note: number) {
+    return note < MIN_LABEL ? 'max-content minmax(0, 1fr)' : `${(HEAD_WIDTH * note) / NOTE_TEXT}px minmax(0, 1fr)`;
+  }
+
+  private matrixColumnsAt(columns: number, scale: number) {
+    return `max-content repeat(${columns}, ${this.widest() * scale}px)${this.screenMode() ? '' : ' auto'}`;
+  }
+
   private matrixFit(matrix: HTMLElement, { columns, list, sections, fold }: FitDom) {
     const first = sections[0];
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
@@ -682,12 +689,12 @@ export class SketchesComponent {
     for (const gutter of gutters) setStyle(gutter, { fontSize: `${note}px` });
     if (matrix) {
       setStyle(matrix, {
-        gridTemplateColumns: `max-content repeat(${columns}, ${this.widest() * scale}px) auto`,
+        gridTemplateColumns: this.matrixColumnsAt(columns, scale),
       });
     }
 
     for (const section of matrix ? [] : sections) {
-      setStyle(section, { gridTemplateColumns: `${(HEAD_WIDTH * note) / NOTE_TEXT}px minmax(0, 1fr)` });
+      setStyle(section, { gridTemplateColumns: this.headColumnsAt(note) });
     }
     for (const element of notes) setStyle(element, { fontSize: `${note}px` });
     for (const element of labels) setStyle(element, { fontSize: `${label}px` });
