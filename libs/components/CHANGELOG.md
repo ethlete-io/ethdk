@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.84
+
+### Minor Changes
+
+- Add the `--et-form-field-supporting-inset` token to `et-form-field`. It sets the inline-start inset of the static label, hint, errors, warnings and description. It defaults to the control's padding-inline plus border width; set `0px` to align them with the frame edge.
+- `et-match-card` takes badges: mark an element inside the card with `etMatchCardBadge="<label>"` and it is drawn in the meta row, while its label joins the card's accessible name (`matchName` gets `badges`).
+- `et-match-card` gains a `loading` skeleton state (`match` may be `null`), a `cancelled` status, font tokens (`--et-match-card-*-font-*`), and participants take an optional `country` drawn as a flag and name.
+
+### Patch Changes
+
+- A loading `et-menu-item` that triggers a submenu no longer opens it on click, hover or ArrowRight.
+
 ## 1.0.0-next.83
 
 ### Minor Changes

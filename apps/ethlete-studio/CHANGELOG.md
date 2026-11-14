@@ -1,5 +1,16 @@
 # ethlete-studio
 
+## 0.2.0-next.19
+
+### Patch Changes
+
+- The disclosure takes a `hug` option that sizes its toggle to the label instead of the full row; the sketches fold toggle uses it in place of the `min-w-0` wrapper.
+- The sketches matrix of a wide part is as wide as its columns instead of the whole list, and the stacked crop edges sit in one scaled box under the frame, like the design.
+- The sketches screen crop matrix draws no first-change mark and no empty fold column, its stacked frame keeps its own height with scaled edges, and a hidden row head sizes to its tag at a far zoom.
+- The build-ready footer shows "Sketch öffnen" beside the status whenever a direct edit blocks the part, instead of only inside the opened Gründe list.
+- When the design server listens but does not answer for 30 seconds, the Studio start screen says "Design-Server antwortet nicht" with its URL and a restart button, keeps asking, and opens the system view once it answers.
+- At a user zoom the sketch view keeps its row or column layout when the panel hides or the window resizes, so the frames no longer swap under the camera.
+
 ## 0.2.0-next.18
 
 ### Patch Changes
