@@ -3420,6 +3420,7 @@ Side: user-facing, after B249 (ADR 0269).
 882\. Linux builder (2026-11-11, B249 5c-2 live): the merge view of an edit sketch lists nothing under "Geändert".
 Suspect: the merge view reads the changed list from the variant compare, which an edit sketch does not feed. Tool fix: an
 e2e case on an edit sketch merge view asserts the changed states. Side: B249 follow-up, after 5c.
+882 as built (2026-11-14): fixed in 487e24844; e2e 4c asserts Geändert rows with outlines, 3/3 plain + hold 14000 pass, 7 rows (7 outlined). Not bitten against the parent of 487e24844 (finding 890).
 
 884\. Linux builder (2026-11-11): CI red twice in one evening from apt, not from code: 04aebf37c at `yarn playwright install
 --with-deps chromium` in about every job, 605ca993d at the Rust host apt fetch (404 for libsoup-3.0-dev_3.6.6-1ubuntu0.1;
@@ -3530,6 +3531,7 @@ run before and after a token change.
 (`withdrawn-hidden` / `-shown`) fail with "design draws no such element"; the props compare cannot check withdrawn,
 agent, fold, question or port. Suspect: the design lacks elements the app draws, or the compare cannot match them. Probe
 first: which side is wrong per row. Lesson: the props compare has no answer for app-only elements. Queue: Mac, after 909.
+910 closed (2026-11-14): group A design gap (ff1213561); group B app defect, built as 922 (a84c7b94b); `design actions pages/sketches --state withdrawn-hidden|-shown` reports no failure.
 
 911\. Mac builder (2026-11-12 night, after 905): `apps/ethlete-studio/src/app/design-parts/inbox/inbox-sample.ts` and
 `inbox.component.html` still hold the human's real name. Lesson: the person-name lint does not cover app sample data,
