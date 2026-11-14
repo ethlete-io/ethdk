@@ -309,6 +309,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     fitAt = fitScale();
     const scale = mode === 'fit' ? fitAt : mode;
     apply(scale);
+    pan(0, 0);
     if (label) label.textContent = `${Math.round(scale * 100)} %`;
   };
 
