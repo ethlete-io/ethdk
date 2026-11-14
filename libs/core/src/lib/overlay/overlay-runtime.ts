@@ -479,10 +479,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
+          const originElement = getOriginElement();
+          const onOrigin = !!originElement && originElement.contains(target);
+          if (onOrigin && closeOnOutsidePointer === 'except-origin') {
+            return;
+          }
+
           overlayRef.close(undefined, 'outside-pointer');
 
-          const originElement = getOriginElement();
-          if (originElement && originElement.contains(target)) {
+          if (originElement && onOrigin) {
             const swallowReopenClick = (clickEvent: MouseEvent) => {
               disarmReopenSwallow();
 

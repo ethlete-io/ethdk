@@ -134,6 +134,31 @@ describe('overlay layer scenarios', () => {
     origin.remove();
   });
 
+  it('leaves a press on the origin and its click to the origin when outside presses spare it', () => {
+    const s = scenario();
+    const origin = createOrigin();
+    const ref = open(s, {
+      modal: false,
+      hasBackdrop: false,
+      closeOnOutsidePointer: 'except-origin',
+      positionStrategy: anchoredOverlayPosition({ referenceElement: origin }),
+    });
+    const sources = closeSources(ref);
+
+    press(origin);
+    s.flush();
+
+    expect(sources).toEqual([]);
+    expect(click(origin).defaultPrevented).toBe(false);
+
+    press(document.body);
+    s.flush();
+
+    expect(sources).toEqual(['outside-pointer']);
+
+    origin.remove();
+  });
+
   it('releases the document when the app goes away between the closing press and its click', () => {
     const s = scenario();
     const origin = createOrigin();

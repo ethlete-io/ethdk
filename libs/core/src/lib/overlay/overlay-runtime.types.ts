@@ -134,7 +134,11 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
   autoFocus?: OverlayRuntimeAutoFocusTarget | string | false;
   restoreFocus?: boolean;
   closeOnEscape?: boolean;
-  closeOnOutsidePointer?: boolean;
+  /**
+   * Closes the overlay on a pointer press outside its pane. `'except-origin'` leaves a press on the
+   * anchored origin to the origin's own click handler, which then sees the click.
+   */
+  closeOnOutsidePointer?: boolean | 'except-origin';
   /**
    * Marks an overlay that never owns the interaction - a tooltip, a hover card, a drag preview.
    * A passive overlay is skipped when the runtime looks for the top-most layer, so the overlay
