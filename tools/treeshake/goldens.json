@@ -30,11 +30,11 @@
     },
     "components-floor": {
       "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
-      "gzip": 3036
+      "gzip": 3043
     },
     "query-devtools-panel": {
       "entry": "import { QueryDevtoolsComponent } from '@ethlete/query-devtools';\nconsole.log(QueryDevtoolsComponent);",
-      "gzip": 199389
+      "gzip": 200301
     },
     "query-devtools-lazy": {
       "entry": "import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';\nconsole.log(QueryDevtoolsLazyComponent);",
@@ -48,139 +48,139 @@
     },
     "bracket-single-elimination": {
       "entry": "import { BracketComponent, singleEliminationBracketLayout } from '@ethlete/components';\nconsole.log(BracketComponent, singleEliminationBracketLayout());",
-      "gzip": 20200
+      "gzip": 20406
     },
     "bracket-single-elimination-default-cards": {
       "entry": "import { BRACKET_DEFAULT_CARDS, BracketComponent, singleEliminationBracketLayout } from '@ethlete/components';\nconsole.log(BracketComponent, BRACKET_DEFAULT_CARDS, singleEliminationBracketLayout());",
-      "gzip": 36443
+      "gzip": 36802
     },
     "bracket-natural-width": {
       "entry": "import { bracketNaturalWidth, singleEliminationBracketLayout } from '@ethlete/components';\nconsole.log(bracketNaturalWidth, singleEliminationBracketLayout());",
-      "gzip": 13465
+      "gzip": 13484
     },
     "nav-tabs": {
       "entry": "import { NAV_TAB_IMPORTS } from '@ethlete/components';\nconsole.log(NAV_TAB_IMPORTS);",
-      "gzip": 31046
+      "gzip": 31073
     },
     "overlay-nav-tabs": {
       "entry": "import { OVERLAY_NAV_TAB_IMPORTS } from '@ethlete/components';\nconsole.log(OVERLAY_NAV_TAB_IMPORTS);",
-      "gzip": 33456
+      "gzip": 33495
     },
     "bar-chart": {
       "entry": "import { BarChartComponent } from '@ethlete/components';\nconsole.log(BarChartComponent);",
-      "gzip": 36751
+      "gzip": 36923
     },
     "line-chart": {
       "entry": "import { LineChartComponent } from '@ethlete/components';\nconsole.log(LineChartComponent);",
-      "gzip": 40164
+      "gzip": 40381
     },
     "pie-chart": {
       "entry": "import { PieChartComponent } from '@ethlete/components';\nconsole.log(PieChartComponent);",
-      "gzip": 34529
+      "gzip": 34709
     },
     "sankey-chart": {
       "entry": "import { SankeyChartComponent } from '@ethlete/components';\nconsole.log(SankeyChartComponent);",
-      "gzip": 38608
+      "gzip": 38790
     },
     "chart-imports": {
       "entry": "import { CHART_IMPORTS } from '@ethlete/components';\nconsole.log(CHART_IMPORTS);",
-      "gzip": 54744
+      "gzip": 54927
     },
     "stat-tile": {
       "entry": "import { StatTileComponent } from '@ethlete/components';\nconsole.log(StatTileComponent);",
-      "gzip": 8484
+      "gzip": 8858
     },
     "stat-tile-imports": {
       "entry": "import { STAT_TILE_IMPORTS } from '@ethlete/components';\nconsole.log(STAT_TILE_IMPORTS);",
-      "gzip": 9215
+      "gzip": 9593
     },
     "scheduler": {
       "entry": "import { SchedulerComponent } from '@ethlete/components';\nconsole.log(SchedulerComponent);",
-      "gzip": 83643
+      "gzip": 84184
     },
     "scheduler-with-edit-surface": {
       "entry": "import { provideSchedulerEditSurface, SchedulerComponent } from '@ethlete/components';\nconsole.log(SchedulerComponent, provideSchedulerEditSurface());",
-      "gzip": 146013
+      "gzip": 146844
     },
     "scheduler-imports": {
       "entry": "import { SCHEDULER_IMPORTS } from '@ethlete/components';\nconsole.log(SCHEDULER_IMPORTS);",
-      "gzip": 83695
+      "gzip": 84241
     },
     "table": {
       "entry": "import { TABLE_IMPORTS } from '@ethlete/components';\nconsole.log(TABLE_IMPORTS);",
-      "gzip": 29421
+      "gzip": 30534
     },
     "table-row-expansion": {
       "entry": "import { TABLE_IMPORTS, TABLE_ROW_EXPANSION_IMPORTS } from '@ethlete/components';\nconsole.log(TABLE_IMPORTS, TABLE_ROW_EXPANSION_IMPORTS);",
-      "gzip": 31089
+      "gzip": 32208
     },
     "table-group-headers": {
       "entry": "import { TABLE_IMPORTS, TABLE_GROUP_HEADERS_IMPORTS } from '@ethlete/components';\nconsole.log(TABLE_IMPORTS, TABLE_GROUP_HEADERS_IMPORTS);",
-      "gzip": 30456
+      "gzip": 31564
     },
     "table-skeleton": {
       "entry": "import { TABLE_IMPORTS, TABLE_SKELETON_IMPORTS } from '@ethlete/components';\nconsole.log(TABLE_IMPORTS, TABLE_SKELETON_IMPORTS);",
-      "gzip": 31081
+      "gzip": 32307
     },
     "table-sticky-columns": {
       "entry": "import { TABLE_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS } from '@ethlete/components';\nconsole.log(TABLE_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS);",
-      "gzip": 30842
+      "gzip": 31962
     },
     "form-field-input": {
       "entry": "import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(FORM_FIELD_IMPORTS, INPUT_IMPORTS);",
-      "gzip": 26308
+      "gzip": 26567
     },
     "form-field-password-input": {
       "entry": "import { FORM_FIELD_IMPORTS, PASSWORD_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(FORM_FIELD_IMPORTS, PASSWORD_INPUT_IMPORTS);",
-      "gzip": 29901
+      "gzip": 30127
     },
     "select": {
       "entry": "import { SELECT_IMPORTS } from '@ethlete/components';\nconsole.log(SELECT_IMPORTS);",
-      "gzip": 64298
+      "gzip": 64951
     },
     "phone-input": {
       "entry": "import { PHONE_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(PHONE_INPUT_IMPORTS);",
-      "gzip": 59958
+      "gzip": 60553
     },
     "date-input": {
       "entry": "import { DATE_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(DATE_INPUT_IMPORTS);",
-      "gzip": 62080
+      "gzip": 62396
     },
     "date-time-input": {
       "entry": "import { DATE_TIME_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(DATE_TIME_INPUT_IMPORTS);",
-      "gzip": 83664
+      "gzip": 84132
     },
     "duration-input": {
       "entry": "import { DURATION_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(DURATION_INPUT_IMPORTS);",
-      "gzip": 12301
+      "gzip": 12418
     },
     "dropzone": {
       "entry": "import { DROPZONE_IMPORTS } from '@ethlete/components';\nconsole.log(DROPZONE_IMPORTS);",
-      "gzip": 34527
+      "gzip": 34708
     },
     "scrollable": {
       "entry": "import { SCROLLABLE_IMPORTS } from '@ethlete/components';\nconsole.log(SCROLLABLE_IMPORTS);",
-      "gzip": 17256
+      "gzip": 17260
     },
     "button": {
       "entry": "import { BUTTON_IMPORTS } from '@ethlete/components';\nconsole.log(BUTTON_IMPORTS);",
-      "gzip": 14945
+      "gzip": 15060
     },
     "button-component": {
       "entry": "import { ButtonComponent } from '@ethlete/components';\nconsole.log(ButtonComponent);",
-      "gzip": 11273
+      "gzip": 11392
     },
     "tooltip": {
       "entry": "import { TOOLTIP_IMPORTS } from '@ethlete/components';\nconsole.log(TOOLTIP_IMPORTS);",
-      "gzip": 27706
+      "gzip": 27916
     },
     "tabs": {
       "entry": "import { TAB_IMPORTS } from '@ethlete/components';\nconsole.log(TAB_IMPORTS);",
-      "gzip": 31863
+      "gzip": 31898
     },
     "menu": {
       "entry": "import { MENU_IMPORTS } from '@ethlete/components';\nconsole.log(MENU_IMPORTS);",
-      "gzip": 37976
+      "gzip": 40509
     },
     "checkbox": {
       "entry": "import { CHECKBOX_IMPORTS } from '@ethlete/components';\nconsole.log(CHECKBOX_IMPORTS);",
@@ -188,59 +188,59 @@
     },
     "password-input": {
       "entry": "import { PASSWORD_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(PASSWORD_INPUT_IMPORTS);",
-      "gzip": 13182
+      "gzip": 13260
     },
     "carousel": {
       "entry": "import { CAROUSEL_IMPORTS } from '@ethlete/components';\nconsole.log(CAROUSEL_IMPORTS);",
-      "gzip": 35091
+      "gzip": 35186
     },
     "grid": {
       "entry": "import { GRID_IMPORTS } from '@ethlete/components';\nconsole.log(GRID_IMPORTS);",
-      "gzip": 31191
+      "gzip": 31326
     },
     "color-input": {
       "entry": "import { COLOR_INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(COLOR_INPUT_IMPORTS);",
-      "gzip": 58676
+      "gzip": 59009
     },
     "cascader": {
       "entry": "import { CASCADER_IMPORTS } from '@ethlete/components';\nconsole.log(CASCADER_IMPORTS);",
-      "gzip": 62637
+      "gzip": 62891
     },
     "stream-youtube-slot": {
       "entry": "import { STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS } from '@ethlete/components';\nconsole.log(STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS);",
-      "gzip": 21012
+      "gzip": 21127
     },
     "stream-with-pip": {
       "entry": "import { STREAM_IMPORTS, STREAM_PIP_IMPORTS, STREAM_YOUTUBE_IMPORTS, provideStreamPip } from '@ethlete/components';\nconsole.log(STREAM_IMPORTS, STREAM_PIP_IMPORTS, STREAM_YOUTUBE_IMPORTS, provideStreamPip());",
-      "gzip": 40065
+      "gzip": 40225
     },
     "stream-all": {
       "entry": "import { STREAM_ALL_IMPORTS } from '@ethlete/components';\nconsole.log(STREAM_ALL_IMPORTS);",
-      "gzip": 39597
+      "gzip": 39741
     },
     "overlay-dialog": {
       "entry": "import { defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS } from '@ethlete/components';\nconsole.log(defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS);",
-      "gzip": 26580
+      "gzip": 26770
     },
     "overlay-alert-dialog": {
       "entry": "import { createAlertDialogOpener } from '@ethlete/components';\nconsole.log(createAlertDialogOpener);",
-      "gzip": 39064
+      "gzip": 39351
     },
     "rich-text-editor": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS);",
-      "gzip": 46199
+      "gzip": 46311
     },
     "rich-text-editor-floating-toolbar": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorFloatingToolbar } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorFloatingToolbar());",
-      "gzip": 65229
+      "gzip": 65463
     },
     "rich-text-editor-full-tools": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorDefaultTools } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorDefaultTools());",
-      "gzip": 78666
+      "gzip": 79140
     },
     "rich-text-viewer": {
       "entry": "import { RichTextViewerComponent } from '@ethlete/components';\nconsole.log(RichTextViewerComponent);",
-      "gzip": 8064
+      "gzip": 8068
     },
     "query-client": {
       "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",
@@ -260,11 +260,11 @@
     },
     "contentful-config-default-components": {
       "entry": "import { ContentfulRichTextRendererComponent, provideContentfulConfig, CONTENTFUL_DEFAULT_COMPONENTS } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent, provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS }));",
-      "gzip": 15236
+      "gzip": 15237
     },
     "contentful-image": {
       "entry": "import { ContentfulImageComponent } from '@ethlete/contentful';\nconsole.log(ContentfulImageComponent);",
-      "gzip": 7204
+      "gzip": 7206
     },
     "core-deps": {
       "entry": "import { clamp } from '@ethlete/core';\nconsole.log(clamp);",
@@ -278,17 +278,17 @@
     },
     "components-deps": {
       "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
-      "gzip": 4315,
+      "gzip": 4313,
       "thirdParty": true
     },
     "menu-anchored-deps": {
       "entry": "import { MENU_IMPORTS } from '@ethlete/components';\nconsole.log(MENU_IMPORTS);",
-      "gzip": 46433,
+      "gzip": 48964,
       "thirdParty": true
     },
     "anchored-strategy-deps": {
       "entry": "import { anchoredOverlayStrategy, createOverlayOpener } from '@ethlete/components';\nconsole.log(anchoredOverlayStrategy, createOverlayOpener);",
-      "gzip": 33369,
+      "gzip": 33519,
       "thirdParty": true
     },
     "contentful-deps": {
