@@ -1217,7 +1217,7 @@ B415's unpushed commits), and `sketch ready` commits its own `ready.json` change
 569\. Builder (2026-11-07, B163): `shot` threw when the clip lay outside the page. Why no tool caught it: every shot
 spec used a mocked page. Tool fix (technical): each Playwright-backed spec gets one case on a real page; the serve route
 returns the same note as the CLI (`x-et-note`), new row.
-569 as built (Linux builder subagent, 2026-11-14, B503): the throw was already gone (`shot.ts` answers a crop outside the content with a blank picture and a note, covered by a mocked spec). Built: the serve route sends that note as `x-et-note` (`sendShot` in `thumb.ts` takes `{ png, note }`). Cause: the route returned `picture.png` only and dropped the note. Verified: the new route case in `shot.spec.ts` was red on the old code (no note), green after; not run live. Not built: a real-page case for each Playwright-backed spec (the finding's "new row").
+569 as built (Linux builder subagent, 2026-11-14, B503): the throw was already gone (`shot.ts` answers a crop outside the content with a blank picture and a note, covered by a mocked spec). Built: the serve route sends that note as `x-et-note` (`sendShot` in `thumb.ts` takes `{ png, note }`). Cause: the route returned `picture.png` only and dropped the note. Verified: the new route case in `shot.spec.ts` was red on the old code (no note), green after. Commit a78186d96; not run live. Not built: a real-page case for each Playwright-backed spec (the finding's "new row").
 
 570\. Builder (2026-11-07, B360): on a missing `dist`, `mappedSubpathOf` swallows the error, so the listing never names
 the build command. Tool fix (technical): the listing names `nx build <name>` for a missing `dist`.
