@@ -3,8 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { SketchesComponent } from './sketches.component';
-import { SKETCH_PINS, SketchRow } from './sketches-sample';
+import { SketchesComponent, foldedStatesOf } from './sketches.component';
+import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchRow } from './sketches-sample';
 
 const withTooltip = (root: Element | null | undefined, text: string) =>
   [...(root?.querySelectorAll<HTMLElement>('[aria-describedby]') ?? [])].find((element) =>
@@ -432,7 +432,7 @@ describe('SketchesComponent', () => {
   });
 
   it('keeps a variant name in the fold label on one line so no letter is left alone', () => {
-    const label = LABELS.sameVariants(['a', 'b']);
+    const label = LABELS.sameVariants(['Variante a', 'Variante b']);
 
     expect(label.split(/ /).every((part) => part.length > 1)).toBe(true);
   });
@@ -539,7 +539,7 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = fixture.nativeElement;
     const bar = root.querySelector<HTMLButtonElement>('[data-sk-same] button');
 
-    expect(textOf(bar)).toBe(LABELS.sameVariants(['y', 'z']).replace(/\s/g, ' '));
+    expect(textOf(bar)).toBe(LABELS.sameVariants(['Variante y', 'Variante z']).replace(/\s/g, ' '));
     expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
     expect(root.querySelector('[data-sk-row="x"]')).not.toBeNull();
 
@@ -559,10 +559,18 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = (await render({ camera: '100', rows, pins: SKETCH_PINS })).nativeElement;
 
     expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(
-      LABELS.sameVariants(['a', 'b']).replace(/\s/g, ' '),
+      LABELS.sameVariants(['Variante a', 'Variante b']).replace(/\s/g, ' '),
     );
     expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
     expect(root.querySelector('ethlete-comment-pin')).toBeNull();
+  });
+
+  it('names a folded variant by its label like its row head', async () => {
+    const unchanged = (row: SketchRow) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) });
+    const rows = [ROWS[0], ROWS[1], { ...unchanged(ROWS[1] as SketchRow), key: 'b', label: 'Entwurf 2' }];
+    const root: HTMLElement = (await render({ camera: '100', rows })).nativeElement;
+
+    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe('Unverändert: Entwurf 2');
   });
 
   it('draws old of an @edit sketch as the base row, never folded as an unchanged variant', async () => {
@@ -575,6 +583,61 @@ describe('SketchesComponent', () => {
 
     expect(root.querySelector('[data-sk-same]')).toBeNull();
     expect(root.querySelector('[data-sk-row="old"]')).not.toBeNull();
+  });
+
+  it('keeps a state a hidden withdrawn variant changes unfolded', async () => {
+    const rows: SketchRow[] = [
+      {
+        key: 'current',
+        note: '',
+        width: 176,
+        shots: [
+          { state: 'rest', changed: false, height: 32 },
+          { state: 'open', changed: false, height: 32 },
+          { state: 'fit', changed: false, height: 32 },
+        ],
+      },
+      {
+        key: 'a',
+        note: '',
+        width: 176,
+        shots: [
+          { state: 'rest', changed: false, height: 32 },
+          { state: 'open', changed: false, height: 32 },
+          { state: 'fit', changed: true, height: 32 },
+        ],
+      },
+      {
+        key: 'b',
+        note: '',
+        width: 176,
+        withdrawn: 'zu breit',
+        shots: [
+          { state: 'rest', changed: true, height: 32 },
+          { state: 'open', changed: false, height: 32 },
+          { state: 'fit', changed: false, height: 32 },
+        ],
+      },
+    ];
+    const layerShim = Object.assign(document.createElement('style'), { textContent: 'et-choice-field{display:flex}' });
+
+    document.head.append(layerShim);
+    onTestFinished(() => layerShim.remove());
+
+    const root: HTMLElement = (await render({ rows })).nativeElement;
+
+    expect(root.querySelector('[data-sk-row="b"]')).toBeNull();
+    expect(textOf(root.querySelector('[data-sk-folded]'))).toContain(LABELS.foldedStates(1));
+  });
+
+  it('folds the states neither old nor new of an @edit sketch changes', () => {
+    const rows = SKETCH_EDIT_SAMPLE.rows;
+    const changed = new Set(rows.flatMap((row) => row.shots.filter((shot) => shot.changed).map((shot) => shot.state)));
+    const folded = foldedStatesOf(rows);
+
+    expect(folded.size).toBeGreaterThan(0);
+    expect([...folded].filter((state) => changed.has(state))).toEqual([]);
+    expect(folded.size + changed.size).toBe(new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state))).size);
   });
 
   it('shows both named rows of an @edit sketch with a button each when new equals Aktuell', async () => {
@@ -614,7 +677,9 @@ describe('SketchesComponent', () => {
     fixture.componentRef.setInput('rows', [...ROWS, same].map(unknown));
     await fixture.whenStable();
 
-    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(LABELS.sameVariants(['y']).replace(/\s/g, ' '));
+    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(
+      LABELS.sameVariants(['Variante y']).replace(/\s/g, ' '),
+    );
     expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
     expect(root.querySelector('[data-sk-row="x"]')).not.toBeNull();
 

@@ -92,26 +92,20 @@ const EDIT_ROW_LABELS: Record<string, string> = {
 const isBaseRow = (row: SketchRow) => row.key === SKETCH_CURRENT || row.key === 'old' || row.key === 'new';
 
 /**
- * The states every variant row draws the same as Current (`changed === false`); a state still compared (`null`) never
- * folds, and none folds when every state would.
+ * The states no row changes (`changed === false`), Current and the rows old and new of an @edit sketch included; a state
+ * still compared (`null`) never folds, and none folds when every state would.
  */
 export const foldedStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> => {
-  const variants = rows.filter((row) => !isBaseRow(row));
   const states = statesOf(rows);
-  const folded = states.filter(
-    (state) =>
-      variants.length > 0 &&
-      variants.every((row) => row.shots.some((shot) => shot.state === state && shot.changed === false)),
+  const folded = states.filter((state) =>
+    rows.every((row) =>
+      isBaseRow(row)
+        ? row.shots.every((shot) => shot.state !== state || shot.changed === false)
+        : row.shots.some((shot) => shot.state === state && shot.changed === false),
+    ),
   );
 
   return new Set(folded.length < states.length ? folded : []);
-};
-
-/** The states Current and every variant row draw: all of them while `open`, else only the ones a variant changes. */
-export const shownStatesOf = (rows: readonly SketchRow[], open: boolean): string[] => {
-  const folded = open ? new Set<string>() : foldedStatesOf(rows);
-
-  return statesOf(rows).filter((state) => !folded.has(state));
 };
 
 const WRAP_WIDTH = 1440;
@@ -284,10 +278,11 @@ export class SketchesComponent {
 
     return edit ? rows.map((row) => ({ ...row, label: EDIT_ROW_LABELS[row.key] ?? row.label })) : rows;
   });
-  protected foldedStates = computed(() => foldedStatesOf(this.listedRows()));
+  protected foldedStates = computed(() => foldedStatesOf(this.rows()));
   public shownRows = computed(() => {
     const rows = this.listedRows();
-    const shown = new Set(shownStatesOf(rows, this.statesOpen()));
+    const folded = this.statesOpen() ? new Set<string>() : this.foldedStates();
+    const shown = new Set(statesOf(rows).filter((state) => !folded.has(state)));
 
     if (shown.size === statesOf(rows).length) return rows;
 
@@ -387,7 +382,9 @@ export class SketchesComponent {
 
     return variants.length > 0 && variants.every((row) => same.has(row.key)) ? this.mergeHold() : null;
   });
-  protected sameLabel = computed(() => this.LABELS.sameVariants(this.sameRows().map((row) => row.label ?? row.key)));
+  protected sameLabel = computed(() =>
+    this.LABELS.sameVariants(this.sameRows().map((row) => row.label ?? this.LABELS.variant(row.key))),
+  );
   protected matrixRows = computed(() =>
     this.sameOpen() ? [...this.changedRows(), ...this.sameRows()] : this.changedRows(),
   );

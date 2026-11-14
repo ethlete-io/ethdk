@@ -99,7 +99,7 @@ export const STUDIO_LABELS = {
     comparing: 'vergleicht …',
     compareFailed: (message: string) => `Vergleich fehlgeschlagen: ${message}`,
     reload: 'Erneut laden',
-    sameVariants: (keys: string[]) => `Unverändert: ${keys.map((key) => `Variante\u00A0${key}`).join(', ')}`,
+    sameVariants: (names: string[]) => `Unverändert: ${names.map((name) => name.replace(/ /g, '\u00A0')).join(', ')}`,
     firstChange: 'erste Änderung',
     foldedStates: (count: number) =>
       count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`,
