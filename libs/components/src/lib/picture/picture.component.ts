@@ -52,6 +52,7 @@ import {
     '[attr.data-state]': 'state()',
     '[attr.data-fit]': 'fit()',
     '[style.--_et-picture-fit]': 'fit()',
+    '[style.--_et-picture-position]': 'position()',
     '[attr.data-aspect-ratio]': 'reservedAspectRatio()',
     '[style.--_et-picture-aspect-ratio]': 'reservedAspectRatio()',
   },
@@ -120,6 +121,12 @@ export class PictureComponent {
    * host to have a definite size in both axes. Omit for the default flow layout, where the image sizes itself.
    */
   public fit = input<'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | null>(null);
+
+  /**
+   * The part of the image to keep in view when `fit` crops it, as a CSS `object-position` value: `'top'`,
+   * `'left bottom'`, or a focal point such as `'30% 20%'`. Has an effect only together with `fit`. @default center
+   */
+  public position = input<string | null>(null);
 
   /** The image finished loading, with the intrinsic pixel dimensions the browser decoded. */
   public imageLoad = output<{ naturalWidth: number; naturalHeight: number }>();

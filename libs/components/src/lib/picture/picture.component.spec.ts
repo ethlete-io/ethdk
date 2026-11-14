@@ -63,6 +63,19 @@ describe('PictureComponent', () => {
     });
   });
 
+  describe('position', () => {
+    it('omits the position custom property by default', () => {
+      expect(getHostEl().style.getPropertyValue('--_et-picture-position')).toBe('');
+    });
+
+    it('reflects position as the custom property the stylesheet reads', () => {
+      fixture.componentRef.setInput('position', '30% 20%');
+      fixture.detectChanges();
+
+      expect(getHostEl().style.getPropertyValue('--_et-picture-position')).toBe('30% 20%');
+    });
+  });
+
   describe('reserved aspect ratio', () => {
     it('is absent without aspectRatio', () => {
       expect(getHostEl().hasAttribute('data-aspect-ratio')).toBe(false);

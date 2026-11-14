@@ -30,6 +30,27 @@ import { PICTURE_WIDE_SRC } from './picture.data';
     </section>
 
     <section class="example-picture-section">
+      <h3>Keeping a part in view</h3>
+      <p><code>position</code> picks the part of a cropped image that stays visible.</p>
+
+      <div class="example-picture-modes">
+        @for (position of POSITIONS; track position) {
+          <div class="example-picture-mode">
+            <span>{{ position }}</span>
+
+            <et-picture
+              [defaultSrc]="WIDE_SRC"
+              [position]="position"
+              class="example-picture-box"
+              fit="cover"
+              alt="A mountain range at sunrise"
+            />
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="example-picture-section">
       <h3>Natural size, once it is known</h3>
       <p>
         <code>naturalSize()</code> and <code>naturalAspectRatio()</code> report what the browser decoded, and
@@ -101,6 +122,7 @@ import { PICTURE_WIDE_SRC } from './picture.data';
 })
 export class PictureFitExampleComponent {
   protected readonly FIT_MODES = ['cover', 'contain', 'fill', 'none', 'scale-down'] as const;
+  protected readonly POSITIONS = ['left', 'center', 'right', '20% 50%'] as const;
   protected readonly WIDE_SRC = PICTURE_WIDE_SRC;
 
   protected loadedRatio = signal<number | null>(null);
