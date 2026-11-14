@@ -1,13 +1,21 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ProvideColorDirective, provideColorThemesWithTailwind4, type ColorTheme } from '@ethlete/core';
+import {
+  ProvideColorDirective,
+  provideColorThemesWithTailwind4,
+  type ColorTheme,
+  type ThemeColor,
+} from '@ethlete/core';
 import '../../test-helpers';
 import { MENU_IMPORTS } from './menu.imports';
 
-const theme = (name: string, color: string, isDefault = false): ColorTheme => ({
+const theme = (name: string, color: ThemeColor, isDefault = false): ColorTheme => ({
   name,
   isDefault,
-  primary: { color: { default: color }, onColor: { default: '#fff' } },
+  primary: {
+    color: { default: color, hover: color, active: color, disabled: color },
+    onColor: { default: '255 255 255' },
+  },
 });
 
 @Component({
@@ -35,7 +43,7 @@ describe('Menu color theming', () => {
   it('applies etProvideColor on the panel and on a single item', async () => {
     TestBed.configureTestingModule({
       imports: [Host],
-      providers: [provideColorThemesWithTailwind4([theme('brand', '#f00', true), theme('accent', '#0f0')])],
+      providers: [provideColorThemesWithTailwind4([theme('brand', '255 0 0', true), theme('accent', '0 255 0')])],
     });
 
     const fixture = TestBed.createComponent(Host);
