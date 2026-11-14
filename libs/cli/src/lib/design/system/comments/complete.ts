@@ -56,7 +56,7 @@ export const completeComment = (options: {
     if (author) {
       const authored = withAuthor({ sketch, variant: found.sketch.variant, author });
 
-      if (authored !== sketch) writeSketchFile(authored, { base: sketch });
+      if (authored !== sketch) writeSketchFile(authored);
     }
 
     return addressComment({ products: [{ name: product.name, dir: product.dir }], id, author, note });

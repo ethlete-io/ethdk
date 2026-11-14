@@ -2,8 +2,8 @@ import { relative } from 'path';
 import { ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
 import { variantProblemsOf } from './check-sketches';
-import { journaledRebaseOf } from './rebase-port';
-import { listSketches, rejectionOf, Sketch, writeSketchFile } from './sketch';
+import { portBaseChanges } from './rebase-port';
+import { listSketches, rebaseSketch, rejectionOf, Sketch, writeSketchFile } from './sketch';
 import { staleBaseOf } from './stale-base';
 
 const changedKeysOf = (before: Record<string, string>, now: Record<string, string>) =>
@@ -43,21 +43,19 @@ export const rebaseAfterMerge = (options: {
     const id = `${product.name} ${sketch.target}`;
     const rebase = `sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
     const mark = (marked: Sketch, reasons: string[]) =>
-      writeSketchFile(
-        {
-          ...marked,
-          portAfterMerge: { merged, parts, reasons, at: new Date().toISOString() },
-        },
-        { base: marked },
-      );
-    const { ported, conflicts, rebased } = journaledRebaseOf({ target, product, sketch });
+      writeSketchFile({
+        ...marked,
+        portAfterMerge: { merged, parts, reasons, at: new Date().toISOString() },
+      });
+    const { ported, conflicts } = portBaseChanges({ target, product, sketch });
 
-    if (!rebased) {
+    if (conflicts.length > 0) {
       mark(sketch, conflicts);
       lines.push(`AGENT PORTS ${id} ${after}: ${conflicts.join('; ')} - port it by hand, then run ${rebase}`);
       continue;
     }
 
+    const rebased = rebaseSketch({ product, sketch });
     const problems = ported.length > 0 ? recheckOf({ target, product, sketch: rebased }) : [];
 
     if (problems.length > 0) {

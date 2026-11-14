@@ -261,20 +261,3 @@ export const openJournal = (options: { productDir: string; root: string; label: 
 
 /** The journal this process has open, if any. */
 export const openJournalOf = (): WriteJournal | null => (current ? joinedOf(current) : null);
-
-/** Runs `run` inside a journal of `productDir` (see `openJournal`): a throw undoes its writes and rethrows. */
-export const journaled = <T>(options: { productDir: string; root: string; label: string }, run: () => T): T => {
-  const journal = openJournal(options);
-
-  try {
-    const result = run();
-
-    journal.close();
-
-    return result;
-  } catch (error) {
-    journal.rollback();
-
-    throw error;
-  }
-};
