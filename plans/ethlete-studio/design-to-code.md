@@ -2566,6 +2566,13 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   only via target parse); 974 one REFUSED MISSING DESIGN MOCKS line (guard never checked folder existence); 570
   mappedSubpathOf no longer swallows the build error (Suspect: a consumer that fell back now gets it, not live); 871
   check summary names the cli build dir and sha. Open: studio:e2e --help side issue.
+- B503-2 (9d14fc2ad): 511 `check --slow` writes the record (Cause: checkSlow returned before the record step); 512
+  the no-record line names every blocker; 485 never existed (the plan's "built" note was wrong), now `check --product
+--base` part-checks the touched parts. Measured: 17 parts 627 s vs ~420 s full; Suspect: per-part setup; next: one
+  run over the chosen set. B503-3 (f8c2b702f, 98a87dcfe): 613 moot, 637 and 825 already fixed, 754 `sketch check`
+  prints CHANGED STATES per variant, one source with NO-CHANGED-STATE (cost: a multi-target sketch shoots every target).
+- CI red a9acbf9ff (run 43557485036): Studio e2e "[Large] Fit is stable" 26 % then 29 % after reload; Suspect:
+  c230d01b3 or load; builder bisects, reverts if unproven.
 - Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);
   orphan `sh`/`sleep` at the CI job end unexplained.
 - B501: `sketch ready` 57/70 s (target 10 s), phase "undeclared" 23/37 s.
