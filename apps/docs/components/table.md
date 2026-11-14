@@ -304,7 +304,9 @@ Three template directives, each matched to its column the same way:
 
 A template bound to a column the table doesn't render throws
 [`ET3504`](/components/error-codes#table-et35xx) in dev, so a typo can't silently render
-nothing. A template inside a control-flow block registers and unregisters with that
+nothing. A hidden column (`hidden: true`, or hidden at runtime) is
+still one of the table's columns: its templates throw nothing and show once it is
+visible again. A template inside a control-flow block registers and unregisters with that
 block, so `@if` around one turns that cell off.
 
 **Sort and filter still work on rich cells.** The display template is decoupled

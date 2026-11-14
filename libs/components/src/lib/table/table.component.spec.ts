@@ -948,6 +948,35 @@ describe('TableComponent', () => {
         expect.objectContaining({ code: TABLE_ERROR_CODES.UNKNOWN_TEMPLATE_COLUMN }) as unknown as RuntimeError<number>,
       );
     });
+
+    it('keeps the template of a hidden column without throwing, and renders it once the column is shown', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data">
+            <ng-template [etTableCell]="cols.role" let-row>role:{{ row.role }}</ng-template>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class HiddenColumnTemplateComponent {
+        table = viewChild.required(TableComponent);
+        data = PEOPLE;
+        cols = {
+          name: { value: (person: Person) => person.name },
+          role: { value: (person: Person) => person.role, hidden: true },
+        } satisfies TableColumns<Person>;
+      }
+
+      const fixture = TestBed.createComponent(HiddenColumnTemplateComponent);
+
+      expect(() => fixture.detectChanges()).not.toThrow();
+      expect(fixture.nativeElement.textContent).not.toContain('role:');
+
+      fixture.componentInstance.table().setColumnVisible('role', true);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain(`role:${PEOPLE[0]!.role}`);
+    });
   });
 
   describe('loading & error states', () => {
