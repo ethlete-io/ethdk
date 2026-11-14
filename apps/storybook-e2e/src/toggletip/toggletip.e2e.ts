@@ -286,3 +286,34 @@ test.describe('toggletip / chrome', () => {
     await expect(toggletip).toHaveCSS('overflow', 'visible');
   });
 });
+
+test.describe('toggletip / reported suspects', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: click behavior');
+
+  test('the first click on the origin of an open-on-load toggletip reaches the origin and closes it', async ({
+    page,
+  }) => {
+    const root = await openStory(page, 'components-feedback-toggletip--open-on-load');
+    const button = root.getByRole('button', { name: 'Save lineup' });
+    await waitForPanelEntered(page.getByRole('dialog'));
+
+    await button.click();
+
+    await expect(root.locator('[data-save-count]')).toHaveText('Saved 1 times');
+    await expect(page.getByRole('dialog')).toBeHidden();
+  });
+
+  test('after an Enter open the first outside click closes the toggletip', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text toggletip' });
+    const dialog = page.getByRole('dialog');
+
+    await trigger.focus();
+    await pressKey(page, 'Enter');
+    await waitForPanelEntered(dialog);
+
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+
+    await expect(dialog).toBeHidden({ timeout: 300 });
+  });
+});

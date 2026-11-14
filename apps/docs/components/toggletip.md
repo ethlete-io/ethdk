@@ -46,7 +46,7 @@ import { TOGGLETIP_IMPORTS } from '@ethlete/components';
 ## Behavior
 
 - **Click** toggles; `open` is a two-way model (`[(etToggletipOpen)]`), plus `show()` / `hide()` / `toggle()` methods. The model follows a dismissal as soon as it starts, and a `show()` issued while the previous instance is still fading out re-opens once it has left.
-- Dismisses on outside click and <kbd>Escape</kbd>; non-modal, no backdrop.
+- Dismisses on outside click and <kbd>Escape</kbd>; non-modal, no backdrop. A press on the trigger itself is not an outside click: its click toggles the toggletip closed and still reaches the trigger's own `(click)` handler.
 - Focus moves to the first tabbable element inside on open and is **restored to the trigger** on close - but it is not trapped.
 - `etToggletipDisabled` disables it; it also closes automatically when content becomes `null` or a blank string, or the trigger is disabled. A blank string never opens it, so `[etToggletip]="hint() ?? ''"` is a valid conditional toggletip.
 

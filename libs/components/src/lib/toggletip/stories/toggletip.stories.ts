@@ -1,5 +1,5 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { ToggletipStorybookComponent } from './components';
+import { ToggletipPinnedStorybookComponent, ToggletipStorybookComponent } from './components';
 
 export default {
   title: 'Components/Feedback/Toggletip',
@@ -33,4 +33,9 @@ export const Bottom: Story = {
   args: {
     placement: 'bottom',
   },
+};
+
+export const OpenOnLoad: StoryObj<ToggletipPinnedStorybookComponent> = {
+  render: () => ({ template: '<et-sb-toggletip-pinned />' }),
+  decorators: [moduleMetadata({ imports: [ToggletipPinnedStorybookComponent] })],
 };

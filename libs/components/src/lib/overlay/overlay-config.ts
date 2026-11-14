@@ -57,7 +57,7 @@ export type OverlayConfig = {
   backdropClass?: string | string[];
   panelClass?: string | string[];
   mode?: OverlayMode;
-  closeOnOutsidePointer?: boolean;
+  closeOnOutsidePointer?: boolean | 'except-origin';
   closeOnEscape?: boolean;
 
   /**

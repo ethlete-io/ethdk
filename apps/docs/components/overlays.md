@@ -475,26 +475,26 @@ When an anchor/trigger exists (and mode is non-modal) the surface opens anchored
 
 `[etOverlay]` mirrors most of the imperative config as inputs:
 
-| Input                                        | Default       | Notes                                                                            |
-| -------------------------------------------- | ------------- | -------------------------------------------------------------------------------- |
-| `mode`                                       | `'non-modal'` | `'modal'` adds backdrop + focus trap semantics                                   |
-| `role`                                       | -             | Overrides the mode-derived ARIA role                                             |
-| `disabled`                                   | `false`       | Ignores open requests while set                                                  |
-| `disableClose`                               | `false`       | Forces `closeOnEscape` / `closeOnOutsidePointer` off                             |
-| `closeOnEscape` / `closeOnOutsidePointer`    | `true`        |                                                                                  |
-| `closeOnNavigation`                          | `true`        | `false` with `disableClose`; see [Closing on navigation](#closing-on-navigation) |
-| `hasBackdrop`                                | -             | Follows `mode` when unset                                                        |
-| `autoFocus` / `restoreFocus`                 | - / `true`    | Initial focus target; restore focus on close                                     |
-| `hostClass` / `backdropClass` / `panelClass` | -             | Extra classes per overlay element                                                |
-| `placement`                                  | `'bottom'`    | floating-ui placement (anchored mode)                                            |
-| `fallbackPlacements`                         | -             | Tried when `placement` doesn't fit                                               |
-| `offset` / `viewportPadding`                 | `8` / `8`     | Distance from anchor / viewport edges                                            |
-| `shift`                                      | `true`        | Slide along the axis to stay in the viewport                                     |
-| `autoResize`                                 | `false`       | Constrain size to the available space                                            |
-| `minAvailableSpace`                          | -             | Shrink into the current side above this many px instead of flipping              |
-| `autoHide`                                   | `false`       | Hide when the anchor leaves the viewport                                         |
-| `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                                                     |
-| `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)                                   |
+| Input                                        | Default       | Notes                                                                                          |
+| -------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------- |
+| `mode`                                       | `'non-modal'` | `'modal'` adds backdrop + focus trap semantics                                                 |
+| `role`                                       | -             | Overrides the mode-derived ARIA role                                                           |
+| `disabled`                                   | `false`       | Ignores open requests while set                                                                |
+| `disableClose`                               | `false`       | Forces `closeOnEscape` / `closeOnOutsidePointer` off                                           |
+| `closeOnEscape` / `closeOnOutsidePointer`    | `true`        | `closeOnOutsidePointer: 'except-origin'` leaves a press on the origin to its own click handler |
+| `closeOnNavigation`                          | `true`        | `false` with `disableClose`; see [Closing on navigation](#closing-on-navigation)               |
+| `hasBackdrop`                                | -             | Follows `mode` when unset                                                                      |
+| `autoFocus` / `restoreFocus`                 | - / `true`    | Initial focus target; restore focus on close                                                   |
+| `hostClass` / `backdropClass` / `panelClass` | -             | Extra classes per overlay element                                                              |
+| `placement`                                  | `'bottom'`    | floating-ui placement (anchored mode)                                                          |
+| `fallbackPlacements`                         | -             | Tried when `placement` doesn't fit                                                             |
+| `offset` / `viewportPadding`                 | `8` / `8`     | Distance from anchor / viewport edges                                                          |
+| `shift`                                      | `true`        | Slide along the axis to stay in the viewport                                                   |
+| `autoResize`                                 | `false`       | Constrain size to the available space                                                          |
+| `minAvailableSpace`                          | -             | Shrink into the current side above this many px instead of flipping                            |
+| `autoHide`                                   | `false`       | Hide when the anchor leaves the viewport                                                       |
+| `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                                                                   |
+| `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)                                                 |
 
 Apart from `disabled`, the overlay reads these inputs when it opens. A change while it is open, such as a new `placement`, applies at the next open.
 

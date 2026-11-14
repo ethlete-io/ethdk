@@ -237,7 +237,7 @@ export class ToggletipDirective {
       mode: 'non-modal',
       origin: hostElement,
       closeOnEscape: true,
-      closeOnOutsidePointer: true,
+      closeOnOutsidePointer: 'except-origin',
       panelClass: 'et-toggletip-panel',
       strategies: anchoredOverlayStrategy({
         containerClass: ['et-overlay--toggletip', 'et-floating-panel'],
