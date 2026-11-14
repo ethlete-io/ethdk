@@ -105,7 +105,7 @@
     "by": "designer",
     "cmd": "POST /__design/sketch-decision",
     "pid": 3380508,
-    "decidedAt": "2026-11-14T17:25:23.421Z"
+    "decidedAt": "2026-11-14T17:27:05.745Z"
   },
   "rounds": [
     {
@@ -127,11 +127,11 @@
     }
   },
   "readyContent": {
-    "a": "97ce3ecb954a50e4",
-    "b": "d2193ca0c21c4116"
+    "a": "39c6fb175b7c4089",
+    "b": "e18e20b681fefb4b"
   },
   "mergeHold": {
     "reason": "variant a changes server-crashed; variant b changes server-crashed",
-    "at": "2026-11-14T07:22:52.367Z"
+    "at": "2026-11-14T17:29:40.552Z"
   }
 }
