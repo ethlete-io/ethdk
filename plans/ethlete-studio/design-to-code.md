@@ -1114,6 +1114,8 @@ to undo an edit that implements ADR 0045/0050, because nothing links a direct ed
 Decided in ADR 0209: an agent accepts a direct edit that names the ADR it implements; shell-main is accepted with
 "ADR 0050", then pages/start (Tom's q1ok).
 
+As built (Linux builder, 2026-11-14, recommendation built, pick decided): the Sketches page (app and design part) never folds `old` or `new` of an `@edit` sketch, names them "Zuletzt gemergter Stand" and "Änderung behalten" through the row `label`, drops an Aktuell row, and each row keeps its Übernehmen button; part note and edit header text updated. Verified: sketches.component spec (new case, 444 related tests pass), design tsc, `et:design check`. Not verified: a real `@edit` sketch in the running Studio; side effect: the first-changed state marker no longer shows on `new`.
+
 516\. Tom's "q1ok" for pages/sketches reached the builder only as a relayed message, and the builder's permission
 check refused `accept --by tom`: an agent may not record Tom's consent from a relay. The doc agent had promised the
 accept in Tom's name. Why no tool caught it: the Tom-only accept exists only as a CLI flag an agent types; nothing

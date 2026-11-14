@@ -577,6 +577,25 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="old"]')).not.toBeNull();
   });
 
+  it('shows both named rows of an @edit sketch with a button each when new equals Aktuell', async () => {
+    const unchanged = (row: SketchRow) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) });
+    const rows = [
+      unchanged(ROWS[0] as SketchRow),
+      { ...unchanged(ROWS[1] as SketchRow), key: 'old' },
+      { ...unchanged(ROWS[1] as SketchRow), key: 'new' },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows, part: 'components/chip@edit', status: 'waiting' }))
+      .nativeElement;
+    const rowOf = (key: string) => root.querySelector<HTMLElement>(`[data-sk-row="${key}"]`);
+
+    expect(root.querySelector('[data-sk-same]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
+    expect(textOf(rowOf('new'))).toContain(LABELS.editNew);
+    expect(textOf(rowOf('old'))).toContain(LABELS.editOld);
+    expect(rowOf('new')?.querySelector('[data-sk-merge]')).not.toBeNull();
+    expect(rowOf('old')?.querySelector('[data-sk-merge]')).not.toBeNull();
+  });
+
   it('keeps a folded variant folded while a quick listing knows nothing about its compare', async () => {
     const same: SketchRow = {
       key: 'y',

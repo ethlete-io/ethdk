@@ -84,7 +84,12 @@ const statesOf = (rows: readonly SketchRow[]) => [
   ...new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state))),
 ];
 
-const isBaseRow = (row: SketchRow) => row.key === SKETCH_CURRENT || row.key === 'old';
+const EDIT_ROW_LABELS: Record<string, string> = {
+  old: STUDIO_LABELS.sketches.editOld,
+  new: STUDIO_LABELS.sketches.editNew,
+};
+
+const isBaseRow = (row: SketchRow) => row.key === SKETCH_CURRENT || row.key === 'old' || row.key === 'new';
 
 /**
  * The states every variant row draws the same as Current (`changed === false`); a state still compared (`null`) never
@@ -269,11 +274,16 @@ export class SketchesComponent {
   private fontsReady = toSignal(from(this.document.fonts.ready).pipe(map(() => true)), { initialValue: false });
   private userCamera$ = new Subject<Camera | null>();
   protected withdrawnCount = computed(() => this.rows().filter(isWithdrawn).length);
-  private listedRows = computed(() =>
-    this.rows().filter(
-      (row) => !(this.fresh() && row.key === SKETCH_CURRENT) && (this.withdrawn() === 'shown' || !isWithdrawn(row)),
-    ),
-  );
+  private isEdit = computed(() => this.part().endsWith('@edit'));
+  private listedRows = computed(() => {
+    const edit = this.isEdit();
+    const rows = this.rows().filter(
+      (row) =>
+        !((this.fresh() || edit) && row.key === SKETCH_CURRENT) && (this.withdrawn() === 'shown' || !isWithdrawn(row)),
+    );
+
+    return edit ? rows.map((row) => ({ ...row, label: EDIT_ROW_LABELS[row.key] ?? row.label })) : rows;
+  });
   protected foldedStates = computed(() => foldedStatesOf(this.listedRows()));
   public shownRows = computed(() => {
     const rows = this.listedRows();
@@ -285,7 +295,7 @@ export class SketchesComponent {
       .map((row) => ({ ...row, shots: row.shots.filter((shot) => shown.has(shot.state)) }))
       .filter((row) => shown.size > 0 || row.key !== SKETCH_CURRENT);
   });
-  protected discardable = computed(() => !this.part().endsWith('@edit'));
+  protected discardable = computed(() => !this.isEdit());
   protected question = computed(() => this.rounds().find((option) => option.value === this.round())?.note ?? '');
   public columns = computed(() => {
     const rows = this.shownRows();

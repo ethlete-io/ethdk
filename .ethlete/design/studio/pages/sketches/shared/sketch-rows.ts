@@ -45,7 +45,7 @@ const zoomChipStates = zoomChip.states as Record<string, ZoomChipProps>;
 const STEADY = ['fit-hover', 'fit-active', 'fit-focus-visible'];
 const NARROW_STATES = Object.keys(zoomChipStates).filter((name) => name.startsWith('reset') || name.startsWith('fit'));
 
-const isBase = (row: Row) => row.key === 'current' || row.key === 'old';
+const isBase = (row: Row) => row.key === 'current' || row.key === 'old' || row.key === 'new';
 
 const narrowPart = (): SketchPart => ({
   key: 'components/zoom-chip',
@@ -93,9 +93,10 @@ export const PARTS: Record<PartKind, SketchPart> = {
     ...narrowPart(),
     key: 'components/zoom-chip@edit',
     rows: [
-      { key: 'old', note: 'Stand vor der direkten Änderung', changed: [], look: '' },
+      { key: 'old', label: 'Zuletzt gemergter Stand', note: 'Stand vor der direkten Änderung', changed: [], look: '' },
       {
         key: 'new',
+        label: 'Änderung behalten',
         note: 'Direkte Änderung: Prozentzahl in Halbfett.',
         changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
         look: '',

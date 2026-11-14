@@ -74,7 +74,9 @@ export const STUDIO_LABELS = {
   },
   sketches: {
     discard: 'Verwerfen',
-    editHint: 'Kein Verwerfen: old macht die Änderung rückgängig, new behält sie',
+    editHint: 'Kein Verwerfen: Zuletzt gemergter Stand macht die Änderung rückgängig, Änderung behalten behält sie',
+    editOld: 'Zuletzt gemergter Stand',
+    editNew: 'Änderung behalten',
     discardConfirm: {
       label: 'Skizze verwerfen',
       question: (part: string) => `Skizze ${part} verwerfen?`,
