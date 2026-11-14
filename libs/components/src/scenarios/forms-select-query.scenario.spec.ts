@@ -4,7 +4,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
-import { createGetQuery, createQueryClient, def, V2QueryClient } from '@ethlete/query';
+import { createGetQuery, createLegacyQueryCreator, createQueryClient, def, V2QueryClient } from '@ethlete/query';
 import {
   provideOverlay,
   SELECT_FILTER_MODES,
@@ -106,6 +106,43 @@ class LegacyAssigneePickerComponent {
             },
       };
     },
+    toOptions: (response) => response.items,
+    minQueryLength: 1,
+    debounceTime: 100,
+  });
+}
+
+const creatorOptions = { reportErrors: false };
+
+@Component({
+  selector: 'et-scenario-silent-legacy-picker',
+  imports: [SelectComponent, SelectOptionComponent, SelectSearchDirective],
+  template: `
+    <et-select
+      [loading]="members.loading()"
+      [loadError]="members.error()"
+      [filterMode]="externalFilter"
+      (queryChange)="members.setQuery($event)"
+      aria-label="Assignee"
+    >
+      <input etSelectSearch />
+      @for (member of members.options(); track member.id) {
+        <et-select-option [value]="member.id">{{ member.name }}</et-select-option>
+      }
+    </et-select>
+  `,
+})
+class SilentLegacyPickerComponent {
+  externalFilter = SELECT_FILTER_MODES.EXTERNAL;
+  members = selectOptionsFromV2Query({
+    queryCreator: createLegacyQueryCreator({
+      name: 'legacySearchMembers',
+      creator: createGetQuery(createQueryClient({ baseUrl: 'https://api.example.com', name: 'silent-legacy' }))<{
+        queryParams: { q: string };
+        response: { items: Member[] };
+      }>('/members').clone({ reportErrors: creatorOptions.reportErrors }),
+    }),
+    args: (query) => ({ queryParams: { q: query() } }),
     toOptions: (response) => response.items,
     minQueryLength: 1,
     debounceTime: 100,
@@ -223,7 +260,14 @@ describe('forms select query scenarios', () => {
   });
 
   describe('with the legacy query client', () => {
-    const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+    const scenario = useScenario({
+      providers: [
+        provideOverlay(),
+        provideColorThemes(TEST_COLOR_THEMES),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
 
     const hop = async (s: Scenario, ms: number) => {
       s.tick(ms);
@@ -266,6 +310,78 @@ describe('forms select query scenarios', () => {
       expect(app.members.error()).toBe('Directory offline');
       expect(text(query('.et-select-state--error'))).toBe('Directory offline');
 
+      fixture.destroy();
+      s.tick(1000);
+      s.frame(4);
+    });
+
+    it('keeps the previous options while a silent legacy creator loads, and does not report its failure', async () => {
+      const s = scenario();
+      const http = TestBed.inject(HttpTestingController);
+      const fixture = TestBed.createComponent(SilentLegacyPickerComponent);
+      const host = fixture.nativeElement as HTMLElement;
+
+      s.tick();
+
+      const input = query<HTMLInputElement>('input[etSelectSearch]', host);
+      const search = async (value: string) => {
+        type(s, input, value);
+        await hop(s, 100);
+      };
+
+      await search('2');
+      http.expectOne((request) => param(request, 'q') === '2').flush({ items: [member(2)] });
+      s.tick();
+      s.frame(4);
+      expect(optionLabels()).toEqual(['Member 2']);
+
+      await search('3');
+      const pending = http.expectOne((request) => param(request, 'q') === '3');
+      s.frame(4);
+      expect(optionLabels()).toEqual(['Member 2']);
+
+      pending.flush({ items: [member(3)] });
+      s.tick();
+      s.frame(4);
+      expect(optionLabels()).toEqual(['Member 3']);
+
+      await search('9');
+      http
+        .expectOne((request) => param(request, 'q') === '9')
+        .flush({ message: 'Directory offline' }, { status: 503, statusText: 'Unavailable' });
+      s.tick();
+      s.frame(4);
+
+      expect(text(query('.et-select-state--error'))).toBe('Directory offline');
+      expect(s.errors).toEqual([]);
+
+      http.verify();
+      fixture.destroy();
+      s.tick(1000);
+      s.frame(4);
+    });
+
+    it('reports the failure of the same creator when it is not silent', async () => {
+      const s = scenario();
+      creatorOptions.reportErrors = true;
+      onTestFinished(() => (creatorOptions.reportErrors = false));
+      const http = TestBed.inject(HttpTestingController);
+      const fixture = TestBed.createComponent(SilentLegacyPickerComponent);
+      const input = query<HTMLInputElement>('input[etSelectSearch]', fixture.nativeElement);
+
+      s.tick();
+      type(s, input, '9');
+      await hop(s, 100);
+      http
+        .expectOne((request) => param(request, 'q') === '9')
+        .flush({ message: 'Directory offline' }, { status: 503, statusText: 'Unavailable' });
+      s.tick();
+      s.frame(4);
+
+      expect(text(query('.et-select-state--error'))).toBe('Directory offline');
+      s.expectError(/./);
+
+      http.verify();
       fixture.destroy();
       s.tick(1000);
       s.frame(4);

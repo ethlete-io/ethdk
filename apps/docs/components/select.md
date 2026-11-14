@@ -325,7 +325,7 @@ An edit form usually holds a stored id whose option is not on the first page (or
 protected userName = (id: string) => this.assigneeName() ?? id;
 ```
 
-Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFromV2Query` instead - same config shape and returned signal bundle, but `queryCreator` takes a legacy creator (from `client.get(...)` or a `createLegacyQueryCreator` interop wrapper) and `args` builds the `prepare()` arguments. Options stay rendered while the next request loads, matching the current-system adapter.
+Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFromV2Query` instead - same config shape and returned signal bundle, but `queryCreator` takes a legacy creator (from `client.get(...)` or a `createLegacyQueryCreator` interop wrapper) and `args` builds the `prepare()` arguments. Options stay rendered while the next request loads, matching the current-system adapter. A wrapper over a creator cloned with `reportErrors: false` works the same: a failed search shows only in the select and never reaches the `ErrorHandler`.
 
 ### Custom values
 
