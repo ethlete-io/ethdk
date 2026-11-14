@@ -33,12 +33,12 @@ export const studioMergeOf = ({ target, product: name, sketch, note }: MergeRequ
     product,
     sketch,
     merge: () => mergeSketch({ target, config, product, sketch, note, deferRebase: true }),
-    finish: (before) => {
+    finish: (before, sketchDirs) => {
       refreshHarnessMap({ target, product });
 
       if (note?.trim()) for (const part of sketch.targets) recordMergeReason({ product, part, reason: note.trim() });
 
-      commitMergeResultSync({ target, product, sketch, variant, before });
+      commitMergeResultSync({ target, product, sketch, variant, before, sketchDirs });
     },
   });
 };

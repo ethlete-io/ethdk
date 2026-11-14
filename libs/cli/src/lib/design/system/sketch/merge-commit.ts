@@ -83,6 +83,7 @@ function* commitFlow(options: {
   sketch: Sketch;
   variant: string;
   before: Map<string, string> | null;
+  sketchDirs?: string[];
 }): GitFlow<boolean> {
   const { product, sketch, before } = options;
   const after = yield* dirtyFilesFlow(product);
@@ -91,11 +92,13 @@ function* commitFlow(options: {
 
   const productDir = realpathSync(product.dir);
   const sketches = sketchesDirOf(productDir);
-  const merged = resolve(productDir, relative(product.dir, sketch.dir));
+  const held = [sketch.dir, ...(options.sketchDirs ?? [])].map((dir) =>
+    resolve(productDir, relative(product.dir, dir)),
+  );
   const files = [...after]
     .filter(([file, hash]) => before.get(file) !== hash)
     .map(([file]) => file)
-    .filter((file) => !below(file, sketches) || below(file, merged));
+    .filter((file) => !below(file, sketches) || held.some((dir) => below(file, dir)));
 
   if (files.length === 0) return true;
 
@@ -163,6 +166,7 @@ type CommitOptions = {
   sketch: Sketch;
   variant: string;
   before: Map<string, string> | null;
+  sketchDirs?: string[];
 };
 
 /** The dirty files of the product's folders by absolute path, each with a hash of its content; `null` outside a git checkout. */
@@ -171,7 +175,7 @@ export const dirtyFilesOfSync = (options: { target: string; product: ResolvedPro
 
 /**
  * Commits what a merge wrote into the product's folders - the files dirty now that were clean or different before,
- * and the merged sketch's own deletion, never another open sketch - as one commit, with a `none` changeset for each
+ * the merged sketch's own deletion and what the merge's rebase wrote into `sketchDirs`, never another open sketch - as one commit, with a `none` changeset for each
  * workspace package they lie in when the checkout has a `.changeset` folder. A failed commit warns and leaves the files as they are.
  */
 export const commitMergeResultSync = (options: CommitOptions) =>

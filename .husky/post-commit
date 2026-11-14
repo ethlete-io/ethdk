@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
-# Rebases the open sketches a commit to a design part made stale; it must never fail the commit, so every exit is 0.
+# Rebases the open sketches a commit to a design part made stale and commits the rebase; it must never fail the commit,
+# so every exit is 0.
 cd "$(git rev-parse --show-toplevel)" || exit 0
 node ./tools/scripts/post-commit-rebase-sketches.mjs || true
 exit 0

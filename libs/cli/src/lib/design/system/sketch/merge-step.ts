@@ -6,6 +6,7 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { configOf, isModelId, oneProductOf } from './cli-args';
 import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
 import { mergeSketch, MergeRefusal, rebaseOthersAfterMerge } from './merge';
+import { SketchRebases } from './after-merge';
 import { openJournal } from '../write-journal';
 import { appGatedMergeOf } from './merge-app-gate';
 import { recordMergeReason } from './merged-parts';
@@ -77,7 +78,7 @@ export const mergeAndRecord = (options: {
           deferRebase: true,
           ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : decidedBy ? { decidedBy } : {}),
         }),
-      finish: (before) => {
+      finish: (before, sketchDirs) => {
         const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target, product }));
 
         if (typeof refreshed === 'string') console.error(`merged, but the harness map is still stale: ${refreshed}`);
@@ -86,7 +87,7 @@ export const mergeAndRecord = (options: {
           for (const part of sketch.targets)
             recordMergeReason({ product, part, planRef: allowed?.planRef.trim(), reason });
 
-        commitMergeResultSync({ target, product, sketch, variant, before });
+        commitMergeResultSync({ target, product, sketch, variant, before, sketchDirs });
       },
     }),
   );
@@ -103,15 +104,16 @@ export const mergeAndRecord = (options: {
 /**
  * Runs `merge` behind the app gate and then `finish` (the writes that complete it, up to its commit) as one journaled
  * step: a refusal or a throw undoes every file it wrote, and the next process that takes the product lock undoes a
- * killed one, or finishes it once its commit landed. Then rebases the other sketches the merge made stale. Waits for a
- * merge of the product that another thread or process still finishes.
+ * killed one, or finishes it once its commit landed. Before `finish` it rebases the other sketches the merge made stale
+ * and hands `finish` their folders, so the merge commit holds them. Waits for a merge of the product that another thread
+ * or process still finishes.
  */
 export const journaledMergeOf = (options: {
   target: string;
   product: ResolvedProduct;
   sketch: Sketch;
   merge: () => string[] | MergeRefusal;
-  finish: (before: Map<string, string> | null) => void;
+  finish: (before: Map<string, string> | null, sketchDirs: string[]) => void;
 }): string[] | MergeRefusal => {
   const { target, product, sketch } = options;
   const journal = openJournal({
@@ -122,6 +124,7 @@ export const journaledMergeOf = (options: {
   });
 
   let merged: string[] | MergeRefusal;
+  let rebases: SketchRebases;
 
   try {
     const before = dirtyFilesOfSync({ target, product });
@@ -134,7 +137,8 @@ export const journaledMergeOf = (options: {
       return merged;
     }
 
-    options.finish(before);
+    rebases = rebaseOthersAfterMerge({ target, product, sketch });
+    options.finish(before, rebases.dirs);
   } catch (error) {
     journal.rollback();
 
@@ -142,7 +146,7 @@ export const journaledMergeOf = (options: {
   }
 
   journal.close();
-  rebaseOthersAfterMerge({ target, product, sketch }).forEach((line) => console.log(line));
+  rebases.lines.forEach((line) => console.log(line));
 
   return merged;
 };

@@ -465,7 +465,7 @@ export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sket
   return rejectedProblemOf(sketch, pick.variant);
 };
 
-/** Ports and rebases the other open sketches the merge of `sketch` made stale; answers one line per sketch. */
+/** Ports and rebases the other open sketches the merge of `sketch` made stale; answers one line per sketch and their folders. */
 export const rebaseOthersAfterMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) =>
   rebaseAfterMerge({
     target: options.target,
@@ -571,7 +571,8 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
       clearSketchReport({ checkout: target, sketch });
     });
 
-    if (!options.deferRebase) rebaseOthersAfterMerge({ target, product, sketch }).forEach((line) => console.log(line));
+    if (!options.deferRebase)
+      rebaseOthersAfterMerge({ target, product, sketch }).lines.forEach((line) => console.log(line));
 
     return checked.mergedParts;
   } finally {

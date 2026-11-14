@@ -9,6 +9,8 @@ import { resolveProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
 import { rebaseAfterCommit } from './after-merge';
 import { mergeSketch } from './merge';
+import { commitMergeResultSync } from './merge-commit';
+import { journaledMergeOf } from './merge-step';
 import { createSketch, decideSketch, markSketchReady, readSketch, Sketch, SketchTarget } from './sketch';
 
 const targets: string[] = [];
@@ -82,6 +84,46 @@ describe('a merge and the other open sketches', { timeout: 120_000 }, () => {
     expect(lines).toContain('REBASED acme pages/home after the merge of elements/hero');
   });
 
+  it('commits the sketches the merge rebased in the merge commit', () => {
+    const target = acme();
+
+    output();
+
+    const home = readyOn(target, { layer: 'pages', name: 'home' });
+    const drawn = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    }) as Sketch;
+
+    edit(heroFile(drawn), 'One featured film', 'The featured film');
+
+    const hero = markSketchReady({ checkout: target, sketch: drawn }) as Sketch;
+
+    git(target, 'add', '-A');
+    git(target, 'commit', '-qm', 'sketches');
+
+    const product = resolveAcme(target);
+    const config = readConfig(target) ?? {};
+    const sketch = decideSketch({
+      sketch: hero,
+      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
+    }) as Sketch;
+
+    expect(
+      journaledMergeOf({
+        target,
+        product,
+        sketch,
+        merge: () => mergeSketch({ target, config, product, sketch, deferRebase: true }),
+        finish: (before, sketchDirs) =>
+          void commitMergeResultSync({ target, product, sketch, variant: 'a', before, sketchDirs }),
+      }),
+    ).toEqual(['elements/hero']);
+    expect(String(git(target, 'status', '--porcelain'))).toBe('');
+    expect(reread(home).baseline).toEqual(baselineOf(resolveAcme(target)));
+  });
+
   it('marks an open sketch whose rebase conflicts for its agent and names it in the merge output', () => {
     const target = acme();
     const lines = output();
@@ -120,18 +162,20 @@ describe('a merge and the other open sketches', { timeout: 120_000 }, () => {
 
     writeFileSync(join(target, 'notes.txt'), 'unrelated');
 
-    expect(rebaseAfterCommit({ target, product: resolveAcme(target), commit: 'n', files: commitOf('notes') })).toEqual(
-      [],
-    );
+    expect(rebaseAfterCommit({ target, product: resolveAcme(target), commit: 'n', files: commitOf('notes') })).toEqual({
+      lines: [],
+      dirs: [],
+    });
 
     edit(join(target, '.ethlete/design/acme/elements/hero/hero.ts'), 'One featured film', 'The featured film');
 
     const files = commitOf('hero');
 
     expect(reread(home).baseline).not.toEqual(baselineOf(resolveAcme(target)));
-    expect(rebaseAfterCommit({ target, product: resolveAcme(target), commit: 'h', files })).toEqual([
-      'REBASED acme pages/home after the commit h',
-    ]);
+    expect(rebaseAfterCommit({ target, product: resolveAcme(target), commit: 'h', files })).toEqual({
+      lines: ['REBASED acme pages/home after the commit h'],
+      dirs: [home.dir],
+    });
 
     const after = reread(home);
 

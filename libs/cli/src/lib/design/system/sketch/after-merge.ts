@@ -18,15 +18,19 @@ const recheckOf = (options: { target: string; product: ResolvedProduct; sketch: 
         ),
   );
 
+/** One line per stale sketch, and the folder of each sketch the rebase wrote: rebased, or marked for its agent. */
+export type SketchRebases = { lines: string[]; dirs: string[] };
+
 const rebaseStaleSketches = (options: {
   target: string;
   product: ResolvedProduct;
   merged?: string[];
   after: string;
   hitsOf: (parts: string[]) => string[];
-}): string[] => {
+}): SketchRebases => {
   const { target, product, after, hitsOf } = options;
   const lines: string[] = [];
+  const dirs: string[] = [];
 
   for (const sketch of listSketches({ productDir: product.dir, product: product.name })) {
     if (typeof sketch === 'string' || sketch.decision?.kind === 'discard') continue;
@@ -51,6 +55,8 @@ const rebaseStaleSketches = (options: {
       );
     const { ported, conflicts, rebased } = journaledRebaseOf({ target, product, sketch });
 
+    dirs.push(sketch.dir);
+
     if (!rebased) {
       mark(sketch, conflicts);
       lines.push(`AGENT PORTS ${id} ${after}: ${conflicts.join('; ')} - port it by hand, then run ${rebase}`);
@@ -70,7 +76,7 @@ const rebaseStaleSketches = (options: {
     lines.push(`REBASED ${id} ${after}`);
   }
 
-  return lines;
+  return { lines, dirs };
 };
 
 /**
@@ -82,7 +88,7 @@ export const rebaseAfterMerge = (options: {
   product: ResolvedProduct;
   merged: string[];
   before: Record<string, string>;
-}): string[] => {
+}): SketchRebases => {
   const changed = changedKeysOf(options.before, baselineOf(options.product));
 
   return rebaseStaleSketches({
@@ -113,7 +119,7 @@ export const rebaseAfterCommit = (options: {
   product: ResolvedProduct;
   commit: string;
   files: string[];
-}): string[] => {
+}): SketchRebases => {
   const { target, product, commit } = options;
   const files = new Set(options.files.map((file) => resolve(target, file)));
   const touched = new Map<string, boolean>();
