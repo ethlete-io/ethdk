@@ -1198,6 +1198,9 @@ Decided in ADR 0209: an agent accepts a direct edit that names the ADR it implem
 "ADR 0050", then pages/start (Tom's q1ok).
 
 As built (Linux builder, 2026-11-14, recommendation built, pick decided): the Sketches page (app and design part) never folds `old` or `new` of an `@edit` sketch, names them "Zuletzt gemergter Stand" and "Änderung behalten" through the row `label`, drops an Aktuell row, and each row keeps its Übernehmen button; part note and edit header text updated. Verified: sketches.component spec (new case, 444 related tests pass), design tsc, `et:design check`. Not verified: a real `@edit` sketch in the running Studio; side effect: the first-changed state marker no longer shows on `new`.
+Verified live (B504, 2026-11-14): a scratch checkout with a direct edit of studio-lab `elements/list-row` opened
+`elements/list-row@edit`; the headless Studio shows "Änderung behalten" and "Zuletzt gemergter Stand", each with
+"Übernehmen", no "Unverändert" fold and no Aktuell row.
 
 516\. Tom's "q1ok" for pages/sketches reached the builder only as a relayed message, and the builder's permission
 check refused `accept --by tom`: an agent may not record Tom's consent from a relay. The doc agent had promised the
@@ -2177,8 +2180,8 @@ gemergt" where it fits, reuse before a new state); then `sketchStatus` reads the
 "waits for a pick" for both the CLI and the view (tool internal). Bite: a spec with a ready sketch that has a pick
 expects the picked state, not `waiting`.
 Verified live (B504, 2026-11-14): a headless Studio render (`withStudio`, studio-lab, sketch view of `elements/rating`) shows
-"Variante gewählt", the "9 offen" chip beside "Übernehmen" of variant c, and no "Wartet auf deine Wahl". The badge uses
-`LABELS.status.picked`, not the "Sketch gewählt, noch nicht gemergt" wording.
+"Variante gewählt", the "9 offen" chip beside "Übernehmen" of variant c, and no "Wartet auf deine Wahl". The badge
+(`LABELS.status.picked`, "Variante gewählt") matches the picked variant c (design-to-code-notes-2026-11.md:326).
 
 652, decided by the doc agent (2026-11-11, night; tool internal, the builder's recommendation; no ADR covers it, ADR 0009
 was a one-time commit): step 1 moves only `pictures.json` (pure tool state: shot hashes) to a gitignored
