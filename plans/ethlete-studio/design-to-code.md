@@ -2050,6 +2050,10 @@ frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5
 Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
 own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
 with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).
+As built (B487, 2026-11-14): Cause: the canvas frame drops the focused iframe on both paths and focus falls to
+`body` (bite: e2e case `focus inside a live frame stays on the frame across its remount` fails without the fix, passes
+with it, also under `--hold-listings 14000`). Fix: the frame host takes focus when its focused iframe unmounts. Not
+verified: the menu trigger landing (Shift+Tab from `body` reached the canvas here), WKWebView, CEF, grid cell iframes.
 
 779\. Linux builder (2026-11-11, night, 777 df5226ee1): the first push:suite failed: `serve.spec`, `shot-store.spec` and
 `serve.perf.spec` mock `vite` without `createLogger`, which `serve.ts` now imports. The subagent ran only its touched

@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   ElementRef,
+  afterRenderEffect,
   ViewEncapsulation,
   computed,
   inject,
@@ -15,7 +16,13 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
-import { ProvideColorDirective, injectSemanticColorTheme, signalHostElementIntersection } from '@ethlete/core';
+import {
+  ProvideColorDirective,
+  injectHostElement,
+  injectRenderer,
+  injectSemanticColorTheme,
+  signalHostElementIntersection,
+} from '@ethlete/core';
 import {
   EMPTY,
   Observable,
@@ -334,6 +341,8 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     '[attr.data-live]': 'live()',
     '[attr.data-schemed]': 'copies().length > 0 || null',
     '[attr.data-load-failed]': 'failure() !== null || null',
+    '(focusin)': 'holdFocus($event)',
+    '(focusout)': 'releaseFocus($event)',
   },
 })
 export class CanvasFrameComponent {
@@ -341,6 +350,9 @@ export class CanvasFrameComponent {
   private sanitizer = inject(DomSanitizer);
   private queue = injectFrameRenderQueue();
 
+  private host = injectHostElement();
+
+  private renderer = injectRenderer();
   public frame = input.required<CanvasFrame>();
   /** The width of one scheme copy; the host spans every copy. */
   public width = input.required<number>();
@@ -350,25 +362,26 @@ export class CanvasFrameComponent {
   public liveCells = input<ReadonlySet<string> | null>(null);
   public active = input(false);
   public selected = input(false);
-  public captionBelow = input(false);
 
+  public captionBelow = input(false);
   public heightChange = output<number>();
   public widthChange = output<number>();
   public escapeKeydown = output();
+
   public cellsChange = output<Record<string, Rect>>();
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
-
   private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
+
   private gridView = viewChild(CanvasFrameGridComponent);
 
   protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
-
   public bordered = computed(
     () =>
       this.selected() ||
       (this.frame().empty === undefined && (this.frame().width !== undefined || this.frame().grid !== undefined)),
   );
+
   protected copies = computed(() => schemeCopiesOf(this.frame(), { width: this.width(), height: this.height() }));
 
   protected labelsSchemes = computed(() => this.copies().length > 1);
@@ -404,12 +417,12 @@ export class CanvasFrameComponent {
 
     return copies.length > 0 ? copies : [null];
   });
-
   protected cropped = computed(() => {
     const crop = this.frame().crop;
 
     return crop ? croppedLayoutOf(crop) : null;
   });
+
   private drawn = computed(() => this.live() && this.frame().empty === undefined && !this.frame().error);
 
   /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */
@@ -477,7 +490,14 @@ export class CanvasFrameComponent {
 
   private contentLoad$ = new Subject<HTMLIFrameElement>();
 
+  private focusedIframe: HTMLIFrameElement | null = null;
+
   constructor() {
+    afterRenderEffect(() => {
+      this.iframes();
+      this.keepFocusOnRemount();
+    });
+
     toObservable(this.wanted)
       .pipe(
         switchMap((wanted) => (wanted ? this.admit$(wanted) : EMPTY)),
@@ -546,6 +566,15 @@ export class CanvasFrameComponent {
     return this.gridView()?.liveWindowOf(id) ?? null;
   }
 
+  protected holdFocus(event: FocusEvent) {
+    if (event.target instanceof HTMLIFrameElement) this.focusedIframe = event.target;
+  }
+
+  protected releaseFocus(event: FocusEvent) {
+    if (event.relatedTarget) this.focusedIframe = null;
+    if (event.target === this.host) this.renderer.removeAttribute(this.host, 'tabindex');
+  }
+
   protected labelOf(scheme: ColorScheme) {
     return SCHEME_LABELS[scheme];
   }
@@ -578,6 +607,21 @@ export class CanvasFrameComponent {
 
   protected loadContent(iframe: HTMLIFrameElement) {
     this.contentLoad$.next(iframe);
+  }
+
+  private keepFocusOnRemount() {
+    const iframe = this.focusedIframe;
+
+    if (!iframe || iframe.isConnected) return;
+
+    this.focusedIframe = null;
+
+    const active = this.host.ownerDocument.activeElement;
+
+    if (active && active !== this.host.ownerDocument.body) return;
+
+    this.renderer.setAttribute(this.host, 'tabindex', '-1');
+    this.host.focus({ preventScroll: true });
   }
 
   private settleScreenshot(event: Event) {

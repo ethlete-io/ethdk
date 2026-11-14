@@ -461,6 +461,69 @@ const focusUntil = async (page, done) => {
   return ring;
 };
 
+const LIVE_GRACE_MS = 5000;
+
+const liveFrameUntil = async (page, id) => {
+  const handle = await page.waitForFunction(
+    ({ CANVAS, id }) => {
+      const canvas = document.querySelector(CANVAS)?.getBoundingClientRect();
+      const frame = [...document.querySelectorAll('ethlete-canvas-frame[data-live="true"]')].find((host) => {
+        const iframe = host.querySelector('iframe:not(.opacity-0)');
+        const box = iframe?.getBoundingClientRect();
+
+        return (
+          (!id || host.dataset.frameId === id) &&
+          box &&
+          box.top >= canvas.top &&
+          box.bottom <= canvas.bottom &&
+          box.left >= canvas.left &&
+          box.right <= canvas.right
+        );
+      });
+
+      return frame?.dataset.frameId ?? false;
+    },
+    { CANVAS, id },
+    { timeout: FULL_COMPARE_MS },
+  );
+
+  return handle.jsonValue();
+};
+
+const frameFocusOf = async (page, id) => {
+  const outer = await page.evaluate((id) => {
+    const host = document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"]`);
+    const active = document.activeElement;
+    const owner = active?.closest('ethlete-canvas-frame');
+    const label = active
+      ? `${active.localName}${owner ? `[${owner.dataset.frameId}]` : ''}${active.getAttribute('aria-label') ? ` "${active.getAttribute('aria-label')}"` : ''}`
+      : 'nothing';
+
+    return { label, onHost: active === host, inFrame: active?.localName === 'iframe' && host?.contains(active) };
+  }, id);
+  const iframe = outer.inFrame
+    ? await page.locator(`ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`).elementHandle()
+    : null;
+  const inner = iframe
+    ? await (await iframe.contentFrame())?.evaluate(() => document.activeElement?.localName ?? 'nothing')
+    : null;
+
+  return { ...outer, active: inner ? `${outer.label} > ${inner}` : outer.label };
+};
+
+const focusInto = async (page, id) => {
+  await page.evaluate(
+    (id) => document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`)?.focus(),
+    id,
+  );
+  await page.keyboard.press('Tab');
+  await settle(page);
+
+  const focus = await frameFocusOf(page, id);
+
+  return focus.inFrame && !focus.active.endsWith('> body') && !focus.active.endsWith('> nothing');
+};
+
 const noRingAfterPointer = async (page, point) => {
   await page.mouse.click(point.x, point.y);
   await settle(page);
@@ -2755,6 +2818,89 @@ const CASES = [
         ok: ring.focused && ring.rings.length > 0,
         detail: `focused=${ring.focused} rings=[${ring.rings}] active=${ring.active}`,
       };
+    },
+  },
+  {
+    name: 'focus inside a live frame stays on the frame across its remount',
+    listingMayPend: 'the evidence is where focus sits, and the case waits for the remounted iframe itself',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const target = await liveFrameUntil(page);
+
+      const stylesheet = join(checkout, '.ethlete/design/studio', EDITED_PART, 'disclosure.css');
+      const original = readFileSync(stylesheet, 'utf8');
+      const rows = [];
+      const check = async (path, remount) => {
+        if (!(await focusInto(page, target))) return `${path}: Tab put no focus inside frame ${target}`;
+
+        const before = await frameFocusOf(page, target);
+
+        await page.keyboard.press('Shift+Tab');
+        const expected = await frameFocusOf(page, target);
+
+        if (!(await focusInto(page, target))) return `${path}: Tab put no focus inside frame ${target} again`;
+        await remount();
+        const after = await frameFocusOf(page, target);
+        await page.keyboard.press('Shift+Tab');
+        const shifted = await frameFocusOf(page, target);
+        const kept = after.onHost || after.inFrame;
+
+        rows.push(
+          `${path}: before ${before.active}, after remount ${after.active}, Shift+Tab ${shifted.active} (without remount ${expected.active})`,
+        );
+
+        return kept && shifted.active === expected.active ? null : `${path} lost focus`;
+      };
+
+      try {
+        const failures = [
+          await check('address', async () => {
+            const src = await page.evaluate(
+              (id) => document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`)?.src,
+              target,
+            );
+
+            writeFileSync(stylesheet, `${original}\n.st-disclosure { outline: 6px solid rgb(0 128 255); }\n`);
+            await page.waitForFunction(
+              ({ id, src }) => {
+                const shown = document.querySelector(
+                  `ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`,
+                );
+
+                return (
+                  !!shown &&
+                  shown.src !== src &&
+                  document.querySelectorAll(`ethlete-canvas-frame[data-frame-id="${id}"] iframe`).length === 1
+                );
+              },
+              { id: target, src },
+              { timeout: FULL_COMPARE_MS },
+            );
+            await settle(page);
+          }),
+          await check('grace', async () => {
+            const box = await page.locator(CANVAS).first().boundingBox();
+
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+            for (let step = 0; step < 10; step++) await page.mouse.wheel(0, 600);
+            await page.waitForFunction(
+              (id) => !document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"] iframe`),
+              target,
+              { timeout: LIVE_GRACE_MS + WAIT_MS },
+            );
+            await settle(page);
+            rows.push(`grace dropped: ${(await frameFocusOf(page, target)).active}`);
+            for (let step = 0; step < 10; step++) await page.mouse.wheel(0, -600);
+            await liveFrameUntil(page, target);
+            await settle(page);
+          }),
+        ].filter(Boolean);
+
+        return { ok: failures.length === 0, detail: `frame ${target}: ${[...failures, ...rows].join('; ')}` };
+      } finally {
+        writeFileSync(stylesheet, original);
+      }
     },
   },
   {

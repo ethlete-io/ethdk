@@ -85,6 +85,22 @@ describe('CanvasFrameComponent swap between shot and page', () => {
 
     expect(shown()).toEqual({ shot: true, page: false, mounted: false });
   });
+
+  it('keeps focus on the frame when the focused page unmounts', async () => {
+    post({ type: 'design-explore:painted' });
+    await flush();
+    const iframe: HTMLIFrameElement = fixture.nativeElement.querySelector('iframe');
+
+    iframe.focus();
+    iframe.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    fixture.componentRef.setInput('live', false);
+    await flush();
+    decoded();
+    await flush();
+
+    expect(shown().mounted).toBe(false);
+    expect(document.activeElement).toBe(fixture.nativeElement);
+  });
 });
 
 describe('CanvasFrameComponent failed page load', () => {
