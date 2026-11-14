@@ -22,6 +22,7 @@ import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs'
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
+import { settleLayout } from './settle-wait.mjs';
 import { shardShareOf } from './shard-share.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
@@ -751,28 +752,32 @@ const eventLog = (startedAt = Date.now()) => {
 
 const settled = async (page, selector) => {
   await listingAnswered(page);
-  let last = '';
-  let same = 0;
+  await settleLayout({
+    polls: WAIT_MS / 250,
+    waitedFor: `${WAIT_MS / 1000} s`,
+    wait: () => page.waitForTimeout(250),
+    read: () =>
+      page.evaluate(
+        ({ CANVAS, selector }) => {
+          const changes = document.querySelectorAll('[data-sk-changed="pending"]').length;
+          const unsized = [...document.querySelectorAll('[data-sk-row][data-sk-unsized]')].map(
+            (row) => `row ${row.getAttribute('data-sk-row')} unsized`,
+          );
 
-  for (let poll = 0; poll < WAIT_MS / 250 && same < 3; poll++) {
-    await page.waitForTimeout(250);
-    const now = await page.evaluate(
-      ({ CANVAS, selector }) =>
-        document.querySelector('[data-sk-changed="pending"], [data-sk-row][data-sk-unsized]')
-          ? 'pending'
-          : [...(document.querySelector(CANVAS)?.querySelectorAll(selector) ?? [])]
+          return {
+            pending: [...unsized, ...(changes ? [`${changes} change mark(s) pending`] : [])],
+            layout: [...(document.querySelector(CANVAS)?.querySelectorAll(selector) ?? [])]
               .map((frame) => {
                 const { left, top, width, height } = frame.getBoundingClientRect();
 
                 return [left, top, width, height].map(Math.round).join();
               })
               .join(' '),
-      { CANVAS, selector },
-    );
-
-    same = now !== 'pending' && now === last ? same + 1 : 0;
-    last = now;
-  }
+          };
+        },
+        { CANVAS, selector },
+      ),
+  });
 };
 
 const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) => {
@@ -2513,8 +2518,10 @@ const CASES = [
 
         return `sent +${since(sent.sentAt)}${wire}, ${sent.endAt ? `${sent.answer} +${since(sent.endAt)}` : 'not answered'}`;
       };
-      const switchTo = (part) =>
-        page.evaluate(
+      const switchTo = async (part) => {
+        await markPartLeaves(page);
+
+        return page.evaluate(
           ({ part, timeoutMs }) =>
             new Promise((resolveSwitch) => {
               const heard = new Map();
@@ -2539,9 +2546,7 @@ const CASES = [
               document.addEventListener('load', onLoad, true);
 
               const named = [
-                ...document.querySelectorAll(
-                  '[role="treeitem"][data-kind="part"], [role="treeitem"][data-kind="leaf"]',
-                ),
+                ...document.querySelectorAll('[role="treeitem"][data-kind="part"], [role="treeitem"][data-e2e-part]'),
               ].filter((candidate) => candidate.textContent.trim() === part.split('/')[1]);
               const leaf = named.find((candidate) => candidate.dataset.kind === 'part') ?? named[0];
 
@@ -2645,6 +2650,7 @@ const CASES = [
             }),
           { part, timeoutMs: WAIT_MS },
         );
+      };
       const rows = [];
       const seen = new Set(['pages/system']);
       let from = 'pages/system';
