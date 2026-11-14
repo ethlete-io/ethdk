@@ -178,6 +178,42 @@ This applies to root menus opening on the vertical axis. Submenus and context me
 
 The active item shows its focus ring only while the keyboard moved it there. Moving the pointer hands the highlight to the item under it and ends the ring, also when the pointer was already resting on that item.
 
+## Closing & focus
+
+### Outside clicks
+
+While a root menu is open, a `pointerdown` anywhere outside its panes (any level of the tree) closes the whole tree. The menu never swallows that press: it renders no backdrop, adds no `preventDefault()`/`stopPropagation()`, and closes without waiting for the click. The click that follows lands on whatever sits under the pointer, so a button elsewhere on the page both closes the menu and runs its own click handler.
+
+Three presses do not close it on `pointerdown`: one inside any open pane, one on a pane that belongs to a higher overlay layer, and one on the menu's own trigger (the click that follows toggles the menu closed). A right press on a context-menu zone is also skipped, because the `contextmenu` event that follows reopens the menu at the new point.
+
+An outside close does **not** move focus. It stays wherever the press put it (the clicked button, an input, or the body), unlike closing through item activation, <kbd>Esc</kbd> or <kbd>Tab</kbd>, which focus the trigger.
+
+### Focus after a dialog opened from an item
+
+Activating an item closes the menu (unless `closeOnActivate="false"`) and focuses the trigger. When the item's `(click)` or `(activate)` handler opens a dialog or any other overlay from the overlay manager, focus lands back on the **menu trigger** once that overlay closes - not on the item (which is gone with the panel) and not on the body.
+
+The overlay records the focused element and the focus-restore chain of the overlay that owned it, and on close it focuses the first still-connected entry: the item has been removed by then, so the chain falls through to the trigger. This relies on the overlay's `restoreFocus` default (`true`) and applies only while focus is still inside the closing overlay or on the body; if the user has already focused something else, that wins. A dialog opened with `restoreFocus: false` leaves focus where it is.
+
+## Coloring items
+
+`etProvideColor` works on the panel (`<et-menu>`) and on a single `et-menu-item`; the nearest scope wins for that row's color tokens. The directive is not part of `MENU_IMPORTS`, so add `ProvideColorDirective` from `@ethlete/core` to the `imports` of the component whose template uses it - without it the attribute is inert. The theme name must be one your app registered with `provideColorThemesWithTailwind4()`.
+
+```ts
+import { ProvideColorDirective } from '@ethlete/core';
+import { MENU_IMPORTS } from '@ethlete/components';
+
+@Component({ imports: [MENU_IMPORTS, ProvideColorDirective], … })
+```
+
+```html
+<et-menu etProvideColor="brand">
+  <button et-menu-item etProvideColor="accent" type="button">Highlighted row</button>
+  <button et-menu-item type="button">Regular row</button>
+</et-menu>
+```
+
+The panel renders detached in the overlay container, so it re-applies the color context from the trigger's location itself; an explicit `etProvideColor` on `<et-menu>` overrides that. `variant="destructive"` on an item forces the app's error theme and takes precedence over an `etProvideColor` on the same item. Theme names such as `brand` or `accent` above belong to the example app - the SDK ships none.
+
 ## Accessibility
 
 Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics are emitted automatically:
@@ -190,6 +226,50 @@ Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics ar
 ## Theming
 
 Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`, caps the whole panel - header included - and is itself capped by the space next to the trigger, see [Panel placement](#panel-placement)), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-border-radius` (`10px`, the panel), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-font-weight` (unset: inherits the page's weight), `--et-menu-item-icon-size` (`16px`), `--et-menu-item-submenu-icon-size` (`12px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`), `--et-menu-scroll-fade-size` (`12px`, see [Panel placement](#panel-placement)). Every token inherits, so a value set on `:root` or any ancestor reaches the panel, which renders detached in the overlay container. Colors come from the [surface/color theme systems](/core/theming).
+
+## Migrating from the cdk menu
+
+The cdk menu (`MenuImports` from `@ethlete/cdk`) is in maintenance mode. The SDK menu is a different shape: the trigger no longer takes a template, it sits inside an `[etMenu]` host next to an `ng-template[etMenuSurface]`. The mechanical symbol renames are covered by the [cdk migration](/cdk/migration) and its codemod; this table is the behavioral map.
+
+```html
+<!-- cdk -->
+<button [etMenuTrigger]="menuTpl" [placement]="'bottom-start'">Menu</button>
+<ng-template #menuTpl>
+  <et-menu>
+    <button etMenuItem>Item</button>
+  </et-menu>
+</ng-template>
+
+<!-- SDK -->
+<div etMenu placement="bottom-start">
+  <button etMenuTrigger et-button type="button">Menu</button>
+  <ng-template etMenuSurface>
+    <et-menu>
+      <button et-menu-item type="button">Item</button>
+    </et-menu>
+  </ng-template>
+</div>
+```
+
+| cdk                                                                                                     | SDK                                                                             | Notes                                                                                             |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `MenuImports`                                                                                           | `MENU_IMPORTS` (+ `MENU_SEARCH_IMPORTS`)                                        |                                                                                                   |
+| `[etMenuTrigger]="templateRef"`                                                                         | `[etMenu]` host + `etMenuTrigger` (no value) + `ng-template[etMenuSurface]`     | The template is the surface, not a trigger input                                                  |
+| trigger input `placement`, `offset`, `viewportPadding`, `fallbackPlacements`                            | same inputs on `[etMenu]`                                                       | Defaults differ: `placement` and `offset` are `'auto'`, see [Positioning](#positioning-behavior)  |
+| trigger input `shift`, `referenceElement`, `mirrorWidth`                                                | no equivalent                                                                   | No such inputs on `etMenu`                                                                        |
+| `<et-menu>` (`MenuComponent`)                                                                           | `<et-menu>`                                                                     | Same selector, new panel                                                                          |
+| `<et-menu>` inputs `renderScrollableMasks`, `renderScrollableButtons`, `scrollableClass`, `orientation` | no equivalent                                                                   | The panel scrolls with an auto-hiding scrollbar and fade, see [Panel placement](#panel-placement) |
+| `etMenuItem` / `[et-menu-item]` / `<et-menu-item>`                                                      | `button[et-menu-item]` / `a[et-menu-item]` (or headless `[etMenuItem]`)         | The styled item is a button or anchor, not a free element                                         |
+| item input `etMenuItemDisabled`                                                                         | `disabled`                                                                      |                                                                                                   |
+| `et-menu-group`, `[etMenuGroup]`                                                                        | no equivalent                                                                   | Plain items need no group; selection groups below                                                 |
+| `et-menu-group-title`, `[etMenuGroupTitle]`                                                             | `<et-menu-group-label>`                                                         | Wired into group `aria-labelledby`                                                                |
+| `et-menu-radio-group` + `<et-menu-radio-item>`                                                          | `<et-menu-radio-group>` + `<et-menu-radio-item>`                                | `[(value)]` or `[formField]` on the group; see [Selection](#selection)                            |
+| `et-menu-checkbox-group` + `<et-menu-checkbox-item>`                                                    | `<et-menu-checkbox-group>` + `<et-menu-checkbox-item>`                          | `[(value)]` or `[formField]`; items also stand alone                                              |
+| radio/checkbox item input `closeOnInteraction`                                                          | `closeOnActivate`                                                               | Both default to keeping the menu open on a pointer click; see [Selection](#selection)             |
+| `<ng-template etMenuSearchTemplate>` with a form input                                                  | `input[etMenuSearch]` as first child of `<et-menu>`                             | Filtering the items is your job, see [Search](#search)                                            |
+| (none)                                                                                                  | `activate` output and `closeOnActivate` input on the item                       | The cdk item had no output                                                                        |
+| (none)                                                                                                  | `open` model, `show()` / `hide()` / `toggle()` / `closeAll()` / `openAt(point)` | Programmatic and two-way open state                                                               |
+| `MENU_TRIGGER_TOKEN`, `MENU_ITEM_TOKEN`                                                                 | inject `MenuTriggerDirective` / `MenuItemDirective` directly                    | Per the [cdk migration](/cdk/migration) symbol index                                              |
 
 ## Error codes
 
