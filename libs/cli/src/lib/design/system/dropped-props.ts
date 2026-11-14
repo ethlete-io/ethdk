@@ -172,6 +172,59 @@ export const droppedStatePropsOf = (options: {
   return dropped;
 };
 
+/** Whether the component in `source` takes every design prop of `states`, by the check DROPPED-PROP runs. */
+export const takesEveryPropOf = (options: {
+  states: Record<string, unknown>;
+  sampled: readonly string[];
+  source: string;
+}) => {
+  const inputs = componentInputsOf(options.source);
+
+  return (
+    inputs !== null && droppedStatePropsOf({ states: options.states, inputs, sampled: options.sampled }).size === 0
+  );
+};
+
+/** Answers whether the app component at `path` takes every design prop of the page part `page` of `product`. */
+export const pagePropTakerOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  warm?: WarmDraw;
+}): Promise<(page: string, path: string) => boolean> => {
+  const { target, config, product } = options;
+  const pages = product.parts.filter((part) => part.layer === 'pages');
+  const states = await loadingOn({ target, config, warm: options.warm }, async (server) => {
+    const loaded = new Map<string, Record<string, unknown>>();
+
+    for (const part of pages) {
+      const module = (await server
+        .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
+        .catch(() => null)) as { default?: { states?: unknown } } | null;
+      const found = module?.default?.states;
+
+      if (isRecord(found)) loaded.set(partKeyOf(part), found);
+    }
+
+    return loaded;
+  });
+
+  return (page, path) => {
+    const pageStates = states.get(page);
+    const file = resolve(target, path);
+
+    return (
+      pageStates !== undefined &&
+      existsSync(file) &&
+      takesEveryPropOf({
+        states: pageStates,
+        sampled: productSampledPropsOf({ target, product, part: page }),
+        source: readFileSync(file, 'utf8'),
+      })
+    );
+  };
+};
+
 const CONSTANT_BINDING = /^(?:'([^']*)'|"([^"]*)"|true|false|null|undefined|-?\d+(?:\.\d+)?)$/u;
 
 type Binding = { expression: string; fixed: boolean };

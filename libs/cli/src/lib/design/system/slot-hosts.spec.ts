@@ -1,6 +1,6 @@
 import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { slotComponentsOnPage } from './slot-hosts';
+import { hostComponentsOnPage, slotComponentsOnPage } from './slot-hosts';
 
 const PAGE = `<style>
   body { margin: 0; }
@@ -89,5 +89,20 @@ describe('slotComponentsOnPage', { timeout: 30_000 }, () => {
         slots: [{ part: 'elements/canvas', x: 0, y: 0, width: 10, height: 10 }],
       }),
     ).toBeNull();
+  });
+
+  it('names the live host and the components around it, innermost first, and null without the host', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(
+      `<app-root style="display: block"><app-view style="display: contents">${PAGE}</app-view></app-root>`,
+    );
+
+    expect(
+      await hostComponentsOnPage({ page, host: 'app-shell', selectors: ['app-root', 'app-view', ...SELECTORS] }),
+    ).toEqual(['app-shell', 'app-view', 'app-root']);
+    expect(await hostComponentsOnPage({ page, host: 'app-gone', selectors: SELECTORS })).toBeNull();
   });
 });

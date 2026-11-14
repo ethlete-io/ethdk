@@ -2,7 +2,7 @@ import { writeFileSync } from 'fs';
 import { refreshHarnessMap } from './harness-map';
 import { UncoveredState } from './live-uncovered';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
-import { partLinkOf, withLinkOf } from './sketch/part-definition';
+import { partLinkOf, withLinkOf, withRouteComponentOf } from './sketch/part-definition';
 import { noteWrite } from './write-journal';
 
 export type DerivedLink = { part: string; from: string | null; to: string };
@@ -15,16 +15,51 @@ const linkPathOf = (source: string) => {
   return link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
 };
 
+const pageLinksOf = (options: {
+  parts: ReadonlyMap<string, ResolvedProduct['parts'][number]>;
+  states: UncoveredState[];
+  components: ReadonlyMap<string, string>;
+  current: ReadonlyMap<string, string | null>;
+  takes: (page: string, path: string) => boolean;
+}) => {
+  const around = new Map<string, string[]>();
+
+  for (const state of options.states) {
+    if ('problem' in state || !state.around) continue;
+
+    const paths = state.around
+      .map((selector) => options.components.get(selector))
+      .filter((path): path is string => path !== undefined);
+    const known = around.get(state.page);
+
+    around.set(state.page, known ? known.filter((path) => paths.includes(path)) : paths);
+  }
+
+  return [...around].flatMap(([page, paths]): [string, string][] => {
+    const part = options.parts.get(page);
+
+    if (!part || part.layer !== 'pages' || partLinkOf(part.source).kind !== 'route') return [];
+
+    const taken = new Set([...options.current].filter(([key]) => key !== page).map(([, path]) => path));
+    const innermost = paths.find((path) => !taken.has(path) && options.takes(page, path));
+
+    return innermost ? [[page, innermost]] : [];
+  });
+};
+
 /**
  * The `implements` link of each embedded part, derived from the app components the live pages render at every slot
  * the design draws the part in. A part whose slots share no component, or that the app draws inline, keeps its link;
  * a page's own component never counts for a part it embeds, nor a component another part links; a foundation gets no
- * link; a part left with more than one candidate is ambiguous.
+ * link; a part left with more than one candidate is ambiguous. A page with a route link gets the innermost app component at
+ * or around its live host in every state of it that `takes` every design prop of the page, skipping the shared host, the
+ * shell and components other parts link; without `takes` no page link is derived.
  */
 export const derivedLinksOf = (options: {
   product: ResolvedProduct;
   states: UncoveredState[];
   components: ReadonlyMap<string, string>;
+  takes?: (page: string, path: string) => boolean;
 }): DerivedLinks => {
   const { product, components } = options;
   const parts = new Map(product.parts.map((part) => [partKeyOf(part), part]));
@@ -75,6 +110,15 @@ export const derivedLinksOf = (options: {
     }
   }
 
+  for (const [page, path] of pageLinksOf({
+    parts,
+    states: options.states,
+    components,
+    current,
+    takes: options.takes ?? (() => false),
+  }))
+    settled.set(page, path);
+
   return {
     links: [...settled]
       .filter(([part, path]) => current.get(part) !== path)
@@ -87,8 +131,8 @@ export const derivedLinksOf = (options: {
 };
 
 /**
- * Writes each derived link into its part file and regenerates the harness map from the new links. A part with a
- * route link or one inherited from a base product is left alone. Answers one line per written link, ambiguous part or
+ * Writes each derived link into its part file and regenerates the harness map from the new links; a route link keeps
+ * its route. A part inherited from a base product is left alone. Answers one line per written link, ambiguous part or
  * problem.
  */
 export const writeDerivedLinks = (options: { target: string; product: ResolvedProduct; derived: DerivedLinks }) => {
@@ -101,9 +145,12 @@ export const writeDerivedLinks = (options: { target: string; product: ResolvedPr
   for (const { part, from, to } of options.derived.links) {
     const resolved = options.product.parts.find((candidate) => partKeyOf(candidate) === part);
 
-    if (!resolved || resolved.origin === 'base' || partLinkOf(resolved.source).kind === 'route') continue;
+    if (!resolved || resolved.origin === 'base') continue;
 
-    const source = withLinkOf(resolved.source, to);
+    const source =
+      partLinkOf(resolved.source).kind === 'route'
+        ? withRouteComponentOf(resolved.source, to)
+        : withLinkOf(resolved.source, to);
 
     if (source === null) continue;
 

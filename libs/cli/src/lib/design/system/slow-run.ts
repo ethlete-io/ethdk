@@ -18,7 +18,7 @@ import { HarnessServer, startHarnessServer, StartHarnessServer } from './harness
 import { derivedLinksOf, writeDerivedLinks } from './derived-links';
 import { liveUncoveredOf, UncoveredState } from './live-uncovered';
 import { appComponentsOf } from './slot-hosts';
-import { droppedPropProblemsOf } from './dropped-props';
+import { droppedPropProblemsOf, pagePropTakerOf } from './dropped-props';
 import { compareLineOf, comparePngs } from './part-compare';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
@@ -60,6 +60,7 @@ export type SlowRunners = {
   controlState: typeof bespokeControlProblemsOf;
   contrastPairs: typeof contrastPairProblemsOf;
   droppedProps: typeof droppedPropProblemsOf;
+  pageProps: typeof pagePropTakerOf;
   actionLost: typeof actionLostProblemsOf;
 };
 
@@ -75,6 +76,7 @@ const defaultRunners: SlowRunners = {
   controlState: bespokeControlProblemsOf,
   contrastPairs: contrastPairProblemsOf,
   droppedProps: droppedPropProblemsOf,
+  pageProps: pagePropTakerOf,
   actionLost: actionLostProblemsOf,
 };
 
@@ -262,7 +264,14 @@ export const runSlowChecks = async (options: {
           );
 
           if (typeof states !== 'string') {
-            const derived = derivedLinksOf({ product, states, components: appComponentsOf({ target, product }) });
+            const derived = derivedLinksOf({
+              product,
+              states,
+              components: appComponentsOf({ target, product }),
+              takes: states.some((state) => 'around' in state)
+                ? await runners.pageProps({ target, config, product })
+                : undefined,
+            });
 
             writeDerivedLinks({ target, product, derived }).forEach((line) => console.log(line));
           }

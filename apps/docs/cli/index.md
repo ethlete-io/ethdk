@@ -371,7 +371,10 @@ Some rules need the app running in a browser, so they do not run with the static
 - The same pass derives the `implements` link of each part the page's design embeds: the app component whose host
   covers the part at every spot the design draws it becomes the link, written into the part file, and the harness map
   is regenerated. A page's own component never counts, a part drawn inline keeps its link, and a part with two
-  candidates prints `UNDERIVED` and keeps its link. `check --live` derives the links the same way.
+  candidates prints `UNDERIVED` and keeps its link. A page with a route link gets as its `component` the innermost app
+  component at or around the live host in every state, skipping the shared host, the shell and components other parts
+  link, and only one that takes every design prop of the page (the `DROPPED-PROP` check). `check --live` derives the
+  links the same way.
 - `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
   the harness page logs.
 

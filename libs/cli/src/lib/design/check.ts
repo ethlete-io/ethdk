@@ -10,6 +10,7 @@ import { holdStatus, writeStatus } from './status';
 import { callLintGateLinesOf, changedLintFilesOf, lintGateLinesOf } from './design-lint';
 import { checkRules, checkSystemRendered } from './system/check-system';
 import { derivedLinksOf, writeDerivedLinks } from './system/derived-links';
+import { pagePropTakerOf } from './system/dropped-props';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
 import { appComponentsOf } from './system/slot-hosts';
 import { appCanonicalClassesOf, fixAppCanonicalClassesOf, fixCanonicalClassesOf } from './system/rules/canonical-class';
@@ -498,7 +499,12 @@ const checkLive = async (options: { target: string; config: DesignConfig; produc
     writeDerivedLinks({
       target,
       product,
-      derived: derivedLinksOf({ product, states: checked.states, components: appComponentsOf({ target, product }) }),
+      derived: derivedLinksOf({
+        product,
+        states: checked.states,
+        components: appComponentsOf({ target, product }),
+        takes: await pagePropTakerOf({ target, config, product }),
+      }),
     }).forEach((line) => console.log(`${name}: ${line}`));
     checked.problems.forEach((line) => console.log(`${name}: ${line}`));
     checked.findings.forEach((finding) => console.log(`${name}: ${uncoveredFindingLineOf(finding)}`));

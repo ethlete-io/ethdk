@@ -10,7 +10,14 @@ import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { frameContentOf, LiveError, liveSpecOf, openLivePage } from './live-compare';
 import { ResolvedProduct } from './resolve-product';
 import { settledPanesOf } from './settled-panes';
-import { appComponentsOf, PartSlot, partSlotsOf, SlotComponents, slotComponentsOnPage } from './slot-hosts';
+import {
+  appComponentsOf,
+  hostComponentsOnPage,
+  PartSlot,
+  partSlotsOf,
+  SlotComponents,
+  slotComponentsOnPage,
+} from './slot-hosts';
 import { createSystemModules } from './system-modules';
 import { partCoverOf, regionTextOf, UncoveredRegion, uncoveredRegionsOnPage } from './uncovered-regions';
 
@@ -21,7 +28,7 @@ export type UncoveredFinding = { region: UncoveredRegion; states: string[] };
  * in, or why that state did not open.
  */
 export type UncoveredState = { page: string; state: string } & (
-  { regions: UncoveredRegion[]; slots?: SlotComponents[] } | { problem: string }
+  { regions: UncoveredRegion[]; slots?: SlotComponents[]; around?: string[] } | { problem: string }
 );
 
 /** Groups the regions each live state reports, so a region every state shows is one finding listing those states. */
@@ -155,9 +162,16 @@ export const liveUncoveredOf = async (options: {
                     selectors,
                   });
 
+                  const around = await hostComponentsOnPage({
+                    page: opened.page,
+                    host: page.host ?? spec.host,
+                    selectors: selectors.filter((selector) => selector !== spec.host && selector !== spec.shell),
+                  });
+
                   return {
                     regions: await uncoveredRegionsOnPage({ page: opened.page, parts, partless: spec.partless ?? [] }),
                     ...(components && { slots: components }),
+                    ...(around && { around }),
                   };
                 } finally {
                   await context.close();

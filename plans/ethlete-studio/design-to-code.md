@@ -1229,6 +1229,13 @@ comment-pin name components the app renders (flows/sketches, merge/sketches, des
 link the derivation leaves alone, still `system-page` (open); tree-row matches part-tree on three pages and
 `[ethlete-tree-row-item]` on flows, so no common host (open). Verified: specs, the live run on a scratch copy and in the
 main checkout. Commit 9f2594cbd.
+As built (586, B502 page links, Linux builder, 2026-11-14): pages are never embedded in a slot, so the live pass now
+also measures the app components at and around the live host of each page state (`hostComponentsOnPage`) and writes the
+innermost one common to every state into the `component` of the page's route link; the shared host, the shell and a
+component another part links never count. A candidate must take every design prop of the page, by the DROPPED-PROP
+check (`takesEveryPropOf`), so `system-view`, which takes none, never replaces `system-page`; without that check no page
+link is derived. Verified: specs (the guard spec fails without it), and `design check --live --product studio` in the
+main checkout derives no change; `pages/system` stays `system-page`.
 
 588\. Builder (2026-11-07, B434): the Studio e2e job (added in 94606402c) never passed in CI. It built only `cli`, so
 the design server answered `/__design/system` with 503 "missing build" and Studio stayed on "Design-Server startet".

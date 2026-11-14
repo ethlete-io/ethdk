@@ -102,3 +102,30 @@ export const slotComponentsOnPage = async (options: {
 
   return found ? options.slots.map(({ part }, index) => ({ part, selectors: found[index] ?? [] })) : null;
 };
+
+const AROUND_HOST_SCRIPT = `(({ host, selectors }) => {
+  const root = document.querySelector(host);
+  if (!root) return null;
+  const around = [];
+  for (let node = root; node; node = node.parentElement) {
+    const selector = selectors.find((candidate) => {
+      try {
+        return node.matches(candidate);
+      } catch {
+        return false;
+      }
+    });
+    if (selector && !around.includes(selector)) around.push(selector);
+  }
+  return around;
+})`;
+
+/** The app component selectors of the live host and the hosts around it, innermost first. `null` when the live host is missing. */
+export const hostComponentsOnPage = async (options: {
+  page: Page;
+  host: string;
+  selectors: string[];
+}): Promise<string[] | null> =>
+  (await options.page.evaluate(
+    `${AROUND_HOST_SCRIPT}(${JSON.stringify({ host: options.host, selectors: options.selectors })})`,
+  )) as string[] | null;

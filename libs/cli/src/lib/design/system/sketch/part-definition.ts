@@ -438,3 +438,16 @@ export const withLinkOf = (source: string, path: string): string | null => {
 
   return `${source.slice(0, open)}\n  ${field},${source.slice(open)}`;
 };
+
+/** `source` with the `component` of its route link replaced by `path`; `null` without a route link that names one. */
+export const withRouteComponentOf = (source: string, path: string): string | null => {
+  const found = linkFieldOf(source);
+  const link = found?.field.initializer;
+  const component = link && ts.isObjectLiteralExpression(link) ? propertyOf(link, 'component') : undefined;
+
+  if (!found || !component) return null;
+
+  const value = component.initializer;
+
+  return source.slice(0, value.getStart(found.file)) + quoted(path) + source.slice(value.getEnd());
+};

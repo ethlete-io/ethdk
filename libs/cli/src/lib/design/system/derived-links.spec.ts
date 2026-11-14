@@ -4,6 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from '../design-config';
 import { derivedLinksOf, writeDerivedLinks } from './derived-links';
+import { takesEveryPropOf } from './dropped-props';
 import { UncoveredState } from './live-uncovered';
 import { resolveProduct } from './resolve-product';
 import { appComponentsOf, SlotComponents } from './slot-hosts';
@@ -12,13 +13,16 @@ const HERO = 'apps/acme/src/app/hero/hero.component.ts';
 const BANNER = 'apps/acme/src/app/banner/banner.component.ts';
 const HOME = 'apps/acme/src/app/home/home.component.ts';
 
+const VIEW = 'apps/acme/src/app/view/view.component.ts';
+
 const COMPONENTS = new Map([
   ['app-hero', HERO],
+  ['app-view', VIEW],
   ['app-banner', BANNER],
   ['app-home', HOME],
 ]);
 
-const acme = (links: Record<string, string> = {}) => {
+const acme = (links: Record<string, string> = {}, routes: Record<string, string> = {}) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-derived-links-'));
 
   cpSync(join(__dirname, '__fixtures__'), target, { recursive: true });
@@ -30,6 +34,19 @@ const acme = (links: Record<string, string> = {}) => {
     writeFileSync(
       file,
       source.replace(/definePart(<\w+>)?\(\{/u, (open) => `${open}\n  implements: '${path}',`),
+    );
+  }
+
+  for (const [part, path] of Object.entries(routes)) {
+    const file = join(target, `.ethlete/design/acme/${part}/${part.split('/')[1]}.ts`);
+    const source = readFileSync(file, 'utf8');
+
+    writeFileSync(
+      file,
+      source.replace(
+        /definePart(<\w+>)?\(\{/u,
+        (open) => `${open}\n  implements: { route: '/', component: '${path}' },`,
+      ),
     );
   }
 
@@ -141,6 +158,86 @@ describe('derivedLinksOf', { timeout: 30_000 }, () => {
   });
 });
 
+describe('derivedLinksOf for a page', { timeout: 30_000 }, () => {
+  const around = (name: string, selectors: string[]): UncoveredState => ({
+    page: 'pages/home',
+    state: name,
+    regions: [],
+    around: selectors,
+  });
+
+  it('links a route page to the innermost component around the live host in every state of it', () => {
+    const { product } = acme({}, { 'pages/home': HOME });
+
+    const derived = derivedLinksOf({
+      product,
+      states: [around('default', ['app-view', 'app-banner']), around('error', ['app-home', 'app-view', 'app-banner'])],
+      components: COMPONENTS,
+      takes: () => true,
+    });
+
+    expect(derived).toEqual({ links: [{ part: 'pages/home', from: HOME, to: VIEW }], ambiguous: [] });
+  });
+
+  it('skips a component another part links, and leaves a page without a route link alone', () => {
+    const { product } = acme({ 'elements/hero': VIEW }, { 'pages/home': HOME });
+
+    expect(
+      derivedLinksOf({
+        product,
+        states: [around('default', ['app-view', 'app-home'])],
+        components: COMPONENTS,
+        takes: () => true,
+      }),
+    ).toEqual({ links: [], ambiguous: [] });
+
+    expect(
+      derivedLinksOf({
+        product: acme({ 'pages/home': HOME }).product,
+        states: [around('default', ['app-view'])],
+        components: COMPONENTS,
+        takes: () => true,
+      }),
+    ).toEqual({ links: [], ambiguous: [] });
+  });
+
+  it('skips a component that does not take every design prop of the page', () => {
+    const { target, product } = acme({}, { 'pages/home': HOME });
+    const takingFilms = `import { Component, input } from '@angular/core';\n\n@Component({ selector: 'x', template: '' })\nexport class C {\n  films = input<unknown[]>([]);\n}\n`;
+
+    writeFileSync(join(target, HOME), takingFilms);
+    writeFileSync(join(target, BANNER), takingFilms);
+
+    const takes = (_page: string, path: string) =>
+      takesEveryPropOf({
+        states: { default: { films: [{ title: 'Heat' }] }, empty: { films: [] } },
+        sampled: [],
+        source: readFileSync(join(target, path), 'utf8'),
+      });
+
+    expect(
+      derivedLinksOf({ product, states: [around('default', ['app-view', 'app-home'])], components: COMPONENTS, takes }),
+    ).toEqual({ links: [], ambiguous: [] });
+    expect(
+      derivedLinksOf({
+        product,
+        states: [around('default', ['app-view', 'app-banner'])],
+        components: COMPONENTS,
+        takes,
+      }),
+    ).toEqual({ links: [{ part: 'pages/home', from: HOME, to: BANNER }], ambiguous: [] });
+  });
+
+  it('derives no page link without a prop check', () => {
+    const { product } = acme({}, { 'pages/home': HOME });
+
+    expect(derivedLinksOf({ product, states: [around('default', ['app-view'])], components: COMPONENTS })).toEqual({
+      links: [],
+      ambiguous: [],
+    });
+  });
+});
+
 describe('writeDerivedLinks', { timeout: 30_000 }, () => {
   it('writes the derived link into the part file and regenerates the harness map from it', () => {
     const { target, product } = acme({ 'elements/hero': BANNER });
@@ -174,5 +271,20 @@ describe('writeDerivedLinks', { timeout: 30_000 }, () => {
 
     expect(map).toMatch(/"elements\/hero": \(\) => import\("\.\/hero\/hero\.component"\)/u);
     expect(map).toMatch(/"components\/button": \(\) =>\s+import\("\.\/banner\/banner\.component"\)/u);
+  });
+
+  it('writes a derived page link into the component of its route link and keeps the route', () => {
+    const { target, product } = acme({}, { 'pages/home': HOME });
+
+    expect(
+      writeDerivedLinks({
+        target,
+        product,
+        derived: { links: [{ part: 'pages/home', from: HOME, to: VIEW }], ambiguous: [] },
+      }),
+    ).toEqual([`LINKED pages/home implements ${VIEW} (was ${HOME})`]);
+    expect(readFileSync(join(target, '.ethlete/design/acme/pages/home/home.ts'), 'utf8')).toContain(
+      `implements: { route: '/', component: '${VIEW}' },`,
+    );
   });
 });
