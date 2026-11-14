@@ -431,6 +431,10 @@ export type ListedSketch = {
    * (the design server retries once they are committed).
    */
   mergeHold?: { reason: string; at: string; dirty?: string[] };
+  /** The variants of a ready sketch whose files changed since `sketch ready` judged them. Missing from an `@ethlete/cli` older than it. */
+  changedSinceReady?: string[];
+  /** The parts that changed since the sketch was drawn or rebased, `[]` without a baseline, `null` while current. Missing from an `@ethlete/cli` older than it. */
+  staleBase?: string[] | null;
 };
 
 /** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */

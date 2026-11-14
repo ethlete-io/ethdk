@@ -56,7 +56,9 @@ export type PartBadge =
   | 'question'
   | 'answered'
   | 'in progress'
-  | 'ready';
+  | 'ready'
+  | 'needs rebase'
+  | 'changed since ready';
 
 /** Which parts and sketches hold an open comment, and which of those wait for the user. */
 type CommentMarks = {
@@ -200,10 +202,18 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
       ...(sketch.problems ?? []).flatMap(({ variant, problems }) =>
         problems.map((found) => `${variant}: ${found.rule}: ${found.message}`),
       ),
+      ...(sketch.staleBase ? [STUDIO_LABELS.treeRow.sketchNeedsRebase(sketch.staleBase)] : []),
+      ...(sketch.changedSinceReady?.length
+        ? [STUDIO_LABELS.treeRow.sketchChangedSinceReady(sketch.changedSinceReady)]
+        : []),
     ].join('\n') || sketch.target,
   ...commentsOf(sketch.target, marks),
   badges: [
-    sketch.status,
+    ...(sketch.status === 'ready' && !sketch.staleBase && !sketch.changedSinceReady?.length
+      ? (['ready'] as const)
+      : (['in progress'] as const)),
+    ...(sketch.staleBase ? (['needs rebase'] as const) : []),
+    ...(sketch.changedSinceReady?.length ? (['changed since ready'] as const) : []),
     ...commentBadgesOf(sketch.target, marks),
     ...(sketch.problems?.some((entry) => entry.problems.length > 0) || sketch.targets?.some((entry) => entry.error)
       ? (['error'] as const)

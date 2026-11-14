@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync } from 'fs';
+import { appendFileSync, cpSync, mkdtempSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -14,6 +14,9 @@ import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-check
 type Listed = {
   sketches: {
     target: string;
+    dir: string;
+    changedSinceReady: string[];
+    staleBase: string[] | null;
     targets?: { variant: string; unchanged?: string[]; crops?: Record<string, { box: unknown }> }[];
   }[];
 };
@@ -220,5 +223,39 @@ describe('the first full sketch listing', () => {
 
     void listing(target, '', () => new Promise(() => undefined), { pictureOf, warmRenderer });
     await vi.waitFor(() => expect(warmRenderer).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('what changed under a sketch since it was drawn or judged ready', () => {
+  it('lists the variants whose files changed since sketch ready judged them, in the quick listing too', async () => {
+    const target = acme();
+    const never = () => new Promise(() => undefined);
+    const changedOf = async () =>
+      (await listing(target, '&unchanged=no&targets=no', never)).sketches.map(
+        ({ changedSinceReady }) => changedSinceReady,
+      );
+
+    expect(await changedOf()).toEqual([[]]);
+
+    const [listed] = (await listing(target, '&unchanged=no&targets=no', never)).sketches;
+
+    writeFileSync(join(target, listed?.dir ?? '', 'a', 'changed.ts'), 'export const changed = true;\n');
+    detachRunningListings();
+
+    expect(await changedOf()).toEqual([['a']]);
+  });
+
+  it('lists the parts that changed since the sketch was drawn as its stale base', async () => {
+    const target = acme();
+    const never = () => new Promise(() => undefined);
+    const staleOf = async () =>
+      (await listing(target, '&unchanged=no&targets=no', never)).sketches.map(({ staleBase }) => staleBase);
+
+    expect(await staleOf()).toEqual([null]);
+
+    appendFileSync(join(target, '.ethlete/design/acme-base/components/card/card.css'), '.changed { color: red; }\n');
+    detachRunningListings();
+
+    expect(await staleOf()).toEqual([['components/card']]);
   });
 });

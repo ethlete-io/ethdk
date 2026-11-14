@@ -716,6 +716,31 @@ describe('sketches in the tree', () => {
     ]);
   });
 
+  it('shows a ready sketch as ready only while its base is current and no variant changed since sketch ready', () => {
+    const [sketches] = treeOf([part()], {
+      sketches: [
+        sketch({ status: 'ready', staleBase: null, changedSinceReady: ['a'] }),
+        sketch({ target: 'elements/a', layer: 'elements', name: 'a', status: 'ready', staleBase: ['components/chip'] }),
+        sketch({ target: 'elements/b', layer: 'elements', name: 'b', staleBase: [] }),
+        sketch({
+          target: 'elements/c',
+          layer: 'elements',
+          name: 'c',
+          status: 'ready',
+          staleBase: null,
+          changedSinceReady: [],
+        }),
+      ],
+    });
+
+    expect(sketches?.entries.map((entry) => [entry.title, entry.badges])).toEqual([
+      ['Seit Freigabe geändert: a', ['in progress', 'changed since ready']],
+      ['Braucht Rebase: components/chip geändert', ['in progress', 'needs rebase']],
+      ['Braucht Rebase: keine Baseline', ['in progress', 'needs rebase']],
+      ['elements/c', ['ready']],
+    ]);
+  });
+
   it('titles a sketch with one line per problem, naming its variant and rule', () => {
     const [sketches] = treeOf([part()], {
       sketches: [

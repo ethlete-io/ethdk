@@ -931,7 +931,9 @@ export class SystemViewComponent {
     const marksOf = (entry: TreeEntry) => ({
       key: entry.key,
       selected: entry.key === selected,
-      ...(entry.badges.includes('error') ? { warns: entry.title ?? true } : {}),
+      ...(entry.badges.some((badge) => badge === 'error' || badge === 'needs rebase' || badge === 'changed since ready')
+        ? { warns: entry.title ?? true }
+        : {}),
     });
     const partOf = (entry: TreeEntry): PartTreePart => ({
       name: entry.name,

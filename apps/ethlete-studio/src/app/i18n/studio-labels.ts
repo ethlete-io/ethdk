@@ -133,6 +133,9 @@ export const STUDIO_LABELS = {
   treeRow: {
     sketchInProgress: 'Entwurf in Arbeit',
     sketchReady: 'Entwurf fertig',
+    sketchNeedsRebase: (parts: readonly string[]) =>
+      parts.length === 0 ? 'Braucht Rebase: keine Baseline' : `Braucht Rebase: ${parts.join(', ')} geändert`,
+    sketchChangedSinceReady: (variants: readonly string[]) => `Seit Freigabe geändert: ${variants.join(', ')}`,
     openComments: (count: number) => (count === 1 ? '1 offener Kommentar' : `${count} offene Kommentare`),
   },
   system: {

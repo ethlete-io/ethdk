@@ -36,6 +36,7 @@ import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
 import { openSketchListingOf } from './system/sketch/check-sketches';
+import { staleBaseOf } from './system/sketch/stale-base';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
@@ -53,6 +54,7 @@ import {
   findSketch,
   SketchDecisionInput,
   listSketches,
+  changedSinceReadyOf,
   listSketchesInTurns,
   parseTarget,
   readSketchReport,
@@ -217,11 +219,16 @@ const problemOf = ({ target, problem }: { target: string; problem: Problem }) =>
   message: problem.message,
 });
 
-const sketchOf = ({ sketch: { dir, targets, ...sketch }, target }: { sketch: Sketch; target: string }) => ({
-  ...sketch,
-  targetParts: targets,
-  dir: relative(target, dir),
-});
+const sketchOf = ({ sketch, target }: { sketch: Sketch; target: string }) => {
+  const { dir, targets, ...rest } = sketch;
+
+  return {
+    ...rest,
+    targetParts: targets,
+    dir: relative(target, dir),
+    changedSinceReady: changedSinceReadyOf(sketch),
+  };
+};
 
 const commentOf = ({
   comment,
@@ -453,6 +460,7 @@ const listingOf = async ({
 
         return {
           ...sketchOf({ sketch, target }),
+          staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
           ...(checked
             ? {
                 problems: [
