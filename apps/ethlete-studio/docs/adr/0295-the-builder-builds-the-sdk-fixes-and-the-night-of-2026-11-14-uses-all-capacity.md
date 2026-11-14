@@ -30,3 +30,8 @@ the SDK fixes the fifagg session needs are on `next` and its CI is green.
 
 Addendum, 2026-11-14 midday: the human: "Lass uns den Speed nun etwas runter fahren bis 14 Uhr damit wir nicht ins Limit
 laufen." Until the 14:00 reset each session works one slice at a time, with no parallel subagents.
+
+Addendum, 14:16: the human: "Es darf wieder etwas mehr parallel gearbeitet werden." The midday slow-down ends: the
+sessions run parallel subagents on disjoint paths again, moderately. Asked whether the 15:00 stop still holds, with the
+recommendation to drop it, the human answered "ok". The 15:00 stop is cancelled; the sessions keep working until the
+human says otherwise.
