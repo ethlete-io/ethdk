@@ -2660,6 +2660,12 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   history - recheck at fifa OV-5), skeleton width doc ff64e75d9 (Cause measured: no CSS default, w-auto documented), PiP
   stacking doc d4f8d1199 (SDK overlays are not top layer, z 2147483003). CI red Cause: rounded-end class without the
   migrate-from-cdk snapshot, fixed 28bf81e8b. Queued: 7.22 tokens + docs, match-card padding token + TBD check, table.
+- B504 (fifa asks, 14.11. 10:45): built: banner border width + stat-tile label tokens 41b09a0fe, match-card two-value
+  padding afa18e1ec (TBD label exists), table rowLink object form 72f5bdc55, header/row tokens 8c7e97680 + spec
+  a16e59f82, cdk column markup report b789b2cd0, progress-steps ring tokens 50b1c98c0, form contract implements on
+  switch/radio/segmented 94b7a4b68 (Cause: binding worked, declaration missing). ET3504 Cause c5c31b60d: no defect, fifa
+  filtered the record. Table `hidden` Cause 9cbd153f7: known keys kept old state; last write wins. Chromium drops an
+  @property with `<length>{1,2}` (default 0): only + and # work. Queued: carousel tokens, select L-3/L-4.
 - B501: Suspect: `sketch ready` refuses components/badge@long-label for 60 missing motions on 3 text-length-only states.
 - B502 (night 14.11.): live derivation picked wrong (list-row, agent-logos; 8 UNDERIVED from page host); 9f2594cbd: page
   host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
