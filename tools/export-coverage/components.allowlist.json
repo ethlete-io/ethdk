@@ -1,4 +1,6 @@
 {
+  "CHOICE_FIELD_LABEL_POSITIONS": "constant: value set of the choice field labelPosition input",
+  "CHOICE_FIELD_LAYOUTS": "constant: value set of the choice field layout input",
   "DEFAULT_FORM_FIELD_DEFAULTS": "constant: default value of provideFormFieldDefaults",
   "KBD_LABELS": "token: read through injectKbdLabels, set through provideKbdLabels",
   "OverlayOriginCloneComponent": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",

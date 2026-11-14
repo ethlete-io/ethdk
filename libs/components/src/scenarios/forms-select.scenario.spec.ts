@@ -4,10 +4,13 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { form, FormField, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import {
+  DEFAULT_SELECT_ICONS,
   DEFAULT_SELECT_LABELS,
   FORM_FIELD_IMPORTS,
+  injectSelectIcons,
   injectSelectLabels,
   provideOverlay,
+  provideSelectIcons,
   provideSelectLabels,
   SELECT_FILTER_MODES,
   SELECT_LABELS,
@@ -210,6 +213,21 @@ const closeAll = (s: Scenario) => {
   s.tick();
   s.flush();
 };
+
+@Component({
+  selector: 'et-scenario-swapped-icons',
+  imports: [SelectComponent, SelectOptionComponent],
+  providers: [provideSelectIcons({ chevron: 'et-plus' })],
+  template: `
+    <et-select [(value)]="pick" aria-label="Pick">
+      <et-select-option value="a">A</et-select-option>
+    </et-select>
+  `,
+})
+class SwappedIconsComponent {
+  pick = signal<string | null>('a');
+  icons = injectSelectIcons();
+}
 
 describe('forms select scenarios', () => {
   const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
@@ -520,6 +538,24 @@ describe('forms select scenarios', () => {
     open(s, query('[role="combobox"]', fixture.nativeElement as HTMLElement));
 
     expect(text(query('.et-select-state--empty'))).toMatch(/^Leer \(.+\)$/);
+    closeAll(s);
+  });
+
+  it('draws the glyphs swapped through provideSelectIcons and keeps the defaults it leaves out', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(SwappedIconsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    expect(fixture.componentInstance.icons.chevron).toBe('et-plus');
+    expect(fixture.componentInstance.icons.check).toBe(DEFAULT_SELECT_ICONS.check);
+    expect(host.querySelector('.et-icon--et-plus')).not.toBeNull();
+    expect(host.querySelector(`.et-icon--${DEFAULT_SELECT_ICONS.chevron}`)).toBeNull();
+
+    open(s, query('[role="combobox"]', host));
+    expect(document.querySelector(`.et-icon--${DEFAULT_SELECT_ICONS.check}`)).not.toBeNull();
     closeAll(s);
   });
 
