@@ -1182,6 +1182,17 @@ stands, and the page derivation can land with a guard that a candidate takes the
 Verified on a scratch copy: `design check --part` on tree-row, part-tree, flows, inventory, sketches and system has no
 findings (only the copy's own "changed outside a sketch" points, as it has no git), and the live run prints no LINKED or
 UNDERIVED. Not verified: the Studio e2e suite on the Flows list.
+As built (583, B502 system page, Linux builder, 2026-11-14): `system-view` draws every System state through
+`system-page` (listing error, call, the notes start-server, read error and sketch missing, empty, part); its inline
+shell, toolbar and canvas states are deleted. The app projects what the design does not draw: the side tree with its
+remembered scroll (`systemSide`), the live canvas (`systemCanvas`, `systemCallCanvas`), the note (`systemNote`) and the
+inventory toggle and exception error (`systemActions`). `system-page` gained `section`, `noted`, `missingShots` and
+`openPoint`. So `pages/system` → `system-page` is now true. The Inbox canvas keeps the part canvas only, without the
+System toolbar (the Inbox design draws none). Verified: typecheck, lint, related specs, `design check --part
+pages/system` (0 findings, no part rewrite), live shots of part, page part, sketch missing, inbox, listing error, empty
+and call, `studio:e2e --view system --hold-listings 14000` (41/41) and `page-switch.e2e` (4/4). Not verified: the
+start-server and call-error notes live; the empty state keeps the app's tree in the side panel, not the design's
+"none" line.
 
 584\. Builder (2026-11-07, 994dd8bea): `addedBaselineNamesOf` flagged every entry that some older version of
 `rule-baseline.json` did not hold, so only the first commit of the file could baseline anything and a second new rule

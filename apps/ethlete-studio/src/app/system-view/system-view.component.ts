@@ -69,9 +69,7 @@ import { commentDraftOf, otherSizeFrameOf, pinsOf } from './comment-pins';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
-import { SystemEmptyComponent } from '../design-parts/system-page/system-empty.component';
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
-import { ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
 import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
@@ -90,7 +88,6 @@ import { BuildReadyStatus } from '../design-parts/system-page/build-ready-footer
 import { OpenPointGroup, OpenPointTarget } from '../design-parts/system-page/system-page-sample';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { openExceptionsOf } from '../../host/design-exceptions';
-import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 import { CommentDraftComponent } from '../design-parts/system-page/comment-draft.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
@@ -125,110 +122,34 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
 @Component({
   selector: 'ethlete-system-view',
   template: `
-    <ng-template #sideTree>
-      <ethlete-part-tree
-        [layers]="partTree().layers"
-        [sketches]="partTree().sketches"
-        [legacy]="partTree().legacy"
-        [label]="LABELS.designSystem"
-        (expandedChange)="rememberOpen($event)"
-        (activate)="activate($event)"
-        class="p-2"
-      />
-    </ng-template>
-
     <ng-template #shellCanvas>
-      <main class="relative grid size-full min-h-0 min-w-0 pl-(--st-shell-inset-left)">
-        @if (!port()) {
-          <p [class]="NOTE">{{ LABELS.startServer }}</p>
-        } @else if (call(); as shown) {
-          <p [class]="NOTE">{{ shown.slug }}: {{ 'error' in shown ? shown.error : '' }}</p>
-        } @else if (reading(); as read) {
-          @if (read.error) {
-            <p [class]="NOTE">{{ read.error }}</p>
-          } @else if (sketchShown()) {
-          } @else if (flowShown()) {
-          } @else if (awaitingPicked()) {
-          } @else if (sketchMissing()) {
-            <p [class]="NOTE" data-sketch-missing>{{ EMPTY_LABELS.sketchMissing }}</p>
-          } @else if (part(); as partShown) {
-            <div class="absolute top-space-3 right-space-3 z-1 flex gap-2">
-              @if (exceptions.error(); as message) {
-                <span
-                  [etProvideColor]="errorTheme()"
-                  class="self-center text-[1.2rem] text-(--et-theme-color-primary-solid)"
-                  data-exceptions-error
-                  >{{ message }}</span
-                >
-              }
-              @if (partShown.listed.layer === 'pages') {
-                <button
-                  [pressed]="inventoryShown()"
-                  (click)="toggleInventory()"
-                  et-button
-                  type="button"
-                  variant="outline"
-                  color="surface"
-                  size="sm"
-                  data-inventory-toggle
-                >
-                  {{ INVENTORY_LABELS.toggle }}
-                </button>
-              }
-              <button
-                [pressed]="commentStore.active()"
-                (click)="commentStore.toggle()"
-                et-button
-                type="button"
-                variant="outline"
-                size="sm"
-                data-comment-mode
-              >
-                {{ EMPTY_LABELS.comment }}
-              </button>
-              <ethlete-open-points-chip
-                [part]="partShown.key"
-                [groups]="openPointGroups()"
-                [exceptions]="openExceptions()"
-                [missingShots]="failedShots.count()"
-                [buildReady]="buildReady()"
-                (openEditSketch)="openEditSketch(partShown.key)"
-                (approveException)="approveException(partShown.key, $event)"
-                (openPoint)="openPoint(partShown.key, $event)"
+      <main class="relative grid size-full min-h-0 min-w-0">
+        @if (part()) {
+          <ethlete-design-canvas
+            #partCanvas
+            [frames]="frames()"
+            [pins]="partPins()"
+            [cameraKey]="cameraKey()"
+            [restoredCamera]="restoredCamera()"
+            [zoomChipClass]="PART_ZOOM_CHIP_CLASS"
+            [pointing]="commentStore.active()"
+            [pointingTitle]="EMPTY_LABELS.commentOn"
+            [draft]="commentStore.draft()"
+            (pointPick)="startComment($event)"
+            (cameraChange)="rememberCamera($event)"
+            class="min-h-0"
+          >
+            @if (commentStore.draft()) {
+              <ethlete-comment-draft
+                [(text)]="commentStore.draftText"
+                [phase]="commentStore.sendPhase()"
+                [reason]="commentStore.sendReason()"
+                (send)="commentStore.send($event)"
+                (discard)="commentStore.cancel()"
+                canvasDraft
               />
-            </div>
-            <ethlete-design-canvas
-              #partCanvas
-              [frames]="frames()"
-              [pins]="partPins()"
-              [cameraKey]="cameraKey()"
-              [restoredCamera]="restoredCamera()"
-              [zoomChipClass]="PART_ZOOM_CHIP_CLASS"
-              [pointing]="commentStore.active()"
-              [pointingTitle]="EMPTY_LABELS.commentOn"
-              [draft]="commentStore.draft()"
-              (pointPick)="startComment($event)"
-              (cameraChange)="rememberCamera($event)"
-              class="-ms-(--st-shell-inset-left) min-h-0"
-            >
-              @if (commentStore.draft()) {
-                <ethlete-comment-draft
-                  [(text)]="commentStore.draftText"
-                  [phase]="commentStore.sendPhase()"
-                  [reason]="commentStore.sendReason()"
-                  (send)="commentStore.send($event)"
-                  (discard)="commentStore.cancel()"
-                  canvasDraft
-                />
-              }
-            </ethlete-design-canvas>
-          } @else {
-            <ethlete-system-empty
-              [product]="product()?.name ?? ''"
-              (copyPrompt)="copyText(EMPTY_LABELS.emptyPrompt(product()?.name ?? ''))"
-              flush
-            />
-          }
+            }
+          </ethlete-design-canvas>
         }
       </main>
     </ng-template>
@@ -312,25 +233,50 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           (shellAction)="runShellAction($event)"
         />
       }
-    } @else if (listingError(); as message) {
+    } @else {
+      @let partShown = part();
       <ethlete-system-page
+        [(closed)]="pointsClosed"
         [shell]="pageShell()"
-        [listingError]="message"
-        (reload)="reloadListing()"
-        (shellAction)="runShellAction($event)"
-      />
-    } @else if (callPage(); as shown) {
-      <ethlete-system-page
-        [shell]="pageShell()"
-        [tree]="partTree()"
-        [call]="shown"
+        [section]="section()"
+        [listingError]="listingError()"
+        [call]="callPage()"
         [themeSwitches]="themeSwitches()"
+        [noted]="canvasNote() !== null"
+        [empty]="canvasNote() === null && !partShown"
+        [part]="partShown?.key ?? ''"
+        [openPoints]="openPointGroups()"
+        [exceptions]="openExceptions()"
+        [buildReady]="buildReady()"
+        [missingShots]="failedShots.count()"
+        [commentMode]="commentStore.active()"
+        (commentModeChange)="commentStore.toggle()"
+        (reload)="reloadListing()"
         (markTransferred)="markTransferred($event)"
         (pickTheme)="pickTheme($event.kind, $event.name)"
-        (activate)="activate($event)"
-        (expandedChange)="rememberOpen($event)"
+        (copyPrompt)="copyText(EMPTY_LABELS.emptyPrompt(product()?.name ?? ''))"
+        (openEditSketch)="openEditSketch(partShown?.key ?? '')"
+        (approveException)="approveException(partShown?.key ?? '', $event)"
+        (openPoint)="openPoint(partShown?.key ?? '', $event)"
         (shellAction)="runShellAction($event)"
       >
+        @if (listingError() === null) {
+          <div
+            [ethleteRememberedTreeScroll]="listsRead()"
+            class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto"
+            systemSide
+          >
+            <ethlete-part-tree
+              [layers]="partTree().layers"
+              [sketches]="partTree().sketches"
+              [legacy]="partTree().legacy"
+              [label]="LABELS.designSystem"
+              (expandedChange)="rememberOpen($event)"
+              (activate)="activate($event)"
+              class="p-2"
+            />
+          </div>
+        }
         <div class="grid size-full min-h-0 grid-rows-[minmax(0,1fr)] pt-16" systemCallCanvas>
           <ethlete-design-canvas
             [frames]="callFrames()"
@@ -348,18 +294,35 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             </p>
           }
         </div>
-      </ethlete-system-page>
-    } @else {
-      <ethlete-shell-page [section]="section()" [shell]="pageShell()" (action)="runShellAction($event)">
-        <div
-          [ethleteRememberedTreeScroll]="listsRead()"
-          class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto"
-          shellMainSide
-        >
-          <ng-container [ngTemplateOutlet]="sideTree" />
+        <p [class]="NOTE" [attr.data-sketch-missing]="sketchMissing() ? '' : null" systemNote>{{ canvasNote() }}</p>
+        <div class="contents" systemCanvas>
+          <ng-container [ngTemplateOutlet]="shellCanvas" />
         </div>
-        <ng-container [ngTemplateOutlet]="shellCanvas" />
-      </ethlete-shell-page>
+        <div class="contents" systemActions>
+          @if (exceptions.error(); as message) {
+            <span
+              [etProvideColor]="errorTheme()"
+              class="self-center text-[1.2rem] text-(--et-theme-color-primary-solid)"
+              data-exceptions-error
+              >{{ message }}</span
+            >
+          }
+          @if (partShown?.listed?.layer === 'pages') {
+            <button
+              [pressed]="inventoryShown()"
+              (click)="toggleInventory()"
+              et-button
+              type="button"
+              variant="outline"
+              color="surface"
+              size="sm"
+              data-inventory-toggle
+            >
+              {{ INVENTORY_LABELS.toggle }}
+            </button>
+          }
+        </div>
+      </ethlete-system-page>
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -373,12 +336,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     SketchViewComponent,
     FlowViewComponent,
     InboxComponent,
-    ShellPageComponent,
-    SystemEmptyComponent,
     StartComponent,
     InventoryViewComponent,
     SystemPageComponent,
-    OpenPointsChipComponent,
     CommentDraftComponent,
   ],
   providers: [provideCommentStore(), provideCommandPaletteStore()],
@@ -429,7 +389,7 @@ export class SystemViewComponent {
 
   private listingReloads = signal(0);
 
-  protected reading = toSignal(
+  public reading = toSignal(
     toObservable(
       computed(() => ({
         port: this.port(),
@@ -611,7 +571,7 @@ export class SystemViewComponent {
     () => (this.flowList() ?? []).find((listed) => flowKeyOf(listed.name) === this.picked()) ?? null,
   );
 
-  protected flowShown = computed(() => {
+  public flowShown = computed(() => {
     const port = this.port();
     const product = this.product();
     const flow = this.flow();
@@ -625,7 +585,7 @@ export class SystemViewComponent {
     () => this.sketches().find((listed) => sketchKeyOf(listed.target) === this.picked()) ?? null,
   );
 
-  protected sketchShown = computed(() => {
+  public sketchShown = computed(() => {
     const port = this.port();
     const product = this.product();
     const sketch = this.sketch();
@@ -673,7 +633,7 @@ export class SystemViewComponent {
     });
   });
 
-  protected call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
+  public call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
 
   protected callPage = computed(() => {
     const call = this.call();
@@ -755,7 +715,7 @@ export class SystemViewComponent {
   });
 
   /** True while the remembered entry may still be a call or a sketch whose list has not arrived. */
-  protected awaitingPicked = computed(() => {
+  public awaitingPicked = computed(() => {
     const picked = this.picked();
 
     return picked !== null && !this.listsRead() && !this.nodes().entries.has(picked);
@@ -775,6 +735,26 @@ export class SystemViewComponent {
   protected sketchMissing = computed(
     () => isSketchKey(this.picked()) && this.listsRead() && !this.sketch() && !this.pickedPart(),
   );
+
+  /** The line the canvas shows instead of a part: `''` keeps it blank, `null` shows the part or the empty card. */
+  protected canvasNote = computed(() => {
+    if (!this.port()) return this.LABELS.startServer;
+
+    const call = this.call();
+
+    if (call) return `${call.slug}: ${'error' in call ? call.error : ''}`;
+
+    const read = this.reading();
+
+    if (!read) return '';
+    if (read.error) return read.error;
+    if (this.sketchShown() || this.flowShown() || this.awaitingPicked()) return '';
+    if (this.sketchMissing()) return this.EMPTY_LABELS.sketchMissing;
+
+    return null;
+  });
+
+  protected pointsClosed = signal(true);
 
   protected part = computed(() => {
     const parts = this.product()?.parts ?? [];

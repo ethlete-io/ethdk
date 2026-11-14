@@ -5,6 +5,7 @@ import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
+import { ShellSection } from '../shell-main/shell-main.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { SystemEmptyComponent } from './system-empty.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
@@ -13,6 +14,7 @@ import { OpenPointsChipComponent } from './open-points-chip.component';
 import {
   LegacyCall,
   MANY_STATES_LAYERS,
+  OpenPointTarget,
   OPEN_POINTS_SAMPLE,
   PartException,
   SYSTEM_TREE,
@@ -28,19 +30,22 @@ export const FRAME_HEAD_CLASS =
 @Component({
   selector: 'ethlete-system-page',
   template: `
-    <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="System">
-      @if (empty()) {
-        <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted" shellMainSide>{{ LABELS.none }}</p>
-      } @else if (listingError() === null) {
-        <ethlete-part-tree
-          [layers]="manyStates() ? manyStatesLayers() : tree().layers"
-          [sketches]="manyStates() ? undefined : tree().sketches"
-          [legacy]="manyStates() ? undefined : tree().legacy"
-          (expandedChange)="expandedChange.emit($event)"
-          (activate)="activate.emit($event)"
-          shellMainSide
-        />
-      }
+    <ethlete-shell-page [shell]="shell()" [section]="section()" (action)="shellAction.emit($event)">
+      <ng-container ngProjectAs="[shellMainSide]">
+        <ng-content select="[systemSide]">
+          @if (empty()) {
+            <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+          } @else if (listingError() === null) {
+            <ethlete-part-tree
+              [layers]="manyStates() ? manyStatesLayers() : tree().layers"
+              [sketches]="manyStates() ? undefined : tree().sketches"
+              [legacy]="manyStates() ? undefined : tree().legacy"
+              (expandedChange)="expandedChange.emit($event)"
+              (activate)="activate.emit($event)"
+            />
+          }
+        </ng-content>
+      </ng-container>
       @if (listingError(); as message) {
         <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)" data-listing-error>
           <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
@@ -130,6 +135,10 @@ export const FRAME_HEAD_CLASS =
             </button>
           }
         </header>
+      } @else if (noted()) {
+        <div class="grid h-full ps-(--st-shell-inset-left)">
+          <ng-content select="[systemNote]" />
+        </div>
       } @else if (empty()) {
         <ethlete-system-empty [product]="shell().product" (copyPrompt)="copyPrompt.emit()" />
       } @else if (manyStates()) {
@@ -156,46 +165,49 @@ export const FRAME_HEAD_CLASS =
           </figure>
         </ethlete-canvas-frames>
       } @else {
-        <ethlete-canvas-frames
-          [fitted]="fit()"
-          (zoomOut)="zoomOut.emit()"
-          (zoomReset)="zoomReset.emit()"
-          (zoomIn)="zoomIn.emit()"
-          (fit)="fitAll.emit()"
-          class="w-full"
-        >
-          <figure [class]="FRAME_CLASS">
-            <figcaption [class]="FRAME_HEAD_CLASS">{{ frame() }}</figcaption>
-            <div class="relative">
-              <div [class.w-md]="fit()" [class.h-45]="fit()">
-                <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
-              </div>
-              @if (commentMode()) {
-                <div
-                  [etTooltip]="LABELS.commentOn(frame())"
-                  [attr.aria-label]="LABELS.commentOn(frame())"
-                  (click)="draft.set('')"
-                  (keydown.enter)="draft.set('')"
-                  class="absolute inset-0 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
-                  role="button"
-                  tabindex="0"
-                ></div>
-                @if (draft() !== null) {
-                  <ethlete-comment-draft
-                    [text]="draft() ?? ''"
-                    [phase]="send()"
-                    [reason]="reason()"
-                    (textChange)="draft.set($event)"
-                    (send)="sendComment.emit($event)"
-                    (discard)="draft.set(null)"
-                    class="absolute top-[42%] left-[38%] z-4"
-                  />
+        <ng-content select="[systemCanvas]">
+          <ethlete-canvas-frames
+            [fitted]="fit()"
+            (zoomOut)="zoomOut.emit()"
+            (zoomReset)="zoomReset.emit()"
+            (zoomIn)="zoomIn.emit()"
+            (fit)="fitAll.emit()"
+            class="w-full"
+          >
+            <figure [class]="FRAME_CLASS">
+              <figcaption [class]="FRAME_HEAD_CLASS">{{ frame() }}</figcaption>
+              <div class="relative">
+                <div [class.w-md]="fit()" [class.h-45]="fit()">
+                  <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
+                </div>
+                @if (commentMode()) {
+                  <div
+                    [etTooltip]="LABELS.commentOn(frame())"
+                    [attr.aria-label]="LABELS.commentOn(frame())"
+                    (click)="draft.set('')"
+                    (keydown.enter)="draft.set('')"
+                    class="absolute inset-0 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
+                    role="button"
+                    tabindex="0"
+                  ></div>
+                  @if (draft() !== null) {
+                    <ethlete-comment-draft
+                      [text]="draft() ?? ''"
+                      [phase]="send()"
+                      [reason]="reason()"
+                      (textChange)="draft.set($event)"
+                      (send)="sendComment.emit($event)"
+                      (discard)="draft.set(null)"
+                      class="absolute top-[42%] left-[38%] z-4"
+                    />
+                  }
                 }
-              }
-            </div>
-          </figure>
-        </ethlete-canvas-frames>
-        <div class="absolute top-space-3 right-space-3 flex gap-space-2">
+              </div>
+            </figure>
+          </ethlete-canvas-frames>
+        </ng-content>
+        <div class="absolute top-space-3 right-space-3 z-1 flex gap-space-2">
+          <ng-content select="[systemActions]" />
           <button
             [pressed]="commentMode()"
             (click)="toggleComments()"
@@ -214,6 +226,8 @@ export const FRAME_HEAD_CLASS =
             [exceptions]="openExceptions()"
             [buildReady]="buildReady()"
             [agent]="agent()"
+            [missingShots]="missingShots()"
+            (openPoint)="openPoint.emit($event)"
             (openEditSketch)="openEditSketch.emit($event)"
             (approveException)="approveException.emit($event)"
           />
@@ -246,6 +260,9 @@ export const FRAME_HEAD_CLASS =
 export class SystemPageComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   public shell = input<ShellState>(SHELL_SAMPLE);
+  public section = input<ShellSection>('System');
+  public noted = input(false);
+  public missingShots = input(0);
 
   public empty = input(false);
   public listingError = input<string | null>(null);
@@ -282,6 +299,7 @@ export class SystemPageComponent {
   public sendComment = output<string>();
   public openEditSketch = output<BuildBlocker>();
   public approveException = output<string>();
+  public openPoint = output<OpenPointTarget>();
   // eslint-disable-next-line ethlete/prefer-present-tense-output -- the design action emit:markTransferred fixes this name
   public markTransferred = output<string>();
   public pickTheme = output<ThemePick>();
