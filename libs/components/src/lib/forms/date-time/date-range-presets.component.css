@@ -1,7 +1,7 @@
 @layer components.sdk {
   @property --et-date-range-presets-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 2px;
   }
 

@@ -9,7 +9,7 @@
 
   @property --et-cascader-panel-max-block-size {
     syntax: '<length-percentage>';
-    inherits: false;
+    inherits: true;
     initial-value: 320px;
   }
 

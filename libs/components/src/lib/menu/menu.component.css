@@ -1,25 +1,25 @@
 @layer components.sdk {
   @property --et-menu-min-width {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 180px;
   }
 
   @property --et-menu-max-height {
     syntax: '<length-percentage>';
-    inherits: false;
+    inherits: true;
     initial-value: 40vh;
   }
 
   @property --et-menu-padding-block {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 6px;
   }
 
   @property --et-menu-padding-inline {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 6px;
   }
 
@@ -67,19 +67,19 @@
 
   @property --et-menu-separator-margin-block {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 6px;
   }
 
   @property --et-menu-group-label-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 
   @property --et-menu-scroll-fade-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 

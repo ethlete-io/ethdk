@@ -1,25 +1,25 @@
 @layer components.sdk {
   @property --et-command-palette-max-height {
     syntax: '<length-percentage>';
-    inherits: false;
+    inherits: true;
     initial-value: 60vh;
   }
 
   @property --et-command-palette-padding {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 8px;
   }
 
   @property --et-command-palette-search-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 48px;
   }
 
   @property --et-command-palette-search-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 15px;
   }
 
