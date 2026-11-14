@@ -993,6 +993,46 @@ describe('the design server for sketches and comments', () => {
     expect(callsAt).toBeLessThan(listedAt);
   }, 60_000);
 
+  it('compares the sketch `&sketch=` names alone and answers it while the rule check of the product still runs', async () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    for (const name of ['components/card@one', 'components/card@two']) {
+      const parsed = parseTarget(name);
+      const created = typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a'] });
+
+      if (typeof created === 'string') throw new Error(created);
+    }
+
+    let checks = 0;
+    let release = () => undefined as void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const { ask } = await serveAcme(target, undefined, async (request) => {
+      checks++;
+      await held;
+
+      return checkSketchesHere(request);
+    });
+    let fullAt = Infinity;
+    const full = ask('/__design/sketches', '?product=acme').finally(() => (fullAt = performance.now()));
+    const opened = await ask('/__design/sketches', '?product=acme&sketch=components/card@two');
+    const openedAt = performance.now();
+
+    expect(opened.status).toBe(200);
+    expect((opened.body as { sketches: Record<string, unknown>[] }).sketches).toEqual([
+      expect.objectContaining({ target: 'components/card@two', targets: [expect.objectContaining({ variant: 'a' })] }),
+    ]);
+    expect((opened.body as { sketches: Record<string, unknown>[] }).sketches[0]).not.toHaveProperty('problems');
+    expect(checks).toBe(1);
+
+    release();
+
+    expect((await full).body).toMatchObject({
+      sketches: [{ problems: [{ variant: 'a' }] }, { problems: [{ variant: 'a' }] }],
+    });
+    expect(openedAt).toBeLessThan(fullAt);
+  });
+
   it('lists the states of every target part of a sketch, the first target first', async () => {
     const target = acme();
     const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });

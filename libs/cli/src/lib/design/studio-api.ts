@@ -36,6 +36,7 @@ import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
 import { openSketchListingOf } from './system/sketch/check-sketches';
+import { holdTargetEndOf } from './system/sketch/merged-parts';
 import { staleBaseOf } from './system/sketch/stale-base';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
@@ -227,6 +228,7 @@ const sketchOf = ({ sketch, target }: { sketch: Sketch; target: string }) => {
     targetParts: targets,
     dir: relative(target, dir),
     changedSinceReady: changedSinceReadyOf(sketch),
+    holdTargetEnd: holdTargetEndOf(sketch),
   };
 };
 
@@ -427,8 +429,11 @@ const listingOf = async ({
 }) => {
   const { target } = asked;
   const listOnly = light && asked.url.searchParams.get('targets') === 'no';
+  const only = asked.url.searchParams.get('sketch');
   const listed = await listSketchesInTurns({ productDir: product.dir, product: product.name });
-  const sketches = listed.filter((sketch): sketch is Sketch => typeof sketch !== 'string');
+  const sketches = listed.filter(
+    (sketch): sketch is Sketch => typeof sketch !== 'string' && (only === null || sketch.target === only),
+  );
   if (!light && asked.pictureOf) asked.warmRenderer?.();
 
   const targetsListed = inTurns({ items: sketches, signal }, (sketch) =>
@@ -437,7 +442,7 @@ const listingOf = async ({
       : targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf, signal, compare: !light }),
   );
   const [checked, sketchTargets] = await Promise.all([
-    light
+    light || only !== null
       ? null
       : asked.checkSketches
         ? asked.checkSketches({ target, product: product.name })
@@ -525,7 +530,8 @@ const startedListing = ({
  * draws the same as the product now (`unchanged`), where each state it draws differently differs from the product's
  * picture (`crops`, by state: picture size, box, pixel count and regions), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
- * of the agent (`report`, `null` when none runs). `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
+ * of the agent (`report`, `null` when none runs). `&sketch=<layer>/<name>@<sketch>` answers that sketch alone, compared, without
+ * `problems`: no rule check, so it answers before a full listing. `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
  * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.
  * A listing asked while the same one runs gets that one's answer, unless `detachRunningListings` ran since it started; it stops when every client that asked for it has closed its request.
  * Each listing first runs the held automatic merges whose uncommitted files are gone.
@@ -534,7 +540,13 @@ export const sketchesAnswer = withProduct('GET', ({ asked, config, product }) =>
   retriedHeldMerges({ target: asked.target, config });
 
   const light = asked.url.searchParams.get('unchanged') === 'no';
-  const key = JSON.stringify([asked.target, product.name, light, asked.url.searchParams.get('targets') === 'no']);
+  const key = JSON.stringify([
+    asked.target,
+    product.name,
+    light,
+    asked.url.searchParams.get('targets') === 'no',
+    asked.url.searchParams.get('sketch'),
+  ]);
   const listing = runningListings.get(key) ?? startedListing({ key, asked, product, light });
   const leave = () => {
     listing.askers -= 1;

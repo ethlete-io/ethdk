@@ -36,4 +36,29 @@ describe('sketchRead$', () => {
 
     expect(reads.at(-1)).toEqual({ product: 'p', items: [sketch], error: 'product "p" is gone' });
   });
+
+  it('compares the picked sketch alone after the quick listing and before the full one', async () => {
+    const asked: string[] = [];
+    const other = { target: 'b' };
+    const compared = { ...sketch, compared: true };
+
+    vi.stubGlobal('fetch', async (url: string) => {
+      const query = new URL(url).searchParams;
+      const kind = query.get('sketch') ?? (query.get('targets') ? 'names' : query.get('unchanged') ? 'quick' : 'full');
+
+      asked.push(kind);
+
+      return new Response(JSON.stringify({ sketches: kind === 'a' ? [compared] : [sketch, other], unreadable: [] }));
+    });
+
+    const reads = await firstValueFrom(sketchRead$({ port: 1, product: 'p', picked: 'sketch:a' }).pipe(toArray()));
+
+    expect(asked).toEqual(['names', 'quick', 'a', 'full']);
+    expect(reads.map(({ items }) => items)).toEqual([
+      [sketch, other],
+      [sketch, other],
+      [compared, other],
+      [sketch, other],
+    ]);
+  });
 });
