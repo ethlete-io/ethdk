@@ -31,6 +31,7 @@
     position: relative;
     display: inline-block;
     touch-action: none;
+    -webkit-user-select: none;
     user-select: none;
   }
 
