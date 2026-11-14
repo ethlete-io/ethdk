@@ -1203,7 +1203,7 @@ The re-run prints no LINKED and no UNDERIVED. The five 583 parts keep their link
 comment-pin name components the app renders (flows/sketches, merge/sketches, design-canvas); pages/system is a route
 link the derivation leaves alone, still `system-page` (open); tree-row matches part-tree on three pages and
 `[ethlete-tree-row-item]` on flows, so no common host (open). Verified: specs, the live run on a scratch copy and in the
-main checkout. Commit: see git log for B502 live links.
+main checkout. Commit 9f2594cbd.
 
 588\. Builder (2026-11-07, B434): the Studio e2e job (added in 94606402c) never passed in CI. It built only `cli`, so
 the design server answered `/__design/system` with 503 "missing build" and Studio stayed on "Design-Server startet".
