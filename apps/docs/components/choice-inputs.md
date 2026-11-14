@@ -337,6 +337,76 @@ The panel chrome is one stylesheet, injected the first time any of the three
 renders with `variant="card"` - an app that only ever uses `variant="plain"` never
 puts it in the document.
 
+### Custom radio card {#custom-radio-card}
+
+When neither `et-radio` nor its card preset fits - a broadcast picker, a list row with its own
+layout - write the markup yourself and keep the behavior. The group and the option are two
+headless directives the presets are built on:
+
+| Directive                                          | Put it on           | Brings                                                                                                |
+| -------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `SelectionListDirective` (`[etSelectionList]`)     | the group element   | `role="radiogroup"`, the value (`[formField]`, `[(value)]`), `disabled`, `readonly`, `compareWith`    |
+| `SelectionOptionDirective` (`[etSelectionOption]`) | each option element | `role="radio"`, `aria-checked`, the roving `tabindex`, click and [keyboard](#selection-list-keyboard) |
+
+Use them as attributes, or as `hostDirectives` of your own components. The option component
+injects `SelectionOptionDirective` to read `checked()`, `effectiveDisabled()` (its own or the
+group's `disabled`) and `labelId`, and calls `select()` when it needs to select from code. The
+group component injects `SelectionListDirective` (or `SELECTION_LIST_TOKEN`) for `value()`,
+`disabled()` and `items()`.
+
+```ts
+@Component({
+  selector: 'app-broadcast-card',
+  template: `<span [id]="option.labelId">{{ heading() }}</span>`,
+  hostDirectives: [{ directive: SelectionOptionDirective, inputs: ['value', 'disabled'] }],
+  host: { '[attr.data-checked]': 'option.checked() || null' },
+})
+export class BroadcastCardComponent {
+  protected option = inject(SelectionOptionDirective);
+  public heading = input.required<string>();
+}
+
+@Component({
+  selector: 'app-broadcast-picker',
+  template: `<ng-content />`,
+  hostDirectives: [
+    {
+      directive: SelectionListDirective,
+      inputs: ['value', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name', 'aria-label'],
+      outputs: ['valueChange', 'touchedChange'],
+    },
+  ],
+})
+export class BroadcastPickerComponent {}
+```
+
+```html
+<app-broadcast-picker [formField]="streamForm.broadcast" aria-label="Broadcast">
+  <app-broadcast-card value="main" heading="Main stage" />
+</app-broadcast-picker>
+```
+
+- The option names itself with `aria-labelledby="<labelId>"`, so put `[id]="option.labelId"` on the
+  element that holds its label. Typeahead matches the option's text content, so that label should
+  lead it.
+- Forward the group inputs `[formField]` binds (`value`, `touched`, `disabled`, `readonly`,
+  `invalid`, `errors`, `required`, `name`) and the outputs `valueChange` / `touchedChange`; signal
+  forms reaches them through the host directive. There is no `ControlValueAccessor` - a
+  `FormControl` moves to signal forms, see [Coming from reactive forms](/components/forms#coming-from-reactive-forms).
+- Style the states from your own host bindings (`data-checked` above) or from the directive's
+  attributes: `[aria-checked="true"]`, `[aria-disabled]`, `[data-readonly]`.
+- Add `multiple` to the group and the same option becomes a checkbox (`role="checkbox"`, an
+  array value).
+
+@example choice-inputs/radio-group-custom-card 360px
+
+::: tip Coming from `@ethlete/cdk`
+`RADIO_GROUP_TOKEN` and `InputStateService` on the group become `SelectionListDirective` (or
+`SELECTION_LIST_TOKEN`); `RADIO_TOKEN` and `FormFieldStateService` on the item become
+`SelectionOptionDirective`. Writing the selection is `option.select()`, or a write to the group's
+`value`.
+:::
+
 ### Segmented button: tabs variant {#segmented-tabs}
 
 `et-segmented-button-group` takes `variant="tabs"`, which underlines the selected
