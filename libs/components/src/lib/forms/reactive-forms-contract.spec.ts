@@ -450,30 +450,39 @@ describe('reactive forms on et-* form controls', () => {
       return fixture;
     };
 
-    it('minlength arrives in lower case and shows no text without a resolver', async () => {
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    it('minlength from Validators.minLength shows the built-in text with its bound', async () => {
       const fixture = await render();
       const dir = fixture.debugElement.query(By.directive(InputDirective)).injector.get(InputDirective);
 
       expect(dir.errors().map((e) => e.kind)).toEqual(['minlength']);
-      expect(fixture.nativeElement.querySelector('et-form-field').textContent.trim()).toBe('Name');
-      warn.mockRestore();
+      expect(fixture.nativeElement.textContent).toContain('Must be at least 3 characters');
     });
 
-    it('KNOWN GAP: Validators.min gets the built-in min text without its bound', async () => {
+    it.each([
+      ['min', [Validators.min(5)], 2, 'Must be at least 5'],
+      ['max', [Validators.max(5)], 9, 'Must be at most 5'],
+    ])('Validators.%s shows the built-in text with its bound', async (_kind, validators, value, text) => {
       @Component({
         imports: [ReactiveFormsModule, FORM_FIELD_IMPORTS, NUMBER_INPUT_IMPORTS],
         template: `<et-form-field><et-label>Count</et-label><et-number-input [formControl]="ctrl" /></et-form-field>`,
       })
-      class MinHost {
-        public ctrl = new FormControl(2, [Validators.min(5)]);
+      class BoundHost {
+        public ctrl = new FormControl(value, validators);
       }
 
-      const fixture = TestBed.createComponent(MinHost);
+      const fixture = TestBed.createComponent(BoundHost);
       await settle(fixture);
       fixture.componentInstance.ctrl.markAsTouched();
       await settle(fixture);
-      expect(fixture.nativeElement.textContent).toContain('Must be at least undefined');
+      expect(fixture.nativeElement.textContent).toContain(text);
+    });
+
+    it('Validators.maxLength shows the built-in text with its bound', async () => {
+      const fixture = await render();
+      fixture.componentInstance.ctrl.setValidators([Validators.maxLength(1)]);
+      fixture.componentInstance.ctrl.updateValueAndValidity();
+      await settle(fixture);
+      expect(fixture.nativeElement.textContent).toContain('Must be at most 1 characters');
     });
 
     it('provideFormErrorMessageResolver maps minlength and a setErrors backend error', async () => {

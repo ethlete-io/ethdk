@@ -921,22 +921,14 @@ Error texts:
 
 - A bare `et-checkbox` or `et-switch` renders no error text. Wrap it in an
   [`et-choice-field`](/components/choice-inputs) to show the message.
-- The built-in texts fit `required`, `email` and `pattern`. Reactive forms report the other kinds in
-  their own spelling and shape - `minlength` with `{ requiredLength, actualLength }`, `maxlength`,
-  `min` and `max` (whose built-in text then lacks the bound), and any key you pass to `setErrors()`.
-  Map them with a [custom error resolver](#custom-error-messages); the reactive error's object
-  arrives as `error.context`:
+- The built-in texts cover `required`, `email`, `pattern`, `min`, `max`, `minlength` and `maxlength`,
+  with the bound read from the reactive error. Any other key - one you pass to `setErrors()` - needs a
+  [custom error resolver](#custom-error-messages); the reactive error's object arrives as `error.context`:
 
 ```ts
-provideFormErrorMessageResolver((error) => {
-  const context = (error as { context?: unknown }).context;
-
-  if (error.kind === 'minlength')
-    return `At least ${(context as { requiredLength: number }).requiredLength} characters`;
-  if (error.kind === 'backend') return String(context);
-
-  return null;
-});
+provideFormErrorMessageResolver((error) =>
+  error.kind === 'backend' ? String((error as { context?: unknown }).context) : null,
+);
 ```
 
 ### Migrating screen by screen
@@ -945,10 +937,12 @@ A form can be migrated one screen at a time; the cdk and the components controls
 
 1. Run the [`migrate-from-cdk`](/cdk/migration#run-the-codemod) codemod. It rewrites the imports it can and
    lists every cdk control still bound with `formControl`, `formControlName` or `[formGroup]` in the section
-   "Form controls that need signal forms first" of `migrate-from-cdk-tasks.md`, grouped by component. Those
-   screens stay on `@ethlete/cdk` for now.
-2. Pick one screen, leaf-most first. Move its whole form together: the model and schema, every control's
-   binding, the error messages, any `controlValueSignal` call sites, and the submit handler.
+   "Form controls that need signal forms first" of `migrate-from-cdk-tasks.md`, grouped by component.
+2. Pick one screen, leaf-most first. Either keep its reactive form and swap the cdk controls for `et-*`
+   controls bound with `[formControl]` - move every template `required` to `Validators.required`, and add
+   `Validators.required` beside `Validators.requiredTrue` for the marker (see the gaps above) - or move the
+   whole form to signal forms together: the model and schema, every control's binding, the error messages,
+   any `controlValueSignal` call sites, and the submit handler.
 3. A filter bar on `QueryForm` moves with its screen to `defineQueryForm`; the query args read `qf.value()`.
 4. Move the server-error handling to `mapViolationsToFormErrors`.
 5. Repeat. Remove `ReactiveFormsModule` and `provideValidatorErrorsService()` from an app once its last

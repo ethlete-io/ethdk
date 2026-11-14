@@ -16,18 +16,25 @@ export const provideFormErrorMessageResolver = (resolver: FormErrorMessageResolv
   useValue: resolver,
 });
 
+const reactiveBound = (error: ValidationError.WithOptionalFieldTree, key: string) =>
+  (error as unknown as { context?: Record<string, number> }).context?.[key];
+
 const defaultMessage = (labels: FormFieldLabels, error: ValidationError.WithOptionalFieldTree): string | undefined => {
   switch (error.kind) {
     case 'required':
       return labels.errorRequired;
     case 'min':
-      return labels.errorMin(error as unknown as { min: number });
+      return labels.errorMin({ min: reactiveBound(error, 'min') ?? (error as unknown as { min: number }).min });
     case 'max':
-      return labels.errorMax(error as unknown as { max: number });
+      return labels.errorMax({ max: reactiveBound(error, 'max') ?? (error as unknown as { max: number }).max });
     case 'minLength':
       return labels.errorMinLength(error as unknown as { minLength: number });
+    case 'minlength':
+      return labels.errorMinLength({ minLength: reactiveBound(error, 'requiredLength') as number });
     case 'maxLength':
       return labels.errorMaxLength(error as unknown as { maxLength: number });
+    case 'maxlength':
+      return labels.errorMaxLength({ maxLength: reactiveBound(error, 'requiredLength') as number });
     case 'pattern':
       return labels.errorPattern(error as unknown as { pattern: RegExp });
     case 'email':
