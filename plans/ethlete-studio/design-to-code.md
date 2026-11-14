@@ -2650,6 +2650,11 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   menu radius 3f0aba618 + item weight eacc59d28; all headless only. Queued: menu docs, skeleton (labels docs, colour
   tokens, nested role=status, rect beats aspect-ratio, container layout token), table (rowLink queryParams/title,
   header tokens, cdk markup docs), progress-steps ring token, carousel colour + wipe duration tokens. Prerelease needed.
+- B504 (fifa asks, 14.11. 09:45): built: menu docs 2abe76855 (outside click, focus return, etProvideColor proven by
+  spec), skeleton de8ad6d1c (labels docs, colour + layout tokens, nested skeleton silent, rect keeps aspect-ratio:
+  16px -> 180px), backdrop colour from :root ff3def516 (Cause: set on the element). Queued: Forward-reopen spec (routing
+  overlay), backdrop filter token, PiP vs overlay stacking docs, table (+ cards row paint/hover tokens; Suspect: ET3504
+  on a template for an undisplayed column), progress-steps ring token, carousel tokens. Prerelease needed.
 - B501: Suspect: `sketch ready` refuses components/badge@long-label for 60 missing motions on 3 text-length-only states.
 - B502 (night 14.11.): live derivation picked wrong (list-row, agent-logos; 8 UNDERIVED from page host); 9f2594cbd: page
   host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
