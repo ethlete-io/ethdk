@@ -991,6 +991,18 @@ tsc clean. Compare: pages/sketches 31 ok / 0 DIFF / 7 FAILED (489), components/d
 `design check`: pages/system 2 warnings, components/disclosure and pages/merge clean, pages/sketches 4 OLD
 CANVAS-UNDER-PANEL. Not verified: CI; the live app.
 
+**B502l as built (Linux builder subagent, 2026-11-14, 8fa1bbe24):** `design actions --product studio --live` on
+2ab761101: 62 click timeouts (the row's 18 was an older run), all "locator.evaluate: Timeout 30000ms exceeded", all on a
+click whose control is gone afterwards: 6 pages x the Studio-menu items (Projekt öffnen, Design-Server neu starten /
+stoppen, Erscheinungsbild, Hilfe & Einstellungen, ethlete-sdk) and the nav/product/Hide-panel buttons that switch the
+page; the own page's nav button passed. Cause (measured, spec): the runner read the toggle attributes of the clicked
+control with an unguarded `locator.evaluate`, which waits 30 s for a removed element; the ring probe next to it already
+answered null. Fix: `toggleStepOf` answers null when the control is gone. After: 0 timeouts (2 of 2 runs), failed checks
+118 to 69 of 485. Now visible, not timeouts, not built: Erscheinungsbild and Hilfe click close the menu instead of
+reaching `studio-menu.appearance`/`.help`; button System drifts per page. Unchanged: studio (2.) productChange,
+Sucheninstudio no data-et-action, separator sideWidthChange. Spec red on HEAD in a scratch copy, green after; vitest
+related 1510 green; lint, tsc clean. No part touched, so no `design check`. Not verified: CI.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
