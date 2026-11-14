@@ -28,6 +28,14 @@ const render = async (status: BuildReadyStatus) => {
 };
 
 describe('BuildReadyFooterComponent', () => {
+  it('makes the Gründe toggle itself the row item beside the badge', async () => {
+    const { toggle } = await render({ state: 'blocked', blockers: [{ kind: 'problem', text: 'APP-SPEC' }] });
+    const host = toggle()?.closest('ethlete-disclosure');
+
+    expect(host?.classList.contains('contents')).toBe(true);
+    expect(host?.classList.contains('block')).toBe(false);
+  });
+
   it('shows Baubereit without a Gründe toggle', async () => {
     const { element, toggle } = await render({ state: 'ready' });
 

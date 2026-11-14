@@ -10,7 +10,7 @@ export const DISCLOSURE_BODY_CLASS =
   templateUrl: './disclosure.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, SurfaceInteractiveDirective],
-  host: { class: 'font-ui text-ui-md', '[class.block]': '!hug()', '[class.contents]': 'hug()' },
+  host: { class: 'contents font-ui text-ui-md' },
 })
 export class DisclosureComponent {
   public label = input.required<string>();
