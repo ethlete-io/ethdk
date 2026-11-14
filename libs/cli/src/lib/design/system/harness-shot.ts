@@ -288,13 +288,15 @@ const forcedTargetOf = async (options: {
   forced: ForcedElement;
   url: string;
   timeout: number;
+  opens?: boolean;
 }) => {
   const { page, host, forced, url, timeout } = options;
   const { interaction, label, role, text } = forced;
+  const doing = options.opens ? `open its overlay by ${interaction}` : `force ${interaction} on`;
 
   if (label === null && text === '')
     throw new UndrivableError(
-      `the design forces ${interaction} on a <${role}> without an aria-label or text - compare cannot find it in the app`,
+      `the design ${options.opens ? `opens the overlay of a <${role}> by ${interaction}` : `forces ${interaction} on a <${role}>`} without an aria-label or text - compare cannot find it in the app`,
     );
 
   const named = label === null ? `the ${role} "${text}"` : `the aria-label "${label}"`;
@@ -316,13 +318,11 @@ const forcedTargetOf = async (options: {
 
       if (count === 1) return matches;
       if (count > 1)
-        throw new UndrivableError(
-          `the harness page ${url} has ${count} elements with ${named} to force ${interaction} on`,
-        );
+        throw new UndrivableError(`the harness page ${url} has ${count} elements with ${named} to ${doing}`);
     }
 
     if (Date.now() > deadline)
-      throw new UndrivableError(`the harness page ${url} has no element with ${named} to force ${interaction} on`);
+      throw new UndrivableError(`the harness page ${url} has no element with ${named} to ${doing}`);
 
     await page.waitForTimeout(FORCED_POLL_MS);
   }
@@ -343,6 +343,8 @@ export const harnessShotOf = async (options: {
   size?: DesignPreset | null;
   width?: number | null;
   forced?: ForcedElement[];
+  /** Triggers whose overlay the design draws open at rest: each gets a mouse `pointerenter` without a real hover. */
+  openedBy?: ForcedElement[];
   /** Draws the app's `data-et-force` elements forced, for a design that forces elements of framed drawings. */
   forcesInFrames?: boolean;
   /** Fails with the first look whose selector matches nothing inside the app's elements with that look. */
@@ -448,9 +450,25 @@ export const harnessShotOf = async (options: {
         throw new UndrivableError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
     }
 
+    for (const opener of options.openedBy ?? []) {
+      if (opener.interaction !== 'hover')
+        throw new UndrivableError(
+          `compare cannot open the overlay of "${opener.label ?? opener.text}" by ${opener.interaction} in the app - data-et-opened-by takes hover`,
+        );
+
+      const element = await forcedTargetOf({ page, host, forced: opener, url, timeout, opens: true });
+
+      await element.dispatchEvent('pointerenter', { pointerType: 'mouse' });
+    }
+
     const panes = options.panes ?? 0;
     const { settled, opened: openedPanes } = await step('settle', () =>
-      settledPanesOf({ page, count: panes, timeout }),
+      settledPanesOf({
+        page,
+        count: panes,
+        timeout,
+        hovered: (options.openedBy?.length ?? 0) + (options.forced?.length ?? 0) > 0,
+      }),
     );
 
     if (!settled)

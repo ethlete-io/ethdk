@@ -47,6 +47,7 @@ import {
   drawnSurfacesOf,
   forcedElementsOf,
   forcesInFramesOf,
+  openedByElementsOf,
   frameLooksOf,
   harnessUrlOf,
   pointerOpensOf,
@@ -376,6 +377,7 @@ export const shootStatesWith =
           shoot: ({ state, design, open }) => {
             const sent = open?.props ?? states[open?.from ?? state];
             const forced = forcedElementsOf(design.markup ?? '');
+            const openedBy = openedByElementsOf(design.markup ?? '');
             const looks = frameLooksOf(design.markup ?? '');
             const shot: HarnessShot = {
               url: harnessUrlOf({
@@ -388,6 +390,7 @@ export const shootStatesWith =
               size: frame.size,
               width,
               forced,
+              ...(openedBy.length > 0 ? { openedBy } : {}),
               ...(forcesInFramesOf(design.markup ?? '') ? { forcesInFrames: true } : {}),
               ...(looks.length > 0 ? { looks } : {}),
               ...(appOnly

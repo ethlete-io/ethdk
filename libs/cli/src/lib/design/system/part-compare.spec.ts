@@ -23,6 +23,7 @@ import {
   droppedPropsOf,
   encodePng,
   forcedElementsOf,
+  openedByElementsOf,
   forcesInFramesOf,
   frameLooksOf,
   harnessUrlOf,
@@ -149,6 +150,17 @@ describe('part compare', () => {
       { interaction: 'hover', label: null, role: 'treeitem', text: 'Components 3' },
       { interaction: 'hover', label: null, role: 'input', text: '' },
     ]);
+  });
+
+  it('reads the triggers a design picture draws with their overlay open, apart from its forced elements', () => {
+    const markup =
+      '<div><span class="relative"><button class="et-button" data-et-opened-by="hover"><svg></svg><div>Neu starten</div></button>' +
+      '<div class="et-overlay-runtime-pane" role="tooltip">CLI geändert</div></span><button aria-label="Zu" data-et-force="hover"></button></div>';
+
+    expect(openedByElementsOf(markup)).toEqual([
+      { interaction: 'hover', label: null, role: 'button', text: 'Neu starten' },
+    ]);
+    expect(forcedElementsOf(markup)).toEqual([{ interaction: 'hover', label: 'Zu', role: 'button', text: '' }]);
   });
 
   it('leaves out a forced element of a drawing a slot region frames, and reads the looks of that region', () => {
@@ -730,14 +742,16 @@ describe('harnessShotOf', () => {
                                   ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
                                   : request.url?.includes('components%2Fframed')
                                     ? '<style>i{display:block;width:7px;height:5px;background:#0000ff}i:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><div class="look"><i data-et-force="hover"></i></div></div></body>'
-                                    : request.url?.includes('components%2Fhover')
-                                      ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                                      : request.url?.startsWith('/__design-harness') &&
-                                          request.url.includes('layout=page')
-                                        ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
-                                        : request.url?.startsWith('/__design-harness')
-                                          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
-                                          : '<body>no harness</body>',
+                                    : request.url?.includes('components%2Fhint')
+                                      ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button:hover{background:#ff0000}.et-overlay-runtime-root{position:fixed;top:20px;left:20px}.et-overlay-runtime-pane{position:absolute;top:0;left:0;width:7px;height:2px;background:#ff0000}</style><body style="margin:20px"><div data-design-harness-host style="width:7px;height:5px"><button onpointerleave="clearTimeout(window.hint)" onpointerenter="if (event.pointerType === \'mouse\') window.hint = setTimeout(() => document.body.insertAdjacentHTML(\'beforeend\', \'<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane></div></div>\'), 300)">Go</button></div></body>'
+                                      : request.url?.includes('components%2Fhover')
+                                        ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                                        : request.url?.startsWith('/__design-harness') &&
+                                            request.url.includes('layout=page')
+                                          ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
+                                          : request.url?.startsWith('/__design-harness')
+                                            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
+                                            : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -930,6 +944,32 @@ describe('harnessShotOf', () => {
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => RED));
+  });
+
+  it('opens the overlay of a data-et-opened-by trigger with a mouse pointerenter and leaves the trigger at rest', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/hint', state: 'a', props: {} }),
+      openedBy: [{ interaction: 'hover', label: null, role: 'button', text: 'Go' }],
+      panes: 1,
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(7, 5, (_x, y) => (y < 2 ? RED : BLUE)));
+  });
+
+  it('refuses to open an overlay by another interaction than hover', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    await expect(
+      harnessShotOf({
+        browser,
+        url: harnessUrlOf({ url, part: 'components/hint', state: 'a', props: {} }),
+        openedBy: [{ interaction: 'focus-visible', label: null, role: 'button', text: 'Go' }],
+        panes: 1,
+      }),
+    ).rejects.toThrow('data-et-opened-by takes hover');
   });
 
   it('keeps the pointer off a top-left element in a rest shot', async (context) => {

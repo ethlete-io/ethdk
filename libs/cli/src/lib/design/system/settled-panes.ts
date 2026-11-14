@@ -49,13 +49,15 @@ export const settledPanesScript = `(() => {
 const PANES_NOW = `document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)}).length`;
 
 /**
- * Waits up to `PANE_COUNT_TIMEOUT_MS` for at least `count` overlay panes, or until the open ones settle with no new one,
+ * Waits up to `PANE_COUNT_TIMEOUT_MS` for at least `count` overlay panes, or, unless `hovered`, until the open ones settle with no new one,
  * then until `settledPanesScript` holds within `timeout`. `opened` is the pane count when fewer than `count` opened.
  */
 export const settledPanesOf = async (options: {
   page: Page;
   count: number;
   timeout: number;
+  /** Waits for the `count` panes even while the page is settled, as a hover opens a tooltip only after its show delay. */
+  hovered?: boolean;
 }): Promise<{ settled: boolean; opened: number | null }> => {
   const { page, count } = options;
   const timeout = playwrightTimeoutOf(options.timeout);
@@ -63,7 +65,9 @@ export const settledPanesOf = async (options: {
   if (count > 0)
     await page
       .waitForFunction(
-        `(() => { const settled = ${settledPanesScript}; return ${PANES_NOW} >= ${count} || settled; })()`,
+        options.hovered
+          ? `${PANES_NOW} >= ${count}`
+          : `(() => { const settled = ${settledPanesScript}; return ${PANES_NOW} >= ${count} || settled; })()`,
         undefined,
         { timeout: Math.min(timeout, PANE_COUNT_TIMEOUT_MS), polling: 'raf' },
       )

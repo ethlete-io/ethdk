@@ -56,9 +56,11 @@ const update = (props: Props) =>
     props,
   );
 
-const withHint = (markup: string, text: string | undefined) =>
+const openedByHover = (markup: string) => markup.replace('<button ', '<button data-et-opened-by="hover" ');
+
+const withHint = (markup: string, text: string | undefined, { force }: Props) =>
   text
-    ? `<span class="relative inline-flex">${markup}<span class="absolute top-full right-0 z-10 mt-2">${tooltip({ text, placement: 'bottom-end' })}</span></span>`
+    ? `<span class="relative inline-flex">${force?.control === 'notice' ? markup : openedByHover(markup)}<span class="absolute top-full right-0 z-10 mt-2">${tooltip({ text, placement: 'bottom-end' })}</span></span>`
     : markup;
 
 const dirtyText = ({ notice, noticeText }: Props) =>
@@ -113,6 +115,7 @@ const notice = async (props: Props) =>
       { imports },
     ),
     props.restart ? undefined : props.noticeText,
+    props,
   );
 
 export default definePart({

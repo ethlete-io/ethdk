@@ -83,6 +83,8 @@ export const hostBoxScriptOf = (options: { up: boolean }) => `(() => {
  */
 export type ForcedElement = { interaction: string; label: string | null; role: string; text: string };
 
+export const OPENED_BY_ATTRIBUTE = 'data-et-opened-by';
+
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' };
 
 const unescaped = (value: string) =>
@@ -162,26 +164,36 @@ const openingTagsOf = (markup: string) => {
   return tags;
 };
 
-const forcedTagsOf = (markup: string) =>
-  openingTagsOf(markup).filter(({ attributes }) => attributeOf(attributes, 'data-et-force') !== undefined);
+const markedTagsOf = (markup: string, attribute: string) =>
+  openingTagsOf(markup).filter(({ attributes }) => attributeOf(attributes, attribute) !== undefined);
 
-/**
- * The elements a design picture's markup forces with `data-et-force`, one entry per interaction. A forced element of a
- * framed drawing is left out: it is a still of another part's state, which the app draws forced as well.
- */
-export const forcedElementsOf = (markup: string): ForcedElement[] =>
-  forcedTagsOf(markup)
+const forcedTagsOf = (markup: string) => markedTagsOf(markup, 'data-et-force');
+
+const namedElementsOf = (markup: string, attribute: string): ForcedElement[] =>
+  markedTagsOf(markup, attribute)
     .filter(({ framed }) => !framed)
     .flatMap(({ whole, name, attributes, index }) => {
       const label = attributeOf(attributes, 'aria-label');
       const role = attributeOf(attributes, 'role') ?? name;
       const text = textOf(contentOf({ markup, tag: name, from: index + whole.length }));
 
-      return (attributeOf(attributes, 'data-et-force') ?? '')
+      return (attributeOf(attributes, attribute) ?? '')
         .split(/\s+/)
         .filter(Boolean)
         .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label), role, text }));
     });
+
+/**
+ * The elements a design picture's markup forces with `data-et-force`, one entry per interaction. A forced element of a
+ * framed drawing is left out: it is a still of another part's state, which the app draws forced as well.
+ */
+export const forcedElementsOf = (markup: string): ForcedElement[] => namedElementsOf(markup, 'data-et-force');
+
+/**
+ * The triggers whose overlay a design picture draws open while the trigger itself stays at rest, each marked
+ * `data-et-opened-by="hover"`: compare opens that overlay in the app without drawing the trigger hovered.
+ */
+export const openedByElementsOf = (markup: string): ForcedElement[] => namedElementsOf(markup, OPENED_BY_ATTRIBUTE);
 
 /** Whether a design picture forces an element of a framed drawing, which the app then draws with `data-et-force` too. */
 export const forcesInFramesOf = (markup: string) => forcedTagsOf(markup).some(({ framed }) => framed);
