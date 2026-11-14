@@ -45,7 +45,14 @@ import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless';
   hostDirectives: [
     {
       directive: PhoneInputDirective,
-      inputs: ['value', 'placeholder', 'defaultCountry', 'preferredCountries', ...TEXT_FIELD_CONTROL_INPUTS],
+      inputs: [
+        'value',
+        'placeholder',
+        'autocomplete',
+        'defaultCountry',
+        'preferredCountries',
+        ...TEXT_FIELD_CONTROL_INPUTS,
+      ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     ColorInteractiveDirective,

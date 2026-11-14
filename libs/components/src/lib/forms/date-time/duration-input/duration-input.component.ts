@@ -27,6 +27,7 @@ import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-contro
         'required',
         'name',
         'placeholder',
+        'autocomplete',
         'parseErrorMessage',
         'durationFormat',
         ...ACCESSIBLE_NAME_INPUTS,

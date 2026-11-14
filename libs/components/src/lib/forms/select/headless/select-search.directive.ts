@@ -6,6 +6,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   model,
   signal,
   untracked,
@@ -24,7 +25,7 @@ import { SelectDirective } from './select.directive';
   selector: 'input[etSelectSearch]',
   exportAs: 'etSelectSearch',
   host: {
-    autocomplete: 'off',
+    '[attr.autocomplete]': 'autocomplete() || null',
     role: 'combobox',
     'aria-autocomplete': 'list',
     'aria-haspopup': 'listbox',
@@ -51,6 +52,7 @@ export class SelectSearchDirective {
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
 
   public query = model('');
+  public autocomplete = input('off');
 
   private edited = signal(false);
 

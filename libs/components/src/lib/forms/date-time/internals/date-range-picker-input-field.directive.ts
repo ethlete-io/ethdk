@@ -25,7 +25,7 @@ import { DateRangePickerInputDirective, DateRangeSide } from './date-range-picke
 @Directive({
   host: {
     type: 'text',
-    autocomplete: 'off',
+    '[attr.autocomplete]': '(rangeInput?.autocomplete() ?? "off") || null',
     '[attr.inputmode]': 'maskAttached() ? "numeric" : null',
     '[attr.placeholder]': 'placeholder() || null',
     '[attr.aria-required]': 'rangeInput?.required() || null',

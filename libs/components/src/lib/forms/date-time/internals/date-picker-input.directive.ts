@@ -33,6 +33,7 @@ export abstract class DatePickerInputDirective
   /** The wire value in `valueFormat`, or `null` while empty/unparseable. */
   public value = model<string | null>(null);
   public placeholder = input('');
+  public autocomplete = input('off');
 
   /** Uncommitted field text - kept visible when it fails to parse. */
   public inputText = signal('');

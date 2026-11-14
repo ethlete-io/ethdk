@@ -38,6 +38,7 @@ import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.d
         'maxLength',
         'pending',
         'placeholder',
+        'autocomplete',
         'mixedLabel',
         'separators',
         'allowDuplicates',

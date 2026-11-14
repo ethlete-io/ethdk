@@ -516,6 +516,7 @@ panel at all.
 | `normalizeValue`  | `(raw: string) => string \| null` | trim, empty → `null` | Maps raw text to the stored tag - return `null` to reject.                                                                |
 | `maxSelection`    | `number \| undefined`             | `undefined`          | Further adds are ignored once reached, and the field locks - unless it still holds text.                                  |
 | `placeholder`     | `string`                          | `''`                 | Placeholder of the inline text field, shown while no tag is being typed.                                                  |
+| `autocomplete`    | `string`                          | `'off'`              | Native `autocomplete` attribute of the inline text field. An empty string removes it.                                     |
 | `mixedLabel`      | `string \| null`                  | `null`               | Placeholder shown in place of the value while `mixed` - see [Bulk editing](#bulk-editing).                                |
 
 Plus the shared control members: the `value` (`string[]`, `[]`), `mixed` and
@@ -569,7 +570,7 @@ regional-indicator emoji.
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
 ² `null` falls through to [`FORM_FIELD_LABELS.clear`](/components/localization).
 
-The phone input also takes the `pending`, `maxLength`, `hidden` and `warnings` inputs: an async validator shows the field's busy state and an `<et-counter />` counts against the schema's `maxLength()`. A `null` value renders as an empty field, on the OTP input too.
+Its `autocomplete` input defaults to `'tel'`; an empty string removes the attribute. The phone input also takes the `pending`, `maxLength`, `hidden` and `warnings` inputs: an async validator shows the field's busy state and an `<et-counter />` counts against the schema's `maxLength()`. A `null` value renders as an empty field, on the OTP input too.
 
 Typing national digits builds the `+dial` value; a national trunk `0` is stripped
 (`0171…` with Germany active → `+49171…` - except for countries like Italy where

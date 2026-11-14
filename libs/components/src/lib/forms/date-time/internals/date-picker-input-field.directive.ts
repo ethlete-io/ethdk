@@ -12,7 +12,7 @@ import { DatePickerInputDirective } from './date-picker-input.directive';
 @Directive({
   host: {
     type: 'text',
-    autocomplete: 'off',
+    '[attr.autocomplete]': '(pickerInput?.autocomplete() ?? "off") || null',
     '[attr.inputmode]': 'maskAttached() ? "numeric" : null',
     '[attr.placeholder]': 'pickerInput?.effectivePlaceholder() || null',
     '[attr.aria-required]': 'pickerInput?.required() || null',

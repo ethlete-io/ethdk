@@ -71,6 +71,7 @@ export abstract class DateRangePickerInputDirective
   public value = model<DateRangeValue>({ start: null, end: null });
   public startPlaceholder = input('');
   public endPlaceholder = input('');
+  public autocomplete = input('off');
 
   /**
    * Accessible name of the start field, which is the named widget - the group around both fields

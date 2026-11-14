@@ -39,6 +39,7 @@ export class PhoneInputDirective extends TextFieldControlDirective implements Fo
   /** Normalized `+<dialCode><national digits>` - empty string while nothing is entered. */
   public value = model('');
   public placeholder = input('');
+  public autocomplete = input('tel');
 
   /** ISO 3166-1 alpha-2 code, case-insensitive. */
   public defaultCountry = input('us', { transform: toPhoneCountryCode });

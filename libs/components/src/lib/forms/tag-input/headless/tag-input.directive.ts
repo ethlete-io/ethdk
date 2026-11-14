@@ -39,6 +39,7 @@ export class TagInputDirective extends TextShellControlDirective implements Form
   public pending = input(false, { transform: booleanAttribute });
 
   public placeholder = input('');
+  public autocomplete = input('off');
 
   /**
    * What commits the pending text as a tag: multi-character entries are key names

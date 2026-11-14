@@ -10,7 +10,7 @@ import { TagInputDirective } from './tag-input.directive';
   selector: 'input[etTagInputField]',
   exportAs: 'etTagInputField',
   host: {
-    autocomplete: 'off',
+    '[attr.autocomplete]': '(tagInput?.autocomplete() ?? "off") || null',
     '[attr.placeholder]': 'tagInput?.effectivePlaceholder() || null',
     '[attr.aria-required]': 'tagInput?.required() || null',
     '[attr.aria-invalid]': 'tagInput?.shouldDisplayError() || null',

@@ -46,6 +46,7 @@ import { mountRangeInputShellStyles } from '../range-input-shell-styles.componen
         'name',
         'startPlaceholder',
         'endPlaceholder',
+        'autocomplete',
         'parseErrorMessage',
         'valueFormat',
         'displayFormat',

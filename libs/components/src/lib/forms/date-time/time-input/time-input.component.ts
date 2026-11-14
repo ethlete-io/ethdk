@@ -44,6 +44,7 @@ import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-contro
         'required',
         'name',
         'placeholder',
+        'autocomplete',
         'parseErrorMessage',
         'valueFormat',
         'displayFormat',

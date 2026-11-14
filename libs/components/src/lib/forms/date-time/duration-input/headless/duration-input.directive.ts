@@ -50,6 +50,7 @@ export class DurationInputDirective
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
   public placeholder = input('');
+  public autocomplete = input('off');
   /** Field placeholder shown while `mixed` is set. Presentation only - it never enters the form value. */
   public mixedLabel = input<string | null>(null);
 

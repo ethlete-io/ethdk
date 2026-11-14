@@ -10,7 +10,7 @@ import { PhoneInputDirective } from './phone-input.directive';
   exportAs: 'etPhoneInputField',
   host: {
     type: 'tel',
-    autocomplete: 'tel',
+    '[attr.autocomplete]': '(phoneInput?.autocomplete() ?? "tel") || null',
     inputmode: 'tel',
     '[attr.placeholder]': 'phoneInput?.effectivePlaceholder() || null',
     '[attr.aria-required]': 'phoneInput?.required() || null',
