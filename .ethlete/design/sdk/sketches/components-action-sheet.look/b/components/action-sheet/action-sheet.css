@@ -1,0 +1,124 @@
+.action-sheet-frame {
+  overflow: hidden;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+}
+
+.action-sheet-scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-block-size: 56rem;
+}
+
+.action-sheet-scene > .et-overlay-runtime-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.action-sheet-page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding: 1.6rem;
+}
+
+.action-sheet-page-bar {
+  block-size: 2.4rem;
+  inline-size: 50%;
+  border-radius: 0.6rem;
+  background: var(--et-surface-border-solid);
+}
+
+.action-sheet-page-card {
+  block-size: 8rem;
+  border-radius: 1.2rem;
+  border: 1px solid var(--et-surface-border-solid);
+}
+
+.action-sheet-page-card--short {
+  block-size: 4.8rem;
+}
+
+@layer components.sdk {
+  .et-action-sheet {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-block-end: 1.6rem;
+    border-start-start-radius: 1.6rem;
+    border-start-end-radius: 1.6rem;
+    background: var(--et-surface-background-solid);
+    color: var(--et-surface-color-solid);
+  }
+
+  .et-action-sheet-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 2rem 2rem 1.2rem;
+  }
+
+  .et-action-sheet-title {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+
+  .et-action-sheet-message {
+    margin: 0;
+    color: var(--et-surface-color-muted-solid);
+  }
+
+  .et-action-sheet-list {
+    display: flex;
+    flex-direction: column;
+    padding-block-start: 0.4rem;
+  }
+
+  .et-action-sheet-action {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-block-size: 5.2rem;
+    padding-inline: 2rem;
+    border: 0;
+    border-block-end: 1px solid var(--et-surface-border-solid);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1.6rem;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .et-action-sheet-action:where([data-variant='destructive']) {
+    color: var(--et-theme-color-ink-solid);
+  }
+
+  .et-action-sheet-cancel {
+    justify-content: center;
+    margin-block-start: 0.8rem;
+    border-block: 1px solid var(--et-surface-border-solid);
+    font-weight: 600;
+  }
+
+  @media (hover: hover) {
+    .et-action-sheet-action:hover {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+    }
+  }
+
+  .et-action-sheet-action:active {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+  }
+
+  .et-action-sheet-action:focus-visible {
+    outline: 2px solid var(--et-surface-color-solid);
+    outline-offset: -2px;
+  }
+}
