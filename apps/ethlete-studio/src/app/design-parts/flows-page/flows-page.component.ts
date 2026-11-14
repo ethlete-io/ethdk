@@ -18,7 +18,8 @@ import { CanvasViewport, mountCanvasViewport } from '../../components/design-can
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
-import { TreeRow, TreeRowItemComponent } from '../tree-row/tree-row-item.component';
+import { TreeRow } from '../tree-row/tree-row-item.component';
+import { TreeRowComponent } from '../tree-row/tree-row.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 
 export const FLOWS_SAMPLE: string[] = [...STUDIO_LABELS.flows.sample.names];
@@ -55,19 +56,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
     <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Flows">
       <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
         @if (rows().length) {
-          <div class="flex flex-col gap-px" role="tree">
-            @for (row of rows(); track row.label) {
-              <div
-                [item]="row"
-                [attr.aria-level]="1"
-                [attr.aria-selected]="row.selected"
-                (rowPress)="pick.emit(row.label)"
-                ethlete-tree-row-item
-                role="treeitem"
-                tabindex="0"
-              ></div>
-            }
-          </div>
+          <ethlete-tree-row [rows]="rows()" (rowPress)="pick.emit($event.label)" />
         } @else {
           <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
         }
@@ -202,7 +191,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
     ShellPageComponent,
-    TreeRowItemComponent,
+    TreeRowComponent,
     ZoomChipComponent,
   ],
   host: { class: 'block h-screen w-full' },

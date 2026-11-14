@@ -1168,6 +1168,20 @@ design-canvas); `components/canvas-viewport` is drawn by design-canvas itself; `
 off-screen in the panned sample. Decision by the doc agent (ADR 0201, 0105, 0113): the rule lands with these five in
 its baseline, then each link fix shrinks it. A link to the real host is technical; a part drawn as inline markup links
 the file that holds it; a part with no app code loses its link; comment-pin gets an on-screen sample.
+As built (583, B502 links, Linux builder, 2026-11-14): `components/tree-row` keeps `tree-row.component`, and the Flows
+list now draws its rows through that component instead of its own `[ethlete-tree-row-item]` loop, so a page renders the
+linked file (the stack marks a selected row `aria-selected`, as the Flows loop did). The part tree keeps its own rows: it
+draws a nested tree with `etTreeNode`, not the flat stack. `pages/system` stays on `system-page` (open). A derivation of
+a page's link from the innermost app component at or around the live host (shared host and shell skipped) was built and
+measured: it linked `system-view`, the real host, and the part check then failed with 19 DROPPED-PROP, because the
+harness draws the linked component with the design props and `system-view` takes none. Cause (measured): the app draws
+the part state of the System page inline in `system-view`, and `system-page` is a second drawing of the same states
+that only the listing-error and legacy-call states and the harness use. Not committed. Next step: `system-view` renders
+`system-page` for every state with its canvas projected, as the call state already does; then the link is right as it
+stands, and the page derivation can land with a guard that a candidate takes the design props.
+Verified on a scratch copy: `design check --part` on tree-row, part-tree, flows, inventory, sketches and system has no
+findings (only the copy's own "changed outside a sketch" points, as it has no git), and the live run prints no LINKED or
+UNDERIVED. Not verified: the Studio e2e suite on the Flows list.
 
 584\. Builder (2026-11-07, 994dd8bea): `addedBaselineNamesOf` flagged every entry that some older version of
 `rule-baseline.json` did not hold, so only the first commit of the file could baseline anything and a second new rule

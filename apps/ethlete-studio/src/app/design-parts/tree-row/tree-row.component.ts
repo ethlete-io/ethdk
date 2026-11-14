@@ -9,7 +9,7 @@ import { TreeRow, TreeRowItemComponent } from './tree-row-item.component';
       <div
         [item]="row"
         [attr.aria-level]="row.depth + 1"
-        [attr.aria-selected]="null"
+        [attr.aria-selected]="row.selected ?? null"
         [attr.aria-expanded]="row.kind === 'leaf' ? null : row.expanded === true"
         (rowPress)="rowPress.emit(row)"
         ethlete-tree-row-item
