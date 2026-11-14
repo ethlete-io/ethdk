@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/components",
-  "version": "1.0.0-next.81",
+  "version": "1.0.0-next.82",
   "repository": {
     "type": "git",
     "url": "https://github.com/ethlete-io/ethdk",
@@ -12,7 +12,7 @@
     "./design/*": "./design/*.ts"
   },
   "dependencies": {
-    "@ethlete/bracket": "^1.0.0-next.3"
+    "@ethlete/bracket": "^1.0.0-next.5"
   },
   "peerDependencies": {
     "@angular/common": "^22.1.0",

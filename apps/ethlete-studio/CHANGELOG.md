@@ -1,5 +1,61 @@
 # ethlete-studio
 
+## 0.2.0-next.17
+
+### Minor Changes
+
+- Drag the right edge of the side panel, or press the arrow keys on it, to set its width between 200 and 400 px; the width survives a reload.
+- Open a command palette from the title search or with Ctrl+K / ⌘K: it finds parts, pages, sketches and the design server commands, opens the chosen one and lists what was opened last.
+- The logo menu holds the project switch, Projekt öffnen…, the design server actions and the Erscheinungsbild and Hilfe & Einstellungen submenus; the sidebar head picks the design system, and the project switch at the bottom of the sidebar is gone.
+- A sketch round of a wide part shows each changed state as an enlarged crop of the change, same changes once.
+
+### Patch Changes
+
+- The sketch view canvas runs under the open side panel, and a new design check flags a canvas clipped at a floating panel.
+- Studio no longer reads every running design server as stale: it compares only the stamp's version and build, and judges a server that answered no stamp yet again on the next check.
+- Studio's CEF runtime allows the page to reach loopback addresses without a Local Network Access prompt, so the request to the design server no longer hangs where CEF shows no prompt and the sketch view opens.
+- The release smoke marker probes the sketch view's frame cells (`data-painted`) and logs a failure line when nothing paints.
+- Buttons and the title search key hint use the type scale line heights, and the sketches matrix refits once web fonts have loaded.
+- App sample data and specs no longer name a real person, and the person-name check no longer baselines any file under the app source.
+- The part tree restores its scroll position only after all listings are loaded, so a late listing no longer shifts the rows shown after a reload.
+- The part tree keeps its scroll position when the window reloads.
+- Verwerfen on a sketch asks first: an anchored confirm names the sketch and that all its variants are lost, focuses Abbrechen, and Escape cancels.
+- Studio shows the `@ethlete/components` tooltip instead of native `title` tooltips on its tree marks, canvas labels, comment targets, model names and agent status.
+- A part with a definite blocker shows "Nicht baubereit" while slow checks run, the popover lists a direct edit, and an edit sketch offers no Verwerfen.
+- A merged edit sketch now opens its part, its merge view lists the changed states because a redraw no longer cancels the running compare, and each compare row outlines the edited part.
+- Show a part's state grid when its frames are read again while its pictures load; before, the grid stayed hidden and never went live.
+- A static rule problem in a variant of a ready sketch is now a `sketch-problem` open point, shown in Studio as "Sketch-Regel verletzt: <rule>".
+- The production build ships the design's `@assets` files, so Studio loads Noto Sans and Noto Sans Mono again.
+- The open-points popover no longer knows the `contrast` point kind.
+- The start view shows the terminal command in the shipped Noto Sans Mono instead of the OS monospace font.
+- Arrows, math signs and the keyboard symbols (⌘ ⇧ ⌥ → ≥) draw in the shipped Noto Sans Math and Noto Sans Symbols 2 instead of an OS font.
+- The merge page shows one disclosure per part for the unchanged states, not just the first part.
+- Update rustix to 1.1.6 to drop the unsound xattr advisory RUSTSEC-2026-0486.
+- The sketches page folds every variant into the "Unverändert" bar when no variant changes any state, so the comment pin of
+  a folded variant no longer shows.
+- Draw the open points popover on the sketches page without dividers between groups.
+- The Studio app renders its text in the design fonts (Noto Sans, Noto Sans Mono) instead of Jost and IBM Plex Mono.
+- Show the restart notice in the title bar again: the host no longer expects a push gate in the code state.
+- Disabled buttons on accent, warning, danger and surface fills get a lighter muted fill with a dark label at 3:1 or more.
+- The sketch gutter no longer shows the crop reason, locator and toggle when the zoom hides the state labels, so no text leaves its box at min zoom.
+- A failed listing read on the System page shows an error card with the reason and Erneut laden. The sketch view keeps which change crops show the whole screen.
+- The Studio logo menu uses the SDK menu's default maximum height again.
+- The macOS app writes console errors to its console log again. The macOS window config now leaves the main window to the app start, which attaches the log.
+- A sketch row in the System tree no longer switches to a merging status while its merge runs; the merge view shows the activity.
+- A merged sketch opens its part also when the sketch listing drops it before the merge answers.
+- A sketch with several parts shows its round title as head and lists its target parts under it in the part tree.
+- The part tree nests a part under the one part of its own layer that uses it, and moves it back to its layer once a second part uses it.
+- A row in the Offene Punkte popover for a missing motion opens its start state, and a blocker row that names a part opens that part.
+- Clicking a row in the Offene Punkte popover opens the state, comment, sketch or edit sketch the point is about.
+- The command palette shows a hint and the Ctrl K shortcut while the field is empty and nothing was opened yet
+- The Studio explorer shows only parts, no states: the open sketches sit on top as `part@name`, and Legacy sits collapsed at the bottom with one row per project.
+- The rail drops the Sketches (pencil) item: open sketches sit at the top of the explorer, and an open sketch marks System in the rail.
+- Remove the unused Studio project switch part and its component, since the project switch lives in the logo menu.
+- Studio asks the design server again when a check request hangs, so a hung request no longer keeps the start screen forever.
+- The sketch view shows "Variante gewählt" once a variant is picked, and the picked variant's head lists the sketch's open points, also for a part without a merged view.
+- The sketches page sample comment pin names the design's sample author, so `et design compare` matches its accessible name.
+- The open points popover on the sketches page now opens under the take button with its arrow on the chip, and lists its lines without a gap between the groups.
+
 ## 0.2.0-next.16
 
 ### Minor Changes

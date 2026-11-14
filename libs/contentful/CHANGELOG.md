@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 4.0.0-next.18
+
+### Minor Changes
+
+- SDK component styles now sit in `@layer components.sdk`, so an app rule in `@layer components` overrides them; `et update` leaves a task to check those rules.
+
 ## 4.0.0-next.17
 
 ### Patch Changes

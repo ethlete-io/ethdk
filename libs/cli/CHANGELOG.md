@@ -1,5 +1,140 @@
 # @ethlete/cli
 
+## 3.0.0-next.29
+
+### Minor Changes
+
+- `design system --json` lists each part's `usedBy`: the keys of the product's parts that import it directly.
+- The sketch listing names where each changed state differs from the product (`crops`).
+- Add `et design sketch pick <part> --variant <key> --decided-by "<words, source>"` to record a pick the designer gave outside Studio, as the same pick Studio writes.
+
+### Patch Changes
+
+- `et design status` shows the last finished CI run with its failed job names next to a running one, and counts a red one as a block for feature slices.
+- `sketch check` reuses the shots of one run across its ready checks, as `sketch ready` does, so the NO-CHANGED-STATE check no longer shoots every state again.
+- `et design sketch ready` and `sketch check` now fail on a usage error before the lib build wait.
+- A direct edit with no old design now opens its sketch with only `new` once, so the design server no longer repeats `EDIT-OLD-NOT-FOUND` on every poll.
+- `sketch ready` refuses and `sketch check` warns (`NO-CHANGED-STATE`) on a variant that draws no changed state, the Studio listing shows it as a problem, and `--no-visible-change` keeps the automatic merge of a sketch meant to change no pixel.
+- The design server now also serves a checkout's symlinked directories, so `?inline` stylesheets answer the same on every server and `design check` reuses its render and completeness caches.
+- Design: `design check` without a resident process starts one design server and Chromium for the run instead of one per drawing rule.
+- `design check` reports each request the design server refused as outside its Vite allow list as a `SERVE-DENIED <id>` problem and fails, instead of only logging it.
+- `sketch check` reports each request the design server refused as outside its Vite allow list as a `SERVE-DENIED <id>` problem and fails, instead of only logging it.
+- The generated `tsconfig.json` of a sketch variant is now written in the checkout's Prettier format, so `sketch check` no longer reports it as unformatted.
+- The design open points now list a part that exists only in an unmerged sketch, with its `unmerged-sketch` point, and the Studio open-points call answers such a part instead of 404 `unknown-part`.
+- The design CLI writes the editor `tsconfig.json` of each sketch variant in the checkout's Prettier format without a Prettier process per file, so a product with many sketches no longer slows the design server down.
+- The design frame resolves `url(@assets/...)` in `@import`ed stylesheets, and the new `FONT-FACE` render rule fails a part whose `@font-face` does not load.
+- `et design shot <part> --variants --in <layer>/<name>` draws a sketch's variants inside a part that embeds the sketched part, such as a foundations sketch in a page.
+- `et design status` names each open or ready sketch whose base is stale, with the rebase command; `--stale` prints only those lines.
+- The open points keep the sketch problems of each ready sketch variant until the product or a file the variant's rule check read changes, so a repeat answer no longer reruns every variant.
+- Stop warming the open points in the background at `et design serve` start; the warm-up kept CI from listing the sketches in time.
+- The design server computes the open points with their sketch problems in the background at start and after each watched file change, and an open-points request waits for that run instead of starting its own.
+- The open points of a product with ready sketches are computed several times faster: each rule reads, parses and scans a source text once, so a part edit only rechecks that part's text.
+- The reach check in `et design` forces `pointer-events` only on the elements that turn it off, so the render check runs about a third faster.
+- `sketch ready` on a ready sketch whose stored hashes are stale, but whose variant and `shared/` files equal the commit that recorded them, hashes them again and keeps the sketch ready.
+- The design server answers the first sketch listing about twice as fast.
+- `sketch check` warns when two sketch variants look alike at Studio's fit zoom, naming the variants, the state and the region.
+- A design merge now refuses, naming the URL or spec, when a merged stylesheet has a `url()` the app build cannot resolve or an app spec fails.
+- The sketch view canvas runs under the open side panel, and a new design check flags a canvas clipped at a floating panel.
+- The design server no longer rewrites `merged.json`, and `sketch discard` refuses the old/new sketch of a direct edit.
+- The design server writes an uncaught error with its stack, time, pid and port to `.ethlete/cache/design-server-crash.log`, prints the path and exits 1, and reports the last crash in its identity.
+- The cli builds again: reading the newest crash log entry no longer needs ES2022.
+- Picking `old` in an edit sketch writes the part file back byte-identical to HEAD instead of adding `design check` to `madeBy`.
+- `et design compare` fails a state whose app body or harness host renders in another first font family than the design frame root.
+- The OFF-CENTRE design rule skips visually hidden text (`clip-path: inset(50%)`, a zero `clip`, or a 1px `overflow: hidden` box), so a screen-reader label no longer pulls a button off centre in a scaled sketch thumbnail.
+- `et design` warns when a repo build of the CLI is older than the `libs/cli` sources, now also for the copies `yarn et:design` runs.
+- `design check` fails with the `CONTROL-HEIGHT` render rule on a control sized by a `--control-*` token whose rendered height differs from that token by more than 0.5px, at full size and in scaled thumbnails alike.
+- The visually hidden test of `design check` exempts only a 1x1 px `overflow: hidden` box, so CLIPPED still flags text cut by a box that collapsed to 1 px in one direction.
+- `design check` no longer flags visually hidden text as CLIPPED, underlined-clipped or WRAP; one shared visually-hidden test serves every render rule.
+- `sketch merge` now names the commit order when a part the sketch embeds holds an uncommitted change it was drawn on, instead of the `sketch rebase` advice that could not help.
+- `design compare` refuses a checkout with no lib build folder, naming the build command, instead of failing every part.
+- `design compare --base <rev>` also compares each part with the harness app at `<rev>` and lists the failing states new at HEAD and those fixed.
+- A design compare, check or sketch run in a `yarn scratch:checkout` copy stops its resident design process and its Chromium when it ends.
+- `design compare --state` takes several states, comma-separated or as a repeated flag, and compares them in one run.
+- The resident design server serves a frame from the current source: a frame asked for after a loaded source changed reloads the changed modules.
+- `design dom` prints each element's box (`data-box="x:… y:… w:… h:…"`, relative to the drawn root) on both the design and the `--app` side.
+- A design sketch merge commit now carries a `none` changeset for each workspace package it changes.
+- A sketch records the tree its baseline came from, so `sketch rebase` ports a sketch cut from an uncommitted tree without `--ported`.
+- `et design sketch merge` refuses a picked variant whose files changed since `sketch ready`, and `sketch ready` judges such a sketch again.
+- `et design sketch rebase` drops an agent pick whose merge never reached git, and `sketch merge` names an agent pick it reuses.
+- `et design` logs its heap use (`heap <used>/<limit> MB`) every 5 minutes and one warning the first time it passes 80 % of the heap limit.
+- The design server's `/__design/shot` route shoots the app harness of a part state with `source=app`.
+- `et design sketch list` and the `sketch check` sweep skip a `sketches/` folder that holds only generated tsconfigs; the sweep names each one in a note line.
+- The look-alike check zooms to the sketch list width Studio last posted to `POST /__design/list-width` instead of a guessed 1280 px window; the Studio API level is 9.
+- `sketch rebase` now names `--ported` when it refuses to port a conflict, so an agent following its remedy no longer loops on the same refusal.
+- `sketch merge --allowed-by` no longer leaves its agent pick in the sketch file when the merge is refused, and an agent
+  pick never decides a later merge: only a pick by the designer does.
+- A sketch keeps its recorded baseline tree in the ref `refs/ethlete/sketch/<place>/<folder>`, so `git gc` no longer prunes it before `sketch rebase` ports from it. Discarding or merging the sketch deletes the ref.
+- The shot route answers 400 to `source=app` with `surface`, `color`, `fill`, `scheme` or `scale`, which the app harness cannot draw, instead of ignoring them.
+- The design part shooter draws another state of a part frame it just drew by switching the state in place, instead of loading the frame again, so the aktuell pass of `et design sketch check` loads each frame once.
+- A direct-edit sketch takes `old` from the part at HEAD, so a part with a drifted merged hash keeps its old/new compare, and its changed states no longer fold as unchanged.
+- The `new` variant of an old/new edit sketch no longer reads as unchanged, so Studio shows it next to `old` instead of folding it.
+- A merged edit sketch now opens its part, its merge view lists the changed states because a redraw no longer cancels the running compare, and each compare row outlines the edited part.
+- `design serve` no longer shows a direct edit that HEAD already holds as an open point.
+- `design serve` no longer shows a direct edit that draws as before as an open point.
+- The design server no longer crashes when a merge removes a sketch folder while the server lists the sketches.
+- A direct edit that HEAD already holds no longer opens a `<part>@edit` sketch: `design check` and the design server record it and delete an open edit sketch for it.
+- A static rule problem in a variant of a ready sketch is now a `sketch-problem` open point, shown in Studio as "Sketch-Regel verletzt: <rule>".
+- `et design visible-change` writes the diff pictures of a product into the same folder on every run and empties it first, so repeated runs no longer leave a new folder in `/tmp` each time.
+- `design compare` grows the app page to cover a part taller than the viewport before its picture, so an anchored overlay no longer shifts during the screenshot.
+- `et design serve` always hosts the resident design process; the `ETHLETE_DESIGN_SHARED_SERVE` flag is gone. `ETHLETE_DESIGN_RESIDENT=0` still keeps every call in its own process, and in CI a call uses a serve-hosted resident but never starts one.
+- `design serve` answers the first open-points request of a product in under a second: the variants of ready sketches run their rules in a small worker pool after one shared Tailwind run.
+- `et design serve` hosts the resident design process, so compare, check and sketch runs share its design server and Chromium (off with `ETHLETE_DESIGN_SHARED_SERVE=0` and in CI).
+- `et design serve` runs its slow checks in a worker, so a slow-checks poll no longer blocks its answers; Tailwind's class facts are kept on disk under `node_modules/.cache/ethlete-design/class-facts` and shared by every process and worker.
+- `et design sketch check <sketch>` runs the rules only for that sketch, typechecks its variants incrementally and in parallel with the gates, and starts the design server earlier: a cold check drops from about 19 s to 8 s.
+- `et design shot` runs in the resident design process, so a repeated shot reuses its warm design server and Chromium.
+- `design check` no longer reports ACTION-UNDECLARED or NESTED-SURFACE: both flagged SDK catalogue parts that are correct (native fields and their own controls, a component on its demo stage).
+- `design check` no longer reports CONTRAST, LOST-SURFACE, NESTED-SCROLL, CUT-CONTROL or SKIP-SCOPE.
+- `et design check` no longer runs the OFF-CENTRE and DISABLED-INTERACTION rules: OFF-CENTRE took toolbars for one-line text boxes, and DISABLED-INTERACTION flagged loading buttons that keep their colours on purpose. `data-et-skip="OFF-CENTRE"` is still accepted and escapes nothing.
+- `et design check` no longer runs the UNREACHABLE and COVERED rules, and counts a render finding inside a base component on the product part that draws it.
+- `et design check --slow` and `et design serve` no longer run the `VISIBLE-CHANGE` rule, and `--slow` no longer takes `--base`; `et design check --visible-change` still runs the gate on demand.
+- `design check` no longer rewrites `merged.json` and `ready.json`: it reports the same lines, and the check records and merge hashes it computes stay in memory. `design ready` and the design server still write check records.
+- A `design check` run through the design server no longer hides the server's own `ready.json` writes or shows the server its unsaved check records.
+- Remove `et design check --visible-change` and the `harness.baseBranch` setting it read; `et design compare --base <rev>` still compares against a clone at `<rev>`. The `background-design-commands` hook no longer names `--visible-change`.
+- `definePart` no longer takes a `contrast` field, and `data-et-skip` accepts only `CLIPPED`, `WRAP` and `CONTROL-HEIGHT`: the ids of removed check rules are refused. Until B503, `OFF-CENTRE` on the studio part `foundations/type` is still ignored.
+- The open points drop the `contrast` kind: no check produces it since the contrast rule left `design check`.
+- Resolve a `url(@assets/...)` in a stylesheet a product imports from another product's folder (also through `?inline`) against that product's assets, so its font faces load in the design frame.
+- The design tool loads every font face a frame declares before the frame reports ready, so a face no text uses yet no longer stays unloaded in a shot.
+- `CONTRAST-PAIR` measures every scheme a product draws and names the theme and scheme of each weak pair; `measureContrastPairs` resolves the tokens on the marked element and reads `r g b` channel tokens.
+- `design check` reports `CONTRAST-PAIR` for each token pair a part measures with `measureContrastPairs` below its need.
+- Before a frame reports ready, the design tool loads only the font faces its text can use, not every declared face.
+- `et design check` no longer reuses stale Tailwind class facts, SDK declarations or app file lists after a theme in a package, a missing template that appears, a tsconfig path or a same-mtime edit changes what they read.
+- `design compare --base` finds the product when the checkout path goes through a symlink.
+- Write `ready.json`, `merged.json` and `sketch.json` atomically (temp file and rename) under a per-product lock, so a serve and a CLI call can no longer lose each other's update or leave a torn file.
+- `et design check` no longer runs the UNBOUND-INPUT rule: an input that only the component itself or the design harness sets is not a defect.
+- Reverted for now: the journal of a killed sketch discard or rebase and `sketch rebase --ported` come back in a later release.
+- The sketch merge compare no longer draws a differing state a second time when both of its pictures were just drawn, which halves the draws of a cold compare.
+- A design sketch merge now writes through a journal under the product lock: a merge killed half way is undone, or finished once its commit landed, by the next design command.
+- The design tools keep the shot hashes in the gitignored `.ethlete/cache/<product>/pictures.json` and no longer rewrite an unchanged `ready.json` or `sketch.json`.
+- `et design serve` and `et design check` keep their check records in the gitignored `.ethlete/cache/<product>/stamps/ready.json`, so only `et design ready` changes `ready.json`.
+- Reverted for now: the per-field merge of `sketch.json` writes comes back in a later release.
+- A viewed sketch shot keeps its own copy per variant, so a later shot that rewrites the same sheet file no longer makes earlier variant views stale.
+- `et design sketch merge` and `pick` refuse a person name in `--decided-by` before writing, and their help names the role `human`.
+- `design check` now prints a RECORD DROPPED line when it removes a part's ready record because of a definite blocker.
+- `design check` now warns on every run of each part state its slow run could not judge, naming the product, part, state and why.
+- Design frames keep normal colours on a loading button, like the SDK.
+- `design check` also compares the drawn `::before` and `::after` of a control when it decides whether a selected option looks different.
+- `design serve` shares one in-flight rules run per product and ends it when the last caller aborts; a self-started resident idles out after `ETHLETE_DESIGN_IDLE_MS` (30 min by default), a serve-hosted one ends with its server.
+- The design server no longer writes its crash log into a removed checkout. That write recreated the checkout, so its resident design process never saw the checkout gone and stayed alive.
+- An app picture waits until the harness host has a mounted part that renders, and fails with a clear error when none appears in time, instead of shooting an empty host.
+- The look-alike check no longer warns about a small changed region whose difference stays plainly visible at Studio's fit zoom.
+- A sketch merge commits only its own entries of a JSON file that was already dirty before the merge, such as `merged.json`, and leaves the other edits of that file in the working tree.
+- Recognise a nested design-file lock as the same product when one caller names the product through a symlinked path, so a merge commit no longer waits 10 s on its own lock and then throws.
+- A `ready.json` record names the command that wrote it: `et design serve` for the design server's slow runner, `et design check` for a check.
+- The design render check draws the states of a part by switching them in place on a booted frame, and the dark twin on the same load, instead of loading the frame once per state and scheme.
+- A failed rebuild of a stale lib build now prints the last lines of its build output before the refusal.
+- The resident design process exits when its checkout or its entry file is gone, checked every 10 s and on each run request, instead of living on until its 30 min idle timeout.
+- The resident design process reuses its idle draw pages across draws and runs instead of opening a new browser context for each draw and keeping it open, which left hundreds of Chromium renderers running during a full product check.
+- Revert the variant pool and warmed worker for cold open-points answers; a Studio e2e case failed in CI with them.
+- SDK component styles now sit in `@layer components.sdk`, so an app rule in `@layer components` overrides them; `et update` leaves a task to check those rules.
+- `et design serve-state` and the stamp check name `DE_PORT=<port> et design` as the command that binds the design port, and a terminal `et design` prints "4402 left to Studio, serving on <port>".
+- `et design shot <part>@<name>` draws that named sketch, and `sketch ready` counts a shot as viewed only while the shot file the CLI drew still holds it.
+- The design shot store writes no picture and takes no draw lock once its checkout is removed. Those writes recreated the checkout, so its resident design process never saw the checkout gone.
+- Studio shows the new picture of a part edited on disk again, instead of one drawn from the old code.
+- `et design sketch check` no longer moves a ready sketch back to in progress; it prints `READY-STALE` instead, and the ready content hash ignores the generated editor `tsconfig.json`.
+- `sketch check` reads the render inspect cache, so a second check of an unchanged sketch variant draws nothing again.
+- A stale lib rebuild now runs `nx build` in the Nx workspace that owns the lib build folder, so a checkout that links its `libs` and `dist` from another checkout no longer refuses with "Cannot find project".
+- `et design` no longer fails to start when a rebuild removes a package file while the server hashes its build.
+
 ## 3.0.0-next.28
 
 ### Minor Changes

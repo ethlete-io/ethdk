@@ -1,5 +1,22 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.34
+
+### Minor Changes
+
+- `app-styling` allows app CSS in `@layer components` again, and `et update` no longer leaves the `app-styling-utilities` task.
+
+### Patch Changes
+
+- The git-safety hook now allows the commit that concludes a merge when a plan archive under `plans/**/archive/` is staged next to the merge paths, so an archive run that shrinks a merged plan can go into the merge commit.
+- `agent-sessions restart` refuses while a `❓` question of a Claude session has no later human message, unless the resumed handoff names it under "Open for the human".
+- The `background-design-commands` hook lets a `--help` or `-h` call of a long `design` command run in the foreground; `studio:e2e --help` stays denied because it runs the suite.
+- The agent-sessions `restart` and wake-up commands now see a focused footer pill or agent panel row of the current Claude Code build, and move the focus back to the prompt before they type.
+- Tighten the agent-sessions skill, mainly the restart section.
+- The agent-sessions skill starts each agent with `CLAUDE_CODE_TMPDIR=~/.cache/claude-tmp`, in `run`, the shell functions and `restart --process`, so a full `/tmp` does not stop the agent's shell.
+- Remove `et design check --visible-change` and the `harness.baseBranch` setting it read; `et design compare --base <rev>` still compares against a clone at `<rev>`. The `background-design-commands` hook no longer names `--visible-change`.
+- Tighten the timetrack skill and list transcript and resync in its command table.
+
 ## 0.1.0-next.33
 
 ### Minor Changes
