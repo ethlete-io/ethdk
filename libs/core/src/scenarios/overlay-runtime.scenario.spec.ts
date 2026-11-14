@@ -88,6 +88,41 @@ describe('overlay runtime scenarios', () => {
     expect(events).toEqual(['dialog:beforeClosed:api', 'dialog:afterClosed:api']);
   });
 
+  it.each([false, true])(
+    'emits backdropClick once per press with closeOnOutsidePointer %s and completes after close',
+    (close) => {
+      const s = scenario();
+      const ref = s.run(() =>
+        injectOverlayRuntime().mount({
+          id: 'dialog',
+          component: ScenarioDialogComponent,
+          autoFocus: false,
+          closeOnOutsidePointer: close,
+        }),
+      );
+      const clicks: MouseEvent[] = [];
+      let completed = false;
+      ref.backdropClick().subscribe({ next: (event) => clicks.push(event), complete: () => (completed = true) });
+
+      s.flush();
+      ref.elements.paneElement.click();
+      pressBackdrop(ref, 1);
+
+      expect(clicks).toHaveLength(1);
+
+      if (!close) {
+        expect(ref.state()).toBe('mounted');
+        ref.close();
+      }
+
+      s.flush();
+
+      expect(ref.state()).toBe('closed');
+      expect(completed).toBe(true);
+      expect(rootsInDocument()).toEqual([]);
+    },
+  );
+
   it('closes two stacked overlays with two fast Escapes, topmost first', () => {
     const s = scenario();
     const bottom = open(s, 'bottom');

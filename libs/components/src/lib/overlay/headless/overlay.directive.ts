@@ -9,6 +9,7 @@ import {
   input,
   inputBinding,
   model,
+  output,
   signal,
   untracked,
 } from '@angular/core';
@@ -52,6 +53,7 @@ export class OverlayDirective {
   // eslint-disable-next-line ethlete/no-native-html-input-name -- deliberately sets the overlay's ARIA role
   public role = input<OverlayRole | undefined>(undefined);
   public open = model(false);
+
   public disabled = input(false, { transform: booleanAttribute });
   public disableClose = input(false, { transform: booleanAttribute });
   // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
@@ -84,6 +86,8 @@ export class OverlayDirective {
   public autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
   /** Matches the overlay's width to its anchor. Applies at the next open. */
   public mirrorWidth = input(false, { transform: booleanAttribute });
+  /** Emits for every click on the backdrop, whether or not it closes the overlay. */
+  public backdropClick = output<MouseEvent>();
 
   /** @internal */
   public registeredAnchor = signal<OverlayAnchorDirective | null>(null);
@@ -276,6 +280,14 @@ export class OverlayDirective {
     }
 
     this.overlayRef.set(overlayRef);
+
+    overlayRef
+      .backdropClick()
+      .pipe(
+        tap((event) => this.backdropClick.emit(event)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
 
     overlayRef
       .beforeClosed()

@@ -1,6 +1,6 @@
 import { Provider, signal } from '@angular/core';
 import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource } from '@ethlete/core';
-import { ReplaySubject, map } from 'rxjs';
+import { ReplaySubject, Subject, map } from 'rxjs';
 import { OVERLAY_REF, OverlayCloseGuard, OverlayConfig, OverlayRef } from '@ethlete/components';
 
 export type TestOverlayRef<TComponent extends object = object, TResult = unknown> = OverlayRef<TComponent, TResult> & {
@@ -8,6 +8,8 @@ export type TestOverlayRef<TComponent extends object = object, TResult = unknown
   readonly closeCalls: readonly { result: TResult | undefined; source: OverlayRuntimeCloseSource; forced: boolean }[];
   /** Whether a close got past the close guards. */
   readonly isClosed: () => boolean;
+  /** Emits on `backdropClick()`. */
+  readonly emitBackdropClick: (event?: MouseEvent) => void;
 };
 
 /**
@@ -28,6 +30,7 @@ export const createTestOverlayRef = <TResult = unknown, TComponent extends objec
   const closeGuards = new Set<OverlayCloseGuard<TResult>>();
   const closed = signal(false);
   const busy = signal(false);
+  const backdropClick$ = new Subject<MouseEvent>();
   const afterOpened$ = new ReplaySubject<void>(1);
   const beforeClosed$ = new ReplaySubject<OverlayRuntimeCloseEvent<TResult | undefined>>(1);
   const afterClosed$ = new ReplaySubject<OverlayRuntimeCloseEvent<TResult | undefined>>(1);
@@ -49,6 +52,7 @@ export const createTestOverlayRef = <TResult = unknown, TComponent extends objec
     beforeClosed$.complete();
     afterClosed$.next(event);
     afterClosed$.complete();
+    backdropClick$.complete();
   };
 
   const mapResult = (subject: ReplaySubject<OverlayRuntimeCloseEvent<TResult | undefined>>) =>
@@ -75,6 +79,8 @@ export const createTestOverlayRef = <TResult = unknown, TComponent extends objec
     beforeClosedEvent: () => beforeClosed$.asObservable(),
     afterClosed: () => mapResult(afterClosed$),
     afterClosedEvent: () => afterClosed$.asObservable(),
+    backdropClick: () => backdropClick$.asObservable(),
+    emitBackdropClick: (event = new MouseEvent('click')) => backdropClick$.next(event),
     closeCalls,
     isClosed: closed.asReadonly(),
   };

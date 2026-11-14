@@ -86,6 +86,7 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
 - `beforeClosedEvent()`, `afterClosedEvent()` - like `beforeClosed()` / `afterClosed()`, but the emitted event also carries `source`
   (`'api' | 'escape' | 'outside-pointer' | 'drag' | 'reference-detached' | 'replace' | 'navigation'`) - e.g. to restore focus
   on an explicit dismiss without stealing it from whatever an outside-pointer close was aimed at
+- `backdropClick()` - emits the `MouseEvent` for every click on the backdrop, once per click, whether or not the overlay closes on it (`closeOnOutsidePointer`, `disableClose`); clicks inside the pane do not emit, and the stream completes when the overlay closes. The headless `etOverlay` directive exposes it as the `(backdropClick)` output
 - `componentInstance()` - the content component instance
 - `busy` - a writable signal that blocks every non-`api` close while `true`, see [Busy state](#busy-state)
 - `layout` - a signal with the layout the active strategy shows the overlay as (`'dialog'`, `'bottom-sheet'`, `'top-sheet'`, `'left-sheet'`, `'right-sheet'`, `'full-screen-dialog'`, `'anchored-dialog'`, or a custom strategy's own `et-overlay--<name>`), `null` without a strategy. It follows breakpoint switches, so `overlayRef.layout() === 'bottom-sheet'` is the way to tell a bottom sheet apart - do not key on the `.et-overlay--bottom-sheet` class

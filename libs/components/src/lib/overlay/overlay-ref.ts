@@ -63,6 +63,8 @@ export type OverlayRef<TComponent extends object = object, TResult = unknown> = 
    * outside-pointer close was aimed at.
    */
   afterClosedEvent: () => Observable<OverlayRuntimeCloseEvent<TResult | undefined>>;
+  /** Emits for every click on the backdrop, whether or not it closes the overlay. Completes after close. */
+  backdropClick: () => Observable<MouseEvent>;
 };
 
 export const OVERLAY_REF = new InjectionToken<OverlayRef>('OverlayRef');

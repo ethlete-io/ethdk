@@ -50,6 +50,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const beforeClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
   const afterClosed$ = new Subject<TResult | undefined>();
   const afterClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
+  const backdropClick$ = new Subject<MouseEvent>();
   const closeGuards = new Set<OverlayCloseGuard<TResult>>();
 
   const withDismissResult = (event: OverlayRuntimeCloseEvent<TResult | undefined>) =>
@@ -82,6 +83,11 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
 
       return true;
     });
+
+    runtimeRef
+      .backdropClick()
+      .pipe(tap((event) => backdropClick$.next(event)))
+      .subscribe();
 
     runtimeRef
       .afterOpened()
@@ -118,6 +124,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
 
           busyAttributeEffect.destroy();
           afterOpened$.complete();
+          backdropClick$.complete();
           afterClosed$.next(event.result);
           afterClosed$.complete();
           afterClosedEvent$.next(event);
@@ -158,6 +165,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     beforeClosedEvent: () => beforeClosedEvent$.asObservable(),
     afterClosed: () => afterClosed$.asObservable(),
     afterClosedEvent: () => afterClosedEvent$.asObservable(),
+    backdropClick: () => backdropClick$.asObservable(),
   };
 
   const internals: OverlayRefInternals<TComponent, TResult> = {

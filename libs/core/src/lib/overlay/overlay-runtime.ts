@@ -205,6 +205,14 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       renderer.appendChild(hostElement, paneElement);
       renderer.appendChild(root, hostElement);
 
+      const onHostClick = (event: MouseEvent) => {
+        if (event.target === backdropElement()) {
+          overlayRef.emitBackdropClick(event);
+        }
+      };
+
+      hostElement.addEventListener('click', onHostClick);
+
       const overlayRef = createOverlayRuntimeRef<TComponent, TResult>(
         config.id,
         { ...config },

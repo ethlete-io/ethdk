@@ -43,6 +43,7 @@ describe('createOverlayRef', () => {
         afterOpened: () => afterOpened,
         beforeClosed: () => never,
         afterClosed: () => afterClosed,
+        backdropClick: () => never,
       } as never,
       TestBed.inject(Injector),
     );

@@ -1,5 +1,5 @@
 import { ComponentRef, Signal, signal } from '@angular/core';
-import { Observable, ReplaySubject } from 'rxjs';
+import { Observable, ReplaySubject, Subject } from 'rxjs';
 import {
   OverlayRuntimeCloseEvent,
   OverlayRuntimeCloseGuard,
@@ -27,6 +27,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
   const afterOpenedSubject = new ReplaySubject<void>(1);
   const beforeClosedSubject = new ReplaySubject<OverlayRuntimeCloseEvent<TResult>>(1);
   const afterClosedSubject = new ReplaySubject<OverlayRuntimeCloseEvent<TResult>>(1);
+  const backdropClickSubject = new Subject<MouseEvent>();
   const closeGuards = new Set<OverlayRuntimeCloseGuard<TResult>>();
 
   return {
@@ -81,6 +82,12 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
     },
     afterClosed(): Observable<OverlayRuntimeCloseEvent<TResult>> {
       return afterClosedSubject.asObservable();
+    },
+    backdropClick(): Observable<MouseEvent> {
+      return backdropClickSubject.asObservable();
+    },
+    emitBackdropClick(event: MouseEvent) {
+      backdropClickSubject.next(event);
     },
 
     attachComponentRef(componentRef: ComponentRef<TComponent>) {
@@ -152,6 +159,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       afterOpenedSubject.complete();
       afterClosedSubject.next(closeEvent);
       afterClosedSubject.complete();
+      backdropClickSubject.complete();
     },
   };
 };
@@ -179,6 +187,8 @@ export type OverlayRuntimeRef<TComponent extends object = object, TResult = unkn
   afterOpened(): Observable<void>;
   beforeClosed(): Observable<OverlayRuntimeCloseEvent<TResult>>;
   afterClosed(): Observable<OverlayRuntimeCloseEvent<TResult>>;
+  /** Emits for every click on the backdrop, whether or not it closes the overlay. Completes after close. */
+  backdropClick(): Observable<MouseEvent>;
   updatePositionStrategy(strategy: OverlayRuntimePositionStrategy): void;
   /** Adds or removes the backdrop of an open overlay. A closing overlay keeps the backdrop it has. */
   updateBackdrop(hasBackdrop: boolean): void;
