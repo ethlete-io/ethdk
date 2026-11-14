@@ -9,6 +9,8 @@ import { conflictsOf, FIXTURES_KEY, partHashOf } from './baseline';
 import {
   SHARED_FOLDER,
   sharedDirOf,
+  rebaseSketch,
+  rejectionOf,
   Sketch,
   SOURCE_FILE,
   variantDirOf,
@@ -16,6 +18,9 @@ import {
   withSharedImports,
 } from './sketch';
 import { gitTopOf } from '../../git-top';
+import { writeChangedFile } from '../../../json-file';
+import { withProductLock } from '../product-lock';
+import { journaled, noteWrite } from '../write-journal';
 
 const CANDIDATE_COMMITS = 60;
 
@@ -23,7 +28,7 @@ export type PortedFile = { variant: string; part: string; file: string; how: 'me
 
 export type BasePort = { ported: PortedFile[]; conflicts: string[] };
 
-type Write = { path: string; content: Buffer | null };
+type Write = { path: string; content: Buffer | null; read: Buffer | null; line: string };
 
 const git = (cwd: string, args: string[]) =>
   execFileSync('git', args, { cwd, maxBuffer: 1 << 28, stdio: ['pipe', 'pipe', 'pipe'] });
@@ -187,17 +192,33 @@ const withoutHeldHunks = (options: { scratch: string; mine: Buffer; old: Buffer;
   return Buffer.from(out.join(''));
 };
 
+/** The variant a conflict line of `portBaseChanges` names. */
+export const conflictVariantOf = (conflict: string) => conflict.slice(0, conflict.indexOf(':'));
+
+const allKept = (conflicts: string[], keep: ((variant: string) => boolean) | undefined) =>
+  conflicts.every((conflict) => keep?.(conflictVariantOf(conflict)) ?? false);
+
+/**
+ * Which conflicts `rebase --ported <named>` may keep as the variant holds them: those of a named variant, of a rejected
+ * or withdrawn one, and of one that is not the pick of a picked sketch.
+ */
+export const keptByPortedOf = (sketch: Sketch, named: string[]) => (variant: string) =>
+  named.includes(variant) ||
+  rejectionOf(sketch, variant) !== null ||
+  (sketch.decision?.kind === 'pick' && sketch.decision.variant !== variant);
+
 /**
  * Ports the changes the product made to each part the sketch's variants replace since its baseline into those
  * variants: a 3-way merge per file of the variant, the part as the baseline held it (found in git history by its
  * hash, or in the tree the baseline was recorded from) and the part now. Writes nothing when any file conflicts or a baseline state is not in history, and then
- * answers with the conflicts; with `keepConflicts` it keeps the variant's version of those and ports the rest.
+ * answers with the conflicts; when `keepConflicts` holds for the variant of each conflict, it keeps the variant's version of
+ * those and ports the rest. A file that changes while the port runs is a conflict.
  */
 export const portBaseChanges = (options: {
   target: string;
   product: ResolvedProduct;
   sketch: Sketch;
-  keepConflicts?: boolean;
+  keepConflicts?: (variant: string) => boolean;
 }): BasePort => {
   const { target, product, sketch, keepConflicts } = options;
   const baseline = sketch.baseline ?? {};
@@ -261,7 +282,7 @@ export const portBaseChanges = (options: {
           if (sameBytes(old, fresh) || sameBytes(mine, fresh)) continue;
 
           if (sameBytes(mine, old)) {
-            writes.set(path, { path, content: fresh });
+            writes.set(path, { path, content: fresh, read: mine, line: `${variant}: ${file}` });
             ported.push({ variant, part, file, how: fresh === null ? 'deleted' : 'taken' });
             continue;
           }
@@ -279,24 +300,58 @@ export const portBaseChanges = (options: {
 
           if (merged.equals(mine as Buffer)) continue;
 
-          writes.set(path, { path, content: merged });
+          writes.set(path, { path, content: merged, read: mine, line: `${variant}: ${file}` });
           ported.push({ variant, part, file, how: 'merged' });
         }
       }
     }
 
-    if (conflicts.length > 0 && !keepConflicts) return { ported: [], conflicts };
+    return withProductLock(product.dir, () => {
+      const moved = [...writes.values()].filter((write) => !sameBytes(readOrNull(write.path), write.read));
 
-    for (const { path, content } of writes.values()) {
-      if (content === null) rmSync(path, { force: true });
-      else {
-        mkdirSync(dirname(path), { recursive: true });
-        writeFileSync(path, content);
+      conflicts.push(...moved.map(({ line }) => `${line} - it changed while the port ran, rebase again`));
+
+      if (!allKept(conflicts, keepConflicts)) return { ported: [], conflicts };
+
+      for (const { path, content } of writes.values()) {
+        if (moved.some((write) => write.path === path)) continue;
+
+        if (content === null) {
+          noteWrite(path);
+          rmSync(path, { force: true });
+        } else writeChangedFile(path, content);
       }
-    }
 
-    return { ported, conflicts };
+      return {
+        ported: ported.filter(({ variant, file }) => !moved.some(({ line }) => line === `${variant}: ${file}`)),
+        conflicts,
+      };
+    });
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
+};
+
+/**
+ * Ports the base changes into the sketch's variants (see `portBaseChanges`) and records its new baseline as one
+ * journaled step under the product lock: a throw or a kill leaves the variants and `sketch.json` as they were. Without
+ * a kept conflict, a conflict writes nothing and answers without `rebased`.
+ */
+export const journaledRebaseOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  keepConflicts?: (variant: string) => boolean;
+}): BasePort & { rebased?: Sketch } => {
+  const { target, product, sketch } = options;
+
+  return journaled({ productDir: product.dir, root: target, label: `rebase of ${sketch.target}` }, () =>
+    withProductLock(product.dir, () => {
+      const port = portBaseChanges(options);
+
+      if (!allKept(port.conflicts, options.keepConflicts)) return port;
+
+      return { ...port, rebased: rebaseSketch({ product, sketch }) };
+    }),
+  );
 };

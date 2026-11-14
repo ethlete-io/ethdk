@@ -163,7 +163,7 @@ export const recoverInterrupted = (productDir: string) => {
   if (hasJournal(productDir)) withProductLock(productDir, () => undefined);
 };
 
-const productDirOfSketch = (sketchDir: string) => resolve(sketchDir, '..', '..');
+export const productDirOfSketch = (sketchDir: string) => resolve(sketchDir, '..', '..');
 
 /**
  * Writes a product's `ready.json`, `merged.json` or a sketch's `sketch.json` atomically under the product lock; any

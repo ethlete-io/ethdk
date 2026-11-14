@@ -14,6 +14,7 @@ import {
   writeSync,
 } from 'fs';
 import { basename, dirname, resolve, sep } from 'path';
+import { threadId } from 'worker_threads';
 import { productCacheDirOf } from './product';
 
 type Image = { path: string; image: string | null };
@@ -32,9 +33,16 @@ export type WriteJournal = {
 };
 
 const JOURNAL = 'journal';
+const WAIT_MS = 10_000;
 const MANIFEST = 'manifest.json';
 
 let current: OpenJournal | null = null;
+
+const sleeper = new Int32Array(new SharedArrayBuffer(4));
+
+const sleepSync = (ms: number) => Atomics.wait(sleeper, 0, 0, ms);
+
+const ownSuffixOf = () => `${process.pid}-${threadId}`;
 
 const journalDirOf = (productDir: string) => resolve(productCacheDirOf(resolve(productDir)), JOURNAL);
 
@@ -90,7 +98,7 @@ const copy = (from: string, to: string) => {
 };
 
 const drop = (dir: string) => {
-  const gone = `${dir}.${process.pid}.done`;
+  const gone = `${dir}.${ownSuffixOf()}.done`;
 
   renameSync(dir, gone);
   rmSync(gone, { recursive: true, force: true });
@@ -127,7 +135,7 @@ const dropDeadLeftovers = (dir: string) => {
   if (!existsSync(parent)) return;
 
   for (const name of readdirSync(parent)) {
-    const match = new RegExp(`^${JOURNAL}\\.(\\d+)\\.(?:done|new)$`, 'u').exec(name);
+    const match = new RegExp(`^${JOURNAL}\\.(\\d+)-\\d+\\.(?:done|new)$`, 'u').exec(name);
 
     if (match && !isAlive(Number(match[1]))) rmSync(resolve(parent, name), { recursive: true, force: true });
   }
@@ -187,29 +195,46 @@ const joinedOf = (open: OpenJournal): WriteJournal => ({
   rollback: () => undefined,
 });
 
+const created = ({ fresh, dir, manifest }: { fresh: string; dir: string; manifest: Manifest }) => {
+  rmSync(fresh, { recursive: true, force: true });
+  mkdirSync(fresh, { recursive: true });
+  writeManifest(fresh, manifest);
+
+  try {
+    renameSync(fresh, dir);
+
+    return true;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+
+    if (code !== 'ENOTEMPTY' && code !== 'EEXIST') throw error;
+
+    rmSync(fresh, { recursive: true, force: true });
+
+    return false;
+  }
+};
+
 /**
  * Opens the write journal of a product: until `close`, every write to a file below `root` that goes through
  * `noteWrite` first keeps the file's old state, so a process killed half way is undone (or, once its git commit
- * landed, finished) by the next process that takes the product lock. One journal per process; a nested open of the same
- * product joins it (its `close` and `rollback` leave both to the outer one), another product throws.
+ * landed, finished) by the next process that takes the product lock. One journal per thread; a nested open of the same
+ * product joins it (its `close` and `rollback` leave both to the outer one), another product throws. Waits up to
+ * `waitMs` (10 s) while another thread or process has the product's journal open, and throws naming it after that.
  */
-export const openJournal = (options: { productDir: string; root: string; label: string }): WriteJournal => {
+export const openJournal = (options: {
+  productDir: string;
+  root: string;
+  label: string;
+  waitMs?: number;
+}): WriteJournal => {
   const productDir = resolve(options.productDir);
 
   if (current?.productDir === productDir) return joinedOf(current);
   if (current) throw new Error(`${options.label}: the ${current.manifest.label} still writes`);
 
   const dir = journalDirOf(productDir);
-
-  recoverJournal(productDir);
-
-  const left = existsSync(dir) ? readManifest(dir) : null;
-
-  if (left)
-    throw new Error(
-      `${options.label} waits: the ${left.label} of pid ${left.pid} has not finished (${dir}) - wait for it, or stop it`,
-    );
-
+  const deadline = Date.now() + (options.waitMs ?? WAIT_MS);
   const manifest: Manifest = {
     label: options.label,
     pid: process.pid,
@@ -217,12 +242,21 @@ export const openJournal = (options: { productDir: string; root: string; label: 
     before: [],
     after: [],
   };
-  const fresh = `${dir}.${process.pid}.new`;
+  const fresh = `${dir}.${ownSuffixOf()}.new`;
 
-  rmSync(fresh, { recursive: true, force: true });
-  mkdirSync(fresh, { recursive: true });
-  writeManifest(fresh, manifest);
-  renameSync(fresh, dir);
+  for (;;) {
+    recoverJournal(productDir);
+
+    const left = existsSync(dir) ? readManifest(dir) : null;
+
+    if (!left && created({ fresh, dir, manifest })) break;
+    if (Date.now() >= deadline)
+      throw new Error(
+        `${options.label} waits: the ${left?.label ?? 'journaled write'} of pid ${left?.pid ?? '?'} has not finished (${dir}) - wait for it, or stop it`,
+      );
+
+    sleepSync(25 + Math.floor(Math.random() * 25));
+  }
 
   const close = () => {
     current = null;
@@ -261,3 +295,23 @@ export const openJournal = (options: { productDir: string; root: string; label: 
 
 /** The journal this process has open, if any. */
 export const openJournalOf = (): WriteJournal | null => (current ? joinedOf(current) : null);
+
+/** Runs `run` inside a journal of `productDir` (see `openJournal`): a throw undoes its writes and rethrows. */
+export const journaled = <T>(
+  options: { productDir: string; root: string; label: string; waitMs?: number },
+  run: () => T,
+): T => {
+  const journal = openJournal(options);
+
+  try {
+    const result = run();
+
+    journal.close();
+
+    return result;
+  } catch (error) {
+    journal.rollback();
+
+    throw error;
+  }
+};

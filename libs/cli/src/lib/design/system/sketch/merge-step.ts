@@ -12,6 +12,8 @@ import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch, writeSketchFile } from './sketch';
 
+const MERGE_WAIT_MS = 300_000;
+
 export type DesignStep = { line: string; run: () => Promise<number> };
 
 /** The sketch with the pick a plan allows: its only live variant, when `variant` names it and nobody picked yet. */
@@ -90,7 +92,7 @@ export const mergeAndRecord = (options: {
   );
 
   if (!Array.isArray(result)) {
-    if (allowed) writeSketchFile(sketch);
+    if (allowed) writeSketchFile(sketch, { replace: true });
 
     return result.reason;
   }
@@ -101,7 +103,8 @@ export const mergeAndRecord = (options: {
 /**
  * Runs `merge` behind the app gate and then `finish` (the writes that complete it, up to its commit) as one journaled
  * step: a refusal or a throw undoes every file it wrote, and the next process that takes the product lock undoes a
- * killed one, or finishes it once its commit landed. Then rebases the other sketches the merge made stale.
+ * killed one, or finishes it once its commit landed. Then rebases the other sketches the merge made stale. Waits for a
+ * merge of the product that another thread or process still finishes.
  */
 export const journaledMergeOf = (options: {
   target: string;
@@ -111,11 +114,19 @@ export const journaledMergeOf = (options: {
   finish: (before: Map<string, string> | null) => void;
 }): string[] | MergeRefusal => {
   const { target, product, sketch } = options;
-  const before = dirtyFilesOfSync({ target, product });
-  const journal = openJournal({ productDir: product.dir, root: target, label: `merge of ${sketch.target}` });
+  const journal = openJournal({
+    productDir: product.dir,
+    root: target,
+    label: `merge of ${sketch.target}`,
+    waitMs: MERGE_WAIT_MS,
+  });
+
+  let merged: string[] | MergeRefusal;
 
   try {
-    const merged = appGatedMergeOf({ target, product, sketch, merge: options.merge });
+    const before = dirtyFilesOfSync({ target, product });
+
+    merged = appGatedMergeOf({ target, product, sketch, merge: options.merge });
 
     if (!Array.isArray(merged)) {
       journal.rollback();
@@ -124,16 +135,16 @@ export const journaledMergeOf = (options: {
     }
 
     options.finish(before);
-    journal.close();
-
-    rebaseOthersAfterMerge({ target, product, sketch }).forEach((line) => console.log(line));
-
-    return merged;
   } catch (error) {
     journal.rollback();
 
     throw error;
   }
+
+  journal.close();
+  rebaseOthersAfterMerge({ target, product, sketch }).forEach((line) => console.log(line));
+
+  return merged;
 };
 
 /** A merge of one ready sketch as a step, or why it may not run; checks everything a merge needs before anything is written. */
@@ -184,7 +195,7 @@ export const mergeStepOf = (options: {
 
     if (typeof decided === 'string') return decided;
 
-    writeSketchFile(sketch);
+    writeSketchFile(sketch, { replace: true });
   } else if (picked === undefined)
     return `${sketch.target} has no pick - name the variant in the entry, or the user picks in Studio`;
 

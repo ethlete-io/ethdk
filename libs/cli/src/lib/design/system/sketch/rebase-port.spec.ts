@@ -1,13 +1,28 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
 import { git } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
-import { portBaseChanges } from './rebase-port';
+import { keptByPortedOf, portBaseChanges } from './rebase-port';
 import { baselineTreeRefOf } from './baseline-tree';
 import { createSketch, rebaseSketch, removeSketchDir, Sketch } from './sketch';
+
+const reads = vi.hoisted(() => ({ hook: null as ((path: string) => void) | null }));
+
+vi.mock('fs', async (importOriginal) => {
+  const fs = await importOriginal<typeof import('fs')>();
+  const readFileSync = ((...args: Parameters<typeof fs.readFileSync>) => {
+    const read = fs.readFileSync(...args);
+
+    reads.hook?.(String(args[0]));
+
+    return read;
+  }) as typeof fs.readFileSync;
+
+  return { ...fs, default: { ...fs, readFileSync }, readFileSync };
+});
 
 const targets: string[] = [];
 
@@ -50,7 +65,10 @@ const changeProduct = (target: string, file: string, from: string, to: string) =
   git(target, 'commit', '-qam', 'product change');
 };
 
-afterEach(() => targets.splice(0).forEach((target) => rmSync(target, { recursive: true, force: true })));
+afterEach(() => {
+  reads.hook = null;
+  targets.splice(0).forEach((target) => rmSync(target, { recursive: true, force: true }));
+});
 
 describe('portBaseChanges', () => {
   it('takes a product change into each variant that left the file alone', () => {
@@ -238,11 +256,70 @@ describe('portBaseChanges', () => {
     edit(variantFile(sketch, 'a', 'hero.ts'), 'One featured film', 'A featured film');
     changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
 
-    const port = portBaseChanges({ target, product: resolveAcme(target), sketch, keepConflicts: true });
+    const port = portBaseChanges({ target, product: resolveAcme(target), sketch, keepConflicts: () => true });
 
     expect(port.conflicts).toEqual(['a: elements/hero/hero.ts - the variant and the product both changed it']);
     expect(port.ported.map(({ variant, how }) => `${variant} ${how}`)).toEqual(['b taken']);
     expect(readFileSync(variantFile(sketch, 'a', 'hero.ts'), 'utf8')).toContain('A featured film');
     expect(readFileSync(variantFile(sketch, 'b', 'hero.ts'), 'utf8')).toContain('The featured film');
+  });
+
+  it('keeps the conflicts of the variants --ported names, and writes nothing while another live one conflicts', () => {
+    const { target, sketch } = sketched();
+
+    edit(variantFile(sketch, 'a', 'hero.ts'), 'One featured film', 'A featured film');
+    edit(variantFile(sketch, 'b', 'hero.ts'), 'One featured film', 'Any featured film');
+    changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+    changeProduct(target, 'hero.css', 'opacity', 'transform');
+
+    const product = resolveAcme(target);
+    const refused = portBaseChanges({ target, product, sketch, keepConflicts: keptByPortedOf(sketch, ['a']) });
+
+    expect(refused).toEqual({
+      ported: [],
+      conflicts: [
+        'a: elements/hero/hero.ts - the variant and the product both changed it',
+        'b: elements/hero/hero.ts - the variant and the product both changed it',
+      ],
+    });
+
+    const picked = { ...sketch, decision: { kind: 'pick' as const, variant: 'a', decidedAt: 'T', by: 'user' } };
+
+    expect(readFileSync(variantFile(sketch, 'a', 'hero.css'), 'utf8')).toContain('opacity');
+
+    const kept = portBaseChanges({ target, product, sketch: picked, keepConflicts: keptByPortedOf(picked, ['a']) });
+
+    expect(kept.conflicts).toEqual(refused.conflicts);
+    expect(kept.ported.map(({ variant, file }) => `${variant} ${file}`)).toEqual([
+      'a elements/hero/hero.css',
+      'b elements/hero/hero.css',
+    ]);
+    expect(readFileSync(variantFile(sketch, 'b', 'hero.ts'), 'utf8')).toContain('Any featured film');
+    expect(keptByPortedOf(picked, [])('b')).toBe(true);
+    expect(keptByPortedOf(picked, [])('a')).toBe(false);
+    expect(keptByPortedOf(sketch, ['a', 'b'])('b')).toBe(true);
+  });
+
+  it('keeps an edit that lands in a variant file between the port reading and writing it', () => {
+    const { target, sketch } = sketched();
+    const mine = variantFile(sketch, 'a', 'hero.ts');
+    let sawFresh = false;
+
+    changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+    reads.hook = (path) => {
+      if (path === join(heroDir(target), 'hero.ts')) sawFresh = true;
+      else if (path === mine && sawFresh) {
+        reads.hook = null;
+        writeFileSync(mine, `${readFileSync(mine, 'utf8')}// edited meanwhile\n`);
+      }
+    };
+
+    const port = portBaseChanges({ target, product: resolveAcme(target), sketch });
+
+    expect(readFileSync(mine, 'utf8')).toContain('// edited meanwhile');
+    expect(port).toEqual({
+      ported: [],
+      conflicts: ['a: elements/hero/hero.ts - it changed while the port ran, rebase again'],
+    });
   });
 });

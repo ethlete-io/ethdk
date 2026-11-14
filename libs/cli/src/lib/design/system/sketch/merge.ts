@@ -24,7 +24,7 @@ import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf, partHashHolds } from './baseline';
 import { prettierBinOf } from '../prettier';
 import { withProductLock } from '../product-lock';
-import { noteWrite } from '../write-journal';
+import { journaled, noteWrite } from '../write-journal';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
 import { EDIT_OLD } from './edit-sketch';
 import {
@@ -610,13 +610,17 @@ export const mergeSketch = (options: {
 
 /** Deletes a sketch with all its variants and resolves the addressed comments on them and marks the open ones addressed, by `author` or the user. */
 export const discardSketch = (options: { target: string; sketch: Sketch; author?: string }): string | null => {
-  resolveSketchEndComments({
-    sketch: options.sketch,
-    note: `resolved by the discard of ${options.sketch.target}`,
-  });
-  addressSketchComments({ sketch: options.sketch, reason: 'discard', author: options.author });
-  removeSketchDir(options.sketch.dir);
-  clearSketchReport({ checkout: options.target, sketch: options.sketch });
+  const { target, sketch } = options;
+  const productDir = resolve(sketch.dir, '..', '..');
+
+  journaled({ productDir, root: target, label: `discard of ${sketch.target}` }, () =>
+    withProductLock(productDir, () => {
+      resolveSketchEndComments({ sketch, note: `resolved by the discard of ${sketch.target}` });
+      addressSketchComments({ sketch, reason: 'discard', author: options.author });
+      removeSketchDir(sketch.dir);
+      clearSketchReport({ checkout: target, sketch });
+    }),
+  );
 
   return null;
 };

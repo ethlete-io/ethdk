@@ -8,6 +8,7 @@ import { readConfig } from '../../design-config';
 import { gitResult } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { originOf } from '../write-origin';
+import { createComment } from '../comments/comment';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch } from './sketch';
 
 const PART = 'elements/hero';
@@ -18,7 +19,7 @@ const JITI = pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib
 const productOf = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
-const pickedCase = () => {
+const checkoutCase = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-merge-journal-'));
   const git = (...args: string[]) => gitResult(target, ...args);
 
@@ -27,6 +28,26 @@ const pickedCase = () => {
   git('init', '-q');
   git('add', '.');
   git('commit', '-qm', 'base');
+
+  return target;
+};
+
+const readyCase = () => {
+  const target = checkoutCase();
+  markSketchReady({
+    checkout: target,
+    sketch: createSketch({
+      product: productOf(target),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    }) as Sketch,
+  });
+
+  return target;
+};
+
+const pickedCase = (comments = false) => {
+  const target = checkoutCase();
 
   const created = createSketch({
     product: productOf(target),
@@ -39,6 +60,31 @@ const pickedCase = () => {
   const ready = markSketchReady({ checkout: target, sketch: created }) as Sketch;
 
   decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf('designer') } });
+
+  if (comments)
+    for (const variant of ['a', 'b'])
+      expect(
+        createComment({
+          product: productOf(target),
+          comment: {
+            part: PART,
+            state: 'default',
+            size: 'desktop',
+            text: 'Taller.',
+            sketch: { target: PART, variant },
+          },
+        }),
+      ).toHaveProperty('id');
+
+  return target;
+};
+
+const staleCase = () => {
+  const target = pickedCase();
+  const hero = join(productOf(target).dir, PART, 'hero.ts');
+
+  writeFileSync(hero, readFileSync(hero, 'utf8').replace('One featured film', 'A featured film'));
+  gitResult(target, 'commit', '-qam', 'calmer note');
 
   return target;
 };
@@ -56,8 +102,11 @@ const filesOf = (dir: string, root: string): string[] =>
 const stateOf = (target: string) => {
   const git = (...args: string[]) => gitResult(target, ...args).stdout.trim();
   const files = filesOf(target, target)
-    .sort()
-    .map((file) => `${file}\n${readFileSync(join(target, file), 'utf8').replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/gu, 'T')}`);
+    .map(
+      (file) =>
+        `${file.replace(/\d{8}T\d{6}Z-[\da-f]+\.json$/u, 'id.json')}\n${readFileSync(join(target, file), 'utf8').replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/gu, 'T')}`,
+    )
+    .sort();
 
   return {
     files,
@@ -67,11 +116,13 @@ const stateOf = (target: string) => {
   };
 };
 
-const runChild = (target: string, killAt: number) =>
+const runChild = (target: string, killAt: number, action = 'merge') =>
   new Promise<{ out: string; killed: boolean }>((done) => {
-    const child = spawn(process.execPath, ['--import', JITI, '--import', KILL, CHILD, target, String(killAt), PART], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const child = spawn(
+      process.execPath,
+      ['--import', JITI, '--import', KILL, CHILD, target, String(killAt), PART, action],
+      { stdio: ['ignore', 'pipe', 'pipe'] },
+    );
     let out = '';
 
     child.stdout.on('data', (chunk: Buffer) => (out += chunk.toString()));
@@ -82,49 +133,92 @@ const runChild = (target: string, killAt: number) =>
 const recover = (target: string) =>
   findSketch({ productDir: productOf(target).dir, product: 'acme', sketch: { layer: 'elements', name: 'hero' } });
 
+const killEveryWrite = async (options: {
+  action: string;
+  done: string;
+  gone: string;
+  minSteps: number;
+  caseOf: () => string;
+}) => {
+  const { action, done, gone } = options;
+  const reference = options.caseOf();
+  const whole = await runChild(reference, 0, action);
+  const steps = Number(/writes (\d+)/u.exec(whole.out)?.[1]);
+
+  expect(whole.out).toContain(done);
+  expect(steps).toBeGreaterThan(options.minSteps);
+
+  const fresh = stateOf(reference);
+  const outcomes: string[] = [];
+
+  const killAt = async (step: number) => {
+    const target = options.caseOf();
+    const old = stateOf(target);
+    const killed = await runChild(target, step, action);
+
+    expect(killed.killed, `step ${step}: ${killed.out}`).toBe(true);
+
+    recover(target);
+
+    const after = stateOf(target);
+    const isOld = JSON.stringify(after) === JSON.stringify(old);
+
+    if (!isOld) expect(after, `step ${step} is neither the old nor the new state`).toEqual(fresh);
+
+    const rerun = await runChild(target, 0, action);
+
+    expect(rerun.out, `step ${step} re-run`).toContain(isOld ? done : gone);
+    expect(stateOf(target), `step ${step} after the re-run`).toEqual(fresh);
+    expect(recover(target) === null).toBe(action !== 'rebase');
+    outcomes.push(`${step}:${isOld ? 'old' : 'new'}`);
+  };
+
+  const queue = Array.from({ length: steps }, (_, index) => index + 1);
+  const worker = async () => {
+    for (let step = queue.shift(); step !== undefined; step = queue.shift()) await killAt(step);
+  };
+
+  await Promise.all(Array.from({ length: 4 }, worker));
+
+  expect(outcomes).toHaveLength(steps);
+  expect(outcomes.some((outcome) => outcome.endsWith('new'))).toBe(true);
+  expect(outcomes.some((outcome) => outcome.endsWith('old'))).toBe(true);
+};
+
 describe('a merge killed at any write leaves the old or the new state', { timeout: 600_000 }, () => {
-  it('is undone or finished by the next process, and a re-run merges or reports the sketch gone', async () => {
-    const reference = pickedCase();
-    const done = await runChild(reference, 0);
-    const steps = Number(/writes (\d+)/u.exec(done.out)?.[1]);
+  it('is undone or finished by the next process, and a re-run merges or reports the sketch gone', () =>
+    killEveryWrite({
+      action: 'merge',
+      done: `merged ${PART}`,
+      gone: `no sketch ${PART}`,
+      minSteps: 5,
+      caseOf: () => pickedCase(),
+    }));
 
-    expect(done.out).toContain(`merged ${PART}`);
-    expect(steps).toBeGreaterThan(5);
+  it('a merge of a sketch with no visible change is undone or finished, and a re-run merges', () =>
+    killEveryWrite({
+      action: 'auto',
+      done: `merged ${PART} automatically`,
+      gone: `no sketch ${PART}`,
+      minSteps: 3,
+      caseOf: readyCase,
+    }));
 
-    const fresh = stateOf(reference);
-    const outcomes: string[] = [];
+  it('a discard is undone by the next process, and a re-run discards or reports the sketch gone', () =>
+    killEveryWrite({
+      action: 'discard',
+      done: `discarded ${PART}`,
+      gone: `no sketch ${PART}`,
+      minSteps: 3,
+      caseOf: () => pickedCase(true),
+    }));
 
-    const killAt = async (step: number) => {
-      const target = pickedCase();
-      const old = stateOf(target);
-      const killed = await runChild(target, step);
-
-      expect(killed.killed, `step ${step}: ${killed.out}`).toBe(true);
-
-      recover(target);
-
-      const after = stateOf(target);
-      const isOld = JSON.stringify(after) === JSON.stringify(old);
-
-      if (!isOld) expect(after, `step ${step} is neither the old nor the new state`).toEqual(fresh);
-
-      const rerun = await runChild(target, 0);
-
-      expect(rerun.out, `step ${step} re-run`).toContain(isOld ? `merged ${PART}` : `no sketch ${PART}`);
-      expect(stateOf(target), `step ${step} after the re-run`).toEqual(fresh);
-      expect(recover(target)).toBeNull();
-      outcomes.push(`${step}:${isOld ? 'old' : 'new'}`);
-    };
-
-    const queue = Array.from({ length: steps }, (_, index) => index + 1);
-    const worker = async () => {
-      for (let step = queue.shift(); step !== undefined; step = queue.shift()) await killAt(step);
-    };
-
-    await Promise.all(Array.from({ length: 4 }, worker));
-
-    expect(outcomes).toHaveLength(steps);
-    expect(outcomes.some((outcome) => outcome.endsWith('new'))).toBe(true);
-    expect(outcomes.some((outcome) => outcome.endsWith('old'))).toBe(true);
-  });
+  it('a rebase is undone by the next process, and a re-run rebases', () =>
+    killEveryWrite({
+      action: 'rebase',
+      done: `rebased ${PART} 2`,
+      gone: `rebased ${PART} 0`,
+      minSteps: 3,
+      caseOf: staleCase,
+    }));
 });
