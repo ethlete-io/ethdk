@@ -930,6 +930,23 @@ the app's does not, so the color scheme differs at the switch; unchanged-matrix 
 `design check --part pages/sketches`: 4 findings, all OLD CANVAS-UNDER-PANEL. vitest related 158 green; lint, tsc clean.
 Not verified: no design spec for (4); CI; the live app.
 
+**B502h as built (Linux builder subagent, 2026-11-14, 3ddb4efba, 52685c6f9, 006ab4a9c):** Full compare after (2 of 2
+runs): 31 ok / 0 DIFF / 7 FAILED (489). Per state, before to after (px): unchanged-matrix 13040 to ok,
+unchanged-matrix-open 20408 to ok, withdrawn-shown 131 to ok, change-crop 792 to ok. Causes, measured with `design dom`
+and the shot pixels: (1) the design's start pan (camera x -4000) clamped against the world before the font load (room
+2 px) and no later fit clamped it again, so the design stayed panned 2 px (`--sk-pan-x: 2px`, sticky gutter edge drawn)
+while its matrix (1074 px) fits the list (1076 px); `fit` now calls `pan(0, 0)`. (2) the app world kept `min-w-full`
+on a wide part, so the fold row was 1076 px, the design's `w-max` world 1074 px; the app drops it unless the screen
+crop matrix shows (the design's screen world is full width). (3) the design shot box (positioned) paints over the top
+edge of the first stack edge, the app drew the edges in their own box after the frame (rows 352/353 at 35/19 not 15,
+row 358 at 35 not 45); the app now draws them in one scaled box after a shot-high spacer, under a `z-1` frame. (4) the
+design's sdk switch drew the checked ink edge in dark too; Q102 and the lib draw it only in light
+(`light-dark(ink, transparent)`), the design now does. Specs "sizes the world of a wide part to its matrix" and "draws
+the stack edges below a shot-high spacer" red on 9635fe92f sources in a scratch copy, green after; vitest related 160
+green; lint, tsc clean. `design check`: pages/sketches 4 CANVAS-UNDER-PANEL (same 4 as B502g), components/switch 0,
+pages/inbox (embeds the switch) clean. Not verified: the cause split of unchanged-matrix-open (ok after (1)
+and (2) together); no design spec for (1) and (4); CI; the live app.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
