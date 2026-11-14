@@ -127,7 +127,7 @@ than resetting them.
 | `quickFilter`         | `''`         | Free text; keeps the rows containing every word of it. See [Quick filter](#quick-filter).                                                            |
 | `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`.                                    |
 | `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row clicks](#row-clicks).                                                                           |
-| `rowLink`             | -            | `(row: T) => string \| unknown[] \| null` - make every row a real link. See [Row links](#row-links).                                                 |
+| `rowLink`             | -            | `(row: T) => string \| unknown[] \| object \| null` - make every row a real link. See [Row links](#row-links).                                       |
 
 ## Appearance & density
 
@@ -1020,13 +1020,28 @@ be had from a click handler:
 - "Open in new tab" and "Copy link address" from the context menu,
 - a crawlable `href`, and a status-bar preview on hover.
 
-The callback answers with one of three things:
+The callback answers with one of four things:
 
 | Answer                     | What happens                                                                                          |
 | -------------------------- | ----------------------------------------------------------------------------------------------------- |
 | a string                   | Rendered as the `href` and followed by the browser - an external URL, or an app without routing.      |
 | an array (router commands) | Resolved and navigated by `etTableRowRouterLink`; needs that feature, else the table throws `ET3509`. |
+| an object                  | `{ commands, queryParams?, fragment?, title? }` or `{ href, title? }` - see below.                    |
 | `null` / nothing           | That row links nowhere and stays a plain row.                                                         |
+
+The object forms mirror `routerLink`. `title` becomes the anchor's `title` attribute, and the
+`commands` form takes `queryParams` and `fragment`, which land in both the `href` and the navigation:
+
+```ts
+protected orderLink = (order: Order) => ({
+  commands: ['/orders', order.id],
+  queryParams: { tab: 'items' },
+  fragment: 'summary',
+  title: `Open order ${order.id}`,
+});
+```
+
+An object with `href` cannot also carry `commands`, `queryParams` or `fragment` - it does not compile.
 
 **In-app navigation needs the feature.** Import `TABLE_ROW_ROUTER_LINK_IMPORTS` and add
 `etTableRowRouterLink`: it turns the commands into the `href` and routes a plain left click

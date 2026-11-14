@@ -405,10 +405,33 @@ export type TableHeaderGroup = {
 export type TableRowKey<T = unknown> = (row: T) => string | number;
 
 /**
+ * A row link given as router commands plus the rest of what `routerLink` takes - resolved by
+ * `etTableRowRouterLink`.
+ */
+export type TableRowCommandsLink = {
+  commands: readonly unknown[];
+  queryParams?: Record<string, unknown> | null;
+  fragment?: string;
+  /** Rendered as the `title` attribute of the row's anchor. */
+  title?: string;
+  href?: never;
+};
+
+/** A row link given as a plain `href`, with an optional `title` for the row's anchor. */
+export type TableRowHrefLink = {
+  href: string;
+  title?: string;
+  commands?: never;
+  queryParams?: never;
+  fragment?: never;
+};
+
+/**
  * Where a row links to - what a `rowLink` callback answers with.
  *
  * A **string** is an `href` the browser follows, which is what an external URL or an app without the
  * Angular router needs. An **array** is router commands (`['/orders', order.id]`), resolved and
- * navigated by `etTableRowRouterLink` - the table itself never depends on the router.
+ * navigated by `etTableRowRouterLink` - the table itself never depends on the router. An **object**
+ * is either of those with a `title`, and the commands form also takes `queryParams` and `fragment`.
  */
-export type TableRowLink = string | readonly unknown[];
+export type TableRowLink = string | readonly unknown[] | TableRowCommandsLink | TableRowHrefLink;

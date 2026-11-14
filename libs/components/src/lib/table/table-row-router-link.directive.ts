@@ -4,6 +4,7 @@ import { computed, Directive, inject, input } from '@angular/core';
 // eslint-disable-next-line ethlete/no-angular-router-api
 import { ActivatedRoute, Router } from '@angular/router';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
+import { TableRowCommandsLink } from './table.types';
 
 /** Options for {@link TableRowRouterLinkDirective}. */
 export type TableRowRouterLinkConfig = TableFeatureConfig;
@@ -51,27 +52,31 @@ export class TableRowRouterLinkDirective {
 
   constructor() {
     this.table.registerRowNavigation({
-      href: (commands) => this.href(commands),
-      navigate: (commands, event) => this.navigate(commands, event),
+      href: (link) => this.href(link),
+      navigate: (link, event) => this.navigate(link, event),
       enabled: computed(() => this.config().enabled ?? true),
     });
   }
 
-  /** The URL these commands resolve to - what the row's anchor carries as its `href`. */
-  public href(commands: readonly unknown[]) {
-    return this.router.serializeUrl(this.urlTree(commands));
+  /** The URL this link resolves to - what the row's anchor carries as its `href`. */
+  public href(link: readonly unknown[] | TableRowCommandsLink) {
+    return this.router.serializeUrl(this.urlTree(link));
   }
 
-  /** Navigate to these commands, unless the click asked for the browser's own behaviour. */
-  public navigate(commands: readonly unknown[], event: MouseEvent) {
+  /** Navigate to this link, unless the click asked for the browser's own behaviour. */
+  public navigate(link: readonly unknown[] | TableRowCommandsLink, event: MouseEvent) {
     if (opensElsewhere(event)) return false;
 
-    this.router.navigateByUrl(this.urlTree(commands));
+    this.router.navigateByUrl(this.urlTree(link));
 
     return true;
   }
 
-  private urlTree(commands: readonly unknown[]) {
-    return this.router.createUrlTree([...commands], { relativeTo: this.route });
+  private urlTree(link: readonly unknown[] | TableRowCommandsLink) {
+    const { commands, queryParams, fragment } = Array.isArray(link)
+      ? ({ commands: link } as TableRowCommandsLink)
+      : (link as TableRowCommandsLink);
+
+    return this.router.createUrlTree([...commands], { relativeTo: this.route, queryParams, fragment });
   }
 }

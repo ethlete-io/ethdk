@@ -292,6 +292,7 @@
                column. The row box is the containing block that spans every cell. -->
           <a
             [attr.href]="rowVm.href"
+            [attr.title]="rowVm.title"
             [attr.aria-labelledby]="rowVm.linkLabelId"
             (click)="activateRowLink(rowVm.link, $event)"
             class="et-table-row-link"

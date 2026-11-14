@@ -90,6 +90,8 @@ import {
   TableExpandedRowContext,
   TableFilter,
   TableRowKey,
+  TableRowCommandsLink,
+  TableRowHrefLink,
   TableRowLink,
   TableMultiSort,
   TableSort,
@@ -147,6 +149,12 @@ type TableBodyCellVm<T> = TableCellPinning & {
   edit: { template: TemplateRef<unknown>; context: object } | null;
 };
 
+const toCommandsLink = (link: TableRowLink | null): TableRowCommandsLink | null => {
+  if (Array.isArray(link)) return { commands: link };
+
+  return typeof link === 'object' && link !== null && 'commands' in link ? (link as TableRowCommandsLink) : null;
+};
+
 type TableBodyRowVm<T> = {
   row: T;
   /** The row's absolute index in `rows()` - true even while a virtual window renders a slice. */
@@ -161,6 +169,8 @@ type TableBodyRowVm<T> = {
   link: TableRowLink | null;
   /** The `href` the row's anchor carries - the link itself, or a navigator's resolution of it. */
   href: string | null;
+  /** The link's `title`, rendered on the row's anchor. */
+  title: string | null;
   /** Id of the cell naming the link, which names the (textless) anchor via `aria-labelledby`. */
   linkLabelId: string;
   /** The registered detail row to stamp under this row, while it is open. */
@@ -1228,7 +1238,19 @@ export class TableComponent<T> implements TableFeatureHost {
       const link = rowLink?.(row) ?? null;
       // A string is an href as given; commands are a URL only a navigator can build, so a table without
       // one renders no link at all rather than a wrong one (see the dev-mode check in the constructor).
-      const href = link === null ? null : typeof link === 'string' ? link : (navigation?.href(link) ?? null);
+      const commandsLink = toCommandsLink(link);
+      const href =
+        link === null
+          ? null
+          : commandsLink
+            ? (navigation?.href(commandsLink) ?? null)
+            : typeof link === 'string'
+              ? link
+              : (link as TableRowHrefLink).href;
+      const title =
+        typeof link === 'object' && link !== null && !Array.isArray(link)
+          ? ((link as TableRowHrefLink).title ?? null)
+          : null;
 
       return {
         row,
@@ -1236,6 +1258,7 @@ export class TableComponent<T> implements TableFeatureHost {
         index: indexOffset + index,
         link,
         href,
+        title,
         linkLabelId: `${this.LINK_ID_PREFIX}-${indexOffset + index}`,
         classes: [...leads, ...trails]
           .map((utility) => utility.lead.rowClass?.(row))
@@ -1346,7 +1369,7 @@ export class TableComponent<T> implements TableFeatureHost {
         const rowLink = this.rowLink();
 
         if (!rowLink || this.rowNavigationList().length) return;
-        if (!this.renderedRows().some((row) => Array.isArray(rowLink(row)))) return;
+        if (!this.renderedRows().some((row) => toCommandsLink(rowLink(row) ?? null))) return;
 
         throw new RuntimeError(
           TABLE_ERROR_CODES.MISSING_ROW_ROUTER_LINK,
@@ -2009,9 +2032,11 @@ export class TableComponent<T> implements TableFeatureHost {
    * browser's own behaviour, which is the reason the row carries a real `href` at all.
    */
   protected activateRowLink(link: TableRowLink | null, event: MouseEvent) {
-    if (link === null || typeof link === 'string') return;
+    const commandsLink = toCommandsLink(link);
 
-    if (this.rowNavigation()?.navigate(link, event)) event.preventDefault();
+    if (!commandsLink) return;
+
+    if (this.rowNavigation()?.navigate(commandsLink, event)) event.preventDefault();
   }
 
   /**

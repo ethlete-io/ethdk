@@ -1752,6 +1752,60 @@ describe('TableComponent', () => {
         expect(navigate).toHaveBeenCalledTimes(1);
         expect(modified.defaultPrevented).toBe(false);
       });
+
+      it('carries queryParams, fragment and title of an object link into the href and the navigation', () => {
+        TestBed.configureTestingModule({ providers: [provideRouter([])] });
+
+        @Component({
+          template: `<et-table [columns]="cols" [data]="data" [rowLink]="link" etTableRowRouterLink />`,
+          imports: [TABLE_IMPORTS, TABLE_ROW_ROUTER_LINK_IMPORTS],
+        })
+        class ObjectHost {
+          data = PEOPLE;
+          link = (person: Person) => ({
+            commands: ['/people', person.id],
+            queryParams: { tab: 'a' },
+            fragment: 'top',
+            title: `Open ${person.name}`,
+          });
+          cols = columns();
+        }
+
+        const fixture = TestBed.createComponent(ObjectHost);
+        fixture.detectChanges();
+
+        const anchor = links(fixture)[0] as HTMLAnchorElement;
+
+        expect(anchor.getAttribute('href')).toBe('/people/1?tab=a#top');
+        expect(anchor.getAttribute('title')).toBe(`Open ${PEOPLE[0]?.name}`);
+
+        const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+        anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+
+        const tree = navigate.mock.calls[0]?.[0];
+
+        expect(TestBed.inject(Router).serializeUrl(tree as never)).toBe('/people/1?tab=a#top');
+      });
+    });
+
+    it('renders an href object with its title and needs no router', () => {
+      @Component({
+        template: `<et-table [columns]="cols" [data]="data" [rowLink]="link" />`,
+        imports: [TABLE_IMPORTS],
+      })
+      class HrefObjectHost {
+        data = PEOPLE;
+        link = (person: Person) => ({ href: `/p/${person.id}`, title: 'Go' });
+        cols = columns();
+      }
+
+      const fixture = TestBed.createComponent(HrefObjectHost);
+      fixture.detectChanges();
+
+      const anchor = links(fixture)[0] as HTMLAnchorElement;
+
+      expect(anchor.getAttribute('href')).toBe('/p/1');
+      expect(anchor.getAttribute('title')).toBe('Go');
     });
   });
   describe('disabled columns', () => {

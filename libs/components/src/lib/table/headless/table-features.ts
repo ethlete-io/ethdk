@@ -2,7 +2,14 @@ import { inject, Injector, InjectionToken, InputSignal, Signal, TemplateRef, Typ
 import { RuntimeError } from '@ethlete/core';
 import { TABLE_ERROR_CODES } from '../table-errors';
 import { TableLabels } from './table-labels';
-import { TableColumnDef, TableColumnPin, TableSortDirection, TableState, TableTemplateSlot } from '../table.types';
+import {
+  TableColumnDef,
+  TableColumnPin,
+  TableRowCommandsLink,
+  TableSortDirection,
+  TableState,
+  TableTemplateSlot,
+} from '../table.types';
 
 /**
  * The row-type-independent half of a {@link TableColumnDef} - everything a feature needs to read
@@ -312,12 +319,12 @@ export type TableCellEditing = {
  */
 export type TableRowNavigation = {
   /** The `href` to render for these commands. */
-  href(commands: readonly unknown[]): string;
+  href(link: TableRowCommandsLink): string;
   /**
    * Follow the link in place of the browser. Returns whether it did: a modified click (middle button,
    * Ctrl/Cmd/Shift) is left alone, which is what keeps "open in a new tab" working.
    */
-  navigate(commands: readonly unknown[], event: MouseEvent): boolean;
+  navigate(link: TableRowCommandsLink, event: MouseEvent): boolean;
   /** Whether the navigator is live - see {@link TableHeaderAdornment.enabled}. */
   enabled?: Signal<boolean>;
 };
