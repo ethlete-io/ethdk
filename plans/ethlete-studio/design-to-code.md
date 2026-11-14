@@ -435,6 +435,7 @@ variant a's pill look only to its changed states (`cell()` in `shared/sketch-row
 (6f4b45040) took the pill corners away with the mark. In a comparing state no marks paint, so only a corner radius
 differs, invisible at 24 %. No compare fix. Fix (B345): the cut-out shows such a strip enlarged at fit, and the state
 says why it changed when the diff is small (for example "1358 px in 3 Zellen").
+433 as built (2026-11-14, audit): B345 (06fec7616, 4af4cda0f) shows the enlarged strip and the reason; `sketches.component.spec.ts` expects "1358 px in 3 Stellen · 4,6× vergrößert". Verified by spec read only.
 
 434\. Tom (2026-11-04, merge of `pages/sketches@merge-port` variant a): "immer. wieder. fehler. beim. mergen." The check
 after the merge failed with `TYPE-ERROR ... elements/variant-cell/variant-cell.ts:88:3 TS2353 'sample' does not exist
@@ -2103,6 +2104,7 @@ formats what it writes; a spec runs Prettier `--check` on a freshly created vari
 the semantic colour theme. Lesson: a component API that takes "error" and draws the brand colour lets a sketch show a
 wrong look without a warning. Open: the builder checks if `libs/components` banner should set the semantic colour from
 its type (an SDK API question for the human if it changes a default); until then the sketch uses the wrapper.
+757 as built (2026-11-14, audit): the banner sets its semantic colour from its type (`banner.component.ts`, `forceColor(semanticThemes[type])`, 44b743455); a `color` input overrides it. The sketch wrappers stay harmless. Verified by code read only.
 
 758\. Linux builder (same sketch): Studio has no `components/banner` part, so variant c imports the SDK mock directly.
 Note only: if the human picks c, the pick adds the part first (ADR 0010 flow), not a direct SDK import in a page.
