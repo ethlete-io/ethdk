@@ -3604,3 +3604,12 @@ B509 as built (2026-11-13): the part tree nests a part of the product's own unde
 B508 slice 1 as built: slow draw rule `CONTRAST-PAIR` reads the ratio and low mark `measureContrastPairs` (`@design-system`) writes on each chip of studio `foundations/colors`, which draw the same values. Replaces B500's per-picture CONTRAST.
 
 B508 slice 2 as built: sdk `foundations/colors` marks its contrast rows for `measureContrastPairs` (own AA math gone); tokens resolve on the marked element, `r g b` channels too. `CONTRAST-PAIR` draws every product scheme, one finding per pair, theme (`data-et-contrast-theme`) and scheme. Bite (light muted 190) gave two findings, light and dark scheme; no hits without it. Open: the auto `@edit` sketch's old variant cannot resolve the relative `@import` of faces.css (EDIT-OLD-NOT-DRAWN).
+
+Group lines 2026-11-14 (doc agent, night shift; Suspect unless marked Cause):
+
+- B501: Cause of the CI red 7/7 (run 43485175425): the relanded discard/rebase journal blocked its own merge ("merge ... waits: the merge of pid N has not finished"); third landing reverted a1e6a90d9 (ADR 0280); the 13.11. "S3 closed" was wrong. Suspect (CI red on f28fee046): B501 S3 wait again. 4th landing 9ec027eb2, Cause (instrumented trace + 45 s hold reproduce the CI alert): merge worker removes the sketch folder before gate/commit, e2e picks again while the first journal is open, second openJournal threw; fix: openJournal waits for another open journal, discard/rebase open journal before the product lock. Proof pending: CI 7/7.
+- B499: P6 reland b716013dc. Cause (arithmetic on CI numbers): chip-wheel case read the frame at the 1440 fallback. P6 local 2/2; proof pending: CI, Mac.
+- A17: CI e2e red 1/7, scroll position 300->475 under load 15. Suspect: restore on partial tree, late listing inserts rows above. Cause (red/green, --hold-listings 14000, exactly 300->475): restore ran on the partial tree; fix 16e5c83c4 waits for listsRead(); CI proof pending.
+- A30/A4 as built: A30 closed db72fd4d1 (+0dcb7e60f), missing-motion row opens its `from` state, embedded blocker row opens the named part; not checked: Tauri, screen reader. A4: no code, the 01.11. decision (archive/findings-2026-11.md item 4) holds, note 67c558d38.
+- SDK for fifagg: prerelease #3174 merged 48a0f259a (components 1.0.0-next.82, core 5.0.0-next.75, query 6.0.0-next.64); scrollable mask-image on next 37ecaac13 (changeset pending); button token scoping 443a6be1c (font/letter-spacing not shielded).
+- design-to-code shrink d59b09b24.
