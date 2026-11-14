@@ -59,6 +59,12 @@
     initial-value: 8px;
   }
 
+  @property --_et-button-cap-middle {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
   @property --et-button-line-height {
     syntax: '<number>';
     inherits: false;

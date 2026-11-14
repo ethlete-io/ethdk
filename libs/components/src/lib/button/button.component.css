@@ -10,9 +10,10 @@
 
     display: inline-flex;
     position: relative;
-    align-items: center;
+    align-items: baseline;
     justify-content: center;
     gap: var(--et-button-gap);
+    --_et-button-cap-middle: 0.5cap;
     background: var(--_et-button-background);
     color: var(--_et-button-color);
     border-radius: var(--_et-button-border-radius);
@@ -190,6 +191,10 @@
       flex-shrink: 0;
       font-size: var(--et-button-icon-size, 1em);
       transition: opacity 120ms ease;
+      /* baseline alignment puts the icon's bottom edge on the label baseline; this moves its centre to the
+       label's cap-height middle, so it does not depend on the font's ascent and descent */
+      translate: 0 calc(0.5em - var(--_et-button-cap-middle));
+      margin-block-start: calc(var(--_et-button-cap-middle) - 0.5em);
 
       &:empty {
         display: none;
@@ -198,6 +203,15 @@
       .et-icon {
         width: 1em;
         height: 1em;
+      }
+    }
+
+    &:has(> .et-button-contents:empty) {
+      align-items: center;
+
+      .et-button-icon {
+        translate: none;
+        margin-block-start: 0;
       }
     }
 
