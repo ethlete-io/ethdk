@@ -947,6 +947,23 @@ green; lint, tsc clean. `design check`: pages/sketches 4 CANVAS-UNDER-PANEL (sam
 pages/inbox (embeds the switch) clean. Not verified: the cause split of unchanged-matrix-open (ok after (1)
 and (2) together); no design spec for (1) and (4); CI; the live app.
 
+**B502i as built (Linux builder subagent, 2026-11-14, d1f722990):** `components/disclosure` takes `hug?: boolean`
+(like the boolean options `compact`/`long`): without it the toggle keeps `w-full`, with it the toggle sizes to its label.
+pages/sketches passes `hug: true` to the fold row's "Alle Zustände zeigen" instead of the `min-w-0` span of B502e. The
+app `DisclosureComponent` has a `hug` input (`booleanAttribute`): the button gets `w-fit` instead of `w-full` and the host
+`contents` instead of `block`, so the button is the flex item of the fold row like in the design; the sketches template
+drops `class="min-w-0"` and sets `hug`. A `block` host with `w-fit` drew unchanged-matrix-open DIFF 20408 px, `contents`
+ok. A first try glued `'w-full '` to `gap-space-2` in the class string: `design check` caught it
+(CLASS-GLUED-INTERPOLATION, PICTURES CHANGED, it wrote a `components/disclosure@edit` sketch), the spaced form is clean
+and the check removed the @edit sketch again. Compare: components/disclosure 12 ok, pages/merge 5 ok; pages/sketches in
+a scratch copy of HEAD plus this change 31 ok / 0 DIFF / 7 FAILED (489), 2 of 2 full runs; in the main checkout
+unchanged-matrix is DIFF 13030 px (app panned 2 px, gutter edge drawn) with and without this change (HEAD app files
+swapped in), 30 ok; pages/system 26 DIFF (13241-34089 px) identical on HEAD in the scratch copy, not from this slice.
+`design check`: components/disclosure clean, pages/merge clean, pages/sketches 4 CANVAS-UNDER-PANEL (as B502h),
+pages/system 2 warnings. Spec "sizes the fold toggle to its label instead of its row" red on HEAD app files in a
+scratch copy, green after; vitest related 183 green; lint, tsc clean. Not verified: why the main checkout's
+unchanged-matrix pans 2 px where the scratch copy does not; the pages/system DIFFs; CI; the live app.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
