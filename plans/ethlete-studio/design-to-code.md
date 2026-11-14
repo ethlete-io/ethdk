@@ -2580,6 +2580,10 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   pages/sketches error(), listError(); pages/system listingError()/noted(). Limits: @switch, @Input aliases. Not
   verified: full check --slow on studio. Open: their sketches, 140 actions, harness drift; sketch merge runs no
   `generated` + ACTION-LOST (B501 area).
+- B502 (night 14.11.): 3 missing-state sketches ready (f6231d4b8), wait for the human's pick; Suspect: canvas-note a
+  uses text-ui-sm vs app text-small. B502b (49e38b948): 140 missed actions on pages/sketches; Cause (measured): no
+  harness sample for part:'edit' since b685abce7, so the harness fell back to title-bar rows; all-unchanged fold.
+  Open: what makes a design state without a harness sample impossible where it is written.
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
