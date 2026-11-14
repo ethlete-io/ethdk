@@ -5,7 +5,13 @@ import { describe, expect, it } from 'vitest';
 import { PictureOf } from '../../merge-compare';
 import { readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
-import { sketchShowsNoChange, variantLoadProblemsOf } from './no-visible-change';
+import {
+  changedStateCountLinesOf,
+  noChangedStateLinesOf,
+  sketchShowsNoChange,
+  variantChangesOf,
+  variantLoadProblemsOf,
+} from './no-visible-change';
 import { createSketch, Sketch, variantDirOf } from './sketch';
 import { SketchPartLoader } from './unchanged-states';
 
@@ -183,6 +189,94 @@ describe('sketchShowsNoChange', () => {
     expect(
       await sketchShowsNoChange({ product, sketch, load: byFolder, pictureOf: pictureWith((sketched) => +sketched) }),
     ).toBe('variant a changes components/card default');
+  });
+});
+
+describe('variantChangesOf', () => {
+  const buttonAndCard = () => {
+    const { product } = acme();
+    const sketch = createSketch({
+      merge: 'override',
+      product,
+      sketch: { layer: 'components', name: 'button' },
+      others: [{ layer: 'components', name: 'card' }],
+      variants: ['a'],
+    }) as Sketch;
+    const byFolder: SketchPartLoader = async ({ file }) => ({
+      default: {
+        states: { default: {}, hover: {} },
+        render: () => ({
+          body: '<p></p>',
+          styles: readFileSync(resolve(dirname(file), `${basename(dirname(file))}.css`), 'utf8'),
+        }),
+      },
+    });
+    const edit = (part: string) => {
+      const css = resolve(variantDirOf(sketch, 'a'), `components/${part}/${part}.css`);
+
+      writeFileSync(css, `${readFileSync(css, 'utf8')}\n/* one pixel */\n`);
+    };
+
+    return { product, sketch, load: byFolder, edit };
+  };
+
+  it('counts no changed state of a variant that draws the same pixels', async () => {
+    const { product, sketch, load: byFolder } = buttonAndCard();
+
+    expect(await variantChangesOf({ product, sketch, load: byFolder, pictureOf: pictureWith(() => 0) })).toEqual([
+      { variant: 'a', changed: 0, change: null },
+    ]);
+  });
+
+  it('counts the changed states of every target, not only of the first one that changes', async () => {
+    const { product, sketch, load: byFolder, edit } = buttonAndCard();
+
+    edit('button');
+    edit('card');
+
+    expect(
+      await variantChangesOf({ product, sketch, load: byFolder, pictureOf: pictureWith((sketched) => +sketched) }),
+    ).toEqual([
+      {
+        variant: 'a',
+        changed: 4,
+        change: 'variant a changes components/button default, hover; variant a changes components/card default, hover',
+      },
+    ]);
+  });
+});
+
+describe('changedStateCountLinesOf', () => {
+  it('prints the count of changed states per variant, and why a variant has none to count', () => {
+    const { sketch } = acme();
+
+    expect(
+      changedStateCountLinesOf({
+        sketch,
+        changes: [
+          { variant: 'a', changed: 3, change: 'variant a changes default, hover, active' },
+          { variant: 'b', changed: 0, change: null },
+          { variant: 'c', changed: null, change: 'variant c also holds components/card' },
+        ],
+      }),
+    ).toEqual([
+      'CHANGED STATES variant a of elements/hero: 3',
+      'CHANGED STATES variant b of elements/hero: 0',
+      'CHANGED STATES variant c of elements/hero: not counted - variant c also holds components/card',
+    ]);
+  });
+
+  it('feeds the NO-CHANGED-STATE guard: exactly the variants it counts 0 for', () => {
+    const { sketch } = acme();
+    const changes = [
+      { variant: 'a', changed: 0, change: null },
+      { variant: 'b', changed: null, change: 'variant b also holds components/card' },
+      { variant: 'c', changed: 1, change: 'variant c changes default' },
+    ];
+
+    expect(noChangedStateLinesOf({ sketch, changes, noVisibleChange: false })).toEqual([
+      expect.stringMatching(/^NO-CHANGED-STATE variant a of elements\/hero /u),
+    ]);
   });
 });
 

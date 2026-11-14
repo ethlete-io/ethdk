@@ -18,7 +18,7 @@ vi.mock('./ready-shots', () => {
     })),
     sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
     identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
-    variantChangesShown: vi.fn(async () => [{ variant: 'a', change: 'variant a changes default' }]),
+    variantChangesShown: vi.fn(async () => [{ variant: 'a', changed: 1, change: 'variant a changes default' }]),
     variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
   };
 });

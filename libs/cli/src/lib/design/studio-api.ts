@@ -385,13 +385,13 @@ const noChangedStateProblemsOf = ({ sketch, targets }: { sketch: Sketch; targets
 
     if (rejectionOf(sketch, variant) || drawn.length === 0 || !compared) return [];
 
-    const changed = drawn.some((entry) =>
-      entry.states.some((state) => !('unchanged' in entry && entry.unchanged?.includes(state))),
-    );
+    const changed = drawn.flatMap((entry) =>
+      entry.states.filter((state) => !('unchanged' in entry && entry.unchanged?.includes(state))),
+    ).length;
 
-    return [{ variant, change: changed ? 'changed' : null }];
+    return [{ variant, changed, change: changed > 0 ? 'changed' : null }];
   });
-  const unchanged = changes.filter(({ change }) => change === null);
+  const unchanged = changes.filter(({ changed }) => changed === 0);
 
   return noChangedStateLinesOf({ sketch, changes, noVisibleChange: sketch.status === 'ready' }).map(
     (line, index): Problem & { variant: string } => {

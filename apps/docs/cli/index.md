@@ -673,7 +673,9 @@ variant that matches another in some states only is fine.
 
 `sketch ready` also refuses (`NO-CHANGED-STATE`) a live variant that draws no state differing from the current part, by
 the same diff as `SHOT-NOT-VIEWED` below; `sketch check` warns of it, and the Studio listing shows it as a problem of the
-variant. A sketch meant to change no pixel passes `--no-visible-change`: when no live variant draws a change, `sketch
+variant. `sketch check` prints that count per live variant as `CHANGED STATES variant <key> of <part>: <n>`
+(`not counted - <why>` when a target does not load or the variant holds another part); the refusal fires exactly
+when `<n>` is 0. A sketch meant to change no pixel passes `--no-visible-change`: when no live variant draws a change, `sketch
 ready` then merges it by itself. The Studio sketch view shows each column's first
 state (the current part's states first), so `sketch ready` also refuses a variant whose first shown state draws like
 the current part's or an earlier variant's: make a state the variant changes its first state.

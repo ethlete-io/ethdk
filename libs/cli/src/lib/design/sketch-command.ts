@@ -42,7 +42,7 @@ import {
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
-import { noChangedStateLinesOf, noChangeOf } from './system/sketch/no-visible-change';
+import { changedStateCountLinesOf, noChangedStateLinesOf, noChangeOf } from './system/sketch/no-visible-change';
 import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
@@ -1604,9 +1604,15 @@ const noChangedStateLines = async (options: {
 
   const changes = await variantChangesShown(shots);
 
-  return Array.isArray(changes)
-    ? noChangedStateLinesOf({ sketch: shots.sketch, changes, noVisibleChange: args.flags.has('--no-visible-change') })
-    : [];
+  if (!Array.isArray(changes)) return [];
+
+  changedStateCountLinesOf({ sketch: shots.sketch, changes }).forEach((line) => console.log(line));
+
+  return noChangedStateLinesOf({
+    sketch: shots.sketch,
+    changes,
+    noVisibleChange: args.flags.has('--no-visible-change'),
+  });
 };
 
 const TYPECHECKS_AT_ONCE = 4;

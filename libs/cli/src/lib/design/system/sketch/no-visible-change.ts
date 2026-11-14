@@ -8,13 +8,19 @@ import { rejectionOf, Sketch, variantDirOf } from './sketch';
 import { SketchPartLoader, unchangedStatesOf } from './unchanged-states';
 import { VariantChange } from './viewed-shots';
 
+type Counted = Omit<VariantChange, 'variant'>;
+
+const SAME: Counted = { changed: 0, change: null };
+
+const uncounted = (change: string): Counted => ({ changed: null, change });
+
 const affectedChangeOf = async (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   variant: string;
   load: SketchPartLoader;
   pictureOf: PictureOf;
-}): Promise<string | null> => {
+}): Promise<Counted> => {
   const { product, sketch, variant, load, pictureOf } = options;
   const { changed } = await compareMerge({
     product,
@@ -26,13 +32,13 @@ const affectedChangeOf = async (options: {
     load,
   });
 
-  if (changed.length === 0) return null;
+  if (changed.length === 0) return SAME;
 
   const rows = changed.map((row) =>
     [row.part, row.state, row.error ? `(${row.error})` : ''].filter((entry) => entry !== '').join(' '),
   );
 
-  return `variant ${variant} changes ${rows.join(', ')}`;
+  return { changed: rows.length, change: `variant ${variant} changes ${rows.join(', ')}` };
 };
 
 const partChangeOf = async (options: {
@@ -43,11 +49,11 @@ const partChangeOf = async (options: {
   pictureOf: PictureOf;
   part: string;
   named: boolean;
-}): Promise<string | null> => {
+}): Promise<Counted> => {
   const { product, sketch, variant, load, pictureOf, part, named } = options;
   const file = overlaySketch({ product, sketch, variant }).parts.find((entry) => partKeyOf(entry) === part)?.file;
 
-  if (!file) return `variant ${variant} does not draw ${part}`;
+  if (!file) return uncounted(`variant ${variant} does not draw ${part}`);
 
   const read = await readPartModule({
     part: { file },
@@ -56,8 +62,8 @@ const partChangeOf = async (options: {
   });
   const of = named ? ` ${part}` : '';
 
-  if (read.problem) return `variant ${variant}${of} does not load: ${read.problem}`;
-  if (read.states.length === 0) return `variant ${variant}${of} has no states`;
+  if (read.problem) return uncounted(`variant ${variant}${of} does not load: ${read.problem}`);
+  if (read.states.length === 0) return uncounted(`variant ${variant}${of} has no states`);
 
   const failures = new Set<string>();
   const recording: PictureOf = async (picture) => {
@@ -71,11 +77,11 @@ const partChangeOf = async (options: {
   const unchanged = await unchangedStatesOf({ product, sketch, variant, load, pictureOf: recording, part });
   const changed = read.states.filter((state) => !unchanged.includes(state));
 
-  if (changed.length === 0) return null;
+  if (changed.length === 0) return SAME;
 
   const failed = failures.size > 0 ? ` - a shot failed: ${[...failures].join('; ')}` : '';
 
-  return `variant ${variant} changes${of} ${changed.join(', ')}${failed}`;
+  return { changed: changed.length, change: `variant ${variant} changes${of} ${changed.join(', ')}${failed}` };
 };
 
 const variantChangeOf = async (options: {
@@ -84,23 +90,30 @@ const variantChangeOf = async (options: {
   variant: string;
   load: SketchPartLoader;
   pictureOf: PictureOf;
-}): Promise<string | null> => {
+}): Promise<Counted> => {
   const { product, sketch, variant } = options;
   const others = partFilesOf(variantDirOf(sketch, variant))
     .parts.map(partKeyOf)
     .filter((key) => !sketch.targets.includes(key));
 
-  if (others.length > 0) return `variant ${variant} also holds ${others.join(', ')}`;
+  if (others.length > 0) return uncounted(`variant ${variant} also holds ${others.join(', ')}`);
 
   const parts = [...sketch.targets, ...mergePreviewOf({ product, sketch, variant }).shared];
+  const found: Counted[] = [];
 
   for (const part of parts) {
-    const change = await partChangeOf({ ...options, part, named: parts.length > 1 });
+    const counted = await partChangeOf({ ...options, part, named: parts.length > 1 });
 
-    if (change !== null) return change;
+    if (counted.changed === null) return counted;
+    if (counted.changed > 0) found.push(counted);
   }
 
-  return affectedChangeOf(options);
+  if (found.length === 0) return affectedChangeOf(options);
+
+  return {
+    changed: found.reduce((sum, { changed }) => sum + (changed ?? 0), 0),
+    change: found.map(({ change }) => change).join('; '),
+  };
 };
 
 /**
@@ -133,14 +146,12 @@ export const variantChangesOf = async (options: {
 
   if (live.length === 0) return 'the sketch has no live variant';
 
-  return Promise.all(
-    live.map(async (variant) => ({ variant, change: await variantChangeOf({ ...options, variant }) })),
-  );
+  return Promise.all(live.map(async (variant) => ({ variant, ...(await variantChangeOf({ ...options, variant })) })));
 };
 
 /** `true` when no variant changes anything; otherwise every change, joined. */
 export const noChangeOf = (changes: VariantChange[]): true | string => {
-  const found = changes.flatMap(({ change }) => (change === null ? [] : [change]));
+  const found = changes.flatMap(({ changed, change }) => (changed === 0 || change === null ? [] : [change]));
 
   return found.length === 0 ? true : found.join('; ');
 };
@@ -186,7 +197,7 @@ export const noChangedStateLinesOf = (options: {
   noVisibleChange: boolean;
 }): string[] => {
   const { sketch, changes, noVisibleChange } = options;
-  const unchanged = changes.filter(({ change }) => change === null);
+  const unchanged = changes.filter(({ changed }) => changed === 0);
   const alone = unchanged.length === changes.length;
 
   if (alone && noVisibleChange) return [];
@@ -199,3 +210,11 @@ export const noChangedStateLinesOf = (options: {
       `draw the state the sketch is about (for a marker sketch: draw the missing state)${escape}`,
   );
 };
+
+/** One `CHANGED STATES` line per live variant: how many states it draws differently from the design. */
+export const changedStateCountLinesOf = (options: { sketch: Sketch; changes: VariantChange[] }): string[] =>
+  options.changes.map(
+    ({ variant, changed, change }) =>
+      `CHANGED STATES variant ${variant} of ${options.sketch.targets.join(', ')}: ` +
+      (changed === null ? `not counted - ${change}` : `${changed}`),
+  );

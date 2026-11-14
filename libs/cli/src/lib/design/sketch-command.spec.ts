@@ -38,7 +38,7 @@ vi.mock('./ready-shots', () => {
     identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
     sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
     variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
-      { variant: 'a', change: 'variant a changes default' },
+      { variant: 'a', changed: 1, change: 'variant a changes default' },
     ]),
     variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
   };
@@ -113,7 +113,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.mocked(unviewedShotLinesOf).mockReset().mockReturnValue([]);
     vi.mocked(variantChangesShown)
       .mockReset()
-      .mockResolvedValue([{ variant: 'a', change: 'variant a changes default' }]);
+      .mockResolvedValue([{ variant: 'a', changed: 1, change: 'variant a changes default' }]);
   });
 
   it('merges a ready sketch by itself and logs it auto when no state shows a change', async () => {
@@ -122,7 +122,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const product = join(target, DESIGN_DIR, 'acme');
 
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
 
     await write(
@@ -160,7 +160,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       gitSpawn(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
     git('init');
     git('add', '.');
@@ -248,7 +248,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) => {
       rmSync(sketchDir, { recursive: true, force: true });
 
-      return sketch.variants.map((variant) => ({ variant, change: null }));
+      return sketch.variants.map((variant) => ({ variant, changed: 0, change: null }));
     });
 
     expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(1);
@@ -265,7 +265,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       lines.push(`second run: ${await write(target, 'ready', 'components/button', '--product', 'acme')}`);
       unlock();
 
-      return sketch.variants.map((variant) => ({ variant, change: 'variant a changes default' }));
+      return sketch.variants.map((variant) => ({ variant, changed: 1, change: 'variant a changes default' }));
     });
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
@@ -280,7 +280,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const git = gitRepo(target);
 
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
     await sameButton(target);
 
@@ -300,7 +300,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const merged = join(target, DESIGN_DIR, 'acme/merged.json');
 
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
     writeFileSync(merged, '{}\n');
     await sameButton(target);
@@ -802,7 +802,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
     vi.mocked(variantChangesShown).mockImplementation(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -814,6 +814,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain(`ready will refuse: ${line}`);
+    expect(lines).toContain('CHANGED STATES variant a of components/button: 0');
     expect(
       findSketch({
         productDir: join(target, DESIGN_DIR, 'acme'),
@@ -844,8 +845,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
     vi.mocked(variantChangesShown).mockResolvedValue([
-      { variant: 'a', change: 'variant a changes default' },
-      { variant: 'b', change: null },
+      { variant: 'a', changed: 1, change: 'variant a changes default' },
+      { variant: 'b', changed: 0, change: null },
     ]);
 
     expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(1);
@@ -860,7 +861,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const product = join(target, DESIGN_DIR, 'acme');
 
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
 
     expect(
@@ -952,7 +953,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe('components/button is still ready');
 
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
 
     expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
@@ -1002,7 +1003,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
-    vi.mocked(variantChangesShown).mockResolvedValue([{ variant: 'a', change: 'variant a changes default' }]);
+    vi.mocked(variantChangesShown).mockResolvedValue([
+      { variant: 'a', changed: 1, change: 'variant a changes default' },
+    ]);
 
     const sketch = () => {
       const found = findSketch({
@@ -1067,7 +1070,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
-    vi.mocked(variantChangesShown).mockResolvedValue([{ variant: 'a', change: 'variant a changes default' }]);
+    vi.mocked(variantChangesShown).mockResolvedValue([
+      { variant: 'a', changed: 1, change: 'variant a changes default' },
+    ]);
 
     const sketch = () => {
       const found = findSketch({
@@ -1143,8 +1148,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
     vi.mocked(variantChangesShown).mockResolvedValue([
-      { variant: 'a', change: 'variant a changes default' },
-      { variant: 'b', change: 'variant b changes default' },
+      { variant: 'a', changed: 1, change: 'variant a changes default' },
+      { variant: 'b', changed: 1, change: 'variant b changes default' },
     ]);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -1174,8 +1179,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     vi.mocked(unviewedShotLinesOf).mockImplementation(actual.unviewedShotLinesOf);
     vi.mocked(variantChangesShown).mockResolvedValueOnce([
-      { variant: 'a', change: null },
-      { variant: 'b', change: null },
+      { variant: 'a', changed: 0, change: null },
+      { variant: 'b', changed: 0, change: null },
     ]);
     await write(
       target,
@@ -1738,7 +1743,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('check ok - ready will refuse 1 (see above)');
-    expect(lines.pop()).toMatch(/^ready will refuse: components\/button round r1 has no note - set it with:/u);
+    expect(lines).toContainEqual(
+      expect.stringMatching(/^ready will refuse: components\/button round r1 has no note - set it with:/u),
+    );
     expect(await write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
@@ -2610,7 +2617,7 @@ export default definePart({
     wideHero(target, 'class="acme-hero" data-et-skip="WRAP"');
     vi.mocked(renderIssuesOf).mockImplementationOnce(await actualRender());
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
-      sketch.variants.map((variant) => ({ variant, change: null })),
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
     );
 
     expect(await write(target, 'ready', 'elements/hero', '--no-visible-change', '--product', 'acme')).toBe(0);

@@ -4,8 +4,11 @@ import { dirname, resolve } from 'path';
 import { workRootOf } from '../../work-root';
 import { Sketch, variantContentHashOf } from './sketch';
 
-/** What a live variant of a sketch draws differently from the product, or `null` when it draws the same pixels. */
-export type VariantChange = { variant: string; change: string | null };
+/**
+ * What a live variant of a sketch draws differently from the product: `changed` counts its states that differ (`null`
+ * when it cannot be counted, which counts as a change), `change` names them and is `null` exactly when `changed` is 0.
+ */
+export type VariantChange = { variant: string; changed: number | null; change: string | null };
 
 type ViewedShot = { content: string; shot: string; shotHash: string };
 

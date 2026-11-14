@@ -347,8 +347,8 @@ describe('createPartShooter', () => {
     if (typeof sketch === 'string') throw new Error(sketch);
 
     const changes = [
-      { variant: 'a', change: 'variant a changes default' },
-      { variant: 'b', change: 'variant b changes default' },
+      { variant: 'a', changed: 1, change: 'variant a changes default' },
+      { variant: 'b', changed: 1, change: 'variant b changes default' },
     ];
     const unviewed = () =>
       unviewedShotLinesOf({ target, invocation: 'et design', sketch, changes }).map((line) => line.split(' - ')[0]);
