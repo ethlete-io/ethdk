@@ -10,6 +10,7 @@ export type SketchShot = { state: string; changed: boolean | null; height: numbe
 
 export type SketchRow = {
   key: string;
+  label?: string;
   note: string;
   model?: SketchModel;
   width: number;
@@ -56,9 +57,10 @@ const shotsOf = (
   states.map((state) => ({ state, changed: changed.includes(state), height: height(changed.includes(state)) }));
 
 export const SKETCH_ROWS: SketchRow[] = [
-  { key: SKETCH_CURRENT, note: 'Gemergter Stand', width: 1440, shots: shotsOf([]) },
+  { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: 1440, shots: shotsOf([]) },
   {
     key: 'a',
+    label: 'Entwurf 1',
     note: 'Update als schmaler Button direkt neben der Suche, die Suche wird dafür schmaler; ohne Update bleibt die Leiste wie heute.',
     model: { ...OPUS, when: '02.11. 10:14' },
     width: 1440,
@@ -66,6 +68,7 @@ export const SKETCH_ROWS: SketchRow[] = [
   },
   {
     key: 'b',
+    label: 'Entwurf 2',
     note: 'Leiste 40 px hoch, damit Suche und Fensterknöpfe mehr Luft haben; kostet 8 px Höhe in jeder Ansicht.',
     model: { ...SOL, when: '02.11. 10:21' },
     width: 1440,
@@ -73,6 +76,7 @@ export const SKETCH_ROWS: SketchRow[] = [
   },
   {
     key: 'c',
+    label: 'Entwurf 3',
     note: 'Unter macOS rückt die Suche nach links an die Ampel, Linux und Windows bleiben gleich.',
     model: { ...OPUS, when: '02.11. 10:30' },
     width: 1440,

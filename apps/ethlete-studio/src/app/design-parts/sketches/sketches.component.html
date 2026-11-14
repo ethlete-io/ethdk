@@ -420,15 +420,15 @@
     <span
       class="inline-flex w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
       data-sk-head-tag
-      >{{ row.key === CURRENT ? LABELS.current : row.key }}</span
+      >{{ row.label ?? (row.key === CURRENT ? LABELS.current : row.key) }}</span
     >
   }
   <div [class.hidden]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       @if (row.key === CURRENT) {
-        <span class="text-ui-sm font-ui-medium text-et-surface">{{ LABELS.current }}</span>
+        <span class="text-ui-sm font-ui-medium text-et-surface">{{ row.label ?? LABELS.current }}</span>
       } @else {
-        <span class="font-code text-ui-sm text-et-surface">{{ LABELS.variant(row.key) }}</span>
+        <span class="font-code text-ui-sm text-et-surface">{{ row.label ?? LABELS.variant(row.key) }}</span>
       }
       @if (row.model; as model) {
         <span

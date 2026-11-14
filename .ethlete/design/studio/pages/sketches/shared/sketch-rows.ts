@@ -12,6 +12,7 @@ type Model = { short: string; id: string; agent: Agent; when: string };
 
 export type Row = {
   key: RowKey;
+  label?: string;
   note: string;
   model?: Model;
   changed: string[];
@@ -61,9 +62,10 @@ export const PARTS: Record<PartKind, SketchPart> = {
     states: WIDE_STATES,
     render: async (state) => (await titleBar.render(titleBarStates[state] as TitleBarProps)) as Render,
     rows: [
-      { key: 'current', note: 'Gemergter Stand', changed: [], look: '' },
+      { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
       {
         key: 'a',
+        label: 'Entwurf 1',
         note: 'Update als schmaler Button direkt neben der Suche, die Suche wird dafür schmaler; ohne Update bleibt die Leiste wie heute.',
         model: { ...OPUS, when: '02.11. 10:14' },
         changed: ['linux-close-update', 'windows-update', 'macos-update'],
@@ -71,6 +73,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
       },
       {
         key: 'b',
+        label: 'Entwurf 2',
         note: 'Leiste 40 px hoch, damit Suche und Fensterknöpfe mehr Luft haben; kostet 8 px Höhe in jeder Ansicht.',
         model: { ...SOL, when: '02.11. 10:21' },
         changed: [...WIDE_STATES],
@@ -78,6 +81,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
       },
       {
         key: 'c',
+        label: 'Entwurf 3',
         note: 'Unter macOS rückt die Suche nach links an die Ampel, Linux und Windows bleiben gleich.',
         model: { ...OPUS, when: '02.11. 10:30' },
         changed: ['macos', 'macos-update'],
@@ -104,9 +108,10 @@ export const PARTS: Record<PartKind, SketchPart> = {
     states: NARROW_STATES,
     render: async (state) => (await zoomChip.render(zoomChipStates[state] as ZoomChipProps)) as Render,
     rows: [
-      { key: 'current', note: 'Gemergter Stand', changed: [], look: '' },
+      { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
       {
         key: 'a',
+        label: 'Entwurf 1',
         note: 'Chip als Pille, die Knöpfe rücken enger zusammen.',
         model: { ...OPUS, when: '02.11. 11:02' },
         changed: NARROW_STATES.filter((name) => name.startsWith('fit') && !STEADY.includes(name)),
@@ -114,6 +119,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
       },
       {
         key: 'b',
+        label: 'Entwurf 2',
         note: 'Prozentzahl in Halbfett, damit der Zoom auf einen Blick lesbar ist.',
         model: { ...SOL, when: '02.11. 11:09' },
         changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
@@ -138,7 +144,9 @@ export const unchangedStates = (part: SketchPart) => {
   return unchanged.length < part.states.length ? unchanged : [];
 };
 
-export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map((row) => `Variante ${row.key}`).join(', ')}`;
+const rowName = (row: Row) => row.label ?? (row.key === 'current' ? 'Aktuell' : `Variante ${row.key}`);
+
+export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map(rowName).join(', ')}`;
 
 export const isTransposed = (part: SketchPart, viewWidth: number) => part.width > viewWidth / 4;
 
@@ -189,8 +197,8 @@ export const rowHead = (row: Row, action: string, mark = '') =>
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       ${
         row.key === 'current'
-          ? html`<span class="text-ui-sm font-ui-medium text-et-surface">Aktuell</span>`
-          : html`<span class="font-code text-ui-sm text-et-surface">Variante ${row.key}</span>`
+          ? html`<span class="text-ui-sm font-ui-medium text-et-surface">${rowName(row)}</span>`
+          : html`<span class="font-code text-ui-sm text-et-surface">${rowName(row)}</span>`
       }
       ${
         row.model
@@ -228,14 +236,15 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   let mode = zoom;
   let fitAt = 0;
 
-  const noteAt = (scale: number) => {
-    const floor = Math.max(MIN_TEXT, NOTE_TEXT * fitAt);
-    return scale >= fitAt ? Math.max(MIN_TEXT, NOTE_TEXT * scale) : (floor * scale) / fitAt;
+  const textAt = (size: number, scale: number) => {
+    const floor = Math.max(MIN_TEXT, size * fitAt);
+    return scale >= fitAt ? Math.max(MIN_TEXT, size * scale) : (floor * scale) / fitAt;
   };
+  const noteAt = (scale: number) => textAt(NOTE_TEXT, scale);
 
   const apply = (scale: number) => {
     const note = noteAt(scale);
-    const text = LABEL_TEXT * scale;
+    const text = textAt(LABEL_TEXT, scale);
     world.style.setProperty('--sk-scale', `${scale}`);
     world.style.setProperty('--sk-frame', `${width * scale}px`);
     world.style.setProperty('--sk-cols', `${columns}`);

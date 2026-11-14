@@ -477,7 +477,7 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-first-change]')).toBeNull();
   });
 
-  it('keeps the note at 12 px or more and hides state labels below 9 px', async () => {
+  it('keeps the note and the state names at 12 px or more down to fit', async () => {
     const fixture = await render({ camera: { zoom: 2, x: 0, y: 0 } });
     const root: HTMLElement = fixture.nativeElement;
     const sizes = () => [
@@ -493,15 +493,36 @@ describe('SketchesComponent', () => {
     fixture.componentRef.setInput('camera', { zoom: 0.25, x: 0, y: 0 });
     await fixture.whenStable();
 
-    expect(sizes()[0]).toBe('12px');
-    expect(root.querySelector('[data-sk-row="x"] [data-sk-state] .font-code')?.parentElement?.classList).toContain(
-      'hidden',
-    );
+    expect(sizes()).toEqual(['12px', '12px']);
+  });
 
-    fixture.componentRef.setInput('camera', { zoom: 0.7, x: 0, y: 0 });
-    await fixture.whenStable();
+  it('keeps the state names at 12 px or more at fit', async () => {
+    const fixture = await render({ camera: 'fit' });
+    const name = fixture.nativeElement.querySelector('[data-sk-row="x"] [data-sk-state] .font-code');
 
-    expect(sizes()[1]).toBe(`${13 * 0.7}px`);
+    expect(parseFloat(name.style.fontSize)).toBeGreaterThanOrEqual(12);
+  });
+
+  it('names a row by its label in the head and the head tag, else by Aktuell and Variante', async () => {
+    const named = [
+      { ...ROWS[0], key: 'current', label: 'Stand' },
+      { ...ROWS[1], key: 'a', label: 'Entwurf 1' },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows: named })).nativeElement;
+    const plain: HTMLElement = (
+      await render({
+        camera: '100',
+        rows: [
+          { ...ROWS[0], key: 'current' },
+          { ...ROWS[1], key: 'a' },
+        ],
+      })
+    ).nativeElement;
+
+    expect(textOf(root.querySelector('[data-sk-row="current"]'))).toContain('Stand');
+    expect(textOf(root.querySelector('[data-sk-row="a"]'))).toContain('Entwurf 1');
+    expect(textOf(plain.querySelector('[data-sk-row="current"]'))).toContain('Aktuell');
+    expect(textOf(plain.querySelector('[data-sk-row="a"]'))).toContain('Variante a');
   });
 
   it('folds variants that match Aktuell in every state into one collapsed bar and opens it', async () => {

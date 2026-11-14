@@ -37,9 +37,9 @@ export type PageVariant = { key: 'current' | 'a' | 'b'; label: string; note: str
 export const PAGE_SKETCH = { part: 'pages/system', status: 'In Arbeit', state: 'part' };
 
 export const PAGE_VARIANTS: PageVariant[] = [
-  { key: 'current', label: 'Aktuell', note: 'Panel 248 px, offen' },
-  { key: 'a', label: 'a', note: 'Panel ausgeblendet', author: OPUS },
-  { key: 'b', label: 'b', note: 'Panel 200 px', author: SOL },
+  { key: 'current', label: 'Stand', note: 'Panel 248 px, offen' },
+  { key: 'a', label: 'Entwurf 1', note: 'Panel ausgeblendet', author: OPUS },
+  { key: 'b', label: 'Entwurf 2', note: 'Panel 200 px', author: SOL },
 ];
 
 export const PAGE_PIN: Pin = {

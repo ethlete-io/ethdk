@@ -154,10 +154,10 @@ const frameKeyOf = (row: SketchRow, state: string) => `${row.key} ${state}`;
 const zoomOf = (camera: 'fit' | '100' | Camera): FrameZoom =>
   camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom;
 
-const noteAt = (scale: number, fit: number) => {
-  const floor = Math.max(MIN_TEXT, NOTE_TEXT * fit);
+const textAt = (size: number, { scale, fit }: { scale: number; fit: number }) => {
+  const floor = Math.max(MIN_TEXT, size * fit);
 
-  return scale >= fit ? Math.max(MIN_TEXT, NOTE_TEXT * scale) : (floor * scale) / fit;
+  return scale >= fit ? Math.max(MIN_TEXT, size * scale) : (floor * scale) / fit;
 };
 
 const isWithdrawn = (row: SketchRow) => row.withdrawn !== undefined;
@@ -328,17 +328,13 @@ export class SketchesComponent {
         ? (fit ?? 1)
         : previous.value,
   });
-  protected noteSize = computed(() => noteAt(this.scale(), this.noteFit()));
+  protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
   protected headColumns = computed(() =>
     this.headHidden() ? 'max-content minmax(0, 1fr)' : `${(HEAD_WIDTH * this.noteSize()) / NOTE_TEXT}px minmax(0, 1fr)`,
   );
-  protected labelFont = computed(() => LABEL_TEXT * this.scale());
-  protected labelSize = computed(() => {
-    const size = LABEL_TEXT * this.scale();
-
-    return size < MIN_LABEL ? null : size;
-  });
+  protected labelFont = computed(() => textAt(LABEL_TEXT, { scale: this.scale(), fit: this.noteFit() }));
+  protected labelSize = computed(() => (this.labelFont() < MIN_LABEL ? null : this.labelFont()));
   protected shownStatus = computed(() =>
     this.errored().length > 0 && (this.status() === 'waiting' || this.status() === 'idle') ? 'errored' : this.status(),
   );
@@ -381,7 +377,7 @@ export class SketchesComponent {
 
     return variants.length > 0 && variants.every((row) => same.has(row.key)) ? this.mergeHold() : null;
   });
-  protected sameLabel = computed(() => this.LABELS.sameVariants(this.sameRows().map((row) => row.key)));
+  protected sameLabel = computed(() => this.LABELS.sameVariants(this.sameRows().map((row) => row.label ?? row.key)));
   protected matrixRows = computed(() =>
     this.sameOpen() ? [...this.changedRows(), ...this.sameRows()] : this.changedRows(),
   );
@@ -439,7 +435,7 @@ export class SketchesComponent {
 
       untracked(() => {
         this.fitAt.set(this.fitScaleOf(dom));
-        this.applyScale({ scale: this.scale(), note: this.noteSize() }, dom);
+        this.applyScale({ scale: this.scale(), note: this.noteSize(), label: this.labelFont() }, dom);
       });
     });
 
@@ -606,7 +602,10 @@ export class SketchesComponent {
     let scale = 1;
 
     for (let pass = 0; pass < FIT_PASSES; pass++) {
-      this.applyScale({ scale, note: Math.max(MIN_TEXT, NOTE_TEXT * scale) }, dom);
+      this.applyScale(
+        { scale, note: Math.max(MIN_TEXT, NOTE_TEXT * scale), label: Math.max(MIN_TEXT, LABEL_TEXT * scale) },
+        dom,
+      );
 
       const next = dom.matrix ? this.matrixFit(dom.matrix, dom) : this.gridFit(scale, dom);
 
@@ -631,7 +630,7 @@ export class SketchesComponent {
   }
 
   private applyScale(
-    { scale, note }: { scale: number; note: number },
+    { scale, note, label }: { scale: number; note: number; label: number },
     { columns, sections, stages, frames, notes, labels, labelRows, gutters, matrix }: FitDom,
   ) {
     const { setStyle } = this.renderer;
@@ -647,8 +646,8 @@ export class SketchesComponent {
       setStyle(section, { gridTemplateColumns: `${(HEAD_WIDTH * note) / NOTE_TEXT}px minmax(0, 1fr)` });
     }
     for (const element of notes) setStyle(element, { fontSize: `${note}px` });
-    for (const element of labels) setStyle(element, { fontSize: `${LABEL_TEXT * scale}px` });
-    for (const row of labelRows) this.renderer.toggleClass(row, 'hidden', LABEL_TEXT * scale < MIN_LABEL);
+    for (const element of labels) setStyle(element, { fontSize: `${label}px` });
+    for (const row of labelRows) this.renderer.toggleClass(row, 'hidden', label < MIN_LABEL);
     for (const stage of stages) {
       const inner = frames.find((frame) => stage.contains(frame))?.firstElementChild;
 
