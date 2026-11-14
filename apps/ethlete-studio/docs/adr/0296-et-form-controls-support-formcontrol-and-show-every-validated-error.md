@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B507
+built: 7af5b6e6d
 decided: 2026-11-14
 source: doc-agent session 2026-11-14 (morning round), from the fifagg 7.8 forms spike
 ---
