@@ -1872,6 +1872,23 @@ indeterminate `et-spinner` at the mock's frame. Suspect: compare has no way to o
 rule that a mock of an animated control carries a frame. Tool fix (backlog): a state may name the interaction that
 opens its overlay, and compare applies it; `design check` flags an animated-control mock without `data-et-frozen-at`.
 
+733 as built (Linux subagent, 2026-11-14, 8685aba7f): (a) a design marks a trigger whose overlay it draws open at rest with
+`data-et-opened-by="hover"`; compare finds it in the app by aria-label or role and text, as `data-et-force`, and
+dispatches a mouse `pointerenter` without a real hover, so the trigger stays at rest. The title-bar puts it on Neu
+starten in every notice state that does not force that button. Cause of the FAIL (measured): besides the missing
+interaction, `settledPanesOf` stopped waiting once a page with 0 panes was quiet for 3 frames, before the 300 ms tooltip
+show delay, so even `linux-full-notice-hover` failed; after a forced or opened-by interaction it now waits up to 1 s for
+the drawn panes. Specs red on the old code, green after (part-compare.spec: 3 tests). Live `compare
+components/title-bar --working-tree`: the five `*-notice` states and notice-hover/active now DIFF 529-534 px instead
+of FAIL; the rest is the tooltip itself: the mock draws `bottom-end` with the arrow near the button end, the app
+centres the arrow under the button (design or app drift, not a tool issue). (b) not built. Cause (measured with `design
+dom`): the mock spinner carries `data-et-frozen-at` with `--et-spinner-frozen-at: 0.3`, but the button mock goes
+through `ng()` with LOADER_IMPORTS, the real `et-spinner` re-renders it, and its default `diameter` input (18 px,
+stroke 2.25) overrides the mock's 12 px style; the app's xs button draws 12 px. `linux-full-notice-pending` is now
+DIFF 187 px from that size. A frozen-at rule would not catch it. Tool fix proposed: `spinner()` in
+`libs/components/design/loader.ts` also emits `diameter`/`strokeWidth` attributes, so an ng-rendered mock keeps its
+size. Not verified: other parts with ng-rendered sized spinners; the finding-789 sweep (no rule built).
+
 736\. Linux builder (2026-11-10, 732 sketch `pages/system@footer-open-points`, 6c2fc5cc0): `design shot
 pages/system@footer-open-points` fails "has no open sketch in product studio", and `shot pages/system --variants` draws
 the other open `pages-system` sketch. Cause (measured by the subagent): `sketchHoldingOf` in
