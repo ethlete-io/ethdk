@@ -853,8 +853,8 @@ describe('SketchesComponent', () => {
     vi.stubGlobal(
       'ResizeObserver',
       class {
-        constructor(callback: () => void) {
-          observers.push(() => callback.call(this, [{ target: listOf() }] as never));
+        constructor(callback: (entries: unknown) => void) {
+          observers.push(() => callback([{ target: listOf() }]));
         }
         observe = () => undefined;
         disconnect = () => undefined;
