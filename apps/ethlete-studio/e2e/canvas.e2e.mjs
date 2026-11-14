@@ -1661,13 +1661,13 @@ const CASES = [
 
       const row = page.locator('[role="dialog"] [data-open-point-target]', { hasText: part });
 
-      await row.waitFor({ timeout: 20000 }).catch(() => undefined);
+      await row.waitFor({ timeout: 20000 });
 
       const rows = await row.count();
 
       if (process.env['STUDIO_E2E_SHOTS'])
         await page.screenshot({ path: join(process.env['STUDIO_E2E_SHOTS'], 'open-points-part-row.png') });
-      if (rows === 1) await row.click();
+      await row.click();
       await settle(page);
       await page.unroute('**/__design/open-points?*');
 
