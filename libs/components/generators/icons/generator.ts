@@ -1,6 +1,6 @@
 import { formatFiles, logger, Tree, workspaceRoot } from '@nx/devkit';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 
 //#region Types
 
@@ -119,7 +119,10 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   }
 
   // Step 4: Write the IconDefinition constants.
-  tree.write(outputPath, generateIconsFile(resolved, schema, source.package));
+  tree.write(
+    outputPath,
+    generateIconsFile(resolved, schema, source.package, typesImportSpecifier(outputPath, typesOutputPath)),
+  );
   logger.log(`✅ Generated ${resolved.length} icon(s) at: ${outputPath}`);
 
   // Step 5: Write the type augmentation so `etIcon`/`variant` are checked against these names.
@@ -205,10 +208,19 @@ function regenerateCommand(schema: GeneratorSchema): string {
   return parts.join(' ');
 }
 
+function typesImportSpecifier(outputPath: string, typesOutputPath: string): string {
+  const path = relative(dirname(outputPath), typesOutputPath)
+    .replace(/\\/g, '/')
+    .replace(/(\.d)?\.ts$/, '');
+
+  return path.startsWith('.') ? path : `./${path}`;
+}
+
 function generateIconsFile(
   icons: (ResolvedIcon & { data: string })[],
   schema: GeneratorSchema,
   source: string,
+  typesSpecifier: string,
 ): string {
   const header = `/* eslint-disable */
 /*
@@ -219,6 +231,7 @@ function generateIconsFile(
  * ${regenerateCommand(schema)}
  */
 import type { IconDefinition } from '@ethlete/components';
+import type {} from '${typesSpecifier}';
 `;
 
   // Deliberately no aggregate "all icons" export: importing one would register every icon

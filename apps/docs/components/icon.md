@@ -124,9 +124,13 @@ declare module '@ethlete/components' {
     name: 'app-home' | 'app-search' | 'et-chevron' | 'et-times';
   }
 }
+
+export {};
 ```
 
-Once augmented, `etIcon` only accepts the listed names - include the built-in `et-*` names you render yourself.
+Once augmented, `etIcon` only accepts the listed names - include the built-in `et-*` names you render yourself. With `strictTemplates`, every binding is checked: `etIcon="typo"`, `[etIcon]="cond ? 'a' : 'typo'"`, and a plain `string` such as `[etIcon]="'icon-' + kind"` are all compile errors.
+
+The augmentation only applies when its file is part of the app's compilation. Keep the `export {}` (without it the file declares a separate ambient module), and make sure the app actually loads the file: an Angular app's `tsconfig.app.json` usually compiles `main.ts`, what it imports, and only its own `src/**/*.d.ts`, so a `.d.ts` in a library folder is silently skipped and `etIcon` stays plain `string`. Import it from code the app loads (`import type {} from './et-icon-registry';`) - the generated icons file already does this.
 
 ## Generating icons
 
@@ -145,7 +149,7 @@ It reads a config file (default `src/icons.json`) listing the icons you use:
 }
 ```
 
-and writes two files: the `IconDefinition` constants (default `src/generated/et-icons.ts`) - import and pass the ones each component needs to `provideIcons()` individually, so unused icons stay tree-shakeable - and a `.d.ts` that augments `EthleteIconNameRegistry` / `EthleteIconVariantRegistry` so `etIcon` names and variants are string-literal typed. Each SVG is normalized on the way in - `width/height="100%"`, `fill="currentColor"`, license comments stripped - so the output passes the dev-mode validation above.
+and writes two files: the `IconDefinition` constants (default `src/generated/et-icons.ts`) - import and pass the ones each component needs to `provideIcons()` individually, so unused icons stay tree-shakeable - and a `.d.ts` that augments `EthleteIconNameRegistry` / `EthleteIconVariantRegistry` so `etIcon` names and variants are string-literal typed. The icons file imports the `.d.ts`, so any app that provides a generated icon also sees the names; regenerate after updating `@ethlete/components` to get that import. Each SVG is normalized on the way in - `width/height="100%"`, `fill="currentColor"`, license comments stripped - so the output passes the dev-mode validation above.
 
 The `source` option defaults to `'auto'`, which detects Font Awesome (pro, then free) in `node_modules`; any package with a `svgs/<variant>/<name>.svg` layout works when named explicitly. Paths are configurable via `--configPath` / `--outputPath` / `--typesOutputPath`. Re-run the generator whenever the config changes - missing icons warn and are skipped rather than failing the run. No need to remember the options you used: the header comment of both generated files (`et-icons.ts` and `et-icon-registry.d.ts`) contains the exact command to regenerate them.
 
