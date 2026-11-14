@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git } from '../git-reader';
 import { createHash } from 'crypto';
 import {
   existsSync,
@@ -24,12 +24,7 @@ const IN_USE = '.in-use-';
 const INSTALL_STATES = ['.yarn-state.yml', '.package-lock.json', '.modules.yaml', '.yarn-integrity'];
 
 const gitOf = (cwd: string, args: string[]) =>
-  execFileSync('git', ['--no-optional-locks', ...args], {
-    cwd,
-    encoding: 'utf8',
-    maxBuffer: 1 << 28,
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+  git(['--no-optional-locks', ...args], { cwd, stdio: ['ignore', 'pipe', 'ignore'] });
 
 const blobShaOf = (file: string) => {
   const stat = lstatSync(file, { throwIfNoEntry: false });

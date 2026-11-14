@@ -1,4 +1,5 @@
-import { execFileSync, spawnSync } from 'child_process';
+import { gitBytes, gitBytesStatusOf } from '../../git-reader';
+import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, relative, resolve, sep } from 'path';
@@ -30,8 +31,7 @@ export type BasePort = { ported: PortedFile[]; conflicts: string[] };
 
 type Write = { path: string; content: Buffer | null; read: Buffer | null; line: string };
 
-const git = (cwd: string, args: string[]) =>
-  execFileSync('git', args, { cwd, maxBuffer: 1 << 28, stdio: ['pipe', 'pipe', 'pipe'] });
+const git = (cwd: string, args: string[]) => gitBytes(args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] });
 
 const posix = (path: string) => path.split(sep).join('/');
 
@@ -133,7 +133,7 @@ const mergedOf = (options: { scratch: string; ours: Buffer; base: Buffer; theirs
   writeFileSync(baseFile, base);
   writeFileSync(theirsFile, theirs);
 
-  const result = spawnSync('git', ['merge-file', '-p', oursFile, baseFile, theirsFile], { maxBuffer: 1 << 28 });
+  const result = gitBytesStatusOf(['merge-file', '-p', oursFile, baseFile, theirsFile]);
 
   return result.status === 0 ? result.stdout : null;
 };
@@ -150,9 +150,7 @@ const hunksOf = (options: { scratch: string; old: Buffer; fresh: Buffer }) => {
   writeFileSync(oldFile, options.old);
   writeFileSync(freshFile, options.fresh);
 
-  const diff = spawnSync('git', ['diff', '--no-index', '--no-color', '-U0', oldFile, freshFile], {
-    maxBuffer: 1 << 28,
-  });
+  const diff = gitBytesStatusOf(['diff', '--no-index', '--no-color', '-U0', oldFile, freshFile]);
 
   return diff.stdout
     .toString('utf8')

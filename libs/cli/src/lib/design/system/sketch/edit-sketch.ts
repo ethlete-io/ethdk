@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { catFilesOf, git as gitText } from '../../git-reader';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { assetDirsOf, filesBelow } from '../assets';
@@ -41,8 +41,7 @@ export type EditOldNotFound = { rule: typeof EDIT_OLD_NOT_FOUND; message: string
 
 type OldDesign = Map<string, Buffer>;
 
-const git = (root: string, args: string[]) =>
-  execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe', maxBuffer: 64 * 1024 * 1024 });
+const git = (root: string, args: string[]) => gitText(args, { cwd: root, stdio: 'pipe' });
 
 const blobsAt = ({ root, commit, paths }: { root: string; commit: string; paths: string[] }) =>
   git(root, ['ls-tree', '-r', '-z', commit, '--', ...paths.map((path) => `./${path}`)])
@@ -99,13 +98,22 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
   try {
     const tree = blobsAt({ root, commit: 'HEAD', paths: [partDir] });
 
-    if (tree.length > 0)
-      return new Map(
-        tree.map(({ oid, path }) => [
-          relative(partDir, path),
-          execFileSync('git', ['cat-file', 'blob', oid], { cwd: root, stdio: 'pipe', maxBuffer: 256 * 1024 * 1024 }),
-        ]),
+    if (tree.length > 0) {
+      const blobs = catFilesOf(
+        tree.map(({ oid }) => oid),
+        { cwd: root },
       );
+
+      return new Map(
+        tree.map(({ oid, path }, index) => {
+          const blob = blobs[index];
+
+          if (!blob) throw new Error(`git cannot read blob ${oid}`);
+
+          return [relative(partDir, path), blob];
+        }),
+      );
+    }
   } catch (error) {
     return `${part} has no history to find its old design in: ${error instanceof Error ? error.message : String(error)}`;
   }

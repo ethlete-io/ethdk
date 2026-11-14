@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git as gitText } from '../git-reader';
 import { createHash } from 'crypto';
 import {
   existsSync,
@@ -15,8 +15,7 @@ import {
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-export const git = (cwd: string, args: string[]) =>
-  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
+export const git = (cwd: string, args: string[]) => gitText(args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
 
 export const gitOrNull = (cwd: string, args: string[]) => {
   try {

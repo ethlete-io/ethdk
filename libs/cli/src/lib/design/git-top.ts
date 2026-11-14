@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git } from './git-reader';
 import { resolve } from 'path';
 
 /**
@@ -6,11 +6,4 @@ import { resolve } from 'path';
  * the real path, so paths below a symlinked `cwd` would climb out of it when made relative to that.
  */
 export const gitTopOf = (cwd: string) =>
-  resolve(
-    cwd,
-    execFileSync('git', ['rev-parse', '--show-cdup'], {
-      cwd,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim(),
-  );
+  resolve(cwd, git(['rev-parse', '--show-cdup'], { cwd, stdio: ['ignore', 'pipe', 'pipe'] }).trim());

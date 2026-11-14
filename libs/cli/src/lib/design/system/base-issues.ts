@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git } from '../git-reader';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { repoRootOf } from './reachable-files';
@@ -21,7 +21,7 @@ export const baseIssuesFileOf = (product: ResolvedProduct) =>
 
 const gitLinesOf = (root: string, args: string[]) => {
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' })
+    return git(args, { cwd: root, stdio: 'pipe' })
       .split('\n')
       .filter((line) => line !== '');
   } catch {

@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { gitBytes } from './git-reader';
 import { mkdirSync, rmSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { sketchFolderOf, SketchTarget } from './system/sketch/sketch';
@@ -17,7 +18,7 @@ export const extractSketchAt = (options: {
 }): { root: string } | { problem: string } => {
   const { target, productDir, sketch, commit, dest } = options;
   const run = (args: string[], input?: Buffer) =>
-    execFileSync('git', args, { cwd: target, input, maxBuffer: 1 << 28, stdio: ['pipe', 'pipe', 'pipe'] });
+    gitBytes(args, { cwd: target, input, stdio: ['pipe', 'pipe', 'pipe'] });
 
   try {
     const top = gitTopOf(target);

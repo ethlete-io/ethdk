@@ -1,4 +1,5 @@
 import { spawnSync } from 'child_process';
+import { gitStatusOf } from '../../git-reader';
 import {
   cpSync,
   existsSync,
@@ -35,16 +36,14 @@ export type CleanCopy = {
 };
 
 const committedInto = (options: { target: string; rel: string; to: string }) => {
-  const prefix = spawnSync('git', ['rev-parse', '--show-prefix'], { cwd: options.target, encoding: 'utf8' });
+  const prefix = gitStatusOf(['rev-parse', '--show-prefix'], { cwd: options.target });
 
   if (prefix.status !== 0) return false;
 
   const tar = resolve(dirname(options.to), `${basename(options.to)}.tar`);
-  const archived = spawnSync(
-    'git',
-    ['archive', '--format=tar', '-o', tar, `HEAD:${prefix.stdout.trim()}${options.rel}`],
-    { cwd: options.target, encoding: 'utf8' },
-  );
+  const archived = gitStatusOf(['archive', '--format=tar', '-o', tar, `HEAD:${prefix.stdout.trim()}${options.rel}`], {
+    cwd: options.target,
+  });
 
   if (archived.status !== 0) return false;
 

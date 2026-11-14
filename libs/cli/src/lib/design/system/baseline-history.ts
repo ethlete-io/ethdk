@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { catFilesOf, git as gitText } from '../git-reader';
 import { existsSync, readFileSync } from 'fs';
 import { basename, dirname } from 'path';
 
@@ -20,8 +20,7 @@ export const addedBaselineNamesOf = (options: {
 
   if (!existsSync(file)) return [];
 
-  const git = (args: string[]) =>
-    execFileSync('git', args, { cwd: dirname(file), maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+  const git = (args: string[]) => gitText(args, { cwd: dirname(file), stdio: ['ignore', 'pipe', 'pipe'] });
   const path = `./${basename(file)}`;
   let versions: string[];
 
@@ -31,13 +30,20 @@ export const addedBaselineNamesOf = (options: {
     return [];
   }
 
-  const committed = versions.map((sha) => {
-    try {
-      return new Set(identitiesOf(git(['show', `${sha}:${path}`])).map(([, identity]) => identity));
-    } catch {
-      return new Set<string>();
-    }
-  });
+  let blobs: (Buffer | null)[];
+
+  try {
+    blobs = catFilesOf(
+      versions.map((sha) => `${sha}:${path}`),
+      { cwd: dirname(file) },
+    );
+  } catch {
+    blobs = [];
+  }
+
+  const committed = versions.map(
+    (_, index) => new Set(identitiesOf(blobs[index]?.toString('utf8') ?? '').map(([, identity]) => identity)),
+  );
 
   return identitiesOf(readFileSync(file, 'utf8'))
     .filter(([, identity]) =>

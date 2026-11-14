@@ -1560,6 +1560,12 @@ verified: green under real CI load. Why no tool caught it: nothing stops code fr
 and no check counts process starts. Tool fix (backlog, per ADR 0235 at the cause): every git read in the cli goes
 through one batched git reader, and lint forbids a direct `spawnSync`/`execSync` of `git` outside it; a per-test spawn
 budget is only the fallback if the lint rule cannot cover a case.
+642 as built (2026-11-14): `libs/cli/src/lib/design/git-reader.ts` is the only place in the design cli that starts
+git (`git`, `gitBytes`, `gitStatusOf`, `gitLater`, and the batched `catFilesOf`/`showFilesOf`/`logNamesOf`); all 35
+direct spawns in 22 files moved onto it. `design task --verify` now primes its importer and wiring reads in one
+`cat-file --batch`: title-bar at f2c835d39 went from 122 `git show` processes to 2 (counted with a spawn counter over
+`importersOf`/`wiringFilesOf`). Also batched: `edit-sketch` old-design blobs and `baseline-history` versions. Scope
+decided without the lint rule; `spawnPlain(['git', ...])` callers stay as they are.
 
 643\. Builder (2026-11-09, during 7a2c46230): the 640/641 subagent overwrote the repo slice-paths file
 (`$(git rev-parse --git-path slice-paths)`) with its own paths, so the builder's slice warning checked the wrong paths.

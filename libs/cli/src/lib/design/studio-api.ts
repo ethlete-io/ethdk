@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git } from './git-reader';
 import { originOf } from './system/write-origin';
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
@@ -719,13 +719,7 @@ export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
 
 const userNameOf = (dir: string) => {
   try {
-    return (
-      execFileSync('git', ['config', 'user.name'], {
-        cwd: dir,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      }).trim() || null
-    );
+    return git(['config', 'user.name'], { cwd: dir, stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null;
   } catch {
     return null;
   }

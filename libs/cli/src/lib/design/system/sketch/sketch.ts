@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { gitStatusOf } from '../../git-reader';
 import { createHash } from 'crypto';
 import {
   cpSync,
@@ -1260,10 +1260,7 @@ const readyCommitOf = (sketch: Sketch) => {
 
   if (!recorded) return null;
 
-  const log = spawnSync('git', ['log', '-1', '--format=%H', '-S', recorded, '--', SKETCH_FILE], {
-    cwd: sketch.dir,
-    encoding: 'utf8',
-  });
+  const log = gitStatusOf(['log', '-1', '--format=%H', '-S', recorded, '--', SKETCH_FILE], { cwd: sketch.dir });
 
   return log.status === 0 && log.stdout.trim() !== '' ? log.stdout.trim() : null;
 };
@@ -1274,11 +1271,8 @@ const equalsReadyCommit = (sketch: Sketch) => {
   if (!commit) return false;
 
   const paths = [...sketch.variants, SHARED_FOLDER];
-  const diff = spawnSync('git', ['diff', '--quiet', commit, '--', ...paths], { cwd: sketch.dir });
-  const untracked = spawnSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...paths], {
-    cwd: sketch.dir,
-    encoding: 'utf8',
-  });
+  const diff = gitStatusOf(['diff', '--quiet', commit, '--', ...paths], { cwd: sketch.dir });
+  const untracked = gitStatusOf(['ls-files', '--others', '--exclude-standard', '--', ...paths], { cwd: sketch.dir });
 
   return diff.status === 0 && untracked.status === 0 && untracked.stdout === '';
 };
@@ -1481,8 +1475,7 @@ export const orphanedPickOf = (sketch: Sketch, product: string) => {
   if (decision?.kind !== 'pick' || !decision.by || decision.by === 'designer') return null;
 
   const subject = `Merge ${sketch.target} variant ${decision.variant} into ${product}`;
-  const log = spawnSync(
-    'git',
+  const log = gitStatusOf(
     [
       'log',
       '-1',
@@ -1491,7 +1484,7 @@ export const orphanedPickOf = (sketch: Sketch, product: string) => {
       `--grep=${subject}`,
       `--since=${decision.decidedAt.replace(/\.\d+Z$/, 'Z')}`,
     ],
-    { cwd: sketch.dir, encoding: 'utf8' },
+    { cwd: sketch.dir },
   );
 
   return log.status === 0 && log.stdout.trim() !== '' ? null : decision;

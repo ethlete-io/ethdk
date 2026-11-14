@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git as gitText } from '../../git-reader';
 import { createHash } from 'crypto';
 import { mkdtempSync, realpathSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
@@ -25,9 +25,8 @@ export const baselineTreeOf = (options: {
     const inRepo = (dir: string) => !relative(top, dir).startsWith('..');
     const owners = [product.dir, ...(product.base && inRepo(product.base.dir) ? [product.base.dir] : [])];
     const git = (args: string[]) =>
-      execFileSync('git', args, {
+      gitText(args, {
         cwd: top,
-        encoding: 'utf8',
         env: { ...process.env, GIT_INDEX_FILE: join(scratch, 'index') },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
@@ -58,7 +57,7 @@ export const baselineTreeRefOf = (sketchDir: string) => {
 
 const gitIn = (dir: string, args: string[]) => {
   try {
-    execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    gitText(args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
   } catch {
     return;
   }

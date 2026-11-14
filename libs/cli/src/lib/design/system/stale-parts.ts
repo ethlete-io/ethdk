@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git as gitText } from '../git-reader';
 import { dirname, relative, resolve, sep } from 'path';
 import { appFilesOf } from './app-files';
 import { changedDesignFilesOf, designHashOf, DesignHash, HashRecord, legacyHolds, recordHolds } from './design-hash';
@@ -151,10 +151,7 @@ const newerThanOf = ({ root, paths, at }: { root: string; paths: string[]; at: s
   if (Number.isNaN(since) || paths.length === 0) return paths.length > 0;
 
   try {
-    const git = (args: string[]) =>
-      execFileSync('git', ['-C', root, ...args], { maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] })
-        .toString()
-        .trim();
+    const git = (args: string[]) => gitText(['-C', root, ...args], { stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     const dirty = git(['status', '--porcelain', '--', ...paths]);
 
     if (dirty) return true;

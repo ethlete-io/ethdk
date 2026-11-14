@@ -1,4 +1,4 @@
-import { execFile } from 'child_process';
+import { gitLater } from './git-reader';
 import { appendFileSync } from 'fs';
 import { loadavg } from 'os';
 import { physicalCoresOf } from './physical-cores';
@@ -199,10 +199,7 @@ export const overTargetLineOf = (line: TimingLine) => {
   return `over target: ${labelOf(line)} took ${secondsOf(line.totalMs)} > ${secondsOf(target)} - slowest phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}${noisy}`;
 };
 
-const gitOutputOf = (cwd: string, args: string[]) =>
-  new Promise<string | null>((done) =>
-    execFile('git', ['-C', cwd, ...args], { timeout: 5000 }, (error, stdout) => done(error ? null : stdout.trim())),
-  );
+const gitOutputOf = (cwd: string, args: string[]) => gitLater(['-C', cwd, ...args], { timeout: 5000 });
 
 /** The commit `checkout` is at (short sha) and whether its tracked files differ from it, or `null` outside git. */
 export const checkoutCommitOf = async (checkout: string): Promise<TimingCommit | null> => {

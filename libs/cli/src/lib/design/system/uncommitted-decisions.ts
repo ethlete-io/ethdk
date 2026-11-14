@@ -1,14 +1,10 @@
-import { execFileSync } from 'child_process';
+import { git } from '../git-reader';
 import { ResolvedProduct } from './resolve-product';
 
 const DECISION_FILES = ['merged.json', ':(glob)sketches/*/sketch.json'];
 
 const gitLines = (cwd: string, args: string[]) =>
-  execFileSync('git', [...args, '--', ...DECISION_FILES], {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  })
+  git([...args, '--', ...DECISION_FILES], { cwd, stdio: ['ignore', 'pipe', 'ignore'] })
     .split('\n')
     .filter(Boolean);
 

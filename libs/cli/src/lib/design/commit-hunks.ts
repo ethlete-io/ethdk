@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { git as gitText } from './git-reader';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { basename, isAbsolute, join, relative, resolve } from 'path';
 import { pathToFileURL } from 'url';
@@ -88,7 +88,7 @@ export const withPartHunks = (options: {
   return REFUSAL;
 };
 
-const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' });
+const git = (cwd: string, args: string[]) => gitText(args, { cwd, stdio: 'pipe' });
 
 const LOCK_TRIES = 10;
 

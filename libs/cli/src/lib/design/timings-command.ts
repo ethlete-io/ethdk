@@ -1,5 +1,5 @@
+import { git } from './git-reader';
 import { existsSync, readFileSync } from 'fs';
-import { execFileSync } from 'child_process';
 import {
   costliestPhaseOf,
   isNoisy,
@@ -187,7 +187,7 @@ const flagOf = (argv: string[], flag: string) => {
 
 const headOf = (checkout: string) => {
   try {
-    return execFileSync('git', ['-C', checkout, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim() || null;
+    return git(['-C', checkout, 'rev-parse', '--short', 'HEAD']).trim() || null;
   } catch {
     return null;
   }

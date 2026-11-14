@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { gitStatusOf } from './git-reader';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { dirname, join, resolve, sep } from 'path';
 import { cliSourceHash } from '../source-hash';
@@ -119,7 +119,7 @@ export const builtCliChangedWarning = (options: { distDir: string }): string | n
 
   if (!commit) return null;
 
-  const diff = spawnSync('git', ['-C', distDir, 'diff', '--quiet', commit, '--', ...BUILT_PATHS], { stdio: 'ignore' });
+  const diff = gitStatusOf(['-C', distDir, 'diff', '--quiet', commit, '--', ...BUILT_PATHS], { stdio: 'ignore' });
 
   if (diff.status !== 1 || builtFromCurrentSources(distDir)) return null;
 

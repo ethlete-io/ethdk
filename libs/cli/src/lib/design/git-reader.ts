@@ -25,6 +25,10 @@ export const gitBytes = (args: string[], options: GitOptions = {}): Buffer =>
 export const gitStatusOf = (args: string[], options: GitOptions = {}) =>
   spawnSync('git', args, { maxBuffer: MAX_BUFFER, ...options, encoding: 'utf8' });
 
+/** `gitStatusOf` that answers stdout and stderr as raw bytes. */
+export const gitBytesStatusOf = (args: string[], options: GitOptions = {}) =>
+  spawnSync('git', args, { maxBuffer: MAX_BUFFER, ...options });
+
 /** One git command that does not block the event loop: the trimmed stdout, or `null` on any failure or after `timeout` ms. */
 export const gitLater = (args: string[], options: { cwd?: string; timeout?: number } = {}) =>
   new Promise<string | null>((done) =>

@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { gitStatusOf } from '../../git-reader';
 import { spawnPlain } from '../../../plain-output';
 import {
   cpSync,
@@ -168,10 +168,9 @@ const formatFiles = (target: string, files: string[]) => {
 const dirtyAmongOf = (options: { target: string; paths: string[] }) => {
   if (options.paths.length === 0) return [];
 
-  const root = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: options.target, encoding: 'utf8' });
-  const status = spawnSync('git', ['status', '--porcelain', '-z', '--untracked-files=all', '--', ...options.paths], {
+  const root = gitStatusOf(['rev-parse', '--show-toplevel'], { cwd: options.target });
+  const status = gitStatusOf(['status', '--porcelain', '-z', '--untracked-files=all', '--', ...options.paths], {
     cwd: options.target,
-    encoding: 'utf8',
   });
 
   if (root.status !== 0 || status.status !== 0) return [];

@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { gitStatusOf } from '../git-reader';
 import {
   closeSync,
   cpSync,
@@ -105,7 +105,7 @@ const drop = (dir: string) => {
 };
 
 const landed = (commit: JournalCommit) => {
-  const log = spawnSync('git', ['log', '-1', '--format=%P%x00%s'], { cwd: commit.top, encoding: 'utf8' });
+  const log = gitStatusOf(['log', '-1', '--format=%P%x00%s'], { cwd: commit.top });
 
   return log.status === 0 && log.stdout.trim() === `${commit.head}\0${commit.subject}`;
 };
@@ -124,7 +124,7 @@ const restore = (dir: string, manifest: Manifest) => {
 
   const commit = manifest.commit;
 
-  if (commit) for (const path of commit.paths) spawnSync('git', ['reset', '-q', '--', path], { cwd: commit.top });
+  if (commit) for (const path of commit.paths) gitStatusOf(['reset', '-q', '--', path], { cwd: commit.top });
 
   return 'undid';
 };
