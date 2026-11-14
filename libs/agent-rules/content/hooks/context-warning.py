@@ -52,11 +52,10 @@ ways that matter here, all captured in AGENT_PROFILES:
 
 At the critical tier, if the session's permission_mode is "auto", the
 instruction escalates from "recommend" to "just do it": auto mode already
-means the user wants the agent acting without stopping to ask, and clearing +
-resuming can't be triggered programmatically (no hook or tool can submit
-input to a running session), so the best available automation is to save the
+means the user wants the agent acting without stopping to ask, so it saves the
 handoff file itself immediately rather than waiting for a natural stopping
-point. Codex's permission_mode value set is undocumented, so its profile lists
+point. In an agent-sessions tmux pane the agent also clears and resumes itself
+with the `restart` command; elsewhere that last step stays with the user. Codex's permission_mode value set is undocumented, so its profile lists
 no auto modes and the escalation stays off there.
 
 Neither the critical tier nor the Stop event forces a handoff. A session is
@@ -193,9 +192,7 @@ AGENT_PROFILES = {
             "edit first, nothing new. Apply its own test: with every change committed, no "
             "step left and nothing running, write no file, say that instead, and recommend "
             "/clear. If a file is warranted, tell the user exactly which one was written and "
-            "that they should run /clear, then '/{handoff} resume <slug>', to continue - "
-            "clearing and resuming can't be done programmatically, so this is the one step "
-            "still on them."
+            "that they should run /clear, then '/{handoff} resume <slug>', to continue."
         ),
         "save_at_stop": (
             "save a handoff with the handoff skill, then tell the user which file was "
@@ -258,14 +255,15 @@ def handoff_skill(root):
 
 
 SELF_RESTART = (
-    "you run in an agent-sessions tmux session, so do not hand this step to the user and never ask them to clear: "
-    "apply the {handoff} skill's save test and save the handoff if it calls for a file, then run "
-    '`node {script} restart {name} "/{handoff} resume"` yourself and end the turn - with no file, '
-    "restart with a prompt that names the next step"
+    "you run in an agent-sessions tmux session, so you clear and resume yourself and never ask the user to clear: "
+    "apply the {handoff} skill's save test and save the handoff if it calls for a file, then, when every condition "
+    "of its 'Clear and resume on your own' section holds, run "
+    '`node {script} restart {name} "/{handoff} resume <slug>"` yourself and end the turn - with no file, '
+    "restart with a prompt that names the next step. Only when a condition cannot be met, tell the user"
 )
 SELF_RESTART_ACT_NOW = (
-    "Save the handoff, then run `node {script} restart {name} \"/{handoff} resume\"` yourself and end the turn. "
-    "Never ask the user to clear."
+    "Save the handoff, then run `node {script} restart {name} \"/{handoff} resume <slug>\"` yourself and end the "
+    "turn, as the {handoff} skill's 'Clear and resume on your own' section says. Never ask the user to clear."
 )
 USER_DIRECTED_KEYS = ("recommend", "suggest", "save_now", "save_at_stop")
 
@@ -279,7 +277,8 @@ def self_restart_target(root):
         (
             path
             for path in (
-                os.path.join(".agents/skills", name, "agent-sessions.mjs")
+                os.path.join(skills_dir, name, "agent-sessions.mjs")
+                for skills_dir in (".agents/skills", ".claude/skills")
                 for name in ("ethlete-agent-sessions", "agent-sessions")
             )
             if os.path.isfile(os.path.join(root, path))

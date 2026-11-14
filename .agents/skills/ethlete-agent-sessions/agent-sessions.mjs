@@ -583,12 +583,24 @@ if (command === 'send' && sender) {
   }
 } else if (command === 'shell-init' || command === 'shell-install') {
   const agents = [sender, ...words].filter(Boolean);
+  const locate = `_ethlete_agent_sessions_script() {
+  local root dir
+  root=$(git rev-parse --show-toplevel 2>/dev/null) || return 1
+  for dir in .agents/skills .claude/skills; do
+    if [ -f "$root/$dir/ethlete-agent-sessions/agent-sessions.mjs" ]; then
+      printf '%s\\n' "$root/$dir/ethlete-agent-sessions/agent-sessions.mjs"
+      return 0
+    fi
+  done
+  return 1
+}
+`;
   const functions = (agents.length ? agents : ['claude', 'codex'])
     .map(
       (agent) => `${agent}() {
-  local root script
-  root=$(git rev-parse --show-toplevel 2>/dev/null) && script="$root/.agents/skills/ethlete-agent-sessions/agent-sessions.mjs"
-  if [ -n "$script" ] && [ -f "$script" ] && command -v tmux >/dev/null; then
+  local script
+  script=$(_ethlete_agent_sessions_script)
+  if [ -n "$script" ] && command -v tmux >/dev/null; then
     node "$script" run ${agent} ${agent} "$@"
   else
     command ${agent} "$@"
@@ -596,7 +608,7 @@ if (command === 'send' && sender) {
 }
 `,
     )
-    .join('');
+    .reduce((text, fn) => text + fn, locate);
   if (command === 'shell-init') {
     process.stdout.write(functions);
   } else {

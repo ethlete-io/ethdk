@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join } from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -1041,6 +1041,22 @@ process.stdin.on('data', (data) => {
     expect(output).toContain('gemini() {');
     expect(output).toContain('command gemini "$@"');
     expect(spawnSync('bash', ['-n'], { input: output }).status).toBe(0);
+  });
+
+  it.each(['.agents/skills', '.claude/skills'])('finds the script under %s in the shell functions', (skillsDir) => {
+    const repo = join(dir, `repo-${skillsDir.replace(/\W/g, '')}`);
+    const script = join(repo, skillsDir, 'ethlete-agent-sessions/agent-sessions.mjs');
+    mkdirSync(join(repo, skillsDir, 'ethlete-agent-sessions'), { recursive: true });
+    writeFileSync(script, '');
+    spawnSync('git', ['init', '-q'], { cwd: repo });
+    const functions = run(['shell-init', 'claude']).stdout;
+
+    const located = spawnSync('bash', ['-c', `${functions}\n_ethlete_agent_sessions_script`], {
+      cwd: repo,
+      encoding: 'utf8',
+    });
+
+    expect(located.stdout.trim()).toBe(realpathSync(script));
   });
 
   it('replaces a block written under the old agent-mailbox marker', () => {

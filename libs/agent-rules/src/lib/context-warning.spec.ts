@@ -201,8 +201,11 @@ describe('context-warning handoff mode', () => {
   });
 
   describe('in a tmux pane', () => {
-    const run = (tokens: number, options: { session?: string; skill?: boolean; pane?: boolean } = {}) => {
-      const { session = 'claude@<repo>', skill = true, pane = true } = options;
+    const run = (
+      tokens: number,
+      options: { session?: string; skill?: boolean; pane?: boolean; skillsDir?: string } = {},
+    ) => {
+      const { session = 'claude@<repo>', skill = true, pane = true, skillsDir = '.agents/skills' } = options;
 
       const output = runClaudeHook({
         env: pane ? { TMUX_PANE: '%7' } : {},
@@ -210,8 +213,8 @@ describe('context-warning handoff mode', () => {
         setup: (root) => {
           const bin = join(root, 'bin');
           if (skill) {
-            mkdirSync(join(root, '.agents/skills/ethlete-agent-sessions'), { recursive: true });
-            writeFileSync(join(root, '.agents/skills/ethlete-agent-sessions/agent-sessions.mjs'), '');
+            mkdirSync(join(root, skillsDir, 'ethlete-agent-sessions'), { recursive: true });
+            writeFileSync(join(root, skillsDir, 'ethlete-agent-sessions/agent-sessions.mjs'), '');
           }
           mkdirSync(bin);
           writeFileSync(join(bin, 'tmux'), `#!/bin/sh\necho '${session.replace('<repo>', basename(root))}'\n`, {
@@ -229,9 +232,10 @@ describe('context-warning handoff mode', () => {
       const context = run(175_000);
 
       expect(context).toContain(
-        'node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart claude "/ethlete-handoff resume"',
+        'node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart claude "/ethlete-handoff resume <slug>"',
       );
-      expect(context).toContain('never ask them to clear');
+      expect(context).toContain('never ask the user to clear');
+      expect(context).toContain("'Clear and resume on your own'");
       expect(context).not.toContain('recommend the user run /');
     });
 
@@ -239,10 +243,16 @@ describe('context-warning handoff mode', () => {
       const context = run(175_000);
 
       expect(context).toContain(
-        'node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart claude "/ethlete-handoff resume"',
+        'node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart claude "/ethlete-handoff resume <slug>"',
       );
       expect(context).toContain('Never ask the user to clear.');
       expect(context).not.toContain('Run /ethlete-handoff now');
+    });
+
+    it('finds the agent-sessions script under .claude/skills', () => {
+      expect(run(175_000, { skillsDir: '.claude/skills' })).toContain(
+        'node .claude/skills/ethlete-agent-sessions/agent-sessions.mjs restart claude "/ethlete-handoff resume <slug>"',
+      );
     });
 
     it('keeps the user-directed texts without the skill, without TMUX_PANE', () => {
@@ -254,7 +264,7 @@ describe('context-warning handoff mode', () => {
 
     it('passes a session name that is not suffixed with the repo as the own name', () => {
       expect(run(175_000, { session: 'some-other-session' })).toContain(
-        'restart some-other-session "/ethlete-handoff resume"',
+        'restart some-other-session "/ethlete-handoff resume <slug>"',
       );
     });
   });
