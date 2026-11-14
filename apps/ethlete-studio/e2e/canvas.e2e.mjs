@@ -4327,7 +4327,11 @@ const work = async () => {
             new Promise((_, reject) => (reportAsyncError = reject)),
           ]);
         } catch (error) {
-          result = { ok: false, detail: String(error).split('\n')[0] };
+          const cause = error?.cause
+            ? ` (cause: ${[error.cause.code, error.cause.message].filter(Boolean).join(' ')})`
+            : '';
+
+          result = { ok: false, detail: `${String(error).split('\n')[0]}${cause}` };
         }
 
         if (!CASES[job.case].open && !CASES[job.case].listingMayPend) result = heldListings.check(result);
