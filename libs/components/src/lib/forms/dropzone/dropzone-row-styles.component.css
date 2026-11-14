@@ -1,0 +1,85 @@
+@layer components.sdk {
+  @property --et-dropzone-row-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 56px;
+  }
+
+  et-dropzone:where([data-layout='row']) {
+    .et-dropzone-area {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .et-dropzone-trigger {
+      place-items: center start;
+      min-block-size: var(--et-dropzone-row-height);
+      padding-block: 8px;
+      padding-inline: 14px;
+      border-radius: calc(var(--et-dropzone-border-radius) / 1.5);
+      text-align: start;
+    }
+
+    .et-dropzone-prompt {
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    .et-dropzone-prompt-icon {
+      flex-shrink: 0;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+
+    .et-dropzone-area > .et-dropzone-item {
+      position: relative;
+      grid-area: 1 / 1;
+      min-block-size: var(--et-dropzone-row-height);
+      padding-block: 6px;
+      border-width: var(--et-dropzone-border-width);
+      border-radius: calc(var(--et-dropzone-border-radius) / 1.5);
+
+      .et-dropzone-item-thumbnail {
+        inline-size: calc(var(--et-dropzone-row-height) - 20px);
+        block-size: calc(var(--et-dropzone-row-height) - 20px);
+      }
+
+      .et-dropzone-file-icon {
+        inline-size: 20px;
+        block-size: 20px;
+      }
+
+      &[data-status='error'] .et-dropzone-entry-meta {
+        display: none;
+      }
+
+      .et-dropzone-entry-progress {
+        position: absolute;
+        inset-block-end: 3px;
+        inset-inline: 10px;
+
+        et-progress-bar {
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  et-dropzone[data-readonly][data-layout='row'] {
+    .et-dropzone-area:not([data-has-preview]) .et-dropzone-trigger {
+      min-block-size: var(--et-dropzone-row-height);
+    }
+
+    .et-dropzone-empty {
+      flex-direction: row;
+    }
+  }
+
+  et-dropzone[data-drag-over]:where([data-layout='row']) .et-dropzone-area > .et-dropzone-item {
+    border-color: var(--et-theme-color-primary-solid, currentColor);
+    background-color: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, currentColor) 8%,
+      var(--et-surface-background-solid, transparent)
+    );
+  }
+}

@@ -48,6 +48,18 @@
     >
       <i etIcon="et-rotate-right"></i>
     </button>
+  } @else if (replaceLabel(); as replaceLabel) {
+    <button
+      [disabled]="!interactive()"
+      [attr.aria-label]="replaceLabel"
+      (click)="replace.emit()"
+      class="et-dropzone-replace-button"
+      type="button"
+      et-icon-button
+      size="sm"
+    >
+      <i etIcon="et-upload"></i>
+    </button>
   }
 
   <button

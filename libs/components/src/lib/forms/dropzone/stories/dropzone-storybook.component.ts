@@ -5,6 +5,7 @@ import { ProvideColorDirective } from '@ethlete/core';
 import { createPostQuery, createQueryClient, def, V2QueryClient } from '@ethlete/query';
 import { HintComponent } from '../../form-field/hint.component';
 import { LabelDirective } from '../../form-field/headless';
+import { DropzoneLayout } from '../dropzone.component';
 import { DROPZONE_IMPORTS } from '../dropzone.imports';
 import { createDropzoneUpload, createV2DropzoneUpload } from '../headless/dropzone-upload';
 import { dropzoneFiles } from '../headless/dropzone-validation';
@@ -32,7 +33,13 @@ const uploadMediaV2 = v2Client.post({
   selector: 'et-sb-dropzone',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-xl flex-col gap-6 p-8 font-sans">
-      <et-dropzone [formField]="demoForm.media" [upload]="upload()" [multiple]="multiple()" [crop]="crop()">
+      <et-dropzone
+        [formField]="demoForm.media"
+        [upload]="upload()"
+        [multiple]="multiple()"
+        [crop]="crop()"
+        [layout]="layout()"
+      >
         <et-label>Media</et-label>
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -49,6 +56,7 @@ export class DropzoneStorybookComponent {
   public color = input('brand');
   public hint = input('');
   public multiple = input(false);
+  public layout = input<DropzoneLayout>('area');
   public accept = input('');
   public maxFileSize = input<number | null>(null);
   public disabled = input(false);

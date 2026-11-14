@@ -43,12 +43,21 @@ import { DropzoneCropComponent } from './dropzone-crop.component';
 import { DropzoneItemComponent } from './dropzone-item.component';
 import { DropzonePreviewStylesComponent } from './dropzone-preview-styles.component';
 import { DropzoneReadonlyStylesComponent } from './dropzone-readonly-styles.component';
+import { DropzoneRowStylesComponent } from './dropzone-row-styles.component';
+import { injectUploadedAtFormatter } from './dropzone-uploaded-at';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
 import { AnyDropzoneUploadConfig } from './headless/dropzone-upload';
 import { rejectionMessage } from './headless/dropzone-validation';
 import { DropzoneLabels, injectDropzoneLabels } from './dropzone-labels';
 import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
+
+export const DROPZONE_LAYOUTS = {
+  AREA: 'area',
+  ROW: 'row',
+} as const;
+
+export type DropzoneLayout = (typeof DROPZONE_LAYOUTS)[keyof typeof DROPZONE_LAYOUTS];
 
 @Component({
   selector: 'et-dropzone',
@@ -98,6 +107,7 @@ import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.d
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
     '[attr.data-multiple]': 'dropzoneDir.multiple() || null',
+    '[attr.data-layout]': 'layout()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
@@ -109,12 +119,19 @@ export class DropzoneComponent<TValue = unknown> {
   private injector = inject(Injector);
   private renderer = injectRenderer();
   private prefersReducedMotion = injectPrefersReducedMotion();
+  private formatUploadedAt = injectUploadedAtFormatter();
 
   /**
    * The upload workflow configuration. Create it via `createDropzoneUpload()`. Its value type is the
    * type the upload and delete outputs emit.
    */
   public upload = input.required<AnyDropzoneUploadConfig<TValue>>();
+
+  /**
+   * `'area'` is the large drop area with a single file previewed inside it. `'row'` shrinks the drop area to
+   * one input-height row that shows a single file's thumbnail, data, status and actions in place.
+   */
+  public layout = input<DropzoneLayout>(DROPZONE_LAYOUTS.AREA);
 
   /** Per-instance overrides of the dropzone labels, merged over `provideDropzoneLabels()`. */
   public labels = input<Partial<DropzoneLabels> | null>(null);
@@ -147,6 +164,8 @@ export class DropzoneComponent<TValue = unknown> {
   protected singleEntry = computed(() =>
     this.dropzoneDir.multiple() ? null : (this.dropzoneDir.entries()[0] ?? null),
   );
+
+  protected singleEntryUploadedAt = computed(() => this.formatUploadedAt(this.singleEntry()?.uploadedAt() ?? null));
 
   protected pendingCrop = computed(() => this.dropzoneDir.pendingCrops()[0] ?? null);
 
@@ -194,7 +213,12 @@ export class DropzoneComponent<TValue = unknown> {
     });
 
     effect(() => {
-      if (this.singleEntry()) styleManager.mount(DropzonePreviewStylesComponent);
+      if (this.singleEntry() && this.layout() === DROPZONE_LAYOUTS.AREA)
+        styleManager.mount(DropzonePreviewStylesComponent);
+    });
+
+    effect(() => {
+      if (this.layout() === DROPZONE_LAYOUTS.ROW) styleManager.mount(DropzoneRowStylesComponent);
     });
 
     effect(() => {

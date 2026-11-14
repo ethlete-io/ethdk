@@ -38,10 +38,10 @@ export const createDropzoneDriver = <T>(fixture: ComponentFixture<T>, options: C
     dropzone: base.control,
 
     attr: (name: string) => dropzoneEl().getAttribute(name),
-    drag: (type: string, files: File[] = []) => {
+    drag: (type: string, files: File[] = [], target: HTMLElement = dropzoneEl()) => {
       const event = dragEvent(type, files);
 
-      dropzoneEl().dispatchEvent(event);
+      target.dispatchEvent(event);
       tick();
 
       return event as DragEvent;

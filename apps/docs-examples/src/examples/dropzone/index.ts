@@ -12,4 +12,6 @@ export const DROPZONE_EXAMPLES = {
   'dropzone/dropzone-crop': () => import('./dropzone-crop.example').then((m) => m.DropzoneCropExampleComponent),
   'dropzone/dropzone-file-data': () =>
     import('./dropzone-file-data.example').then((m) => m.DropzoneFileDataExampleComponent),
+  'dropzone/dropzone-compact-row': () =>
+    import('./dropzone-compact-row.example').then((m) => m.DropzoneCompactRowExampleComponent),
 };

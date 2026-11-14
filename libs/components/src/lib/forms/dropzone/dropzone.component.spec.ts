@@ -8,7 +8,7 @@ import { flushFrames } from '../../testing/driver-core';
 import { LabelDirective } from '../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../testing/dropzone-driver';
 import { provideDropzoneLabels } from './dropzone-labels';
-import { DropzoneComponent } from './dropzone.component';
+import { DropzoneComponent, DropzoneLayout } from './dropzone.component';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './headless/dropzone-upload';
 import { DropzoneFileConstraints, dropzoneFiles } from './headless/dropzone-validation';
 
@@ -27,6 +27,7 @@ const createFile = (name = 'photo.png', type = 'image/png', size = 4) =>
       [multiple]="multiple()"
       [readonly]="readonly()"
       [disabled]="disabled()"
+      [layout]="layout()"
     >
       <et-label>Attachments</et-label>
     </et-dropzone>
@@ -38,6 +39,7 @@ class DropzoneComponentTestHost {
   multiple = signal(false);
   readonly = signal(false);
   disabled = signal(false);
+  layout = signal<DropzoneLayout>('area');
   value = signal<string | string[] | null>(null);
 }
 
@@ -722,5 +724,164 @@ describe('DropzoneComponent with file data and server responses', () => {
     expect(item(1).querySelector('.et-dropzone-entry-error')?.textContent?.trim()).toBe('Upload failed');
     expect(driver.internalErrorsText()).toContain('"a.png": Too dark');
     expect(driver.internalErrorsText()).toContain('"b.png" failed to upload.');
+  });
+});
+
+describe('DropzoneComponent single-file layouts', () => {
+  type MediaResponse = { uuid: string; thumbnail: string; uploadedAt: string };
+  type MediaArgs = { response: MediaResponse; body: FormData };
+
+  let driver: MountedDropzoneDriver<DropzoneComponentTestHost>;
+  const element = () => driver.fixture.nativeElement as HTMLElement;
+  const rowItem = () => element().querySelector<HTMLElement>('.et-dropzone-area > et-dropzone-item');
+  const rowChild = (selector: string) => rowItem()?.querySelector<HTMLElement>(selector) ?? null;
+  const previewChild = (selector: string) => driver.previewEl()?.querySelector<HTMLElement>(selector) ?? null;
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
+    URL.revokeObjectURL = vi.fn();
+
+    driver = mountDropzone(DropzoneComponentTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<MediaArgs, string>({
+          queryCreator: query.createPost<MediaArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+          selectFileInfo: (response) => ({ previewUrl: response.thumbnail, uploadedAt: response.uploadedAt }),
+          resolveExisting: (value) => ({
+            name: `${value}.jpg`,
+            size: 1536,
+            previewUrl: `https://cdn.test.com/${value}.jpg`,
+            uploadedAt: '2026-03-01T10:00:00.000Z',
+          }),
+        }),
+    });
+  });
+
+  afterEach(() => {
+    driver.fixture.destroy();
+    driver.query.httpTesting.verify();
+  });
+
+  describe('row', () => {
+    beforeEach(() => {
+      driver.host.layout.set('row');
+      driver.tick();
+    });
+
+    it('should render an empty row with the prompt and no entry', () => {
+      expect(driver.attr('data-layout')).toBe('row');
+      expect(driver.triggerEl().textContent).toContain('Drag & drop or click to browse');
+      expect(rowItem()).toBeNull();
+    });
+
+    it('should render an uploaded file as a row instead of the large preview', () => {
+      driver.pickFiles([createFile('a.png')]);
+      driver.query.httpTesting
+        .expectOne(UPLOAD_URL)
+        .flush({ uuid: 'uuid-a', thumbnail: 'https://cdn.test.com/a.jpg', uploadedAt: '2026-04-02T08:00:00.000Z' });
+      driver.tick();
+
+      expect(driver.host.value()).toBe('uuid-a');
+      expect(driver.previewEl()).toBeNull();
+      expect(element().querySelector('.et-dropzone-list')).toBeNull();
+      expect(rowItem()!.getAttribute('role')).toBeNull();
+      expect(rowItem()!.getAttribute('data-status')).toBe('success');
+      expect(rowChild('.et-dropzone-entry-name')?.textContent).toBe('a.png');
+      expect(rowChild('.et-dropzone-entry-size')?.textContent).toBe('4 B');
+      expect(rowChild('.et-dropzone-entry-date')?.getAttribute('datetime')).toBe('2026-04-02T08:00:00.000Z');
+      expect(rowChild('img')?.getAttribute('src')).toBe('https://cdn.test.com/a.jpg');
+      expect(rowChild('.et-dropzone-replace-button')?.getAttribute('aria-label')).toBe('Replace file');
+    });
+
+    it('should upload a file dropped onto the row', () => {
+      driver.drag('drop', [createFile('dropped.png')], driver.triggerEl());
+      driver.query.httpTesting
+        .expectOne(UPLOAD_URL)
+        .flush({ uuid: 'uuid-d', thumbnail: 'https://cdn.test.com/d.jpg', uploadedAt: '2026-04-02T08:00:00.000Z' });
+      driver.tick();
+
+      expect(driver.host.value()).toBe('uuid-d');
+
+      driver.drag('drop', [createFile('second.png')], rowItem()!);
+      driver.query.httpTesting
+        .expectOne(UPLOAD_URL)
+        .flush({ uuid: 'uuid-e', thumbnail: 'https://cdn.test.com/e.jpg', uploadedAt: '2026-04-02T08:00:00.000Z' });
+      driver.tick();
+
+      expect(driver.host.value()).toBe('uuid-e');
+      expect(rowChild('.et-dropzone-entry-name')?.textContent).toBe('second.png');
+    });
+
+    it('should show the server error and retry the failed upload', () => {
+      driver.pickFiles([createFile('fail.png')]);
+      driver.query.httpTesting
+        .expectOne(UPLOAD_URL)
+        .flush({ message: 'Too dark' }, { status: 422, statusText: 'Unprocessable Entity' });
+      driver.tick();
+
+      expect(rowItem()!.getAttribute('data-status')).toBe('error');
+      expect(rowChild('.et-dropzone-entry-error')?.textContent?.trim()).toBe('Too dark');
+      expect(rowChild('.et-dropzone-replace-button')).toBeNull();
+
+      driver.click(rowChild('.et-dropzone-retry-button')!);
+      driver.query.httpTesting
+        .expectOne(UPLOAD_URL)
+        .flush({ uuid: 'uuid-r', thumbnail: 'https://cdn.test.com/r.jpg', uploadedAt: '2026-04-02T08:00:00.000Z' });
+      driver.tick();
+
+      expect(driver.host.value()).toBe('uuid-r');
+      expect(rowChild('.et-dropzone-entry-error')).toBeNull();
+    });
+
+    it('should show the fallback label for a failure without a server message', () => {
+      driver.pickFiles([createFile('a.png')]);
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush(null, { status: 500, statusText: 'Server Error' });
+      driver.tick();
+
+      expect(rowChild('.et-dropzone-entry-error')?.textContent?.trim()).toBe('Upload failed');
+    });
+
+    it('should remove the file and open the file picker from the replace action', () => {
+      driver.host.value.set('e1');
+      driver.tick();
+
+      const pickerClick = vi.spyOn(driver.nativeInput(), 'click');
+
+      driver.click(rowChild('.et-dropzone-replace-button')!);
+
+      expect(pickerClick).toHaveBeenCalledTimes(1);
+
+      driver.click(rowChild('.et-dropzone-remove-button')!);
+
+      expect(driver.host.value()).toBeNull();
+      expect(rowItem()).toBeNull();
+    });
+  });
+
+  describe('area', () => {
+    it('should show the upload date of an existing file in the preview', () => {
+      driver.host.value.set('e1');
+      driver.tick();
+
+      expect(previewChild('.et-dropzone-entry-size')?.textContent).toBe('1.5 KB');
+      expect(previewChild('.et-dropzone-entry-date')?.getAttribute('datetime')).toBe('2026-03-01T10:00:00.000Z');
+      expect(previewChild('.et-dropzone-entry-date')?.textContent).toContain('2026');
+    });
+
+    it('should show the server error of a failed file in the preview, or the fallback label', () => {
+      driver.pickFiles([createFile('a.png')]);
+      driver.query.httpTesting
+        .expectOne(UPLOAD_URL)
+        .flush({ message: 'Too dark' }, { status: 422, statusText: 'Unprocessable Entity' });
+      driver.tick();
+
+      expect(previewChild('.et-dropzone-entry-error')?.textContent?.trim()).toBe('Too dark');
+
+      driver.click(driver.previewEl()!.querySelector<HTMLElement>('.et-dropzone-retry-button')!);
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush(null, { status: 500, statusText: 'Server Error' });
+      driver.tick();
+
+      expect(previewChild('.et-dropzone-entry-error')?.textContent?.trim()).toBe('Upload failed');
+    });
   });
 });

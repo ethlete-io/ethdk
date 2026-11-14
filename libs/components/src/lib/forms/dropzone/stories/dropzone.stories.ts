@@ -17,6 +17,7 @@ export default {
     hint: { control: 'text' },
     accept: { control: 'text' },
     multiple: { control: 'boolean' },
+    layout: { control: 'inline-radio', options: ['area', 'row'] },
     maxFileSize: { control: 'number' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
@@ -32,6 +33,7 @@ export default {
     hint: '',
     accept: '',
     multiple: false,
+    layout: 'area',
     maxFileSize: null,
     disabled: false,
     readonly: false,
@@ -109,6 +111,22 @@ export const ServerResponse: Story = {
   args: {
     multiple: true,
     serverResponse: true,
+    hint: 'The server response sets the thumbnail and upload date. Files named "fail…" are rejected by the server.',
+  },
+};
+
+export const CompactRow: Story = {
+  args: {
+    layout: 'row',
+    hint: 'A single file shown as one input-height row. Drop a file onto it or use the row actions.',
+  },
+};
+
+export const CompactRowServerResponse: Story = {
+  args: {
+    layout: 'row',
+    serverResponse: true,
+    initialValue: 'mountain',
     hint: 'The server response sets the thumbnail and upload date. Files named "fail…" are rejected by the server.',
   },
 };

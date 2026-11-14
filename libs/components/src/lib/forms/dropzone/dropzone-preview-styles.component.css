@@ -35,8 +35,24 @@
       color: rgb(var(--et-on-scrim-color-rgb, 255 255 255));
       transition: translate var(--et-dropzone-transition-duration) ease;
 
-      .et-dropzone-entry-size {
+      .et-dropzone-entry-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 8px;
+        font-size: 12px;
         color: rgb(var(--et-on-scrim-color-rgb, 255 255 255) / 0.7);
+      }
+
+      .et-dropzone-entry-size {
+        color: inherit;
+      }
+
+      .et-dropzone-entry-error {
+        overflow: hidden;
+        font-size: 12px;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
 

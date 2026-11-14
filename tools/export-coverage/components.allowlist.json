@@ -2,6 +2,7 @@
   "CHOICE_FIELD_LABEL_POSITIONS": "constant: value set of the choice field labelPosition input",
   "CHOICE_FIELD_LAYOUTS": "constant: value set of the choice field layout input",
   "DEFAULT_FORM_FIELD_DEFAULTS": "constant: default value of provideFormFieldDefaults",
+  "DROPZONE_LAYOUTS": "constant: value set of the dropzone layout input",
   "INPUT_CLEAR_IMPORTS": "imports tuple: covered by input-clear.directive.spec.ts and the input story",
   "InputClearDirective": "opt-in et-input clear button: covered by input-clear.directive.spec.ts",
   "KBD_LABELS": "token: read through injectKbdLabels, set through provideKbdLabels",

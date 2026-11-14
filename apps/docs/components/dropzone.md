@@ -166,6 +166,7 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 | `maxFileSize`        | `number \| undefined`                        | `undefined`        | Largest accepted file in bytes.                                                                                          |
 | `minFileSize`        | `number \| undefined`                        | `undefined`        | Smallest accepted file in bytes.                                                                                         |
 | `crop`               | `DropzoneCropConfig \| null`                 | `null`             | Sends picked images through a [crop step](#crop) before they upload.                                                     |
+| `layout`             | `'area' \| 'row'`                            | `'area'`           | `'row'` shrinks the drop area to one input-height row that holds a single file - see [compact row](#compact-row).        |
 | `readonly`           | `boolean`                                    | `false`            | View-only: the entries stay visible, nothing can change.                                                                 |
 | `hidden`             | `boolean`                                    | `false`            | Hides the whole field. A schema `hidden(...)` rule does the same without the input.                                      |
 | `warnings`           | `string \| … \| null`                        | `null`             | Advisories for a dropzone not bound to signal forms - see [warnings](/components/forms#warnings-valid-but-worth-a-look). |
@@ -177,7 +178,7 @@ Plus the shared control members: the `value` (`TValue \| TValue[] \| null`) and
 `touched` models and the `disabled`, `invalid`, `errors`, `required`, `name` and
 `aria-label`/`aria-labelledby` inputs - see [Forms](/components/forms).
 
-`color`, `labels`, `upload` and `uploadErrorMessage` are the component's own; the
+`color`, `labels`, `layout`, `upload` and `uploadErrorMessage` are the component's own; the
 rest is forwarded to the headless directive. `et-dropzone` takes its `TValue` from the
 `upload` config, so the outputs below are typed by it (`deleteSucceed` emits a `string`
 for a config whose `selectValue` returns one):
@@ -281,9 +282,31 @@ upload = createDropzoneUpload<UploadMediaArgs, string>({
 | `previewUrl` | `string \| null`                   | the thumbnail                                 |
 | `uploadedAt` | `Date \| string \| number \| null` | the date, formatted for `injectLocale()`      |
 
-Each entry also carries the server's raw response as `entry.response()` - `null` until its upload succeeded, and for existing values. A failed upload whose body carries a message (`{ message }`, a list of `{ message }` items, or a `detail` string) shows that message on the entry in the file list, and in the `"name": <server message>` sentence below the field. Without one the entry shows the `entryUploadFailed` label (`Upload failed`):
+Each entry also carries the server's raw response as `entry.response()` - `null` until its upload succeeded, and for existing values. A failed upload whose body carries a message (`{ message }`, a list of `{ message }` items, or a `detail` string) shows that message on the entry (the list item, the single-file preview or the [compact row](#compact-row)), and in the `"name": <server message>` sentence below the field. Without one the entry shows the `entryUploadFailed` label (`Upload failed`):
 
 @example dropzone/dropzone-file-data 560px
+
+The single-file preview shows the same data: name, size and upload date, and on a failed upload the server message
+or the `entryUploadFailed` label.
+
+## Compact row
+
+`layout="row"` turns a single-file dropzone into one input-height row, for forms where a 160px drop area is too much.
+Empty, the row is the drop target and opens the file picker, with the prompt on one line. With a file in it, the row
+shows the thumbnail (or the file icon), the name, size and upload date, a thin progress bar while uploading, and the
+server message or `entryUploadFailed` label on a failed upload. Its actions are retry (on a failed upload) or replace
+(`replaceFile`), and remove. Files can still be dropped onto the row; a new file replaces the current one.
+
+```html
+<et-dropzone [formField]="form.contract" [upload]="upload" layout="row">
+  <et-label>Signed contract</et-label>
+</et-dropzone>
+```
+
+@example dropzone/dropzone-compact-row 300px
+
+With `multiple`, `layout="row"` only shrinks the drop area; the files still list below it. The row height is
+`--et-dropzone-row-height`.
 
 ## Crop
 
@@ -342,7 +365,7 @@ handle.execute();
 - Label/hint/error wiring comes from the shared form-field chrome: the trigger carries `aria-labelledby` (from `et-label`), `aria-describedby` (hint/error region) and `aria-invalid`.
 - A polite live region announces upload activity ("Uploading 2 files"); rejected files surface as regular validation errors, upload failures render in a `role="alert"` region below the field.
 - Remove, replace and retry buttons are regular [icon buttons](/components/button) carrying per-entry `aria-label`s including the file name; previews and thumbnails are `aria-hidden`/empty-`alt`.
-- In single mode with a preview shown, the (visually replaced) trigger is removed from the tab order in favor of the replace/remove actions.
+- In single mode with a preview or a compact row shown, the (visually replaced) trigger is removed from the tab order in favor of the replace/remove actions.
 - The crop frame is a focusable `role="group"` named by the `cropArea` label, which also tells how the arrow keys work.
 - Entry enter/leave animations (scale/fade plus a FLIP shift of the remaining list items on delete) are disabled under `prefers-reduced-motion`.
 
@@ -354,6 +377,7 @@ Colors come from the app-registered [surface and color theme systems](/component
 | ----------------------------------- | ------- | ------------------------------------- |
 | `--et-dropzone-min-height`          | `160px` | Drop area height                      |
 | `--et-dropzone-readonly-min-height` | `96px`  | Height of an empty read-only box      |
+| `--et-dropzone-row-height`          | `56px`  | Height of the compact row layout      |
 | `--et-dropzone-border-radius`       | `12px`  | Drop area corner radius               |
 | `--et-dropzone-border-width`        | `2px`   | Dashed border width                   |
 | `--et-dropzone-gap`                 | `10px`  | Vertical gap between building blocks  |
