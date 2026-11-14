@@ -76,7 +76,7 @@
     "components/tabs": "965ae70a1a173a15",
     "components/textarea": "7ac4a67d54c0a797",
     "components/timeline": "f80aff4bf0d6c3b4",
-    "components/title-bar": "10dca6e38b5e7560",
+    "components/title-bar": "31744cd6fbb521a5",
     "components/title-search": "5ecaabf10ac93d2f",
     "components/toolbar": "8963a8ba9a488f1b",
     "components/tooltip": "d8d78f8928e32679",
@@ -98,7 +98,7 @@
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "ceb89644f2adadc57b27a3622646948862e0401f",
+  "baselineTree": "56d3526c7f08d651bb96ad421fdfd81401c5f811",
   "rounds": [
     {
       "key": "r1",
