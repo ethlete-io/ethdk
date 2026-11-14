@@ -511,8 +511,10 @@ const frameBoxes = (page, selector) =>
 
       return [...(canvas?.querySelectorAll(selector) ?? [])].map((frame) => {
         const { left, top, width, height } = frame.getBoundingClientRect();
+        const content = Number.parseFloat(frame.firstElementChild?.style.width ?? '');
+        const zoom = width / (frame.hasAttribute('data-sk-frame') && content > 0 ? content : frame.offsetWidth || 1);
 
-        return { left, top, width, height, iframe: !!frame.querySelector('iframe') };
+        return { left, top, width, height, zoom, iframe: !!frame.querySelector('iframe') };
       });
     },
     { CANVAS, selector },
@@ -1127,11 +1129,12 @@ const CASES = [
 
       const zoomed = (await frameBoxes(page, selector))[index];
       const pans = Math.abs(panned.top - before.top) > 20 || Math.abs(panned.left - before.left) > 20;
-      const zooms = zoomed.width > panned.width * 1.05;
+      // A sketch row stays at the 1440 px fallback until its iframe measures it, which can land between two reads.
+      const zooms = zoomed.zoom > panned.zoom * 1.05;
 
       return {
         ok: pans && zooms,
-        detail: `iframe=${before.iframe} top ${before.top.toFixed(0)} -> ${panned.top.toFixed(0)} width ${panned.width.toFixed(0)} -> ${zoomed.width.toFixed(0)}`,
+        detail: `iframe=${before.iframe} top ${before.top.toFixed(0)} -> ${panned.top.toFixed(0)} width ${panned.width.toFixed(0)} -> ${zoomed.width.toFixed(0)} zoom ${panned.zoom.toFixed(3)} -> ${zoomed.zoom.toFixed(3)}`,
       };
     },
   },
@@ -1634,6 +1637,49 @@ const CASES = [
       const badge = (await status.textContent().catch(() => null))?.trim() ?? null;
 
       return { ok: offered === 1 && badge !== 'Wird geprüft', detail: `offered=${offered} badge=${badge}` };
+    },
+  },
+  {
+    name: 'an open points row that names a part opens that part',
+    listingMayPend:
+      'the row comes from a faked open-points response and the part from the system listing, neither held',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const part = 'pages/sketches';
+
+      await page.route('**/__design/open-points?*', (route) =>
+        route.fulfill({
+          json: {
+            points: [],
+            buildReady: { ready: false, blockers: [{ kind: 'embedded', text: `${part} is not build-ready`, part }] },
+          },
+        }),
+      );
+      await page.reload();
+      await page.locator('[data-open-points-chip]').first().click();
+
+      const row = page.locator('[role="dialog"] [data-open-point-target]', { hasText: part });
+
+      await row.waitFor({ timeout: 20000 }).catch(() => undefined);
+
+      const rows = await row.count();
+
+      if (process.env['STUDIO_E2E_SHOTS'])
+        await page.screenshot({ path: join(process.env['STUDIO_E2E_SHOTS'], 'open-points-part-row.png') });
+      if (rows === 1) await row.click();
+      await settle(page);
+      await page.unroute('**/__design/open-points?*');
+
+      const after = await page.evaluate(() => ({
+        open: !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'),
+        entry: JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry ?? null,
+      }));
+
+      return {
+        ok: rows === 1 && !after.open && after.entry === part,
+        detail: `rows=${rows} open=${after.open} entry=${after.entry}`,
+      };
     },
   },
   {

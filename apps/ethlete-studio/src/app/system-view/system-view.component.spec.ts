@@ -270,7 +270,10 @@ describe('SystemViewComponent on a reload', () => {
 
     const rows = document.querySelectorAll<HTMLButtonElement>('ethlete-open-points-popover [data-open-point-target]');
 
-    expect([...rows].map((row) => row.textContent?.trim())).toEqual(['Wartet auf den Agentenhover']);
+    expect([...rows].map((row) => row.textContent?.trim())).toEqual([
+      'Wartet auf den Agentenhover',
+      'rest → hovermotion',
+    ]);
 
     rows[0]?.click();
     await settle(fixture);
@@ -1646,6 +1649,40 @@ describe('SystemViewComponent on a tree pick', () => {
     expect(document.querySelector('ethlete-open-points-popover')).toBeNull();
     expect(rememberedView().systemEntry).toBe('sketch:elements/rating@edit');
     expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
+  });
+
+  it('closes the popover and opens the part a blocker row names', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/open-points'))
+        return json({
+          points: [],
+          buildReady: {
+            ready: false,
+            blockers: [{ kind: 'embedded', text: 'foundations/tokens is not build-ready', part: 'foundations/tokens' }],
+          },
+        });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    element.querySelector<HTMLButtonElement>('[data-open-points-chip]')?.click();
+    await settle(fixture);
+
+    const row = document.querySelector<HTMLButtonElement>('ethlete-open-points-popover [data-open-point-target]');
+
+    expect(row?.textContent).toContain('foundations/tokens ist noch nicht baubereit');
+
+    row?.click();
+    await settle(fixture);
+
+    expect(document.querySelector('ethlete-open-points-popover')).toBeNull();
+    expect(rememberedView().systemEntry).toBe('foundations/tokens');
   });
 
   it('opens the sketch view on a sketch row whose old variant fails to render', async () => {

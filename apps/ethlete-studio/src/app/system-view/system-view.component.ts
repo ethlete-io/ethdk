@@ -352,9 +352,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     } @else {
       <ethlete-shell-page [section]="section()" [shell]="pageShell()" (action)="runShellAction($event)">
         <div
+          [ethleteRememberedTreeScroll]="listsRead()"
           class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto"
           shellMainSide
-          ethleteRememberedTreeScroll
         >
           <ng-container [ngTemplateOutlet]="sideTree" />
         </div>
@@ -591,7 +591,7 @@ export class SystemViewComponent {
     return read && read.product === this.product()?.name ? read.error : null;
   });
 
-  private listsRead = computed(
+  protected listsRead = computed(
     () => this.callList() !== null && this.sketchList() !== null && this.flowList() !== null,
   );
 
@@ -1357,6 +1357,8 @@ export class SystemViewComponent {
         return this.activate(sketchKeyOf(target.target));
       case 'sketch':
         return this.openSketch(part, target);
+      case 'part':
+        return this.activate(target.part);
     }
   }
 

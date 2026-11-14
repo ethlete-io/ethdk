@@ -7,7 +7,8 @@ export type OpenPointTarget =
   | { kind: 'state'; state: string }
   | { kind: 'comment'; comment: string }
   | { kind: 'sketch'; sketch: string; variant?: string }
-  | { kind: 'edit-sketch'; target: string };
+  | { kind: 'edit-sketch'; target: string }
+  | { kind: 'part'; part: string };
 
 export type OpenPointLine = { text: string; detail: string; target?: OpenPointTarget };
 

@@ -52,7 +52,11 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
         target: { kind: 'sketch', sketch: point.sketch, variant: point.variant },
       };
     case 'missing-motion':
-      return { text: `${point.from} → ${point.to}`, detail: 'motion' };
+      return {
+        text: `${point.from} → ${point.to}`,
+        detail: 'motion',
+        target: { kind: 'state', state: point.from },
+      };
   }
 };
 
@@ -85,7 +89,11 @@ const blockerLinesOf = ({ buildReady }: PartOpenPoints): OpenPointLine[] =>
     ? []
     : buildReady.blockers
         .filter((blocker) => blocker.kind !== 'open-point')
-        .map((blocker) => ({ text: blockerTextOf(blocker), detail: blocker.part ?? blocker.kind }));
+        .map((blocker) =>
+          blocker.part
+            ? { text: blockerTextOf(blocker), detail: blocker.part, target: { kind: 'part', part: blocker.part } }
+            : { text: blockerTextOf(blocker), detail: blocker.kind },
+        );
 
 /**
  * The open points of a part grouped by icon, in the order the chip popover lists them; the build-ready blockers that

@@ -48,10 +48,17 @@ describe('openPointGroupsOf', () => {
             text: 'Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen',
             detail: 'stale-record',
           },
-          { text: 'elements/icon ist noch nicht baubereit', detail: 'elements/icon' },
+          {
+            text: 'elements/icon ist noch nicht baubereit',
+            detail: 'elements/icon',
+            target: { kind: 'part', part: 'elements/icon' },
+          },
         ],
       },
-      { icon: 'flow', lines: [{ text: 'rest → hover', detail: 'motion' }] },
+      {
+        icon: 'flow',
+        lines: [{ text: 'rest → hover', detail: 'motion', target: { kind: 'state', state: 'rest' } }],
+      },
     ]);
   });
 
@@ -119,14 +126,31 @@ describe('openPointGroupsOf', () => {
       points: [
         { kind: 'missing-state', control: null },
         { kind: 'missing-state', control: 'size' },
-        { kind: 'missing-motion', from: 'rest', to: 'hover' },
         { kind: 'direct-edit', sketch: null },
       ],
-      buildReady: { ready: false, blockers: [{ kind: 'embedded', text: 'x', part: 'elements/icon' }] },
+      buildReady: {
+        ready: false,
+        blockers: [
+          { kind: 'stale-record', text: 'x' },
+          { kind: 'embedded', text: 'x is not build-ready' },
+        ],
+      },
     }).flatMap((group) => group.lines);
 
     expect(lines).toHaveLength(5);
     expect(lines.filter((line) => line.target)).toEqual([]);
+  });
+
+  it('opens a missing motion at its start state and a blocker that names a part at that part', () => {
+    const targets = openPointGroupsOf({
+      points: [{ kind: 'missing-motion', from: 'busy', to: 'idle' }],
+      buildReady: { ready: false, blockers: [{ kind: 'embedded', text: 'x', part: 'components/badge' }] },
+    }).flatMap((group) => group.lines.map((line) => line.target));
+
+    expect(targets).toEqual([
+      { kind: 'part', part: 'components/badge' },
+      { kind: 'state', state: 'busy' },
+    ]);
   });
 
   it('has no group without a point on a build-ready part', () => {

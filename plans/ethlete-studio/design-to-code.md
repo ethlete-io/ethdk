@@ -3553,9 +3553,13 @@ keeps its `title` on the ratio chips: it is the chip's only label. B11 stays ope
 
 A17 as built (Linux builder, 2026-11-13): the part tree list scroll position is stored as `treeScroll` in the remembered ViewState (one tree for all views) and written 150 ms after the last scroll. `RememberedTreeScrollDirective` on the tree scroller restores it after the first render tall enough (afterEveryRender, no timer). Verified: spec, e2e "the part tree keeps its scroll position after a reload" red/green, also with `--hold-listings 14000`. Not verified: other platforms.
 
+A17 fix as built (2026-11-14): the restore also waits until all listings are read (`listsRead`), so a late Sketches group no longer shifts the restored rows (CI showed 300 -> 475 via scroll anchoring). Verified: e2e case red, then 3x green with `--hold-listings 14000` and 1x without. Not verified: CI under load.
+
 A23 as built (2026-11-13): Verwerfen in the sketch header opens an SDK anchored alertdialog (Abbrechen focused,
 Verwerfen in the error theme); only that Verwerfen posts the discard. The comment draft's Abbrechen gets no confirm.
 Verified: spec and e2e red without the confirm. Not verified: Tauri, a screen reader.
+
+A30 as built (2026-11-14): on top of f41f6be36 (state, comment, sketch, edit-sketch rows), a missing-motion row opens its `from` state and a blocker row naming a part (embedded) opens that part (`part` target); rows stay plain without a place (no controls, undrawn control, direct edit without sketch, stale record, pending, no harness). Verified: specs, e2e "an open points row that names a part opens that part" red, then green, also with `--hold-listings 14000`, live shot. Not verified: Tauri, a screen reader.
 
 A2 as built (2026-11-13, 30f13ee56): title search click or Ctrl+K opens the SDK command palette; no drawn "neu zeichnen"
 command; first Esc clears. Verified specs, typecheck, lint; no live shot.
