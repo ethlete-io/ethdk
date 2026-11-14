@@ -112,9 +112,9 @@
       display: flex;
       align-items: center;
       font-size: var(--et-form-field-label-font-size);
-      font-weight: 500;
+      font-weight: var(--et-form-field-label-font-weight, 500);
       line-height: 1.2;
-      letter-spacing: -0.01em;
+      letter-spacing: var(--et-form-field-label-letter-spacing, -0.01em);
       color: var(--et-surface-color-muted-solid, currentColor);
       cursor: text;
       -webkit-user-select: none;
@@ -248,6 +248,11 @@
       align-items: center;
       flex: 1;
       min-inline-size: 0;
+      letter-spacing: var(--et-form-field-letter-spacing);
+    }
+
+    .et-form-field-control-slot :where(input, textarea) {
+      letter-spacing: var(--et-form-field-letter-spacing, revert-layer);
     }
 
     .et-form-field-support {

@@ -952,9 +952,15 @@ A form can be migrated one screen at a time; the cdk and the components controls
 
 The field shell declares public design tokens; override them in your CSS scope:
 
-| Component       | Tokens                                                                                                                                                                                                                                                                                                                  |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration` |
+| Component       | Tokens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`, `-control-border-color` / `-border-color-hover` / `-border-color-focus` / `-focus-ring-width`, `-value-color` / `-value-color-active`, `-label-font-weight` / `-label-letter-spacing`, `-letter-spacing` |
+
+The border colours and `-value-color` default to the surface theme. `-value-color-active` applies
+while the frame is hovered, focused or open, and falls back to `-value-color`. The focus ring is drawn
+inside the border at `-control-focus-ring-width` (default: the border width); set it to `0px` for a
+plain border in `-control-border-color-focus`. In the error state the error theme still colours the
+border. `-letter-spacing` sets the value text; unset, it is inherited.
 
 `--et-form-field-control-border-radius` is read from any ancestor, `:root` included; unset, the
 radius follows `size` (`4px` / `5px` / `6px` for `sm` / `md` / `lg`).

@@ -47,13 +47,22 @@
        injected by the control, so a control instantiated before any form-field would inject it
        *before* the base sheet and lose every source-order tie against the base frame/label rules. */
     &[data-text-shell] {
-      --_et-form-field-frame-border: var(--et-surface-interaction-solid, currentColor);
-      --_et-form-field-frame-border-hover: color-mix(
-        in srgb,
-        var(--et-surface-interaction-solid, currentColor) 75%,
+      --_et-form-field-frame-border: var(
+        --et-form-field-control-border-color,
+        var(--et-surface-interaction-solid, currentColor)
+      );
+      --_et-form-field-frame-border-hover: var(
+        --et-form-field-control-border-color-hover,
+        color-mix(
+          in srgb,
+          var(--et-surface-interaction-solid, currentColor) 75%,
+          var(--et-surface-color-solid, currentColor)
+        )
+      );
+      --_et-form-field-frame-focus: var(
+        --et-form-field-control-border-color-focus,
         var(--et-surface-color-solid, currentColor)
       );
-      --_et-form-field-frame-focus: var(--et-surface-color-solid, currentColor);
       --_et-form-field-label-color: var(--et-surface-color-muted-solid, currentColor);
       --_et-form-field-label-color-active: var(--et-surface-color-solid, currentColor);
 
@@ -91,6 +100,10 @@
 
       .et-form-field-control-frame {
         border-color: var(--_et-form-field-frame-border);
+      }
+
+      .et-form-field-control-slot {
+        color: var(--et-form-field-value-color);
       }
 
       .et-form-field-prefix {
@@ -255,6 +268,10 @@
             border-color: var(--_et-form-field-frame-border-hover);
           }
 
+          .et-form-field-control-slot {
+            color: var(--et-form-field-value-color-active, var(--et-form-field-value-color));
+          }
+
           .et-form-field-label-area,
           .et-form-field-affix {
             color: var(--_et-form-field-label-color-active);
@@ -267,7 +284,14 @@
       &:where([data-expanded]:not([data-readonly])) .et-form-field-control-frame,
       &:where([data-focused]:not([data-readonly])) .et-form-field-control-frame {
         border-color: var(--_et-form-field-frame-focus);
-        box-shadow: inset 0 0 0 var(--et-form-field-control-border-width) var(--_et-form-field-frame-focus);
+        box-shadow: inset 0 0 0 var(--et-form-field-control-focus-ring-width, var(--et-form-field-control-border-width))
+          var(--_et-form-field-frame-focus);
+      }
+
+      &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-slot,
+      &:where([data-expanded]:not([data-readonly])) .et-form-field-control-slot,
+      &:where([data-focused]:not([data-readonly])) .et-form-field-control-slot {
+        color: var(--et-form-field-value-color-active, var(--et-form-field-value-color));
       }
 
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-label-area,
