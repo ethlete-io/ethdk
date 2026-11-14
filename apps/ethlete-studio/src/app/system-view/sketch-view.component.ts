@@ -96,6 +96,7 @@ import {
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
 import { sketchPointGroupsOf } from './open-points';
+import { undecidedShotsOf } from './undecided-shots';
 import { OpenPointGroup, OpenPointTarget } from '../design-parts/system-page/system-page-sample';
 
 type Busy = 'merge' | 'discard';
@@ -534,11 +535,6 @@ export class SketchViewComponent {
     return new Set([...this.paintedFrames()].flatMap(([key, { frame }]) => (mounted.has(frame) ? [key] : [])));
   });
 
-  protected shotPictures = computed(
-    () =>
-      new Map(this.sketchRows().flatMap((row) => row.shots.map((shot) => [`${row.key} ${shot.state}`, shot.picture]))),
-  );
-
   private measured = toSignal(
     fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message').pipe(
       map((event) => ({ shot: this.shotShowing(event.source), message: frameMessageOf(event.data) })),
@@ -783,13 +779,37 @@ export class SketchViewComponent {
 
   protected loadedPictures = signal<ReadonlyMap<string, string>>(new Map());
 
+  private undecidedShots = computed(() => {
+    if (this.sketch().problems !== undefined || this.listError() !== null) return new Set<string>();
+
+    const shown = new Set([...this.paintedShots(), ...this.loadedPictures().keys()]);
+
+    return new Set([...undecidedShotsOf(this.sketchRows())].filter((key) => !shown.has(key)));
+  });
+
+  protected shotPictures = computed(() => {
+    const undecided = this.undecidedShots();
+
+    return new Map(
+      this.sketchRows().flatMap((row) =>
+        row.shots.flatMap((shot) => {
+          const key = `${row.key} ${shot.state}`;
+
+          return undecided.has(key) ? [] : [[key, shot.picture] as const];
+        }),
+      ),
+    );
+  });
+
   protected liveShots = computed(
     () =>
       new Set(
         this.sketch().targets === undefined && this.listError() === null
           ? []
           : liveShotsOf({
-              order: this.sketchRows().flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`)),
+              order: this.sketchRows()
+                .flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`))
+                .filter((key) => !this.undecidedShots().has(key)),
               near: this.nearShots(),
               pictured: new Set(this.loadedPictures().keys()),
               painted: this.paintedShots(),

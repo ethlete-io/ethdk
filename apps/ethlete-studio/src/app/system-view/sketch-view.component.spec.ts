@@ -6,6 +6,7 @@ import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent, liveShotsOf } from './sketch-view.component';
+import { undecidedShotsOf } from './undecided-shots';
 
 const PRODUCT: ListedProduct = { name: 'web', base: null, presets: {}, parts: [], problems: [] };
 
@@ -282,6 +283,60 @@ describe('SketchViewComponent', () => {
     await settle(fixture);
 
     expect(root.querySelectorAll('iframe[data-state]').length).toBeGreaterThan(0);
+  });
+
+  it('asks no frame and no picture of a state before the full listing says it is shown, then only of the changed states', async () => {
+    const states = ['default', 'hover'];
+    const quick = {
+      ...SKETCH,
+      problems: undefined,
+      targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [] })),
+    } satisfies ListedSketch;
+    const { fixture, root } = await render(quick, noComments, { ...CARD, states });
+    const asked = () =>
+      [...root.querySelectorAll<HTMLIFrameElement | HTMLImageElement>('iframe[data-state], img[data-shot-picture]')]
+        .map((element) => element.closest('[data-shot]')?.getAttribute('data-shot'))
+        .sort();
+
+    expect(root.querySelectorAll('[data-shot]').length).toBe(6);
+    expect(asked()).toEqual([]);
+
+    fixture.componentRef.setInput('sketch', {
+      ...quick,
+      problems: [],
+      targets: quick.targets.map((target) => ({ ...target, unchanged: ['hover'] })),
+    });
+    await settle(fixture);
+
+    expect([...new Set(asked())]).toEqual(['a default', 'b default', 'current default']);
+  });
+
+  it('holds back a pending shot and every shot of a state that no row changes yet', () => {
+    const row = (key: string, shots: [string, boolean | null][]) => ({
+      key,
+      width: null,
+      shots: shots.map(([state, changed]) => ({ state, changed, src: '', picture: '' })),
+    });
+
+    expect([
+      ...undecidedShotsOf([
+        row('current', [
+          ['x', false],
+          ['y', false],
+          ['z', false],
+        ]),
+        row('a', [
+          ['x', true],
+          ['y', false],
+          ['z', false],
+        ]),
+        row('b', [
+          ['x', null],
+          ['y', null],
+          ['z', false],
+        ]),
+      ]),
+    ]).toEqual(['current y', 'a y', 'b x', 'b y']);
   });
 
   it('lists the near keys in row order up to the cap', () => {
