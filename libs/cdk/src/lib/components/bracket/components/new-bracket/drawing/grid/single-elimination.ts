@@ -1,7 +1,9 @@
-import { COMMON_BRACKET_ROUND_TYPE } from '../../core';
-import { NewBracket } from '../../linked';
+import { BRACKET_DATA_LAYOUT, COMMON_BRACKET_ROUND_TYPE } from '../../core';
+import { NewBracket, NewBracketRound } from '../../linked';
 import {
   BracketComponents,
+  BracketMasterColumnSection,
+  BracketSubColumn,
   createBracketGrid,
   createBracketMasterColumn,
   createBracketMasterColumnSection,
@@ -10,10 +12,35 @@ import {
 import {
   createBracketContinueMasterColumn,
   createBracketGapMasterColumn,
+  createFoldedThirdPlaceSection,
   createRoundBracketSubColumnRelativeToFirstRound,
   getBracketContinueMatches,
 } from './prebuild';
 import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
+
+// A mirrored grid has no free column for the third place: a column between the final and the right half
+// would sit on the straight connector between them.
+const resolveThirdPlaceTopOffset = (options: CreateBracketGridConfig) => {
+  if (options.thirdPlaceTopOffset !== null && options.thirdPlaceTopOffset !== undefined) {
+    return options.thirdPlaceTopOffset;
+  }
+
+  if (options.layout !== BRACKET_DATA_LAYOUT.MIRRORED) return null;
+
+  const headerOffset = options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0;
+
+  return options.finalMatchHeight + options.rowGap + headerOffset;
+};
+
+const resolveFoldedThirdPlaceRound = <TRoundData, TMatchData>(
+  rounds: NewBracketRound<TRoundData, TMatchData>[],
+  topOffset: number | null,
+) => {
+  if (topOffset === null) return null;
+  if (!rounds.some((round) => round.type === COMMON_BRACKET_ROUND_TYPE.FINAL)) return null;
+
+  return rounds.find((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) ?? null;
+};
 
 export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
@@ -28,8 +55,25 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
     throw new Error('No rounds found in bracket data');
   }
 
-  for (const [roundIndex, round] of rounds.entries()) {
-    const isLastRound = roundIndex === rounds.length - 1;
+  const thirdPlaceTopOffset = resolveThirdPlaceTopOffset(options);
+  const foldedThirdPlaceRound = resolveFoldedThirdPlaceRound(rounds, thirdPlaceTopOffset);
+  const ownColumnThirdPlaceRound = foldedThirdPlaceRound
+    ? null
+    : (rounds.find((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) ?? null);
+  const chainRounds = rounds.filter((round) => round !== foldedThirdPlaceRound && round !== ownColumnThirdPlaceRound);
+
+  let pushSectionToFinal: ((...sections: BracketMasterColumnSection<TRoundData, TMatchData>[]) => void) | null = null;
+  let finalSubColumn: BracketSubColumn<TRoundData, TMatchData> | null = null;
+
+  const pushGapColumn = () =>
+    grid.pushMasterColumn(
+      createBracketGapMasterColumn({
+        existingMasterColumns: grid.grid.masterColumns,
+        columnGap: options.columnGap,
+      }),
+    );
+
+  const pushRoundColumn = (round: NewBracketRound<TRoundData, TMatchData>) => {
     const { masterColumn, ...mutableMasterColumn } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: round.type === COMMON_BRACKET_ROUND_TYPE.FINAL ? options.finalColumnWidth : options.columnWidth,
       padding: {
@@ -61,14 +105,32 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 
     grid.pushMasterColumn(masterColumn);
 
-    if (!isLastRound) {
-      grid.pushMasterColumn(
-        createBracketGapMasterColumn({
-          existingMasterColumns: grid.grid.masterColumns,
-          columnGap: options.columnGap,
-        }),
-      );
+    return { pushSection: mutableMasterColumn.pushSection, sub };
+  };
+
+  for (const [roundIndex, round] of chainRounds.entries()) {
+    if (roundIndex > 0) pushGapColumn();
+
+    const { pushSection, sub } = pushRoundColumn(round);
+
+    if (round.type === COMMON_BRACKET_ROUND_TYPE.FINAL) {
+      pushSectionToFinal = pushSection;
+      finalSubColumn = sub;
     }
+  }
+
+  // Added after the loop, so the gap column beside the final copies only the final's section. The folded
+  // round has nothing to its right to stay aligned with.
+  if (foldedThirdPlaceRound && pushSectionToFinal && finalSubColumn) {
+    pushSectionToFinal(
+      createFoldedThirdPlaceSection({
+        finalSubColumn,
+        round: foldedThirdPlaceRound,
+        topOffset: thirdPlaceTopOffset ?? 0,
+        options,
+        components,
+      }),
+    );
   }
 
   if (options.continueElement && components.continue) {
@@ -93,6 +155,13 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
         }),
       );
     }
+  }
+
+  // After the continue column, so the line from the final to the continue element does not cross it.
+  if (ownColumnThirdPlaceRound) {
+    if (chainRounds.length) pushGapColumn();
+
+    pushRoundColumn(ownColumnThirdPlaceRound);
   }
 
   grid.calculateDimensions();

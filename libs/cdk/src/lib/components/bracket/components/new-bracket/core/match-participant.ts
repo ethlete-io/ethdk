@@ -38,6 +38,16 @@ export type NewBracketMatchParticipantBase = NewBracketParticipantBase & {
 export type NewBracketMatchParticipantWithRelationsBase = NewBracketMatchParticipantBase &
   NewBracketParticipantWithRelationsBase;
 
+/** The round whose losers play for third place, or null if the source has no third place match. */
+const thirdPlaceFeederRoundId = <TRoundData, TMatchData>(source: BracketDataSource<TRoundData, TMatchData>) => {
+  if (!source.rounds.some((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE)) return null;
+
+  const chain = source.rounds.filter((round) => round.type !== COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE);
+  const finalIndex = chain.findIndex((round) => round.type === COMMON_BRACKET_ROUND_TYPE.FINAL);
+
+  return finalIndex > 0 ? (chain[finalIndex - 1]?.id ?? null) : null;
+};
+
 /**
  * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
@@ -101,8 +111,9 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
   if (hasElimination) {
     switch (source.mode) {
       case TOURNAMENT_MODE.SINGLE_ELIMINATION: {
-        isEliminationMatch = true;
-        isEliminated = isLooser ?? false;
+        // A semi final loser still plays the third place match, so the semi final eliminates nobody.
+        isEliminationMatch = match.roundId !== thirdPlaceFeederRoundId(source);
+        isEliminated = (isEliminationMatch && isLooser) ?? false;
         break;
       }
       case TOURNAMENT_MODE.DOUBLE_ELIMINATION: {

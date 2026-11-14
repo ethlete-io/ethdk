@@ -39,6 +39,8 @@ export type NewBracketConfig<TRoundData = any, TMatchData = any> = {
   columnGap?: number;
   rowGap?: number;
   rowRoundGap?: number;
+  /** See the `thirdPlaceTopOffset` input of `et-new-bracket`. */
+  thirdPlaceTopOffset?: number | null;
   lineStartingCurveAmount?: number;
   lineEndingCurveAmount?: number;
   lineWidth?: number;

@@ -340,6 +340,61 @@
 
 - [`a690217`](https://github.com/ethlete-io/ethdk/commit/a6902172efd9bd1956a16237e79acbfbd816d946) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump only
 
+## 4.74.0
+
+### Minor Changes
+
+- [`770e26b`](https://github.com/ethlete-io/ethdk/commit/770e26ba1cb2042a573e48cc529d8edf3e0e9dc0) Thanks [@TomTomB](https://github.com/TomTomB)! - New bracket: support a third place match in single elimination. The final stays the last match of the bracket, so the continue element is drawn again. A mirrored layout folds the third place match below the final, and the new `thirdPlaceTopOffset` input (also in `provideNewBracketConfig`) folds it below the final in a left to right layout. Semi final losers are no longer marked `isEliminated` when a third place match follows.
+
+### Patch Changes
+
+- [`88a6896`](https://github.com/ethlete-io/ethdk/commit/88a6896692e166a9f4b0222346e29e33e2d76636) Thanks [@TomTomB](https://github.com/TomTomB)! - Place a third place match that keeps its own column after the continue element, so the line from the final to the continue element no longer crosses it.
+
+## 4.73.0
+
+### Minor Changes
+
+- [`4dfebf6`](https://github.com/ethlete-io/ethdk/commit/4dfebf65b4a21be3ae101580bc68a6ddf011dd5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update all dependencies to their latest versions. The peer dependencies now require Angular 22.2 and Angular CDK 22.2, and `@ethlete/core` requires TypeScript 6.0 and `@nx/devkit` 24.
+
+### Patch Changes
+
+- [`bc313e1`](https://github.com/ethlete-io/ethdk/commit/bc313e1fd84e421cb4344745cdf7a8f06c9f530c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update dependencies and the pinned peer dependency versions (Angular 20.3.34, Angular CDK 20.2.14, @floating-ui/dom 1.8.0, @contentful/rich-text-types 17.2.7).
+
+## 4.72.1
+
+### Patch Changes
+
+- [`ba5501f`](https://github.com/ethlete-io/ethdk/commit/ba5501f9d86878d1d02a2dea68ccaf591ff48611) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep a combobox control's value while its async options load, instead of overwriting it with `null`.
+
+## 4.72.0
+
+### Minor Changes
+
+- [`29dfbf8`](https://github.com/ethlete-io/ethdk/commit/29dfbf8dd03511af30e6411be93f5836fcc43e20) Thanks [@TomTomB](https://github.com/TomTomB)! - Support swiss mode in bracket new as per design spec
+
+- [`86e0817`](https://github.com/ethlete-io/ethdk/commit/86e0817d7dd68b36d65dbf8b45a35026f2568e96) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to render a continue element at the end of a bracket if theres a follow up competition stage
+
+### Patch Changes
+
+- [`214679e`](https://github.com/ethlete-io/ethdk/commit/214679e82ecd8de2dd37416911cb5a4bcf0dbdb4) Thanks [@baltruschat](https://github.com/baltruschat)! - Position winner rounds correctly when the winner bracket starts after round 1
+
+  Some double elimination brackets omit the early winner rounds — e.g. a small bracket where the first lower round is seeded directly from a group phase and has no winner round feeding it. The grid previously placed the first present winner round in the leftmost column, so every winner round was one column too far left relative to its drop-in lower round. The grid now detects the missing leading winner rounds (a complete winner bracket has lowerRounds / 2 + 1 rounds) and leaves those leading slots empty, so each present winner round lines up above the lower round its losers actually drop into.
+
+- [`214679e`](https://github.com/ethlete-io/ethdk/commit/214679e82ecd8de2dd37416911cb5a4bcf0dbdb4) Thanks [@baltruschat](https://github.com/baltruschat)! - Align winner bracket rounds above their drop-in loser round
+
+  In the double elimination grid, winner bracket rounds that span two lower bracket columns were centered over that span, leaving them half a column off from the loser round they relate to. They are now left-aligned within the span so winner round n sits directly above the loser round its losers drop into (round 2n − 2) — the round whose matches merge into the next one — making the drop target unambiguous. The first winner round and the winner final are single-column and stay in place; lower rounds and other brackets are unaffected.
+
+- [`86e0817`](https://github.com/ethlete-io/ethdk/commit/86e0817d7dd68b36d65dbf8b45a35026f2568e96) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix bracket highlighting getting laggy on larger brackets
+
+- [`214679e`](https://github.com/ethlete-io/ethdk/commit/214679e82ecd8de2dd37416911cb5a4bcf0dbdb4) Thanks [@baltruschat](https://github.com/baltruschat)! - Fix rendering of truncated double elimination brackets
+
+  Brackets whose data ends before the grand final (e.g. only the currently available rounds are loaded) no longer crash and now draw their lower bracket connector lines correctly:
+  - The last lower bracket round is no longer left without a relation when there is no final round to feed into (it now terminates with a `one-to-nothing` relation), which previously caused a `Cannot destructure property 'nextRoundMatchPosition'` error.
+  - `generateMatchRelationsNew` skips matches whose round has no resolved relation instead of throwing, so incomplete brackets degrade gracefully.
+  - Lower bracket rounds are now separated by a gap column even when no finals section exists, so their connector lines are no longer collapsed to zero width and become invisible.
+
+  Brackets that are truncated at the front (missing the first winner bracket round) are covered by the same changes.
+
 ## 4.71.1
 
 ### Patch Changes

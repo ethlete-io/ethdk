@@ -72,6 +72,7 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
         [continueColumnWidth]="continueColumnWidth()"
         [continueElementHeight]="continueElementHeight()"
         [continueLineDashArray]="continueLineDashArray()"
+        [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
       />
     </et-scrollable>
   `,
@@ -106,6 +107,7 @@ export class StorybookBracketNewComponent {
   continueColumnWidth = input(250, { transform: numberAttribute });
   continueElementHeight = input(75, { transform: numberAttribute });
   continueLineDashArray = input(6, { transform: numberAttribute });
+  thirdPlaceTopOffset = input<number | null>(null);
 
   swissColors = input<BracketSwissColors | undefined>(undefined);
 

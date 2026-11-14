@@ -54,6 +54,18 @@
 
 - [`a690217`](https://github.com/ethlete-io/ethdk/commit/a6902172efd9bd1956a16237e79acbfbd816d946) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump only
 
+## 1.11.5
+
+### Patch Changes
+
+- [`b0edf17`](https://github.com/ethlete-io/ethdk/commit/b0edf17fd258765db473b8d2ecfd98d009f29e03) Thanks [@TomTomB](https://github.com/TomTomB)! - Skip version 1.11.4, which npm no longer accepts because it was published and unpublished before.
+
+## 1.11.4
+
+### Patch Changes
+
+- [`4dfebf6`](https://github.com/ethlete-io/ethdk/commit/4dfebf65b4a21be3ae101580bc68a6ddf011dd5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update all dependencies to their latest versions. The peer dependencies now require Angular 22.2 and Angular CDK 22.2, and `@ethlete/core` requires TypeScript 6.0 and `@nx/devkit` 24.
+
 ## 1.11.3
 
 ### Patch Changes

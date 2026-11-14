@@ -965,6 +965,22 @@
 
 - [`256b1b0`](https://github.com/ethlete-io/ethdk/commit/256b1b02d7598a0a6540af55447799a8ced469c4) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump only to implement fixes from 5.44.0
 
+## 5.45.0
+
+### Minor Changes
+
+- [`4dfebf6`](https://github.com/ethlete-io/ethdk/commit/4dfebf65b4a21be3ae101580bc68a6ddf011dd5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update all dependencies to their latest versions. The peer dependencies now require Angular 22.2 and Angular CDK 22.2, and `@ethlete/core` requires TypeScript 6.0 and `@nx/devkit` 24.
+
+### Patch Changes
+
+- [`bc313e1`](https://github.com/ethlete-io/ethdk/commit/bc313e1fd84e421cb4344745cdf7a8f06c9f530c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update dependencies and the pinned peer dependency versions (Angular 20.3.34, Angular CDK 20.2.14, @floating-ui/dom 1.8.0, @contentful/rich-text-types 17.2.7).
+
+## 5.44.1
+
+### Patch Changes
+
+- [`2c02096`](https://github.com/ethlete-io/ethdk/commit/2c020964d1b57ebaa483035be59ee84a15d1794e) Thanks [@TomTomB](https://github.com/TomTomB)! - Give each object in an array its own index when `writeArrayIndexes` is enabled. Before, every object item was serialized at index `0`.
+
 ## 5.44.0
 
 ### Minor Changes
