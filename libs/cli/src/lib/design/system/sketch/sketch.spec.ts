@@ -359,9 +359,44 @@ describe('status', () => {
     }) as Sketch;
 
     expect(
-      reportSketch({ checkout: target, sketch: decided, variant: 'a', author: 'gpt-5.6-sol', message: 'late' }),
+      reportSketch({ checkout: target, sketch: decided, variant: 'b', author: 'gpt-5.6-sol', message: 'late' }),
     ).toBe('elements/hero is decided (pick) - a report would reopen it, so nothing was recorded');
     expect(sketchJson(target, 'elements-hero')['status']).toBe('ready');
+  });
+
+  it('takes a report on the picked variant of a decided sketch and keeps the pick', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+    const decided = decideSketch({
+      sketch: ready,
+      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
+    }) as Sketch;
+
+    expect(
+      reportSketch({
+        checkout: target,
+        sketch: decided,
+        variant: 'b',
+        author: 'gpt-5.6-sol',
+        message: 'port',
+        reopen: true,
+      }),
+    ).toBe('elements/hero is decided (pick) - a report would reopen it, so nothing was recorded');
+
+    const ported = reportSketch({
+      checkout: target,
+      sketch: decided,
+      variant: 'a',
+      author: 'gpt-5.6-sol',
+      message: 'port',
+      reopen: true,
+    }) as Sketch;
+
+    expect(ported.status).toBe('in progress');
+    expect(ported.decision).toMatchObject({ kind: 'pick', variant: 'a' });
+    expect(sketchJson(target, 'elements-hero')['decision']).toMatchObject({ kind: 'pick', variant: 'a' });
+    expect(readSketchReport({ checkout: target, sketch })?.message).toBe('port');
   });
 
   it('drops a ready sketch to in progress when a variant changed since ready, and keeps it while none did', () => {

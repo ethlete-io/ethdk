@@ -1094,7 +1094,8 @@ type SketchReportFile = { state: 'drawing'; updatedAt: string; message: string; 
 /**
  * Records what an agent builds on a variant of a sketch right now ("phone, outline state"), for Studio to show,
  * and adds the agent's model id to the variant's authors in `sketch.json` unless it is there already. A ready sketch
- * refuses a report unless `reopen` moves it back to in progress.
+ * refuses a report unless `reopen` moves it back to in progress; a decided one only takes a report on its picked
+ * variant, and keeps the pick.
  */
 export const reportSketch = (options: {
   checkout: string;
@@ -1109,7 +1110,9 @@ export const reportSketch = (options: {
   if (!sketch.variants.includes(variant))
     return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ') || 'none'}`;
   if (author.trim() === '') return 'a report needs --by <model id>';
-  if (sketch.status === 'ready' && sketch.decision)
+  const portOfPick = sketch.decision?.kind === 'pick' && sketch.decision.variant === variant;
+
+  if (sketch.status === 'ready' && sketch.decision && !portOfPick)
     return `${sketch.target} is decided (${sketch.decision.kind}) - a report would reopen it, so nothing was recorded`;
   if (sketch.status === 'ready' && !reopen)
     return `${sketch.target} is ready - a report moves it back to in progress, so nothing was recorded; add --reopen if the user asked for a change`;
