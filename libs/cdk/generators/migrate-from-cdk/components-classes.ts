@@ -643,6 +643,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-pip-window__title-bar-spacer',
   'et-progress-bar',
   'et-progress-bar--indeterminate',
+  'et-progress-bar--rounded-end',
   'et-progress-bar--themed',
   'et-progress-bar__bar',
   'et-progress-bar__bar--primary',
