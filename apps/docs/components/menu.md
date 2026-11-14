@@ -47,7 +47,7 @@ import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '@ethlete/components';
 
 ### Loading items
 
-Set `loading` on an item while the async work it started runs. The item shows a spinner (in the trailing slot of `et-menu-item`, in place of the check of a checkbox or radio item), sets `aria-busy` and `aria-disabled`, and ignores clicks, <kbd>Enter</kbd> and <kbd>Space</kbd> - neither `(click)` nor `(activate)` fires and the menu does not close. Unlike a `disabled` item it keeps its full opacity and stays reachable with the arrow keys. The default `closeOnActivate` closes the menu on the activation that starts the work, so set `closeOnActivate="false"` to keep the spinner visible, and close the menu yourself when the work ends:
+Set `loading` on an item while the async work it started runs. The item shows a spinner (in the trailing slot of `et-menu-item`, in place of the check of a checkbox or radio item), sets `aria-busy` and `aria-disabled`, and ignores clicks, <kbd>Enter</kbd> and <kbd>Space</kbd> - neither `(click)` nor `(activate)` fires, the menu does not close, and a loading submenu trigger does not open its submenu on click, hover or <kbd>ArrowRight</kbd>. Unlike a `disabled` item it keeps its full opacity and stays reachable with the arrow keys. The default `closeOnActivate` closes the menu on the activation that starts the work, so set `closeOnActivate="false"` to keep the spinner visible, and close the menu yourself when the work ends:
 
 ```html
 <div #menu="etMenu" etMenu>

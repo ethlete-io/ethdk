@@ -82,6 +82,9 @@ export class MenuItemDirective {
   /** @internal Combines the item's own `disabled` input with a state pushed in by a composing directive. */
   public isDisabled = computed(() => this.disabled() || (this.disabledOverride()?.() ?? false));
 
+  /** @internal */
+  public blocksSubmenu = computed(() => this.isDisabled() || this.loading());
+
   protected tabIndex = computed(() => {
     const owner = this.owner;
 

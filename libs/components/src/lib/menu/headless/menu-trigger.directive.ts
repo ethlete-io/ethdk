@@ -79,7 +79,7 @@ export class MenuTriggerDirective {
   }
 
   protected handleClick() {
-    if (this.hostItem?.isDisabled()) {
+    if (this.hostItem?.blocksSubmenu()) {
       return;
     }
 

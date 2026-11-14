@@ -35,6 +35,7 @@ import { MenuDirective } from './menu.directive';
           <div etMenu>
             <button
               [disabled]="submenuTriggerDisabled()"
+              [loading]="submenuTriggerLoading()"
               class="submenu-trigger"
               etMenuItem
               etMenuTrigger
@@ -63,6 +64,7 @@ class MenuDirectiveTestHost {
   loop = signal(true);
   menuAutoFocus = signal(true);
   submenuTriggerDisabled = signal(false);
+  submenuTriggerLoading = signal(false);
 }
 
 @Component({
@@ -347,6 +349,25 @@ describe('MenuDirective', () => {
     await openMenu();
 
     query('.submenu-trigger').click();
+    tick();
+
+    expect(menu.openSubmenu()).toBeNull();
+    expect(document.querySelector('.sub-panel')).toBeNull();
+  });
+
+  it('does not open the submenu of a loading submenu trigger item on click or ArrowRight', async () => {
+    fixture.componentInstance.submenuTriggerLoading.set(true);
+    await openMenu();
+
+    const submenuTrigger = query('.submenu-trigger');
+
+    submenuTrigger.click();
+    tick();
+    keydown(query('.item-alpha'), 'End');
+    tick();
+    keydown(submenuTrigger, 'ArrowRight');
+    tick();
+    await flushFrames();
     tick();
 
     expect(menu.openSubmenu()).toBeNull();
@@ -695,6 +716,18 @@ describe('MenuDirective', () => {
 
     it('does not open the submenu of a disabled submenu trigger item on hover', async () => {
       fixture.componentInstance.submenuTriggerDisabled.set(true);
+      trigger.click();
+      tick();
+
+      pointermove(query('.submenu-trigger'));
+      vi.advanceTimersByTime(1000);
+      tick();
+
+      expect(menu.openSubmenu()).toBeNull();
+    });
+
+    it('does not open the submenu of a loading submenu trigger item on hover', async () => {
+      fixture.componentInstance.submenuTriggerLoading.set(true);
       trigger.click();
       tick();
 

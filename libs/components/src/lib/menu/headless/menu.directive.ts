@@ -401,7 +401,7 @@ export class MenuDirective {
 
         if (opensSubmenu) {
           const activeItem = this.activeItem();
-          const submenu = activeItem && !activeItem.isDisabled() ? activeItem.submenu : null;
+          const submenu = activeItem && !activeItem.blocksSubmenu() ? activeItem.submenu : null;
 
           if (submenu) {
             event.preventDefault();
@@ -606,7 +606,7 @@ export class MenuDirective {
       return;
     }
 
-    const submenu = item.isDisabled() ? null : item.submenu;
+    const submenu = item.blocksSubmenu() ? null : item.submenu;
     const currentSubmenu = this.openSubmenu();
 
     this.hoverIntent.cancelOpen();
