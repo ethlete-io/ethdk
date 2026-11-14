@@ -38,6 +38,7 @@ type Props = {
   server?: 'stopped' | 'starting' | 'unanswered' | 'crashed';
   log?: string[];
   crash?: Crash;
+  serverUrl?: string;
   chrome?: Chrome;
   update?: boolean;
   sideWidth?: number;
@@ -160,7 +161,13 @@ export const restartButton = withAction(
   'emit:restartServer',
 );
 
-const serverScreen = (server: NonNullable<Props['server']>, log: string[], crash: Crash, crashScreen: CrashScreen) =>
+const serverScreen = (
+  server: NonNullable<Props['server']>,
+  log: string[],
+  serverUrl: string,
+  crash: Crash,
+  crashScreen: CrashScreen,
+) =>
   html`<div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
     ${
       server === 'crashed'
@@ -173,7 +180,7 @@ const serverScreen = (server: NonNullable<Props['server']>, log: string[], crash
               ${
                 server === 'unanswered'
                   ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
-                        Design-Server antwortet nicht: http://localhost:4402
+                        Design-Server antwortet nicht: ${serverUrl}
                       </p>
                       <div class="mt-space-3">${restartButton}</div>`
                   : ''
@@ -240,7 +247,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
   states: {
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
     'server-starting': { ...BASE, server: 'starting' },
-    'server-unanswered': { ...BASE, server: 'unanswered' },
+    'server-unanswered': { ...BASE, server: 'unanswered', serverUrl: 'http://localhost:4402' },
     'server-crashed': { ...BASE, server: 'crashed', crash: SERVER_CRASH },
     open: BASE,
     'open-focus-visible': { ...BASE, systemForce: 'focus-visible' },
@@ -278,6 +285,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     force,
     server,
     log = [],
+    serverUrl = '',
     crash = SERVER_CRASH,
     chrome = LINUX_CHROME,
     update = false,
@@ -305,7 +313,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
             class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"
             ${server ? '' : slot('canvas')}
           >
-            ${server ? serverScreen(server, log, crash, crashScreen) : content}
+            ${server ? serverScreen(server, log, serverUrl, crash, crashScreen) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
           ${panel === 'hidden' ? '' : resizeHandle({ width: sideWidth ?? SIDE_WIDTH.rest, interaction: resizeForce })}
