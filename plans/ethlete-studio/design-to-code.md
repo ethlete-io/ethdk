@@ -866,6 +866,14 @@ below-fit, unchanged-matrix: measured `design dom` of zoomed-page, the design si
 the parked head-note size race (its notes wrap larger in this shot). Not verified: far-out, narrow-far-out,
 change-crop-whole, sketch-only-points-open measured with `design dom`; the 7 unchecked states; CI.
 
+**B502d follow-up (Linux builder, 2026-11-14, fbeb7c12d):** item (2), withdrawn-hidden folding by every row, reverted:
+it made `comparing` DIFF 51440 px (2 of 2 runs; ok with the da9d62b3d sources in a scratch copy, ok again after the
+revert). Cause unknown: `design dom` of comparing matches design and app after settle, only the compare shot's head notes
+render larger; Suspect: reading `rows()` instead of `listedRows()` shifts the fit pass into the head-note race. Full
+compare on fbeb7c12d: 13 ok, 18 DIFF, 7 FAILED (no app input for agent/question/port, finding 489), no action missed;
+comparing ok, all-unchanged ok, edit-sketch 4397, withdrawn-hidden 59791 again. Open: redo the withdrawn fold without
+touching the fit timing (e.g. `listedRows()` plus the withdrawn rows only) with a spec.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
