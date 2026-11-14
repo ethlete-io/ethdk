@@ -777,7 +777,21 @@ takes (state props as inputs, other inputs at their literal default; a computed,
 bite (the A1 title-bar template and states), and the real title bar with its `cli-dirty` states removed gives
 `@if (!notice() && noticeText())`; with them, none. Over every part (finding 789): studio 3 hits, baselined on 484
 (ADR 0201) - `pages/sketches` `@if (error())` and `@if (listError())` (the failed-listing look of ADR 0010),
-`pages/system` `@else if (noted())`; sdk and studio-lab have no linked component, so none. Not done: the three sketches.
+`pages/system` `@else if (noted())`; sdk and studio-lab have no linked component, so none. The three sketches: B502a.
+**B502a as built (Linux builder, 2026-11-14):** each of the three hits has its missing-state sketch, opened with
+`design sketch new`, drawn, and set ready; all wait for Tom's pick. `pages/sketches@failed-listing` (state
+`list-error`, prop `listError`): a the built look (Erneut laden in the head, Vergleich fehlgeschlagen: <reason> in
+each comparing row), b per-row retry, c one head banner (the ADR 0010 alternatives). `pages/sketches@merge-error`
+(state `merge-error`, prop `error`): a the built look (the server reason as xs error text in the head; it squeezes the
+title, as in the app), b the reason under Übernehmen of the picked variant, c a head banner.
+`pages/system@canvas-note` (state `canvas-note`, prop `noted`): a the built look (one muted line in the middle of
+the empty canvas, tree empty, the no-server text), b a card like the empty page, c a strip on top of the canvas.
+Each state prop is named like the app input, so a merged pick clears its hit; until then the three baseline
+entries name their sketch. Verified: `sketch check` and `sketch ready` pass (warnings only: frame budget, unused
+shared exports carried over from the merged part, and on canvas-note variants that look alike at fit zoom); every
+variant's shot viewed; `design check --part pages/sketches` and `--part pages/system`: 0 findings each, the three hits baselined with their sketch, no part file rewritten. Not verified:
+the built look against a live app screenshot (read from the templates only); variant a of canvas-note draws
+`text-ui-sm` for the app's `text-small` (13 px).
 
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben

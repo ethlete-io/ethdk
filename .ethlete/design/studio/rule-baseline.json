@@ -58,15 +58,15 @@
   "STATE-UNDESIGNED": {
     "pages/sketches: @if (error())": {
       "finding": "484",
-      "sketch": "pages/sketches: not opened yet - the missing-state sketch, the built look as variant a (ADR 0010)"
+      "sketch": "pages/sketches@merge-error (B502a, waits for the pick; state merge-error, variant a the built look)"
     },
     "pages/sketches: @if (listError())": {
       "finding": "484",
-      "sketch": "pages/sketches: not opened yet - the missing-state sketch, the built look as variant a (ADR 0010)"
+      "sketch": "pages/sketches@failed-listing (B502a, waits for the pick; state list-error, variant a the built look, ADR 0010)"
     },
     "pages/system: @if (listingError()) @else if (noted())": {
       "finding": "484",
-      "sketch": "pages/system: not opened yet - the missing-state sketch, the built look as variant a (ADR 0010)"
+      "sketch": "pages/system@canvas-note (B502a, waits for the pick; state canvas-note, variant a the built look)"
     }
   }
 }
