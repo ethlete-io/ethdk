@@ -317,14 +317,26 @@ Colours come from the app-registered [surface and color themes](/core/theming): 
 current page takes the full-strength text colour, and the focus ring uses
 `--et-theme-color-primary-solid`. A trail is chrome, so the accent colour appears in nothing else - the
 overflow button stays neutral even while its popover is open, and hover states are the neutral
-`--et-surface-interaction-solid` tint. Geometry is tokens:
+`--et-surface-interaction-solid` tint. Geometry and type are tokens:
 
-| Property                         | Default | Applies to                                           |
-| -------------------------------- | ------- | ---------------------------------------------------- |
-| `--et-breadcrumb-gap`            | `6px`   | gap between crumbs and their separators              |
-| `--et-breadcrumb-separator-size` | `12px`  | the chevron box                                      |
-| `--et-breadcrumb-radius`         | `6px`   | rounding of the overflow button and its popover rows |
-| `--et-breadcrumb-loading-width`  | `72px`  | width of a `loading` crumb's placeholder             |
+| Property                         | Default   | Applies to                                           |
+| -------------------------------- | --------- | ---------------------------------------------------- |
+| `--et-breadcrumb-gap`            | `6px`     | gap between crumbs and their separators              |
+| `--et-breadcrumb-separator-size` | `12px`    | the chevron box                                      |
+| `--et-breadcrumb-radius`         | `6px`     | rounding of the overflow button and its popover rows |
+| `--et-breadcrumb-loading-width`  | `72px`    | width of a `loading` crumb's placeholder             |
+| `--et-breadcrumb-font-size`      | inherited | the trail's text                                     |
+| `--et-breadcrumb-line-height`    | inherited | the trail's text                                     |
+| `--et-breadcrumb-letter-spacing` | inherited | the trail's text                                     |
+
+The colours are tokens too; unset, each falls back to the theme colour named above:
+
+| Property                           | Default                           | Applies to                 |
+| ---------------------------------- | --------------------------------- | -------------------------- |
+| `--et-breadcrumb-item-color`       | `--et-surface-color-muted-solid`  | a crumb at rest            |
+| `--et-breadcrumb-item-hover-color` | `--et-surface-color-solid`        | a linked crumb on hover    |
+| `--et-breadcrumb-current-color`    | `--et-surface-color-solid`        | the current page           |
+| `--et-breadcrumb-separator-color`  | `--et-surface-color-subtle-solid` | the chevron between crumbs |
 
 The overflow button renders the built-in `et-ellipsis` icon, so
 [`provideIconOverrides`](/components/icon#overriding-the-built-in-icons) can swap the glyph.
