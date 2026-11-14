@@ -2584,6 +2584,11 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   uses text-ui-sm vs app text-small. B502b (49e38b948): 140 missed actions on pages/sketches; Cause (measured): no
   harness sample for part:'edit' since b685abce7, so the harness fell back to title-bar rows; all-unchanged fold.
   Open: what makes a design state without a harness sample impossible where it is written.
+- B502c (c230d01b3): harness sample drift on pages/sketches, 16 of 31 states ok; Causes (design dom measured): sample
+  data in zoom-chip@edit row and avatar, fold row width, stack edge border; shell-collapse padding moved to its sample.
+  The pages/sketches sample now throws on a prop value without a sample (removes the silent title-bar fallback); other
+  parts not audited. Parked: head note size race (Suspect: fit-pass font timing), change-crop edges. CI red 43552342055:
+  Cause 3d0765c2a (re-export pulled slow-checks into the compare cache key); serve.spec 5.2 s timeout Suspect: CI load.
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
