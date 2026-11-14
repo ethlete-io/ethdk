@@ -25,6 +25,7 @@ describe('select theming tokens', () => {
     ['--et-select-option-color-hover', 'color'],
     ['--et-select-option-background-active', 'background'],
     ['--et-select-option-color-active', 'color'],
+    ['--et-select-option-outline-color-active', 'outline'],
     ['--et-select-option-color-selected', '--_et-select-option-color-rest'],
     ['--et-select-option-check-color', 'color'],
     ['--et-select-option-check-order', 'order'],

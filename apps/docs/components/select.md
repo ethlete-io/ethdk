@@ -515,6 +515,7 @@ The colour tokens below have no value of their own: unset, each falls back to th
 | `--et-select-option-color-hover`            | inherited                                 | Text colour of the option under the pointer                            |
 | `--et-select-option-background-active`      | `transparent`                             | Background of the keyboard-active option (the ink outline stays)       |
 | `--et-select-option-color-active`           | inherited                                 | Text colour of the keyboard-active option                              |
+| `--et-select-option-outline-color-active`   | `--et-theme-color-ink-solid`              | Outline colour of the keyboard-active option; `transparent` hides it   |
 | `--et-select-option-color-selected`         | inherited                                 | Text colour of a selected option; hover and active colours win over it |
 | `--et-select-option-check-color`            | `--et-theme-color-ink-solid`              | The selected check                                                     |
 | `--et-select-option-check-order`            | `0` (after the label)                     | CSS `order` of the check; `-1` moves it before the label               |

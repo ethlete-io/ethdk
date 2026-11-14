@@ -65,6 +65,32 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
 - When validation changes between a hint, warning, and error, the support message
   moves in severity order; reduced-motion preferences collapse that transition.
 
+### Label placement {#choice-field-label-placement}
+
+`labelPosition="start"` puts the label text before the control (default `'end'`).
+Clicking the text still toggles the control, and the accessible name and tab order
+stay the same.
+
+`layout="subgrid"` (default `'inline'`) lets a column of fields line up: the field
+spans two columns of its parent grid, and the control and the label each take one.
+The parent must be a grid with at least two columns. Hints and errors run under
+the label column.
+
+```html
+<div style="display: grid; grid-template-columns: 1fr auto; gap: 12px 24px">
+  <et-choice-field labelPosition="start" layout="subgrid">
+    <et-switch [formField]="demoForm.notifications" />
+    <et-label>Email notifications</et-label>
+  </et-choice-field>
+  <et-choice-field labelPosition="start" layout="subgrid">
+    <et-switch [formField]="demoForm.newsletter" />
+    <et-label>Newsletter</et-label>
+  </et-choice-field>
+</div>
+```
+
+Both only apply to `variant="plain"`; a card places its control with `controlPosition`.
+
 ## Selection lists
 
 Three group flavors over one selection engine - options are projected children,

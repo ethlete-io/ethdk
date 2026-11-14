@@ -77,7 +77,7 @@
     }
 
     &:where([data-active][data-active-source='keyboard']) {
-      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
+      outline: 2px solid var(--et-select-option-outline-color-active, var(--et-theme-color-ink-solid, currentColor));
       outline-offset: -2px;
       background: var(--et-select-option-background-active, transparent);
       color: var(--et-select-option-color-active, var(--_et-select-option-color-rest));

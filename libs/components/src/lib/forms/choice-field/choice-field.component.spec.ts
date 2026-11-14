@@ -10,7 +10,7 @@ import { warn } from '../form-field/headless/field-warnings';
 import { SelectionCardControlPosition } from '../selection-card.types';
 import { expectDescribedByPointsAtErrors, expectDescribedByResolves } from '../testing/described-by';
 import { mountChoiceField } from '../testing/choice-field-driver';
-import { ChoiceFieldVariant } from './choice-field.component';
+import { ChoiceFieldLabelPosition, ChoiceFieldLayout, ChoiceFieldVariant } from './choice-field.component';
 import { CHOICE_FIELD_IMPORTS } from './choice-field.imports';
 
 // jsdom drops the component stylesheet whole (`@layer`, nesting), and vitest stubs CSS imports to an
@@ -28,6 +28,21 @@ describe('ChoiceFieldComponent styles', () => {
     expect(choiceFieldCss).toContain('--et-form-support-hint-font-size: var(--et-choice-field-hint-font-size)');
   });
 
+  const blockAfter = (selector: string) => choiceFieldCss.slice(choiceFieldCss.indexOf(selector)).replace(/\s+/g, ' ');
+
+  it('moves the label area ahead of the control with labelPosition start', () => {
+    expect(blockAfter("&:where([data-label-position='start'])")).toMatch(
+      /^&:where\(\[data-label-position='start'\]\) \{ \.et-choice-field-label-area \{ order: -1; \}/,
+    );
+  });
+
+  it('makes the control slot and the label area items of a subgrid in the subgrid layout', () => {
+    const subgrid = blockAfter("&:where([data-layout='subgrid'])");
+
+    expect(subgrid).toMatch(/^[^}]*display: grid;[^}]*grid-template-columns: subgrid;[^}]*grid-column: span 2;/);
+    expect(subgrid).toContain('.et-choice-field-control { display: contents; }');
+  });
+
   it('indents the support text past the leading control, and not on a card', () => {
     expect(choiceFieldCss).toContain(
       'padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px))',
@@ -43,7 +58,13 @@ describe('ChoiceFieldComponent styles', () => {
 
 @Component({
   template: `
-    <et-choice-field [controlPosition]="controlPosition()" [size]="size()" [variant]="variant()">
+    <et-choice-field
+      [controlPosition]="controlPosition()"
+      [labelPosition]="labelPosition()"
+      [layout]="layout()"
+      [size]="size()"
+      [variant]="variant()"
+    >
       <et-checkbox [checked]="checked()" (checkedChange)="checked.set($event)" />
       <et-label>Accept terms</et-label>
     </et-choice-field>
@@ -54,6 +75,8 @@ class ChoiceFieldTestHost {
   checked = signal(false);
   variant = signal<ChoiceFieldVariant>('plain');
   controlPosition = signal<SelectionCardControlPosition>('end');
+  labelPosition = signal<ChoiceFieldLabelPosition>('end');
+  layout = signal<ChoiceFieldLayout>('inline');
   size = signal<'sm' | 'md' | 'lg'>('md');
 }
 
@@ -140,6 +163,43 @@ describe('ChoiceFieldComponent', () => {
     driver.tick();
 
     expect(driver.attr('data-control-position')).toBeNull();
+  });
+
+  it('only exposes non-default data-label-position and data-layout on the plain variant', () => {
+    const driver = mount();
+
+    expect(driver.attr('data-label-position')).toBeNull();
+    expect(driver.attr('data-layout')).toBeNull();
+
+    driver.host.labelPosition.set('start');
+    driver.host.layout.set('subgrid');
+    driver.tick();
+
+    expect(driver.attr('data-label-position')).toBe('start');
+    expect(driver.attr('data-layout')).toBe('subgrid');
+
+    driver.host.variant.set('card');
+    driver.tick();
+
+    expect(driver.attr('data-label-position')).toBeNull();
+    expect(driver.attr('data-layout')).toBeNull();
+  });
+
+  it('toggles the control from the label text with labelPosition start in the subgrid layout', () => {
+    const driver = mount();
+
+    driver.host.labelPosition.set('start');
+    driver.host.layout.set('subgrid');
+    driver.tick();
+
+    driver.click(driver.query<HTMLElement>('et-label')!);
+    expect(driver.host.checked()).toBe(true);
+
+    driver.click(driver.query<HTMLElement>('et-label')!);
+    expect(driver.host.checked()).toBe(false);
+    expect(driver.controlSlot().querySelector('[role="checkbox"]')?.getAttribute('aria-labelledby')).toBe(
+      driver.query<HTMLElement>('et-label')!.id,
+    );
   });
 
   it('registers the projected checkbox as the form field control', () => {

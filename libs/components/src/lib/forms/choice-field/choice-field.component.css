@@ -174,6 +174,45 @@
       padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
     }
 
+    &:where([data-label-position='start']) {
+      .et-choice-field-label-area {
+        order: -1;
+      }
+
+      .et-form-support-errors,
+      .et-form-support-warnings,
+      .et-form-support-hint {
+        padding-inline-start: 0;
+      }
+    }
+
+    &:where([data-layout='subgrid']) {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: span 2;
+      align-items: center;
+      column-gap: normal;
+      width: auto;
+
+      .et-choice-field-control {
+        display: contents;
+      }
+
+      .et-form-support {
+        grid-column: 2 / -1;
+      }
+
+      &:where([data-label-position='start']) .et-form-support {
+        grid-column: 1 / -1;
+      }
+
+      .et-form-support-errors,
+      .et-form-support-warnings,
+      .et-form-support-hint {
+        padding-inline-start: 0;
+      }
+    }
+
     /* Must stay after the rule above: same specificity, so source order is what makes it win. */
     &:where([data-variant='card']) {
       .et-form-support-errors,

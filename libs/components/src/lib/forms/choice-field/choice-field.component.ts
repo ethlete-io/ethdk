@@ -24,6 +24,22 @@ export const CHOICE_FIELD_VARIANTS = {
 
 export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHOICE_FIELD_VARIANTS];
 
+/** Which side of the control the label sits on. See {@link ChoiceFieldComponent.labelPosition}. */
+export const CHOICE_FIELD_LABEL_POSITIONS = {
+  START: 'start',
+  END: 'end',
+} as const;
+
+export type ChoiceFieldLabelPosition = (typeof CHOICE_FIELD_LABEL_POSITIONS)[keyof typeof CHOICE_FIELD_LABEL_POSITIONS];
+
+/** How a plain choice field lays out its parts. See {@link ChoiceFieldComponent.layout}. */
+export const CHOICE_FIELD_LAYOUTS = {
+  INLINE: 'inline',
+  SUBGRID: 'subgrid',
+} as const;
+
+export type ChoiceFieldLayout = (typeof CHOICE_FIELD_LAYOUTS)[keyof typeof CHOICE_FIELD_LAYOUTS];
+
 @Component({
   selector: 'et-choice-field',
   templateUrl: './choice-field.component.html',
@@ -42,6 +58,8 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
     '[style.display]': 'formField.isHidden() ? "none" : null',
     '[attr.data-size]': 'size()',
     '[attr.data-variant]': 'variant()',
+    '[attr.data-label-position]': "variant() === 'plain' && labelPosition() === 'start' ? 'start' : null",
+    '[attr.data-layout]': "variant() === 'plain' && layout() === 'subgrid' ? 'subgrid' : null",
     '[attr.data-control-position]': "variant() === 'card' ? controlPosition() : null",
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
@@ -68,6 +86,19 @@ export class ChoiceFieldComponent {
    * reads it. @default 'end'
    */
   public controlPosition = input<SelectionCardControlPosition>(SELECTION_CARD_CONTROL_POSITIONS.END);
+
+  /**
+   * Which side of the control the label sits on in `variant="plain"`. `'start'` puts the text before the control;
+   * the DOM order and the accessible name stay the same. A card uses `controlPosition` instead. @default 'end'
+   */
+  public labelPosition = input<ChoiceFieldLabelPosition>(CHOICE_FIELD_LABEL_POSITIONS.END);
+
+  /**
+   * `'subgrid'` makes the field span two columns of the parent grid and places the control and the label in those
+   * columns, so rows of fields line up. The parent must be a grid with at least two columns. Only
+   * `variant="plain"` reads it. @default 'inline'
+   */
+  public layout = input<ChoiceFieldLayout>(CHOICE_FIELD_LAYOUTS.INLINE);
 
   private description = contentChild(DescriptionComponent);
 
