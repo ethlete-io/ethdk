@@ -11,6 +11,12 @@
     initial-value: 14px;
   }
 
+  @property --et-stat-tile-label-letter-spacing {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0;
+  }
+
   @property --et-stat-tile-value-font-size {
     syntax: '<length>';
     inherits: true;
@@ -50,12 +56,27 @@
     &:where([aria-busy='true']) > .et-stat-tile-sparkline {
       visibility: hidden;
     }
+
+    &:where([data-align='center']) {
+      text-align: center;
+    }
+
+    &:where([data-label-position='below']) {
+      > .et-stat-tile-label {
+        order: 1;
+      }
+
+      > .et-stat-tile-footer,
+      > .et-stat-tile-sparkline {
+        order: 2;
+      }
+    }
   }
 
   .et-stat-tile-label {
     font-size: var(--et-stat-tile-label-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
-    text-transform: var(--et-stat-tile-label-text-transform);
+    text-transform: var(--et-stat-tile-label-text-transform, none);
     letter-spacing: var(--et-stat-tile-label-letter-spacing);
   }
 

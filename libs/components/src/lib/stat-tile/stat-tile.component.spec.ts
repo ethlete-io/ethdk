@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import '../../test-helpers';
-import { StatTileFormat, StatTileGoodDirection } from './stat-tile.types';
+import { StatTileAlign, StatTileFormat, StatTileGoodDirection, StatTileLabelPosition } from './stat-tile.types';
 import { STAT_TILE_IMPORTS } from './stat-tile.imports';
 
 const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
@@ -21,6 +21,9 @@ const COLOR_THEMES: ColorTheme[] = [
   template: `
     <et-stat-tile
       [value]="value()"
+      [format]="format()"
+      [align]="align()"
+      [labelPosition]="labelPosition()"
       [unit]="unit()"
       [delta]="delta()"
       [deltaFormat]="deltaFormat()"
@@ -34,6 +37,9 @@ const COLOR_THEMES: ColorTheme[] = [
 })
 class StatTileHostComponent {
   value = signal<number | string | null>(1284);
+  format = signal<StatTileFormat | null>(null);
+  align = signal<StatTileAlign>('start');
+  labelPosition = signal<StatTileLabelPosition>('above');
   unit = signal<string | null>(null);
   delta = signal<number | null>(null);
   deltaFormat = signal<StatTileFormat | null>(null);
@@ -66,6 +72,44 @@ describe('StatTileComponent', () => {
     expect(text(host.querySelector('.et-stat-tile-label'))).toBe('Latency');
     expect(text(host.querySelector('.et-stat-tile-value'))).toBe('1,284 ms');
     expect(host.querySelector('.et-stat-tile-footer')).toBeNull();
+  });
+
+  it('reflects align and label position on the host and keeps the label first in the DOM', () => {
+    const { app, host, render } = setup();
+
+    expect(host.getAttribute('data-align')).toBe('start');
+    expect(host.getAttribute('data-label-position')).toBe('above');
+
+    app.align.set('center');
+    app.labelPosition.set('below');
+    render();
+
+    expect(host.getAttribute('data-align')).toBe('center');
+    expect(host.getAttribute('data-label-position')).toBe('below');
+    expect(host.firstElementChild?.classList.contains('et-stat-tile-label')).toBe(true);
+  });
+
+  it('formats a rank as #n and keeps the dash for no rank', () => {
+    const { app, host, render } = setup();
+
+    app.format.set('rank');
+    app.value.set(1234);
+    render();
+    expect(text(host.querySelector('.et-stat-tile-value'))).toBe('#1,234');
+
+    app.value.set(null);
+    render();
+    expect(text(host.querySelector('.et-stat-tile-value [aria-hidden="true"]'))).toBe('–');
+  });
+
+  it('formats a delta without the rank format when the format is rank', () => {
+    const { app, host, render } = setup();
+
+    app.format.set('rank');
+    app.delta.set(3);
+    render();
+
+    expect(text(host.querySelector('.et-stat-tile-delta'))).toContain('+3');
   });
 
   it('shows a string value as given and a null value as a labelled dash', () => {

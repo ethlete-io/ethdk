@@ -4,7 +4,7 @@ import { injectOptionalSemanticTheme } from '../internals/semantic-theme';
 import { SkeletonComponent, SkeletonItemComponent } from '../skeleton';
 import { formatStatTileNumber, statTileDirection, statTileSentiment } from './stat-tile-format';
 import { injectStatTileLabels } from './stat-tile-labels';
-import { StatTileFormat, StatTileGoodDirection } from './stat-tile.types';
+import { StatTileAlign, StatTileFormat, StatTileGoodDirection, StatTileLabelPosition } from './stat-tile.types';
 
 /**
  * A single headline number with its label, an optional signed delta and an optional trend - the form a value
@@ -24,6 +24,8 @@ import { StatTileFormat, StatTileGoodDirection } from './stat-tile.types';
   host: {
     class: 'et-stat-tile',
     '[attr.aria-busy]': 'loading() || null',
+    '[attr.data-align]': 'align()',
+    '[attr.data-label-position]': 'labelPosition()',
   },
 })
 export class StatTileComponent {
@@ -37,7 +39,7 @@ export class StatTileComponent {
   /** A number is formatted with `format`; a string is shown as given. `null` shows a dash. */
   public value = input.required<number | string | null>();
 
-  /** How a numeric value is formatted. @default compact from 10,000 (`12.9K`), one fraction digit */
+  /** How a numeric value is formatted. `'rank'` shows an integer as `#<n>`. @default compact from 10,000 (`12.9K`), one fraction digit */
   public format = input<StatTileFormat | null>(null);
 
   /** Shown after the value, smaller - `ms`, `users`. */
@@ -54,6 +56,12 @@ export class StatTileComponent {
 
   /** The comparison the delta is measured against, or any short context line - `vs last month`. */
   public caption = input<string | null>(null);
+
+  /** Aligns the label, value, footer and sparkline. */
+  public align = input<StatTileAlign>('start');
+
+  /** Shows the label above or below the value. Only the visual order changes; the label stays first for assistive tech. */
+  public labelPosition = input<StatTileLabelPosition>('above');
 
   /** Replaces the value and delta with a skeleton. The label stays. */
   public loading = input(false, { transform: booleanAttribute });
@@ -76,8 +84,9 @@ export class StatTileComponent {
 
     const direction = statTileDirection(delta);
     const sentiment = statTileSentiment(direction, this.goodDirection());
+    const deltaFormat = this.deltaFormat() ?? this.format();
     const text = formatStatTileNumber(delta, {
-      format: this.deltaFormat() ?? this.format(),
+      format: deltaFormat === 'rank' ? null : deltaFormat,
       locale: this.locale.currentLocale(),
       defaults: { signDisplay: 'exceptZero' },
     });

@@ -35,7 +35,7 @@ The tile has no chrome of its own. Put it in an [`et-card`](/components/card) fo
 
 ## Formatting
 
-A number `value` is formatted with `Intl.NumberFormat` in the app locale (`injectLocale()` from `@ethlete/core`). By default it groups below 10,000 and compacts from there, with one fraction digit: `1,284`, `12.9K`, `4.2M`. Pass `format` to change that - either `Intl.NumberFormatOptions`, used as given, or a function that returns the finished string. A string `value` is shown as is, and `null` shows a dash that a screen reader reads as `noValue`.
+A number `value` is formatted with `Intl.NumberFormat` in the app locale (`injectLocale()` from `@ethlete/core`). By default it groups below 10,000 and compacts from there, with one fraction digit: `1,284`, `12.9K`, `4.2M`. Pass `format` to change that - either `Intl.NumberFormatOptions`, used as given, a function that returns the finished string, or `'rank'` (see [Rank](#rank)). A string `value` is shown as is, and `null` shows a dash that a screen reader reads as `noValue`.
 
 `deltaFormat` works the same way for the delta and falls back to `format`, so an absolute delta of a currency value is a currency too. Intl options always get `signDisplay: 'exceptZero'` unless they set their own; a function is responsible for its own sign.
 
@@ -43,6 +43,24 @@ A number `value` is formatted with `Intl.NumberFormat` in the app locale (`injec
 <et-stat-tile [value]="212" [delta]="18" goodDirection="down" caption="vs last week" label="p95 latency" unit="ms" />
 <et-stat-tile [value]="0.034" [format]="{ style: 'percent', maximumFractionDigits: 1 }" label="Churn rate" />
 <et-stat-tile [value]="score" [format]="formatScore" label="Score" />
+```
+
+## Alignment and label position
+
+`align` is `'start'` (default) or `'center'`; centered, the label, value, footer and a projected sparkline are all centered. `labelPosition` is `'above'` (default) or `'below'`. Below moves the label under the value in CSS only, so the DOM stays label first and a screen reader still reads "label, value"; the footer and sparkline stay last. The loading skeleton follows the same order.
+
+```html
+<et-stat-tile [value]="14" align="center" label="Matches" labelPosition="below" />
+```
+
+For an uppercase, spaced label set `--et-stat-tile-label-text-transform: uppercase` and `--et-stat-tile-label-letter-spacing: 0.08em` on the tile or an ancestor.
+
+## Rank
+
+`format="rank"` shows an integer as `#` plus the locale's integer format: `#1,234` in `en`, `#1.234` in `de`. A `null` value keeps the dash and the `noValue` label, so a tile without a rank can name itself with its label, for example `Unranked`. A delta on a rank tile ignores `'rank'` and uses the default number format.
+
+```html
+<et-stat-tile [value]="rank" format="rank" label="Rank" />
 ```
 
 ## Delta colour
@@ -65,17 +83,19 @@ A theme is looked up only when a delta needs it, so an app that never shows a co
 
 `et-stat-tile`:
 
-| Input           | Type                       | Default | Description                                                                     |
-| --------------- | -------------------------- | ------- | ------------------------------------------------------------------------------- |
-| `label`         | `string`                   | -       | Required. The metric's name, in sentence case.                                  |
-| `value`         | `number \| string \| null` | -       | Required. A number is formatted, a string shown as given, `null` shows a dash.  |
-| `format`        | `StatTileFormat \| null`   | `null`  | Intl options or a function. `null` groups below 10,000 and compacts from there. |
-| `unit`          | `string \| null`           | `null`  | Shown after the value, smaller.                                                 |
-| `delta`         | `number \| null`           | `null`  | The signed change. Its sign decides the direction.                              |
-| `deltaFormat`   | `StatTileFormat \| null`   | `null`  | Like `format`, and falls back to it. Intl options keep the sign.                |
-| `goodDirection` | `'up' \| 'down' \| null`   | `'up'`  | Which direction is good. `null` leaves every delta neutral.                     |
-| `caption`       | `string \| null`           | `null`  | The comparison the delta is measured against, or a short context line.          |
-| `loading`       | `boolean`                  | `false` | Shows a skeleton in place of the value and the footer.                          |
+| Input           | Type                       | Default   | Description                                                                               |
+| --------------- | -------------------------- | --------- | ----------------------------------------------------------------------------------------- |
+| `label`         | `string`                   | -         | Required. The metric's name, in sentence case.                                            |
+| `value`         | `number \| string \| null` | -         | Required. A number is formatted, a string shown as given, `null` shows a dash.            |
+| `format`        | `StatTileFormat \| null`   | `null`    | Intl options, a function or `'rank'`. `null` groups below 10,000 and compacts from there. |
+| `unit`          | `string \| null`           | `null`    | Shown after the value, smaller.                                                           |
+| `delta`         | `number \| null`           | `null`    | The signed change. Its sign decides the direction.                                        |
+| `deltaFormat`   | `StatTileFormat \| null`   | `null`    | Like `format`, and falls back to it. Intl options keep the sign.                          |
+| `goodDirection` | `'up' \| 'down' \| null`   | `'up'`    | Which direction is good. `null` leaves every delta neutral.                               |
+| `caption`       | `string \| null`           | `null`    | The comparison the delta is measured against, or a short context line.                    |
+| `align`         | `'start' \| 'center'`      | `'start'` | Aligns label, value, footer and sparkline.                                                |
+| `labelPosition` | `'above' \| 'below'`       | `'above'` | Shows the label above or below the value, visually only.                                  |
+| `loading`       | `boolean`                  | `false`   | Shows a skeleton in place of the value and the footer.                                    |
 
 `et-stat-tile-sparkline`:
 
@@ -85,7 +105,7 @@ A theme is looked up only when a delta needs it, so an app that never shows a co
 
 ## Accessibility
 
-The tile reads as one sentence, in visual order: "Revenue, $4.2M, Up +12.4% vs last month". The arrow is `aria-hidden`; in its place a visually hidden word names the direction (`up`, `down` or `unchanged` from `STAT_TILE_LABELS`), so the reading never depends on the colour or on a formatter keeping the sign. The sparkline is `aria-hidden` too - the value, the delta and the caption carry what it shows - so put anything a reader must not miss into the caption.
+The tile reads as one sentence, in DOM order (label first, even with `labelPosition="below"`): "Revenue, $4.2M, Up +12.4% vs last month". The arrow is `aria-hidden`; in its place a visually hidden word names the direction (`up`, `down` or `unchanged` from `STAT_TILE_LABELS`), so the reading never depends on the colour or on a formatter keeping the sign. The sparkline is `aria-hidden` too - the value, the delta and the caption carry what it shows - so put anything a reader must not miss into the caption.
 
 While `loading`, the host has `aria-busy="true"` and the skeleton announces `LOADER_LABELS`' `loadingContent` once. Localize the tile's own strings with `provideStatTileLabels({ up: '…', down: '…', unchanged: '…', noValue: '…' })` - see [localization](/components/localization).
 
@@ -93,6 +113,6 @@ The success and error themes your app registers decide the delta's text contrast
 
 ## Theming
 
-Public design tokens on `et-stat-tile`: `--et-stat-tile-gap`, `--et-stat-tile-label-font-size`, `--et-stat-tile-label-text-transform`, `--et-stat-tile-label-letter-spacing` (both unset by default, so the label inherits the page's), `--et-stat-tile-value-font-size`, `--et-stat-tile-value-font-weight`, `--et-stat-tile-footer-font-size`, `--et-stat-tile-sparkline-gap`. On `et-stat-tile-sparkline`: `--et-stat-tile-sparkline-height`, `--et-stat-tile-sparkline-line-width`, `--et-stat-tile-sparkline-current-size`.
+Public design tokens on `et-stat-tile`: `--et-stat-tile-gap`, `--et-stat-tile-label-font-size`, `--et-stat-tile-label-text-transform`, `--et-stat-tile-label-letter-spacing` (the transform is unset and falls back to `none`; the spacing defaults to `0`), `--et-stat-tile-value-font-size`, `--et-stat-tile-value-font-weight`, `--et-stat-tile-footer-font-size`, `--et-stat-tile-sparkline-gap`. On `et-stat-tile-sparkline`: `--et-stat-tile-sparkline-height`, `--et-stat-tile-sparkline-line-width`, `--et-stat-tile-sparkline-current-size`.
 
 Text colours come from the surface tokens (`--et-surface-color-solid` for the value, `--et-surface-color-muted-solid` for the label, unit and caption), so a tile reads correctly on every surface it sits on. The delta and the sparkline's last point come from the colour theme in scope - see [theming](/core/theming).

@@ -16,6 +16,10 @@ export type StatTileNumberFormatOptions = {
 export const formatStatTileNumber = (value: number, { format, locale, defaults }: StatTileNumberFormatOptions) => {
   if (typeof format === 'function') return format(value);
 
+  if (format === 'rank') {
+    return `#${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)}`;
+  }
+
   return new Intl.NumberFormat(locale, { ...defaults, ...(format ?? autoCompactOptions(value)) }).format(value);
 };
 

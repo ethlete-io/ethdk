@@ -1,10 +1,18 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { StatTileRowStorybookComponent, StatTileStorybookComponent } from './stat-tile-storybook.component';
+import {
+  StatTileCenteredStorybookComponent,
+  StatTileRowStorybookComponent,
+  StatTileStorybookComponent,
+} from './stat-tile-storybook.component';
 
 export default {
   title: 'Components/Data display/Stat tile',
   component: StatTileStorybookComponent,
-  decorators: [moduleMetadata({ imports: [StatTileStorybookComponent, StatTileRowStorybookComponent] })],
+  decorators: [
+    moduleMetadata({
+      imports: [StatTileStorybookComponent, StatTileRowStorybookComponent, StatTileCenteredStorybookComponent],
+    }),
+  ],
   args: {
     label: 'Weekly active users',
     value: 25_240,
@@ -30,4 +38,8 @@ export const KpiRow: Story = {
 
 export const Loading: Story = {
   render: () => ({ template: `<et-sb-stat-tile-row [surfaces]="['dark']" loading />` }),
+};
+
+export const CenteredWithRank: Story = {
+  render: () => ({ template: `<et-sb-stat-tile-centered />` }),
 };

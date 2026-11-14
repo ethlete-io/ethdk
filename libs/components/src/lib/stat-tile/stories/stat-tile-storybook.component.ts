@@ -120,3 +120,49 @@ export class StatTileRowStorybookComponent {
   protected readonly REVENUE = [3.1, 3.3, 3.2, 3.6, 3.5, 3.8, 3.7, 3.9, 4.0, 3.9, 4.1, 4.21];
   protected readonly LATENCY = [180, 185, 178, 190, 196, 188, 201, 199, 205, 210, 204, 212];
 }
+
+@Component({
+  selector: 'et-sb-stat-tile-centered',
+  template: `
+    <div [style.grid-template-columns]="'repeat(auto-fill, minmax(140px, 1fr))'" class="grid gap-4 p-8 font-sans">
+      <et-card>
+        <et-stat-tile
+          [style.--et-stat-tile-value-font-size.px]="14"
+          [style.--et-stat-tile-label-text-transform]="'uppercase'"
+          [style.--et-stat-tile-label-letter-spacing.px]="1"
+          [value]="1284"
+          align="center"
+          label="Matches"
+          labelPosition="below"
+        />
+      </et-card>
+      <et-card>
+        <et-stat-tile
+          [style.--et-stat-tile-value-font-size.px]="14"
+          [style.--et-stat-tile-label-text-transform]="'uppercase'"
+          [style.--et-stat-tile-label-letter-spacing.px]="1"
+          [value]="1234"
+          align="center"
+          format="rank"
+          label="Rank"
+          labelPosition="below"
+        />
+      </et-card>
+      <et-card>
+        <et-stat-tile
+          [style.--et-stat-tile-value-font-size.px]="14"
+          [style.--et-stat-tile-label-text-transform]="'uppercase'"
+          [style.--et-stat-tile-label-letter-spacing.px]="1"
+          [value]="null"
+          align="center"
+          format="rank"
+          label="Unranked"
+          labelPosition="below"
+        />
+      </et-card>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [STAT_TILE_IMPORTS, CARD_IMPORTS],
+})
+export class StatTileCenteredStorybookComponent {}

@@ -26,6 +26,12 @@ describe('formatStatTileNumber', () => {
     expect(formatStatTileNumber(12_900, { format: { maximumFractionDigits: 0 }, locale: 'en' })).toBe('12,900');
   });
 
+  it('formats a rank as # plus the locale integer', () => {
+    expect(formatStatTileNumber(1234, { format: 'rank', locale: 'en' })).toBe('#1,234');
+    expect(formatStatTileNumber(1234, { format: 'rank', locale: 'de' })).toBe('#1.234');
+    expect(formatStatTileNumber(1, { format: 'rank', locale: 'en' })).toBe('#1');
+  });
+
   it('formats in the given locale', () => {
     expect(formatStatTileNumber(1284.5, { format: null, locale: 'de' })).toBe('1.284,5');
   });
