@@ -304,6 +304,7 @@ export default defineConfig({
             { text: 'Card', link: '/components/card' },
             { text: 'Carousel', link: '/components/carousel' },
             { text: 'Chart', link: '/components/chart' },
+            { text: 'Collapse', link: '/components/collapse' },
             { text: 'Description list', link: '/components/description-list' },
             { text: 'Divider', link: '/components/divider' },
             { text: 'Grid', link: '/components/grid' },

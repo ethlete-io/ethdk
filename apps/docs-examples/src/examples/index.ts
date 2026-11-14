@@ -20,6 +20,7 @@ import { CDK_TOGGLETIP_EXAMPLES } from './cdk-toggletip';
 import { CDK_TOOLTIP_EXAMPLES } from './cdk-tooltip';
 import { CDK_MENU_EXAMPLES } from './cdk-menu';
 import { CDK_OVERLAYS_EXAMPLES } from './cdk-overlays';
+import { COLLAPSE_EXAMPLES } from './collapse';
 import { CONTENTFUL_RICH_TEXT_EXAMPLES } from './contentful-rich-text';
 import { QUERY_QUERIES_EXAMPLES } from './query-queries';
 import { QUERY_STACKS_EXAMPLES } from './query-stacks';
@@ -96,6 +97,7 @@ export type RoutedExample = { component: Type<unknown>; routes: Routes };
 export type ExampleLoader = () => Promise<Type<unknown> | RoutedExample>;
 
 export const EXAMPLES: Record<string, ExampleLoader> = {
+  ...COLLAPSE_EXAMPLES,
   ...CONTENTFUL_RICH_TEXT_EXAMPLES,
   ...QUERY_QUERIES_EXAMPLES,
   ...QUERY_STACKS_EXAMPLES,

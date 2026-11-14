@@ -10,6 +10,7 @@ export * from './lib/card';
 export * from './lib/carousel';
 export * from './lib/chart';
 export * from './lib/chip';
+export * from './lib/collapse';
 export * from './lib/command-palette';
 export * from './lib/copy-button';
 export * from './lib/description-list';
