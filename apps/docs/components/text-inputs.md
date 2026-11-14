@@ -55,6 +55,15 @@ affix gap:
 [rich text editor](/components/rich-text-editor). A `search` input hides the
 browser's native clear button.
 
+`clearable` adds a clear (×) button to the suffix stack while the focused input
+holds a value. It empties the value, emits the change and keeps focus in the
+input; `clearLabel` overrides its accessible name (the shared `clear` label from
+`provideFormFieldLabels`). `clear()` does the same from code.
+
+```html
+<et-input [formField]="demoForm.search" type="search" clearable placeholder="Search…" />
+```
+
 A **read-only** text field (set `readonly` in the field schema) draws its frame
 dashed and drops the hover change - default cursor, full-contrast value - so it
 reads as view-only content. It stays focusable, and focus draws a 2px dashed

@@ -38,6 +38,7 @@ import { INPUT_IMPORTS } from '../input.imports';
           [mixedLabel]="mixedLabel()"
           [type]="type()"
           [placeholder]="placeholder()"
+          [clearable]="clearable()"
           [aria-label]="label() ? null : ariaLabel()"
         />
         @if (showSuffix()) {
@@ -80,6 +81,7 @@ export class FormFieldInputStorybookComponent {
   public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
+  public clearable = input(false);
   public type = input<(typeof INPUT_TYPES)[keyof typeof INPUT_TYPES]>(INPUT_TYPES.TEXT);
   public label = input('Label');
   /** Accessible name used when `label` is empty - a placeholder is not an accessible name. */
