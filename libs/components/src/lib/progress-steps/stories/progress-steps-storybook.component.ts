@@ -1,9 +1,9 @@
 import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { injectUrl } from '@ethlete/core';
-import { ProgressStepsOrientation } from '../progress-steps.component';
+import { ProgressStepState } from '../headless/progress-step.directive';
+import { ProgressStepsOrientation } from '../headless/progress-steps.directive';
 import { PROGRESS_STEPS_IMPORTS } from '../progress-steps.imports';
-import { ProgressStepState } from '../progress-step.component';
 
 export type ProgressStepsStorybookStep = { label: string; state: ProgressStepState; description?: string };
 

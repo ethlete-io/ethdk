@@ -1,46 +1,9 @@
-import {
-  Component,
-  ElementRef,
-  Signal,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
-import {
-  CHECK_ICON,
-  IconDirective,
-  RegisteredIconName,
-  TIMES_ICON,
-  TRIANGLE_EXCLAMATION_ICON,
-  provideIcons,
-} from '../icon';
-import { injectSemanticThemes } from '../internals/semantic-theme';
-import { injectProgressStepLabels } from './progress-step-labels';
-
-export const PROGRESS_STEP_STATES = {
-  COMPLETE: 'complete',
-  CURRENT: 'current',
-  UPCOMING: 'upcoming',
-  SUCCESS: 'success',
-  WARNING: 'warning',
-  ERROR: 'error',
-} as const;
-
-export type ProgressStepState = (typeof PROGRESS_STEP_STATES)[keyof typeof PROGRESS_STEP_STATES];
-
-const INTERACTIVE_HOSTS = /* @__PURE__ */ new Set(['A', 'BUTTON']);
-
-const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
-  complete: 'et-check',
-  success: 'et-check',
-  warning: 'et-triangle-exclamation',
-  error: 'et-times',
-};
+import { IconDirective, provideIcons } from '../icon';
+import { ProgressStepDirective } from './headless/progress-step.directive';
+import { PROGRESS_STATE_ICONS, injectProgressStateVisuals } from './progress-state-visuals';
 
 /**
  * One step in an `et-progress-steps` row: a numbered marker that becomes an icon once resolved, plus
@@ -49,7 +12,8 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
  *
  * `complete` marks a step as done in the surrounding color theme; `success`, `warning` and `error`
  * mark it as done with an outcome and recolor the step in the app's matching semantic theme, each
- * with its own icon so the outcome does not rest on color alone.
+ * with its own icon so the outcome does not rest on color alone. `skipped` marks a step the process
+ * passed without doing it.
  *
  * Project `[etProgressStepDescription]` for a second, muted line under the label - what the step
  * covers, what it produced, why it failed:
@@ -59,6 +23,10 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
  *   Payment
  *   <span etProgressStepDescription>Card ending 4242</span>
  * </et-progress-step>
+ *
+ * Project `[etProgressStepContent]` for any further content under the text, and `[etProgressStepMarker]`
+ * to replace the number or icon inside the marker. For a look of your own, use the headless
+ * `etProgressSteps` and `etProgressStep` directives instead.
  *
  * Write the step as a link or a button to make it interactive - the attribute selector puts the step
  * on the consumer's own element, so `routerLink`, `href` and click handlers all stay where they
@@ -73,66 +41,21 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
   styleUrl: './progress-step.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective],
-  viewProviders: [provideIcons(CHECK_ICON, TIMES_ICON, TRIANGLE_EXCLAMATION_ICON)],
-  hostDirectives: [ProvideColorDirective, FocusRingDirective],
+  viewProviders: [provideIcons(...PROGRESS_STATE_ICONS)],
+  hostDirectives: [
+    { directive: ProgressStepDirective, inputs: ['stepState'] },
+    ProvideColorDirective,
+    FocusRingDirective,
+  ],
   host: {
     class: 'et-progress-step',
-    '[attr.data-state]': 'resolvedState()',
-    '[attr.aria-current]': 'ariaCurrent()',
-    '[attr.role]': 'role',
   },
 })
 export class ProgressStepComponent {
-  private provideColor = inject(ProvideColorDirective);
-  private semanticThemes = injectSemanticThemes();
-  private labels = injectProgressStepLabels();
-
-  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-
-  public stepState = input<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
-
-  protected role = INTERACTIVE_HOSTS.has(this.elementRef.nativeElement.nodeName) ? null : 'listitem';
-
-  private currentSource = signal<Signal<boolean> | null>(null);
-
-  protected resolvedState = computed(() =>
-    this.currentSource()?.() ? PROGRESS_STEP_STATES.CURRENT : this.stepState(),
-  );
-
-  protected markerIcon = computed(() => STATE_ICONS[this.resolvedState()] ?? null);
-  protected stateLabel = computed(() => {
-    const state = this.resolvedState();
-
-    return state === PROGRESS_STEP_STATES.CURRENT || state === PROGRESS_STEP_STATES.UPCOMING
-      ? null
-      : this.labels()[state];
-  });
-  protected ariaCurrent = computed(() => (this.resolvedState() === PROGRESS_STEP_STATES.CURRENT ? 'step' : null));
+  private step = inject(ProgressStepDirective);
+  protected visuals = injectProgressStateVisuals(this.step.resolvedState);
 
   constructor() {
     mountVisuallyHidden();
-
-    effect(() => {
-      const state = this.resolvedState();
-      const theme =
-        state === PROGRESS_STEP_STATES.SUCCESS ||
-        state === PROGRESS_STEP_STATES.WARNING ||
-        state === PROGRESS_STEP_STATES.ERROR
-          ? this.semanticThemes[state]()
-          : null;
-
-      if (!theme) {
-        this.provideColor.clearForcedColor();
-
-        return;
-      }
-
-      this.provideColor.forceColor(theme);
-    });
-  }
-
-  /** @internal */
-  public registerCurrentSource(source: Signal<boolean>) {
-    this.currentSource.set(source);
   }
 }

@@ -36,9 +36,10 @@ The content column takes the default slot plus the `[etTimelineTime]` slot, whic
 
 `et-timeline` takes no inputs; it is a layout container configured through its [design tokens](#theming).
 
-| Input on `et-timeline-item` | Type                          | Default | Description                                                        |
-| --------------------------- | ----------------------------- | ------- | ------------------------------------------------------------------ |
-| `color`                     | registered color theme / name | -       | Scopes a color theme to this item, which is what tints its marker. |
+| Input on `et-timeline-item` | Type                                                                                              | Default | Description                                                                                                                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `color`                     | registered color theme / name                                                                     | -       | Scopes a color theme to this item, which is what tints its marker.                                                                                                                                                                       |
+| `status`                    | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error' \| 'skipped' \| null` | `null`  | The progress-step vocabulary. A resolved status shows its icon in the marker and is announced; `success`, `warning` and `error` recolor the item in the app's semantic theme; `current` rings the marker and sets `aria-current="step"`. |
 
 ## Markers
 
@@ -55,6 +56,19 @@ With nothing projected into the marker slot, an item renders the default dot, si
 A projected marker sits on the surface background rather than on the line, so an icon stays legible where the rail passes behind it. Mixing dot items and icon items in one timeline is fine - both are centered on the same rail.
 
 @example timeline/timeline-with-markers 280px
+
+## Your own look: the headless directives
+
+`et-timeline` and `et-timeline-item` are the `etTimeline` and `etTimelineItem` directives plus the
+default rail. Put the directives on your own markup to keep the list semantics, the `status` on
+`data-status` and `aria-current`, and draw the rest yourself:
+
+```html
+<ol etTimeline>
+  <li etTimelineItem status="complete">Ordered</li>
+  <li etTimelineItem status="current">Shipped</li>
+</ol>
+```
 
 ## Density
 

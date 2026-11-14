@@ -1,7 +1,7 @@
 import { Directive, computed, inject, input, booleanAttribute } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { injectUrl } from '@ethlete/core';
-import { ProgressStepComponent } from './progress-step.component';
+import { ProgressStepDirective } from './headless/progress-step.directive';
 
 /**
  * Makes a step written as a `routerLink` the `current` step while its link is active in the router.
@@ -17,7 +17,7 @@ import { ProgressStepComponent } from './progress-step.component';
 export class ProgressStepRouterActiveDirective {
   private router = inject(Router);
   private routerLink = inject(RouterLink);
-  private step = inject(ProgressStepComponent);
+  private step = inject(ProgressStepDirective);
   private url = injectUrl();
 
   public etProgressStepExact = input(false, { transform: booleanAttribute });

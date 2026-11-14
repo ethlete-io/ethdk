@@ -3,7 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { ColorTheme, ProvideColorDirective, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { PROGRESS_STEPS_IMPORTS } from './progress-steps.imports';
-import { ProgressStepComponent, ProgressStepState } from './progress-step.component';
+import { ProgressStepState } from './headless/progress-step.directive';
+import { ProgressStepComponent } from './progress-step.component';
 import { TEST_SEMANTIC_COLOR_THEMES } from '../testing/color-themes';
 import { provideProgressStepLabels } from './progress-step-labels';
 
@@ -29,6 +30,19 @@ class ProgressStepHostComponent {
   imports: [PROGRESS_STEPS_IMPORTS],
 })
 class ProgressStepDescriptionHostComponent {}
+
+@Component({
+  selector: 'et-test-progress-step-slots-host',
+  template: `
+    <et-progress-step stepState="complete">
+      Draw
+      <b etProgressStepMarker>Q</b>
+      <button etProgressStepContent type="button">Open bracket</button>
+    </et-progress-step>
+  `,
+  imports: [PROGRESS_STEPS_IMPORTS],
+})
+class ProgressStepSlotsHostComponent {}
 
 describe('ProgressStepComponent', () => {
   it('defaults to upcoming and renders no checkmark icon', () => {
@@ -183,5 +197,31 @@ describe('ProgressStepComponent', () => {
     const marker = fixture.nativeElement.querySelector('.et-progress-step-marker') as HTMLElement;
 
     expect(marker.querySelector('[etProgressStepDescription]')).toBeNull();
+  });
+
+  it('marks a skipped step with its own icon and state text, in the surrounding theme', () => {
+    const fixture = TestBed.createComponent(ProgressStepHostComponent);
+    fixture.componentInstance.state.set('skipped');
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement.querySelector('et-progress-step') as HTMLElement;
+
+    expect(host.getAttribute('data-state')).toBe('skipped');
+    expect(host.querySelector('.et-progress-step-marker .et-icon')).not.toBeNull();
+    expect(host.querySelector('.et-progress-step-state')?.textContent).toBe('Skipped');
+    expect(fixture.componentInstance.step()?.effectiveColor()).toBeUndefined();
+  });
+
+  it('replaces the marker content with a projected marker and renders projected content under the text', () => {
+    const fixture = TestBed.createComponent(ProgressStepSlotsHostComponent);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement.querySelector('et-progress-step') as HTMLElement;
+    const marker = host.querySelector('.et-progress-step-marker') as HTMLElement;
+
+    expect(marker.textContent?.trim()).toBe('Q');
+    expect(marker.querySelector('.et-icon')).toBeNull();
+    expect(host.querySelector('.et-progress-step-text [etProgressStepContent]')?.textContent).toBe('Open bracket');
+    expect(host.querySelector('.et-progress-step-label')?.textContent?.trim()).toBe('Draw');
   });
 });

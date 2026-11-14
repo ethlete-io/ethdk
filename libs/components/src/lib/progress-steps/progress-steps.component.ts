@@ -1,16 +1,10 @@
-import { Component, input, ViewEncapsulation } from '@angular/core';
-
-export const PROGRESS_STEPS_ORIENTATIONS = {
-  HORIZONTAL: 'horizontal',
-  VERTICAL: 'vertical',
-} as const;
-
-export type ProgressStepsOrientation = (typeof PROGRESS_STEPS_ORIENTATIONS)[keyof typeof PROGRESS_STEPS_ORIENTATIONS];
+import { Component, ViewEncapsulation } from '@angular/core';
+import { ProgressStepsDirective } from './headless/progress-steps.directive';
 
 /**
- * Lays out a row - or, with `orientation="vertical"`, a column - of `et-progress-step`s with automatic
- * step numbering and a connecting line between them. Project the steps in order, each with its own
- * `stepState`.
+ * Lays out a row - or a column - of `et-progress-step`s with automatic step numbering and a connecting line
+ * between them. Project the steps in order, each with its own `stepState`. The default `orientation="auto"`
+ * stacks the steps into a column once the row gets too narrow for them, so they never scroll sideways.
  *
  * @example
  * <et-progress-steps>
@@ -24,13 +18,9 @@ export type ProgressStepsOrientation = (typeof PROGRESS_STEPS_ORIENTATIONS)[keyo
   template: `<ng-content />`,
   styleUrl: './progress-steps.component.css',
   encapsulation: ViewEncapsulation.None,
+  hostDirectives: [{ directive: ProgressStepsDirective, inputs: ['orientation', 'minStepSize'] }],
   host: {
     class: 'et-progress-steps',
-    role: 'list',
-    '[attr.data-orientation]': 'orientation()',
   },
 })
-export class ProgressStepsComponent {
-  /** Whether the steps run across the row or down a column. The connector follows. */
-  public orientation = input<ProgressStepsOrientation>(PROGRESS_STEPS_ORIENTATIONS.HORIZONTAL);
-}
+export class ProgressStepsComponent {}

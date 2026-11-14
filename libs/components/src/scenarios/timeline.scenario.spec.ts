@@ -1,7 +1,14 @@
 import { Component, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
-import { TIMELINE_IMPORTS, TimelineComponent, TimelineItemComponent } from '../index';
+import {
+  TIMELINE_IMPORTS,
+  TimelineComponent,
+  TimelineDirective,
+  TimelineItemComponent,
+  TimelineItemDirective,
+  TimelineItemStatus,
+} from '../index';
 import { TEST_COLOR_THEMES, TEST_SEMANTIC_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
 import { useScenario } from './harness';
@@ -50,6 +57,25 @@ class ChangelogComponent {
   entries = signal(['v1', 'v2']);
   items = viewChildren(TimelineItemComponent);
   timeline = viewChild.required(TimelineComponent);
+}
+
+@Component({
+  selector: 'et-scenario-order-tracking',
+  imports: [TimelineDirective, TimelineItemDirective],
+  template: `
+    <ol aria-label="Order" etTimeline>
+      @for (stage of stages(); track stage.label) {
+        <li [status]="stage.status" etTimelineItem>{{ stage.label }}</li>
+      }
+    </ol>
+  `,
+})
+class OrderTrackingComponent {
+  stages = signal<{ label: string; status: TimelineItemStatus }[]>([
+    { label: 'Ordered', status: 'complete' },
+    { label: 'Packed', status: 'skipped' },
+    { label: 'Shipped', status: 'current' },
+  ]);
 }
 
 describe('timeline scenarios', () => {
@@ -128,5 +154,28 @@ describe('timeline scenarios', () => {
 
     expect(app.items().length).toBe(3);
     expect(texts(host, 'et-timeline-item[role="listitem"]')).toEqual(['v1', 'v2', 'v3']);
+  });
+
+  it('renders an app-owned timeline with the headless directives and moves the status with the app', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(OrderTrackingComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    const items = () => Array.from(host.querySelectorAll('li'));
+
+    expect(host.querySelector('ol')?.getAttribute('role')).toBe('list');
+    expect(items().map((item) => item.getAttribute('data-status'))).toEqual(['complete', 'skipped', 'current']);
+    expect(items().map((item) => item.getAttribute('aria-current'))).toEqual([null, null, 'step']);
+
+    fixture.componentInstance.stages.update((stages) => [
+      ...stages.slice(0, 2),
+      { label: 'Shipped', status: 'complete' },
+      { label: 'Delivered', status: 'current' },
+    ]);
+    s.tick();
+
+    expect(items().map((item) => item.getAttribute('aria-current'))).toEqual([null, null, null, 'step']);
   });
 });

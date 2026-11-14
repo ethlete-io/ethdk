@@ -10,8 +10,10 @@ import {
   PROGRESS_STEPS_IMPORTS,
   PROGRESS_STEPS_ORIENTATIONS,
   ProgressStepComponent,
+  ProgressStepDirective,
   ProgressStepRouterActiveDirective,
   ProgressStepsComponent,
+  ProgressStepsDirective,
   ProgressStepsOrientation,
   ProgressStepState,
   provideProgressStepLabels,
@@ -123,6 +125,22 @@ const stateTexts = (host: HTMLElement) =>
   Array.from(host.querySelectorAll<HTMLElement>('.et-progress-step')).map(
     (step) => text(step.querySelector('.et-progress-step-state')) || null,
   );
+
+@Component({
+  selector: 'et-scenario-headless-steps',
+  imports: [ProgressStepsDirective, ProgressStepDirective, ProgressStepRouterActiveDirective, RouterLink],
+  template: `
+    <nav>
+      <ol #steps="etProgressSteps" orientation="vertical" etProgressSteps>
+        <li stepState="complete" etProgressStep>Draw</li>
+        <li stepState="skipped" etProgressStep>Qualifier</li>
+        <li><a [routerLink]="['/shipping']" etProgressStep etProgressStepRouterActive>Final</a></li>
+      </ol>
+      <p class="count">{{ steps.steps().length }}</p>
+    </nav>
+  `,
+})
+class HeadlessStepsComponent {}
 
 describe('progress steps scenarios', () => {
   const scenario = useScenario({
@@ -327,6 +345,30 @@ describe('progress steps scenarios', () => {
 
     expect(router.url).toBe('/payment');
     expect(states()).toEqual(['complete', 'upcoming', 'current']);
+    expect(s.errors).toEqual([]);
+  });
+
+  it('drives app-owned markup through the headless directives, router state included', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(HeadlessStepsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const steps = () => Array.from(host.querySelectorAll<HTMLElement>('[etProgressStep]'));
+
+    s.tick();
+
+    expect(host.querySelector('ol')?.getAttribute('role')).toBe('list');
+    expect(host.querySelector('ol')?.getAttribute('data-orientation')).toBe('vertical');
+    expect(host.querySelector('.count')?.textContent).toBe('3');
+    expect(steps().map((step) => step.dataset['state'])).toEqual(['complete', 'skipped', 'upcoming']);
+    expect(steps().map((step) => step.getAttribute('role'))).toEqual(['listitem', 'listitem', null]);
+
+    await TestBed.inject(Router).navigateByUrl('/shipping');
+    s.tick();
+    s.flush();
+    fixture.detectChanges();
+
+    expect(steps()[2]?.dataset['state']).toBe('current');
+    expect(steps()[2]?.getAttribute('aria-current')).toBe('step');
     expect(s.errors).toEqual([]);
   });
 });

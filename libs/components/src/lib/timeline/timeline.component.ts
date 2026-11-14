@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
+import { TimelineDirective } from './headless/timeline.directive';
 
 /**
  * A vertical rail of chronological events - an activity feed, an audit log, a match report. Project
@@ -25,9 +26,9 @@ import { Component, ViewEncapsulation } from '@angular/core';
   template: `<ng-content />`,
   styleUrl: './timeline.component.css',
   encapsulation: ViewEncapsulation.None,
+  hostDirectives: [TimelineDirective],
   host: {
     class: 'et-timeline',
-    role: 'list',
   },
 })
 export class TimelineComponent {}

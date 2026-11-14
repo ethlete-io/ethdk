@@ -63,6 +63,10 @@ the three outcome states) - the line says "the flow got past here".
 
 ## A column instead of a row
 
+The default `orientation="auto"` keeps the steps in a row while each step gets at least `minStepSize`
+pixels (96 by default) and stacks them into a column below that, so the steps never scroll sideways on a
+narrow screen. Set `horizontal` or `vertical` to pin one layout.
+
 `orientation="vertical"` on `et-progress-steps` stacks the steps, puts each label beside its marker,
 and turns the connector into a vertical bar hanging from one marker down to the next. It is not a
 rotation of the horizontal connector - the geometry is its own - and the gap default grows to `20px`,
@@ -141,15 +145,16 @@ normal case: only the steps behind the user are reachable.
 
 ### `et-progress-steps`
 
-| Input         | Type                         | Default        | Description                                          |
-| ------------- | ---------------------------- | -------------- | ---------------------------------------------------- |
-| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Whether the steps run across a row or down a column. |
+| Input         | Type                                   | Default  | Description                                                                    |
+| ------------- | -------------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| `orientation` | `'auto' \| 'horizontal' \| 'vertical'` | `'auto'` | A row, a column, or a row that stacks into a column once the steps do not fit. |
+| `minStepSize` | `number`                               | `96`     | In `auto`, the narrowest a step may get, in pixels, before the steps stack.    |
 
 ### `et-progress-step`
 
-| Input       | Type                                                                         | Default      | Description                                                                                            |
-| ----------- | ---------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
-| `stepState` | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error'` | `'upcoming'` | Drives the marker (number vs. icon), the connector tint, the label weight, and the step's color theme. |
+| Input       | Type                                                                                      | Default      | Description                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| `stepState` | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error' \| 'skipped'` | `'upcoming'` | Drives the marker (number vs. icon), the connector tint, the label weight, and the step's color theme. |
 
 ### `etProgressStepRouterActive`
 
@@ -163,6 +168,29 @@ Applies to an `et-progress-step` that also has a `routerLink`.
 | ----------------------------- | ------------------------------------------------------------------------------------------- |
 | _(default)_                   | The step's label.                                                                           |
 | `[etProgressStepDescription]` | A second, muted line under the label. Rendered only when you project it; no reserved space. |
+| `[etProgressStepContent]`     | Any further content under the text: a card, a button, a result.                             |
+| `[etProgressStepMarker]`      | Replaces the number or icon inside the marker.                                              |
+
+## Skipped steps
+
+`skipped` marks a step the process passed without doing it - a qualifier a seeded team does not play, an
+optional form page. Its marker shows a dash in a dashed ring, it keeps the surrounding color theme, the
+connector after it fills like a completed one, and it is announced as "Skipped".
+
+## Your own look: the headless directives
+
+`et-progress-steps` and `et-progress-step` are the `etProgressSteps` and `etProgressStep` directives plus
+the default look. Put the directives on your own markup to keep the list semantics, the states on
+`data-state`, `aria-current="step"`, the `auto` orientation on `data-orientation` and
+`etProgressStepRouterActive`, and style it any way you like:
+
+```html
+<ol #steps="etProgressSteps" etProgressSteps>
+  @for (step of steps; track step.id) {
+  <li [stepState]="step.state" etProgressStep>{{ step.label }}</li>
+  }
+</ol>
+```
 
 ## Accessibility
 

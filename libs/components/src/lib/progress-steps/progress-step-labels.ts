@@ -6,6 +6,7 @@ export type ProgressStepLabels = {
   success: string;
   warning: string;
   error: string;
+  skipped: string;
 };
 
 /** The built-in English labels. */
@@ -14,6 +15,7 @@ export const DEFAULT_PROGRESS_STEP_LABELS: ProgressStepLabels = {
   success: 'Succeeded',
   warning: 'Warning',
   error: 'Failed',
+  skipped: 'Skipped',
 };
 
 /** The built-in German labels, used when the current locale is a German one. */
@@ -22,6 +24,7 @@ export const GERMAN_PROGRESS_STEP_LABELS: ProgressStepLabels = {
   success: 'Erfolgreich',
   warning: 'Warnung',
   error: 'Fehlgeschlagen',
+  skipped: 'Übersprungen',
 };
 
 /** The label set for a locale. Anything other than English and German needs {@link provideProgressStepLabels}. */

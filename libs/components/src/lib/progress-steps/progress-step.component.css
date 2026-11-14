@@ -50,9 +50,13 @@
 
     /* Every resolved state fills its connector. The color comes from the step's own forced theme, so
        a failed step's segment is red with no per-state rule here. */
-    &:is([data-state='complete'], [data-state='success'], [data-state='warning'], [data-state='error']):not(
-        :last-child
-      )::after {
+    &:is(
+        [data-state='complete'],
+        [data-state='success'],
+        [data-state='warning'],
+        [data-state='error'],
+        [data-state='skipped']
+      ):not(:last-child)::after {
       background: var(--et-theme-color-ink-solid);
     }
 
@@ -101,6 +105,10 @@
       color: var(--et-theme-color-on-primary-solid, white);
     }
 
+    &[data-state='skipped'] .et-progress-step-marker {
+      border-style: dashed;
+    }
+
     .et-progress-step-marker-number::before {
       content: counter(et-progress-step);
     }
@@ -115,6 +123,7 @@
       min-inline-size: 0;
       font-size: var(--et-progress-step-label-font-size);
       text-align: center;
+      overflow-wrap: anywhere;
     }
 
     .et-progress-step-label {
@@ -126,6 +135,10 @@
       margin: 0;
       font-size: var(--et-progress-step-description-font-size);
       color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    [etProgressStepContent] {
+      margin-block-start: 4px;
     }
 
     &[data-state='current'] .et-progress-step-label {

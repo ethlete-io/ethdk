@@ -1,3 +1,4 @@
+export * from './headless';
 export * from './progress-step-labels';
 export * from './progress-step-router-active.directive';
 export * from './progress-step.component';

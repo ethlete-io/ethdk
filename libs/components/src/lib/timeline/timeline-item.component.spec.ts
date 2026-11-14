@@ -35,7 +35,7 @@ describe('TimelineItemComponent', () => {
     const marker = fixture.nativeElement.querySelector('.et-timeline-item-marker') as HTMLElement;
 
     expect(marker).not.toBeNull();
-    expect(marker.childNodes.length).toBe(0);
+    expect(marker.matches(':empty')).toBe(true);
   });
 
   it('projects the content next to the rail', () => {

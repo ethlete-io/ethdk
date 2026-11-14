@@ -1,10 +1,17 @@
 <span class="et-timeline-item-rail">
   <span class="et-timeline-item-marker">
-    <ng-content select="[etTimelineMarker]" />
+    <ng-content select="[etTimelineMarker]">
+      @if (visuals.icon(); as icon) {
+        <i [etIcon]="icon"></i>
+      }
+    </ng-content>
   </span>
 </span>
 
 <div class="et-timeline-item-content">
+  @if (visuals.label(); as label) {
+    <span class="et-visually-hidden et-timeline-item-status">{{ label }}</span>
+  }
   <ng-content select="[etTimelineTime]" />
   <ng-content />
 </div>

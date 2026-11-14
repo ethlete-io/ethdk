@@ -1,17 +1,20 @@
 <span class="et-progress-step-marker">
-  @if (markerIcon(); as icon) {
-    <i [etIcon]="icon"></i>
-  } @else {
-    <span class="et-progress-step-marker-number"></span>
-  }
+  <ng-content select="[etProgressStepMarker]">
+    @if (visuals.icon(); as icon) {
+      <i [etIcon]="icon"></i>
+    } @else {
+      <span class="et-progress-step-marker-number"></span>
+    }
+  </ng-content>
 </span>
 
 <span class="et-progress-step-text">
   <span class="et-progress-step-label"><ng-content /></span>
 
-  @if (stateLabel(); as label) {
+  @if (visuals.label(); as label) {
     <span class="et-visually-hidden et-progress-step-state">{{ label }}</span>
   }
 
   <ng-content select="[etProgressStepDescription]" />
+  <ng-content select="[etProgressStepContent]" />
 </span>

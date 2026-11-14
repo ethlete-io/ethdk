@@ -110,6 +110,16 @@
     }
   }
 
+  .et-timeline-item:where([data-status='upcoming'], [data-status='skipped']) .et-timeline-item-marker {
+    color: var(--et-timeline-marker-color, var(--et-surface-color-muted-solid, currentColor));
+  }
+
+  .et-timeline-item[data-status='current'] .et-timeline-item-marker {
+    box-shadow:
+      0 0 0 var(--et-timeline-line-thickness) var(--et-surface-background-solid, Canvas),
+      0 0 0 calc(var(--et-timeline-line-thickness) * 2) currentColor;
+  }
+
   .et-timeline-item:last-child .et-timeline-item-rail::before {
     display: none;
   }
