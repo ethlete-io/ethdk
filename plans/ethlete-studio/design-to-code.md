@@ -2514,6 +2514,11 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
   drew states inline and system-page again; 44f3d6430 draws system-page per state. Open: empty product side panel shows
   the app tree, not the design's "none" line. Suspect: `design check --part` writes part files (cf. B500 P5).
+- B502 (night 14.11.): page links derived (9dac1ca77), guard: candidate takes every design prop (spec only, no live
+  rejection yet). 484 (ddcc3bb6e): STATE-UNDESIGNED names template branches no design state takes; hits on 484:
+  pages/sketches error(), listError(); pages/system listingError()/noted(). Limits: @switch, @Input aliases. Not
+  verified: full check --slow on studio. Open: their sketches, 140 actions, harness drift; sketch merge runs no
+  `generated` + ACTION-LOST (B501 area).
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
