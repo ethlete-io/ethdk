@@ -1897,6 +1897,7 @@ the other open `pages-system` sketch. Cause (measured by the subagent): `sketchH
 `libs/cli/src/lib/design/shot-command.ts` matches the part only, never the sketch name. Missed: no spec has two open
 sketches on one part. Tool fix (Linux builder, after 731): shot resolves `<part>@<name>`; spec bite with two sketches
 on one part; an `--at` shot of a named sketch counts as viewed.
+736 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. Cause: c18d4a1d0 (2026-11-10) made `sketchHoldingOf` (`shot-command.ts`) resolve `<part>@<name>`, refuse a bare part with several named sketches, and record an `--at` shot of the live sketch as viewed. Probe: `shot-command.spec.ts` "draws the sketch a <part>@<name> shot names, not the first one on the part" and "refuses a bare shot of a part with two named sketches before it draws" pass today.
 
 737\. Linux builder (2026-11-10, same sketch): because of 736, `sketch ready` refused with SHOT-NOT-VIEWED, and the
 subagent called `recordShotViewed` directly to pass the gate. The gate was bypassed, not met; the builder says the
@@ -1904,6 +1905,7 @@ viewed content equals the commit. Lesson: a gate that an agent can satisfy with 
 tool is broken; the agent must stop and report the tool defect instead. Tool fix (with 736): the viewed record holds
 the hash of the shot file the CLI drew, and `sketch ready` checks it, so a direct call without a real shot fails;
 builder subagent briefs say "a refused gate is a finding, never call its internals".
+737 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. Cause: c18d4a1d0 (2026-11-10) ties the viewed record to the shot file the CLI drew (`viewed-shots.ts`), and the subagent briefs carry the refused-gate line. Probe: `sketch-command.spec.ts` "refuses ready on a viewed record without a shot the CLI drew of the current content" passes today.
 
 738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
 render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
@@ -2364,6 +2366,7 @@ head's CLI copy is not built it prints a hint to run `yarn et:design status` and
 823\. Linux builder (2026-11-11, B489): `sketch rebase` named only variant b as a conflict ("the variant and the product
 both changed it"); a and c had the same kind of overlap and passed. Suspect. Tool fix (doc agent, tool internal): find
 the rule that let a and c through; a spec with the B489 variants (da746a43e onto 2f83c46da) must name all three.
+823 as built (Linux builder subagent, 2026-11-14, B503): moot, nothing built. Probe: `portBaseChanges` run on a git worktree of 9df5ffa51 (sketch as drawn in da746a43e, product after the change-crop merge 2f83c46da) and of a8621f4ab (the person-name fix, the state B489 rebased), with today's `rebase-port.ts` and with the a8621f4ab one: each run names a, b and c (`pages/sketches/sketches.ts - the variant and the product both changed it`); the old `sketch rebase` printed every conflict line. So no rule lets a and c through on these inputs, and a spec with them would be green on the old code. Suspect: the B489 run that named only b ran on a sketch whose a and c were already ported by hand.
 
 824\. Linux builder (2026-11-11, B489): `sketch check` 70 s and `sketch ready` 59 s (target 10 s), `design check
 --product studio` 199 s (target 60 s). Measured once. Tool fix (doc agent, tool internal): profile one `sketch check`
