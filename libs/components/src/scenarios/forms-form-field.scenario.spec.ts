@@ -25,6 +25,7 @@ import {
   FORM_FIELD_FILLS,
   FORM_FIELD_IMPORTS,
   FORM_FIELD_LABEL_MODES,
+  FORM_FIELD_LABEL_POSITIONS,
   FORM_FIELD_SIZES,
   FormFieldComponent,
   FormFieldDirective,
@@ -78,6 +79,7 @@ class SignupComponent {
       [appearance]="appearance()"
       [fill]="fill()"
       [labelMode]="labelMode()"
+      [labelPosition]="labelPosition()"
       [size]="size()"
       [busy]="busy()"
     >
@@ -95,6 +97,7 @@ class ProfileComponent {
   appearance = signal<'box' | 'underline'>(FORM_FIELD_APPEARANCES.BOX);
   fill = signal<'transparent' | 'filled'>(FORM_FIELD_FILLS.TRANSPARENT);
   labelMode = signal<'static' | 'inline' | 'floating-inside' | 'floating-outside'>(FORM_FIELD_LABEL_MODES.STATIC);
+  labelPosition = signal<'top' | 'start'>(FORM_FIELD_LABEL_POSITIONS.TOP);
   size = signal<'sm' | 'md' | 'lg'>(FORM_FIELD_SIZES.MD);
   busy = signal(false);
   profile = form(this.model, (path) => {
@@ -521,6 +524,26 @@ describe('forms form-field scenarios', () => {
     profile.busy.set(false);
     render(s);
     expect(formField.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('moves the label before the control frame for labelPosition start and forces a static label', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ProfileComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const formField = query('et-form-field', host);
+    const profile = fixture.componentInstance;
+    render(s);
+
+    expect(formField.hasAttribute('data-label-position')).toBe(false);
+
+    profile.labelMode.set(FORM_FIELD_LABEL_MODES.FLOATING_INSIDE);
+    profile.labelPosition.set(FORM_FIELD_LABEL_POSITIONS.START);
+    render(s);
+
+    expect(formField.getAttribute('data-label-position')).toBe('start');
+    expect(formField.getAttribute('data-label-mode')).toBe('start');
+    expect(query('.et-form-field-shell > .et-form-field-label-area--start et-label', host)).toBeTruthy();
+    expect(host.querySelector('.et-form-field-control-frame et-label')).toBeNull();
   });
 
   it('names a label-less control by its own aria-label, lets aria-labelledby beat the label, and shows [warnings]', () => {

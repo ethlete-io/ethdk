@@ -11,6 +11,8 @@ import {
   FormFieldAppearance,
   FormFieldFill,
   FormFieldLabelMode,
+  FormFieldLabelPosition,
+  FORM_FIELD_LABEL_POSITIONS,
   FormFieldSize,
 } from '../../form-field';
 import { DESCRIPTION_IMPORTS } from '../../description/description.imports';
@@ -22,7 +24,13 @@ import { INPUT_CLEAR_IMPORTS, INPUT_IMPORTS } from '../input.imports';
   selector: 'et-sb-form-field-input',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
+      <et-form-field
+        [appearance]="appearance()"
+        [fill]="fill()"
+        [size]="size()"
+        [labelMode]="labelMode()"
+        [labelPosition]="labelPosition()"
+      >
         @if (label()) {
           <et-label>{{ label() }}</et-label>
         }
@@ -83,6 +91,7 @@ export class FormFieldInputStorybookComponent {
   public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
+  public labelPosition = input<FormFieldLabelPosition>(FORM_FIELD_LABEL_POSITIONS.TOP);
   public clearable = input(false);
   public type = input<(typeof INPUT_TYPES)[keyof typeof INPUT_TYPES]>(INPUT_TYPES.TEXT);
   public label = input('Label');

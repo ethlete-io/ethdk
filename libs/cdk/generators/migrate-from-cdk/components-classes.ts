@@ -353,6 +353,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-form-field-label-area',
   'et-form-field-label-area--floating',
   'et-form-field-label-area--inline',
+  'et-form-field-label-area--start',
   'et-form-field-prefix',
   'et-form-field-shell',
   'et-form-field-suffix',

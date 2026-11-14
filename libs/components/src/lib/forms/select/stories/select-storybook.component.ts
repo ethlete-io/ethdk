@@ -13,6 +13,8 @@ import {
   FormFieldAppearance,
   FormFieldFill,
   FormFieldLabelMode,
+  FormFieldLabelPosition,
+  FORM_FIELD_LABEL_POSITIONS,
   FormFieldSize,
 } from '../../form-field';
 import { TAB_IMPORTS } from '../../../tabs/tabs.imports';
@@ -32,7 +34,13 @@ const FRUIT_OPTIONS = [
   selector: 'et-sb-form-field-select',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
+      <et-form-field
+        [appearance]="appearance()"
+        [fill]="fill()"
+        [size]="size()"
+        [labelMode]="labelMode()"
+        [labelPosition]="labelPosition()"
+      >
         <et-label>{{ label() }}</et-label>
         <et-select
           [(mixed)]="mixedState"
@@ -81,6 +89,7 @@ export class FormFieldSelectStorybookComponent {
   public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
+  public labelPosition = input<FormFieldLabelPosition>(FORM_FIELD_LABEL_POSITIONS.TOP);
   public label = input('Fruit');
   public placeholder = input('Pick a fruit');
   public hint = input('');

@@ -65,6 +65,12 @@
     initial-value: 14px;
   }
 
+  @property --et-form-field-label-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-form-field-error-font-size {
     syntax: '<length>';
     inherits: true;
@@ -127,6 +133,31 @@
       et-label {
         display: inline;
         min-inline-size: 0;
+      }
+    }
+
+    &:where([data-label-position='start']) {
+      display: grid;
+      grid-template-columns: var(--et-form-field-label-column, auto) var(--et-form-field-control-column, minmax(0, 1fr));
+      column-gap: var(--et-form-field-label-gap);
+      align-items: center;
+
+      .et-form-field-shell {
+        display: contents;
+      }
+
+      .et-form-field-label-area--start {
+        grid-column: 1;
+        align-self: center;
+      }
+
+      .et-form-field-control-frame {
+        grid-column: 2;
+      }
+
+      > et-description,
+      .et-form-field-support {
+        grid-column: 2;
       }
     }
 

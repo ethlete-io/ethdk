@@ -1,17 +1,29 @@
+<ng-template #labelTemplate>
+  <ng-content select="et-label" />
+</ng-template>
+
 <div class="et-form-field-shell">
+  @if (hasStartLabel()) {
+    <div class="et-form-field-label-area et-form-field-label-area--start">
+      <ng-template [ngTemplateOutlet]="labelTemplate" />
+    </div>
+  }
+
   <div #controlFrame (mousedown)="handleFramePointerDown($event)" class="et-form-field-control-frame">
     <div #prefixEl class="et-form-field-affix et-form-field-prefix">
       <ng-content select="[etInputPrefix]" />
     </div>
 
     <div class="et-form-field-control-area">
-      <div
-        [class.et-form-field-label-area--floating]="hasFloatingTextLabel()"
-        [class.et-form-field-label-area--inline]="hasInlineLabel()"
-        class="et-form-field-label-area"
-      >
-        <ng-content select="et-label" />
-      </div>
+      @if (!hasStartLabel()) {
+        <div
+          [class.et-form-field-label-area--floating]="hasFloatingTextLabel()"
+          [class.et-form-field-label-area--inline]="hasInlineLabel()"
+          class="et-form-field-label-area"
+        >
+          <ng-template [ngTemplateOutlet]="labelTemplate" />
+        </div>
+      }
 
       <div class="et-form-field-control-slot">
         <ng-content />

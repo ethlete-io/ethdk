@@ -36,9 +36,11 @@ import { injectFormFieldDefaults } from './form-field-defaults';
 import {
   FORM_FIELD_FILLS,
   FORM_FIELD_LABEL_MODES,
+  FORM_FIELD_LABEL_POSITIONS,
   FormFieldAppearance,
   FormFieldFill,
   FormFieldLabelMode,
+  FormFieldLabelPosition,
   FormFieldSize,
 } from './form-field.variants';
 import {
@@ -91,7 +93,8 @@ import {
     '[attr.data-et-surface-fill]': 'paintsElevatedFill() ? "" : null',
     '[attr.data-label-floated]': 'hasFloatingTextLabel() && formFieldDir.shouldFloatLabel() ? "" : null',
     '[attr.data-has-label]': 'formFieldDir.registeredLabel() ? "" : null',
-    '[attr.data-label-mode]': 'formFieldDir.usesTextFieldShell() ? labelMode() : null',
+    '[attr.data-label-mode]': 'formFieldDir.usesTextFieldShell() ? (hasStartLabel() ? "start" : labelMode()) : null',
+    '[attr.data-label-position]': 'hasStartLabel() ? "start" : null',
     '[attr.data-size]': 'formFieldDir.usesTextFieldShell() ? size() : null',
     '[attr.data-text-shell]': 'formFieldDir.usesTextFieldShell() || null',
     '[style.--_et-form-field-prefix-offset]': 'prefixOffset()',
@@ -113,6 +116,13 @@ export class FormFieldComponent {
   public fill = input<FormFieldFill>(this.defaults.fill);
   public labelMode = input<FormFieldLabelMode>(this.defaults.labelMode);
   public size = input<FormFieldSize>(this.defaults.size);
+
+  /**
+   * `'start'` puts the label outside the control frame, before it and vertically centred, and the control takes
+   * the remaining width. It replaces `labelMode` with a static label, and only applies to text-field controls.
+   * @default 'top'
+   */
+  public labelPosition = input<FormFieldLabelPosition>(FORM_FIELD_LABEL_POSITIONS.TOP);
 
   /**
    * Shows the busy spinner for work the form doesn't know about (saving, a lookup of your own). A
@@ -159,15 +169,23 @@ export class FormFieldComponent {
 
   public canAnimate = createCanAnimateSignal();
 
+  protected hasStartLabel = computed(
+    () => this.formFieldDir.usesTextFieldShell() && this.labelPosition() === FORM_FIELD_LABEL_POSITIONS.START,
+  );
+
   protected hasFloatingTextLabel = computed(
     () =>
       this.formFieldDir.usesTextFieldShell() &&
+      !this.hasStartLabel() &&
       this.labelMode() !== FORM_FIELD_LABEL_MODES.STATIC &&
       this.labelMode() !== FORM_FIELD_LABEL_MODES.INLINE,
   );
 
   protected hasInlineLabel = computed(
-    () => this.formFieldDir.usesTextFieldShell() && this.labelMode() === FORM_FIELD_LABEL_MODES.INLINE,
+    () =>
+      this.formFieldDir.usesTextFieldShell() &&
+      !this.hasStartLabel() &&
+      this.labelMode() === FORM_FIELD_LABEL_MODES.INLINE,
   );
 
   protected prefixOffset = computed(() => {

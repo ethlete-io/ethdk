@@ -21,6 +21,7 @@ describe('form-field tokens', () => {
     ['--et-form-field-control-focus-ring-width', 'box-shadow'],
     ['--et-form-field-value-color', 'color'],
     ['--et-form-field-value-color-active', 'color'],
+    ['--et-form-field-label-gap', 'column-gap'],
     ['--et-form-field-label-font-weight', 'font-weight'],
     ['--et-form-field-label-letter-spacing', 'letter-spacing'],
     ['--et-form-field-letter-spacing', 'letter-spacing'],

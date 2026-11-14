@@ -21,6 +21,13 @@ export const FORM_FIELD_LABEL_MODES = {
 
 export type FormFieldLabelMode = (typeof FORM_FIELD_LABEL_MODES)[keyof typeof FORM_FIELD_LABEL_MODES];
 
+export const FORM_FIELD_LABEL_POSITIONS = {
+  TOP: 'top',
+  START: 'start',
+} as const;
+
+export type FormFieldLabelPosition = (typeof FORM_FIELD_LABEL_POSITIONS)[keyof typeof FORM_FIELD_LABEL_POSITIONS];
+
 export const FORM_FIELD_SIZES = {
   SM: 'sm',
   MD: 'md',

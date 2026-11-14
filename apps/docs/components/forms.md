@@ -169,12 +169,29 @@ They are now one shared pair in the field's suffix slot - restyle against the ne
 
 Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 
-| Input        | Values                                                            | Default         |
-| ------------ | ----------------------------------------------------------------- | --------------- |
-| `appearance` | `'box' \| 'underline'`                                            | `'box'`         |
-| `fill`       | `'transparent' \| 'filled'`                                       | `'transparent'` |
-| `labelMode`  | `'static' \| 'inline' \| 'floating-inside' \| 'floating-outside'` | `'static'`      |
-| `size`       | `'sm' \| 'md' \| 'lg'`                                            | `'md'`          |
+| Input           | Values                                                            | Default         |
+| --------------- | ----------------------------------------------------------------- | --------------- |
+| `appearance`    | `'box' \| 'underline'`                                            | `'box'`         |
+| `fill`          | `'transparent' \| 'filled'`                                       | `'transparent'` |
+| `labelMode`     | `'static' \| 'inline' \| 'floating-inside' \| 'floating-outside'` | `'static'`      |
+| `size`          | `'sm' \| 'md' \| 'lg'`                                            | `'md'`          |
+| `labelPosition` | `'top' \| 'start'`                                                | `'top'`         |
+
+`labelPosition="start"` moves the label out of the control frame to its start, vertically
+centred, and the control takes the remaining width. It replaces `labelMode` with a static label
+(floating and inline labels do not apply), and hints and errors stay under the control. It only
+applies to text-field controls such as `et-input` and `et-select`.
+
+The label column and the control column are `auto` and `minmax(0, 1fr)`. Set
+`--et-form-field-label-column: 1fr` and `--et-form-field-control-column: auto` to give the free
+space to the label instead. `--et-form-field-label-gap` (default `12px`) sets the space between them.
+
+```html
+<et-form-field labelPosition="start">
+  <et-label>Name</et-label>
+  <input [formField]="demoForm.name" etInput />
+</et-form-field>
+```
 
 To change these defaults for a whole app or a subtree, call `provideFormFieldDefaults()` in its
 providers. An input set on a field still wins:
