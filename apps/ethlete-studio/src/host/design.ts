@@ -425,7 +425,9 @@ export type ListedSketch = {
   /** Per variant, every rejection it had, oldest first. Missing from an `@ethlete/cli` without variant rejection. */
   rejections?: Record<string, SketchRejection[]>;
   /** Set while `sketch hold` pauses the sketch: what it waits on, the model id that held it and when. */
-  hold?: { until: string; by: string; heldAt: string };
+  hold?: { until: string; by: string; heldAt: string; untilSketch?: { target: string; mergedHash: string | null } };
+  /** How the sketch `hold.untilSketch` waits on ended, `null` while it is open. Missing from an `@ethlete/cli` older than it. */
+  holdTargetEnd?: 'merged' | 'discarded' | null;
   /**
    * Set while a ready sketch could not merge itself: why, when it tried, and the uncommitted files that refused it
    * (the design server retries once they are committed).

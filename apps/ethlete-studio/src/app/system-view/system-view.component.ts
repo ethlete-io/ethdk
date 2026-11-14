@@ -489,7 +489,9 @@ export class SystemViewComponent {
       })),
     ).pipe(
       switchMap(({ port, product }) =>
-        port && product ? sketchRead$({ port, product, kept: untracked(this.sketchList) }) : of(null),
+        port && product
+          ? sketchRead$({ port, product, kept: untracked(this.sketchList), picked: untracked(this.picked) })
+          : of(null),
       ),
     ),
     { initialValue: null },
@@ -931,7 +933,13 @@ export class SystemViewComponent {
     const marksOf = (entry: TreeEntry) => ({
       key: entry.key,
       selected: entry.key === selected,
-      ...(entry.badges.some((badge) => badge === 'error' || badge === 'needs rebase' || badge === 'changed since ready')
+      ...(entry.badges.some(
+        (badge) =>
+          badge === 'error' ||
+          badge === 'needs rebase' ||
+          badge === 'changed since ready' ||
+          badge === 'hold target ended',
+      )
         ? { warns: entry.title ?? true }
         : {}),
     });

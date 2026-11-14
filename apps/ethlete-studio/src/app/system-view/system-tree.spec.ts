@@ -741,6 +741,31 @@ describe('sketches in the tree', () => {
     ]);
   });
 
+  it('flags a sketch held on a sketch that was merged or discarded, and not one on an open or free-text hold', () => {
+    const hold = (target: string) => ({ until: 'x', by: 'm', heldAt: 't', untilSketch: { target, mergedHash: null } });
+    const [sketches] = treeOf([part()], {
+      sketches: [
+        sketch({ hold: hold('components/chip@calm'), holdTargetEnd: 'merged' }),
+        sketch({
+          target: 'elements/a',
+          layer: 'elements',
+          name: 'a',
+          hold: hold('pages/x'),
+          holdTargetEnd: 'discarded',
+        }),
+        sketch({ target: 'elements/b', layer: 'elements', name: 'b', hold: hold('pages/y'), holdTargetEnd: null }),
+        sketch({ target: 'elements/c', layer: 'elements', name: 'c', hold: { until: 'x', by: 'm', heldAt: 't' } }),
+      ],
+    });
+
+    expect(sketches?.entries.map((entry) => [entry.title, entry.badges])).toEqual([
+      ['Pausiert auf components/chip@calm, das übernommen ist: Pause aufheben', ['in progress', 'hold target ended']],
+      ['Pausiert auf pages/x, das verworfen ist: Pause aufheben', ['in progress', 'hold target ended']],
+      ['elements/b', ['in progress']],
+      ['elements/c', ['in progress']],
+    ]);
+  });
+
   it('titles a sketch with one line per problem, naming its variant and rule', () => {
     const [sketches] = treeOf([part()], {
       sketches: [

@@ -136,6 +136,8 @@ export const STUDIO_LABELS = {
     sketchNeedsRebase: (parts: readonly string[]) =>
       parts.length === 0 ? 'Braucht Rebase: keine Baseline' : `Braucht Rebase: ${parts.join(', ')} geändert`,
     sketchChangedSinceReady: (variants: readonly string[]) => `Seit Freigabe geändert: ${variants.join(', ')}`,
+    sketchHoldTargetEnded: (target: string, end: 'merged' | 'discarded') =>
+      `Pausiert auf ${target}, das ${end === 'merged' ? 'übernommen' : 'verworfen'} ist: Pause aufheben`,
     openComments: (count: number) => (count === 1 ? '1 offener Kommentar' : `${count} offene Kommentare`),
   },
   system: {
