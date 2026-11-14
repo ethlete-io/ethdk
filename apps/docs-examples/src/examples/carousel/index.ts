@@ -3,6 +3,8 @@ export const CAROUSEL_EXAMPLES = {
     import('./carousel-default.example').then((m) => m.CarouselDefaultExampleComponent),
   'carousel/carousel-loop': () => import('./carousel-loop.example').then((m) => m.CarouselLoopExampleComponent),
   'carousel/carousel-wipe': () => import('./carousel-wipe.example').then((m) => m.CarouselWipeExampleComponent),
+  'carousel/carousel-overlay': () =>
+    import('./carousel-overlay.example').then((m) => m.CarouselOverlayExampleComponent),
   'carousel/carousel-headless': () =>
     import('./carousel-headless.example').then((m) => m.CarouselHeadlessExampleComponent),
 };

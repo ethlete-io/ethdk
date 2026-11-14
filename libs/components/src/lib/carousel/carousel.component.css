@@ -31,6 +31,12 @@
     initial-value: 32px;
   }
 
+  @property --et-carousel-controls-inset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   .et-carousel {
     display: flex;
     flex-direction: column;
@@ -92,6 +98,40 @@
     justify-content: center;
     gap: 4px;
     background: var(--et-carousel-controls-background, transparent);
+  }
+
+  .et-carousel:where([data-controls-position='overlay'], [data-pause-toggle-position^='top-']) {
+    position: relative;
+  }
+
+  .et-carousel:where([data-controls-position='overlay']) .et-carousel-controls,
+  .et-carousel-play-toggle-corner {
+    position: absolute;
+    border-radius: var(--et-carousel-controls-radius, 999px);
+    background: var(
+      --et-carousel-controls-background,
+      color-mix(in srgb, var(--et-surface-background-solid, white) 80%, transparent)
+    );
+  }
+
+  .et-carousel:where([data-controls-position='overlay']) .et-carousel-controls {
+    inset-inline: var(--et-carousel-controls-inset);
+    inset-block-end: var(--et-carousel-controls-inset);
+    inline-size: fit-content;
+    margin-inline: auto;
+  }
+
+  .et-carousel-play-toggle-corner {
+    display: flex;
+    inset-block-start: var(--et-carousel-controls-inset);
+  }
+
+  .et-carousel:where([data-pause-toggle-position='top-start']) .et-carousel-play-toggle-corner {
+    inset-inline-start: var(--et-carousel-controls-inset);
+  }
+
+  .et-carousel:where([data-pause-toggle-position='top-end']) .et-carousel-play-toggle-corner {
+    inset-inline-end: var(--et-carousel-controls-inset);
   }
 
   /* Two classes deep: the icon button's own colour rule is one class deep and injected at runtime. */

@@ -26,6 +26,8 @@ export default {
     autoplayTime: 5000,
     showControls: true,
     showDots: true,
+    controlsPosition: 'below',
+    pauseTogglePosition: 'controls',
     transition: 'none',
     transitionDriver: 'auto',
     slideAlign: 'start',
@@ -38,6 +40,8 @@ export default {
     autoplayTime: { control: { type: 'range', min: 1000, max: 10000, step: 500 } },
     showControls: { control: 'boolean' },
     showDots: { control: 'boolean' },
+    controlsPosition: { control: 'radio', options: ['below', 'overlay'] },
+    pauseTogglePosition: { control: 'radio', options: ['controls', 'start', 'end', 'top-start', 'top-end'] },
     transition: { control: 'radio', options: ['none', 'dim', 'wipe', 'custom'] },
     transitionDriver: { control: 'radio', options: ['auto', 'scroll-timeline', 'js', 'none'] },
     slideAlign: { control: 'radio', options: ['start', 'center'] },
@@ -75,6 +79,20 @@ export const Loop: Story = {
           'in its clone - and the scroll offset is shifted a whole track along once the scrolling has stopped ' +
           '(`scrollend`, never mid-animation, never while a finger is down). The dots keep counting the real ' +
           'slides, and the clones are `aria-hidden` and `inert`, so a reader never meets the same slide twice.',
+      },
+    },
+  },
+};
+
+export const OverlayControls: Story = {
+  args: { autoplay: true, autoplayTime: 3000, controlsPosition: 'overlay', pauseTogglePosition: 'top-end' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`controlsPosition="overlay"` lays the control bar over the bottom of the track, and ' +
+          '`pauseTogglePosition` moves the autoplay pause toggle to an end of the bar or a top corner of the track. ' +
+          'The toggle still always renders while autoplay is on.',
       },
     },
   },

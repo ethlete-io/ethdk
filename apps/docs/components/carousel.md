@@ -71,23 +71,25 @@ The template context:
 
 On `<et-carousel>`:
 
-| Input              | Default   | Description                                                                                   |
-| ------------------ | --------- | --------------------------------------------------------------------------------------------- |
-| `activeIndex`      | `0`       | The current slide, two-way: `[(activeIndex)]`. Setting it scrolls there like `goTo()`.        |
-| `itemSize`         | `'full'`  | How much of the track one slide takes - `'full'`, `'half'`, `'third'`, `'quarter'`, `'auto'`. |
-| `loop`             | `true`    | Cross the seam without showing it - see [Looping](#looping).                                  |
-| `slideAlign`       | `'start'` | Where the current slide rests: `'start'` or `'center'` - see [Alignment](#alignment).         |
-| `autoplay`         | `false`   | Advance on its own. Renders the required pause control.                                       |
-| `autoplayTime`     | `5000`    | Milliseconds per slide.                                                                       |
-| `pauseOnHover`     | `true`    | Pause while a mouse or pen is over the carousel.                                              |
-| `pauseOnFocus`     | `true`    | Pause while focus is inside the carousel.                                                     |
-| `pauseOnOffScreen` | `true`    | Pause while the carousel is scrolled out of view or the tab is hidden.                        |
-| `playOnInit`       | `true`    | Whether autoplay starts by itself. Off waits for the play control (or `start()`).             |
-| `transition`       | `'none'`  | `'dim'`, `'wipe'` or `'custom'` - see [Transitions](#transitions).                            |
-| `transitionDriver` | `'auto'`  | What drives the transition - see [Two drivers](#two-drivers).                                 |
-| `showControls`     | `true`    | Render the previous/next controls.                                                            |
-| `showDots`         | `true`    | Render the slide dots (which double as the autoplay progress indicator).                      |
-| `labels`           | `null`    | Per-instance string overrides; prefer `provideCarouselLabels` app-wide.                       |
+| Input                 | Default      | Description                                                                                             |
+| --------------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
+| `activeIndex`         | `0`          | The current slide, two-way: `[(activeIndex)]`. Setting it scrolls there like `goTo()`.                  |
+| `itemSize`            | `'full'`     | How much of the track one slide takes - `'full'`, `'half'`, `'third'`, `'quarter'`, `'auto'`.           |
+| `loop`                | `true`       | Cross the seam without showing it - see [Looping](#looping).                                            |
+| `slideAlign`          | `'start'`    | Where the current slide rests: `'start'` or `'center'` - see [Alignment](#alignment).                   |
+| `autoplay`            | `false`      | Advance on its own. Renders the required pause control.                                                 |
+| `autoplayTime`        | `5000`       | Milliseconds per slide.                                                                                 |
+| `pauseOnHover`        | `true`       | Pause while a mouse or pen is over the carousel.                                                        |
+| `pauseOnFocus`        | `true`       | Pause while focus is inside the carousel.                                                               |
+| `pauseOnOffScreen`    | `true`       | Pause while the carousel is scrolled out of view or the tab is hidden.                                  |
+| `playOnInit`          | `true`       | Whether autoplay starts by itself. Off waits for the play control (or `start()`).                       |
+| `transition`          | `'none'`     | `'dim'`, `'wipe'` or `'custom'` - see [Transitions](#transitions).                                      |
+| `transitionDriver`    | `'auto'`     | What drives the transition - see [Two drivers](#two-drivers).                                           |
+| `showControls`        | `true`       | Render the previous/next controls.                                                                      |
+| `showDots`            | `true`       | Render the slide dots (which double as the autoplay progress indicator).                                |
+| `controlsPosition`    | `'below'`    | `'below'` the track or `'overlay'` over it - see [Controls over the slides](#controls-over-the-slides). |
+| `pauseTogglePosition` | `'controls'` | Where the autoplay pause control sits: `'controls'`, `'start'`, `'end'`, `'top-start'`, `'top-end'`.    |
+| `labels`              | `null`       | Per-instance string overrides; prefer `provideCarouselLabels` app-wide.                                 |
 
 On the `etCarouselSlide` template:
 
@@ -341,6 +343,24 @@ every value, and animating a registered property recalculates style every frame 
 not. Idle, the gradient version cost ~1120 paints and ~510 style recalculations over nine seconds; the
 rotations cost ~139 and ~89, which is within measurement noise of rendering no ring at all.
 
+## Controls over the slides
+
+`controlsPosition="overlay"` lays the control bar over the bottom edge of the track instead of under it,
+as a pill inset by `--et-carousel-controls-inset`. Over a photo the bar needs a backdrop, so in this mode
+`--et-carousel-controls-background` defaults to a translucent surface background rather than `transparent`.
+
+`pauseTogglePosition` moves the autoplay pause control: `'controls'` keeps it between the dots and the
+next arrow, `'start'` and `'end'` put it at either end of the bar, and `'top-start'` and `'top-end'` take it
+out of the bar into a corner over the track. It is only ever moved, never removed: while `autoplay` is on,
+`<et-carousel>` renders it wherever it was placed, so the WCAG 2.2.2 requirement holds whatever an app
+picks.
+
+```html
+<et-carousel controlsPosition="overlay" pauseTogglePosition="top-end" autoplay>…</et-carousel>
+```
+
+@example carousel/carousel-overlay 360px
+
 ## Headless
 
 `etCarousel` needs a scrollable to move and finds one three ways: on its own element
@@ -407,14 +427,14 @@ Colours come from the app-registered [surface and color themes](/core/theming): 
 the progress ring take the theme's ink in the light scheme and the primary accent in the dark scheme,
 inactive dots a neutral tint. Each colour has a token of its own; unset, it keeps that look:
 
-| Property                             | Applies to                                                        |
-| ------------------------------------ | ----------------------------------------------------------------- |
-| `--et-carousel-dot-color`            | an inactive dot                                                   |
-| `--et-carousel-dot-hover-color`      | an inactive dot under the pointer                                 |
-| `--et-carousel-dot-active-color`     | the active dot and the autoplay countdown fill                    |
-| `--et-carousel-dot-ring-track-color` | the countdown ring's track, behind the fill                       |
-| `--et-carousel-controls-background`  | the controls row under the track (default `transparent`)          |
-| `--et-carousel-control-color`        | the previous, next and play/pause icons (default the theme's ink) |
+| Property                             | Applies to                                                                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `--et-carousel-dot-color`            | an inactive dot                                                                                    |
+| `--et-carousel-dot-hover-color`      | an inactive dot under the pointer                                                                  |
+| `--et-carousel-dot-active-color`     | the active dot and the autoplay countdown fill                                                     |
+| `--et-carousel-dot-ring-track-color` | the countdown ring's track, behind the fill                                                        |
+| `--et-carousel-controls-background`  | the controls row (default `transparent`; a translucent surface when overlaid) and the pause corner |
+| `--et-carousel-control-color`        | the previous, next and play/pause icons (default the theme's ink)                                  |
 
 Geometry is tokens too:
 
@@ -426,6 +446,8 @@ Geometry is tokens too:
 | `--et-carousel-dot-target-size` | `24px`  | the dot's tap target                                                                                 |
 | `--et-carousel-dot-ring-size`   | `18px`  | the autoplay countdown ring                                                                          |
 | `--et-carousel-dot-ring-width`  | `2.5px` | how thick that ring is drawn                                                                         |
+| `--et-carousel-controls-inset`  | `12px`  | how far the overlaid control bar and the pause corner sit from the track's edges                     |
+| `--et-carousel-controls-radius` | `999px` | the corner radius of the overlaid control bar and the pause corner                                   |
 | `--et-carousel-edge-fade`       | `32px`  | how far the track's edges fade where a centred peeking layout cuts a slide off; `0px` for a hard cut |
 
 `wipe` has knobs of its own, matching what cdk's `mask-slide` used:

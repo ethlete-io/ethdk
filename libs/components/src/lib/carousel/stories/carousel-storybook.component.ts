@@ -27,6 +27,8 @@ const SLIDES: Slide[] = [
           [autoplayTime]="autoplayTime()"
           [showControls]="showControls()"
           [showDots]="showDots()"
+          [controlsPosition]="controlsPosition()"
+          [pauseTogglePosition]="pauseTogglePosition()"
           [slideAlign]="slideAlign()"
           [transition]="transition()"
           [transitionDriver]="transitionDriver()"
@@ -66,6 +68,8 @@ export class CarouselStorybookComponent {
   public autoplayTime = input(5000);
   public showControls = input(true);
   public showDots = input(true);
+  public controlsPosition = input<'below' | 'overlay'>('below');
+  public pauseTogglePosition = input<'controls' | 'start' | 'end' | 'top-start' | 'top-end'>('controls');
   public transition = input<CarouselTransition>('none');
   public transitionDriver = input<CarouselTransitionDriver>('auto');
   public slideAlign = input<CarouselSlideAlign>('start');

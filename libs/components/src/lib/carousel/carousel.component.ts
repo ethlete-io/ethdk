@@ -97,6 +97,8 @@ type CarouselSlideView = {
   host: {
     class: 'et-carousel',
     '[class.et-carousel--can-animate]': 'canAnimate.state()',
+    '[attr.data-controls-position]': 'controlsPosition()',
+    '[attr.data-pause-toggle-position]': 'pauseTogglePosition()',
   },
 })
 export class CarouselComponent {
@@ -124,6 +126,19 @@ export class CarouselComponent {
   /** Render the slide dots, which double as the autoplay progress indicator. @default true */
   public showDots = input(true, { transform: booleanAttribute });
 
+  /**
+   * Where the control bar sits: `'below'` the track (the default), or `'overlay'` over its bottom edge,
+   * inset by `--et-carousel-controls-inset`. @default 'below'
+   */
+  public controlsPosition = input<'below' | 'overlay'>('below');
+
+  /**
+   * Where the autoplay pause toggle sits: in the bar between the dots and the next arrow (`'controls'`, the
+   * default), at the bar's `'start'` or `'end'`, or alone in the track's `'top-start'` or `'top-end'` corner.
+   * The toggle always renders while autoplay is on. @default 'controls'
+   */
+  public pauseTogglePosition = input<'controls' | 'start' | 'end' | 'top-start' | 'top-end'>('controls');
+
   public track = viewChild.required(ScrollableComponent, { read: ScrollableDirective });
 
   /** @internal Held low for the first frames, so the chrome's transitions don't run on arrival. */
@@ -132,6 +147,12 @@ export class CarouselComponent {
   protected isAutoplayEnabled = computed(() => this.autoplayDirective.isEnabled());
 
   protected isAutoplayRunning = computed(() => this.autoplayDirective.isPlaying());
+
+  protected isPlayToggleInCorner = computed(
+    () => this.isAutoplayEnabled() && this.pauseTogglePosition().startsWith('top-'),
+  );
+
+  protected isPlayToggleInBar = computed(() => this.isAutoplayEnabled() && !this.isPlayToggleInCorner());
 
   protected autoplayDuration = computed(() => this.autoplayDirective.duration());
 

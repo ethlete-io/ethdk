@@ -159,6 +159,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-carousel-dots',
   'et-carousel-item',
   'et-carousel-play-toggle',
+  'et-carousel-play-toggle-corner',
   'et-carousel-play-toggle-icon',
   'et-carousel-slide-content',
   'et-carousel-track',

@@ -16,8 +16,12 @@
   }
 </et-scrollable>
 
-@if (showControls() || showDots() || isAutoplayEnabled()) {
+@if (showControls() || showDots() || isPlayToggleInBar()) {
   <div class="et-carousel-controls">
+    @if (pauseTogglePosition() === 'start') {
+      <ng-container *ngTemplateOutlet="playToggle" />
+    }
+
     @if (showControls()) {
       <button class="et-carousel-control" et-icon-button etCarouselPrevious size="sm" variant="transparent">
         <i class="et-carousel-control-icon et-carousel-control-icon--previous" etIcon="et-chevron"></i>
@@ -52,18 +56,8 @@
       </div>
     }
 
-    @if (isAutoplayEnabled()) {
-      <button
-        [attr.data-playing]="isAutoplayRunning() ? '' : null"
-        class="et-carousel-control et-carousel-play-toggle"
-        et-icon-button
-        etCarouselPlayToggle
-        size="sm"
-        variant="transparent"
-      >
-        <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-play" aria-hidden="true"></i>
-        <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-pause" aria-hidden="true"></i>
-      </button>
+    @if (pauseTogglePosition() === 'controls') {
+      <ng-container *ngTemplateOutlet="playToggle" />
     }
 
     @if (showControls()) {
@@ -71,5 +65,31 @@
         <i class="et-carousel-control-icon et-carousel-control-icon--next" etIcon="et-chevron"></i>
       </button>
     }
+
+    @if (pauseTogglePosition() === 'end') {
+      <ng-container *ngTemplateOutlet="playToggle" />
+    }
   </div>
 }
+
+@if (isPlayToggleInCorner()) {
+  <div class="et-carousel-play-toggle-corner">
+    <ng-container *ngTemplateOutlet="playToggle" />
+  </div>
+}
+
+<ng-template #playToggle>
+  @if (isAutoplayEnabled()) {
+    <button
+      [attr.data-playing]="isAutoplayRunning() ? '' : null"
+      class="et-carousel-control et-carousel-play-toggle"
+      et-icon-button
+      etCarouselPlayToggle
+      size="sm"
+      variant="transparent"
+    >
+      <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-play" aria-hidden="true"></i>
+      <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-pause" aria-hidden="true"></i>
+    </button>
+  }
+</ng-template>

@@ -22,6 +22,8 @@ type Slide = { title: string };
       [slideAlign]="slideAlign()"
       [transition]="transition()"
       [transitionDriver]="transitionDriver()"
+      [controlsPosition]="controlsPosition()"
+      [pauseTogglePosition]="pauseTogglePosition()"
     >
       <ng-template [etCarouselSlide]="slides()" [autoplayTimeFor]="autoplayTimeFor()" let-slide let-index="index">
         <span>{{ index + 1 }}. {{ slide.title }}</span>
@@ -43,6 +45,8 @@ class CarouselHostComponent {
   public slideAlign = signal<'start' | 'center'>('start');
   public transition = signal<'none' | 'dim' | 'wipe' | 'custom'>('none');
   public transitionDriver = signal<'auto' | 'scroll-timeline' | 'js' | 'none'>('auto');
+  public controlsPosition = signal<'below' | 'overlay'>('below');
+  public pauseTogglePosition = signal<'controls' | 'start' | 'end' | 'top-start' | 'top-end'>('controls');
   public autoplayTimeFor = signal<((slide: Slide, index: number) => number | null) | null>(null);
 }
 
@@ -202,6 +206,59 @@ describe('CarouselComponent', () => {
 
     expect(toggle?.getAttribute('aria-pressed')).toBeNull();
     expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
+  });
+
+  it('reports where its control bar sits, below the track unless laid over it', () => {
+    const fixture = createHost();
+    const carousel = host(fixture).querySelector('et-carousel');
+
+    expect(carousel?.getAttribute('data-controls-position')).toBe('below');
+
+    fixture.componentInstance.controlsPosition.set('overlay');
+    fixture.detectChanges();
+
+    expect(carousel?.getAttribute('data-controls-position')).toBe('overlay');
+  });
+
+  it('renders exactly one play control wherever it is placed, in the bar or a corner over the track', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+
+    const barChildren = () =>
+      Array.from(host(fixture).querySelector('.et-carousel-controls')?.children ?? []).map((child) =>
+        child.hasAttribute('etCarouselPlayToggle')
+          ? 'toggle'
+          : child.hasAttribute('etCarouselPrevious')
+            ? 'previous'
+            : child.hasAttribute('etCarouselNext')
+              ? 'next'
+              : 'dots',
+      );
+
+    const toggles = () => host(fixture).querySelectorAll('[etCarouselPlayToggle]');
+
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['previous', 'dots', 'toggle', 'next']);
+
+    fixture.componentInstance.pauseTogglePosition.set('start');
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['toggle', 'previous', 'dots', 'next']);
+
+    fixture.componentInstance.pauseTogglePosition.set('end');
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['previous', 'dots', 'next', 'toggle']);
+
+    fixture.componentInstance.pauseTogglePosition.set('top-end');
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['previous', 'dots', 'next']);
+    expect(toggles().length).toBe(1);
+    expect(toggles()[0]?.parentElement?.classList).toContain('et-carousel-play-toggle-corner');
+    expect(fixture.componentInstance.autoplayDirective().pauseControl()).not.toBeNull();
+
+    fixture.componentInstance.autoplay.set(false);
+    fixture.detectChanges();
+    expect(toggles().length).toBe(0);
+    expect(host(fixture).querySelector('.et-carousel-play-toggle-corner')).toBeNull();
   });
 
   it('disables the play control under reduced motion, where starting changes nothing', () => {

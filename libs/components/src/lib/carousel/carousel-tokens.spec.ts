@@ -37,4 +37,10 @@ describe('carousel colour tokens', () => {
       /\.et-carousel \.et-carousel-control \{ color: var\(--et-carousel-control-color, var\(--et-theme-color-ink-solid\)\);/,
     );
   });
+
+  it('insets the overlaid control bar and the pause corner by --et-carousel-controls-inset', () => {
+    expect(carouselCss).toContain('inset-block-end: var(--et-carousel-controls-inset);');
+    expect(carouselCss).toContain('inset-block-start: var(--et-carousel-controls-inset);');
+    expect(carouselCss).toContain('background: var(--et-carousel-controls-background, color-mix(');
+  });
 });
