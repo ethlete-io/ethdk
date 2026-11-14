@@ -19,3 +19,19 @@ describe('tooltip.component.css tokens', () => {
     expect(tokens.filter((token) => !token.inherits).map((token) => token.name)).toEqual([]);
   });
 });
+
+describe('floating tip colour tokens', () => {
+  const floatingTipCss = readFileSync(
+    fileURLToPath(import.meta.url).replace(/tooltip\/[^/]+$/, 'overlay/floating-tip-styles.component.css'),
+    'utf8',
+  );
+
+  it.each(['background', 'color', 'border'])('lets --et-floating-tip-%s override the surface default', (part) => {
+    expect(floatingTipCss).toMatch(new RegExp(`--_et-floating-tip-${part}: var\\(\\s*--et-floating-tip-${part},`));
+    expect(floatingTipCss).not.toContain(`@property --et-floating-tip-${part} `);
+  });
+
+  it('keeps the tooltip border and its arrow on the public border token', () => {
+    expect(css.match(/var\(\s*--et-floating-tip-border,/g)).toHaveLength(2);
+  });
+});

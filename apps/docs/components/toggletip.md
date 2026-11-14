@@ -99,7 +99,7 @@ A toggletip is a lightweight **dialog**, not a tooltip: the trigger gets `aria-e
 
 ## Theming
 
-Public design tokens: `--et-toggletip-font-size`, `--et-toggletip-line-height`, `--et-toggletip-padding-inline`, `--et-toggletip-padding-block`, `--et-toggletip-gap`, `--et-toggletip-letter-spacing` (default `-0.01em`), `--et-toggletip-min-width` (default `min(272px, calc(100vw - 24px))`; `0` lets a short toggletip hug its content). It also reads `--et-floating-tip-radius` and `--et-floating-tip-max-width`, shared with the [tooltip](/components/tooltip#theming). All of them inherit, so setting one on `et-toggletip` or any ancestor reaches the surface and content that read it. The arrow follows the [surface theme](/core/theming) (`--et-overlay-arrow-background` / `--et-overlay-arrow-border`).
+Public design tokens: `--et-toggletip-font-size`, `--et-toggletip-line-height`, `--et-toggletip-padding-inline`, `--et-toggletip-padding-block`, `--et-toggletip-gap`, `--et-toggletip-letter-spacing` (default `-0.01em`), `--et-toggletip-min-width` (default `min(272px, calc(100vw - 24px))`; `0` lets a short toggletip hug its content). It also reads `--et-floating-tip-radius`, `--et-floating-tip-max-width`, `--et-floating-tip-background`, `--et-floating-tip-color` and `--et-floating-tip-border` (defaults: the surface theme), shared with the [tooltip](/components/tooltip#theming). All of them inherit, so setting one on `et-toggletip` or any ancestor reaches the surface and content that read it. The arrow follows the [surface theme](/core/theming) (`--et-overlay-arrow-background` / `--et-overlay-arrow-border`).
 
 ## Migrating from the cdk toggletip
 

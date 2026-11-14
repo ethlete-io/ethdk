@@ -63,16 +63,22 @@
   }
 
   .et-tooltip-panel {
-    --et-overlay-arrow-border: light-dark(
-      var(--et-surface-border-solid, rgb(255 255 255 / 0.1)),
-      color-mix(in srgb, var(--et-surface-color-solid) 24%, var(--et-surface-background-solid))
+    --et-overlay-arrow-border: var(
+      --et-floating-tip-border,
+      light-dark(
+        var(--et-surface-border-solid, rgb(255 255 255 / 0.1)),
+        color-mix(in srgb, var(--et-surface-color-solid) 24%, var(--et-surface-background-solid))
+      )
     );
   }
 
   .et-tooltip {
-    --_et-floating-tip-border: light-dark(
-      var(--et-surface-border-solid, rgb(255 255 255 / 0.1)),
-      color-mix(in srgb, var(--et-surface-color-solid) 24%, var(--et-surface-background-solid))
+    --_et-floating-tip-border: var(
+      --et-floating-tip-border,
+      light-dark(
+        var(--et-surface-border-solid, rgb(255 255 255 / 0.1)),
+        color-mix(in srgb, var(--et-surface-color-solid) 24%, var(--et-surface-background-solid))
+      )
     );
   }
 }
