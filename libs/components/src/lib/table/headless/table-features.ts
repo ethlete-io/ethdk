@@ -639,8 +639,10 @@ export type TableFeatureHost = {
   setSort(key: string, direction: TableSortDirection | null): void;
   /** Show or hide a column. */
   setColumnVisible(key: string, visible: boolean): void;
-  /** Every declared column in order, hidden ones included - what a "choose columns" panel lists. */
+  /** Every declared column in order, hidden ones included. */
   allColumns(): TableColumnMeta[];
+  /** The columns whose `visibleFrom` breakpoint is met, hidden ones included - what a "choose columns" panel lists. */
+  availableColumns(): TableColumnMeta[];
   /** Whether a column is currently shown. */
   isColumnVisible(key: string): boolean;
   /** Show every hidden column again. */

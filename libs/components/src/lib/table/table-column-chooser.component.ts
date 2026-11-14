@@ -19,7 +19,12 @@ import { TableFeatureHost } from './headless/table-features';
 /** The slice of the table a column chooser drives - any `et-table` satisfies it. */
 export type TableColumnVisibilityHost = Pick<
   TableFeatureHost,
-  'allColumns' | 'visibleColumnsMeta' | 'isColumnVisible' | 'setColumnVisible' | 'showAllColumns' | 'resolvedLabels'
+  | 'availableColumns'
+  | 'visibleColumnsMeta'
+  | 'isColumnVisible'
+  | 'setColumnVisible'
+  | 'showAllColumns'
+  | 'resolvedLabels'
 >;
 
 /**
@@ -78,7 +83,9 @@ export class TableColumnChooserComponent {
    */
   protected labels = computed(() => this.table().resolvedLabels());
 
-  protected hasHidden = computed(() => this.table().visibleColumnsMeta().length < this.table().allColumns().length);
+  protected hasHidden = computed(
+    () => this.table().visibleColumnsMeta().length < this.table().availableColumns().length,
+  );
 
   /**
    * The last column standing can't be hidden - a table with no columns has nothing to show. Its

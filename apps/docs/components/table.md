@@ -1547,20 +1547,21 @@ though `moveColumn` can still reposition anything programmatically.
 Column **order and visibility** are also fully programmatic, so you can build a
 "columns" chooser with the [menu](/components/menu):
 
-| Method / signal                  | Description                                               |
-| -------------------------------- | --------------------------------------------------------- |
-| `moveColumn(key, toIndex)`       | Move a column within the order.                           |
-| `allColumns()`                   | Every declared column in order, **hidden ones included**. |
-| `visibleColumns()`               | Only the shown ones, in order.                            |
-| `hiddenColumnKeys()`             | The keys of the hidden columns, in declared order.        |
-| `isColumnVisible(key)`           | Whether a column is shown.                                |
-| `setColumnVisible(key, visible)` | Show/hide a column.                                       |
-| `toggleColumnVisibility(key)`    | Flip a column's visibility.                               |
-| `showAllColumns()`               | Show every hidden column again.                           |
+| Method / signal                  | Description                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `moveColumn(key, toIndex)`       | Move a column within the order.                                                                 |
+| `allColumns()`                   | Every declared column in order, **hidden ones included**.                                       |
+| `availableColumns()`             | The columns whose `visibleFrom` breakpoint is met, hidden ones included - what a chooser lists. |
+| `visibleColumns()`               | Only the shown ones, in order.                                                                  |
+| `hiddenColumnKeys()`             | The keys of the hidden columns, in declared order.                                              |
+| `isColumnVisible(key)`           | Whether a column is shown.                                                                      |
+| `setColumnVisible(key, visible)` | Show/hide a column.                                                                             |
+| `toggleColumnVisibility(key)`    | Flip a column's visibility.                                                                     |
+| `showAllColumns()`               | Show every hidden column again.                                                                 |
 
 ::: tip Bringing a hidden column back
 The [column chooser](#column-chooser) already does this. Without it, nothing in the
-table's own chrome lists a column that isn't rendered, so expose `allColumns()` + `toggleColumnVisibility()` yourself (or a "Show all columns"
+table's own chrome lists a column that isn't rendered, so expose `availableColumns()` + `toggleColumnVisibility()` yourself (or a "Show all columns"
 action calling `showAllColumns()`) - otherwise a user can strand a hidden column until
 the page reloads.
 :::
@@ -1569,7 +1570,7 @@ the page reloads.
 <!-- a columns chooser: every column, checked when visible -->
 <et-menu>
   <et-menu-checkbox-group>
-    @for (column of table.allColumns(); track column.key) {
+    @for (column of table.availableColumns(); track column.key) {
     <et-menu-checkbox-item
       [value]="column.key"
       [checked]="table.isColumnVisible(column.key)"

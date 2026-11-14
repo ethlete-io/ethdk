@@ -37,12 +37,13 @@ describe('TableComponent visibleFrom', () => {
     const { componentInstance: table } = create();
 
     expect(keys(table)).toEqual(['name']);
-    expect(table.allColumns().map((column) => column.key)).toEqual(['name']);
+    expect(table.availableColumns().map((column) => column.key)).toEqual(['name']);
+    expect(table.allColumns().map((column) => column.key)).toEqual(['name', 'role']);
 
     viewport.resize(768);
 
     expect(keys(table)).toEqual(['name', 'role']);
-    expect(table.allColumns().map((column) => column.key)).toEqual(['name', 'role']);
+    expect(table.availableColumns().map((column) => column.key)).toEqual(['name', 'role']);
   });
 
   it('keeps a user-hidden column hidden after the breakpoint is crossed', () => {

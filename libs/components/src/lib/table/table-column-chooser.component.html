@@ -14,7 +14,7 @@
   <ng-template etMenuSurface>
     <et-menu>
       <!-- Every declared column, hidden ones included: this list is the only way back from hiding one. -->
-      @for (column of table().allColumns(); track column.key) {
+      @for (column of table().availableColumns(); track column.key) {
         <et-menu-checkbox-item
           [value]="column.key"
           [checked]="table().isColumnVisible(column.key)"

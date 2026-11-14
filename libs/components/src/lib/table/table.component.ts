@@ -1320,12 +1320,12 @@ export class TableComponent<T> implements TableFeatureHost {
   /**
    * The keys of the currently hidden columns, in declared order. Nothing in the table's own chrome
    * shows a hidden column - the column menu's "Hide column" takes one away and has no way back - so
-   * this is what an app builds its own "columns" chooser from, together with {@link allColumns},
+   * this is what an app builds its own "columns" chooser from, together with {@link availableColumns},
    * {@link setColumnVisible} and {@link showAllColumns}.
    *
    * @example
    * // a menu of every column, checked when visible
-   * for (const column of table.allColumns()) {
+   * for (const column of table.availableColumns()) {
    *   … table.isColumnVisible(column.key) … table.toggleColumnVisibility(column.key) …
    * }
    */
@@ -1335,11 +1335,14 @@ export class TableComponent<T> implements TableFeatureHost {
       .map((column) => column.key),
   );
 
+  /** Every declared column in the current order, hidden ones included - the counterpart to {@link visibleColumns}. */
+  public allColumns = computed(() => this.orderedColumns());
+
   /**
-   * Every declared column in the current order, hidden ones included - the counterpart to
-   * {@link visibleColumns}, and the list a "columns" chooser iterates.
+   * The columns whose `visibleFrom` breakpoint is met, user-hidden ones included - the list a "columns"
+   * chooser iterates.
    */
-  public allColumns = computed(() => this.breakpointColumns());
+  public availableColumns = computed(() => this.breakpointColumns());
 
   // Which feature owns the drag each live pointer started - see claimPointerGesture.
   private pointerGestureClaims = new Map<number, string>();
