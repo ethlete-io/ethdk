@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B510
+built: d054e55a7
 decided: 2026-11-14
 source: doc-agent session 2026-11-14, afternoon round on SDK bundle size
 ---
