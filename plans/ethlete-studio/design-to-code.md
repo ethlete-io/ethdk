@@ -2001,6 +2001,7 @@ the repo's `node_modules/.design-explore`. Lesson: a scratch copy is the documen
 :4402, but the tool treats it like a repo and leaks into the real one. Decided by the doc agent (tool internal,
 backlog): the format check skips gitignored generated files, and the shot cache resolves from the project root, not
 through the `node_modules` real path.
+755(b) as built (2026-11-14): `workRootOf` returns `<target>/.ethlete/cache/design-explore` (gitignored) when `realpath(node_modules)` is outside `realpath(target)`, else the old `node_modules/.design-explore`; new `work-root.spec.ts` failed on the old code. 755(a) not done.
 
 756\. Linux builder (same sketch): the repo's `pages/system` variant `a/tsconfig.json` is not formatted by Prettier.
 Suspect: the generator writes it with `JSON.stringify` and no format pass (not checked). Backlog: the generator
