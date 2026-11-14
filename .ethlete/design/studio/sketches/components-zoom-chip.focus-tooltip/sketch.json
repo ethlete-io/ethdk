@@ -87,7 +87,7 @@
     "components/zoom-chip": "51bd9a1615d87220",
     "elements/canvas-frames": "3a487354d74113f2",
     "elements/part-tree": "b487e67aac3e89a5",
-    "elements/shell-main": "c9dc7011775042f2",
+    "elements/shell-main": "fe25d017a48626ee",
     "elements/studio-menu": "251ee1f3be48f068",
     "elements/variant-cell": "b5d9dccbef712939",
     "pages/flows": "df04c02df74ca95e",
@@ -99,7 +99,7 @@
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "08af6bad0497b4a1b7f6439449addfb2910c14e2",
+  "baselineTree": "55403feeada327ee97c0209172cf4c3250dbd612",
   "rounds": [
     {
       "key": "r1",
@@ -113,10 +113,5 @@
       "round": "r1",
       "note": "SDK-Tooltip offen über dem fokussierten Button, Text wie der heutige title. Fit liegt am Fensterrand: das SDK schiebt das Tooltip (shift, 8 px Rand) nach links, der Pfeil zeigt weiter auf Fit."
     }
-  },
-  "hold": {
-    "until": "pages/sketches zeigt zoom-chip-Zustände in 176-px-Zellen (sketch-rows narrowPart, change-crop); das offene Tooltip im focus-visible-Zustand ragt dort heraus (CLIPPED, CUT-CONTROL, SEE-THROUGH, CANVAS-UNDER-PANEL). Braucht eine Entscheidung zur Seite pages/sketches, die selbst eine offene Skizze hat.",
-    "by": "claude-opus-5-5",
-    "heldAt": "2026-11-12T23:49:51.850Z"
   }
 }
