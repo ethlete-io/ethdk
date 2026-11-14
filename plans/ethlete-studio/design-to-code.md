@@ -2644,6 +2644,13 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B504 (fifa asks, 14.11.): public tokens for floating-tip radius + max-width, toggletip letter-spacing + min-width,
   badge letter-spacing + ellipsis/max-size, `--et-avatar-size`; tooltip guide: cdk toggletip -> `[(open)]`, no
   `provideOverlay()`; empty state row layout as sketch only.
+- B504 (fifa asks, 14.11. am): built: spinner ink default is intended (docs 4333ca411), progress `roundedEnd` d9afa90bd,
+  spinner size token aa5d00f0a, tip/badge/avatar tokens abc8790ef, badge align-self dropped 1c690a8a0, empty-state icon
+  colour d64be54f2, tip colour tokens 2414fd031 (Cause: tip CSS paints surface only), overlay tokens inherit 8dacebfdf,
+  menu radius 3f0aba618 + item weight eacc59d28; all headless only. Queued: menu docs, skeleton (labels docs, colour
+  tokens, nested role=status, rect beats aspect-ratio, container layout token), table (rowLink queryParams/title,
+  header tokens, cdk markup docs), progress-steps ring token, carousel colour + wipe duration tokens. Prerelease needed.
+- B501: Suspect: `sketch ready` refuses components/badge@long-label for 60 missing motions on 3 text-length-only states.
 - B502 (night 14.11.): live derivation picked wrong (list-row, agent-logos; 8 UNDERIVED from page host); 9f2594cbd: page
   host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
   drew states inline and system-page again; 44f3d6430 draws system-page per state. Open: empty product side panel shows
