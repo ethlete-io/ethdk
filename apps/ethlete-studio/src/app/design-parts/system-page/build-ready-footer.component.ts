@@ -83,6 +83,11 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
           }
         }
         <span class="ms-auto"></span>
+        @if (directEdit(); as edit) {
+          <button (click)="openEditSketch.emit(edit)" et-button type="button" variant="outline" size="xs">
+            {{ LABELS.openEditSketch }}
+          </button>
+        }
         @if (current.state === 'blocked' && !blockersOpen()) {
           <ng-container *ngTemplateOutlet="reasons" />
         }
@@ -149,17 +154,6 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
                       }
                     </svg>
                     <span class="min-w-0 flex-1 text-et-surface">{{ blocker.text }}</span>
-                    @if (group.kind === 'direct-edit') {
-                      <button
-                        (click)="openEditSketch.emit(blocker)"
-                        et-button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                      >
-                        {{ LABELS.openEditSketch }}
-                      </button>
-                    }
                   </li>
                 }
               </ul>
@@ -196,6 +190,12 @@ export class BuildReadyFooterComponent {
     const status = this.status();
 
     return status.state === 'blocked' ? status.blockers.length : 0;
+  });
+
+  protected directEdit = computed(() => {
+    const status = this.status();
+
+    return status.state === 'blocked' ? (status.blockers.find(({ kind }) => kind === 'direct-edit') ?? null) : null;
   });
 
   protected groups = computed(() => {

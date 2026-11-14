@@ -82,18 +82,26 @@ describe('BuildReadyFooterComponent', () => {
     expect(withTooltip(element, 'tsc bricht ab')?.textContent?.trim()).toBe('Agent fehlgeschlagen');
   });
 
-  it('emits the direct edit from Sketch öffnen', async () => {
+  it('emits the direct edit from Sketch öffnen beside the status while the reasons stay closed', async () => {
     const edit: BuildBlocker = { kind: 'direct-edit', text: 'Bild ohne Sketch geändert' };
-    const { fixture, element } = await render({ state: 'blocked', blockers: [edit] });
+    const { fixture, element, toggle } = await render({ state: 'blocked', blockers: [edit] });
     const emitted: BuildBlocker[] = [];
 
     fixture.componentInstance.openEditSketch.subscribe((blocker) => emitted.push(blocker));
+    const open = () =>
+      [...element.querySelectorAll<HTMLButtonElement>('button')].filter(
+        (button) => button.textContent?.trim() === 'Sketch öffnen',
+      );
+
+    expect(toggle()?.getAttribute('aria-expanded')).toBe('false');
+    expect(open()).toHaveLength(1);
+
+    open()[0]?.click();
     fixture.componentRef.setInput('blockersOpen', true);
     await fixture.whenStable();
-    [...element.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Sketch öffnen')
-      ?.click();
 
     expect(emitted).toEqual([edit]);
+    expect(open()).toHaveLength(1);
+    expect(open()[0]?.closest('ethlete-disclosure')).toBeNull();
   });
 });
