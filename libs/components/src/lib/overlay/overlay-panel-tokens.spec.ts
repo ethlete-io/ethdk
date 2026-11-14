@@ -49,4 +49,11 @@ describe('overlay panel tokens', () => {
       'background-color: var(--et-overlay-backdrop-color, rgb(var(--et-scrim-color-rgb, 0 0 0) / 0.32));',
     );
   });
+
+  it('reads --et-overlay-backdrop-filter without setting it on the backdrop, defaulting to none', () => {
+    const containerCss = readFileSync(libRoot + 'overlay/overlay-container.component.css', 'utf8');
+
+    expect(containerCss).not.toMatch(/--et-overlay-backdrop-filter\s*:/);
+    expect(containerCss).toContain('backdrop-filter: var(--et-overlay-backdrop-filter, none);');
+  });
 });
