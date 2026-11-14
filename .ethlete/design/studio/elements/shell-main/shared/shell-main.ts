@@ -21,6 +21,10 @@ type Chrome = Pick<Parameters<typeof titleBar.render>[0], 'os' | 'left' | 'right
 
 const LINUX_CHROME: Chrome = { os: 'linux', left: [], right: ['minimize', 'maximize', 'close'] };
 
+export type Crash = { time: string; pid: number; port: number; path: string; stack: string[] };
+
+export type CrashScreen = (crash: Crash) => string;
+
 type Props = {
   section: Section;
   product: string;
@@ -31,8 +35,9 @@ type Props = {
   systemForce?: SystemForce;
   studio?: string;
   force?: RailForce;
-  server?: 'stopped' | 'starting' | 'unanswered';
+  server?: 'stopped' | 'starting' | 'unanswered' | 'crashed';
   log?: string[];
+  crash?: Crash;
   serverUrl?: string;
   chrome?: Chrome;
   update?: boolean;
@@ -134,7 +139,19 @@ const SERVER_LOG = [
   'design server exited with code 1',
 ];
 
-const restartButton = withAction(
+const SERVER_CRASH: Crash = {
+  time: '14.11.2026, 09:42:17',
+  pid: 48213,
+  port: 4402,
+  path: '/srv/studio/.ethlete/cache/design-server-crash.log',
+  stack: [
+    "TypeError: Cannot read properties of undefined (reading 'states')",
+    '    at renderPart (dist/libs/cli/src/lib/design/render.js:212:31)',
+    '    at async serveFrame (dist/libs/cli/src/lib/design/serve.js:88:5)',
+  ],
+};
+
+export const restartButton = withAction(
   button({
     label: 'Neu starten',
     variant: 'outline',
@@ -144,38 +161,46 @@ const restartButton = withAction(
   'emit:restartServer',
 );
 
-const serverScreen = (server: 'stopped' | 'starting' | 'unanswered', log: string[], serverUrl: string) =>
+const serverScreen = (
+  server: NonNullable<Props['server']>,
+  log: string[],
+  serverUrl: string,
+  crash: Crash,
+  crashScreen: CrashScreen,
+) =>
   html`<div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
     ${
-      server === 'starting' || server === 'unanswered'
-        ? html`<div class="mx-auto mt-15 w-full max-w-6xl box-border px-space-5">
-            <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">
-              ${server === 'unanswered' ? 'Design-Server gestoppt' : 'Design-Server startet'}
-            </h3>
-            ${
-              server === 'unanswered'
-                ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
-                      Design-Server antwortet nicht: ${serverUrl}
-                    </p>
-                    <div class="mt-space-3">${restartButton}</div>`
-                : ''
-            }
-          </div>`
-        : html`<div
-            class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
-            role="alert"
-          >
-            <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server gestoppt</h3>
-            ${
-              log.length
-                ? html`<pre
-                    class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
-                  >
+      server === 'crashed'
+        ? crashScreen(crash)
+        : server === 'starting' || server === 'unanswered'
+          ? html`<div class="mx-auto mt-15 w-full max-w-6xl box-border px-space-5">
+              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">
+                ${server === 'unanswered' ? 'Design-Server gestoppt' : 'Design-Server startet'}
+              </h3>
+              ${
+                server === 'unanswered'
+                  ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
+                        Design-Server antwortet nicht: ${serverUrl}
+                      </p>
+                      <div class="mt-space-3">${restartButton}</div>`
+                  : ''
+              }
+            </div>`
+          : html`<div
+              class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
+              role="alert"
+            >
+              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server gestoppt</h3>
+              ${
+                log.length
+                  ? html`<pre
+                      class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                    >
 ${log.join('\n')}</pre>`
-                : ''
-            }
-            ${restartButton}
-          </div>`
+                  : ''
+              }
+              ${restartButton}
+            </div>`
     }
   </div>`;
 
@@ -216,12 +241,14 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
   resizeHandle: (props: { width: number; interaction?: RailInteraction }) => string,
   choice: SystemChoice,
   system: { states: TStates; control: TControl },
+  crashScreen: CrashScreen,
 ) => ({
   widths: [1440],
   states: {
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
     'server-starting': { ...BASE, server: 'starting' },
     'server-unanswered': { ...BASE, server: 'unanswered', serverUrl: 'http://localhost:4402' },
+    'server-crashed': { ...BASE, server: 'crashed', crash: SERVER_CRASH },
     open: BASE,
     'open-focus-visible': { ...BASE, systemForce: 'focus-visible' },
     hidden: { ...BASE, panel: 'hidden' },
@@ -259,6 +286,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     server,
     log = [],
     serverUrl = '',
+    crash = SERVER_CRASH,
     chrome = LINUX_CHROME,
     update = false,
     sideWidth,
@@ -285,7 +313,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
             class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"
             ${server ? '' : slot('canvas')}
           >
-            ${server ? serverScreen(server, log, serverUrl) : content}
+            ${server ? serverScreen(server, log, serverUrl, crash, crashScreen) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
           ${panel === 'hidden' ? '' : resizeHandle({ width: sideWidth ?? SIDE_WIDTH.rest, interaction: resizeForce })}

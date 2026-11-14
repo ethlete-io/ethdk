@@ -86,7 +86,7 @@
     "components/zoom-chip": "51bd9a1615d87220",
     "elements/canvas-frames": "3a487354d74113f2",
     "elements/part-tree": "b487e67aac3e89a5",
-    "elements/shell-main": "c9dc7011775042f2",
+    "elements/shell-main": "fe25d017a48626ee",
     "elements/studio-menu": "251ee1f3be48f068",
     "elements/variant-cell": "b5d9dccbef712939",
     "pages/flows": "df04c02df74ca95e",
@@ -98,7 +98,15 @@
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "08af6bad0497b4a1b7f6439449addfb2910c14e2",
+  "baselineTree": "55403feeada327ee97c0209172cf4c3250dbd612",
+  "decision": {
+    "kind": "pick",
+    "variant": "b",
+    "by": "designer",
+    "cmd": "POST /__design/sketch-decision",
+    "pid": 3380508,
+    "decidedAt": "2026-11-14T17:30:27.964Z"
+  },
   "rounds": [
     {
       "key": "r1",
@@ -124,12 +132,12 @@
     }
   },
   "readyContent": {
-    "a": "f124d959ae252b21",
-    "b": "dc64a912a72d2757",
-    "c": "63eb49435150485a"
+    "a": "c2183ab9628a1c51",
+    "b": "d3e38e079254be79",
+    "c": "184fdb5bdeb74baf"
   },
   "mergeHold": {
     "reason": "variant a changes merge-error; variant b changes merge-error; variant c changes merge-error",
-    "at": "2026-11-14T03:48:16.749Z"
+    "at": "2026-11-14T17:45:28.880Z"
   }
 }
