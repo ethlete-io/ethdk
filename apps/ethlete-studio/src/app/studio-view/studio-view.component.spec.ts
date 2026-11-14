@@ -338,6 +338,42 @@ describe('StudioViewComponent', () => {
     }
   });
 
+  it('says the design server does not answer after 30 s without an answer, until it answers', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+
+    let answer: () => Promise<Response> = () => new Promise<Response>(() => undefined);
+
+    vi.stubGlobal('fetch', () => answer());
+
+    try {
+      const fixture = TestBed.createComponent(StudioViewComponent);
+
+      localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
+      fixture.autoDetectChanges();
+      await vi.advanceTimersByTimeAsync(29_000);
+      await fixture.whenStable();
+
+      expect(element(fixture).textContent).toContain('Design-Server startet');
+      expect(element(fixture).textContent).not.toContain('antwortet nicht');
+
+      await vi.advanceTimersByTimeAsync(1500);
+      await fixture.whenStable();
+
+      expect(element(fixture).textContent).toContain('Design-Server antwortet nicht: http://localhost:4402');
+      expect(button(element(fixture), 'Neu starten')).toBeDefined();
+      expect(system(fixture)).toBeUndefined();
+
+      answer = () => Promise.resolve(new Response('[]', { status: 200 }));
+      await vi.advanceTimersByTimeAsync(10_000);
+      await fixture.whenStable();
+
+      expect(element(fixture).textContent).not.toContain('antwortet nicht');
+      expect(system(fixture)?.port()).toBe(4402);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('starts its own server and draws the frames again when a server Studio did not start ends', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
 

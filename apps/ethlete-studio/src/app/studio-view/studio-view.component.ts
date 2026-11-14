@@ -11,11 +11,13 @@ import {
   first,
   interval,
   map,
+  merge,
   of,
   retry,
   share,
   startWith,
   switchMap,
+  takeUntil,
   tap,
   timeout,
   timer,
@@ -52,6 +54,8 @@ const SERVER_ANSWER_RETRY_MS = 1000;
 
 const SERVER_ANSWER_TIMEOUT_MS = 5000;
 
+const SERVER_SILENT_MS = 30_000;
+
 @Component({
   selector: 'ethlete-studio-view',
   template: `
@@ -63,7 +67,8 @@ const SERVER_ANSWER_TIMEOUT_MS = 5000;
           project: projectName(),
           projects: checkouts.names(),
           panel: serverPanel(),
-          server: serverDown() ? 'stopped' : 'starting',
+          server: serverDown() ? 'stopped' : serverSilent() ? 'unanswered' : 'starting',
+          serverUrl: serverUrl(),
           serverLog: downLog(),
         }"
         (action)="runShellAction($event)"
@@ -117,12 +122,22 @@ export class StudioViewComponent {
     return state?.listening ? state.port : null;
   });
 
-  private serverAnswered = toSignal(
-    toObservable(this.listeningPort).pipe(switchMap((port) => (port === null ? of(false) : serverAnswers$(port)))),
-    { initialValue: false },
+  private serverAnswer = toSignal(
+    toObservable(this.listeningPort).pipe(
+      switchMap((port) => (port === null ? of<ServerAnswer>('waiting') : serverAnswers$(port))),
+    ),
+    { initialValue: 'waiting' },
   );
 
-  public serverReady = computed(() => this.listeningPort() !== null && this.serverAnswered());
+  public serverReady = computed(() => this.listeningPort() !== null && this.serverAnswer() === 'answers');
+
+  protected serverSilent = computed(() => this.listeningPort() !== null && this.serverAnswer() === 'silent');
+
+  protected serverUrl = computed(() => {
+    const port = this.listeningPort();
+
+    return port === null ? '' : serverUrlOf(port);
+  });
 
   protected serverDown = computed(() => {
     const state = this.server();
@@ -358,14 +373,27 @@ export class StudioViewComponent {
   }
 }
 
-const serverAnswers$ = (port: number) =>
-  fromFetch(`http://localhost:${port}${DESIGN_STAMP_PATH}`).pipe(
-    map((response) => {
+type ServerAnswer = 'waiting' | 'answers' | 'silent';
+
+const serverUrlOf = (port: number) => `http://localhost:${port}`;
+
+const serverAnswers$ = (port: number) => {
+  const answers$ = fromFetch(`${serverUrlOf(port)}${DESIGN_STAMP_PATH}`).pipe(
+    map((response): ServerAnswer => {
       if (response.status >= 500) throw new Error(`${response.status}`);
 
-      return true;
+      return 'answers';
     }),
     timeout(SERVER_ANSWER_TIMEOUT_MS),
     retry({ delay: () => timer(SERVER_ANSWER_RETRY_MS) }),
-    startWith(false),
+    share(),
   );
+
+  return merge(
+    answers$,
+    timer(SERVER_SILENT_MS).pipe(
+      map((): ServerAnswer => 'silent'),
+      takeUntil(answers$),
+    ),
+  ).pipe(startWith<ServerAnswer>('waiting'));
+};

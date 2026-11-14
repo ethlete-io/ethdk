@@ -3544,6 +3544,7 @@ sketch column whose label has no cell under it after the listing is complete. Si
 "Design-Server startet" forever (874 showed it). Lesson: a start screen that waits on a request with no timeout hides
 every server fault. Tool fix: timeout plus retry, and after the timeout Studio says the server does not answer, with the
 URL. Side: user-facing, after B249 (ADR 0269).
+879 as built (2026-11-14): `serverAnswers$` emits `waiting | answers | silent`; after 30 s without an answer (the wait the doc agent set) the start screen shows the elements/shell-main `server-unanswered` state with `http://localhost:<port>` and a restart button, and keeps retrying; the design state now takes `serverUrl` as a prop. Verified: studio-view and shell-main specs (bite: the new studio-view spec fails without the fix), lint, typecheck, design check. Not verified: a real hung server in the running app, design compare (`design task` refuses: shell-main not build-ready).
 
 881\. Mac builder (2026-11-11, B345 slice 1): with several variant columns, the change crop is the union of all variant
 boxes, but the reason text names the first variant only, so the reason of the other variants is lost. Accepted for now

@@ -138,9 +138,26 @@
     >
       @if (server(); as server) {
         <div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
-          @if (server === 'starting') {
+          @if (server !== 'stopped') {
             <div class="mx-auto mt-15 box-border w-full max-w-6xl px-space-5">
-              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.starting }}</h3>
+              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">
+                {{ server === 'unanswered' ? LABELS.stopped : LABELS.starting }}
+              </h3>
+              @if (server === 'unanswered') {
+                <p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.unanswered(serverUrl()) }}</p>
+                <div class="mt-space-3">
+                  <button
+                    (click)="restartServer.emit()"
+                    et-button
+                    type="button"
+                    variant="outline"
+                    color="surface"
+                    size="sm"
+                  >
+                    {{ LABELS.restartButton }}
+                  </button>
+                </div>
+              }
             </div>
           } @else {
             <div

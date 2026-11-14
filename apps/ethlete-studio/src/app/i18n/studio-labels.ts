@@ -5,6 +5,7 @@ export const STUDIO_LABELS = {
     stop: 'Design-Server stoppen',
     stopped: 'Design-Server gestoppt',
     starting: 'Design-Server startet',
+    unanswered: (url: string) => `Design-Server antwortet nicht: ${url}`,
     restartButton: 'Neu starten',
   },
   studioMenu: {

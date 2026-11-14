@@ -29,7 +29,8 @@ export type ShellState = {
   project: string;
   projects: string[];
   panel: 'open' | 'hidden';
-  server?: 'running' | 'starting' | 'stopped';
+  server?: 'running' | 'starting' | 'unanswered' | 'stopped';
+  serverUrl?: string;
   serverLog?: readonly string[];
 };
 
@@ -60,6 +61,7 @@ export const SHELL_SAMPLE: ShellState = {
       [panel]="shell().panel"
       [server]="screen()"
       [log]="shell().serverLog ?? []"
+      [serverUrl]="shell().serverUrl ?? ''"
       [chrome]="chrome()"
       [update]="!!updateCheck.version()"
       [sideWidth]="sideWidth()"
@@ -119,7 +121,7 @@ export class ShellPageComponent {
   protected screen = computed(() => {
     const server = this.shell().server;
 
-    return server === 'stopped' || server === 'starting' ? server : null;
+    return server === 'running' ? null : (server ?? null);
   });
 
   protected setSideWidth(width: number) {

@@ -123,6 +123,25 @@ describe('ShellMainComponent', () => {
     });
   });
 
+  it('names the url of a design server that does not answer and restarts it', async () => {
+    const { fixture, host } = await setup('hidden');
+    let restarts = 0;
+
+    fixture.componentInstance.restartServer.subscribe(() => restarts++);
+    fixture.componentRef.setInput('server', 'unanswered');
+    fixture.componentRef.setInput('serverUrl', 'http://localhost:5123');
+    await fixture.whenStable();
+
+    const main = host.querySelector('main');
+
+    expect(main?.querySelector('h3')?.textContent?.trim()).toBe('Design-Server gestoppt');
+    expect(main?.textContent).toContain('Design-Server antwortet nicht: http://localhost:5123');
+
+    main?.querySelector('button')?.click();
+
+    expect(restarts).toBe(1);
+  });
+
   it('hides the open panel when the active section is clicked', async () => {
     const { events, click } = await setup('open');
 

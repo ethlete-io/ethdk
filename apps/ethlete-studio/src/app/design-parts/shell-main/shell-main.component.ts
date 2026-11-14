@@ -43,8 +43,9 @@ export class ShellMainComponent {
   public products = input(['studio', 'timetrack', 'docs']);
   public panel = input<'open' | 'hidden'>('open');
   public systemPicker = model<'open' | 'closed'>('closed');
-  public server = input<'stopped' | 'starting' | null>(null);
+  public server = input<'stopped' | 'starting' | 'unanswered' | null>(null);
   public log = input<readonly string[]>([]);
+  public serverUrl = input('');
   public chrome = input<Pick<WindowChrome, 'os' | 'left' | 'right'> | null>(null);
 
   public update = input(false);

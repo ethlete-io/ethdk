@@ -33,6 +33,7 @@ type Props = {
   force?: RailForce;
   server?: 'stopped' | 'starting' | 'unanswered';
   log?: string[];
+  serverUrl?: string;
   chrome?: Chrome;
   update?: boolean;
   sideWidth?: number;
@@ -143,7 +144,7 @@ const restartButton = withAction(
   'emit:restartServer',
 );
 
-const serverScreen = (server: 'stopped' | 'starting' | 'unanswered', log: string[]) =>
+const serverScreen = (server: 'stopped' | 'starting' | 'unanswered', log: string[], serverUrl: string) =>
   html`<div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
     ${
       server === 'starting' || server === 'unanswered'
@@ -154,7 +155,7 @@ const serverScreen = (server: 'stopped' | 'starting' | 'unanswered', log: string
             ${
               server === 'unanswered'
                 ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
-                      Design-Server antwortet nicht: http://localhost:4402
+                      Design-Server antwortet nicht: ${serverUrl}
                     </p>
                     <div class="mt-space-3">${restartButton}</div>`
                 : ''
@@ -220,7 +221,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
   states: {
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
     'server-starting': { ...BASE, server: 'starting' },
-    'server-unanswered': { ...BASE, server: 'unanswered' },
+    'server-unanswered': { ...BASE, server: 'unanswered', serverUrl: 'http://localhost:4402' },
     open: BASE,
     'open-focus-visible': { ...BASE, systemForce: 'focus-visible' },
     hidden: { ...BASE, panel: 'hidden' },
@@ -257,6 +258,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     force,
     server,
     log = [],
+    serverUrl = '',
     chrome = LINUX_CHROME,
     update = false,
     sideWidth,
@@ -283,7 +285,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
             class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"
             ${server ? '' : slot('canvas')}
           >
-            ${server ? serverScreen(server, log) : content}
+            ${server ? serverScreen(server, log, serverUrl) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
           ${panel === 'hidden' ? '' : resizeHandle({ width: sideWidth ?? SIDE_WIDTH.rest, interaction: resizeForce })}
