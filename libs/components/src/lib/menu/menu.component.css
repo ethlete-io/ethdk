@@ -23,6 +23,12 @@
     initial-value: 6px;
   }
 
+  @property --et-menu-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
   @property --et-menu-item-height {
     syntax: '<length>';
     inherits: true;
@@ -122,7 +128,6 @@
     --_et-menu-color: var(--et-surface-color-solid, rgb(244 244 245));
     --_et-menu-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     --_et-menu-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
-    --_et-menu-radius: 10px;
     --_et-menu-item-active-background: color-mix(
       in srgb,
       var(--et-surface-interaction-solid, rgb(255 255 255)) 12%,
@@ -143,7 +148,7 @@
     /* an anchored pane does not clip, so dropping the pane's own cap here lets a menu taller than
        the room next to the trigger hang out of the pane and past the viewport edge */
     max-block-size: min(var(--et-menu-max-height), var(--et-overlay-max-height, 100vh));
-    border-radius: var(--_et-menu-radius);
+    border-radius: var(--et-menu-border-radius);
     border: 1px solid var(--_et-menu-border);
     background: var(--_et-menu-background);
     color: var(--_et-menu-color);

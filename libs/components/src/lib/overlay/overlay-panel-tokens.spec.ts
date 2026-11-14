@@ -26,4 +26,11 @@ describe('overlay panel tokens', () => {
       expect(nonInheritingPublicTokens(path)).toEqual([]);
     },
   );
+
+  it('draws the menu panel corners from --et-menu-border-radius', () => {
+    const menuCss = readFileSync(libRoot + 'menu/menu.component.css', 'utf8');
+
+    expect(menuCss).toMatch(/@property --et-menu-border-radius \{[^}]*initial-value: 10px;/);
+    expect(menuCss).toMatch(/\.et-menu \{[^}]*border-radius: var\(--et-menu-border-radius\);/);
+  });
 });
