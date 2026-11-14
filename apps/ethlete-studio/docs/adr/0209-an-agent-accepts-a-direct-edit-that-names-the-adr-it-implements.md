@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0048
 open: B412
 governs: ['.ethlete/design/*/merged.json', '.ethlete/design/**/sketches/**']
 decided: 2026-11-06
