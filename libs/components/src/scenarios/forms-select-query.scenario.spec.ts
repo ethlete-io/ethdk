@@ -364,7 +364,9 @@ describe('forms select query scenarios', () => {
     it('reports the failure of the same creator when it is not silent', async () => {
       const s = scenario();
       creatorOptions.reportErrors = true;
-      onTestFinished(() => (creatorOptions.reportErrors = false));
+      onTestFinished(() => {
+        creatorOptions.reportErrors = false;
+      });
       const http = TestBed.inject(HttpTestingController);
       const fixture = TestBed.createComponent(SilentLegacyPickerComponent);
       const input = query<HTMLInputElement>('input[etSelectSearch]', fixture.nativeElement);
