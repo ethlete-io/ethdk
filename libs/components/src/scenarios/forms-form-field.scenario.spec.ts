@@ -15,7 +15,9 @@ import {
   FormErrorComponent,
   FormWarningComponent,
   injectFormFieldLabels,
+  formErrorContext,
   provideFormErrorMessageResolver,
+  provideFormErrorMessages,
   provideFormFieldLabels,
   provideFormWarningMessageResolver,
   FORM_FIELD_APPEARANCES,
@@ -633,15 +635,32 @@ describe('forms form-field localized counter scenarios', () => {
   });
 });
 
+describe('forms form-field kind resolver scenarios', () => {
+  const scenario = useScenario({
+    providers: [
+      provideColorThemes(TEST_COLOR_THEMES),
+      provideFormErrorMessageResolver((error) => (error.kind === 'required' ? 'Pflicht' : null)),
+    ],
+  });
+
+  it('resolves an error by kind through a plain resolver', () => {
+    scenario();
+    const resolver = TestBed.inject(FORM_ERROR_MESSAGE_RESOLVER);
+
+    expect(resolver({ kind: 'required' })).toBe('Pflicht');
+    expect(resolver({ kind: 'email' })).toBeNull();
+  });
+});
+
 describe('forms form-field localized scenarios', () => {
   const scenario = useScenario({
     providers: [
       provideColorThemes(TEST_COLOR_THEMES),
       provideFormFieldLabels({ mixed: 'Gemischt' }),
-      provideFormErrorMessageResolver((error) => {
-        if (error.kind === 'required') return 'Pflichtfeld';
-        if (error.kind === 'minlength') return 'Zu kurz';
-        return null;
+      provideFormErrorMessages({
+        required: () => 'Pflichtfeld',
+        minlength: () => 'Zu kurz',
+        otherwise: (error) => (formErrorContext(error, 'max') ? 'Zu groß' : null),
       }),
       provideFormWarningMessageResolver((warning) =>
         warning.kind === 'longStreet' ? 'Ungewöhnlich lange Straße' : null,

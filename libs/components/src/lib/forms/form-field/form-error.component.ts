@@ -1,5 +1,6 @@
 import { Component, InjectionToken, Provider, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
+import { ServerViolationValidationError } from '@ethlete/query';
 import { FormFieldLabels, injectFormFieldLabels } from './form-field-labels';
 
 /**
@@ -15,6 +16,83 @@ export const provideFormErrorMessageResolver = (resolver: FormErrorMessageResolv
   provide: FORM_ERROR_MESSAGE_RESOLVER,
   useValue: resolver,
 });
+
+/** The validator value of each known error `kind`, as `formErrorContext()` and `provideFormErrorMessages()` hand it out. */
+export type FormErrorContextMap = {
+  required: true | undefined;
+  email: true | undefined;
+  min: { min: number; actual: number | undefined };
+  max: { max: number; actual: number | undefined };
+  minLength: { minLength: number };
+  maxLength: { maxLength: number };
+  minlength: { requiredLength: number; actualLength: number };
+  maxlength: { requiredLength: number; actualLength: number };
+  pattern: { requiredPattern: string | RegExp; actualValue: string | undefined };
+  etServerViolation: ServerViolationValidationError['violation'];
+  etServerError: undefined;
+};
+
+export type FormErrorContext<TKind extends string> = TKind extends keyof FormErrorContextMap
+  ? FormErrorContextMap[TKind]
+  : unknown;
+
+/** Reads the validator value of an error, typed by its `kind`; `unknown` for a kind outside `FormErrorContextMap`. */
+export const formErrorContext = <const TKind extends string>(
+  error: ValidationError.WithOptionalFieldTree,
+  kind: TKind,
+): FormErrorContext<TKind> | undefined => {
+  if (error.kind !== kind) {
+    return undefined;
+  }
+
+  const raw = error as unknown as Record<string, unknown>;
+  const context = (raw['context'] ?? {}) as Record<string, unknown>;
+
+  switch (kind as string) {
+    case 'min':
+      return { min: context['min'] ?? raw['min'], actual: context['actual'] } as FormErrorContext<TKind>;
+    case 'max':
+      return { max: context['max'] ?? raw['max'], actual: context['actual'] } as FormErrorContext<TKind>;
+    case 'minLength':
+      return { minLength: raw['minLength'] } as FormErrorContext<TKind>;
+    case 'maxLength':
+      return { maxLength: raw['maxLength'] } as FormErrorContext<TKind>;
+    case 'pattern':
+      return {
+        requiredPattern: context['requiredPattern'] ?? raw['pattern'],
+        actualValue: context['actualValue'],
+      } as FormErrorContext<TKind>;
+    case 'etServerViolation':
+      return raw['violation'] as FormErrorContext<TKind>;
+    case 'etServerError':
+      return undefined;
+    default:
+      return raw['context'] as FormErrorContext<TKind>;
+  }
+};
+
+export type FormErrorMessages = {
+  [TKind in keyof FormErrorContextMap]?: (
+    context: FormErrorContextMap[TKind],
+    error: ValidationError.WithOptionalFieldTree,
+  ) => string | null;
+} & {
+  otherwise?: (error: ValidationError.WithOptionalFieldTree) => string | null;
+};
+
+/** Provides a resolver from a map of texts per error `kind`; each function receives the validator value typed for its kind, `null` falls back to the default text. */
+export const provideFormErrorMessages = (messages: FormErrorMessages): Provider =>
+  provideFormErrorMessageResolver((error) => {
+    const resolve = (messages as Record<string, ((context: unknown, error: unknown) => string | null) | undefined>)[
+      error.kind
+    ];
+
+    if (resolve && error.kind !== 'otherwise') {
+      return resolve(formErrorContext(error, error.kind), error);
+    }
+
+    return messages.otherwise?.(error) ?? null;
+  });
 
 const reactiveBound = (error: ValidationError.WithOptionalFieldTree, key: string) =>
   (error as unknown as { context?: Record<string, number> }).context?.[key];

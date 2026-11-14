@@ -707,6 +707,21 @@ provideFormErrorMessageResolver((error) => {
 });
 ```
 
+`provideFormErrorMessages` takes the same texts as a map per kind, and each function
+receives the validator value typed for its kind (`min`: `{ min, actual }`, `max`,
+`minlength` / `maxlength`: `{ requiredLength, actualLength }`, `minLength` /
+`maxLength`, `pattern`, `required`, `email`, `etServerViolation`). Return `null` to
+fall back to the default text; `otherwise` receives every kind outside the map.
+`formErrorContext(error, 'min')` reads the same typed value inside any resolver.
+
+```ts
+provideFormErrorMessages({
+  min: ({ min }) => `At least ${min}`,
+  minlength: ({ requiredLength }) => `At least ${requiredLength} characters`,
+  otherwise: (error) => (error.kind === 'taken' ? 'Already taken' : null),
+});
+```
+
 ## Submitting
 
 `[etForm]` connects a `<form>` to the signal form it edits. It sets `novalidate`,

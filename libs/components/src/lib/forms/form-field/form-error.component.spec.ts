@@ -2,7 +2,12 @@ import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ValidationError } from '@angular/forms/signals';
 import { provideFormFieldLabels } from './form-field-labels';
-import { FormErrorComponent, provideFormErrorMessageResolver } from './form-error.component';
+import {
+  FormErrorComponent,
+  formErrorContext,
+  provideFormErrorMessageResolver,
+  provideFormErrorMessages,
+} from './form-error.component';
 
 @Component({
   template: '<et-form-error [error]="error()" />',
@@ -117,5 +122,43 @@ describe('FormErrorComponent', () => {
     });
 
     expect(renderError({ kind: 'minLength', message: 'Too short' })).toBe('Too short');
+  });
+
+  describe('provideFormErrorMessages', () => {
+    it('should hand a resolver the typed validator value of its kind', () => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideFormErrorMessages({
+            min: ({ min, actual }) => `min ${min} got ${actual}`,
+            minlength: ({ requiredLength }) => `len ${requiredLength}`,
+            minLength: ({ minLength }) => `signal len ${minLength}`,
+          }),
+        ],
+      });
+
+      expect(renderError({ kind: 'min', min: 3, context: { min: 3, actual: 1 } } as never)).toBe('min 3 got 1');
+    });
+
+    it('should resolve a signal-forms error and fall back for an unmapped kind', () => {
+      TestBed.configureTestingModule({
+        providers: [provideFormErrorMessages({ minLength: ({ minLength }) => `signal len ${minLength}` })],
+      });
+
+      expect(renderError({ kind: 'minLength', minLength: 4 } as never)).toBe('signal len 4');
+      expect(renderError({ kind: 'required' })).toBe('This field is required');
+    });
+
+    it('should route an unknown kind to otherwise', () => {
+      TestBed.configureTestingModule({
+        providers: [provideFormErrorMessages({ otherwise: (error) => `other ${error.kind}` })],
+      });
+
+      expect(renderError({ kind: 'custom' })).toBe('other custom');
+    });
+
+    it('formErrorContext returns undefined for another kind and the raw context for an unknown one', () => {
+      expect(formErrorContext({ kind: 'min', min: 1 } as never, 'max')).toBeUndefined();
+      expect(formErrorContext({ kind: 'custom', context: 5 } as never, 'custom')).toBe(5);
+    });
   });
 });
