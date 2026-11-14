@@ -976,6 +976,21 @@ is no longer a `part` row, the case clicked that sketch row (sketch view, 0 canv
 NOT -> 1116 ms (15 frames), with `--hold-listings 14000` 1064 ms; the case passes 1/1 both ways; ctrl-wheel all 6 pages
 pass under the hold. Not verified: the full e2e suite and CI (every case now fails on a row unsized past 10 s).
 
+**B502k as built (Linux builder subagent, 2026-11-14, 7425e42bf, 2bf00b602):** pages/system 26 DIFF to 2 (2 of 2 full
+runs, 27 ok). Causes, measured on the shots and `design dom`: (1) the app sample `SYSTEM_TREE` listed Components before
+Elements, the design part-tree (3d2a32cf8) and the app's `SYSTEM_GROUPS` list Elements first; 24 states 13241-13639 to
+ok or the 398 px group. (2) the app disclosure host was a `block` flex item that shrank to its label, so the footer's
+`ms-auto` pushed Gründe to the row end; the design's `w-full` toggle is itself the row item next to the badge. The host
+is now always `contents`: the 398 px group (part, fit, part-focus-visible, one-blocker, agent-*), direct-edit-closed
+1434 to ok. (3) the design's `blocked-checking` build sample (b685abce7, ADR 0270) had no case in `buildReadySampleOf`,
+so the app drew no footer: 15860 to ok. Left, Cause measured: direct-edit 20848, blockers-open 1553: the SDK
+`anchoredDialogOverlayStrategy` caps the popover at `maxHeight: 80vh` (716 px drawn, it scrolls), the design's
+`sdk/components/anchored-dialog` draws no cap (769 px); a design/SDK conflict, not changed. Recommendation: the sdk
+design dialog draws the lib's 80vh cap. Specs red on HEAD in a scratch copy, green after; vitest related 193 green; lint,
+tsc clean. Compare: pages/sketches 31 ok / 0 DIFF / 7 FAILED (489), components/disclosure 12 ok, pages/merge 5 ok.
+`design check`: pages/system 2 warnings, components/disclosure and pages/merge clean, pages/sketches 4 OLD
+CANVAS-UNDER-PANEL. Not verified: CI; the live app.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
