@@ -24,3 +24,8 @@ gaps that come from Angular itself: a template `required` beside `[formControl]`
   `autocomplete` through.
 
 The human answered "Q2ok" to the summary.
+
+Addendum, 2026-11-14 afternoon: the prerelease waits for this row. The human: "Ich denke mit dem sdk Release waren wir
+dann noch auf die offenen sdk Themen." and "Ok" to the recommendation: the prerelease goes out once B507 and the
+breadcrumb tokens are on `next` with green CI; the doc agent merges the release PR (ADR 0295). The ADR 0297 pieces ship
+in later prereleases as each lands.
