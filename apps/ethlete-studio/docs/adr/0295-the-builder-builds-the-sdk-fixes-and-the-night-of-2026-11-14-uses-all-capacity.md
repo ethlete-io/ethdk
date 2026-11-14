@@ -20,3 +20,6 @@ an agent pane stopped at a usage limit, as in ADR 0220. The human: "kümmere dic
 auch." The doc agent also resumes and steers the fifagg session.
 
 The human answered "beides ok" to the summary. `built` names HEAD at the decision, because no code change builds it.
+
+Addendum, 01:50: the human: "um 15 uhr dann wollen wir nur noch angebrochene arbeit beenden. nicht mehr full ham mode
+dann." From 15:00 the sessions only finish work already started and start nothing new.
