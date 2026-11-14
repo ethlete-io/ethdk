@@ -2468,6 +2468,14 @@ the 1440 fallback to the measured size inside the case window, and the variant p
 there. No cause in the time box, so a10cda703 is reverted (B499 P6 reopens, ADR 0280). A green Studio e2e after the
 revert supports the suspect commit; P6 then needs a way that keeps that case green.
 
+B499 P6 reland as built (Linux builder subagent, 2026-11-14): a10cda703 is back unchanged. Cause (arithmetic on the CI
+numbers): the Chip frame was read at the 1440 px fallback width (802 = 1440 x 0.557) and the zoomed read is the measured
+203 px chip at 0.557 x 1.284 (= 145); the case judged zoom by box width, so a row measured between two reads failed it.
+Suspect: the pool's CPU moved that measure into the window (the case was also red without the pool on aca2c7f6d). Fix:
+the case judges each frame's zoom (box width / unscaled content width; in db72fd4d1). P6 `--only P6`, scratch
+copy: pass twice, open-points 15 / 17 ms, warm system 63 / 58 ms, worst block 0 / 0 ms. Chip case with the pool, `--hold-listings
+14000 --load 24`: 6/6 green (zoom 1.000 -> 1.284). Not verified: Studio e2e in CI, a reproduction of the red locally.
+
 B500 S2 as built (Linux builder subagent, 2026-11-13): both rules fail the P2 sample and are removed from `design
 check`. ACTION-UNDECLARED, one hit from each of 20 parts, 10 false: scheduler "Today" true (emit), input native
 input false (the part is the field), slider thumb false (the part is the control), textarea native false, checkbox
@@ -2779,6 +2787,11 @@ merge runs `journaledMergeOf` with the pick written inside the journal and its c
 unjournaled, step 1 half state). 574 (`sketch pick`, sketch-command spec "records the pick the designer gave in
 chat"), 434 (merge.spec "clean copy of HEAD", "refuses before any write"), 889 (edit-sketch.spec "adds no author")
 green. Open beyond S3: ready/pick journal, baseline ref on undo.
+B501 journal reland as built (2026-11-14): Cause (trace + 45 s hold, e2e red with the CI alert): the Studio merge worker
+removes the sketch folder before its gate and commit, so the view closes and the next merge's worker opened the journal
+while the first one still held it, and `openJournal` threw at once. Fix: `openJournal` waits (merge 5 min, else 10 s), one
+journal per thread, journal before product lock in discard/rebase, rebase-after-merge outside the merge's try. Verified:
+write-journal.spec bites, e2e case green with the hold and 5/5 with `--hold-listings 14000 --load 8`. Not verified: CI shard 7/7.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
