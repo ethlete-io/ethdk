@@ -973,15 +973,7 @@ const withEditSketch = async (page, designPort, run) => {
   };
   const pick = async (variant) => {
     await listingAnswered(page);
-    await page.evaluate((variant) => {
-      for (const button of document.querySelectorAll('[data-sk-merge]')) {
-        let row = button.parentElement;
-
-        while (row && !/Variante \S+/.test(row.textContent)) row = row.parentElement;
-        if (row?.textContent.match(/Variante (\S+)/)[1].startsWith(variant)) button.setAttribute('data-e2e-pick', '');
-      }
-    }, variant);
-    await page.locator('[data-e2e-pick]').first().click();
+    await page.locator(`[data-sk-row="${variant}"] [data-sk-merge]`).first().click();
 
     const rows = { changed: 0, outlined: 0 };
 
