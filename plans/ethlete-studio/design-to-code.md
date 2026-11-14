@@ -2641,6 +2641,9 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - Machinery: serve and `yarn et:design` run stale cli code after a cli change (8 false CONTRAST-PAIR); specs on
   untouched libs red under load; no commitlint bracket scope; output-style.spec red under CLAUDE_CONFIG_DIR.
 - B504: empty palette query without recents shows nothing (sketch queued after B501 S2).
+- B504 (fifa asks, 14.11.): public tokens for floating-tip radius + max-width, toggletip letter-spacing + min-width,
+  badge letter-spacing + ellipsis/max-size, `--et-avatar-size`; tooltip guide: cdk toggletip -> `[(open)]`, no
+  `provideOverlay()`; empty state row layout as sketch only.
 - B502 (night 14.11.): live derivation picked wrong (list-row, agent-logos; 8 UNDERIVED from page host); 9f2594cbd: page
   host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
   drew states inline and system-page again; 44f3d6430 draws system-page per state. Open: empty product side panel shows
