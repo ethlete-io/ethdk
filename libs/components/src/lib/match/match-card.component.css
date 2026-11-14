@@ -17,13 +17,13 @@
   /* One token per density, rather than one token the density rules overwrite: the card only ever *reads*
      these, so a value set from outside survives the mode switch instead of being clobbered by it. */
   @property --et-match-card-compact-padding {
-    syntax: '<length>';
+    syntax: '<length>+';
     inherits: true;
     initial-value: 10px;
   }
 
   @property --et-match-card-expanded-padding {
-    syntax: '<length>';
+    syntax: '<length>+';
     inherits: true;
     initial-value: 16px;
   }
@@ -78,7 +78,7 @@
 
   /* The third density, below the dense row: a code and a number. See the minimal threshold below. */
   @property --et-match-card-minimal-padding {
-    syntax: '<length>';
+    syntax: '<length>+';
     inherits: true;
     initial-value: 6px;
   }

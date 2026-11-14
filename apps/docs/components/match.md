@@ -442,8 +442,8 @@ reuses the featured card's tokens and changes only the arrangement:
 | ------------------------------------------ | ------- | --------------------------------------------------------- |
 | `--et-match-card-border-radius`            | `10px`  | The card's corner radius                                  |
 | `--et-match-card-min-inline-size`          | `180px` | The floor that keeps a card in a flex row from collapsing |
-| `--et-match-card-compact-padding`          | `10px`  | Padding, dense row                                        |
-| `--et-match-card-expanded-padding`         | `16px`  | Padding, featured card                                    |
+| `--et-match-card-compact-padding`          | `10px`  | Padding, dense row; `block inline` sets two               |
+| `--et-match-card-expanded-padding`         | `16px`  | Padding, featured card; `block inline` sets two           |
 | `--et-match-card-compact-gap`              | `6px`   | Row gap, dense row                                        |
 | `--et-match-card-expanded-gap`             | `12px`  | Row gap, featured card                                    |
 | `--et-match-card-compact-emblem-size`      | `20px`  | Emblem size, dense row                                    |
@@ -452,7 +452,7 @@ reuses the featured card's tokens and changes only the arrangement:
 | `--et-match-card-expanded-name-font-size`  | `15px`  | Participant name size, featured card                      |
 | `--et-match-card-compact-score-font-size`  | `14px`  | Score size, dense row                                     |
 | `--et-match-card-expanded-score-font-size` | `20px`  | Score size, featured card and wide row                    |
-| `--et-match-card-minimal-padding`          | `6px`   | Padding, minimal layout                                   |
+| `--et-match-card-minimal-padding`          | `6px`   | Padding, minimal layout; `block inline` sets two          |
 | `--et-match-card-minimal-gap`              | `3px`   | Row gap, minimal layout                                   |
 | `--et-match-card-minimal-name-font-size`   | `11px`  | Participant name size, minimal layout                     |
 | `--et-match-card-minimal-score-font-size`  | `12px`  | Score size, minimal layout                                |
