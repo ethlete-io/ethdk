@@ -50,10 +50,10 @@ const fixture = (initial, preChangesets = [], setup = () => undefined) => {
   git('commit', '-q', '-m', 'base');
   const base = git('rev-parse', 'HEAD').stdout.trim();
 
-  const commit = (change) => {
+  const commit = (change, author = 't') => {
     change(repo);
     git('add', '-A');
-    git('commit', '-q', '-m', 'change');
+    git('-c', `user.name=${author}`, 'commit', '-q', '-m', 'change');
   };
 
   const check = () =>
@@ -78,6 +78,13 @@ describe('check-changeset-coverage dropped changesets', () => {
     assert.equal(result.status, 1);
     assert.match(result.stderr, /silent-catch-try-catch\.md is deleted `@ethlete\/eslint-plugin`/);
     assert.match(result.stderr, /add a new changeset file/);
+  });
+
+  test('passes when a release commit consumed the changeset, as in 646d5ef6b', () => {
+    const { commit, check } = fixture(REAL_BEFORE);
+    commit((repo) => unlinkSync(join(repo, '.changeset/silent-catch-try-catch.md')), 'github-actions[bot]');
+
+    assert.equal(check().status, 0);
   });
 
   test('fails when a package entry is removed, as in d7f6169e6', () => {

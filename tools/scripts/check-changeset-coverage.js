@@ -111,6 +111,9 @@ for (const [sha, , subject] of commits) {
 }
 
 const rangeBase = git('merge-base', base, head).trim();
+const consumedByRelease = (path) =>
+  git('log', '-1', '--full-history', '--diff-filter=D', '--format=%an', `${rangeBase}..${head}`, '--', path).trim() ===
+  RELEASE_BOT;
 const changesetFiles = git('ls-tree', '--name-only', rangeBase, '.changeset/')
   .split('\n')
   .filter((path) => /^\.changeset\/[^/]+\.md$/.test(path) && path !== '.changeset/README.md');
@@ -127,6 +130,8 @@ for (const path of changesetFiles) {
   } catch {
     kept = null;
   }
+
+  if (kept === null && consumedByRelease(path)) continue;
 
   for (const name of changesetPackages(rangeBase, path)) {
     if (!kept?.has(name)) dropped.push({ path, name, deleted: kept === null });
