@@ -2666,7 +2666,9 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   switch/radio/segmented 94b7a4b68 (Cause: binding worked, declaration missing). ET3504 Cause c5c31b60d: no defect, fifa
   filtered the record. Table `hidden` Cause 9cbd153f7: known keys kept old state; last write wins. Chromium drops an
   @property with `<length>{1,2}` (default 0): only + and # work. Carousel colour tokens e158c00f4; no wipe duration
-  token (Cause, code read: wipe follows scroll position, browser owns smooth-scroll speed). Queued: select L-3/L-4.
+  token (Suspect, code read, no probe: wipe follows scroll position, browser owns smooth-scroll speed). Select L-4
+  b5aa31a33 (Cause, spec: Escape on a closed select keeps selection, no preventDefault), L-3 d72cc664b e874d653e (Cause,
+  scenario: selectOptionsFromV2Query works with fifa's silent legacy creator; 503 shows inline, no ErrorHandler).
 - B501: Suspect: `sketch ready` refuses components/badge@long-label for 60 missing motions on 3 text-length-only states.
 - B502 (night 14.11.): live derivation picked wrong (list-row, agent-logos; 8 UNDERIVED from page host); 9f2594cbd: page
   host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
