@@ -1,4 +1,10 @@
 @layer components.sdk {
+  @property --et-avatar-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 40px;
+  }
+
   @property --et-avatar-font-size {
     syntax: '<length>';
     inherits: true;
@@ -18,15 +24,14 @@
   }
 
   .et-avatar {
-    --_et-avatar-size: 40px;
     --_et-avatar-icon-size: 2rem;
     --et-theme-color-primary-opacity: 1;
 
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    inline-size: var(--_et-avatar-size);
-    block-size: var(--_et-avatar-size);
+    inline-size: var(--et-avatar-size);
+    block-size: var(--et-avatar-size);
     flex-shrink: 0;
     box-sizing: border-box;
     border-radius: var(--et-avatar-border-radius);
@@ -43,25 +48,25 @@
     user-select: none;
 
     &:where([data-size='xs']) {
-      --_et-avatar-size: 24px;
+      --et-avatar-size: 24px;
       --_et-avatar-icon-size: 1.4rem;
       --et-avatar-font-size: 10px;
     }
 
     &:where([data-size='sm']) {
-      --_et-avatar-size: 32px;
+      --et-avatar-size: 32px;
       --_et-avatar-icon-size: 1.8rem;
       --et-avatar-font-size: 12px;
     }
 
     &:where([data-size='lg']) {
-      --_et-avatar-size: 48px;
+      --et-avatar-size: 48px;
       --_et-avatar-icon-size: 2.4rem;
       --et-avatar-font-size: 16px;
     }
 
     &:where([data-size='xl']) {
-      --_et-avatar-size: 64px;
+      --et-avatar-size: 64px;
       --_et-avatar-icon-size: 2.8rem;
       --et-avatar-font-size: 20px;
     }

@@ -71,7 +71,7 @@ The image's `alt` text comes from `name` (empty when unset, which is a deliberat
 
 Public design tokens:
 
-- `et-avatar`: `--et-avatar-font-size`, `--et-avatar-font-weight`, `--et-avatar-border-radius`.
+- `et-avatar`: `--et-avatar-size` (default `40px`, the `md` size; `xs`-`xl` set it on the avatar itself, so set it on an avatar with `size` left at `md`), `--et-avatar-font-size`, `--et-avatar-font-weight`, `--et-avatar-border-radius`.
 - `et-avatar-group`: `--et-avatar-group-overlap`, `--et-avatar-group-ring-width`.
 
 The initials/fallback background and text color come from the nearest [color theme](/core/theming) - set `color` to pick a specific one. For a colour no theme covers, set these on the avatar (or on an `et-avatar-group`, which reaches every avatar in it, the `+N` included):

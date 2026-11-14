@@ -53,10 +53,6 @@ import {
       inline-size: 100%;
       aspect-ratio: 16 / 9;
     }
-
-    .example-stream-command > .et-badge {
-      align-self: center;
-    }
   `,
 })
 export class StreamSlotControlsExampleComponent {

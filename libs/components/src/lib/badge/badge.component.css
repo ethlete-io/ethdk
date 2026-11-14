@@ -41,8 +41,6 @@
     --_et-badge-border-color: transparent;
 
     display: inline-flex;
-    align-self: start;
-    justify-self: start;
     align-items: center;
     justify-content: center;
     gap: var(--et-badge-gap);
@@ -51,9 +49,10 @@
     border-radius: var(--et-badge-border-radius);
     font-size: var(--et-badge-font-size);
     font-weight: var(--et-badge-font-weight);
+    letter-spacing: var(--et-badge-letter-spacing, inherit);
     line-height: 1.4;
     box-sizing: border-box;
-    max-inline-size: 100%;
+    max-inline-size: var(--et-badge-max-width, 100%);
     background: var(--_et-badge-background);
     color: var(--_et-badge-color);
     border: 1px solid var(--_et-badge-border-color);

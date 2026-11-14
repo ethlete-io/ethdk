@@ -45,6 +45,8 @@ The icon is decorative by default (`aria-hidden`), which is right when it sits n
 
 ## Design specs & tokens
 
-Override tokens: `--et-badge-padding-inline`, `--et-badge-min-block-size`, `--et-badge-border-radius`, `--et-badge-font-size`, `--et-badge-font-weight`, `--et-badge-gap`.
+Override tokens: `--et-badge-padding-inline`, `--et-badge-min-block-size`, `--et-badge-border-radius`, `--et-badge-font-size`, `--et-badge-font-weight`, `--et-badge-gap`, `--et-badge-letter-spacing` (default: inherited from the parent), `--et-badge-max-width` (default `100%`; it only caps the width, the badge does not truncate).
+
+The badge does not align itself: inside a flex or grid parent it follows the parent's `align-items` / `justify-items`.
 
 `size="md"` is the token defaults, left unset by the stylesheet - so a token you set on an ancestor reaches every `md` badge under it. `sm` and `lg` set the four sizing tokens on the badge itself and therefore win over an ancestor override; restyle those per size, or reach for `md` plus your own tokens.

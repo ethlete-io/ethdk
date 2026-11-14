@@ -75,10 +75,6 @@ const MEDIA_CONSENT = new InjectionToken<WritableSignal<boolean>>('MEDIA_CONSENT
       align-items: center;
       gap: 0.8rem;
     }
-
-    .example-stream-consent-label > .et-badge {
-      align-self: center;
-    }
   `,
 })
 export class StreamConsentProviderExampleComponent {

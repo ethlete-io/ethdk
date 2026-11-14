@@ -95,10 +95,6 @@ const VIDEO_LIST: Video[] = [
       font-weight: 500;
     }
 
-    .example-stream-video > .et-badge {
-      align-self: center;
-    }
-
     .example-stream-sources {
       position: fixed;
       inset-block-start: 0;
