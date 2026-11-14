@@ -123,6 +123,8 @@
         >
           {{ LABELS.discard }}
         </button>
+      } @else {
+        <span class="text-ui-sm whitespace-nowrap text-et-surface-muted" data-sk-edit-hint>{{ LABELS.editHint }}</span>
       }
     </header>
     <div
@@ -309,7 +311,7 @@
             >
               <span class="flex items-center gap-space-3">
                 <span class="text-ui-sm text-et-surface-muted">{{ LABELS.foldedStates(foldedStates().size) }}</span>
-                <ethlete-disclosure [(open)]="statesOpen" [label]="LABELS.showAllStates" size="xs" />
+                <ethlete-disclosure [(open)]="statesOpen" [label]="LABELS.showAllStates" class="w-full" size="xs" />
               </span>
             </section>
           }
@@ -524,7 +526,11 @@
     @let shownHeight = shownHeightOf(row, item);
     @let cropTransform = cropTransformOf(row, item.state);
     @let mark = markOf(row, item);
-    <div class="row-start-2 flex min-w-0 flex-col">
+    @let stacked = !!cropTransform && !!mark && (groupOfState().get(item.state)?.states?.length ?? 0) > 1;
+    <div
+      [class]="stacked ? 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]' : ''"
+      class="row-start-2 flex min-w-0 flex-col"
+    >
       <div
         #frame
         [style.width.px]="row.width * scale()"
@@ -532,12 +538,14 @@
         [attr.data-sk-frame]="key"
         [attr.data-selected]="key === selectedFrame() ? '' : null"
         [attr.data-sk-cropped]="cropTransform ? '' : null"
-        class="relative overflow-hidden shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+        [class]="stacked ? '' : 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]'"
+        class="relative overflow-clip [overflow-clip-margin:8px]"
       >
         <div
           [style.width.px]="row.width"
           [style.height.px]="shownHeight"
           [style.transform]="'scale(' + scale() + ')'"
+          [class.overflow-hidden]="!!cropTransform"
           class="pointer-events-none origin-top-left"
         >
           <div
@@ -571,7 +579,7 @@
           data-frame-border
         ></span>
       </div>
-      @if (cropTransform && mark && (groupOfState().get(item.state)?.states?.length ?? 0) > 1) {
+      @if (stacked) {
         @for (inset of STACK_INSETS; track inset) {
           <div
             [style.margin-inline.px]="inset * scale()"

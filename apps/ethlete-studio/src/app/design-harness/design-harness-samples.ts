@@ -43,8 +43,18 @@ const sketchRowsOf = (rows: SketchRow[], { same = [], comparing = false }: { sam
         },
   );
 
+const SKETCH_PART_SAMPLES: Record<string, { rows: SketchRow[]; looks: Record<string, string> }> = {
+  wide: { rows: SKETCH_ROWS, looks: {} },
+  narrow: SKETCH_NARROW_SAMPLE,
+  edit: SKETCH_EDIT_SAMPLE,
+};
+
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
+  'components/shell-collapse': ({ class: extra, ...props }) => ({
+    ...props,
+    class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
+  }),
   'elements/canvas-frames': ({ zoom, class: extra, ...props }) => ({
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} min-h-120`,
@@ -53,13 +63,14 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
   }),
   'pages/sketches': ({ part, same, comparing, withdrawn, points, pointsOpen, screen, multi, ...props }) => {
     const { wholeScreen, ...screenSample } = SKETCH_SCREEN_SAMPLE;
+    const kind = String(part ?? 'wide');
+    const partSample = SKETCH_PART_SAMPLES[kind];
+
+    if (!partSample) throw new Error(`no sample for prop part=${kind} of part pages/sketches`);
+
     const { looks: _looks, ...sample } = screen
       ? { ...screenSample, looks: {}, wholeScreens: screen === 'whole' ? [wholeScreen] : [] }
-      : part === 'narrow'
-        ? SKETCH_NARROW_SAMPLE
-        : part === 'edit'
-          ? SKETCH_EDIT_SAMPLE
-          : { rows: SKETCH_ROWS, looks: {} };
+      : partSample;
     const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true }).map(
       (row) => (withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row),
     );

@@ -33,7 +33,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS],
-  host: { class: 'inline-flex p-space-2' },
+  host: { class: 'inline-flex' },
 })
 export class ShellCollapseComponent {
   public collapse = output();

@@ -109,17 +109,18 @@ export const SKETCH_IDLE: SketchIdle = { by: 'Opus 5.5', since: 'seit 25 Min' };
 
 export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1 · Suche und Update' }];
 
-export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'H', count: 1 }];
+export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'TB', count: 1 }];
+
+const SKETCH_COMPONENTS = ['title-bar', 'zoom-chip@edit', 'zoom-chip'];
+
+const componentsLayerOf = (selected?: string) => ({
+  title: 'Components',
+  open: true,
+  parts: SKETCH_COMPONENTS.map((name) => (name === selected ? { name, selected: true } : { name })),
+});
 
 export const SKETCH_TREE: PartTree = {
-  layers: [
-    {
-      title: 'Components',
-      open: true,
-      parts: [{ name: 'title-bar', selected: true }, { name: 'zoom-chip' }],
-    },
-    { title: 'Pages', open: true, parts: [{ name: 'system' }] },
-  ],
+  layers: [componentsLayerOf('title-bar'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
 };
 
 const CHIP_STATES = [
@@ -167,14 +168,7 @@ export const SKETCH_NARROW_SAMPLE = {
   >,
   rounds: [{ value: 'round-1', label: 'Runde 1 · Reset control: SDK button or own part' }] satisfies SketchRound[],
   tree: {
-    layers: [
-      {
-        title: 'Components',
-        open: true,
-        parts: [{ name: 'title-bar' }, { name: 'zoom-chip', selected: true }],
-      },
-      { title: 'Pages', open: true, parts: [{ name: 'system' }] },
-    ],
+    layers: [componentsLayerOf('zoom-chip'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
   } satisfies PartTree,
 };
 
@@ -192,6 +186,10 @@ export const SKETCH_EDIT_SAMPLE = {
   ] satisfies SketchRow[],
   looks: {} as Record<string, string>,
   rounds: [{ value: 'edit', label: 'Direkte Änderung' }] satisfies SketchRound[],
+  round: 'edit',
+  tree: {
+    layers: [componentsLayerOf('zoom-chip@edit'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
+  } satisfies PartTree,
 };
 
 const MULTI_TARGETS = ['components/badge', 'components/sketch-status-badge', 'elements/variant-cell'];
@@ -307,11 +305,7 @@ export const SKETCH_SCREEN_SAMPLE = {
   round: 'round-2',
   tree: {
     layers: [
-      {
-        title: 'Components',
-        open: true,
-        parts: [{ name: 'title-bar' }, { name: 'zoom-chip' }],
-      },
+      componentsLayerOf(),
       {
         title: 'Pages',
         open: true,

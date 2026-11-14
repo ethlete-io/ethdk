@@ -811,6 +811,36 @@ other DIFFs unchanged (31 DIFF states before and after). Verified: specs red on 
 `design check --part pages/sketches` 0 findings, no part file rewritten. Not verified: the real server's old row of
 an @edit sketch in the live app; the remaining DIFFs (B502 harness sample drift line); CI.
 
+**B502c as built (Linux builder subagent, 2026-11-14, commit "fix(ethlete-studio): Draw the sketches harness sample
+like its design"):** `compare pages/sketches --product studio` on 49e38b948: 31 DIFF states, sum 689346 px
+(page-sketch 3063, narrow-part 17426, all-unchanged 12474, edit-sketch 8805, change-crop 19650, change-crop-whole
+17950). After: 16 states ok, 15 DIFF, sum 358188 to 447115 px over three runs (page-sketch, narrow-part,
+all-unchanged, edit-sketch ok; change-crop 1369, change-crop-whole 146); `compare --base HEAD`: 0 new failures, 17
+fixed. Items, each measured with `design dom` (design vs `--app`): (1) zoom-chip@edit row, Cause: sample data; the
+design tree lists every `PARTS` key (title-bar, zoom-chip@edit, zoom-chip), the app samples listed two, and the edit
+sample selected zoom-chip; fixed (`componentsLayerOf` in sketches-sample.ts). (2) Avatar, Cause: sample data; the
+design pin is `PAGE_PIN` with initials TB, `SKETCH_PINS` said H; fixed. (3) Stack edges, Cause: the design draws them
+inside the frame (`.sk-fit` border wraps shot and edges, height 73.7 px), the app bordered only the 62.2 px crop and
+hung the edges below; fixed (border on the wrapper when stacked); 1369 px residual on the edge corners, parked. (4)
+Fold row, Cause: the design's disclosure button is `w-full` in the row and shrinks the label to 166 px so it wraps;
+the app's `ethlete-disclosure` host is `block` at max-content; fixed (`class="w-full"` on that host). Found on the
+way: (5) the panel collapse button sat 8 px left in every shell, Cause: `ShellCollapseComponent` carried the design's
+preview wrapper `p-space-2` as host padding; the padding moved to the harness sample of components/shell-collapse; (6)
+the frame clipped focus rings (`overflow-hidden`; design `overflow-clip` with an 8 px clip margin), fixed, a crop
+clips on its scale box; (7) edit-sketch drew `round-1` and no edit hint, Cause: the sample lacked `round: 'edit'` and
+the app lacked the design's "Kein Verwerfen" line (`data-sk-edit-hint`); fixed. Fallback removal (ADR 0235):
+`DESIGN_HARNESS_SAMPLES['pages/sketches']` now throws `no sample for prop part=<value> of part pages/sketches` for a
+`part` value without a sample; it removes the silent fallback to the title-bar rows that drew b685abce7's edit state
+as 24 title-bar frames (spec in design-harness-samples.spec.ts fails on the old code). Parked: the wide head note
+renders larger in the compare shot of a few wide states (idle, paused-reason, new-part, comparing; which ones changes
+between harness builds, while `design dom --app` of idle measures the same 190.5 x 64.8 px note box as the design),
+not new at HEAD; the zoomed and matrix states (zoomed-page, below-fit, far-out, narrow-far-out, unchanged-matrix,
+unchanged-matrix-open, withdrawn-hidden, unchanged-open) were outside the four items and not measured. Checks: `design
+check --part pages/sketches` 0 findings, no part file rewritten; vitest related 439 green; tsc app and spec clean;
+lint clean. Verified: compare app shots of page-sketch, idle and change-crop viewed (tree rows, avatar, collapse
+button, stack edges). `compare --base HEAD`: components/shell-collapse all ok; elements/shell-main 0 new, 19 fixed.
+Not verified: other pages that embed the shell; CI.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
@@ -2517,7 +2547,7 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B500: serve start log (f0e2405f8): visible-change gate fails, title-bar 7 and update-dialog 4 states unjudged.
 - B500: 12 rules removed with their findings (list in ee5000b5d); contrast decided in ADR 0292.
 - B501: an idle `yarn design` serve rewrites tracked `.ethlete/design/*/ready.json` within 2 min (Cause, pid probe).
-- B502: pages/sketches harness sample drifts from the design (zoom-chip@edit row, avatar, stack edges, fold width).
+- B502: pages/sketches harness sample drifts from the design (after B502c: stack-edge corners 1369 px, wide head note size in some states).
 - B503 (twice): a foundation sketch copy loses its relative `@import` (type `./faces.css`; colors@edit old variant
   EDIT-OLD-NOT-DRAWN, Cause); a copy that rewrites relative imports makes it impossible.
 - Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);

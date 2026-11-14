@@ -1,3 +1,4 @@
+import { PartTree } from '../design-parts/part-tree/part-tree.component';
 import { cropGroupsOf } from '../design-parts/sketches/sketch-crops';
 import { SketchRow } from '../design-parts/sketches/sketches-sample';
 import { LISTING_ERROR_SAMPLE } from '../design-parts/system-page/system-page-sample';
@@ -38,6 +39,22 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
 
     expect(props['part']).toBe('components/zoom-chip@edit');
     expect((props['rows'] as SketchRow[]).map((row) => row.key)).toEqual(['old', 'new']);
+  });
+
+  it('refuses a part prop it has no sample for instead of drawing the title-bar rows', () => {
+    expect(() => sketchesOf({ camera: 'fit', part: 'unknown' })).toThrow(
+      'no sample for prop part=unknown of part pages/sketches',
+    );
+  });
+
+  it('selects the @edit row in the tree of the edit part', () => {
+    const tree = sketchesOf({ part: 'edit' })['tree'] as PartTree;
+
+    expect(tree.layers[0]?.parts.map(({ name, selected }) => (selected ? `${name}*` : name))).toEqual([
+      'title-bar',
+      'zoom-chip@edit*',
+      'zoom-chip',
+    ]);
   });
 
   it('turns the listing-error flag into the server reason', () => {

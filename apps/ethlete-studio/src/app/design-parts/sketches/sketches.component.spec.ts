@@ -333,7 +333,10 @@ describe('SketchesComponent', () => {
     const buttons = (root: HTMLElement) => [...root.querySelectorAll('header button')].map(textOf);
 
     expect(buttons((await render({ part: 'components/card' })).nativeElement)).toContain(LABELS.discard);
-    expect(buttons((await render({ part: 'components/card@edit' })).nativeElement)).not.toContain(LABELS.discard);
+    const edit: HTMLElement = (await render({ part: 'components/card@edit' })).nativeElement;
+
+    expect(buttons(edit)).not.toContain(LABELS.discard);
+    expect(textOf(edit.querySelector('[data-sk-edit-hint]'))).toBe(LABELS.editHint);
   });
 
   it('discards only after the confirm, and Abbrechen keeps the sketch', async () => {
@@ -396,7 +399,7 @@ describe('SketchesComponent', () => {
 
   it('sizes each frame from the part size at a fixed zoom', async () => {
     const root: HTMLElement = (await render({ camera: { zoom: 0.5, x: 0, y: 0 } })).nativeElement;
-    const frame = root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-state="open"] .overflow-hidden');
+    const frame = root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-state="open"] [data-sk-frame]');
 
     expect(frame?.style.width).toBe('200px');
     expect(frame?.style.height).toBe('120px');
