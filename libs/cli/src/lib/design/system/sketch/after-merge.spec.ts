@@ -100,6 +100,8 @@ describe('a merge and the other open sketches', { timeout: 120_000 }, () => {
 
     const hero = markSketchReady({ checkout: target, sketch: drawn }) as Sketch;
 
+    git(target, 'config', 'user.name', 't');
+    git(target, 'config', 'user.email', 't@t');
     git(target, 'add', '-A');
     git(target, 'commit', '-qm', 'sketches');
 
