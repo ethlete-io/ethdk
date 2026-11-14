@@ -3090,3 +3090,50 @@ describe('a sketches folder that holds only generated tsconfigs', { timeout: 120
     expect(lines.filter((line) => line.includes('change-crop'))).toHaveLength(1);
   });
 });
+
+describe('designSketch new under noteLanguage', { timeout: 120_000 }, () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const german = () => {
+    const target = acme();
+    const file = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(file, 'utf8'));
+
+    config.products.acme.noteLanguage = 'de';
+    writeFileSync(file, JSON.stringify(config));
+
+    return target;
+  };
+
+  const openWith = (target: string, note: string) =>
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--round',
+      'Look',
+      '--note',
+      note,
+      '--product',
+      'acme',
+    );
+
+  it('refuses a round note in another language than the product notes', async () => {
+    const target = german();
+    const lines = output();
+
+    expect(await openWith(target, 'The button shows the saved state with no icon')).toBe(1);
+    expect(lines.join('\n')).toContain("--note reads as English, but this product's notes are German");
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
+  });
+
+  it('opens the sketch with a note in the product language', async () => {
+    const target = german();
+
+    output();
+    expect(await openWith(target, 'Der Button zeigt den Zustand mit einem Icon und nicht ohne')).toBe(0);
+  });
+});

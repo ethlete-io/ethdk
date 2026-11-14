@@ -1434,6 +1434,7 @@ no tool flagged a visible branch without a design state. Marker sketch opened as
 tool gaps: the `--round` title did not stay in `sketch.json`, and the round note was not German. Tool fix (technical):
 `design check` lists app template branches that draw text (error, empty, loading) with no matching state in the
 implemented part; `sketch new` keeps `--round` in `sketch.json` and refuses a non-German round note.
+605 as built (2026-11-14): `sketch new` now fails with exit 1 when `--note` reads as another language than the product's `noteLanguage` (the `note-language.ts` detector); a new `sketch-command.spec.ts` case failed on the old code. Variant notes still only warn.
 
 606\. Builder (2026-11-08): the doc agent's archive commit e8610084f replaced `archive/findings-2026-11.md` with
 findings 240-252 alone (3527 lines deleted): its script opened the file for writing before it read it. Pre-push

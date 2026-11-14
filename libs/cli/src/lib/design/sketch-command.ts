@@ -14,7 +14,7 @@ import { Problem } from './system/problem';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
 import { frameBudgetWarningsOf } from './system/sketch/frame-budget';
-import { NOTE_LANGUAGE_NAMES, noteLanguageWarningsOf } from './system/sketch/note-language';
+import { NOTE_LANGUAGE_NAMES, noteLanguageOf, noteLanguageWarningsOf } from './system/sketch/note-language';
 import {
   openSketchProblemsOf,
   startVariantTypechecks,
@@ -332,6 +332,14 @@ const opened = (context: Context) => {
 
   if (args.values['--round'] !== undefined && (args.values['--note'] ?? '').trim() === '')
     return fail(`--round needs --note "<what the round shows>" - sketch ready refuses a round without a note`);
+
+  const noteLanguage = product.config.noteLanguage;
+  const written = noteLanguage === undefined ? null : noteLanguageOf(args.values['--note'] ?? '');
+
+  if (noteLanguage !== undefined && written !== null && written !== noteLanguage)
+    return fail(
+      `--note reads as ${NOTE_LANGUAGE_NAMES[written]}, but this product's notes are ${NOTE_LANGUAGE_NAMES[noteLanguage]}: write the note in ${NOTE_LANGUAGE_NAMES[noteLanguage]}`,
+    );
 
   const asked = args.values['--like'];
   const like = asked === undefined ? undefined : sketchSourceOf({ product, like: asked });
