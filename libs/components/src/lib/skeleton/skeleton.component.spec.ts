@@ -24,12 +24,32 @@ class SkeletonTestHost {
   lastLineWidth = signal(60);
 }
 
+@Component({
+  template: `
+    <et-skeleton class="outer">
+      <et-skeleton class="inner">
+        <et-skeleton-item />
+      </et-skeleton>
+    </et-skeleton>
+  `,
+  imports: [SKELETON_IMPORTS],
+})
+class NestedSkeletonTestHost {}
+
 describe('SkeletonComponent', () => {
   it('is a status region that is not marked busy, so the loading text gets announced', () => {
     const driver = mountSkeleton(SkeletonTestHost);
 
     expect(driver.query('et-skeleton')?.getAttribute('role')).toBe('status');
     expect(driver.query('et-skeleton')?.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('keeps a nested skeleton silent, so the outer one is the only live region', () => {
+    const driver = mountSkeleton(NestedSkeletonTestHost);
+
+    expect(driver.queryAll('[role="status"]')).toEqual([driver.query('et-skeleton.outer')]);
+    expect(driver.queryAll('.et-skeleton-ally-text')).toHaveLength(1);
+    expect(driver.query('et-skeleton.inner .et-skeleton-ally-text')).toBeNull();
   });
 
   it('re-renders lines of equal width without duplicate-key warnings', () => {

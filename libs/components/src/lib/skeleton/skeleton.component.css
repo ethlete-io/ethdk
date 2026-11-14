@@ -26,9 +26,22 @@
     initial-value: 1400ms;
   }
 
+  /* Not inheriting: a nested skeleton must not pick up its outer container's layout. */
+  @property --et-skeleton-display {
+    syntax: '<custom-ident>+';
+    inherits: false;
+    initial-value: flex;
+  }
+
+  @property --et-skeleton-direction {
+    syntax: 'row | row-reverse | column | column-reverse';
+    inherits: false;
+    initial-value: column;
+  }
+
   .et-skeleton {
-    display: flex;
-    flex-direction: column;
+    display: var(--et-skeleton-display);
+    flex-direction: var(--et-skeleton-direction);
     gap: var(--et-skeleton-gap);
     /* The pointer says "not yet" too, which is cheaper than disabling everything inside. */
     cursor: progress;
@@ -43,7 +56,10 @@
     inline-size: 100%;
     block-size: var(--et-skeleton-size, 1em);
     border-radius: var(--et-skeleton-radius);
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+    background: var(
+      --et-skeleton-color,
+      color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent)
+    );
   }
 
   /* `text` is a line of text's height rather than a fixed px, so a bar sits in running copy without
@@ -66,8 +82,18 @@
     border-radius: 50%;
   }
 
+  /* The 1em default is content height, not block-size, so a consumer aspect-ratio (or block-size) wins.
+     overflow: hidden on the item drops the content-based minimum an aspect-ratio would otherwise keep. */
   .et-skeleton-item:where([data-shape='rect']) {
+    align-self: start;
+    block-size: auto;
     border-radius: var(--et-skeleton-radius);
+
+    &::before {
+      content: '';
+      display: block;
+      block-size: var(--et-skeleton-size, 1em);
+    }
   }
 
   .et-skeleton-text {
@@ -89,7 +115,10 @@
       background: linear-gradient(
         90deg,
         transparent,
-        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent),
+        var(
+          --et-skeleton-highlight-color,
+          color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent)
+        ),
         transparent
       );
       animation: et-skeleton-sweep var(--et-skeleton-duration) ease-in-out infinite;

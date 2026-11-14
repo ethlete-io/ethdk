@@ -4,7 +4,8 @@ Loading placeholders: compose `et-skeleton-item`s inside an `et-skeleton`, which
 
 ::: warning Superseded by @ethlete/components
 New code should use the [components skeleton](/components/skeleton) (`SKELETON_IMPORTS`). The same two
-elements and the same `loadingAllyText` / `animated` inputs are there, plus a `shape` preset per item
+elements and the `animated` input are there - `loadingAllyText` becomes `labels` (`{ loadingContent }`) -
+plus a `shape` preset per item
 (`'text'`, `'circle'`, `'rect'`, …) so shapes are sized without your own CSS, an `et-skeleton-text` for a
 paragraph of lines, and colors from the [surface tokens](/core/theming) instead of a hardcoded gradient.
 This page documents the CDK version, which still receives bug fixes.

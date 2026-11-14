@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { mountVisuallyHidden } from '@ethlete/core';
 import { injectLoaderLabels, LoaderLabels } from '../loader';
 
@@ -9,6 +9,7 @@ import { injectLoaderLabels, LoaderLabels } from '../loader';
  * Light by default - the container announces the wait to assistive tech and owns the animation switch;
  * the shapes are `<et-skeleton-item>`s sized by your own CSS, or by their `shape` for the common cases.
  * Colors come from the surface tokens, so a skeleton reads correctly on any surface it is placed on.
+ * A skeleton nested in another one stays silent: only the outermost is a live region.
  *
  * @example
  * <et-skeleton>
@@ -18,17 +19,20 @@ import { injectLoaderLabels, LoaderLabels } from '../loader';
  */
 @Component({
   selector: 'et-skeleton',
-  template: `<span class="et-visually-hidden et-skeleton-ally-text">{{ resolvedLabels().loadingContent }}</span
-    ><ng-content />`,
+  template: `@if (!outerSkeleton) {
+      <span class="et-visually-hidden et-skeleton-ally-text">{{ resolvedLabels().loadingContent }}</span>
+    }
+    <ng-content />`,
   styleUrl: './skeleton.component.css',
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-skeleton',
-    role: 'status',
+    '[attr.role]': 'outerSkeleton ? null : "status"',
     '[class.et-skeleton--animated]': 'animated()',
   },
 })
 export class SkeletonComponent {
+  protected outerSkeleton = inject(SkeletonComponent, { optional: true, skipSelf: true });
   private injectedLabels = injectLoaderLabels();
 
   /**

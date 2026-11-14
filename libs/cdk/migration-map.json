@@ -2551,7 +2551,7 @@
   "SkeletonComponent": {
     "docs": "/components/skeleton",
     "kind": "move",
-    "note": "loadingAllyText and animated carry over; colors come from the surface tokens and et-skeleton-text renders a paragraph of lines",
+    "note": "loadingAllyText becomes labels; animated carries over; colors come from the surface tokens and et-skeleton-text renders a paragraph of lines",
     "package": "@ethlete/components",
     "to": "SkeletonComponent"
   },

@@ -38,13 +38,16 @@ import { SKELETON_IMPORTS } from '@ethlete/components';
 
 ¹ `null`, or a key left out, falls through to [`LOADER_LABELS`](/components/localization) (`loadingContent`: `'Loading…'`).
 
+An `et-skeleton` nested inside another one is silent: it renders no `role="status"` and no
+announcement text, so a screen reader hears the outer container's `loadingContent` once.
+
 ### Shapes
 
-| `shape`    | Sizing                                                                                                |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| `'text'`   | **Default.** A line of text's height (`em`-based), inline, so it flows inside copy without moving it. |
-| `'rect'`   | Full width, height and radius from your CSS - a card, an image, a chart.                              |
-| `'circle'` | `--et-skeleton-size` square and round - an avatar.                                                    |
+| `shape`    | Sizing                                                                                                                |
+| ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| `'text'`   | **Default.** A line of text's height (`em`-based), inline, so it flows inside copy without moving it.                 |
+| `'rect'`   | Full width, `--et-skeleton-size` tall unless your CSS sets a height or an `aspect-ratio` - a card, an image, a chart. |
+| `'circle'` | `--et-skeleton-size` square and round - an avatar.                                                                    |
 
 `et-skeleton-text` takes `lines` (default `3`) and `lastLineWidth` (default `60`%); a
 full-width last line reads as a block rather than a paragraph.
@@ -55,17 +58,30 @@ CSS, which makes **`shape="rect"` the equivalent - not the default**. Swapping t
 every item on `shape="text"`, which is `inline-block`, `0.85em` tall and carries vertical margins to
 fill a line box. Items that stood in for a card, an image or a chart therefore shrink and the layout
 around them shifts, without any error to point at it. Add `shape="rect"` to every migrated item and
-keep the size rule you already have; only bones that replace a run of words want the default.
+keep the size rule you already have; only bones that replace a run of words want the default. The
+[`migrate-from-cdk` codemod](/cdk/migration#run-the-codemod) adds `shape="rect"` to every
+`et-skeleton-item` that has no `shape` yet.
+
+The cdk's `loadingAllyText` input does not exist here: pass `[labels]="{ loadingContent: '…' }"`, or
+provide [`LOADER_LABELS`](/components/localization) once for the app. The cdk container was
+`display: block`; this one is a flex column, which `--et-skeleton-display: block` undoes.
 :::
 
 ## Custom properties
 
-| Property                 | Default  | Applies to                        |
-| ------------------------ | -------- | --------------------------------- |
-| `--et-skeleton-size`     | `1em`    | `circle` diameter, item height    |
-| `--et-skeleton-radius`   | `4px`    | corner radius of `text` / `rect`  |
-| `--et-skeleton-gap`      | `8px`    | gap between shapes and text lines |
-| `--et-skeleton-duration` | `1400ms` | one shimmer sweep                 |
+| Property                        | Default                                                    | Applies to                                   |
+| ------------------------------- | ---------------------------------------------------------- | -------------------------------------------- |
+| `--et-skeleton-size`            | `1em`                                                      | `circle` diameter, item height               |
+| `--et-skeleton-radius`          | `4px`                                                      | corner radius of `text` / `rect`             |
+| `--et-skeleton-gap`             | `8px`                                                      | gap between shapes and text lines            |
+| `--et-skeleton-duration`        | `1400ms`                                                   | one shimmer sweep                            |
+| `--et-skeleton-color`           | `--et-surface-interaction-solid` at 12% over `transparent` | bone fill                                    |
+| `--et-skeleton-highlight-color` | `--et-surface-interaction-solid` at 16% over `transparent` | the shimmer's highlight                      |
+| `--et-skeleton-display`         | `flex`                                                     | container `display` (not inherited) ²        |
+| `--et-skeleton-direction`       | `column`                                                   | container `flex-direction` (not inherited) ² |
+
+² Set these on the `et-skeleton` itself: they do not inherit, so a nested skeleton keeps its own
+flex column.
 
 ## Motion
 
