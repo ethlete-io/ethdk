@@ -4139,6 +4139,10 @@ A7 as built (ebdc6e77e): shell-main edge handle (core `etDragHandle`, separator,
 Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px, min, max, focus, reload); DROPPED-PROP sideWidth gone. Not verified: Tauri, touch, compare.
 Handle part: components/shell-resize-handle, embedded by shell-main; states draw as before, app unchanged.
 
+A4 as built (2026-11-14): nothing to change; the 01.11. rule holds. Busy marks sit only where one waits (Übernehmen,
+send, restart buttons, canvas Rendering); none in tree rows, shell or globally. Verified: template search. Not verified:
+live shot, e2e.
+
 A36 as built (2026-11-13, part-tree@parts-only a): part-tree takes `layers`, `sketches`, `legacy`; no states, hosts nest `nested`; Sketches first (`part@name`, status mark), Legacy last, a section per project, calls by slug.
 Pencil gone (rail: System, Flows, Inbox); sample layers in app order. Not built: nested parts.
 
