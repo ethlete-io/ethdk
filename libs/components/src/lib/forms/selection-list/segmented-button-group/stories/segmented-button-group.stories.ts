@@ -12,6 +12,8 @@ export default {
     value: { control: 'select', options: [null, 'list', 'grid', 'table'] },
     mixed: { control: 'boolean' },
     showMixedState: { control: false, table: { disable: true } },
+    maxWidth: { control: 'text' },
+    options: { table: { disable: true } },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
@@ -28,6 +30,7 @@ export default {
     required: false,
     color: 'brand',
     size: 'md',
+    maxWidth: null,
   },
 } as Meta<SegmentedButtonGroupStorybookComponent>;
 
@@ -56,5 +59,19 @@ export const Tabs: Story = {
           '[tabs](/components/tabs).',
       },
     },
+  },
+};
+
+export const LongLabel: Story = {
+  args: {
+    maxWidth: '390px',
+    value: 'all',
+    label: 'Competition',
+    options: [
+      { value: 'all', label: 'All' },
+      { value: 'long', label: 'FIFA World Cup 26 qualifiers - second round' },
+      { value: 'cup', label: 'Cup' },
+    ],
+    hint: 'In a narrow container the row stops at the container edge and the long label truncates.',
   },
 };

@@ -9,7 +9,7 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
 @Component({
   selector: 'et-sb-segmented-button-group',
   template: `
-    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
+    <div [etProvideColor]="color()" [style.max-width]="maxWidth()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-segmented-button-group
         [(mixed)]="mixedState"
         [variant]="variant()"
@@ -56,6 +56,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public color = input('brand');
   public variant = input<SegmentedButtonGroupVariant>('pill');
   public size = input<FormFieldSize>('md');
+  public maxWidth = input<string | null>(null);
 
   public options = input([
     { value: 'list', label: 'List' },

@@ -104,8 +104,12 @@
     }
 
     .et-segmented-button-group-buttons {
-      display: inline-flex;
+      display: inline-grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, max-content);
       align-self: flex-start;
+      min-width: 0;
+      max-width: 100%;
       gap: 2px;
       padding: var(--et-segmented-button-group-track-padding);
       border-radius: var(--et-segmented-button-group-track-radius);

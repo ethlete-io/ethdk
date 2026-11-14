@@ -130,6 +130,9 @@ keyboard navigation is roving-tabindex with wrapping arrows:
   from the dimmed `disabled` state.
 - The segmented button group renders its options on a tonal track; the filled
   active pill animates between options on selection.
+- The segmented button row never grows past its container. When the labels do not
+  fit, the short ones keep their full width and the longer ones truncate with an
+  ellipsis; screen readers still read the full label.
 
 Checkbox options and radios accept an `et-description` child for secondary text.
 

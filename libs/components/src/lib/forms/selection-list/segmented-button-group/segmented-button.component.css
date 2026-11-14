@@ -65,6 +65,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: 0;
     gap: var(--et-segmented-button-gap);
     block-size: var(--et-segmented-button-height);
     padding: var(--et-segmented-button-padding-y) var(--et-segmented-button-padding-x);
@@ -85,7 +86,18 @@
     user-select: none;
 
     .et-segmented-button-label {
-      display: contents;
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      > :where(:not(:last-child)) {
+        margin-inline-end: var(--et-segmented-button-gap);
+      }
+
+      > :where(*) {
+        vertical-align: middle;
+      }
     }
 
     .et-segmented-button-bg {
