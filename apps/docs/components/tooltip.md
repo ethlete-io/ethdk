@@ -48,6 +48,10 @@ While a trigger carries a tooltip on a touch device (`(pointer: coarse)`), the t
 
 @example tooltip/tooltip-in-dialog 320px
 
+## Setup
+
+A tooltip needs no `provideOverlay()`: that provider only registers the scroll blocker used by modal overlays.
+
 ## Positioning
 
 floating-ui anchored, with an arrow pointing at the trigger:
@@ -73,7 +77,7 @@ The tooltip is a **description**, not a name: the trigger gets `aria-describedby
 
 ## Theming
 
-Text metrics and padding are public design tokens: `--et-tooltip-font-size`, `--et-tooltip-line-height`, `--et-tooltip-font-weight`, `--et-tooltip-letter-spacing`, `--et-tooltip-padding-inline`, `--et-tooltip-padding-block`. All of them inherit, so setting one on `et-tooltip` or any ancestor reaches the surface that reads it. The arrow follows the [surface theme](/core/theming) and can be overridden via `--et-overlay-arrow-background` / `--et-overlay-arrow-border`.
+Text metrics and padding are public design tokens: `--et-tooltip-font-size`, `--et-tooltip-line-height`, `--et-tooltip-font-weight`, `--et-tooltip-letter-spacing`, `--et-tooltip-padding-inline`, `--et-tooltip-padding-block`. All of them inherit, so setting one on `et-tooltip` or any ancestor reaches the surface that reads it. The tooltip and the [toggletip](/components/toggletip) share two more: `--et-floating-tip-radius` (default `16px`) and `--et-floating-tip-max-width` (default `min(34ch, calc(100vw - 24px))`). The arrow follows the [surface theme](/core/theming) and can be overridden via `--et-overlay-arrow-background` / `--et-overlay-arrow-border`.
 
 ## Error codes
 

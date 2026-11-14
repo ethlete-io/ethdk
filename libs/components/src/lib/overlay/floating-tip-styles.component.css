@@ -1,4 +1,10 @@
 @layer components.sdk {
+  @property --et-floating-tip-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
   .et-overlay.et-overlay--tooltip,
   .et-overlay.et-overlay--toggletip {
     overflow: visible;
@@ -19,8 +25,8 @@
       --et-anchored-panel-shadow,
       0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16)
     );
-    --_et-floating-tip-radius: 16px;
-    --_et-floating-tip-max-width: min(34ch, calc(100vw - 24px));
+    --_et-floating-tip-radius: var(--et-floating-tip-radius);
+    --_et-floating-tip-max-width: var(--et-floating-tip-max-width, min(34ch, calc(100vw - 24px)));
 
     position: relative;
     display: block;

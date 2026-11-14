@@ -40,11 +40,11 @@
     font-size: var(--et-toggletip-font-size);
     font-weight: 500;
     line-height: var(--et-toggletip-line-height);
-    letter-spacing: -0.01em;
+    letter-spacing: var(--et-toggletip-letter-spacing, -0.01em);
   }
 
   .et-toggletip__surface {
-    min-inline-size: min(272px, calc(100vw - 24px));
+    min-inline-size: var(--et-toggletip-min-width, min(272px, calc(100vw - 24px)));
     padding: calc(var(--et-toggletip-padding-block) + 2px) calc(var(--et-toggletip-padding-inline) + 2px);
   }
 
