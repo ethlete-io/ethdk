@@ -136,21 +136,21 @@
     "tauri": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tauri",
+        "command": "node ../../tools/scripts/studio-tauri.mjs",
         "cwd": "apps/ethlete-studio"
       }
     },
     "tauri:dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tauri dev --no-watch",
+        "command": "node ../../tools/scripts/studio-tauri.mjs dev --no-watch",
         "cwd": "apps/ethlete-studio"
       }
     },
     "tauri:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tauri build",
+        "command": "node ../../tools/scripts/studio-tauri.mjs build",
         "cwd": "apps/ethlete-studio"
       }
     }
