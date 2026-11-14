@@ -15,7 +15,9 @@ import {
 import { shootStates, ShootStates } from './compare-command';
 import { appFilesOf } from './app-files';
 import { HarnessServer, startHarnessServer, StartHarnessServer } from './harness-server';
+import { derivedLinksOf, writeDerivedLinks } from './derived-links';
 import { liveUncoveredOf, UncoveredState } from './live-uncovered';
+import { appComponentsOf } from './slot-hosts';
 import { droppedPropProblemsOf } from './dropped-props';
 import { compareLineOf, comparePngs } from './part-compare';
 import { Problem } from './problem';
@@ -25,7 +27,6 @@ import { withStampsInCache } from './stamp-files';
 import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolve-product';
 import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
-import { implementsUnrenderedProblemsOf } from './rules/implements-unrendered';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
 import { sdkErrorLineOf } from './sdk-errors';
 import { autoAcceptOf, settleCommittedEdits } from './accepted-pictures';
@@ -122,7 +123,7 @@ const comparedProblemsOf = async (options: {
 };
 
 /**
- * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION` with `IMPLEMENTS-UNRENDERED`,
+ * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION`,
  * compare and the SDK-error watch against one harness app - on the product's parts that have one, or on `parts`, one browser at a time, and
  * stores each part's problems at the inputs it had when the run started.
  */
@@ -260,7 +261,11 @@ export const runSlowChecks = async (options: {
               : uncoveredRegionProblemsOf({ product, live: harness.live, states }),
           );
 
-          if (typeof states !== 'string') merge(results, implementsUnrenderedProblemsOf({ product, states }));
+          if (typeof states !== 'string') {
+            const derived = derivedLinksOf({ product, states, components: appComponentsOf({ target, product }) });
+
+            writeDerivedLinks({ target, product, derived }).forEach((line) => console.log(line));
+          }
         }
 
         for (const part of ruled(COMPARE_RULE)) {

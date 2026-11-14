@@ -368,9 +368,10 @@ Some rules need the app running in a browser, so they do not run with the static
   `harness.specs` the rule is off.
 - `UNCOVERED-REGION` opens every state of the `harness.live` spec and reports each visible region no part covers, on
   the page part of that live page, else on `(product)`.
-- `IMPLEMENTS-UNRENDERED` runs in the same pass: for each part the page's design embeds, it checks that the app
-  renders the part's `implements` component at the spot the design draws the part. A part whose component appears at
-  none of its spots on that page is reported on the page part, naming the embedded part's file.
+- The same pass derives the `implements` link of each part the page's design embeds: the app component whose host
+  covers the part at every spot the design draws it becomes the link, written into the part file, and the harness map
+  is regenerated. A page's own component never counts, a part drawn inline keeps its link, and a part with two
+  candidates prints `UNDERIVED` and keeps its link. `check --live` derives the links the same way.
 - `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
   the harness page logs.
 

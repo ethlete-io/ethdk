@@ -95,7 +95,7 @@ const helpOf = (invocation: string) =>
     '  Exits 1 on a finding.',
     '',
     `${invocation} check --product <name>… --slow [--part <layer>/<name>…]`,
-    '  Run the slow rules - APP-SPEC, UNCOVERED-REGION, IMPLEMENTS-UNRENDERED, compare and the SDK-error',
+    '  Run the slow rules - APP-SPEC, UNCOVERED-REGION, compare and the SDK-error',
     "  watch - and store each part's problems in node_modules/.cache/ethlete-design, where the build-ready state reads",
     '  them.',
     '  Exits 1 on a problem.',

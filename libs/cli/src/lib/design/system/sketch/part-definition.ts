@@ -422,3 +422,19 @@ export const withLinkFieldOf = (source: string, field: string) => {
     ? source.slice(0, found.field.getStart(found.file)) + field + source.slice(found.field.getEnd())
     : source;
 };
+
+/** `source` with `implements: '<path>'` in its `definePart`, replacing a link or added first; `null` without a `definePart`. */
+export const withLinkOf = (source: string, path: string): string | null => {
+  const { file, definition } = definitionOf(source);
+
+  if (!definition) return null;
+
+  const field = `implements: ${quoted(path)}`;
+  const current = fieldOf(definition, 'implements');
+
+  if (current) return source.slice(0, current.getStart(file)) + field + source.slice(current.getEnd());
+
+  const open = definition.getStart(file) + 1;
+
+  return `${source.slice(0, open)}\n  ${field},${source.slice(open)}`;
+};

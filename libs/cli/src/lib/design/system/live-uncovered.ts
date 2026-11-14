@@ -10,18 +10,18 @@ import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { frameContentOf, LiveError, liveSpecOf, openLivePage } from './live-compare';
 import { ResolvedProduct } from './resolve-product';
 import { settledPanesOf } from './settled-panes';
-import { implementsSelectorsOf, PartSlot, partSlotsOf, SlotHost, slotHostsOnPage } from './slot-hosts';
+import { appComponentsOf, PartSlot, partSlotsOf, SlotComponents, slotComponentsOnPage } from './slot-hosts';
 import { createSystemModules } from './system-modules';
 import { partCoverOf, regionTextOf, UncoveredRegion, uncoveredRegionsOnPage } from './uncovered-regions';
 
 export type UncoveredFinding = { region: UncoveredRegion; states: string[] };
 
 /**
- * The regions one live state of a page part shows and whether the app renders each `implements` host at the slot its
- * design draws the part in, or why that state did not open.
+ * The regions one live state of a page part shows and the app components it draws at each slot its design draws a part
+ * in, or why that state did not open.
  */
 export type UncoveredState = { page: string; state: string } & (
-  { regions: UncoveredRegion[]; slots?: SlotHost[] } | { problem: string }
+  { regions: UncoveredRegion[]; slots?: SlotComponents[] } | { problem: string }
 );
 
 /** Groups the regions each live state reports, so a region every state shows is one finding listing those states. */
@@ -85,7 +85,7 @@ export const liveUncoveredOf = async (options: {
         await server.listen();
 
         const base = `http://localhost:${(server.httpServer?.address() as AddressInfo).port}`;
-        const selectors = implementsSelectorsOf({ target, product });
+        const selectors = [...appComponentsOf({ target, product }).keys()];
         const slotFill = spec.frame ? frameContentOf(readFileSync(resolve(dir, spec.frame))) : null;
         const designShooter = (shooter = createPartShooter({
           target,
@@ -117,7 +117,7 @@ export const liveUncoveredOf = async (options: {
                 compose: state.compose ?? null,
                 params: new URLSearchParams(),
               })
-              .then((design) => partSlotsOf(design.marks, selectors))
+              .then((design) => partSlotsOf(design.marks))
               .catch(() => []);
             const seen = await queue
               .run(async (browser) => {
@@ -148,9 +148,16 @@ export const liveUncoveredOf = async (options: {
                     .catch(() => undefined);
                   await settledPanesOf({ page: opened.page, count: 0, timeout: DRAW_TIMEOUT_MS });
 
+                  const components = await slotComponentsOnPage({
+                    page: opened.page,
+                    host: page.host ?? spec.host,
+                    slots,
+                    selectors,
+                  });
+
                   return {
                     regions: await uncoveredRegionsOnPage({ page: opened.page, parts, partless: spec.partless ?? [] }),
-                    slots: await slotHostsOnPage({ page: opened.page, host: page.host ?? spec.host, slots }),
+                    ...(components && { slots: components }),
                   };
                 } finally {
                   await context.close();

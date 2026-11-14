@@ -54,43 +54,5 @@
       "finding": "489",
       "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
     }
-  },
-  "IMPLEMENTS-UNRENDERED": {
-    "components/canvas-viewport: pages/inbox": {
-      "finding": "583",
-      "sketch": "link components/canvas-viewport to design-canvas, which draws the viewport, ADR 0113"
-    },
-    "components/canvas-viewport: pages/system": {
-      "finding": "583",
-      "sketch": "link components/canvas-viewport to design-canvas, which draws the viewport, ADR 0113"
-    },
-    "components/comment-pin: pages/sketches": {
-      "finding": "583",
-      "sketch": "give the live sample a pin that is on screen"
-    },
-    "components/disclosure: pages/system": {
-      "finding": "583",
-      "sketch": "link the file that draws the disclosure, or remove the link (ADR 0105)"
-    },
-    "components/tree-row: pages/flows": {
-      "finding": "583",
-      "sketch": "link the file that draws the tree row, or remove the link (ADR 0105)"
-    },
-    "components/tree-row: pages/inventory": {
-      "finding": "583",
-      "sketch": "link the file that draws the tree row, or remove the link (ADR 0105)"
-    },
-    "components/tree-row: pages/sketches": {
-      "finding": "583",
-      "sketch": "link the file that draws the tree row, or remove the link (ADR 0105)"
-    },
-    "components/tree-row: pages/system": {
-      "finding": "583",
-      "sketch": "link the file that draws the tree row, or remove the link (ADR 0105)"
-    },
-    "pages/system: pages/system": {
-      "finding": "583",
-      "sketch": "link pages/system to the host the app renders (system-view), ADR 0113"
-    }
   }
 }

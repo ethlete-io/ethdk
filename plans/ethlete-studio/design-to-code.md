@@ -1186,6 +1186,13 @@ manual `design check --slow` batch, against ADR 0226: a check runs live and fast
 unnecessary wins over the check. Tool fix (technical, applies ADR 0226): Studio derives a part's `implements` link
 from the component the page harness renders at the part's slot instead of checking a hand-written link; the
 `--slow` batch gets no new rule, and every rule already in it gets a STATUS row "live or delete".
+As built (586, B502 S1, Linux builder, 2026-11-14): the live pass (`check --slow` with a live spec, and `check --live`)
+measures which app components the page draws at each slot of an embedded part (`slotComponentsOnPage`), keeps the
+components common to all slots of the part, drops the page's own component, and writes the one left into the part
+file as `implements` (`derived-links.ts`), then regenerates the harness map. A part drawn inline keeps its link; two
+candidates print UNDERIVED and keep it. IMPLEMENTS-UNRENDERED, its spec and its three baseline entries (583) are
+deleted. Verified: specs for the browser measurement, the derivation and the write. Not verified: a live run on the
+studio product; that run writes the derived links of the five 583 parts.
 
 588\. Builder (2026-11-07, B434): the Studio e2e job (added in 94606402c) never passed in CI. It built only `cli`, so
 the design server answered `/__design/system` with 503 "missing build" and Studio stayed on "Design-Server startet".

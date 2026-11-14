@@ -9,7 +9,9 @@ import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';
 import { callLintGateLinesOf, changedLintFilesOf, lintGateLinesOf } from './design-lint';
 import { checkRules, checkSystemRendered } from './system/check-system';
+import { derivedLinksOf, writeDerivedLinks } from './system/derived-links';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
+import { appComponentsOf } from './system/slot-hosts';
 import { appCanonicalClassesOf, fixAppCanonicalClassesOf, fixCanonicalClassesOf } from './system/rules/canonical-class';
 import { callTopLevelAwaitsOf } from './system/rules/top-level-await';
 import { partKeyOf, resolveProduct } from './system/resolve-product';
@@ -484,7 +486,8 @@ const checkLive = async (options: { target: string; config: DesignConfig; produc
       continue;
     }
 
-    const checked = await liveUncoveredOf({ target, config, product: resolveProduct({ target, name, config: entry }) });
+    const product = resolveProduct({ target, name, config: entry });
+    const checked = await liveUncoveredOf({ target, config, product });
 
     if (typeof checked === 'string') {
       console.log(`${name}: ${checked}`);
@@ -492,6 +495,11 @@ const checkLive = async (options: { target: string; config: DesignConfig; produc
       continue;
     }
 
+    writeDerivedLinks({
+      target,
+      product,
+      derived: derivedLinksOf({ product, states: checked.states, components: appComponentsOf({ target, product }) }),
+    }).forEach((line) => console.log(`${name}: ${line}`));
     checked.problems.forEach((line) => console.log(`${name}: ${line}`));
     checked.findings.forEach((finding) => console.log(`${name}: ${uncoveredFindingLineOf(finding)}`));
     failed += checked.problems.length + checked.findings.length;
