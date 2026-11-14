@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
 import { clampProgress, progressOrNull } from '../clamp-progress';
 import { injectLoaderName } from '../inject-loader-name';
@@ -15,7 +15,8 @@ import { injectLoaderName } from '../inject-loader-name';
   template: `
     <div class="et-progress-bar__track" aria-hidden="true">
       <div
-        [style.transform]="indeterminate() ? '' : 'scaleX(' + clampedValue() / 100 + ')'"
+        [style.transform]="indeterminate() || roundedEnd() ? '' : 'scaleX(' + clampedValue() / 100 + ')'"
+        [style.width.%]="roundedEnd() && !indeterminate() ? clampedValue() : null"
         class="et-progress-bar__bar et-progress-bar__bar--primary"
       >
         <span class="et-progress-bar__bar-inner"></span>
@@ -37,6 +38,7 @@ import { injectLoaderName } from '../inject-loader-name';
     class: 'et-progress-bar',
     '[class.et-progress-bar--indeterminate]': 'indeterminate()',
     '[class.et-progress-bar--themed]': 'hasExplicitColor()',
+    '[class.et-progress-bar--rounded-end]': 'roundedEnd()',
     role: 'progressbar',
     '[attr.aria-label]': 'name()',
     '[attr.aria-valuenow]': 'indeterminate() ? null : clampedValue()',
@@ -54,6 +56,12 @@ export class ProgressBarComponent {
    * value attributes. @default null
    */
   public value = input<number | null, number | string | null | undefined>(null, { transform: progressOrNull });
+
+  /**
+   * Round the end of the determinate fill with `--et-progress-bar-border-radius`. Off, the fill ends square.
+   * @default false
+   */
+  public roundedEnd = input(false, { transform: booleanAttribute });
 
   protected indeterminate = computed(() => this.value() === null);
 

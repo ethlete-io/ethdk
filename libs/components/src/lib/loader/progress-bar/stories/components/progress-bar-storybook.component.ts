@@ -15,7 +15,12 @@ import { ProgressBarComponent } from '../../progress-bar.component';
           etProvideSurface="dark-elevated"
           style="background: rgb(var(--et-surface-background)); border-color: rgb(var(--et-surface-border))"
         >
-          <et-progress-bar [value]="indeterminate() ? null : value()" [color]="color()" class="w-full text-et-brand" />
+          <et-progress-bar
+            [value]="indeterminate() ? null : value()"
+            [color]="color()"
+            [roundedEnd]="roundedEnd()"
+            class="w-full text-et-brand"
+          />
         </div>
       </div>
     </div>
@@ -27,4 +32,5 @@ export class ProgressBarStorybookComponent {
   public value = input(42);
   public indeterminate = input(false);
   public color = input<RegisteredColorThemeName | null>(null);
+  public roundedEnd = input(false);
 }

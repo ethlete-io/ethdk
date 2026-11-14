@@ -9,10 +9,12 @@ export default {
     value: 42,
     indeterminate: false,
     color: null,
+    roundedEnd: false,
   },
   argTypes: {
     value: { control: { type: 'range', min: 0, max: 100, step: 1 } },
     indeterminate: { control: 'boolean' },
+    roundedEnd: { control: 'boolean' },
     color: { control: 'select', options: [null, 'brand', 'danger', 'success', 'warning', 'neutral'] },
   },
 } as Meta<ProgressBarStorybookComponent>;
@@ -36,5 +38,11 @@ export const Complete: Story = {
 export const Themed: Story = {
   args: {
     color: 'danger',
+  },
+};
+
+export const RoundedEnd: Story = {
+  args: {
+    roundedEnd: true,
   },
 };

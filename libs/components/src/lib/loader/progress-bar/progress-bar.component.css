@@ -171,6 +171,15 @@
     }
   }
 
+  .et-progress-bar:where(.et-progress-bar--rounded-end):not(.et-progress-bar--indeterminate)
+    .et-progress-bar__bar--primary {
+    left: 0;
+    transform: none;
+    overflow: hidden;
+    border-radius: var(--et-progress-bar-border-radius);
+    transition: width 200ms linear;
+  }
+
   .et-progress-bar:where(.et-progress-bar--themed) {
     --et-progress-bar-indicator-color: var(--et-theme-color-ink-solid);
   }

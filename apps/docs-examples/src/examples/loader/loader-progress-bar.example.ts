@@ -6,6 +6,7 @@ import { LOADER_IMPORTS } from '@ethlete/components';
   template: `
     <et-progress-bar />
     <et-progress-bar [value]="42" color="brand" />
+    <et-progress-bar [value]="42" color="brand" roundedEnd />
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [LOADER_IMPORTS],

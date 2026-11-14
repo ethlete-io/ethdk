@@ -94,6 +94,39 @@ describe('ProgressBarComponent', () => {
     });
   });
 
+  describe('roundedEnd', () => {
+    const primaryBar = () => host.querySelector<HTMLElement>('.et-progress-bar__bar--primary')!;
+
+    beforeEach(() => {
+      fixture.componentRef.setInput('value', 42);
+      fixture.detectChanges();
+    });
+
+    it('scales a square fill by default', () => {
+      expect(host.classList.contains('et-progress-bar--rounded-end')).toBe(false);
+      expect(primaryBar().style.transform).toBe('scaleX(0.42)');
+      expect(primaryBar().style.width).toBe('');
+    });
+
+    it('sizes the fill by width instead of scaling it', () => {
+      fixture.componentRef.setInput('roundedEnd', true);
+      fixture.detectChanges();
+
+      expect(host.classList.contains('et-progress-bar--rounded-end')).toBe(true);
+      expect(primaryBar().style.transform).toBe('');
+      expect(primaryBar().style.width).toBe('42%');
+    });
+
+    it('leaves the indeterminate sweep alone', () => {
+      fixture.componentRef.setInput('roundedEnd', true);
+      fixture.componentRef.setInput('value', null);
+      fixture.detectChanges();
+
+      expect(primaryBar().style.transform).toBe('');
+      expect(primaryBar().style.width).toBe('');
+    });
+  });
+
   describe('color', () => {
     it('does not add the themed class by default', () => {
       expect(host.classList.contains('et-progress-bar--themed')).toBe(false);

@@ -54,12 +54,14 @@ chips and inputs are usually better off inheriting.
 <et-progress-bar [value]="42" class="w-full" />
 <et-progress-bar class="w-full" />
 <et-progress-bar [value]="42" class="w-full" color="brand" />
+<et-progress-bar [value]="42" class="w-full" roundedEnd />
 ```
 
-| Input   | Default | Notes                                                                        |
-| ------- | ------- | ---------------------------------------------------------------------------- |
-| `value` | `null`  | 0–100, clamped; `null`/`undefined` shows the sweep and drops the aria values |
-| `color` | `null`  | A color theme name or `ColorTheme`; unset keeps the inherited `currentColor` |
+| Input        | Default | Notes                                                                                              |
+| ------------ | ------- | -------------------------------------------------------------------------------------------------- |
+| `value`      | `null`  | 0–100, clamped; `null`/`undefined` shows the sweep and drops the aria values                       |
+| `color`      | `null`  | A color theme name or `ColorTheme`; unset keeps the inherited `currentColor`                       |
+| `roundedEnd` | `false` | Rounds the end of the determinate fill with `--et-progress-bar-border-radius`; off, it ends square |
 
 @example loader/loader-progress-bar 200px
 
