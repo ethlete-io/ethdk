@@ -14,6 +14,7 @@ import {
   gql,
   isHtmlErrorPayload,
   mapViolationsToFormErrors,
+  queryErrorMessage,
   queryErrorMessages,
   QueryRuntimeErrorCode,
   registerQueryErrorParser,
@@ -1128,6 +1129,26 @@ describe('HTML error parsing edge cases (withHtmlErrorParsing)', () => {
     expect(message).toContain('Http failure response');
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    c.destroy();
+  });
+
+  it('falls back to the HttpErrorResponse message when the body carries no message', () => {
+    const s = scenario();
+    s.api.on('POST', '/no-message', () => ({ status: 422, body: { code: 'rejected' } }));
+
+    const postUpload = s.post<{ response: unknown; body: Record<string, never> }>('/no-message');
+    const c = s.consumer();
+    const query = c.run(() => postUpload());
+    c.run(() => query.execute({ args: { body: {} } }));
+
+    s.tick();
+
+    const error = query.error();
+    expect(error?.isList).toBe(false);
+    expect(queryErrorMessage(error)).toBe(error?.raw.message);
+    expect(queryErrorMessage(error)).toContain('Http failure response');
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 422);
     c.destroy();
   });
 
