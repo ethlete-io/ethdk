@@ -114,9 +114,10 @@ describe('loader scenarios', () => {
     expect(spinner.querySelector('.et-spinner-indeterminate-container')).toBeNull();
     expect(spinner.querySelector('.et-spinner-track-container')).not.toBeNull();
     expect(spinner.style.getPropertyValue('--et-spinner-size')).toBe('48px');
-    expect(spinner.style.getPropertyValue('--et-spinner-stroke-width')).toBe('4px');
 
     const circle = spinner.querySelector<SVGCircleElement>('.et-spinner-determinate-circle')!;
+
+    expect(parseFloat(circle.style.strokeWidth)).toBeCloseTo((4 / 48) * 100, 3);
     const circumference = parseFloat(circle.style.strokeDasharray);
 
     expect(parseFloat(circle.style.strokeDashoffset)).toBeCloseTo(circumference * 0.6, 3);

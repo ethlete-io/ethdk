@@ -159,8 +159,15 @@ describe('SpinnerComponent', () => {
   });
 
   describe('CSS custom properties', () => {
-    it('applies the default diameter as a CSS variable', () => {
-      expect(host.style.getPropertyValue('--et-spinner-size')).toBe('18px');
+    it('writes no size inline while diameter is unbound, so an inherited size applies', () => {
+      expect(host.style.getPropertyValue('--et-spinner-size')).toBe('');
+    });
+
+    it('draws the 18px geometry while diameter is unbound', () => {
+      const circle = host.querySelector('circle');
+
+      expect(circle?.getAttribute('r')).toBe('4');
+      expect(circle?.style.strokeWidth).toBe('12.5%');
     });
 
     it('applies a custom diameter as a CSS variable', () => {
@@ -172,6 +179,12 @@ describe('SpinnerComponent', () => {
 });
 
 describe('SpinnerComponent styles', () => {
+  it('lets a size set on an ancestor reach the spinner', () => {
+    const rule = /@property --et-spinner-size \{([^}]*)\}/.exec(spinnerCss)?.[1];
+
+    expect(rule).toContain('inherits: true');
+  });
+
   it('lets the duration token reach the animated descendants', () => {
     const rule = /@property --et-spinner-duration \{([^}]*)\}/.exec(spinnerCss)?.[1];
 

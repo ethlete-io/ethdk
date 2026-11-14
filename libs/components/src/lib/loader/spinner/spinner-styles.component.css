@@ -1,14 +1,8 @@
 @layer components.sdk {
   @property --et-spinner-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 18px;
-  }
-
-  @property --et-spinner-stroke-width {
-    syntax: '<length>';
-    inherits: false;
-    initial-value: 2.25px;
   }
 
   @property --et-spinner-color {

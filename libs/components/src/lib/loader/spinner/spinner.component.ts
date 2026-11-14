@@ -14,6 +14,10 @@ import { injectLoaderName } from '../inject-loader-name';
 import { SpinnerStylesComponent } from './spinner-styles.component';
 
 const BASE_STROKE_WIDTH = 10;
+const DEFAULT_DIAMETER = 18;
+
+const optionalNumber = (value: unknown) =>
+  value === null || value === undefined || value === '' ? undefined : numberAttribute(value);
 
 /**
  * A circular loading indicator: determinate while `value` is bound, else indeterminate. Inherits `currentColor`
@@ -113,7 +117,6 @@ const BASE_STROKE_WIDTH = 10;
     '[class.et-spinner--determinate]': 'determinate()',
     '[class.et-spinner--themed]': 'hasExplicitColor()',
     '[style.--et-spinner-size.px]': 'diameter()',
-    '[style.--et-spinner-stroke-width.px]': 'strokeWidth()',
     role: 'progressbar',
     '[attr.aria-label]': 'name()',
     '[attr.aria-valuenow]': 'determinate() ? clampedValue() : null',
@@ -126,8 +129,11 @@ export class SpinnerComponent {
 
   protected name = injectLoaderName();
 
-  /** The size in px. @default 18 */
-  public diameter = input(18, { transform: numberAttribute });
+  /**
+   * The size in px. Unbound, the spinner takes `--et-spinner-size` from its context (18px if nothing sets it) and
+   * scales its stroke with it.
+   */
+  public diameter = input<number | undefined, unknown>(undefined, { transform: optionalNumber });
 
   /** The stroke width in px. @default 2.25 */
   public strokeWidth = input(2.25, { transform: numberAttribute });
@@ -151,9 +157,11 @@ export class SpinnerComponent {
    */
   protected hasExplicitColor = computed(() => (this.provideColor.color() ?? null) !== null);
 
-  protected circleRadius = computed(() => Math.max(1, (this.diameter() - BASE_STROKE_WIDTH) / 2));
+  private geometryDiameter = computed(() => this.diameter() ?? DEFAULT_DIAMETER);
 
-  protected normalizedStrokeWidth = computed(() => (this.strokeWidth() / this.diameter()) * 100);
+  protected circleRadius = computed(() => Math.max(1, (this.geometryDiameter() - BASE_STROKE_WIDTH) / 2));
+
+  protected normalizedStrokeWidth = computed(() => (this.strokeWidth() / this.geometryDiameter()) * 100);
 
   protected viewBox = computed(() => {
     const diameter = this.circleRadius() * 2 + this.strokeWidth();
