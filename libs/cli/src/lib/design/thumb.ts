@@ -433,13 +433,18 @@ export const noteFailure = <T>(shot: Promise<T>, failed: (failure: { status: num
 export const SHOT_MAX_AGE_S = 3600;
 
 /**
- * Answers with the PNG `shot` resolves to, tagged with its content hash; an ask whose `if-none-match` names that
- * tag gets a 304. The asker keys the URL on the content it shows (Studio: session, epoch and revision), so the
- * browser may keep a picture for `SHOT_MAX_AGE_S` and paint it again without asking.
+ * Answers with the PNG `shot` resolves to, tagged with its content hash and its note in `x-et-note`; an ask whose
+ * `if-none-match` names that tag gets a 304. The asker keys the URL on the content it shows (Studio: session, epoch
+ * and revision), so the browser may keep a picture for `SHOT_MAX_AGE_S` and paint it again without asking.
  */
-export const sendShot = (response: ServerResponse, shot: Promise<Buffer>) =>
+export const sendShot = (response: ServerResponse, shot: Promise<Buffer | { png: Buffer; note?: string }>) =>
   void shot.then(
-    (body) => {
+    (answer) => {
+      const body = Buffer.isBuffer(answer) ? answer : answer.png;
+      const note = Buffer.isBuffer(answer) ? undefined : answer.note;
+
+      if (note) response.setHeader('x-et-note', note);
+
       const tag = `"${createHash('sha1').update(body).digest('base64url')}"`;
 
       response.setHeader('etag', tag);

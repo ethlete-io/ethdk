@@ -978,7 +978,7 @@ export const createPartShooter = (options: {
           }).then((picture) => {
             if (sketchVariant && want.priority === 'high') viewed({ product, ...sketchVariant, png: picture.png });
 
-            return picture.png;
+            return { png: picture.png, ...(picture.note ? { note: picture.note } : {}) };
           }),
           (failure) =>
             options.ledger?.fail({

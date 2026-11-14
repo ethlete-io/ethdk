@@ -143,10 +143,15 @@ const asking = (shots: ReturnType<typeof createPartShooter>, query: string) => {
     setHeader: (name: string, value: string) => (headers[name] = value),
     end: (() => undefined) as (body: unknown) => void,
   });
-  const answer = new Promise<{ status: number; type: string; body: unknown }>((done) => {
+  const answer = new Promise<{ status: number; type: string; body: unknown; note?: string }>((done) => {
     response.end = (body: unknown) => {
       response.writableFinished = true;
-      done({ status: response.statusCode, type: headers['content-type'] ?? '', body });
+      done({
+        status: response.statusCode,
+        type: headers['content-type'] ?? '',
+        body,
+        ...(headers['x-et-note'] ? { note: headers['x-et-note'] } : {}),
+      });
     };
   });
 
@@ -826,6 +831,14 @@ describe('createPartShooter', () => {
     expect(picture.note).toBe(
       'crop box 900,900,40,10 is outside the content (content box 0,0,200,80); the picture is empty',
     );
+
+    screenshot.mockRejectedValueOnce(
+      new Error('page.screenshot: Clipped area is either empty or outside the resulting image'),
+    );
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&clip=900,900,40,12')).toMatchObject({
+      status: 200,
+      note: 'crop box 900,900,40,12 is outside the content (content box 0,0,200,80); the picture is empty',
+    });
 
     screenshot.mockRejectedValueOnce(new Error('page.screenshot: Target closed'));
     await expect(

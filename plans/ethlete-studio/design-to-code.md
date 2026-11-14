@@ -345,7 +345,7 @@ Archived: Findings 340-414 (2026-11-10), see [findings-2026-11](archive/findings
 sketch even with `--reopen` ("is decided (pick) - a report would reopen it"), so the rule "report before a variant edit"
 cannot be followed for a port. Why no tool caught it: no test covers a report on a decided sketch. Fix (B342): a report
 on the picked variant of a decided sketch is allowed and keeps the decision.
-415 as built (Linux builder subagent, 2026-11-14, B503): `reportSketch` (`libs/cli/src/lib/design/system/sketch/sketch.ts`) takes a report on the picked variant of a decided sketch under the ready rules (`--reopen` moves it to in progress, the pick stays); another variant of a decided sketch is still refused. Cause: the refusal checked `decision` before the variant. Verified: the new case in `sketch.spec.ts` was red on the old code (refusal string), green after; not run live.
+415 as built (Linux builder subagent, 2026-11-14, B503): `reportSketch` (`libs/cli/src/lib/design/system/sketch/sketch.ts`) takes a report on the picked variant of a decided sketch under the ready rules (`--reopen` moves it to in progress, the pick stays); another variant of a decided sketch is still refused. Cause: the refusal checked `decision` before the variant. Verified: the new case in `sketch.spec.ts` was red on the old code (refusal string), green after; Commit 2d27b0034; not run live.
 
 416\. Builder (2026-11-04, same port): `rebase --ported` marks every variant ported, also the unported b and c; only
 `sketch check` noticed (STATES errors). The same port also hit finding 404 a second time (`sketch-rows.ts`, identical
@@ -1217,6 +1217,7 @@ B415's unpushed commits), and `sketch ready` commits its own `ready.json` change
 569\. Builder (2026-11-07, B163): `shot` threw when the clip lay outside the page. Why no tool caught it: every shot
 spec used a mocked page. Tool fix (technical): each Playwright-backed spec gets one case on a real page; the serve route
 returns the same note as the CLI (`x-et-note`), new row.
+569 as built (Linux builder subagent, 2026-11-14, B503): the throw was already gone (`shot.ts` answers a crop outside the content with a blank picture and a note, covered by a mocked spec). Built: the serve route sends that note as `x-et-note` (`sendShot` in `thumb.ts` takes `{ png, note }`). Cause: the route returned `picture.png` only and dropped the note. Verified: the new route case in `shot.spec.ts` was red on the old code (no note), green after; not run live. Not built: a real-page case for each Playwright-backed spec (the finding's "new row").
 
 570\. Builder (2026-11-07, B360): on a missing `dist`, `mappedSubpathOf` swallows the error, so the listing never names
 the build command. Tool fix (technical): the listing names `nx build <name>` for a missing `dist`.
