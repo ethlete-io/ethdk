@@ -106,6 +106,15 @@ full-width, intrinsic-ratio height and `object-fit` has nothing left to do. Give
 `object-fit: none` paints outside the box it was given; add `overflow: hidden` if you don't want that.
 :::
 
+The image sits centred in that box, the CSS default. To keep another part of it in view, set `object-position`
+on `.et-picture-img` from the host: `class="[&_.et-picture-img]:object-top"` with Tailwind, or a rule of your own:
+
+```css
+.card-media .et-picture-img {
+  object-position: top;
+}
+```
+
 @example picture/picture-fit 640px
 
 `aspectRatio` counts as a definite box here: with `fit` set, the image takes the host's inline size and its own

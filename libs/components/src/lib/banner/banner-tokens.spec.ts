@@ -18,4 +18,8 @@ describe('banner.component.css tokens', () => {
     expect(tokens.length).toBeGreaterThan(0);
     expect(tokens.filter((token) => !token.inherits).map((token) => token.name)).toEqual([]);
   });
+
+  it('draws the border at --et-banner-border-width, so a consumer can set it to 0', () => {
+    expect(css).toContain('border: var(--et-banner-border-width) solid');
+  });
 });

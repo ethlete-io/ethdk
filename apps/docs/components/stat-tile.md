@@ -93,6 +93,6 @@ The success and error themes your app registers decide the delta's text contrast
 
 ## Theming
 
-Public design tokens on `et-stat-tile`: `--et-stat-tile-gap`, `--et-stat-tile-label-font-size`, `--et-stat-tile-value-font-size`, `--et-stat-tile-value-font-weight`, `--et-stat-tile-footer-font-size`, `--et-stat-tile-sparkline-gap`. On `et-stat-tile-sparkline`: `--et-stat-tile-sparkline-height`, `--et-stat-tile-sparkline-line-width`, `--et-stat-tile-sparkline-current-size`.
+Public design tokens on `et-stat-tile`: `--et-stat-tile-gap`, `--et-stat-tile-label-font-size`, `--et-stat-tile-label-text-transform`, `--et-stat-tile-label-letter-spacing` (both unset by default, so the label inherits the page's), `--et-stat-tile-value-font-size`, `--et-stat-tile-value-font-weight`, `--et-stat-tile-footer-font-size`, `--et-stat-tile-sparkline-gap`. On `et-stat-tile-sparkline`: `--et-stat-tile-sparkline-height`, `--et-stat-tile-sparkline-line-width`, `--et-stat-tile-sparkline-current-size`.
 
 Text colours come from the surface tokens (`--et-surface-color-solid` for the value, `--et-surface-color-muted-solid` for the label, unit and caption), so a tile reads correctly on every surface it sits on. The delta and the sparkline's last point come from the colour theme in scope - see [theming](/core/theming).

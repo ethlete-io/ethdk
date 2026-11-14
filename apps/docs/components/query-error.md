@@ -195,6 +195,8 @@ like one: the public tokens are `--et-banner-*`, and setting them on (or above) 
 }
 ```
 
+For a borderless panel set `--et-banner-border-width: 0` on it.
+
 There is no global "error color" variable in this system - error is a _theme_. `type="error"` makes the banner
 resolve the error theme of its surface via `injectSemanticColorTheme('error')` and provide it as a color scope, which is what
 `color` overrides. Inside that scope `--et-theme-color-primary-*` **is** the error color, so the panel's tint,

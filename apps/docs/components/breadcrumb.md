@@ -24,6 +24,22 @@ import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from '@ethlete/compon
 </et-breadcrumb>
 ```
 
+A trail built from data is the same templates in a `@for`, the last crumb as plain text:
+
+```html
+<et-breadcrumb etBreadcrumbCollapse>
+  @for (crumb of trail(); track crumb.url; let last = $last) {
+  <ng-template etBreadcrumbItemTemplate>
+    @if (last) {
+    <span etBreadcrumbItem>{{ crumb.label }}</span>
+    } @else {
+    <a [routerLink]="crumb.url" etBreadcrumbItem>{{ crumb.label }}</a>
+    }
+  </ng-template>
+  }
+</et-breadcrumb>
+```
+
 ## Live demo
 
 @example breadcrumb/breadcrumb-default 320px

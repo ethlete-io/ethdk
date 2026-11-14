@@ -55,6 +55,8 @@
   .et-stat-tile-label {
     font-size: var(--et-stat-tile-label-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
+    text-transform: var(--et-stat-tile-label-text-transform);
+    letter-spacing: var(--et-stat-tile-label-letter-spacing);
   }
 
   .et-stat-tile-value {
