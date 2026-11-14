@@ -42,5 +42,3 @@ export const CONTRAST_PAIR_RULE = 'CONTRAST-PAIR';
 
 export const blockerKindOfRule = (rule: string): BlockerKind =>
   rule === COMPARE_RULE ? 'compare' : rule === SDK_ERROR_RULE ? 'sdk-error' : 'problem';
-
-export { slowProblemsOf } from './slow-checks';
