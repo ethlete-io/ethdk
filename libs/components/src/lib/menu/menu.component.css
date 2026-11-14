@@ -59,6 +59,12 @@
     initial-value: 14px;
   }
 
+  @property --et-menu-item-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 400;
+  }
+
   @property --et-menu-item-icon-size {
     syntax: '<length>';
     inherits: true;
@@ -239,6 +245,7 @@
       background: transparent;
       color: inherit;
       font: inherit;
+      font-weight: var(--et-menu-item-font-weight);
       text-align: start;
       text-decoration: none;
       cursor: pointer;

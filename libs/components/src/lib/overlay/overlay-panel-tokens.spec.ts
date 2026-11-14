@@ -33,4 +33,11 @@ describe('overlay panel tokens', () => {
     expect(menuCss).toMatch(/@property --et-menu-border-radius \{[^}]*initial-value: 10px;/);
     expect(menuCss).toMatch(/\.et-menu \{[^}]*border-radius: var\(--et-menu-border-radius\);/);
   });
+
+  it('sets the menu item weight from --et-menu-item-font-weight after the font reset', () => {
+    const menuCss = readFileSync(libRoot + 'menu/menu.component.css', 'utf8');
+
+    expect(menuCss).toMatch(/@property --et-menu-item-font-weight \{[^}]*initial-value: 400;/);
+    expect(menuCss).toMatch(/font: inherit;\s*font-weight: var\(--et-menu-item-font-weight\);/);
+  });
 });
