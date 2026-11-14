@@ -21,7 +21,10 @@ These controls implement Angular's [signal forms](https://angular.dev/guide/form
 contracts (`FormValueControl` / `FormCheckboxControl`) and bind via `[formField]`
 from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer -
 the classic stack lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]`
-/ `[(checked)]` also works for simple cases. Moving an app over is covered in
+/ `[(checked)]` also works for simple cases. `et-checkbox` and `et-switch` implement
+`FormCheckboxControl` (`[formField]` binds `checked`); every other control, including
+`et-radio-group` and `et-segmented-button-group`, implements `FormValueControl`
+(`[formField]` binds `value`). Moving an app over is covered in
 [Coming from reactive forms](#coming-from-reactive-forms).
 :::
 

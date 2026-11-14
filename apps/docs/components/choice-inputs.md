@@ -409,6 +409,17 @@ export class BroadcastPickerComponent {}
 `value`.
 :::
 
+### Segmented button: form binding {#segmented-form}
+
+`et-segmented-button-group` implements `FormValueControl`, like the radio group:
+
+```html
+<et-segmented-button-group [formField]="viewForm.range">
+  <et-segmented-button value="day">Day</et-segmented-button>
+  <et-segmented-button value="week">Week</et-segmented-button>
+</et-segmented-button-group>
+```
+
 ### Segmented button: tabs variant {#segmented-tabs}
 
 `et-segmented-button-group` takes `variant="tabs"`, which underlines the selected

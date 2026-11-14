@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
-import { ValidationError } from '@angular/forms/signals';
+import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { signalElementMutations } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { isSameOrder, sortByDomOrder } from '../../../internals/dom-order';
@@ -51,7 +51,7 @@ const referenceEquality: SelectionListCompareWith = (a, b) => a === b;
 })
 export class SelectionListDirective
   extends FieldStateControlDirective
-  implements SelectionListDirectiveBase, FormFieldControl
+  implements SelectionListDirectiveBase, FormValueControl<unknown>, FormFieldControl
 {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
