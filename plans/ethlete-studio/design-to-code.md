@@ -874,6 +874,17 @@ compare on fbeb7c12d: 13 ok, 18 DIFF, 7 FAILED (no app input for agent/question/
 comparing ok, all-unchanged ok, edit-sketch 4397, withdrawn-hidden 59791 again. Open: redo the withdrawn fold without
 touching the fit timing (e.g. `listedRows()` plus the withdrawn rows only) with a spec.
 
+**B502e as built (Linux builder subagent, 2026-11-14, slices A-C):** (A) fold button, look pick "Empfehlung gebaut":
+the pages/sketches design no longer stretches the fold row's "Alle Zustände zeigen" disclosure; `.replace(' w-full ',
+' ')` on its markup was refused by `design check` (PART-REWRITE, it wants a `components/disclosure` option, outside this
+slice's paths), so the design wraps the disclosure in a `min-w-0` span like the app's `min-w-0` host (b4b4e2fda) and the
+button sizes to its label. `design check --part pages/sketches`: 0 new findings (4 OLD CANVAS-UNDER-PANEL). Full compare
+before (1f0303837, px from the B502d notes, not re-measured here) to after: 13 to 19 ok, 18 to 12 DIFF, 7 FAILED (finding 489), every action works; to ok: narrow-part,
+narrow-below-fit, picked, sketch-only-points, multi-part, multi-part-many (4525/4527), edit-sketch 4397, unchanged 4384;
+withdrawn-shown 4525 to 131, withdrawn-hidden 59791 to 59779, unchanged-open 9820 to 9807, unchanged-matrix 34639 to
+34623, unchanged-matrix-open 40865 to 40964, narrow-far-out 29481 to 24954, change-crop 14054 to 9510, change-crop-whole
+29041 to 29182; unchanged: zoomed-page 82405, sticky-names 58240, below-fit 63183, far-out 11733; comparing ok.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
