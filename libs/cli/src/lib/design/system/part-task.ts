@@ -1,10 +1,10 @@
-import { execFileSync } from 'child_process';
 import { writeJsonFile } from '../../json-file';
 import { createHash } from 'crypto';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, designHolds, FileHashes, isOptionalFileHashes } from './design-hash';
 import { DESIGN_DIR } from '../design-config';
+import { git, showFilesOf } from '../git-reader';
 import { matchesPattern } from './harness-config';
 import { buildReadyOf, BuildReadyInputs } from './part-build-ready';
 import { readyMarkOf, readyPartOf } from './part-ready';
@@ -312,29 +312,44 @@ export const wiringFilesOf = (options: {
 
 /** The files git tracks under a folder at a revision. */
 export const gitTreeFilesOf = (options: { root: string; rev: string; dir: string }) =>
-  execFileSync('git', ['ls-tree', '-r', '--name-only', options.rev, '--', options.dir], {
-    cwd: options.root,
-    encoding: 'utf8',
-    stdio: 'pipe',
-    maxBuffer: 64 * 1024 * 1024,
-  })
+  git(['ls-tree', '-r', '--name-only', options.rev, '--', options.dir], { cwd: options.root, stdio: 'pipe' })
     .split('\n')
     .filter((line) => line !== '');
 
-/** The content of a file at the end of a git range, or null when it is gone. */
-export const gitFileAtOf = (options: { root: string; range: string; file: string }) => {
-  const end = options.range.includes('..') ? options.range.split('..').pop() : options.range;
+/**
+ * Reads files at the end of a git range: `prime` reads every file it names in one git process, and `read` answers a
+ * file's content, or null when it is gone, reading an unprimed file on its own.
+ */
+export const gitFilesAtOf = (options: { root: string; range: string }) => {
+  const rev = options.range.includes('..') ? (options.range.split('..').pop() ?? options.range) : options.range;
+  const contents = new Map<string, string | null>();
+  const prime = (files: string[]) => {
+    const unread = files.filter((file) => !contents.has(file));
 
-  try {
-    return execFileSync('git', ['show', `${end}:${options.file}`], {
-      cwd: options.root,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    });
-  } catch {
-    return null;
-  }
+    if (unread.length === 0) return;
+
+    try {
+      for (const [file, blob] of showFilesOf({ cwd: options.root, rev, paths: unread })) {
+        contents.set(file, blob?.toString('utf8') ?? null);
+      }
+    } catch {
+      unread.forEach((file) => contents.set(file, null));
+    }
+  };
+
+  return {
+    prime,
+    read: (file: string) => {
+      prime([file]);
+
+      return contents.get(file) ?? null;
+    },
+  };
 };
+
+/** The content of a file at the end of a git range, or null when it is gone. */
+export const gitFileAtOf = (options: { root: string; range: string; file: string }) =>
+  gitFilesAtOf(options).read(options.file);
 
 /** Whether a `git diff -U0` patch adds or removes only Tailwind `@source` lines. */
 export const changesOnlySourceLines = (patch: string) =>
@@ -345,22 +360,14 @@ export const changesOnlySourceLines = (patch: string) =>
 
 /** The `git diff -U0` patch of one file in a range. */
 export const gitDiffPatchOf = (options: { root: string; range: string; file: string }) =>
-  execFileSync('git', ['diff', '-U0', options.range, '--', options.file], {
-    cwd: options.root,
-    encoding: 'utf8',
-    stdio: 'pipe',
-  });
+  git(['diff', '-U0', options.range, '--', options.file], { cwd: options.root, stdio: 'pipe' });
 
 /** The git range `--verify` checks: a range as given, a single commit `x` as `x^..x`. */
 export const verifyRangeOf = (rev: string) => (rev.includes('..') ? rev : `${rev}^..${rev}`);
 
 /** Each file `git diff --name-status --no-renames` names for a range, from the repository root, with its status. */
 export const gitDiffChangesOf = (options: { root: string; range: string }) =>
-  execFileSync('git', ['diff', '--name-status', '--no-renames', options.range], {
-    cwd: options.root,
-    encoding: 'utf8',
-    stdio: 'pipe',
-  })
+  git(['diff', '--name-status', '--no-renames', options.range], { cwd: options.root, stdio: 'pipe' })
     .split('\n')
     .filter((line) => line !== '')
     .map((line) => {

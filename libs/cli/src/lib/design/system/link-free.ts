@@ -1,7 +1,7 @@
-import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { dirname, join, relative, sep } from 'path';
+import { catFilesOf, logNamesOf } from '../git-reader';
 import { linkFieldTextOf, withLinkFieldOf, withoutLinkFieldOf } from './sketch/part-definition';
 
 const mayLink = (file: string, text: string) =>
@@ -23,59 +23,30 @@ const repoRootOf = (file: string): string | null => {
   }
 };
 
-const gitIn = ({ root, args, input }: { root: string; args: string[]; input?: string }) =>
-  execFileSync('git', ['-C', root, '-c', 'core.quotePath=false', ...args], {
-    input,
-    maxBuffer: 1 << 28,
-    stdio: ['pipe', 'pipe', 'ignore'],
-    env: { ...process.env, GIT_LITERAL_PATHSPECS: '1' },
-  });
-
-const blobsOf = (output: Buffer): (Buffer | null)[] => {
-  const blobs: (Buffer | null)[] = [];
-
-  for (let at = 0; at < output.length;) {
-    const end = output.indexOf(0x0a, at);
-    const found = /^[0-9a-f]+ (\S+) (\d+)$/.exec(output.subarray(at, end).toString('utf8'));
-    const size = found ? Number(found[2]) : -1;
-
-    blobs.push(found?.[1] === 'blob' ? output.subarray(end + 1, end + 1 + size) : null);
-    at = found ? end + 2 + size : end + 1;
-  }
-
-  return blobs;
-};
+const literalEnv = () => ({ ...process.env, GIT_LITERAL_PATHSPECS: '1' });
 
 const committedLinkFieldsIn = (root: string, files: string[]): Map<string, string[]> => {
   const fields = new Map(files.map((file) => [file, [] as string[]]));
   const byPath = new Map(files.map((file) => [relative(root, file).split(sep).join('/'), file]));
 
   try {
-    const log = gitIn({
-      root,
-      args: ['log', '--format=%x00%H', '--name-only', '-G', 'implements', '--', ...byPath.keys()],
-    });
-    const revisions = log
-      .toString()
-      .split('\0')
-      .flatMap((entry) => {
-        const [commit = '', ...paths] = entry.split('\n').filter(Boolean);
+    const revisions = logNamesOf(['-G', 'implements', '--', ...byPath.keys()], {
+      env: literalEnv(),
+      cwd: root,
+      stdio: ['pipe', 'pipe', 'ignore'],
+    }).flatMap(({ commit, paths }) =>
+      paths.flatMap((path) => {
+        const file = byPath.get(path);
 
-        return paths.flatMap((path) => {
-          const file = byPath.get(path);
-
-          return file ? [{ commit, path, file }] : [];
-        });
-      });
+        return file ? [{ commit, path, file }] : [];
+      }),
+    );
 
     if (revisions.length === 0) return fields;
 
-    const blobs = blobsOf(
-      gitIn({
-        root,
-        args: ['cat-file', '--batch'],
-        input: revisions.map(({ commit, path }) => `${commit}:${path}\n`).join(''),
-      }),
+    const blobs = catFilesOf(
+      revisions.map(({ commit, path }) => `${commit}:${path}`),
+      { env: literalEnv(), cwd: root },
     );
 
     revisions.forEach(({ file }, index) => {

@@ -14,7 +14,7 @@ import {
   designFilesOf,
   filesOutsideOf,
   gitDiffFilesOf,
-  gitFileAtOf,
+  gitFilesAtOf,
   gitTreeFilesOf,
   importersOf,
   gitDiffPatchOf,
@@ -183,8 +183,21 @@ export const designTask = async (options: {
   const harnessApp = product.config.harness?.app;
   const stylesheet = harnessApp ? appStylesheetOf({ target, app: harnessApp }) : null;
   const root = resolve(product.configFile, '../../..');
+  const readers = new Map<string, Pick<ReturnType<typeof gitFilesAtOf>, 'prime' | 'read'>>();
+  const readerOf = (range: string) => {
+    const read = options.read;
+    const reader =
+      readers.get(range) ??
+      (read
+        ? { prime: (_files: string[]) => undefined, read: (file: string) => read({ root, range, file }) }
+        : gitFilesAtOf({ root, range }));
+
+    readers.set(range, reader);
+
+    return reader;
+  };
   const wiringAt = (range: string, component: string) => {
-    const read = (file: string) => (options.read ?? gitFileAtOf)({ root, range, file });
+    const { prime, read } = readerOf(range);
     const rev = range.includes('..') ? (range.split('..').pop() ?? range) : range;
 
     try {
@@ -193,6 +206,8 @@ export const designTask = async (options: {
         rev,
         dir: component.split('/').slice(0, 2).join('/'),
       });
+
+      prime(files.filter((file) => file.endsWith('.ts') && !file.endsWith('.spec.ts')));
 
       return wiringFilesOf({ files, component, read });
     } catch {
@@ -233,12 +248,12 @@ export const designTask = async (options: {
         (file) =>
           file !== stylesheet || !changesOnlySourceLines((options.patch ?? gitDiffPatchOf)({ root, range, file })),
       );
+      const reader = readerOf(range);
+
+      reader.prime(unlisted);
+
       const importers = tasks.flatMap((each) =>
-        importersOf({
-          files: unlisted,
-          component: each.component,
-          read: (file) => (options.read ?? gitFileAtOf)({ root, range, file }),
-        }),
+        importersOf({ files: unlisted, component: each.component, read: reader.read }),
       );
 
       const wiring = tasks.flatMap((each) => wiringAt(range, each.component));
