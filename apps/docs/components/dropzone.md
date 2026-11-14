@@ -165,7 +165,7 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 | `accept`             | `string`                                     | `''`               | Accepted file types, native `accept` semantics. Also filters the native picker.                                          |
 | `maxFileSize`        | `number \| undefined`                        | `undefined`        | Largest accepted file in bytes.                                                                                          |
 | `minFileSize`        | `number \| undefined`                        | `undefined`        | Smallest accepted file in bytes.                                                                                         |
-| `crop`               | `DropzoneCropConfig \| null`                 | `null`             | Sends picked images through a [crop step](#crop) before they upload.                                                     |
+| `crop`               | `DropzoneCropConfig \| null`                 | `null`             | Sends picked images through a [crop step](#crop) before they upload. Needs `DROPZONE_CROP_IMPORTS`.                      |
 | `layout`             | `'area' \| 'row'`                            | `'area'`           | `'row'` shrinks the drop area to one input-height row that holds a single file - see [compact row](#compact-row).        |
 | `readonly`           | `boolean`                                    | `false`            | View-only: the entries stay visible, nothing can change.                                                                 |
 | `hidden`             | `boolean`                                    | `false`            | Hides the whole field. A schema `hidden(...)` rule does the same without the input.                                      |
@@ -310,10 +310,14 @@ With `multiple`, `layout="row"` only shrinks the drop area; the files still list
 
 ## Crop
 
-Set `crop` and every picked image opens a crop step before it uploads. Files that are not
-raster images (an SVG, a PDF) skip it and upload right away.
+The crop step is an add-on: import `DROPZONE_CROP_IMPORTS` next to `DROPZONE_IMPORTS`, so an app
+without it pays nothing for cropping. Then set `crop` and every picked image opens a crop step before it
+uploads. Files that are not raster images (an SVG, a PDF) skip it and upload right away. Without the
+import, `crop` throws `ET2404` in dev mode.
 
 ```ts
+imports: [DROPZONE_IMPORTS, DROPZONE_CROP_IMPORTS],
+
 protected crop: DropzoneCropConfig = { aspectRatio: 1, maxWidth: 256, type: 'image/webp', quality: 0.85 };
 ```
 

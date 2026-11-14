@@ -327,6 +327,7 @@ All dropzone checks run in dev mode only.
 | `ET2401` | The control was initialized with a value but the config has no `resolveExisting`.                                               | Add a `resolveExisting` function so existing values can be displayed.                                      |
 | `ET2402` | The control value shape doesn't match the mode (array in single mode or vice versa).                                            | Set `multiple` to match the value shape, or write a value matching the current mode.                       |
 | `ET2403` | The crop step could not render the image (no 2d canvas context, the canvas produced no image, or the image was not loaded yet). | Check the browser supports canvas encoding for the crop `type`; confirm only once the crop frame is shown. |
+| `ET2404` | `et-dropzone` has a `crop` config, but `DROPZONE_CROP_IMPORTS` is not imported.                                                 | Add `DROPZONE_CROP_IMPORTS` to the imports of the component that renders the dropzone.                     |
 
 ## Rich text editor (ET25xx)
 

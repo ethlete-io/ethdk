@@ -2,6 +2,7 @@ import { JsonPipe } from '@angular/common';
 import { Component, signal, ViewEncapsulation } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
 import {
+  DROPZONE_CROP_IMPORTS,
   DROPZONE_IMPORTS,
   DropzoneCropConfig,
   FORM_FIELD_IMPORTS,
@@ -27,7 +28,7 @@ const uploadMedia = createPostQuery(client)<UploadMediaArgs>('/upload', { report
     <p>Form value: {{ avatarForm.avatar().value() | json }}</p>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [FORM_FIELD_IMPORTS, DROPZONE_IMPORTS, FormField, JsonPipe],
+  imports: [FORM_FIELD_IMPORTS, DROPZONE_IMPORTS, DROPZONE_CROP_IMPORTS, FormField, JsonPipe],
 })
 export class DropzoneCropExampleComponent {
   protected readonly CROP: DropzoneCropConfig = { aspectRatio: 1, maxWidth: 256, type: 'image/webp', quality: 0.85 };

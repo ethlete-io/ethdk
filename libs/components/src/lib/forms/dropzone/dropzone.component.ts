@@ -11,15 +11,18 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
 import { outputFromObservable, outputToObservable } from '@angular/core/rxjs-interop';
 import {
   createCanAnimateSignal,
   createFlipAnimationGroup,
+  injectHostElement,
   injectPrefersReducedMotion,
   injectRenderer,
   injectStyleManager,
   ProvideColorDirective,
   mountVisuallyHidden,
+  RuntimeError,
 } from '@ethlete/core';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import { FocusRingDirective } from '../../focus-ring/focus-ring.directive';
@@ -39,7 +42,7 @@ import {
   injectFormSupport,
   provideFormSupport,
 } from '../form-field/headless';
-import { DropzoneCropComponent } from './dropzone-crop.component';
+import { DROPZONE_CROP_STEP_TOKEN } from './dropzone-crop-step.token';
 import { DropzoneItemComponent } from './dropzone-item.component';
 import { DropzonePreviewStylesComponent } from './dropzone-preview-styles.component';
 import { DropzoneReadonlyStylesComponent } from './dropzone-readonly-styles.component';
@@ -47,6 +50,7 @@ import { DropzoneRowStylesComponent } from './dropzone-row-styles.component';
 import { injectUploadedAtFormatter } from './dropzone-uploaded-at';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
+import { DROPZONE_ERROR_CODES } from './headless/dropzone-errors';
 import { AnyDropzoneUploadConfig } from './headless/dropzone-upload';
 import { rejectionMessage } from './headless/dropzone-validation';
 import { DropzoneLabels, injectDropzoneLabels } from './dropzone-labels';
@@ -65,7 +69,7 @@ export type DropzoneLayout = (typeof DROPZONE_LAYOUTS)[keyof typeof DROPZONE_LAY
   styleUrl: './dropzone.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    DropzoneCropComponent,
+    NgComponentOutlet,
     DropzoneItemComponent,
     FocusRingDirective,
     FormSupportComponent,
@@ -120,6 +124,8 @@ export class DropzoneComponent<TValue = unknown> {
   private renderer = injectRenderer();
   private prefersReducedMotion = injectPrefersReducedMotion();
   private formatUploadedAt = injectUploadedAtFormatter();
+  private hostElement = injectHostElement();
+  protected cropStep = inject(DROPZONE_CROP_STEP_TOKEN, { optional: true, self: true });
 
   /**
    * The upload workflow configuration. Create it via `createDropzoneUpload()`. Its value type is the
@@ -205,6 +211,19 @@ export class DropzoneComponent<TValue = unknown> {
     mountVisuallyHidden();
 
     this.dropzoneDir.bindUploadSource(this.upload);
+
+    if (ngDevMode) {
+      effect(() => {
+        if (this.dropzoneDir.crop() && !this.cropStep) {
+          throw new RuntimeError(
+            DROPZONE_ERROR_CODES.MISSING_CROP_STEP,
+            '[DropzoneComponent] The "crop" input needs the crop step. Add DROPZONE_CROP_IMPORTS to the imports ' +
+              'of the component that renders this et-dropzone.',
+            { element: this.hostElement },
+          );
+        }
+      });
+    }
 
     const styleManager = injectStyleManager();
 

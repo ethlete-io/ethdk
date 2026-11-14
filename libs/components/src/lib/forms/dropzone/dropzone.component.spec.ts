@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
 import '../../../test-helpers';
 import { expectDescribedByPointsAtErrors } from '../testing/described-by';
@@ -8,6 +9,7 @@ import { flushFrames } from '../../testing/driver-core';
 import { LabelDirective } from '../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../testing/dropzone-driver';
 import { provideDropzoneLabels } from './dropzone-labels';
+import { DropzoneCropStepDirective } from './dropzone-crop-step.directive';
 import { DropzoneComponent, DropzoneLayout } from './dropzone.component';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './headless/dropzone-upload';
 import { DropzoneFileConstraints, dropzoneFiles } from './headless/dropzone-validation';
@@ -531,13 +533,35 @@ describe('DropzoneComponent with instance labels', () => {
       <et-label>Avatar</et-label>
     </et-dropzone>
   `,
-  imports: [DropzoneComponent, LabelDirective],
+  imports: [DropzoneComponent, DropzoneCropStepDirective, LabelDirective],
 })
 class DropzoneCropComponentTestHost {
   upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
   crop = { aspectRatio: 1, maxWidth: 50 };
   value = signal<string | null>('uuid-old');
 }
+
+@Component({
+  template: `
+    <et-dropzone [crop]="{ aspectRatio: 1 }">
+      <et-label>Avatar</et-label>
+    </et-dropzone>
+  `,
+  imports: [DropzoneComponent, LabelDirective],
+})
+class DropzoneCropWithoutStepTestHost {}
+
+describe('DropzoneComponent crop without DROPZONE_CROP_IMPORTS', () => {
+  it('should throw ET2404', () => {
+    TestBed.configureTestingModule({ imports: [DropzoneCropWithoutStepTestHost] });
+
+    const fixture = TestBed.createComponent(DropzoneCropWithoutStepTestHost);
+
+    expect(() => fixture.detectChanges()).toThrowError(/ET2404/);
+
+    fixture.destroy();
+  });
+});
 
 class FakeImage {
   public naturalWidth = 200;

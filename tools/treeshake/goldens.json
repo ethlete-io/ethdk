@@ -156,7 +156,11 @@
     },
     "dropzone": {
       "entry": "import { DROPZONE_IMPORTS } from '@ethlete/components';\nconsole.log(DROPZONE_IMPORTS);",
-      "gzip": 41387
+      "gzip": 37015
+    },
+    "dropzone-crop": {
+      "entry": "import { DROPZONE_CROP_IMPORTS, DROPZONE_IMPORTS } from '@ethlete/components';\nconsole.log(DROPZONE_IMPORTS, DROPZONE_CROP_IMPORTS);",
+      "gzip": 41642
     },
     "scrollable": {
       "entry": "import { SCROLLABLE_IMPORTS } from '@ethlete/components';\nconsole.log(SCROLLABLE_IMPORTS);",

@@ -6,7 +6,7 @@ import { createPostQuery, createQueryClient, def, V2QueryClient } from '@ethlete
 import { HintComponent } from '../../form-field/hint.component';
 import { LabelDirective } from '../../form-field/headless';
 import { DropzoneLayout } from '../dropzone.component';
-import { DROPZONE_IMPORTS } from '../dropzone.imports';
+import { DROPZONE_CROP_IMPORTS, DROPZONE_IMPORTS } from '../dropzone.imports';
 import { createDropzoneUpload, createV2DropzoneUpload } from '../headless/dropzone-upload';
 import { dropzoneFiles } from '../headless/dropzone-validation';
 import { MOCK_UPLOAD_BASE_URL } from './upload-mock';
@@ -50,7 +50,15 @@ const uploadMediaV2 = v2Client.post({
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...DROPZONE_IMPORTS, FormField, HintComponent, LabelDirective, ProvideColorDirective, JsonPipe],
+  imports: [
+    ...DROPZONE_IMPORTS,
+    ...DROPZONE_CROP_IMPORTS,
+    FormField,
+    HintComponent,
+    LabelDirective,
+    ProvideColorDirective,
+    JsonPipe,
+  ],
 })
 export class DropzoneStorybookComponent {
   public color = input('brand');
