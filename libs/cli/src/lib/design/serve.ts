@@ -136,6 +136,8 @@ import {
   readConfig,
 } from './design-config';
 import { startSlowRunnerInWorker } from './system/slow-run-host';
+import { stopOpenPointsWorkers, warmOpenPointsOf } from './system/open-points-runner';
+import { oneProductOf } from './system/sketch/cli-args';
 import { timedPhase } from './phase-timing';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
@@ -1461,11 +1463,20 @@ export const serveDesign = async (options: {
   server.printUrls();
 
   watchHeap({ log: (line) => console.log(`design-explore: ${line}`) });
+  server.httpServer?.once('close', () => void stopOpenPointsWorkers());
 
   if (process.env['ETHLETE_DESIGN_SLOW_CHECKS'] !== 'off') {
     const slow = startSlowRunnerInWorker({ target, log: (line) => console.log(`design-explore: ${line}`) });
 
     server.httpServer?.once('close', () => void slow.stop());
+    void warmOpenPointsOf(
+      Object.keys(config.products ?? {}).flatMap((asked) => {
+        const product = oneProductOf({ target, config, asked });
+
+        return typeof product === 'string' ? [] : [product];
+      }),
+      (line) => console.log(`design-explore: ${line}`),
+    );
   }
 
   if (ownedByStudio) {
