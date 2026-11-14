@@ -585,51 +585,6 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="old"]')).not.toBeNull();
   });
 
-  it('keeps a state a hidden withdrawn variant changes unfolded', async () => {
-    const rows: SketchRow[] = [
-      {
-        key: 'current',
-        note: '',
-        width: 176,
-        shots: [
-          { state: 'rest', changed: false, height: 32 },
-          { state: 'open', changed: false, height: 32 },
-          { state: 'fit', changed: false, height: 32 },
-        ],
-      },
-      {
-        key: 'a',
-        note: '',
-        width: 176,
-        shots: [
-          { state: 'rest', changed: false, height: 32 },
-          { state: 'open', changed: false, height: 32 },
-          { state: 'fit', changed: true, height: 32 },
-        ],
-      },
-      {
-        key: 'b',
-        note: '',
-        width: 176,
-        withdrawn: 'zu breit',
-        shots: [
-          { state: 'rest', changed: true, height: 32 },
-          { state: 'open', changed: false, height: 32 },
-          { state: 'fit', changed: false, height: 32 },
-        ],
-      },
-    ];
-    const layerShim = Object.assign(document.createElement('style'), { textContent: 'et-choice-field{display:flex}' });
-
-    document.head.append(layerShim);
-    onTestFinished(() => layerShim.remove());
-
-    const root: HTMLElement = (await render({ rows })).nativeElement;
-
-    expect(root.querySelector('[data-sk-row="b"]')).toBeNull();
-    expect(textOf(root.querySelector('[data-sk-folded]'))).toContain(LABELS.foldedStates(1));
-  });
-
   it('folds the states neither old nor new of an @edit sketch changes', () => {
     const rows = SKETCH_EDIT_SAMPLE.rows;
     const changed = new Set(rows.flatMap((row) => row.shots.filter((shot) => shot.changed).map((shot) => shot.state)));

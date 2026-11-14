@@ -278,7 +278,7 @@ export class SketchesComponent {
 
     return edit ? rows.map((row) => ({ ...row, label: EDIT_ROW_LABELS[row.key] ?? row.label })) : rows;
   });
-  protected foldedStates = computed(() => foldedStatesOf(this.rows()));
+  protected foldedStates = computed(() => foldedStatesOf(this.listedRows()));
   public shownRows = computed(() => {
     const rows = this.listedRows();
     const folded = this.statesOpen() ? new Set<string>() : this.foldedStates();
