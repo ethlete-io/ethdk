@@ -150,9 +150,10 @@ export const SKETCH_WITHDRAWN = {
 export const SKETCH_NARROW_SAMPLE = {
   part: 'components/zoom-chip',
   rows: [
-    { key: SKETCH_CURRENT, note: 'Gemergter Stand', width: 176, shots: chipShotsOf([]) },
+    { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: 176, shots: chipShotsOf([]) },
     {
       key: 'a',
+      label: 'Entwurf 1',
       note: 'Chip als Pille, die Knöpfe rücken enger zusammen.',
       model: { ...OPUS, when: '02.11. 11:02' },
       width: 176,
@@ -160,6 +161,7 @@ export const SKETCH_NARROW_SAMPLE = {
     },
     {
       key: 'b',
+      label: 'Entwurf 2',
       note: 'Prozentzahl in Halbfett, damit der Zoom auf einen Blick lesbar ist.',
       model: { ...SOL, when: '02.11. 11:09' },
       width: 176,
@@ -296,9 +298,10 @@ const screenShotsOf = (changed: boolean): SketchShot[] => [
 export const SKETCH_SCREEN_SAMPLE = {
   part: 'pages/sketches',
   rows: [
-    { key: SKETCH_CURRENT, note: 'Gemergter Stand', width: SCREEN.width, shots: screenShotsOf(false) },
+    { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: SCREEN.width, shots: screenShotsOf(false) },
     {
       key: 'a',
+      label: 'Entwurf 1',
       note: 'Port nach dem Merge als Zeile unter dem Kopf; die Zellen der Probe tragen die Pillenform.',
       model: { ...OPUS, when: '04.11. 09:12' },
       width: SCREEN.width,

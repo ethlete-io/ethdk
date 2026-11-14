@@ -74,7 +74,7 @@ export const STUDIO_LABELS = {
   },
   sketches: {
     discard: 'Verwerfen',
-    editHint: 'Kein Verwerfen: Zuletzt gemergter Stand macht die Änderung rückgängig, Änderung behalten behält sie',
+    editHint: 'Kein Verwerfen: wähle eine der beiden Zeilen',
     editOld: 'Zuletzt gemergter Stand',
     editNew: 'Änderung behalten',
     discardConfirm: {

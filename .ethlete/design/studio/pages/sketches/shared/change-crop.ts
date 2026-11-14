@@ -46,9 +46,10 @@ export const GROUPS: ChangeGroup[] = [
 export const UNCHANGED_COUNT = 16;
 
 export const SCREEN_ROWS: Row[] = [
-  { key: 'current', note: 'Gemergter Stand', changed: [], look: '' },
+  { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
   {
     key: 'a',
+    label: 'Entwurf 1',
     note: 'Port nach dem Merge als Zeile unter dem Kopf; die Zellen der Probe tragen die Pillenform.',
     model: { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude', when: '04.11. 09:12' },
     changed: GROUPS.flatMap((group) => group.states),

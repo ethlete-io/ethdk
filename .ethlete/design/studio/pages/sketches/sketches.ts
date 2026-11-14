@@ -679,8 +679,7 @@ export default definePart<Props>({
         ${
           kind === 'edit' && !screen
             ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
-                >Kein Verwerfen: Zuletzt gemergter Stand macht die Änderung rückgängig, Änderung behalten behält
-                sie</span
+                >Kein Verwerfen: wähle eine der beiden Zeilen</span
               >`
             : withAction(discard.body, 'emit:discard')
         }
