@@ -37,6 +37,8 @@ export type MatchCardNameContext = {
   status: NormalizedMatchStatus;
   /** The match's `label` (`'Grand Final'`), or its `number` named by `matchNumber`, or `null`. */
   label: string | null;
+  /** The labels of the card's `etMatchCardBadge` badges, in template order. */
+  badges: readonly string[];
   /** Every match label in effect, so this one can reuse the localized `live`, `finished` and `versus`. */
   labels: MatchLabels;
 };
@@ -111,13 +113,13 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   emblemAlt: (participant) => `${participant} emblem`,
   seed: (seed) => `Seed ${seed}`,
   matchNumber: (number) => `Match ${number}`,
-  matchName: ({ home, away, result, startTime, status, label, labels }) => {
+  matchName: ({ home, away, result, startTime, status, label, badges, labels }) => {
     const kickOff = status === 'live' ? null : startTime;
     const state = status === 'live' ? labels.live : status === 'finished' ? labels.finished : null;
     const pairing = `${home} ${labels.versus} ${away}`;
     const matchUp = label ? `${label}: ${pairing}` : pairing;
 
-    return [matchUp, result, kickOff, state].filter(Boolean).join(', ');
+    return [matchUp, result, kickOff, state, ...badges].filter(Boolean).join(', ');
   },
   gameScores: 'Games',
   gameScore: (game, score) => `Game ${game}: ${score}`,
@@ -142,12 +144,12 @@ export const GERMAN_MATCH_LABELS: MatchLabels = {
   emblemAlt: (participant) => `Wappen von ${participant}`,
   seed: (seed) => `Setzplatz ${seed}`,
   matchNumber: (number) => `Spiel ${number}`,
-  matchName: ({ home, away, result, startTime, status, label, labels }) => {
+  matchName: ({ home, away, result, startTime, status, label, badges, labels }) => {
     const kickOff = status === 'live' ? null : startTime;
     const state = status === 'live' ? labels.live : status === 'finished' ? labels.finished : null;
     const pairing = `${home} ${labels.versus} ${away}`;
     const matchUp = label ? `${label}: ${pairing}` : pairing;
-    return [matchUp, result, kickOff, state].filter(Boolean).join(', ');
+    return [matchUp, result, kickOff, state, ...badges].filter(Boolean).join(', ');
   },
   gameScores: 'Spiele',
   gameScore: (game, score) => `Spiel ${game}: ${score}`,

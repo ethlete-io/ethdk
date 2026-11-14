@@ -459,6 +459,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-masonry',
   'et-masonry-item',
   'et-match-card',
+  'et-match-card-badges',
   'et-match-card-content',
   'et-match-card-game',
   'et-match-card-games',

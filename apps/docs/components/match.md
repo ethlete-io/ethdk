@@ -201,6 +201,23 @@ protected onGoal(change: MatchScoreChange) {
 It fires on **any** change after the first render, live or not, while `match.id` stays the same - a
 corrected result is still a change your app may want to know about. Only the animation is gated to live.
 
+## Badges
+
+Mark any element inside the card with `etMatchCardBadge` and the default card draws it in the meta row, next
+to the live badge or the kick-off - a highlight star, a stream or VOD marker. The directive's value is what the
+badge means: the meta row is hidden from assistive tech, so each badge label joins the card's composed name
+(`matchName` gets them as `badges`, in document order).
+
+```html
+<et-match-card [match]="match()">
+  <et-badge etMatchCardBadge="Video on demand" size="sm">VOD</et-badge>
+</et-match-card>
+```
+
+@example match/match-badges 360px
+
+The dense row has no meta row, so it draws no badges; their labels stay in the composed name.
+
 ## The card is the link
 
 In a real app a match card is almost always a click target. Rather than owning that, the card puts its whole
@@ -347,11 +364,12 @@ Two of them do the composing, and they are where you change phrasing rather than
   announces - which is not what it draws. With values it reads `"2 : 1"` (or `"3 : 0 points"`); with none it
   names the winner, `"FC Berlin won"`, or says `"Draw"`. Those words are English in the default, so **a
   localized app overrides `resultName` too**.
-- **`matchName({ home, away, result, resultKind, winner, startTime, status, label, labels })`** composes the
+- **`matchName({ home, away, result, resultKind, winner, startTime, status, label, badges, labels })`** composes the
   card's whole accessible name, taking `resultName`'s output as `result`. The default reads
   `"Grand Final: FC Berlin vs Neon Esports, 2 : 1, 05/02/2026 8:30 PM, Finished"` - which match, who is
   playing, how it stands, when it kicks off, whether it is still going. The kick-off is in the name wherever
-  the card draws it, which is every status but `live`, where the badge takes its place.
+  the card draws it, which is every status but `live`, where the badge takes its place. The labels of the card's
+  `etMatchCardBadge` badges follow at the end.
 
 Both get `labels`, the whole set in effect, and the default `matchName` speaks its `versus`, `live` and
 `finished` - so localizing those three localizes the name without rewriting `matchName`.
@@ -383,6 +401,7 @@ the card and read the state off it.
 | `gameScoreText(gameScore)`                    | `string`                        | One game in the same `'13 : 11'` shape                    |
 | `formattedStartTime()`                        | `string \| null`                | Kick-off in the active locale, `null` for an invalid date |
 | `accessibleName()`                            | `string`                        | The composed name (also bound to the host's `aria-label`) |
+| `badgeLabels()`                               | `string[]`                      | The labels of the `etMatchCardBadge` badges, in DOM order |
 | `isLive()` / `isFinished()` / `isScheduled()` | `boolean`                       | The status, as three predicates                           |
 | `showsShortNames()`                           | `boolean`                       | Whether participants render as codes                      |
 | `isInteractive()`                             | `boolean`                       | Whether the card is a click target                        |
@@ -390,12 +409,13 @@ the card and read the state off it.
 The host also carries `data-status`, `data-size`, `data-result-kind`, `data-winner`, `data-interactive` and
 `data-hide-names` - the layout rules are written against those, so your own can be too.
 
-Three optional parts wire the accessibility that is easy to get wrong:
+Four optional parts wire the accessibility that is easy to get wrong:
 
 | Part                    | What it does                                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `etMatchCardScore`      | Makes the element a polite, atomic live region, so a score arriving over a poll or socket is announced once as `"2 : 1"` |
 | `etMatchCardMeta`       | Hides the label/badge/kick-off row from assistive tech - all three are already in the composed name                      |
+| `etMatchCardBadge`      | Adds the badge's label (its value) to the composed name; the default card projects it into the meta row                  |
 | `etMatchCardGameScores` | Names the breakdown from the `gameScores` label and gives it an explicit `role="list"`                                   |
 
 Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when used outside an `[etMatchCard]`.
@@ -413,8 +433,8 @@ Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when us
 - **Nothing a layout hides is lost.** The dense row drops the label and kick-off from the _drawing_ only; both
   are still in the card's composed name, which is what a screen reader reads. Same for `hideNames`. The
   subtitle is the exception: it is drawn only, and never part of the composed name.
-- **The meta row is hidden** (`aria-hidden`) because the label, live badge and kick-off are all in the card's
-  name already.
+- **The meta row is hidden** (`aria-hidden`) because the label, live badge, kick-off and every
+  `etMatchCardBadge` label are all in the card's name already.
 - **The series breakdown stays exposed**, as a real list, with each game numbered (`"Game 2: 8 : 13"`) - a bare
   `"8 : 13"` says nothing on its own.
 - **Emblems** are named from `emblemAlt`, and a seed badge from `seed`, since the digit alone is meaningless.

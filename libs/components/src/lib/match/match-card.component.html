@@ -1,10 +1,16 @@
 <!-- Everything mode-dependent lives on this element rather than the host: a container query can only
      style descendants of its container, and the host is the container. -->
 <div class="et-match-card-content">
-  @if (card.label() || card.isLive() || card.formattedStartTime()) {
+  @if (card.label() || card.badgeLabels().length || card.isLive() || card.formattedStartTime()) {
     <div class="et-match-card-meta" etMatchCardMeta>
       @if (card.label(); as label) {
         <span class="et-match-card-label">{{ label }}</span>
+      }
+
+      @if (card.badgeLabels().length) {
+        <span class="et-match-card-badges">
+          <ng-content select="[etMatchCardBadge]" />
+        </span>
       }
 
       @if (card.isLive()) {

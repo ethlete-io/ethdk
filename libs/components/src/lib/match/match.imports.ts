@@ -1,4 +1,5 @@
 import {
+  MatchCardBadgeDirective,
   MatchCardDirective,
   MatchCardGameScoresDirective,
   MatchCardMetaDirective,
@@ -27,4 +28,5 @@ export const MATCH_CARD_IMPORTS = [
   MatchCardMetaDirective,
   MatchCardScoreDirective,
   MatchCardGameScoresDirective,
+  MatchCardBadgeDirective,
 ] as const;

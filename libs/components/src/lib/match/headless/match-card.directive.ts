@@ -8,6 +8,7 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
   untracked,
 } from '@angular/core';
 import { optionalBooleanAttribute } from '@ethlete/core';
@@ -163,6 +164,15 @@ export class MatchCardDirective {
    * deliberately doesn't ship (a sound, confetti, a toast). Both sides can fire from one update.
    */
   public scoreChange = output<MatchScoreChange>();
+
+  private badgeLabelsByElement = signal<ReadonlyMap<HTMLElement, () => string>>(new Map());
+
+  /** The labels of the `etMatchCardBadge` badges inside the card, in document order. */
+  public badgeLabels = computed(() =>
+    [...this.badgeLabelsByElement().entries()]
+      .sort(([a], [b]) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+      .map(([, label]) => label()),
+  );
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<MatchLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
@@ -329,6 +339,7 @@ export class MatchCardDirective {
       startTime: this.formattedStartTime(),
       status: this.match().status,
       label: this.label(),
+      badges: this.badgeLabels(),
       labels: this.resolvedLabels(),
     }),
   );
@@ -343,6 +354,18 @@ export class MatchCardDirective {
         }
       });
     });
+  }
+
+  /** @internal */
+  public registerBadge(element: HTMLElement, label: () => string) {
+    this.badgeLabelsByElement.update((badges) => new Map(badges).set(element, label));
+
+    return () =>
+      this.badgeLabelsByElement.update((badges) => {
+        const next = new Map(badges);
+        next.delete(element);
+        return next;
+      });
   }
 
   /** One game of the series, as the same `'13 : 11'` shape the headline score uses. */

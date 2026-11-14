@@ -241,6 +241,14 @@
     white-space: nowrap;
   }
 
+  .et-match-card-badges {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    margin-inline-start: auto;
+  }
+
   .et-match-card-time {
     display: var(--_et-match-card-time-display, block);
     flex: none;

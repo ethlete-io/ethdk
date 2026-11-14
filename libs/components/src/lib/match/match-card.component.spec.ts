@@ -77,6 +77,22 @@ class BareInteractiveHostComponent {
   public match = signal<NormalizedMatch>(FINISHED);
 }
 
+@Component({
+  template: `
+    <et-match-card [match]="match()">
+      @if (highlighted()) {
+        <span etMatchCardBadge="Highlighted">★</span>
+      }
+      <span etMatchCardBadge="Video on demand">VOD</span>
+    </et-match-card>
+  `,
+  imports: [MATCH_CARD_IMPORTS],
+})
+class BadgeHostComponent {
+  public match = signal<NormalizedMatch>({ ...FINISHED, label: null, startTime: null });
+  public highlighted = signal(true);
+}
+
 const create = () => mountMatchCard(HostComponent);
 
 describe('MatchCardComponent', () => {
@@ -338,6 +354,37 @@ describe('MatchCardComponent', () => {
       driver.detectChanges();
 
       expect(driver.query('.et-match-card-meta')).toBeNull();
+    });
+  });
+
+  describe('badges', () => {
+    it('draws projected badges in the meta row, even with nothing else to put in it', () => {
+      const driver = mountMatchCard(BadgeHostComponent);
+
+      expect(driver.queryAll('.et-match-card-meta .et-match-card-badge').map((badge) => badge.textContent)).toEqual([
+        '★',
+        'VOD',
+      ]);
+    });
+
+    it('speaks each badge label as part of the card name, since the meta row is hidden', () => {
+      const driver = mountMatchCard(BadgeHostComponent);
+
+      expect(driver.card().getAttribute('aria-label')).toBe(
+        'FC Berlin vs Neon Esports, 2 : 1, Finished, Highlighted, Video on demand',
+      );
+    });
+
+    it('drops a removed badge from the card name', () => {
+      const driver = mountMatchCard(BadgeHostComponent);
+
+      driver.host.highlighted.set(false);
+      driver.detectChanges();
+
+      expect(driver.card().getAttribute('aria-label')).toBe(
+        'FC Berlin vs Neon Esports, 2 : 1, Finished, Video on demand',
+      );
+      expect(driver.queryAll('.et-match-card-badge')).toHaveLength(1);
     });
   });
 

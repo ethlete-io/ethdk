@@ -15,6 +15,7 @@ import {
   MATCH_ERROR_CODES,
   MATCH_LABELS,
   MATCH_PARTICIPANT_IMPORTS,
+  MatchCardBadgeDirective,
   MatchCardComponent,
   MatchCardDirective,
   MatchCardGameScoresDirective,
@@ -81,7 +82,7 @@ const ethleteMatch = (overrides: Partial<EthleteMatchInput> = {}): EthleteMatchI
 
 @Component({
   selector: 'et-scenario-live-match',
-  imports: [MatchCardComponent],
+  imports: [MatchCardComponent, MatchCardBadgeDirective],
   template: `
     <a
       [match]="match()"
@@ -91,7 +92,9 @@ const ethleteMatch = (overrides: Partial<EthleteMatchInput> = {}): EthleteMatchI
       href="/matches/match-1"
       et-match-card
       showSeeds
-    ></a>
+    >
+      <span etMatchCardBadge="Highlighted">★</span>
+    </a>
   `,
 })
 class LiveMatchComponent {
@@ -193,9 +196,10 @@ class RosterComponent {
 
 @Component({
   selector: 'et-scenario-stray-score',
-  imports: [MatchCardScoreDirective, MatchCardMetaDirective, MatchCardGameScoresDirective],
+  imports: [MatchCardScoreDirective, MatchCardMetaDirective, MatchCardGameScoresDirective, MatchCardBadgeDirective],
   template: `
     <span etMatchCardScore>1 : 0</span>
+    <span etMatchCardBadge="Highlighted">★</span>
     <span etMatchCardMeta>Match 3</span>
     <ol etMatchCardGameScores></ol>
   `,
@@ -223,7 +227,7 @@ describe('match scenarios', () => {
 
     const card = host.querySelector('.card');
 
-    expect(card?.getAttribute('aria-label')).toBe('Match 3: Team A vs Team B, 1 : 0, Live');
+    expect(card?.getAttribute('aria-label')).toBe('Match 3: Team A vs Team B, 1 : 0, Live, Highlighted');
     expect(card?.getAttribute('role')).toBeNull();
     expect(card?.hasAttribute('data-interactive')).toBe(true);
     expect(card?.getAttribute('data-status')).toBe('live');
@@ -234,6 +238,7 @@ describe('match scenarios', () => {
     expect(text(card?.querySelector('.et-match-card-live'))).toBe(DEFAULT_MATCH_LABELS.live);
     expect(card?.querySelector('.et-match-card-live')?.classList).toContain('et-color--alert');
     expect(card?.querySelector('.et-match-card-time')).toBeNull();
+    expect(text(card?.querySelector('.et-match-card-meta .et-match-card-badges .et-match-card-badge'))).toBe('★');
 
     const sides = Array.from(card?.querySelectorAll('.et-match-card-side') ?? []);
 
@@ -293,7 +298,7 @@ describe('match scenarios', () => {
     expect(page.changes.at(-1)).toEqual({ side: 'away', from: 0, to: 1, delta: 1 });
     expect(card?.getAttribute('data-winner')).toBe('home');
     expect(card?.getAttribute('aria-label')).toBe(
-      `Match 3: Team A vs Team B, 2 : 1, ${format(new Date('2026-09-26T18:30:00.000Z'), DEFAULT_MATCH_CARD_START_TIME_FORMAT)}, Finished`,
+      `Match 3: Team A vs Team B, 2 : 1, ${format(new Date('2026-09-26T18:30:00.000Z'), DEFAULT_MATCH_CARD_START_TIME_FORMAT)}, Finished, Highlighted`,
     );
     expect(sides.map((side) => text(side.querySelector('.et-match-participant-name')))).toEqual(['TMA', 'TMB']);
     expect(
@@ -465,11 +470,11 @@ describe('match scenarios', () => {
 
     s.tick();
 
-    for (const part of ['etMatchCardScore', 'etMatchCardMeta', 'etMatchCardGameScores']) {
+    for (const part of ['etMatchCardScore', 'etMatchCardBadge', 'etMatchCardMeta', 'etMatchCardGameScores']) {
       s.expectError(new RegExp(`${code(MATCH_ERROR_CODES.PART_OUTSIDE_MATCH_CARD)}.*\\[${part}\\]`));
     }
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       expect((fixture.nativeElement as HTMLElement).contains(takeErrorContext(s)?.element ?? null)).toBe(true);
     }
   });

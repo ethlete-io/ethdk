@@ -1,4 +1,4 @@
-import { afterNextRender, computed, Directive, inject } from '@angular/core';
+import { afterNextRender, computed, DestroyRef, Directive, inject, input } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { MATCH_ERROR_CODES } from '../match-errors';
 import { MATCH_CARD_TOKEN } from './match-card.tokens';
@@ -87,5 +87,36 @@ export class MatchCardGameScoresDirective {
 
   constructor() {
     assertInsideMatchCard(this.card, 'etMatchCardGameScores');
+  }
+}
+
+/**
+ * Marks a badge in the card's meta row - a highlight star, a stream or VOD marker. The meta row is hidden
+ * from assistive tech, so the badge's label (the directive's value) joins the card's accessible name instead.
+ *
+ * @example
+ * <et-match-card [match]="match()">
+ *   <span etMatchCardBadge="Video on demand">VOD</span>
+ * </et-match-card>
+ */
+@Directive({
+  selector: '[etMatchCardBadge]',
+  exportAs: 'etMatchCardBadge',
+  host: {
+    class: 'et-match-card-badge',
+  },
+})
+export class MatchCardBadgeDirective {
+  private card = inject(MATCH_CARD_TOKEN, { optional: true });
+
+  /** What the badge means, spoken as part of the card's accessible name. */
+  public label = input.required<string>({ alias: 'etMatchCardBadge' });
+
+  constructor() {
+    assertInsideMatchCard(this.card, 'etMatchCardBadge');
+
+    const unregister = this.card?.registerBadge(injectHostElement(), () => this.label());
+
+    if (unregister) inject(DestroyRef).onDestroy(unregister);
   }
 }
