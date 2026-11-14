@@ -51,7 +51,10 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      background: var(
+        --et-carousel-dot-active-color,
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+      );
       rotate: -180deg;
       /* At -180deg the flat edge lies on this half's clip edge, and at a fractional device pixel ratio the
          anti-aliasing of the two leaks a one-pixel line. The sweep keyframes show it again. */
@@ -98,7 +101,10 @@
       inline-size: var(--et-carousel-dot-ring-size);
       block-size: var(--et-carousel-dot-ring-size);
       border: var(--et-carousel-dot-ring-width) solid
-        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 30%, transparent);
+        var(
+          --et-carousel-dot-ring-track-color,
+          color-mix(in srgb, var(--et-surface-interaction-solid, gray) 30%, transparent)
+        );
       border-radius: 50%;
       opacity: 0;
       scale: 0.55;

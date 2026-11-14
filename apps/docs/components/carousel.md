@@ -405,7 +405,18 @@ provideCarouselLabels({ previous: 'Vorheriges Bild', next: 'Nächstes Bild', sli
 
 Colours come from the app-registered [surface and color themes](/core/theming): the active dot and
 the progress ring take the theme's ink in the light scheme and the primary accent in the dark scheme,
-inactive dots a neutral tint. Geometry is tokens:
+inactive dots a neutral tint. Each colour has a token of its own; unset, it keeps that look:
+
+| Property                             | Applies to                                                        |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `--et-carousel-dot-color`            | an inactive dot                                                   |
+| `--et-carousel-dot-hover-color`      | an inactive dot under the pointer                                 |
+| `--et-carousel-dot-active-color`     | the active dot and the autoplay countdown fill                    |
+| `--et-carousel-dot-ring-track-color` | the countdown ring's track, behind the fill                       |
+| `--et-carousel-controls-background`  | the controls row under the track (default `transparent`)          |
+| `--et-carousel-control-color`        | the previous, next and play/pause icons (default the theme's ink) |
+
+Geometry is tokens too:
 
 | Property                        | Default | Applies to                                                                                           |
 | ------------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |

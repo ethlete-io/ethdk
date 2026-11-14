@@ -91,6 +91,12 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
+    background: var(--et-carousel-controls-background, transparent);
+  }
+
+  /* Two classes deep: the icon button's own colour rule is one class deep and injected at runtime. */
+  .et-carousel .et-carousel-control {
+    color: var(--et-carousel-control-color, var(--et-theme-color-ink-solid));
   }
 
   .et-carousel-control {
@@ -136,21 +142,33 @@
       inline-size: var(--et-carousel-dot-size);
       block-size: var(--et-carousel-dot-size);
       border-radius: 50%;
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent);
+      background: var(
+        --et-carousel-dot-color,
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent)
+      );
     }
 
     &:hover::before {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 55%, transparent);
+      background: var(
+        --et-carousel-dot-hover-color,
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 55%, transparent)
+      );
     }
 
     &:where([data-active])::before {
-      background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      background: var(
+        --et-carousel-dot-active-color,
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+      );
     }
 
     /* Spelled out because the plain `:hover` above outranks a `:where()`-flattened selector, so without this
        the accent dot went grey under the pointer — the one dot that must never look unselected. */
     &:where([data-active]):hover::before {
-      background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      background: var(
+        --et-carousel-dot-active-color,
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+      );
     }
   }
 
