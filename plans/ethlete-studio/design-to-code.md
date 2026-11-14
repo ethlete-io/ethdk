@@ -1462,6 +1462,9 @@ zoom (fix: a `noteFit` linkedSignal). Check, compare and verify render at one fi
 width while a camera is set. Tool fix (technical): `design verify` hides the panel (or resizes) at a non-Fit zoom on
 each canvas part and needs the first frame rect to stay within 1 px; `design check` flags a layout size (font size,
 grid column) derived from a fit or viewport measurement. Open risk: `transposed` also depends on the width.
+Built (B504, 2026-11-14): no new `design verify` command or lint rule (doc agent: no-new-gate default; the e2e
+cases "hiding the panel …" cover the bug class). `transposed` in `sketches.component.ts` is a linkedSignal that holds its
+value while a user zoom is set, like `noteFit`; spec bitten. Not verified: a live shot.
 
 597\. Builder (2026-11-08, B434, 4f00e0311): the sketch view used one revision for the whole sketch, so an edit of one
 variant renewed the iframe and picture URLs of the Aktuell row too, and its cells stayed empty until the new
@@ -2173,6 +2176,9 @@ sketch of A also covers a picked badge state (reuse the existing open-point word
 gemergt" where it fits, reuse before a new state); then `sketchStatus` reads the pick, and one shared function decides
 "waits for a pick" for both the CLI and the view (tool internal). Bite: a spec with a ready sketch that has a pick
 expects the picked state, not `waiting`.
+Verified live (B504, 2026-11-14): a headless Studio render (`withStudio`, studio-lab, sketch view of `elements/rating`) shows
+"Variante gewählt", the "9 offen" chip beside "Übernehmen" of variant c, and no "Wartet auf deine Wahl". The badge uses
+`LABELS.status.picked`, not the "Sketch gewählt, noch nicht gemergt" wording.
 
 652, decided by the doc agent (2026-11-11, night; tool internal, the builder's recommendation; no ADR covers it, ADR 0009
 was a one-time commit): step 1 moves only `pictures.json` (pure tool state: shot hashes) to a gitignored

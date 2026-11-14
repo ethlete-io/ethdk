@@ -318,7 +318,27 @@ export class SketchesComponent {
   private sizedWidest = computed(() =>
     Math.max(0, ...this.shownRows().flatMap((row) => (row.sized === false ? [] : [row.width]))),
   );
-  public transposed = computed(() => this.listWidth() > 0 && this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE);
+  private fitTransposed = computed(
+    () => this.listWidth() > 0 && this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE,
+  );
+  // A user zoom holds the layout: a width change from the panel or the viewport would swap rows and columns under the camera.
+  public transposed = linkedSignal<{ zoom: FrameZoom; measured: boolean; widest: number; fit: boolean }, boolean>({
+    source: () => ({
+      zoom: this.canvas.zoom(),
+      measured: this.listMeasured(),
+      widest: this.sizedWidest(),
+      fit: this.fitTransposed(),
+    }),
+    computation: ({ zoom, measured, widest, fit }, previous) =>
+      zoom === 'fit' ||
+      !measured ||
+      previous === undefined ||
+      previous.source.zoom !== zoom ||
+      !previous.source.measured ||
+      previous.source.widest !== widest
+        ? fit
+        : previous.value,
+  });
   private cropGroups = computed(() => (this.transposed() ? cropGroupsOf(this.shownRows()) : []));
   protected groupOfState = computed(
     () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),

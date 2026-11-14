@@ -1052,4 +1052,44 @@ describe('SketchesComponent', () => {
     expect(before).toContain('33');
     expect(chip()).toContain('100');
   });
+  it.each([
+    { camera: 'fit' as const, flips: true },
+    { camera: '200', flips: false },
+  ])('keeps the layout when the list narrows at camera $camera unless it is in Fit', async ({ camera, flips }) => {
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+    });
+    const observers: (() => void)[] = [];
+    let root: HTMLElement | null = null;
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: (entries: unknown) => void) {
+          observers.push(() => callback([{ target: root?.querySelector('[data-sk-rows]') }]));
+        }
+        observe = () => undefined;
+        disconnect = () => undefined;
+        unobserve = () => undefined;
+      },
+    );
+    let width = 30000;
+
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? width : 0;
+    });
+    const fixture = await render({ rows: ROWS.map((row) => ({ ...row, width: 4950 })), camera });
+
+    root = fixture.nativeElement;
+    observers.forEach((notify) => notify());
+    await fixture.whenStable();
+    const before = fixture.componentInstance.transposed();
+
+    width = 12000;
+    observers.forEach((notify) => notify());
+    await fixture.whenStable();
+
+    expect(before).toBe(false);
+    expect(fixture.componentInstance.transposed()).toBe(flips);
+  });
 });
