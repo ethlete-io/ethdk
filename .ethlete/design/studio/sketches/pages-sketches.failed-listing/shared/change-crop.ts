@@ -46,9 +46,10 @@ export const GROUPS: ChangeGroup[] = [
 export const UNCHANGED_COUNT = 16;
 
 export const SCREEN_ROWS: Row[] = [
-  { key: 'current', note: 'Gemergter Stand', changed: [], look: '' },
+  { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
   {
     key: 'a',
+    label: 'Entwurf 1',
     note: 'Port nach dem Merge als Zeile unter dem Kopf; die Zellen der Probe tragen die Pillenform.',
     model: { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude', when: '04.11. 09:12' },
     changed: GROUPS.flatMap((group) => group.states),
@@ -128,9 +129,9 @@ export const screenOf = async (state: string, changed: boolean) => {
           </div>`
         : ''
     }
-    ${rowAt(200, 'Aktuell', 'Gemergter Stand', bodies, false)}
-    ${rowAt(371, 'Variante a', 'Chip als Pille, die Knöpfe rücken enger zusammen.', bodies, cells && changed)}
-    ${rowAt(540, 'Variante b', 'Prozentzahl in Halbfett.', bodies, false)}
+    ${rowAt(200, 'Stand', 'Gemergter Stand', bodies, false)}
+    ${rowAt(371, 'Entwurf 1', 'Chip als Pille, die Knöpfe rücken enger zusammen.', bodies, cells && changed)}
+    ${rowAt(540, 'Entwurf 2', 'Prozentzahl in Halbfett.', bodies, false)}
   </div>`;
   return { body, styles: chips[0]?.styles ?? '' };
 };
