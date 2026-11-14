@@ -44,6 +44,7 @@ const runOf = (line: TimingLine, head: string | null) =>
     line.unphasedMs === undefined ? '' : `(unphased ${secondsOf(line.unphasedMs)})`,
     line.exit === 0 ? '' : `exit ${line.exit}`,
     line.commit ? `@${line.commit.sha}${line.commit.dirty ? '+dirty' : ''}` : '',
+    line.cli ? `cli ${line.cli}` : '',
     line.load ? `load ${line.load.avg1.toFixed(1)}/${line.load.cores}` : '',
     isStale(line, head) ? 'STALE' : '',
     isNoisy(line) ? 'NOISY' : '',

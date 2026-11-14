@@ -128,7 +128,7 @@ describe('timingsReportOf', () => {
     const report = timingsReportOf({
       lines: [
         lineOf({ minutesAgo: 1, totalMs: 4000 }),
-        lineOf({ minutesAgo: 2, totalMs: 15000, commit: { sha: 'def5678', dirty: true } }),
+        lineOf({ minutesAgo: 2, totalMs: 15000, commit: { sha: 'def5678', dirty: true }, cli: 'def567800+dirty' }),
         lineOf({ minutesAgo: 3, totalMs: 18000, load: { avg1: 17, cores: 16 } }),
         lineOf({ minutesAgo: 4, totalMs: 16000, commit: undefined, load: undefined }),
       ],
@@ -137,7 +137,7 @@ describe('timingsReportOf', () => {
       head: HEAD,
     });
 
-    expect(report).toContain('compare pages/start 15.0 s @def5678+dirty load 2.0/16 STALE');
+    expect(report).toContain('compare pages/start 15.0 s @def5678+dirty cli def567800+dirty load 2.0/16 STALE');
     expect(report).toContain('compare pages/start 18.0 s @abc1234 load 17.0/16 NOISY');
     expect(report).toContain('compare pages/start 16.0 s STALE NOISY');
     expect(rowOf(report, 'compare')).toMatch(/compare\s+4\s+15\.5 s\s+18\.0 s\s+1\s+4\.0 s\s+10\.0 s\s+ok$/);

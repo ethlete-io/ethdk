@@ -1157,6 +1157,15 @@ never blocks on a batch of heavy runs in the foreground, and every wait loop has
 
 535 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
+535 as built (commit "fix(cli): Let et:design run the working tree CLI with --working-tree"): `yarn et:design --working-tree <command>` builds the working tree's `libs/cli` (uncommitted edits
+included) into `tmp/studio-cli-working/<pid>` (removed when the run ends; never `dist/` or `tmp/studio-cli`), and
+prints `et:design runs the cli built from the working tree (<sha>+dirty)`. The launcher hands the CLI
+`ETHLETE_DESIGN_CLI_BUILD` (`<sha>`, `<sha>+dirty`, or `custom` for `ETHLETE_DESIGN_CLI_ENTRY`); a timings line records
+it as `cli` and the report prints `cli <sha>+dirty`; the dirty-libs/cli note now names the option. Verified: specs red on
+the old code, green after; live, `--working-tree status` logged `"cli":"a2d62a1e9+dirty"`, the same run without the
+option (committed CLI) logged no `cli`. Not verified: the resident process records its own env, so a resident-served
+run carries the mark of the launcher that started the resident, not of the asking one.
+
 542 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 543 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand

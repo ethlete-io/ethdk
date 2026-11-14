@@ -43,6 +43,7 @@ export type TimingLine = {
   nullHashes?: number;
   unphasedMs?: number;
   commit?: TimingCommit | null;
+  cli?: string;
   load?: TimingLoad;
 };
 
@@ -213,6 +214,10 @@ export const checkoutCommitOf = async (checkout: string): Promise<TimingCommit |
   return sha ? { sha, dirty: changed === null || changed !== '' } : null;
 };
 
+/** The CLI build `et:design` launched this run from (`<sha>`, `<sha>+dirty` or `custom`), from its environment. */
+const cliBuildOf = (env: NodeJS.ProcessEnv) =>
+  env['ETHLETE_DESIGN_CLI_BUILD'] ? { cli: env['ETHLETE_DESIGN_CLI_BUILD'] } : {};
+
 const machineLoadOf = (): TimingLoad => ({
   avg1: Math.round((loadavg()[0] ?? 0) * 100) / 100,
   cores: physicalCoresOf(),
@@ -310,6 +315,7 @@ export const recordRun = async (
       concurrentHeavy: recorder.concurrentHeavy,
       nullHashes: recorder.nullHashes,
       commit,
+      ...cliBuildOf(env),
       load: loadOf(),
     };
     const unphasedMs = unphasedMsOf(phases, totalMs);

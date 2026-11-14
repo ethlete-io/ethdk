@@ -14,10 +14,12 @@ import {
 } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const CACHE = 'tmp/studio-cli';
+
+export const WORKING_CLI_CACHE = 'tmp/studio-cli-working';
 
 export const APP_SOURCES = [
   'apps/ethlete-studio',
@@ -63,8 +65,11 @@ export const areaState = (root) => ({
 export const dirtyCliNoteOf = ({ sha, dirty, args }) =>
   dirty
     ? `et:design runs the cli built from ${sha.slice(0, 9)}; libs/cli has uncommitted changes. ` +
-      `To run them: npx nx build cli && node dist/libs/cli/src/index.js design ${args.join(' ')}`.trimEnd()
+      `To run them: yarn et:design --working-tree ${args.join(' ')}`.trimEnd()
     : null;
+
+/** How a timings line names the CLI build that ran: its commit, `+dirty` when built from a changed `libs/cli`. */
+export const cliBuildMarkOf = ({ sha, dirty }) => `${sha.slice(0, 9)}${dirty ? '+dirty' : ''}`;
 
 /**
  * Picks the committed build to run. A dirty `libs/cli` never yields a copy of the working build;
@@ -206,6 +211,65 @@ export const ensureCliCopy = (
   if (keepWhenDirty) writeFileSync(currentFile, `${plan.sha}\n`);
 
   return { entry: join(target, 'src/index.js'), sha: plan.sha, dirty };
+};
+
+const compileWithNx = (root, output, log) => {
+  const compile = spawnSync(
+    'npx',
+    ['nx', 'run', 'cli:compile', `--outputPath=${relative(root, output)}`, '--skip-nx-cache'],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false', ETHLETE_HEAVY_EXEMPT: 'design' },
+    },
+  );
+
+  const info =
+    compile.status === 0 &&
+    spawnSync(process.execPath, ['libs/cli/scripts/write-build-info.mts', output], { cwd: root, encoding: 'utf8' });
+
+  if (!info || info.status !== 0) {
+    log(`${compile.stdout}${compile.stderr}${info ? `${info.stdout}${info.stderr}` : ''}`.trim());
+    throw new Error('Building the CLI from the working tree failed.');
+  }
+};
+
+/**
+ * Builds the working tree's `libs/cli`, uncommitted edits included, into `tmp/studio-cli-working/<id>`, never into
+ * `dist/` or the committed copies. The caller removes `dir` when its run ends.
+ */
+export const workingTreeCliCopy = (
+  root,
+  { id = String(process.pid), log = (line) => console.error(line), build = compileWithNx } = {},
+) => {
+  const cache = join(root, WORKING_CLI_CACHE);
+  const dir = join(cache, id);
+  const sha = lastCommitOf(root, AREAS.cli) ?? git(root, ['rev-parse', 'HEAD']);
+  const dirty = isDirty(root, AREAS.cli);
+
+  for (const name of existsSync(cache) ? readdirSync(cache) : []) {
+    const pid = Number(name);
+
+    if (name !== id && Number.isInteger(pid) && pid > 0 && !processAlive(pid)) {
+      rmSync(join(cache, name), { recursive: true, force: true });
+    }
+  }
+
+  rmSync(dir, { recursive: true, force: true });
+  log(`Building the CLI from the working tree into ${WORKING_CLI_CACHE}/${id}…`);
+  build(root, dir, log);
+
+  return { dir, entry: join(dir, 'src/index.js'), sha, dirty, mark: cliBuildMarkOf({ sha, dirty }) };
+};
+
+const processAlive = (pid) => {
+  try {
+    process.kill(pid, 0);
+
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
 };
 
 export const currentAppCopy = (root) => {

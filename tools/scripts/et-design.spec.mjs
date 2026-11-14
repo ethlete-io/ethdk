@@ -131,3 +131,33 @@ test('runs an injected cli outside a git checkout, and refuses to build the CLI 
   assert.equal(refused.status, 2);
   assert.match(refused.stderr, /is no git checkout/);
 });
+
+test('hands the cli the build mark, and refuses --working-tree next to an injected cli', () => {
+  const markCli = join(stateDir, 'mark-cli.mjs');
+  const markFile = join(stateDir, 'mark.json');
+
+  writeFileSync(
+    markCli,
+    `import { writeFileSync } from 'node:fs';
+writeFileSync(${JSON.stringify(markFile)}, JSON.stringify({ mark: process.env.ETHLETE_DESIGN_CLI_BUILD, args: process.argv.slice(2) }));
+`,
+  );
+
+  const run = spawnSync(process.execPath, [wrapper, 'mark'], {
+    env: { ...env, ETHLETE_DESIGN_CLI_ENTRY: markCli },
+    encoding: 'utf8',
+    timeout: 10_000,
+  });
+
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(JSON.parse(readFileSync(markFile, 'utf8')), { mark: 'custom', args: ['design', 'mark'] });
+
+  const refused = spawnSync(process.execPath, [wrapper, '--working-tree', 'mark'], {
+    env: { ...env, ETHLETE_DESIGN_CLI_ENTRY: markCli },
+    encoding: 'utf8',
+    timeout: 10_000,
+  });
+
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /--working-tree builds its own CLI/);
+});

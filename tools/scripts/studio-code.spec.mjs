@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { connect, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,8 +11,11 @@ import {
   areaState,
   cliCopyPlan,
   dirtyCliNoteOf,
+  cliBuildMarkOf,
   ensureCliCopy,
   pushStateOf,
+  WORKING_CLI_CACHE,
+  workingTreeCliCopy,
 } from './studio-code.mjs';
 import { gitSpawn } from './git-test-env.mjs';
 
@@ -24,7 +27,12 @@ test('a dirty libs/cli names the build commit and the command that runs the work
   const note = dirtyCliNoteOf({ sha: B, dirty: true, args: ['check', '--product', 'sdk'] });
 
   assert.match(note, /built from bbbbbbbbb; libs\/cli has uncommitted changes/);
-  assert.match(note, /npx nx build cli && node dist\/libs\/cli\/src\/index\.js design check --product sdk$/);
+  assert.match(note, /yarn et:design --working-tree check --product sdk$/);
+});
+
+test('the build mark names the commit, and +dirty when libs/cli differs from it', () => {
+  assert.equal(cliBuildMarkOf({ sha: B, dirty: false }), 'bbbbbbbbb');
+  assert.equal(cliBuildMarkOf({ sha: B, dirty: true }), 'bbbbbbbbb+dirty');
 });
 
 test('a clean libs/cli prints no note', () => {
@@ -173,6 +181,38 @@ test('a clean libs/cli without dist/libs/cli builds the last commit', () => {
     assert.ok(existsSync(copy.entry));
   } finally {
     gitSpawn(['worktree', 'prune'], { cwd: root });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+const copyingBuild = (root, output) => {
+  mkdirSync(join(output, 'src'), { recursive: true });
+  writeFileSync(join(output, 'src/index.js'), readFileSync(join(root, 'libs/cli/file.txt'), 'utf8'));
+};
+
+test('the working-tree copy builds the uncommitted libs/cli into its own scratch dist, marked dirty', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-code-spec-'));
+
+  try {
+    git(root, 'init', '-q');
+    git(root, 'config', 'user.email', 'spec@example.com');
+    git(root, 'config', 'user.name', 'spec');
+    mkdirSync(join(root, 'libs/cli'), { recursive: true });
+    writeFileSync(join(root, 'libs/cli/file.txt'), 'committed\n');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'init');
+    writeFileSync(join(root, 'libs/cli/file.txt'), 'uncommitted\n');
+
+    const copy = workingTreeCliCopy(root, { log: quiet, build: copyingBuild, id: 'spec' });
+    const sha = git(root, 'rev-parse', 'HEAD');
+
+    assert.equal(copy.dir, join(root, WORKING_CLI_CACHE, 'spec'));
+    assert.equal(copy.entry, join(copy.dir, 'src/index.js'));
+    assert.equal(readFileSync(copy.entry, 'utf8'), 'uncommitted\n');
+    assert.equal(copy.mark, `${sha.slice(0, 9)}+dirty`);
+    assert.equal(existsSync(join(root, 'dist')), false);
+    assert.equal(existsSync(join(root, 'tmp/studio-cli')), false);
+  } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });

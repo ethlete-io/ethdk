@@ -4,7 +4,7 @@ import { linkSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirtyCliNoteOf, ensureCliCopy } from './studio-code.mjs';
+import { cliBuildMarkOf, dirtyCliNoteOf, ensureCliCopy, workingTreeCliCopy } from './studio-code.mjs';
 
 const BACKSTOP_MS = { shot: 6 * 60_000, check: 22 * 60_000 };
 const DEADLINE_EXIT_CODE = 124;
@@ -13,7 +13,14 @@ const KILL_GRACE_MS = 5000;
 const FORWARDED = ['SIGTERM', 'SIGINT', 'SIGHUP'];
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const args = process.argv.slice(2);
+const WORKING_TREE = '--working-tree';
+const workingTree = process.argv.slice(2).includes(WORKING_TREE);
+const args = process.argv.slice(2).filter((arg) => arg !== WORKING_TREE);
+
+if (workingTree && process.env.ETHLETE_DESIGN_CLI_ENTRY) {
+  console.error(`et-design: ${WORKING_TREE} builds its own CLI; unset ETHLETE_DESIGN_CLI_ENTRY or drop the option.`);
+  process.exit(2);
+}
 
 if (
   !process.env.ETHLETE_DESIGN_CLI_ENTRY &&
@@ -98,20 +105,33 @@ if (held) {
   process.exit(1);
 }
 
-const entry =
-  process.env.ETHLETE_DESIGN_CLI_ENTRY ||
-  (() => {
-    const { entry, sha, dirty } = ensureCliCopy(root, { keepWhenDirty: false });
-    const note = dirtyCliNoteOf({ sha, dirty, args });
+const { entry, mark } = (() => {
+  if (process.env.ETHLETE_DESIGN_CLI_ENTRY) return { entry: process.env.ETHLETE_DESIGN_CLI_ENTRY, mark: 'custom' };
 
-    if (note) console.error(note);
+  if (workingTree) {
+    const copy = workingTreeCliCopy(root);
 
-    return entry;
-  })();
+    process.on('exit', () => rmSync(copy.dir, { recursive: true, force: true }));
+    console.error(`et:design runs the cli built from the working tree (${copy.mark}) in ${copy.dir}`);
+
+    return copy;
+  }
+
+  const { entry, sha, dirty } = ensureCliCopy(root, { keepWhenDirty: false });
+  const note = dirtyCliNoteOf({ sha, dirty, args });
+
+  if (note) console.error(note);
+
+  return { entry, mark: cliBuildMarkOf({ sha, dirty: false }) };
+})();
 
 // `et design` reads stdin, and a detached child reading the terminal from a background group stops on SIGTTIN.
 const detached = !process.stdin.isTTY;
-const child = spawn(process.execPath, [entry, 'design', ...args], { stdio: 'inherit', detached });
+const child = spawn(process.execPath, [entry, 'design', ...args], {
+  stdio: 'inherit',
+  detached,
+  env: { ...process.env, ETHLETE_DESIGN_CLI_BUILD: mark },
+});
 const group = detached ? -child.pid : child.pid;
 const signal = (name) => {
   try {

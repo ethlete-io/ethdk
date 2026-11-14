@@ -308,6 +308,24 @@ describe('the commit and load of a run', () => {
     expect(line.load).toEqual({ avg1: 3.5, cores: 12 });
   });
 
+  it('logs the cli build et:design launched it from, and nothing without one', async () => {
+    const file = timingsFileOf(dir);
+    const run = (env: NodeJS.ProcessEnv) =>
+      recordRun({ file, argv: ['compare'], env, commitOf: async () => null }, async () => 0);
+
+    mkdirSync(join(dir, '.ethlete/design'), { recursive: true });
+    await run({ ...NO_SESSION, ETHLETE_DESIGN_CLI_BUILD: 'abc123456+dirty' });
+    await run(NO_SESSION);
+
+    const [built, plain] = readFileSync(file, 'utf8')
+      .trim()
+      .split('\n')
+      .map((text) => JSON.parse(text) as TimingLine);
+
+    expect(built?.cli).toBe('abc123456+dirty');
+    expect(plain && 'cli' in plain).toBe(false);
+  });
+
   it('reads the short sha of HEAD and whether a tracked file differs from it', async () => {
     const git = (...args: string[]) =>
       gitExec(['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { encoding: 'utf8' });
