@@ -47,6 +47,21 @@ describe('overlay backdropClick', () => {
     expect(emitted).toHaveBeenCalledTimes(1);
   });
 
+  it.each([false, true])('emits exactly once for a press and click when closeOnOutsidePointer is %s', (close) => {
+    const ref = open({ closeOnOutsidePointer: close });
+    const emitted = vi.fn();
+    ref.backdropClick().subscribe(emitted);
+    const backdrop = ref.elements?.backdropElement();
+
+    backdrop?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    TestBed.tick();
+    backdrop?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+
+    expect(emitted).toHaveBeenCalledTimes(1);
+
+    ref.close();
+  });
+
   it('does not emit for a click inside the pane', () => {
     const ref = open({ closeOnOutsidePointer: false });
     const emitted = vi.fn();

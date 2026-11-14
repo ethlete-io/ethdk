@@ -123,6 +123,28 @@ describe('overlay runtime scenarios', () => {
     },
   );
 
+  it('emits backdropClick once when the press closes an overlay without a leave animation', () => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayRuntime().mount({
+        id: 'dialog',
+        component: ScenarioDialogComponent,
+        autoFocus: false,
+        closeOnOutsidePointer: true,
+        animationDelegate: { leave: ({ lifecycle }) => lifecycle.forceLeftState() },
+      }),
+    );
+    const clicks: MouseEvent[] = [];
+    ref.backdropClick().subscribe((event) => clicks.push(event));
+
+    s.flush();
+    pressBackdrop(ref, 1);
+    s.flush();
+
+    expect(ref.state()).toBe('closed');
+    expect(clicks).toHaveLength(1);
+  });
+
   it('closes two stacked overlays with two fast Escapes, topmost first', () => {
     const s = scenario();
     const bottom = open(s, 'bottom');

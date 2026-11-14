@@ -205,7 +205,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       renderer.appendChild(hostElement, paneElement);
       renderer.appendChild(root, hostElement);
 
+      let backdropPressEmitted = false;
+
       const onHostClick = (event: MouseEvent) => {
+        if (backdropPressEmitted) {
+          backdropPressEmitted = false;
+
+          return;
+        }
+
         if (event.target === backdropElement()) {
           overlayRef.emitBackdropClick(event);
         }
@@ -429,6 +437,19 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         targetDocument.addEventListener('keydown', onKeyDown);
         cleanupFns.push(() => targetDocument.removeEventListener('keydown', onKeyDown));
       }
+
+      // Registered before the close listeners: a press that closes the overlay completes the stream
+      // (and may remove the host before its click), so the press itself has to emit first.
+      const onBackdropPress = (event: PointerEvent) => {
+        backdropPressEmitted = event.target === backdropElement();
+
+        if (backdropPressEmitted) {
+          overlayRef.emitBackdropClick(event);
+        }
+      };
+
+      targetDocument.addEventListener('pointerdown', onBackdropPress, true);
+      cleanupFns.push(() => targetDocument.removeEventListener('pointerdown', onBackdropPress, true));
 
       const closeOnOutsidePointer = config.closeOnOutsidePointer ?? config.modal === false;
       if (closeOnOutsidePointer) {
