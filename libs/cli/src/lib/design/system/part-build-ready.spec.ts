@@ -236,6 +236,37 @@ describe('recordBuildReady', () => {
     expect(lines).toEqual(['NO RECORD app-a components/chip: problem: HARD-CODED-COLOUR: #fff']);
   });
 
+  it('names every blocker in the NO RECORD line, not only the first', async () => {
+    const { target } = checkout();
+    const product = productOf(target);
+    const inputs: BuildReadyInputs = {
+      ...green,
+      problemsOf: (part) =>
+        part === 'components/chip'
+          ? [
+              { rule: 'HARD-CODED-COLOUR', file: 'chip.ts', message: '#fff' },
+              { rule: 'HARD-CODED-COLOUR', file: 'chip.ts', message: '#000' },
+              { rule: 'HARD-CODED-COLOUR', file: 'chip.ts', message: '#123' },
+            ]
+          : [],
+    };
+    const lines: string[] = [];
+
+    await recordBuildReady({
+      product,
+      by: 'et design check',
+      cmd: 'check',
+      parts: ['components/chip'],
+      inputs,
+      actionsOf: async () => [],
+      onNoRecord: (line) => lines.push(line),
+    });
+
+    expect(lines).toEqual([
+      'NO RECORD app-a components/chip: problem: HARD-CODED-COLOUR: #fff; problem: HARD-CODED-COLOUR: #000; problem: HARD-CODED-COLOUR: #123',
+    ]);
+  });
+
   it('keeps a page from build-ready while a part two levels down is not, though the part between has its record', async () => {
     const { target } = checkout();
     const design = join(target, DESIGN_DIR, 'app-a', 'pages/shell');

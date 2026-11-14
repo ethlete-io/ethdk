@@ -73,7 +73,10 @@ describe('checkDesign', () => {
       '  elements/hero: no controls declared',
       'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
     ]);
-    expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme elements\/hero: open-point: .*\(\+2 more\)$/));
+    const noRecord = lines.find((line) => line.startsWith('NO RECORD acme elements/hero: '));
+
+    expect(noRecord).toMatch(/^NO RECORD acme elements\/hero: open-point: .*; .*; /u);
+    expect(noRecord).not.toContain('more)');
   });
 
   it('runs only the static rules with --rules, and fails on a problem', async () => {

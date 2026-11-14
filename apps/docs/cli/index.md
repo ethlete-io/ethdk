@@ -338,6 +338,10 @@ linked component takes as `input()` or `model()` (a type named `…Phase` or `�
 named `phase` or `state`) but is not named after that value: `sending: { phase: 'busy' }` must be the state `busy`
 (`busy-long` is fine).
 
+`et design check --product <name> --base <rev|range>` checks only the parts whose design files or implementing app
+files `git diff <base>` names, plus every part that embeds one, each as `--part` would, and first prints
+`BASE <product> since <base>: <n> part(s) - <parts>` (or `no part changed`). It does not take `--part`.
+
 `et design check --product <name> --rules --base <rev|range>` also fails with `IMPLEMENTATION-UNCOMPARED` on each file
 `git diff <base>` names that the app component of an implemented part reaches and that changed since the part's
 `implemented.json` record, and names the part. CI passes the pushed range. `et design compare --affected` (or
@@ -361,7 +365,8 @@ outputs, service subjects and the branch an emitted `kind` literal picks; it sto
 
 Some rules need the app running in a browser, so they do not run with the static checks.
 `et design check --product <name> --slow [--part <layer>/<name>…]` runs them on a product with a
-`harness`, prints each problem as `<product> <part>: <RULE> <file>: <message>`, and exits 1 on a problem:
+`harness`, prints each problem as `<product> <part>: <RULE> <file>: <message>`, then runs the check without `--slow`
+on the same product or parts, so it writes the same check record, and exits 1 on a problem:
 
 - `APP-SPEC` runs the specs related to each part's app files with the vitest config in `harness.specs`. A failing
   spec counts on the innermost part whose app files hold the file it tests, else on `(product)`. Without
@@ -442,7 +447,8 @@ gitignored `.ethlete/cache/<product>/stamps/ready.json`, which every later comma
 itself changes; neither touches `ready.json` or `merged.json`. A record names its writer, with `cmd` set to `ready`,
 `check` or `serve`. There is no go and no acceptance step: Studio computes the state and `design task` starts only for
 build-ready parts. Any edit of the part changes its hash, and the record then reads as stale until `et design ready`,
-`et design check` or the design server writes it again.
+`et design check` or the design server writes it again. A part-scoped `et design check` prints
+`NO RECORD <product> <part>: <kind>: <text>; …` for a part it left without a holding record, naming every blocker.
 
 Studio shows the state on the part as "Baubereit", "Nicht baubereit (n)" with the reasons, or "Wird geprüft" while the
 slow checks run. A change to a merged part outside a sketch is not accepted by hand: `design check` opens an old/new

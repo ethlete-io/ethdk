@@ -19,6 +19,8 @@ import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
 import { checkSlow } from './system/slow-run';
+import { partsChangedOf } from './system/base-parts';
+import { gitDiffChangesOf } from './system/part-task';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 import { binaryOf, outputOf, processFailureOf, trim, typecheck } from './typecheck';
 import { assertServed } from './thumb';
@@ -432,6 +434,53 @@ const renderedAndLinted = async (options: Parameters<typeof checkSystemRendered>
   return code === 0 ? lint || calls : code;
 };
 
+const checkSinceBase = async (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  base: string;
+  invocation: string;
+  warm?: WarmDraw;
+}) => {
+  const { target, config, base } = options;
+  const missing = options.products.filter((name) => !config.products?.[name]);
+
+  if (missing.length > 0) {
+    missing.forEach((name) => console.error(`NO PRODUCT "${name}" in config.json.`));
+
+    return 1;
+  }
+
+  let changes: ReturnType<typeof gitDiffChangesOf>;
+
+  try {
+    changes = gitDiffChangesOf({ root: target, range: base });
+  } catch (error) {
+    console.error(
+      `check --base ${base}: git diff failed - ${trim(error instanceof Error ? error.message : String(error))}`,
+    );
+
+    return 2;
+  }
+
+  const products = options.products.map((name) =>
+    resolveProduct({ target, name, config: config.products?.[name] ?? {} }),
+  );
+  const chosen = partsChangedOf({ target, config, products, changes });
+  let code = 0;
+
+  for (const [name, parts] of chosen) {
+    console.log(
+      `BASE ${name} since ${base}: ${parts.length === 0 ? 'no part changed' : `${parts.length} part(s) - ${parts.join(', ')}`}`,
+    );
+
+    for (const part of parts)
+      code = Math.max(code, await renderedAndLinted({ ...options, config, products: [name], part }));
+  }
+
+  return code;
+};
+
 const fixAppClasses = (options: { target: string; config: DesignConfig; products: string[] }) => {
   const { target, config, products } = options;
   let fixed = 0;
@@ -545,7 +594,7 @@ const unreadArgumentOf = (argv: string[]) => {
 
   const system = flags.find((flag) => flag === '--product' || flag === '--part');
   const scope = mode ?? system;
-  const allowed = mode ? (MODE_FLAGS[mode] ?? []) : system ? ['--product', '--part'] : CALL_FLAGS;
+  const allowed = mode ? (MODE_FLAGS[mode] ?? []) : system ? ['--product', '--part', '--base'] : CALL_FLAGS;
   const ignored = flags.find((flag) => flag !== mode && !allowed.includes(flag));
 
   if (!ignored) return null;
@@ -606,8 +655,22 @@ const checkWithStatus = async (options: {
 
   const parts = positionals.length === 1 ? positionals : flags['--part'];
 
-  if (slow && products && products.length > 0)
-    return checkSlow({ target, config: readConfig(target) ?? {}, products, parts });
+  if (slow && products && products.length > 0) {
+    const config = readConfig(target) ?? {};
+    const slowCode = await checkSlow({ target, config, products, parts });
+    let code = 0;
+
+    for (const scoped of parts ?? [undefined])
+      code = Math.max(code, await renderedAndLinted({ target, config, products, part: scoped, invocation, warm }));
+
+    return Math.max(slowCode, code);
+  }
+
+  if (base !== undefined && !rules && parts) {
+    console.error('check takes --base or --part, not both');
+
+    return 2;
+  }
 
   if (parts && parts.length !== 1) {
     console.error(`usage: ${invocation} check [--product <name>…] --part <layer>/<name>`);
@@ -628,6 +691,8 @@ const checkWithStatus = async (options: {
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
     if (rules) return checkRules({ target, config: readConfig(target) ?? {}, products, base, invocation });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
+    if (base !== undefined)
+      return checkSinceBase({ target, config: readConfig(target) ?? {}, products, base, invocation, warm });
 
     return renderedAndLinted({ target, config: readConfig(target) ?? {}, products, part, invocation, warm });
   }

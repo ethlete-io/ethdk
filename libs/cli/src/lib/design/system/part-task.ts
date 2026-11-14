@@ -354,11 +354,27 @@ export const gitDiffPatchOf = (options: { root: string; range: string; file: str
 /** The git range `--verify` checks: a range as given, a single commit `x` as `x^..x`. */
 export const verifyRangeOf = (rev: string) => (rev.includes('..') ? rev : `${rev}^..${rev}`);
 
-/** The files `git diff --name-only` names for a range, from the repository root. */
-export const gitDiffFilesOf = (options: { root: string; range: string }) =>
-  execFileSync('git', ['diff', '--name-only', options.range], { cwd: options.root, encoding: 'utf8', stdio: 'pipe' })
+/** Each file `git diff --name-status --no-renames` names for a range, from the repository root, with its status. */
+export const gitDiffChangesOf = (options: { root: string; range: string }) =>
+  execFileSync('git', ['diff', '--name-status', '--no-renames', options.range], {
+    cwd: options.root,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  })
     .split('\n')
-    .filter((line) => line !== '');
+    .filter((line) => line !== '')
+    .map((line) => {
+      const [status = '', file = ''] = line.split('\t');
+
+      return { status: status === 'A' || status === 'D' ? status : 'M', file } as {
+        status: 'A' | 'M' | 'D';
+        file: string;
+      };
+    });
+
+/** The files `git diff` names for a range, from the repository root. */
+export const gitDiffFilesOf = (options: { root: string; range: string }) =>
+  gitDiffChangesOf(options).map(({ file }) => file);
 
 const SURFACE_DIRECTIVES = [
   ['data-et-auto-surface', 'etAutoSurface'],

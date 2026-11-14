@@ -90,15 +90,17 @@ export type ActionsOf = (part: string) => Promise<string[] | NoVerdict>;
 /** The action keys a part declares now, or why they could not be read. */
 export type DeclaredActionsOf = (part: string) => Promise<string[] | string>;
 
+const blockersTextOf = (blockers: Blocker[]) =>
+  blockers.map((blocker) => `${blocker.kind}: ${blocker.text}`).join('; ');
+
 const recordDroppedLineOf = (options: { product: string; part: string; blockers: Blocker[] }) =>
-  `RECORD DROPPED ${options.product} ${options.part}: ${options.blockers.map((blocker) => `${blocker.kind}: ${blocker.text}`).join('; ')}`;
+  `RECORD DROPPED ${options.product} ${options.part}: ${blockersTextOf(options.blockers)}`;
 
 const noRecordLineOf = (options: { product: string; part: string; blockers: Blocker[]; unverified: boolean }) => {
-  const [first, ...rest] = options.blockers;
   const reason = options.unverified
     ? 'the actions did not run'
-    : first
-      ? `${first.kind}: ${first.text}${rest.length > 0 ? ` (+${rest.length} more)` : ''}`
+    : options.blockers.length > 0
+      ? blockersTextOf(options.blockers)
       : 'unknown part';
 
   return `NO RECORD ${options.product} ${options.part}: ${reason}`;

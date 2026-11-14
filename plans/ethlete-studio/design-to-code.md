@@ -851,6 +851,8 @@ CI (done in this commit); (2) tool: `design check --product <p> --base <ref>` ch
 implemented app files changed since `<ref>`, plus the parts that embed them, and prints which parts it chose. Built in
 the performance block of ADR 0199.
 
+485 as built (Linux builder subagent, 2026-11-14, B503): not built before - a run of `check --product studio --base HEAD` printed "check does not read --base with --product" (exit 2), and ADR 0199 names no such item. Built: `check --product <p> --base <rev|range>` prints `BASE <p> since <base>: <n> part(s) - ...` and runs the part-scoped check on each chosen part; `--base` with `--part` exits 2. Parts are chosen in `base-parts.ts` from one diff source (`gitDiffChangesOf`, which `gitDiffFilesOf` of `--rules --base` now reads too): design files through the existing `touchedPartsOf` (part folder plus importing parts), app files through each part's `appFilesOf`, plus every part whose `embeddedPartsOf` holds a chosen one. `compare --base` chooses no parts (it compares against a base harness), so there was nothing to reuse there. Verified: `check-base.spec.ts` (design change picks hero + home, app-file change picks hero + home, `--part` refused) red on the old code for the two check runs, green after; live `--base c230d01b3^` chose 17 studio parts (studio-labels.ts reaches most components) and checked them, exit 0. Suspect (measured): that run took 627 s, slower than the full check (about 7 min), because each part check pays the per-run setup (draws took 0-6 s per part); `--base` pays off only for a few parts. Backlog: one run over the chosen part set in `checkSystemRendered` instead of one run per part. The builder-agent skill line stays (still true).
+
 486 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 489\. `design check` shows 2 CONTROL-STATE problems on `shell-main`: the rail controls `section` and `product` are
@@ -1079,12 +1081,16 @@ may surface renamed controls the check passed silently before.
 asserts that each check mode writes the record. Fix: `--slow` writes the same record as the fast check (it runs a
 superset), with a spec that fails when a slow run leaves no record.
 
+511 as built (Linux builder subagent, 2026-11-14, B503): `check --slow` runs the check without `--slow` on the same scope after the slow rules (each `--part`, or the whole product), so it writes the check record through the same `recordCheckedBuildReady` path; correct by construction, no second record writer (`check.ts`, help, docs Slow rules). Cause: `--slow` returned straight from `checkSlow`, which stores slow results but never calls the record step. Verified: `check-slow-record.spec.ts` (record writer called with the part) red on the old code, green after; live `design check --product studio --part components/title-bar --slow`: "No slow-rule problem (21s)", then "READY studio: components/title-bar", 27 s in all. Not verified: a whole-product `--slow` run live (it now also runs the full check).
+
 512\. The NO RECORD line of components/title-bar ended with "(+1 more)", but no line of the check named that open
 point. Why no tool caught it: the summary truncates the list, and nothing prints the rest. Fix: the check lists every
 open point (or prints the hidden ones under the summary); spec with more open points than the summary shows.
 Context: the ff698951f verify needs studio-menu, flows, merge, title-bar and shell-main together; title-bar misses
 notice.hover/active/focus-visible. Decided by ADR 0106 (no question to Tom): a sketch round that draws them with the
 existing styles, no new look, which Tom merges.
+
+512 as built (Linux builder subagent, 2026-11-14, B503): the NO RECORD line names every blocker, joined with "; " as RECORD DROPPED already did, and no longer ends in "(+n more)" (`part-build-ready.ts`, docs Build-ready). Cause: `noRecordLineOf` printed only the first blocker and a count. Verified: spec with three blockers, red on the old code ("... #fff (+2 more)"), green after; the `--part` spec in `check-system-args.spec.ts` now expects every blocker. Not verified live: the live title-bar run wrote its record, so it printed no NO RECORD line.
 
 513\. The S6 subagent drew a timing fixture as a real sketch in studio (`components/sketch-status-badge`, a/b only add
 p-1/p-2 padding). Studio listed it for Tom like any sketch, and the doc agent asked the builder before it could tell
