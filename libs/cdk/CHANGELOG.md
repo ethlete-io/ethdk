@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.49
+
+### Patch Changes
+
+- The cdk migration knows the new et-scrollable--masked class of the components scrollable.
+- `migrate-from-cdk`: the components class list knows `et-standings-pick-ghost` and `et-tab-group__trigger--active`, and drops `et-standings-pick-handle`.
+
 ## 5.0.0-next.48
 
 ### Patch Changes

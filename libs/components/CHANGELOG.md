@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.0.0-next.82
+
+### Minor Changes
+
+- Export `resolveBracketLayoutSettings` and `BracketLayoutSettings`, so an app can position its own UI around a bracket before it renders. Add the `--et-bracket-move-easing` token (default `ease`) for the relayout transition.
+- Add `lineTurnOffset` to `et-bracket`: a connector turns at that distance in px from the card that feeds it. The default `null` keeps the turn at the middle of the column gap.
+- Add `matchInputs` to `et-bracket` and `et-bracket-rounds-list`: extra inputs for a custom match card, computed per match. Keys the card does not declare are dropped, so the default cards are unaffected.
+- Add the `unknown` slot kind (`bracketSlot.unknown(label?)`): it keeps its label and links no feeder. A `match-outcome` slot accepts `role: null`, read as the winner. Exhaustive switches over `BracketSlotSourceKind` need an `'unknown'` case.
+- Add `--et-button-filled-hover-rgb` to choose the hover color of a filled button and icon button (unset, it keeps hovering to the theme's active color).
+- Add `--et-button-letter-spacing`, `--et-button-text-transform` and `--et-button-outline-border-color` button tokens (defaults unchanged), and let `--et-icon-button-icon-size` size icon-font `etIcon` content inside `et-icon-button`.
+- Add `--et-pagination-item-border-color` and `--et-pagination-item-border-color-hover` to give pagination items a border (unset, items keep no border).
+- Add a `size` option to `etScrollableButtons` to set the size of the prev/next icon buttons (`'xs'` by default).
+- `et-scrollable` fades its edges with a CSS mask, so the fade shows the real background behind the track instead of the surface colour.
+- SDK component styles now sit in `@layer components.sdk`, so an app rule in `@layer components` overrides them; `et update` leaves a task to check those rules.
+- `et-tab-group` and `et-nav-tabs` take an `align` input (`'start' | 'center' | 'end'`) for horizontal bars, and read the optional tokens `--et-tab-font-weight`, `--et-tab-text-transform`, `--et-tab-letter-spacing`, `--et-tab-line-height`, `--et-tab-baseline-size`, `--et-tab-hover-color` and `--et-tab-hover-underline-opacity`. Unset, the tabs look as before.
+
+### Patch Changes
+
+- `et-grid`: on touch, an item drags after a 250ms hold, so a swipe over the grid scrolls the page.
+- Render icon button content that lacks the `etIcon` attribute instead of dropping it, and warn about it in dev mode.
+- A loading button keeps its normal colours and opacity instead of looking disabled. Only a truly disabled button gets the disabled look.
+- An app's `--et-button-padding`, `--et-button-border-radius` and `--et-icon-button-*` size tokens on `.et-button` / `.et-icon-button` no longer change the buttons SDK components render themselves (pagination, table header triggers, breadcrumb overflow, scheduler, date range presets, rich text toolbar), even from an unlayered rule
+- `et-standings-pick`: the card is the row's focusable control, with hover, active and focus states; the grip is no longer a button. Arrow-key moves keep focus and animate.
+- `et-standings-pick`: drag a row by its whole card; the card follows the pointer and lands in its slot on a spring instead of jumping there.
+- `et-standings-pick`: a card lifts on press and follows the pointer from the first pixel. A dashed ghost marks the drop slot and fades out on release. Reduced motion also stops the card's hover fade.
+- `et-standings-pick`: on touch, a card drags after a 250ms hold, so a swipe over the list scrolls the page.
+- `et-standings-pick`: a dragged card no longer selects text in Safari.
+- Updated dependencies:
+  - @ethlete/bracket@1.0.0-next.5
+
 ## 1.0.0-next.81
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # @ethlete/bracket
 
+## 1.0.0-next.5
+
+### Minor Changes
+
+- Add `lineTurnOffset` to `et-bracket`: a connector turns at that distance in px from the card that feeds it. The default `null` keeps the turn at the middle of the column gap.
+- `resolveBracketSlot` and `migrateBracketPicks` take `linkedBrackets` (earlier stages a slot points into) and the policy `fallBackToRealParticipant`. The `standingRank` pick lookup also receives the asking `match` and `side`.
+- Add the `unknown` slot kind (`bracketSlot.unknown(label?)`): it keeps its label and links no feeder. A `match-outcome` slot accepts `role: null`, read as the winner. Exhaustive switches over `BracketSlotSourceKind` need an `'unknown'` case.
+
+### Patch Changes
+
+- Place a third place match that keeps its own column after the continue element, so the line from the final to the continue element no longer crosses it.
+
 ## 1.0.0-next.4
 
 ### Patch Changes

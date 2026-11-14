@@ -1,5 +1,22 @@
 # @ethlete/core
 
+## 5.0.0-next.75
+
+### Minor Changes
+
+- Title parts keep the place they got when they were bound, so a part that empties and comes back no longer moves to the end. The new `order: 'child-first'` option of `provideTitleConfig` builds `Child | Parent | Suffix`.
+- `provideDragHandleDefaults` sets the `etDragHandle` input defaults (`touchHoldDelay`) for the handle on the same element only, so a directive that hosts it can change them without reaching handles in its content.
+- `etDragHandle` and `dragGestureFrom` take `touchHoldDelay`: a touch must hold still that long before it drags, and a touch that moves first scrolls the page.
+- SDK component styles now sit in `@layer components.sdk`, so an app rule in `@layer components` overrides them; `et update` leaves a task to check those rules.
+
+### Patch Changes
+
+- The `tailwind-4-surface-theme` generator reads a negative `elevation` such as `-1`. A theme the generator cannot parse now rejects with the theme name instead of being skipped with a warning.
+- A meta or link binding now keeps the place it got when it was bound. An earlier binding whose value updates no longer jumps ahead of a later one, so a child's tag stays in front of its parent's.
+- A meta tag that was in the page before a binding took its selector (e.g. from `index.html`) now comes back once the last binding for that selector is released, instead of staying removed.
+- `etDragHandle` accepts `commitThreshold` as a plain attribute (`commitThreshold="0"`).
+- A loading button keeps its normal colours and opacity instead of looking disabled. Only a truly disabled button gets the disabled look.
+
 ## 5.0.0-next.74
 
 ### Minor Changes
