@@ -18,4 +18,9 @@ describe('progress-step.component.css tokens', () => {
     expect(tokens.length).toBeGreaterThan(0);
     expect(tokens.filter((token) => !token.inherits).map((token) => token.name)).toEqual([]);
   });
+
+  it('draws the marker ring at --et-progress-step-marker-ring-width in --et-progress-step-marker-ring-color', () => {
+    expect(css).toContain('border: var(--et-progress-step-marker-ring-width) solid');
+    expect(css.match(/border-color: var\(--et-progress-step-marker-ring-color,/g)).toHaveLength(2);
+  });
 });

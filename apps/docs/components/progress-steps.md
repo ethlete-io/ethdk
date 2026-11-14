@@ -189,8 +189,13 @@ not.
 ## Theming
 
 Public design tokens: `--et-progress-steps-gap`, `--et-progress-step-marker-size`,
+`--et-progress-step-marker-ring-width` (`2px`), `--et-progress-step-marker-ring-color`,
 `--et-progress-step-label-font-size`, `--et-progress-step-description-font-size`. All of them inherit, so
 setting one on `et-progress-steps` or any ancestor configures every step inside it.
+
+`--et-progress-step-marker-ring-color` has no default: unset, each marker's ring keeps its state colour
+(surface border when `upcoming`, the theme ink otherwise). Set it on one step, or scope it with
+`.et-progress-step[data-state='upcoming']`, to colour only some rings.
 
 `current`/`complete` markers and the connector after a resolved step read
 from the ambient [color theme](/core/theming) (`--et-theme-color-primary-solid` /
