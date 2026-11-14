@@ -6,7 +6,7 @@ import { withProductLock } from '../product-lock';
 import { readStampText, writeStampFile } from '../stamp-files';
 import { partHashesHold, partHashHolds, partHashOf } from './baseline';
 import { heldEditsOf } from './held-edits';
-import { listSketches, Sketch, variantDirOf } from './sketch';
+import { findSketch, listSketches, parseTarget, Sketch, SketchHold, variantDirOf } from './sketch';
 
 export const MERGED_FILE = 'merged.json';
 
@@ -254,4 +254,40 @@ export const recordMergeReason = (options: {
 
     writeEntries(product.dir, entries);
   });
+};
+
+/** What a sketch holds `hold.untilSketch` of at the start of a hold: its target and the `merged.json` hash of its part. */
+export const untilSketchOf = (options: {
+  productDir: string;
+  product: string;
+  target: string;
+}): NonNullable<SketchHold['untilSketch']> | string => {
+  const parsed = parseTarget(options.target);
+
+  if (typeof parsed === 'string') return parsed;
+
+  const found = findSketch({ productDir: options.productDir, product: options.product, sketch: parsed });
+
+  if (found === null) return `no open sketch ${options.target} - hold with --until instead`;
+  if (typeof found === 'string') return found;
+
+  return { target: found.target, mergedHash: readMerged(options.productDir)[found.targets[0] ?? ''] ?? null };
+};
+
+/**
+ * How the sketch a hold waits on ended: `merged` when its part merged since the hold began, `discarded` when it is gone
+ * or decided to discard otherwise, `null` while it is open or the hold names no sketch.
+ */
+export const holdTargetEndOf = (sketch: Pick<Sketch, 'dir' | 'product' | 'hold'>): 'merged' | 'discarded' | null => {
+  const until = sketch.hold?.untilSketch;
+  const parsed = until ? parseTarget(until.target) : null;
+
+  if (!until || parsed === null || typeof parsed === 'string') return null;
+
+  const productDir = resolve(sketch.dir, '..', '..');
+  const found = findSketch({ productDir, product: sketch.product, sketch: parsed });
+
+  if (found !== null && typeof found !== 'string') return found.decision?.kind === 'discard' ? 'discarded' : null;
+
+  return (readMerged(productDir)[partKeyOf(parsed)] ?? null) !== until.mergedHash ? 'merged' : 'discarded';
 };

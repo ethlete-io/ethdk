@@ -71,7 +71,13 @@ export type SketchRejection = {
 export type SketchRound = { key: string; title: string; note: string; lost?: string; drops?: string[] };
 
 /** A change to the sketch that waits on something; while it holds, the sketch stays in progress and cannot be ready. */
-export type SketchHold = { until: string; by: string; heldAt: string };
+export type SketchHold = {
+  until: string;
+  by: string;
+  heldAt: string;
+  /** The sketch the hold waits on, `<layer>/<name>[@<sketch>]`, and its part's `merged.json` hash when the hold began. */
+  untilSketch?: { target: string; mergedHash: string | null };
+};
 
 /** A rebase after the merge of `merged` that could not port `parts` by itself; the sketch's agent ports `reasons` by hand. */
 export type SketchPortMark = { merged: string[]; parts: string[]; reasons: string[]; at: string };
@@ -435,6 +441,18 @@ const isRounds = (value: unknown): value is SketchRound[] =>
   ) &&
   new Set(value.map((round: SketchRound) => round.key)).size === value.length;
 
+const isUntilSketch = (value: unknown) => {
+  const until = value as { target?: unknown; mergedHash?: unknown } | null;
+
+  return (
+    typeof until === 'object' &&
+    until !== null &&
+    typeof until.target === 'string' &&
+    typeof parseTarget(until.target) !== 'string' &&
+    (until.mergedHash === null || typeof until.mergedHash === 'string')
+  );
+};
+
 const isHold = (value: unknown): value is SketchHold => {
   const hold = value as Partial<Record<keyof SketchHold, unknown>> | null;
 
@@ -444,7 +462,8 @@ const isHold = (value: unknown): value is SketchHold => {
     typeof hold.until === 'string' &&
     hold.until.trim() !== '' &&
     typeof hold.by === 'string' &&
-    typeof hold.heldAt === 'string'
+    typeof hold.heldAt === 'string' &&
+    (hold.untilSketch === undefined || isUntilSketch(hold.untilSketch))
   );
 };
 
@@ -1314,14 +1333,24 @@ export const heldProblemOf = (sketch: Pick<Sketch, 'target' | 'hold'>) =>
  * Holds a sketch until a change that waits on something is made: it goes back to in progress, which drops a pick
  * and takes it out of the merge queue, and `sketch ready` refuses until the hold is released.
  */
-export const holdSketch = (options: { sketch: Sketch; until: string; by: string; now?: Date }): Sketch | string => {
-  const { sketch, by, now = new Date() } = options;
+export const holdSketch = (options: {
+  sketch: Sketch;
+  until: string;
+  by: string;
+  untilSketch?: SketchHold['untilSketch'];
+  now?: Date;
+}): Sketch | string => {
+  const { sketch, by, untilSketch, now = new Date() } = options;
   const until = options.until.trim();
 
   if (until === '') return 'a hold needs --until <what the change waits on>';
 
   const { decision: _decision, ...undecided } = sketch;
-  const held: Sketch = { ...undecided, status: 'in progress', hold: { until, by, heldAt: now.toISOString() } };
+  const held: Sketch = {
+    ...undecided,
+    status: 'in progress',
+    hold: { until, by, heldAt: now.toISOString(), ...(untilSketch ? { untilSketch } : {}) },
+  };
 
   writeSketchFile(held, { base: sketch });
 

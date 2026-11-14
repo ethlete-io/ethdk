@@ -7,6 +7,7 @@ import { readConfig } from '../../design-config';
 import { git } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
+import { rebaseAfterCommit } from './after-merge';
 import { mergeSketch } from './merge';
 import { createSketch, decideSketch, markSketchReady, readSketch, Sketch, SketchTarget } from './sketch';
 
@@ -103,5 +104,38 @@ describe('a merge and the other open sketches', { timeout: 120_000 }, () => {
     expect(lines).toContain(
       'AGENT PORTS acme elements/hero@other after the merge of elements/hero: a: elements/hero/hero.ts - the variant and the product both changed it - port it by hand, then run sketch rebase elements/hero@other --product acme --by <model id>',
     );
+  });
+
+  it('rebases an open sketch after a commit to a part it embeds, and leaves it alone after an unrelated commit', () => {
+    const target = acme();
+    const home = readyOn(target, { layer: 'pages', name: 'home' });
+    const commitOf = (subject: string) => {
+      git(target, 'add', '-A');
+      git(target, 'commit', '-qm', subject);
+
+      return String(git(target, 'diff-tree', '--root', '--no-commit-id', '--name-only', '-r', 'HEAD'))
+        .split('\n')
+        .filter(Boolean);
+    };
+
+    writeFileSync(join(target, 'notes.txt'), 'unrelated');
+
+    expect(rebaseAfterCommit({ target, product: resolveAcme(target), commit: 'n', files: commitOf('notes') })).toEqual(
+      [],
+    );
+
+    edit(join(target, '.ethlete/design/acme/elements/hero/hero.ts'), 'One featured film', 'The featured film');
+
+    const files = commitOf('hero');
+
+    expect(reread(home).baseline).not.toEqual(baselineOf(resolveAcme(target)));
+    expect(rebaseAfterCommit({ target, product: resolveAcme(target), commit: 'h', files })).toEqual([
+      'REBASED acme pages/home after the commit h',
+    ]);
+
+    const after = reread(home);
+
+    expect(after.baseline).toEqual(baselineOf(resolveAcme(target)));
+    expect(after.status).toBe('ready');
   });
 });

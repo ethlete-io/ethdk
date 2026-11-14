@@ -12,6 +12,7 @@ import {
   variantsThatDoNotLoad,
 } from './ready-shots';
 import { designSketch } from './sketch-command';
+import { holdTargetEndOf } from './system/sketch/merged-parts';
 import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { renderIssuesOf } from './system/render-check';
@@ -1883,6 +1884,41 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(findSketch({ productDir, product: 'acme', sketch })).not.toHaveProperty('hold');
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(statusOf()).toBe('ready');
+  });
+
+  it('holds a sketch on another sketch and tells when that sketch is discarded', async () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const held = () =>
+      findSketch({ productDir, product: 'acme', sketch: { layer: 'elements', name: 'hero' } }) as Sketch;
+
+    output();
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    await write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
+
+    expect(await write(target, 'hold', 'elements/hero', '--until-sketch', 'pages/none', '--product', 'acme')).toBe(1);
+    expect(
+      await write(target, 'hold', 'elements/hero', '--until-sketch', 'components/button', '--product', 'acme'),
+    ).toBe(0);
+    expect(held().hold).toMatchObject({
+      until: 'the sketch components/button',
+      untilSketch: { target: 'components/button' },
+    });
+    expect(holdTargetEndOf(held())).toBeNull();
+
+    expect(await write(target, 'discard', 'components/button', '--product', 'acme')).toBe(0);
+    expect(holdTargetEndOf(held())).toBe('discarded');
   });
 
   it('refuses ready while a variant drops a state of the part', async () => {

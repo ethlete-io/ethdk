@@ -1,6 +1,6 @@
-import { relative } from 'path';
-import { ResolvedProduct } from '../resolve-product';
-import { baselineOf } from './baseline';
+import { dirname, relative, resolve } from 'path';
+import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { baselineOf, FIXTURES_KEY, partInputsOf } from './baseline';
 import { variantProblemsOf } from './check-sketches';
 import { journaledRebaseOf } from './rebase-port';
 import { listSketches, rejectionOf, Sketch, writeSketchFile } from './sketch';
@@ -18,19 +18,14 @@ const recheckOf = (options: { target: string; product: ResolvedProduct; sketch: 
         ),
   );
 
-/**
- * Rebases each undiscarded sketch whose base the merge of `merged` changed, re-checks it and keeps its status; one that
- * conflicts or fails the check gets a `portAfterMerge` mark instead. `product` must resolve the product after the merge.
- */
-export const rebaseAfterMerge = (options: {
+const rebaseStaleSketches = (options: {
   target: string;
   product: ResolvedProduct;
-  merged: string[];
-  before: Record<string, string>;
+  merged?: string[];
+  after: string;
+  hitsOf: (parts: string[]) => string[];
 }): string[] => {
-  const { target, product, merged, before } = options;
-  const changed = changedKeysOf(before, baselineOf(product));
-  const after = `after the merge of ${merged.join(', ')}`;
+  const { target, product, after, hitsOf } = options;
   const lines: string[] = [];
 
   for (const sketch of listSketches({ productDir: product.dir, product: product.name })) {
@@ -38,7 +33,11 @@ export const rebaseAfterMerge = (options: {
 
     const parts = staleBaseOf({ product, sketch });
 
-    if (!parts?.some((part) => changed.has(part))) continue;
+    const hits = parts ? hitsOf(parts) : [];
+
+    if (!parts || hits.length === 0) continue;
+
+    const merged = options.merged ?? hits;
 
     const id = `${product.name} ${sketch.target}`;
     const rebase = `sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
@@ -72,4 +71,66 @@ export const rebaseAfterMerge = (options: {
   }
 
   return lines;
+};
+
+/**
+ * Rebases each undiscarded sketch whose base the merge of `merged` changed, re-checks it and keeps its status; one that
+ * conflicts or fails the check gets a `portAfterMerge` mark instead. `product` must resolve the product after the merge.
+ */
+export const rebaseAfterMerge = (options: {
+  target: string;
+  product: ResolvedProduct;
+  merged: string[];
+  before: Record<string, string>;
+}): string[] => {
+  const changed = changedKeysOf(options.before, baselineOf(options.product));
+
+  return rebaseStaleSketches({
+    ...options,
+    after: `after the merge of ${options.merged.join(', ')}`,
+    hitsOf: (parts) => parts.filter((part) => changed.has(part)),
+  });
+};
+
+const inputFilesOf = (product: ResolvedProduct, key: string) => {
+  if (key === FIXTURES_KEY) return product.fixtures ? [product.fixtures] : [];
+
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+  if (!part) return [];
+
+  const { files, shared, assets } = partInputsOf({ product, dir: dirname(part.file) });
+
+  return [...files, ...shared.map(({ file }) => file), ...assets.map(({ file }) => file)];
+};
+
+/**
+ * `rebaseAfterMerge` for a commit that changed `files` (paths relative to `target`): rebases each undiscarded sketch
+ * whose stale base holds a part that reads one of them, directly or as a part its variants embed.
+ */
+export const rebaseAfterCommit = (options: {
+  target: string;
+  product: ResolvedProduct;
+  commit: string;
+  files: string[];
+}): string[] => {
+  const { target, product, commit } = options;
+  const files = new Set(options.files.map((file) => resolve(target, file)));
+  const touched = new Map<string, boolean>();
+  const reads = (key: string) => {
+    if (!touched.has(key))
+      touched.set(
+        key,
+        inputFilesOf(product, key).some((file) => files.has(file)),
+      );
+
+    return touched.get(key) === true;
+  };
+
+  return rebaseStaleSketches({
+    target,
+    product,
+    after: `after the commit ${commit}`,
+    hitsOf: (parts) => parts.filter(reads),
+  });
 };

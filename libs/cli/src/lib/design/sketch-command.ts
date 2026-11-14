@@ -52,7 +52,7 @@ import { openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
-import { MERGED_FILE } from './system/sketch/merged-parts';
+import { MERGED_FILE, untilSketchOf } from './system/sketch/merged-parts';
 import { noVerdictLineOf } from './system/no-verdict';
 import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
@@ -61,6 +61,7 @@ import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
 import { productModuleIdOf, SketchVariant } from './system/system-modules';
 import { unchangedStatesOf } from './system/sketch/unchanged-states';
+import { rebaseAfterCommit } from './system/sketch/after-merge';
 import { conflictVariantOf, journaledRebaseOf, keptByPortedOf } from './system/sketch/rebase-port';
 import { THEMING_TEXT } from './system/theming-text';
 import { createRunDraw, loadingOn, WarmDraw } from './warm-draw';
@@ -115,11 +116,12 @@ export const SKETCH_USAGE = [
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--reopen] [--product <name>]',
   'sketch ready <layer>/<name> [--no-visible-change] --by <model id> [--product <name>]',
-  'sketch hold <layer>/<name> --until <what the change waits on> --by <model id> [--product <name>]',
+  'sketch hold <layer>/<name> (--until <what the change waits on> | --until-sketch <layer>/<name>[@<sketch>]) --by <model id> [--product <name>]',
   'sketch release <layer>/<name> --by <model id> [--product <name>]',
   'sketch check [<layer>/<name>] [--fix] [--no-visible-change] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> [--ported <variant>] --by <model id> [--product <name>]',
+  'sketch rebase-open --commit <rev> [--product <name>]',
   'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <role>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
@@ -1434,17 +1436,53 @@ const rebased = (context: Context) =>
     return 0;
   });
 
+const committedFilesOf = (target: string, commit: string) => {
+  const run = spawnPlain(['git', 'diff-tree', '--root', '--no-commit-id', '--name-only', '-r', commit], {
+    cwd: target,
+  });
+
+  return run.status === 0 ? run.stdout.split('\n').filter(Boolean) : null;
+};
+
+const rebasedAfterCommit = (context: Context) => {
+  const commit = context.args.values['--commit'];
+  const names = productNamesOf({ config: context.config, asked: context.args.values['--product'] });
+
+  if (commit === undefined) return fail('usage: sketch rebase-open --commit <rev> [--product <name>]');
+  if (typeof names === 'string') return fail(names);
+
+  const files = committedFilesOf(context.target, commit);
+
+  if (files === null) return fail(`git cannot list the files of ${commit}`);
+
+  for (const name of names) {
+    const product = oneProductOf({ target: context.target, config: context.config, asked: name });
+
+    if (typeof product === 'string') return fail(product);
+
+    rebaseAfterCommit({ target: context.target, product, commit, files }).forEach((line) => console.log(line));
+  }
+
+  return 0;
+};
+
 const held = (context: Context) =>
-  withSketch(context, ({ sketch }) => {
-    const until = context.args.values['--until'];
+  withSketch(context, ({ product, sketch }) => {
+    const asked = context.args.values['--until-sketch'];
+    const untilSketch =
+      asked === undefined
+        ? undefined
+        : untilSketchOf({ productDir: product.dir, product: product.name, target: asked });
+    const until = context.args.values['--until'] ?? (untilSketch ? `the sketch ${asked}` : undefined);
 
     if (context.args.positional.length !== 1 || until === undefined)
       return fail(
-        `usage: sketch hold <layer>/<name> --until <what the change waits on> --by <model id> [--product <name>]`,
+        `usage: sketch hold <layer>/<name> (--until <what the change waits on> | --until-sketch <layer>/<name>[@<sketch>]) --by <model id> [--product <name>]`,
       );
+    if (typeof untilSketch === 'string') return fail(untilSketch);
 
     const wasReady = sketch.status === 'ready';
-    const holding = holdSketch({ sketch, until, by: authorOf(context.args) ?? '' });
+    const holding = holdSketch({ sketch, until, untilSketch, by: authorOf(context.args) ?? '' });
 
     if (typeof holding === 'string') return fail(holding);
 
@@ -2093,6 +2131,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   check: checked,
   preview: previewed,
   rebase: rebased,
+  'rebase-open': rebasedAfterCommit,
   pick: picked,
   merge: merged,
   discard: discarded,
