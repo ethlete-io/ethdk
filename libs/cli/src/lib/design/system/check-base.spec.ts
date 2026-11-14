@@ -8,6 +8,20 @@ import { partsChangedOf } from './base-parts';
 import { acme, output } from './check-system.fixtures';
 import { gitDiffChangesOf } from './part-task';
 import { resolveProduct } from './resolve-product';
+import * as tsconfig from './system-tsconfig';
+import * as warmDraw from '../warm-draw';
+
+vi.mock('../warm-draw', async (importOriginal) => {
+  const original = await importOriginal<typeof warmDraw>();
+
+  return { ...original, createRunDraw: vi.fn(original.createRunDraw) };
+});
+
+vi.mock('./system-tsconfig', async (importOriginal) => {
+  const original = await importOriginal<typeof tsconfig>();
+
+  return { ...original, typecheckProduct: vi.fn(original.typecheckProduct) };
+});
 
 const git = (target: string, ...args: string[]) =>
   execFileSync('git', ['-c', 'user.email=spec@example.com', '-c', 'user.name=spec', ...args], {
@@ -39,7 +53,11 @@ const changedPartsOf = (target: string) => {
 };
 
 describe('design check --product --base', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.mocked(warmDraw.createRunDraw).mockClear();
+    vi.mocked(tsconfig.typecheckProduct).mockClear();
+  });
 
   it('checks only the parts whose design changed since the base and the parts that embed them, and names them', async () => {
     const target = committed();
@@ -52,6 +70,18 @@ describe('design check --product --base', () => {
     expect(lines).toContain('BASE acme since HEAD: 2 part(s) - elements/hero, pages/home');
     expect(lines.filter((line) => line.startsWith('NO PART'))).toEqual([]);
     expect(lines.some((line) => line.startsWith('PART acme components/button'))).toBe(false);
+  });
+
+  it('starts one design server and browser and typechecks once for all the chosen parts', async () => {
+    const target = committed();
+
+    output();
+    appendFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '\n.acme-hero { gap: 1px; }\n');
+
+    await checkDesign({ target, argv: ['--product', 'acme', '--base', 'HEAD'], invocation: 'et design' });
+
+    expect(warmDraw.createRunDraw).toHaveBeenCalledTimes(1);
+    expect(tsconfig.typecheckProduct).toHaveBeenCalledTimes(1);
   });
 
   it('chooses a part whose implementing app files changed, and its hosts', () => {

@@ -308,6 +308,7 @@ type CheckOptions = {
   invocation?: string;
   chromiumOf?: typeof chromiumOf;
   warm?: WarmDraw;
+  typechecks?: Map<string, ReturnType<typeof typecheckProduct>>;
 };
 
 const PRODUCT_LEVEL = PRODUCT_PART_KEY;
@@ -511,7 +512,9 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: numbe
 
     writeEditorTsconfig({ target, product });
 
-    const result = typecheckProduct({ target, product });
+    const result = options.typechecks?.get(name) ?? typecheckProduct({ target, product });
+
+    options.typechecks?.set(name, result);
 
     if (result.kind === 'unavailable') {
       console.error(result.message);
@@ -973,14 +976,28 @@ const checkProductTail = async (
  * of each component part as `design complete` draws them, the blockers `design ready` refuses on; they do not change
  * the exit code.
  */
-export const checkSystemRendered = async (options: CheckOptions) => {
+export const checkSystemRendered = async (
+  options: CheckOptions & {
+    /** Checks each of these parts in turn as `part` does, on one design server, browser and typecheck. */
+    parts?: string[];
+    /** Runs after each part's check and returns the exit code that part counts with. */
+    afterPart?: (part: string | undefined, code: number) => number;
+  },
+) => {
   const run = options.warm
     ? { warm: { ...options.warm, perRun: true }, close: async () => undefined }
     : createRunDraw(options.target, { chromiumOf: options.chromiumOf });
+  const typechecks = new Map<string, ReturnType<typeof typecheckProduct>>();
 
   try {
     return await withStampsInMemory(async () => {
-      const code = await checkSystemRenderedOn({ ...options, warm: run.warm });
+      let code = 0;
+
+      for (const part of options.parts ?? [options.part]) {
+        const checked = await checkSystemRenderedOn({ ...options, part, typechecks, warm: run.warm });
+
+        code = Math.max(code, options.afterPart ? options.afterPart(part, checked) : checked);
+      }
 
       keepHeldStampsInCache(READY_FILE);
 

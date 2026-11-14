@@ -426,13 +426,16 @@ const lintedCalls = (target: string) => {
   return lines.length > 0 ? 1 : 0;
 };
 
-const renderedAndLinted = async (options: Parameters<typeof checkSystemRendered>[0]) => {
-  const code = await checkSystemRendered(options);
-  const lint = lintedProducts(options);
-  const calls = options.part ? 0 : lintedCalls(options.target);
+const renderedAndLinted = (options: Parameters<typeof checkSystemRendered>[0]) =>
+  checkSystemRendered({
+    ...options,
+    afterPart: (part, code) => {
+      const lint = lintedProducts({ ...options, part });
+      const calls = part ? 0 : lintedCalls(options.target);
 
-  return code === 0 ? lint || calls : code;
-};
+      return code === 0 ? lint || calls : code;
+    },
+  });
 
 const checkSinceBase = async (options: {
   target: string;
@@ -474,8 +477,8 @@ const checkSinceBase = async (options: {
       `BASE ${name} since ${base}: ${parts.length === 0 ? 'no part changed' : `${parts.length} part(s) - ${parts.join(', ')}`}`,
     );
 
-    for (const part of parts)
-      code = Math.max(code, await renderedAndLinted({ ...options, config, products: [name], part }));
+    if (parts.length > 0)
+      code = Math.max(code, await renderedAndLinted({ ...options, config, products: [name], parts }));
   }
 
   return code;
