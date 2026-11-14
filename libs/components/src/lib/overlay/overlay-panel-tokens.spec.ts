@@ -34,10 +34,10 @@ describe('overlay panel tokens', () => {
     expect(menuCss).toMatch(/\.et-menu \{[^}]*border-radius: var\(--et-menu-border-radius\);/);
   });
 
-  it('sets the menu item weight from --et-menu-item-font-weight after the font reset', () => {
+  it('leaves --et-menu-item-font-weight unregistered, so an unset token keeps the inherited weight', () => {
     const menuCss = readFileSync(libRoot + 'menu/menu.component.css', 'utf8');
 
-    expect(menuCss).toMatch(/@property --et-menu-item-font-weight \{[^}]*initial-value: 400;/);
+    expect(menuCss).not.toContain('@property --et-menu-item-font-weight');
     expect(menuCss).toMatch(/font: inherit;\s*font-weight: var\(--et-menu-item-font-weight\);/);
   });
 });
