@@ -2492,6 +2492,10 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - Machinery: serve and `yarn et:design` run stale cli code after a cli change (8 false CONTRAST-PAIR); specs on
   untouched libs red under load; no commitlint bracket scope; output-style.spec red under CLAUDE_CONFIG_DIR.
 - B504: empty palette query without recents shows nothing (sketch queued after B501 S2).
+- B502 (night 14.11.): live derivation picked wrong (list-row, agent-logos; 8 UNDERIVED from page host); 9f2594cbd: page
+  host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
+  drew states inline and system-page again; 44f3d6430 draws system-page per state. Open: empty product side panel shows
+  the app tree, not the design's "none" line. Suspect: `design check --part` writes part files (cf. B500 P5).
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
