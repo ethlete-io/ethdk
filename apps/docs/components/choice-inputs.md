@@ -60,6 +60,8 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
 - An `et-description` projected into `et-choice-field` renders under the label
   and joins the control's `aria-describedby`, ahead of the hint, warning or error
   the field is showing.
+- A bare `et-checkbox` or `et-switch` shows no error text: the hint, warning and
+  error messages render only inside `et-choice-field`.
 - When validation changes between a hint, warning, and error, the support message
   moves in severity order; reduced-motion preferences collapse that transition.
 
