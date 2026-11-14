@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { changesDesignParts, rebasedFilesOf } from './post-commit-rebase-sketches.mjs';
+import { changesDesignParts, rebasedFilesOf, rebaseUncommittedAfter } from './post-commit-rebase-sketches.mjs';
 
 test('a commit to a design part asks for the rebase', () => {
   assert.equal(changesDesignParts(['M\t.ethlete/design/studio/components/title-bar/title-bar.css', '']), true);
@@ -27,5 +27,20 @@ test('the rebase commit takes only the files the rebase made dirty', () => {
       dirtyAfter: [`${home}/sketch.json`, `${home}/a/home.css`],
     }),
     { files: [`${home}/sketch.json`], kept: [`${home}/a/home.css`] },
+  );
+});
+
+test('a sketch with an uncommitted rebase file is recorded, one committed whole is dropped', () => {
+  const home = '.ethlete/design/studio/sketches/pages-home';
+  const bar = '.ethlete/design/studio/sketches/components-title-bar';
+
+  assert.deepEqual(
+    rebaseUncommittedAfter({
+      recorded: { 'components-title-bar': { commit: 'old' }, 'pages-other': { commit: 'old' } },
+      sketchDirs: [home, bar],
+      uncommitted: [`${home}/sketch.json`],
+      commit: 'abc1234',
+    }),
+    { 'pages-home': { commit: 'abc1234' }, 'pages-other': { commit: 'old' } },
   );
 });

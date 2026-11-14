@@ -135,6 +135,7 @@ export const STUDIO_LABELS = {
     sketchReady: 'Entwurf fertig',
     sketchNeedsRebase: (parts: readonly string[]) =>
       parts.length === 0 ? 'Braucht Rebase: keine Baseline' : `Braucht Rebase: ${parts.join(', ')} geändert`,
+    sketchRebaseUncommitted: (commit: string) => `Rebase nach ${commit} nicht committet`,
     sketchChangedSinceReady: (variants: readonly string[]) => `Seit Freigabe geändert: ${variants.join(', ')}`,
     sketchHoldTargetEnded: (target: string, end: 'merged' | 'discarded') =>
       `Pausiert auf ${target}, das ${end === 'merged' ? 'übernommen' : 'verworfen'} ist: Pause aufheben`,

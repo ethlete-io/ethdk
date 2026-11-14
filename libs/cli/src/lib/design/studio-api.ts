@@ -38,6 +38,7 @@ import { ResolvedProduct } from './system/resolve-product';
 import { openSketchListingOf } from './system/sketch/check-sketches';
 import { holdTargetEndOf } from './system/sketch/merged-parts';
 import { staleBaseOf } from './system/sketch/stale-base';
+import { rebaseUncommittedOf } from './system/sketch/rebase-uncommitted';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
@@ -455,6 +456,11 @@ const listingOf = async ({
       typeof sketch === 'string' ? [{ rule: 'SKETCH', file: product.dir, message: sketch }] : [],
     );
 
+  const rebaseUncommitted = rebaseUncommittedOf({
+    productDir: product.dir,
+    dirs: sketches.map((sketch) => sketch.dir),
+  });
+
   return {
     status: 200,
     body: {
@@ -466,6 +472,7 @@ const listingOf = async ({
         return {
           ...sketchOf({ sketch, target }),
           staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
+          rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
           ...(checked
             ? {
                 problems: [

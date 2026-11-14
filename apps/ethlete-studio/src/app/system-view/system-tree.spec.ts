@@ -766,6 +766,20 @@ describe('sketches in the tree', () => {
     ]);
   });
 
+  it('flags a sketch whose rebase the post-commit hook could not commit', () => {
+    const [sketches] = treeOf([part()], {
+      sketches: [
+        sketch({ rebaseUncommitted: { commit: 'abc1234' } }),
+        sketch({ target: 'elements/a', layer: 'elements', name: 'a', rebaseUncommitted: null }),
+      ],
+    });
+
+    expect(sketches?.entries.map((entry) => [entry.title, entry.badges])).toEqual([
+      ['Rebase nach abc1234 nicht committet', ['in progress', 'rebase not committed']],
+      ['elements/a', ['in progress']],
+    ]);
+  });
+
   it('titles a sketch with one line per problem, naming its variant and rule', () => {
     const [sketches] = treeOf([part()], {
       sketches: [

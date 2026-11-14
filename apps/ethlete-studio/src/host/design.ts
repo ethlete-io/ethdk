@@ -437,6 +437,8 @@ export type ListedSketch = {
   changedSinceReady?: string[];
   /** The parts that changed since the sketch was drawn or rebased, `[]` without a baseline, `null` while current. Missing from an `@ethlete/cli` older than it. */
   staleBase?: string[] | null;
+  /** The commit whose rebase of the sketch the post-commit hook could not commit, `null` once nothing of it is left uncommitted. Missing from an `@ethlete/cli` older than it. */
+  rebaseUncommitted?: { commit: string } | null;
 };
 
 /** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */

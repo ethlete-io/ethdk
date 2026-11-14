@@ -945,7 +945,8 @@ export class SystemViewComponent {
           badge === 'error' ||
           badge === 'needs rebase' ||
           badge === 'changed since ready' ||
-          badge === 'hold target ended',
+          badge === 'hold target ended' ||
+          badge === 'rebase not committed',
       )
         ? { warns: entry.title ?? true }
         : {}),

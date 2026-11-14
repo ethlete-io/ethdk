@@ -59,7 +59,8 @@ export type PartBadge =
   | 'ready'
   | 'needs rebase'
   | 'changed since ready'
-  | 'hold target ended';
+  | 'hold target ended'
+  | 'rebase not committed';
 
 /** Which parts and sketches hold an open comment, and which of those wait for the user. */
 type CommentMarks = {
@@ -207,6 +208,9 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
       ...(sketch.changedSinceReady?.length
         ? [STUDIO_LABELS.treeRow.sketchChangedSinceReady(sketch.changedSinceReady)]
         : []),
+      ...(sketch.rebaseUncommitted
+        ? [STUDIO_LABELS.treeRow.sketchRebaseUncommitted(sketch.rebaseUncommitted.commit)]
+        : []),
       ...(sketch.hold?.untilSketch && sketch.holdTargetEnd
         ? [STUDIO_LABELS.treeRow.sketchHoldTargetEnded(sketch.hold.untilSketch.target, sketch.holdTargetEnd)]
         : []),
@@ -219,6 +223,7 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
     ...(sketch.staleBase ? (['needs rebase'] as const) : []),
     ...(sketch.changedSinceReady?.length ? (['changed since ready'] as const) : []),
     ...(sketch.hold?.untilSketch && sketch.holdTargetEnd ? (['hold target ended'] as const) : []),
+    ...(sketch.rebaseUncommitted ? (['rebase not committed'] as const) : []),
     ...commentBadgesOf(sketch.target, marks),
     ...(sketch.problems?.some((entry) => entry.problems.length > 0) || sketch.targets?.some((entry) => entry.error)
       ? (['error'] as const)

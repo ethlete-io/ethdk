@@ -95,6 +95,7 @@ playwright-report
 # Local state of the design tools
 .ethlete/cache/
 .ethlete/design/*/pictures.json
+.ethlete/design/*/rebase-uncommitted.json
 
 **/.vitest/
 __pycache__/

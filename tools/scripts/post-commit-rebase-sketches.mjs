@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, realpathSync } from 'node:fs';
-import { dirname, relative, resolve, sep } from 'node:path';
+import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ensureCliCopy } from './studio-code.mjs';
 
@@ -43,6 +43,45 @@ export const rebasedFilesOf = ({ dirtyBefore, dirtyAfter }) => {
     files: dirtyAfter.filter((path) => !before.has(path)),
     kept: dirtyAfter.filter((path) => before.has(path)),
   };
+};
+
+const REBASE_UNCOMMITTED_FILE = 'rebase-uncommitted.json';
+
+/**
+ * The `rebase-uncommitted.json` entries after a rebase of `sketchDirs` at `commit`: a sketch with a file the rebase
+ * left uncommitted is recorded, one whose rebase was committed whole is dropped.
+ */
+export const rebaseUncommittedAfter = ({ recorded, sketchDirs, uncommitted, commit }) => {
+  const next = { ...recorded };
+
+  for (const dir of sketchDirs) {
+    const name = basename(dir);
+
+    if (uncommitted.some((path) => path.startsWith(`${dir}/`))) next[name] = { commit };
+    else delete next[name];
+  }
+
+  return next;
+};
+
+const recordUncommitted = (root, { sketchDirs, uncommitted, commit }) => {
+  const byProduct = Map.groupBy(sketchDirs, (dir) => dirname(dirname(dir)));
+
+  for (const [productDir, dirs] of byProduct) {
+    const file = resolve(root, productDir, REBASE_UNCOMMITTED_FILE);
+    let recorded = {};
+
+    try {
+      recorded = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
+    } catch {
+      recorded = {};
+    }
+
+    const next = rebaseUncommittedAfter({ recorded, sketchDirs: dirs, uncommitted, commit });
+
+    if (Object.keys(next).length === 0) rmSync(file, { force: true });
+    else writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
+  }
 };
 
 const midSequence = (root) =>
@@ -94,7 +133,11 @@ const main = () => {
 
   for (const path of kept) console.log(`post-commit: ${path} had uncommitted edits before the rebase - not committed`);
 
-  if (files.length === 0) return;
+  if (files.length === 0) {
+    recordUncommitted(root, { sketchDirs, uncommitted: kept, commit: head });
+
+    return;
+  }
 
   const added = git(root, ['add', '--all', '--', ...files]);
   const committed =
@@ -102,6 +145,11 @@ const main = () => {
       ? git(root, ['commit', '-m', `fix(repo): Rebase the sketches ${head} made stale`, '--', ...files])
       : added;
 
+  recordUncommitted(root, {
+    sketchDirs,
+    uncommitted: committed.status === 0 ? kept : [...files, ...kept],
+    commit: head,
+  });
   console.log(
     committed.status === 0
       ? `post-commit: committed the rebase of ${sketchDirs.join(', ')}`
