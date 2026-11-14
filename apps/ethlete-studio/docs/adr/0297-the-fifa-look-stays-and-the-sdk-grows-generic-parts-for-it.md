@@ -22,6 +22,9 @@ weicht stark ab." The SDK provides tokens, slots and headless layers; the app su
   select query adapter (`selectOptionsFromV2Query`, `hasMoreItems`/`loadMore`). The human: "wir zeigen das more
   options Template mit manuellen nachladen mit dem select query Adapter. Gleiches bei tables".
 - Contentful icons: a list of today's names maps to icons, with a fallback icon for new ones.
+- The birthdate field in the fifagg settings uses `dd.MM.yyyy`, like the 42 other places the app shows a date. The old
+  native date input had no fixed format; the interim `dd/MM/yyyy` (enGB) goes. The human accepted the recommendation:
+  "Q1ok" (2026-11-14).
 
 ## SDK asks (all generic; the FIFA look stays in the app)
 
