@@ -921,6 +921,9 @@ after the first fit" red on b9e040148, "keeps a state a hidden withdrawn variant
 all green after. unchanged-matrix, Cause (`design dom`): the design's `matrixFit` ignores the fold column (`--sk-note`
 9.886 px, fit 0.3035), the app subtracts it (fit 0.245, 12 px), a design/app rule conflict, not timing. Not verified: CI,
 the 7 FAILED states, a font that loads after a user zoom in the live app.
+As built (b1 approved "Empfehlung gebaut"): the design's `matrixFit` in `pages/sketches/shared/sketch-rows.ts` subtracts
+the closed fold column plus one gap, like the app. Compare: 24 ok / 7 DIFF as before, unchanged-matrix 39861 to 13040,
+the other DIFF states unchanged. Not verified: a live shot.
 
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben

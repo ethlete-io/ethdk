@@ -265,7 +265,9 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   const matrixFit = (matrix: HTMLElement) => {
     const first = matrix.querySelector<HTMLElement>('[data-sk-row]');
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
-    return Math.min(1, (list.clientWidth - lead - (columns - 1) * GAP - FIT_PADDING) / (columns * width));
+    const fold = matrix.querySelector<HTMLElement>('[data-sk-same]:not([data-open])');
+    const foldWidth = fold ? fold.offsetWidth + GAP : 0;
+    return Math.min(1, (list.clientWidth - lead - foldWidth - (columns - 1) * GAP - FIT_PADDING) / (columns * width));
   };
 
   const gridFit = (scale: number) => {
