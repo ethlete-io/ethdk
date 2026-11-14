@@ -22,7 +22,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, filter, from, map, Subject, tap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, from, fromEvent, merge, scan, Subject, tap } from 'rxjs';
 import {
   anchoredDialogOverlayStrategy,
   BADGE_IMPORTS,
@@ -264,8 +264,14 @@ export class SketchesComponent {
   });
   protected reasonOpen = linkedSignal(() => this.reason());
   protected selectedFrame = signal<string | null>(null);
-  private fitAt = signal<number | null>(null);
-  private fontsReady = toSignal(from(this.document.fonts.ready).pipe(map(() => true)), { initialValue: false });
+  private fitAt = signal<{ scale: number; fonts: number } | null>(null);
+  // fonts.ready resolves before the gutter's mono face loads; without loadingdone the fit keeps the fallback's gutter.
+  private fontLoads = toSignal(
+    merge(from(this.document.fonts.ready), fromEvent(this.document.fonts, 'loadingdone')).pipe(
+      scan((loads) => loads + 1, 0),
+    ),
+    { initialValue: 0 },
+  );
   private userCamera$ = new Subject<Camera | null>();
   protected withdrawnCount = computed(() => this.rows().filter(isWithdrawn).length);
   private isEdit = computed(() => this.part().endsWith('@edit'));
@@ -317,7 +323,7 @@ export class SketchesComponent {
       (state) => (groups.get(state)?.states[0] ?? state) === state,
     );
   });
-  private fitScale = computed(() => this.fitAt() ?? 1);
+  private fitScale = computed(() => this.fitAt()?.scale ?? 1);
 
   protected scale = computed(() => {
     const zoom = this.canvas.zoom();
@@ -326,11 +332,11 @@ export class SketchesComponent {
   });
   // A user zoom holds the fit the labels were sized at: a new fit from a wider viewport would resize the gutter and head
   // columns and move every frame on screen.
-  private noteFit = linkedSignal<{ zoom: FrameZoom; fit: number | null }, number>({
+  private noteFit = linkedSignal<{ zoom: FrameZoom; fit: { scale: number; fonts: number } | null }, number>({
     source: () => ({ zoom: this.canvas.zoom(), fit: this.fitAt() }),
     computation: ({ zoom, fit }, previous) =>
-      zoom === 'fit' || fit === null || previous?.source.fit === null || previous?.source.zoom !== zoom
-        ? (fit ?? 1)
+      zoom === 'fit' || fit === null || previous?.source.zoom !== zoom || previous.source.fit?.fonts !== fit.fonts
+        ? (fit?.scale ?? 1)
         : previous.value,
   });
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
@@ -413,7 +419,7 @@ export class SketchesComponent {
     });
 
     afterRenderEffect(() => {
-      this.fontsReady();
+      this.fontLoads();
       this.listSize();
       this.shownRows();
       this.matrixRows();
@@ -424,6 +430,10 @@ export class SketchesComponent {
       this.labels();
       this.labelRows();
       this.gutters();
+
+      // The rows render only once the list is measured; a fit taken before would be 1, and a user zoom would hold it.
+      if (!this.listMeasured()) return;
+
       const list: HTMLElement = this.list().nativeElement;
       const elementsOf = (refs: readonly ElementRef<HTMLElement>[]) => refs.map(({ nativeElement }) => nativeElement);
       const dom: FitDom = {
@@ -441,7 +451,7 @@ export class SketchesComponent {
       };
 
       untracked(() => {
-        this.fitAt.set(this.fitScaleOf(dom));
+        this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
         this.applyScale({ scale: this.scale(), note: this.noteSize(), label: this.labelFont() }, dom);
       });
     });

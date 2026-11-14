@@ -467,6 +467,54 @@ describe('SketchesComponent', () => {
     expect(width * 4 + 24 * 3 + 16).toBeLessThanOrEqual(LIST_WIDTH + 1);
   });
 
+  it('sizes the notes of a user zoom by the fit of the rendered matrix, not by a fit before the list is measured', async () => {
+    const resized: ResizeObserverCallback[] = [];
+    let listWidth = 0;
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resized.push(callback);
+        }
+        observe = () => undefined;
+        unobserve = () => undefined;
+        disconnect = () => undefined;
+      },
+    );
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? listWidth : 0;
+    });
+    const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
+    const fixture = await render({ rows: wide, camera: { zoom: 0.6, x: 0, y: 0 } });
+    const root: HTMLElement = fixture.nativeElement;
+    const list = root.querySelector('[data-sk-rows]')!;
+
+    listWidth = LIST_WIDTH;
+    resized.forEach((callback) => callback([{ target: list } as unknown as ResizeObserverEntry], {} as ResizeObserver));
+    await fixture.whenStable();
+    vi.unstubAllGlobals();
+
+    expect(root.querySelector('[data-sk-matrix]')).not.toBeNull();
+    expect(root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-note]')?.style.fontSize).toBe('12px');
+  });
+
+  it('fits the matrix again when a font loads after the first fit', async () => {
+    const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
+    const fixture = await render({ rows: wide, camera: 'fit' });
+    const root: HTMLElement = fixture.nativeElement;
+    const columns = () => root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns;
+    const before = columns();
+
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return new DOMRect(this.matches('section[data-sk-row]') ? 2000 : 0, 0, 0, 0);
+    });
+    document.fonts.dispatchEvent(new Event('loadingdone'));
+    await fixture.whenStable();
+
+    expect(columns()).not.toBe(before);
+  });
+
   it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
     const pending = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) }));
     const root: HTMLElement = (await render({ camera: '100', rows: pending })).nativeElement;
