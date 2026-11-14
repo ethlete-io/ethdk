@@ -318,8 +318,13 @@ Override per instance via `panelClass` and the pane tokens. `--et-overlay-radius
 | `--et-overlay-radius`               | `1.6rem` (`1.2rem` anchored dialog) |
 
 The backdrop behind a modal overlay dims independently of the pane's own surface:
-`--et-overlay-backdrop-color` (default `rgb(0 0 0 / 0.32)`). To change only its color and keep the
-opacity, set the [scrim color](/core/theming#shadow-and-scrim-colors) instead.
+
+| Token                         | Default                                                                                             | Styles                                               |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `--et-overlay-backdrop-color` | `rgb(var(--et-scrim-color-rgb) / 0.32)`, which is `rgb(0 0 0 / 0.32)` unless the scrim color is set | The backdrop's background (it fades in over `200ms`) |
+
+The token is read from the backdrop element, so a value on `:root` or any ancestor of the overlay container reaches it.
+To change only the color and keep the opacity, set the [scrim color](/core/theming#shadow-and-scrim-colors) instead.
 
 ## Strategies
 

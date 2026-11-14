@@ -40,4 +40,13 @@ describe('overlay panel tokens', () => {
     expect(menuCss).not.toContain('@property --et-menu-item-font-weight');
     expect(menuCss).toMatch(/font: inherit;\s*font-weight: var\(--et-menu-item-font-weight\);/);
   });
+
+  it('reads --et-overlay-backdrop-color without setting it on the backdrop, so a :root value reaches it', () => {
+    const containerCss = readFileSync(libRoot + 'overlay/overlay-container.component.css', 'utf8');
+
+    expect(containerCss).not.toMatch(/--et-overlay-backdrop-color\s*:/);
+    expect(containerCss).toContain(
+      'background-color: var(--et-overlay-backdrop-color, rgb(var(--et-scrim-color-rgb, 0 0 0) / 0.32));',
+    );
+  });
 });

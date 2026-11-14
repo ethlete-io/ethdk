@@ -146,9 +146,7 @@
   }
 
   .et-overlay-runtime-backdrop {
-    --et-overlay-backdrop-color: rgb(var(--et-scrim-color-rgb, 0 0 0) / 0.32);
-
-    background-color: var(--et-overlay-backdrop-color);
+    background-color: var(--et-overlay-backdrop-color, rgb(var(--et-scrim-color-rgb, 0 0 0) / 0.32));
     opacity: 0;
     transition: opacity 200ms linear;
 
