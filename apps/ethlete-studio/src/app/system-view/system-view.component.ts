@@ -453,6 +453,7 @@ export class SystemViewComponent {
   private pickedProduct = signal(rememberedView().systemProduct ?? null);
 
   private picked = signal(rememberedView().systemEntry ?? null);
+  private picks$ = toObservable(this.picked);
 
   private cameras = signal(rememberedView().movedCameras ?? {});
 
@@ -490,7 +491,13 @@ export class SystemViewComponent {
     ).pipe(
       switchMap(({ port, product }) =>
         port && product
-          ? sketchRead$({ port, product, kept: untracked(this.sketchList), picked: untracked(this.picked) })
+          ? sketchRead$({
+              port,
+              product,
+              kept: untracked(this.sketchList),
+              picked: untracked(this.picked),
+              picks: this.picks$,
+            })
           : of(null),
       ),
     ),

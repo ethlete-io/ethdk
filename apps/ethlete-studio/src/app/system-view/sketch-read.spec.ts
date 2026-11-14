@@ -1,4 +1,4 @@
-import { firstValueFrom, toArray } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, toArray } from 'rxjs';
 import { sketchRead$ } from './sketch-read';
 
 const sketch = { target: 'a' };
@@ -58,6 +58,38 @@ describe('sketchRead$', () => {
       [sketch, other],
       [sketch, other],
       [compared, other],
+      [sketch, other],
+    ]);
+  });
+
+  it('compares a sketch picked after the start alone while the full listing runs', async () => {
+    const asked: string[] = [];
+    const other = { target: 'b' };
+    const compared = { ...other, compared: true };
+    const picks = new BehaviorSubject<string | null>('sketch:a');
+    let answerFull = () => undefined as void;
+
+    vi.stubGlobal('fetch', async (url: string) => {
+      const query = new URL(url).searchParams;
+      const kind = query.get('sketch') ?? (query.get('targets') ? 'names' : query.get('unchanged') ? 'quick' : 'full');
+
+      asked.push(kind);
+      if (kind === 'full') {
+        picks.next('sketch:b');
+        await new Promise<void>((done) => (answerFull = done));
+      }
+      if (kind === 'b') setTimeout(() => answerFull());
+
+      return new Response(JSON.stringify({ sketches: kind === 'b' ? [compared] : [sketch, other], unreadable: [] }));
+    });
+
+    const reads = await firstValueFrom(
+      sketchRead$({ port: 1, product: 'p', picked: 'sketch:a', picks }).pipe(toArray()),
+    );
+
+    expect(asked).toEqual(['names', 'quick', 'a', 'full', 'b']);
+    expect(reads.map(({ items }) => items).slice(3)).toEqual([
+      [sketch, compared],
       [sketch, other],
     ]);
   });
