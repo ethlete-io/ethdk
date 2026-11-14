@@ -843,6 +843,29 @@ lint clean. Verified: compare app shots of page-sketch, idle and change-crop vie
 button, stack edges). `compare --base HEAD`: components/shell-collapse all ok; elements/shell-main 0 new, 19 fixed.
 Not verified: other pages that embed the shell; CI.
 
+**B502d as built (Linux builder subagent, 2026-11-14, commit "fix(repo): Fold the sketches states like the design"):**
+`compare pages/sketches --product studio` on da9d62b3d: 13 ok, 18 DIFF, 63 actions missed (60 in edit-sketch, 3 fold
+buttons), 7 states unchecked (design props agent, question, port have no app input). After: 13 ok, 18 DIFF, 0 actions
+missed beside those 7. Per state before to after (px): edit-sketch 94936 to 4397, withdrawn-hidden 59791 to 4525,
+all-unchanged 852 to ok, unchanged 4797 to 4384, unchanged-open 10233 to 9820, unchanged-matrix 34990 to 34639,
+unchanged-matrix-open 40966 to 40865, comparing ok to 51440; unchanged: zoomed-page 82405, sticky-names 58240,
+below-fit 63183, far-out 11733, narrow-far-out 29481, narrow-part, narrow-below-fit, withdrawn-shown, picked,
+sketch-only-points, multi-part, multi-part-many 4525 to 4527, sketch-only-points-open 1476, change-crop 14054,
+change-crop-whole 29041. (1) edit-sketch, Cause: 76fdeeca8 made new a base row, so `foldedStatesOf` saw no variant and
+folded nothing, while the design's `unchangedStates` folds the states no row changes (4 fit states); fixed, base rows
+count when no shot of theirs changes the state. (2) withdrawn-hidden, Cause: the app folded by the listed rows, the
+design by every row of the part (`unchangedStates(full)`), so a hidden withdrawn variant's changed states folded (7
+against 3); fixed, folding reads all rows. (3) Fold button name, Cause: `sameVariants` printed "Variante <label>", the
+design names a labelled row by its label (Unverändert: Entwurf 2); fixed. (4) The 4525 px states, Cause: the fold
+label wraps in the design (166 px, its disclosure button `w-full`) and not in the app (200 px), since b4b4e2fda set
+the disclosure host `min-w-0` so a click beside it no longer opens all states; a design question, not changed: the
+design should drop `w-full` from that fold button, or the app goes back to `w-full`. (5) zoomed-page, sticky-names,
+below-fit, unchanged-matrix: measured `design dom` of zoomed-page, the design sizes gutter names and notes 12 px
+(`--sk-note`, `--sk-label` at zoom 0.6 above its fit), the app 9 px and 7.8 px, the value `textAt` gives below a fit of
+0.8 or more; Suspect: the app's `noteFit` holds a fit measured before the matrix layout settled. (6) comparing, Suspect:
+the parked head-note size race (its notes wrap larger in this shot). Not verified: far-out, narrow-far-out,
+change-crop-whole, sketch-only-points-open measured with `design dom`; the 7 unchecked states; CI.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
@@ -2676,6 +2699,13 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   token (Suspect, code read, no probe: wipe follows scroll position, browser owns smooth-scroll speed). Select L-4
   b5aa31a33 (Cause, spec: Escape on a closed select keeps selection, no preventDefault), L-3 d72cc664b e874d653e (Cause,
   scenario: selectOptionsFromV2Query works with fifa's silent legacy creator; 503 shows inline, no ErrorHandler).
+- B504 (14.11. 11:40): button plus icon on the label cap middle 1f512bf39 (Cause, measured: icon centred on the line
+  box; offset now <=0.25 px in 5 fonts, Chromium only). Fit-56 % Suspect refuted by guard specs ea19aeadb d209f251c;
+  Suspect: archived e2e settled() read too early. 431 and 514 Empfehlung gebaut 50eb9255b ddfc21949 76fdeeca8
+  c112ef3f8 (sample rows Stand / Entwurf 1 / 2; @edit never folds, two named rows with Übernehmen); picture checked.
+  Moved 418->B356, 427/432->B365, 437->B370, 699->B482, 776->B487; 894 and 933 out with fix commits.
+- B487: 776 built fac6ef075 (Cause, live e2e bite: focus in a live frame fell to body on iframe remount).
+- B501: `design shot <part> --states` refuses a plain part shot while the part has 2+ open sketches ("name one").
 - B501: Suspect: `sketch ready` refuses components/badge@long-label for 60 missing motions on 3 text-length-only states.
 - B502 (night 14.11.): live derivation picked wrong (list-row, agent-logos; 8 UNDERIVED from page host); 9f2594cbd: page
   host never counts, a linked component is not free, foundations get none. pages/system Cause (measured): system-view
