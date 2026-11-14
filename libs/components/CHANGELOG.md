@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.0.0-next.83
+
+### Minor Changes
+
+- Add `--et-banner-border-width` (borderless banners and query errors) and the stat tile label tokens `--et-stat-tile-label-text-transform` and `--et-stat-tile-label-letter-spacing`.
+- Add carousel colour tokens for the dots, the countdown ring track and the controls row.
+- `et-empty-state` exposes `--et-empty-state-icon-color` for its icon.
+- Badge exposes `--et-badge-letter-spacing` and `--et-badge-max-width`, and avatar exposes `--et-avatar-size`. A badge no longer sets `align-self` / `justify-self: start`, so it follows its parent's `align-items` / `justify-items` instead of sitting at the start of the cross axis.
+- Tooltip and toggletip expose public CSS tokens: `--et-floating-tip-radius`, `--et-floating-tip-max-width`, `--et-toggletip-letter-spacing` and `--et-toggletip-min-width`. Defaults are unchanged.
+- Tooltip and toggletip expose `--et-floating-tip-background`, `--et-floating-tip-color` and `--et-floating-tip-border`.
+- The match card padding tokens take a `block inline` pair, e.g. `--et-match-card-compact-padding: 12px 8px`.
+- `et-progress-bar` takes a `roundedEnd` input that rounds the end of the determinate fill with `--et-progress-bar-border-radius`. The default fill still ends square.
+- Add `--et-progress-step-marker-ring-width` and `--et-progress-step-marker-ring-color` tokens to `et-progress-step`.
+- `et-spinner` without a bound `diameter` now takes its size from an inherited `--et-spinner-size`. The unread `--et-spinner-stroke-width` token is removed.
+- Add table tokens for the header typography and row min height, per-row background and hover background, and the hover radius.
+- Let an `et-table` `rowLink` answer with `{ commands, queryParams?, fragment?, title? }` or `{ href, title? }`, rendering `title` on the row anchor.
+
+### Patch Changes
+
+- The `spinner()` design mock sets `diameter` and `strokeWidth` on `et-spinner`, so a mock that `ng()` renders as the real component keeps its size.
+- `et-button` centres its icon on the label's cap height instead of the line box, so the icon no longer sits up to 3 px low (lg/xl, any font).
+- Declare `FormCheckboxControl` on `et-switch` and `FormValueControl` on the radio group and segmented button group so the `[formField]` contract is compile-checked.
+- New `--et-menu-border-radius` token (default `10px`) sets the menu panel's corner radius.
+- `--et-menu-item-font-weight` is unregistered: unset, menu items keep the inherited page weight.
+- New `--et-menu-item-font-weight` token (default `400`) sets the menu item weight.
+- The public menu, menu search, cascader panel, date range presets and command palette tokens now inherit, so a value set on `:root` reaches the detached overlay panel.
+- New `--et-overlay-backdrop-filter` token (default `none`) sets the overlay backdrop's `backdrop-filter`.
+- `--et-overlay-backdrop-color` set on `:root` or an ancestor now reaches the backdrop.
+- Skeleton: add `--et-skeleton-color`, `--et-skeleton-highlight-color`, `--et-skeleton-display` and `--et-skeleton-direction`, keep a nested skeleton silent, and let a `shape="rect"` item keep its `aspect-ratio`.
+- Apply a changed `hidden` from a new `et-table` `columns` value; the last write between it and `setColumnVisible` wins.
+
 ## 1.0.0-next.82
 
 ### Minor Changes

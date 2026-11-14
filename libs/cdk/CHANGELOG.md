@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.50
+
+### Patch Changes
+
+- The migrate-from-cdk codemod now reports cdk table column directives, which render nothing inside `et-table`.
+- Skeleton: add `--et-skeleton-color`, `--et-skeleton-highlight-color`, `--et-skeleton-display` and `--et-skeleton-direction`, keep a nested skeleton silent, and let a `shape="rect"` item keep its `aspect-ratio`.
+
 ## 5.0.0-next.49
 
 ### Patch Changes
