@@ -1,8 +1,11 @@
-import { booleanAttribute, computed, Directive, effect, input } from '@angular/core';
+import { booleanAttribute, computed, Directive, effect, input, model, signal } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { injectStandingsLabels, StandingsLabels } from '../standings-labels';
 import { STANDINGS_ERROR_CODES } from '../standings-errors';
-import { NormalizedStandingRow, StandingsZone } from '../standings.types';
+import { NormalizedStandingRow, StandingsExpandMode, StandingsZone } from '../standings.types';
+import { StandingsRowDetailDirective } from './standings-row-detail.directive';
+
+let uniqueId = 0;
 
 /** A row paired with whatever the config says about the position it sits in. */
 export type StandingsRenderRow = {
@@ -11,6 +14,10 @@ export type StandingsRenderRow = {
   zone: StandingsZone | null;
   /** Whether this is the row the consumer asked to highlight. */
   isHighlighted: boolean;
+  /** Whether the row's detail is open. Always `false` without a row detail template. */
+  isExpanded: boolean;
+  /** The id for the element holding the row's detail, for the toggle's `aria-controls`. */
+  detailId: string;
 };
 
 /**
@@ -50,6 +57,20 @@ export class StandingsDirective {
   /** Override this instance's strings - see {@link provideStandingsLabels} for the app-wide version. */
   public labels = input<Partial<StandingsLabels> | null>(null);
 
+  /** The `id`s of the rows whose detail is open. Two-way bindable. @default [] */
+  public expandedRows = model<readonly string[]>([]);
+
+  /** `'single'` closes the open row when another one opens; `'multiple'` lets rows open independently. @default 'multiple' */
+  public expandMode = input<StandingsExpandMode>('multiple');
+
+  /** The `ng-template[etStandingsRowDetail]` registered here, or `null` when the rows do not expand. */
+  public registeredRowDetailTemplate = signal<StandingsRowDetailDirective | null>(null);
+
+  /** Whether the rows have a detail to expand into. */
+  public isExpandable = computed(() => !!this.registeredRowDetailTemplate());
+
+  private readonly DETAIL_ID_PREFIX = `et-standings-${uniqueId++}-detail-`;
+
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<StandingsLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
@@ -57,11 +78,14 @@ export class StandingsDirective {
   public renderRows = computed<StandingsRenderRow[]>(() => {
     const zones = this.zones();
     const highlightedRowId = this.highlightedRowId();
+    const expandedRows = this.isExpandable() ? this.expandedRows() : [];
 
     return this.rows().map((row) => ({
       row,
       zone: zones.find((zone) => row.position >= zone.from && row.position <= zone.to) ?? null,
       isHighlighted: !!highlightedRowId && row.id === highlightedRowId,
+      isExpanded: expandedRows.includes(row.id),
+      detailId: this.DETAIL_ID_PREFIX + row.id,
     }));
   });
 
@@ -77,6 +101,22 @@ export class StandingsDirective {
   constructor() {
     if (ngDevMode) {
       effect(() => this.assertZonesDoNotOverlap(this.zones()));
+    }
+  }
+
+  /** Whether the row with this `id` has its detail open. Always `false` without a row detail template. */
+  public isRowExpanded(rowId: string) {
+    return this.isExpandable() && this.expandedRows().includes(rowId);
+  }
+
+  /** Open the row's detail, or close it when it is open. In `'single'` mode opening a row closes the others. */
+  public toggleRow(rowId: string) {
+    const expanded = this.expandedRows();
+
+    if (expanded.includes(rowId)) {
+      this.expandedRows.set(expanded.filter((id) => id !== rowId));
+    } else {
+      this.expandedRows.set(this.expandMode() === 'single' ? [rowId] : [...expanded, rowId]);
     }
   }
 

@@ -303,3 +303,112 @@ describe('StandingsComponent ties', () => {
     ]);
   });
 });
+
+@Component({
+  template: `
+    <et-standings
+      [(expandedRows)]="expandedRows"
+      [rows]="rows"
+      [expandMode]="expandMode()"
+      (click)="clicks = clicks + 1"
+    >
+      <ng-template let-row let-columnCount="columnCount" etStandingsRowDetail>
+        <tr class="season-row">
+          <td [attr.colspan]="columnCount">
+            <button class="season-button" type="button">{{ row.participant?.name }} 2025</button>
+          </td>
+        </tr>
+      </ng-template>
+    </et-standings>
+  `,
+  imports: [STANDINGS_IMPORTS],
+})
+class ExpandableHostComponent {
+  public rows = ROWS;
+  public expandMode = signal<'single' | 'multiple'>('multiple');
+  public expandedRows = signal<readonly string[]>([]);
+  public clicks = 0;
+}
+
+describe('StandingsComponent row detail', () => {
+  const toggles = (driver: ReturnType<typeof createExpandable>) =>
+    driver.queryAll<HTMLButtonElement>('.et-standings-expand-toggle');
+
+  const createExpandable = () => mountStandings(ExpandableHostComponent);
+
+  it('adds no toggle column, no extra tbody and no aria without the template', () => {
+    const driver = create();
+
+    expect(driver.queryAll('[data-column="expand"]').length).toBe(0);
+    expect(driver.queryAll('tbody').length).toBe(1);
+    expect(driver.queryAll('[aria-expanded]').length).toBe(0);
+  });
+
+  it('gives every row a labelled toggle that controls its detail', () => {
+    const driver = createExpandable();
+    const [first] = toggles(driver);
+
+    expect(toggles(driver).length).toBe(3);
+    expect(driver.queryAll('thead [data-column="expand"]').length).toBe(1);
+    expect(first!.getAttribute('aria-label')).toBe('Details for FC Berlin');
+    expect(first!.getAttribute('aria-expanded')).toBe('false');
+    expect(driver.query('.season-row')).toBeNull();
+
+    driver.click(first!);
+
+    expect(first!.getAttribute('aria-expanded')).toBe('true');
+    const detail = driver.query('.et-standings-detail');
+    expect(detail?.id).toBe(first!.getAttribute('aria-controls'));
+    expect(detail?.querySelector('td')?.getAttribute('colspan')).toBe('9');
+    expect(driver.text('.season-button')).toBe('FC Berlin 2025');
+  });
+
+  it('keeps the toggle click away from a click handler on the table', () => {
+    const driver = createExpandable();
+
+    driver.click(toggles(driver)[0]!);
+
+    expect(driver.host.clicks).toBe(0);
+  });
+
+  it('opens rows independently by default', () => {
+    const driver = createExpandable();
+
+    driver.click(toggles(driver)[0]!);
+    driver.click(toggles(driver)[1]!);
+
+    expect(driver.host.expandedRows()).toEqual(['fcb', 'neo']);
+  });
+
+  it('closes the open row when another one opens in single mode', () => {
+    const driver = createExpandable();
+    driver.host.expandMode.set('single');
+    driver.detectChanges();
+
+    driver.click(toggles(driver)[0]!);
+    driver.click(toggles(driver)[1]!);
+
+    expect(driver.host.expandedRows()).toEqual(['neo']);
+    expect(toggles(driver).map((toggle) => toggle.getAttribute('aria-expanded'))).toEqual(['false', 'true', 'false']);
+  });
+
+  it('closes an open row on a second click', () => {
+    const driver = createExpandable();
+
+    driver.click(toggles(driver)[0]!);
+    driver.click(toggles(driver)[0]!);
+
+    expect(driver.host.expandedRows()).toEqual([]);
+    expect(toggles(driver)[0]!.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('opens the rows bound through expandedRows', () => {
+    const driver = createExpandable();
+
+    driver.host.expandedRows.set(['rlp']);
+    driver.detectChanges();
+
+    expect(toggles(driver).map((toggle) => toggle.getAttribute('aria-expanded'))).toEqual(['false', 'false', 'true']);
+    expect(driver.text('.season-button')).toBe('Rote Löwen 2025');
+  });
+});

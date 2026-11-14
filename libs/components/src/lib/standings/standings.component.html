@@ -39,62 +39,43 @@
             {{ labels().form }}
           </th>
         }
+        @if (standings.isExpandable()) {
+          <th class="et-standings-cell" data-column="expand" scope="col">
+            <span class="et-visually-hidden">{{ labels().rowDetailColumn }}</span>
+          </th>
+        }
       </tr>
     </thead>
 
-    <tbody>
+    @if (standings.registeredRowDetailTemplate(); as detail) {
       @for (renderRow of standings.renderRows(); track renderRow.row.id) {
-        <tr
-          [etProvideColor]="renderRow.zone?.color ?? null"
-          [attr.data-zone]="renderRow.zone ? '' : null"
-          [attr.data-highlighted]="renderRow.isHighlighted ? '' : null"
-          [attr.aria-current]="renderRow.isHighlighted ? 'true' : null"
-          class="et-standings-row"
-        >
-          <!-- A row header, not a cell: the position is what identifies the row to a screen reader. -->
-          <th class="et-standings-cell" data-column="position" scope="row">
-            {{ renderRow.row.position }}
-            @if (renderRow.zone; as zone) {
-              <!-- The band's meaning in text, so the banding isn't colour-only. -->
-              <span class="et-visually-hidden et-standings-zone-note"> {{ zone.label }}</span>
-            }
-            @if (renderRow.isHighlighted) {
-              <span class="et-visually-hidden et-standings-zone-note"> {{ labels().highlightedRow }}</span>
-            }
-          </th>
+        <tbody class="et-standings-row-group">
+          <ng-container [ngTemplateOutlet]="teamRow" [ngTemplateOutletContext]="{ $implicit: renderRow }" />
+        </tbody>
 
-          <td class="et-standings-cell" data-column="participant">
-            <et-match-participant [participant]="renderRow.row.participant" class="et-standings-participant" />
-          </td>
-
-          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.played }}</td>
-          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.wins }}</td>
-          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.ties }}</td>
-          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.losses }}</td>
-
-          @if (standings.hasDifference()) {
-            <td class="et-standings-cell" data-column="detail">{{ differenceText(renderRow.row.difference) }}</td>
-          }
-
-          <td class="et-standings-cell" data-column="points">{{ renderRow.row.points }}</td>
-
-          @if (standings.hasForm()) {
-            <td class="et-standings-cell" data-column="form">
-              @if (renderRow.row.form; as form) {
-                <span class="et-standings-form">
-                  @for (result of form; track $index) {
-                    <span [attr.data-result]="result" class="et-standings-form-result" aria-hidden="true">{{
-                      labels().formResultShort(result)
-                    }}</span>
-                    <span class="et-visually-hidden et-standings-form-note"> {{ labels().formResult(result) }}</span>
-                  }
-                </span>
-              }
-            </td>
-          }
-        </tr>
+        @if (renderRow.isExpanded) {
+          <tbody
+            [id]="renderRow.detailId"
+            [etProvideColor]="renderRow.zone?.color ?? null"
+            [attr.data-zone]="renderRow.zone ? '' : null"
+            class="et-standings-detail"
+            animate.enter="et-standings-detail--enter"
+            animate.leave="et-standings-detail--leave"
+          >
+            <ng-container
+              [ngTemplateOutlet]="detail.templateRef"
+              [ngTemplateOutletContext]="{ $implicit: renderRow.row, renderRow, columnCount: columnCount() }"
+            />
+          </tbody>
+        }
       }
-    </tbody>
+    } @else {
+      <tbody>
+        @for (renderRow of standings.renderRows(); track renderRow.row.id) {
+          <ng-container [ngTemplateOutlet]="teamRow" [ngTemplateOutletContext]="{ $implicit: renderRow }" />
+        }
+      </tbody>
+    }
   </table>
 
   @if (standings.legendZones(); as zones) {
@@ -110,3 +91,70 @@
     }
   }
 </div>
+
+<ng-template #teamRow let-renderRow>
+  <tr
+    [etProvideColor]="renderRow.zone?.color ?? null"
+    [attr.data-zone]="renderRow.zone ? '' : null"
+    [attr.data-highlighted]="renderRow.isHighlighted ? '' : null"
+    [attr.aria-current]="renderRow.isHighlighted ? 'true' : null"
+    class="et-standings-row"
+  >
+    <!-- A row header, not a cell: the position is what identifies the row to a screen reader. -->
+    <th class="et-standings-cell" data-column="position" scope="row">
+      {{ renderRow.row.position }}
+      @if (renderRow.zone; as zone) {
+        <!-- The band's meaning in text, so the banding isn't colour-only. -->
+        <span class="et-visually-hidden et-standings-zone-note"> {{ zone.label }}</span>
+      }
+      @if (renderRow.isHighlighted) {
+        <span class="et-visually-hidden et-standings-zone-note"> {{ labels().highlightedRow }}</span>
+      }
+    </th>
+
+    <td class="et-standings-cell" data-column="participant">
+      <et-match-participant [participant]="renderRow.row.participant" class="et-standings-participant" />
+    </td>
+
+    <td class="et-standings-cell" data-column="detail">{{ renderRow.row.played }}</td>
+    <td class="et-standings-cell" data-column="detail">{{ renderRow.row.wins }}</td>
+    <td class="et-standings-cell" data-column="detail">{{ renderRow.row.ties }}</td>
+    <td class="et-standings-cell" data-column="detail">{{ renderRow.row.losses }}</td>
+
+    @if (standings.hasDifference()) {
+      <td class="et-standings-cell" data-column="detail">{{ differenceText(renderRow.row.difference) }}</td>
+    }
+
+    <td class="et-standings-cell" data-column="points">{{ renderRow.row.points }}</td>
+
+    @if (standings.hasForm()) {
+      <td class="et-standings-cell" data-column="form">
+        @if (renderRow.row.form; as form) {
+          <span class="et-standings-form">
+            @for (result of form; track $index) {
+              <span [attr.data-result]="result" class="et-standings-form-result" aria-hidden="true">{{
+                labels().formResultShort(result)
+              }}</span>
+              <span class="et-visually-hidden et-standings-form-note"> {{ labels().formResult(result) }}</span>
+            }
+          </span>
+        }
+      </td>
+    }
+
+    @if (standings.isExpandable()) {
+      <td class="et-standings-cell" data-column="expand">
+        <button
+          [attr.aria-expanded]="renderRow.isExpanded"
+          [attr.aria-controls]="renderRow.detailId"
+          [attr.aria-label]="labels().rowDetailToggle(participantName(renderRow.row))"
+          (click)="toggleRow($event, renderRow.row.id)"
+          class="et-standings-expand-toggle"
+          type="button"
+        >
+          <i class="et-standings-expand-chevron" etIcon="et-chevron" aria-hidden="true"></i>
+        </button>
+      </td>
+    }
+  </tr>
+</ng-template>

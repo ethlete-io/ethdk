@@ -13,6 +13,8 @@ export default {
     withZones: true,
     withForm: true,
     direction: 'ltr',
+    expandable: false,
+    expandMode: 'multiple',
   },
   argTypes: {
     surface: { control: 'text' },
@@ -22,6 +24,8 @@ export default {
     withZones: { control: 'boolean' },
     withForm: { control: 'boolean' },
     direction: { control: 'inline-radio', options: ['ltr', 'rtl'] },
+    expandable: { control: 'boolean' },
+    expandMode: { control: 'inline-radio', options: ['single', 'multiple'] },
   },
 } as Meta<StandingsStorybookComponent>;
 
@@ -61,6 +65,20 @@ export const Rtl: Story = {
     docs: {
       description: {
         story: 'Right to left: the zone bar sits on the start side of the position cell, now the right edge.',
+      },
+    },
+  },
+};
+
+export const ExpandableRows: Story = {
+  args: { expandable: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'An `ng-template[etStandingsRowDetail]` adds a toggle per row. The template renders real rows into the ' +
+          'table, so each season lines up with the team columns, and its buttons work. Switch `expandMode` to ' +
+          '`single` to keep one row open.',
       },
     },
   },

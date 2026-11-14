@@ -1,7 +1,7 @@
-import { Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { STANDINGS_IMPORTS } from '../standings.imports';
-import { NormalizedStandingRow, StandingsZone } from '../standings.types';
+import { NormalizedStandingRow, StandingsExpandMode, StandingsZone } from '../standings.types';
 
 @Component({
   selector: 'et-sb-standings',
@@ -16,12 +16,48 @@ import { NormalizedStandingRow, StandingsZone } from '../standings.types';
 
         <div [style.inline-size]="boxWidth()" [attr.dir]="direction()">
           <et-standings
+            [(expandedRows)]="expandedRows"
             [rows]="rows()"
             [zones]="zones()"
             [highlightedRowId]="highlight() ? 'neo' : null"
             [showLegend]="showLegend()"
-          />
+            [expandMode]="expandMode()"
+          >
+            @if (expandable()) {
+              <ng-template let-row etStandingsRowDetail>
+                @for (season of seasonsOf(row); track season.name) {
+                  <tr class="et-standings-row">
+                    <td class="et-standings-cell" data-column="position"></td>
+                    <td class="et-standings-cell" data-column="participant">
+                      <button
+                        (click)="openedSeason.set((row.participant?.name ?? '') + ' ' + season.name)"
+                        class="cursor-pointer border-0 bg-transparent p-0 text-inherit underline"
+                        type="button"
+                      >
+                        {{ season.name }}
+                      </button>
+                    </td>
+                    <td class="et-standings-cell" data-column="detail">{{ season.played }}</td>
+                    <td class="et-standings-cell" data-column="detail">{{ season.wins }}</td>
+                    <td class="et-standings-cell" data-column="detail">{{ season.ties }}</td>
+                    <td class="et-standings-cell" data-column="detail">{{ season.losses }}</td>
+                    <td class="et-standings-cell" data-column="detail"></td>
+                    <td class="et-standings-cell" data-column="points">{{ season.points }}</td>
+                    @if (withForm()) {
+                      <td class="et-standings-cell" data-column="form"></td>
+                    }
+                    <td class="et-standings-cell" data-column="expand"></td>
+                  </tr>
+                }
+              </ng-template>
+            }
+          </et-standings>
         </div>
+        @if (expandable()) {
+          <p class="text-small m-0 opacity-60" data-testid="standings-expanded">
+            Expanded: {{ expandedRows().join(', ') || 'none' }} - last opened season: {{ openedSeason() ?? 'none' }}
+          </p>
+        }
       </section>
     </div>
   `,
@@ -36,6 +72,11 @@ export class StandingsStorybookComponent {
   public withZones = input(true);
   public withForm = input(true);
   public direction = input<'ltr' | 'rtl'>('ltr');
+  public expandable = input(false);
+  public expandMode = input<StandingsExpandMode>('multiple');
+
+  protected expandedRows = signal<readonly string[]>([]);
+  protected openedSeason = signal<string | null>(null);
 
   /** Caps at the viewport so a phone gets the collapsed table instead of a horizontal scrollbar. */
   protected boxWidth = computed(() => `min(${this.width()}px, 100%)`);
@@ -52,6 +93,16 @@ export class StandingsStorybookComponent {
   protected rows = computed<NormalizedStandingRow[]>(() =>
     STANDINGS_ROWS.map((row) => ({ ...row, form: this.withForm() ? row.form : null })),
   );
+
+  protected seasonsOf(row: NormalizedStandingRow) {
+    return ['2024', '2025'].map((name, index) => {
+      const wins = Math.max(0, row.wins - 3 - index);
+      const ties = row.ties;
+      const losses = 6 - wins - ties;
+
+      return { name, played: 6, wins, ties, losses, points: wins * 3 + ties };
+    });
+  }
 }
 
 // Below the component on purpose: an interpolated template literal above an inline `template:` breaks the

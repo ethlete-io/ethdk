@@ -105,15 +105,39 @@ Like the match card, the table measures itself and drops columns rather than scr
 A column nobody reports is dropped entirely: no row with a `difference` means no difference column, and no
 row with `form` means no form column - an empty column is worse than a missing one.
 
+## Expandable rows
+
+Give the table an `ng-template[etStandingsRowDetail]` and every row gets a chevron toggle in a trailing
+column. The template renders its own `<tr>`s straight into the table, under the row, so a sub-row that reuses
+`et-standings-cell` and the `data-column` values lines up with the team's columns and collapses with them
+when the table narrows. The context is the row (`let-row`), its `renderRow`, and `columnCount` for a single
+full-width cell (`<td [attr.colspan]="columnCount">`).
+
+@example standings/standings-expandable 360px
+
+- **Only the toggle expands.** The row itself stays free for your own click handler, and the toggle's click
+  does not bubble to it. Buttons and links inside the detail work as usual.
+- **Rows open independently** by default. `expandMode="single"` keeps one open.
+- **`expandedRows`** holds the open rows' `id`s and is two-way bindable: `[(expandedRows)]="expanded"`.
+- The detail fades in and out; with reduced motion it appears at once. A zone's accent bar and tint
+  continue down the detail rows.
+- The headless `StandingsDirective` owns the state - `toggleRow(id)`, `isRowExpanded(id)`,
+  `registeredRowDetailTemplate()` and each render row's `isExpanded` / `detailId` - so a custom renderer can
+  reuse it.
+
+Without the template nothing changes: no toggle column, one `<tbody>`, no extra attributes.
+
 ## Options
 
-| Input              | Type                               | Default | What it does                                                     |
-| ------------------ | ---------------------------------- | ------- | ---------------------------------------------------------------- |
-| `rows`             | `readonly NormalizedStandingRow[]` | -       | Required. Drawn in the order given.                              |
-| `zones`            | `readonly StandingsZone[]`         | `[]`    | Position bands (see [Zones](#zones)).                            |
-| `highlightedRowId` | `string \| null`                   | `null`  | The `id` of the row to single out - "your team".                 |
-| `showLegend`       | `boolean`                          | `true`  | Draw the legend under the table. No zones, no legend either way. |
-| `labels`           | `Partial<StandingsLabels> \| null` | `null`  | Per-instance string overrides.                                   |
+| Input              | Type                               | Default      | What it does                                                     |
+| ------------------ | ---------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `rows`             | `readonly NormalizedStandingRow[]` | -            | Required. Drawn in the order given.                              |
+| `zones`            | `readonly StandingsZone[]`         | `[]`         | Position bands (see [Zones](#zones)).                            |
+| `highlightedRowId` | `string \| null`                   | `null`       | The `id` of the row to single out - "your team".                 |
+| `showLegend`       | `boolean`                          | `true`       | Draw the legend under the table. No zones, no legend either way. |
+| `labels`           | `Partial<StandingsLabels> \| null` | `null`       | Per-instance string overrides.                                   |
+| `expandedRows`     | `readonly string[]`                | `[]`         | The `id`s of the open rows. Two-way bindable.                    |
+| `expandMode`       | `'single' \| 'multiple'`           | `'multiple'` | Whether opening a row closes the open one.                       |
 
 ## Localization
 
@@ -147,6 +171,9 @@ provideStandingsLabels({
 - **Form is never opacity-only.** Each square carries a letter (`formResultShort`: "W", "D", "L") and a
   visually hidden word (`formResult`: "Win", "Draw", "Loss"); the letter is `aria-hidden`, so it is not read
   twice.
+- **The row toggle** is a real `<button>` named by `rowDetailToggle` ("Details for FC Berlin"), with
+  `aria-expanded` and `aria-controls` pointing at the detail's `<tbody>`. Its column header carries the
+  visually hidden `rowDetailColumn` label.
 - Dropped columns are dropped from the DOM or set to `display: none`, so assistive tech never announces a
   column the reader can't see.
 
@@ -163,6 +190,9 @@ each square, not its fill, tells the results apart.
 | `--et-standings-cell-padding-inline` | `8px`   | Horizontal cell padding                   |
 | `--et-standings-zone-bar-width`      | `3px`   | Width of a zone's inline-start accent bar |
 | `--et-standings-font-size`           | `13px`  | Table text, including participant names   |
+| `--et-standings-expand-toggle-size`  | `28px`  | Size of the row detail toggle             |
+| `--et-standings-expand-chevron-size` | `16px`  | Size of the toggle's chevron              |
+| `--et-standings-expand-duration`     | `180ms` | Detail fade and chevron turn              |
 
 ## Error codes
 

@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
@@ -20,6 +21,8 @@ import {
   StandingsPickComponent,
   StandingsPickDirective,
   StandingsPickMarkDirective,
+  StandingsRowDetailContext,
+  StandingsRowDetailDirective,
   StandingsZone,
 } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
@@ -215,6 +218,92 @@ class PickCardsComponent {
 })
 class DuplicateMarkComponent {
   teams = TEAMS;
+}
+
+type Season = { name: string; played: number; points: number };
+
+@Component({
+  selector: 'et-scenario-season-rows',
+  imports: [STANDINGS_IMPORTS],
+  template: `
+    <et-standings [(expandedRows)]="expanded" [rows]="rows" [zones]="zones" (click)="rowClicks = rowClicks + 1">
+      <ng-template let-row let-columnCount="columnCount" etStandingsRowDetail>
+        @for (season of seasons[row.id] ?? []; track season.name) {
+          <tr class="et-standings-row season">
+            <td class="et-standings-cell" data-column="position"></td>
+            <td class="et-standings-cell" data-column="participant">
+              <button (click)="opened = season.name" type="button">{{ season.name }}</button>
+            </td>
+            <td class="et-standings-cell" data-column="detail">{{ season.played }}</td>
+            <td class="et-standings-cell" data-column="detail"></td>
+            <td class="et-standings-cell" data-column="detail"></td>
+            <td class="et-standings-cell" data-column="detail"></td>
+            <td class="et-standings-cell" data-column="detail"></td>
+            <td class="et-standings-cell" data-column="points">{{ season.points }}</td>
+            <td class="et-standings-cell" data-column="expand"></td>
+          </tr>
+        } @empty {
+          <tr class="empty">
+            <td [attr.colspan]="columnCount">No earlier seasons</td>
+          </tr>
+        }
+      </ng-template>
+    </et-standings>
+  `,
+})
+class SeasonRowsComponent {
+  rows = GROUP.placements.map(normalizeEthletePlacement);
+  zones = [RELEGATION];
+  seasons: Record<string, Season[]> = {
+    'team-a': [
+      { name: '2024', played: 6, points: 12 },
+      { name: '2025', played: 6, points: 15 },
+    ],
+  };
+  expanded = signal<readonly string[]>([]);
+  rowClicks = 0;
+  opened: string | null = null;
+}
+
+@Component({
+  selector: 'et-scenario-expandable-cards',
+  imports: [StandingsDirective, StandingsRowDetailDirective, NgTemplateOutlet],
+  template: `
+    <section #table="etStandings" [rows]="rows" etStandings expandMode="single">
+      @for (entry of table.renderRows(); track entry.row.id) {
+        <button [attr.aria-expanded]="table.isRowExpanded(entry.row.id)" (click)="table.toggleRow(entry.row.id)">
+          {{ entry.row.participant?.name ?? 'Open slot' }}
+        </button>
+        @if (entry.isExpanded && table.registeredRowDetailTemplate(); as detail) {
+          <ng-container *ngTemplateOutlet="detail.templateRef; context: context(entry)" />
+        }
+      }
+      <ng-template let-row etStandingsRowDetail>
+        <p class="detail">{{ row.points }} points</p>
+      </ng-template>
+    </section>
+  `,
+})
+class ExpandableCardsComponent {
+  rows = GROUP.placements.map(normalizeEthletePlacement);
+
+  context(renderRow: StandingsRowDetailContext['renderRow']): StandingsRowDetailContext {
+    return { $implicit: renderRow.row, renderRow, columnCount: 1 };
+  }
+}
+
+@Component({
+  selector: 'et-scenario-duplicate-row-detail',
+  imports: [STANDINGS_IMPORTS],
+  template: `
+    <et-standings [rows]="rows">
+      <ng-template etStandingsRowDetail>one</ng-template>
+      <ng-template etStandingsRowDetail>two</ng-template>
+    </et-standings>
+  `,
+})
+class DuplicateRowDetailComponent {
+  rows = GROUP.placements.map(normalizeEthletePlacement);
 }
 
 const query = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
@@ -439,6 +528,84 @@ describe('standings scenarios', () => {
 
     expect(items()).toEqual(['1 Team C', '2 Team A', '3 Team B']);
     expect(text(query('.start', host))).toBe('team-a,team-b,team-c / team-c,team-a,team-b');
+  });
+
+  it('expands a row into season rows aligned to its columns, without touching the table click', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(SeasonRowsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+    s.flush();
+
+    expect(text(query('thead [data-column="expand"]', host))).toBe('Details');
+    const toggles = queryAll<HTMLButtonElement>('.et-standings-expand-toggle', host);
+    expect(toggles.map((toggle) => toggle.getAttribute('aria-label'))).toEqual([
+      'Details for Team A',
+      'Details for Team B',
+      'Details for Team C',
+      'Details for TBD',
+    ]);
+
+    toggles[0]!.click();
+    toggles[3]!.click();
+    s.tick();
+    s.flush();
+
+    expect(app.rowClicks).toBe(0);
+    expect(app.expanded()).toEqual(['team-a', 'position-4']);
+    expect(queryAll('.season [data-column="points"]', host).map(text)).toEqual(['12', '15']);
+    expect(queryAll('tbody', host).map((group) => group.classList[0])).toEqual([
+      'et-standings-row-group',
+      'et-standings-detail',
+      'et-standings-row-group',
+      'et-standings-row-group',
+      'et-standings-row-group',
+      'et-standings-detail',
+    ]);
+    expect(queryAll('.et-standings-detail', host)[1]!.hasAttribute('data-zone')).toBe(true);
+    expect(text(query('.empty', host))).toBe('No earlier seasons');
+    expect(query('.empty td', host).getAttribute('colspan')).toBe('9');
+
+    query<HTMLButtonElement>('.season button', host).click();
+    expect(app.opened).toBe('2024');
+
+    toggles[0]!.click();
+    s.tick();
+    s.flush();
+
+    expect(toggles[0]!.getAttribute('aria-expanded')).toBe('false');
+    expect(app.expanded()).toEqual(['position-4']);
+  });
+
+  it('expands headless cards one at a time through the directive api', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ExpandableCardsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    const buttons = queryAll<HTMLButtonElement>('button', host);
+    buttons[0]!.click();
+    s.tick();
+    buttons[1]!.click();
+    s.tick();
+    s.flush();
+
+    expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual(['false', 'true', 'false', 'false']);
+    expect(queryAll('.detail', host).map(text)).toEqual(['4 points']);
+  });
+
+  it('refuses a second row detail template on one table', () => {
+    const s = scenario();
+
+    expect(() => {
+      TestBed.createComponent(DuplicateRowDetailComponent);
+      s.tick();
+    }).toThrow(`ET${STANDINGS_ERROR_CODES.DUPLICATE_ROW_DETAIL_TEMPLATE}`);
+    dropErrorContext(s);
   });
 
   it('refuses a second mark template on one pick list', () => {

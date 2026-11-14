@@ -36,6 +36,10 @@ export type StandingsLabels = {
   legend: string;
   /** Announced on the highlighted row, so it is findable without seeing the highlight. */
   highlightedRow: string;
+  /** Names the header of the column holding the row detail toggles. */
+  rowDetailColumn: string;
+  /** Names a row's detail toggle; `aria-expanded` says whether it is open. */
+  rowDetailToggle: (participant: string) => string;
   /** Names the pick list - what the order being arranged is an order of. */
   pickCaption: string;
   /** The cut between the last advancing position and the first one below it. */
@@ -74,6 +78,8 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
   formResultShort: (result) => (result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D'),
   legend: 'What the highlighted positions mean',
   highlightedRow: 'Your team',
+  rowDetailColumn: 'Details',
+  rowDetailToggle: (participant) => `Details for ${participant}`,
   pickCaption: 'Your predicted order',
   pickCut: 'Advancing',
   pickAdvancingRow: 'Advancing',
@@ -106,6 +112,8 @@ export const GERMAN_STANDINGS_LABELS: StandingsLabels = {
   formResultShort: (result) => (result === 'win' ? 'S' : result === 'loss' ? 'N' : 'U'),
   legend: 'Bedeutung der hervorgehobenen Plätze',
   highlightedRow: 'Eigenes Team',
+  rowDetailColumn: 'Details',
+  rowDetailToggle: (participant) => `Details zu ${participant}`,
   pickCaption: 'Vorhergesagte Reihenfolge',
   pickCut: 'Kommt weiter',
   pickAdvancingRow: 'Kommt weiter',

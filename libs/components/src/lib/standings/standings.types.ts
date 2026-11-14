@@ -47,3 +47,6 @@ export type StandingsZone = {
   /** What the band means, for the legend. */
   label: string;
 };
+
+/** How the rows of a table with a row detail expand: one at a time, or independently. */
+export type StandingsExpandMode = 'single' | 'multiple';

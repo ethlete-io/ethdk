@@ -1,7 +1,10 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, ViewEncapsulation } from '@angular/core';
 import { ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
-import { MATCH_PARTICIPANT_IMPORTS } from '../match';
+import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
+import { injectMatchLabels, MATCH_PARTICIPANT_IMPORTS, matchParticipantDisplayName } from '../match';
 import { StandingsDirective } from './headless';
+import { NormalizedStandingRow } from './standings.types';
 
 /**
  * A league or group table: positions, the participants, played/won/drawn/lost, the points they rank by, and
@@ -22,11 +25,13 @@ import { StandingsDirective } from './headless';
   templateUrl: './standings.component.html',
   styleUrl: './standings.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [MATCH_PARTICIPANT_IMPORTS, ProvideColorDirective],
+  imports: [MATCH_PARTICIPANT_IMPORTS, ProvideColorDirective, NgTemplateOutlet, IconDirective],
+  providers: [provideIcons(CHEVRON_ICON)],
   hostDirectives: [
     {
       directive: StandingsDirective,
-      inputs: ['rows', 'zones', 'highlightedRowId', 'showLegend', 'labels'],
+      inputs: ['rows', 'zones', 'highlightedRowId', 'showLegend', 'labels', 'expandedRows', 'expandMode'],
+      outputs: ['expandedRowsChange'],
     },
   ],
   host: {
@@ -36,10 +41,23 @@ import { StandingsDirective } from './headless';
 export class StandingsComponent {
   protected standings = inject(StandingsDirective);
 
+  private matchLabels = injectMatchLabels();
+
   protected labels = computed(() => this.standings.resolvedLabels());
+
+  protected columnCount = computed(() => 8 + Number(this.standings.hasDifference()) + Number(this.standings.hasForm()));
 
   constructor() {
     mountVisuallyHidden();
+  }
+
+  protected participantName(row: NormalizedStandingRow) {
+    return matchParticipantDisplayName({ participant: row.participant, labels: this.matchLabels() });
+  }
+
+  protected toggleRow(event: Event, rowId: string) {
+    event.stopPropagation();
+    this.standings.toggleRow(rowId);
   }
 
   /** Signed, because a difference of `-4` and one of `4` are the two things this column exists to tell apart. */
