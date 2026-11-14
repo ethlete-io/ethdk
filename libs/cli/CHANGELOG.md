@@ -1,5 +1,19 @@
 # @ethlete/cli
 
+## 3.0.0-next.31
+
+### Minor Changes
+
+- A design commit rebases the open sketches it made stale (`sketch rebase-open --commit <rev>`), and `sketch hold --until-sketch` holds a sketch on another sketch.
+
+### Patch Changes
+
+- A sketch merge now rebases the other open sketches before its commit and commits them with it; `sketch rebase-open --json` prints the rebased sketch folders.
+- The sketch listing marks a sketch whose rebase the post-commit hook could not commit (`rebaseUncommitted`).
+- `design actions --live` no longer waits 30 s and reports a timeout when a click removes the clicked control, such as a menu item that closes its menu or a nav button that switches the page.
+- A sketch listing with `&sketch=<target>` compares that sketch alone, without the rule check, and Studio asks for the opened sketch that way before the full listing, so its changed states draw sooner.
+- The Studio sketch list no longer shows a ready check on a sketch whose base needs a rebase or whose variants changed since `sketch ready`.
+
 ## 3.0.0-next.30
 
 ### Minor Changes
