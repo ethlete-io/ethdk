@@ -9,6 +9,7 @@ import {
   liveOutcomeOf,
   liveStateCompareOf,
   nearestControlOf,
+  toggleStepOf,
   toggleSyncFailureOf,
 } from './live-actions';
 
@@ -204,5 +205,42 @@ describe('awaitEmitted', () => {
     await page.close();
 
     expect(waited).toBeLessThan(EMIT_WAIT_MS - 100);
+  });
+}, 30_000);
+
+describe('toggleStepOf', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('answers null at once for a control its click removed, and reads a kept toggle', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    page.setDefaultTimeout(3000);
+    await page.setContent(
+      `<button id="item" onclick="this.remove()">Item</button><button id="kept" aria-expanded="true">Kept</button>`,
+    );
+    await page.locator('#item').click();
+
+    const start = Date.now();
+    const removed = await toggleStepOf({ page, control: page.locator('#item'), overlaysBefore: 0 }).catch(
+      (error: unknown) => error,
+    );
+    const waited = Date.now() - start;
+    const kept = await toggleStepOf({ page, control: page.locator('#kept'), overlaysBefore: 0 });
+
+    await page.close();
+
+    expect(removed).toBeNull();
+    expect(waited).toBeLessThan(1000);
+    expect(kept).toEqual({ pressed: null, expanded: 'true', overlays: 0 });
   });
 }, 30_000);

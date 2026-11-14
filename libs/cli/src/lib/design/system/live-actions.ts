@@ -302,7 +302,29 @@ const overlayCountOf = async (page: { evaluate: (script: string) => Promise<unkn
     `[...document.querySelectorAll(${JSON.stringify(OVERLAY_ROOTS)})].reduce((count, root) => count + root.children.length, 0)`,
   )) as number;
 
+/** The toggle attributes of a clicked control and the overlays open beyond `overlaysBefore`; `null` once the click removed it. */
+export const toggleStepOf = async ({
+  page,
+  control,
+  overlaysBefore,
+}: {
+  page: { evaluate: (script: string) => Promise<unknown> };
+  control: Locator;
+  overlaysBefore: number;
+}): Promise<ToggleStep | null> => {
+  if ((await control.count()) === 0) return null;
+
+  return {
+    ...(await control.evaluate((element) => ({
+      pressed: element.getAttribute('aria-pressed'),
+      expanded: element.getAttribute('aria-expanded'),
+    }))),
+    overlays: (await overlayCountOf(page)) - overlaysBefore,
+  };
+};
+
 type Context = Awaited<ReturnType<Browser['newContext']>>;
+type Locator = ReturnType<Awaited<ReturnType<Context['newPage']>>['locator']>;
 
 type Target = { key: string; occurrence: number };
 
@@ -545,14 +567,11 @@ export const checkLiveActions = async (options: {
           let keyboardRing: PointerFocusProbes['keyboard'] = null;
           const overlaysBefore = options.input === 'click' ? await overlayCountOf(page) : 0;
           const toggleSteps: ToggleStep[] = [];
-          const readToggle = async () =>
-            toggleSteps.push({
-              ...(await control.evaluate((element) => ({
-                pressed: element.getAttribute('aria-pressed'),
-                expanded: element.getAttribute('aria-expanded'),
-              }))),
-              overlays: (await overlayCountOf(page)) - overlaysBefore,
-            });
+          const readToggle = async () => {
+            const step = await toggleStepOf({ page, control, overlaysBefore });
+
+            if (step) toggleSteps.push(step);
+          };
 
           if (options.input === 'dblclick') {
             await watchMutations(page);
