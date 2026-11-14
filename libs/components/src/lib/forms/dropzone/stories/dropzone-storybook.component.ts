@@ -31,7 +31,7 @@ const uploadMediaV2 = v2Client.post({
   selector: 'et-sb-dropzone',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-xl flex-col gap-6 p-8 font-sans">
-      <et-dropzone [formField]="demoForm.media" [upload]="upload()" [multiple]="multiple()">
+      <et-dropzone [formField]="demoForm.media" [upload]="upload()" [multiple]="multiple()" [crop]="crop()">
         <et-label>Media</et-label>
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -56,6 +56,13 @@ export class DropzoneStorybookComponent {
   public flaky = input(false);
   public v2 = input(false);
   public initialValue = input<string | string[] | null>(null);
+  public cropAspectRatio = input<number | null>(null);
+
+  protected crop = computed(() => {
+    const aspectRatio = this.cropAspectRatio();
+
+    return aspectRatio ? { aspectRatio, maxWidth: 512 } : null;
+  });
 
   protected upload = computed(() => {
     const resolveExisting = (uuid: string) => ({

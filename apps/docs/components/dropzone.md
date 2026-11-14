@@ -164,6 +164,7 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 | `accept`             | `string`                                     | `''`               | Accepted file types, native `accept` semantics. Also filters the native picker.                                          |
 | `maxFileSize`        | `number \| undefined`                        | `undefined`        | Largest accepted file in bytes.                                                                                          |
 | `minFileSize`        | `number \| undefined`                        | `undefined`        | Smallest accepted file in bytes.                                                                                         |
+| `crop`               | `DropzoneCropConfig \| null`                 | `null`             | Sends picked images through a [crop step](#crop) before they upload.                                                     |
 | `readonly`           | `boolean`                                    | `false`            | View-only: the entries stay visible, nothing can change.                                                                 |
 | `hidden`             | `boolean`                                    | `false`            | Hides the whole field. A schema `hidden(...)` rule does the same without the input.                                      |
 | `warnings`           | `string \| … \| null`                        | `null`             | Advisories for a dropzone not bound to signal forms - see [warnings](/components/forms#warnings-valid-but-worth-a-look). |
@@ -209,7 +210,7 @@ gesture it will refuse:
 - With no file at all the box shrinks to `--et-dropzone-readonly-min-height` and reads
   the `empty` label ("No files") in place of the prompt.
 
-The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall` and `tooManyFiles` (each called with the file name, the size ones also with the limit in bytes). Per instance, the `labels` input overrides any of them, except that the four rejection messages of a `dropzoneFiles()` field error come from the token only, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
+The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, `cropArea` / `cropConfirm` / `cropCancel` for the crop step, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall` and `tooManyFiles` (each called with the file name, the size ones also with the limit in bytes). Per instance, the `labels` input overrides any of them, except that the four rejection messages of a `dropzoneFiles()` field error come from the token only, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
 
 ## Validation
 
@@ -245,6 +246,32 @@ When the form starts with existing values (edit forms), the dropzone renders the
 
 Initializing the control with a value **without** providing `resolveExisting` throws `ET2401` in dev mode.
 
+## Crop
+
+Set `crop` and every picked image opens a crop step before it uploads. Files that are not
+raster images (an SVG, a PDF) skip it and upload right away.
+
+```ts
+protected crop: DropzoneCropConfig = { aspectRatio: 1, maxWidth: 256, type: 'image/webp', quality: 0.85 };
+```
+
+| Option        | Type     | Default                                       | Description                                         |
+| ------------- | -------- | --------------------------------------------- | --------------------------------------------------- |
+| `aspectRatio` | `number` | -                                             | Width divided by height, e.g. `1` or `16 / 9`.      |
+| `maxWidth`    | `number` | -                                             | Scales the cropped image down to at most this wide. |
+| `maxHeight`   | `number` | -                                             | Scales the cropped image down to at most this high. |
+| `type`        | `string` | the file's type, `image/png` if not encodable | MIME type of the cropped file.                      |
+| `quality`     | `number` | `0.92`                                        | Encoder quality from 0 to 1 for lossy types.        |
+
+The crop frame starts as the largest centered rect of the aspect ratio. Drag it to move it, drag a
+corner to resize it; the ratio stays locked. With the frame focused, the arrow keys move it and
+<kbd>Shift</kbd> + arrow keys resize it. **Crop** renders the frame into a new `File` (same name,
+the extension follows `type`) and uploads that. **Cancel** drops the picked image: nothing
+uploads, and in single mode the current value stays. Several images picked at once in multiple
+mode are cropped one after another.
+
+@example dropzone/dropzone-crop 620px
+
 ## Failed uploads & retry
 
 A failed upload renders like a validation error: the message (`"name": <server message>`, falling back to `"name" failed to upload.` via the `uploadFailed` label; the sentence itself is the `uploadFailedMessage` label) appears below the field in the app's error color theme, and the entry gets a retry icon button. Retrying re-executes the query with the file's original request args and clears the message on success:
@@ -257,7 +284,7 @@ Per-file progress requires `reportProgress: true` on the query creator **and** t
 
 ## Headless usage
 
-All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive`, `lastRejections` and `unhandledRejections` (the rejections no `dropzoneFiles()` rule reports as field errors). Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `resolvedAccept()` gives you the `accept` string in effect (the schema's, else the `accept` input) for it. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive`, `lastRejections` and `unhandledRejections` (the rejections no `dropzoneFiles()` rule reports as field errors). Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `resolvedAccept()` gives you the `accept` string in effect (the schema's, else the `accept` input) for it. With `crop` set, picked images wait in `pendingCrops()` (`{ id, file }`) until you call `confirmCrop(id, croppedFile)` or `cancelCrop(id)`. The `etDropzoneCrop` directive holds the crop state for one file (`file` and `config` inputs; `imageSrc()`, `rect()` in image pixels, `ready()`, and `export()` to render the crop into a `File`); put `etDropzoneCropRect` on the frame and `etDropzoneCropHandle="nw|ne|sw|se"` on its corners, and position them with the `--_et-dropzone-crop-{left,top,right,bottom}` percentages the directive sets on its host. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
 
 To build an entry outside the directive - an upload history, a paste target - create a handle from the
 upload config and turn it into an entry with `createFileDropzoneEntry`. The handle uploads on
@@ -277,27 +304,30 @@ handle.execute();
 - A polite live region announces upload activity ("Uploading 2 files"); rejected files surface as regular validation errors, upload failures render in a `role="alert"` region below the field.
 - Remove, replace and retry buttons are regular [icon buttons](/components/button) carrying per-entry `aria-label`s including the file name; previews and thumbnails are `aria-hidden`/empty-`alt`.
 - In single mode with a preview shown, the (visually replaced) trigger is removed from the tab order in favor of the replace/remove actions.
+- The crop frame is a focusable `role="group"` named by the `cropArea` label, which also tells how the arrow keys work.
 - Entry enter/leave animations (scale/fade plus a FLIP shift of the remaining list items on delete) are disabled under `prefers-reduced-motion`.
 
 ## Theming
 
 Colors come from the app-registered [surface and color theme systems](/components/forms#theming) - the drag-over highlight and error states use the active color theme (`--et-theme-color-primary-*`; the error state is scoped to the app's `type: 'error'` theme automatically). Public tokens:
 
-| Token                               | Default | Purpose                              |
-| ----------------------------------- | ------- | ------------------------------------ |
-| `--et-dropzone-min-height`          | `160px` | Drop area height                     |
-| `--et-dropzone-readonly-min-height` | `96px`  | Height of an empty read-only box     |
-| `--et-dropzone-border-radius`       | `12px`  | Drop area corner radius              |
-| `--et-dropzone-border-width`        | `2px`   | Dashed border width                  |
-| `--et-dropzone-gap`                 | `10px`  | Vertical gap between building blocks |
-| `--et-dropzone-thumbnail-size`      | `48px`  | List thumbnail size (multiple mode)  |
-| `--et-dropzone-transition-duration` | `150ms` | Hover/drag-over transition           |
-| `--et-dropzone-opacity-disabled`    | `0.5`   | Disabled dimming                     |
-| `--et-dropzone-label-font-size`     | `13px`  | Projected `et-label` font size       |
-| `--et-dropzone-support-duration`    | `180ms` | Hint/error region animation          |
-| `--et-dropzone-error-font-size`     | `12px`  | Error text font size                 |
-| `--et-dropzone-warning-font-size`   | `12px`  | Warning text font size               |
-| `--et-dropzone-hint-font-size`      | `12px`  | Hint text font size                  |
+| Token                               | Default | Purpose                               |
+| ----------------------------------- | ------- | ------------------------------------- |
+| `--et-dropzone-min-height`          | `160px` | Drop area height                      |
+| `--et-dropzone-readonly-min-height` | `96px`  | Height of an empty read-only box      |
+| `--et-dropzone-border-radius`       | `12px`  | Drop area corner radius               |
+| `--et-dropzone-border-width`        | `2px`   | Dashed border width                   |
+| `--et-dropzone-gap`                 | `10px`  | Vertical gap between building blocks  |
+| `--et-dropzone-thumbnail-size`      | `48px`  | List thumbnail size (multiple mode)   |
+| `--et-dropzone-transition-duration` | `150ms` | Hover/drag-over transition            |
+| `--et-dropzone-opacity-disabled`    | `0.5`   | Disabled dimming                      |
+| `--et-dropzone-label-font-size`     | `13px`  | Projected `et-label` font size        |
+| `--et-dropzone-support-duration`    | `180ms` | Hint/error region animation           |
+| `--et-dropzone-error-font-size`     | `12px`  | Error text font size                  |
+| `--et-dropzone-warning-font-size`   | `12px`  | Warning text font size                |
+| `--et-dropzone-hint-font-size`      | `12px`  | Hint text font size                   |
+| `--et-dropzone-crop-max-height`     | `320px` | Largest image height in the crop step |
+| `--et-dropzone-crop-handle-size`    | `14px`  | Crop frame corner handle size         |
 
 ## Error codes
 

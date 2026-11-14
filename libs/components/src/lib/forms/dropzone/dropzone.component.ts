@@ -39,6 +39,7 @@ import {
   injectFormSupport,
   provideFormSupport,
 } from '../form-field/headless';
+import { DropzoneCropComponent } from './dropzone-crop.component';
 import { DropzoneItemComponent } from './dropzone-item.component';
 import { DropzonePreviewStylesComponent } from './dropzone-preview-styles.component';
 import { DropzoneReadonlyStylesComponent } from './dropzone-readonly-styles.component';
@@ -55,6 +56,7 @@ import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.d
   styleUrl: './dropzone.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
+    DropzoneCropComponent,
     DropzoneItemComponent,
     FocusRingDirective,
     FormSupportComponent,
@@ -82,6 +84,7 @@ import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.d
         'accept',
         'maxFileSize',
         'minFileSize',
+        'crop',
         ...ACCESSIBLE_NAME_INPUTS,
         ...FIELD_STATE_INPUTS,
       ],
@@ -144,6 +147,8 @@ export class DropzoneComponent<TValue = unknown> {
   protected singleEntry = computed(() =>
     this.dropzoneDir.multiple() ? null : (this.dropzoneDir.entries()[0] ?? null),
   );
+
+  protected pendingCrop = computed(() => this.dropzoneDir.pendingCrops()[0] ?? null);
 
   protected readonlyList = computed(
     () => this.dropzoneDir.readonly() && this.dropzoneDir.multiple() && this.dropzoneDir.entries().length > 0,

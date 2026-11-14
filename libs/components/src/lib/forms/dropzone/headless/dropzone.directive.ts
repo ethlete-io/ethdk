@@ -20,7 +20,7 @@ import {
 } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
-import { injectHostElement, RuntimeError } from '@ethlete/core';
+import { injectHostElement, randomId, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import {
@@ -33,6 +33,7 @@ import {
   isFileAccepted,
 } from './dropzone-entry';
 import { DROPZONE_ERROR_CODES } from './dropzone-errors';
+import { DropzoneCropConfig, isDropzoneCroppableFile } from './internals/dropzone-crop-math';
 import { AnyDropzoneUploadConfig, DropzoneUploadError } from './dropzone-upload';
 import {
   DROPZONE_FILE_CONSTRAINTS,
@@ -48,6 +49,9 @@ const isValueInControl = <TValue>(entry: DropzoneEntry<TValue>) => {
 
   return status === DROPZONE_ENTRY_STATUSES.SUCCESS || status === DROPZONE_ENTRY_STATUSES.EXISTING;
 };
+
+/** An image file waiting in the crop step. It becomes an entry once the crop is confirmed. */
+export type DropzonePendingCrop = { id: string; file: File };
 
 const valuesEqual = (a: unknown, b: unknown) => {
   if (a === b) {
@@ -116,6 +120,9 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Whether multiple files can be uploaded. The control value becomes an array. */
   public multiple = input(false, { transform: booleanAttribute });
+
+  /** Sends picked images through a crop step before they upload. Other files upload right away. */
+  public crop = input<DropzoneCropConfig | null>(null);
   public touch = outputFromObservable(controlTouches(this.touched));
 
   /** Emits all files of a selection that were rejected, with the reason per file. */
@@ -140,6 +147,7 @@ export class DropzoneDirective<TValue = unknown>
   // ET2400 (thrown after the first render) reports a missing config, so the reads past it may assume one
   private uploadConfig = computed(() => (this.uploadSource()?.() ?? this.upload()) as AnyDropzoneUploadConfig<TValue>);
   private internalEntries = signal<DropzoneEntry<TValue>[]>([]);
+  private internalPendingCrops = signal<DropzonePendingCrop[]>([]);
   private internalLastRejections = signal<DropzoneFileRejection[]>([]);
   private dragDepth = signal(0);
   private entryWatchers = new Map<string, EffectRef>();
@@ -151,6 +159,9 @@ export class DropzoneDirective<TValue = unknown>
 
   /** All entries currently managed by the dropzone, including uploading and failed ones. */
   public entries = this.internalEntries.asReadonly();
+
+  /** Images waiting for {@link confirmCrop} or {@link cancelCrop}, in pick order. */
+  public pendingCrops = this.internalPendingCrops.asReadonly();
 
   /** The rejections of the most recent file selection. Reset by the next selection, removal or clear. */
   public lastRejections = this.internalLastRejections.asReadonly();
@@ -293,32 +304,32 @@ export class DropzoneDirective<TValue = unknown>
       this.filesReject.emit(rejections);
     }
 
-    if (!accepted.length) {
+    const crop = this.crop();
+    const toCrop = crop ? accepted.filter(isDropzoneCroppableFile) : [];
+    const direct = accepted.filter((file) => !toCrop.includes(file));
+
+    if (toCrop.length || (!multiple && direct.length)) {
+      const pending = toCrop.map((file) => ({ id: randomId(), file }));
+
+      this.internalPendingCrops.update((list) => (multiple ? [...list, ...pending] : pending));
+    }
+
+    this.addFiles(direct);
+  }
+
+  /** Replaces a pending crop with the cropped file, which then uploads like a picked one. */
+  public confirmCrop(id: string, file: File) {
+    if (!this.interactive() || !this.internalPendingCrops().some((item) => item.id === id)) {
       return;
     }
 
-    const newEntries = accepted.map((file) => this.createFileEntry(file));
+    this.internalPendingCrops.update((list) => list.filter((item) => item.id !== id));
+    this.addFiles([file]);
+  }
 
-    if (multiple) {
-      this.internalEntries.update((entries) => [...entries, ...newEntries]);
-    } else {
-      const replaced = this.internalEntries();
-      // read before disposing - `disposeEntry` tears the upload handle down, resetting entry.value()
-      const deletableValues = replaced.map((entry) => this.deletableValueOf(entry));
-
-      for (const entry of replaced) {
-        this.disposeEntry(entry);
-      }
-
-      this.internalEntries.set(newEntries);
-      this.syncValue();
-
-      for (const value of deletableValues) {
-        if (value !== null) {
-          this.executeDelete(value);
-        }
-      }
-    }
+  /** Drops a pending crop. Nothing uploads, and the current value stays. */
+  public cancelCrop(id: string) {
+    this.internalPendingCrops.update((list) => list.filter((item) => item.id !== id));
   }
 
   /** Removes an entry. Cancels its upload if it is still in flight. */
@@ -396,7 +407,13 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Removes all entries and resets the control value locally. Never sends a `delete` request - see {@link removeAll}. */
   public clear() {
-    if (!this.interactive() || !this.internalEntries().length) {
+    if (!this.interactive()) {
+      return;
+    }
+
+    this.internalPendingCrops.set([]);
+
+    if (!this.internalEntries().length) {
       return;
     }
 
@@ -462,6 +479,36 @@ export class DropzoneDirective<TValue = unknown>
 
     if (files?.length) {
       this.selectFiles(files);
+    }
+  }
+
+  private addFiles(files: File[]) {
+    if (!files.length) {
+      return;
+    }
+
+    const multiple = this.multiple();
+    const newEntries = files.map((file) => this.createFileEntry(file));
+
+    if (multiple) {
+      this.internalEntries.update((entries) => [...entries, ...newEntries]);
+    } else {
+      const replaced = this.internalEntries();
+      // read before disposing - `disposeEntry` tears the upload handle down, resetting entry.value()
+      const deletableValues = replaced.map((entry) => this.deletableValueOf(entry));
+
+      for (const entry of replaced) {
+        this.disposeEntry(entry);
+      }
+
+      this.internalEntries.set(newEntries);
+      this.syncValue();
+
+      for (const value of deletableValues) {
+        if (value !== null) {
+          this.executeDelete(value);
+        }
+      }
     }
   }
 

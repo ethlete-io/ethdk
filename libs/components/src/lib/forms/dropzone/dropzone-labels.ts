@@ -42,6 +42,12 @@ export type DropzoneLabels = {
   tooManyFiles: (fileName: string) => string;
   /** Announced while uploads are in flight. */
   uploading: (count: number) => string;
+  /** Accessible label of the crop frame in the crop step. */
+  cropArea: string;
+  /** Confirms the crop step; the cropped image then uploads. */
+  cropConfirm: string;
+  /** Leaves the crop step without uploading the image. */
+  cropCancel: string;
 };
 
 /** The built-in English labels. */
@@ -61,6 +67,9 @@ export const DEFAULT_DROPZONE_LABELS: DropzoneLabels = {
     `"${fileName}" is too small${minFileSize !== undefined ? ` (min ${formatFileSize(minFileSize)})` : ''}.`,
   tooManyFiles: (fileName) => `"${fileName}" was not added (only one file is allowed).`,
   uploading: (count) => (count === 1 ? 'Uploading 1 file' : `Uploading ${count} files`),
+  cropArea: 'Crop area. Arrow keys move it, Shift and arrow keys resize it.',
+  cropConfirm: 'Crop',
+  cropCancel: 'Cancel',
 };
 
 /** The built-in German labels, used when the current locale is a German one. */
@@ -80,6 +89,9 @@ export const GERMAN_DROPZONE_LABELS: DropzoneLabels = {
     `"${fileName}" ist zu klein${minFileSize !== undefined ? ` (min. ${formatFileSize(minFileSize)})` : ''}.`,
   tooManyFiles: (fileName) => `"${fileName}" wurde nicht hinzugefügt (nur eine Datei erlaubt).`,
   uploading: (count) => (count === 1 ? '1 Datei wird hochgeladen' : `${count} Dateien werden hochgeladen`),
+  cropArea: 'Zuschnitt. Pfeiltasten verschieben ihn, Umschalt und Pfeiltasten ändern die Größe.',
+  cropConfirm: 'Zuschneiden',
+  cropCancel: 'Abbrechen',
 };
 
 /** The label set for a locale. Anything other than English and German needs {@link provideDropzoneLabels}. */

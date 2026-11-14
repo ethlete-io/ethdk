@@ -24,6 +24,7 @@ export default {
     flaky: { table: { disable: true } },
     v2: { table: { disable: true } },
     initialValue: { table: { disable: true } },
+    cropAspectRatio: { control: 'number' },
   },
   args: {
     color: 'brand',
@@ -37,6 +38,7 @@ export default {
     flaky: false,
     v2: false,
     initialValue: null,
+    cropAspectRatio: null,
   },
 } as Meta<DropzoneStorybookComponent>;
 
@@ -83,5 +85,12 @@ export const LegacyV2Query: Story = {
     multiple: true,
     hint: 'Uploads run through the legacy V2QueryClient adapter.',
     v2: true,
+  },
+};
+
+export const Crop: Story = {
+  args: {
+    cropAspectRatio: 16 / 9,
+    hint: 'Images open a 16:9 crop step before they upload, scaled to at most 512px wide.',
   },
 };

@@ -11,6 +11,10 @@ import {
   disposeDropzoneEntry,
   DROPZONE_ENTRY_STATUSES,
   DROPZONE_ERROR_CODES,
+  DropzoneCropComponent,
+  DropzoneCropDirective,
+  DropzoneCropHandleDirective,
+  DropzoneCropRectDirective,
   DropzoneDirective,
   DropzoneEntry,
   isFileAccepted,
@@ -123,6 +127,33 @@ class UnresolvedValueComponent {
 class ModeMismatchComponent {
   value = ['a', 'b'];
   upload = avatarUpload();
+}
+
+@Component({
+  selector: 'et-scenario-avatar-crop',
+  imports: [
+    DropzoneDirective,
+    DropzoneCropComponent,
+    DropzoneCropDirective,
+    DropzoneCropHandleDirective,
+    DropzoneCropRectDirective,
+  ],
+  template: `
+    <div #zone="etDropzone" [(value)]="avatar" [upload]="upload" [crop]="crop" etDropzone>
+      @for (pending of zone.pendingCrops(); track pending.id) {
+        <div [file]="pending.file" [config]="crop" class="custom-crop" etDropzoneCrop>
+          <div class="custom-crop-frame" etDropzoneCropRect><span etDropzoneCropHandle="se"></span></div>
+        </div>
+        <et-dropzone-crop [file]="pending.file" [config]="crop" confirmLabel="Use" cancelLabel="Drop" />
+      }
+    </div>
+  `,
+})
+class AvatarCropComponent {
+  upload = avatarUpload();
+  crop = { aspectRatio: 1, maxWidth: 128 };
+  avatar = signal<string | null>('current');
+  zone = viewChild.required(DropzoneDirective);
 }
 
 const query = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
@@ -244,5 +275,52 @@ describe('forms dropzone headless scenarios', () => {
     }).toThrow(`ET${code}`);
     s.flush();
     expect(s.errors.splice(0).map((entry) => entry.source)).toEqual(['console.error']);
+  });
+
+  it('holds picked images in a crop step until the app confirms or cancels them', () => {
+    const s = scenario();
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(AvatarCropComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+
+    app.zone().selectFiles([file('me.png', 'image/png')]);
+    s.tick();
+
+    http.expectNone('https://api.example.com/avatars');
+    expect(
+      app
+        .zone()
+        .pendingCrops()
+        .map((pending) => pending.file.name),
+    ).toEqual(['me.png']);
+    expect(queryAll('.custom-crop', host)).toHaveLength(1);
+    expect(query('.custom-crop-frame', host).style.display).toBe('none');
+    expect(text(query('.et-dropzone-crop-cancel', host))).toBe('Drop');
+
+    app.zone().cancelCrop(app.zone().pendingCrops()[0]?.id ?? '');
+    s.tick();
+    expect(queryAll('.custom-crop', host)).toHaveLength(0);
+    expect(app.avatar()).toBe('current');
+
+    app.zone().selectFiles([file('me.png', 'image/png')]);
+    s.tick();
+    app.zone().confirmCrop(app.zone().pendingCrops()[0]?.id ?? '', file('me.png', 'image/png'));
+    s.tick();
+
+    http.expectOne('https://api.example.com/avatars').flush({ key: 'k-cropped' });
+    s.tick();
+    expect(app.avatar()).toBe('k-cropped');
+
+    app.zone().selectFiles([file('notes.pdf', 'application/pdf')]);
+    s.tick();
+    expect(app.zone().pendingCrops()).toEqual([]);
+    http.expectOne('https://api.example.com/avatars').flush({ key: 'k-pdf' });
+    s.tick();
+    expect(app.avatar()).toBe('k-pdf');
+
+    fixture.destroy();
   });
 });

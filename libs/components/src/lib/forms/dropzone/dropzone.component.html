@@ -116,6 +116,21 @@
   }
 </div>
 
+@if (dropzoneDir.crop(); as crop) {
+  @if (pendingCrop(); as pending) {
+    <et-dropzone-crop
+      [file]="pending.file"
+      [config]="crop"
+      [disabled]="!dropzoneDir.interactive()"
+      [areaLabel]="resolvedLabels().cropArea"
+      [confirmLabel]="resolvedLabels().cropConfirm"
+      [cancelLabel]="resolvedLabels().cropCancel"
+      (cropConfirm)="dropzoneDir.confirmCrop(pending.id, $event)"
+      (cropCancel)="dropzoneDir.cancelCrop(pending.id)"
+    />
+  }
+}
+
 @if (dropzoneDir.multiple() && dropzoneDir.entries().length) {
   <ul
     #fileList

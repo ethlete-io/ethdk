@@ -522,3 +522,136 @@ describe('DropzoneComponent with instance labels', () => {
     driver.fixture.destroy();
   });
 });
+
+@Component({
+  template: `
+    <et-dropzone [(value)]="value" [upload]="upload()!" [crop]="crop">
+      <et-label>Avatar</et-label>
+    </et-dropzone>
+  `,
+  imports: [DropzoneComponent, LabelDirective],
+})
+class DropzoneCropComponentTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+  crop = { aspectRatio: 1, maxWidth: 50 };
+  value = signal<string | null>('uuid-old');
+}
+
+class FakeImage {
+  public naturalWidth = 200;
+  public naturalHeight = 100;
+  public onload: (() => void) | null = null;
+
+  public set src(_value: string) {
+    setTimeout(() => this.onload?.());
+  }
+}
+
+describe('DropzoneComponent crop step', () => {
+  let driver: MountedDropzoneDriver<DropzoneCropComponentTestHost>;
+  let drawImage: ReturnType<typeof vi.fn>;
+
+  const cropEl = () => driver.fixture.nativeElement.querySelector('et-dropzone-crop') as HTMLElement | null;
+  const cropButton = (name: 'confirm' | 'cancel') =>
+    driver.fixture.nativeElement.querySelector(`.et-dropzone-crop-${name}`) as HTMLButtonElement;
+
+  const waitForCropReady = () =>
+    vi.waitFor(() => {
+      driver.tick();
+      expect(cropButton('confirm').disabled).toBe(false);
+    });
+
+  beforeEach(() => {
+    vi.stubGlobal('Image', FakeImage);
+    drawImage = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage,
+      fillRect: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+      this: HTMLCanvasElement,
+      callback,
+      type,
+    ) {
+      callback(new Blob([`${this.width}x${this.height}`], { type }));
+    });
+
+    driver = mountDropzone(DropzoneCropComponentTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<UploadArgs, string>({
+          queryCreator: query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+          resolveExisting: (value) => ({ name: `existing-${value}` }),
+        }),
+    });
+  });
+
+  afterEach(() => {
+    driver.fixture.destroy();
+    driver.query.httpTesting.verify();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('should crop a picked image before it uploads', async () => {
+    driver.pickFiles([createFile('photo.png')]);
+
+    expect(cropEl()).toBeTruthy();
+    driver.query.httpTesting.expectNone(UPLOAD_URL);
+
+    await waitForCropReady();
+    cropButton('confirm').click();
+
+    await vi.waitFor(() => {
+      driver.tick();
+      expect(cropEl()).toBeNull();
+    });
+
+    const request = driver.query.httpTesting.expectOne(UPLOAD_URL);
+    const file = [...(request.request.body as FormData).values()].find((entry) => entry instanceof File) as File;
+
+    expect(drawImage).toHaveBeenCalledWith(expect.anything(), 50, 0, 100, 100, 0, 0, 50, 50);
+    expect(file.name).toBe('photo.png');
+    expect(await file.text()).toBe('50x50');
+
+    request.flush({ uuid: 'uuid-1' });
+    driver.tick();
+
+    expect(driver.host.value()).toBe('uuid-1');
+  });
+
+  it('should upload a file that is not an image without the crop step', () => {
+    driver.pickFiles([createFile('doc.pdf', 'application/pdf')]);
+
+    expect(cropEl()).toBeNull();
+    driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-doc' });
+    driver.tick();
+
+    expect(driver.host.value()).toBe('uuid-doc');
+  });
+
+  it('should drop the image and keep the current value on cancel', async () => {
+    driver.pickFiles([createFile('photo.png')]);
+    await waitForCropReady();
+
+    cropButton('cancel').click();
+    driver.tick();
+
+    expect(cropEl()).toBeNull();
+    driver.query.httpTesting.expectNone(UPLOAD_URL);
+    expect(driver.host.value()).toBe('uuid-old');
+  });
+
+  it('should move the crop frame with the arrow keys', async () => {
+    driver.pickFiles([createFile('photo.png')]);
+    await waitForCropReady();
+
+    const rect = driver.fixture.nativeElement.querySelector('.et-dropzone-crop-rect') as HTMLElement;
+    const stage = driver.fixture.nativeElement.querySelector('.et-dropzone-crop-stage') as HTMLElement;
+
+    rect.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    driver.tick();
+
+    expect(stage.style.getPropertyValue('--_et-dropzone-crop-left')).toBe('26%');
+  });
+});
