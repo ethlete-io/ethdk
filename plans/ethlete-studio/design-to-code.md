@@ -964,6 +964,18 @@ pages/system 2 warnings. Spec "sizes the fold toggle to its label instead of its
 scratch copy, green after; vitest related 183 green; lint, tsc clean. Not verified: why the main checkout's
 unchanged-matrix pans 2 px where the scratch copy does not; the pages/system DIFFs; CI; the live app.
 
+**B502j as built (Linux builder subagent, 2026-11-14, 3d28a1e00):** (1) The e2e `settled()` (run before every case)
+waited until no sketch row had `data-sk-unsized` (63399aedb), but after 10 s its loop ended and the case ran on with an
+unmeasured row. Now `settleLayout` (`e2e/settle-wait.mjs`) throws `not settled after 10 s: row <key> unsized` (or `<n>
+change mark(s) pending`); a layout that still moves keeps the old behaviour. Live: with every row forced unsized,
+ctrl-wheel --view sketches passed 3/3 on HEAD (23 s each), now fails 3/3 naming `row current, row a`. Spec
+`settle-wait.spec.mjs` red on the old loop, green after. (2) [System] switch time red. Cause (measured): the e2e fixture
+adds an unnamed sketch on elements/shell-main, shown as a `shell-main` leaf in the Sketches group; since shell-main
+is no longer a `part` row, the case clicked that sketch row (sketch view, 0 canvas frames) and recorded `all NOT` at
+10000 ms. Fix in the e2e only: it picks a row outside Sketches/Legacy (`markPartLeaves`). icons->shell-main first:
+NOT -> 1116 ms (15 frames), with `--hold-listings 14000` 1064 ms; the case passes 1/1 both ways; ctrl-wheel all 6 pages
+pass under the hold. Not verified: the full e2e suite and CI (every case now fails on a row unsized past 10 s).
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
