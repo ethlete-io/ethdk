@@ -100,6 +100,10 @@
     --_et-form-field-control-background: transparent;
     --_et-form-field-control-focus-ring: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
     --_et-form-field-floating-label-scale: 0.75;
+    --_et-form-field-supporting-inset: var(
+      --et-form-field-supporting-inset,
+      calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width))
+    );
 
     display: flex;
     flex-direction: column;
@@ -325,9 +329,7 @@
       gap: 2px;
       font-size: var(--et-form-field-error-font-size);
       color: var(--et-theme-color-ink-solid);
-      padding-inline-start: calc(
-        var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)
-      );
+      padding-inline-start: var(--_et-form-field-supporting-inset);
     }
 
     .et-form-field-warnings {
@@ -336,15 +338,11 @@
       gap: 2px;
       font-size: var(--et-form-field-warning-font-size);
       color: var(--et-theme-color-ink-solid);
-      padding-inline-start: calc(
-        var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)
-      );
+      padding-inline-start: var(--_et-form-field-supporting-inset);
     }
 
     > et-description {
-      padding-inline-start: calc(
-        var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)
-      );
+      padding-inline-start: var(--_et-form-field-supporting-inset);
     }
 
     .et-form-field-support[data-can-animate] {

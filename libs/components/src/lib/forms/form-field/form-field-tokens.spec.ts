@@ -13,7 +13,23 @@ const declarationsReading = (token: string) =>
     )
     .map(([, property]) => property);
 
+const insetRules = (source: string) =>
+  [...source.matchAll(/([^{};]+)\{([^{}]*--_et-form-field-supporting-inset\)[^{}]*)\}/g)].map(([, selector]) =>
+    (selector ?? '').trim(),
+  );
+
 describe('form-field tokens', () => {
+  it('drives the supporting inset of errors, warnings, description, hint and the static label from one token', () => {
+    expect(css).toMatch(
+      /--_et-form-field-supporting-inset:\s*var\(\s*--et-form-field-supporting-inset,\s*calc\(var\(--et-form-field-control-padding-inline\) \+ var\(--et-form-field-control-border-width\)\)/,
+    );
+    expect(insetRules(css)).toEqual(
+      expect.arrayContaining(['.et-form-field-errors', '.et-form-field-warnings', '> et-description']),
+    );
+    expect(read('hint.component.css')).toContain('padding-inline-start: var(--_et-form-field-supporting-inset)');
+    expect(css).toMatch(/inset-inline-start:\s*calc\(var\(--_et-form-field-supporting-inset\)/);
+  });
+
   it.each([
     ['--et-form-field-control-border-color', '--_et-form-field-frame-border'],
     ['--et-form-field-control-border-color-hover', '--_et-form-field-frame-border-hover'],

@@ -3,9 +3,7 @@
     .et-form-field-hint {
       font-size: var(--et-form-field-hint-font-size);
       color: var(--et-surface-color-muted-solid, currentColor);
-      padding-inline-start: calc(
-        var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)
-      );
+      padding-inline-start: var(--_et-form-field-supporting-inset);
       transition: color 150ms ease;
 
       &:empty {
