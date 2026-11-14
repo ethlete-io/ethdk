@@ -1,5 +1,25 @@
 # ethlete-studio
 
+## 0.2.0-next.18
+
+### Patch Changes
+
+- A keyboard user inside a live design frame keeps focus on that frame when its page remounts after an address change or an off-view drop.
+- The Flows list draws its rows with the shared tree-row stack, and a selected row in that stack is marked as selected for assistive technology.
+- The System page draws every state through one page component, so the app and the design harness show the same page.
+- The Sketches page folds no state when every state draws like Aktuell, and the design harness draws the edit-sketch state with an @edit chip sample.
+- A direct-edit sketch shows both choices, Änderung behalten and Zuletzt gemergter Stand, each with its own button, instead of folding new into Unverändert.
+- The Sketches page draws like its design: the @edit hint, crop stack edges inside the frame, uncut focus rings and the wrapped fold label.
+- Sketches fit the rows only once the list is measured and again after each font load, so a zoomed view sizes its notes by the real fit.
+- The sketches design draws the fold row's "Alle Zustände zeigen" button at its label width, like the app, so the label no longer wraps.
+- Sketches keep a state unfolded when a hidden withdrawn variant changes it, like the design.
+- The sketches fold disclosure shrinks to wrap its label instead of stretching across the row, so a click beside it no longer opens all states.
+- The sketches page folds unchanged states of an @edit sketch and keeps a state a hidden withdrawn variant changes, and names a folded variant by its row label.
+- The sketches page folds states by its listed rows again, so a hidden withdrawn variant no longer changes the comparing layout.
+- The Studio Sketches page names its sample rows Stand, Entwurf 1 and Entwurf 2 apart from the live Aktuell and Variante columns, and keeps the state names at 12 px down to fit.
+- Name every sample sketch row apart from the live chrome and keep the direct-edit hint on one line.
+- `yarn studio` and the `tauri` targets run Studio through `@tauri-apps/cli-cef` on macOS and Linux, so the dev host finds the CEF framework instead of panicking at start.
+
 ## 0.2.0-next.17
 
 ### Minor Changes

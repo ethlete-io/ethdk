@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.76
+
+### Minor Changes
+
+- Add `backdropClick()` to the overlay ref and a `backdropClick` output to the headless overlay directive, emitting on every backdrop click whether or not the overlay closes.
+
 ## 5.0.0-next.75
 
 ### Minor Changes

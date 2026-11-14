@@ -1,5 +1,12 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.35
+
+### Patch Changes
+
+- The context warning and the shell functions from `shell-install` also find the agent-sessions script under `.claude/skills`, so a session in such a repo starts in tmux and restarts itself after a handoff instead of asking the user to clear.
+- List the collapse guide in the sdk-docs skill.
+
 ## 0.1.0-next.34
 
 ### Minor Changes
