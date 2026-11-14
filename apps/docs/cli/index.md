@@ -374,7 +374,11 @@ Some rules need the app running in a browser, so they do not run with the static
   candidates prints `UNDERIVED` and keeps its link. A page with a route link gets as its `component` the innermost app
   component at or around the live host in every state, skipping the shared host, the shell and components other parts
   link, and only one that takes every design prop of the page (the `DROPPED-PROP` check). `check --live` derives the
-  links the same way.
+  links the same way. A live state whose `design` names no state of the page fails as `STATE-UNDESIGNED`.
+- `STATE-UNDESIGNED` reports each `@if`, `@else if` and `@else` branch of a linked component's template that no
+  design state takes: with each state's props as the inputs and every other input at its literal default, no state
+  makes the branch's conditions true. A condition on a computed, a loop variable, a required, sampled or `TemplateRef`
+  input counts as taken. Draw a state for the branch: the missing-state sketch with the built look as variant a.
 - `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
   the harness page logs.
 

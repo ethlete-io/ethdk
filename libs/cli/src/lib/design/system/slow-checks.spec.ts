@@ -111,7 +111,12 @@ describe('the draw rules in the slow set', { timeout: 30_000 }, () => {
     const { product } = drawable();
     const inputs = slowInputsOf({ product: product() });
 
-    expect(inputs['components/chip']?.rules).toEqual(['CONTROL-STATE', 'DROPPED-PROP', 'STATE-NO-SOURCE']);
+    expect(inputs['components/chip']?.rules).toEqual([
+      'CONTROL-STATE',
+      'DROPPED-PROP',
+      'STATE-NO-SOURCE',
+      'STATE-UNDESIGNED',
+    ]);
     expect(inputs['(product)']?.rules).toEqual(['ACTION-LOST']);
     expect(inputs['components/button']).toBeUndefined();
   });

@@ -767,6 +767,17 @@ state opens the missing-state sketch of ADR 0048 and ADR 0010 at once (built loo
 Applied for A1: the three restart cases follow the design (button only); the CLI-dirty hint and the cause text stay
 as the built look, marked, with a sketch on `components/title-bar` (variant a built text, b cause as tooltip, c no
 hint).
+**484 as built (Linux builder, 2026-11-14, B502):** decision: a static pass, not the live one - compare can only walk
+design states, and a live pass would need a driven app state per branch. New slow rule `STATE-UNDESIGNED`
+(`undesigned-branches.ts`, run with DROPPED-PROP, which already loads each linked part's states): it parses the linked
+component's template with `@angular/compiler` and names every `@if` / `@else if` / `@else` branch that no design state
+takes (state props as inputs, other inputs at their literal default; a computed, loop variable, required, sampled or
+`TemplateRef` input counts as taken). The hit text points to the missing-state sketch with the built look as variant a
+(ADR 0048/0010); a live state that names a missing design state fails as `STATE-UNDESIGNED` too. Verified: spec with
+bite (the A1 title-bar template and states), and the real title bar with its `cli-dirty` states removed gives
+`@if (!notice() && noticeText())`; with them, none. Over every part (finding 789): studio 3 hits, baselined on 484
+(ADR 0201) - `pages/sketches` `@if (error())` and `@if (listError())` (the failed-listing look of ADR 0010),
+`pages/system` `@else if (noted())`; sdk and studio-lab have no linked component, so none. Not done: the three sketches.
 
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben

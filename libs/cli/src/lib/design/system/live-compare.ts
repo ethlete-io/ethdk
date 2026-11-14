@@ -16,6 +16,7 @@ import { overlaySketch } from './sketch/overlay';
 import { findSketch, parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { PartCover, partCoverOf, Partless, uncoveredLineOf, uncoveredRegionsOnPage } from './uncovered-regions';
+import { STATE_UNDESIGNED_RULE } from './build-ready-contract';
 
 type Storage = Record<string, unknown>;
 
@@ -542,7 +543,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
       if (!(state.design in states)) {
         shots.push({
           state: name,
-          problem: `${part} has no design state "${state.design}" - its states: ${Object.keys(states).join(', ')}`,
+          problem: `${STATE_UNDESIGNED_RULE}: the app state "${name}" of ${part} has no design state "${state.design}" - draw it: the missing-state sketch with the built look as variant a (ADR 0010); its states: ${Object.keys(states).join(', ')}`,
         });
         continue;
       }

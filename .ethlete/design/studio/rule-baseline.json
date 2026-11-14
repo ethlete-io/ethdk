@@ -54,5 +54,19 @@
       "finding": "489",
       "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
     }
+  },
+  "STATE-UNDESIGNED": {
+    "pages/sketches: @if (error())": {
+      "finding": "484",
+      "sketch": "pages/sketches: not opened yet - the missing-state sketch, the built look as variant a (ADR 0010)"
+    },
+    "pages/sketches: @if (listError())": {
+      "finding": "484",
+      "sketch": "pages/sketches: not opened yet - the missing-state sketch, the built look as variant a (ADR 0010)"
+    },
+    "pages/system: @if (listingError()) @else if (noted())": {
+      "finding": "484",
+      "sketch": "pages/system: not opened yet - the missing-state sketch, the built look as variant a (ADR 0010)"
+    }
   }
 }

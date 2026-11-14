@@ -10,6 +10,7 @@ import {
   SDK_ERROR_RULE,
   SlowProblemsOf,
   STATE_NO_SOURCE_RULE,
+  STATE_UNDESIGNED_RULE,
 } from './build-ready-contract';
 import { DesignHash, designHashOf, designHolds, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
@@ -26,7 +27,14 @@ import { partLinkOf } from './sketch/part-definition';
 export const PRODUCT_PART = '(product)';
 
 export const isDrawRule = (rule: string) =>
-  [CONTROL_STATE_RULE, DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, ACTION_LOST_RULE, CONTRAST_PAIR_RULE].includes(rule);
+  [
+    CONTROL_STATE_RULE,
+    DROPPED_PROP_RULE,
+    STATE_NO_SOURCE_RULE,
+    STATE_UNDESIGNED_RULE,
+    ACTION_LOST_RULE,
+    CONTRAST_PAIR_RULE,
+  ].includes(rule);
 
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
 export const isSlowRule = (rule: string) =>
@@ -179,7 +187,9 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const rules = [
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
     ...(measuresContrastPairs(part) ? [CONTRAST_PAIR_RULE] : []),
-    ...(own && linked !== null && existsSync(resolve(root, linked)) ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE] : []),
+    ...(own && linked !== null && existsSync(resolve(root, linked))
+      ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE]
+      : []),
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
     ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE] : []),

@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import ts from 'typescript';
 import { INTERACTIONS } from '../force-interactions';
 import { DesignConfig } from '../design-config';
-import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE } from './build-ready-contract';
+import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE } from './build-ready-contract';
 import { productSampledPropsOf } from './harness-samples';
 import { designOnlyPropsOf } from './part-compare';
 import { Problem } from './problem';
@@ -13,6 +13,12 @@ import { KNOWN_UNBOUND_INPUTS } from './rules/unbound-input-known';
 import { partLinkOf } from './sketch/part-definition';
 import { productModuleIdOf } from './system-modules';
 import { sourceFileOf } from './ts-source';
+import {
+  angularCompilerOf,
+  componentTemplateOf,
+  undesignedBranchesOf,
+  undesignedBranchMessageOf,
+} from './undesigned-branches';
 import { loadingOn, WarmDraw } from '../warm-draw';
 
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
@@ -128,6 +134,46 @@ export const inputDefaultsOf = (source: string): Record<string, string> => {
   }
 
   return defaults;
+};
+
+export type InputInitial = { input: string; initial: ts.Expression | undefined | null; type: string | null };
+
+/**
+ * Each input of the source's `@Component` class by member name: its input name, its declared type, and its initial
+ * value expression (the first argument of `input()` or `model()`, the initializer of an `@Input()` property,
+ * `undefined` without one, `null` when required).
+ */
+export const inputInitialsOf = (source: string): Map<string, InputInitial> => {
+  const initials = new Map<string, InputInitial>();
+
+  for (const member of componentClassOf(source)?.members ?? []) {
+    if (!ts.isPropertyDeclaration(member) || !ts.isIdentifier(member.name)) continue;
+
+    const call = signalInputOf(member.initializer);
+    const decorated = (ts.getDecorators(member) ?? []).some(
+      (decorator) =>
+        ts.isCallExpression(decorator.expression) &&
+        ts.isIdentifier(decorator.expression.expression) &&
+        decorator.expression.expression.text === 'Input',
+    );
+
+    if (call) {
+      const required = ts.isPropertyAccessExpression(call.expression) && call.expression.name.text === 'required';
+
+      initials.set(member.name.text, {
+        input: aliasOf(call) ?? member.name.text,
+        initial: required ? null : call.arguments[0],
+        type: call.typeArguments?.[0]?.getText() ?? null,
+      });
+    } else if (decorated)
+      initials.set(member.name.text, {
+        input: member.name.text,
+        initial: member.initializer,
+        type: member.type?.getText() ?? null,
+      });
+  }
+
+  return initials;
 };
 
 /**
@@ -327,7 +373,10 @@ export const droppedPropProblemsOf = async (options: {
       : [
           {
             part,
+            path,
             inputs,
+            initials: inputInitialsOf(text),
+            template: file === null ? null : componentTemplateOf(file),
             defaults: inputDefaultsOf(text),
             unbound: KNOWN_UNBOUND_INPUTS.filter((known) => resolve(target, known.file) === file).map(
               (known) => known.input,
@@ -340,10 +389,12 @@ export const droppedPropProblemsOf = async (options: {
 
   if (candidates.length === 0) return [];
 
+  const compiler = await angularCompilerOf();
+
   return loadingOn({ target, config, warm: options.warm }, async (server) => {
     const problems: Problem[] = [];
 
-    for (const { part, inputs, defaults, unbound, selector, appDir } of candidates) {
+    for (const { part, path, inputs, initials, template, defaults, unbound, selector, appDir } of candidates) {
       const module = (await server
         .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
         .catch(() => null)) as { default?: { states?: unknown } } | null;
@@ -360,6 +411,15 @@ export const droppedPropProblemsOf = async (options: {
           message: `${state}: ${droppedPropsMessageOf(dropped)}`,
           at: state,
         });
+
+      if (compiler !== null && template !== null)
+        for (const branch of undesignedBranchesOf({ compiler, template, inputs: initials, states, sampled }))
+          problems.push({
+            rule: STATE_UNDESIGNED_RULE,
+            file: part.file,
+            message: undesignedBranchMessageOf(branch, path ?? ''),
+            at: branch,
+          });
 
       if (selector === null || appDir === null || !existsSync(appDir)) continue;
 
