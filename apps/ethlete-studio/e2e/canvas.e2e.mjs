@@ -695,7 +695,7 @@ const settled = async (page, selector) => {
     await page.waitForTimeout(250);
     const now = await page.evaluate(
       ({ CANVAS, selector }) =>
-        document.querySelector('[data-sk-changed="pending"]')
+        document.querySelector('[data-sk-changed="pending"], [data-sk-row][data-sk-unsized]')
           ? 'pending'
           : [...(document.querySelector(CANVAS)?.querySelectorAll(selector) ?? [])]
               .map((frame) => {
@@ -1321,7 +1321,7 @@ const CASES = [
     run: async (page, state) => {
       const { view } = state;
 
-      await listingAnswered(page);
+      await settled(page, FRAME);
       await page.mouse.click((view.left + view.right) / 2, (view.top + view.bottom) / 2);
       await page.keyboard.press('Shift+Digit1');
       await settle(page);

@@ -232,6 +232,7 @@
                 <section
                   #section
                   [attr.data-sk-row]="row.key"
+                  [attr.data-sk-unsized]="row.sized === false ? '' : null"
                   [attr.data-selected]="row.key === selected() ? '' : null"
                   [style.grid-column]="column + 2"
                   [style.grid-row]="matrixTop()"
@@ -333,6 +334,7 @@
   <section
     #section
     [attr.data-sk-row]="row.key"
+    [attr.data-sk-unsized]="row.sized === false ? '' : null"
     [attr.data-selected]="row.key === selected() ? '' : null"
     [style.grid-template-columns]="headColumns()"
     [attr.data-sk-head-hidden]="headHidden() ? '' : null"
