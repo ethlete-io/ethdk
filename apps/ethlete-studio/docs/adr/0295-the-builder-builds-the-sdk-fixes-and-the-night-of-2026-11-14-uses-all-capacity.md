@@ -27,3 +27,6 @@ dann." From 15:00 the sessions only finish work already started and start nothin
 Addendum, 02:00: the human: "ich erlaube dir auch den nötigen merge auf gh für den pre release den die fifa session
 braucht sobald dort alles drin ist." The doc agent merges the prerelease PR on GitHub (`changeset-release/next`) once
 the SDK fixes the fifagg session needs are on `next` and its CI is green.
+
+Addendum, 2026-11-14 midday: the human: "Lass uns den Speed nun etwas runter fahren bis 14 Uhr damit wir nicht ins Limit
+laufen." Until the 14:00 reset each session works one slice at a time, with no parallel subagents.
