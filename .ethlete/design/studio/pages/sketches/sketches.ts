@@ -317,7 +317,7 @@ const pinFor = (row: Row) =>
 
 const headOf = (row: Row, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
-  const take = view.status === 'waiting' || view.status === 'picked' ? view.take : '';
+  const take = (view.status === 'waiting' || view.status === 'picked') && !isSame(row) ? view.take : '';
   const withPoints =
     view.points && row.key === view.selected
       ? html`<span class="relative flex flex-wrap items-center gap-space-2">${take}${view.points}</span>`
