@@ -284,7 +284,14 @@ export class SketchesComponent {
 
     return edit ? rows.map((row) => ({ ...row, label: EDIT_ROW_LABELS[row.key] ?? row.label })) : rows;
   });
-  protected foldedStates = computed(() => foldedStatesOf(this.listedRows()));
+  private hiddenWithdrawnRows = computed(() => (this.withdrawn() === 'shown' ? [] : this.rows().filter(isWithdrawn)), {
+    equal: (a, b) => a === b || (a.length === 0 && b.length === 0),
+  });
+  protected foldedStates = computed(() => {
+    const hidden = this.hiddenWithdrawnRows();
+
+    return foldedStatesOf(hidden.length === 0 ? this.listedRows() : [...this.listedRows(), ...hidden]);
+  });
   public shownRows = computed(() => {
     const rows = this.listedRows();
     const folded = this.statesOpen() ? new Set<string>() : this.foldedStates();

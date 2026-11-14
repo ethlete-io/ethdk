@@ -303,6 +303,27 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="x"] [data-sk-withdrawn]')).toBeNull();
   });
 
+  it('keeps a state a hidden withdrawn variant changes unfolded', async () => {
+    const withdrawn: SketchRow = {
+      ...ROWS[1]!,
+      key: 'w',
+      withdrawn: '',
+      shots: [
+        { state: 'rest', changed: true, height: 100 },
+        { state: 'open', changed: false, height: 200 },
+      ],
+    };
+    const layerShim = Object.assign(document.createElement('style'), { textContent: 'et-choice-field{display:flex}' });
+
+    document.head.append(layerShim);
+    onTestFinished(() => layerShim.remove());
+
+    const root: HTMLElement = (await render({ camera: '100', rows: [...ROWS, withdrawn] })).nativeElement;
+
+    expect(root.querySelector('[data-sk-row="w"]')).toBeNull();
+    expect(root.querySelectorAll('[data-sk-row="x"] [data-sk-state]')).toHaveLength(2);
+  });
+
   it('shows no Zurückgezogene toggle while no variant is withdrawn', async () => {
     const root = (await render({})).nativeElement as HTMLElement;
 

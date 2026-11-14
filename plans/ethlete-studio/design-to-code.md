@@ -900,6 +900,28 @@ stays equal; the state result also depends on the run order (targeted vs full). 
 the fold re-layout settles (B502d's head-note race). Open: make the fit pass settle-safe first (`noteFit`/fit after the
 last layout), then redo the fold. Not verified: CI, the 7 FAILED states.
 
+**B502f as built (Linux builder subagent, 2026-11-14, e09bbf7ce and the withdrawn-fold commit after it):** Cause, measured
+with a logging build and Playwright on the harness page (zoomed-page, below-fit, paused): (1) the first fit pass runs
+before `listSize` is measured (list width 0, no rows rendered yet, since the rows wait for `listMeasured()`), so it
+measures fit 1; `noteFit` keeps the first measured fit under a user zoom, so zoomed-page, sticky-names and below-fit
+sized notes and gutter names by fit 1 (9 and 7.8 px) while the real fit is 0.143. (2) `document.fonts.ready` resolves
+before Noto Sans Mono loads (it starts only once the gutter's mono text renders, about 15 ms later); the gutter
+shrinks from 165.6 to 162 px, but no tracked signal changes, so whether a fit pass lands after the swap depended on
+unrelated recomputations: the head-note race of B502d/B502e (comparing, paused-reason, new-part; with fix (1) alone
+drawing, paused, paused-reason, idle, new-part and comparing went DIFF 2 of 2 runs, columns narrower by the old gutter).
+Fix: the fit pass waits for `listMeasured()`, `fontLoads` counts `fonts.ready` and every `loadingdone`, the fit
+records the font count it was measured under, and `noteFit` takes a new fit after a font load. Full compare 2 of 2
+runs: 19 to 23 ok; to ok: zoomed-page 82405, sticky-names 58240, below-fit 63183, far-out 11733; unchanged-matrix 34623
+to 39869, unchanged-matrix-open 40964 to 21846; unchanged: withdrawn-shown 131, withdrawn-hidden 59779,
+unchanged-open 9807, narrow-far-out 24954, change-crop 9510, change-crop-whole 29182. Then attempt 2 of the withdrawn
+fold (B502e C) again: full compare 2 of 2 runs 24 ok, comparing ok, withdrawn-hidden 59779 to ok, unchanged-matrix
+39861, rest as above, 7 FAILED (489). Bites in a scratch copy: "sizes the notes of a user zoom by the fit of the
+rendered matrix, not by a fit before the list is measured" (9 px not 12) and "fits the matrix again when a font loads
+after the first fit" red on b9e040148, "keeps a state a hidden withdrawn variant changes unfolded" red on e09bbf7ce;
+all green after. unchanged-matrix, Cause (`design dom`): the design's `matrixFit` ignores the fold column (`--sk-note`
+9.886 px, fit 0.3035), the app subtracts it (fit 0.245, 12 px), a design/app rule conflict, not timing. Not verified: CI,
+the 7 FAILED states, a font that loads after a user zoom in the live app.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
 tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
