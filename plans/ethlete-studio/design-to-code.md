@@ -1459,6 +1459,7 @@ no picture; CI never showed it.
 that names its ADR (`--by builder --note "ADR <n>"`). The question repeated a decision. Tool fix (technical, ADR 0209):
 `design accept --by builder` works without a terminal when the note names an ADR; the builder then accepts the label
 and drops the sketch.
+613 as built (Linux builder subagent, 2026-11-14, B503): moot, nothing built. Cause: ADR 0048 removed `design accept` as a human gate, and B249 S4a (build-ready.md) deleted the command; ADR 0233 is superseded by 0048. Verified by a run: `yarn et:design accept pages/sketches --by builder --note "ADR 0201"` exits 2 with `unknown command or checkout "accept"`. Open for the doc agent: ADR 0209 still reads `status: accepted` though the accept it rests on is gone (finding 637).
 
 615\. Builder (2026-11-09, B440): `tsc -p` on the Studio `tsconfig.spec.json` fails in `shot-state.spec.ts`
 (`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause: the
@@ -1515,6 +1516,7 @@ an accept on a pixel-identical edit; the doc agent searched the ADRs for "accept
 builder): until B249 lands, `design go` and `design accept` print that ADR 0048 removed them and name B249, and
 EDIT-OLD-NOT-FOUND does not fire when the edit leaves every picture of the part unchanged. Process fix: before a grill
 question names a cli command, the doc agent runs `yarn adr:governs` on the file that defines that command.
+637 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. B249 landed before this item, so the interim print is moot: `yarn et:design go pages/sketches` and `accept` both exit 2 as unknown commands (run). EDIT-OLD-NOT-FOUND: since B249 a direct edit with a recorded or cached picture is compared and held when every state draws as before (`HELD ... every state draws as before`, accepted-pictures spec run green), and an old/new sketch is discarded when old and new draw alike; EDIT-OLD-NOT-FOUND fires only when there is no picture baseline and HEAD holds no file of the part, so no old picture exists to call the edit pixel-identical, and it opens the new-only sketch of ADR 0253 instead of asking for an accept. Not verified: a live `design check` on a pixel-identical edit.
 
 638 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
@@ -1952,6 +1954,7 @@ an allow rule, so no night needs a hand-made timer.
 through the `sketch ready` lines. With finding 750 (a sketch with zero changed states reached the human) this count is
 the fact an agent needs first. Decided by the doc agent (tool internal, backlog): `sketch status` (or `sketch check`)
 prints the changed-state count per variant, and the 750 guard uses the same count.
+754 as built (Linux builder subagent, 2026-11-14, B503): `sketch check` prints `CHANGED STATES variant <key> of <targets>: <n>` per live variant (`not counted - <why>` when a target does not load or the variant holds another part). Cause: `VariantChange` held only a `change` text, and `variantChangeOf` stopped at the first target that changed, so no count existed. Now it carries `changed` (the states that differ, summed over every target and shared part), and the NO-CHANGED-STATE guard of `sketch ready`, `sketch check` and the Studio listing (`studio-api.ts` counts its listed unchanged states the same way) fires exactly when `changed` is 0. Bite: 3 new `no-visible-change.spec.ts` cases fail on the old code (no count, first-target stop, no count line). Verified live: `design sketch check components/zoom-chip@focus-tooltip --product studio` printed `CHANGED STATES variant a of components/zoom-chip, components/shell-collapse: 3` (exit 1 from unrelated CLIPPED/SEE-THROUGH lines). Not verified: Studio shows no count; a multi-target sketch now shoots every target even after the first changes.
 
 755\. Linux builder (same sketch, scratch copy `/tmp/sk750`): (a) `sketch check` flags the gitignored, regenerated
 `<variant>/tsconfig.json` as FORMAT; (b) with a `node_modules` symlink to the repo, the scratch writes its shots into
@@ -2341,6 +2344,7 @@ leaves :4402 to the Studio app and serves on a random port, so a shot from the o
 agent started `DE_PORT=4402 yarn design` in tmux `studio-serve`. Suspect: the skills that name :4402 still assume the old
 default. Tool fix (doc agent, tool internal): one source for the design server port, and the skills read it, or
 `yarn design` prints the port and the skills name the print.
+825 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. `yarn design` prints the port it serves on since c9d4af13b (2026-11-10, before this finding): a run printed `design-explore: 4402 left to Studio, serving on 39747 (DE_PORT=4402 binds 4402)` and the vite `Local:` URL. No skill names :4402 as the open design server (grep of `.agents/skills` and `libs/agent-rules/content`: only the `never touch :4402` line of verify-in-storybook), and the design-exploration reference says not to start `yarn design` next to Studio. The port has one constant, `DEFAULT_PORT` in `design-config.ts`; `RESERVED_PORTS` in `harness-server.ts` repeats 4402 as a literal (not changed: a dedupe has no behaviour to bite on). Suspect left: `design check --call`, the MCP server and `serve-state` still assume `portOf(config)` (4402), so they reach Studio's server, not a plain `yarn design` on a free port.
 
 826\. Linux builder (2026-11-11, 816 live run): `shot foundations/type@font-pair --variants --in pages/sketches` exited 1
 because variant c's page-sketch cell differed between two renders (70861 px). Suspect (one run): an unstable render or a
