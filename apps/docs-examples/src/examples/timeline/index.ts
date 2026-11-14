@@ -5,4 +5,5 @@ export const TIMELINE_EXAMPLES = {
     import('./timeline-with-markers.example').then((m) => m.TimelineWithMarkersExampleComponent),
   'timeline/timeline-compact': () =>
     import('./timeline-compact.example').then((m) => m.TimelineCompactExampleComponent),
+  'timeline/timeline-status': () => import('./timeline-status.example').then((m) => m.TimelineStatusExampleComponent),
 };

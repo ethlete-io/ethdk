@@ -10,7 +10,7 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
 @Component({
   selector: 'et-sb-progress-steps',
   template: `
-    <div [style.max-inline-size.px]="480" class="p-8 font-sans">
+    <div [style.max-inline-size.px]="width()" class="p-8 font-sans">
       <et-progress-steps [orientation]="orientation()">
         @for (step of steps(); track step.label) {
           @if (asLinks()) {
@@ -60,6 +60,7 @@ export class ProgressStepsStorybookComponent {
   private url = injectUrl();
 
   public orientation = input<ProgressStepsOrientation>('horizontal');
+  public width = input(480);
   public asLinks = input(false, { transform: booleanAttribute });
   public routerLinks = input(false, { transform: booleanAttribute });
 

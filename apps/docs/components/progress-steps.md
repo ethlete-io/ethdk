@@ -67,6 +67,8 @@ The default `orientation="auto"` keeps the steps in a row while each step gets a
 pixels (96 by default) and stacks them into a column below that, so the steps never scroll sideways on a
 narrow screen. Set `horizontal` or `vertical` to pin one layout.
 
+@example progress-steps/progress-steps-auto 400px
+
 `orientation="vertical"` on `et-progress-steps` stacks the steps, puts each label beside its marker,
 and turns the connector into a vertical bar hanging from one marker down to the next. It is not a
 rotation of the horizontal connector - the geometry is its own - and the gap default grows to `20px`,
@@ -176,6 +178,8 @@ Applies to an `et-progress-step` that also has a `routerLink`.
 `skipped` marks a step the process passed without doing it - a qualifier a seeded team does not play, an
 optional form page. Its marker shows a dash in a dashed ring, it keeps the surrounding color theme, the
 connector after it fills like a completed one, and it is announced as "Skipped".
+
+@example progress-steps/progress-steps-skipped 140px
 
 ## Your own look: the headless directives
 

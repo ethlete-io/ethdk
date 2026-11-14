@@ -29,7 +29,7 @@ export default {
     }),
   ],
   argTypes: {
-    orientation: { control: 'select', options: ['horizontal', 'vertical'] },
+    orientation: { control: 'select', options: ['horizontal', 'vertical', 'auto'] },
     asLinks: { control: 'boolean' },
     routerLinks: { control: 'boolean' },
   },
@@ -49,6 +49,26 @@ export const Outcomes: Story = {
       { label: 'Publish', state: 'upcoming' },
     ],
   },
+};
+
+export const Skipped: Story = {
+  args: {
+    steps: [
+      { label: 'Account', state: 'complete' },
+      { label: 'Shipping', state: 'skipped' },
+      { label: 'Payment', state: 'current' },
+      { label: 'Review', state: 'upcoming' },
+    ],
+  },
+};
+
+/** In `auto` the row stacks into a column once a step would get less than `minStepSize` pixels. */
+export const AutoWide: Story = {
+  args: { orientation: 'auto', width: 560 },
+};
+
+export const AutoNarrow: Story = {
+  args: { orientation: 'auto', width: 280 },
 };
 
 /** A column instead of a row: the connector hangs from each marker down to the next one. */

@@ -57,6 +57,12 @@ A projected marker sits on the surface background rather than on the line, so an
 
 @example timeline/timeline-with-markers 280px
 
+## Item status
+
+Set `status` on an item to show where a process stands, with the same vocabulary as [progress steps](/components/progress-steps). A resolved status shows its icon in the marker and is announced to assistive tech; `current` rings the marker.
+
+@example timeline/timeline-status 280px
+
 ## Your own look: the headless directives
 
 `et-timeline` and `et-timeline-item` are the `etTimeline` and `etTimelineItem` directives plus the

@@ -8,6 +8,7 @@ import {
   TRIANGLE_EXCLAMATION_ICON,
   TROPHY_ICON,
 } from '../../icon';
+import { TimelineItemStatus } from '../headless/timeline-item.directive';
 import { TIMELINE_IMPORTS } from '../timeline.imports';
 
 type TimelineStoryEvent = {
@@ -16,6 +17,7 @@ type TimelineStoryEvent = {
   description: string;
   icon: RegisteredIconName;
   color: string | null;
+  status: TimelineItemStatus;
 };
 
 @Component({
@@ -29,7 +31,7 @@ type TimelineStoryEvent = {
         [style.--et-timeline-dot-size]="compact() ? '6px' : null"
       >
         @for (event of EVENTS; track event.label) {
-          <et-timeline-item [color]="showMarkers() ? event.color : null">
+          <et-timeline-item [color]="showMarkers() ? event.color : null" [status]="showStatus() ? event.status : null">
             @if (showTime()) {
               <span etTimelineTime>{{ event.time }}</span>
             }
@@ -57,6 +59,7 @@ type TimelineStoryEvent = {
 export class TimelineStorybookComponent {
   public showTime = input(true);
   public showMarkers = input(false);
+  public showStatus = input(false);
   public compact = input(false);
 
   protected readonly EVENTS: TimelineStoryEvent[] = [
@@ -66,6 +69,7 @@ export class TimelineStorybookComponent {
       description: 'Both line-ups published 60 minutes before kickoff.',
       icon: 'et-clock',
       color: null,
+      status: 'complete',
     },
     {
       time: "23'",
@@ -73,6 +77,7 @@ export class TimelineStorybookComponent {
       description: 'Assisted by M. Keller after a counter down the left.',
       icon: 'et-circle-check',
       color: 'success',
+      status: 'success',
     },
     {
       time: "67'",
@@ -80,6 +85,7 @@ export class TimelineStorybookComponent {
       description: 'Sent off; the home side plays the rest a player down.',
       icon: 'et-triangle-exclamation',
       color: 'danger',
+      status: 'error',
     },
     {
       time: "90+4'",
@@ -87,6 +93,7 @@ export class TimelineStorybookComponent {
       description: 'The visitors take all three points and go top of the table.',
       icon: 'et-trophy',
       color: 'brand',
+      status: 'current',
     },
   ];
 }

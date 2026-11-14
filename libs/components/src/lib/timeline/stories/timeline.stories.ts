@@ -8,6 +8,7 @@ export default {
   args: {
     showTime: true,
     showMarkers: false,
+    showStatus: false,
     compact: false,
   },
 } as Meta<TimelineStorybookComponent>;
@@ -22,4 +23,8 @@ export const WithMarkers: Story = {
 
 export const Compact: Story = {
   args: { compact: true },
+};
+
+export const ItemStatuses: Story = {
+  args: { showStatus: true },
 };
