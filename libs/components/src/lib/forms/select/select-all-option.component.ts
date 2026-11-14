@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { CHECK_ICON, IconDirective, provideIcons } from '../../icon';
 import { SelectAllOptionDirective } from './headless';
+import { injectSelectIcons } from './select-icons';
 import { mountSelectOptionStyles } from './select-option-styles.component';
 
 /** The styled "Select all" row `et-select` renders for `selectAll`. Project the row's text. */
@@ -15,7 +16,7 @@ import { mountSelectOptionStyles } from './select-option-styles.component';
       @if (option.ariaChecked() === 'mixed') {
         <span class="et-select-all-option-dash" aria-hidden="true"></span>
       } @else {
-        <i etIcon="et-check"></i>
+        <i [etIcon]="icons.check"></i>
       }
     </span>
   `,
@@ -30,6 +31,7 @@ import { mountSelectOptionStyles } from './select-option-styles.component';
 })
 export class SelectAllOptionComponent {
   protected option = inject(SelectAllOptionDirective);
+  protected icons = injectSelectIcons();
 
   constructor() {
     mountSelectOptionStyles();

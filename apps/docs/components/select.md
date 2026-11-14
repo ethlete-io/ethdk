@@ -504,6 +504,52 @@ Public design tokens:
 
 The panel and option group tokens inherit, so setting one on `et-select-panel`, `et-select-option-group` or any ancestor reaches the parts that read it.
 
+The colour tokens below have no value of their own: unset, each falls back to the surface or colour theme as described above. Set them on `:root` or on any ancestor of the overlay pane, because the panel is rendered outside the field.
+
+| Token                                       | Unset                                     | Purpose                                                                |
+| ------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
+| `--et-select-panel-background`              | the elevated surface background           | Panel and sticky search row background                                 |
+| `--et-select-panel-border-color`            | `--et-surface-border-solid`               | Panel border (always `1px`)                                            |
+| `--et-select-panel-color`                   | `--et-surface-color-solid`                | Panel text colour                                                      |
+| `--et-select-option-background-hover`       | 12% `--et-surface-interaction-solid` tint | Background of the option under the pointer                             |
+| `--et-select-option-color-hover`            | inherited                                 | Text colour of the option under the pointer                            |
+| `--et-select-option-background-active`      | `transparent`                             | Background of the keyboard-active option (the ink outline stays)       |
+| `--et-select-option-color-active`           | inherited                                 | Text colour of the keyboard-active option                              |
+| `--et-select-option-color-selected`         | inherited                                 | Text colour of a selected option; hover and active colours win over it |
+| `--et-select-option-check-color`            | `--et-theme-color-ink-solid`              | The selected check                                                     |
+| `--et-select-option-check-order`            | `0` (after the label)                     | CSS `order` of the check; `-1` moves it before the label               |
+| `--et-select-option-divider-width`          | `0px`                                     | Border between two adjacent option rows                                |
+| `--et-select-option-divider-color`          | `--et-surface-border-solid`               | Colour of that border                                                  |
+| `--et-select-panel-action-color`            | `--et-theme-color-ink-solid`              | Text of the "Load more" and "Add new" rows                             |
+| `--et-select-panel-action-background-hover` | 12% `--et-surface-interaction-solid` tint | Their hover background                                                 |
+| `--et-select-panel-action-separator-color`  | `--et-surface-border-solid`               | The line above them                                                    |
+
+The trigger's value reads the form field's `--et-form-field-value-color`, `--et-form-field-value-color-active`
+and `--et-form-field-letter-spacing`, like an `et-input` (see [Forms › Theming](/components/forms#theming)).
+
+### Icons
+
+The select draws three glyphs of its own: the trigger chevron (also the rotated chevron on the "Load more"
+row), the clear button and the selected check. `provideSelectIcons()` swaps them by icon name for every select
+below that injector; register a name outside the built-in `et-*` set with `provideIconOverrides()`:
+
+```ts
+// app.config.ts
+providers: [
+  provideSelectIcons({ chevron: 'app-caret', check: 'app-tick' }),
+  provideIconOverrides({ name: 'app-caret', data: caretSvg }, { name: 'app-tick', data: tickSvg }),
+],
+```
+
+| Key       | Default        |
+| --------- | -------------- |
+| `chevron` | `'et-chevron'` |
+| `clear`   | `'et-times'`   |
+| `check`   | `'et-check'`   |
+
+To replace a built-in glyph everywhere in the app instead, override its `et-*` name with `provideIconOverrides()`
+alone.
+
 ## Error codes
 
 The select domain owns the `ET1000`–`ET1099` range - see [error codes](/components/error-codes#select-et10xx).

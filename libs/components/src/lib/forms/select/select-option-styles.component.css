@@ -35,6 +35,12 @@
     initial-value: 16px;
   }
 
+  @property --et-select-option-divider-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
   .et-select-option {
     &[data-filtered] {
       display: none;
@@ -60,14 +66,30 @@
       color 120ms ease,
       opacity 120ms ease;
 
+    & + .et-select-option {
+      border-block-start: var(--et-select-option-divider-width) solid
+        var(--et-select-option-divider-color, var(--et-surface-border-solid, currentColor));
+    }
+
+    &:where([data-selected]) {
+      --_et-select-option-color-rest: var(--et-select-option-color-selected);
+      color: var(--_et-select-option-color-rest);
+    }
+
     &:where([data-active][data-active-source='keyboard']) {
       outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
       outline-offset: -2px;
+      background: var(--et-select-option-background-active, transparent);
+      color: var(--et-select-option-color-active, var(--_et-select-option-color-rest));
     }
 
     @media (hover: hover) {
       &:where([data-active]:hover) {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+        background: var(
+          --et-select-option-background-hover,
+          color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent)
+        );
+        color: var(--et-select-option-color-hover, var(--_et-select-option-color-rest));
       }
     }
 
@@ -91,7 +113,8 @@
       flex: none;
       inline-size: var(--et-select-option-check-size);
       block-size: var(--et-select-option-check-size);
-      color: var(--et-theme-color-ink-solid, currentColor);
+      order: var(--et-select-option-check-order);
+      color: var(--et-select-option-check-color, var(--et-theme-color-ink-solid, currentColor));
       /* hidden via opacity, NOT visibility — an explicit `visibility: visible` would punch
          through the pane's positioning phase (`visibility: hidden`) and paint the check
          before the panel itself becomes visible */

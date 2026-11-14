@@ -19,6 +19,7 @@ import { injectSearchPlaceholderWidth } from './select-search-width';
 import { SelectVirtualOptionComponent } from './select-virtual-option.component';
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectSelectLabels } from '../../forms/select/select-labels';
+import { injectSelectIcons } from './select-icons';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 import { SemanticThemesDirective } from '../../internals/semantic-themes.directive';
@@ -116,6 +117,7 @@ import { SemanticThemesDirective } from '../../internals/semantic-themes.directi
 })
 export class SelectComponent {
   protected selectLabels = injectSelectLabels();
+  protected icons = injectSelectIcons();
 
   private formFieldLabels = injectFormFieldLabels();
 

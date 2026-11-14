@@ -76,7 +76,7 @@
       font: inherit;
       font-size: var(--et-select-option-font-size, 14px);
       text-align: start;
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-select-panel-action-color, var(--et-theme-color-ink-solid, currentColor));
       cursor: pointer;
       appearance: none;
       transition: background 120ms ease;
@@ -87,12 +87,18 @@
         inset-inline: calc(var(--et-select-panel-padding, 6px) * -1);
         inset-block-start: -4px;
         block-size: 1px;
-        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+        background: var(
+          --et-select-panel-action-separator-color,
+          var(--et-surface-border-solid, rgb(255 255 255 / 0.1))
+        );
       }
 
       @media (hover: hover) {
         &:not(:disabled):hover {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+          background: var(
+            --et-select-panel-action-background-hover,
+            color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent)
+          );
         }
       }
 

@@ -62,7 +62,7 @@
       tabindex="-1"
       type="button"
     >
-      <i etIcon="et-times"></i>
+      <i [etIcon]="icons.clear"></i>
     </button>
   }
 
@@ -75,7 +75,7 @@
     tabindex="-1"
     type="button"
   >
-    <i etIcon="et-chevron"></i>
+    <i [etIcon]="icons.chevron"></i>
   </button>
 </ng-template>
 
@@ -183,7 +183,7 @@
             tabindex="-1"
             type="button"
           >
-            <i class="et-select-load-more-icon" etIcon="et-chevron" aria-hidden="true"></i>
+            <i [etIcon]="icons.chevron" class="et-select-load-more-icon" aria-hidden="true"></i>
             {{ resolvedLoadMoreLabel() }}
           </button>
         }

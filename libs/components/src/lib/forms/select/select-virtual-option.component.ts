@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { CHECK_ICON, IconDirective, provideIcons } from '../../icon';
 import { SelectDirective, SelectOptionTemplateContext, SelectVirtualOptionDirective } from './headless';
+import { injectSelectIcons } from './select-icons';
 import { mountSelectOptionStyles } from './select-option-styles.component';
 
 /**
@@ -21,7 +22,7 @@ import { mountSelectOptionStyles } from './select-option-styles.component';
     </span>
 
     <span class="et-select-option-check">
-      <i etIcon="et-check"></i>
+      <i [etIcon]="icons.check"></i>
     </span>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -40,6 +41,7 @@ import { mountSelectOptionStyles } from './select-option-styles.component';
 export class SelectVirtualOptionComponent {
   protected select = inject(SelectDirective);
   protected virtualOption = inject(SelectVirtualOptionDirective);
+  protected icons = injectSelectIcons();
 
   protected templateContext = computed<SelectOptionTemplateContext>(() => {
     const item = this.virtualOption.item();

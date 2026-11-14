@@ -58,9 +58,9 @@
       overflow: clip;
     }
     border-radius: var(--_et-overlay-surface-radius, 10px);
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    background: var(--et-surface-background-solid, rgb(32 32 32));
-    color: var(--et-surface-color-solid, rgb(244 244 245));
+    border: 1px solid var(--et-select-panel-border-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
+    background: var(--et-select-panel-background, var(--et-surface-background-solid, rgb(32 32 32)));
+    color: var(--et-select-panel-color, var(--et-surface-color-solid, rgb(244 244 245)));
     /* base font size for panel content beyond the options themselves (custom search inputs
        etc.) — the detached pane would otherwise inherit the root font size (10px here) */
     font-size: var(--et-select-option-font-size, 14px);
@@ -89,7 +89,7 @@
     margin-block-start: calc(var(--et-select-panel-padding, 6px) * -1);
     margin-inline: calc(var(--et-select-panel-padding, 6px) * -1);
     padding: var(--et-select-panel-padding, 6px);
-    background: var(--et-surface-background-solid, rgb(32 32 32));
+    background: var(--et-select-panel-background, var(--et-surface-background-solid, rgb(32 32 32)));
     z-index: 1;
 
     input[etselectsearch] {

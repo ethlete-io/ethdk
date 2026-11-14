@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { CHECK_ICON, IconDirective, PLUS_ICON, provideIcons } from '../../icon';
 import { SelectOptionDirective } from './headless';
+import { injectSelectIcons } from './select-icons';
 import { mountSelectOptionStyles } from './select-option-styles.component';
 
 @Component({
@@ -22,6 +23,7 @@ import { mountSelectOptionStyles } from './select-option-styles.component';
 })
 export class SelectOptionComponent {
   protected option = inject(SelectOptionDirective);
+  protected icons = injectSelectIcons();
 
   constructor() {
     mountSelectOptionStyles();
