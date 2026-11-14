@@ -117,6 +117,28 @@ describe('derivedLinksOf', { timeout: 30_000 }, () => {
 
     expect(open).toEqual({ links: [], ambiguous: [{ part: 'elements/hero', paths: [BANNER, HERO] }] });
   });
+
+  it('leaves a component another part links to that part, when the page draws it at a slot of a different part', () => {
+    const { product } = acme({ 'elements/hero': HERO });
+
+    const derived = derivedLinksOf({
+      product,
+      states: [state('default', [{ part: 'components/button', selectors: ['app-hero'] }])],
+      components: COMPONENTS,
+    });
+
+    expect(derived).toEqual({ links: [], ambiguous: [] });
+  });
+
+  it('links no foundation, even where the page draws one component at its slots', () => {
+    const derived = derivedLinksOf({
+      product: acme().product,
+      states: [state('default', [{ part: 'foundations/palette', selectors: ['app-hero'] }])],
+      components: COMPONENTS,
+    });
+
+    expect(derived).toEqual({ links: [], ambiguous: [] });
+  });
 });
 
 describe('writeDerivedLinks', { timeout: 30_000 }, () => {

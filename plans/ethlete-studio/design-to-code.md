@@ -1193,6 +1193,17 @@ file as `implements` (`derived-links.ts`), then regenerates the harness map. A p
 candidates print UNDERIVED and keep it. IMPLEMENTS-UNRENDERED, its spec and its three baseline entries (583) are
 deleted. Verified: specs for the browser measurement, the derivation and the write. Not verified: a live run on the
 studio product; that run writes the derived links of the five 583 parts.
+As built (586, B502 live links, Linux builder, 2026-11-14): the first live run on studio linked `components/list-row` to
+the disclosure (merge draws the disclosure where the design draws the row) and `foundations/agent-logos` to the one-logo
+component (new DROPPED-PROP: the gallery states have no input there), and printed eight UNDERIVED pages and
+canvas-viewport, whose candidates were the live host and the views around it. Cause, measured per slot: the host and its
+ancestors cover every full-page slot, and a component another part links counted as free. Fixed with specs: the live host
+and the components around it never count, a component another part links stays with it, and a foundation gets no link.
+The re-run prints no LINKED and no UNDERIVED. The five 583 parts keep their links: canvas-viewport, disclosure and
+comment-pin name components the app renders (flows/sketches, merge/sketches, design-canvas); pages/system is a route
+link the derivation leaves alone, still `system-page` (open); tree-row matches part-tree on three pages and
+`[ethlete-tree-row-item]` on flows, so no common host (open). Verified: specs, the live run on a scratch copy and in the
+main checkout. Commit: see git log for B502 live links.
 
 588\. Builder (2026-11-07, B434): the Studio e2e job (added in 94606402c) never passed in CI. It built only `cli`, so
 the design server answered `/__design/system` with 503 "missing build" and Studio stayed on "Design-Server startet".

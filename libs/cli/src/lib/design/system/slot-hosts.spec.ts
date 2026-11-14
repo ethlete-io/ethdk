@@ -28,7 +28,7 @@ describe('slotComponentsOnPage', { timeout: 30_000 }, () => {
     await browser?.close();
   });
 
-  it('names the components drawn at each slot from the live host origin, outermost first, also through display: contents', async (context) => {
+  it('names the components drawn at each slot from the live host origin, also through display: contents', async (context) => {
     if (!browser) return context.skip('no browser');
 
     const page = await browser.newPage();
@@ -48,11 +48,30 @@ describe('slotComponentsOnPage', { timeout: 30_000 }, () => {
     });
 
     expect(found).toEqual([
-      { part: 'elements/canvas', selectors: ['app-shell', 'app-canvas'] },
+      { part: 'elements/canvas', selectors: ['app-canvas'] },
       { part: 'elements/frames', selectors: ['app-old-frames'] },
       { part: 'components/pin', selectors: ['app-pin'] },
-      { part: 'elements/shell', selectors: ['app-shell', 'app-canvas'] },
+      { part: 'elements/shell', selectors: ['app-canvas'] },
     ]);
+  });
+
+  it('skips the live host and the components around it', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(
+      `<app-root style="display: block"><app-view style="display: contents">${PAGE}</app-view></app-root>`,
+    );
+
+    const found = await slotComponentsOnPage({
+      page,
+      host: 'app-shell',
+      selectors: ['app-root', 'app-view', ...SELECTORS],
+      slots: [{ part: 'elements/canvas', x: 110, y: 10, width: 280, height: 280 }],
+    });
+
+    expect(found).toEqual([{ part: 'elements/canvas', selectors: ['app-canvas'] }]);
   });
 
   it('answers null when the live host is missing', async (context) => {

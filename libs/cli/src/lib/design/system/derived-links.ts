@@ -18,7 +18,8 @@ const linkPathOf = (source: string) => {
 /**
  * The `implements` link of each embedded part, derived from the app components the live pages render at every slot
  * the design draws the part in. A part whose slots share no component, or that the app draws inline, keeps its link;
- * a page's own component never counts for a part it embeds; a part left with more than one candidate is ambiguous.
+ * a page's own component never counts for a part it embeds, nor a component another part links; a foundation gets no
+ * link; a part left with more than one candidate is ambiguous.
  */
 export const derivedLinksOf = (options: {
   product: ResolvedProduct;
@@ -40,7 +41,9 @@ export const derivedLinksOf = (options: {
         .map((selector) => components.get(selector))
         .filter((path): path is string => path !== undefined && path !== page);
 
-      if (paths.length === 0 || !parts.has(slot.part)) continue;
+      const part = parts.get(slot.part);
+
+      if (paths.length === 0 || !part || part.layer === 'foundations') continue;
 
       const known = candidates.get(slot.part);
 
@@ -58,7 +61,7 @@ export const derivedLinksOf = (options: {
 
   for (let changed = true; changed;) {
     changed = false;
-    const taken = new Set(settled.values());
+    const taken = new Set([...settled.values(), ...[...current.values()].filter((path) => path !== null)]);
 
     for (const [part, paths] of candidates) {
       if (settled.has(part)) continue;

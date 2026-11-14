@@ -47,7 +47,9 @@ const SLOT_COMPONENTS_SCRIPT = `(({ host, slots, selectors }) => {
   };
   const hosts = selectors.flatMap((selector) => {
     try {
-      return [...document.querySelectorAll(selector)].map((element) => ({ element, selector }));
+      return [...document.querySelectorAll(selector)]
+        .filter((element) => !element.contains(root))
+        .map((element) => ({ element, selector }));
     } catch {
       return [];
     }
@@ -83,7 +85,8 @@ const SLOT_COMPONENTS_SCRIPT = `(({ host, slots, selectors }) => {
 /**
  * The app components whose host the open page draws at each slot: a host counts when it covers at least half of the
  * smaller of its box and the slot, and neither is more than four times the other, so layout drift that compare reports
- * does not move the link. A `display: contents` host is measured by its content. `null` when the live host is missing.
+ * does not move the link. A `display: contents` host is measured by its content. The live host and the components
+ * around it are the page, never a part. `null` when the live host is missing.
  */
 export const slotComponentsOnPage = async (options: {
   page: Page;
