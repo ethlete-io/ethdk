@@ -416,6 +416,16 @@ One typed `TableColumns<Row>` object bound to `[columns]` replaces the per-colum
 | `TableDataSourcePaginator` | —                                           | pagination is driven by your own state or a query                                       |
 | `TextColumnComponent`      | [`TableColumns`](/components/table)         | a plain column entry replaces the text-column shorthand                                 |
 
+#### Table column markup {#table-column-markup}
+
+cdk column markup (`etColumnDef`, `*etHeaderCellDef`, `*etCellDef`, `*etFooterCellDef`, `etHeaderRowDef`, `etRowDef`, `etFooterRowDef`) placed inside an `<et-table>` compiles but renders nothing for those columns. Find leftovers with:
+
+```bash
+grep -rn "etColumnDef\|etHeaderCellDef\|etCellDef\|etRowDef\|etHeaderRowDef" src
+```
+
+The codemod lists each hit in its report. Replace them with a `TableColumns<Row>` object bound to `[columns]`; a custom cell is an `etTableCell` template and a custom header an `etTableHeaderCell` template. See [Columns](/components/table#columns).
+
 ### Inline tabs → tab group and tab bar
 
 The `Inline` prefix is gone, and the header is a tab bar with its own trigger and underline directives instead of an internal paginated header.

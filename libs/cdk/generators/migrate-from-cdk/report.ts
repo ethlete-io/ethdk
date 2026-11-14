@@ -42,6 +42,7 @@ export type MigrationReport = {
   gatedSymbols: Map<string, SymbolSites>;
   unknownStyleClasses: Map<string, ReportSite[]>;
   reactiveFormControls: Map<string, ReportSite[]>;
+  cdkTableColumnDirectives: ReportSite[];
 };
 
 export type ReportContext = {
@@ -58,6 +59,7 @@ export const createEmptyReport = (): MigrationReport => ({
   gatedSymbols: new Map(),
   unknownStyleClasses: new Map(),
   reactiveFormControls: new Map(),
+  cdkTableColumnDirectives: [],
 });
 
 export const isReportEmpty = (report: MigrationReport) =>
@@ -68,7 +70,8 @@ export const isReportEmpty = (report: MigrationReport) =>
   report.judgmentSymbols.size === 0 &&
   report.gatedSymbols.size === 0 &&
   report.unknownStyleClasses.size === 0 &&
-  report.reactiveFormControls.size === 0;
+  report.reactiveFormControls.size === 0 &&
+  report.cdkTableColumnDirectives.length === 0;
 
 const FORM_CONTROL_TAGS = [
   'et-checkbox',
@@ -92,6 +95,18 @@ const FORM_CONTROL_TAGS = [
   'et-textarea-input',
   'et-time-input',
 ] as const;
+
+const CDK_TABLE_DIRECTIVES = [
+  'etColumnDef',
+  'etHeaderCellDef',
+  'etCellDef',
+  'etFooterCellDef',
+  'etHeaderRowDef',
+  'etRowDef',
+  'etFooterRowDef',
+] as const;
+
+const CDK_TABLE_DIRECTIVE = new RegExp(`[\\s*\\[](${CDK_TABLE_DIRECTIVES.join('|')})(?=[\\s=\\]/>])`, 'g');
 
 const REACTIVE_FORM_BINDING = /\s\[?(formControl|formControlName|formGroup)\]?(?=[\s=/>])/;
 
@@ -225,6 +240,10 @@ export const scanTemplate = (report: MigrationReport, template: string, { file, 
       sites.push({ file, line: lineAt(index), detail: `\`${binding[1]}\`` });
       report.reactiveFormControls.set(tagName, sites);
     });
+  }
+
+  for (const match of template.matchAll(CDK_TABLE_DIRECTIVE)) {
+    report.cdkTableColumnDirectives.push({ file, line: lineAt(match.index), detail: `\`${match[1]}\`` });
   }
 
   for (const tagName of [SPINNER_TAG, LEGACY_SPINNER_TAG]) {
@@ -493,6 +512,18 @@ export const renderReport = (report: MigrationReport, context: ReportContext) =>
             ...renderSites(sites),
             '',
           ]),
+        ]
+      : []),
+    ...(report.cdkTableColumnDirectives.length > 0
+      ? [
+          '## cdk table column markup',
+          '',
+          'The cdk column directives compile inside `<et-table>` but render nothing. Declare the columns as one typed',
+          '`TableColumns<Row>` bound to `[columns]` instead; a custom cell is an `etTableCell` template and a custom',
+          `header an \`etTableHeaderCell\` template. See ${DOCS_BASE_URL}/cdk/migration#table-column-markup.`,
+          '',
+          ...renderSites(report.cdkTableColumnDirectives),
+          '',
         ]
       : []),
     ...(report.unknownStyleClasses.size > 0

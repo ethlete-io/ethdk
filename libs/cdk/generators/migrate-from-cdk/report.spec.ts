@@ -70,3 +70,46 @@ describe('migrate-from-cdk -> reactive form controls', () => {
     expect(report.reactiveFormControls.size).toBe(0);
   });
 });
+
+describe('migrate-from-cdk -> cdk table column directives', () => {
+  it('reports every cdk column and row directive with its line', () => {
+    const report = createEmptyReport();
+
+    scanTemplate(
+      report,
+      [
+        '<et-table>',
+        '  <ng-container etColumnDef="name">',
+        '    <th *etHeaderCellDef>Name</th>',
+        '    <td *etCellDef="let row">{{ row.name }}</td>',
+        '  </ng-container>',
+        '  <tr *etHeaderRowDef="cols"></tr>',
+        '</et-table>',
+      ].join('\n'),
+      { file: 'a.html', startLine: 1 },
+    );
+
+    expect(report.cdkTableColumnDirectives.map((site) => `${site.line} ${site.detail}`)).toEqual([
+      '2 `etColumnDef`',
+      '3 `etHeaderCellDef`',
+      '4 `etCellDef`',
+      '6 `etHeaderRowDef`',
+    ]);
+
+    const rendered = renderReport(report, { installedVersions: {}, rewrittenFiles: 0 });
+
+    expect(rendered).toContain('## cdk table column markup');
+    expect(rendered).toContain('- `a.html:3` - `etHeaderCellDef`');
+  });
+
+  it('ignores the SDK table templates and similar names', () => {
+    const report = createEmptyReport();
+
+    scanTemplate(report, '<ng-template etTableCell="name"></ng-template><i etCellDefault></i>', {
+      file: 'a.html',
+      startLine: 1,
+    });
+
+    expect(report.cdkTableColumnDirectives).toEqual([]);
+  });
+});
