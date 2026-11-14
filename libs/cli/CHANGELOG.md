@@ -1,5 +1,33 @@
 # @ethlete/cli
 
+## 3.0.0-next.30
+
+### Minor Changes
+
+- The live pass of `design check --slow` and `--live` now writes each embedded part's `implements` link from the app component drawn at its slots, and the `IMPLEMENTS-UNRENDERED` rule is gone.
+
+### Patch Changes
+
+- `et design sketch report` takes a report on the picked variant of a decided sketch and keeps the pick, so a port can report before it edits.
+- A design timings line records the CLI build `et:design` launched it from (`cli <sha>`, `<sha>+dirty` for `--working-tree`).
+- The design server's shot route answers a crop outside the content with the same note the CLI prints, in the `x-et-note` header.
+- `et design sketch new` refuses a `--note` that reads as another language than the product's `noteLanguage`.
+- `design compare` judges a tooltip a design draws open at rest: mark its trigger `data-et-opened-by="hover"`.
+- The design tool keeps its shot cache inside the checkout when `node_modules` is a symlink to another tree, instead of writing into that tree's `node_modules`.
+- `design serve` answers the first open-points request of a product in under a second again: the variant pool and the warmed open-points worker are back.
+- The compare cache key no longer includes the slow-check and compare command modules: `build-ready-contract` stops re-exporting `slowProblemsOf`.
+- The derived `implements` link no longer picks the live page host or the components around it, a component that another part already links, or a foundation.
+- The live pass also derives the `component` of a page's route link: the innermost app component at or around the live host that takes every design prop of the page.
+- New slow rule `STATE-UNDESIGNED`: an `@if`/`@else` branch of a linked app component that no design state takes is a named finding, and a live state that names a missing design state fails under the same rule.
+- `sketch new --name` refuses an invalid name or a flag as its value with a sketch-name error, a missing built mocks folder and a missing render dist name the build command, and `design check` names the cli build it runs.
+- `design check --slow` writes the check record, `NO RECORD` names every blocker, and `design check --product <p> --base <rev>` checks only the parts changed since `<rev>`.
+- `design check --product <p> --base <rev|range>` checks the chosen parts on one design server, browser and typecheck instead of starting them once per part.
+- Every git call of the design cli now goes through its git reader; `design edit` reads the old design and the baseline history reads its versions in one `git cat-file --batch`.
+- The design cli reads git through one module: per-file `git show` loops in `design task` and the link history read become one `git cat-file --batch` each.
+- A killed sketch discard or rebase is now undone by the next design command, and `sketch rebase --ported <variant>` names the variants ported by hand.
+- Two sketch commands that change different fields of one sketch both keep their change, and the automatic merge of a sketch with no visible change survives a killed run.
+- `sketch check` prints the changed-state count of each variant, and the NO-CHANGED-STATE guard reads the same count.
+
 ## 3.0.0-next.29
 
 ### Minor Changes

@@ -1,5 +1,15 @@
 # ethlete-studio
 
+## 0.2.0-next.18
+
+### Patch Changes
+
+- The Flows list draws its rows with the shared tree-row stack, and a selected row in that stack is marked as selected for assistive technology.
+- The System page draws every state through one page component, so the app and the design harness show the same page.
+- The Sketches page folds no state when every state draws like Aktuell, and the design harness draws the edit-sketch state with an @edit chip sample.
+- The Sketches page draws like its design: the @edit hint, crop stack edges inside the frame, uncut focus rings and the wrapped fold label.
+- The sketches fold disclosure shrinks to wrap its label instead of stretching across the row, so a click beside it no longer opens all states.
+
 ## 0.2.0-next.17
 
 ### Minor Changes

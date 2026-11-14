@@ -1277,7 +1277,7 @@ dependencies = [
 
 [[package]]
 name = "ethlete-studio"
-version = "0.2.0-next.17"
+version = "0.2.0-next.18"
 dependencies = [
  "fix-path-env",
  "libc",
