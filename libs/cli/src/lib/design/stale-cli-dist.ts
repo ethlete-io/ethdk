@@ -126,6 +126,16 @@ export const builtCliChangedWarning = (options: { distDir: string }): string | n
   return `WARN: this cli was built from ${commit.slice(0, 9)}; libs/cli has commits or uncommitted changes since, so a fix in the source may not be in this build. Rebuild: ${CLI_REBUILD_COMMAND}`;
 };
 
+/** The line that names the cli build at `distDir` and the commit it was built from. */
+export const cliBuildLineOf = (options: { distDir: string }) => {
+  const commit = buildCommitOf(options.distDir);
+
+  return `cli: runs the build at ${options.distDir} (${commit ? `built from ${commit.slice(0, 9)}` : 'no build commit'})`;
+};
+
+/** The line that names the cli build this process runs from. */
+export const runningCliBuildLine = () => cliBuildLineOf({ distDir: resolve(__dirname, '../../../') });
+
 /** The warning for the cli this process runs from, or null when it is no build inside a repo checkout. */
 export const runningCliStaleWarning = (): string | null => {
   const distDir = resolve(__dirname, '../../../');

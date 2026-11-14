@@ -289,6 +289,19 @@ export const sketchIdOfName = (value: string) => {
   return typeof parseTarget(dotted) === 'string' ? null : dotted;
 };
 
+/** Why `--name` cannot name a sketch, with the name it could take instead; `null` when it can. */
+export const sketchNameProblemOf = (name: string) => {
+  if (NAME.test(name)) return null;
+
+  const slug =
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, '-')
+      .replace(/^-+|-+$/gu, '') || 'alt';
+
+  return `--name "${name}" is no sketch name - pass lowercase letters, digits and dashes, e.g. --name ${slug}`;
+};
+
 export const isVariantName = (name: string) => NAME.test(name) && name !== SHARED_FOLDER;
 
 const foldersOf = (dir: string) =>

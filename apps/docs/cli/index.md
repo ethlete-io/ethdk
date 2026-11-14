@@ -48,7 +48,7 @@ Changesets runs through the package manager the repo uses (`yarn changeset`, `pn
 - [`et update`](/cli/update) - move the `@ethlete/*` packages to a newer version, run the codemods those versions ship, and report what needs a decision.
 - [`et migrations`](/cli/update#migration-levels) - list the recommended and optional migrations the app has not run, and run one of them.
 - [`et doctor`](/cli/config#et-doctor) - report every problem with this machine's config and API checkouts at once.
-- `et design [checkout]` - serve the design system in the `.ethlete/design` folder of a checkout to Ethlete Studio (the current repo by default, or a path, or `--checkout <path>`). `et design check` checks the system and names each problem. Studio's tiles are pictures the server draws in headless Chromium, so they need `playwright` or `playwright-core` (with its Chromium) in the checkout or next to the cli; without it a tile stays blank. An edit redraws only the parts it reaches: a file that a product stylesheet only scans as a Tailwind `@source` redraws its own parts and their importers, while an edit of the stylesheet or a file it `@import`s redraws every part.
+- `et design [checkout]` - serve the design system in the `.ethlete/design` folder of a checkout to Ethlete Studio (the current repo by default, or a path, or `--checkout <path>`). `et design check` checks the system and names each problem; its summary names the cli build it runs (`cli: runs the build at <dir> (built from <sha>)`) and warns when `libs/cli` has commits or uncommitted changes since that build. Studio's tiles are pictures the server draws in headless Chromium, so they need `playwright` or `playwright-core` (with its Chromium) in the checkout or next to the cli; without it a tile stays blank. An edit redraws only the parts it reaches: a file that a product stylesheet only scans as a Tailwind `@source` redraws its own parts and their importers, while an edit of the stylesheet or a file it `@import`s redraws every part.
 
 A running `et design` watches the cli it was started from. Once a rebuild or reinstall of the cli has finished writing, the server restarts itself from the new build on the same port, in the same process, so Studio keeps it and no shot is drawn with old code.
 
@@ -642,7 +642,7 @@ into the base and removes the copy with its `merged.json` entry. A part of a bui
 A part holds one open sketch, or one per name: `sketch new components/card --name alt --variants x` opens a second one
 next to the first, in its own folder (`sketches/components-card.alt`), with its own `sketch.json` and the id
 `components/card@alt`. Pass that id to every sketch command (`sketch ready components/card@alt`). A sketch opened without
-`--name` keeps its folder and id, and two sketches on a part cannot share a name.
+`--name` keeps its folder and id, and two sketches on a part cannot share a name. A name takes lowercase letters, digits and dashes (`--name disabled-labels`); any other name is refused with the one it could take.
 
 `sketch ready` refuses while a target of a live variant does not load. It also runs the render check on the variants and refuses on a render issue the merged part does not already show (same rule, detail and element, also when the part moved its demo frame into `frame`); `design check` still lists the old ones. An element marked `data-et-skip` stays out, and a missing browser skips the check with a `RENDER CHECK SKIPPED` line.
 

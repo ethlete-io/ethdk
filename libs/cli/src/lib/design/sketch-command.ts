@@ -82,6 +82,7 @@ import {
   changedSinceReadyOf,
   reopenChangedReady,
   parseTarget,
+  sketchNameProblemOf,
   orphanedPickOf,
   authorsOf,
   rejectionOf,
@@ -316,6 +317,10 @@ const opened = (context: Context) => {
   if (parsed === undefined || typeof parsed === 'string') return fail(SKETCH_USAGE[0] ?? '');
 
   const name = args.values['--name'];
+  const nameProblem = name === undefined ? null : sketchNameProblemOf(name);
+
+  if (nameProblem) return fail(nameProblem);
+
   const named = name === undefined ? parsed : parseTarget(`${parsed.layer}/${parsed.name}@${name}`);
 
   if (typeof named === 'string') return fail(named);

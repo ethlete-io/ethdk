@@ -19,6 +19,9 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: [], invocation: 'et design' })).toBe(1);
     expect(withoutBrowserLines(lines)).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/)]);
+    expect(lines).toContainEqual(
+      expect.stringMatching(/^cli: runs the build at .* \((built from [0-9a-f]{9}|no build commit)\)$/),
+    );
   });
 
   it('runs the render check past a static failure and reports both', async (context) => {

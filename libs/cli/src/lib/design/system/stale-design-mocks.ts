@@ -37,6 +37,13 @@ export const staleDesignMocksOf = (options: { target: string }): StaleDesignMock
 
   if (stale.length === 0) return null;
 
+  if (!existsSync(built))
+    return {
+      stale,
+      command: MOCKS_BUILD_COMMAND,
+      message: `REFUSED MISSING DESIGN MOCKS - ${BUILT_DIR} is missing; the drawings need the built mocks - run ${MOCKS_BUILD_COMMAND}`,
+    };
+
   const shown = stale.slice(0, 5).join(', ');
 
   return {

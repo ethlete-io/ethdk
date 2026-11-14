@@ -165,12 +165,14 @@ export const watchedEntryOf = (mapped: MappedPackage, watched: Record<string, nu
 
 /**
  * The file a drawing's subpath import of a mapped package loads in the browser, or null to leave it
- * to the checkout. The root stays with the checkout: the browser has its own `@angular/core`.
+ * to the checkout. The root stays with the checkout: the browser has its own `@angular/core`. Throws with
+ * the build command while the mapped package is not built.
  */
 export const mappedSubpathOf = (options: { specifier: string; packages: Record<string, string>; target: string }) => {
   const mapped = mapPackage(options);
 
   if (!mapped || mapped.subpath === '.') return null;
+  if (!existsSync(resolve(mapped.dir, 'package.json'))) return entryOf(mapped);
 
   try {
     return entryOf(mapped);

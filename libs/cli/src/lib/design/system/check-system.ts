@@ -10,7 +10,7 @@ import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
 import { actionLostProblemsOf, declaredPartActionsOf } from './action-lost';
 import { refreshHarnessMap } from './harness-map';
-import { runningCliStaleWarning } from '../stale-cli-dist';
+import { runningCliBuildLine, runningCliStaleWarning } from '../stale-cli-dist';
 import { capabilityPlaceOf } from './rules/capability-place';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { contrastPairProblemsOf } from './contrast-pairs';
@@ -1050,6 +1050,7 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
   timedPhase('summary', () => {
     const staleCli = runningCliStaleWarning();
 
+    console.log(runningCliBuildLine());
     if (staleCli) console.log(staleCli);
 
     for (const name of options.products) {

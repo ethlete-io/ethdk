@@ -206,6 +206,18 @@ describe('subpaths of a mapped package', () => {
     expect(await mappedSubpathOf({ specifier: '@ethlete/core/nope', packages, target })).toBeNull();
     expect(await mappedSubpathOf({ specifier: '@angular/core/testing', packages, target })).toBeNull();
   });
+
+  it('names the build command for a subpath import while the mapped dist is missing', () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-no-dist-'));
+
+    expect(() =>
+      mappedSubpathOf({
+        specifier: '@ethlete/components/design/button',
+        packages: { '@ethlete/*': 'dist/libs/*' },
+        target,
+      }),
+    ).toThrow('run `nx build components`');
+  });
 });
 
 describe('lookupImports', () => {

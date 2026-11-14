@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cliSourceHash } from '../source-hash';
-import { builtCliChangedWarning } from './stale-cli-dist';
+import { builtCliChangedWarning, cliBuildLineOf } from './stale-cli-dist';
 
 describe('builtCliChangedWarning', () => {
   let root: string;
@@ -30,6 +30,15 @@ describe('builtCliChangedWarning', () => {
   });
 
   afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  it('names the build it runs and its build commit', () => {
+    expect(cliBuildLineOf({ distDir: copyDir() })).toBe(
+      `cli: runs the build at ${copyDir()} (built from ${sha.slice(0, 9)})`,
+    );
+    expect(cliBuildLineOf({ distDir: join(root, 'none') })).toBe(
+      `cli: runs the build at ${join(root, 'none')} (no build commit)`,
+    );
+  });
 
   it('stays silent while libs/cli matches the build commit', () => {
     expect(builtCliChangedWarning({ distDir: copyDir() })).toBeNull();

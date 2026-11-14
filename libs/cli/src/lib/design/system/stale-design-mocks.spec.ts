@@ -37,6 +37,12 @@ describe('staleDesignMocksOf', () => {
     expect(staleDesignMocksOf({ target: checkout({ source: 'a', built: null }) })?.stale).toEqual(['button.ts']);
   });
 
+  it('says in one line that the built folder is missing, not that it differs', () => {
+    expect(staleDesignMocksOf({ target: checkout({ source: 'a', built: null }) })?.message).toBe(
+      `REFUSED MISSING DESIGN MOCKS - dist/libs/components/design is missing; the drawings need the built mocks - run ${MOCKS_BUILD_COMMAND}`,
+    );
+  });
+
   it('is null in a checkout without mocks', () => {
     expect(staleDesignMocksOf({ target: mkdtempSync(join(tmpdir(), 'cli-design-no-mocks-')) })).toBeNull();
   });

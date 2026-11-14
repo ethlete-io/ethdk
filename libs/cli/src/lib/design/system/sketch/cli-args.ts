@@ -23,7 +23,7 @@ export const argsOf = (argv: string[], flags: { values: string[]; switches?: str
     if (valueFlags.includes(arg)) {
       const value = argv[index + 1];
 
-      if (value === undefined) return `${arg} needs a value`;
+      if (value === undefined || valueFlags.includes(value) || switches?.includes(value)) return `${arg} needs a value`;
 
       args.values[arg] = value;
       args.repeated[arg] = [...(args.repeated[arg] ?? []), value];

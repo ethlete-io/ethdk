@@ -1203,6 +1203,8 @@ returns the same note as the CLI (`x-et-note`), new row.
 570\. Builder (2026-11-07, B360): on a missing `dist`, `mappedSubpathOf` swallows the error, so the listing never names
 the build command. Tool fix (technical): the listing names `nx build <name>` for a missing `dist`.
 
+570 as built (Linux builder subagent, 2026-11-14, B503): `mappedSubpathOf` (`libs/cli/src/lib/design/render-packages.ts`) no longer swallows a missing mapped `dist`: when the package folder has no `package.json` it throws `entryOf`'s error, which names `nx build <name>` (or that the build is running); a built package that does not export the subpath still answers null. Cause: the catch-all `try` turned the missing build into a fallback to the checkout. Verified: the new case in `render.spec.ts` was red on the old code (no throw), green after; not seen live in the Studio listing.
+
 571\. Builder (2026-11-07): rows from worktree branches cannot land by merge commit (the PreToolUse hook allows only
 `git commit -m … -- <paths>`, and git refuses a partial commit during a merge), so they land by cherry-pick and their
 `built: <sha>` goes stale. Tool fix (technical): the integration step writes each `built:` sha itself after the
@@ -3300,6 +3302,8 @@ Suspect: the check resolves the CLI from the build output, not from source. Less
 under test must say so, not pass. Tool fix: the check prints which CLI build it runs and warns when `libs/cli` has
 uncommitted or unbuilt changes. Side: user-facing (every Studio project), after B249 (ADR 0269).
 
+871 as built (Linux builder subagent, 2026-11-14, B503): the warning half was already built by f15c2cf25 (904, `builtCliChangedWarning`: commits or uncommitted changes in `libs/cli` since the build commit, also for the `tmp/studio-cli` copies `et:design` runs; its `build-commit.spec.ts` cases pass). New: the check summary always prints `cli: runs the build at <dir> (built from <sha9>)` or `(no build commit)` (`runningCliBuildLine` in `stale-cli-dist.ts`). Verified: `build-commit.spec.ts` and the wiring assertion in `check-system-render.spec.ts` were red on the old code, green after; not run live through `yarn et:design check`.
+
 872\. Mac builder (2026-11-11, B345 slice 1): design check cannot drive the change-crop states of pages/sketches
 ("undrivable", 16 same aria-labels), so no design compare covered the new view before the live shot. Suspect: the harness
 samples feed no crop data. Lesson: a state the harness cannot drive is a hole in compare, and it was found by the
@@ -3544,6 +3548,8 @@ for its 4 disabled chips, so the human compares both floors.
 default, tool backlog): `--name` takes a value, with a spec. Same class (Linux, 900): `yarn studio:e2e --help` has no help and
 starts the full suite.
 
+944 as built (Linux builder subagent, 2026-11-14, B503): `--name` always took a value; measured (spec, old code): `--name "Disabled labels"` failed as `"components/button@Disabled labels" is no target`, and `--name --round` took `--round` as the name. Cause: `sketch new` only checked the name by parsing `<target>@<name>`. Now `sketchNameProblemOf` refuses a name outside lowercase letters, digits and dashes with the name it could take (`--name disabled-labels`), and `argsOf` refuses any known flag as a flag's value (`--name needs a value`), for every command that uses it. Verified: both cases in `sketch-usage-exit.spec.ts` red on the old code, green after; the `studio:e2e --help` side is not in this slice.
+
 933 update 3 (Linux, 63d53b7b6): the sketch `foundations/colors` (studio) is ready, variants a (4 disabled-label chips
 with a contrast exception, WCAG 1.4.3, ratios 3.1-3.4) and b (no exception, 4.7-5.1). It waits for the human's pick by
 merge. After a pick, `generate-studio-themes.mjs` must read the new `--on-surface-disabled` token (DARK_INTERACTION onColor).
@@ -3615,6 +3621,8 @@ with a biting spec.
 974\. Linux builder (2026-11-12 night, 927): with `dist/libs/components/design` missing, the design-mocks guard says the
 folder "differs from" the source and lists 55 files; the build command it names is right. Cause (seen live). Tool fix
 (builder default, tool backlog): a missing folder gives one line that names it missing, with a biting spec.
+
+974 as built (Linux builder subagent, 2026-11-14, B503): `staleDesignMocksOf` (`libs/cli/src/lib/design/system/stale-design-mocks.ts`) answers one line when `dist/libs/components/design` itself is missing: `REFUSED MISSING DESIGN MOCKS - dist/libs/components/design is missing; the drawings need the built mocks - run NX_NO_CLOUD=true npx nx build components`; a folder that exists but differs keeps the file list. Cause: the guard compared file by file and never asked whether the folder exists. Verified: the new case in `stale-design-mocks.spec.ts` was red on the old code (the "differs from" line), green after; not run live on a checkout without the build.
 
 976\. Mac builder (2026-11-12 night, 926): a merge refusal advice ("run sketch rebase") could not fix its cause, and no spec
 applied the advice. Tool fix (builder default, tool backlog): every merge refusal that names a remedy gets a spec that
