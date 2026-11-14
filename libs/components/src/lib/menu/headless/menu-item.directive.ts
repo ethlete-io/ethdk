@@ -9,6 +9,7 @@ import {
   inject,
   input,
   output,
+  Renderer2,
   signal,
 } from '@angular/core';
 import { optionalBooleanAttribute, RuntimeError } from '@ethlete/core';
@@ -28,7 +29,9 @@ export type MenuItemActivationEvent = {
   host: {
     '[attr.role]': 'role()',
     '[attr.tabindex]': 'tabIndex()',
-    '[attr.aria-disabled]': 'isDisabled() || null',
+    '[attr.aria-disabled]': 'isDisabled() || loading() || null',
+    '[attr.aria-busy]': 'loading() || null',
+    '[attr.data-loading]': 'loading() || null',
     '[attr.data-active]': 'isActive() || null',
     '[attr.data-active-source]': 'activeSource()',
     '[attr.data-highlight-held]': 'isHighlightHeld() || null',
@@ -47,6 +50,11 @@ export class MenuItemDirective {
   private destroyRef = inject(DestroyRef);
 
   public disabled = input(false, { transform: booleanAttribute });
+  /**
+   * Shows a spinner and blocks activation while async work started by this item runs. Unlike `disabled`,
+   * the item stays reachable with the arrow keys.
+   */
+  public loading = input(false, { transform: booleanAttribute });
   public closeOnActivate = input<boolean | undefined, unknown>(undefined, { transform: optionalBooleanAttribute });
   public activate = output<MenuItemActivationEvent>();
 
@@ -106,7 +114,16 @@ export class MenuItemDirective {
 
     this.owner?.registerItem(this);
 
+    // Must stay a capture listener so it runs before a consumer's template `(click)` on the same element.
+    const unlistenClick = inject(Renderer2).listen(
+      this.elementRef.nativeElement,
+      'click',
+      (event: MouseEvent) => this.blockLoadingClick(event),
+      { capture: true },
+    );
+
     this.destroyRef.onDestroy(() => {
+      unlistenClick();
       this.owner?.unregisterItem(this);
     });
 
@@ -143,7 +160,7 @@ export class MenuItemDirective {
 
   /** @internal Activates via a synthesized click so consumer (click) handlers fire for keyboard users too. */
   public activateFromKeyboard(source: MenuItemActivationSource) {
-    if (this.isDisabled()) {
+    if (this.isDisabled() || this.loading()) {
       return;
     }
 
@@ -201,6 +218,15 @@ export class MenuItemDirective {
 
   protected handleFocus() {
     this.owner?.activeItem.set(this);
+  }
+
+  private blockLoadingClick(event: MouseEvent) {
+    if (!this.loading()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
   }
 
   private keyboardTookOver() {

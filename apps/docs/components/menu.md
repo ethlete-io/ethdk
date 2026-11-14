@@ -45,6 +45,37 @@ import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '@ethlete/components';
 - The headless `etMenuItem` directive exposes an `activate` output (`{ source: 'pointer' | 'keyboard-enter' | 'keyboard-space' }`) and a `closeOnActivate` input to control whether activating dismisses the menu. Unset, the item type decides; a bare `closeOnActivate` attribute means `true`, `closeOnActivate="false"` keeps the menu open.
 - `<et-menu-separator />` and `<et-menu-group-label>` structure longer menus (the label is wired into group `aria-labelledby` automatically).
 
+### Loading items
+
+Set `loading` on an item while the async work it started runs. The item shows a spinner (in the trailing slot of `et-menu-item`, in place of the check of a checkbox or radio item), sets `aria-busy` and `aria-disabled`, and ignores clicks, <kbd>Enter</kbd> and <kbd>Space</kbd> - neither `(click)` nor `(activate)` fires and the menu does not close. Unlike a `disabled` item it keeps its full opacity and stays reachable with the arrow keys. The default `closeOnActivate` closes the menu on the activation that starts the work, so set `closeOnActivate="false"` to keep the spinner visible, and close the menu yourself when the work ends:
+
+```html
+<div #menu="etMenu" etMenu>
+  <button etMenuTrigger et-button type="button">Actions</button>
+
+  <ng-template etMenuSurface>
+    <et-menu>
+      <button [loading]="exporting()" (activate)="export(menu)" et-menu-item closeOnActivate="false" type="button">
+        Export
+      </button>
+    </et-menu>
+  </ng-template>
+</div>
+```
+
+```ts
+protected export(menu: MenuDirective) {
+  this.exporting.set(true);
+  this.exportService
+    .run()
+    .pipe(
+      tap(() => menu.closeAll()),
+      finalize(() => this.exporting.set(false)),
+    )
+    .subscribe();
+}
+```
+
 ## Submenus
 
 Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `etMenuTrigger` opens it. The row shows the chevron itself - do not add one. Arbitrary depth is supported - submenus open on hover (with intent delays) or <kbd>ArrowRight</kbd>, close on <kbd>ArrowLeft</kbd> (swapped, and opening to the left, when the menu resolves to `direction: rtl`):
@@ -221,6 +252,7 @@ Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics ar
 - The trigger gets `aria-haspopup="menu"`, live `aria-expanded`, and `aria-controls` pointing at the open panel; the panel is `role="menu"` labelled by its trigger.
 - Items are `role="menuitem"` - or `menuitemradio` / `menuitemcheckbox` with `aria-checked` (`"mixed"` for indeterminate) for selection items. Groups are `role="group"` labelled by their `<et-menu-group-label>`, separators `role="separator"`, shortcuts `aria-hidden`.
 - Focus uses a roving tabindex over enabled items (see [Keyboard](#keyboard)) plus typeahead, and returns to the trigger when the menu closes via item activation, <kbd>Esc</kbd> or <kbd>Tab</kbd>.
+- A `loading` item sets `aria-busy` and `aria-disabled` and stays in the roving tabindex - see [Loading items](#loading-items).
 - With search: the panel reflects `[loading]` as `aria-busy`, and an `[error]` renders as a `role="alert"` line wired to the input via `aria-describedby` / `aria-invalid`.
 
 ## Theming

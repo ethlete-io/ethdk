@@ -13,6 +13,10 @@
       color: var(--et-theme-color-ink-solid, currentColor);
     }
 
+    &[data-loading] .et-menu-item-check::before {
+      display: none;
+    }
+
     &.et-menu-radio-item .et-menu-item-check::before {
       content: '';
       inline-size: 6px;

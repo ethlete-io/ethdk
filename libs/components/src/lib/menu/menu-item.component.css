@@ -28,5 +28,9 @@
         display: none;
       }
     }
+
+    .et-menu-item-loader {
+      display: inline-flex;
+    }
   }
 }

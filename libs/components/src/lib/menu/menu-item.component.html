@@ -9,6 +9,12 @@
 <span class="et-menu-item-trailing">
   <ng-content select="et-menu-item-shortcut" />
 
+  @if (item.loading()) {
+    <span class="et-menu-item-loader" aria-hidden="true">
+      <et-spinner diameter="16" strokeWidth="2" />
+    </span>
+  }
+
   @if (isSubmenuTrigger) {
     <et-menu-item-submenu-icon />
   }

@@ -276,9 +276,13 @@
         background: var(--_et-menu-item-pressed-background);
       }
 
-      &[aria-disabled='true'] {
+      &[aria-disabled='true']:not([data-loading]) {
         opacity: 0.4;
         cursor: default;
+      }
+
+      &[data-loading] {
+        cursor: progress;
       }
 
       &[data-variant='destructive'] {

@@ -5,6 +5,7 @@ const STORY_ID = 'components-overlays-menu--default';
 const WITHOUT_HOVER_OPEN_STORY_ID = 'components-overlays-menu--without-hover-open';
 const CONTEXT_STORY_ID = 'components-overlays-menu--context-menu';
 const DIALOG_STORY_ID = 'components-overlays-menu--menu-to-dialog';
+const LOADING_STORY_ID = 'components-overlays-menu--loading-item';
 
 /**
  * Menu items indicate focus with a `[data-active]` background highlight, not an outline or
@@ -644,5 +645,35 @@ test.describe('menu / selection check', () => {
     await check.evaluate((el: HTMLElement) => el.style.setProperty('--et-theme-color-ink-solid', 'rgb(1 2 3)'));
 
     await expect(check).toHaveCSS('color', 'rgb(1, 2, 3)');
+  });
+});
+
+test.describe('menu / loading item', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard and click');
+
+  test('a loading item stays open and focusable, ignores Enter, and closes the menu when its work ends', async ({
+    page,
+  }) => {
+    const root = await openStory(page, LOADING_STORY_ID);
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await expect(page.getByRole('menuitem', { name: 'Rename' })).toBeFocused();
+    await pressKey(page, 'ArrowDown');
+
+    const exportItem = page.getByRole('menuitem', { name: 'Export' });
+
+    await expect(exportItem).toBeFocused();
+    await pressKey(page, 'Enter');
+
+    await expect(exportItem).toHaveAttribute('aria-busy', 'true');
+    await expect(exportItem.locator('et-spinner')).toBeVisible();
+    await expect(exportItem).toBeFocused();
+
+    await pressKey(page, 'Enter');
+    await expect(page.getByRole('menu')).toBeVisible();
+
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await expect(root.getByText('Last action: Export')).toBeVisible();
   });
 });

@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, effect, inject, input, untracked } from '@angular/core';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { MenuItemDirective } from './headless';
+import { SpinnerComponent } from '../loader';
 import { MenuItemSubmenuIconComponent } from './menu-item-submenu-icon.component';
 
 export const MENU_ITEM_VARIANTS = {
@@ -15,11 +16,11 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
   templateUrl: './menu-item.component.html',
   styleUrl: './menu-item.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [MenuItemSubmenuIconComponent],
+  imports: [MenuItemSubmenuIconComponent, SpinnerComponent],
   hostDirectives: [
     {
       directive: MenuItemDirective,
-      inputs: ['disabled', 'closeOnActivate'],
+      inputs: ['disabled', 'loading', 'closeOnActivate'],
       outputs: ['activate'],
     },
     ProvideColorDirective,
@@ -32,7 +33,7 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
 export class MenuItemComponent {
   private provideColor = inject(ProvideColorDirective);
   private errorColorTheme = injectSemanticColorTheme('error');
-  private item = inject(MenuItemDirective);
+  protected item = inject(MenuItemDirective);
 
   public variant = input<MenuItemVariant>(MENU_ITEM_VARIANTS.DEFAULT);
 

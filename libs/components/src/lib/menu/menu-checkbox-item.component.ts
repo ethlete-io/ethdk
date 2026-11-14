@@ -1,5 +1,6 @@
-import { Component, input, ViewEncapsulation } from '@angular/core';
+import { Component, inject, input, ViewEncapsulation } from '@angular/core';
 import { IconDirective } from '../icon';
+import { SpinnerComponent } from '../loader';
 import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective } from './headless';
 
 @Component({
@@ -7,12 +8,12 @@ import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective
   templateUrl: './menu-selection-item.component.html',
   styleUrl: './menu-selection-item.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [IconDirective],
+  imports: [IconDirective, SpinnerComponent],
   providers: [{ provide: MENU_SELECTION_ITEM_KIND, useValue: 'checkbox' }],
   hostDirectives: [
     {
       directive: MenuItemDirective,
-      inputs: ['closeOnActivate'],
+      inputs: ['loading', 'closeOnActivate'],
       outputs: ['activate'],
     },
     {
@@ -27,5 +28,7 @@ import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective
   },
 })
 export class MenuCheckboxItemComponent {
+  protected item = inject(MenuItemDirective);
+
   public icon = input<string | null>(null);
 }
