@@ -62,6 +62,7 @@ import {
   TaskPart,
 } from './part-task';
 import { appFilesOf } from './app-files';
+import { driftSinceOf } from './drift-since';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { inOrderAtOnce } from './in-order-at-once';
@@ -881,8 +882,14 @@ export const designCompare = async (options: {
         if (typeof result === 'string') {
           console.error(result);
           failed++;
-        } else if (!result.green) failed++;
-        else if (affected) {
+        } else if (!result.green) {
+          failed++;
+          driftSinceOf({
+            root: repoRootOf(product),
+            record: readImplemented(task.dir)[task.part],
+            files: Object.keys(appFilesOf({ root: repoRootOf(product), component: task.component })),
+          }).forEach((line) => console.log(line));
+        } else if (affected) {
           const recorded = await recordAffected({
             target,
             config,
