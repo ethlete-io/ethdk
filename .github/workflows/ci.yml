@@ -125,6 +125,10 @@ jobs:
         env:
           TMPDIR: ${{ runner.temp }}/link-tmp
 
+      - name: Name the failing specs
+        if: failure()
+        run: grep -E ' FAIL |Failed tasks|^ *- [a-z-]+:test|Error: |Timed out|ELIFECYCLE' "$RUNNER_TEMP/unit-tests.log" | sed 's/%/%25/g; s/^/::error title=unit::/' | head -40 || true
+
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
