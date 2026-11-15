@@ -33,3 +33,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - menu, select, pickers (SDK, 14.11.): schlucken den Klick auf ihren Trigger wie vorher das Toggletip (consumer-`(click)` auf dem Trigger geht verloren); Fix wäre closeOnOutsidePointer `except-origin` + Trigger schließt per Toggle. Geparkt, bis ein Consumer es trifft (nach 442f2ce40). Suspect.
 - RSS leak (Linux, 986): an RSS leak seen in the B499 runs did not reproduce. Parked until a recipe (ADR 0302).
 - agent-sessions up --dry-run (machinery, fifa 15.11.): `up --dry-run` ignores the flag and starts the tmux sessions; `run` inside an existing tmux session of its own name returns without starting the agent. Built only on red CI.
+- runner image without Ubuntu mirror (CI, 15.11.): spec-sweep --slow 1 apt exit 100 on image ubuntu-26.04 20261111.82.6, no Ubuntu mirror fetched; not our code. Parked (ADR 0276).
