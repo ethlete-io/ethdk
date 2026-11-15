@@ -4031,3 +4031,7 @@ Not verified: on a Mac (the 17px-tall case), and that the Mac Chromium renders N
 tsconfig is regenerated and formatted before the check (788), so an unformatted one is never flagged, with or without .git. A new
 spec (git repo and no repo) pins that and a tracked unformatted file still gives FORMAT. No bite: the spec passes on the old code.
 Not verified: the original scratch copy `/tmp/sk750` was not reproduced.
+649 stat cost (2026-11-15, Linux, 32 cores, load 1.3-3.7): warm `design check --product sdk` through `et-design.mjs` with
+`ETHLETE_DESIGN_CLI_ENTRY`, old CLI built at d761342b3^ (0b6fee92d) vs 51f5f20b7: old 24.7-24.9 s (3 warm runs; exit 1
+on its older rules), new 11.2-12.8 s (3 warm runs). The two builds differ by many commits, so this shows no regression
+but does not isolate the stat cost; no stat count (no strace).
