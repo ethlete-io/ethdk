@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B502
+built: 5850cda5a
 decided: 2026-11-15
 source: doc-agent session 2026-11-15, morning round after the night shift
 ---
