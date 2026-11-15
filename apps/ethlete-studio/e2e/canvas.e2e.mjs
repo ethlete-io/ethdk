@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFile, execFileSync, fork, spawn, spawnSync } from 'node:child_process';
 import {
+  copyFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -4030,7 +4031,9 @@ const prepareCheckout = () => {
 
   for (const entry of readdirSync(root)) {
     if (entry === '.ethlete' || entry === '.git' || (coldShots && entry === 'node_modules')) continue;
-    symlinkSync(join(root, entry), join(dir, entry));
+    // git reads no symlinked .gitignore, so `git add -- .ethlete` would take .ethlete/cache.
+    if (entry === '.gitignore') copyFileSync(join(root, entry), join(dir, entry));
+    else symlinkSync(join(root, entry), join(dir, entry));
   }
 
   if (coldShots) {
