@@ -139,5 +139,15 @@
   "mergeHold": {
     "reason": "variant a changes merge-error; variant b changes merge-error; variant c changes merge-error",
     "at": "2026-11-14T17:45:28.880Z"
+  },
+  "portAfterMerge": {
+    "merged": ["pages/sketches"],
+    "parts": ["pages/sketches"],
+    "reasons": [
+      "a: pages/sketches/sketches.ts - the variant and the product both changed it",
+      "b: pages/sketches/sketches.ts - the variant and the product both changed it",
+      "c: pages/sketches/sketches.ts - the variant and the product both changed it"
+    ],
+    "at": "2026-11-15T21:40:21.734Z"
   }
 }
