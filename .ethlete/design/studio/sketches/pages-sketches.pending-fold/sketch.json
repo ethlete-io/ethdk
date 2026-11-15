@@ -93,12 +93,12 @@
     "pages/inbox": "0e0fc08e618a94a0",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "0e69471347b333f1",
-    "pages/sketches": "0cf1d5a921a8c600",
+    "pages/sketches": "cc81d4449e52a49f",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "f3e33ef739accbba5004ea1b199f07ed5cc765eb",
+  "baselineTree": "3c738b5d613b9c5c2f8e61b2c53f4960bd5a9e74",
   "decision": {
     "kind": "pick",
     "variant": "a",
@@ -127,11 +127,5 @@
   "mergeHold": {
     "reason": "variant a changes narrow-part, comparing, comparing-narrow, compare-pending, compare-answered, added-state, narrow-wide-state, panned-zoomed, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, unchanged-matrix-open, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, multi-part, multi-part-many",
     "at": "2026-11-14T17:54:15.592Z"
-  },
-  "portAfterMerge": {
-    "merged": ["pages/sketches"],
-    "parts": ["pages/sketches"],
-    "reasons": ["a: pages/sketches/sketches.ts - the variant and the product both changed it"],
-    "at": "2026-11-15T21:40:21.779Z"
   }
 }

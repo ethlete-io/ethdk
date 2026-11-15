@@ -7,7 +7,7 @@ import switchPart from '@system/components/switch';
 import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
 import { holdTrigger } from '@system/components/hold-trigger';
-import { type SketchStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
+import { type SketchStatus as BadgeStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
 import { variantCell, variantCellStyles } from '@system/elements/variant-cell';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
@@ -72,6 +72,8 @@ import {
 } from '@shared/change-crop';
 
 type MergePort = 'one' | 'two';
+
+type SketchStatus = Exclude<BadgeStatus, 'idle'>;
 
 type ScreenMode = 'crop' | 'whole';
 
@@ -205,7 +207,6 @@ const controlsOf = async () => ({
     waiting: await sketchStatusBadge('waiting'),
     picked: await sketchStatusBadge('picked'),
     paused: await sketchStatusBadge('paused'),
-    idle: await sketchStatusBadge('idle'),
     'not-ready': await sketchStatusBadge('not-ready'),
     fresh: await tag('neu'),
   },
@@ -228,13 +229,11 @@ const statusMarkup = (status: SketchStatus, reason: boolean, tags: Tags, readyRe
     </span>`;
   }
   const after =
-    status === 'idle'
-      ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap">${IDLE.last} · ${IDLE.since}</span>`
-      : status === 'not-ready'
-        ? html`<span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-not-ready
-            >${readyReason ?? NOT_READY_UNKNOWN}</span
-          >`
-        : '';
+    status === 'not-ready'
+      ? html`<span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-not-ready
+          >${readyReason ?? NOT_READY_UNKNOWN} · ${IDLE.last} · ${IDLE.since}</span
+        >`
+      : '';
   return html`<span class="flex items-center gap-space-2">${tags[status].body} ${after}</span>`;
 };
 
@@ -579,7 +578,7 @@ const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : ca
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
 export default definePart<Props>({
-  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert oder Keine Aktivität. Solange sketch ready nicht bestanden hat, steht Noch nicht bereit mit der ersten Zeile seiner letzten Ablehnung daneben, ohne aufgezeichnete Ablehnung der Hinweis, sketch ready auszuführen; Übernehmen fehlt dann. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>. Schlägt Übernehmen oder eine andere Sketch-Aktion fehl, steht der Grund des Servers in der Fehlerfarbe im Kopf der gewählten Variante unter Übernehmen; der Seitenkopf bleibt ohne Fehler.',
+  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert. Solange sketch ready nicht bestanden hat, steht Noch nicht bereit mit der ersten Zeile seiner letzten Ablehnung und danach der letzten Änderung daneben, ohne aufgezeichnete Ablehnung der Hinweis, sketch ready auszuführen; Übernehmen fehlt dann. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>. Schlägt Übernehmen oder eine andere Sketch-Aktion fehl, steht der Grund des Servers in der Fehlerfarbe im Kopf der gewählten Variante unter Übernehmen; der Seitenkopf bleibt ohne Fehler.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   controls: {
@@ -594,7 +593,6 @@ export default definePart<Props>({
     drawing: { camera: 'fit', status: 'drawing' },
     paused: { camera: 'fit', status: 'paused' },
     'paused-reason': { camera: 'fit', status: 'paused', reason: true },
-    idle: { camera: 'fit', status: 'idle' },
     'not-ready': { camera: 'fit', status: 'not-ready', readyReason: NOT_READY_REASON },
     'not-ready-unknown': { camera: 'fit', status: 'not-ready' },
     'new-part': { camera: 'fit', fresh: true },
