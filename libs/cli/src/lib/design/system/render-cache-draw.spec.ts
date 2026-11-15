@@ -47,7 +47,7 @@ vi.mock('../code-hash', async (importOriginal) => ({
 vi.mock('../thumb', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../thumb')>()),
   openFrame: async (page: { goto: (url: string) => Promise<unknown> }, url: string) => page.goto(url),
-  awaitSettled: async () => undefined,
+  awaitSettled: async () => [],
 }));
 vi.mock('../shot', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../shot')>()),
@@ -110,7 +110,7 @@ const fakeBrowser = (base: string) => ({
         close: async () => undefined,
         emulateMedia: async () => undefined,
         setViewportSize: async () => undefined,
-        evaluate: async () => [],
+        evaluate: async () => [[], []],
         goto: async (url: string) => {
           const search = new URL(url).searchParams;
           const part = (search.get('part') ?? '').replace('components/', '');

@@ -669,16 +669,11 @@ const FINISHED_TRANSITIONS = `document.getAnimations()
   .filter((animation) => animation instanceof CSSTransition)
   .forEach((animation) => animation.finish())`;
 
-const schemeSwitched = async (lane: Lane, scheme: ColorScheme | null) => {
-  await lane.page.emulateMedia({ colorScheme: scheme });
-  lane.scheme = scheme;
-  await awaitSettled(lane.page, FINISHED_TRANSITIONS);
-};
-
-const unstyledPassOf = (frame: Frame, emptySlots: string | null) => `(async () => {
-  ${emptySlots === null ? '' : `${emptySlots};\n  await null;`}
+const unstyledPassOf = (frame: Frame, emptySlots: string) => `(async () => {
+  ${emptySlots};
+  await null;
   const unstyled = ${inspectFrame({ ...inspectedOptionsOf(frame), sdkStylesOnly: true })};
-  return [unstyled, ${emptySlots === null ? 'null' : `await ${FONT_FACES_SCRIPT}`}];
+  return [unstyled, await ${FONT_FACES_SCRIPT}];
 })()`;
 
 const inspectedOptionsOf = (frame: Frame) => ({
@@ -717,38 +712,28 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
     lane.booted = booted;
   }
 
-  await awaitSettled(page);
-
   const inFrame: Found[][] = [];
 
   for (const [at, frame] of frames.entries()) {
-    if (at > 0) await schemeSwitched(lane, frame.scheme);
+    if (at > 0) {
+      await page.emulateMedia({ colorScheme: frame.scheme });
+      lane.scheme = frame.scheme;
+    }
 
-    inFrame.push((await page.evaluate(inspectFrame(inspectedOptionsOf(frame)))) as Found[]);
+    const before = at > 0 ? FINISHED_TRANSITIONS : undefined;
+
+    inFrame.push((await awaitSettled(page, { before, after: inspectFrame(inspectedOptionsOf(frame)) })) as Found[]);
   }
 
-  const unstyled: Found[][] = [];
-  let fontFaces: Found[] = [];
-
-  for (let at = frames.length - 1; at >= 0; at--) {
-    const frame = frames[at] as Frame;
-
-    const last = at === frames.length - 1;
-
-    if (!last) await schemeSwitched(lane, frame.scheme);
-
-    const [found, faces] = (await page.evaluate(
-      unstyledPassOf(frame, last ? emptySlotsScriptOf(first.address.part) : null),
-    )) as [Found[], Found[] | null];
-
-    unstyled[at] = found;
-    fontFaces = faces ?? fontFaces;
-  }
+  // One pass covers every frame of the load: UNSTYLED-SDK reads the SDK visually-hidden rule, which no colour scheme changes.
+  const [unstyled, fontFaces] = (await page.evaluate(
+    unstyledPassOf(frames[frames.length - 1] as Frame, emptySlotsScriptOf(first.address.part)),
+  )) as [Found[], Found[]];
 
   return frames.map((frame, at) => {
     const { product, part, state, sketch } = frame.address;
 
-    return [...(inFrame[at] ?? []), ...(unstyled[at] ?? []), ...fontFaces].map((issue) => ({
+    return [...(inFrame[at] ?? []), ...unstyled, ...fontFaces].map((issue) => ({
       ...issue,
       product,
       part,
