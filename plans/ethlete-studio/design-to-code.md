@@ -4025,3 +4025,6 @@ whose reads are not recorded; pixel-cache is keyed by the hashes of both picture
 `earlierFields` holds git history read by `git`; vite-cache is a folder claim, not a cache. No `bases` map was found in
 `slow-checks.ts`. Not verified: `trackedRunAsync` has no caller yet; a Tailwind `@plugin`/`@config` module loaded
 through ESM `import` is still not recorded; no warm `design check` measured the stat cost on a real product.
+649 part 2 removed (2026-11-15, grill call): `trackedRunAsync`, `asyncReadsCacheOf`, the `AsyncLocalStorage` recorder and
+the `fs/promises` recorders are gone again, no store calls them (git has d3d973b27). Kept: `trackedRun` takes the prints
+of a finished run untracked. Cause (bite): with prints untracked, an unchained outer fails the new sync nesting case.
