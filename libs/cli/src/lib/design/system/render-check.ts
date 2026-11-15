@@ -322,7 +322,13 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   };
   const clipMarginOf = (style, axis) => (style[axis] === 'clip' ? parseFloat((style.overflowClipMargin ?? '').split(' ').pop()) || 0 : 0);
   const drawsByClipping = (element) => element.closest('.et-spinner') !== null;
-  const pansItself = (element, style) => /^grab/.test(style.cursor) || [...element.children].some((child) => isPanned(getComputedStyle(child)));
+  const holdsPannedWorld = (element) =>
+    [...element.children].some((child) => {
+      const rect = child.getBoundingClientRect();
+      const fills = rect.width >= element.clientWidth || rect.height >= element.clientHeight;
+      return rect.width > 0 && rect.height > 0 && fills && isPanned(getComputedStyle(child));
+    });
+  const pansItself = (element, style) => /^grab/.test(style.cursor) || holdsPannedWorld(element);
   const pans = (element, style) => pansItself(element, style) || [...element.children].some((child) => pansItself(child, getComputedStyle(child)));
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
@@ -341,7 +347,7 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   for (const viewport of floating.length ? root.querySelectorAll('*') : []) {
     const viewportStyle = getComputedStyle(viewport);
     const inheritsGrab = /^grab/.test(viewportStyle.cursor) && viewport.parentElement && /^grab/.test(getComputedStyle(viewport.parentElement).cursor);
-    if (!pansItself(viewport, viewportStyle) || (inheritsGrab && ![...viewport.children].some((child) => isPanned(getComputedStyle(child))))) continue;
+    if (!pansItself(viewport, viewportStyle) || (inheritsGrab && !holdsPannedWorld(viewport))) continue;
     let clipper = viewport;
     while (clipper && clipper !== root && getComputedStyle(clipper).overflowX === 'visible') clipper = clipper.parentElement;
     if (!clipper || clipper === root) continue;

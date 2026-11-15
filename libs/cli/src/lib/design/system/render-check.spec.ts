@@ -605,6 +605,12 @@ export default definePart({
       'components/inside-draggable': {
         body: `<div style="cursor: grab">${page('style="position: absolute; inset: 0 0 0 168px; overflow: clip"', '')}</div>`,
       },
+      'components/nudged-icon-beside-panel': {
+        body: page('style="position: absolute; inset: 0 0 0 168px; overflow: clip"', '').replace(
+          'World</div>',
+          'World<button style="width: 200px; height: 24px"><span style="display: block; translate: 0 2px"></span><span style="display: inline-block; width: 14px; height: 14px; translate: 0 2px"></span>Search</button></div>',
+        ),
+      },
       'components/thumbnail-beside-panel': {
         body: page('style="position: absolute; top: 8px; left: 168px; width: 120px; height: 184px; overflow: clip"'),
       },
