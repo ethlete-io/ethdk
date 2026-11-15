@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
 import { openPointsAnswer } from './open-points.fixtures';
 import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
+import { git, gitResult, initGitRepo } from './git-repo.fixtures';
 import { harnessMapOf, writeHarnessMap } from './harness-map';
 import { checkLiveActions } from './live-actions';
 import { drawnFindingsOf } from './drawn-open-points';
@@ -542,5 +543,52 @@ describe('ready on an unchanged part', () => {
     appendFileSync(join(dir, 'pages/inbox/inbox.ts'), 'export const more = 1;\n');
 
     expect(await readyAs(target, '2026-03-03T00:00:00.000Z')).toMatchObject({ at: '2026-03-03T00:00:00.000Z' });
+  });
+});
+
+describe('a ready mark commits its own ready.json', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const readyIn = (target: string) =>
+    markPartReady({
+      product: productOf(target),
+      origin: originOf('spec'),
+      part: 'components/tag',
+      hash: hashOf(target, 'components/tag'),
+      pointsOf: async () => [],
+      actionsOf: async () => [],
+      commitIn: target,
+    });
+
+  it('commits the ready.json alone and leaves other staged and dirty files as they are', async () => {
+    const { target } = checkout();
+
+    initGitRepo(target, 'base');
+    writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip { dirty = 1; }\n');
+    writeFileSync(join(target, 'libs/staged.ts'), 'export const staged = 1;\n');
+    git(target, 'add', 'libs/staged.ts');
+
+    expect(await readyIn(target)).toMatchObject({ by: 'spec' });
+    expect(gitResult(target, 'log', '-1', '--format=%s').stdout.trim()).toBe(
+      'feat(repo): Mark components/tag build-ready in app-a',
+    );
+    expect(gitResult(target, 'show', '--name-only', '--format=', 'HEAD').stdout.trim()).toBe(
+      `${DESIGN_DIR}/app-a/ready.json`,
+    );
+    expect(gitResult(target, 'status', '--porcelain').stdout.split('\n').filter(Boolean).sort()).toEqual([
+      ' M libs/chip.component.ts',
+      'A  libs/staged.ts',
+    ]);
+  });
+
+  it('keeps the mark and warns when the checkout is no git repository', async () => {
+    const { target, dir } = checkout();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect(await readyIn(target)).toMatchObject({ by: 'spec' });
+    expect(Object.keys(readReady(dir))).toEqual(['components/tag']);
+    expect(warn.mock.calls.flat().join('\n')).toContain(
+      'READY UNCOMMITTED components/tag: the mark is written, but the commit failed',
+    );
   });
 });

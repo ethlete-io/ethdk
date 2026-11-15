@@ -9,6 +9,7 @@ import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { withProductLock } from './product-lock';
+import { commitOwnFilesSync } from './sketch/merge-commit';
 import { readStampText, writeStampFile } from './stamp-files';
 import { hasActor, WriteOrigin } from './write-origin';
 
@@ -259,7 +260,8 @@ const dropRecordIn = (dir: string, part: string) => {
  * blocker or `actionsOf` any failed action check. The failed-actions refusal names the embedded parts whose app files
  * changed since the last record. `pointsOf` runs only after the hash holds, `blockersOf` only after the open-point list
  * is empty, `actionsOf` only after the blocker list is. The record holds the keys `declaredActionsOf` answers; when it
- * answers why it could not read them, the record keeps the ones it held.
+ * answers why it could not read them, the record keeps the ones it held. With `commitIn`, it commits the ready.json
+ * alone in that checkout and only warns when git refuses.
  */
 export const markPartReady = async (options: {
   product: ResolvedProduct;
@@ -272,6 +274,7 @@ export const markPartReady = async (options: {
   declaredActionsOf?: () => Promise<string[] | string>;
   actionsNote?: string;
   at?: string;
+  commitIn?: string;
 }): Promise<PartReady | ReadyRefusal> => {
   const { product, part, hash } = options;
 
@@ -320,16 +323,30 @@ export const markPartReady = async (options: {
 
   const declared = await options.declaredActionsOf?.();
 
-  return (
-    writePartRecord({
-      product,
-      part,
-      origin: options.origin,
-      at: options.at,
-      ...(Array.isArray(declared) ? { actions: declared } : {}),
-    }) ?? {
-      status: 404,
-      error: `unknown part ${part}`,
-    }
+  const record = writePartRecord({
+    product,
+    part,
+    origin: options.origin,
+    at: options.at,
+    ...(Array.isArray(declared) ? { actions: declared } : {}),
+  });
+
+  if (!record) return { status: 404, error: `unknown part ${part}` };
+  if (options.commitIn) commitReadyFile({ target: options.commitIn, product, part, dir: found.dir });
+
+  return record;
+};
+
+const commitReadyFile = (options: { target: string; product: ResolvedProduct; part: string; dir: string }) => {
+  const refused = withProductLock(options.dir, () =>
+    commitOwnFilesSync({
+      target: options.target,
+      files: [readyFileOf(options.dir)],
+      slug: `ready-${options.part}`,
+      subject: `feat(repo): Mark ${options.part} build-ready in ${options.product.name}`,
+    }),
   );
+
+  if (refused !== null)
+    console.warn(`READY UNCOMMITTED ${options.part}: the mark is written, but the commit failed: ${refused}`);
 };

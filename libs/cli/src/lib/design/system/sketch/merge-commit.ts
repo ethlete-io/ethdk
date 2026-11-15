@@ -78,6 +78,41 @@ const ownEntriesOf = (texts: { head: string; before: string; work: string }) => 
   return `${JSON.stringify(own, null, 2)}\n`;
 };
 
+function* commitFilesFlow(options: { files: string[]; slug: string; subject: string }): GitFlow<PlainResult> {
+  const { subject } = options;
+  const files = [...options.files];
+  const top = yield { args: ['rev-parse', '--show-toplevel'] };
+  const changeset =
+    top.status === 0 ? writeMergeChangeset({ top: realpathSync(top.stdout.trim()), files, slug: options.slug }) : null;
+
+  if (changeset) files.push(changeset);
+
+  const head = yield { args: ['rev-parse', 'HEAD'] };
+
+  if (top.status === 0 && head.status === 0)
+    openJournalOf()?.markCommit({
+      top: realpathSync(top.stdout.trim()),
+      head: head.stdout.trim(),
+      subject,
+      paths: files,
+    });
+
+  const added = yield { args: ['add', '--all', '--', ...files] };
+
+  return added.status === 0 ? yield { args: ['commit', '-m', subject, '--', ...files] } : added;
+}
+
+function* commitChangedFlow(options: { files: string[]; slug: string; subject: string }): GitFlow<string | null> {
+  const status = yield { args: ['status', '--porcelain', '--', ...options.files] };
+
+  if (status.status !== 0) return (status.stderr || status.stdout).trim();
+  if (status.stdout.trim() === '') return null;
+
+  const committed = yield* commitFilesFlow(options);
+
+  return committed.status === 0 ? null : (committed.stderr || committed.stdout).trim();
+}
+
 function* commitFlow(options: {
   product: ResolvedProduct;
   sketch: Sketch;
@@ -126,31 +161,11 @@ function* commitFlow(options: {
     writeDecisionFile(file, own);
   }
 
-  const top = yield { args: ['rev-parse', '--show-toplevel'] };
-  const changeset =
-    top.status === 0
-      ? writeMergeChangeset({
-          top: realpathSync(top.stdout.trim()),
-          files,
-          slug: `${sketch.target}-${options.variant}`,
-        })
-      : null;
-
-  if (changeset) files.push(changeset);
-
-  const subject = `feat(repo): Merge ${sketch.target} variant ${options.variant} into ${product.name}`;
-  const head = yield { args: ['rev-parse', 'HEAD'] };
-
-  if (top.status === 0 && head.status === 0)
-    openJournalOf()?.markCommit({
-      top: realpathSync(top.stdout.trim()),
-      head: head.stdout.trim(),
-      subject,
-      paths: files,
-    });
-
-  const added = yield { args: ['add', '--all', '--', ...files] };
-  const committed = added.status === 0 ? yield { args: ['commit', '-m', subject, '--', ...files] } : added;
+  const committed = yield* commitFilesFlow({
+    files,
+    slug: `${sketch.target}-${options.variant}`,
+    subject: `feat(repo): Merge ${sketch.target} variant ${options.variant} into ${product.name}`,
+  });
 
   for (const { file, text } of restore) writeDecisionFile(file, text);
 
@@ -180,3 +195,10 @@ export const dirtyFilesOfSync = (options: { target: string; product: ResolvedPro
  */
 export const commitMergeResultSync = (options: CommitOptions) =>
   withProductLock(options.product.dir, () => runSync(options.target, commitFlow(options)));
+
+/**
+ * Commits `files` (absolute paths) alone as one commit with `subject`, with a `none` changeset like a merge commit, and
+ * leaves every other staged or dirty file as it is. Answers why git refused, or `null` when committed or already clean.
+ */
+export const commitOwnFilesSync = (options: { target: string; files: string[]; slug: string; subject: string }) =>
+  runSync(options.target, commitChangedFlow(options));

@@ -77,6 +77,7 @@ export const designReady = async (options: { target: string; argv: string[]; inv
     product,
     part,
     origin: originOf(author, 'ready'),
+    commitIn: target,
     hash: typeof located === 'string' ? '-' : located.hash,
     pointsOf: async () => {
       const points = await drawnPartPointsOf({ target, config, product, part });
