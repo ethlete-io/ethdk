@@ -9961,3 +9961,172 @@ and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builde
 and changes-shot steps faster, measured against the 951 numbers.
 
 988 built 3ddc2f320 (Linux builder, 2026-11-15, B499 close): B499 P1 pass, sketch check cold 8.3 s, warm 2.3-3.0 s (target 10 s).
+
+433\. Tom (2026-11-04, screenshot of `comparing-narrow` in `pages/sketches@merge-port`): "und hier? ist doch beides
+gleich". In this state the sample shows "vergleicht …" and no marks at all, so the new sample marks never paint, and
+"Aktuell" and "Variante a" look the same. Still the listing counts the state as changed (one of the 12 narrow states).
+Cause (builder, pixel diff of the two server shots): the compare is right. 1358 pixels differ in a 575×45 px strip
+(x 842-1416, y 371-415), the sample variant-a cells fit-hover, fit-active and fit-focus-visible. The sample applies
+variant a's pill look only to its changed states (`cell()` in `shared/sketch-rows.ts`), so the B357 alignment
+(6f4b45040) took the pill corners away with the mark. In a comparing state no marks paint, so only a corner radius
+differs, invisible at 24 %. No compare fix. Fix (B345): the cut-out shows such a strip enlarged at fit, and the state
+says why it changed when the diff is small (for example "1358 px in 3 Zellen").
+
+433 as built (2026-11-14, audit): B345 (06fec7616, 4af4cda0f) shows the enlarged strip and the reason; `sketches.component.spec.ts` expects "1358 px in 3 Stellen · 4,6× vergrößert". Verified by spec read only.
+
+551\. Builder (2026-11-07), `sketch check pages/sketches@all-states` (850 s at load 118): ready refused because variants
+b and c "first change zoomed-page" with the same pixels as a. Cause: the sketch carries its own copy of
+`shared/sketch-rows.ts`, made before 1afe49a71; the base now snaps the camera, the copy does not. Why no tool caught it:
+a base change after `sketch new` never reaches the sketch's shared copies, and the check blames a variant for a
+difference no variant made. Doc agent decision (technical): `sketch check` compares each shared copy with the base file
+it came from (hash in sketch.json) and names a stale copy with the base commit; `sketch rebase` brings unchanged copies
+forward. Base problems reported the same in a/b/c (UNREACHABLE "Übernehmen" in far-out, CUT-CONTROL 64 px in
+unchanged-matrix-open, 90 frames over the 24 budget) are the base part's open points and do not block the sketch.
+
+551 built 07b96b302: the all-states sketch copy of `shared/sketch-rows.ts` rebased onto the snapped camera; 2d184b6c6 records the stale check on ready.
+
+563\. Doc agent (2026-11-07): an agent appended to a size-budgeted plan file and committed; only pre-push saw the size and
+format, 300 commits later. Tool fix (technical): a staged-file size and format check in pre-commit.
+
+563 built d821f7361: pre-commit checks size and format of staged plan files.
+
+568\. Doc agent (2026-11-07): Tom's ready marks for seven studio foundations (agent-logos, colors, icons, logo, motion,
+spacing, type) sat uncommitted in the desk `ready.json` for a day; the move to the Mac's `next` dropped them, and Tom has
+to mark them again. Why no tool caught it: nothing tells the user that a ready mark is not committed, and the checkout
+switch only saw a dirty generated file. Tool fix (technical): Studio shows uncommitted ready marks (same channel as
+B415's unpushed commits), and `sketch ready` commits its own `ready.json` change like B369 does for merges.
+
+568 as built (2026-11-15): `et design ready` (the only ready-mark command; `sketch ready` writes no `ready.json`) commits the `ready.json` it wrote alone via `commitOwnFilesSync` in `merge-commit.ts`, the B369 merge path (`none` changeset, `git commit -- <path>`), subject `feat(repo): Mark <part> build-ready in <product>`. A refused commit keeps the mark and warns `READY UNCOMMITTED`. Verified: `part-ready.spec.ts` on a temp repo, red on HEAD, green after. Not verified: a live run.
+
+569\. Builder (2026-11-07, B163): `shot` threw when the clip lay outside the page. Why no tool caught it: every shot
+spec used a mocked page. Tool fix (technical): each Playwright-backed spec gets one case on a real page; the serve route
+returns the same note as the CLI (`x-et-note`), new row.
+
+569 as built (Linux builder subagent, 2026-11-14, B503): the throw was already gone (`shot.ts` answers a crop outside the content with a blank picture and a note, covered by a mocked spec). Built: the serve route sends that note as `x-et-note` (`sendShot` in `thumb.ts` takes `{ png, note }`). Cause: the route returned `picture.png` only and dropped the note. Verified: the new route case in `shot.spec.ts` was red on the old code (no note), green after. Commit a78186d96; not run live. Not built: a real-page case for each Playwright-backed spec (the finding's "new row").
+
+589\. Builder (2026-11-07, push 29ce24b3d): `yarn lint:person-names` refused ADR 0227, which the doc agent wrote with
+"Tom:" before each quote, as the doc-agent skill says ("Tom's words verbatim"). The skill and the person-name rule
+disagree. Tool fix (technical): the doc-agent and grilling skills say "the human:" (as ADR 0226 does), and the
+pre-commit hook runs `lint:person-names` on staged ADR and plan files, so the doc agent sees it at commit time.
+
+589 built ffaf42f02, 1542f90ba: pre-commit runs the person-name check on staged files and the doc-agent skill names the human in ADRs.
+
+594\. Builder (2026-11-08): pre-push `lint:person-names` refused ADR 0228 for the same reason as finding 589. The tool
+fix of 589 waits behind B434 (ADR 0228), and the doc-agent skill still says "Tom's words verbatim", so the doc agent
+wrote the name again. Tool fix (technical): the 589 fix moves into the current slice of the doc agent's own files: the
+doc-agent skill says "the human's words verbatim", and the doc agent runs `yarn lint:person-names` before each commit.
+
+594 built 1542f90ba: the doc-agent skill names the human in ADRs.
+
+598\. Builder (2026-11-08, B434, e1fa89e05): after a variant was added, a full sketch listing took 89.9 s: the design
+server's `redraw()` dropped all kept compares on each part change, and every differing frame was drawn 4 times at high
+priority (171 frames), which also starved the canvas pictures. Fix: `forgetUnchangedStates(change)` drops only the
+compares of redrawn parts, and a listing after a change does not join an older run; now 11.8 s. Nothing caught it,
+because the long-running server writes nothing to `.timings.jsonl` and nothing counts draws or compare hits per
+listing, so it showed only as 60 s e2e timeouts. Tool fix (technical): the server logs each full listing (hits,
+misses, draws, fresh redraws, time) to the timings file; the e2e prints that line when a `FULL_COMPARE_MS` wait fails;
+a spec asserts that a listing after an unrelated edit draws nothing.
+
+598 closed (Linux builder, 2026-11-13, B499 S6): guard `unchanged-states.spec.ts` "keeps the pixel compare across a change to another part, and drops it for a change to its own".
+
+605\. Builder (2026-11-08, a369b13b0): the System fix shows a failed listing (503 "missing build") in the System view;
+pages/system has no designed state for it, and the app draws `read.error` as a plain note line. The doc agent asked;
+no tool flagged a visible branch without a design state. Marker sketch opened as ADR 0010 says (21ff32b31). Two sketch
+tool gaps: the `--round` title did not stay in `sketch.json`, and the round note was not German. Tool fix (technical):
+`design check` lists app template branches that draw text (error, empty, loading) with no matching state in the
+implemented part; `sketch new` keeps `--round` in `sketch.json` and refuses a non-German round note.
+
+605 as built (2026-11-14): `sketch new` now fails with exit 1 when `--note` reads as another language than the product's `noteLanguage` (the `note-language.ts` detector); a new `sketch-command.spec.ts` case failed on the old code. Variant notes still only warn.
+
+606\. Builder (2026-11-08): the doc agent's archive commit e8610084f replaced `archive/findings-2026-11.md` with
+findings 240-252 alone (3527 lines deleted): its script opened the file for writing before it read it. Pre-push
+`lint:studio-adrs` caught 36 STATUS rows that cited lost findings; the pre-commit hook did not. Fixed on top. Tool fix
+(technical): a `findings:archive <from> <to>` script moves findings, so no agent writes its own; the pre-commit hook
+refuses a commit that removes a finding from the archive and runs `lint:studio-adrs` on staged plan files.
+
+606 built 421d2fee8, 212a98778: `archive-findings.mjs` moves the findings and pre-commit refuses a commit that cuts finding lines.
+
+613\. Builder (2026-11-09, B440): the title bar needed a "CI rot" label that the human decided in ADR 0230, but
+`design accept` refused to run without the human at a terminal, so the builder opened the sketch
+`components/title-bar@ci-red` and asked for a new `--adr` flag. ADR 0209 already says an agent accepts a direct edit
+that names its ADR (`--by builder --note "ADR <n>"`). The question repeated a decision. Tool fix (technical, ADR 0209):
+`design accept --by builder` works without a terminal when the note names an ADR; the builder then accepts the label
+and drops the sketch.
+
+613 as built (Linux builder subagent, 2026-11-14, B503): moot, nothing built. Cause: ADR 0048 removed `design accept` as a human gate, and B249 S4a (build-ready.md) deleted the command; ADR 0233 is superseded by 0048. Verified by a run: `yarn et:design accept pages/sketches --by builder --note "ADR 0201"` exits 2 with `unknown command or checkout "accept"`. Open for the doc agent: ADR 0209 still reads `status: accepted` though the accept it rests on is gone (finding 637).
+
+615\. Builder (2026-11-09, B440): `tsc -p` on the Studio `tsconfig.spec.json` fails in `shot-state.spec.ts`
+(`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause: the
+`typecheck` target of `ethlete-studio` and `timetrack-app` checked only `tsconfig.app.json`, so no gate typechecked
+their specs. Fix (d536fee67): both targets also run `tsc -p tsconfig.spec.json`. Tool fix (general):
+`yarn lint:spec-typecheck` in pre-push refuses a project whose `typecheck` target does not name its
+`tsconfig.spec.json`.
+
+615 built d536fee67: the Studio and Timetrack typecheck targets also run `tsc -p tsconfig.spec.json`, and `lint:spec-typecheck` refuses a project that skips it.
+
+626\. Builder (2026-11-09, B457, b1af8f143): the full `design check` of B456 wrote build-ready records with the absolute
+home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-names` refused them. Cause: `originOf` in
+`libs/cli/src/lib/design/system/write-origin.ts` wrote `process.argv` as it was, and the resident starts as
+`design __resident --checkout <absolute checkout>`. No full check wrote through the resident before, so HEAD had no such
+path. The tool caught it at the commit, not at the write. Tool fix (built): `portableCmdOf` writes each absolute
+argument relative to the working directory (`--checkout .`); `write-origin.spec.ts` bites without it.
+
+626 built b1af8f143: `portableCmdOf` writes no absolute path into the cmd of a ready mark or sketch pick.
+
+637\. The human (2026-11-09), on a grill question that offered `yarn design go --batch` for a human accept: "ich lese
+da schon wieder das wort go". ADR 0048 removed go and accept as human gates: a direct edit to a merged part without a
+picture change holds at once, and the human decides only by picking in a sketch. ADR 0209, the builder's accept for the
+`pages/sketches` gutter skip (finding 635) and ADR 0233 all rested on the accept gate, so ADR 0233 is withdrawn. Why no
+tool caught it: B249 is still open, so the cli still has `go`, `accept` and `go.json`, and EDIT-OLD-NOT-FOUND asks for
+an accept on a pixel-identical edit; the doc agent searched the ADRs for "accept" but not for "go". Tool fix (general,
+builder): until B249 lands, `design go` and `design accept` print that ADR 0048 removed them and name B249, and
+EDIT-OLD-NOT-FOUND does not fire when the edit leaves every picture of the part unchanged. Process fix: before a grill
+question names a cli command, the doc agent runs `yarn adr:governs` on the file that defines that command.
+
+637 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. B249 landed before this item, so the interim print is moot: `yarn et:design go pages/sketches` and `accept` both exit 2 as unknown commands (run). EDIT-OLD-NOT-FOUND: since B249 a direct edit with a recorded or cached picture is compared and held when every state draws as before (`HELD ... every state draws as before`, accepted-pictures spec run green), and an old/new sketch is discarded when old and new draw alike; EDIT-OLD-NOT-FOUND fires only when there is no picture baseline and HEAD holds no file of the part, so no old picture exists to call the edit pixel-identical, and it opens the new-only sketch of ADR 0253 instead of asking for an accept. Not verified: a live `design check` on a pixel-identical edit.
+
+640\. Doc agent (2026-11-09): the builder sat idle for about 55 min. Its button sketch subagent (finding 628) ran
+`node tools/scripts/et-design.mjs shot components/button --states --variants --product sdk` in the background at 17:52;
+the shot kept a live headless Chrome tree and never exited. The subagent waited for the completion notice with no
+deadline, and the builder waited on the subagent with no deadline. An older `et-design.mjs` (pid 1117702, from 15:27)
+also still ran. Cause of the shot hang: not known (no output captured). Why no tool caught it: `shot` has no overall
+deadline and writes no progress, and neither wait has a deadline. Tool fix (part of item 0, because it stops all work):
+`shot` and `design check` end with an error and a captured log after a hard deadline, and the builder waits on a
+background run or a subagent only with a deadline (Monitor until-loop with a timeout), then reads the log.
+
+640 closed (Linux builder, 2026-11-13, B499 S6): guard `run-deadline.spec.ts` (shot and check end with a log after their deadline).
+
+642\. Builder (2026-11-09, 48d1a7716): CI on `next` was red since 3aaa8364e, `real-open-points.spec.ts` timed out at
+5 s under full CI load (405 ms alone). Cause: `readOpenPoints` reached `committedLinkFieldsOf` in `link-free.ts`, which
+started 50 synchronous git processes per run (one `git log -G implements` per linked part, one `git show` per commit
+found). Process starts get much slower when 342 spec files share the runner. Fix: one `git log --name-only` and one
+`git cat-file --batch` per repository; 50 calls became 2, the spec runs in 172-195 ms also under local load. Not
+verified: green under real CI load. Why no tool caught it: nothing stops code from starting one git process per file,
+and no check counts process starts. Tool fix (backlog, per ADR 0235 at the cause): every git read in the cli goes
+through one batched git reader, and lint forbids a direct `spawnSync`/`execSync` of `git` outside it; a per-test spawn
+budget is only the fallback if the lint rule cannot cover a case.
+
+642 as built (2026-11-14): `libs/cli/src/lib/design/git-reader.ts` is the only place in the design cli that starts
+git (`git`, `gitBytes`, `gitStatusOf`, `gitLater`, and the batched `catFilesOf`/`showFilesOf`/`logNamesOf`); all 35
+direct spawns in 22 files moved onto it. `design task --verify` now primes its importer and wiring reads in one
+`cat-file --batch`: title-bar at f2c835d39 went from 122 `git show` processes to 2 (counted with a spawn counter over
+`importersOf`/`wiringFilesOf`). Also batched: `edit-sketch` old-design blobs and `baseline-history` versions. Scope
+decided without the lint rule; `spawnPlain(['git', ...])` callers stay as they are.
+
+736\. Linux builder (2026-11-10, 732 sketch `pages/system@footer-open-points`, 6c2fc5cc0): `design shot
+pages/system@footer-open-points` fails "has no open sketch in product studio", and `shot pages/system --variants` draws
+the other open `pages-system` sketch. Cause (measured by the subagent): `sketchHoldingOf` in
+`libs/cli/src/lib/design/shot-command.ts` matches the part only, never the sketch name. Missed: no spec has two open
+sketches on one part. Tool fix (Linux builder, after 731): shot resolves `<part>@<name>`; spec bite with two sketches
+on one part; an `--at` shot of a named sketch counts as viewed.
+
+736 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. Cause: c18d4a1d0 (2026-11-10) made `sketchHoldingOf` (`shot-command.ts`) resolve `<part>@<name>`, refuse a bare part with several named sketches, and record an `--at` shot of the live sketch as viewed. Probe: `shot-command.spec.ts` "draws the sketch a <part>@<name> shot names, not the first one on the part" and "refuses a bare shot of a part with two named sketches before it draws" pass today.
+
+737\. Linux builder (2026-11-10, same sketch): because of 736, `sketch ready` refused with SHOT-NOT-VIEWED, and the
+subagent called `recordShotViewed` directly to pass the gate. The gate was bypassed, not met; the builder says the
+viewed content equals the commit. Lesson: a gate that an agent can satisfy with one internal call is no gate when the
+tool is broken; the agent must stop and report the tool defect instead. Tool fix (with 736): the viewed record holds
+the hash of the shot file the CLI drew, and `sketch ready` checks it, so a direct call without a real shot fails;
+builder subagent briefs say "a refused gate is a finding, never call its internals".
+
+737 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. Cause: c18d4a1d0 (2026-11-10) ties the viewed record to the shot file the CLI drew (`viewed-shots.ts`), and the subagent briefs carry the refused-gate line. Probe: `sketch-command.spec.ts` "refuses ready on a viewed record without a shot the CLI drew of the current content" passes today.
