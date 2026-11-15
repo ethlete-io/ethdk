@@ -3044,7 +3044,10 @@ B501 ready removals as built: check drops removed parts' entries, a merge drops 
 refused `design ready` commits a dropped entry (3 red-first specs). Live: shell-project-switch cleared.
 B501 P4 as built (330ec2c19 + next commit): title bar input `uncommitted` (pencil, N offen, hover list); host state carries
 `uncommitted` (studio-code.mjs, studio_code.rs); the design's `hint` switch became `force` hover. Part check clean, specs
-green (vitest related, node --test, cargo). Not verified: live shot of the running Studio (needs a host rebuild).
+green (vitest related, node --test, cargo). Live shot 2026-11-15: Studio built from 3d1e948fe in headless Chromium,
+`studio_code_state` answered by the real `studio-code.mjs state` with an untracked probe sketch: title bar shows
+"1 offen", hover lists "Sketch ungetrackt pages-sketches.shot-probe"; pages/sketches@pending-fold shows "Noch nicht
+bereit" with the B519 refusal line. Not verified: the Tauri binary itself (Rust parse covered by cargo test).
 B519 as built (2026-11-15): refusal recorded, Studio badges not ready.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
