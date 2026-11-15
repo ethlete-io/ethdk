@@ -30,7 +30,7 @@ export const sketchStatusBadge = async (status: SketchBadgeStatus) => {
 
 export default definePart({
   note: 'The status of a sketch as a small tonal badge: zeichnet while a variant is drawn, Wartet auf deine Wahl when all stand and nothing is picked, Variante gewählt once the designer picked a variant and the merge is still to come, Pausiert while the agent waits on other work, Keine Aktivität when nothing moved for a while, Noch nicht bereit while `sketch ready` has not passed. Render fehlgeschlagen, when its render failed, takes the error colour theme by its semantic type. The host places it, and wraps the paused badge in the hold trigger.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'design check'],
   widths: [200],
   states: {
     drawing: { status: 'drawing' },
