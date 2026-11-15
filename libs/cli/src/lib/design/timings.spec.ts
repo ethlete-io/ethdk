@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -345,6 +345,23 @@ describe('the commit and load of a run', () => {
     writeFileSync(join(dir, 'a.txt'), 'two');
 
     expect(await checkoutCommitOf(dir)).toEqual({ sha, dirty: true });
+  });
+
+  it('reads the checkout state without taking the index lock a concurrent git add needs', async () => {
+    const git = (...args: string[]) =>
+      gitExec(['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { encoding: 'utf8' });
+
+    git('init', '-q');
+    writeFileSync(join(dir, 'a.txt'), 'one');
+    git('add', 'a.txt');
+    git('commit', '-qm', 'one');
+    utimesSync(join(dir, 'a.txt'), new Date(Date.now() + 60_000), new Date(Date.now() + 60_000));
+
+    const index = readFileSync(join(dir, '.git/index'));
+
+    await checkoutCommitOf(dir);
+
+    expect(readFileSync(join(dir, '.git/index')).equals(index)).toBe(true);
   });
 
   it('says a run over its target under load above its cores is no verdict', () => {
