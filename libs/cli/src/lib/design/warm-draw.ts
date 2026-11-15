@@ -2,7 +2,7 @@ import { AddressInfo } from 'net';
 import { chromiumOf } from './browser';
 import { DesignConfig } from './design-config';
 import { createDesignServer } from './serve';
-import { createDrawQueue } from './thumb';
+import { createDrawQueue, INSPECT_BROWSER_ARGS } from './thumb';
 
 export type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 export type DrawQueue = ReturnType<typeof createDrawQueue>;
@@ -11,6 +11,8 @@ export type DrawQueue = ReturnType<typeof createDrawQueue>;
 export type WarmDraw = {
   server: (config: DesignConfig) => Promise<DesignServer>;
   queue: () => DrawQueue;
+  /** The queue the render and completeness checks inspect frames on; `queue` when absent. */
+  inspectQueue?: () => DrawQueue;
   perRun?: boolean;
   /** The ids the started design server refused as outside its allow list since the last call, none before it starts. */
   takeDeniedIds?: () => string[];
@@ -68,6 +70,7 @@ export const createRunDraw = (target: string, options: { chromiumOf?: typeof chr
   let server: Promise<DesignServer> | null = null;
   let listening: DesignServer | null = null;
   let queue: DrawQueue | null = null;
+  let inspectQueue: DrawQueue | null = null;
 
   const warm: WarmDraw = {
     server: (config) =>
@@ -85,12 +88,14 @@ export const createRunDraw = (target: string, options: { chromiumOf?: typeof chr
         return started;
       })),
     queue: () => (queue ??= createDrawQueue({ target, chromiumOf: options.chromiumOf })),
+    inspectQueue: () =>
+      (inspectQueue ??= createDrawQueue({ target, chromiumOf: options.chromiumOf, args: INSPECT_BROWSER_ARGS })),
     perRun: true,
     takeDeniedIds: () => listening?.takeDeniedIds() ?? [],
   };
 
   const close = async () => {
-    await queue?.close();
+    await Promise.all([queue?.close(), inspectQueue?.close()]);
     await (await server?.catch(() => null))?.close();
   };
 

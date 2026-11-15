@@ -214,6 +214,9 @@ type WaitingDraw = { job: () => Promise<void>; wants: Set<DrawWant>; drop: () =>
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
 // embedded frame depends on which frame painted first: two draws of the same page differed under load.
 export const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
+// Headless Chromium paces requestAnimationFrame at 60 Hz, so each settle of an inspected frame waited for frames
+// while the renderer idled. The flag breaks a view-transition screenshot, so only the inspect browser takes it.
+export const INSPECT_BROWSER_ARGS = [...DRAW_BROWSER_ARGS, '--disable-frame-rate-limit'];
 export const DRAWS_AT_ONCE = 8;
 
 /**
@@ -267,8 +270,9 @@ export const createDrawQueue = (options: {
   chromiumOf?: typeof chromiumOf;
   ledger?: DrawLedger;
   board?: Pick<ShotBoard, 'laneOf'>;
+  args?: string[];
 }) => {
-  const { target, ledger } = options;
+  const { target, ledger, args = DRAW_BROWSER_ARGS } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   let browser: Promise<Browser> | null = null;
   const waiting: WaitingDraw[] = [];
@@ -284,13 +288,11 @@ export const createDrawQueue = (options: {
         );
       }
 
-      return timedPhase('browser-start', () => resolved.chromium.launch({ args: DRAW_BROWSER_ARGS })).catch(
-        (error: unknown) => {
-          throw new ThumbUnavailableError(
-            `design-explore: the Chromium of ${resolved.from} did not start\n${error instanceof Error ? error.message : String(error)}`,
-          );
-        },
-      );
+      return timedPhase('browser-start', () => resolved.chromium.launch({ args })).catch((error: unknown) => {
+        throw new ThumbUnavailableError(
+          `design-explore: the Chromium of ${resolved.from} did not start\n${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
     });
 
     browser.catch(() => (browser = null));

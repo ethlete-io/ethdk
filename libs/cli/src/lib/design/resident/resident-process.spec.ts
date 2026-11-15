@@ -31,6 +31,7 @@ vi.mock('../serve', () => ({
   createDesignServer: async () => ({ listen: async () => undefined, close: async () => undefined, forgetDrawn }),
 }));
 vi.mock('../thumb', () => ({
+  INSPECT_BROWSER_ARGS: [],
   createDrawQueue: () => ({ run: async (draw: () => Promise<unknown>) => draw(), close: async () => undefined }),
 }));
 
@@ -111,7 +112,7 @@ describe('the resident design process', () => {
     expect(checkDesign).toHaveBeenCalledWith(
       expect.objectContaining({
         argv: ['--product', 'studio'],
-        warm: expect.objectContaining({ queue: expect.any(Function) }),
+        warm: expect.objectContaining({ queue: expect.any(Function), inspectQueue: expect.any(Function) }),
       }),
     );
   });

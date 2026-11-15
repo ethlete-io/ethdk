@@ -4,7 +4,7 @@ import { checkDesign } from '../check';
 import { DesignConfig, readConfig } from '../design-config';
 import { buildStampOf } from '../stamp';
 import { createDesignServer } from '../serve';
-import { createDrawQueue } from '../thumb';
+import { createDrawQueue, INSPECT_BROWSER_ARGS } from '../thumb';
 import { designShot } from '../shot-command';
 import { designSketch } from '../sketch-command';
 import { designCompare, shootStatesWith } from '../system/compare-command';
@@ -38,16 +38,18 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
   let server: Promise<DesignServer> | null = null;
   let listening: DesignServer | null = null;
   let queue: ReturnType<typeof createDrawQueue> | null = null;
+  let inspectQueue: ReturnType<typeof createDrawQueue> | null = null;
   let active = 0;
   const harness = createHarnessWatch({ target });
 
   const closeDraw = async () => {
-    const [closingServer, closingQueue] = [server, queue];
+    const [closingServer, closingQueues] = [server, [queue, inspectQueue]];
 
     server = null;
     listening = null;
     queue = null;
-    await closingQueue?.close();
+    inspectQueue = null;
+    await Promise.all(closingQueues.map((closing) => closing?.close()));
     if (!shared) await (await closingServer?.catch(() => null))?.close();
   };
 
@@ -85,6 +87,8 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
       return server;
     },
     queue: () => (queue ??= createDrawQueue({ target, chromiumOf: shared?.chromiumOf })),
+    inspectQueue: () =>
+      (inspectQueue ??= createDrawQueue({ target, chromiumOf: shared?.chromiumOf, args: INSPECT_BROWSER_ARGS })),
     takeDeniedIds: () => listening?.takeDeniedIds() ?? [],
   };
 
@@ -178,7 +182,7 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
 
     await refresh(config);
     await warm.server(config);
-    await warm.queue().run(async () => undefined);
+    await Promise.all([warm.queue(), warm.inspectQueue?.()].map((queue) => queue?.run(async () => undefined)));
   };
 
   const close = async () => {

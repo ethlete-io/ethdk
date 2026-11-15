@@ -37,4 +37,23 @@ describe('sharedChromiumOf', () => {
 
     expect(fake.launch).toHaveBeenCalledTimes(2);
   });
+
+  it('starts a Chromium of its own for other launch args', async () => {
+    const fake = fakeChromium();
+    const shared = sharedChromiumOf(fake.resolve);
+    const plain = await (await shared('/a'))?.chromium.launch({ args: ['--a'] });
+    const fast = await (await shared('/a'))?.chromium.launch({ args: ['--a', '--b'] });
+
+    expect(fake.launch).toHaveBeenCalledTimes(2);
+
+    await fast?.close();
+
+    expect(fake.closed).toHaveBeenCalledTimes(1);
+
+    await (await shared('/a'))?.chromium.launch({ args: ['--a'] });
+
+    expect(fake.launch).toHaveBeenCalledTimes(2);
+
+    await plain?.close();
+  });
 });

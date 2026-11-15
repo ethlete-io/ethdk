@@ -7,7 +7,14 @@ import { DesignConfig } from '../design-config';
 import { viteCacheOf } from '../vite-cache';
 import { createDesignServer } from '../serve';
 import { partFrameOf, viewportOf } from '../shot';
-import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
+import {
+  awaitSettled,
+  Browser,
+  createDrawQueue,
+  INSPECT_BROWSER_ARGS,
+  openFrame,
+  ThumbUnavailableError,
+} from '../thumb';
 import { yieldRun } from '../run-yield';
 import { WarmDraw } from '../warm-draw';
 import { INTERACTIVE_SELECTOR } from './actions';
@@ -1826,7 +1833,9 @@ export const partsCompletenessOf = async (options: {
 
   if (!chromium) return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
 
-  const queue = warm ? warm.queue() : createDrawQueue({ target, chromiumOf: resolveChromium });
+  const queue = warm
+    ? (warm.inspectQueue ?? warm.queue)()
+    : createDrawQueue({ target, chromiumOf: resolveChromium, args: INSPECT_BROWSER_ARGS });
   const server = warm ? await warm.server(config) : await createDesignServer({ target, config, listen: true, port: 0 });
   const sights = new Map<string, ReturnType<typeof seePart>>();
   const atOnce = slotsOf(INSPECTS_AT_ONCE);

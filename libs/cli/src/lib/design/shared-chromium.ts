@@ -4,15 +4,16 @@ export type ChromiumOf = typeof chromiumOf;
 type Browser = Awaited<ReturnType<Chromium['launch']>>;
 
 /**
- * A `chromiumOf` whose `launch` starts one Chromium for every draw queue that asks it, so a process keeps one browser
- * root. Each launch returns a lease; its `close` ends the browser only when the last lease closes.
+ * A `chromiumOf` whose `launch` starts one Chromium per distinct `args` for every draw queue that asks it, so a process
+ * keeps one browser root per flag set. Each launch returns a lease; its `close` ends that browser only when its last
+ * lease closes.
  */
 export const sharedChromiumOf = (resolveChromium: ChromiumOf = chromiumOf): ChromiumOf => {
   let resolved: ReturnType<ChromiumOf> | null = null;
-  let browser: Promise<Browser> | null = null;
-  let leases = 0;
+  const browsers = new Map<string, Promise<Browser>>();
+  const leases = new Map<string, number>();
 
-  const leaseOf = (open: Browser): Browser => {
+  const leaseOf = (args: string, open: Browser): Browser => {
     let closed = false;
 
     return new Proxy(open, {
@@ -22,11 +23,14 @@ export const sharedChromiumOf = (resolveChromium: ChromiumOf = chromiumOf): Chro
             if (closed) return;
 
             closed = true;
-            leases--;
 
-            if (leases > 0) return;
+            const left = (leases.get(args) ?? 1) - 1;
 
-            browser = null;
+            leases.set(args, left);
+
+            if (left > 0) return;
+
+            browsers.delete(args);
             await target.close();
           };
         }
@@ -46,20 +50,21 @@ export const sharedChromiumOf = (resolveChromium: ChromiumOf = chromiumOf): Chro
     if (!found) return null;
 
     const launch = (async (options?: Parameters<Chromium['launch']>[0]) => {
-      const launching = (browser ??= found.chromium.launch(options));
+      const key = JSON.stringify(options?.args ?? []);
+      const launching = browsers.get(key) ?? found.chromium.launch(options);
+      const forget = () => {
+        if (browsers.get(key) === launching) browsers.delete(key);
+      };
 
-      launching.catch(() => {
-        if (browser === launching) browser = null;
-      });
+      browsers.set(key, launching);
+      launching.catch(forget);
 
       const open = await launching;
 
-      leases++;
-      open.once('disconnected', () => {
-        if (browser === launching) browser = null;
-      });
+      leases.set(key, (leases.get(key) ?? 0) + 1);
+      open.once('disconnected', forget);
 
-      return leaseOf(open);
+      return leaseOf(key, open);
     }) as Chromium['launch'];
 
     const chromium = new Proxy(found.chromium, {

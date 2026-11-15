@@ -18,6 +18,7 @@ import {
   bootKeyOf,
   Browser,
   createDrawQueue,
+  INSPECT_BROWSER_ARGS,
   openFrame,
   switchFrame,
   ThumbUnavailableError,
@@ -925,7 +926,9 @@ export const renderIssuesOf = async (options: {
     };
 
   const { warm } = options;
-  const queue = warm ? warm.queue() : createDrawQueue({ target, chromiumOf: resolveChromium });
+  const queue = warm
+    ? (warm.inspectQueue ?? warm.queue)()
+    : createDrawQueue({ target, chromiumOf: resolveChromium, args: INSPECT_BROWSER_ARGS });
   const server = warm ? await warm.server(config) : await createDesignServer({ target, config, listen: true, port: 0 });
 
   try {
