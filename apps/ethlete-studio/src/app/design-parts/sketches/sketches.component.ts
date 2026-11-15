@@ -65,7 +65,9 @@ import {
   SKETCH_ROUNDS,
   SKETCH_ROWS,
   SKETCH_TREE,
+  SketchAgentRun,
   SketchHold,
+  SketchMergePort,
   SketchIdle,
   SketchPin,
   SketchRow,
@@ -190,6 +192,7 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
 })
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
+  protected warningTheme = injectSemanticColorTheme('warning');
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private injector = inject(Injector);
@@ -212,6 +215,9 @@ export class SketchesComponent {
   public hold = input<SketchHold>(SKETCH_HOLD);
   public idle = input<SketchIdle>(SKETCH_IDLE);
   public reason = input(false);
+  public agent = input<SketchAgentRun | null>(null);
+  public question = input('');
+  public port = input<SketchMergePort | null>(null);
   public rounds = input(SKETCH_ROUNDS);
   public round = input(SKETCH_ROUNDS[0]?.value ?? '');
   public pins = input<SketchPin[]>(SKETCH_PINS);
@@ -304,7 +310,9 @@ export class SketchesComponent {
       .filter((row) => shown.size > 0 || row.key !== SKETCH_CURRENT);
   });
   protected discardable = computed(() => !this.isEdit());
-  protected question = computed(() => this.rounds().find((option) => option.value === this.round())?.note ?? '');
+  protected shownQuestion = computed(
+    () => this.question() || (this.rounds().find((option) => option.value === this.round())?.note ?? ''),
+  );
   public columns = computed(() => {
     const rows = this.shownRows();
     const widest = Math.max(1, ...rows.map((row) => row.width));
@@ -373,7 +381,11 @@ export class SketchesComponent {
   protected labelFont = computed(() => textAt(LABEL_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected labelSize = computed(() => (this.labelFont() < MIN_LABEL ? null : this.labelFont()));
   protected shownStatus = computed(() =>
-    this.errored().length > 0 && (this.status() === 'waiting' || this.status() === 'idle') ? 'errored' : this.status(),
+    (this.agent() && !this.agent()?.failed) || this.port()
+      ? 'drawing'
+      : this.errored().length > 0 && (this.status() === 'waiting' || this.status() === 'idle')
+        ? 'errored'
+        : this.status(),
   );
 
   protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));

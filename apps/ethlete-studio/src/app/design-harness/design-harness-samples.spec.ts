@@ -30,6 +30,14 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(props['wholeScreens']).toEqual(['comparing-narrow']);
   });
 
+  it('feeds the agent and port props as their samples and refuses a value without one', () => {
+    expect(sketchesOf({ part: 'narrow', agent: 'failed' })['agent']).toMatchObject({ failed: true });
+    expect(sketchesOf({ part: 'narrow', port: 'two' })['port']).toMatchObject({ merged: expect.any(Array) });
+    expect(sketchesOf({ part: 'narrow' })).not.toHaveProperty('agent');
+    expect(() => sketchesOf({ part: 'narrow', agent: 'nope' })).toThrow('agent=nope');
+    expect(() => sketchesOf({ part: 'narrow', port: 'nope' })).toThrow('port=nope');
+  });
+
   it('keeps the narrow chip sample when no screen is set', () => {
     expect(sketchesOf({ part: 'narrow' })['part']).toBe('components/zoom-chip');
   });

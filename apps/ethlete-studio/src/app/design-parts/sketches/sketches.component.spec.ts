@@ -1146,4 +1146,66 @@ describe('SketchesComponent', () => {
     expect(before).toBe(false);
     expect(fixture.componentInstance.transposed()).toBe(flips);
   });
+
+  it('draws the question line above the pickers and moves the pickers and rows down', async () => {
+    const root: HTMLElement = (await render({ camera: '100', question: 'Wohin mit dem Knopf?' })).nativeElement;
+    const question = root.querySelector('[data-sk-question]');
+
+    expect(question?.tagName).toBe('P');
+    expect(textOf(question)).toBe('Wohin mit dem Knopf?');
+    expect(question?.nextElementSibling?.classList.contains('top-24')).toBe(true);
+    expect(root.querySelector('[data-sk-rows]')?.parentElement?.classList.contains('top-37')).toBe(true);
+
+    const plain: HTMLElement = (await render({ camera: '100' })).nativeElement;
+
+    expect(plain.querySelector('[data-sk-question]')).toBeNull();
+    expect(plain.querySelector('[data-sk-rows]')?.parentElement?.classList.contains('top-27')).toBe(true);
+  });
+
+  it('shows a running agent with its model, task and step and marks the sketch as drawing', async () => {
+    const agent = {
+      by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' },
+      task: 'baut Variante z',
+      step: 'Zustand leer',
+      since: 'seit 9 Min',
+    };
+    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', agent })).nativeElement;
+    const line = root.querySelector('[data-sk-agent]');
+
+    expect([...(line?.children ?? [])].map(textOf)).toEqual([
+      '',
+      'Haiku 5.5',
+      'baut Variante z',
+      '· Zustand leer · seit 9 Min',
+    ]);
+    expect(line?.querySelector('.animate-pulse')).not.toBeNull();
+    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
+  });
+
+  it('shows a failed agent run without the pulse and keeps the sketch status', async () => {
+    const agent = {
+      by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' },
+      task: 'Runde 3 fehlgeschlagen',
+      step: 'Build-Fehler',
+      since: 'vor 1 Min',
+      failed: true,
+    };
+    const root: HTMLElement = (await render({ camera: '100', status: 'picked', agent })).nativeElement;
+
+    expect(root.querySelector('[data-sk-agent] .animate-pulse')).toBeNull();
+    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.picked);
+    expect(textOf(root.querySelector('header'))).not.toContain(LABELS.status.drawing);
+  });
+
+  it('shows the port after a merge with every merged part and marks the sketch as drawing', async () => {
+    const port = { merged: ['components/a', 'components/b', 'elements/c'], since: 'seit 5 Min' };
+    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', port })).nativeElement;
+
+    expect([...(root.querySelector('[data-sk-merge-port]')?.children ?? [])].map(textOf)).toEqual([
+      '',
+      LABELS.mergePort(port.merged),
+      '· seit 5 Min',
+    ]);
+    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
+  });
 });

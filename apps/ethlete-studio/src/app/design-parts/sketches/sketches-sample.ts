@@ -29,6 +29,10 @@ export type SketchIdle = { by: string; since: string };
 
 export type SketchRound = { value: string; label: string; note?: string };
 
+export type SketchAgentRun = { by: SketchModel; task: string; step: string; since: string; failed?: boolean };
+
+export type SketchMergePort = { merged: string[]; since: string };
+
 export type SketchPin = {
   variant: string;
   author: string;
@@ -110,6 +114,23 @@ export const SKETCH_DRAWN = 'b';
 export const SKETCH_HOLD: SketchHold = { until: 'B34/B36/B38', by: OPUS, since: 'seit 12 Min' };
 
 export const SKETCH_IDLE: SketchIdle = { by: 'Opus 5.5', since: 'seit 25 Min' };
+
+export const SKETCH_AGENT_RUNS: Record<'round' | 'variant' | 'failed', SketchAgentRun> = {
+  round: { by: OPUS, task: 'baut Runde 2', step: 'Variante c, 1 von 2', since: 'seit 4 Min' },
+  variant: { by: SOL, task: 'baut Variante c', step: 'Zustand reset-hover', since: 'seit 2 Min' },
+  failed: {
+    by: OPUS,
+    task: 'Runde 2 fehlgeschlagen',
+    step: 'tsc-Fehler in Variante d, zoom-chip.ts:14',
+    since: 'vor 3 Min',
+    failed: true,
+  },
+};
+
+export const SKETCH_MERGE_PORTS: Record<'one' | 'two', SketchMergePort> = {
+  one: { merged: ['components/button'], since: 'seit 1 Min' },
+  two: { merged: ['components/sketch-status-badge', 'elements/variant-cell'], since: 'seit 1 Min' },
+};
 
 export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1 · Suche und Update' }];
 

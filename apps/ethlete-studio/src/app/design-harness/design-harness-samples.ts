@@ -12,8 +12,10 @@ import {
 } from '../design-parts/system-page/system-page-sample';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
 import {
+  SKETCH_AGENT_RUNS,
   SKETCH_CURRENT,
   SKETCH_EDIT_SAMPLE,
+  SKETCH_MERGE_PORTS,
   SKETCH_NARROW_SAMPLE,
   SKETCH_POINTS_SAMPLE,
   SKETCH_ROWS,
@@ -61,12 +63,31 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     cameraKey: 'elements/canvas-frames',
     restoredCamera: { x: 0, y: 0, zoom: parseFloat(String(zoom ?? '100%')) / 100 },
   }),
-  'pages/sketches': ({ part, same, comparing, withdrawn, points, pointsOpen, screen, multi, ...props }) => {
+  'pages/sketches': ({
+    part,
+    same,
+    comparing,
+    withdrawn,
+    points,
+    pointsOpen,
+    screen,
+    multi,
+    agent,
+    port,
+    ...props
+  }) => {
     const { wholeScreen, ...screenSample } = SKETCH_SCREEN_SAMPLE;
     const kind = String(part ?? 'wide');
     const partSample = SKETCH_PART_SAMPLES[kind];
 
     if (!partSample) throw new Error(`no sample for prop part=${kind} of part pages/sketches`);
+
+    const run = agent === undefined ? undefined : SKETCH_AGENT_RUNS[String(agent) as keyof typeof SKETCH_AGENT_RUNS];
+    const merge = port === undefined ? undefined : SKETCH_MERGE_PORTS[String(port) as keyof typeof SKETCH_MERGE_PORTS];
+
+    if (agent !== undefined && !run)
+      throw new Error(`no sample for prop agent=${String(agent)} of part pages/sketches`);
+    if (port !== undefined && !merge) throw new Error(`no sample for prop port=${String(port)} of part pages/sketches`);
 
     const { looks: _looks, ...sample } = screen
       ? { ...screenSample, looks: {}, wholeScreens: screen === 'whole' ? [wholeScreen] : [] }
@@ -82,6 +103,8 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(withdrawn ? { withdrawn } : {}),
       ...(points ? { openPoints: SKETCH_POINTS_SAMPLE, pointsClosed: pointsOpen !== true } : {}),
       ...(multi === 'three' || multi === 'many' ? sketchMultiSampleOf(multi) : {}),
+      ...(run ? { agent: run } : {}),
+      ...(merge ? { port: merge } : {}),
     };
   },
   'pages/system': ({ build, agent, call, listingError, ...props }) => {

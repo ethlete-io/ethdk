@@ -127,8 +127,18 @@
         <span class="text-ui-sm whitespace-nowrap text-et-surface-muted" data-sk-edit-hint>{{ LABELS.editHint }}</span>
       }
     </header>
+    @if (shownQuestion(); as question) {
+      <p
+        class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface"
+        data-sk-question
+      >
+        {{ question }}
+      </p>
+    }
     <div
-      class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
+      [class.top-14]="!shownQuestion()"
+      [class.top-24]="!!shownQuestion()"
+      class="absolute right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
     >
       <et-form-field size="sm">
         <et-select [value]="round()" [aria-label]="LABELS.roundSelect" (valueChange)="selectRound($event)">
@@ -137,8 +147,39 @@
           }
         </et-select>
       </et-form-field>
-      @if (question()) {
-        <span class="min-w-0 truncate text-ui-sm text-et-surface-muted" data-sk-question>{{ question() }}</span>
+      @if (agent(); as run) {
+        <span
+          [etProvideColor]="run.failed ? errorTheme() : undefined"
+          class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
+          data-sk-agent
+        >
+          <span
+            [class.animate-pulse]="!run.failed"
+            class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
+          ></span>
+          <span class="inline-flex items-center gap-space-1"
+            ><svg [agent]="run.by.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ run.by.short }}</span
+          >
+          <span
+            [class]="run.failed ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'"
+            class="font-ui-medium"
+            >{{ run.task }}</span
+          >
+          <span>· {{ run.step }} · {{ run.since }}</span>
+        </span>
+      }
+      @if (port(); as merge) {
+        <span
+          class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
+          data-sk-merge-port
+        >
+          <span
+            [etProvideColor]="warningTheme()"
+            class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
+          ></span>
+          <span class="truncate font-ui-medium text-et-surface">{{ LABELS.mergePort(merge.merged) }}</span>
+          <span>· {{ merge.since }}</span>
+        </span>
       }
       @if (withdrawnCount() > 0) {
         <et-choice-field size="sm" color="brand" data-sk-withdrawn-toggle>
@@ -148,7 +189,9 @@
       }
     </div>
     <div
-      class="absolute top-27 right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+      [class.top-27]="!shownQuestion()"
+      [class.top-37]="!!shownQuestion()"
+      class="absolute right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
     >
       <ethlete-canvas-viewport
         #list

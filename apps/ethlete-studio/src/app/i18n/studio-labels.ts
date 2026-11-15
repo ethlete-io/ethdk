@@ -114,6 +114,7 @@ export const STUDIO_LABELS = {
     drawingMark: 'zeichnet',
     drawingVariant: 'zeichnet diese Variante',
     drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
+    mergePort: (merged: readonly string[]) => `Agent portiert nach Merge von ${merged.join(', ')}`,
     fresh: 'neu',
     status: {
       drawing: 'zeichnet',
