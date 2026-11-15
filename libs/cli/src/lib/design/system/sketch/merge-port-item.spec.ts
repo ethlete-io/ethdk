@@ -5,8 +5,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { gitSpawn } from '../../../git-test-env.fixtures';
 import { resolveProduct } from '../resolve-product';
+import { originOf } from '../write-origin';
+import { writePartRecord } from '../part-ready';
+import { designTask } from '../task-command';
 import { mergeStepOf } from './merge-step';
-import { createSketch, markSketchReady, Sketch } from './sketch';
+import { studioMergeOf } from './merge-runner';
+import { createSketch, decideSketch, markSketchReady, Sketch } from './sketch';
 
 const BY = 'claude-opus-5-5';
 const COMPONENT = 'apps/acme/src/hero.component.ts';
@@ -83,5 +87,38 @@ describe('merge of a sketch that adds a prop the app component has no input for'
     expect(logged.filter((line) => line.startsWith('PORT '))).toEqual([
       `PORT acme elements/hero: the merged design states send withdrawn - ${COMPONENT} has no input for it; add the input, see design task elements/hero --product acme`,
     ]);
+  });
+
+  it('lists the prop on the port line of design task after a Studio merge', async () => {
+    const logged: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation((line: unknown) => void logged.push(String(line)));
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void logged.push(String(line)));
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const { target, sketch } = implementedHero();
+    const picked = decideSketch({
+      sketch,
+      decision: { kind: 'pick', variant: 'a', ...originOf('designer') },
+    }) as Sketch;
+
+    expect(studioMergeOf({ target, product: 'acme', sketch: picked })).toEqual(['elements/hero']);
+
+    const configFile = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+
+    config.products.acme.harness = { app: 'apps/acme', map: 'apps/acme/harness.ts' };
+    writeFileSync(configFile, JSON.stringify(config));
+    for (const part of ['components/button', 'elements/hero'])
+      writePartRecord({ product: acmeOf(target), part, origin: originOf('spec') });
+    logged.length = 0;
+    await designTask({
+      target,
+      argv: ['elements/hero', '--product', 'acme'],
+      invocation: 'et design',
+      inputs: () => ({ pointsOf: () => [], problemsOf: () => [], slowOf: () => [] }),
+    });
+
+    expect(logged.join('\n')).toContain(`port: no input on ${COMPONENT} for withdrawn`);
   });
 });
