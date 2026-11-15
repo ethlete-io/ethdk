@@ -1,4 +1,5 @@
 import { declaredPartActionsOf } from './action-lost';
+import { settleCommittedEdits } from './accepted-pictures';
 import { PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { refreshHarnessMap } from './harness-map';
 import { openPointsText } from './open-points';
@@ -72,6 +73,9 @@ export const designReady = async (options: { target: string; argv: string[]; inv
   if (refreshed) console.log('regenerated the stale harness map');
 
   const part = partKeyOf(parsed);
+
+  settleCommittedEdits({ target, product, parts: [part] });
+
   const located = readyPartOf({ product, part });
   const marked = await markPartReady({
     product,

@@ -32,6 +32,7 @@ import {
 } from './part-ready';
 import { designReady } from './ready-command';
 import { resolveProduct } from './resolve-product';
+import { readMerged, recordMerged } from './sketch/merged-parts';
 
 vi.mock('./drawn-open-points', () => ({
   drawnFindingsOf: vi.fn(async () => ({ missingStates: [] })),
@@ -463,6 +464,45 @@ describe('part ready', () => {
       await failuresOf({ ...options, start: async () => ({ url: 'http://localhost:2', stop: async () => undefined }) }),
     ).toEqual([]);
     expect(checkLive).not.toHaveBeenCalled();
+  });
+});
+
+describe('ready on a merged part edited outside a sketch', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const edited = () => {
+    const { target, dir } = checkout();
+
+    recordMerged({ product: productOf(target), parts: ['components/tag'] });
+    initGitRepo(target, 'base');
+    writeFileSync(
+      join(dir, 'components/tag/tag.ts'),
+      'export default definePart({ states: { default: {}, on: {} } });\n',
+    );
+
+    return { target, dir, merged: readMerged(dir)['components/tag'] };
+  };
+  const ready = (target: string) =>
+    designReady({ target, argv: ['components/tag', '--product', 'app-a', '--by', 'model'], invocation: 'et design' });
+
+  it('settles a committed edit into merged.json before it checks the part', async () => {
+    const { target, dir, merged } = edited();
+    const lines = output();
+
+    git(target, 'commit', '-qam', 'edit tag');
+    await ready(target);
+
+    expect(lines.join('\n')).not.toContain('changed outside a sketch');
+    expect(readMerged(dir)['components/tag']).not.toBe(merged);
+  });
+
+  it('still refuses an uncommitted edit', async () => {
+    const { target, dir, merged } = edited();
+    const lines = output();
+
+    expect(await ready(target)).toBe(1);
+    expect(lines.join('\n')).toContain('changed outside a sketch');
+    expect(readMerged(dir)['components/tag']).toBe(merged);
   });
 });
 

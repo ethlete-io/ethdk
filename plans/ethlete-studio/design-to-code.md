@@ -500,6 +500,8 @@ As built (543, 2026-11-16): fix (3) was already built in ba4321e8c (`harnessShot
 
 As built (point 0 rest, delayed pictures, 2026-11-16): already built in 6cafe2129 (the hold run of `studio-e2e-repeat.mjs` passes `--delay-pictures`), no code change. Still open: the idle measurement against 90 s (ADR 0237) and an on-disk check cache (the sketch check cache, `sketch-check-cache.ts`, lives in memory only).
 
+As built (B520 ready fix, 2026-11-16): `design ready` (`ready-command.ts`) calls `settleCommittedEdits` for its part before `markPartReady`, so a direct edit HEAD holds is recorded in `merged.json` and no longer refuses as "changed outside a sketch"; `design check` stays read-only. Spec: `part-ready.spec.ts` "ready on a merged part edited outside a sketch" (red without the call, verified); an uncommitted edit still refuses. Unblocks ready for foundations/colors, foundations/type, comment-row, title-bar, studio-menu and pages/start besides the B520 parts. Not verified yet: a live `design ready` on a studio part.
+
 448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
 `generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
 ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
