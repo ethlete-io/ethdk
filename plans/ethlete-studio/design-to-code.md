@@ -4010,3 +4010,18 @@ B508 menu loading gap as built (2026-11-14): a loading submenu-trigger item no l
 B220b uncommitted-rebase mark as built (2026-11-14): when the post-commit hook cannot commit its rebase (or leaves out a file dirty before it), it records the sketch folder and commit in the gitignored `<product>/rebase-uncommitted.json` and drops the entry once it commits that sketch whole. The sketch listing answers `rebaseUncommitted: { commit }` for a recorded sketch while its files are dirty in git (`rebaseUncommittedOf`), and the Studio tree row warns `Rebase nach <sha> nicht committet` with the badge `rebase not committed`. Verified live in a git-initialised scratch copy with a failing pre-commit: zoom-chip edit -> 5 sketches rebased, commit refused, all 5 rows warn with that tooltip; committing the sketch files clears it. Specs: hook spec, `rebase-uncommitted.spec.ts`, system-tree spec.
 
 B220b follow-up and sketch switch fast path as built (2026-11-14): see `design-to-code-notes-2026-11.md`.
+
+649 part 2 as built (2026-11-15): `trackedRunAsync` and `asyncReadsCacheOf` in `system/tracked-reads.ts` (d3d973b27).
+The recorder now lives in an `AsyncLocalStorage` for sync and async runs, so two async runs at the same time record
+only their own reads, a nested run still chains to the outer one, and `fs/promises` and callback reads count too; the
+prints of a finished run are taken untracked. Spec `tracked-reads.spec.ts`; bite: a module-global recorder fails the
+two-runs-at-once and the async cache case (run before the prints went untracked), an unchained outer fails the
+nesting case. Moved: none of the 12 stores, each stays with its key. Suspect (read in the code, no
+bite): the answer of each is not a function of files this process reads through `fs`. action-cache, compare-cache,
+part-picture-cache, shot-store, sketch/unchanged-states and the slow-checks results hold browser output (the browser
+loads its files over HTTP, whose handlers run outside the caller's async context); served-cache holds server
+responses; harness-build-cache and generated-stylesheets hold a child process's output (the build, the generator),
+whose reads are not recorded; pixel-cache is keyed by the hashes of both pictures, its whole input; link-free
+`earlierFields` holds git history read by `git`; vite-cache is a folder claim, not a cache. No `bases` map was found in
+`slow-checks.ts`. Not verified: `trackedRunAsync` has no caller yet; a Tailwind `@plugin`/`@config` module loaded
+through ESM `import` is still not recorded; no warm `design check` measured the stat cost on a real product.
