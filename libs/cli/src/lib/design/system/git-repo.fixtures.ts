@@ -19,5 +19,8 @@ export const commitAll = (target: string, message: string) => {
 
 export const initGitRepo = (target: string, message: string) => {
   git(target, 'init', '-q');
+  git(target, 'config', 'user.name', 't');
+  git(target, 'config', 'user.email', 't@t');
+  git(target, 'config', 'commit.gpgsign', 'false');
   commitAll(target, message);
 };
