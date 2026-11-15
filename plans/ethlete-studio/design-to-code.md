@@ -2817,6 +2817,12 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   parts not audited. Parked: head note size race (Suspect: fit-pass font timing), change-crop edges. CI red 43552342055:
   Cause 3d0765c2a (re-export pulled slow-checks into the compare cache key); serve.spec 5.2 s timeout Suspect: CI load.
 
+B502 port line as built (Linux builder subagent, 2026-11-15): the port record already existed. `rebaseStaleSketches`
+(`after-merge.ts`) writes `portAfterMerge { merged, parts, reasons, at }` into `sketch.json` when a rebase after a merge
+or commit conflicts or fails the re-check, and the studio-api listing passes it through. It lands in `rebaseSketch`
+(`sketch rebase`, a clean auto-rebase); new: `markSketchReady` drops it too, so a port that only fixed the re-check
+ends. The app binds `[port]` from it (`since` = `seit N Min` from `at`); `staleBase` stays unbound.
+
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
 `ready.json` reads and writes go through it, so the check sees its own record and merge stamps but the files stay as

@@ -11,7 +11,16 @@ import { rebaseAfterCommit } from './after-merge';
 import { mergeSketch } from './merge';
 import { commitMergeResultSync } from './merge-commit';
 import { journaledMergeOf } from './merge-step';
-import { createSketch, decideSketch, markSketchReady, readSketch, Sketch, SketchTarget } from './sketch';
+import { journaledRebaseOf } from './rebase-port';
+import {
+  createSketch,
+  decideSketch,
+  markSketchReady,
+  readSketch,
+  Sketch,
+  SketchTarget,
+  writeSketchFile,
+} from './sketch';
 
 const targets: string[] = [];
 
@@ -148,6 +157,54 @@ describe('a merge and the other open sketches', { timeout: 120_000 }, () => {
     expect(lines).toContain(
       'AGENT PORTS acme elements/hero@other after the merge of elements/hero: a: elements/hero/hero.ts - the variant and the product both changed it - port it by hand, then run sketch rebase elements/hero@other --product acme --by <model id>',
     );
+  });
+
+  it('clears the port mark once the agent has ported the sketch by hand and rebased it', () => {
+    const target = acme();
+
+    output();
+
+    const other = readyOn(target, { layer: 'elements', name: 'hero', sketch: 'other' });
+    const hero = readyOn(target, { layer: 'elements', name: 'hero' });
+
+    edit(heroFile(other), 'One featured film', 'A featured film');
+    edit(heroFile(hero), 'One featured film', 'The featured film');
+    mergeHero(target, hero);
+
+    const marked = reread(other);
+
+    expect(marked.portAfterMerge?.at).toEqual(expect.any(String));
+
+    const { rebased } = journaledRebaseOf({
+      target,
+      product: resolveAcme(target),
+      sketch: marked,
+      keepConflicts: () => true,
+    });
+
+    expect(rebased?.portAfterMerge).toBeUndefined();
+    expect(reread(other).portAfterMerge).toBeUndefined();
+  });
+
+  it('clears the port mark when sketch ready judges the ported sketch', () => {
+    const target = acme();
+    const drawn = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    }) as Sketch;
+    const marked: Sketch = {
+      ...drawn,
+      portAfterMerge: { merged: ['elements/hero'], parts: ['elements/hero'], reasons: ['a: check'], at: 'now' },
+    };
+
+    writeSketchFile(marked, { base: drawn });
+
+    expect(reread(drawn).portAfterMerge?.merged).toEqual(['elements/hero']);
+
+    markSketchReady({ checkout: target, sketch: reread(drawn) });
+
+    expect(reread(drawn).portAfterMerge).toBeUndefined();
   });
 
   it('rebases an open sketch after a commit to a part it embeds, and leaves it alone after an unrelated commit', () => {

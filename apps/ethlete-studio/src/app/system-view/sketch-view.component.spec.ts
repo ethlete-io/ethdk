@@ -839,6 +839,37 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-agent]')).toBeNull();
   });
 
+  it('shows the port line from the port mark: the merged parts and since when', async () => {
+    const at = new Date(Date.now() - 4 * 60_000).toISOString();
+    const { root } = await render(
+      {
+        ...SKETCH,
+        decision: undefined,
+        report: null,
+        portAfterMerge: { merged: ['elements/hero', 'elements/card'], parts: ['elements/hero'], reasons: [], at },
+      },
+      noComments,
+    );
+    const parts = [...(root.querySelector('[data-sk-merge-port]')?.children ?? [])].map((part) =>
+      part.textContent?.trim(),
+    );
+
+    expect(parts).toEqual([
+      '',
+      STUDIO_LABELS.sketches.mergePort(['elements/hero', 'elements/card']),
+      `· ${STUDIO_LABELS.sketches.since(4)}`,
+    ]);
+  });
+
+  it('shows no port line without a port mark, even while the base is stale', async () => {
+    const { root } = await render(
+      { ...SKETCH, decision: undefined, report: null, staleBase: ['elements/hero'] },
+      noComments,
+    );
+
+    expect(root.querySelector('[data-sk-merge-port]')).toBeNull();
+  });
+
   it('shows a pick the rules refuse as picked, with the sketch points in the head of the picked variant of a sketch-only part', async () => {
     const asked: string[] = [];
     const sketch: ListedSketch = {

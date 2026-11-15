@@ -538,8 +538,7 @@ Verified: the component spec. Not verified: the look against a design part, beca
   and prints), `rebase-port.spec.ts` (lifted shared file identical is clean; product change ports into the lifted
   copy), `sketch-command.spec.ts` (embedded change: `sketch check` prints SKETCH-BASE-STALE naming elements/hero).
   "Identical content in the part's own file" passed before already (the old code compared bytes).
-- Open: Studio does not draw the "Agent portiert nach Merge von <part>" mark; no design part draws it, so it needs a
-  sketch. The mark is in the sketch listing (`portAfterMerge`).
+- Studio draws the "Agent portiert nach Merge von <part>" line from the listing's `portAfterMerge` (B502).
 
 ## As built: B351 (finding 410)
 

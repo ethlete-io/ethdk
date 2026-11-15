@@ -1234,8 +1234,8 @@ export const finishSketchReport = (options: { checkout: string; sketch: Sketch; 
 };
 
 /**
- * Marks an in-progress sketch ready for the user to pick, ends its live report, and records `author` on each variant
- * that has no author yet.
+ * Marks an in-progress sketch ready for the user to pick, ends its live report and its `portAfterMerge` mark, and
+ * records `author` on each variant that has no author yet.
  */
 export const markSketchReady = (options: { checkout: string; sketch: Sketch; author?: string }): Sketch | string => {
   const { checkout, sketch, author } = options;
@@ -1247,11 +1247,12 @@ export const markSketchReady = (options: { checkout: string; sketch: Sketch; aut
   if (held !== null) return held;
   if (sketch.variants.length === 0) return `${sketch.target} holds no variant`;
 
+  const { portAfterMerge: _ported, ...unmarked } = sketch;
   const authored = author
     ? sketch.variants
         .filter((variant) => authorsOf(sketch, variant).length === 0)
-        .reduce((current, variant) => withAuthor({ sketch: current, variant, author }), sketch)
-    : sketch;
+        .reduce((current, variant) => withAuthor({ sketch: current, variant, author }), unmarked)
+    : unmarked;
   const ready: Sketch = { ...authored, status: 'ready', readyContent: readyContentOf(sketch) };
 
   writeSketchFile(ready, { base: sketch });

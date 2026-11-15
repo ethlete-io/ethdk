@@ -437,6 +437,8 @@ export type ListedSketch = {
   changedSinceReady?: string[];
   /** The parts that changed since the sketch was drawn or rebased, `[]` without a baseline, `null` while current. Missing from an `@ethlete/cli` older than it. */
   staleBase?: string[] | null;
+  /** Set while its agent ports the sketch by hand after a merge or commit changed its base: the merged parts and when it started. Missing from an `@ethlete/cli` older than it. */
+  portAfterMerge?: { merged: string[]; parts: string[]; reasons: string[]; at: string };
   /** The commit whose rebase of the sketch the post-commit hook could not commit, `null` once nothing of it is left uncommitted. Missing from an `@ethlete/cli` older than it. */
   rebaseUncommitted?: { commit: string } | null;
 };

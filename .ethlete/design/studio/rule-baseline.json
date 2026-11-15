@@ -26,27 +26,7 @@
       "finding": "489",
       "sketch": "elements/canvas-frames: not opened yet - an app input for the prop, or a state that does not set it"
     },
-    "pages/sketches: agent-failed": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/sketches: agent-round": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/sketches: agent-variant": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
     "pages/sketches: folded": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/sketches: port-after-merge": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/sketches: port-after-merge-long": {
       "finding": "489",
       "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
     },

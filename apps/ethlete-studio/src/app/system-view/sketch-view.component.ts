@@ -58,6 +58,7 @@ import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import {
   SketchAgentRun,
   SketchHold,
+  SketchMergePort,
   SketchIdle,
   SketchModel,
   SketchPin,
@@ -188,6 +189,7 @@ export const liveShotsOf = ({
         [idle]="lastChange()"
         [hold]="held()"
         [agent]="agentRun()"
+        [port]="mergePort()"
         [drawn]="drawnVariant()"
         [rounds]="rounds()"
         [round]="shownRoundKey()"
@@ -753,6 +755,16 @@ export class SketchViewComponent {
       since: minutes === null ? '' : labels.ago(minutes),
       failed: true,
     };
+  });
+
+  protected mergePort = computed<SketchMergePort | null>(() => {
+    const mark = this.sketch().portAfterMerge;
+
+    if (!mark) return null;
+
+    const at = Date.parse(mark.at);
+
+    return { merged: mark.merged, since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)) };
   });
 
   protected sketchStatus = computed<SketchStatus>(() => {
