@@ -119,5 +119,19 @@
   "mergeHold": {
     "reason": "variant a changes narrow-part, comparing, comparing-narrow, compare-pending, compare-answered, added-state, narrow-wide-state, panned-zoomed, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, unchanged-matrix-open, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, multi-part, multi-part-many",
     "at": "2026-11-14T17:54:15.592Z"
+  },
+  "portAfterMerge": {
+    "merged": ["pages/sketches"],
+    "parts": ["pages/sketches"],
+    "reasons": ["a: pages/sketches/sketches.ts - the variant and the product both changed it"],
+    "at": "2026-11-14T19:58:53.048Z"
+  },
+  "decision": {
+    "kind": "pick",
+    "variant": "a",
+    "by": "designer",
+    "cmd": "POST /__design/sketch-decision",
+    "pid": 3576116,
+    "decidedAt": "2026-11-14T19:58:51.524Z"
   }
 }

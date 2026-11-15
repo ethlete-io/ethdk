@@ -83,6 +83,7 @@ type Props = {
   fresh?: boolean;
   part?: PartKind;
   comparing?: boolean;
+  listError?: string;
   same?: RowKey[];
   sameOpen?: boolean;
   withdrawn?: Withdrawn;
@@ -99,6 +100,8 @@ type View = {
   selected?: RowKey;
   status: SketchStatus;
   comparing: boolean;
+  listError?: string;
+  retry: string;
   withdrawn?: Withdrawn;
   take: string;
   points: string;
@@ -107,6 +110,13 @@ type View = {
 const DRAWN: RowKey = 'b';
 
 const LIST_WIDTH = 1100;
+
+const LIST_ERROR = 'missing build: pages/sketches';
+
+const failedMark = (reason: string) =>
+  html`<span class="text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-compare-failed
+    >Vergleich fehlgeschlagen: ${reason}</span
+  >`;
 
 const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
 
@@ -323,7 +333,8 @@ const headOf = (row: Row, view: View) => {
       ? html`<span class="relative flex flex-wrap items-center gap-space-2">${take}${view.points}</span>`
       : take;
   const action = drawn ? drawingMark : withPoints;
-  const mark = view.comparing && row.key !== 'current' ? comparingMark : '';
+  const failed = view.listError ? failedMark(view.listError) : comparingMark;
+  const mark = view.comparing && row.key !== 'current' ? failed : '';
   if (isWithdrawn(row, view.withdrawn)) return rowHead(row, withdrawnMark, mark);
   return rowHead(row, action, mark) + (drawn ? '' : pinFor(row));
 };
@@ -545,7 +556,7 @@ const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : ca
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
 export default definePart<Props>({
-  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert oder Keine Aktivität. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher.',
+  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert oder Keine Aktivität. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   controls: {
@@ -566,6 +577,7 @@ export default definePart<Props>({
     'sticky-names': { camera: { zoom: 0.8, x: -1700, y: -260 } },
     comparing: { camera: 'fit', comparing: true },
     'comparing-narrow': { camera: 'fit', part: 'narrow', comparing: true },
+    'list-error': { camera: 'fit', part: 'narrow', comparing: true, listError: LIST_ERROR },
     'below-fit': { camera: { zoom: 0.25, x: 0, y: 0 } },
     'far-out': { camera: { zoom: 0.1, x: 0, y: 0 } },
     'narrow-below-fit': { camera: { zoom: 0.8, x: 0, y: 0 }, part: 'narrow' },
@@ -609,6 +621,7 @@ export default definePart<Props>({
     fresh = false,
     part: kind = 'wide',
     comparing = false,
+    listError,
     same: sameKeys = [],
     sameOpen = false,
     withdrawn,
@@ -621,6 +634,8 @@ export default definePart<Props>({
     multi,
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
+    const reload = await button.render({ label: 'Erneut laden', variant: 'outline', color: 'surface', size: 'sm' });
+    const retry = listError ? withAction(reload.body, 'emit:retry') : '';
     const take = await takeButton();
     const run = agent ? AGENT_RUNS[agent] : undefined;
     const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
@@ -639,6 +654,8 @@ export default definePart<Props>({
       selected,
       status,
       comparing,
+      listError,
+      retry,
       withdrawn,
       take: takeAction(take.body),
       points: pointsButton
@@ -681,7 +698,7 @@ export default definePart<Props>({
             ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
                 >Kein Verwerfen: wähle eine der beiden Zeilen</span
               >`
-            : withAction(discard.body, 'emit:discard')
+            : retry + withAction(discard.body, 'emit:discard')
         }
       </header>
       ${parts.body}
@@ -753,6 +770,7 @@ export default definePart<Props>({
         menu.styles +
         side.styles +
         discard.styles +
+        reload.styles +
         pickers.wide.styles +
         showWithdrawn.styles +
         control.styles +
