@@ -42,3 +42,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - shot --at copy (Linux, 15.11.): `shot --variants --at HEAD` breaks a relative import in its `--at` copy, so the B502 port had no before/after compare. Suspect, first time. Parked (ADR 0276).
 - Unit tests red without a log (CI, 15.11.): run 43753975170 on d4a9931 failed Unit tests + Verified, job log "not found"; HEAD bc2b953 green, not reproduced. Suspect, first time. Parked (ADR 0276).
 - render-check fixture font on Mac (machinery, 15.11.): 661 (f6b8bf020) draws fixtures with bundled Noto; whether Mac Chromium gives the same pixels is unverified. Suspect, first time. Parked (ADR 0276).
+- real-open-points.spec under load (Linux, 15.11.): times out at 10 s when `sketch merge` runs it under load; 0.15 s alone and in the commit hook. Suspect, first time. Parked (ADR 0276).

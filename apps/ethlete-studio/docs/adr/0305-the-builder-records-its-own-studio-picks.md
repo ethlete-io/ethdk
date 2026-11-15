@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B518
+built: eb3519bd5
 decided: 2026-11-15
 source: doc-agent session 2026-11-15, evening, Q1 of the open round
 ---
@@ -15,3 +15,6 @@ command, or whether the human clicks the picks in Studio, with the recommendatio
 
 `.claude/settings.json` allows `Bash(yarn design sketch pick *)`, and only that command. The builder then records the
 pick of its recommendation itself. The human sets the rule: auto mode denied the doc agent the settings edit too.
+
+As built: the builder's `yarn et:design sketch pick` ran without a denial, so the settings rule was never added and is
+not needed while that holds.
