@@ -4028,3 +4028,8 @@ through ESM `import` is still not recorded; no warm `design check` measured the 
 649 part 2 removed (2026-11-15, grill call): `trackedRunAsync`, `asyncReadsCacheOf`, the `AsyncLocalStorage` recorder and
 the `fs/promises` recorders are gone again, no store calls them (git has d3d973b27). Kept: `trackedRun` takes the prints
 of a finished run untracked. Cause (bite): with prints untracked, an unchained outer fails the new sync nesting case.
+
+649 rest as built (2026-11-15): no code change. Cause (bite): Node 24 loads an ESM `@plugin`/`@config` module, and every
+module it imports, through `fs.promises.readFile`, which the Tailwind child in `tailwind-classes.ts` already records.
+Specs in `tailwind-facts-cache.spec.ts` (plugin's imported module changes, ESM config changes) fail with that recorder
+removed and pass with only the child's `readFileSync` recorder removed.

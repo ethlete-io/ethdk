@@ -87,6 +87,45 @@ describe('classFactsOf', { timeout: 120_000 }, () => {
     expect(factsIn(target, ['w-[420px]']).get('w-[420px]')?.canonical).toBe('w-2xl');
   });
 
+  it('answers fresh after a module that an ESM-imported plugin imports changes', () => {
+    const target = projectOf();
+
+    write(
+      target,
+      'styles.css',
+      `@import ${JSON.stringify(require.resolve('tailwindcss/index.css'))};\n@plugin "./plugin.mjs";\n`,
+    );
+    write(
+      target,
+      'plugin.mjs',
+      "import { colors } from './colors.mjs';\nexport default { handler() {}, config: { theme: { extend: { colors } } } };\n",
+    );
+    write(target, 'colors.mjs', "export const colors = { brand: 'blue' };\n");
+
+    expect(factsIn(target, ['bg-brand']).get('bg-brand')?.emitsNothing).toBe(false);
+
+    write(target, 'colors.mjs', "export const colors = { other: 'blue' };\n");
+
+    expect(factsIn(target, ['bg-brand']).get('bg-brand')?.emitsNothing).toBe(true);
+  });
+
+  it('answers fresh after an ESM config module changes', () => {
+    const target = projectOf();
+
+    write(
+      target,
+      'styles.css',
+      `@import ${JSON.stringify(require.resolve('tailwindcss/index.css'))};\n@config "./tailwind.config.mjs";\n`,
+    );
+    write(target, 'tailwind.config.mjs', "export default { theme: { extend: { colors: { brand: 'blue' } } } };\n");
+
+    expect(factsIn(target, ['bg-brand']).get('bg-brand')?.emitsNothing).toBe(false);
+
+    write(target, 'tailwind.config.mjs', "export default { theme: { extend: { colors: { other: 'blue' } } } };\n");
+
+    expect(factsIn(target, ['bg-brand']).get('bg-brand')?.emitsNothing).toBe(true);
+  });
+
   it('keeps the answer while no read file changes', () => {
     const target = projectOf();
     const first = factsIn(target, ['bg-brand']);
