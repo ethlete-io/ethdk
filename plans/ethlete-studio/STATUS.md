@@ -35,8 +35,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 2. B520 Ausstehende Ports (ADR 0205, 16.11.): App-Code an das gemergte Design angleichen für components/disclosure, shell-collapse, tree-row, zoom-chip, elements/part-tree, shell-main (Port-Zeilen von `design check`, 136ec0d7e) sowie die Drift von components/canvas-viewport und comment-pin (nicht in der Baseline). Je Teil `design task`, ein Slice pro Teil.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet):
-Rest von Punkt 0 (ADR 0238: verzögerte Bilder in
-der Wiederholungs-Prüfung, ruhige Messung gegen 90 s, Prüf-Cache auf der Festplatte).
+Rest von Punkt 0 (ADR 0238: ruhige Messung gegen 90 s, Prüf-Cache auf der Festplatte).
 
 **Umbau-Gruppen (12.11., ADR 0279):** Offene Befunde laufen als Ursachen-Gruppen B498-B504, in dieser Reihenfolge, B506 (Schriften), dann B498 (ADR 0283); der Builder nimmt die älteste offene Gruppe, keinen Einzelbefund, aber nur, wenn Abendliste und zweite Liste des Menschen leer sind (ADR 0285). Maschinerie-Befunde (92) ruhen als Ganzes, außer bei rotem CI.
 
