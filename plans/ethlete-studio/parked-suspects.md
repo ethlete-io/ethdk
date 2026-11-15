@@ -43,3 +43,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - Unit tests red without a log (CI, 15.11.): run 43753975170 on d4a9931 failed Unit tests + Verified, job log "not found"; HEAD bc2b953 green, not reproduced. Suspect, first time. Parked (ADR 0276).
 - render-check fixture font on Mac (machinery, 15.11.): 661 (f6b8bf020) draws fixtures with bundled Noto; whether Mac Chromium gives the same pixels is unverified. Suspect, first time. Parked (ADR 0276).
 - real-open-points.spec under load (Linux, 15.11.): times out at 10 s when `sketch merge` runs it under load; 0.15 s alone and in the commit hook. Suspect, first time. Parked (ADR 0276).
+- e2e bite --revert on old fixes (machinery, 15.11.): `studio:e2e:bite --revert` refused both 435 fixes (e459da21e, 3c67d2143) because they no longer revert cleanly; the builder bit with a scratch script. Suspect, first time. Parked (ADR 0276).
