@@ -32,7 +32,7 @@ vi.mock('./package-root', async (importOriginal) => {
     bundle: true,
     platform: 'node',
     format: 'cjs',
-    packages: 'external',
+    external: ['@angular/*'],
     outfile: worker,
     logLevel: 'error',
   });
