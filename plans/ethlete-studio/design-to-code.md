@@ -506,6 +506,8 @@ As built (B520 disclosure, 2026-11-16): the disclosure part changed since its re
 
 As built (B520 tree-row, 2026-11-16): the tree-row part changed since its record of 2026-11-01 (tree roles 83ccabb8e, menu item text size b57fb9729, `text-ui-md` 37655a447, declared actions 4bbd88e03 and f1fea4e17, fired outputs 8d8496ce9, SDK tooltip df86a711f). The app component and `tree-row-item.component.ts` were already ported by those commits and by 66e540f97, so no code changed: `design task components/tree-row --verify` ran compare green on all 53 states and re-recorded `implemented.json`. Verified: that compare, `design check --part components/tree-row` and `compare --affected` (results in the commit report). Not verified: the unit spec was not re-run, as no app file changed.
 
+As built (B520 part-tree, 2026-11-16): no app code differed; `design ready` (920dac953, settled the committed edit) and `design task elements/part-tree --verify` compared all 7 states ok and re-recorded implemented.json at 5cb438b5755f8332. `design check --part elements/part-tree`: 0 findings. Not run: the part-tree unit spec (no app file changed).
+
 448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
 `generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
 ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
