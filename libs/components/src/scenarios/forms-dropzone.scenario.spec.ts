@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { form, FormField, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
@@ -20,12 +21,15 @@ import {
   DEFAULT_DROPZONE_LABELS,
   DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE,
   defaultDropzoneRejectionMessage,
+  DROPZONE_CROP_IMPORTS,
   DROPZONE_ENTRY_STATUSES,
   DROPZONE_FILE_CONSTRAINTS,
   DROPZONE_FILE_REJECTION_REASONS,
   DROPZONE_FILES_ERROR_KIND,
   DROPZONE_LABELS,
   DropzoneComponent,
+  DropzoneCropStepComponent,
+  DropzoneCropStepDirective,
   DropzoneFileConstraints,
   DropzoneFileRejection,
   dropzoneFiles,
@@ -169,6 +173,25 @@ class ArchiveViewComponent {
 
   archive = signal<string | null>(null);
   readonly = signal(true);
+}
+
+@Component({
+  selector: 'et-scenario-avatar-crop-step',
+  styles: [UNSTYLED_BLOCKS],
+  encapsulation: ViewEncapsulation.None,
+  imports: [DropzoneComponent, DROPZONE_CROP_IMPORTS],
+  template: ` <et-dropzone [(value)]="avatar" [upload]="upload" [crop]="{ aspectRatio: 1 }" aria-label="Avatar" /> `,
+})
+class AvatarCropStepComponent {
+  upload = createV2DropzoneUpload({
+    queryCreator: new V2QueryClient({ baseRoute: 'https://api.example.com' }).post({
+      route: '/avatars',
+      types: { args: def<{ body: FormData }>(), response: def<{ uuid: string }>() },
+    }),
+    selectValue: (response) => response.uuid,
+  });
+
+  avatar = signal<string | null>(null);
 }
 
 const query = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
@@ -457,6 +480,28 @@ describe('forms dropzone scenarios', () => {
 
     expect(preview('small.png')?.src).toMatch(/^data:image\/png/);
     expect(preview('over.png')).toBeNull();
+    s.flush();
+  });
+
+  it('holds a picked image in the built-in crop step until it is cancelled', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AvatarCropStepComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    expect(fixture.debugElement.query(By.directive(DropzoneCropStepDirective))).not.toBeNull();
+    expect(fixture.debugElement.query(By.directive(DropzoneCropStepComponent))).toBeNull();
+
+    pick(s, host, [file('me.png', 1024, 'image/png')]);
+
+    expect(fixture.debugElement.query(By.directive(DropzoneCropStepComponent))).not.toBeNull();
+    expect(queryAll('et-dropzone-crop', host)).toHaveLength(1);
+
+    query<HTMLButtonElement>('.et-dropzone-crop-cancel', host).click();
+    s.tick();
+
+    expect(queryAll('et-dropzone-crop', host)).toHaveLength(0);
+    expect(fixture.componentInstance.avatar()).toBeNull();
     s.flush();
   });
 
