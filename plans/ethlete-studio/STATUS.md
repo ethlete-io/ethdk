@@ -51,7 +51,7 @@ direkt nach dem laufenden Punkt. Ein Fix an der Agenten-Maschinerie (Push-Reihen
 Archiv, Plan-Vermerke) kommt nur bei rotem CI oder echter Blockade dran; sonst eine Zeile im Maschinerie-Rückstand,
 der in einem festen Aufräumblock einmal pro Woche läuft.
 
-**Maschinerie-Rückstand (14.11.):** Cause (gemessen: rot mit `node_modules/.vitest-cache`, 7/7 mit `--no-fsModuleCache`): der vitest-fs-Modul-Cache liefert für bearbeitete Dateien veralteten kompilierten Code; Specs nur mit `--no-fsModuleCache` grün, `spec:stress` falsch 0/4 (bb18b9f26-Slice), und das „lastempfindliche“ progress-steps-Szenario (3 rot in großem `vitest related`-Lauf, 7/7 allein, 1053ab687, f9940515d) ist dieselbe Ursache. Nur bei rotem CI bauen. Suspect: `lint:no-verify-briefs` scannt die ignorierten `.claude/handoffs/*.md` und blockierte einen Push wegen eines zitierten Flags in einem Handoff.
+**Maschinerie-Rückstand (14.11.):** Cause (gemessen: rot mit `node_modules/.vitest-cache`, 7/7 mit `--no-fsModuleCache`): der vitest-fs-Modul-Cache liefert für bearbeitete Dateien veralteten kompilierten Code; Specs nur mit `--no-fsModuleCache` grün, `spec:stress` falsch 0/4 (bb18b9f26-Slice), und das „lastempfindliche“ progress-steps-Szenario (3 rot in großem `vitest related`-Lauf, 7/7 allein, 1053ab687, f9940515d) ist dieselbe Ursache. Nur bei rotem CI bauen. Suspect: `lint:no-verify-briefs` scannt die ignorierten `.claude/handoffs/*.md` und blockierte einen Push wegen eines zitierten Flags in einem Handoff. Agenten können CI-Job-Logs nicht lesen (403, Admin nötig; keine Test-Artefakte), ein roter Unit-Test-Job ist nur lokal nachzustellen (15.11.).
 
 Ältere 🔨-Zeilen unten sind noch nicht gegen git geprüft (Stand der Zeile kann veraltet sein).
 
@@ -477,6 +477,7 @@ sketch` zeigen ihn (Befund 180).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 - **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Offen für Tom: menu item-active Kurzbefehl 4.10:1 (Empf. volle Textfarbe), chart bar-/pie-empty Umriss (Empf. contrast.exceptions).
 - **D19** Ein JSON-Writer für beide Libs statt zwei Kopien (`libs/agent-rules/src/lib/prettier.ts`, `libs/cli/src/lib/json-file.ts`). Subpath-Exports von agent-rules müssen im Workspace auf gebautes JS auflösen (`@ethlete/agent-rules/prettier` auf TS-Quelle ließ die gebaute CLI abstürzen, zurückgenommen). Danach `part-ready.ts` auf den Writer umstellen (nach A10).
+- **D20** core Head-Store (fifa 7.26, 15.11.): Titel-Teil ohne öffentliche Priorität; Schreiben aus einem Effect, der den Store liest, läuft endlos. [fifagg-sdk-findings-2026-11-15-seo.md](../fifagg-sdk-findings-2026-11-15-seo.md)
 
 ## E. Fragen und Entwürfe für Tom
 
