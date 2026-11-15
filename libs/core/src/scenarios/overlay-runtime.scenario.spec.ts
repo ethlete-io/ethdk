@@ -260,6 +260,47 @@ describe('overlay runtime scenarios', () => {
     s.flush();
   });
 
+  it('closes on the click of a single outside press that lands before the enter animation starts', () => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayRuntime().mount({
+        id: 'popover',
+        component: ScenarioDialogComponent,
+        autoFocus: false,
+        modal: false,
+      }),
+    );
+    const { closed } = track(ref);
+
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    s.flush();
+
+    expect(ref.state()).toBe('closed');
+    expect(closed.map((event) => event.source)).toEqual(['outside-pointer']);
+  });
+
+  it('stays open for the second click of a double-click that lands before the enter animation starts', () => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayRuntime().mount({
+        id: 'popover',
+        component: ScenarioDialogComponent,
+        autoFocus: false,
+        modal: false,
+      }),
+    );
+
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }));
+    s.flush();
+
+    expect(ref.state()).toBe('mounted');
+
+    ref.close();
+    s.flush();
+  });
+
   it('lets an Escape during the leave animation pass through untouched', () => {
     const s = scenario();
     const ref = open(s, 'dialog');

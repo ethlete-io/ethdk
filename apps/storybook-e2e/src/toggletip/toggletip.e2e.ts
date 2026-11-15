@@ -316,4 +316,18 @@ test.describe('toggletip / reported suspects', () => {
 
     await expect(dialog).toBeHidden({ timeout: 300 });
   });
+
+  test('after an Enter open one mouse click far outside closes the toggletip', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text toggletip' });
+    const dialog = page.getByRole('dialog');
+
+    await trigger.focus();
+    await pressKey(page, 'Enter');
+    await expect(dialog).toBeVisible();
+
+    await page.mouse.click(2, 400);
+
+    await expect(dialog).toBeHidden({ timeout: 1000 });
+  });
 });

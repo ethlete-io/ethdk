@@ -467,20 +467,26 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
+          const originElement = getOriginElement();
+          const onOrigin = !!originElement && originElement.contains(target);
+
           if (target === backdropElement() && overlayRef.state() === 'mounting') {
-            armBackdropClickClose();
+            armPressClickClose();
 
             return;
           }
 
           if (!interactiveCloseReady) {
-            animationDebugLog(`runtime ${config.id}`, 'outside pointer ignored (enter transition has not started yet)');
+            if (onOrigin) {
+              animationDebugLog(`runtime ${config.id}`, 'origin press ignored (enter transition has not started yet)');
+            } else {
+              animationDebugLog(`runtime ${config.id}`, 'outside press before enter decides on its click');
+              armPressClickClose();
+            }
 
             return;
           }
 
-          const originElement = getOriginElement();
-          const onOrigin = !!originElement && originElement.contains(target);
           if (onOrigin && closeOnOutsidePointer === 'except-origin') {
             return;
           }
@@ -511,30 +517,38 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           }
         };
 
-        // pointerdown carries no click count, so a backdrop press during enter decides on its click:
-        // the second click of a double-click that opened the overlay must not close it again.
-        const onBackdropClick = (event: MouseEvent) => {
-          disarmBackdropClickClose();
+        // pointerdown carries no click count, so a press during enter decides on its click: the second
+        // click of a double-click that opened the overlay must not close it again, but a single click
+        // after a keyboard open must.
+        const onPressClick = (event: MouseEvent) => {
+          disarmPressClickClose();
 
-          if (event.target === backdropElement() && event.detail <= 1) {
-            overlayRef.close(undefined, 'outside-pointer');
+          const target = event.target;
+          if (!isElement(target) || event.detail > 1 || paneElement.contains(target)) {
+            return;
           }
+
+          if (getOriginElement()?.contains(target) || !isTopMost(overlayRef as OverlayRuntimeRef<object, unknown>)) {
+            return;
+          }
+
+          overlayRef.close(undefined, 'outside-pointer');
         };
 
-        const disarmBackdropClickClose = () => {
-          targetDocument.removeEventListener('click', onBackdropClick, true);
-          targetDocument.removeEventListener('pointerdown', disarmBackdropClickClose, true);
+        const disarmPressClickClose = () => {
+          targetDocument.removeEventListener('click', onPressClick, true);
+          targetDocument.removeEventListener('pointerdown', disarmPressClickClose, true);
         };
 
-        const armBackdropClickClose = () => {
-          targetDocument.addEventListener('click', onBackdropClick, true);
-          targetDocument.addEventListener('pointerdown', disarmBackdropClickClose, true);
+        const armPressClickClose = () => {
+          targetDocument.addEventListener('click', onPressClick, true);
+          targetDocument.addEventListener('pointerdown', disarmPressClickClose, true);
         };
 
         targetDocument.addEventListener('pointerdown', onPointerDown, true);
         cleanupFns.push(() => {
           targetDocument.removeEventListener('pointerdown', onPointerDown, true);
-          disarmBackdropClickClose();
+          disarmPressClickClose();
         });
       }
 
