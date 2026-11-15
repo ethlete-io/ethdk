@@ -40,3 +40,5 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - spec:stress skips dist/proof specs (machinery, 15.11.): only `*.perf` switches the vitest config, so a proof spec reports 0/4 in 0.3 s. Pre-existing. Parked (ADR 0276).
 - serve.perf two-hundred-sketches block over budget (CI, 15.11.): 236.8 > 199.9 s, red already on green push 2c9e6dbf6; job non-blocking. Suspect, first time. Parked (ADR 0276).
 - shot --at copy (Linux, 15.11.): `shot --variants --at HEAD` breaks a relative import in its `--at` copy, so the B502 port had no before/after compare. Suspect, first time. Parked (ADR 0276).
+- Unit tests red without a log (CI, 15.11.): run 43753975170 on d4a9931 failed Unit tests + Verified, job log "not found"; HEAD bc2b953 green, not reproduced. Suspect, first time. Parked (ADR 0276).
+- render-check fixture font on Mac (machinery, 15.11.): 661 (f6b8bf020) draws fixtures with bundled Noto; whether Mac Chromium gives the same pixels is unverified. Suspect, first time. Parked (ADR 0276).
