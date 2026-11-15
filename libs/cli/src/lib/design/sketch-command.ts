@@ -854,7 +854,7 @@ const readied = (context: Context) => {
 
   const reopened = reportedReopen(found.sketch, context.args.flags.has('--reopen'));
 
-  if (typeof reopened === 'string') return fail(reopened);
+  if (typeof reopened === 'string') return readyRefused(found, reopened);
 
   const current = { product: found.product, sketch: reopened };
   const refused = timedPhase('gates', () => readyRefusalOf(context, current));

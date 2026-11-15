@@ -476,7 +476,10 @@ const listingOf = async ({
           ...sketchOf({ sketch, target }),
           staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
           rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
-          readyRefusal: sketch.status === 'ready' ? null : recordedReadyRefusalOf({ productDir: product.dir, sketch }),
+          readyRefusal:
+            sketch.status === 'ready' && changedSinceReadyOf(sketch).length === 0
+              ? null
+              : recordedReadyRefusalOf({ productDir: product.dir, sketch }),
           ...(checked
             ? {
                 problems: [

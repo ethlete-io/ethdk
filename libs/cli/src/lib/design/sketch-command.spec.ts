@@ -2603,6 +2603,17 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
     expect(readFileSync(file, 'utf8')).toBe(before);
 
+    const recorded = JSON.parse(
+      readFileSync(
+        join(target, `.ethlete/cache/acme/ready-refusals/${encodeURIComponent('elements/hero')}.json`),
+        'utf8',
+      ),
+    ) as { lines: string[] };
+
+    expect(recorded.lines).toContain(
+      'elements/hero is picked (variant a) and a changed since sketch ready judged it - nothing was recorded; add --reopen if the user asked for the change, else restore the files',
+    );
+
     await write(target, 'ready', 'elements/hero', '--reopen', '--product', 'acme');
 
     expect(lines).toContain('elements/hero was ready; a changed since - back to in progress');

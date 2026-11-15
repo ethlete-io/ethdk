@@ -8,7 +8,8 @@ import { PictureOf } from './merge-compare';
 import { detachRunningListings, sketchesAnswer } from './studio-api';
 import { encodePng } from './system/part-compare';
 import { resolveProduct } from './system/resolve-product';
-import { createSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
+import { recordReadyRefusal } from './system/sketch/ready-refusal';
+import { createSketch, markSketchReady, parseTarget, readSketch } from './system/sketch/sketch';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
 
 type Listed = {
@@ -17,6 +18,7 @@ type Listed = {
     dir: string;
     changedSinceReady: string[];
     staleBase: string[] | null;
+    readyRefusal: { lines: string[] } | null;
     targets?: { variant: string; unchanged?: string[]; crops?: Record<string, { box: unknown }> }[];
   }[];
 };
@@ -243,6 +245,26 @@ describe('what changed under a sketch since it was drawn or judged ready', () =>
     detachRunningListings();
 
     expect(await changedOf()).toEqual([['a']]);
+  });
+
+  it('serves the recorded ready refusal of a ready sketch only while its files changed since ready', async () => {
+    const target = acme();
+    const never = () => new Promise(() => undefined);
+    const refusalOf = async () => (await listing(target, '&unchanged=no&targets=no', never)).sketches[0]?.readyRefusal;
+    const [listed] = (await listing(target, '&unchanged=no&targets=no', never)).sketches;
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const found = readSketch({ product: product.dir, dir: join(target, listed?.dir ?? '') });
+
+    if (typeof found === 'string') throw new Error(found);
+
+    recordReadyRefusal({ productDir: product.dir, sketch: found, message: 'components/card is picked and changed' });
+    detachRunningListings();
+    expect(await refusalOf()).toBeNull();
+
+    writeFileSync(join(target, listed?.dir ?? '', 'a', 'changed.ts'), 'export const changed = true;\n');
+    detachRunningListings();
+
+    expect((await refusalOf())?.lines).toEqual(['components/card is picked and changed']);
   });
 
   it('lists the parts that changed since the sketch was drawn as its stale base', async () => {

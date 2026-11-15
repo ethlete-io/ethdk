@@ -3189,6 +3189,7 @@ refused `design ready` commits a dropped entry (3 red-first specs). Live: shell-
 B501 P4 as built (330ec2c19 + next commit): title bar input `uncommitted` (pencil, N offen, hover list); host state carries
 `uncommitted` (studio-code.mjs, studio_code.rs); the design's `hint` switch became `force` hover. Part check clean, specs
 green (vitest related, node --test, cargo). Not verified: live shot of the running Studio (needs a host rebuild).
+B519 as built (2026-11-15): refusal recorded, Studio badges not ready.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle sockets; the design server closes them after 6 s, so under lag a request hits a dying socket. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every

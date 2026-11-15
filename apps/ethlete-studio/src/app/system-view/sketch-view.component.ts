@@ -774,7 +774,7 @@ export class SketchViewComponent {
     if (this.drawnVariant() !== null) return 'drawing';
     if (this.sketch().hold) return 'paused';
 
-    if (this.sketch().status !== 'ready') return 'not-ready';
+    if (this.sketch().status !== 'ready' || this.sketch().readyRefusal) return 'not-ready';
 
     return waitsForPick(this.sketch()) ? 'waiting' : 'picked';
   });

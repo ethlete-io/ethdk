@@ -729,6 +729,27 @@ describe('SketchViewComponent', () => {
     expect(waitsForPick(refused)).toBe(false);
   });
 
+  it('names a ready, picked sketch whose files changed after ready as not ready and offers no merge', async () => {
+    const changed = {
+      ...SKETCH,
+      status: 'ready' as const,
+      decision: { kind: 'pick' as const, variant: 'a', decidedAt: new Date().toISOString() },
+      report: null,
+      readyRefusal: {
+        lines: ['pages/sketches is picked (variant a) and a changed since sketch ready judged it'],
+        round: 'r1',
+        at: new Date().toISOString(),
+      },
+    };
+    const { root } = await render(changed, noComments);
+
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.notReady);
+    expect(root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
+      'pages/sketches is picked (variant a) and a changed since sketch ready judged it',
+    );
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+  });
+
   it('derives the head badge from the drawing report and readiness, never from the sketch status alone', async () => {
     const badgeOf = (root: HTMLElement) => root.querySelector('header et-badge')?.textContent?.trim();
     const fresh = new Date(Date.now() - 5 * 60_000).toISOString();
