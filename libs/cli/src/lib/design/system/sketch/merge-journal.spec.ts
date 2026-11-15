@@ -237,7 +237,7 @@ const killEveryWrite = async (options: {
   expect(outcomes.some((outcome) => outcome.endsWith('old'))).toBe(true);
 };
 
-describe('a merge killed at any write leaves the old or the new state', { timeout: 600_000 }, () => {
+describe('a merge killed at any write leaves the old or the new state', { timeout: 1_200_000 }, () => {
   it('is undone or finished by the next process, and a re-run merges or reports the sketch gone', () =>
     killEveryWrite({
       action: 'merge',

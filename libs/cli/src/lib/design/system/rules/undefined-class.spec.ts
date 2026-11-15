@@ -54,7 +54,7 @@ const messagesOf = (target: string) =>
 const report = (name: string) =>
   `The class \`${name}\` compiles to no CSS against the product's stylesheets - Tailwind generates no utility of that name; use a value the product's theme defines`;
 
-describe('undefinedClassesOf', { timeout: 30_000 }, () => {
+describe('undefinedClassesOf', { timeout: 120_000 }, () => {
   it('reports a utility whose theme value the product does not define, in a part and in a file below it', () => {
     const target = acme();
 

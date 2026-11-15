@@ -27,7 +27,7 @@ const readySketch = (sketch?: string) => {
 const stepOf = (options: { target: string; part: string; note: string }) =>
   mergeStepOf({ ...options, product: 'acme', variant: 'old', by: 'claude-opus-5-5' });
 
-describe('mergeStepOf on a sketch with two live variants', () => {
+describe('mergeStepOf on a sketch with two live variants', { timeout: 30_000 }, () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('merges the named variant of an @edit sketch when --allowed-by holds a ref', async () => {

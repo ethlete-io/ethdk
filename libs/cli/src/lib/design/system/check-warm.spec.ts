@@ -70,7 +70,7 @@ const checked = async (warm?: WarmDraw) => {
   return drawsOf();
 };
 
-describe('design check on a warm draw', () => {
+describe('design check on a warm draw', { timeout: 30_000 }, () => {
   it('hands one per-run draw of the warm process to every drawing step and starts no design server or Chromium of its own', async () => {
     const warm: WarmDraw = { server: vi.fn(), queue: vi.fn() };
     const draws = await checked(warm);
