@@ -498,3 +498,6 @@ sketch` zeigen ihn (Befund 180).
   empty-state@row-layout, badge@long-label (nicht bereit), action-sheet@look (blockiert B508). Für Tom: `gh auth login`
   (Token seit ~03:50 ungültig); fifa-SEO-Session (!2054, 7.26) seit ~03:55 beendet, neu starten?; fifa !2063 (next.84)
   bereit, e2e offen; zshrc `claude2()` auf `_ethlete_agent_sessions_script` umstellen (nach `shell-install claude codex`).
+  Grill-Frage B501: soll `design check` seine ready.json-Änderungen (Marke setzen/entziehen) selbst committen? Empf.
+  Builder: nein, check meldet READY UNCOMMITTED, `design ready` committet nach; Alt. check committet selbst (wie
+  Merge, ADR 0188); Alt. check schreibt nichts (Kosten: kaputter Teil behält Marke bis `ready`).
