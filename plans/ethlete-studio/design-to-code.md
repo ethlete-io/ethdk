@@ -1539,18 +1539,6 @@ the reused worker page, so later Large cases (edited on disk, scroll never empti
 route in one case outlived the case on a shared worker page. Tool fix (technical): the worker fixture calls
 `page.unrouteAll()` after each case and fails the case that left a route behind.
 
-602\. Builder (2026-11-08, B434): the System "wheel" case timed out in CI at its first frame. The System page waits
-for two full `/__design/system` listings, and each one runs all design rules again on the server thread with no
-result cache (`listSystem` -> `ruleProblemsOf`): 1.5-3.5 s on macOS, 3.5-7 s on Linux, and stamp and pings get no
-answer meanwhile. The page throws the first answer away and asks again. A passing local run drew at 9.2 s of a 10 s
-wait. The cold path also runs `execFileSync` (tailwind `classFactsOf`, about 8 s) and git (about 1.7 s) on the server
-thread, the class of finding 599, which the 599 spec checks only for the merge path. Nothing measures request time on
-the server or counts requests per page load. Tool fix (technical): a first-frame timeout names the slow design
-requests and the longest ping (b815a18af); a spec asserts one listing per page load; the 599 assertion covers the
-whole server (no sync `child_process` call and no full rule run on the server thread per request).
-
-602 built d4e6b1477 (Linux builder, 2026-11-15, B499 close): rules() shares one in-flight run (P7 pass); warm /__design/system 143 ms in P6 on the Mac (target 300 ms).
-
 603\. Builder (2026-11-08, B434, d20413216): after a css edit the Large sketch cells showed nothing for about 8 s. The
 img and the iframe switched to the new revision at the same moment; the new img took about 5 s to render, and the new
 iframe stayed transparent until it painted. Fix: a cell keeps its last loaded picture on top until the new one loads,
@@ -2054,11 +2042,6 @@ tool is broken; the agent must stop and report the tool defect instead. Tool fix
 the hash of the shot file the CLI drew, and `sketch ready` checks it, so a direct call without a real shot fails;
 builder subagent briefs say "a refused gate is a finding, never call its internals".
 737 as built (Linux builder subagent, 2026-11-14, B503): already fixed, nothing built. Cause: c18d4a1d0 (2026-11-10) ties the viewed record to the shot file the CLI drew (`viewed-shots.ts`), and the subagent briefs carry the refused-gate line. Probe: `sketch-command.spec.ts` "refuses ready on a viewed record without a shot the CLI drew of the current content" passes today.
-
-738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
-render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
-
-738 built 3ddc2f320 (Linux builder, 2026-11-15, B499 close): B499 P1 pass, sketch check cold 8.3 s, warm 2.3-3.0 s, CI=1 cold 7.8 s (target 10 s).
 
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
@@ -3358,14 +3341,6 @@ cannot tell a running subagent from a frozen one. Tool fix (doc agent, tool inte
 twice; a timer that does not advance for 10 min counts as frozen, and restart names the frozen agent in its log and the
 mailbox at once instead of waiting out 1800 s. Bite: a pane fixture with a fixed timer reports frozen within the check.
 
-842\. Linux builder (2026-11-11, from 835): a cold open-points run on studio still takes 2.6 s; the Tailwind class-facts
-subprocess is 1.4 s of it (profiled). Tool fix (grill decision): a disk cache of the class facts, keyed by the files
-Tailwind read. Target: a cold run under 1.5 s. Bite: a second cold start runs no class-facts subprocess when no input
-changed, and a changed input runs it. Build after 838 and 837. 830 option (b) stays off the human's list: the edit case
-meets the target, and the start warm-up covers the cold ask.
-
-842 built 65c236faf (Linux builder, 2026-11-15, B499 close): class facts on disk; P6 cold open-points 107 ms on the Mac (target 1.5 s), CI green 6d35dd7cc.
-
 843\. Linux builder (2026-11-11, CI 43016617514 on a00d96078): Studio e2e shards 1, 4 and 6 stopped at "sketch fixture
 check could not list the sketches: TimeoutError ... 60000ms"; the local push-suite on the same code passed. 832 was
 reverted (3ab01b2e6). Suspect (code read): the 832 warm-up loads the CPU at serve start and starves the first listing on
@@ -3464,13 +3439,6 @@ map the related run skips it. Queue: Mac builder, after 850.
 passed silently. Tool fix (doc agent decision, tool internal): the 846 timing gate (under 15 s under the CI-like recipe,
 on a built scratch) becomes a `push:suite` step. Bite: the step fails on the code before 846. Queue: Linux builder, in
 the 846 slice or right after it.
-
-853\. Linux builder (2026-11-11, from 846), measured: with slow checks on, each 15 s poll blocks the Studio server main
-thread about 14 s under the CI-like recipe (`slowInputsOf` → app-files `declaringFilesOf` regexes). Tool fix (doc agent
-decision, tool internal): move this work to the worker. Bite: a main-thread stall probe under the recipe sees no block
-over 1 s during a poll; before the fix it sees about 14 s. Queue: Linux builder, after 849.
-
-853 built 65c236faf (Linux builder, 2026-11-15, B499 close): slow checks in a worker; P6 worst main-thread block 0 ms in a slow-checks poll, Linux and Mac.
 
 856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
@@ -3912,12 +3880,6 @@ names the retainer; then a fix with a spec that bounds the heap over 200 shots.
 986 update (Linux builder, 2026-11-13, B499 S6): not reproduced; main heap +1.1 MB a round over 200 shots with listings (see B499 S6 as built). Stays open.
 
 986 update (Linux builder, 2026-11-15, B499 close): parked: the leak is not reproduced (B499 S6) and no P-proof covers RSS outside the heap; it needs a reproduction recipe first.
-
-988\. Linux builder (2026-11-12 night, 951): `sketch check` stays at about 30 s against its 10 s target; aktuell (~11 s)
-and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builder default, tool backlog): make the aktuell
-and changes-shot steps faster, measured against the 951 numbers.
-
-988 built 3ddc2f320 (Linux builder, 2026-11-15, B499 close): B499 P1 pass, sketch check cold 8.3 s, warm 2.3-3.0 s (target 10 s).
 
 990\. Linux builder (2026-11-12 night): /tmp reached 99 % inodes (1,028,315 of 1,048,576) and ENOSPC failed unrelated
 specs (commit-export, e2e-check, red-check). Holders: 1,647 playwright-artifacts-* dirs, node-compile-cache,

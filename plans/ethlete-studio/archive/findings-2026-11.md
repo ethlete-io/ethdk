@@ -9923,3 +9923,41 @@ As built (B487, 2026-11-14): Cause: the canvas frame drops the focused iframe on
 `body` (bite: e2e case `focus inside a live frame stays on the frame across its remount` fails without the fix, passes
 with it, also under `--hold-listings 14000`). Fix: the frame host takes focus when its focused iframe unmounts. Not
 verified: the menu trigger landing (Shift+Tab from `body` reached the canvas here), WKWebView, CEF, grid cell iframes.
+
+602\. Builder (2026-11-08, B434): the System "wheel" case timed out in CI at its first frame. The System page waits
+for two full `/__design/system` listings, and each one runs all design rules again on the server thread with no
+result cache (`listSystem` -> `ruleProblemsOf`): 1.5-3.5 s on macOS, 3.5-7 s on Linux, and stamp and pings get no
+answer meanwhile. The page throws the first answer away and asks again. A passing local run drew at 9.2 s of a 10 s
+wait. The cold path also runs `execFileSync` (tailwind `classFactsOf`, about 8 s) and git (about 1.7 s) on the server
+thread, the class of finding 599, which the 599 spec checks only for the merge path. Nothing measures request time on
+the server or counts requests per page load. Tool fix (technical): a first-frame timeout names the slow design
+requests and the longest ping (b815a18af); a spec asserts one listing per page load; the 599 assertion covers the
+whole server (no sync `child_process` call and no full rule run on the server thread per request).
+
+602 built d4e6b1477 (Linux builder, 2026-11-15, B499 close): rules() shares one in-flight run (P7 pass); warm /__design/system 143 ms in P6 on the Mac (target 300 ms).
+
+738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
+render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
+
+738 built 3ddc2f320 (Linux builder, 2026-11-15, B499 close): B499 P1 pass, sketch check cold 8.3 s, warm 2.3-3.0 s, CI=1 cold 7.8 s (target 10 s).
+
+842\. Linux builder (2026-11-11, from 835): a cold open-points run on studio still takes 2.6 s; the Tailwind class-facts
+subprocess is 1.4 s of it (profiled). Tool fix (grill decision): a disk cache of the class facts, keyed by the files
+Tailwind read. Target: a cold run under 1.5 s. Bite: a second cold start runs no class-facts subprocess when no input
+changed, and a changed input runs it. Build after 838 and 837. 830 option (b) stays off the human's list: the edit case
+meets the target, and the start warm-up covers the cold ask.
+
+842 built 65c236faf (Linux builder, 2026-11-15, B499 close): class facts on disk; P6 cold open-points 107 ms on the Mac (target 1.5 s), CI green 6d35dd7cc.
+
+853\. Linux builder (2026-11-11, from 846), measured: with slow checks on, each 15 s poll blocks the Studio server main
+thread about 14 s under the CI-like recipe (`slowInputsOf` → app-files `declaringFilesOf` regexes). Tool fix (doc agent
+decision, tool internal): move this work to the worker. Bite: a main-thread stall probe under the recipe sees no block
+over 1 s during a poll; before the fix it sees about 14 s. Queue: Linux builder, after 849.
+
+853 built 65c236faf (Linux builder, 2026-11-15, B499 close): slow checks in a worker; P6 worst main-thread block 0 ms in a slow-checks poll, Linux and Mac.
+
+988\. Linux builder (2026-11-12 night, 951): `sketch check` stays at about 30 s against its 10 s target; aktuell (~11 s)
+and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builder default, tool backlog): make the aktuell
+and changes-shot steps faster, measured against the 951 numbers.
+
+988 built 3ddc2f320 (Linux builder, 2026-11-15, B499 close): B499 P1 pass, sketch check cold 8.3 s, warm 2.3-3.0 s (target 10 s).
