@@ -4,7 +4,9 @@ import { type Row } from '@shared/sketch-rows';
 
 type Box = { x: number; y: number; width: number; height: number };
 
-export type ChangeGroup = { states: string[]; box: Box; pixels: number; units: string };
+type VariantReason = { variant: string; pixels: number; units: string };
+
+export type ChangeGroup = { states: string[]; box: Box; reasons: VariantReason[] };
 
 export const SCREEN_WIDTH = 1440;
 export const SCREEN_HEIGHT = 900;
@@ -32,14 +34,12 @@ export const GROUPS: ChangeGroup[] = [
       'question-only',
     ],
     box: { x: 842, y: 371, width: 575, height: 45 },
-    pixels: 1358,
-    units: '3 Stellen',
+    reasons: [{ variant: 'Entwurf 1', pixels: 1358, units: '3 Stellen' }],
   },
   {
     states: ['port-after-merge'],
     box: { x: 300, y: 92, width: 420, height: 24 },
-    pixels: 2140,
-    units: '1 Stelle',
+    reasons: [{ variant: 'Entwurf 1', pixels: 2140, units: '1 Stelle' }],
   },
 ];
 
@@ -70,7 +70,14 @@ export const cropOf = (box: Box): Box => {
 
 const magnifyOf = (crop: Box) => SCREEN_WIDTH / crop.width;
 
-export const reasonOf = (group: ChangeGroup) => `${group.pixels} px in ${group.units}`;
+const reasonOf = (reason: VariantReason) => `${reason.pixels} px in ${reason.units}`;
+
+export const reasonLinesOf = (group: ChangeGroup) => {
+  const texts = group.reasons.map(reasonOf);
+  return new Set(texts).size <= 1
+    ? texts.slice(0, 1)
+    : group.reasons.map((reason, index) => `${reason.variant}: ${texts[index]}`);
+};
 
 export const zoomTextOf = (crop: Box) => `${magnifyOf(crop).toFixed(1).replace('.', ',')}×`;
 
