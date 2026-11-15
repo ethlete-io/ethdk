@@ -51,7 +51,7 @@ direkt nach dem laufenden Punkt. Ein Fix an der Agenten-Maschinerie (Push-Reihen
 Archiv, Plan-Vermerke) kommt nur bei rotem CI oder echter Blockade dran; sonst eine Zeile im Maschinerie-Rückstand,
 der in einem festen Aufräumblock einmal pro Woche läuft.
 
-**Maschinerie-Rückstand (14.11.):** Cause (gemessen: rot mit `node_modules/.vitest-cache`, 7/7 mit `--no-fsModuleCache`): der vitest-fs-Modul-Cache liefert für bearbeitete Dateien veralteten kompilierten Code; Specs nur mit `--no-fsModuleCache` grün, `spec:stress` falsch 0/4 (bb18b9f26-Slice), und das „lastempfindliche“ progress-steps-Szenario (3 rot in großem `vitest related`-Lauf, 7/7 allein, 1053ab687, f9940515d) ist dieselbe Ursache. Nur bei rotem CI bauen. Suspect: `lint:no-verify-briefs` scannt die ignorierten `.claude/handoffs/*.md` und blockierte einen Push wegen eines zitierten Flags in einem Handoff. Agenten können CI-Job-Logs nicht lesen (403, Admin nötig; keine Test-Artefakte), ein roter Unit-Test-Job ist nur lokal nachzustellen (15.11.).
+**Maschinerie-Rückstand (14.11.):** Cause (gemessen: rot mit `node_modules/.vitest-cache`, 7/7 mit `--no-fsModuleCache`): der vitest-fs-Modul-Cache liefert für bearbeitete Dateien veralteten kompilierten Code; Specs nur mit `--no-fsModuleCache` grün, `spec:stress` falsch 0/4 (bb18b9f26-Slice), und das „lastempfindliche“ progress-steps-Szenario (3 rot in großem `vitest related`-Lauf, 7/7 allein, 1053ab687, f9940515d) ist dieselbe Ursache. Nur bei rotem CI bauen. Suspect: `lint:no-verify-briefs` scannt die ignorierten `.claude/handoffs/*.md` und blockierte einen Push wegen eines zitierten Flags in einem Handoff. Agenten können CI-Job-Logs nicht lesen (403, Admin nötig; keine Test-Artefakte), ein roter Unit-Test-Job ist nur lokal nachzustellen (15.11.). Suspect: agent-rules output-style.spec „falls back to the home directory“ liest die Umgebung und fällt lokal rot, sobald `CLAUDE_CONFIG_DIR` gesetzt ist (CI setzt es nicht).
 
 Ältere 🔨-Zeilen unten sind noch nicht gegen git geprüft (Stand der Zeile kann veraltet sein).
 
@@ -501,3 +501,4 @@ sketch` zeigen ihn (Befund 180).
   Grill-Frage B501: soll `design check` seine ready.json-Änderungen (Marke setzen/entziehen) selbst committen? Empf.
   Builder: nein, check meldet READY UNCOMMITTED, `design ready` committet nach; Alt. check committet selbst (wie
   Merge, ADR 0188); Alt. check schreibt nichts (Kosten: kaputter Teil behält Marke bis `ready`).
+  Für Tom: Mac-Checkout steht detached auf 26db7d825; dort fehlt der GitHub-ssh-Schlüssel für nicht-interaktives ssh.
