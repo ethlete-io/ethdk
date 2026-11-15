@@ -42,6 +42,7 @@ export const anchoredDialogStyles = /* @__PURE__ */ [
     inline-size: max-content;
     min-inline-size: 288px;
     max-inline-size: 80vw;
+    max-block-size: 80vh;
   }
   .et-anchored-dialog-mock:is([data-overlay-placement^='top'], [data-overlay-placement^='bottom']) > .et-overlay-arrow {
     left: calc(50% - 10px);
