@@ -344,26 +344,29 @@ const readyWithdrawnLinesOf = (sketch: Sketch, ported: PortedFile[]) =>
 /**
  * Ports the base changes into the sketch's variants (see `portBaseChanges`) and records its new baseline as one
  * journaled step under the product lock: a throw or a kill leaves the variants and `sketch.json` as they were. Without
- * a kept conflict, a conflict writes nothing and answers without `rebased`. A ready sketch whose variants were
- * unchanged since ready keeps its ready mark when the port changed only its `shared/` copies; otherwise `withdrawn`
- * names each variant file the port changed.
+ * a kept conflict, a conflict writes nothing and answers without `rebased`. A ready sketch keeps its ready mark when
+ * each variant changed since ready is named in `ported` (a pure port by hand) and the port changed only its `shared/`
+ * copies or those variants; otherwise `withdrawn` names each variant file the port changed.
  */
 export const journaledRebaseOf = (options: {
   target: string;
   product: ResolvedProduct;
   sketch: Sketch;
   keepConflicts?: (variant: string) => boolean;
+  ported?: readonly string[];
 }): BasePort & { rebased?: Sketch; withdrawn?: string[] } => {
   const { target, product, sketch } = options;
+  const handPorted = new Set(options.ported ?? []);
 
   return journaled({ productDir: product.dir, root: target, label: `rebase of ${sketch.target}` }, () =>
     withProductLock(product.dir, () => {
-      const judged = sketch.status === 'ready' && changedSinceReadyOf(sketch).length === 0;
+      const judged =
+        sketch.status === 'ready' && changedSinceReadyOf(sketch).every((variant) => handPorted.has(variant));
       const port = portBaseChanges(options);
 
       if (!allKept(port.conflicts, options.keepConflicts)) return port;
 
-      const rehashReady = judged && port.ported.every(isSharedCopy);
+      const rehashReady = judged && port.ported.every((file) => isSharedCopy(file) || handPorted.has(file.variant));
       const withdrawn = judged && !rehashReady ? readyWithdrawnLinesOf(sketch, port.ported) : [];
 
       return { ...port, withdrawn, rebased: rebaseSketch({ product, sketch, rehashReady }) };

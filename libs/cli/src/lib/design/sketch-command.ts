@@ -1485,6 +1485,7 @@ const rebased = (context: Context) =>
       product,
       sketch,
       keepConflicts: keep,
+      ported: named,
     });
 
     if (!rebased) {
@@ -1509,10 +1510,10 @@ const rebased = (context: Context) =>
     console.log(`${sketch.target} now compares with the product as it is`);
 
     if (withdrawn && withdrawn.length > 0) withdrawn.forEach((line) => console.log(line));
-    else if (ported.length > 0 && sketch.status === 'ready')
+    else if ((ported.length > 0 || named.length > 0) && sketch.status === 'ready')
       console.log(
         rebased.readyContent !== sketch.readyContent
-          ? `${sketch.target} stays ready - the port changed only its shared/ copies`
+          ? `${sketch.target} stays ready - ${named.length > 0 ? `${named.join(', ')} ported by hand` : 'the port changed only its shared/ copies'}`
           : `variants changed - run sketch ready ${sketch.target} to check them again`,
       );
 

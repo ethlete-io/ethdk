@@ -375,6 +375,33 @@ describe('a base change of a shared copy', () => {
     );
   });
 
+  it('keeps the ready mark through a port by hand of the variants --ported names, and only of those', () => {
+    const portedByHand = () => {
+      const { target, sketch } = sketched({ sharedLabel: true });
+      const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+      changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+      ['a', 'b'].forEach((variant) =>
+        edit(variantFile(sketch, variant, 'hero.ts'), 'One featured film', 'The featured film'),
+      );
+
+      return { target, ready };
+    };
+    const rebaseOf = (ported?: string[]) => {
+      const { target, ready } = portedByHand();
+
+      return journaledRebaseOf({ target, product: resolveAcme(target), sketch: ready, ported });
+    };
+
+    const pure = rebaseOf(['a', 'b']);
+
+    expect(pure.rebased?.status).toBe('ready');
+    expect(changedSinceReadyOf(pure.rebased as Sketch)).toEqual([]);
+    expect(pure.withdrawn).toEqual([]);
+    expect(changedSinceReadyOf(rebaseOf(['a']).rebased as Sketch)).toEqual(['a', 'b']);
+    expect(changedSinceReadyOf(rebaseOf().rebased as Sketch)).toEqual(['a', 'b']);
+  });
+
   it('names no withdrawal when the port changed only shared copies', () => {
     const { target, sketch } = sketched({ sharedLabel: true });
     const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
