@@ -1323,6 +1323,8 @@ state is never shot again; (c) a compare of several parts in one call shares one
 compare of a studio page <= 10 s, and a run over target prints its slowest phase at the end. Process: the builder
 never blocks on a batch of heavy runs in the foreground, and every wait loop has a timeout.
 
+521 closed (Linux builder, 2026-11-15, B499 close): compare on a studio page 15.8 s in B499 P3 (was 47-106 s), sketch check cold 8.3 s in P1; no compare target exists.
+
 533 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 535 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
@@ -1539,6 +1541,8 @@ thread, the class of finding 599, which the 599 spec checks only for the merge p
 the server or counts requests per page load. Tool fix (technical): a first-frame timeout names the slow design
 requests and the longest ping (b815a18af); a spec asserts one listing per page load; the 599 assertion covers the
 whole server (no sync `child_process` call and no full rule run on the server thread per request).
+
+602 built d4e6b1477 (Linux builder, 2026-11-15, B499 close): rules() shares one in-flight run (P7 pass); warm /__design/system 143 ms in P6 on the Mac (target 300 ms).
 
 603\. Builder (2026-11-08, B434, d20413216): after a css edit the Large sketch cells showed nothing for about 8 s. The
 img and the iframe switched to the new revision at the same moment; the new img took about 5 s to render, and the new
@@ -2047,6 +2051,8 @@ builder subagent briefs say "a refused gate is a finding, never call its interna
 738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
 render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
 
+738 built 3ddc2f320 (Linux builder, 2026-11-15, B499 close): B499 P1 pass, sketch check cold 8.3 s, warm 2.3-3.0 s, CI=1 cold 7.8 s (target 10 s).
+
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
 only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
@@ -2119,30 +2125,15 @@ an allow rule, so no night needs a hand-made timer.
 
 753 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-754\. Linux builder (same sketch): no command prints the number of changed states of a sketch variant; it shows only
-through the `sketch ready` lines. With finding 750 (a sketch with zero changed states reached the human) this count is
-the fact an agent needs first. Decided by the doc agent (tool internal, backlog): `sketch status` (or `sketch check`)
-prints the changed-state count per variant, and the 750 guard uses the same count.
-754 as built (Linux builder subagent, 2026-11-14, B503): `sketch check` prints `CHANGED STATES variant <key> of <targets>: <n>` per live variant (`not counted - <why>` when a target does not load or the variant holds another part). Cause: `VariantChange` held only a `change` text, and `variantChangeOf` stopped at the first target that changed, so no count existed. Now it carries `changed` (the states that differ, summed over every target and shared part), and the NO-CHANGED-STATE guard of `sketch ready`, `sketch check` and the Studio listing (`studio-api.ts` counts its listed unchanged states the same way) fires exactly when `changed` is 0. Bite: 3 new `no-visible-change.spec.ts` cases fail on the old code (no count, first-target stop, no count line). Verified live: `design sketch check components/zoom-chip@focus-tooltip --product studio` printed `CHANGED STATES variant a of components/zoom-chip, components/shell-collapse: 3` (exit 1 from unrelated CLIPPED/SEE-THROUGH lines). Not verified: Studio shows no count; a multi-target sketch now shoots every target even after the first changes.
+754 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-755\. Linux builder (same sketch, scratch copy `/tmp/sk750`): (a) `sketch check` flags the gitignored, regenerated
-`<variant>/tsconfig.json` as FORMAT; (b) with a `node_modules` symlink to the repo, the scratch writes its shots into
-the repo's `node_modules/.design-explore`. Lesson: a scratch copy is the documented safe way to verify a sketch off
-:4402, but the tool treats it like a repo and leaks into the real one. Decided by the doc agent (tool internal,
-backlog): the format check skips gitignored generated files, and the shot cache resolves from the project root, not
-through the `node_modules` real path.
-755(b) as built (2026-11-14): `workRootOf` returns `<target>/.ethlete/cache/design-explore` (gitignored) when `realpath(node_modules)` is outside `realpath(target)`, else the old `node_modules/.design-explore`; new `work-root.spec.ts` failed on the old code. 755(a) not done.
+755 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 756\. Linux builder (same sketch): the repo's `pages/system` variant `a/tsconfig.json` is not formatted by Prettier.
 Suspect: the generator writes it with `JSON.stringify` and no format pass (not checked). Backlog: the generator
 formats what it writes; a spec runs Prettier `--check` on a freshly created variant.
 
-757\. Linux builder (same sketch): the SDK banner with type error drew teal in Studio, because no
-`data-et-semantic-color="error"` wrapper was around it. Suspect: the banner type sets the icon and the role, but not
-the semantic colour theme. Lesson: a component API that takes "error" and draws the brand colour lets a sketch show a
-wrong look without a warning. Open: the builder checks if `libs/components` banner should set the semantic colour from
-its type (an SDK API question for the human if it changes a default); until then the sketch uses the wrapper.
-757 as built (2026-11-14, audit): the banner sets its semantic colour from its type (`banner.component.ts`, `forceColor(semanticThemes[type])`, 44b743455); a `color` input overrides it. The sketch wrappers stay harmless. Verified by code read only.
+757 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 758\. Linux builder (same sketch): Studio has no `components/banner` part, so variant c imports the SDK mock directly.
 Note only: if the human picks c, the pick adds the part first (ADR 0010 flow), not a direct SDK import in a page.
@@ -2165,17 +2156,6 @@ Measured (same sketch, for 738): `sketch ready` took 29 s, and 1-2 min on a late
 766\. Doc agent (2026-11-10, 23:33): a mailbox `send` to the Linux builder made the dispatcher type into its pane (history
 line recalled). Suspect: `panelFocused` knows only `❯ ⏺` rows, this build draws `● main`.
 Tool fix (night, Linux): `send` refuses a SendMessage peer; panel regexes from a real pane.
-
-776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
-so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
-frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5 s), focus falls out of it, and
-Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
-own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
-with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).
-As built (B487, 2026-11-14): Cause: the canvas frame drops the focused iframe on both paths and focus falls to
-`body` (bite: e2e case `focus inside a live frame stays on the frame across its remount` fails without the fix, passes
-with it, also under `--hold-listings 14000`). Fix: the frame host takes focus when its focused iframe unmounts. Not
-verified: the menu trigger landing (Shift+Tab from `body` reached the canvas here), WKWebView, CEF, grid cell iframes.
 
 779\. Linux builder (2026-11-11, night, 777 df5226ee1): the first push:suite failed: `serve.spec`, `shot-store.spec` and
 `serve.perf.spec` mock `vite` without `createLogger`, which `serve.ts` now imports. The subagent ran only its touched
@@ -2517,6 +2497,8 @@ the rule that let a and c through; a spec with the B489 variants (da746a43e onto
 824\. Linux builder (2026-11-11, B489): `sketch check` 70 s and `sketch ready` 59 s (target 10 s), `design check
 --product studio` 199 s (target 60 s). Measured once. Tool fix (doc agent, tool internal): profile one `sketch check`
 run and name the slowest step before any change.
+
+824 update (Linux builder, 2026-11-15, B499 close): the sketch check half is met (B499 P1 cold 8.3 s). `design check --product studio` 138.7 s against 60 s, slowest phase render-inspect 67.0 s (22 findings, 38 parts). Parked: no B499 slice targets the full check; it needs its own row.
 
 825\. Linux builder (2026-11-11, B489): the tmux session `studio-serve` did not exist, and a plain `yarn design` now
 leaves :4402 to the Studio app and serves on a random port, so a shot from the open server found nothing on :4402. The
@@ -3352,6 +3334,8 @@ Tailwind read. Target: a cold run under 1.5 s. Bite: a second cold start runs no
 changed, and a changed input runs it. Build after 838 and 837. 830 option (b) stays off the human's list: the edit case
 meets the target, and the start warm-up covers the cold ask.
 
+842 built 65c236faf (Linux builder, 2026-11-15, B499 close): class facts on disk; P6 cold open-points 107 ms on the Mac (target 1.5 s), CI green 6d35dd7cc.
+
 843\. Linux builder (2026-11-11, CI 43016617514 on a00d96078): Studio e2e shards 1, 4 and 6 stopped at "sketch fixture
 check could not list the sketches: TimeoutError ... 60000ms"; the local push-suite on the same code passed. 832 was
 reverted (3ab01b2e6). Suspect (code read): the 832 warm-up loads the CPU at serve start and starves the first listing on
@@ -3455,6 +3439,8 @@ the 846 slice or right after it.
 thread about 14 s under the CI-like recipe (`slowInputsOf` → app-files `declaringFilesOf` regexes). Tool fix (doc agent
 decision, tool internal): move this work to the worker. Bite: a main-thread stall probe under the recipe sees no block
 over 1 s during a poll; before the fix it sees about 14 s. Queue: Linux builder, after 849.
+
+853 built 65c236faf (Linux builder, 2026-11-15, B499 close): slow checks in a worker; P6 worst main-thread block 0 ms in a slow-checks poll, Linux and Mac.
 
 856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
@@ -3844,6 +3830,8 @@ not measured). Tool fix (builder default, tool backlog): the resident stops itse
 a temp checkout without stopping its resident, so 3 `design __resident --checkout /tmp/studio-canvas-e2e-*` (about 0.75
 GB each) stay and `design stop` cannot find them; the teardown must stop the resident first.
 
+955 built d4e6b1477 + 6e15e4093 (Linux builder, 2026-11-15, B499 close): one idle end; P4 pass, 90 s after the run 0 design processes and 0 Chromium.
+
 875 server half built (Linux, 4ca55ca3c): a dying design server appends `<ISO time> pid <pid> port <port>: <stack>` to
 `.ethlete/cache/design-server-crash.log` (one per checkout, gitignored, never deleted on start), prints the path and
 exits 1; the next server reports `ServerIdentity.lastCrash`. Bite: crash-log.spec fails without the module. Not verified:
@@ -3893,9 +3881,13 @@ the shot browser pool. Tool fix (builder default, tool backlog): a heap snapshot
 names the retainer; then a fix with a spec that bounds the heap over 200 shots.
 986 update (Linux builder, 2026-11-13, B499 S6): not reproduced; main heap +1.1 MB a round over 200 shots with listings (see B499 S6 as built). Stays open.
 
+986 update (Linux builder, 2026-11-15, B499 close): parked: the leak is not reproduced (B499 S6) and no P-proof covers RSS outside the heap; it needs a reproduction recipe first.
+
 988\. Linux builder (2026-11-12 night, 951): `sketch check` stays at about 30 s against its 10 s target; aktuell (~11 s)
 and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builder default, tool backlog): make the aktuell
 and changes-shot steps faster, measured against the 951 numbers.
+
+988 built 3ddc2f320 (Linux builder, 2026-11-15, B499 close): B499 P1 pass, sketch check cold 8.3 s, warm 2.3-3.0 s (target 10 s).
 
 990\. Linux builder (2026-11-12 night): /tmp reached 99 % inodes (1,028,315 of 1,048,576) and ENOSPC failed unrelated
 specs (commit-export, e2e-check, red-check). Holders: 1,647 playwright-artifacts-* dirs, node-compile-cache,

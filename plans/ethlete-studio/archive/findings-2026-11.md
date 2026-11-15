@@ -9891,3 +9891,35 @@ folder "differs from" the source and lists 55 files; the build command it names 
 (builder default, tool backlog): a missing folder gives one line that names it missing, with a biting spec.
 
 974 as built (Linux builder subagent, 2026-11-14, B503): `staleDesignMocksOf` (`libs/cli/src/lib/design/system/stale-design-mocks.ts`) answers one line when `dist/libs/components/design` itself is missing: `REFUSED MISSING DESIGN MOCKS - dist/libs/components/design is missing; the drawings need the built mocks - run NX_NO_CLOUD=true npx nx build components`; a folder that exists but differs keeps the file list. Cause: the guard compared file by file and never asked whether the folder exists. Verified: the new case in `stale-design-mocks.spec.ts` was red on the old code (the "differs from" line), green after; not run live on a checkout without the build.
+
+754\. Linux builder (same sketch): no command prints the number of changed states of a sketch variant; it shows only
+through the `sketch ready` lines. With finding 750 (a sketch with zero changed states reached the human) this count is
+the fact an agent needs first. Decided by the doc agent (tool internal, backlog): `sketch status` (or `sketch check`)
+prints the changed-state count per variant, and the 750 guard uses the same count.
+754 as built (Linux builder subagent, 2026-11-14, B503): `sketch check` prints `CHANGED STATES variant <key> of <targets>: <n>` per live variant (`not counted - <why>` when a target does not load or the variant holds another part). Cause: `VariantChange` held only a `change` text, and `variantChangeOf` stopped at the first target that changed, so no count existed. Now it carries `changed` (the states that differ, summed over every target and shared part), and the NO-CHANGED-STATE guard of `sketch ready`, `sketch check` and the Studio listing (`studio-api.ts` counts its listed unchanged states the same way) fires exactly when `changed` is 0. Bite: 3 new `no-visible-change.spec.ts` cases fail on the old code (no count, first-target stop, no count line). Verified live: `design sketch check components/zoom-chip@focus-tooltip --product studio` printed `CHANGED STATES variant a of components/zoom-chip, components/shell-collapse: 3` (exit 1 from unrelated CLIPPED/SEE-THROUGH lines). Not verified: Studio shows no count; a multi-target sketch now shoots every target even after the first changes.
+
+755\. Linux builder (same sketch, scratch copy `/tmp/sk750`): (a) `sketch check` flags the gitignored, regenerated
+`<variant>/tsconfig.json` as FORMAT; (b) with a `node_modules` symlink to the repo, the scratch writes its shots into
+the repo's `node_modules/.design-explore`. Lesson: a scratch copy is the documented safe way to verify a sketch off
+:4402, but the tool treats it like a repo and leaks into the real one. Decided by the doc agent (tool internal,
+backlog): the format check skips gitignored generated files, and the shot cache resolves from the project root, not
+through the `node_modules` real path.
+755(b) as built (2026-11-14): `workRootOf` returns `<target>/.ethlete/cache/design-explore` (gitignored) when `realpath(node_modules)` is outside `realpath(target)`, else the old `node_modules/.design-explore`; new `work-root.spec.ts` failed on the old code. 755(a) not done.
+
+757\. Linux builder (same sketch): the SDK banner with type error drew teal in Studio, because no
+`data-et-semantic-color="error"` wrapper was around it. Suspect: the banner type sets the icon and the role, but not
+the semantic colour theme. Lesson: a component API that takes "error" and draws the brand colour lets a sketch show a
+wrong look without a warning. Open: the builder checks if `libs/components` banner should set the semantic colour from
+its type (an SDK API question for the human if it changes a default); until then the sketch uses the wrapper.
+757 as built (2026-11-14, audit): the banner sets its semantic colour from its type (`banner.component.ts`, `forceColor(semanticThemes[type])`, 44b743455); a `color` input overrides it. The sketch wrappers stay harmless. Verified by code read only.
+
+776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
+so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
+frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5 s), focus falls out of it, and
+Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
+own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
+with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).
+As built (B487, 2026-11-14): Cause: the canvas frame drops the focused iframe on both paths and focus falls to
+`body` (bite: e2e case `focus inside a live frame stays on the frame across its remount` fails without the fix, passes
+with it, also under `--hold-listings 14000`). Fix: the frame host takes focus when its focused iframe unmounts. Not
+verified: the menu trigger landing (Shift+Tab from `body` reached the canvas here), WKWebView, CEF, grid cell iframes.
