@@ -1,0 +1,40 @@
+name: Scheduled checks of next
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-audit:
+    uses: ethlete-io/ethdk/.github/workflows/rust-audit.yml@next
+
+  spec-sweep:
+    uses: ethlete-io/ethdk/.github/workflows/spec-sweep.yml@next
+
+  report:
+    name: Open an issue for a red run
+    needs: [rust-audit, spec-sweep]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      AUDIT: ${{ needs.rust-audit.result }}
+      SWEEP: ${{ needs.spec-sweep.result }}
+    steps:
+      - run: |
+          title="Scheduled checks of next failed"
+          body="Rust audit: $AUDIT, spec sweep: $SWEEP. Run: $RUN_URL"
+          number="$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')"
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
