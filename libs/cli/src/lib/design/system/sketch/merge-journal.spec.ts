@@ -2,7 +2,6 @@ import { spawn } from 'child_process';
 import { cpSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join, relative, resolve } from 'path';
-import { pathToFileURL } from 'url';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
 import { gitResult } from '../git-repo.fixtures';
@@ -14,8 +13,7 @@ import { createSketch, decideSketch, findSketch, markSketchReady, Sketch } from 
 
 const PART = 'elements/hero';
 const CHILD = resolve(__dirname, 'merge-journal.child.ts');
-const KILL = pathToFileURL(resolve(__dirname, 'merge-journal.kill.ts')).href;
-const JITI = pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href;
+const JITI = resolve(require.resolve('jiti/package.json'), '../lib/jiti-cli.mjs');
 
 const productOf = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
@@ -164,11 +162,9 @@ const stateOf = (target: string) => {
 
 const runChild = (target: string, killAt: number, action = 'merge') =>
   new Promise<{ out: string; killed: boolean }>((done) => {
-    const child = spawn(
-      process.execPath,
-      ['--import', JITI, '--import', KILL, CHILD, target, String(killAt), PART, action],
-      { stdio: ['ignore', 'pipe', 'pipe'] },
-    );
+    const child = spawn(process.execPath, [JITI, CHILD, target, String(killAt), PART, action], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     let out = '';
 
     child.stdout.on('data', (chunk: Buffer) => (out += chunk.toString()));

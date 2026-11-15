@@ -3156,6 +3156,9 @@ opened by `journaledAsync`, which waits for another holder by yielding to the ev
 typecheck, e2e "picking old ..." 1/1. Not verified: CI.
 B501 (3) as built: `openEditSketch` (design check) runs in `journaledAsync`; `createSketch` notes its new folder.
 P3 case "edit sketch" in merge-journal.spec; bites (no journal; no note): step 7 neither state.
+merge-journal.spec time as built (2026-11-15): Cause (timing, cpu-prof): CPU-bound, 321 children; jiti ESM hooks cost
+0.59 CPU-s per child start, the jiti CLI 0.33. Children start via jiti-cli; the child imports the kill hook first. Local 71.6 -> 52.4 s (343 -> 250 CPU-s),
+spec:stress --runs 4 --load 2 114 -> 77 s; --slow 2 (CI quota) after 540 s. Rest: tsc + prettier inside merge.
 B501 S4 as built (6bb13c4ec): `sketch ready` refuses a picked sketch whose variant changed without `--reopen`. `sharedBase` in sketch.json names a stale `shared/` copy in SKETCH-BASE-STALE; a rebase that
 ports only `shared/` copies keeps the ready mark. Bites for each. Not verified: live all-states; older sketches name no stale copy.
 B501 S5a as built (6458824f1, a2dbaca62): `design status` names uncommitted ready marks (READY UNCOMMITTED) and

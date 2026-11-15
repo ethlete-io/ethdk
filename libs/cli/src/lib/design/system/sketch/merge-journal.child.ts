@@ -1,3 +1,4 @@
+import './merge-journal.kill';
 import { readConfig } from '../../design-config';
 import { journaledPickOf, journaledReadyOf, mergedUnchanged } from '../../sketch-command';
 import { resolveProduct } from '../resolve-product';
