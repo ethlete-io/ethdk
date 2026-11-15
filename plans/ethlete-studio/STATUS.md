@@ -502,3 +502,5 @@ sketch` zeigen ihn (Befund 180).
   Builder: nein, check meldet READY UNCOMMITTED, `design ready` committet nach; Alt. check committet selbst (wie
   Merge, ADR 0188); Alt. check schreibt nichts (Kosten: kaputter Teil behält Marke bis `ready`).
   Für Tom: Mac-Checkout steht detached auf 26db7d825; dort fehlt der GitHub-ssh-Schlüssel für nicht-interaktives ssh.
+  Geparkt aus B499 (ADR 0280, Tom entscheidet): 824 voller `design check --product studio` 138,7 s statt 60 s
+  (render-inspect 67 s), Empf. neue Umbau-Zeile; 986 RSS-Leck nicht nachgestellt, Empf. parken bis ein Rezept da ist.
