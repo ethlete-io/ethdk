@@ -142,6 +142,37 @@ describe('ShellMainComponent', () => {
     expect(restarts).toBe(1);
   });
 
+  it('shows when, where and why the design server crashed and restarts it', async () => {
+    const { fixture, host } = await setup('hidden');
+    let restarts = 0;
+
+    fixture.componentInstance.restartServer.subscribe(() => restarts++);
+    fixture.componentRef.setInput('server', 'crashed');
+    fixture.componentRef.setInput('crash', {
+      time: '02.03.2027, 23:05:59',
+      pid: 7,
+      port: 5999,
+      path: '/home/someone/a/very/long/checkout/path/.ethlete/cache/design-server-crash.log',
+      stack: ['RangeError: Maximum call stack size exceeded', '    at loop (serve.js:1:1)'],
+    });
+    await fixture.whenStable();
+
+    const main = host.querySelector('main');
+
+    expect(main?.querySelector('[role="alert"] h3')?.textContent?.trim()).toBe('Design-Server abgestürzt');
+    expect(main?.textContent).toContain('Abgestürzt am 02.03.2027, 23:05:59 (PID 7, Port 5999)');
+    expect(main?.querySelector('pre')?.textContent).toBe(
+      'RangeError: Maximum call stack size exceeded\n    at loop (serve.js:1:1)',
+    );
+    expect(main?.textContent).toContain(
+      'Ganzes Log: /home/someone/a/very/long/checkout/path/.ethlete/cache/design-server-crash.log',
+    );
+
+    main?.querySelector('button')?.click();
+
+    expect(restarts).toBe(1);
+  });
+
   it('hides the open panel when the active section is clicked', async () => {
     const { events, click } = await setup('open');
 

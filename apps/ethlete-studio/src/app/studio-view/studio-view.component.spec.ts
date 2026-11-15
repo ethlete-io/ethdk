@@ -2,7 +2,7 @@ import { Component, input, output, provideZonelessChangeDetection } from '@angul
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
-import { Project, Themes } from '../../host/design';
+import { DesignServerCrash, Project, Themes } from '../../host/design';
 import { resetDesignStreams } from '../../host/design-events';
 import { THEMES } from '../../themes';
 import { ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
@@ -66,6 +66,7 @@ const RUNNING = {
   foreign: false,
   stale: false,
   exited: false,
+  crash: null as DesignServerCrash | null,
   log: [] as string[],
   logRevision: 0,
 };
@@ -247,6 +248,37 @@ describe('StudioViewComponent', () => {
 
     expect(panel?.textContent).toContain('Design-Server gestoppt');
     expect(panel?.textContent).toContain('EMFILE: too many open files');
+    expect(system(fixture)).toBeUndefined();
+
+    if (panel) button(panel, 'Neu starten')?.click();
+    await settle(fixture);
+
+    expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
+  });
+
+  it('shows the crash the exited design server wrote with a Restart', async () => {
+    const crashed = () => ({
+      ...RUNNING,
+      listening: false,
+      exited: true,
+      crash: {
+        time: new Date(2027, 2, 2, 23, 5, 59).toISOString(),
+        pid: 3500017,
+        port: 4402,
+        path: '/checkout/.ethlete/cache/design-server-crash.log',
+        stack: ['Error: write EPIPE', '    at afterWriteDispatched (node:internal/stream_base_commons:159:15)'],
+      },
+    });
+
+    stubHost({ design_server_state: crashed, design_server_start: crashed });
+
+    const fixture = await mount();
+    const panel = element(fixture).querySelector('[role="alert"]');
+
+    expect(panel?.textContent).toContain('Design-Server abgestürzt');
+    expect(panel?.textContent).toContain('Abgestürzt am 02.03.2027, 23:05:59 (PID 3500017, Port 4402)');
+    expect(panel?.querySelector('pre')?.textContent).toContain('Error: write EPIPE');
+    expect(panel?.textContent).toContain('/checkout/.ethlete/cache/design-server-crash.log');
     expect(system(fixture)).toBeUndefined();
 
     if (panel) button(panel, 'Neu starten')?.click();

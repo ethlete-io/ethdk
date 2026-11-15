@@ -139,7 +139,37 @@
     >
       @if (server(); as server) {
         <div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
-          @if (server !== 'stopped') {
+          @if (server === 'crashed') {
+            <div
+              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
+              role="alert"
+            >
+              <div class="flex flex-col gap-space-1">
+                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.crashed }}</h3>
+                @if (crash(); as crash) {
+                  <p class="m-0">{{ LABELS.crashedAt(crash) }}</p>
+                }
+              </div>
+              @if (crash(); as crash) {
+                <pre
+                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                  >{{ crash.stack.join('\n') }}</pre>
+                <p class="m-0">
+                  {{ LABELS.crashLog }} <span class="font-code break-all text-et-surface">{{ crash.path }}</span>
+                </p>
+              }
+              <button
+                (click)="restartServer.emit()"
+                et-button
+                type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
+              >
+                {{ LABELS.restartButton }}
+              </button>
+            </div>
+          } @else if (server !== 'stopped') {
             <div class="mx-auto mt-15 box-border w-full max-w-6xl px-space-5">
               <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">
                 {{ server === 'unanswered' ? LABELS.stopped : LABELS.starting }}

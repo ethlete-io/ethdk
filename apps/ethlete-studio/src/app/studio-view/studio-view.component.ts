@@ -44,6 +44,7 @@ import { createCheckouts, folderNameOf } from './checkouts';
 import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
 import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
 import { rememberView, rememberedView } from './remembered';
+import { serverCrashOf } from './server-crash';
 
 /** One edit lands as several file events, and an agent writes a whole round in a burst. */
 const SETTLE_MS = 300;
@@ -67,9 +68,10 @@ const SERVER_SILENT_MS = 30_000;
           project: projectName(),
           projects: checkouts.names(),
           panel: serverPanel(),
-          server: serverDown() ? 'stopped' : serverSilent() ? 'unanswered' : 'starting',
+          server: serverDown() ? (serverCrash() ? 'crashed' : 'stopped') : serverSilent() ? 'unanswered' : 'starting',
           serverUrl: serverUrl(),
           serverLog: downLog(),
+          serverCrash: serverCrash(),
         }"
         (action)="runShellAction($event)"
       />
@@ -148,6 +150,8 @@ export class StudioViewComponent {
   protected serverStarting = computed(
     () => !!this.server() && (this.server()?.listening ? !this.serverReady() : this.serverBusy()),
   );
+
+  protected serverCrash = computed(() => serverCrashOf(this.serverDown()?.crash ?? null));
 
   protected downLog = computed(() => (this.serverDown()?.log ?? []).slice(-10));
 

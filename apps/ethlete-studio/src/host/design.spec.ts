@@ -92,6 +92,7 @@ describe('designServerState$', () => {
     foreign: true,
     stale: false,
     exited: true,
+    crash: null,
     log: ['kept'],
     logRevision: 7,
   };

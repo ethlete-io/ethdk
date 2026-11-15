@@ -8,6 +8,8 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from './side-width';
 
+export type ServerCrash = { time: string; pid: number; port: number; path: string; stack: readonly string[] };
+
 export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
 const SECTIONS: { label: ShellSection; icon: string }[] = [
@@ -43,9 +45,10 @@ export class ShellMainComponent {
   public products = input(['studio', 'timetrack', 'docs']);
   public panel = input<'open' | 'hidden'>('open');
   public systemPicker = model<'open' | 'closed'>('closed');
-  public server = input<'stopped' | 'starting' | 'unanswered' | null>(null);
+  public server = input<'stopped' | 'starting' | 'unanswered' | 'crashed' | null>(null);
   public log = input<readonly string[]>([]);
   public serverUrl = input('');
+  public crash = input<ServerCrash | null>(null);
   public chrome = input<Pick<WindowChrome, 'os' | 'left' | 'right'> | null>(null);
 
   public update = input(false);

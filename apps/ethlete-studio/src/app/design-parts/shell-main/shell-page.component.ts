@@ -20,7 +20,7 @@ import { UpdateDialogComponent } from '../../components/update-dialog/update-dia
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
-import { ShellMainComponent, ShellSection } from './shell-main.component';
+import { ServerCrash, ShellMainComponent, ShellSection } from './shell-main.component';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
 export type ShellState = {
@@ -29,9 +29,10 @@ export type ShellState = {
   project: string;
   projects: string[];
   panel: 'open' | 'hidden';
-  server?: 'running' | 'starting' | 'unanswered' | 'stopped';
+  server?: 'running' | 'starting' | 'unanswered' | 'stopped' | 'crashed';
   serverUrl?: string;
   serverLog?: readonly string[];
+  serverCrash?: ServerCrash | null;
 };
 
 export type ShellAction =
@@ -62,6 +63,7 @@ export const SHELL_SAMPLE: ShellState = {
       [server]="screen()"
       [log]="shell().serverLog ?? []"
       [serverUrl]="shell().serverUrl ?? ''"
+      [crash]="shell().serverCrash ?? null"
       [chrome]="chrome()"
       [update]="!!updateCheck.version()"
       [sideWidth]="sideWidth()"
@@ -80,7 +82,7 @@ export const SHELL_SAMPLE: ShellState = {
         [(open)]="menuOpen"
         [(appearance)]="appearanceOpen"
         [(help)]="helpOpen"
-        [server]="shell().server === 'stopped' ? 'stopped' : 'running'"
+        [server]="shell().server === 'stopped' || shell().server === 'crashed' ? 'stopped' : 'running'"
         [project]="shell().project"
         [projects]="shell().projects"
         (projectChange)="action.emit({ kind: 'project', name: $event })"

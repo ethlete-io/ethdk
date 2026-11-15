@@ -118,6 +118,9 @@ export const designStatusChanges$ = (): Observable<void> =>
     invoke('design_status_watch', { changes }).catch((error: unknown) => subscriber.error(error));
   });
 
+/** The crash-log entry a design server wrote before it died. `time` is an ISO timestamp. */
+export type DesignServerCrash = { time: string; pid: number; port: number; path: string; stack: string[] };
+
 /** What a checkout's design server is doing, and what Studio may do about it. */
 export type ServerState = {
   port: number;
@@ -130,6 +133,8 @@ export type ServerState = {
   stale: boolean;
   /** True when a server Studio started has since ended. `log` holds its last output. */
   exited: boolean;
+  /** The exited server's own crash-log entry, when it died of an uncaught error. */
+  crash: DesignServerCrash | null;
   log: string[];
   logRevision: number;
 };

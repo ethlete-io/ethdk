@@ -16,6 +16,10 @@ export const STUDIO_LABELS = {
     starting: 'Design-Server startet',
     unanswered: (url: string) => `Design-Server antwortet nicht: ${url}`,
     restartButton: 'Neu starten',
+    crashed: 'Design-Server abgestürzt',
+    crashedAt: ({ time, pid, port }: { time: string; pid: number; port: number }) =>
+      `Abgestürzt am ${time} (PID ${pid}, Port ${port})`,
+    crashLog: 'Ganzes Log:',
   },
   studioMenu: {
     trigger: 'Studio-Menü',

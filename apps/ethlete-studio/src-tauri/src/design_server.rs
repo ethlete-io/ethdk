@@ -47,6 +47,11 @@ const CLI_SOURCE_DIRS: [&str; 3] = ["src", "design", "playwright"];
 
 const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 
+/// Written by `libs/cli/src/lib/design/crash-log.ts`, one entry per crash.
+const CRASH_LOG: &str = ".ethlete/cache/design-server-crash.log";
+
+const CRASH_SEPARATOR: &str = "\n---\n";
+
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerState {
@@ -61,9 +66,21 @@ pub struct ServerState {
     pub stale: bool,
     /// True when a server this Studio started has since ended. Its last output stays in `log`.
     pub exited: bool,
+    /// The crash-log entry of the exited server, when it died of an uncaught error.
+    pub crash: Option<ServerCrash>,
     /// `None` when the log is still the one the caller named by `log_revision`.
     pub log: Option<Vec<String>>,
     pub log_revision: u64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerCrash {
+    pub time: String,
+    pub pid: u32,
+    pub port: u16,
+    pub path: String,
+    pub stack: Vec<String>,
 }
 
 #[derive(Default)]
@@ -97,6 +114,8 @@ struct Server {
     _stdin: Option<ChildStdin>,
     log: Arc<Mutex<Log>>,
     cli_sha: Option<String>,
+    pid: Option<u32>,
+    crash: Option<Option<ServerCrash>>,
 }
 
 #[derive(Default, Clone)]
@@ -150,6 +169,7 @@ async fn state(
     let mut log_revision = 0;
     let mut managed = false;
     let mut exited = false;
+    let mut crash = None;
 
     if let Some(server) = table.get_mut(checkout) {
         let log = server.log.lock().map_err(|_| StudioError::Poisoned)?;
@@ -163,6 +183,15 @@ async fn state(
         drop(log);
         managed = matches!(server.child.try_wait(), Ok(None));
         exited = !managed;
+
+        if exited {
+            let pid = server.pid;
+
+            crash = server
+                .crash
+                .get_or_insert_with(|| pid.and_then(|pid| read_crash(checkout, pid, port)))
+                .clone();
+        }
     }
 
     Ok(ServerState {
@@ -172,8 +201,49 @@ async fn state(
         foreign: listening && !managed,
         stale: false,
         exited,
+        crash,
         log: (known_log != Some(log_revision)).then_some(lines),
         log_revision,
+    })
+}
+
+fn read_crash(checkout: &str, pid: u32, port: u16) -> Option<ServerCrash> {
+    let path = Path::new(checkout).join(CRASH_LOG);
+    let text = std::fs::read_to_string(&path).ok()?;
+
+    crash_of(&text, pid, port, &path.to_string_lossy())
+}
+
+/// The newest entry of a crash log that the server with `pid` on `port` wrote. Entries of earlier
+/// servers stay in the log and match neither.
+fn crash_of(text: &str, pid: u32, port: u16, path: &str) -> Option<ServerCrash> {
+    text.rsplit(CRASH_SEPARATOR).find_map(|entry| {
+        let (head, first) = entry.split_once(": ")?;
+        let mut words = head.split(' ');
+        let (time, "pid", entry_pid, "port", entry_port, None) = (
+            words.next()?,
+            words.next()?,
+            words.next()?,
+            words.next()?,
+            words.next()?,
+            words.next(),
+        ) else {
+            return None;
+        };
+
+        if entry_pid.parse::<u32>().ok()? != pid || entry_port.parse::<u16>().ok()? != port {
+            return None;
+        }
+
+        let stack = first.trim_end_matches('\n').lines().map(str::to_owned).collect();
+
+        Some(ServerCrash {
+            time: time.to_owned(),
+            pid,
+            port,
+            path: path.to_owned(),
+            stack,
+        })
     })
 }
 
@@ -568,6 +638,7 @@ fn spawn_from(
     })?;
 
     let stdin = child.stdin.take();
+    let pid = child.id();
     let log = Arc::new(Mutex::new(Log::new(preface)));
 
     if let Some(stdout) = child.stdout.take() {
@@ -585,6 +656,8 @@ fn spawn_from(
             _stdin: stdin,
             log,
             cli_sha,
+            pid,
+            crash: None,
         },
     );
 
@@ -801,6 +874,46 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../libs/cli/fixtures/source-hash")
     }
 
+    const CRASH_LOG_FIXTURE: &str = include_str!("fixtures/design-server-crash.log");
+
+    #[test]
+    fn a_crash_log_entry_of_the_exited_server_reads_as_its_crash() {
+        let crash = crash_of(CRASH_LOG_FIXTURE, 3500017, 4482, "/c/crash.log").expect("a crash");
+
+        assert_eq!(crash.time, "2026-11-14T17:29:26.442Z");
+        assert_eq!(crash.pid, 3500017);
+        assert_eq!(crash.port, 4482);
+        assert_eq!(crash.path, "/c/crash.log");
+        assert_eq!(crash.stack.first().map(String::as_str), Some("Error: write EPIPE"));
+        assert_eq!(
+            crash.stack.get(1).map(String::as_str),
+            Some("    at afterWriteDispatched (node:internal/stream_base_commons:159:15)")
+        );
+        assert!(crash.stack.last().is_some_and(|line| !line.is_empty()));
+    }
+
+    #[test]
+    fn a_crash_log_entry_of_another_server_is_ignored() {
+        assert_eq!(crash_of(CRASH_LOG_FIXTURE, 3500018, 4482, "/c/crash.log"), None);
+        assert_eq!(crash_of(CRASH_LOG_FIXTURE, 3500017, 4483, "/c/crash.log"), None);
+    }
+
+    #[test]
+    fn the_newest_crash_log_entry_of_the_server_wins() {
+        let newer = CRASH_LOG_FIXTURE
+            .replace("2026-11-14T17:29:26.442Z", "2026-11-15T08:00:00.000Z")
+            .replace("write EPIPE", "write EPIPE again");
+        let log = format!("{CRASH_LOG_FIXTURE}{CRASH_SEPARATOR}{newer}");
+
+        let crash = crash_of(&log, 3500017, 4482, "/c/crash.log").expect("a crash");
+
+        assert_eq!(crash.time, "2026-11-15T08:00:00.000Z");
+        assert_eq!(
+            crash.stack.first().map(String::as_str),
+            Some("Error: write EPIPE again")
+        );
+    }
+
     #[test]
     fn the_cli_source_hash_matches_the_typescript_one() {
         let expected = std::fs::read_to_string(fixture().join("expected-hash.txt")).expect("an expected hash");
@@ -875,6 +988,41 @@ mod tests {
 
             tokio::time::sleep(POLL).await;
         }
+    }
+
+    #[tokio::test]
+    async fn a_server_that_crashed_reads_as_exited_with_its_own_crash_log_entry() {
+        const PORT: u16 = 45876;
+
+        let dir = std::env::temp_dir().join(format!("studio-design-server-{PORT}"));
+        let entry = dir.join("node_modules/@ethlete/cli/src/index.js");
+        let log = dir.join(CRASH_LOG);
+
+        std::fs::create_dir_all(entry.parent().expect("a parent")).expect("a temporary checkout");
+        std::fs::create_dir_all(log.parent().expect("a parent")).expect("a cache folder");
+        std::fs::write(&log, CRASH_LOG_FIXTURE).expect("an older crash");
+        std::fs::write(
+            &entry,
+            format!("require('node:fs').appendFileSync({log:?}, `\n---\n2026-11-16T09:00:00.000Z pid ${{process.pid}} port {PORT}: Error: boom\n    at serve`);\nprocess.exit(1);\n"),
+        )
+        .expect("a design tool");
+
+        let checkout = dir.to_string_lossy().into_owned();
+        let servers = DesignServers::default();
+
+        spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
+        await_listening(&servers, &checkout, PORT).await;
+
+        let read = state(&servers, &checkout, PORT, None).await.expect("a state");
+        let crash = read.crash.expect("a crash");
+
+        assert!(read.exited);
+        assert_eq!(crash.time, "2026-11-16T09:00:00.000Z");
+        assert_eq!(crash.port, PORT);
+        assert_eq!(crash.stack, ["Error: boom", "    at serve"]);
+        assert_eq!(crash.path, log.to_string_lossy());
+
+        let _ = std::fs::remove_dir_all(&checkout);
     }
 
     #[tokio::test]
