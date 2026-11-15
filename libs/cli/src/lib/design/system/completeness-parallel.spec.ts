@@ -7,7 +7,7 @@ import { partsCompletenessOf } from './complete';
 import { INSPECTS_AT_ONCE } from './render-check';
 import { ResolvedProduct } from './resolve-product';
 
-const NAMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const NAMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'];
 
 let product: ResolvedProduct;
 

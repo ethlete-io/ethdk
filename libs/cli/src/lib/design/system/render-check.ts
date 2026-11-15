@@ -602,7 +602,7 @@ const widthsOf = (value: unknown) =>
 const PART_TIMEOUT_MS = 120_000;
 
 /** @internal How many frames of one part `inspect` draws at once, each on a page of its own. */
-export const INSPECTS_AT_ONCE = 4;
+export const INSPECTS_AT_ONCE = 8;
 
 /** The cache folder of the render issues of each part, kept with the responses its drawing loaded. */
 export const RENDER_ISSUES = 'render-issues';
