@@ -504,6 +504,8 @@ As built (B520 ready fix, 2026-11-16): `design ready` (`ready-command.ts`) calls
 
 As built (B520 disclosure, 2026-11-16): the disclosure part changed since its record of 2026-11-01 (hug option d1f722990, passed sketches action 32aaf6552, declared toggle actions f1fea4e17). The app component already had `hug` and rendered the same markup, so no code changed: `design compare components/disclosure --product studio` was green on all 12 states and `design task --verify` re-recorded `implemented.json`. Verified: compare, task verify, `design check` for the part. Not verified: other parts reached by the disclosure (no `compare --affected`).
 
+As built (B520 tree-row, 2026-11-16): the tree-row part changed since its record of 2026-11-01 (tree roles 83ccabb8e, menu item text size b57fb9729, `text-ui-md` 37655a447, declared actions 4bbd88e03 and f1fea4e17, fired outputs 8d8496ce9, SDK tooltip df86a711f). The app component and `tree-row-item.component.ts` were already ported by those commits and by 66e540f97, so no code changed: `design task components/tree-row --verify` ran compare green on all 53 states and re-recorded `implemented.json`. Verified: that compare, `design check --part components/tree-row` and `compare --affected` (results in the commit report). Not verified: the unit spec was not re-run, as no app file changed.
+
 448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
 `generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
 ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
