@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.77
+
+### Minor Changes
+
+- `closeOnOutsidePointer` accepts `'except-origin'`: a press on the anchored origin no longer closes the overlay or swallows its click, so the origin's own click handler decides.
+
 ## 5.0.0-next.76
 
 ### Minor Changes

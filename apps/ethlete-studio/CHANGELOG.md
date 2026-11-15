@@ -1,5 +1,18 @@
 # ethlete-studio
 
+## 0.2.0-next.20
+
+### Patch Changes
+
+- The sidebar marks a sketch held on another sketch that was merged or discarded, instead of showing it paused forever.
+- The part tree warns on a sketch whose rebase the post-commit hook could not commit.
+- A sketch listing with `&sketch=<target>` compares that sketch alone, without the rule check, and Studio asks for the opened sketch that way before the full listing, so its changed states draw sooner.
+- The Studio sketch list no longer shows a ready check on a sketch whose base needs a rebase or whose variants changed since `sketch ready`.
+- A sketch picked after Studio start is compared alone before the full listing answers, so its changed states draw sooner.
+- The sketch view asks no frame and no picture of a state until the full listing shows it is not folded away, so the changed states draw first.
+- The disclosure host renders as `contents`, so its toggle is the row item like in the design: the build-ready footer's Gründe toggle sits beside the badge instead of at the row end.
+- The System page sample lists the layers in the app order (Foundations, Elements, Components, Pages) and draws the `blocked-checking` build state as one definite blocker, like the design.
+
 ## 0.2.0-next.19
 
 ### Patch Changes
