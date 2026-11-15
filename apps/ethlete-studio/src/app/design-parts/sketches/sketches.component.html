@@ -165,7 +165,7 @@
             class="font-ui-medium"
             >{{ run.task }}</span
           >
-          <span>· {{ run.step }} · {{ run.since }}</span>
+          <span>· {{ run.step }}{{ run.since ? ' · ' + run.since : '' }}</span>
         </span>
       }
       @if (port(); as merge) {

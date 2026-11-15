@@ -759,6 +759,86 @@ describe('SketchViewComponent', () => {
     expect(buttonNamed(ready.root, STUDIO_LABELS.sketches.merge)).toBeDefined();
   });
 
+  it('shows the agent line from the drawing report: who, its message, the variant and since when', async () => {
+    const updatedAt = new Date(Date.now() - 7 * 60_000).toISOString();
+    const { root } = await render(
+      {
+        ...SKETCH,
+        status: 'in progress',
+        decision: undefined,
+        report: { message: 'baut Runde 3', updatedAt, variant: 'b', author: 'claude-sonnet-5-5' },
+      },
+      noComments,
+    );
+    const parts = [...(root.querySelector('[data-sk-agent]')?.children ?? [])].map((part) => part.textContent?.trim());
+
+    expect(parts).toEqual(['', 'Sonnet 5.5', 'baut Runde 3', `· Variante b · ${STUDIO_LABELS.sketches.since(7)}`]);
+  });
+
+  it('shows the variant step of a report that names a state, and no agent line once the report stalls', async () => {
+    const open = { ...SKETCH, status: 'in progress' as const, decision: undefined };
+    const drawing = await render(
+      {
+        ...open,
+        report: {
+          message: 'Zustand reset-hover',
+          updatedAt: new Date().toISOString(),
+          variant: 'a',
+          author: 'claude-opus-5-5',
+        },
+      },
+      noComments,
+    );
+
+    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).toContain('Zustand reset-hover');
+    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).toContain('Variante a');
+    drawing.fixture.destroy();
+
+    const stalled = await render(
+      {
+        ...open,
+        report: {
+          message: 'Zustand reset-hover',
+          updatedAt: new Date(Date.now() - 60 * 60_000).toISOString(),
+          variant: 'a',
+          author: 'claude-opus-5-5',
+        },
+      },
+      noComments,
+    );
+
+    expect(stalled.root.querySelector('[data-sk-agent]')).toBeNull();
+  });
+
+  it('shows a failed agent line naming the round and every variant that did not render', async () => {
+    const updatedAt = new Date(Date.now() - 50 * 60_000).toISOString();
+    const { root } = await render(
+      {
+        ...SKETCH,
+        decision: undefined,
+        targets: [
+          { variant: 'a', states: ['default'], interactions: [], error: 'tsc failed' },
+          { variant: 'b', states: ['default'], interactions: [], error: 'tsc failed' },
+        ],
+        report: { message: 'baut', updatedAt, variant: 'b', author: 'claude-opus-5-5' },
+      },
+      noComments,
+    );
+    const line = root.querySelector('[data-sk-agent]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const labels = STUDIO_LABELS.sketches.agentRun;
+
+    expect(line).toContain('Opus 5.5');
+    expect(line).toContain(labels.errored(['a', 'b']));
+    expect(line).toContain(labels.ago(50));
+    expect(line).toMatch(/Runde (\d+ )?fehlgeschlagen/);
+  });
+
+  it('shows no agent line while nothing draws and every variant rendered', async () => {
+    const { root } = await render({ ...SKETCH, decision: undefined, report: null }, noComments);
+
+    expect(root.querySelector('[data-sk-agent]')).toBeNull();
+  });
+
   it('shows a pick the rules refuse as picked, with the sketch points in the head of the picked variant of a sketch-only part', async () => {
     const asked: string[] = [];
     const sketch: ListedSketch = {

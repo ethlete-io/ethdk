@@ -129,6 +129,12 @@ export const STUDIO_LABELS = {
     lastChange: (by: string, since: string) =>
       by || since ? [by ? `Letzte Änderung von ${by}` : 'Letzte Änderung', since].filter(Boolean).join(' · ') : '',
     since: (minutes: number) => `seit ${minutes} Min`,
+    agentRun: {
+      failed: (round: number | null) => (round === null ? 'Runde fehlgeschlagen' : `Runde ${round} fehlgeschlagen`),
+      errored: (variants: readonly string[]) =>
+        `Render-Fehler in ${variants.length === 1 ? 'Variante' : 'Varianten'} ${variants.join(', ')}`,
+      ago: (minutes: number) => `vor ${minutes} Min`,
+    },
     roundSelect: 'Runde',
     round: (number: number, title: string) => [`Runde ${number}`, title].filter(Boolean).join(' · '),
   },

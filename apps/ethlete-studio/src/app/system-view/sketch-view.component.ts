@@ -56,8 +56,10 @@ import { MergeComponent } from '../design-parts/merge/merge.component';
 import { MergeRow, MergeTarget, MergeUnchanged } from '../design-parts/merge/merge-sample';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import {
+  SketchAgentRun,
   SketchHold,
   SketchIdle,
+  SketchModel,
   SketchPin,
   SketchRow,
   SketchStatus,
@@ -110,6 +112,12 @@ const MEASURING_HEIGHT = 150;
 type Mode = 'sketches' | 'merge';
 
 const minutesSince = (at: number) => Math.max(0, Math.round((Date.now() - at) / 60_000));
+
+const sketchModelOf = (author: string): SketchModel => ({
+  short: author ? modelNameOf(author) : '',
+  id: author,
+  agent: senderOf('agent', author).agent ?? 'claude',
+});
 
 const FALLBACK_SIZE = { width: 1440, height: 900 };
 
@@ -179,6 +187,7 @@ export const liveShotsOf = ({
         [status]="sketchStatus()"
         [idle]="lastChange()"
         [hold]="held()"
+        [agent]="agentRun()"
         [drawn]="drawnVariant()"
         [rounds]="rounds()"
         [round]="shownRoundKey()"
@@ -701,7 +710,7 @@ export class SketchViewComponent {
 
     return {
       until: hold?.until ?? '',
-      by: { short: by ? modelNameOf(by) : '', id: by, agent: senderOf('agent', by).agent ?? 'claude' },
+      by: sketchModelOf(by),
       since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)),
     };
   });
@@ -715,6 +724,36 @@ export class SketchViewComponent {
   protected wholeScreens = signal<readonly string[]>([]);
 
   protected drawnVariant = computed(() => this.matrix().columns.find((column) => column.drawing)?.key ?? null);
+
+  protected agentRun = computed<SketchAgentRun | null>(() => {
+    const report = this.sketch().report;
+    const at = report ? Date.parse(report.updatedAt) : NaN;
+    const minutes = Number.isNaN(at) ? null : minutesSince(at);
+    const drawn = this.drawnVariant();
+    const labels = STUDIO_LABELS.sketches.agentRun;
+
+    if (report && drawn !== null)
+      return {
+        by: sketchModelOf(report.author ?? ''),
+        task: report.message,
+        step: STUDIO_LABELS.sketches.variant(report.variant ?? drawn),
+        since: minutes === null ? '' : STUDIO_LABELS.sketches.since(minutes),
+      };
+
+    const errored = this.erroredVariants();
+
+    if (errored.length === 0) return null;
+
+    const round = this.shownRounds().findIndex((entry) => entry.open);
+
+    return {
+      by: sketchModelOf(report?.author ?? this.newestAuthor() ?? ''),
+      task: labels.failed(round < 0 ? null : round + 1),
+      step: labels.errored(errored),
+      since: minutes === null ? '' : labels.ago(minutes),
+      failed: true,
+    };
+  });
 
   protected sketchStatus = computed<SketchStatus>(() => {
     if (this.drawnVariant() !== null) return 'drawing';
