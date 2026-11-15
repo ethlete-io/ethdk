@@ -77,7 +77,7 @@
     "components/textarea": "7ac4a67d54c0a797",
     "components/timeline": "f80aff4bf0d6c3b4",
     "components/title-bar": "0916d91303ac8516",
-    "components/title-search": "5ecaabf10ac93d2f",
+    "components/title-search": "3a16491e25a49944",
     "components/toolbar": "8963a8ba9a488f1b",
     "components/tooltip": "d8d78f8928e32679",
     "components/tree": "7826d5e508a8602c",
@@ -93,12 +93,12 @@
     "pages/inbox": "0e0fc08e618a94a0",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "0e69471347b333f1",
-    "pages/sketches": "15772959eb3b9896",
+    "pages/sketches": "fdeaab82ba846589",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "e760cc1304b9802cb848b3e1e9ff57ecdcf39f53",
+  "baselineTree": "be74ec9bb02ce2f4e0895f6acf825ab2b5d2d9ea",
   "sharedBase": {
     "components/title-bar/shared/chrome.ts": "13813d877f38804e"
   },
