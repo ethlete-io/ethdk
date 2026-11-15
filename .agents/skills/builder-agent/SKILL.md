@@ -36,9 +36,9 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 - Build in slices. When a slice starts, write an "in progress" note to the plan; it goes into the slice's commit.
 - Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
-- Lead subagents for scoped work, with a fresh subagent per slice and a `model` on each call.
+- Lead subagents for scoped work, a fresh one per slice.
 - One topic at a time: work the queue in order and start the next topic only when the current one
-  is committed. Do not run several topics in parallel. You coordinate, verify, push and report.
+  is committed. You coordinate, verify, push and report.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the
   "as built" note together; the commit that finishes a row also deletes it from `STATUS.md` and sets `built:` on its
   ADRs (ADR 0284). Fix format, lint and review findings before that commit, not after.
@@ -63,7 +63,6 @@ The German grill/docs session talks with the user and records decisions. Talk En
   before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
   nothing runs it in pre-push or CI (ADR 0226).
 - A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
-- Before a revert commit, run `yarn revert:check <sha>`.
 - Before an LSP bite, run `command -v typescript-language-server`. If it prints nothing, report the missing binary; a session restart does not help. The bite counts only when the deliberate type error shows as a diagnostic.
 - Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
   `cd` lands the commit on `next` in the main checkout. Put the same line in every bite brief.

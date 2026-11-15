@@ -494,6 +494,8 @@ As built (533, 2026-11-16): the Studio test setup fails a spec on a `console.war
 
 As built (535 close, 2026-11-16): already built in 0ca01c706, no code change. `yarn et:design --working-tree <command>` builds the working tree's `libs/cli` into its own scratch dist, and each timings line records `cli <sha>+dirty` (see the 535 as-built paragraph further down). Struck from the Werkzeug-Rückstand.
 
+As built (542, 2026-11-16): the subagent brief (`.agents/skills/builder-agent/subagent-brief.md`) now says: give a long run a deadline with the Bash tool's `timeout` parameter (max 600000 ms), never the shell `timeout`, which macOS lacks; merged into the existing wait line. Paid for by cutting a duplicate revert:check line and two redundant clauses from the builder-agent skill (net -7 words). The Mac gate timing of the finding is not measured again here.
+
 448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
 `generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
 ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
