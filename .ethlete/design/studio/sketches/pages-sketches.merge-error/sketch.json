@@ -136,18 +136,18 @@
     "b": "d3e38e079254be79",
     "c": "184fdb5bdeb74baf"
   },
-  "mergeHold": {
-    "reason": "variant a changes merge-error; variant b changes merge-error; variant c changes merge-error",
-    "at": "2026-11-14T17:45:28.880Z"
-  },
   "portAfterMerge": {
-    "merged": ["pages/sketches"],
-    "parts": ["pages/sketches"],
+    "merged": ["components/title-search"],
+    "parts": ["pages/sketches", "components/title-search"],
     "reasons": [
       "a: pages/sketches/sketches.ts - the variant and the product both changed it",
       "b: pages/sketches/sketches.ts - the variant and the product both changed it",
       "c: pages/sketches/sketches.ts - the variant and the product both changed it"
     ],
-    "at": "2026-11-14T19:58:52.684Z"
+    "at": "2026-11-15T19:22:30.185Z"
+  },
+  "mergeHold": {
+    "reason": "variant a changes merge-error; variant b changes merge-error; variant c changes merge-error",
+    "at": "2026-11-14T17:45:28.880Z"
   }
 }

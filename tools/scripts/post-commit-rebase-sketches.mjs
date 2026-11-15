@@ -2,13 +2,14 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { ensureCliCopy } from './studio-code.mjs';
+import { AREAS, ensureCliCopy, isDirty, workingTreeCliCopy } from './studio-code.mjs';
 
 const TIMEOUT_MS = 120_000;
 
 /**
  * Whether a commit with these `git diff-tree --name-status` lines changed a design part: a file under `.ethlete/design`
- * outside `sketches/`. A commit that deletes a `sketch.json` is a merge or a discard, which rebases the others itself.
+ * outside its product's `sketches/` folder. A commit that deletes a `sketch.json` is a merge or a discard, which
+ * rebases the others itself.
  */
 export const changesDesignParts = (lines) => {
   const changes = lines.map((line) => line.split('\t')).filter(([status, path]) => status && path);
@@ -16,8 +17,21 @@ export const changesDesignParts = (lines) => {
   return (
     !changes.some(
       ([status, path]) => status === 'D' && /^\.ethlete\/design\/.*\/sketches\/[^/]+\/sketch\.json$/u.test(path),
-    ) && changes.some(([, path]) => path.startsWith('.ethlete/design/') && !path.includes('/sketches/'))
+    ) &&
+    changes.some(
+      ([, path]) => path.startsWith('.ethlete/design/') && !/^\.ethlete\/design\/[^/]+\/sketches\//u.test(path),
+    )
   );
+};
+
+/** The CLI that runs the rebase: the head's CLI copy, else a build of a clean `libs/cli`; the caller removes `dir`. */
+export const rebaseCliOf = ({ copy, cliDirty, buildWorkingTree }) => {
+  if (copy) return { entry: copy.entry, dir: null };
+  if (cliDirty) return null;
+
+  const { entry, dir } = buildWorkingTree();
+
+  return { entry, dir };
 };
 
 const gitEnv = Object.fromEntries(Object.entries(process.env).filter(([name]) => name !== 'GIT_INDEX_FILE'));
@@ -69,7 +83,7 @@ const recordUncommitted = (root, { sketchDirs, uncommitted, commit }) => {
 
   for (const [productDir, dirs] of byProduct) {
     const file = resolve(root, productDir, REBASE_UNCOMMITTED_FILE);
-    let recorded = {};
+    let recorded;
 
     try {
       recorded = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
@@ -97,17 +111,28 @@ const main = () => {
 
   if (listed.status !== 0 || !changesDesignParts(listed.stdout.split('\n')) || midSequence(root)) return;
 
-  const entry =
-    process.env.ETHLETE_DESIGN_CLI_ENTRY ??
-    ensureCliCopy(root, { keepWhenDirty: false, log: () => undefined, build: null })?.entry ??
-    null;
+  const cli = process.env.ETHLETE_DESIGN_CLI_ENTRY
+    ? { entry: process.env.ETHLETE_DESIGN_CLI_ENTRY, dir: null }
+    : rebaseCliOf({
+        copy: ensureCliCopy(root, { keepWhenDirty: false, log: () => undefined, build: null }),
+        cliDirty: isDirty(root, AREAS.cli),
+        buildWorkingTree: () => workingTreeCliCopy(root, { id: `post-commit-${process.pid}`, log: () => undefined }),
+      });
 
-  if (entry === null) {
-    console.log('post-commit: no built design CLI for this head - run yarn et:design status to see stale sketches.');
+  if (cli === null) {
+    console.log('post-commit: libs/cli has uncommitted changes and no build of this head - run yarn et:design status.');
 
     return;
   }
 
+  try {
+    rebaseWith(root, cli.entry);
+  } finally {
+    if (cli.dir) rmSync(cli.dir, { recursive: true, force: true });
+  }
+};
+
+const rebaseWith = (root, entry) => {
   const head = git(root, ['rev-parse', '--short', 'HEAD']).stdout.trim() || 'HEAD';
   const dirtyBefore = dirtyPathsOf(root, ['.ethlete/design']);
   const run = spawnSync(process.execPath, [entry, 'design', 'sketch', 'rebase-open', '--commit', head, '--json'], {

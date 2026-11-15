@@ -3191,6 +3191,13 @@ during the check stays), never commits, and prints READY UNCOMMITTED per mark th
 commits the file (unchanged). The serve keeps its stamp cache. Specs: check-system-tracked (bite: no write, 2 red),
 stamp-files merge (bite: write onto the run's base, red). Live (scratch): check sets foundations/spacing, prints READY
 UNCOMMITTED, no commit; `design ready` commits it. Closes the 15.11. hand-edit-voids-cache finding for check marks.
+B501 stale-after-commit as built (2026-11-15): Cause (scratch probe at 21ae9e5f3): the post-commit hook's
+`changesDesignParts` skipped every path holding `/sketches/`, so a commit to pages/sketches never rebased. Cause (scratch
+probe at 5850cda5a): a commit that also changed libs/cli had no CLI copy yet, so the hook skipped; live, that copy appeared
+2 min after the commit. Fix: only `.ethlete/design/<product>/sketches/` is excluded, and without a copy the hook builds a
+clean libs/cli (about 5 s, `rebaseCliOf`). Verified: hook spec red before, scratch reruns of both commits rebase or mark and
+commit. Live: canvas-note rebased; merge-error, pending-fold re-marked `portAfterMerge` (sketches.ts conflict, hand port
+open). Not verified: the hook in a live commit.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle sockets; the design server closes them after 6 s, so under lag a request hits a dying socket. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every
