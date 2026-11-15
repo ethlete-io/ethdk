@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B499
+built: ab318dd13
 decided: 2026-11-12
 source: chat with the doc agent 2026-11-12 (morning), answers to the two open rules of ADR 0279
 ---

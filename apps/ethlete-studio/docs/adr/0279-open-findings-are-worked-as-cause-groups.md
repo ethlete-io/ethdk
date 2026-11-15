@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B499
+built: ab318dd13
 decided: 2026-11-12
 source: chat with the doc agent 2026-11-12 (morning); grouping by the analysis session claude2
 ---
