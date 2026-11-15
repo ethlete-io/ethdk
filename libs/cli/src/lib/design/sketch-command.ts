@@ -47,8 +47,8 @@ import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { editRefOf, humanPickOf, journaledMergeOf, mergeAndRecord } from './system/sketch/merge-step';
-import { openJournalOf } from './system/write-journal';
+import { editRefOf, humanPickOf, journaledMergeOf, MERGE_WAIT_MS, mergeAndRecord } from './system/sketch/merge-step';
+import { journaled, openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
@@ -92,6 +92,7 @@ import {
   runningRoundOf,
   sharedDirOf,
   Sketch,
+  SketchDecisionInput,
   sketchSourceOf,
   SketchVariantVerdict,
   SketchVerdictBy,
@@ -965,31 +966,57 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   if (!existsSync(resolve(sketch.dir, SKETCH_FILE)))
     return fail(`${sketch.target} is gone: another run merged or discarded it while this one checked it`);
 
-  const ready =
-    sketch.status === 'ready'
-      ? sketch
-      : markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
-
-  if (typeof ready === 'string') return fail(ready);
-
-  return timedPhase('auto-merge', () =>
-    autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready', changes }),
-  );
+  return timedPhase('auto-merge', () => autoMerged({ context, product, sketch, changes }));
 };
 
 const targetsInProduct = ({ product, sketch }: { product: ResolvedProduct; sketch: Sketch }) =>
   sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key));
 
-const stillReady = (options: { sketch: Sketch; again: boolean; reason: string }) => {
-  writeSketchFile(
-    { ...options.sketch, mergeHold: { reason: options.reason, at: new Date().toISOString() } },
-    { base: options.sketch },
+/**
+ * Marks `sketch` ready (a ready one stays as it is) and, with `hold`, records why it waits for the user's merge, as one
+ * journaled step: a kill leaves `sketch.json` as it was or as it ends.
+ */
+export const journaledReadyOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  author?: string;
+  hold?: string;
+}): Sketch | string => {
+  const { target, product, sketch, author, hold } = options;
+
+  return journaled(
+    { productDir: product.dir, root: target, label: `ready of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
+    () => {
+      const ready = sketch.status === 'ready' ? sketch : markSketchReady({ checkout: target, sketch, author });
+
+      if (typeof ready === 'string' || hold === undefined) return ready;
+
+      const held: Sketch = { ...ready, mergeHold: { reason: hold, at: new Date().toISOString() } };
+
+      writeSketchFile(held, { base: ready });
+
+      return held;
+    },
   );
-
-  if (options.again) console.log(`${options.sketch.target} is still ready`);
-
-  return 0;
 };
+
+/** Records the designer's pick on `sketch` as one journaled step (see `decideSketch`). */
+export const journaledPickOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  decision: SketchDecisionInput;
+}): Sketch | string =>
+  journaled(
+    {
+      productDir: options.product.dir,
+      root: options.target,
+      label: `pick of ${options.sketch.target}`,
+      waitMs: MERGE_WAIT_MS,
+    },
+    () => decideSketch({ sketch: options.sketch, decision: options.decision }),
+  );
 
 const gitIn = (target: string, ...args: string[]) => spawnPlain(['git', ...args], { cwd: target });
 
@@ -1045,11 +1072,22 @@ const autoMerged = (options: {
   context: Context;
   product: ResolvedProduct;
   sketch: Sketch;
-  again: boolean;
   changes: VariantChange[] | string | null;
 }) => {
-  const { context, product, sketch, again, changes } = options;
+  const { context, product, changes } = options;
+  const again = options.sketch.status === 'ready';
+  const author = authorOf(context.args) ?? undefined;
+  const noChange =
+    changes === null ? 'new part, the user merges' : typeof changes === 'string' ? changes : noChangeOf(changes);
+  const sketch = journaledReadyOf({
+    target: context.target,
+    product,
+    sketch: options.sketch,
+    author,
+    ...(noChange === true ? {} : { hold: noChange }),
+  });
 
+  if (typeof sketch === 'string') return fail(sketch);
   if (!again) console.log(`${sketch.target} is ready`);
 
   for (const variant of sketch.variants.filter((candidate) => !rejectionOf(sketch, candidate))) {
@@ -1058,22 +1096,15 @@ const autoMerged = (options: {
     if (shared.length > 0) console.log(`variant ${variant}: a shared/ edit reaches ${shared.join(', ')}`);
   }
 
-  const noChange =
-    changes === null ? 'new part, the user merges' : typeof changes === 'string' ? changes : noChangeOf(changes);
-
   if (noChange !== true) {
     console.log(`auto-merge skipped: ${noChange}`);
 
-    return stillReady({ sketch, again, reason: noChange });
+    if (again) console.log(`${sketch.target} is still ready`);
+
+    return 0;
   }
 
-  return mergedUnchanged({
-    target: context.target,
-    config: context.config,
-    author: authorOf(context.args) ?? undefined,
-    product,
-    sketch,
-  });
+  return mergedUnchanged({ target: context.target, config: context.config, author, product, sketch });
 };
 
 export const mergedUnchanged = (options: {
@@ -1939,7 +1970,9 @@ const picked = (context: Context) =>
       );
     if (hasPersonName(words)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
 
-    const decided = decideSketch({
+    const decided = journaledPickOf({
+      target: context.target,
+      product,
       sketch,
       decision: { kind: 'pick', variant, comment: words, ...originOf('designer') },
     });

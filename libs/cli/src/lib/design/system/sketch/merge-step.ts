@@ -13,7 +13,7 @@ import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch, writeSketchFile } from './sketch';
 
-const MERGE_WAIT_MS = 300_000;
+export const MERGE_WAIT_MS = 300_000;
 
 export type DesignStep = { line: string; run: () => Promise<number> };
 

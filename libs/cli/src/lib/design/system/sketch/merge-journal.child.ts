@@ -1,6 +1,7 @@
 import { readConfig } from '../../design-config';
-import { mergedUnchanged } from '../../sketch-command';
+import { journaledPickOf, journaledReadyOf, mergedUnchanged } from '../../sketch-command';
 import { resolveProduct } from '../resolve-product';
+import { originOf } from '../write-origin';
 import { discardSketch } from './merge';
 import { mergeAndRecord } from './merge-step';
 import { journaledRebaseOf } from './rebase-port';
@@ -33,6 +34,35 @@ const run = () => {
 
   if (action === 'auto') {
     mergedUnchanged({ target, config, author: 'claude-opus-5-5', product, sketch });
+
+    return;
+  }
+
+  if (action === 'ready') {
+    const ready = journaledReadyOf({
+      target,
+      product,
+      sketch,
+      author: 'claude-opus-5-5',
+      hold: 'new part, the user merges',
+    });
+
+    console.log(
+      typeof ready === 'string' ? `refused ${ready}` : `${sketch.status === 'ready' ? 'still ' : ''}ready ${part}`,
+    );
+
+    return;
+  }
+
+  if (action === 'pick') {
+    const picked = journaledPickOf({
+      target,
+      product,
+      sketch,
+      decision: { kind: 'pick', variant: 'b', comment: 'Calmer.', ...originOf('designer') },
+    });
+
+    console.log(typeof picked === 'string' ? `refused ${picked}` : `picked ${part}`);
 
     return;
   }

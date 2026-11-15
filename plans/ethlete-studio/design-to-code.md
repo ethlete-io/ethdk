@@ -3171,6 +3171,17 @@ Recheck of the CI red on 48a0f259a (run 43540261307, 2026-11-14): the same Cause
 overlap locally (6/7 green with `--hold-listings 14000 --load 8`, the red one from a dist rebuild mid-run). With merge 1
 held 45 s: 9ec027eb2 waits 15 s and goes green, a throw at once goes red with the CI alert. No new change. CI run
 43541995496 on dd806e482: Studio e2e 7/7 green.
+B501 ready/pick journal as built (2026-11-15): Cause (bite): `sketch ready` and `sketch pick` each write `sketch.json`
+once, atomically, outside the journal; a kill between the temp file and its rename left a dead writer's
+`.sketch.json.<pid>.<n>.tmp` in the sketch folder (both bites, step 1), and a ready that holds its merge wrote the ready
+mark and the `mergeHold` as two writes. Built: `journaledReadyOf` writes the ready mark and the hold as one journaled
+step, `journaledPickOf` the CLI pick; both wait for another open journal of the product like a merge (5 min). The
+no-visible-change merge runs after the ready journal closes, in its own. P3 cases "ready" and "pick" in
+merge-journal.spec (bite: unjournaled, step 1 leaves the temp file). Verified: merge-journal.spec, vitest related,
+cli typecheck and lint, spec:stress 4/4 (merge-journal, sketch-command). Not verified: a live `sketch ready`. Open: the Studio pick (`POST
+/__design/sketch-decision`) stays unjournaled: Suspect: on the serve main thread a journal wait blocks the event loop
+for as long as a merge worker holds the product's journal (the e2e "pick new" case); it needs an async wait or the
+worker. Studio has no sketch-ready endpoint; `design ready` writes one tracked `ready.json` under the lock.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a

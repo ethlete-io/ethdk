@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { cpSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join, relative, resolve } from 'path';
+import { basename, join, relative, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
@@ -42,6 +42,27 @@ const readyCase = () => {
       variants: ['a'],
     }) as Sketch,
   });
+
+  return target;
+};
+
+const inProgressCase = () => {
+  const target = checkoutCase();
+
+  createSketch({ product: productOf(target), sketch: { layer: 'elements', name: 'hero' }, variants: ['a', 'b'] });
+
+  return target;
+};
+
+const unpickedCase = () => {
+  const target = inProgressCase();
+  const sketch = findSketch({
+    productDir: productOf(target).dir,
+    product: 'acme',
+    sketch: { layer: 'elements', name: 'hero' },
+  }) as Sketch;
+
+  markSketchReady({ checkout: target, sketch });
 
   return target;
 };
@@ -99,12 +120,24 @@ const filesOf = (dir: string, root: string): string[] =>
     return statSync(path).isDirectory() ? filesOf(path, root) : [rel];
   });
 
+const textOf = (file: string) => {
+  const text = readFileSync(file, 'utf8');
+
+  if (basename(file) !== 'sketch.json') return text;
+
+  const fields = JSON.parse(text) as Record<string, unknown>;
+
+  return JSON.stringify(Object.fromEntries(Object.entries(fields).sort(([a], [b]) => a.localeCompare(b))), null, 2);
+};
+
 const stateOf = (target: string) => {
   const git = (...args: string[]) => gitResult(target, ...args).stdout.trim();
   const files = filesOf(target, target)
     .map(
       (file) =>
-        `${file.replace(/\d{8}T\d{6}Z-[\da-f]+\.json$/u, 'id.json')}\n${readFileSync(join(target, file), 'utf8').replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/gu, 'T')}`,
+        `${file.replace(/\d{8}T\d{6}Z-[\da-f]+\.json$/u, 'id.json')}\n${textOf(join(target, file))
+          .replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/gu, 'T')
+          .replace(/"cmd": "[^"]*cli-merge-journal-[^"]*",\s*"pid": \d+/gu, 'child')}`,
     )
     .sort();
 
@@ -169,7 +202,7 @@ const killEveryWrite = async (options: {
 
     expect(rerun.out, `step ${step} re-run`).toContain(isOld ? done : gone);
     expect(stateOf(target), `step ${step} after the re-run`).toEqual(fresh);
-    expect(recover(target) === null).toBe(action !== 'rebase');
+    expect(recover(target) === null).toBe(!['rebase', 'ready', 'pick'].includes(action));
     outcomes.push(`${step}:${isOld ? 'old' : 'new'}`);
   };
 
@@ -202,6 +235,24 @@ describe('a merge killed at any write leaves the old or the new state', { timeou
       gone: `no sketch ${PART}`,
       minSteps: 3,
       caseOf: readyCase,
+    }));
+
+  it('a ready is undone or finished by the next process, and a re-run marks it ready', () =>
+    killEveryWrite({
+      action: 'ready',
+      done: `ready ${PART}`,
+      gone: `still ready ${PART}`,
+      minSteps: 3,
+      caseOf: inProgressCase,
+    }));
+
+  it('a pick is undone or finished by the next process, and a re-run picks', () =>
+    killEveryWrite({
+      action: 'pick',
+      done: `picked ${PART}`,
+      gone: `picked ${PART}`,
+      minSteps: 1,
+      caseOf: unpickedCase,
     }));
 
   it('a discard is undone by the next process, and a re-run discards or reports the sketch gone', () =>
