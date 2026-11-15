@@ -3054,6 +3054,12 @@ peak above the limit waits for the load to drop (`waiting to rerun <step>`) and 
 and the first peak. The inner run gets `--max-load` from the outer one. The e2e step of the finding left push:suite
 (ADR 0286), so the rerun covers lint, typecheck and tools. Verified: push-suite.spec (3 new cases, red with the rerun
 removed), spec:stress 4/4. Not verified: a real push whose step fails under load.
+762 as built (2026-11-15): the smoke script of the host (console_log.rs) adds the text of a `[role="alert"]` element
+to its waiting line, so a stopped design server shows as `alert: Design-Server gestoppt <server log>`. The stale-CLI
+half is not built: Suspect (code read): the host no longer runs `dist/libs/cli` but the commit-keyed copy of
+`studio-code.mjs cli-copy` (ensureCliCopy builds it when dist does not match), so a stale dist cannot reach the bundle.
+Not named: the "unanswered" state (no role). Verified: cargo test console_log, the generated script in Chromium against
+an alert page prints the line. Not verified: a real macOS smoke run.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle sockets; the design server closes them after 6 s, so under lag a request hits a dying socket. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every

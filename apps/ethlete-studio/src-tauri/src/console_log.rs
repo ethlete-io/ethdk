@@ -152,7 +152,8 @@ fn smoke_script(view: &str) -> String {
       [...frames].filter((frame) => frame.hasAttribute('data-painted')).length +
       [...pictures].filter((picture) => picture.complete && picture.naturalWidth > 0).length;
     if (!painted) {{
-      const now = `${{location.pathname}} sketch view ${{view ? 'shown' : 'missing'}}, ${{frames.length}} live frames, ${{pictures.length}} pictures`;
+      const alert = document.querySelector('[role="alert"]')?.innerText.replace(/\s+/g, ' ').trim();
+      const now = `${{location.pathname}} sketch view ${{view ? 'shown' : 'missing'}}, ${{frames.length}} live frames, ${{pictures.length}} pictures${{alert ? `, alert: ${{alert.slice(0, 300)}}` : ''}}`;
       if (now !== waiting) console.error(`{SMOKE_MARKER} waiting: ${{now}}`);
       waiting = now;
       if (Date.now() > deadline) {{
@@ -191,6 +192,11 @@ mod tests {
         let script = smoke_script(r#"{"checkout":"/a'b"}"#);
 
         assert!(script.contains(r#""{\"checkout\":\"/a'b\"}""#));
+    }
+
+    #[test]
+    fn the_smoke_waiting_line_carries_the_alert_text() {
+        assert!(smoke_script("{}").contains(r#"document.querySelector('[role="alert"]')"#));
     }
 
     #[test]
