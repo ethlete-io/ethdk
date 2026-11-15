@@ -482,6 +482,7 @@ sketch` zeigen ihn (Befund 180).
 
 ## E. Fragen und Entwürfe für Tom
 
+- **D21** Label-ID doppelt (fifa, next.85, 15.11.): cdk `label.component.ts:39` und components `label.directive.ts:31` zählen je eigen `et-label-N`; mit beiden auf einer Seite bekommt das Legacy-Suchfeld den falschen Namen. Cause: zwei Zähler, ein Präfix. Fix: ein gemeinsamer Zähler (core) oder eigenes Präfix in cdk; fifa-e2e-Umweg danach entfernen.
 - **E3** Logo-Knopf: Radius bei Hover und Active (Befund 107).
 - **E4** Schnellwahl: welche zwei Buchstaben, woher kommt das Logo?
 - **E6** Entwürfe vor der Rückkehr: Chat, Notizen, Menü-Einträge, Server-Status, Scan, Update-Hinweis, „Ausnahmen N“,
