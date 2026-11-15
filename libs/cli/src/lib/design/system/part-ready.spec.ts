@@ -581,6 +581,42 @@ describe('a ready mark commits its own ready.json', () => {
     ]);
   });
 
+  it('commits a ready.json entry a check dropped, and drops and commits the entry of a removed part', async () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const at = '2026-10-01T09:00:00.000Z';
+    const refuse = (part: string) =>
+      markPartReady({
+        product: productOf(target),
+        origin: originOf('spec'),
+        part,
+        hash: 'stale',
+        pointsOf: async () => [],
+        actionsOf: async () => [],
+        commitIn: target,
+      });
+
+    writeFileSync(
+      file,
+      JSON.stringify({ 'components/tag': { hash: 'h', at }, 'components/gone': { actions: ['emit:x'], at } }),
+    );
+    initGitRepo(target, 'base');
+    writeFileSync(file, JSON.stringify({ 'components/gone': { actions: ['emit:x'], at } }));
+    writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip { dirty = 1; }\n');
+
+    expect(await refuse('components/tag')).toMatchObject({ status: 409 });
+    expect(gitResult(target, 'log', '-1', '--format=%s').stdout.trim()).toBe(
+      'chore(repo): Drop the ready record of components/tag in app-a',
+    );
+
+    expect(await refuse('components/gone')).toMatchObject({ status: 404 });
+    expect(gitResult(target, 'log', '-1', '--format=%s').stdout.trim()).toBe(
+      'chore(repo): Drop the ready record of components/gone in app-a',
+    );
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({});
+    expect(gitResult(target, 'status', '--porcelain').stdout.trim()).toBe('M libs/chip.component.ts');
+  });
+
   it('keeps the mark and warns when the checkout is no git repository', async () => {
     const { target, dir } = checkout();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);

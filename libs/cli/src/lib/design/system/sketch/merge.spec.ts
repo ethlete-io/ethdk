@@ -168,6 +168,30 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['elements/hero']);
   });
 
+  it('drops from the recorded actions of a merged part the keys its merged files no longer name', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = join(target, DESIGN_DIR, 'acme', 'ready.json');
+    const at = '2026-10-01T09:00:00.000Z';
+
+    writeFileSync(
+      ready,
+      JSON.stringify({
+        'elements/hero': { hash: 'h', at, actions: ['acme-hero', 'emit:gone'] },
+        'components/button': { actions: ['emit:gone'], at },
+      }),
+    );
+
+    const found = readySketch(target);
+
+    expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
+    expect(JSON.parse(readFileSync(ready, 'utf8'))).toEqual({
+      'elements/hero': { hash: 'h', at, actions: ['acme-hero'] },
+      'components/button': { actions: ['emit:gone'], at },
+    });
+  });
+
   it('records the pick, who decided it and when, next to the hash, after the sketch is gone', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

@@ -3198,6 +3198,8 @@ probe at 5850cda5a): a commit that also changed libs/cli had no CLI copy yet, so
 clean libs/cli (about 5 s, `rebaseCliOf`). Verified: hook spec red before, scratch reruns of both commits rebase or mark and
 commit. Live: canvas-note rebased; merge-error, pending-fold re-marked `portAfterMerge` (sketches.ts conflict, hand port
 open). Not verified: the hook in a live commit.
+B501 ready removals as built: check drops removed parts' entries, a merge drops keys its files no longer name,
+refused `design ready` commits a dropped entry (3 red-first specs). Live: shell-project-switch cleared.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle sockets; the design server closes them after 6 s, so under lag a request hits a dying socket. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every

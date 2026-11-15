@@ -2,7 +2,14 @@ import { Blocker, blockerKindOfRule, BuildReady, SlowProblemsOf } from './build-
 import { NoVerdict } from './no-verdict';
 import { actionsRerunReasonOf, embeddedPartsOf } from './embedded-actions';
 import { OpenPoint, openPointGroupsOf } from './open-points';
-import { actionsRerunOf, dropPartRecord, readyMarkOf, readyPartOf, writePartRecord } from './part-ready';
+import {
+  actionsRerunOf,
+  dropPartRecord,
+  dropRemovedPartEntries,
+  readyMarkOf,
+  readyPartOf,
+  writePartRecord,
+} from './part-ready';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { slowProblemsOf } from './slow-checks';
@@ -134,6 +141,8 @@ export const recordBuildReady = async (options: {
     return resolved ? embeddedPartsOf({ product, part: resolved }).length : 0;
   };
   const readyOf = (part: string) => results.get(part)?.ready ?? isPartReady({ product, part, inputs });
+
+  dropRemovedPartEntries(product);
 
   for (const part of [...options.parts].sort((a, b) => embeddedCountOf(a) - embeddedCountOf(b))) {
     const target = { product, part, inputs };

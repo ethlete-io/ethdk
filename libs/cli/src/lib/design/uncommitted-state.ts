@@ -36,15 +36,18 @@ const readyLinesOf = (product: ResolvedProduct) => {
   const head = entriesOf(gitIn(product.dir, ['show', `HEAD:./${READY_FILE}`]));
   const prefix = (part: string, what: string) => `READY UNCOMMITTED ${product.name} ${part}: ${what}`;
   const line = (part: string, what: string) => `${prefix(part, what)} - run \`design ready ${part}\` to commit it`;
+  const removal = (part: string, what: string) =>
+    `${prefix(part, what)} - run \`design ready ${part}\` to commit the removal`;
 
   return [...new Set([...Object.keys(head), ...Object.keys(now)])].sort().flatMap((part) => {
     const [before, after] = [head[part], now[part]];
 
     if (isMark(after) && !isMark(before)) return [line(part, 'marked ready, HEAD has no mark')];
-    if (!isMark(after) && isMark(before))
-      return [`${prefix(part, 'the mark HEAD holds is gone')} - commit ${READY_FILE} or the mark comes back`];
+    if (!isMark(after) && isMark(before)) return [removal(part, 'the mark HEAD holds is gone')];
     if (isMark(after) && JSON.stringify(after) !== JSON.stringify(before))
       return [line(part, 'the mark differs from HEAD')];
+    if (before !== undefined && JSON.stringify(after) !== JSON.stringify(before))
+      return [removal(part, 'the action baseline HEAD holds changed')];
 
     return [];
   });

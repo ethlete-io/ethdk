@@ -13,7 +13,7 @@ import {
   productActionsOf,
 } from './action-lost';
 import { recordBuildReady } from './part-build-ready';
-import { PartReady, readyMarkOf } from './part-ready';
+import { PartReady, readReadyEntries, readyMarkOf } from './part-ready';
 import { resolveProduct } from './resolve-product';
 
 const record = (actions?: string[]): PartReady => ({
@@ -163,6 +163,25 @@ describe('ACTION-LOST', () => {
     await check(shrunk);
     expect((await lostOf(shrunk)).map((problem) => problem.at)).toEqual([`${part} b`]);
     expect(readyMarkOf({ product, part })).toBeNull();
+  });
+
+  it('drops the record and the action baseline of a part the product no longer has on the next check', async () => {
+    const { product } = checkout({
+      'components/chip': record(),
+      'components/gone': record(['emit:dismiss']),
+      'components/left': { actions: ['emit:close'], at: '2026-10-01T09:00:00.000Z' } as PartReady,
+    });
+
+    await recordBuildReady({
+      product,
+      by: 'spec',
+      cmd: 'check',
+      parts: ['pages/home'],
+      inputs: { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] },
+    });
+
+    expect(Object.keys(readReadyEntries(product.dir))).toEqual(['components/chip']);
+    expect(actionLostOf({ product, declared: new Set(), invocation: 'et design' })).toEqual([]);
   });
 
   it('reads no part when no check record holds actions', async () => {

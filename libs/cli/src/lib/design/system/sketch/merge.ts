@@ -19,6 +19,7 @@ import { addressSketchComments, resolveSketchEndComments } from '../comments/com
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
 import { isBuiltInBase } from '../base';
+import { forgetUnnamedActions } from '../part-ready';
 import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../resolve-product';
 import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf, partHashHolds } from './baseline';
@@ -556,6 +557,8 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
         recordMerged({ product: { dir: product.base.dir, base: null }, parts: baseKeys, decision });
         forgetMerged({ productDir: product.dir, parts: removedKeys });
       }
+
+      forgetUnnamedActions({ product, parts: checked.mergedParts });
 
       const alsoChanged = rerecordChangedMerged({ product, before: untouched });
 

@@ -1,4 +1,6 @@
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { gitStatusOf } from '../git-reader';
 import { DesignConfig } from '../design-config';
 import { Blocker } from './build-ready-contract';
 import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
@@ -7,6 +9,7 @@ import { actionsRerunReasonOf, changedEmbeddedOf, EmbeddedHashes, embeddedHashes
 import { partOwnerOf } from './inventory-approval';
 import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
+import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { withProductLock } from './product-lock';
 import { commitOwnFilesSync } from './sketch/merge-commit';
@@ -254,6 +257,102 @@ const dropRecordIn = (dir: string, part: string) => {
 };
 
 /**
+ * Drops each entry of the product's own ready.json, check record or action baseline, whose part the product no longer
+ * has; answers the dropped part keys.
+ */
+export const dropRemovedPartEntries = (product: ResolvedProduct): string[] => {
+  if (product.parts.length === 0) return [];
+
+  const keys = new Set(product.parts.map(partKeyOf));
+
+  return withProductLock(product.dir, () => {
+    const existing = readReadyEntries(product.dir);
+    const removed = Object.keys(existing).filter((part) => !keys.has(part));
+
+    if (removed.length > 0)
+      writeReady(product.dir, Object.fromEntries(Object.entries(existing).filter(([part]) => keys.has(part))));
+
+    return removed;
+  });
+};
+
+/**
+ * Drops from the recorded actions of each of `parts` the keys none of its design files names any more, as the merge
+ * that removed them confirms; an action baseline left without keys goes.
+ */
+export const forgetUnnamedActions = (options: { product: ResolvedProduct; parts: string[] }) => {
+  for (const part of options.parts) {
+    const found = readyPartOf({ product: options.product, part });
+
+    if (typeof found === 'string') continue;
+
+    withProductLock(found.dir, () => {
+      const existing = readReadyEntries(found.dir);
+      const entry = existing[part];
+
+      if (!entry?.actions?.length) return;
+
+      const root = repoRootOf(options.product);
+      const text = Object.keys(found.design.files)
+        .map((file) => readFileSync(resolve(root, file), 'utf8'))
+        .join('\n');
+      const actions = entry.actions.filter((key) => text.includes(key));
+
+      if (actions.length === entry.actions.length) return;
+
+      const rest = Object.fromEntries(Object.entries(existing).filter(([key]) => key !== part));
+
+      writeReady(found.dir, isReady(entry) || actions.length > 0 ? { ...rest, [part]: { ...entry, actions } } : rest);
+    });
+  }
+};
+
+const headEntryOf = (dir: string, part: string): unknown => {
+  const shown = gitStatusOf(['show', `HEAD:./${READY_FILE}`], { cwd: dir, stdio: 'pipe' });
+
+  if (shown.status !== 0) return undefined;
+
+  try {
+    const parsed: unknown = JSON.parse(shown.stdout);
+
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>)[part] : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const commitDroppedEntry = (options: { target: string; product: ResolvedProduct; part: string }) => {
+  const { product, part } = options;
+  const found = readyPartOf({ product, part });
+  const dir = typeof found === 'string' ? product.dir : found.dir;
+
+  if (typeof found === 'string' && product.parts.length > 0)
+    withProductLock(dir, () => {
+      const existing = readReadyEntries(dir);
+
+      if (part in existing)
+        writeReady(dir, Object.fromEntries(Object.entries(existing).filter(([key]) => key !== part)));
+    });
+
+  const head = headEntryOf(dir, part);
+  const now = readReadyEntries(dir)[part];
+
+  if (head === undefined || isReady(now) || JSON.stringify(head) === JSON.stringify(now)) return;
+
+  const refused = withProductLock(dir, () =>
+    commitOwnFilesSync({
+      target: options.target,
+      files: [readyFileOf(dir)],
+      slug: `ready-drop-${part}`,
+      subject: `chore(repo): Drop the ready record of ${part} in ${product.name}`,
+    }),
+  );
+
+  if (refused !== null)
+    console.warn(`READY UNCOMMITTED ${part}: the record is dropped, but the commit failed: ${refused}`);
+};
+
+/**
  * Checks a part at `hash` and writes its check record, or answers why not: 400 without `hash` or without an
  * `origin` that names its actor, 404 for an unknown
  * part, 409 when the part changed since `hash`, 422 while `pointsOf` lists any open point, `blockersOf` any other
@@ -261,9 +360,19 @@ const dropRecordIn = (dir: string, part: string) => {
  * changed since the last record. `pointsOf` runs only after the hash holds, `blockersOf` only after the open-point list
  * is empty, `actionsOf` only after the blocker list is. The record holds the keys `declaredActionsOf` answers; when it
  * answers why it could not read them, the record keeps the ones it held. With `commitIn`, it commits the ready.json
- * alone in that checkout and only warns when git refuses.
+ * alone in that checkout and only warns when git refuses; on a refusal it commits the part's entry when it is no record
+ * and differs from HEAD, after dropping it for a part the product no longer has.
  */
-export const markPartReady = async (options: {
+export const markPartReady = async (options: MarkOptions): Promise<PartReady | ReadyRefusal> => {
+  const marked = await markOf(options);
+
+  if ('status' in marked && options.commitIn && hasActor(options.origin))
+    commitDroppedEntry({ target: options.commitIn, product: options.product, part: options.part });
+
+  return marked;
+};
+
+type MarkOptions = {
   product: ResolvedProduct;
   part: string;
   hash: unknown;
@@ -275,7 +384,9 @@ export const markPartReady = async (options: {
   actionsNote?: string;
   at?: string;
   commitIn?: string;
-}): Promise<PartReady | ReadyRefusal> => {
+};
+
+const markOf = async (options: MarkOptions): Promise<PartReady | ReadyRefusal> => {
   const { product, part, hash } = options;
 
   if (!hasActor(options.origin)) return { status: 400, error: 'a ready mark needs the actor that writes it (by)' };
