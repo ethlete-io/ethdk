@@ -34,7 +34,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 1. Nacht 13.11. (ADR 0291): Abendliste gebaut bis auf den A8-Rest, der auf Toms Merge wartet (A2, A17, A23, A7, A36, A15, A26 wie gebaut in design-to-code.md); A30 und A4 fertig; danach B499, B500 (abgeschlossen). `rack` bleibt aus.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet):
-Bef. 497 (voller Check ohne Push-Bereich), 500 (restliche Fit-Punkte), 533 (Studio-Specs scheitern nicht an NG0), 535 (Arbeitsbaum-Build für et:design), 542 (Shell-Timeout im Briefing), 543 (Port-Aufgabe und --all-Drift), Rest von Punkt 0 (ADR 0238: verzögerte Bilder in
+Bef. 500 (restliche Fit-Punkte), 533 (Studio-Specs scheitern nicht an NG0), 535 (Arbeitsbaum-Build für et:design), 542 (Shell-Timeout im Briefing), 543 (Port-Aufgabe und --all-Drift), Rest von Punkt 0 (ADR 0238: verzögerte Bilder in
 der Wiederholungs-Prüfung, ruhige Messung gegen 90 s, Prüf-Cache auf der Festplatte).
 
 **Umbau-Gruppen (12.11., ADR 0279):** Offene Befunde laufen als Ursachen-Gruppen B498-B504, in dieser Reihenfolge, B506 (Schriften), dann B498 (ADR 0283); der Builder nimmt die älteste offene Gruppe, keinen Einzelbefund, aber nur, wenn Abendliste und zweite Liste des Menschen leer sind (ADR 0285). Maschinerie-Befunde (92) ruhen als Ganzes, außer bei rotem CI.
