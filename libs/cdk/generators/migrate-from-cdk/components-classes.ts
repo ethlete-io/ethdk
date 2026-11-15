@@ -311,6 +311,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-dropzone-crop-rect',
   'et-dropzone-crop-shade',
   'et-dropzone-crop-stage',
+  'et-dropzone-crop-step',
   'et-dropzone-crop-viewport',
   'et-dropzone-empty',
   'et-dropzone-entry-error',
