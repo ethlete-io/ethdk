@@ -121,9 +121,16 @@ jobs:
       - name: Create a symlinked temp directory
         run: mkdir -p "$RUNNER_TEMP/real-tmp" && ln -s "$RUNNER_TEMP/real-tmp" "$RUNNER_TEMP/link-tmp"
 
-      - run: yarn nx run-many -t test
+      - run: set -o pipefail; yarn nx run-many -t test 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
         env:
           TMPDIR: ${{ runner.temp }}/link-tmp
+
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unit-tests-log
+          path: ${{ runner.temp }}/unit-tests.log
+          retention-days: 7
 
       - run: yarn test:e2e-helpers
 
@@ -338,12 +345,19 @@ jobs:
         run: yarn nx run cli:test-dist
         timeout-minutes: 5
 
-      - run: yarn studio:e2e
+      - run: set -o pipefail; yarn studio:e2e 2>&1 | tee "$RUNNER_TEMP/studio-e2e.log"
         timeout-minutes: 40
         env:
           STUDIO_E2E_WORKERS: 2
           STUDIO_E2E_BUDGET_ENFORCE: 1
           STUDIO_E2E_SHARD: ${{ matrix.shard }}/7
+
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: studio-e2e-log-${{ matrix.shard }}
+          path: ${{ runner.temp }}/studio-e2e.log
+          retention-days: 7
 
   rust:
     name: Rust host
