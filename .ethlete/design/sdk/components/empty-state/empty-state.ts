@@ -34,7 +34,7 @@ const render = ({ form, action }: Props) => emptyState({ ...COPY[form], actionAt
 
 export default definePart({
   note: 'Decided rules only',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     default: { form: 'default' },
     'without-action': { form: 'without-action' },

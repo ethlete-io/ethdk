@@ -13,3 +13,27 @@
     --et-button-shadow: inset 0 0 0 1px var(--et-theme-color-ink-solid);
   }
 }
+
+@layer components {
+  .et-empty-state:has(> .et-icon) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 1.6rem;
+    row-gap: var(--et-empty-state-gap);
+    align-items: start;
+    justify-items: start;
+    text-align: start;
+    margin-inline: 0;
+    max-inline-size: none;
+
+    > .et-icon {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      align-self: start;
+    }
+
+    > :not(.et-icon) {
+      grid-column: 2;
+    }
+  }
+}

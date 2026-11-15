@@ -1,6 +1,12 @@
 {
   "components/accent-on-light": "6a914711035c5ff4",
   "components/accordion": "e8aee655bae00a4e",
+  "components/action-sheet": {
+    "hash": "30bd361548536122",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-15T21:49:47.204Z"
+  },
   "components/anchored-dialog": "1e60e9f9e74b4c91",
   "components/avatar": "1252da777499aba9",
   "components/badge": "c5987a95f8f0899c",
@@ -34,7 +40,12 @@
   "components/description-list": "7c0740660a1ef350",
   "components/dialog": "fae8a8006ea0d4d3",
   "components/divider": "bae2ad95922465b0",
-  "components/empty-state": "82096f95c2172edb",
+  "components/empty-state": {
+    "hash": "982c15bcb5012ed8",
+    "variant": "a",
+    "decidedBy": "user",
+    "at": "2026-11-15T21:49:56.946Z"
+  },
   "components/floating-action": "10a89705a6724bc2",
   "components/form-field": "67a4ce1d7b5efd52",
   "components/grid": "58b5adc87403095e",
