@@ -149,7 +149,8 @@ const stateOf = (target: string) => {
       (file) =>
         `${file.replace(/\d{8}T\d{6}Z-[\da-f]+\.json$/u, 'id.json')}\n${textOf(join(target, file))
           .replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/gu, 'T')
-          .replace(/"cmd": "[^"]*cli-merge-journal-[^"]*",\s*"pid": \d+/gu, 'child')}`,
+          .replace(/"cmd": "[^"]*cli-merge-journal-[^"]*",\s*"pid": \d+/gu, 'child')
+          .replace(/"createdBy": \{[^}]*\}/gu, '"createdBy": {}')}`,
     )
     .sort();
 

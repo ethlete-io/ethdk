@@ -71,6 +71,27 @@ describe('parseTarget', () => {
 });
 
 describe('createSketch', () => {
+  it('records the command that created the sketch in sketch.json', () => {
+    const target = acme();
+    const argv = process.argv;
+
+    process.argv = ['node', 'et', 'design', 'sketch', 'open', 'pages/start', '--variants', 'a'];
+
+    const created = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'pages', name: 'start' },
+      variants: ['a'],
+    });
+
+    process.argv = argv;
+    if (typeof created === 'string') throw new Error(created);
+
+    const file = JSON.parse(readFileSync(join(created.dir, 'sketch.json'), 'utf8'));
+
+    expect(file.createdBy.cmd).toBe('design sketch open pages/start --variants a');
+    expect(created.createdBy?.cmd).toBe(file.createdBy.cmd);
+  });
+
   it('scaffolds a new page with madeBy and the product widths, and no tokens import or stylesheet, since the frame loads the tokens', () => {
     const target = acme();
     const parsed = parseTarget('pages/start');
@@ -96,7 +117,7 @@ describe('createSketch', () => {
     const dir = join(target, DESIGN_DIR, 'acme/sketches/components-card');
 
     expect(sketch.variants).toEqual(['a', 'b']);
-    expect(sketchJson(target, 'components-card')).toEqual({
+    expect({ ...sketchJson(target, 'components-card'), createdBy: undefined }).toEqual({
       target: 'components/card',
       status: 'in progress',
       createdAt: expect.any(String),

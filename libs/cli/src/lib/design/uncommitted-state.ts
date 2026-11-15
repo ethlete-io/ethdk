@@ -58,7 +58,8 @@ const sketchLinesOf = (product: ResolvedProduct) => {
     if (typeof sketch === 'string') return [];
 
     const folder = basename(sketch.dir);
-    const about = `${sketch.target}, ${sketch.status}, created ${sketch.createdAt.slice(0, 10)}`;
+    const by = sketch.createdBy ? `, by \`${sketch.createdBy.cmd}\`` : '';
+    const about = `${sketch.target}, ${sketch.status}, created ${sketch.createdAt.slice(0, 10)}${by}`;
 
     if (isStaleEditSketch(product, sketch))
       return [

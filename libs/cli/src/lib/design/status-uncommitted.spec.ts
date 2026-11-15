@@ -83,15 +83,20 @@ describe('design status and uncommitted design state', () => {
     const product = resolveAcme(target);
     const sketches = join(productDirOf(target), 'sketches');
 
+    const argv = process.argv;
+
+    process.argv = ['node', 'et', 'design', 'sketch', 'open', 'pages/home'];
     createSketch({ product, sketch: { layer: 'pages', name: 'home' }, variants: ['a'] });
+    process.argv = ['node', 'et', 'design', 'check'];
     createSketch({ product, sketch: { layer: 'elements', name: 'hero', sketch: 'edit' }, variants: ['new'] });
+    process.argv = argv;
     mkdirSync(join(sketches, 'components-gone'), { recursive: true });
 
     const today = new Date().toISOString().slice(0, 10);
 
     expect(statusLines(target)).toEqual([
-      `SKETCH LEFTOVER acme elements-hero.edit: elements/hero@edit, in progress, created ${today} - its part matches HEAD, discard it: sketch discard elements/hero@edit --product acme --by <model id>`,
-      `SKETCH UNTRACKED acme pages-home: pages/home, in progress, created ${today} - commit it or discard it`,
+      `SKETCH LEFTOVER acme elements-hero.edit: elements/hero@edit, in progress, created ${today}, by \`design check\` - its part matches HEAD, discard it: sketch discard elements/hero@edit --product acme --by <model id>`,
+      `SKETCH UNTRACKED acme pages-home: pages/home, in progress, created ${today}, by \`design sketch open pages/home\` - commit it or discard it`,
       'SKETCH LEFTOVER acme components-gone: holds no sketch file - delete the folder',
     ]);
 

@@ -24,6 +24,7 @@ import { isBuiltInBase } from '../base';
 import { isLayer, Layer, LAYER_USES, mayUse } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
+import { portableCmdOf } from '../write-origin';
 import { sharedBaseNowOf, sharedBaseOf } from './shared-base';
 import { baselineTreeOf, dropBaselineTree, keepBaselineTree } from './baseline-tree';
 import { hasActor, WriteOrigin } from '../write-origin';
@@ -95,6 +96,8 @@ export type SketchFile = {
   targets?: string[];
   status: SketchStatus;
   createdAt: string;
+  /** The command that created the sketch, and the agent session that ran it; sketches from before it was recorded lack it. */
+  createdBy?: SketchCreatedBy;
   /** The content hash of each part and of the fixtures in the product when the sketch was created or rebased. */
   baseline?: Record<string, string>;
   /** The git tree of the product folders the baseline was recorded from, for a rebase when no commit holds that state. */
@@ -119,6 +122,8 @@ export type SketchFile = {
   portAfterMerge?: SketchPortMark;
   mergeHold?: SketchMergeHold;
 };
+
+export type SketchCreatedBy = { cmd: string; session?: string };
 
 export const SKETCH_MERGES = ['override', 'into-base'] as const;
 
@@ -581,6 +586,8 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
   if (parsed.mergeHold !== undefined && !isMergeHold(parsed.mergeHold))
     return `${file}: mergeHold must be { reason, at }`;
+  if (parsed.createdBy !== undefined && !isCreatedBy(parsed.createdBy))
+    return `${file}: createdBy must be { cmd: string, session?: string }`;
   if (parsed.baselineTree !== undefined && (typeof parsed.baselineTree !== 'string' || !parsed.baselineTree))
     return `${file}: baselineTree must be a git tree id`;
   if (
@@ -672,11 +679,24 @@ const baselineTreeFieldOf = (options: { product: ResolvedProduct; sketchDir: str
   return { baselineTree: tree };
 };
 
+const isCreatedBy = (value: unknown) => {
+  const { cmd, session } = (value ?? {}) as Partial<SketchCreatedBy>;
+
+  return typeof cmd === 'string' && (session === undefined || typeof session === 'string');
+};
+
+const createdByOf = (): SketchCreatedBy => {
+  const session = process.env['ETHLETE_AGENT_ROLE'] || process.env['CLAUDE_CODE_SESSION_ID'];
+
+  return { cmd: portableCmdOf(process.argv.slice(2)), ...(session ? { session } : {}) };
+};
+
 const sketchFileOf = (sketch: Sketch): SketchFile => ({
   target: sketch.target,
   ...(sketch.targets.length > 1 ? { targets: sketch.targets } : {}),
   status: sketch.status,
   createdAt: sketch.createdAt,
+  ...(sketch.createdBy ? { createdBy: sketch.createdBy } : {}),
   ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
   ...(sketch.baselineTree ? { baselineTree: sketch.baselineTree } : {}),
   ...(sketch.sharedBase && Object.keys(sketch.sharedBase).length > 0 ? { sharedBase: sketch.sharedBase } : {}),
@@ -995,6 +1015,7 @@ export const createSketch = (options: {
     targets,
     status: 'in progress',
     createdAt: new Date().toISOString(),
+    createdBy: createdByOf(),
     baseline: baselineOf(product),
     ...baselineTreeFieldOf({ product, sketchDir: dir }),
     ...(Object.keys(sharedBase).length > 0 ? { sharedBase } : {}),
