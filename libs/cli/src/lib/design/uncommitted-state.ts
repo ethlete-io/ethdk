@@ -34,14 +34,15 @@ const readyLinesOf = (product: ResolvedProduct) => {
   const file = `${product.dir}/${READY_FILE}`;
   const now = entriesOf(existsSync(file) ? readFileSync(file, 'utf8') : null);
   const head = entriesOf(gitIn(product.dir, ['show', `HEAD:./${READY_FILE}`]));
-  const line = (part: string, what: string) =>
-    `READY UNCOMMITTED ${product.name} ${part}: ${what} - commit ${READY_FILE} or the mark is lost`;
+  const prefix = (part: string, what: string) => `READY UNCOMMITTED ${product.name} ${part}: ${what}`;
+  const line = (part: string, what: string) => `${prefix(part, what)} - run \`design ready ${part}\` to commit it`;
 
   return [...new Set([...Object.keys(head), ...Object.keys(now)])].sort().flatMap((part) => {
     const [before, after] = [head[part], now[part]];
 
     if (isMark(after) && !isMark(before)) return [line(part, 'marked ready, HEAD has no mark')];
-    if (!isMark(after) && isMark(before)) return [line(part, 'the mark HEAD holds is gone')];
+    if (!isMark(after) && isMark(before))
+      return [`${prefix(part, 'the mark HEAD holds is gone')} - commit ${READY_FILE} or the mark comes back`];
     if (isMark(after) && JSON.stringify(after) !== JSON.stringify(before))
       return [line(part, 'the mark differs from HEAD')];
 

@@ -67,14 +67,14 @@ describe('design status and uncommitted design state', () => {
     });
 
     expect(statusLines(target)).toEqual([
-      'READY UNCOMMITTED acme components/button: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
-      'READY UNCOMMITTED acme pages/home: the mark differs from HEAD - commit ready.json or the mark is lost',
+      'READY UNCOMMITTED acme components/button: marked ready, HEAD has no mark - run `design ready components/button` to commit it',
+      'READY UNCOMMITTED acme pages/home: the mark differs from HEAD - run `design ready pages/home` to commit it',
     ]);
 
     writeReady(target, {});
 
     expect(statusLines(target)).toEqual([
-      'READY UNCOMMITTED acme pages/home: the mark HEAD holds is gone - commit ready.json or the mark is lost',
+      'READY UNCOMMITTED acme pages/home: the mark HEAD holds is gone - commit ready.json or the mark comes back',
     ]);
   });
 
