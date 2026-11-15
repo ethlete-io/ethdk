@@ -7,4 +7,20 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
   }
+
+  .et-menu-item {
+    &[data-active]:where([data-active-source='keyboard']:focus-visible),
+    &[data-highlight-held],
+    &[data-menu-open] {
+      .et-menu-item-shortcut {
+        color: var(--_et-menu-color);
+      }
+    }
+
+    @media (hover: hover) {
+      &[data-active]:where(:hover) .et-menu-item-shortcut {
+        color: var(--_et-menu-color);
+      }
+    }
+  }
 }

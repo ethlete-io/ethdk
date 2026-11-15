@@ -475,7 +475,7 @@ sketch` zeigen ihn (Befund 180).
 - **D7** Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
-- **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Builder baut Empfehlung: menu item-active Kurzbefehl 4.10:1 (volle Textfarbe), chart bar-/pie-empty Umriss (contrast.exceptions).
+- **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Builder baut Empfehlung: menu item-active Kurzbefehl 4.10:1 (volle Textfarbe), chart bar-/pie-empty Umriss (contrast.exceptions). Empfehlung gebaut: Kurzbefehl im aktiven Item in Labelfarbe; chart-Ausnahme offen (kein contrast.exceptions-Mechanismus gefunden, siehe agent-results/D11.md).
 - **D19** Ein JSON-Writer für beide Libs statt zwei Kopien (`libs/agent-rules/src/lib/prettier.ts`, `libs/cli/src/lib/json-file.ts`). Subpath-Exports von agent-rules müssen im Workspace auf gebautes JS auflösen (`@ethlete/agent-rules/prettier` auf TS-Quelle ließ die gebaute CLI abstürzen, zurückgenommen). Danach `part-ready.ts` auf den Writer umstellen (nach A10).
 - **D20** core Head-Store (fifa 7.26, 15.11.): Titel-Teil ohne öffentliche Priorität; Schreiben aus einem Effect, der den Store liest, läuft endlos. [fifagg-sdk-findings-2026-11-15-seo.md](../fifagg-sdk-findings-2026-11-15-seo.md)
 
