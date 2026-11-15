@@ -54,7 +54,6 @@ import {
 } from './part-compare';
 import {
   affectedPartsOf,
-  doneParts,
   implementedHolds,
   linkedTaskPartOf,
   markImplemented,
@@ -69,6 +68,7 @@ import { inOrderAtOnce } from './in-order-at-once';
 import { frozenAnimationsOf } from './frozen-animations';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { missingDistOf } from './stale-dist';
+import { allComparePartsOf } from './stale-parts';
 import { coveredLineOf, coveringSketchOf } from './sketch/covered-diffs';
 import { listSketches, parseTarget, Sketch, SketchTarget } from './sketch/sketch';
 import { cachedComparePngs, COMPARE_PIXELS } from './pixel-cache';
@@ -653,7 +653,8 @@ const statesAskedOf = (values: string[] | undefined) =>
     : [...new Set(values.flatMap((value) => value.split(',')).map((state) => state.trim()))].filter(Boolean);
 
 /**
- * `et design compare --all` compares every done part and fails on any deviation or part it cannot compare; a foundation has nothing to compare.
+ * `et design compare --all` compares every implemented part, done or not, and fails on any deviation or part it cannot
+ * compare; it first lists each implemented part that is not done and why. A foundation has nothing to compare.
  * `et design compare --affected` compares, on one harness, every implemented part whose app files changed since its
  * record, runs its action check and records each part that passes both.
  * `--base <rev>` also compares each part with the harness app built at `rev`, against HEAD's design, and lists the
@@ -756,14 +757,11 @@ export const designCompare = async (options: {
   }
 
   const changedFiles = new Map(affected ? affectedPartsOf(product).map(({ part, files }) => [part, files]) : []);
-  const keys = all
-    ? doneParts({
-        product,
-        parts: product.parts.filter((part) => part.layer !== 'foundations').map(partKeyOf),
-      })
-    : affected
-      ? [...changedFiles.keys()]
-      : [partKeyOf(parsed as SketchTarget)];
+  const allParts = all ? allComparePartsOf(product) : null;
+
+  allParts?.notDone.forEach(({ part, reason }) => console.log(`not done: ${part} (${reason})`));
+
+  const keys = allParts ? allParts.parts : affected ? [...changedFiles.keys()] : [partKeyOf(parsed as SketchTarget)];
 
   if (affected && keys.length === 0) {
     console.log(`${product.name}: no implemented part changed since its compare`);
@@ -780,7 +778,7 @@ export const designCompare = async (options: {
   }
 
   if (all && keys.length === 0) {
-    console.log(`${product.name}: no done parts to compare`);
+    console.log(`${product.name}: no implemented parts to compare`);
 
     return 0;
   }

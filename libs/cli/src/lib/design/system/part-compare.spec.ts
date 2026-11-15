@@ -580,7 +580,7 @@ describe('part compare', () => {
     }));
 
     expect(await all(same)).toBe(0);
-    expect(lines).toEqual(['app-a: no done parts to compare']);
+    expect(lines).toEqual(['app-a: no implemented parts to compare']);
 
     markImplemented({ product: product(), part: 'components/chip', states: { default: {} } });
 
@@ -607,6 +607,43 @@ describe('part compare', () => {
     expect(
       await designCompare({ target, argv: ['--all', '--live', '--product', 'app-a'], invocation: 'et design' }),
     ).toBe(2);
+  });
+
+  it('--all also compares an implemented part that is not done, and names why it is not', async () => {
+    const target = checkout();
+    const lines = output();
+    const product = () => resolveProduct({ target, name: 'app-a', config: {} });
+    const ready = async () => {
+      const found = readyPartOf({ product: product(), part: 'components/chip' });
+
+      await markPartReady({
+        product: product(),
+        origin: originOf('spec'),
+        part: 'components/chip',
+        hash: typeof found === 'string' ? found : found.hash,
+        pointsOf: async () => [],
+        actionsOf: async () => [],
+      });
+    };
+    const same = vi.fn<ShootStates>(async () => ({
+      states: { default: {} },
+      shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
+    }));
+    const source = join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts');
+
+    markImplemented({ product: product(), part: 'components/chip', states: { default: {} } });
+    writeFileSync(source, `${readFileSync(source, 'utf8')}// picked\n`);
+    await ready();
+
+    expect(
+      await designCompare({
+        target,
+        argv: ['--all', '--product', 'app-a', '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        shoot: same,
+      }),
+    ).toBe(0);
+    expect(lines).toEqual(['not done: components/chip (design moved)', '== components/chip', 'default ok']);
   });
 
   it('compares a part without a check record and with a changed design, with no gate note', async () => {

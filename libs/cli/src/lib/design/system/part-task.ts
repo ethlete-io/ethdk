@@ -19,7 +19,13 @@ export const IMPLEMENTED_FILE = 'implemented.json';
  * The design hash a part was last implemented at, when, the props hash of each state it had then, and the hash of
  * each repository file its app component reached.
  */
-export type PartImplemented = { hash: string; at: string; states: Record<string, string>; app?: FileHashes };
+export type PartImplemented = {
+  hash: string;
+  at: string;
+  states: Record<string, string>;
+  files?: FileHashes;
+  app?: FileHashes;
+};
 
 /** A part a task can build: its design hash, the component path its `implements` names, and the directory of its records. */
 export type TaskPart = { part: string; hash: string; dir: string; component: string; earlier?: string[] };
@@ -38,6 +44,7 @@ const isImplemented = (value: unknown): value is PartImplemented =>
   typeof value['at'] === 'string' &&
   isRecord(value['states']) &&
   Object.values(value['states']).every((hash) => typeof hash === 'string') &&
+  isOptionalFileHashes(value['files']) &&
   isOptionalFileHashes(value['app']);
 
 const sortedKeys = (_key: string, value: unknown) =>
@@ -91,6 +98,7 @@ export const markImplemented = (options: {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([state, props]) => [state, stateHashOf(props)]),
     ),
+    files: found.design.files,
     ...(options.app ? { app: options.app } : {}),
   };
   const entries = Object.entries({ ...readImplemented(found.dir), [options.part]: implemented }).sort(([a], [b]) =>

@@ -1,11 +1,19 @@
 import { git as gitText } from '../git-reader';
 import { dirname, relative, resolve, sep } from 'path';
 import { appFilesOf } from './app-files';
-import { changedDesignFilesOf, designHashOf, DesignHash, HashRecord, legacyHolds, recordHolds } from './design-hash';
+import {
+  changedDesignFilesOf,
+  designHashOf,
+  DesignHash,
+  designHolds,
+  HashRecord,
+  legacyHolds,
+  recordHolds,
+} from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { READY_FILE, readReady, readReadyEntries } from './part-ready';
 import { withProductLock } from './product-lock';
-import { changedAppFilesOf, IMPLEMENTED_FILE, linkedComponentOf, readImplemented } from './part-task';
+import { changedAppFilesOf, doneParts, IMPLEMENTED_FILE, linkedComponentOf, readImplemented } from './part-task';
 import {
   addedBaselineEntriesOf,
   baselineLineOf,
@@ -20,18 +28,42 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 
 export const UNLISTED_FILES = 'files unknown: recorded before file lists';
 
-/** A recorded or done part whose design or app files moved since its records, with the changed paths of each side. */
-export type StalePart = { part: string; design: string[]; app: string[] };
+/**
+ * A recorded or done part whose design or app files moved since its records, with the changed paths of each side;
+ * `port` holds the design files that moved since the implemented record but not since the check record.
+ */
+export type StalePart = { part: string; design: string[]; app: string[]; port: string[] };
+
+export const UNLISTED_PORT = 'files unknown: implemented before file lists';
 
 const changedSinceOf = (record: HashRecord, now: DesignHash) =>
   recordHolds(record, now) ? [] : record.files ? changedDesignFilesOf(record.files, now) : [UNLISTED_FILES];
+
+const portOf = (options: {
+  implemented: HashRecord;
+  ready: HashRecord | undefined;
+  now: DesignHash;
+  design: string[];
+}) => {
+  const { implemented, ready, now, design } = options;
+
+  if (implemented.hash === ready?.hash || designHolds(implemented.hash, now) || legacyHolds(implemented.hash, now)) {
+    return [];
+  }
+
+  if (!implemented.files) return design.length > 0 ? [] : [UNLISTED_PORT];
+
+  return changedDesignFilesOf(implemented.files, now)
+    .filter((file) => !design.includes(file))
+    .sort((a, b) => a.localeCompare(b));
+};
 
 const partsOf = (product: ResolvedProduct, only?: string) =>
   product.parts.filter((part) => !only || partKeyOf(part) === only);
 
 /**
- * The parts with a check record or an implemented record whose design hash moved since the check record, or whose app
- * component files moved since the implemented record.
+ * The parts with a check record or an implemented record whose design hash moved since the check record or the
+ * implemented record, or whose app component files moved since the implemented record.
  */
 export const stalePartsOf = (options: { product: ResolvedProduct; only?: string }): StalePart[] =>
   partsOf(options.product, options.only).flatMap((resolved) => {
@@ -46,17 +78,47 @@ export const stalePartsOf = (options: { product: ResolvedProduct; only?: string 
     const now = designHashOf({ product, part: resolved });
     const design = (ready ? changedSinceOf(ready, now) : []).sort((a, b) => a.localeCompare(b));
     const app = implemented ? changedAppFilesOf({ product, part, record: implemented }) : [];
+    const port = implemented ? portOf({ implemented, ready, now, design }) : [];
 
-    return design.length > 0 || app.length > 0 ? [{ part, design, app }] : [];
+    return design.length > 0 || app.length > 0 || port.length > 0 ? [{ part, design, app, port }] : [];
   });
 
 export const staleLineOf = (product: string, stale: StalePart) =>
   `STALE ${product} ${stale.part}: ${[
     stale.design.length > 0 ? `design ${stale.design.join(', ')}` : '',
     stale.app.length > 0 ? `app ${stale.app.join(', ')}` : '',
+    stale.port.length > 0 ? `port ${stale.port.join(', ')} - run design task ${stale.part}` : '',
   ]
     .filter(Boolean)
     .join('; ')}`;
+
+const notDoneReasonOf = (stale: StalePart | undefined) =>
+  [
+    stale && (stale.design.length > 0 || stale.port.length > 0) ? 'design moved' : '',
+    stale && stale.app.length > 0 ? 'app files changed' : '',
+  ]
+    .filter(Boolean)
+    .join(', ') || 'no holding check record';
+
+/**
+ * The non-foundation parts with an implemented record, which `compare --all` compares, and those of them that are not
+ * done, each with why.
+ */
+export const allComparePartsOf = (product: ResolvedProduct) => {
+  const parts = product.parts
+    .filter(
+      (resolved) =>
+        resolved.layer !== 'foundations' &&
+        !!readImplemented(partOwnerOf({ product, part: resolved }).dir)[partKeyOf(resolved)],
+    )
+    .map(partKeyOf);
+  const done = new Set(doneParts({ product, parts }));
+  const notDone = parts
+    .filter((part) => !done.has(part))
+    .map((part) => ({ part, reason: notDoneReasonOf(stalePartsOf({ product, only: part })[0]) }));
+
+  return { parts, notDone };
+};
 
 export const UNCOMPARED_RULE = 'IMPLEMENTATION-UNCOMPARED';
 

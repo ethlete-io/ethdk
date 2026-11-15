@@ -108,8 +108,30 @@ describe('transitive part hash', () => {
     expect(partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') })).toBe(folder);
     expect(readyMarkOf({ product: productOf(target), part: CHIP })).toBeNull();
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
-      { part: CHIP, design: [`${DESIGN_DIR}/app-a/elements/icon/icon.ts`, 'libs/kit/design/index.ts'], app: [] },
+      {
+        part: CHIP,
+        design: [`${DESIGN_DIR}/app-a/elements/icon/icon.ts`, 'libs/kit/design/index.ts'],
+        app: [],
+        port: [],
+      },
     ]);
+  });
+
+  it('names the design files to port when a part is checked at a new hash but implemented at the old one', () => {
+    const { target, dir } = checkout();
+
+    writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
+    markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
+    appendFileSync(join(dir, 'elements/icon/icon.ts'), '// picked\n');
+    writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
+
+    const stale = stalePartsOf({ product: productOf(target) });
+
+    expect(stale).toEqual([{ part: CHIP, design: [], app: [], port: [`${DESIGN_DIR}/app-a/elements/icon/icon.ts`] }]);
+    expect(staleLineOf('app-a', stale[0] ?? { part: '', design: [], app: [], port: [] })).toBe(
+      `STALE app-a ${CHIP}: port ${DESIGN_DIR}/app-a/elements/icon/icon.ts - run design task ${CHIP}`,
+    );
+    expect(doneParts({ product: productOf(target), parts: [CHIP] })).toEqual([]);
   });
 
   it('reaches only the barrel files that declare the imported names, plus template and styles', () => {
@@ -142,8 +164,8 @@ describe('transitive part hash', () => {
 
     const stale = stalePartsOf({ product: productOf(target) });
 
-    expect(stale).toEqual([{ part: CHIP, design: [], app: ['libs/lib/src/helper.ts'] }]);
-    expect(staleLineOf('app-a', stale[0] ?? { part: '', design: [], app: [] })).toBe(
+    expect(stale).toEqual([{ part: CHIP, design: [], app: ['libs/lib/src/helper.ts'], port: [] }]);
+    expect(staleLineOf('app-a', stale[0] ?? { part: '', design: [], app: [], port: [] })).toBe(
       `STALE app-a ${CHIP}: app libs/lib/src/helper.ts`,
     );
     expect(doneParts({ product: productOf(target), parts: [CHIP] })).toEqual([]);
@@ -176,7 +198,7 @@ describe('transitive part hash', () => {
     expect(implemented[CHIP]).toEqual({ hash: now.hash, at, states: {}, app: expect.any(Object) });
     expect(readyMarkOf({ product: productOf(target), part: CHIP })).not.toBeNull();
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
-      { part: 'elements/icon', design: [UNLISTED_FILES], app: [] },
+      { part: 'elements/icon', design: [UNLISTED_FILES], app: [], port: [] },
     ]);
   });
 
@@ -335,7 +357,7 @@ describe('implements link', () => {
     expect(recordHolds(record, designHashOf(chipOf(target)))).toBe(false);
     expect(partHashHolds({ product: productOf(target), dir: join(dir, 'elements/icon'), hash: folder })).toBe(false);
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
-      { part: CHIP, design: [`${DESIGN_DIR}/app-a/elements/icon/icon.ts`], app: [] },
+      { part: CHIP, design: [`${DESIGN_DIR}/app-a/elements/icon/icon.ts`], app: [], port: [] },
     ]);
   });
 });
