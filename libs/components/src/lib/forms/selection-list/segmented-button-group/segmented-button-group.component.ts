@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, effect, inject, input, signal, ViewEncapsulation } from '@angular/core';
 import { createCanAnimateSignal, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import { TabScaleStylesComponent } from '../../../tabs/tab-scale-styles.component';
 import { injectFormFieldDefaults } from '../../form-field/form-field-defaults';
@@ -53,6 +53,7 @@ export type SegmentedButtonGroupVariant =
     '[class.et-tab-scale]': 'isTabsVariant()',
     '[attr.data-size]': 'size()',
     '[attr.data-variant]': 'variant()',
+    '[attr.data-stretch]': 'stretch() || null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
@@ -74,6 +75,9 @@ export class SegmentedButtonGroupComponent {
    * [tabs](/components/tabs) instead; this variant is for a filter that happens to look like tabs. @default 'pill'
    */
   public variant = input<SegmentedButtonGroupVariant>(SEGMENTED_BUTTON_GROUP_VARIANTS.PILL);
+
+  /** Gives every segment the same width and makes the group fill its container. */
+  public stretch = input(false, { transform: booleanAttribute });
 
   protected isTabsVariant = computed(() => this.variant() === SEGMENTED_BUTTON_GROUP_VARIANTS.TABS);
 

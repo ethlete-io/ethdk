@@ -15,6 +15,7 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
         [variant]="variant()"
         [formField]="demoForm.viewMode"
         [size]="size()"
+        [stretch]="stretch()"
       >
         <et-label>{{ label() }}</et-label>
 
@@ -56,6 +57,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public color = input('brand');
   public variant = input<SegmentedButtonGroupVariant>('pill');
   public size = input<FormFieldSize>('md');
+  public stretch = input(false);
   public maxWidth = input<string | null>(null);
 
   public options = input([

@@ -11,6 +11,7 @@ export default {
     hint: { control: 'text' },
     value: { control: 'select', options: [null, 'list', 'grid', 'table'] },
     mixed: { control: 'boolean' },
+    stretch: { control: 'boolean' },
     showMixedState: { control: false, table: { disable: true } },
     maxWidth: { control: 'text' },
     options: { table: { disable: true } },
@@ -25,6 +26,7 @@ export default {
     hint: '',
     value: 'list',
     mixed: false,
+    stretch: false,
     showMixedState: false,
     disabled: false,
     required: false,
@@ -73,5 +75,20 @@ export const LongLabel: Story = {
       { value: 'cup', label: 'Cup' },
     ],
     hint: 'In a narrow container the row stops at the container edge and the long label truncates.',
+  },
+};
+
+export const Stretch: Story = {
+  args: {
+    stretch: true,
+    value: 'all',
+    label: 'Competition',
+    options: [
+      { value: 'all', label: 'All' },
+      { value: 'live', label: 'Live now' },
+      { value: 'upcoming', label: 'Upcoming matches' },
+      { value: 'done', label: 'Done' },
+    ],
+    hint: 'Every segment gets the same column width and the group fills its container, whatever the label lengths.',
   },
 };

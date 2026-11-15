@@ -16,6 +16,8 @@ export const CHOICE_INPUTS_EXAMPLES = {
     import('./radio-group-custom-card.example').then((m) => m.RadioGroupCustomCardExampleComponent),
   'choice-inputs/checkbox-card-interactive': () =>
     import('./checkbox-card-interactive.example').then((m) => m.CheckboxCardInteractiveExampleComponent),
+  'choice-inputs/segmented-button-group-stretch': () =>
+    import('./segmented-button-group-stretch.example').then((m) => m.SegmentedButtonGroupStretchExampleComponent),
   'choice-inputs/segmented-button-group-tabs': () =>
     import('./segmented-button-group-tabs.example').then((m) => m.SegmentedButtonGroupTabsExampleComponent),
   'choice-inputs/rating-default': () => import('./rating-default.example').then((m) => m.RatingDefaultExampleComponent),

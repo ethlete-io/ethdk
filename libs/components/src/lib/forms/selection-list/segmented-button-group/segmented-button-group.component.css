@@ -47,6 +47,12 @@
     initial-value: 10px;
   }
 
+  @property --et-segmented-button-group-segment-min-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
   et-segmented-button-group {
     display: flex;
     flex-direction: column;
@@ -114,6 +120,16 @@
       padding: var(--et-segmented-button-group-track-padding);
       border-radius: var(--et-segmented-button-group-track-radius);
       background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+    }
+
+    &:where([data-stretch]) .et-segmented-button-group-buttons {
+      display: grid;
+      grid-auto-columns: minmax(var(--et-segmented-button-group-segment-min-width), 1fr);
+      align-self: stretch;
+    }
+
+    &:where([data-stretch]) et-segmented-button {
+      min-width: var(--et-segmented-button-group-segment-min-width);
     }
 
     &[data-error] .et-segmented-button-group-buttons {
