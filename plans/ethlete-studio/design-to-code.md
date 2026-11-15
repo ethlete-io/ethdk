@@ -886,15 +886,11 @@ measures fit 1; `noteFit` keeps the first measured fit under a user zoom, so zoo
 sized notes and gutter names by fit 1 (9 and 7.8 px) while the real fit is 0.143. (2) `document.fonts.ready` resolves
 before Noto Sans Mono loads (it starts only once the gutter's mono text renders, about 15 ms later); the gutter
 shrinks from 165.6 to 162 px, but no tracked signal changes, so whether a fit pass lands after the swap depended on
-unrelated recomputations: the head-note race of B502d/B502e (comparing, paused-reason, new-part; with fix (1) alone
-drawing, paused, paused-reason, idle, new-part and comparing went DIFF 2 of 2 runs, columns narrower by the old gutter).
+unrelated recomputations: the head-note race of B502d/B502e.
 Fix: the fit pass waits for `listMeasured()`, `fontLoads` counts `fonts.ready` and every `loadingdone`, the fit
 records the font count it was measured under, and `noteFit` takes a new fit after a font load. Full compare 2 of 2
-runs: 19 to 23 ok; to ok: zoomed-page 82405, sticky-names 58240, below-fit 63183, far-out 11733; unchanged-matrix 34623
-to 39869, unchanged-matrix-open 40964 to 21846; unchanged: withdrawn-shown 131, withdrawn-hidden 59779,
-unchanged-open 9807, narrow-far-out 24954, change-crop 9510, change-crop-whole 29182. Then attempt 2 of the withdrawn
-fold (B502e C) again: full compare 2 of 2 runs 24 ok, comparing ok, withdrawn-hidden 59779 to ok, unchanged-matrix
-39861, rest as above, 7 FAILED (489). Bites in a scratch copy: "sizes the notes of a user zoom by the fit of the
+runs: 19 to 23 ok (zoomed-page, sticky-names, below-fit, far-out). Then the withdrawn fold
+(B502e C) again: 24 ok, comparing and withdrawn-hidden to ok, 7 FAILED (489). Bites: "sizes the notes of a user zoom by the fit of the
 rendered matrix, not by a fit before the list is measured" (9 px not 12) and "fits the matrix again when a font loads
 after the first fit" red on b9e040148, "keeps a state a hidden withdrawn variant changes unfolded" red on e09bbf7ce;
 all green after. unchanged-matrix, Cause (`design dom`): the design's `matrixFit` ignores the fold column (`--sk-note`
@@ -905,9 +901,8 @@ the closed fold column plus one gap, like the app. Compare: 24 ok / 7 DIFF as be
 the other DIFF states unchanged. Not verified: a live shot.
 
 **B502g as built (Linux builder subagent, 2026-11-14, 67993cd08 and the design commit after it):** Full compare on
-361d25ac7 (2 runs, same): 24 ok / 7 DIFF / 7 FAILED (489). After (2 of 2 runs): 27 ok / 4 DIFF. Per state, before to
-after (px): change-crop 9510 to 792, change-crop-whole 29182 to ok, narrow-far-out 24954 to ok, unchanged-open 9807 to
-ok; unchanged: unchanged-matrix 13040, unchanged-matrix-open 21846 to 20408, withdrawn-shown 131. Causes, measured with
+361d25ac7 (2 runs, same): 24 ok / 7 DIFF / 7 FAILED (489). After (2 of 2 runs): 27 ok / 4 DIFF. To ok: change-crop-whole,
+narrow-far-out, unchanged-open; change-crop 9510 to 792. Causes, measured with
 `design dom` and the diff shots: (1) the screen crop matrix (`screenWorld`) passes no `first` and has no `auto` fold
 column, the app drew "erste Änderung" and an empty fold column (matrix 24 px wider, fold row 1084 not 1076 px); (2) the
 app's stacked crop wrapper stretched to the grid row (91 not 73.7 px) and drew the stack edges unscaled (radius, 2 px
@@ -949,6 +944,13 @@ DIFF / 7 FAILED (489), 2 of 2 runs; the main checkout's unchanged-matrix is DIFF
 without this change; pages/system 26 DIFF identical on HEAD. `design check`: disclosure, merge clean, sketches 4
 CANVAS-UNDER-PANEL (B502h), system 2 warnings. Spec red on HEAD app files, green after; vitest related 183 green;
 lint, tsc clean. Not verified: the 2 px pan; the pages/system DIFFs; CI; the live app.
+
+**B502i pan as built (Linux builder subagent, 2026-11-15, this commit):** Cause (compare shots,
+matrix and fold edges x 340/481 app, 342 design, app gutter divider drawn): the app opened panned 2 px. Its start
+camera (x -4000) clamps against the room `canvas.measure` reads, but that read effect did not track `fontLoads`; the
+room was taken before Noto Sans Mono narrowed the gutter and never re-read. Fix: the measure effect reads
+`fontLoads()`. Spec "clamps the start camera again when a font load narrows the content" red on HEAD, green after.
+Compare: unchanged-matrix 13030 and unchanged-matrix-open 20408 to ok, 2 of 2 runs. Not verified: CI, live app.
 
 **B502j as built (Linux builder subagent, 2026-11-14, 3d28a1e00):** (1) The e2e `settled()` (run before every case)
 waited until no sketch row had `data-sk-unsized` (63399aedb), but after 10 s its loop ended and the case ran on with an

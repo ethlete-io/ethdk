@@ -491,6 +491,7 @@ export class SketchesComponent {
 
     afterRenderEffect({
       read: () => {
+        this.fontLoads();
         this.listSize();
         this.scale();
         this.noteSize();

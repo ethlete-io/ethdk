@@ -896,6 +896,21 @@ describe('SketchesComponent', () => {
     expect(await transformAt({ zoom: 1, x: -1700, y: -260 })).toBe('translate(-300px, -260px) scale(1)');
     expect(await transformAt({ zoom: 1, x: -100, y: -2000 })).toBe('translate(-100px, -500px) scale(1)');
   });
+
+  it('clamps the start camera again when a font load narrows the content', async () => {
+    mockWorldSize(LIST_WIDTH + 2, 500);
+    const fixture = await render({ camera: { zoom: 0.25, x: -4000, y: 0 } });
+    const transform = () => fixture.nativeElement.querySelector('[data-sk-rows] > div')?.style.transform;
+
+    expect(transform()).toBe('translate(-2px, 0px) scale(1)');
+
+    mockWorldSize(LIST_WIDTH, 500);
+    document.fonts.dispatchEvent(new Event('loadingdone'));
+    await fixture.whenStable();
+
+    expect(transform()).toBe('translate(0px, 0px) scale(1)');
+  });
+
   describe('change crops of a wide part', () => {
     const change = {
       width: 3000,
