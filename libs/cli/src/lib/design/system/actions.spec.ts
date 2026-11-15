@@ -23,6 +23,7 @@ import {
   nearMissesOf,
   ownScopeOf,
   openedFromOf,
+  openedPartKeyOf,
   pairElementsOf,
   parseAction,
   resolveActionOf,
@@ -46,6 +47,43 @@ describe('actions', () => {
     expect(parseAction('emit:collapse', [])).toEqual({ kind: 'emit', output: 'collapse' });
     expect(parseAction('emit:', [])).toBe('data-et-action="emit:" names no output');
     expect(parseAction('shut', ['rest'])).toBe('data-et-action="shut" names no state of the part - its states: rest');
+  });
+
+  it('parses opens:<part> as an action that opens another part, and finds that part by key or name', () => {
+    expect(parseAction('opens:command-palette', [])).toEqual({ kind: 'opens', part: 'command-palette' });
+    expect(parseAction('opens:components/command-palette', ['rest'])).toEqual({
+      kind: 'opens',
+      part: 'components/command-palette',
+    });
+    expect(parseAction('opens:', [])).toBe('data-et-action="opens:" names no part');
+    expect(
+      resolveActionOf({
+        value: 'opens:command-palette',
+        owners: [{ part: 'components/title-search', states: ['rest'] }],
+        page: { part: 'components/title-bar', states: ['rest'] },
+      }),
+    ).toEqual({ action: { kind: 'opens', part: 'command-palette' }, owner: 'components/title-bar' });
+
+    const keys = ['components/command-palette', 'components/title-search', 'pages/search', 'elements/search'];
+
+    expect(openedPartKeyOf({ part: 'command-palette', keys })).toBe('components/command-palette');
+    expect(openedPartKeyOf({ part: 'pages/search', keys })).toBe('pages/search');
+    expect(openedPartKeyOf({ part: 'search', keys })).toBe(
+      'data-et-action="opens:search" names 2 parts (pages/search, elements/search) - write the full key',
+    );
+    expect(openedPartKeyOf({ part: 'palette', keys })).toBe(
+      'data-et-action="opens:palette" names no part of the product',
+    );
+
+    const opens = { kind: 'opens', part: 'command-palette' } as const;
+    const outcome = { emitted: [], prevented: false, compare: null };
+
+    expect(
+      actionFailureOf({ action: opens, target: '', input: 'click', outcome: { ...outcome, opened: true } }),
+    ).toBeNull();
+    expect(actionFailureOf({ action: opens, target: '', input: 'Enter', outcome: { ...outcome, opened: false } })).toBe(
+      'does not open command-palette',
+    );
   });
 
   it('reads a dblclick: prefix as a double click on the same action', () => {

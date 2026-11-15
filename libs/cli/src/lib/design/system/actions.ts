@@ -22,10 +22,16 @@ export const actionInputsOf = (key: string, action?: DeclaredAction | string | n
   return SPACE_ONLY_ROLES.includes(role) ? ['click', 'Space'] : ['click', 'Enter', 'Space'];
 };
 
-/** What a design declares an interactive element does: reach a state of the part, or fire one of its outputs. */
-export type DeclaredAction = ({ kind: 'state'; state: string } | { kind: 'emit'; output: string }) & {
+/** What a design declares an interactive element does: reach a state of the part, fire one of its outputs, or open another part. */
+export type DeclaredAction = (
+  { kind: 'state'; state: string } | { kind: 'emit'; output: string } | { kind: 'opens'; part: string }
+) & {
   gesture?: 'dblclick';
 };
+
+const OPENS_PREFIX = 'opens:';
+
+const isPageWideAction = (bare: string) => bare.startsWith('emit:') || bare.startsWith(OPENS_PREFIX);
 
 /** The interactive elements the action check presses, in a design picture and in the app. */
 export const INTERACTIVE_SELECTOR = [
@@ -93,7 +99,10 @@ const gestureOf = (value: string) => {
     : { gesture: {}, bare: trimmed };
 };
 
-/** Parses a `data-et-action` value, with an optional `dblclick:` prefix for an action reached by a double click; a string names what is wrong with it. */
+/**
+ * Parses a `data-et-action` value: `<state>`, `emit:<output>` or `opens:<part>`, with an optional `dblclick:` prefix
+ * for an action reached by a double click; a string names what is wrong with it.
+ */
 export const parseAction = (value: string | null, states: readonly string[]): DeclaredAction | string | null => {
   if (value === null) return null;
 
@@ -105,6 +114,14 @@ export const parseAction = (value: string | null, states: readonly string[]): De
     return /^[A-Za-z_$][\w$-]*$/.test(output)
       ? { kind: 'emit', output, ...gesture }
       : `data-et-action="${value}" names no output`;
+  }
+
+  if (bare.startsWith(OPENS_PREFIX)) {
+    const part = bare.slice(OPENS_PREFIX.length);
+
+    return /^[a-z][\w-]*(?:\/[a-z][\w-]*)?$/.test(part)
+      ? { kind: 'opens', part, ...gesture }
+      : `data-et-action="${value}" names no part`;
   }
 
   return states.includes(bare)
@@ -153,7 +170,7 @@ export const resolveActionOf = (options: {
   const { value, owners, page, settled = [] } = options;
   const trimmed = gestureOf(value ?? '').bare;
   const having = owners.filter((candidate) => candidate.states.includes(trimmed));
-  const owner = trimmed.startsWith('emit:')
+  const owner = isPageWideAction(trimmed)
     ? page
     : (having.find((candidate) => !settled.includes(candidate.part)) ??
       (page.states.includes(trimmed) ? page : (having[0] ?? page)));
@@ -199,6 +216,24 @@ export const openedFromOf = (options: {
   if (keys.every((key) => JSON.stringify(own[key]) === JSON.stringify(target[key]))) return null;
 
   return Object.fromEntries(keys.map((key) => [key, target[key]]));
+};
+
+/**
+ * The key of the product part an `opens:<part>` action names: the full key (`components/command-palette`) or the part
+ * name alone when exactly one part has it; a string names what is wrong with it.
+ */
+export const openedPartKeyOf = (options: { part: string; keys: readonly string[] }) => {
+  const { part, keys } = options;
+
+  if (keys.includes(part)) return part;
+
+  const named = keys.filter((key) => key.slice(key.lastIndexOf('/') + 1) === part);
+
+  if (named.length === 1 && named[0]) return named[0];
+
+  return named.length === 0
+    ? `data-et-action="opens:${part}" names no part of the product`
+    : `data-et-action="opens:${part}" names ${named.length} parts (${named.join(', ')}) - write the full key`;
 };
 
 /** The element selector of the Angular component `source` declares, or `null` without one. */
@@ -392,11 +427,12 @@ export type ActionOutcome = {
   prevented: boolean;
   compare: { ok: boolean; detail: string } | null;
   reached?: string | null;
+  opened?: boolean;
 };
 
 /**
  * Why one input on an element missed its declared action, or `null` when it reached it. A declared emit is also reached
- * by one of its `modelChanges`.
+ * by one of its `modelChanges`; a declared `opens:` by a press that `opened` the part.
  */
 export const actionFailureOf = (options: {
   action: DeclaredAction;
@@ -409,14 +445,18 @@ export const actionFailureOf = (options: {
   const reached =
     action.kind === 'emit'
       ? [action.output, ...modelChanges].some((output) => outcome.emitted.includes(output))
-      : outcome.compare?.ok === true;
+      : action.kind === 'opens'
+        ? outcome.opened === true
+        : outcome.compare?.ok === true;
 
   if (reached) return null;
 
   const missed =
     action.kind === 'emit'
       ? `fired no ${action.output} output${outcome.emitted.length > 0 ? ` (fired ${outcome.emitted.join(', ')})` : ''}`
-      : `does not reach state ${target}${outcome.compare === null ? '' : ` (${outcome.compare.detail})`}${outcome.reached ? `; ${outcome.reached}` : ''}`;
+      : action.kind === 'opens'
+        ? `does not open ${action.part}`
+        : `does not reach state ${target}${outcome.compare === null ? '' : ` (${outcome.compare.detail})`}${outcome.reached ? `; ${outcome.reached}` : ''}`;
 
   return input !== 'click' && outcome.prevented ? `${missed}; its keydown default was prevented` : missed;
 };

@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { resolve } from 'path';
 import { chromiumOf } from '../browser';
@@ -13,6 +13,8 @@ import {
   actionFailureOf,
   ActionInput,
   actionScanScriptOf,
+  componentSelectorOf,
+  openedPartKeyOf,
   parseAction,
 } from './actions';
 import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
@@ -30,6 +32,7 @@ import {
 } from './pointer-focus';
 import { expandedOf, reachedExpandedStateOf } from './reached-state';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { partLinkOf } from './sketch/part-definition';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
 /** A shell control: `occurrence` counts among the scanned controls of its key, `x`/`y` is its centre in the host box. */
@@ -326,6 +329,24 @@ const overlayCountOf = async (page: { evaluate: (script: string) => Promise<unkn
     `[...document.querySelectorAll(${JSON.stringify(OVERLAY_ROOTS)})].reduce((count, root) => count + root.children.length, 0)`,
   )) as number;
 
+/** The overlays open on a page, and whether an element of `selector` is on it. */
+export type OpenProbe = { overlays: number; present: boolean };
+
+const openProbeOf = async (page: { evaluate: (script: string) => Promise<unknown> }, selector: string | null) => ({
+  overlays: await overlayCountOf(page),
+  present:
+    selector === null
+      ? false
+      : ((await page.evaluate(`!!document.querySelector(${JSON.stringify(selector)})`)) as boolean),
+});
+
+/**
+ * Whether a press opened a part: it added an overlay, and the part's implementing component, when `selector` names
+ * one, is on the page.
+ */
+export const openedOf = (options: { before: OpenProbe; after: OpenProbe; selector: string | null }) =>
+  options.after.overlays > options.before.overlays && (options.selector === null || options.after.present);
+
 /** The toggle attributes of a clicked control and the overlays open beyond `overlaysBefore`; `null` once the click removed it. */
 export const toggleStepOf = async ({
   page,
@@ -480,6 +501,15 @@ export const checkLiveActions = async (options: {
 
       return cached;
     };
+    const selectorOfPart = (key: string) => {
+      const found = product.parts.find((candidate) => partKeyOf(candidate) === key);
+      const link = found ? partLinkOf(found.source) : null;
+      const component =
+        link?.kind === 'component' ? link.path : link?.kind === 'route' ? (link.component ?? null) : null;
+      const file = component === null ? null : resolve(target, component);
+
+      return file && existsSync(file) ? componentSelectorOf(readFileSync(file, 'utf8')) : null;
+    };
     const ownerOf = async (state: string, parts: string[]) => {
       for (const candidate of parts) if ((await statesOf(candidate)).includes(state)) return candidate;
 
@@ -506,6 +536,7 @@ export const checkLiveActions = async (options: {
       pick: Target;
       input: ActionInput;
       output: string | null;
+      opens?: { selector: string | null };
     }) =>
       queue.run(async (browser) => {
         const context: Context = await browser.newContext({
@@ -589,6 +620,17 @@ export const checkLiveActions = async (options: {
           let clickRing: RingProbe | null = null;
           let clickThenKeyRing: RingProbe | null = null;
           let keyboardRing: PointerFocusProbes['keyboard'] = null;
+          const opens = options.opens;
+          const openBefore = opens ? await openProbeOf(page, opens.selector) : null;
+          let opened: boolean | undefined;
+          const readOpened = async () => {
+            if (opens && openBefore && opened === undefined)
+              opened = openedOf({
+                before: openBefore,
+                after: await openProbeOf(page, opens.selector),
+                selector: opens.selector,
+              });
+          };
           const overlaysBefore = options.input === 'click' ? await overlayCountOf(page) : 0;
           const toggleSteps: ToggleStep[] = [];
           const readToggle = async () => {
@@ -607,6 +649,7 @@ export const checkLiveActions = async (options: {
             await watchMutations(page);
             await control.click({ timeout: DRAW_TIMEOUT_MS });
             await settle(page, DRAW_TIMEOUT_MS);
+            await readOpened();
             await readToggle();
             clickRing = await ringProbeOrNullOf(control);
             if (clickRing) {
@@ -636,6 +679,7 @@ export const checkLiveActions = async (options: {
           }
 
           await awaitEmitted(page, options.output);
+          await readOpened();
 
           const emitted = (await page.evaluate(
             '(window.__etDesignEmits ?? []).map((emit) => emit.output)',
@@ -664,6 +708,7 @@ export const checkLiveActions = async (options: {
             clickRing,
             clickThenKeyRing,
             keyboardRing,
+            opened,
             toggle: isToggle ? toggleSyncFailureOf(toggleSteps) : undefined,
           };
         } finally {
@@ -685,17 +730,25 @@ export const checkLiveActions = async (options: {
       await Promise.all(
         controls.map(async ({ app, declared, owner, parts, opener }) => {
           const name = controlNameOf(app);
-          const action =
+          const bare = declared?.trim().replace(/^dblclick:/u, '') ?? '';
+          const parsed =
             declared === null
               ? null
-              : declared
-                    .trim()
-                    .replace(/^dblclick:/u, '')
-                    .startsWith('emit:')
+              : bare.startsWith('emit:') || bare.startsWith('opens:')
                 ? parseAction(declared, [])
                 : owner === null
                   ? `data-et-action="${declared}" names no state of ${parts.join(', ') || 'its part'}`
                   : parseAction(declared, await statesOf(owner));
+          const openedKey =
+            typeof parsed === 'object' && parsed?.kind === 'opens'
+              ? openedPartKeyOf({ part: parsed.part, keys: product.parts.map(partKeyOf) })
+              : null;
+          const action =
+            openedKey !== null && !product.parts.some((candidate) => partKeyOf(candidate) === openedKey)
+              ? openedKey
+              : parsed;
+          const opens =
+            openedKey === null || typeof action === 'string' ? undefined : { selector: selectorOfPart(openedKey) };
 
           if (action === null || typeof action === 'string') {
             pushLine({
@@ -719,6 +772,7 @@ export const checkLiveActions = async (options: {
                   pick: app,
                   input,
                   output: typeof action === 'object' && action?.kind === 'emit' ? action.output : null,
+                  opens,
                 });
                 const outcome = liveOutcomeOf({ ...result, pressed: app });
 
@@ -792,7 +846,13 @@ export const checkLiveActions = async (options: {
                     action,
                     target: action.kind === 'state' ? action.state : '',
                     input,
-                    outcome: { emitted: result.emitted, prevented: result.prevented, compare, reached },
+                    outcome: {
+                      emitted: result.emitted,
+                      prevented: result.prevented,
+                      compare,
+                      reached,
+                      opened: result.opened,
+                    },
                   }),
                 });
               } catch (error) {

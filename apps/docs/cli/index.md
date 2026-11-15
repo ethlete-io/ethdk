@@ -435,16 +435,18 @@ A part is ready only when its open-point list is empty and `et design actions` p
 while there are any; then it runs the action check on the harness app (`--url`, or one it starts) and exits 1 with the
 failed lines. With `--url` and a live spec it also runs `et design actions --live` for the part and adds its failed
 lines prefixed `live `; without `--url` the refusal notes that it checked the part harness only. Otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
-(the base's file for a part the product takes from its base). Any edit of the part changes its hash, and the mark
+(the base's file for a part the product takes from its base) and commits that file. Any edit of the part changes its hash, and the mark
 then reads as not ready. `et design check` prints a `READY <product>: <parts>` line after the open
 points when a mark holds.
 
 ## Build-ready
 
-A part is build-ready when a current check record with no blockers holds for it. Only `et design ready` writes the
-committed record in `.ethlete/design/<product>/ready.json`. The design server and `et design check` write theirs to the
-gitignored `.ethlete/cache/<product>/stamps/ready.json`, which every later command and Studio read until `ready.json`
-itself changes; neither touches `ready.json` or `merged.json`. A record names its writer, with `cmd` set to `ready`,
+A part is build-ready when a current check record with no blockers holds for it. `et design check` sets and drops
+records in `.ethlete/design/<product>/ready.json`, never commits them, and prints one
+`READY UNCOMMITTED <product> <part>: …` line for each record that differs from HEAD; `et design ready` writes and
+commits the file. The design server writes its records to the gitignored `.ethlete/cache/<product>/stamps/ready.json`,
+which every later command and Studio read until `ready.json` itself changes. Neither touches `merged.json`. A record
+names its writer, with `cmd` set to `ready`,
 `check` or `serve`. There is no go and no acceptance step: Studio computes the state and `design task` starts only for
 build-ready parts. Any edit of the part changes its hash, and the record then reads as stale until `et design ready`,
 `et design check` or the design server writes it again. A part-scoped `et design check` prints
@@ -573,13 +575,15 @@ resident again. A second serve of the same checkout leaves the resident to the f
 
 `et design actions components/chip --product app-a [--url …] [--state <name>]` checks what each control does. Every
 interactive element of a design (button, link, field, an element with an interactive role or `tabindex` 0 or more)
-declares its action in `data-et-action`: the state a press reaches (`data-et-action="open"`) or the output it fires
-(`data-et-action="emit:collapse"`). From each state that forces no interaction, and from each open-surface state
+declares its action in `data-et-action`: the state a press reaches (`data-et-action="open"`), the output it fires
+(`data-et-action="emit:collapse"`), or another part it opens (`data-et-action="opens:command-palette"`, by part name or
+full key such as `components/command-palette`; no page state for the open part is needed). From each state that forces no interaction, and from each open-surface state
 after a click on its trigger, the command opens the harness page, clicks the element and, in fresh pages, presses
 Enter and Space on it; a switch, checkbox or radio gets Space only, as a native checkbox does. A state action passes when the host shot equals that state's design picture at 0 px; a key
 compares with `<state>-focus-visible` where the part draws one. An output action passes when the mounted component
 emits it; the harness records outputs on `window.__etDesignEmits`. It fails on an app element whose design element
 declares nothing, on a declared design element the app lacks, and names a key whose keydown default the app prevented.
+The harness draws a part alone, so an `opens:` action prints `ok (warning: …)` there and is pressed only by `--live`.
 States run in batches of a few with a fresh browser each, so a part with many states does not exhaust memory.
 `et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
 
@@ -596,8 +600,9 @@ instead of the part harness. It needs a development build (`window.ng`) and the 
 (`"harness": { …, "live": "apps/my-app/design-live.json" }`) with a `"shell"` selector of the app's shell component,
 for example `"shell": "app-shell-page"`. On the first state of each live page it presses every control the shell
 component's view owns, and every control in an overlay, with click, Enter and Space, and passes when the page design
-declares the action and the press reaches it: the shell output fires, or the declared state's `aria-expanded` values
-show. It then compares each control's outcome across pages (outputs, expanded controls, a gained `aria-current`, added
+declares the action and the press reaches it: the shell output fires, the declared state's `aria-expanded` values
+show, or, for `opens:<part>`, the press adds an overlay that holds the opened part's `implements` component where it has
+one. It then compares each control's outcome across pages (outputs, expanded controls, a gained `aria-current`, added
 and removed controls) and prints one `drift` line naming each page when they differ. With a part it presses only the
 controls that part draws. The same pointer-focus check runs on every control the press reaches, as a `<control> pointer
 focus` line per page.

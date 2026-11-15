@@ -666,6 +666,18 @@ export const checkActions = async (options: {
             return finish();
           }
 
+          if (action.kind === 'opens') {
+            out.push({
+              state,
+              element: name,
+              input: null,
+              failure: null,
+              warning: `opens ${action.part}: the harness draws the part alone, so only --live presses it`,
+            });
+
+            return finish();
+          }
+
           for (const input of actionInputsOf(element.key, action)) {
             const goal =
               action.kind === 'state'

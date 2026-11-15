@@ -10,6 +10,7 @@ import {
   liveOutcomeOf,
   liveStateCompareOf,
   nearestControlOf,
+  openedOf,
   toggleStepOf,
   toggleSyncFailureOf,
 } from './live-actions';
@@ -146,6 +147,17 @@ describe('liveStateCompareOf', () => {
       ok: false,
       detail: 'state open draws no aria-expanded control, so a live page cannot tell it',
     });
+  });
+});
+
+describe('openedOf', () => {
+  it('opens a part when the press added an overlay and, for an implemented part, its component is on the page', () => {
+    const closed = { overlays: 1, present: false };
+
+    expect(openedOf({ before: closed, after: { overlays: 2, present: false }, selector: null })).toBe(true);
+    expect(openedOf({ before: closed, after: { overlays: 1, present: false }, selector: null })).toBe(false);
+    expect(openedOf({ before: closed, after: { overlays: 2, present: false }, selector: 'et-palette' })).toBe(false);
+    expect(openedOf({ before: closed, after: { overlays: 2, present: true }, selector: 'et-palette' })).toBe(true);
   });
 });
 

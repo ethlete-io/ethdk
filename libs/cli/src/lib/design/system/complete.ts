@@ -409,7 +409,7 @@ const actionGapsOf = (options: {
   return [...groups.values()].map(({ found, states }) => ({
     code: 'ACTION-UNDECLARED',
     target: part,
-    detail: `${found.what}${found.label ? ` "${found.label}"` : ''} at ${found.path} in ${statesShownOf(states)} - declare what it does: data-et-action="<state>" or "emit:<output>"`,
+    detail: `${found.what}${found.label ? ` "${found.label}"` : ''} at ${found.path} in ${statesShownOf(states)} - declare what it does: data-et-action="<state>", "emit:<output>" or "opens:<part>"`,
   }));
 };
 

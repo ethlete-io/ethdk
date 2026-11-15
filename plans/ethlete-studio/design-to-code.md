@@ -1008,6 +1008,13 @@ input-range (Cause, live run: Enter/Space only). (c) Sucheninstudio: Cause (read
 
 **B502s as built (Linux builder subagent, 2026-11-15):** `design dom --app` drives forced and click-opened states as compare does: `harnessShotOf` and `harnessDomOf` share one driver and `harnessDriveOf`/`harnessPropsOf`. The DOM lists open overlay panes after the host, a forced element carries `data-et-forced`. Refused only what compare cannot reach: a force other than hover/active/focus-visible, a click open without a single origin state. Live: error-toast close-hover marks the dismiss button, pages/system blockers-open prints the dialog pane. Specs red on HEAD, green after; lint, tsc clean. Not verified: CI.
 
+**B502 ADR 0301 as built (Linux builder subagent, 2026-11-15):** `parseAction` reads `opens:<part>` (name or full
+key, `openedPartKeyOf`); `--live` passes it when the press adds an overlay that holds the opened part's `implements`
+component where it has one (`openedOf`); the harness check prints `ok (warning: …)`, as it draws the part alone.
+`title-search` declares `opens:command-palette`. Specs red on HEAD, green after; lint, tsc clean; `design check
+components/title-search` static clean. Not verified: the `--live` run (3 tries: the harness build waited 5 min on other
+agents' `studio:e2e` heavy-run lock), and so the action record of title-search (RECORD DROPPED for the same reason), CI.
+
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das frisst den halben tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
 product check; no gate asked for it. Why no tool caught it: `design check` had no scope for "what this slice changed". Fix: (1) the builder-agent skill now
@@ -3170,6 +3177,12 @@ ready mark of each variant it alone changed. Bites for each.
 B501 P7 as built: 12 legacy ready.json records (sdk, studio) got `cmd` check/serve (argv `design check` -> check,
 `design`/`design .` -> serve). Probe: every record now has check/ready/serve; `task` prints canvas-viewport and comment-pin and
 names the blocker of title-bar, update-dialog, disclosure. P4 status side live (READY UNCOMMITTED). Open: P4 Studio display.
+B501 ADR 0300 as built (2026-11-15): `design check` writes the marks it set or dropped into the tracked `ready.json`
+(`keepHeldStampsInFiles`: only the entries the run changed, onto the file as it is now, so a mark another process wrote
+during the check stays), never commits, and prints READY UNCOMMITTED per mark that differs from HEAD; `design ready`
+commits the file (unchanged). The serve keeps its stamp cache. Specs: check-system-tracked (bite: no write, 2 red),
+stamp-files merge (bite: write onto the run's base, red). Live (scratch): check sets foundations/spacing, prints READY
+UNCOMMITTED, no commit; `design ready` commits it. Closes the 15.11. hand-edit-voids-cache finding for check marks.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle sockets; the design server closes them after 6 s, so under lag a request hits a dying socket. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every

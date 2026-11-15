@@ -494,7 +494,7 @@ describe('completenessGapsOf', () => {
         .map(completenessGapLineOf);
 
     expect(gapsOf([control({ action: null })])).toEqual([
-      'ACTION-UNDECLARED components/a - button "Hide panel" at div > button in rest - declare what it does: data-et-action="<state>" or "emit:<output>"',
+      'ACTION-UNDECLARED components/a - button "Hide panel" at div > button in rest - declare what it does: data-et-action="<state>", "emit:<output>" or "opens:<part>"',
     ]);
     expect(gapsOf([control({ action: 'emit:collapse' })])).toEqual([]);
     expect(gapsOf([control({})])).toEqual([]);
@@ -1175,7 +1175,7 @@ export default definePart({
           code: 'ACTION-UNDECLARED',
           target: 'components/undeclared',
           detail:
-            'button "Go" at div > button in rest - declare what it does: data-et-action="<state>" or "emit:<output>"',
+            'button "Go" at div > button in rest - declare what it does: data-et-action="<state>", "emit:<output>" or "opens:<part>"',
         },
       ],
       hints: [
