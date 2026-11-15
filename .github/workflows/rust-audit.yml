@@ -9,8 +9,7 @@ on:
       - apps/ethlete-studio/src-tauri/Cargo.toml
       - apps/timetrack/src-tauri/Cargo.lock
       - apps/timetrack/src-tauri/Cargo.toml
-  schedule:
-    - cron: '0 5 * * *'
+  workflow_call:
   workflow_dispatch:
 
 permissions:
