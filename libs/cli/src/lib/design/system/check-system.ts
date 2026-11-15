@@ -565,15 +565,29 @@ const countCannotDraw = (options: CheckOptions & { product: ResolvedProduct; why
   }
 };
 
+type Completeness = ReturnType<typeof partsCompletenessOf>;
+
+const completenessOf = (options: CheckOptions & { product: ResolvedProduct }): Completeness | null => {
+  const stateful = statefulPartsOf(options.product, options.part ? [options.part] : null);
+
+  return stateful.length > 0 ? partsCompletenessOf({ ...options, parts: stateful, cached: true }) : null;
+};
+
 const drawnFindingsFor = async (
-  options: CheckOptions & { product: ResolvedProduct; rendered: RenderIssue[]; busy?: BusyState[] },
+  options: CheckOptions & {
+    product: ResolvedProduct;
+    rendered: RenderIssue[];
+    busy?: BusyState[];
+    completeness?: Completeness | null;
+  },
 ): Promise<DrawnFindings> => {
   const { product, rendered, busy } = options;
   const stateful = statefulPartsOf(product, options.part ? [options.part] : null);
   let gaps: Map<string, CompletenessGap[] | string> | null = null;
+  const completeness = options.completeness === undefined ? completenessOf(options) : options.completeness;
 
-  if (stateful.length > 0) {
-    const checked = await partsCompletenessOf({ ...options, parts: stateful, cached: true });
+  if (completeness) {
+    const checked = await completeness;
 
     if ('unavailable' in checked) {
       console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);
@@ -599,7 +613,12 @@ const drawnFindingsFor = async (
 };
 
 const printOpenPoints = async (
-  options: CheckOptions & { rendered: RenderIssue[] | null; busy?: BusyState[]; notDrawn?: string },
+  options: CheckOptions & {
+    rendered: RenderIssue[] | null;
+    busy?: BusyState[];
+    notDrawn?: string;
+    completeness?: Map<string, Completeness | null>;
+  },
 ) => {
   const { target, config, products, rendered } = options;
 
@@ -612,7 +631,9 @@ const printOpenPoints = async (
     const findings =
       rendered === null
         ? {}
-        : await timedPhase('completeness', () => drawnFindingsFor({ ...options, product, rendered }));
+        : await timedPhase('completeness', () =>
+            drawnFindingsFor({ ...options, product, rendered, completeness: options.completeness?.get(name) }),
+          );
 
     await timedPhase('open-points', () => printProductOpenPoints({ ...options, product, findings }));
   }
@@ -790,10 +811,33 @@ const oldIssuesOfRun = (options: {
 
 const renderSystem = async (
   options: CheckOptions,
-): Promise<{ code: number; rendered: RenderIssue[] | null; busy?: BusyState[]; notDrawn?: string }> => {
+): Promise<{
+  code: number;
+  rendered: RenderIssue[] | null;
+  busy?: BusyState[];
+  notDrawn?: string;
+  completeness?: Map<string, Completeness | null>;
+}> => {
   const { code, fatal } = timedPhase('static', () => reportSystem({ ...options, warn: true }));
 
   if (fatal) return { code, rendered: null };
+
+  const completeness = new Map(
+    options.products.flatMap((name) => {
+      const entry = options.config.products?.[name];
+
+      if (!entry) return [];
+
+      const started = completenessOf({
+        ...options,
+        product: resolveProduct({ target: options.target, name, config: entry }),
+      });
+
+      started?.catch(() => undefined);
+
+      return [[name, started] as const];
+    }),
+  );
 
   const rendered = await timedPhase('render-inspect', () =>
     renderIssuesOf({
@@ -911,6 +955,7 @@ const renderSystem = async (
     code: code !== 0 || issues.length > 0 || baselineProblems.length > 0 ? 1 : 0,
     rendered: issues,
     busy: rendered.busy,
+    completeness,
   };
 };
 
@@ -1053,9 +1098,9 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
     lines.forEach((line) => console.log(line));
   }
 
-  const { code, rendered, busy, notDrawn } = await renderSystem(counted);
+  const { code, rendered, busy, notDrawn, completeness } = await renderSystem(counted);
 
-  await printOpenPoints({ ...counted, rendered, busy, notDrawn });
+  await printOpenPoints({ ...counted, rendered, busy, notDrawn, completeness });
 
   let failed = 0;
   let partsTotal = 0;
