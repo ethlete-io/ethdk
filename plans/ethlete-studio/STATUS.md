@@ -492,3 +492,9 @@ sketch` zeigen ihn (Befund 180).
 - **E13** Toms gesammelte Runde nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
   deutsche Tooltips am Zoom-Chip (Q41).
 - **E15** Codex-Agenten: über die tmux-Mailbox oder über einen Wrapper? (backlog-parallel/decisions-studio-ui.md)
+- **E16** Morgenrunde 15.11. (Nachtschicht): Grill-Frage B502 (c) Aktionsgrammatik `opens:<part>` für „Suchen in Studio“
+  (Empf. ja; Alt. Seitenzustand mit offener Palette). Studio-Wahlen: components/title-bar@uncommitted (blockiert B501
+  P4), pages/system@canvas-note (Merge abgebrochen, neu wählen), elements/shell-main@crashed, title-bar@notice-arrow,
+  empty-state@row-layout, badge@long-label (nicht bereit), action-sheet@look (blockiert B508). Für Tom: `gh auth login`
+  (Token seit ~03:50 ungültig); fifa-SEO-Session (!2054, 7.26) seit ~03:55 beendet, neu starten?; fifa !2063 (next.84)
+  bereit, e2e offen; zshrc `claude2()` auf `_ethlete_agent_sessions_script` umstellen (nach `shell-install claude codex`).
