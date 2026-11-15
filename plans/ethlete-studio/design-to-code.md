@@ -492,6 +492,8 @@ As built (500 rest, 2026-11-15): no code change; every point is closed. (1)-(3) 
 
 As built (533, 2026-11-16): the Studio test setup fails a spec on a `console.warn` line matching `NG0<n>` (`test-framework-warnings.ts`, own spec), next to the `console.error` check that let NG0953 through, since Angular logs it with `console.warn`. Two causes fixed in the app: `listWidthChange` in `sketches.component.ts` emitted after destroy, because `toObservable` completes on destroy and `debounceTime` flushed its pending value (now `switchMap` to a 500 ms `timer`); `merging` and `decide` in `sketch-view.component.ts` emitted from a `finalize` that ran on the unsubscribe at destroy (now `tap({ complete })`). With the guard on, before the fix: 109 failures in `sketches.component.spec.ts`, `sketch-view.component.spec.ts` and `system-view.component.spec.ts`. Bite: both app fixes reverted, `sketch-view.component.spec.ts` fails 30 of 34. Verified: `vitest related` 734 tests green, lint. Not verified: a live Studio run; `merging(false)` and `decide` no longer fire when the view is destroyed mid-merge.
 
+As built (535 close, 2026-11-16): already built in 0ca01c706, no code change. `yarn et:design --working-tree <command>` builds the working tree's `libs/cli` into its own scratch dist, and each timings line records `cli <sha>+dirty` (see the 535 as-built paragraph further down). Struck from the Werkzeug-Rückstand.
+
 448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
 `generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
 ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
