@@ -3095,11 +3095,8 @@ DROPPED-PROP and CONTROL-HEIGHT have clean samples), P3 dropped, P4 met (studio 
 - 924 closed: the visible-change gate is removed (17375e4f3, 7a3b5f378).
 - 971 closed: ACTION-UNDECLARED and NESTED-SURFACE removed (8838cda38).
 
-B501 proof (ADR 0280, recorded 2026-11-13 by the doc agent from the builder's proposal). Baseline: the working tree holds
-36 uncommitted ready.json records (sdk 1 new + 11 rehashed, studio 5 new + 19 rehashed), all `cmd: ""`; a pid probe ties
-34 to the idle serve and its child. Suspect: `startSlowRunner` -> `recordSettledBuildReady` (record-settled.ts:39) writes
-on a stale slow cache, and the writer pid in each record changes the file on a same-hash rewrite; `upgradeLegacyMarksOf`
-(stale-parts.ts:194) bypasses the in-memory stamps, so `design check` can still write ready.json.
+B501 proof (ADR 0280, recorded 2026-11-13 by the doc agent from the builder's proposal). Baseline: 36 uncommitted ready.json records, 34 written by the idle
+serve (pid probe); its Cause is in S1 as built.
 
 - P1 an idle serve leaves tracked files alone: scratch checkout, slow cache deleted, `yarn design` for 3 min, then
   `git status .ethlete/design` is empty.
@@ -3156,9 +3153,7 @@ file normalized with the base's variant folders and writes only the fields that 
 Replace only for create and the pick rollback in `merge-step`. Spec sketch.spec "writeSketchFile on a sketch read
 before another write" (bite: no merge, fails); check-sketches spec chains its second `editRound`. The no-visible-change
 merge runs `journaledMergeOf` with the pick written inside the journal and its commit marked; P3 case "auto" (bite:
-unjournaled, step 1 half state). 574 (`sketch pick`, sketch-command spec "records the pick the designer gave in
-chat"), 434 (merge.spec "clean copy of HEAD", "refuses before any write"), 889 (edit-sketch.spec "adds no author")
-green. Open beyond S3: ready/pick journal, baseline ref on undo.
+unjournaled, step 1 half state). 574, 434 and 889 green (specs). Open beyond S3: ready/pick journal, baseline ref on undo.
 B501 journal reland as built (2026-11-14): Cause (trace + 45 s hold): the Studio merge worker removes the sketch
 folder before its gate and commit, so the next merge opened the journal while the first held it, and `openJournal` threw.
 Fix: `openJournal` waits (merge 5 min, else 10 s), one journal per thread. Verified: write-journal.spec bites, e2e 5/5 with
@@ -3169,8 +3164,7 @@ once, atomically, outside the journal; a kill between the temp file and its rena
 mark and the `mergeHold` as two writes. Built: `journaledReadyOf` writes the ready mark and the hold as one journaled
 step, `journaledPickOf` the CLI pick; both wait for another open journal of the product like a merge (5 min). The
 no-visible-change merge runs after the ready journal closes, in its own. P3 cases "ready" and "pick" in
-merge-journal.spec (bite: unjournaled, step 1 leaves the temp file). Verified: merge-journal.spec, vitest related,
-cli typecheck and lint, spec:stress 4/4 (merge-journal, sketch-command). Not verified: a live `sketch ready`. Open: the Studio pick (built below). Studio has no sketch-ready endpoint; `design ready` writes one tracked `ready.json` under the lock.
+merge-journal.spec (bite: unjournaled, step 1 leaves the temp file). Verified: specs, typecheck, lint, spec:stress 4/4. Not verified: a live `sketch ready`. Open: the Studio pick (built below). Studio has no sketch-ready endpoint; `design ready` writes one tracked `ready.json` under the lock.
 
 B501 Studio pick journal as built (2026-11-15): `POST /__design/sketch-decision` writes inside a product journal
 opened by `journaledAsync`, which waits for another holder by yielding to the event loop. Spec: write-journal.spec
@@ -3181,6 +3175,10 @@ P3 case "edit sketch" in merge-journal.spec; bites (no journal; no note): step 7
 B501 S4 as built (6bb13c4ec): `sketch ready` refuses a picked sketch whose variant changed without `--reopen`. `sharedBase` in sketch.json names a stale `shared/` copy in SKETCH-BASE-STALE; a rebase that
 ports only `shared/` copies keeps the ready mark. Bites: refusal, stale-copy line, kept mark. Not verified: live all-states;
 sketches older than 6bb13c4ec name no stale copy. Open: a reformat via `check --fix` drops the mark (S6, Suspect).
+B501 S5a as built (6458824f1, a2dbaca62): `design status` names uncommitted ready marks (READY UNCOMMITTED) and
+untracked, empty or stale edit sketch folders (SKETCH UNTRACKED/LEFTOVER). `design check` deletes or names a stale edit
+sketch (STALE EDIT SKETCH; discard accepts it) and lists the sketches it opened (OPENED). A rebase port into a variant
+file prints READY WITHDRAWN (sketch, variant, part). Bites for each. Not verified: live studio status; Studio display (S5b).
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
