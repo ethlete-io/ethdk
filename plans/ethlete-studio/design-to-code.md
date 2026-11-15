@@ -3173,19 +3173,20 @@ typecheck, e2e "picking old ..." 1/1. Not verified: CI.
 B501 (3) as built: `openEditSketch` (design check) runs in `journaledAsync`; `createSketch` notes its new folder.
 P3 case "edit sketch" in merge-journal.spec; bites (no journal; no note): step 7 neither state.
 B501 S4 as built (6bb13c4ec): `sketch ready` refuses a picked sketch whose variant changed without `--reopen`. `sharedBase` in sketch.json names a stale `shared/` copy in SKETCH-BASE-STALE; a rebase that
-ports only `shared/` copies keeps the ready mark. Bites: refusal, stale-copy line, kept mark. Not verified: live all-states;
-sketches older than 6bb13c4ec name no stale copy.
+ports only `shared/` copies keeps the ready mark. Bites for each. Not verified: live all-states; older sketches name no stale copy.
 B501 S5a as built (6458824f1, a2dbaca62): `design status` names uncommitted ready marks (READY UNCOMMITTED) and
 untracked, empty or stale edit sketch folders (SKETCH UNTRACKED/LEFTOVER). `design check` deletes or names a stale edit
 sketch (STALE EDIT SKETCH; discard accepts it) and lists the sketches it opened (OPENED). A rebase port into a variant
-file prints READY WITHDRAWN (sketch, variant, part). Bites for each. Not verified: live studio status; Studio display (S5b).
+file prints READY WITHDRAWN. Bites for each. Not verified: Studio display (S5b).
 B501 S6 as built (20f34d667): product and root editor tsconfigs are written Prettier-formatted (38/38 pass); paths
 point at the installed CLI. FORMAT and `check --fix` skip git-ignored files; a format pass keeps the
 ready mark of each variant it alone changed. Bites for each.
+B501 P7 as built: 12 legacy ready.json records (sdk, studio) got `cmd` check/serve (argv `design check` -> check,
+`design`/`design .` -> serve). Probe: every record now has check/ready/serve; `task` prints canvas-viewport and comment-pin and
+names the blocker of title-bar, update-dialog, disclosure. P4 status side live (READY UNCOMMITTED). Open: P4 Studio display.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
-API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
-request lands on a socket being destroyed. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every
+API agent keeps idle sockets; the design server closes them after 6 s, so under lag a request hits a dying socket. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every
 `page.request.get` in `canvas.e2e.mjs` sends `connection: close`. Bite: probe 3/3 green after. Not verified: CI.
 
 827\. Linux builder (2026-11-11, push:suite at c373dcfd0): "Not formatted in c373dcfd0: package.json"; the 820 subagent
@@ -3194,7 +3195,7 @@ added a script out of key order and reported prettier clean without running it o
 caught one round later by pre-push or push:suite. Tool fix (doc agent, tool internal): pre-commit runs `prettier --check`
 on every staged Prettier-supported blob. Bite: a staged unformatted `package.json` fails the commit.
 
-828\. Large iframe flake (Mac builder, 2026-11-11; numbered 815 on the Mac, renumbered at the merge): "a variant equal to Aktuell keeps its iframes across a quick and a full listing" failed once at `--workers 5`, load 31.7 to 55, with "folded false; collapsed: iframe/row adds 2 removes 22". Cause: the case waited a fixed 60 s for the fold after its setup write, then measured anyway; under load the setup's full listing took longer, so the first fold of variant b (row b and the folded states leave the DOM, the `hidden` frames enter) landed inside the measured "collapsed" window. The case also counted a listing at its `response` event, but `sendHeldJson` sends the headers after the first 15 s keep-alive, so "answered" could mean "headers only": in loaded runs the full listing's body came 5 s after its headers, and in the failed run 25 s after. The product drops no iframe: the removes are the fold the setup expects. Fix (test only): the setup goes through the same `refresh` as the two measured phases, a listing counts on `requestfinished` and only when it was asked after the write, the deadline is 2 x `FULL_COMPARE_MS`, and the setup listings are part of `ok`. Bite: `--hold-listings 25000` failed before with the same "folded false, adds 2 removes 22" (setup full listing cancelled by the 60 s write, fold at 113 s in the collapsed window) and passes after.
+828\. Large iframe flake (Mac builder, 2026-11-11; numbered 815 on the Mac, renumbered at the merge): "a variant equal to Aktuell keeps its iframes across a quick and a full listing" failed once at `--workers 5`, load 31.7 to 55, with "folded false; collapsed: iframe/row adds 2 removes 22". Cause: the case waited a fixed 60 s for the fold after its setup write, then measured anyway; under load the setup's full listing took longer, so the first fold of variant b (row b and the folded states leave the DOM, the `hidden` frames enter) landed inside the measured "collapsed" window. It also counted a listing at `response`, which `sendHeldJson` sends after the first 15 s keep-alive, before the body. The product drops no iframe. Fix (test only): the setup uses the measured phases' `refresh`, a listing counts on `requestfinished` after the write, deadline 2 x `FULL_COMPARE_MS`. Bite: `--hold-listings 25000` failed before with the same "folded false, adds 2 removes 22" (setup full listing cancelled by the 60 s write, fold at 113 s in the collapsed window) and passes after.
 
 829\. Linux builder (2026-11-11, CI runs 42992406760 on a55bc3218 and 42995939464 on be2aa4ff5): Studio e2e shard 6/6
 fails twice in a row in "[System] open points chip pressed matches its popup" with status=null at load 9-12 on 2

@@ -50,8 +50,8 @@
     },
     "actions": [],
     "at": "2026-11-11T13:05:50.338Z",
-    "by": "et design check",
-    "cmd": "design",
+    "by": "et design serve",
+    "cmd": "serve",
     "pid": 1932842
   },
   "components/title-search": {
@@ -115,7 +115,7 @@
     },
     "at": "2026-11-08T14:58:09.869Z",
     "by": "et design check",
-    "cmd": "design check",
+    "cmd": "check",
     "pid": 1454598
   },
   "foundations/agent-logos": {
@@ -135,7 +135,7 @@
     },
     "at": "2026-11-08T14:58:03.530Z",
     "by": "et design check",
-    "cmd": "design check",
+    "cmd": "check",
     "pid": 1454598
   },
   "foundations/icons": {
@@ -164,7 +164,7 @@
     },
     "at": "2026-11-08T14:58:03.709Z",
     "by": "et design check",
-    "cmd": "design check",
+    "cmd": "check",
     "pid": 1454598
   },
   "foundations/logo": {
@@ -177,8 +177,8 @@
     },
     "actions": [],
     "at": "2026-11-10T20:47:23.388Z",
-    "by": "et design check",
-    "cmd": "design .",
+    "by": "et design serve",
+    "cmd": "serve",
     "pid": 2521316
   },
   "foundations/motion": {
@@ -189,7 +189,7 @@
     },
     "at": "2026-11-08T14:58:03.892Z",
     "by": "et design check",
-    "cmd": "design check",
+    "cmd": "check",
     "pid": 1454598
   },
   "foundations/spacing": {
@@ -200,7 +200,7 @@
     },
     "at": "2026-11-08T14:58:03.989Z",
     "by": "et design check",
-    "cmd": "design check",
+    "cmd": "check",
     "pid": 1454598
   },
   "foundations/type": {
@@ -213,8 +213,8 @@
     },
     "actions": [],
     "at": "2026-11-11T13:35:04.758Z",
-    "by": "et design check",
-    "cmd": "design",
+    "by": "et design serve",
+    "cmd": "serve",
     "pid": 3355280
   },
   "pages/flows": {

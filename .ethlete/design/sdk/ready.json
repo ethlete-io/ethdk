@@ -38,8 +38,8 @@
     },
     "actions": [],
     "at": "2026-11-12T01:28:53.014Z",
-    "by": "et design check",
-    "cmd": "design",
+    "by": "et design serve",
+    "cmd": "serve",
     "pid": 1055162
   },
   "components/radio-group": {
@@ -61,8 +61,8 @@
     },
     "actions": [],
     "at": "2026-11-12T01:28:53.190Z",
-    "by": "et design check",
-    "cmd": "design",
+    "by": "et design serve",
+    "cmd": "serve",
     "pid": 1055162
   },
   "components/select": {
@@ -86,7 +86,7 @@
     },
     "at": "2026-11-08T14:57:09.725Z",
     "by": "et design check",
-    "cmd": "design check",
+    "cmd": "check",
     "pid": 1454598
   },
   "foundations/elevation": {
@@ -102,7 +102,7 @@
     },
     "at": "2026-11-08T14:57:09.936Z",
     "by": "et design check",
-    "cmd": "design check",
+    "cmd": "check",
     "pid": 1454598
   }
 }
