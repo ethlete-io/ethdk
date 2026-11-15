@@ -99,6 +99,26 @@ export const forceInteractions = (css: string) => {
   return rewritten;
 };
 
+export type StyledRendererFactory = { createRenderer(element: unknown, type: { styles: string[] } | null): unknown };
+
+/**
+ * Makes Angular's DOM renderer factory rewrite each component's styles with {@link forceInteractions} in place, once,
+ * on the first renderer it creates for that component, so every render after reuses the rewritten styles.
+ */
+export const forceComponentStyles = (factory: StyledRendererFactory) => {
+  const createRenderer = factory.createRenderer;
+  const forced = new WeakSet<object>();
+
+  factory.createRenderer = function (element, type) {
+    if (type && !forced.has(type)) {
+      forced.add(type);
+      type.styles = type.styles.map(forceInteractions);
+    }
+
+    return createRenderer.call(this, element, type);
+  };
+};
+
 /** {@link forceInteractions} as a PostCSS plugin, run after every other plugin of the pipeline. */
 export const forceInteractionsPlugin = (): Plugin => ({
   postcssPlugin: 'ethlete-force-interactions',

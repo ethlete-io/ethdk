@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { forceInteractions, forceInteractionsPlugin } from './force-interactions';
+import { forceComponentStyles, forceInteractions, forceInteractionsPlugin } from './force-interactions';
 
 const HOVER = ':is(:hover, [data-et-force~="hover"], [data-et-force~="active"])';
 const FOCUS = ':is(:focus-visible, [data-et-force~="focus-visible"])';
@@ -120,5 +120,27 @@ describe('forceInteractionsPlugin in the Vite pipeline', () => {
     } finally {
       await vite.close();
     }
+  });
+});
+
+describe('forceComponentStyles', () => {
+  it("rewrites a component's styles in place on its first renderer, and leaves them alone after", () => {
+    const seen: string[][] = [];
+    const factory = {
+      createRenderer: (_element: unknown, type: { styles: string[] } | null) => seen.push(type ? [...type.styles] : []),
+    };
+    const def = { styles: ['.a:hover { color: red; }', '.b { color: blue; }'] };
+
+    forceComponentStyles(factory);
+    factory.createRenderer({}, def);
+    def.styles = [...def.styles, '.c:hover { color: red; }'];
+    factory.createRenderer({}, def);
+    factory.createRenderer({}, null);
+
+    expect(seen).toEqual([
+      [`.a${HOVER} { color: red; }`, '.b { color: blue; }'],
+      [`.a${HOVER} { color: red; }`, '.b { color: blue; }', '.c:hover { color: red; }'],
+      [],
+    ]);
   });
 });

@@ -2,6 +2,7 @@ import { statSync } from 'fs';
 import { registerHooks, ResolveFnOutput, ResolveHookContext } from 'module';
 import { resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { forceComponentStyles } from './force-interactions';
 import { missingPackageMessage } from './missing-package';
 import { buildFields } from './render-fields';
 import { DEV_MODE_NOTICE, keepCustomPropertyCase, quietDevModeNotice, shimMutationObserver } from './ssr-shims';
@@ -117,6 +118,7 @@ const importAngular = async () => {
   ]);
 
   shimLayout(server);
+  forceComponentStyles(browser.ɵDomRendererFactory2.prototype);
 
   return { core, browser, server, modules };
 };

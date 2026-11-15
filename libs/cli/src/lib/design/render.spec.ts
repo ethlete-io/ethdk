@@ -363,10 +363,10 @@ const post = (body: string, middleware: (request: IncomingMessage, response: Ser
 describe('forcing interactions in the CSS a frame receives', () => {
   const forced = '.x:is(:hover, [data-et-force~="hover"], [data-et-force~="active"]){}';
 
-  it('rewrites the component styles of a render', async () => {
+  it('answers the styles of a render as the worker rewrote them', async () => {
     const answered = await post(
       '{}',
-      renderMiddleware(async () => ({ markup: '<b></b>', styles: ['.x:hover{}'] })),
+      renderMiddleware(async () => ({ markup: '<b></b>', styles: [forced] })),
     );
 
     expect(JSON.parse(answered.body)).toEqual({ markup: '<b></b>', styles: [forced] });

@@ -212,7 +212,7 @@ export const renderMiddleware =
         }
 
         response.setHeader('content-type', 'application/json');
-        response.end(JSON.stringify({ ...result, styles: result.styles.map(forceInteractions) }));
+        response.end(JSON.stringify(result));
       });
   };
 

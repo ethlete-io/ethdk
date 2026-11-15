@@ -2,4 +2,4 @@
 '@ethlete/cli': patch
 ---
 
-The design server rewrites each stylesheet for forced interactions once and answers the same stylesheet from memory after that.
+The design render worker forces each component's styles once instead of rewriting every render answer.
