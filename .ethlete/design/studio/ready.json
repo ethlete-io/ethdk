@@ -177,7 +177,7 @@
     "pid": 2186674
   },
   "components/shell-system-picker": {
-    "hash": "e329de220f966ea6",
+    "hash": "ad95662e37a2f732",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "41081c4a032cf65d",
@@ -218,7 +218,7 @@
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
       "libs/components/src/lib/menu/menu-group-label.component.css": "ec523063a1f1a0f7",
-      "libs/components/src/lib/menu/menu-item-shortcut.component.css": "b342e8695a44c8b7",
+      "libs/components/src/lib/menu/menu-item-shortcut.component.css": "38012704bfe34b18",
       "libs/components/src/lib/menu/menu-item-submenu-icon.component.css": "376a5b6475713c4e",
       "libs/components/src/lib/menu/menu-item.component.css": "5f85d77311aa617a",
       "libs/components/src/lib/menu/menu-selection-item.component.css": "652a69f3fab890a3",
@@ -229,10 +229,10 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": ["closed", "emit:productChange", "open"],
-    "at": "2026-11-14T17:25:08.611Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 3380508
+    "at": "2026-11-15T23:38:14.010Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1737354
   },
   "components/sketch-status-badge": {
     "actions": [],
