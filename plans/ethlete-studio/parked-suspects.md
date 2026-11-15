@@ -34,3 +34,5 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - RSS leak (Linux, 986): an RSS leak seen in the B499 runs did not reproduce. Parked until a recipe (ADR 0302).
 - agent-sessions up --dry-run (machinery, fifa 15.11.): `up --dry-run` ignores the flag and starts the tmux sessions; `run` inside an existing tmux session of its own name returns without starting the agent. Built only on red CI.
 - runner image without Ubuntu mirror (CI, 15.11.): spec-sweep --slow 1 apt exit 100 on image ubuntu-26.04 20261111.82.6, no Ubuntu mirror fetched; not our code. Parked (ADR 0276).
+- slice:paths per checkout (machinery, 15.11.): `yarn slice:paths` writes one file per checkout, so parallel subagents overwrite each other and the pre-commit warning is unreliable during parallel runs. Built only on red CI.
+- keyring after D-Bus crash (machinery, 15.11.): gh and glab lost their login when the keyring collection stayed locked after the 03:25 user D-Bus crash. Cause (relogin fixed it ~11:40). Parked (ADR 0276).
