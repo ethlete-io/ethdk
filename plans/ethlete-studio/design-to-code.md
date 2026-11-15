@@ -3133,7 +3133,7 @@ writer's temp file. `withProductLock` holds `.ethlete/cache/<product>/decisions.
 10 s wait, error names the holder) across the read-modify-write of `writePartRecord`, `dropPartRecord`, `recordMerged`,
 `forgetMerged`, `recordMergeReason`, the legacy ready rewrite and every stamp write; `writeDecisionFile` routes
 `writeSketchFile` and the merge commit's json rewrite and restore. Removes (spec, bites): lost updates of `ready.json` and torn reads.
-None of the B501 findings is a torn write or interleave. Not covered: a `sketch.json` read in the caller.
+Not covered: a `sketch.json` read in the caller.
 
 B501 S3 as built (2026-11-13, merge only): `write-journal.ts` keeps an undo journal in `.ethlete/cache/<product>/journal/`:
 before the first write of a path below the checkout it copies its old state; `journaledMergeOf` (CLI and Studio merge) spans the gate, the
@@ -3174,11 +3174,14 @@ B501 (3) as built: `openEditSketch` (design check) runs in `journaledAsync`; `cr
 P3 case "edit sketch" in merge-journal.spec; bites (no journal; no note): step 7 neither state.
 B501 S4 as built (6bb13c4ec): `sketch ready` refuses a picked sketch whose variant changed without `--reopen`. `sharedBase` in sketch.json names a stale `shared/` copy in SKETCH-BASE-STALE; a rebase that
 ports only `shared/` copies keeps the ready mark. Bites: refusal, stale-copy line, kept mark. Not verified: live all-states;
-sketches older than 6bb13c4ec name no stale copy. Open: a reformat via `check --fix` drops the mark (S6, Suspect).
+sketches older than 6bb13c4ec name no stale copy.
 B501 S5a as built (6458824f1, a2dbaca62): `design status` names uncommitted ready marks (READY UNCOMMITTED) and
 untracked, empty or stale edit sketch folders (SKETCH UNTRACKED/LEFTOVER). `design check` deletes or names a stale edit
 sketch (STALE EDIT SKETCH; discard accepts it) and lists the sketches it opened (OPENED). A rebase port into a variant
 file prints READY WITHDRAWN (sketch, variant, part). Bites for each. Not verified: live studio status; Studio display (S5b).
+B501 S6 as built (20f34d667): product and root editor tsconfigs are written Prettier-formatted (38/38 pass); paths
+point at the installed CLI. FORMAT and `check --fix` skip git-ignored files; a format pass keeps the
+ready mark of each variant it alone changed. Bites for each.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
