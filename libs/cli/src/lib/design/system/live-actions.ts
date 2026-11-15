@@ -16,6 +16,7 @@ import {
   parseAction,
 } from './actions';
 import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
+import { BOX_ATTRIBUTE } from './dom-boxes';
 import { compareFrameOf } from './harness-shot';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
 import {
@@ -27,7 +28,7 @@ import {
   RingProbe,
   RingStyle,
 } from './pointer-focus';
-import { reachedExpandedStateOf } from './reached-state';
+import { expandedOf, reachedExpandedStateOf } from './reached-state';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
@@ -76,14 +77,25 @@ const ownedScript = (shell: string) => `
 
 /**
  * A script that scans the interactive elements under `roots` as the part check does and answers them with their
- * centre relative to the first `frame` element, `aria-expanded`, `aria-current` and their `data-et-part` keys from the
+ * centre relative to the first `frame` element (from the `data-box` a design picture's markup carries, as that copy is
+ * unstyled), `aria-expanded`, `aria-current` and their `data-et-part` keys from the
  * innermost out. With `shell` it keeps only the elements the shell component's view tree owns (Angular dev mode) and
  * those in an overlay, whose host Angular creates outside any view.
  */
 export const liveControlsScriptOf = (options: { roots: string[]; frame: string; shell: string | null }) => `(() => {
   const scanned = ${actionScanScriptOf(options.roots)};
   ${options.shell === null ? 'const keep = () => true;' : `${ownedScript(options.shell)}\n  if (!window.ng) throw new Error('the app has no window.ng - the live action check needs a development build');\n  if (!shellRoot) return null;\n  const keep = (element) => owned(element) || !!element.closest(${JSON.stringify(OVERLAY_ROOTS)});`}
-  const frame = document.querySelector(${JSON.stringify(options.frame)})?.getBoundingClientRect() ?? { x: 0, y: 0 };
+  const boxOf = (element) => {
+    const drawn = element.getAttribute(${JSON.stringify(BOX_ATTRIBUTE)});
+
+    if (drawn === null) return element.getBoundingClientRect();
+
+    const [x, y, width, height] = drawn.split(' ').map((field) => Number(field.slice(field.indexOf(':') + 1)));
+
+    return { x, y, width, height };
+  };
+  const frameElement = document.querySelector(${JSON.stringify(options.frame)});
+  const frame = frameElement ? boxOf(frameElement) : { x: 0, y: 0 };
   const counts = new Map();
 
   return scanned.flatMap((found) => {
@@ -91,7 +103,7 @@ export const liveControlsScriptOf = (options: { roots: string[]; frame: string; 
 
     if (!element || !keep(element)) return [];
 
-    const box = element.getBoundingClientRect();
+    const box = boxOf(element);
     const parts = [];
 
     for (let marked = element.closest('[data-et-part]'); marked; marked = marked.parentElement?.closest('[data-et-part]') ?? null)
@@ -260,7 +272,7 @@ export const liveStateCompareOf = (options: {
     };
 
   const wrong = keys.flatMap((key) => {
-    const found = options.after.find((control) => control.key === key)?.expanded ?? 'absent';
+    const found = expandedOf(options.after, key);
 
     return found === options.expected[key] ? [] : [`${key} aria-expanded ${found}, not ${options.expected[key]}`];
   });
@@ -825,6 +837,7 @@ export const checkLiveActions = async (options: {
             emptySlots: slotFill !== null,
             slotFill,
             compose: run.state.compose ?? null,
+            boxes: true,
             params: new URLSearchParams(),
           });
           const design = await designControlsOf({

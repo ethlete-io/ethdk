@@ -5,6 +5,7 @@ import {
   awaitEmitted,
   LiveControl,
   LiveOutcome,
+  liveControlsScriptOf,
   liveDriftOf,
   liveOutcomeOf,
   liveStateCompareOf,
@@ -131,6 +132,15 @@ describe('liveStateCompareOf', () => {
     });
   });
 
+  it('reads the aria-expanded control of a key that a plain button shares', () => {
+    const after = [control('button "studio"', { expanded: null }), control('button "studio"', { expanded: 'true' })];
+
+    expect(liveStateCompareOf({ state: 'open', expected: { 'button "studio"': 'true' }, after })).toEqual({
+      ok: true,
+      detail: '',
+    });
+  });
+
   it('fails a state that draws no aria-expanded control', () => {
     expect(liveStateCompareOf({ state: 'open', expected: {}, after: [] })).toEqual({
       ok: false,
@@ -152,6 +162,39 @@ describe('nearestControlOf', () => {
     expect(nearestControlOf({ ...app, key: 'button "c"' }, design)).toBeNull();
   });
 });
+
+describe('liveControlsScriptOf', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('places a design control by its drawn data-box, not by the unstyled layout of the copied markup', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(
+      `<div data-et-part="pages/flows" data-box="x:0 y:0 w:1280 h:900"><nav data-box="x:0 y:0 w:56 h:900"><button data-box="x:12 y:760 w:32 h:32">studio</button></nav><aside data-box="x:68 y:12 w:248 h:876"><button data-box="x:76 y:48 w:120 h:32">studio</button></aside></div>`,
+    );
+
+    const controls = (await page.evaluate(
+      liveControlsScriptOf({ roots: ['body'], frame: '[data-et-part~="pages/flows"]', shell: null }),
+    )) as LiveControl[];
+
+    await page.close();
+
+    expect(controls.map(({ occurrence, x, y }) => [occurrence, x, y])).toEqual([
+      [0, 28, 776],
+      [1, 136, 64],
+    ]);
+  });
+}, 30_000);
 
 describe('toggleSyncFailureOf', () => {
   const step = (pressed: string | null, overlays: number, expanded: string | null = null) => ({

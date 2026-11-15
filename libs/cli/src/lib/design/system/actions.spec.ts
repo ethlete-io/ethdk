@@ -70,6 +70,13 @@ describe('actions', () => {
     expect(actionInputsOf('menuitemcheckbox "Raster"')).toEqual(['click', 'Enter', 'Space']);
   });
 
+  it('moves a focusable separator or slider with the arrow keys instead of pressing it', () => {
+    const emit = parseAction('emit:sideWidthChange', []);
+
+    expect(actionInputsOf('separator "BreitederSeitenleiste"', emit)).toEqual(['ArrowRight', 'ArrowLeft']);
+    expect(actionInputsOf('slider "Zoom"')).toEqual(['ArrowRight', 'ArrowLeft']);
+  });
+
   it('sends a key press to the focus-visible row of the declared state where the part draws one', () => {
     const states = ['rest', 'open', 'open-focus-visible', 'closed'];
 

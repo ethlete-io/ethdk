@@ -923,38 +923,32 @@ the app's does not, so the color scheme differs at the switch; unchanged-matrix 
 Not verified: no design spec for (4); CI; the live app.
 
 **B502h as built (Linux builder subagent, 2026-11-14, 3ddb4efba, 52685c6f9, 006ab4a9c):** Full compare after (2 of 2
-runs): 31 ok / 0 DIFF / 7 FAILED (489). Per state, before to after (px): unchanged-matrix 13040 to ok,
-unchanged-matrix-open 20408 to ok, withdrawn-shown 131 to ok, change-crop 792 to ok. Causes, measured with `design dom`
-and the shot pixels: (1) the design's start pan (camera x -4000) clamped against the world before the font load (room
+runs): 31 ok / 0 DIFF / 7 FAILED (489). Before to after (px): unchanged-matrix 13040 to ok,
+unchanged-matrix-open 20408 to ok, withdrawn-shown 131 to ok, change-crop 792 to ok. Causes (`design dom`, shot pixels): (1) the design's start pan (camera x -4000) clamped against the world before the font load (room
 2 px) and no later fit clamped it again, so the design stayed panned 2 px (`--sk-pan-x: 2px`, sticky gutter edge drawn)
 while its matrix (1074 px) fits the list (1076 px); `fit` now calls `pan(0, 0)`. (2) the app world kept `min-w-full`
-on a wide part, so the fold row was 1076 px, the design's `w-max` world 1074 px; the app drops it unless the screen
-crop matrix shows (the design's screen world is full width). (3) the design shot box (positioned) paints over the top
-edge of the first stack edge, the app drew the edges in their own box after the frame (rows 352/353 at 35/19 not 15,
+on a wide part, so the fold row was 1076 px, the design's `w-max` world 1074 px; the app drops it unless the screen-crop
+matrix shows (the design's screen world is full width). (3) the design shot box (positioned) paints over the first stack
+edge's top, the app drew the edges in their own box after the frame (rows 352/353 at 35/19 not 15,
 row 358 at 35 not 45); the app now draws them in one scaled box after a shot-high spacer, under a `z-1` frame. (4) the
 design's sdk switch drew the checked ink edge in dark too; Q102 and the lib draw it only in light
-(`light-dark(ink, transparent)`), the design now does. Specs "sizes the world of a wide part to its matrix" and "draws
-the stack edges below a shot-high spacer" red on 9635fe92f sources in a scratch copy, green after; vitest related 160
+(`light-dark(ink, transparent)`), the design now does. Specs "sizes the world of a wide part to its matrix", "draws the
+stack edges below a shot-high spacer" red on 9635fe92f sources, green after; vitest related 160
 green; lint, tsc clean. `design check`: pages/sketches 4 CANVAS-UNDER-PANEL (same 4 as B502g), components/switch 0,
 pages/inbox (embeds the switch) clean. Not verified: the cause split of unchanged-matrix-open (ok after (1)
 and (2) together); no design spec for (1) and (4); CI; the live app.
 
-**B502i as built (Linux builder subagent, 2026-11-14, d1f722990):** `components/disclosure` takes `hug?: boolean`
-(like the boolean options `compact`/`long`): without it the toggle keeps `w-full`, with it the toggle sizes to its label.
-pages/sketches passes `hug: true` to the fold row's "Alle Zustände zeigen" instead of the `min-w-0` span of B502e. The
-app `DisclosureComponent` has a `hug` input (`booleanAttribute`): the button gets `w-fit` instead of `w-full` and the host
-`contents` instead of `block`, so the button is the flex item of the fold row like in the design; the sketches template
-drops `class="min-w-0"` and sets `hug`. A `block` host with `w-fit` drew unchanged-matrix-open DIFF 20408 px, `contents`
-ok. A first try glued `'w-full '` to `gap-space-2` in the class string: `design check` caught it
-(CLASS-GLUED-INTERPOLATION, PICTURES CHANGED, it wrote a `components/disclosure@edit` sketch), the spaced form is clean
-and the check removed the @edit sketch again. Compare: components/disclosure 12 ok, pages/merge 5 ok; pages/sketches in
-a scratch copy of HEAD plus this change 31 ok / 0 DIFF / 7 FAILED (489), 2 of 2 full runs; in the main checkout
-unchanged-matrix is DIFF 13030 px (app panned 2 px, gutter edge drawn) with and without this change (HEAD app files
-swapped in), 30 ok; pages/system 26 DIFF (13241-34089 px) identical on HEAD in the scratch copy, not from this slice.
-`design check`: components/disclosure clean, pages/merge clean, pages/sketches 4 CANVAS-UNDER-PANEL (as B502h),
-pages/system 2 warnings. Spec "sizes the fold toggle to its label instead of its row" red on HEAD app files in a
-scratch copy, green after; vitest related 183 green; lint, tsc clean. Not verified: why the main checkout's
-unchanged-matrix pans 2 px where the scratch copy does not; the pages/system DIFFs; CI; the live app.
+**B502i as built (Linux builder subagent, 2026-11-14, d1f722990):** `components/disclosure` takes `hug?: boolean`:
+without it the toggle keeps `w-full`, with it the toggle sizes to its label. pages/sketches passes `hug: true` to the
+fold row's "Alle Zustände zeigen" instead of the `min-w-0` span of B502e. The app `DisclosureComponent` has a `hug`
+input (`booleanAttribute`): button `w-fit` instead of `w-full`, host `contents` instead of `block`, so the button is the
+fold row's flex item as in the design (a `block` host with `w-fit` drew unchanged-matrix-open DIFF 20408 px). A first try
+glued `'w-full '` to `gap-space-2`: `design check` caught it (CLASS-GLUED-INTERPOLATION, an @edit sketch it removed
+again once spaced). Compare: components/disclosure 12 ok, pages/merge 5 ok; pages/sketches in a scratch copy 31 ok / 0
+DIFF / 7 FAILED (489), 2 of 2 runs; the main checkout's unchanged-matrix is DIFF 13030 px (app panned 2 px) with and
+without this change; pages/system 26 DIFF identical on HEAD. `design check`: disclosure, merge clean, sketches 4
+CANVAS-UNDER-PANEL (B502h), system 2 warnings. Spec red on HEAD app files, green after; vitest related 183 green;
+lint, tsc clean. Not verified: the 2 px pan; the pages/system DIFFs; CI; the live app.
 
 **B502j as built (Linux builder subagent, 2026-11-14, 3d28a1e00):** (1) The e2e `settled()` (run before every case)
 waited until no sketch row had `data-sk-unsized` (63399aedb), but after 10 s its loop ended and the case ran on with an
@@ -971,29 +965,24 @@ pass under the hold. Not verified: the full e2e suite and CI (every case now fai
 **B502k as built (Linux builder subagent, 2026-11-14, 7425e42bf, 2bf00b602):** pages/system 26 DIFF to 2 (2 of 2 full
 runs, 27 ok). Causes, measured on the shots and `design dom`: (1) the app sample `SYSTEM_TREE` listed Components before
 Elements, the design part-tree (3d2a32cf8) and the app's `SYSTEM_GROUPS` list Elements first; 24 states 13241-13639 to
-ok or the 398 px group. (2) the app disclosure host was a `block` flex item that shrank to its label, so the footer's
-`ms-auto` pushed Gründe to the row end; the design's `w-full` toggle is itself the row item next to the badge. The host
-is now always `contents`: the 398 px group (part, fit, part-focus-visible, one-blocker, agent-*), direct-edit-closed
+ok or the 398 px group. (2) the app disclosure host was a `block` flex item shrunk to its label, so `ms-auto` pushed Gründe to the row
+end; the design's `w-full` toggle is the row item. Host now always `contents`: the 398 px group (part, fit, part-focus-visible, one-blocker, agent-*), direct-edit-closed
 1434 to ok. (3) the design's `blocked-checking` build sample (b685abce7, ADR 0270) had no case in `buildReadySampleOf`,
 so the app drew no footer: 15860 to ok. Left, Cause measured: direct-edit 20848, blockers-open 1553: the SDK
-`anchoredDialogOverlayStrategy` caps the popover at `maxHeight: 80vh` (716 px drawn, it scrolls), the design's
-`sdk/components/anchored-dialog` draws no cap (769 px); a design/SDK conflict, not changed. Recommendation: the sdk
+`anchoredDialogOverlayStrategy` caps at `maxHeight: 80vh` (716 px, scrolls), the design's anchored-dialog has no cap
+(769 px); a design/SDK conflict. Recommendation: the sdk
 design dialog draws the lib's 80vh cap. Specs red on HEAD in a scratch copy, green after; vitest related 193 green; lint,
 tsc clean. Compare: pages/sketches 31 ok / 0 DIFF / 7 FAILED (489), components/disclosure 12 ok, pages/merge 5 ok.
 `design check`: pages/system 2 warnings, components/disclosure and pages/merge clean, pages/sketches 4 OLD
 CANVAS-UNDER-PANEL. Not verified: CI; the live app.
 
 **B502l as built (Linux builder subagent, 2026-11-14, 8fa1bbe24):** `design actions --product studio --live` on
-2ab761101: 62 click timeouts (the row's 18 was an older run), all "locator.evaluate: Timeout 30000ms exceeded", all on a
-click whose control is gone afterwards: 6 pages x the Studio-menu items (Projekt öffnen, Design-Server neu starten /
-stoppen, Erscheinungsbild, Hilfe & Einstellungen, ethlete-sdk) and the nav/product/Hide-panel buttons that switch the
-page; the own page's nav button passed. Cause (measured, spec): the runner read the toggle attributes of the clicked
-control with an unguarded `locator.evaluate`, which waits 30 s for a removed element; the ring probe next to it already
-answered null. Fix: `toggleStepOf` answers null when the control is gone. After: 0 timeouts (2 of 2 runs), failed checks
-118 to 69 of 485. Now visible, not timeouts, not built: Erscheinungsbild and Hilfe click close the menu instead of
-reaching `studio-menu.appearance`/`.help`; button System drifts per page. Unchanged: studio (2.) productChange,
-Sucheninstudio no data-et-action, separator sideWidthChange. Spec red on HEAD in a scratch copy, green after; vitest
-related 1510 green; lint, tsc clean. No part touched, so no `design check`. Not verified: CI.
+2ab761101: 62 click timeouts ("locator.evaluate: Timeout 30000ms"), all on a control the click removed: 6
+pages x the Studio-menu items and the page-switching nav/product/Hide-panel buttons. Cause (measured, spec): the
+runner read the clicked control's toggle attributes with an unguarded `locator.evaluate`, which waits 30 s for a
+removed element. Fix: `toggleStepOf` answers null when the control is gone. After: 0 timeouts (2 of 2 runs), failed
+118 to 69 of 485; then visible: Erscheinungsbild/Hilfe close the menu (B502m), button System drift (B502n), and (a)-(c)
+of B502o. Spec red, then green; vitest related 1510 green; lint, tsc clean. No part touched. Not verified: CI.
 
 **B502m as built (Linux builder subagent, 2026-11-15):** Cause (probe, spec): the runner, not the app. Before each click
 `tabAwayFrom` pressed Tab; from the autofocused item of the open Studio menu Tab closes the menu tree, so the click hit
@@ -1011,6 +1000,18 @@ clear it (the host switches). Fix: `liveOutcomeOf` also names the pressed contro
 after the press. After: drift System ok (click/Enter/Space); full `--live` 57 of 513 to 58 of 498, the rest one flaky
 merge load (empty product name; scoped merge 7 of 75 twice, as before). Spec red, then green; vitest related 1566 green;
 spec:stress 4/4; lint, tsc clean. No part touched. Unverified: CI.
+
+**B502o as built (Linux builder subagent, 2026-11-15):** (a) studio (2.) productChange. Cause (probe, spec):
+the runner. It scanned the unstyled `#root` copy of the design (0 stylesheets), so `nearestControlOf` paired the app
+picker (126,68) with the design rail bubble (12,178) and vice versa; `liveStateCompareOf` then read `aria-expanded`
+of the first `button "studio"` (the bubble). Fix: the page picture is drawn
+with `boxes`, `liveControlsScriptOf` places by `data-box`; `expandedOf` reads the control of a key that has one.
+(b) separator sideWidthChange. Cause (live run): the runner clicked, pressed Enter/Space; design note and app use
+the arrow keys. Fix: `actionInputsOf` presses ArrowRight, ArrowLeft for separator, slider,
+input-range. Pointer drag not driven. (c) Sucheninstudio: Cause (read): `title-search.ts` declares no data-et-action;
+the app opens the command palette via its store (no output) and no embedder draws a palette state. Design decision. After: `actions elements/shell-main --live` 44 of 435 to 6 of 559 failed (the 6 search;
+a first run 1 flaky ring timeout). Specs red, then green; vitest related 1587 green; stress 4/4; lint, tsc clean. No
+part touched. Unverified: CI, the full `--live` run.
 
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das frisst den halben tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full

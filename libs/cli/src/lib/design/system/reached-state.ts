@@ -1,5 +1,9 @@
 import { PixelCompare } from './part-compare';
 
+/** The `aria-expanded` of the control of `key` that has one, so a plain button sharing its name does not hide it. */
+export const expandedOf = (after: readonly { key: string; expanded: string | null }[], key: string) =>
+  after.find((control) => control.key === key && control.expanded !== null)?.expanded ?? 'absent';
+
 /**
  * What an app drawing that missed `goal` reached instead: the declared state it matches exactly, or the closest one by
  * differing pixels. `compare` compares the app drawing with one state's design; a state it fails to draw is skipped.
@@ -44,9 +48,7 @@ export const reachedExpandedStateOf = async (options: {
 
     if (!expected || keys.length === 0) return [];
 
-    const differing = keys.filter(
-      (key) => (after.find((control) => control.key === key)?.expanded ?? 'absent') !== expected[key],
-    ).length;
+    const differing = keys.filter((key) => expandedOf(after, key) !== expected[key]).length;
 
     return [{ state, differing }];
   });

@@ -1,4 +1,4 @@
-export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick'] as const;
+export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick', 'ArrowRight', 'ArrowLeft'] as const;
 
 export const DBLCLICK_PREFIX = 'dblclick:';
 
@@ -6,11 +6,20 @@ export type ActionInput = (typeof ACTION_INPUTS)[number];
 
 const SPACE_ONLY_ROLES = ['switch', 'checkbox', 'radio', 'input-checkbox', 'input-radio'];
 
-/** The inputs that press an element of `key`: a checkable control toggles on Space like a native checkbox, not on Enter. */
+const ARROW_ROLES = ['separator', 'slider', 'input-range'];
+
+/**
+ * The inputs that press an element of `key`: a checkable control toggles on Space like a native checkbox, not on Enter;
+ * a focusable separator or slider moves on the arrow keys and takes no press.
+ */
 export const actionInputsOf = (key: string, action?: DeclaredAction | string | null): readonly ActionInput[] => {
   if (typeof action === 'object' && action?.gesture === 'dblclick') return ['dblclick'];
 
-  return SPACE_ONLY_ROLES.includes(key.slice(0, key.indexOf(' '))) ? ['click', 'Space'] : ['click', 'Enter', 'Space'];
+  const role = key.slice(0, key.indexOf(' '));
+
+  if (ARROW_ROLES.includes(role)) return ['ArrowRight', 'ArrowLeft'];
+
+  return SPACE_ONLY_ROLES.includes(role) ? ['click', 'Space'] : ['click', 'Enter', 'Space'];
 };
 
 /** What a design declares an interactive element does: reach a state of the part, or fire one of its outputs. */
