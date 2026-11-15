@@ -3318,6 +3318,7 @@ const CASES = [
                   (picture) => picture.complete && picture.naturalWidth === 0,
                 ),
               null,
+              { timeout: FULL_COMPARE_MS },
             );
           }
           await page.getByRole('button', { name: 'Auf 100 % zoomen' }).first().click();
