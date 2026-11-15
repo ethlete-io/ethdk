@@ -14,6 +14,7 @@ import {
   writeSync,
 } from 'fs';
 import { basename, dirname, resolve, sep } from 'path';
+import { setTimeout as pause } from 'timers/promises';
 import { threadId } from 'worker_threads';
 import { productCacheDirOf } from './product';
 
@@ -215,26 +216,17 @@ const created = ({ fresh, dir, manifest }: { fresh: string; dir: string; manifes
   }
 };
 
-/**
- * Opens the write journal of a product: until `close`, every write to a file below `root` that goes through
- * `noteWrite` first keeps the file's old state, so a process killed half way is undone (or, once its git commit
- * landed, finished) by the next process that takes the product lock. One journal per thread; a nested open of the same
- * product joins it (its `close` and `rollback` leave both to the outer one), another product throws. Waits up to
- * `waitMs` (10 s) while another thread or process has the product's journal open, and throws naming it after that.
- */
-export const openJournal = (options: {
-  productDir: string;
-  root: string;
-  label: string;
-  waitMs?: number;
-}): WriteJournal => {
+type JournalOptions = { productDir: string; root: string; label: string; waitMs?: number };
+
+type Attempt = { opened: () => WriteJournal | null; deadline: number; timedOut: () => Error };
+
+const attemptOf = (options: JournalOptions): Attempt | WriteJournal => {
   const productDir = resolve(options.productDir);
 
   if (current?.productDir === productDir) return joinedOf(current);
   if (current) throw new Error(`${options.label}: the ${current.manifest.label} still writes`);
 
   const dir = journalDirOf(productDir);
-  const deadline = Date.now() + (options.waitMs ?? WAIT_MS);
   const manifest: Manifest = {
     label: options.label,
     pid: process.pid,
@@ -243,66 +235,84 @@ export const openJournal = (options: {
     after: [],
   };
   const fresh = `${dir}.${ownSuffixOf()}.new`;
+  let left: Manifest | null = null;
 
-  for (;;) {
+  const opened = () => {
     recoverJournal(productDir);
 
-    const left = existsSync(dir) ? readManifest(dir) : null;
+    left = existsSync(dir) ? readManifest(dir) : null;
 
-    if (!left && created({ fresh, dir, manifest })) break;
-    if (Date.now() >= deadline)
-      throw new Error(
-        `${options.label} waits: the ${left?.label ?? 'journaled write'} of pid ${left?.pid ?? '?'} has not finished (${dir}) - wait for it, or stop it`,
-      );
+    if (left || !created({ fresh, dir, manifest })) return null;
 
-    sleepSync(25 + Math.floor(Math.random() * 25));
-  }
+    const close = () => {
+      current = null;
+      drop(dir);
+    };
+    const handle: WriteJournal = {
+      close,
+      rollback: () => {
+        restore(dir, manifest);
+        close();
+      },
+      markCommit: (commit) => {
+        manifest.commit = commit;
+        writeManifest(dir, manifest);
+      },
+      keepAfter: (path, text) => {
+        const image = `after-${manifest.after.length}`;
+        const fd = openSync(resolve(dir, image), 'w');
 
-  const close = () => {
-    current = null;
-    drop(dir);
+        try {
+          writeSync(fd, text, null, 'utf8');
+          fsyncSync(fd);
+        } finally {
+          closeSync(fd);
+        }
+
+        manifest.after.push({ path: resolve(path), image });
+        writeManifest(dir, manifest);
+      },
+    };
+
+    current = { dir, productDir, manifest, handle };
+
+    return handle;
   };
-  const handle: WriteJournal = {
-    close,
-    rollback: () => {
-      restore(dir, manifest);
-      close();
-    },
-    markCommit: (commit) => {
-      manifest.commit = commit;
-      writeManifest(dir, manifest);
-    },
-    keepAfter: (path, text) => {
-      const image = `after-${manifest.after.length}`;
-      const fd = openSync(resolve(dir, image), 'w');
+  const timedOut = () =>
+    new Error(
+      `${options.label} waits: the ${left?.label ?? 'journaled write'} of pid ${left?.pid ?? '?'} has not finished (${dir}) - wait for it, or stop it`,
+    );
 
-      try {
-        writeSync(fd, text, null, 'utf8');
-        fsyncSync(fd);
-      } finally {
-        closeSync(fd);
-      }
-
-      manifest.after.push({ path: resolve(path), image });
-      writeManifest(dir, manifest);
-    },
-  };
-
-  current = { dir, productDir, manifest, handle };
-
-  return handle;
+  return { opened, deadline: Date.now() + (options.waitMs ?? WAIT_MS), timedOut };
 };
 
-/** The journal this process has open, if any. */
-export const openJournalOf = (): WriteJournal | null => (current ? joinedOf(current) : null);
+const isAttempt = (value: Attempt | WriteJournal): value is Attempt => 'opened' in value;
 
-/** Runs `run` inside a journal of `productDir` (see `openJournal`): a throw undoes its writes and rethrows. */
-export const journaled = <T>(
-  options: { productDir: string; root: string; label: string; waitMs?: number },
-  run: () => T,
-): T => {
-  const journal = openJournal(options);
+const pauseMs = () => 25 + Math.floor(Math.random() * 25);
 
+/**
+ * Opens the write journal of a product: until `close`, every write to a file below `root` that goes through
+ * `noteWrite` first keeps the file's old state, so a process killed half way is undone (or, once its git commit
+ * landed, finished) by the next process that takes the product lock. One journal per thread; a nested open of the same
+ * product joins it (its `close` and `rollback` leave both to the outer one), another product throws. Waits up to
+ * `waitMs` (10 s) while another thread or process has the product's journal open, and throws naming it after that.
+ */
+export const openJournal = (options: JournalOptions): WriteJournal => {
+  const attempt = attemptOf(options);
+
+  if (!isAttempt(attempt)) return attempt;
+
+  for (;;) {
+    const journal = attempt.opened();
+
+    if (journal) return journal;
+    if (Date.now() >= attempt.deadline) throw attempt.timedOut();
+
+    sleepSync(pauseMs());
+  }
+};
+
+const runIn = <T>(journal: WriteJournal, run: () => T): T => {
   try {
     const result = run();
 
@@ -313,5 +323,30 @@ export const journaled = <T>(
     journal.rollback();
 
     throw error;
+  }
+};
+
+/** The journal this process has open, if any. */
+export const openJournalOf = (): WriteJournal | null => (current ? joinedOf(current) : null);
+
+/** Runs `run` inside a journal of `productDir` (see `openJournal`): a throw undoes its writes and rethrows. */
+export const journaled = <T>(options: JournalOptions, run: () => T): T => runIn(openJournal(options), run);
+
+/**
+ * `journaled` for a thread that must keep serving while it waits: the wait for another holder's journal yields to the
+ * event loop instead of blocking it. `run` stays synchronous, so no other task of this thread sees the open journal.
+ */
+export const journaledAsync = async <T>(options: JournalOptions, run: () => T): Promise<T> => {
+  const attempt = attemptOf(options);
+
+  if (!isAttempt(attempt)) return runIn(attempt, run);
+
+  for (;;) {
+    const journal = attempt.opened();
+
+    if (journal) return runIn(journal, run);
+    if (Date.now() >= attempt.deadline) throw attempt.timedOut();
+
+    await pause(pauseMs());
   }
 };

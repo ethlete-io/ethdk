@@ -3178,10 +3178,12 @@ mark and the `mergeHold` as two writes. Built: `journaledReadyOf` writes the rea
 step, `journaledPickOf` the CLI pick; both wait for another open journal of the product like a merge (5 min). The
 no-visible-change merge runs after the ready journal closes, in its own. P3 cases "ready" and "pick" in
 merge-journal.spec (bite: unjournaled, step 1 leaves the temp file). Verified: merge-journal.spec, vitest related,
-cli typecheck and lint, spec:stress 4/4 (merge-journal, sketch-command). Not verified: a live `sketch ready`. Open: the Studio pick (`POST
-/__design/sketch-decision`) stays unjournaled: Suspect: on the serve main thread a journal wait blocks the event loop
-for as long as a merge worker holds the product's journal (the e2e "pick new" case); it needs an async wait or the
-worker. Studio has no sketch-ready endpoint; `design ready` writes one tracked `ready.json` under the lock.
+cli typecheck and lint, spec:stress 4/4 (merge-journal, sketch-command). Not verified: a live `sketch ready`. Open: the Studio pick (built below). Studio has no sketch-ready endpoint; `design ready` writes one tracked `ready.json` under the lock.
+
+B501 Studio pick journal as built (2026-11-15): `POST /__design/sketch-decision` writes inside a product journal
+opened by `journaledAsync`, which waits for another holder by yielding to the event loop. Spec: write-journal.spec
+"journaledAsync keeps the event loop running"; bite (sync wait): ticker 0, red. Verified: vitest related, lint,
+typecheck, e2e "picking old ..." 1/1. Not verified: CI.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a

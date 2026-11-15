@@ -4,7 +4,7 @@ import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { Worker } from 'worker_threads';
 import { describe, expect, it } from 'vitest';
-import { openJournal } from './write-journal';
+import { journaledAsync, openJournal } from './write-journal';
 
 const JITI = pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href;
 
@@ -56,5 +56,27 @@ describe('openJournal', () => {
     );
 
     await held.closed;
+  }, 30_000);
+
+  it('journaledAsync keeps the event loop running while another thread holds the journal, then runs', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'cli-write-journal-'));
+    const productDir = join(root, '.ethlete', 'design', 'acme');
+
+    mkdirSync(productDir, { recursive: true });
+
+    const held = holdInThread(productDir, root, 1500);
+
+    await held.open;
+
+    let ticks = 0;
+    const ticker = setInterval(() => ticks++, 50);
+    const ran = await journaledAsync({ productDir, root, label: 'pick of components/second', waitMs: 20_000 }, () =>
+      Date.now(),
+    );
+
+    clearInterval(ticker);
+
+    expect(ran).toBeGreaterThanOrEqual(await held.closed);
+    expect(ticks).toBeGreaterThanOrEqual(10);
   }, 30_000);
 });

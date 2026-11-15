@@ -2,6 +2,8 @@ import { git } from './git-reader';
 import { originOf } from './system/write-origin';
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
+import { journaledAsync } from './system/write-journal';
+import { MERGE_WAIT_MS } from './system/sketch/merge-step';
 import { fromEvent, take } from 'rxjs';
 import { setImmediate } from 'timers/promises';
 import { repoInvocation } from '../invocation';
@@ -672,7 +674,7 @@ export const sketchCropAnswer = withSketch('GET', async ({ asked, product, sketc
  * by the designer on one variant: `{ kind: 'reject' | 'reopen', variant, reason? }` or `{ kind: 'reason', variant, reason }`.
  * Writes it into sketch.json.
  */
-export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch }) => {
+export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
   const body = await bodyOf(asked.request);
   const kind = body?.['kind'] as SketchDecisionInput['kind'];
   const comment = textOf(body?.['comment']);
@@ -691,7 +693,10 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
       : kind === 'pick'
         ? { kind, variant, ...(comment ? { comment } : {}), ...studioOrigin }
         : { kind, variant, reason: reason ?? '', by: 'designer' };
-  const decided = decideSketch({ sketch, decision });
+  const decided = await journaledAsync(
+    { productDir: product.dir, root: asked.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
+    () => decideSketch({ sketch, decision }),
+  );
 
   return typeof decided === 'string'
     ? failure(422, decided)
