@@ -160,9 +160,12 @@ const loadedFonts = `Promise.all(${facesInUse}.map((face) => face.load().catch((
 export const settled = `new Promise((done) => ${loadedFonts}.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
 
-/** Waits for `settled` on `page`, and throws a `WaitTimeoutError` naming the page after `DRAW_TIMEOUT_MS`. */
-export const awaitSettled = (page: Pick<Page, 'evaluate' | 'url'>) =>
-  withinLimit(page.evaluate(settled), {
+/**
+ * Waits for `settled` on `page`, after evaluating the expression `before` in the same call, and throws a
+ * `WaitTimeoutError` naming the page after `DRAW_TIMEOUT_MS`.
+ */
+export const awaitSettled = (page: Pick<Page, 'evaluate' | 'url'>, before?: string) =>
+  withinLimit(page.evaluate(before ? `(${before}, ${settled})` : settled), {
     ms: DRAW_TIMEOUT_MS,
     what: `the fonts and the first frames of ${page.url()}`,
   });

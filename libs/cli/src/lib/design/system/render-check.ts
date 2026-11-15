@@ -643,7 +643,13 @@ export const inspectRetryingTimeouts = async (
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
-type Lane = { page: Page; sdkErrors: ReturnType<typeof watchSdkErrorLines>; booted: string | null };
+type Lane = {
+  page: Page;
+  sdkErrors: ReturnType<typeof watchSdkErrorLines>;
+  booted: string | null;
+  scheme?: ColorScheme | null;
+  viewport?: string;
+};
 
 /** @internal The frames of a part that draw the same page and differ only in their colour scheme, in drawing order. */
 export const loadsOf = <T extends Pick<Frame, 'search' | 'viewport'>>(frames: T[]) => {
@@ -662,11 +668,17 @@ const FINISHED_TRANSITIONS = `document.getAnimations()
   .filter((animation) => animation instanceof CSSTransition)
   .forEach((animation) => animation.finish())`;
 
-const schemeSwitched = async (page: Page, scheme: ColorScheme | null) => {
-  await page.emulateMedia({ colorScheme: scheme });
-  await page.evaluate(FINISHED_TRANSITIONS);
-  await awaitSettled(page);
+const schemeSwitched = async (lane: Lane, scheme: ColorScheme | null) => {
+  await lane.page.emulateMedia({ colorScheme: scheme });
+  lane.scheme = scheme;
+  await awaitSettled(lane.page, FINISHED_TRANSITIONS);
 };
+
+const unstyledPassOf = (frame: Frame, emptySlots: string | null) => `(async () => {
+  ${emptySlots === null ? '' : `${emptySlots};\n  await null;`}
+  const unstyled = ${inspectFrame({ ...inspectedOptionsOf(frame), sdkStylesOnly: true })};
+  return [unstyled, await ${FONT_FACES_SCRIPT}];
+})()`;
 
 const inspectedOptionsOf = (frame: Frame) => ({
   fixed: frame.fixed,
@@ -686,8 +698,17 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
 
   const booted = bootKeyOf(first.search);
 
-  await page.emulateMedia({ colorScheme: first.scheme });
-  await page.setViewportSize(first.viewport);
+  const viewport = JSON.stringify(first.viewport);
+
+  if (lane.scheme !== first.scheme) {
+    await page.emulateMedia({ colorScheme: first.scheme });
+    lane.scheme = first.scheme;
+  }
+
+  if (lane.viewport !== viewport) {
+    await page.setViewportSize(first.viewport);
+    lane.viewport = viewport;
+  }
 
   if (lane.booted !== booted || !(await switchFrame(page, first.address.state))) {
     lane.booted = null;
@@ -700,12 +721,10 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
   const inFrame: Found[][] = [];
 
   for (const [at, frame] of frames.entries()) {
-    if (at > 0) await schemeSwitched(page, frame.scheme);
+    if (at > 0) await schemeSwitched(lane, frame.scheme);
 
     inFrame.push((await page.evaluate(inspectFrame(inspectedOptionsOf(frame)))) as Found[]);
   }
-
-  await page.evaluate(emptySlotsScriptOf(first.address.part));
 
   const unstyled: Found[][] = [];
   const fontFaces: Found[][] = [];
@@ -713,12 +732,13 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
   for (let at = frames.length - 1; at >= 0; at--) {
     const frame = frames[at] as Frame;
 
-    if (at < frames.length - 1) await schemeSwitched(page, frame.scheme);
+    const last = at === frames.length - 1;
 
-    unstyled[at] = (await page.evaluate(
-      inspectFrame({ ...inspectedOptionsOf(frame), sdkStylesOnly: true }),
-    )) as Found[];
-    fontFaces[at] = (await page.evaluate(FONT_FACES_SCRIPT)) as Found[];
+    if (!last) await schemeSwitched(lane, frame.scheme);
+
+    [unstyled[at], fontFaces[at]] = (await page.evaluate(
+      unstyledPassOf(frame, last ? emptySlotsScriptOf(first.address.part) : null),
+    )) as [Found[], Found[]];
   }
 
   return frames.map((frame, at) => {
