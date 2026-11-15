@@ -655,6 +655,10 @@ const main = async () => {
       `cold = no design process, no node_modules/.cache/ethlete-design and no ${WORK_ROOT}/*.tsbuildinfo in ${options.target}`,
     );
 
+  // macOS Maintenance Sleep freezes every process mid-run and reads as a server stall; `caffeinate -d -u` does not stop it.
+  if (process.platform === 'darwin')
+    spawn('caffeinate', ['-i', '-s', '-w', String(process.pid)], { detached: true, stdio: 'ignore' }).unref();
+
   const passed = [];
 
   for (const { id, title } of PROOFS.filter(({ id }) => !options.only || id === options.only)) {
