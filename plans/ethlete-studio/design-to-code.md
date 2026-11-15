@@ -4033,3 +4033,7 @@ of a finished run untracked. Cause (bite): with prints untracked, an unchained o
 module it imports, through `fs.promises.readFile`, which the Tailwind child in `tailwind-classes.ts` already records.
 Specs in `tailwind-facts-cache.spec.ts` (plugin's imported module changes, ESM config changes) fail with that recorder
 removed and pass with only the child's `readFileSync` recorder removed.
+
+661 as built (2026-11-15): `render-check.spec.ts` fixtures carry a bundled Noto Sans face (the tracked latin variable woff2 as a data URL, family `FixtureSans`) in each part's drawing `styles`, which land in a document `<style>`; `:root` defaults to it and the `sans-serif` fixture strings use it. The `Gone` font spec stays meaningful (its face still fails to load).
+Verified: new spec draws "Hamburgefonstiv" at 134x19, red with the face broken; changed expectations: underline-cut content 300x18 in 100x18 became 300x22 in 100x22.
+Not verified: on a Mac (the 17px-tall case), and that the Mac Chromium renders Noto identically.

@@ -15,6 +15,14 @@ import {
   uniqueIssuesOf,
 } from './render-check';
 
+const FIXTURE_FONT = 'FixtureSans';
+const FIXTURE_FONT_FILE = join(
+  __dirname,
+  '../../../../../../.ethlete/design/studio/assets/fonts/noto-sans-latin-wght-normal.woff2',
+);
+const FIXTURE_FONT_CSS = `@font-face { font-family: '${FIXTURE_FONT}'; font-weight: 100 900; src: url(data:font/woff2;base64,${readFileSync(FIXTURE_FONT_FILE).toString('base64')}) format('woff2'); }
+:root { font-family: '${FIXTURE_FONT}'; }`;
+
 const skipWithoutBrowser = (context: { skip: (note?: string) => never }, reason: string) => {
   if (process.env['CI']) throw new Error(`No browser in CI: ${reason}`);
 
@@ -105,13 +113,14 @@ const checkout = (parts: typeof PARTS = PARTS) => {
     writeFileSync(
       join(dir, `${name}.ts`),
       `import { definePart, drawing, html } from '@design-system';
+const font = ${JSON.stringify(FIXTURE_FONT_CSS)};
 ${css ? `import styles from './${name}.css?inline';` : ''}
 
 export default definePart({
   note: 'A fixture.',
   states: { ${states} },
   ${extra}
-  render: () => drawing({ body: html\`${body}\`, styles: ${css ? 'styles' : "''"} }),
+  render: () => drawing({ body: html\`${body}\`, styles: ${css ? 'font + styles' : 'font'} }),
 });
 `,
     );
@@ -223,10 +232,28 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('draws the fixtures with the bundled font, so a text metric is the same on every machine', async (context) => {
+    const target = checkout({
+      'components/glyphs': {
+        body: '<div style="width: 20px; overflow: hidden"><p style="margin: 0; width: max-content; font-size: 16px; line-height: 16px">Hamburgefonstiv</p></div>',
+      },
+    });
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [{ product: 'shop', sketch: null, parts: null }],
+    });
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+    expect(rendered.issues.find((issue) => issue.rule === 'CLIPPED')?.detail).toContain('content 134x19 in 20x16');
+  }, 120_000);
+
   it('flags a control whose rendered height is not its --control-* token, at full size and in a thumbnail', async (context) => {
     const css = `:root { --control-sm: 24px; --line: 16px; }
 @layer components {
-  .btn { display: inline-flex; align-items: center; box-sizing: border-box; border: 1px solid rgb(0, 0, 0); font: 12px/16px sans-serif; padding: var(--btn-padding); --btn-padding: 4px 8px;
+  .btn { display: inline-flex; align-items: center; box-sizing: border-box; border: 1px solid rgb(0, 0, 0); font: 12px/16px ${FIXTURE_FONT}; padding: var(--btn-padding); --btn-padding: 4px 8px;
     &:where([data-size='xs']) { --btn-padding: 2px 8px; }
   }
 }
@@ -284,7 +311,7 @@ describe('renderIssuesOf', () => {
 
   it('does not flag a visually hidden span inside a button as clipped', async (context) => {
     const hidden = (style: string) =>
-      `<div style="padding: 8px"><button style="font: 12px/16px sans-serif; padding: 4px 8px">Search<span style="position: absolute; white-space: nowrap; ${style}">Control K</span></button></div>`;
+      `<div style="padding: 8px"><button style="font: 12px/16px ${FIXTURE_FONT}; padding: 4px 8px">Search<span style="position: absolute; white-space: nowrap; ${style}">Control K</span></button></div>`;
     const target = checkout({
       'components/hidden-box': { body: hidden('width: 1px; height: 1px; margin: -1px; overflow: hidden') },
       'components/hidden-clip-path': {
@@ -307,7 +334,7 @@ describe('renderIssuesOf', () => {
   it('still flags text clipped by a collapsed box that is only 1px high', async (context) => {
     const target = checkout({
       'components/collapsed': {
-        body: '<div style="padding: 8px"><div style="width: 200px; height: 1px; overflow: hidden; font: 12px/16px sans-serif">Round one text</div></div>',
+        body: `<div style="padding: 8px"><div style="width: 200px; height: 1px; overflow: hidden; font: 12px/16px ${FIXTURE_FONT}">Round one text</div></div>`,
       },
     });
     const config = readConfig(target) ?? {};
@@ -471,17 +498,18 @@ export default definePart({
     mkdirSync(dir, { recursive: true });
     writeFileSync(
       join(dir, 'fonted.css'),
-      '@font-face { font-family: "Gone"; src: url("/gone.woff2") format("woff2"); } .shop-text { color: #000; background: #fff; font-family: "Gone", sans-serif; } @media (prefers-color-scheme: dark) { .shop-text { color: #eee; background: #111; } }',
+      '@font-face { font-family: "Gone"; src: url("/gone.woff2") format("woff2"); } .shop-text { color: #000; background: #fff; font-family: "Gone", FixtureSans; } @media (prefers-color-scheme: dark) { .shop-text { color: #eee; background: #111; } }',
     );
     writeFileSync(
       join(dir, 'fonted.ts'),
       `import { definePart, drawing, html } from '@design-system';
+const font = ${JSON.stringify(FIXTURE_FONT_CSS)};
 import styles from './fonted.css?inline';
 
 export default definePart({
   note: 'A fixture.',
   states: { a: {}, b: {} },
-  render: () => drawing({ body: html\`<p class="shop-text" style="margin: 0">Text</p>\`, styles }),
+  render: () => drawing({ body: html\`<p class="shop-text" style="margin: 0">Text</p>\`, styles: font + styles }),
 });
 `,
     );
@@ -573,7 +601,7 @@ export default definePart({
       { product: 'shop', part: 'components/gridded', sketch: null, line: 'grid 1 row x 2 columns ok' },
     ]);
     expect(rendered.issues.find((issue) => issue.part === 'components/cut')?.detail).toBe(
-      'content 300x18 in 100x18; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
+      'content 300x22 in 100x22; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
     );
   }, 120_000);
 
