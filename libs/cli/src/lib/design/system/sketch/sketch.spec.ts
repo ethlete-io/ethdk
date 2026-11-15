@@ -408,7 +408,7 @@ describe('status', () => {
 
     writeFileSync(join(sketch.dir, 'a', 'extra.css'), '.x { color: red; }');
 
-    const reopened = reopenChangedReady(ready);
+    const reopened = reopenChangedReady(ready) as { sketch: Sketch; changed: string[] };
 
     expect(reopened?.changed).toEqual(['a']);
     expect(sketchJson(target, 'elements-hero')['status']).toBe('in progress');
@@ -418,7 +418,7 @@ describe('status', () => {
     });
   });
 
-  it('reopens a picked ready sketch whose variant changed since ready and keeps its pick', () => {
+  it('refuses to reopen a picked ready sketch whose variant changed without reopen, and keeps its pick with it', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');
     const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
@@ -429,10 +429,17 @@ describe('status', () => {
 
     writeFileSync(join(sketch.dir, 'a', 'extra.css'), '.x { color: red; }');
 
-    const reopened = reopenChangedReady(picked);
+    const before = readFileSync(join(sketch.dir, 'sketch.json'), 'utf8');
 
-    expect(reopened?.changed).toEqual(['a']);
-    expect(markSketchReady({ checkout: target, sketch: reopened?.sketch as Sketch })).toMatchObject({
+    expect(reopenChangedReady(picked)).toBe(
+      'elements/hero is picked (variant a) and a changed since sketch ready judged it - nothing was recorded; add --reopen if the user asked for the change, else restore the files',
+    );
+    expect(readFileSync(join(sketch.dir, 'sketch.json'), 'utf8')).toBe(before);
+
+    const reopened = reopenChangedReady(picked, { reopen: true }) as { sketch: Sketch; changed: string[] };
+
+    expect(reopened.changed).toEqual(['a']);
+    expect(markSketchReady({ checkout: target, sketch: reopened.sketch })).toMatchObject({
       status: 'ready',
       decision: { kind: 'pick', variant: 'a' },
     });

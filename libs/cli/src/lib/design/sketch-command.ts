@@ -116,7 +116,7 @@ export const SKETCH_USAGE = [
   'sketch target remove <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--reopen] [--product <name>]',
-  'sketch ready <layer>/<name> [--no-visible-change] --by <model id> [--product <name>]',
+  'sketch ready <layer>/<name> [--no-visible-change] [--reopen] --by <model id> [--product <name>]',
   'sketch hold <layer>/<name> (--until <what the change waits on> | --until-sketch <layer>/<name>[@<sketch>]) --by <model id> [--product <name>]',
   'sketch release <layer>/<name> --by <model id> [--product <name>]',
   'sketch check [<layer>/<name>] [--fix] [--no-visible-change] [--product <name>]',
@@ -162,7 +162,7 @@ const FLAG_HELP: Record<string, string> = {
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
   '--until': 'what the pending change waits on: an open decision, a helper still to land',
   '--done': 'end the live report of the variant',
-  '--reopen': 'on report: move a ready sketch back to in progress',
+  '--reopen': 'on report or ready: move a ready sketch back to in progress; a picked one keeps its pick',
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
   '--fix': "write the variants in the checkout's Prettier format first",
@@ -821,10 +821,10 @@ const lockedReady = (sketch: Sketch) => {
   return () => rmSync(lock, { force: true });
 };
 
-const reportedReopen = (sketch: Sketch) => {
-  const reopened = reopenChangedReady(sketch);
+const reportedReopen = (sketch: Sketch, reopen: boolean) => {
+  const reopened = reopenChangedReady(sketch, { reopen });
 
-  if (!reopened) return sketch;
+  if (!reopened || typeof reopened === 'string') return reopened ?? sketch;
 
   if (reopened.changed.length === 0)
     console.log(`${sketch.target} is ready; its files equal the commit that recorded their hashes - hashed them again`);
@@ -842,7 +842,10 @@ const readied = (context: Context) => {
 
   if (hold !== null) return fail(hold);
 
-  const reopened = reportedReopen(found.sketch);
+  const reopened = reportedReopen(found.sketch, context.args.flags.has('--reopen'));
+
+  if (typeof reopened === 'string') return fail(reopened);
+
   const current = { product: found.product, sketch: reopened };
   const refused = timedPhase('gates', () => readyRefusalOf(context, current));
 
@@ -1462,7 +1465,11 @@ const rebased = (context: Context) =>
     console.log(`${sketch.target} now compares with the product as it is`);
 
     if (ported.length > 0 && sketch.status === 'ready')
-      console.log(`variants changed - run sketch ready ${sketch.target} to check them again`);
+      console.log(
+        rebased.readyContent !== sketch.readyContent
+          ? `${sketch.target} stays ready - the port changed only its shared/ copies`
+          : `variants changed - run sketch ready ${sketch.target} to check them again`,
+      );
 
     return 0;
   });

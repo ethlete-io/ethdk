@@ -5,6 +5,7 @@ import { partHashHolds, staleBaselineOf } from './baseline';
 import { overlaySketch } from './overlay';
 import { Problem } from '../problem';
 import { listSketches, Sketch } from './sketch';
+import { staleSharedCopiesOf } from './shared-base';
 
 const isInside = (dir: string, file: string) => {
   const path = relative(dir, file);
@@ -83,7 +84,10 @@ export const staleSketchBasesOf = (options: {
 
     if (!changed?.length || (parts && !changed.some((part) => parts.has(part)))) return [];
 
-    const message = `${changed.join(', ')} changed since the sketch was drawn - bring each variant up to date, then run ${invocation} sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
+    const copies = staleSharedCopiesOf(product, sketch.sharedBase).map(
+      ({ copy, base, commit }) => `; ${copy} is a stale copy of ${base} (${commit})`,
+    );
+    const message = `${changed.join(', ')} changed since the sketch was drawn${copies.join('')} - bring each variant up to date, then run ${invocation} sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
 
     return [
       {

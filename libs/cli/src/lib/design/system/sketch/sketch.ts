@@ -24,6 +24,7 @@ import { isBuiltInBase } from '../base';
 import { isLayer, Layer, LAYER_USES, mayUse } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
+import { sharedBaseNowOf, sharedBaseOf } from './shared-base';
 import { baselineTreeOf, dropBaselineTree, keepBaselineTree } from './baseline-tree';
 import { hasActor, WriteOrigin } from '../write-origin';
 import { withMadeBy } from './part-definition';
@@ -98,6 +99,8 @@ export type SketchFile = {
   baseline?: Record<string, string>;
   /** The git tree of the product folders the baseline was recorded from, for a rebase when no commit holds that state. */
   baselineTree?: string;
+  /** The content hash of each part `shared/` file the sketch lifted into its own, keyed `<layer>/<name>/shared/<path>`, when it was created or rebased. */
+  sharedBase?: Record<string, string>;
   decision?: SketchDecision;
   variantInfo?: Record<string, SketchVariantInfo>;
   /** Per variant, every rejection it had, oldest first. */
@@ -580,6 +583,13 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: mergeHold must be { reason, at }`;
   if (parsed.baselineTree !== undefined && (typeof parsed.baselineTree !== 'string' || !parsed.baselineTree))
     return `${file}: baselineTree must be a git tree id`;
+  if (
+    parsed.sharedBase !== undefined &&
+    (!parsed.sharedBase ||
+      typeof parsed.sharedBase !== 'object' ||
+      Object.values(parsed.sharedBase).some((hash) => typeof hash !== 'string'))
+  )
+    return `${file}: sharedBase must be { <layer>/<name>/shared/<path>: <content hash> }`;
   if (parsed.covers !== undefined && !isStringList(parsed.covers))
     return `${file}: covers must be a list of <state> or <state>@<x>,<y>,<w>,<h>`;
 
@@ -669,6 +679,7 @@ const sketchFileOf = (sketch: Sketch): SketchFile => ({
   createdAt: sketch.createdAt,
   ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
   ...(sketch.baselineTree ? { baselineTree: sketch.baselineTree } : {}),
+  ...(sketch.sharedBase && Object.keys(sketch.sharedBase).length > 0 ? { sharedBase: sketch.sharedBase } : {}),
   ...(sketch.decision ? { decision: sketch.decision } : {}),
   rounds: sketch.rounds,
   ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
@@ -978,6 +989,7 @@ export const createSketch = (options: {
 
   if (like?.shared) cpSync(like.shared, resolve(dir, SHARED_FOLDER), { recursive: true });
 
+  const sharedBase = like ? {} : sharedBaseOf(product, targets);
   const created: Sketch = {
     target: sketchIdOf(sketch),
     targets,
@@ -985,6 +997,7 @@ export const createSketch = (options: {
     createdAt: new Date().toISOString(),
     baseline: baselineOf(product),
     ...baselineTreeFieldOf({ product, sketchDir: dir }),
+    ...(Object.keys(sharedBase).length > 0 ? { sharedBase } : {}),
     rounds: [firstRoundOf(roundTitle, roundNote)],
     variantInfo: Object.fromEntries(
       variants.map((variant) => [
@@ -1299,12 +1312,15 @@ const equalsReadyCommit = (sketch: Sketch) => {
 };
 
 /**
- * Moves an undecided ready sketch back to in progress when a variant changed since `sketch ready` judged it, and
- * answers the changed variants, or `null` when nothing changed or the sketch recorded no content. A sketch whose
- * hashes differ while its variant and `shared/` files equal the commit that recorded them keeps ready with fresh
- * hashes and answers no changed variant.
+ * Moves a ready sketch back to in progress when a variant changed since `sketch ready` judged it, and answers the
+ * changed variants, or `null` when nothing changed or the sketch recorded no content. A picked sketch moves only with
+ * `reopen`, and keeps its pick; without it the answer is the refusal. A sketch whose hashes differ while its variant
+ * and `shared/` files equal the commit that recorded them keeps ready with fresh hashes and answers no changed variant.
  */
-export const reopenChangedReady = (sketch: Sketch): { sketch: Sketch; changed: string[] } | null => {
+export const reopenChangedReady = (
+  sketch: Sketch,
+  options: { reopen?: boolean } = {},
+): { sketch: Sketch; changed: string[] } | string | null => {
   const changed = changedSinceReadyOf(sketch);
 
   if (changed.length === 0) return null;
@@ -1316,6 +1332,9 @@ export const reopenChangedReady = (sketch: Sketch): { sketch: Sketch; changed: s
 
     return { sketch: rehashed, changed: [] };
   }
+
+  if (sketch.decision?.kind === 'pick' && !options.reopen)
+    return `${sketch.target} is picked (variant ${sketch.decision.variant}) and ${changed.join(', ')} changed since sketch ready judged it - nothing was recorded; add --reopen if the user asked for the change, else restore the files`;
 
   const { readyContent: _readyContent, mergeHold: _mergeHold, ...rest } = sketch;
   const reopened: Sketch = { ...rest, status: 'in progress' };
@@ -1524,9 +1543,9 @@ export const orphanedPickOf = (sketch: Sketch, product: string) => {
 /**
  * Records the product as it is now as the sketch's baseline, once the agent has brought each variant
  * up to date with the parts that changed in the product since the sketch was created. Drops a pick whose merge never
- * reached git (`orphanedPickOf`).
+ * reached git (`orphanedPickOf`). With `rehashReady`, a ready sketch keeps its ready mark with fresh hashes.
  */
-export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch }): Sketch => {
+export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch; rehashReady?: boolean }): Sketch => {
   const { portAfterMerge: _ported, ...ported } = options.sketch;
   const { decision: _decision, ...undecided } = ported;
   const sketch = orphanedPickOf(options.sketch, options.product.name) ? undecided : ported;
@@ -1535,6 +1554,8 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
     ...untreed,
     baseline: baselineOf(options.product),
     ...baselineTreeFieldOf({ product: options.product, sketchDir: options.sketch.dir }),
+    ...(sketch.sharedBase ? { sharedBase: sharedBaseNowOf(options.product, sketch.sharedBase) } : {}),
+    ...(options.rehashReady && sketch.readyContent ? { readyContent: readyContentOf(sketch) } : {}),
   };
 
   writeSketchFile(rebased, { base: options.sketch });

@@ -8,6 +8,7 @@ import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf, FIXTURES_KEY, partHashOf } from './baseline';
 import {
+  changedSinceReadyOf,
   SHARED_FOLDER,
   sharedDirOf,
   rebaseSketch,
@@ -330,10 +331,13 @@ export const portBaseChanges = (options: {
   }
 };
 
+const isSharedCopy = ({ part, file }: PortedFile) => file.startsWith(`${part}/${SHARED_FOLDER}/`);
+
 /**
  * Ports the base changes into the sketch's variants (see `portBaseChanges`) and records its new baseline as one
  * journaled step under the product lock: a throw or a kill leaves the variants and `sketch.json` as they were. Without
- * a kept conflict, a conflict writes nothing and answers without `rebased`.
+ * a kept conflict, a conflict writes nothing and answers without `rebased`. A ready sketch whose variants were
+ * unchanged since ready keeps its ready mark when the port changed only its `shared/` copies.
  */
 export const journaledRebaseOf = (options: {
   target: string;
@@ -345,11 +349,14 @@ export const journaledRebaseOf = (options: {
 
   return journaled({ productDir: product.dir, root: target, label: `rebase of ${sketch.target}` }, () =>
     withProductLock(product.dir, () => {
+      const judged = sketch.status === 'ready' && changedSinceReadyOf(sketch).length === 0;
       const port = portBaseChanges(options);
 
       if (!allKept(port.conflicts, options.keepConflicts)) return port;
 
-      return { ...port, rebased: rebaseSketch({ product, sketch }) };
+      const rehashReady = judged && port.ported.every(isSharedCopy);
+
+      return { ...port, rebased: rebaseSketch({ product, sketch, rehashReady }) };
     }),
   );
 };

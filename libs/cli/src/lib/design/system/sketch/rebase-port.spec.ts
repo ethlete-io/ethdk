@@ -5,9 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
 import { git } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
-import { keptByPortedOf, portBaseChanges } from './rebase-port';
+import { journaledRebaseOf, keptByPortedOf, portBaseChanges } from './rebase-port';
+import { staleSketchBasesOf } from './stale-base';
 import { baselineTreeRefOf } from './baseline-tree';
-import { createSketch, rebaseSketch, removeSketchDir, Sketch } from './sketch';
+import { changedSinceReadyOf, createSketch, markSketchReady, rebaseSketch, removeSketchDir, Sketch } from './sketch';
 
 const reads = vi.hoisted(() => ({ hook: null as ((path: string) => void) | null }));
 
@@ -321,5 +322,50 @@ describe('portBaseChanges', () => {
       ported: [],
       conflicts: ['a: elements/hero/hero.ts - it changed while the port ran, rebase again'],
     });
+  });
+});
+
+describe('a base change of a shared copy', () => {
+  const staleMessagesOf = (target: string) =>
+    staleSketchBasesOf({ product: resolveAcme(target), invocation: 'et design' }).map(({ message }) => message);
+
+  it('is named in SKETCH-BASE-STALE with the commit that made it, until the rebase brings the copy forward', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+
+    changeProduct(target, 'shared/label.ts', 'One featured film', 'The featured film');
+
+    const commit = git(target, 'log', '-1', '--format=%h').toString().trim();
+
+    expect(staleMessagesOf(target)).toEqual([
+      `elements/hero changed since the sketch was drawn; shared/label.ts is a stale copy of elements/hero/shared/label.ts (${commit}) - bring each variant up to date, then run et design sketch rebase elements/hero --product acme --by <model id>`,
+    ]);
+
+    journaledRebaseOf({ target, product: resolveAcme(target), sketch });
+
+    expect(readFileSync(join(sketch.dir, 'shared/label.ts'), 'utf8')).toContain('The featured film');
+    expect(staleMessagesOf(target)).toEqual([]);
+  });
+
+  it('keeps the ready mark of a sketch whose port changed only its shared copies', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+    changeProduct(target, 'shared/label.ts', 'One featured film', 'The featured film');
+
+    const { rebased } = journaledRebaseOf({ target, product: resolveAcme(target), sketch: ready });
+
+    expect(rebased?.status).toBe('ready');
+    expect(changedSinceReadyOf(rebased as Sketch)).toEqual([]);
+  });
+
+  it('leaves a ready sketch to be judged again when the port changed a variant file', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+    changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+
+    const { rebased } = journaledRebaseOf({ target, product: resolveAcme(target), sketch: ready });
+
+    expect(changedSinceReadyOf(rebased as Sketch)).toEqual(['a', 'b']);
   });
 });

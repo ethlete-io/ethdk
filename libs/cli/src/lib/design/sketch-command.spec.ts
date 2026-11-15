@@ -1236,7 +1236,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     expect(await run(acme(), 'ready', 'components/button', '--fix', '--by', 'x', '--product', 'acme')).toBe(2);
-    expect(lines[0]).toBe('unknown flag --fix (flags: --by, --product, --no-visible-change)');
+    expect(lines[0]).toBe('unknown flag --fix (flags: --by, --product, --no-visible-change, --reopen)');
   });
 
   it('edits the title and note of a round and lists the rounds', async () => {
@@ -2520,6 +2520,36 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(warnings).toContain(
       'READY-STALE elements/hero: a changed since sketch ready judged it - run `et design sketch ready elements/hero --product acme` to judge it again',
     );
+  }, 120_000);
+
+  it('refuses sketch ready on a picked sketch whose variant changed, and with --reopen reports it back to in progress', async () => {
+    const target = acme();
+    const lines = output();
+
+    await write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
+
+    const file = join(target, DESIGN_DIR, 'acme/sketches/elements-hero/sketch.json');
+    const picked = {
+      ...JSON.parse(readFileSync(file, 'utf8')),
+      status: 'ready',
+      readyContent: { a: 'judged-before' },
+      decision: { kind: 'pick', variant: 'a', decidedAt: '2026-11-11T00:00:00.000Z' },
+    };
+
+    writeFileSync(file, `${JSON.stringify(picked, null, 2)}\n`);
+
+    const before = readFileSync(file, 'utf8');
+
+    expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe(
+      'elements/hero is picked (variant a) and a changed since sketch ready judged it - nothing was recorded; add --reopen if the user asked for the change, else restore the files',
+    );
+    expect(readFileSync(file, 'utf8')).toBe(before);
+
+    await write(target, 'ready', 'elements/hero', '--reopen', '--product', 'acme');
+
+    expect(lines).toContain('elements/hero was ready; a changed since - back to in progress');
+    expect(JSON.parse(readFileSync(file, 'utf8')).decision).toMatchObject({ kind: 'pick', variant: 'a' });
   }, 120_000);
 
   it('keeps a ready sketch ready on sketch ready when its files equal the commit of a stale hash', async () => {
