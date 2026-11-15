@@ -2006,6 +2006,43 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.join('\n')).not.toContain('FORMAT');
   }, 30_000);
 
+  it.each([{ repo: true }, { repo: false }])(
+    'leaves the generated tsconfig out of the format check and still flags a tracked file (git repo $repo)',
+    async ({ repo }) => {
+      const target = acme();
+      const lines = output();
+      const variant = join(target, DESIGN_DIR, 'acme/sketches/components-button/b');
+      const css = join(variant, 'components/button/button.css');
+
+      rmSync(join(target, '.prettierignore'));
+      await write(
+        target,
+        'new',
+        'components/button',
+        '--override',
+        '--variants',
+        'a,b',
+        '--note',
+        'n',
+        '--product',
+        'acme',
+      );
+      if (repo) gitRepo(target);
+      writeFileSync(join(variant, 'tsconfig.json'), '{   "extends":"../../../../tsconfig.json"   }');
+
+      await run(target, 'check', 'components/button', '--product', 'acme');
+
+      expect(lines.join('\n')).not.toContain('FORMAT');
+
+      writeFileSync(css, `${readFileSync(css, 'utf8')}\n.acme-button   {   }\n`);
+
+      expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+      expect(lines.join('\n')).toContain('FORMAT');
+      expect(lines.join('\n')).not.toContain('tsconfig.json: is not formatted');
+    },
+    30_000,
+  );
+
   it('writes new and added variants and sketch.json in the format the checkout holds them to', async () => {
     const target = acme();
     const lines = output();

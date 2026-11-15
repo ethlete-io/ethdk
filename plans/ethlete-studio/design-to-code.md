@@ -4011,23 +4011,12 @@ B220b uncommitted-rebase mark as built (2026-11-14): when the post-commit hook c
 
 B220b follow-up and sketch switch fast path as built (2026-11-14): see `design-to-code-notes-2026-11.md`.
 
-649 part 2 as built (2026-11-15): `trackedRunAsync` and `asyncReadsCacheOf` in `system/tracked-reads.ts` (d3d973b27).
-The recorder now lives in an `AsyncLocalStorage` for sync and async runs, so two async runs at the same time record
-only their own reads, a nested run still chains to the outer one, and `fs/promises` and callback reads count too; the
-prints of a finished run are taken untracked. Spec `tracked-reads.spec.ts`; bite: a module-global recorder fails the
-two-runs-at-once and the async cache case (run before the prints went untracked), an unchained outer fails the
-nesting case. Moved: none of the 12 stores, each stays with its key. Suspect (read in the code, no
-bite): the answer of each is not a function of files this process reads through `fs`. action-cache, compare-cache,
-part-picture-cache, shot-store, sketch/unchanged-states and the slow-checks results hold browser output (the browser
-loads its files over HTTP, whose handlers run outside the caller's async context); served-cache holds server
-responses; harness-build-cache and generated-stylesheets hold a child process's output (the build, the generator),
-whose reads are not recorded; pixel-cache is keyed by the hashes of both pictures, its whole input; link-free
-`earlierFields` holds git history read by `git`; vite-cache is a folder claim, not a cache. No `bases` map was found in
-`slow-checks.ts`. Not verified: `trackedRunAsync` has no caller yet; a Tailwind `@plugin`/`@config` module loaded
-through ESM `import` is still not recorded; no warm `design check` measured the stat cost on a real product.
-649 part 2 removed (2026-11-15, grill call): `trackedRunAsync`, `asyncReadsCacheOf`, the `AsyncLocalStorage` recorder and
-the `fs/promises` recorders are gone again, no store calls them (git has d3d973b27). Kept: `trackedRun` takes the prints
-of a finished run untracked. Cause (bite): with prints untracked, an unchained outer fails the new sync nesting case.
+649 part 2 (2026-11-15): an async tracked run (`trackedRunAsync`, `AsyncLocalStorage` recorder) was built in d3d973b27
+and removed again on the grill's call, since no store calls it. Suspect (code read): none of the 12 stores answers from
+files this process reads: action, compare, part-picture, shot, unchanged-states and slow-checks hold browser output;
+served-cache server responses; harness-build and generated-stylesheets a child's output; pixel-cache is keyed by both
+pictures; link-free `earlierFields` is git history; vite-cache is a folder claim. Kept: `trackedRun` takes the prints of a finished run
+untracked. Cause (bite): with prints untracked, an unchained outer fails the sync nesting case.
 
 649 rest as built (2026-11-15): no code change. Cause (bite): Node 24 loads an ESM `@plugin`/`@config` module, and every
 module it imports, through `fs.promises.readFile`, which the Tailwind child in `tailwind-classes.ts` already records.
@@ -4037,3 +4026,8 @@ removed and pass with only the child's `readFileSync` recorder removed.
 661 as built (2026-11-15): `render-check.spec.ts` fixtures carry a bundled Noto Sans face (the tracked latin variable woff2 as a data URL, family `FixtureSans`) in each part's drawing `styles`, which land in a document `<style>`; `:root` defaults to it and the `sans-serif` fixture strings use it. The `Gone` font spec stays meaningful (its face still fails to load).
 Verified: new spec draws "Hamburgefonstiv" at 134x19, red with the face broken; changed expectations: underline-cut content 300x18 in 100x18 became 300x22 in 100x22.
 Not verified: on a Mac (the 17px-tall case), and that the Mac Chromium renders Noto identically.
+
+755(a) as built (2026-11-15): no code change - the format check already skips gitignored files (`check-ignore`) and the variant
+tsconfig is regenerated and formatted before the check (788), so an unformatted one is never flagged, with or without .git. A new
+spec (git repo and no repo) pins that and a tracked unformatted file still gives FORMAT. No bite: the spec passes on the old code.
+Not verified: the original scratch copy `/tmp/sk750` was not reproduced.
