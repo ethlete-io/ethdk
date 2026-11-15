@@ -75,6 +75,15 @@ describe('forceInteractions', () => {
     expect(forceInteractions(once)).toBe(once);
   });
 
+  it('answers a stylesheet it rewrote before the same, and one it could not parse unchanged again', () => {
+    const css = '.again:hover { color: red; }';
+
+    expect(forceInteractions(css)).toBe(`.again${HOVER} { color: red; }`);
+    expect(forceInteractions(css)).toBe(`.again${HOVER} { color: red; }`);
+    expect(forceInteractions('.again:hover {')).toBe('.again:hover {');
+    expect(forceInteractions('.again:hover {')).toBe('.again:hover {');
+  });
+
   it('returns CSS it cannot parse unchanged', () => {
     expect(forceInteractions('.x:hover { color: red;')).toBe('.x:hover { color: red;');
     expect(forceInteractions('.x:hover }} {')).toBe('.x:hover }} {');

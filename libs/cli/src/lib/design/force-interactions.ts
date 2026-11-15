@@ -62,15 +62,11 @@ const forceRoot = (root: Root) => {
   });
 };
 
-/**
- * Rewrites every `:hover`, `:focus-visible` and `:active` in the selectors of a stylesheet to
- * `:is(<pseudo>, [data-et-force~="<name>"])`, so a frame can force the interaction with the
- * attribute. `:focus-within` also matches an element that is, or has a descendant that is,
- * forced to `focus-visible`, and `:hover` also matches one forced to `active`, as a pointer press hovers. Safe to run again on its own output; CSS it cannot parse comes back unchanged.
- */
-export const forceInteractions = (css: string) => {
-  if (!MAY_FORCE.test(css)) return css;
+const FORCED_HELD = 4096;
 
+const forced = new Map<string, string>();
+
+const forcedCssOf = (css: string) => {
   try {
     const root = postcss.parse(css);
 
@@ -80,6 +76,27 @@ export const forceInteractions = (css: string) => {
   } catch {
     return css;
   }
+};
+
+/**
+ * Rewrites every `:hover`, `:focus-visible` and `:active` in the selectors of a stylesheet to
+ * `:is(<pseudo>, [data-et-force~="<name>"])`, so a frame can force the interaction with the
+ * attribute. `:focus-within` also matches an element that is, or has a descendant that is,
+ * forced to `focus-visible`, and `:hover` also matches one forced to `active`, as a pointer press hovers. Safe to run again on its own output; CSS it cannot parse comes back unchanged.
+ */
+export const forceInteractions = (css: string) => {
+  if (!MAY_FORCE.test(css)) return css;
+
+  const known = forced.get(css);
+
+  if (known !== undefined) return known;
+  if (forced.size >= FORCED_HELD) forced.clear();
+
+  const rewritten = forcedCssOf(css);
+
+  forced.set(css, rewritten);
+
+  return rewritten;
 };
 
 /** {@link forceInteractions} as a PostCSS plugin, run after every other plugin of the pipeline. */
