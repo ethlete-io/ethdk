@@ -1020,6 +1020,7 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
   for (const line of timedPhase('stale-dist', () => staleDistWarningsOf(options))) console.warn(line);
 
   const editProblems = new Map<string, Problem[]>();
+  const opened: string[] = [];
 
   for (const name of options.products) {
     const entry = options.config.products?.[name];
@@ -1034,7 +1035,7 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
 
     const problems: Problem[] = [];
     const lines = await timedPhase('auto-accept', () =>
-      autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures, problems }),
+      autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures, problems, opened }),
     );
 
     editProblems.set(name, problems);
@@ -1095,6 +1096,7 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
   if (exit === 0) console.log('ok');
 
   ruleSummaryText(tally).forEach((line) => console.log(line));
+  opened.forEach((line) => console.log(line));
 
   const findings = [...tally.values()]
     .flatMap((found) => [...found.values()])

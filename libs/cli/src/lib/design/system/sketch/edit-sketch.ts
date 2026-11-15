@@ -33,11 +33,23 @@ export const EDIT_OLD_NOT_FOUND = 'EDIT-OLD-NOT-FOUND';
 
 export const EDIT_DISCARD_REFUSED = 'EDIT-DISCARD-REFUSED';
 
-/** Why `sketch discard` refuses the sketch: an old/new edit sketch has no discard. `null` for any other sketch. */
-export const editDiscardRefusalOf = (sketch: Pick<Sketch, 'target' | 'layer' | 'name'>) =>
-  isEditSketch(sketch)
+/**
+ * Why `sketch discard` refuses the sketch: an old/new edit sketch has no discard while its edit is open. `null` for any
+ * other sketch, and for a stale edit sketch (`isStaleEditSketch`).
+ */
+export const editDiscardRefusalOf = (product: ResolvedProduct, sketch: Pick<Sketch, 'target' | 'layer' | 'name'>) =>
+  isEditSketch(sketch) && !isStaleEditSketch(product, sketch)
     ? `${EDIT_DISCARD_REFUSED}: ${sketch.target} is the old/new sketch of a direct edit and cannot be discarded - pick ${EDIT_OLD} to undo the edit or ${NEW} to keep it`
     : null;
+
+/** Whether `sketch` is a direct-edit sketch whose part HEAD holds as it is in the working tree: committed or restored. */
+export const isStaleEditSketch = (product: ResolvedProduct, sketch: Pick<Sketch, 'target' | 'layer' | 'name'>) => {
+  if (!isEditSketch(sketch)) return false;
+
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(sketch));
+
+  return resolved !== undefined && resolved.origin !== 'base' && headHoldsPart(product, resolved);
+};
 
 export type EditOldNotFound = { rule: typeof EDIT_OLD_NOT_FOUND; message: string };
 

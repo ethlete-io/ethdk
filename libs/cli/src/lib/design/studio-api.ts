@@ -739,8 +739,8 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, ske
 });
 
 /** POST `?product=&sketch=`: deletes the sketch with all its variants, as `et design sketch discard` does. */
-export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
-  const refused = editDiscardRefusalOf(sketch);
+export const sketchDiscardAnswer = withSketch('POST', ({ asked, product, sketch }) => {
+  const refused = editDiscardRefusalOf(product, sketch);
 
   if (refused) return refusal({ status: 422, reason: 'edit-discard-refused', message: refused });
 

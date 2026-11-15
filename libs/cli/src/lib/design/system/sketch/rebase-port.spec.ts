@@ -364,8 +364,23 @@ describe('a base change of a shared copy', () => {
 
     changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
 
-    const { rebased } = journaledRebaseOf({ target, product: resolveAcme(target), sketch: ready });
+    const { rebased, withdrawn } = journaledRebaseOf({ target, product: resolveAcme(target), sketch: ready });
 
     expect(changedSinceReadyOf(rebased as Sketch)).toEqual(['a', 'b']);
+    expect(withdrawn).toEqual(
+      ['a', 'b'].map(
+        (variant) =>
+          `READY WITHDRAWN elements/hero ${variant}: the rebase ported elements/hero (hero.ts) - run sketch ready elements/hero to check it again`,
+      ),
+    );
+  });
+
+  it('names no withdrawal when the port changed only shared copies', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+    changeProduct(target, 'shared/label.ts', 'One featured film', 'The featured film');
+
+    expect(journaledRebaseOf({ target, product: resolveAcme(target), sketch: ready }).withdrawn).toEqual([]);
   });
 });

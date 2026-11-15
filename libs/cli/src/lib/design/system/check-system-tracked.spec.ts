@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -100,4 +100,32 @@ describe('a design check and the tracked stamp files', () => {
     },
     120_000,
   );
+
+  it('names the edit sketch it opened in its summary', async () => {
+    const { target, dir } = committedAcme();
+
+    targets.push(target);
+    appendFileSync(join(dir, 'elements/hero/hero.ts'), '// direct edit\n');
+    vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [], warnings: [] } as never);
+    vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
+    const lines: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation((line: unknown) => void lines.push(String(line)));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await checkSystemRendered({
+      target,
+      config: readConfig(target) ?? {},
+      products: ['acme'],
+      part: 'elements/hero',
+      drawPictures: async ({ parts }) => new Map(parts.map((name) => [name, 'not drawn in this spec'])),
+    });
+
+    expect(existsSync(join(dir, 'sketches/elements-hero.edit'))).toBe(true);
+    expect(lines.slice(lines.findIndex((line) => line.startsWith('check complete')) - 1)).toEqual([
+      'OPENED acme elements/hero@edit: direct edit of elements/hero - pick old or new',
+      expect.stringMatching(/^check complete: /u),
+    ]);
+  }, 120_000);
 });

@@ -53,7 +53,7 @@ const rebaseStaleSketches = (options: {
         },
         { base: marked },
       );
-    const { ported, conflicts, rebased } = journaledRebaseOf({ target, product, sketch });
+    const { ported, conflicts, rebased, withdrawn } = journaledRebaseOf({ target, product, sketch });
 
     dirs.push(sketch.dir);
 
@@ -69,11 +69,12 @@ const rebaseStaleSketches = (options: {
       mark(rebased, problems);
       lines.push(
         `AGENT PORTS ${id} ${after}: rebased, but the check fails: ${problems.join('; ')} - fix it, then run sketch check ${sketch.target} --product ${product.name}`,
+        ...(withdrawn ?? []),
       );
       continue;
     }
 
-    lines.push(`REBASED ${id} ${after}`);
+    lines.push(`REBASED ${id} ${after}`, ...(withdrawn ?? []));
   }
 
   return { lines, dirs };

@@ -5,6 +5,7 @@ import { callsRootOf, readConfig } from './design-config';
 import { pushStatusLines, pushStatusOf } from './push-status';
 import { oneProductOf } from './system/sketch/cli-args';
 import { staleSketchBasesOf } from './system/sketch/stale-base';
+import { uncommittedLinesOf } from './uncommitted-state';
 
 export const CALL_STATES = ['scaffolded', 'drawing', 'checking', 'ready', 'failed'] as const;
 
@@ -72,7 +73,8 @@ export const staleSketchLinesOf = (options: { target: string; invocation: string
 const isState = (value: string | undefined): value is CallState => CALL_STATES.includes(value as CallState);
 
 /**
- * `et design status` shows the unpushed commits, the CI state and each sketch whose base is stale; `--stale` shows only
+ * `et design status` shows the unpushed commits, the CI state, each sketch whose base is stale, and each uncommitted
+ * ready mark and untracked or leftover sketch folder (`uncommittedLinesOf`); `--stale` shows only
  * the stale sketches, without git or `gh`. With a slug and a state it records a call's state by hand.
  */
 export const designStatus = (options: { target: string; argv: string[]; invocation: string }) => {
@@ -100,7 +102,13 @@ export const designStatus = (options: { target: string; argv: string[]; invocati
       return 1;
     }
 
-    console.log(json ? JSON.stringify({ push, stale }) : [...pushStatusLines(push), ...stale].join('\n'));
+    const uncommitted = uncommittedLinesOf(target);
+
+    console.log(
+      json
+        ? JSON.stringify({ push, stale, uncommitted })
+        : [...pushStatusLines(push), ...stale, ...uncommitted].join('\n'),
+    );
 
     return 0;
   }

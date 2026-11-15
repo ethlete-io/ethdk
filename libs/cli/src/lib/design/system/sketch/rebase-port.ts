@@ -333,18 +333,27 @@ export const portBaseChanges = (options: {
 
 const isSharedCopy = ({ part, file }: PortedFile) => file.startsWith(`${part}/${SHARED_FOLDER}/`);
 
+const readyWithdrawnLinesOf = (sketch: Sketch, ported: PortedFile[]) =>
+  ported
+    .filter((file) => !isSharedCopy(file))
+    .map(
+      ({ variant, part, file }) =>
+        `READY WITHDRAWN ${sketch.target} ${variant}: the rebase ported ${part} (${relative(part, file)}) - run sketch ready ${sketch.target} to check it again`,
+    );
+
 /**
  * Ports the base changes into the sketch's variants (see `portBaseChanges`) and records its new baseline as one
  * journaled step under the product lock: a throw or a kill leaves the variants and `sketch.json` as they were. Without
  * a kept conflict, a conflict writes nothing and answers without `rebased`. A ready sketch whose variants were
- * unchanged since ready keeps its ready mark when the port changed only its `shared/` copies.
+ * unchanged since ready keeps its ready mark when the port changed only its `shared/` copies; otherwise `withdrawn`
+ * names each variant file the port changed.
  */
 export const journaledRebaseOf = (options: {
   target: string;
   product: ResolvedProduct;
   sketch: Sketch;
   keepConflicts?: (variant: string) => boolean;
-}): BasePort & { rebased?: Sketch } => {
+}): BasePort & { rebased?: Sketch; withdrawn?: string[] } => {
   const { target, product, sketch } = options;
 
   return journaled({ productDir: product.dir, root: target, label: `rebase of ${sketch.target}` }, () =>
@@ -355,8 +364,9 @@ export const journaledRebaseOf = (options: {
       if (!allKept(port.conflicts, options.keepConflicts)) return port;
 
       const rehashReady = judged && port.ported.every(isSharedCopy);
+      const withdrawn = judged && !rehashReady ? readyWithdrawnLinesOf(sketch, port.ported) : [];
 
-      return { ...port, rebased: rebaseSketch({ product, sketch, rehashReady }) };
+      return { ...port, withdrawn, rebased: rebaseSketch({ product, sketch, rehashReady }) };
     }),
   );
 };

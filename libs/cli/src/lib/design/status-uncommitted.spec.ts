@@ -1,0 +1,104 @@
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { git } from '../git-test-env.fixtures';
+import { readConfig } from './design-config';
+import { designStatus } from './status';
+import { resolveProduct } from './system/resolve-product';
+import { createSketch } from './system/sketch/sketch';
+
+vi.mock('./push-status', () => ({
+  pushStatusOf: () => ({ base: 'origin/next', unpushed: 0 }),
+  pushStatusLines: () => ['nothing unpushed (origin/next)'],
+}));
+
+const targets: string[] = [];
+const at = '2026-11-14T00:00:00.000Z';
+
+const commitAll = (target: string) => {
+  git(target, 'add', '-A');
+  git(target, '-c', 'user.name=spec', '-c', 'user.email=spec@example.com', 'commit', '-q', '-m', 'acme');
+};
+
+const committedAcme = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-design-status-uncommitted-'));
+
+  targets.push(target);
+  cpSync(join(__dirname, 'system', '__fixtures__'), target, { recursive: true });
+  writeReady(target, { 'pages/home': { hash: 'h1', at } });
+  git(target, 'init', '-q');
+  commitAll(target);
+
+  return target;
+};
+
+const productDirOf = (target: string) => join(target, '.ethlete/design/acme');
+
+const writeReady = (target: string, entries: Record<string, object>) =>
+  writeFileSync(join(productDirOf(target), 'ready.json'), `${JSON.stringify(entries, null, 2)}\n`);
+
+const resolveAcme = (target: string) =>
+  resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+const statusLines = (target: string) => {
+  const lines: string[] = [];
+
+  vi.spyOn(console, 'log').mockImplementation((line: unknown) => void lines.push(...String(line).split('\n')));
+  expect(designStatus({ target, argv: [], invocation: 'et design' })).toBe(0);
+  vi.restoreAllMocks();
+
+  return lines.filter((line) => /^(READY UNCOMMITTED|SKETCH UNTRACKED|SKETCH LEFTOVER) /u.test(line));
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  targets.splice(0).forEach((target) => rmSync(target, { recursive: true, force: true }));
+});
+
+describe('design status and uncommitted design state', () => {
+  it('names each ready mark that differs from HEAD, one line per part', () => {
+    const target = committedAcme();
+
+    writeReady(target, {
+      'components/button': { hash: 'h2', at },
+      'elements/hero': { actions: [], at },
+      'pages/home': { hash: 'h3', at },
+    });
+
+    expect(statusLines(target)).toEqual([
+      'READY UNCOMMITTED acme components/button: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
+      'READY UNCOMMITTED acme pages/home: the mark differs from HEAD - commit ready.json or the mark is lost',
+    ]);
+
+    writeReady(target, {});
+
+    expect(statusLines(target)).toEqual([
+      'READY UNCOMMITTED acme pages/home: the mark HEAD holds is gone - commit ready.json or the mark is lost',
+    ]);
+  });
+
+  it('names untracked, empty and stale direct-edit sketch folders, and nothing once they are committed or gone', () => {
+    const target = committedAcme();
+    const product = resolveAcme(target);
+    const sketches = join(productDirOf(target), 'sketches');
+
+    createSketch({ product, sketch: { layer: 'pages', name: 'home' }, variants: ['a'] });
+    createSketch({ product, sketch: { layer: 'elements', name: 'hero', sketch: 'edit' }, variants: ['new'] });
+    mkdirSync(join(sketches, 'components-gone'), { recursive: true });
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    expect(statusLines(target)).toEqual([
+      `SKETCH LEFTOVER acme elements-hero.edit: elements/hero@edit, in progress, created ${today} - its part matches HEAD, discard it: sketch discard elements/hero@edit --product acme --by <model id>`,
+      `SKETCH UNTRACKED acme pages-home: pages/home, in progress, created ${today} - commit it or discard it`,
+      'SKETCH LEFTOVER acme components-gone: holds no sketch file - delete the folder',
+    ]);
+
+    rmSync(join(sketches, 'elements-hero.edit'), { recursive: true });
+    rmSync(join(sketches, 'components-gone'), { recursive: true });
+    commitAll(target);
+
+    expect(statusLines(target)).toEqual([]);
+  });
+});

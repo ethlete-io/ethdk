@@ -19,6 +19,7 @@ import {
   EDIT_OLD,
   EditOldNotFound,
   headHoldsPart,
+  isStaleEditSketch,
   openEditSketch,
   refreshEditOld,
   rewordEditNotes,
@@ -266,11 +267,20 @@ const discardsUntracked = (product: ResolvedProduct, sketch: Sketch) =>
   !tracksFileBelow(product, sketch.dir) &&
   commentsOnSketch({ productDir: product.dir, product: product.name, sketch }).length === 0;
 
+const leftStaleEditLinesOf = (product: ResolvedProduct, parts: string[] | undefined) =>
+  listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+    typeof sketch !== 'string' && (!parts || parts.includes(partKeyOf(sketch))) && isStaleEditSketch(product, sketch)
+      ? [
+          `STALE EDIT SKETCH ${product.name} ${sketch.target}: ${partKeyOf(sketch)} matches HEAD - discard it: sketch discard ${sketch.target} --product ${product.name} --by <model id>`,
+        ]
+      : [],
+  );
+
 /**
  * Settles each direct edit of a merged part, or of `parts`, that HEAD already holds: records its hash in `merged.json`
- * and deletes its open edit sketch, without a pick and without a line. Answers the parts it settled. With
- * `writesTracked: false` it records nothing and deletes only an edit sketch git does not track and no comment is on.
- * `held` gets each settled part with its part hash.
+ * and deletes its open edit sketch, without a pick. Answers the parts it settled. With `writesTracked: false` it records
+ * nothing and deletes only an edit sketch git does not track and no comment is on. `held` gets each settled part with
+ * its part hash; `lines` gets a STALE EDIT SKETCH line per edit sketch whose part HEAD holds, deleted or left.
  */
 export const settleCommittedEdits = (options: {
   target: string;
@@ -278,6 +288,7 @@ export const settleCommittedEdits = (options: {
   parts?: string[];
   writesTracked?: boolean;
   held?: { part: string; hash: string }[];
+  lines?: string[];
 }) => {
   const { target, product } = options;
   const writesTracked = options.writesTracked ?? true;
@@ -295,11 +306,16 @@ export const settleCommittedEdits = (options: {
   });
 
   for (const resolved of settled) {
-    const sketch = sketches.get(partKeyOf(resolved));
+    const part = partKeyOf(resolved);
+    const sketch = sketches.get(part);
 
-    if (sketch && (writesTracked || discardsUntracked(product, sketch)))
+    if (sketch && (writesTracked || discardsUntracked(product, sketch))) {
       discardSketch({ target, sketch, author: 'design check' });
+      options.lines?.push(`STALE EDIT SKETCH ${product.name} ${sketch.target}: ${part} matches HEAD - discarded`);
+    }
   }
+
+  if (options.lines) options.lines.push(...leftStaleEditLinesOf(product, options.parts));
 
   const parts = settled.map(partKeyOf);
 
@@ -336,6 +352,7 @@ export const autoAcceptOf = async (options: {
   cache?: PartPictureCache;
   writesTracked?: boolean;
   held?: { part: string; hash: string }[];
+  opened?: string[];
 }): Promise<string[]> => {
   const { target, config, product, only, warm } = options;
   const writesTracked = options.writesTracked ?? true;
@@ -347,6 +364,7 @@ export const autoAcceptOf = async (options: {
   };
   const partHashNowOf = (resolved: ResolvedPart) => partHashOf({ product, dir: dirname(resolved.file) });
 
+  const lines: string[] = [];
   const settled = new Set(
     settleCommittedEdits({
       target,
@@ -354,6 +372,7 @@ export const autoAcceptOf = async (options: {
       parts: only ? (options.parts ?? [only]).filter((part) => part === only) : options.parts,
       writesTracked,
       held: options.held,
+      lines,
     }),
   );
 
@@ -362,7 +381,6 @@ export const autoAcceptOf = async (options: {
   const merged = readMerged(product.dir);
   const records: Need[] = [];
   const edits: Need[] = [];
-  const lines: string[] = [];
   const draw = options.draw ?? drawStatePictures;
   const heads: { part: ResolvedPart; design: string; sketch: Sketch; recheck?: true }[] = [];
   const problem = (resolved: ResolvedPart, { rule, message }: { rule: string; message: string }) => {
@@ -382,7 +400,15 @@ export const autoAcceptOf = async (options: {
         ? `DIRECT EDIT ${product.name} ${part}: changed outside a sketch, no old/new sketch: ${sketch}`
         : `DIRECT EDIT ${product.name} ${part}: changed outside a sketch - pick old or new in sketch ${sketch.target}`,
     );
-  const open = (part: string) => openEditSketch({ target, product, part, author: 'design check' });
+  const open = async (part: string) => {
+    const result = await openEditSketch({ target, product, part, author: 'design check' });
+    const sketch = typeof result === 'string' ? null : 'rule' in result ? result.sketch : result;
+
+    if (sketch)
+      options.opened?.push(`OPENED ${product.name} ${sketch.target}: direct edit of ${part} - pick old or new`);
+
+    return result;
+  };
 
   for (const resolved of product.parts) {
     const part = partKeyOf(resolved);

@@ -1436,7 +1436,7 @@ const rebased = (context: Context) =>
 
     const orphan = orphanedPickOf(sketch, product.name);
     const keep = named.length > 0 ? keptByPortedOf(sketch, named) : undefined;
-    const { ported, conflicts, rebased } = journaledRebaseOf({
+    const { ported, conflicts, rebased, withdrawn } = journaledRebaseOf({
       target: context.target,
       product,
       sketch,
@@ -1464,7 +1464,8 @@ const rebased = (context: Context) =>
 
     console.log(`${sketch.target} now compares with the product as it is`);
 
-    if (ported.length > 0 && sketch.status === 'ready')
+    if (withdrawn && withdrawn.length > 0) withdrawn.forEach((line) => console.log(line));
+    else if (ported.length > 0 && sketch.status === 'ready')
       console.log(
         rebased.readyContent !== sketch.readyContent
           ? `${sketch.target} stays ready - the port changed only its shared/ copies`
@@ -2046,8 +2047,8 @@ const merged = (context: Context) =>
   });
 
 const discarded = (context: Context) =>
-  withSketch(context, ({ sketch }) => {
-    const refused = editDiscardRefusalOf(sketch);
+  withSketch(context, ({ product, sketch }) => {
+    const refused = editDiscardRefusalOf(product, sketch);
 
     if (refused) return fail(refused);
 

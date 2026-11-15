@@ -9,10 +9,13 @@ import { Problem } from './problem';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
+import { editDiscardRefusalOf } from './sketch/edit-sketch';
 import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
+
+const STALE_DISCARDED = `STALE EDIT SKETCH app-a ${CHIP}@edit: ${CHIP} matches HEAD - discarded`;
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-accepted-pictures-'));
@@ -134,13 +137,14 @@ describe('autoAcceptOf', () => {
   it('opens the old/new sketch for a direct edit that changes a picture', async () => {
     const { target, chip } = checkout();
     const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });
+    const opened: string[] = [];
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
     await autoAccept(target, draw);
     appendFileSync(chip, '// visible edit\n');
     pictures.now = { default: 'a1', hover: 'c3' };
 
-    expect(await autoAccept(target, draw)).toEqual([
+    expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, opened })).toEqual([
       `PICTURES CHANGED app-a ${CHIP}: hover`,
       `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
     ]);
@@ -148,6 +152,11 @@ describe('autoAcceptOf', () => {
       kind: 'direct-edit',
       sketch: `${CHIP}@edit`,
     });
+    expect(opened).toEqual([`OPENED app-a ${CHIP}@edit: direct edit of ${CHIP} - pick old or new`]);
+
+    await autoAcceptOf({ target, config: {}, product: productOf(target), draw, opened });
+
+    expect(opened).toHaveLength(1);
   });
 
   it('compares a direct edit with the older review pictures at the merged hash', async () => {
@@ -362,12 +371,12 @@ describe('autoAcceptOf', () => {
       expect(directEditsOf(productOf(target))).toEqual([]);
     });
 
-    it('is deleted and its edit recorded once HEAD holds the edit, without a line', async () => {
+    it('is deleted as stale and its edit recorded once HEAD holds the edit', async () => {
       const { target, dir, chip, draw } = await openSketch();
 
       commitChip(target, chip);
 
-      expect(await autoAccept(target, draw)).toEqual([]);
+      expect(await autoAccept(target, draw)).toEqual([STALE_DISCARDED]);
       expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
       expect(readMerged(dir)[CHIP]).toBe(partHashOf({ product: productOf(target), dir: dirname(chip) }));
       expect(directEditsOf(productOf(target))).toEqual([]);
@@ -387,9 +396,50 @@ describe('autoAcceptOf', () => {
 
       commitChip(target, chip);
 
-      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems: [] })).toEqual([]);
+      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems: [] })).toEqual([
+        STALE_DISCARDED,
+      ]);
       expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
       expect(directEditsOf(productOf(target))).toEqual([]);
+    });
+
+    it('is deleted as stale once its part is restored to HEAD', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+
+      gitExec(['checkout', '--', chip], { cwd: target });
+
+      expect(await autoAccept(target, draw)).toEqual([STALE_DISCARDED]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+    });
+
+    it('is named as stale, left for its discard, once the user decided it and its part is restored to HEAD', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+      const file = sketchFileOf(dir);
+
+      writeFileSync(
+        file,
+        JSON.stringify({
+          ...JSON.parse(readFileSync(file, 'utf8')),
+          decision: { kind: 'pick', variant: 'new', decidedAt: '2026-11-04T00:00:00.000Z' },
+        }),
+      );
+      gitExec(['checkout', '--', chip], { cwd: target });
+
+      expect(await autoAccept(target, draw)).toEqual([
+        `STALE EDIT SKETCH app-a ${CHIP}@edit: ${CHIP} matches HEAD - discard it: sketch discard ${CHIP}@edit --product app-a --by <model id>`,
+      ]);
+      expect(existsSync(file)).toBe(true);
+    });
+
+    it('may be discarded only once its part matches HEAD', async () => {
+      const { target, chip } = await openSketch();
+      const sketch = { target: `${CHIP}@edit`, layer: 'components', name: 'chip' } as const;
+
+      expect(editDiscardRefusalOf(productOf(target), sketch)).toMatch(/^EDIT-DISCARD-REFUSED: /u);
+
+      gitExec(['checkout', '--', chip], { cwd: target });
+
+      expect(editDiscardRefusalOf(productOf(target), sketch)).toBeNull();
     });
 
     it('stays open while a state draws differently from HEAD', async () => {
