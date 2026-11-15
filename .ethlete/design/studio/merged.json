@@ -32,7 +32,7 @@
     "at": "2026-11-12T00:13:38.669Z",
     "note": "merged without a pick: allowed by finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md - merged: 911: sample author human, initials H; only author text and initials change"
   },
-  "components/disclosure": "a6186544ac32f22a",
+  "components/disclosure": "55fb76d9d7dd3b96",
   "components/shell-collapse": "fd8adc8a7443f113",
   "components/sketch-status-badge": {
     "hash": "35ff1719bb184376",

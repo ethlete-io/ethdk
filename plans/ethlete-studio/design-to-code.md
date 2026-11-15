@@ -502,6 +502,8 @@ As built (point 0 rest, delayed pictures, 2026-11-16): already built in 6cafe212
 
 As built (B520 ready fix, 2026-11-16): `design ready` (`ready-command.ts`) calls `settleCommittedEdits` for its part before `markPartReady`, so a direct edit HEAD holds is recorded in `merged.json` and no longer refuses as "changed outside a sketch"; `design check` stays read-only. Spec: `part-ready.spec.ts` "ready on a merged part edited outside a sketch" (red without the call, verified); an uncommitted edit still refuses. Unblocks ready for foundations/colors, foundations/type, comment-row, title-bar, studio-menu and pages/start besides the B520 parts. Not verified yet: a live `design ready` on a studio part.
 
+As built (B520 disclosure, 2026-11-16): the disclosure part changed since its record of 2026-11-01 (hug option d1f722990, passed sketches action 32aaf6552, declared toggle actions f1fea4e17). The app component already had `hug` and rendered the same markup, so no code changed: `design compare components/disclosure --product studio` was green on all 12 states and `design task --verify` re-recorded `implemented.json`. Verified: compare, task verify, `design check` for the part. Not verified: other parts reached by the disclosure (no `compare --affected`).
+
 448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
 `generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
 ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
