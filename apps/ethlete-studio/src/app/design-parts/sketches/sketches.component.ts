@@ -22,7 +22,20 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, filter, from, fromEvent, merge, scan, Subject, tap } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  from,
+  fromEvent,
+  map,
+  merge,
+  scan,
+  Subject,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
 import {
   anchoredDialogOverlayStrategy,
   BADGE_IMPORTS,
@@ -513,7 +526,7 @@ export class SketchesComponent {
     toObservable(this.listWidth)
       .pipe(
         filter((width) => width > 0),
-        debounceTime(500),
+        switchMap((width) => timer(500).pipe(map(() => width))),
         distinctUntilChanged(),
         tap((width) => this.listWidthChange.emit(width)),
         takeUntilDestroyed(),

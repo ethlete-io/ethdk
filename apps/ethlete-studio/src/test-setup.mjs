@@ -1,10 +1,12 @@
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@angular/compiler';
 import { afterEach, beforeEach } from 'vitest';
+import { watchFrameworkWarnings } from './test-framework-warnings';
 import { watchSdkErrors } from './test-sdk-errors';
 import { slowCaseProblemOf } from './test-slow-case';
 
 const takeSdkErrors = watchSdkErrors(console);
+const takeFrameworkWarnings = watchFrameworkWarnings(console);
 const loggedErrors = [];
 const logError = console.error.bind(console);
 
@@ -31,9 +33,12 @@ afterEach((context) => {
 
 afterEach(() => {
   const problem = takeSdkErrors();
+  const warnings = takeFrameworkWarnings();
   const errors = loggedErrors.splice(0);
 
   if (problem) throw new Error(problem);
+
+  if (warnings) throw new Error(warnings);
 
   if (errors.length > 0)
     throw new Error(`the test logged console.error:\n${errors.map((line) => `  ${line}`).join('\n')}`);

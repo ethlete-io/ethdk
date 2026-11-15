@@ -23,7 +23,6 @@ import {
   distinctUntilChanged,
   exhaustMap,
   filter,
-  finalize,
   fromEvent,
   groupBy,
   map,
@@ -931,7 +930,7 @@ export class SketchViewComponent {
 
           return of(null);
         }),
-        finalize(() => this.merging.emit(false)),
+        tap({ complete: () => this.merging.emit(false) }),
       ),
     );
   }
@@ -1024,9 +1023,11 @@ export class SketchViewComponent {
 
           return of(null);
         }),
-        finalize(() => {
-          this.busy.set(null);
-          this.decide.emit();
+        tap({
+          complete: () => {
+            this.busy.set(null);
+            this.decide.emit();
+          },
         }),
         takeUntilDestroyed(this.destroyRef),
       )
