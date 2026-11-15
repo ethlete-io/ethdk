@@ -66,7 +66,7 @@
     "components/shell-resize-handle": "de97d64db1ae5e40",
     "components/shell-system-picker": "6c3aed362535842c",
     "components/skeleton": "4540a543b4126962",
-    "components/sketch-status-badge": "1f05f263d2e08ada",
+    "components/sketch-status-badge": "35ff1719bb184376",
     "components/slider": "1ed03cccbcbd8a0d",
     "components/standings": "56d7793b27f1d306",
     "components/stat-tile": "e9fae2c8fab9eab1",
@@ -76,7 +76,7 @@
     "components/tabs": "965ae70a1a173a15",
     "components/textarea": "7ac4a67d54c0a797",
     "components/timeline": "f80aff4bf0d6c3b4",
-    "components/title-bar": "0916d91303ac8516",
+    "components/title-bar": "780de4e9e6af545e",
     "components/title-search": "3a16491e25a49944",
     "components/toolbar": "8963a8ba9a488f1b",
     "components/tooltip": "d8d78f8928e32679",
@@ -93,19 +93,20 @@
     "pages/inbox": "0e0fc08e618a94a0",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "0e69471347b333f1",
-    "pages/sketches": "fdeaab82ba846589",
+    "pages/sketches": "cc81d4449e52a49f",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "f902849dafaf2a08644471f3e42f3db583eddcee",
+  "baselineTree": "231cdcd8d2bee842be6e5f5995c3925a36be9eea",
   "decision": {
     "kind": "pick",
     "variant": "b",
+    "comment": "Human, 2026-11-15 morning: builder picks its own recommendation (ADR 0305, STATUS E16); builder recommends b: same card as the empty and failed listing",
     "by": "designer",
-    "cmd": "POST /__design/sketch-decision",
-    "pid": 3576116,
-    "decidedAt": "2026-11-14T19:59:06.450Z"
+    "cmd": "design sketch pick pages/system@canvas-note --variant b --decided-by Human, 2026-11-15 morning: builder picks its own recommendation (ADR 0305, STATUS E16); builder recommends b: same card as the empty and failed listing --by claude-opus-5-5 --product studio",
+    "pid": 842231,
+    "decidedAt": "2026-11-15T21:49:53.887Z"
   },
   "rounds": [
     {

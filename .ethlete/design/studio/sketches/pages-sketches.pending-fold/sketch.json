@@ -76,7 +76,7 @@
     "components/tabs": "965ae70a1a173a15",
     "components/textarea": "7ac4a67d54c0a797",
     "components/timeline": "f80aff4bf0d6c3b4",
-    "components/title-bar": "0916d91303ac8516",
+    "components/title-bar": "780de4e9e6af545e",
     "components/title-search": "3a16491e25a49944",
     "components/toolbar": "8963a8ba9a488f1b",
     "components/tooltip": "d8d78f8928e32679",
@@ -98,7 +98,7 @@
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "3c738b5d613b9c5c2f8e61b2c53f4960bd5a9e74",
+  "baselineTree": "231cdcd8d2bee842be6e5f5995c3925a36be9eea",
   "decision": {
     "kind": "pick",
     "variant": "a",

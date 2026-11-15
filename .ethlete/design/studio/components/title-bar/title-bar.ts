@@ -20,6 +20,8 @@ import {
   titleBarControl,
   windowControls,
   pushCount,
+  openCount,
+  withUncommittedHint,
   type Props,
   type WindowButton,
 } from './shared/chrome';
@@ -77,6 +79,14 @@ const pushState = ({ push }: Props) =>
       })}</span>`
     : '';
 
+const uncommittedState = (props: Props) =>
+  props.uncommitted?.length
+    ? withUncommittedHint(
+        `<span class="inline-flex items-center gap-1 whitespace-nowrap text-et-surface-muted" data-uncommitted-state>${icon('pencil', { size: 12 })}${openCount(props.uncommitted)}</span>`,
+        props,
+      )
+    : '';
+
 const failedToast = ({ restart }: Props) =>
   restart === 'failed'
     ? `<div class="flex justify-end px-space-3 pt-space-3">${notificationStack([
@@ -130,7 +140,7 @@ export default definePart({
     const search = await titleSearchPart.render({ product: props.product, part: props.part, os: props.os });
 
     return drawing({
-      body: html`<div class="${props.notice && !props.restart ? 'pb-12' : ''}">
+      body: html`<div class="${props.notice && !props.restart ? 'pb-12' : ''} ${props.hint ? 'pb-32' : ''}">
           <div
             class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-et-surface-border bg-et-surface-bg ${props.os === 'windows' ? 'pl-1.5' : 'px-1.5'} text-et-surface font-ui text-ui-sm"
             data-et-surface
@@ -141,7 +151,7 @@ export default definePart({
               { imports },
             )}${search.body}
             <div class="flex items-center justify-end gap-2 ${props.os === 'windows' ? 'self-stretch' : ''}">
-              ${pushState(props)}${dirtyText(props)}${props.notice ? await notice(props) : ''}${await ng(
+              ${pushState(props)}${uncommittedState(props)}${dirtyText(props)}${props.notice ? await notice(props) : ''}${await ng(
                 `${props.update ? update(props) : ''}${sideControls(props, props.right)}`,
                 { imports },
               )}

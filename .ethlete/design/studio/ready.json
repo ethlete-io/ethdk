@@ -239,7 +239,7 @@
     "at": "2026-11-14T17:25:08.413Z"
   },
   "components/title-bar": {
-    "actions": ["emit:close", "emit:dismiss", "emit:maximize", "emit:minimize", "emit:restart", "emit:update"],
+    "actions": ["emit:dismiss", "emit:restart", "emit:update"],
     "at": "2026-11-14T17:27:46.204Z"
   },
   "components/title-search": {

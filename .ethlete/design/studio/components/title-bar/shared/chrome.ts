@@ -1,6 +1,7 @@
 import { forceInteraction, interactionRows, slot } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import { icon } from '@system/foundations/icons';
+import { tooltip } from '@ethlete/components/design/tooltip';
 
 export type WindowButton = 'minimize' | 'maximize' | 'close';
 
@@ -14,6 +15,31 @@ type PushState = { unpushed: number; age: string };
 
 export const pushCount = ({ unpushed }: PushState) => `${unpushed} ungepusht`;
 
+export const openCount = (uncommitted: string[]) => `${uncommitted.length} offen`;
+
+const UNCOMMITTED_KINDS: Record<string, string> = {
+  'READY UNCOMMITTED': 'Ready-Marke',
+  'SKETCH UNTRACKED': 'Sketch ungetrackt',
+  'SKETCH LEFTOVER': 'Sketch übrig',
+};
+
+const uncommittedItems = (uncommitted: string[]) =>
+  uncommitted.map((line) => {
+    const [kind = '', what = ''] = line.slice(0, line.indexOf(':')).split(' studio ');
+
+    return `<span class="flex flex-col"><span class="text-et-surface-muted">${UNCOMMITTED_KINDS[kind] ?? kind}</span><span class="whitespace-nowrap">${what}</span></span>`;
+  });
+
+export const withUncommittedHint = (markup: string, { uncommitted, hint }: Props) =>
+  uncommitted?.length && hint === 'uncommitted'
+    ? `<span class="relative inline-flex">${markup}<span class="st-notice-hint absolute top-full right-0 left-0 z-10 mt-2 flex justify-end">${tooltip(
+        {
+          content: `<span class="flex flex-col gap-1.5">${uncommittedItems(uncommitted).join('')}</span>`,
+          placement: 'bottom-end',
+        },
+      )}</span></span>`
+    : markup;
+
 export type Props = {
   os: Os;
   left: WindowButton[];
@@ -22,6 +48,8 @@ export type Props = {
   notice?: boolean;
   noticeText?: string;
   push?: PushState;
+  uncommitted?: string[];
+  hint?: 'uncommitted';
   restart?: 'pending' | 'failed';
   product: string;
   part: string;
@@ -95,8 +123,17 @@ const contentStates = (content: Content) =>
 
 const PUSH = { unpushed: 158, age: '5 h' } satisfies PushState;
 
+const UNCOMMITTED = [
+  'READY UNCOMMITTED studio components/title-bar: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
+  'READY UNCOMMITTED studio pages/sketches: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
+  'SKETCH UNTRACKED studio pages-system.canvas-note: in progress - commit it or discard it',
+];
+
 export const states = {
   push: { ...LINUX_FULL, push: PUSH },
+  uncommitted: { ...LINUX_FULL, uncommitted: UNCOMMITTED },
+  'uncommitted-push': { ...LINUX_FULL, push: PUSH, uncommitted: UNCOMMITTED },
+  'uncommitted-push-hint': { ...LINUX_FULL, push: PUSH, uncommitted: UNCOMMITTED, hint: 'uncommitted' },
   'push-update': { ...LINUX_FULL, update: true, push: PUSH },
   'macos-push': { ...MACOS, push: PUSH },
   ...contentStates('notice'),
