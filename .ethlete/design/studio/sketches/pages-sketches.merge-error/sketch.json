@@ -66,7 +66,7 @@
     "components/shell-resize-handle": "de97d64db1ae5e40",
     "components/shell-system-picker": "6c3aed362535842c",
     "components/skeleton": "4540a543b4126962",
-    "components/sketch-status-badge": "1f05f263d2e08ada",
+    "components/sketch-status-badge": "cc264999abd1c6d5",
     "components/slider": "1ed03cccbcbd8a0d",
     "components/standings": "56d7793b27f1d306",
     "components/stat-tile": "e9fae2c8fab9eab1",
@@ -93,12 +93,12 @@
     "pages/inbox": "0e0fc08e618a94a0",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "0e69471347b333f1",
-    "pages/sketches": "fdeaab82ba846589",
+    "pages/sketches": "0cf1d5a921a8c600",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "1dec6fd8b4892901039137b79806beb888546592",
+  "baselineTree": "4f25ed76dffbbf3d199c5db2a9ff3189cef0c4b2",
   "decision": {
     "kind": "pick",
     "variant": "b",
@@ -139,15 +139,5 @@
   "mergeHold": {
     "reason": "variant a changes merge-error; variant b changes merge-error; variant c changes merge-error",
     "at": "2026-11-14T17:45:28.880Z"
-  },
-  "portAfterMerge": {
-    "merged": ["pages/sketches", "components/sketch-status-badge"],
-    "parts": ["pages/sketches", "components/sketch-status-badge"],
-    "reasons": [
-      "a: pages/sketches/sketches.ts - the variant and the product both changed it",
-      "b: pages/sketches/sketches.ts - the variant and the product both changed it",
-      "c: pages/sketches/sketches.ts - the variant and the product both changed it"
-    ],
-    "at": "2026-11-15T21:26:33.782Z"
   }
 }
