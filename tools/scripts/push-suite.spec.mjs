@@ -15,6 +15,7 @@ import {
   parseArgs,
   pushSuite,
   reexecCommand,
+  runStepUnderLoad,
   sampleMaxLoad,
   waitForLowLoad,
   STEPS,
@@ -87,6 +88,11 @@ test('the suite re-runs itself from the export, so every gate script is the comm
   assert.equal(plan.env.PUSH_SUITE_REPO, '/repo');
   assert.equal(plan.env.PUSH_SUITE_EXPORT, '/tmp/export');
   assert.deepEqual(reexecCommand('/e', '/r', { range: 'a..b' }, {}).args.slice(1), ['a..b']);
+  assert.deepEqual(reexecCommand('/e', '/r', { range: 'a..b', maxLoad: 12 }, {}).args.slice(1), [
+    '--max-load',
+    '12',
+    'a..b',
+  ]);
 });
 
 test('push-suite imports no sibling script at load time, so no live gate code runs before the re-exec', () => {
@@ -154,6 +160,67 @@ test('starts anyway after the maximum wait and says it starts under load', async
 
   assert.equal(lines.length, 4);
   assert.equal(lines.at(-1), 'push-suite: starting under load 20.0 (limit 4) after 45 s of waiting');
+});
+
+const stepHarness = (loads, results) => {
+  const lines = [];
+  let runs = 0;
+  let index = 0;
+  const load = () => loads[Math.min(index++, loads.length - 1)];
+  return {
+    lines,
+    runs: () => runs,
+    options: {
+      name: 'tools',
+      run: async () => results[runs++],
+      limit: 4,
+      log: (line) => lines.push(line),
+      loadProbe: {
+        load,
+        timers: { every: () => 1, clear: () => undefined },
+        sleep: async () => undefined,
+        now: () => 0,
+      },
+    },
+  };
+};
+
+test('a step that fails under a load peak above the limit reruns once after the load drops', async () => {
+  const { lines, runs, options } = stepHarness([2, 30, 30, 9, 9, 2, 2, 2, 2], [{ status: 1 }, { status: 0 }]);
+  const result = await runStepUnderLoad(options);
+
+  assert.equal(result.status, 0);
+  assert.equal(runs(), 2);
+  assert.deepEqual(
+    lines.map((line) => line.replace(/ in \d+ s$/, '')),
+    [
+      'push-suite: tools failed at load 30.0 (max 30.0 during the step)',
+      'push-suite: tools failed with the load above the limit 4, rerunning it once after the load drops',
+      'push-suite: waiting to rerun tools, load 9.0 is above the limit 4',
+      'push-suite: tools ok',
+      'push-suite: tools passed on the rerun; the first run failed at a load peak of 30.0',
+    ],
+  );
+});
+
+test('a step that fails at a load within the limit does not rerun', async () => {
+  const { runs, options } = stepHarness([2], [{ status: 1 }, { status: 0 }]);
+
+  assert.equal((await runStepUnderLoad(options)).status, 1);
+  assert.equal(runs(), 1);
+});
+
+test('a step that fails again on the rerun reports the second failure', async () => {
+  const { runs, options } = stepHarness(
+    [30, 30, 2],
+    [
+      { status: 1, output: 'first' },
+      { status: 1, output: 'second' },
+    ],
+  );
+  const result = await runStepUnderLoad(options);
+
+  assert.deepEqual([result.status, result.output, runs()], [1, 'second', 2]);
 });
 
 test('a failed step line names the load average, an ok one does not', () => {

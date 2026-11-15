@@ -41,19 +41,30 @@ export const sampleMaxLoad = (load = oneMinuteLoad, { every = setInterval, clear
   };
 };
 
+export const loadLimitOf = (maxLoad, env = process.env) =>
+  maxLoad ?? Number(env['PUSH_SUITE_MAX_LOAD'] || cpus().length);
+
 export const waitForLowLoad = async (
-  { limit, log, load = oneMinuteLoad, sleep = (ms) => new Promise((done) => setTimeout(done, ms)), now = Date.now },
+  {
+    limit,
+    log,
+    load = oneMinuteLoad,
+    sleep = (ms) => new Promise((done) => setTimeout(done, ms)),
+    now = Date.now,
+    action = 'start',
+    acting = 'starting',
+  },
   { pollMs = LOAD_POLL_MS, maxWaitMs = LOAD_MAX_WAIT_MS } = {},
 ) => {
   const startedAt = now();
   while (load() > limit) {
     if (now() - startedAt >= maxWaitMs) {
       log(
-        `push-suite: starting under load ${formatLoad(load())} (limit ${limit}) after ${seconds(maxWaitMs)} of waiting`,
+        `push-suite: ${acting} under load ${formatLoad(load())} (limit ${limit}) after ${seconds(maxWaitMs)} of waiting`,
       );
       return;
     }
-    log(`push-suite: waiting to start, load ${formatLoad(load())} is above the limit ${limit}`);
+    log(`push-suite: waiting to ${action}, load ${formatLoad(load())} is above the limit ${limit}`);
     await sleep(pollMs);
   }
 };
@@ -180,11 +191,46 @@ export const runStep = (command, args, cwd, env = {}) =>
     child.on('close', (status) => done({ status: status ?? 1, output }));
   });
 
-export const reexecCommand = (exportDir, repo, { only, range }, env = process.env) => ({
+export const reexecCommand = (exportDir, repo, { only, range, maxLoad }, env = process.env) => ({
   command: process.execPath,
-  args: [join(exportDir, 'tools/scripts/push-suite.mjs'), ...(only ? ['--only', only] : []), range],
+  args: [
+    join(exportDir, 'tools/scripts/push-suite.mjs'),
+    ...(only ? ['--only', only] : []),
+    ...(maxLoad === undefined ? [] : ['--max-load', String(maxLoad)]),
+    range,
+  ],
   env: { ...env, PUSH_SUITE_REPO: repo, PUSH_SUITE_EXPORT: exportDir },
 });
+
+/** Runs a step; when it fails with a load peak above `limit`, waits for the load to drop and runs it once more. */
+export const runStepUnderLoad = async ({ name, run, limit, log, loadProbe = {}, waitOptions }) => {
+  const attempt = async () => {
+    const startedAt = performance.now();
+    const stopSampling = sampleMaxLoad(loadProbe.load, loadProbe.timers);
+    const result = await run();
+    const max = stopSampling();
+    log(
+      stepLine(
+        name,
+        result.status,
+        performance.now() - startedAt,
+        result.note,
+        (loadProbe.load ?? oneMinuteLoad)(),
+        max,
+      ),
+    );
+    return { ...result, max };
+  };
+  const first = await attempt();
+  if (first.status === 0 || first.max <= limit) return first;
+
+  log(`push-suite: ${name} failed with the load above the limit ${limit}, rerunning it once after the load drops`);
+  await waitForLowLoad({ limit, log, ...loadProbe, action: `rerun ${name}`, acting: `rerunning ${name}` }, waitOptions);
+  const second = await attempt();
+  if (second.status === 0)
+    log(`push-suite: ${name} passed on the rerun; the first run failed at a load peak of ${formatLoad(first.max)}`);
+  return second;
+};
 
 const runInner = (plan) =>
   new Promise((done) => {
@@ -323,8 +369,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   }
 
   if (!INNER_EXPORT) {
-    const limit = maxLoad ?? Number(process.env['PUSH_SUITE_MAX_LOAD'] || cpus().length);
-    await waitForLowLoad({ limit, log, ...loadProbe });
+    await waitForLowLoad({ limit: loadLimitOf(maxLoad), log, ...loadProbe });
   }
 
   Object.assign(process.env, { NX_NO_CLOUD: 'true', NX_DAEMON: 'false' });
@@ -359,18 +404,20 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
     if (error) return finish(`blocked export of ${sha} failed: ${error}`);
     if (!INNER_EXPORT) {
       log(`push-suite: exported ${sha.slice(0, 12)} to ${dir} in ${seconds(performance.now() - exportedAt)}`);
-      const status = await runInner(reexecCommand(dir, root, { only, range }));
+      const status = await runInner(reexecCommand(dir, root, { only, range, maxLoad }));
       if (status !== 0) release();
       else heavyLock?.release();
       return status;
     }
     await warnStaleDesignServers(log);
     for (const name of chosen) {
-      const startedAt = performance.now();
-      const stopSampling = sampleMaxLoad(loadProbe.load, loadProbe.timers);
-      const { status, output, note } = await withStepTmp(name, steps[name]);
-      const maxLoad = stopSampling();
-      log(stepLine(name, status, performance.now() - startedAt, note, (loadProbe.load ?? oneMinuteLoad)(), maxLoad));
+      const { status, output } = await runStepUnderLoad({
+        name,
+        run: () => withStepTmp(name, steps[name]),
+        limit: loadLimitOf(maxLoad),
+        log,
+        loadProbe,
+      });
       if (status !== 0) {
         log(failureReport(output));
         return finish(`blocked ${name} failed at ${sha}`);

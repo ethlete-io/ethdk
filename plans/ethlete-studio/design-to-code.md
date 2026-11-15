@@ -3049,6 +3049,11 @@ green (vitest related, node --test, cargo). Live shot 2026-11-15: Studio built f
 "1 offen", hover lists "Sketch ungetrackt pages-sketches.shot-probe"; pages/sketches@pending-fold shows "Noch nicht
 bereit" with the B519 refusal line. Not verified: the Tauri binary itself (Rust parse covered by cargo test).
 B519 as built (2026-11-15): refusal recorded, Studio badges not ready.
+761 as built (2026-11-15): push:suite runs each step through `runStepUnderLoad`: a step that fails with a load
+peak above the limit waits for the load to drop (`waiting to rerun <step>`) and runs once more; the report names the rerun
+and the first peak. The inner run gets `--max-load` from the outer one. The e2e step of the finding left push:suite
+(ADR 0286), so the rerun covers lint, typecheck and tools. Verified: push-suite.spec (3 new cases, red with the rerun
+removed), spec:stress 4/4. Not verified: a real push whose step fails under load.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle sockets; the design server closes them after 6 s, so under lag a request hits a dying socket. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every
