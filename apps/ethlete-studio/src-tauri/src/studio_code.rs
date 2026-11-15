@@ -30,6 +30,8 @@ struct Areas {
     host: Area,
     #[serde(default)]
     push: Option<PushState>,
+    #[serde(default)]
+    uncommitted: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -84,6 +86,7 @@ pub struct CodeState {
     frontend: FrontendCode,
     host: HostCode,
     push: Option<PushState>,
+    uncommitted: Vec<String>,
 }
 
 async fn run_script(command: &str) -> StudioResult<(String, Vec<String>)> {
@@ -192,6 +195,7 @@ pub async fn studio_code_state(servers: tauri::State<'_, DesignServers>) -> Stud
             latest: areas.host.latest,
         },
         push: areas.push,
+        uncommitted: areas.uncommitted,
     }))
 }
 
@@ -226,5 +230,15 @@ mod tests {
         let areas: Areas = parsed(answer).expect("the state answer parses");
 
         assert_eq!(areas.push.map(|push| push.unpushed), Some(0));
+        assert!(areas.uncommitted.is_empty());
+    }
+
+    #[test]
+    fn parses_the_uncommitted_lines() {
+        let answer = r#"{"cli":{"latest":"a","dirty":false},"frontend":{"latest":"b"},"host":{"latest":"c"},"uncommitted":["SKETCH UNTRACKED studio a.b: x"]}"#;
+
+        let areas: Areas = parsed(answer).expect("the state answer parses");
+
+        assert_eq!(areas.uncommitted, vec!["SKETCH UNTRACKED studio a.b: x".to_string()]);
     }
 }

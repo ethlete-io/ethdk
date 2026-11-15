@@ -100,6 +100,13 @@ export const pushStateOf = (root) => {
   return status && { unpushed: status.unpushed, oldestAgeHours: status.oldestAgeHours };
 };
 
+/** `et design status`'s uncommitted lines of `root` (ready marks and sketch folders HEAD lacks), or [] without a built CLI. */
+export const uncommittedOf = (root) => {
+  const module = join(root, 'dist/libs/cli/src/lib/design/uncommitted-state.js');
+
+  return existsSync(module) ? createRequire(import.meta.url)(module).uncommittedLinesOf(root) : [];
+};
+
 const recordedHashOf = (buildDir) => {
   try {
     return JSON.parse(readFileSync(join(buildDir, 'build-info.json'), 'utf8')).sourceHash ?? null;
@@ -319,7 +326,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [command] = process.argv.slice(2);
 
   if (command === 'state') {
-    console.log(JSON.stringify({ ...areaState(root), push: pushStateOf(root) }));
+    console.log(JSON.stringify({ ...areaState(root), push: pushStateOf(root), uncommitted: uncommittedOf(root) }));
   } else if (command === 'cli-copy') {
     console.log(JSON.stringify(ensureCliCopy(root)));
   } else if (command === 'app-copy') {

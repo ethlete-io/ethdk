@@ -7,7 +7,7 @@ export type WindowButton = 'minimize' | 'maximize' | 'close';
 
 type Os = 'linux' | 'windows' | 'macos';
 
-type TitleBarControl = 'update' | 'notice' | WindowButton;
+type TitleBarControl = 'update' | 'notice' | 'uncommitted' | WindowButton;
 
 type TitleBarInteraction = 'hover' | 'active' | 'focus-visible';
 
@@ -30,8 +30,8 @@ const uncommittedItems = (uncommitted: string[]) =>
     return `<span class="flex flex-col"><span class="text-et-surface-muted">${UNCOMMITTED_KINDS[kind] ?? kind}</span><span class="whitespace-nowrap">${what}</span></span>`;
   });
 
-export const withUncommittedHint = (markup: string, { uncommitted, hint }: Props) =>
-  uncommitted?.length && hint === 'uncommitted'
+export const withUncommittedHint = (markup: string, { uncommitted, force }: Props) =>
+  uncommitted?.length && force?.control === 'uncommitted'
     ? `<span class="relative inline-flex">${markup}<span class="st-notice-hint absolute top-full right-0 left-0 z-10 mt-2 flex justify-end">${tooltip(
         {
           content: `<span class="flex flex-col gap-1.5">${uncommittedItems(uncommitted).join('')}</span>`,
@@ -49,7 +49,6 @@ export type Props = {
   noticeText?: string;
   push?: PushState;
   uncommitted?: string[];
-  hint?: 'uncommitted';
   restart?: 'pending' | 'failed';
   product: string;
   part: string;
@@ -133,7 +132,12 @@ export const states = {
   push: { ...LINUX_FULL, push: PUSH },
   uncommitted: { ...LINUX_FULL, uncommitted: UNCOMMITTED },
   'uncommitted-push': { ...LINUX_FULL, push: PUSH, uncommitted: UNCOMMITTED },
-  'uncommitted-push-hint': { ...LINUX_FULL, push: PUSH, uncommitted: UNCOMMITTED, hint: 'uncommitted' },
+  'uncommitted-push-hint': {
+    ...LINUX_FULL,
+    push: PUSH,
+    uncommitted: UNCOMMITTED,
+    force: { control: 'uncommitted', interaction: 'hover' },
+  },
   'push-update': { ...LINUX_FULL, update: true, push: PUSH },
   'macos-push': { ...MACOS, push: PUSH },
   ...contentStates('notice'),

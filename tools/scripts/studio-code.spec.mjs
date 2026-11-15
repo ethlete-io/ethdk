@@ -14,6 +14,7 @@ import {
   cliBuildMarkOf,
   ensureCliCopy,
   pushStateOf,
+  uncommittedOf,
   WORKING_CLI_CACHE,
   workingTreeCliCopy,
 } from './studio-code.mjs';
@@ -282,6 +283,25 @@ test('the push state comes from the built CLI and is null without one', () => {
     );
 
     assert.deepEqual(pushStateOf(root), { unpushed: 4, oldestAgeHours: 2.5 });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('the uncommitted lines come from the built CLI and are empty without one', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-code-spec-'));
+
+  try {
+    assert.deepEqual(uncommittedOf(root), []);
+
+    const module = join(root, 'dist/libs/cli/src/lib/design');
+    mkdirSync(module, { recursive: true });
+    writeFileSync(
+      join(module, 'uncommitted-state.js'),
+      `exports.uncommittedLinesOf = (checkout) => ['SKETCH UNTRACKED studio a.b: x'];`,
+    );
+
+    assert.deepEqual(uncommittedOf(root), ['SKETCH UNTRACKED studio a.b: x']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
