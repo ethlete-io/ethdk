@@ -2822,6 +2822,8 @@ B502 port line as built (Linux builder subagent, 2026-11-15): the port record al
 or commit conflicts or fails the re-check, and the studio-api listing passes it through. It lands in `rebaseSketch`
 (`sketch rebase`, a clean auto-rebase); new: `markSketchReady` drops it too, so a port that only fixed the re-check
 ends. The app binds `[port]` from it (`since` = `seit N Min` from `at`); `staleBase` stays unbound.
+Follow-up (2026-11-15): `sketches.since` and `agentRun.ago` name a span past an hour in `Std`, past a day in
+`Tag`/`Tagen` (`studio-labels.spec.ts`); not checked in a live shot.
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and

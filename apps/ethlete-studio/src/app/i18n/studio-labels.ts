@@ -1,3 +1,12 @@
+const spanOf = (minutes: number) => {
+  if (minutes < 60) return `${minutes} Min`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)} Std`;
+
+  const days = Math.floor(minutes / 1440);
+
+  return days === 1 ? '1 Tag' : `${days} Tagen`;
+};
+
 export const STUDIO_LABELS = {
   designServer: {
     start: 'Design-Server starten',
@@ -128,12 +137,12 @@ export const STUDIO_LABELS = {
     holdUntil: (until: string) => `Wartet auf ${until}`,
     lastChange: (by: string, since: string) =>
       by || since ? [by ? `Letzte Änderung von ${by}` : 'Letzte Änderung', since].filter(Boolean).join(' · ') : '',
-    since: (minutes: number) => `seit ${minutes} Min`,
+    since: (minutes: number) => `seit ${spanOf(minutes)}`,
     agentRun: {
       failed: (round: number | null) => (round === null ? 'Runde fehlgeschlagen' : `Runde ${round} fehlgeschlagen`),
       errored: (variants: readonly string[]) =>
         `Render-Fehler in ${variants.length === 1 ? 'Variante' : 'Varianten'} ${variants.join(', ')}`,
-      ago: (minutes: number) => `vor ${minutes} Min`,
+      ago: (minutes: number) => `vor ${spanOf(minutes)}`,
     },
     roundSelect: 'Runde',
     round: (number: number, title: string) => [`Runde ${number}`, title].filter(Boolean).join(' · '),
