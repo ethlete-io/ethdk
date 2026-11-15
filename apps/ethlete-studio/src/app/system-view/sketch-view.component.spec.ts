@@ -751,8 +751,8 @@ describe('SketchViewComponent', () => {
     );
 
     expect(badgeOf(stalled.root)).toBe(status.notReady);
-    expect(stalled.root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
-      STUDIO_LABELS.sketches.notReadyUnknown,
+    expect(stalled.root.querySelector('[data-sk-not-ready]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      `${STUDIO_LABELS.sketches.notReadyUnknown} · Letzte Änderung von Opus 5.5 · seit 40 Min`,
     );
     stalled.fixture.destroy();
 

@@ -131,7 +131,6 @@ export const STUDIO_LABELS = {
       waiting: 'Wartet auf deine Wahl',
       picked: 'Variante gewählt',
       paused: 'Pausiert',
-      idle: 'Keine Aktivität',
       notReady: 'Noch nicht bereit',
       errored: 'Render-Fehler in dieser Runde',
     },

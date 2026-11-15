@@ -407,14 +407,18 @@ describe('SketchesComponent', () => {
     expect(discarded).toHaveBeenCalledTimes(1);
   });
 
-  it('shows Noch nicht bereit with the ready refusal, or the hint to run sketch ready, and no merge', async () => {
+  it('shows Noch nicht bereit with the ready refusal and the last change, or the hint to run sketch ready, and no merge', async () => {
     const refused: HTMLElement = (
       await render({ camera: '100', status: 'not-ready', readyReason: 'elements/x a: a long refusal line' })
     ).nativeElement;
-    const unknown: HTMLElement = (await render({ camera: '100', status: 'not-ready' })).nativeElement;
+    const unknown: HTMLElement = (
+      await render({ camera: '100', status: 'not-ready', lastChange: { by: '', since: '' } })
+    ).nativeElement;
 
     expect(textOf(refused.querySelector('header'))).toContain(LABELS.status.notReady);
-    expect(textOf(refused.querySelector('[data-sk-not-ready]'))).toBe('elements/x a: a long refusal line');
+    expect(textOf(refused.querySelector('[data-sk-not-ready]'))).toBe(
+      `elements/x a: a long refusal line · ${LABELS.lastChange('Opus 5.5', 'seit 25 Min')}`,
+    );
     expect(textOf(unknown.querySelector('[data-sk-not-ready]'))).toBe(LABELS.notReadyUnknown);
     expect(refused.querySelector('[data-sk-merge]')).toBeNull();
   });
@@ -829,11 +833,11 @@ describe('SketchesComponent', () => {
 
   it('offers Übernehmen only while the sketch waits for a pick', async () => {
     const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
-    const idle: HTMLElement = (await render({ camera: '100', status: 'idle' })).nativeElement;
+    const notReady: HTMLElement = (await render({ camera: '100', status: 'not-ready' })).nativeElement;
 
     expect(textOf(waiting.querySelector('header et-badge'))).toBe(LABELS.status.waiting);
     expect(textOf(waiting.querySelector('[data-sk-row="x"] button'))).toBe(LABELS.merge);
-    expect(idle.querySelector('[data-sk-row="x"] button')).toBeNull();
+    expect(notReady.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
 
   it('keeps Übernehmen after a pick and opens the sketch points from the chip in the head of the picked variant only', async () => {

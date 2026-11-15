@@ -21,7 +21,7 @@ export type SketchRow = {
 
 export type SketchWithdrawn = 'hidden' | 'shown';
 
-export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle' | 'not-ready';
+export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'not-ready';
 
 export type SketchHold = { until: string; by: SketchModel; since: string };
 
@@ -297,7 +297,6 @@ const SCREEN_UNCHANGED = [
   'drawing',
   'paused',
   'paused-reason',
-  'idle',
   'new-part',
   'sticky-names',
   'comparing',
