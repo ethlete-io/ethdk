@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { designStatus, statusPath } from './status';
+import { statusPath } from './call-status-path';
+import { designStatus } from './status';
 
 const withCall = (slug: string) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-status-'));

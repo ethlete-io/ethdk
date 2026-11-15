@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CALL_STAGES, newCall } from './new-call';
-import { statusPath } from './status';
+import { statusPath } from './call-status-path';
 import { callTopLevelAwaitsOf } from './system/rules/top-level-await';
 
 const calls = (target: string) => join(target, '.ethlete/design/calls');

@@ -17,7 +17,7 @@ import { setImmediate } from 'timers/promises';
 import { productDirOfSketch, recoverInterrupted, withProductLock, writeDecisionFile } from '../product-lock';
 import { noteWrite } from '../write-journal';
 import { jsonLayoutOf } from '../../json-layout';
-import { statusPath } from '../../status';
+import { statusPath } from '../../call-status-path';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { SHARED_FOLDER, SHARED_PREFIX } from '../imports';
 import { isBuiltInBase } from '../base';
