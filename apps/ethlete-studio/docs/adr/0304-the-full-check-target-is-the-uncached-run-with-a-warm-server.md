@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B514
+built: 2de13a506
 decided: 2026-11-15
 source: doc-agent session 2026-11-15, day shift, B514 question from the builder
 ---
