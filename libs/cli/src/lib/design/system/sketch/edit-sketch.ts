@@ -83,7 +83,7 @@ export const headHoldsPart = (product: ResolvedProduct, resolved: ResolvedPart) 
   try {
     return (
       git(root, ['ls-files', '--', paths[0] ?? '.']) !== '' &&
-      git(root, ['status', '--porcelain', '--untracked-files=all', '--', ...paths]) === ''
+      git(root, ['--no-optional-locks', 'status', '--porcelain', '--untracked-files=all', '--', ...paths]) === ''
     );
   } catch {
     return false;

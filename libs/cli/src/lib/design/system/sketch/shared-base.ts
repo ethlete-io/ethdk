@@ -56,7 +56,7 @@ const commitOf = (file: string) => {
   if (!existsSync(file)) return 'removed';
 
   const cwd = dirname(file);
-  const dirty = gitStatusOf(['status', '--porcelain', '--', file], { cwd });
+  const dirty = gitStatusOf(['--no-optional-locks', 'status', '--porcelain', '--', file], { cwd });
 
   if (dirty.status !== 0) return 'outside git';
   if (dirty.stdout.trim() !== '') return 'uncommitted';

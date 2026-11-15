@@ -152,7 +152,7 @@ const newerThanOf = ({ root, paths, at }: { root: string; paths: string[]; at: s
 
   try {
     const git = (args: string[]) => gitText(['-C', root, ...args], { stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-    const dirty = git(['status', '--porcelain', '--', ...paths]);
+    const dirty = git(['--no-optional-locks', 'status', '--porcelain', '--', ...paths]);
 
     if (dirty) return true;
 

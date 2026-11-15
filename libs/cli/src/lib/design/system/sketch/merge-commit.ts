@@ -26,7 +26,16 @@ const below = (path: string, dir: string) => path === dir || path.startsWith(`${
 function* dirtyFilesFlow(product: ResolvedProduct): GitFlow<Map<string, string> | null> {
   const root = yield { args: ['rev-parse', '--show-toplevel'] };
   const status = yield {
-    args: ['status', '--porcelain', '-z', '--no-renames', '--untracked-files=all', '--', ...dirsOf(product)],
+    args: [
+      '--no-optional-locks',
+      'status',
+      '--porcelain',
+      '-z',
+      '--no-renames',
+      '--untracked-files=all',
+      '--',
+      ...dirsOf(product),
+    ],
   };
 
   if (root.status !== 0 || status.status !== 0) return null;
@@ -103,7 +112,7 @@ function* commitFilesFlow(options: { files: string[]; slug: string; subject: str
 }
 
 function* commitChangedFlow(options: { files: string[]; slug: string; subject: string }): GitFlow<string | null> {
-  const status = yield { args: ['status', '--porcelain', '--', ...options.files] };
+  const status = yield { args: ['--no-optional-locks', 'status', '--porcelain', '--', ...options.files] };
 
   if (status.status !== 0) return (status.stderr || status.stdout).trim();
   if (status.stdout.trim() === '') return null;
