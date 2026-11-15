@@ -221,9 +221,12 @@ const buttonGrid = async () => {
 
 const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">Noch keine Teile.</p>`;
 
+const CANVAS_NOTE = 'Starte den Design-Server, um das Design-System zu sehen.';
+
 export default definePart<{
   empty?: boolean;
   listingError?: boolean;
+  noted?: boolean;
   manyStates?: boolean;
   nothingOpen?: boolean;
   closed?: boolean;
@@ -238,7 +241,7 @@ export default definePart<{
   agent?: AgentState;
   call?: 'open' | 'transferred';
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. Steht statt eines Teils ein Hinweis auf der Fläche (Design-Server nicht gestartet, Lesefehler, Sketch nicht gefunden), zeigt sie eine Karte wie die leere Seite: ein Icon, ein kurzer Titel und darunter der Hinweis; keine Rahmen, kein Chip, keine Kommentar-Taste. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -248,6 +251,7 @@ export default definePart<{
     part: {},
     empty: { empty: true },
     'listing-error': { listingError: true },
+    'canvas-note': { noted: true },
     'many-states': { manyStates: true },
     fit: { fit: true },
     'points-closed': { closed: true },
@@ -312,6 +316,7 @@ export default definePart<{
   render: async ({
     empty,
     listingError,
+    noted,
     manyStates,
     nothingOpen: clear,
     closed,
@@ -370,6 +375,25 @@ export default definePart<{
       });
 
       return drawing({ body: shell.body, setup: menu.setup, styles: shell.styles + menu.styles + reload.styles });
+    }
+
+    if (noted) {
+      const menu = await studioMenu({ open: false });
+      const shell = await shellMain.render({
+        studio: menu.body,
+        section: 'System',
+        product: 'studio',
+        side: '',
+        content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
+          <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
+            ${icon('warning', { size: 24, cls: 'text-et-surface-muted' })}
+            <p class="m-0 text-et-surface font-ui-strong text-ui-md">Design-Server läuft nicht</p>
+            <p class="m-0 text-et-surface-muted">${CANVAS_NOTE}</p>
+          </div>
+        </div>`,
+      });
+
+      return drawing({ body: shell.body, setup: menu.setup, styles: shell.styles + menu.styles });
     }
 
     if (empty) {
