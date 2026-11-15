@@ -915,11 +915,22 @@ const withEditSketch = async (page, designPort, run) => {
   const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
   const file = join(studio, EDIT_PART, 'comment-row.ts');
   const before = readFileSync(file, 'utf8');
-  const git = (...gitArgs) =>
-    execFileSync('git', ['-c', 'user.email=e2e@canvas', '-c', 'user.name=canvas-e2e', ...gitArgs], {
-      cwd: checkout,
-      stdio: 'pipe',
-    });
+  const git = (...gitArgs) => {
+    try {
+      return execFileSync('git', ['-c', 'user.email=e2e@canvas', '-c', 'user.name=canvas-e2e', ...gitArgs], {
+        cwd: checkout,
+        stdio: 'pipe',
+      });
+    } catch (error) {
+      const stderr = String(error.stderr ?? '')
+        .trim()
+        .replace(/\s*\n\s*/g, ' | ');
+
+      throw new Error(`git ${gitArgs.join(' ')} exited ${error.status ?? error.signal}: ${stderr || 'no stderr'}`, {
+        cause: error,
+      });
+    }
+  };
   const merged = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'));
   const entry = merged[EDIT_PART];
 
