@@ -420,8 +420,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       const closeOnEscape = config.closeOnEscape ?? true;
       if (closeOnEscape) {
+        const captureTarget = targetDocument.defaultView ?? targetDocument;
+        let capturedEvent: Event | null = null;
+        const onKeyDownCapture = (event: Event) => {
+          capturedEvent = event;
+        };
+
         const onKeyDown = (event: KeyboardEvent) => {
           if (
+            event !== capturedEvent ||
             event.key !== 'Escape' ||
             event.defaultPrevented ||
             !isTopMost(overlayRef as OverlayRuntimeRef<object, unknown>)
@@ -433,9 +440,14 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           overlayRef.close(undefined, 'escape');
         };
 
-        // bubble phase so content inside the overlay can preventDefault or stopPropagation an Escape first
+        // bubble phase so content inside the overlay can preventDefault or stopPropagation an Escape first;
+        // only keydowns seen by the capture listener count, so the keydown that mounted the overlay cannot close it
+        captureTarget.addEventListener('keydown', onKeyDownCapture, true);
         targetDocument.addEventListener('keydown', onKeyDown);
-        cleanupFns.push(() => targetDocument.removeEventListener('keydown', onKeyDown));
+        cleanupFns.push(() => {
+          captureTarget.removeEventListener('keydown', onKeyDownCapture, true);
+          targetDocument.removeEventListener('keydown', onKeyDown);
+        });
       }
 
       // Registered before the close listeners: a press that closes the overlay completes the stream
