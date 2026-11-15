@@ -187,6 +187,7 @@ export const liveShotsOf = ({
         [fresh]="!part()"
         [status]="sketchStatus()"
         [idle]="lastChange()"
+        [readyReason]="readyReason()"
         [hold]="held()"
         [agent]="agentRun()"
         [port]="mergePort()"
@@ -767,11 +768,13 @@ export class SketchViewComponent {
     return { merged: mark.merged, since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)) };
   });
 
+  protected readyReason = computed(() => this.sketch().readyRefusal?.lines[0] ?? null);
+
   protected sketchStatus = computed<SketchStatus>(() => {
     if (this.drawnVariant() !== null) return 'drawing';
     if (this.sketch().hold) return 'paused';
 
-    if (this.sketch().status !== 'ready') return 'idle';
+    if (this.sketch().status !== 'ready') return 'not-ready';
 
     return waitsForPick(this.sketch()) ? 'waiting' : 'picked';
   });

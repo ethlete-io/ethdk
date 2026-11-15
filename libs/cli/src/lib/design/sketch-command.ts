@@ -14,6 +14,7 @@ import { Problem } from './system/problem';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
 import { frameBudgetWarningsOf } from './system/sketch/frame-budget';
+import { clearReadyRefusal, recordReadyRefusal } from './system/sketch/ready-refusal';
 import { NOTE_LANGUAGE_NAMES, noteLanguageOf, noteLanguageWarningsOf } from './system/sketch/note-language';
 import {
   openSketchProblemsOf,
@@ -235,6 +236,15 @@ const fail = (message: string) => {
   console.error(message);
 
   return 1;
+};
+
+const readyRefused = (
+  { product, sketch, printed = [] }: { product: ResolvedProduct; sketch: Sketch; printed?: string[] },
+  message: string,
+) => {
+  recordReadyRefusal({ productDir: product.dir, sketch, message: [...printed, message].join('\n') });
+
+  return fail(message);
 };
 
 const productsWithSketchOf = (context: Context, has: (productDir: string, product: string) => boolean) =>
@@ -863,7 +873,10 @@ const readied = (context: Context) => {
   );
 
   if (unlinted.length > 0)
-    return fail(`${unlinted.join('\n')}\n${reopened.target} adds lint warnings - fix them before ready`);
+    return readyRefused(
+      current,
+      `${unlinted.join('\n')}\n${reopened.target} adds lint warnings - fix them before ready`,
+    );
 
   const unlock = lockedReady(reopened);
 
@@ -873,10 +886,16 @@ const readied = (context: Context) => {
     ? { warm: { ...context.warm, perRun: true }, close: async () => undefined }
     : createRunDraw(context.target);
 
-  return renderedAndReady({ ...context, warm: run.warm }, current).finally(async () => {
-    unlock();
-    await run.close();
-  });
+  return renderedAndReady({ ...context, warm: run.warm }, current)
+    .then((code) => {
+      if (code === 0) clearReadyRefusal({ productDir: current.product.dir, sketch: reopened });
+
+      return code;
+    })
+    .finally(async () => {
+      unlock();
+      await run.close();
+    });
 };
 
 const renderedAndReady = async (context: Context, found: { product: ResolvedProduct; sketch: Sketch }) => {
@@ -897,12 +916,15 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
   if ('issues' in rendered && rendered.noVerdict) return 1;
 
   if ('issues' in rendered && rendered.issues.length > 0)
-    return fail(`${sketch.target} has problems - fix them before ready`);
+    return readyRefused(
+      { ...found, printed: groupedIssueLinesOf(rendered.issues) },
+      `${sketch.target} has problems - fix them before ready`,
+    );
 
   const busyAdded = 'issues' in rendered ? openPointLinesOf({ product, sketch, busy: rendered.busy ?? [] }).added : [];
 
   if (busyAdded.length > 0)
-    return fail(`${busyAdded.join('\n')}\n${sketch.target} adds open points - close them before ready`);
+    return readyRefused(found, `${busyAdded.join('\n')}\n${sketch.target} adds open points - close them before ready`);
 
   return loadedAndReady(context, found);
 };
@@ -912,14 +934,19 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     unloadedLinesOf({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
   );
 
-  if (unloaded.length > 0) return fail(`${unloaded.join('\n')}\n${sketch.target} does not load - fix it before ready`);
+  if (unloaded.length > 0)
+    return readyRefused(
+      { product, sketch },
+      `${unloaded.join('\n')}\n${sketch.target} does not load - fix it before ready`,
+    );
 
   const drifts = await timedPhase('mark-drift', () =>
     sampleMarkDriftLines({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
   );
 
   if (drifts.length > 0)
-    return fail(
+    return readyRefused(
+      { product, sketch },
       `${drifts.join('\n')}\n${sketch.target} draws one sample with different marks - align them before ready`,
     );
 
@@ -928,15 +955,19 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   );
 
   if (identical.length > 0)
-    return fail(`${identical.join('\n')}\n${sketch.target} draws variants alike - fix them before ready`);
+    return readyRefused(
+      { product, sketch },
+      `${identical.join('\n')}\n${sketch.target} draws variants alike - fix them before ready`,
+    );
 
   const undeclared = await timedPhase('undeclared', () =>
     undeclaredLinesOf({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
   );
 
-  if (typeof undeclared === 'string') return fail(undeclared);
+  if (typeof undeclared === 'string') return readyRefused({ product, sketch }, undeclared);
   if (undeclared.length > 0)
-    return fail(
+    return readyRefused(
+      { product, sketch },
       `${undeclared.join('\n')}\n${sketch.target} draws controls no controls entry declares - declare them before ready`,
     );
 
@@ -950,7 +981,8 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     : [];
 
   if (unchangedVariants.length > 0)
-    return fail(
+    return readyRefused(
+      { product, sketch },
       `${unchangedVariants.join('\n')}\n${sketch.target} draws a variant with no changed state - draw it before ready`,
     );
 
@@ -964,7 +996,10 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     : [];
 
   if (unviewed.length > 0)
-    return fail(`${unviewed.join('\n')}\n${sketch.target} draws a pixel diff - view its shot before ready`);
+    return readyRefused(
+      { product, sketch },
+      `${unviewed.join('\n')}\n${sketch.target} draws a pixel diff - view its shot before ready`,
+    );
 
   if (!existsSync(resolve(sketch.dir, SKETCH_FILE)))
     return fail(`${sketch.target} is gone: another run merged or discarded it while this one checked it`);
@@ -1383,7 +1418,8 @@ const readyRefusalOf = (
   if (stale.length > 0) {
     const commit = baseCommitOf({ context, product, sketch });
 
-    return fail(
+    return readyRefused(
+      { product, sketch },
       `${stale.map((problem) => problem.line).join('\n')}\n${sketch.target} is stale${commit ? ` (base changed in ${commit})` : ''} - rebase it before ready`,
     );
   }
@@ -1406,7 +1442,11 @@ const readyRefusalOf = (
     ),
   );
 
-  if (problems.length > 0) return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
+  if (problems.length > 0)
+    return readyRefused(
+      { product, sketch },
+      `${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`,
+    );
 
   const { added, inherited } = openPointLinesOf({ product, sketch });
 
@@ -1420,11 +1460,15 @@ const readyRefusalOf = (
       ),
     );
 
-  if (added.length > 0) return fail(`${added.join('\n')}\n${sketch.target} adds open points - close them before ready`);
+  if (added.length > 0)
+    return readyRefused(
+      { product, sketch },
+      `${added.join('\n')}\n${sketch.target} adds open points - close them before ready`,
+    );
 
   const noNote = roundNoteRefusalOf(sketch);
 
-  return noNote === null ? null : fail(noNote);
+  return noNote === null ? null : readyRefused({ product, sketch }, noNote);
 };
 
 const rebased = (context: Context) =>

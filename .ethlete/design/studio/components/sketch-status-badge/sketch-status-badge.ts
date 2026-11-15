@@ -1,7 +1,7 @@
 import { definePart } from '@design-system';
 import badge from '@system/components/badge';
 
-export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle';
+export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle' | 'not-ready';
 
 export type SketchBadgeStatus = SketchStatus | 'failed';
 
@@ -13,6 +13,7 @@ const LABEL: Record<SketchBadgeStatus, string> = {
   picked: 'Variante gewählt',
   paused: 'Pausiert',
   idle: 'Keine Aktivität',
+  'not-ready': 'Noch nicht bereit',
   failed: 'Render fehlgeschlagen',
 };
 
@@ -28,7 +29,7 @@ export const sketchStatusBadge = async (status: SketchBadgeStatus) => {
 };
 
 export default definePart({
-  note: 'The status of a sketch as a small tonal badge: zeichnet while a variant is drawn, Wartet auf deine Wahl when all stand and nothing is picked, Variante gewählt once the designer picked a variant and the merge is still to come, Pausiert while the agent waits on other work, Keine Aktivität when nothing moved for a while. Render fehlgeschlagen, when its render failed, takes the error colour theme by its semantic type. The host places it, and wraps the paused badge in the hold trigger.',
+  note: 'The status of a sketch as a small tonal badge: zeichnet while a variant is drawn, Wartet auf deine Wahl when all stand and nothing is picked, Variante gewählt once the designer picked a variant and the merge is still to come, Pausiert while the agent waits on other work, Keine Aktivität when nothing moved for a while, Noch nicht bereit while `sketch ready` has not passed. Render fehlgeschlagen, when its render failed, takes the error colour theme by its semantic type. The host places it, and wraps the paused badge in the hold trigger.',
   madeBy: ['claude-opus-5-5'],
   widths: [200],
   states: {
@@ -37,6 +38,7 @@ export default definePart({
     picked: { status: 'picked' },
     paused: { status: 'paused' },
     idle: { status: 'idle' },
+    'not-ready': { status: 'not-ready' },
     failed: { status: 'failed' },
   },
   controls: {},

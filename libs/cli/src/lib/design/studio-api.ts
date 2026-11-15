@@ -41,6 +41,7 @@ import { openSketchListingOf } from './system/sketch/check-sketches';
 import { holdTargetEndOf } from './system/sketch/merged-parts';
 import { staleBaseOf } from './system/sketch/stale-base';
 import { rebaseUncommittedOf } from './system/sketch/rebase-uncommitted';
+import { recordedReadyRefusalOf } from './system/sketch/ready-refusal';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
@@ -475,6 +476,7 @@ const listingOf = async ({
           ...sketchOf({ sketch, target }),
           staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
           rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
+          readyRefusal: sketch.status === 'ready' ? null : recordedReadyRefusalOf({ productDir: product.dir, sketch }),
           ...(checked
             ? {
                 problems: [

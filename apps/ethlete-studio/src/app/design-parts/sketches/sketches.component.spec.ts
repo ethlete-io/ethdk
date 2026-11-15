@@ -407,6 +407,18 @@ describe('SketchesComponent', () => {
     expect(discarded).toHaveBeenCalledTimes(1);
   });
 
+  it('shows Noch nicht bereit with the ready refusal, or the hint to run sketch ready, and no merge', async () => {
+    const refused: HTMLElement = (
+      await render({ camera: '100', status: 'not-ready', readyReason: 'elements/x a: a long refusal line' })
+    ).nativeElement;
+    const unknown: HTMLElement = (await render({ camera: '100', status: 'not-ready' })).nativeElement;
+
+    expect(textOf(refused.querySelector('header'))).toContain(LABELS.status.notReady);
+    expect(textOf(refused.querySelector('[data-sk-not-ready]'))).toBe('elements/x a: a long refusal line');
+    expect(textOf(unknown.querySelector('[data-sk-not-ready]'))).toBe(LABELS.notReadyUnknown);
+    expect(refused.querySelector('[data-sk-merge]')).toBeNull();
+  });
+
   it('shows In Arbeit and the drawing placeholder for the drawn variant', async () => {
     const root: HTMLElement = (await render({ status: 'drawing', drawn: 'x' })).nativeElement;
 

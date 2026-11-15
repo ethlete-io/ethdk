@@ -6,6 +6,7 @@ import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent, liveShotsOf } from './sketch-view.component';
+import { waitsForPick } from './system-tree';
 import { undecidedShotsOf } from './undecided-shots';
 
 const PRODUCT: ListedProduct = { name: 'web', base: null, presets: {}, parts: [], problems: [] };
@@ -706,6 +707,28 @@ describe('SketchViewComponent', () => {
     expect(completed).toEqual([]);
   });
 
+  it('names a not-ready sketch with the first line of its ready refusal, offers no merge and does not wait for a pick', async () => {
+    const refused = {
+      ...SKETCH,
+      status: 'in progress' as const,
+      decision: undefined,
+      report: null,
+      readyRefusal: {
+        lines: ['pages/system b: SHOT-NOT-VIEWED listing-error', 'pages/system draws a pixel diff - view its shot'],
+        round: 'r1',
+        at: new Date().toISOString(),
+      },
+    };
+    const { root } = await render(refused, noComments);
+
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.notReady);
+    expect(root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
+      'pages/system b: SHOT-NOT-VIEWED listing-error',
+    );
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(waitsForPick(refused)).toBe(false);
+  });
+
   it('derives the head badge from the drawing report and readiness, never from the sketch status alone', async () => {
     const badgeOf = (root: HTMLElement) => root.querySelector('header et-badge')?.textContent?.trim();
     const fresh = new Date(Date.now() - 5 * 60_000).toISOString();
@@ -727,9 +750,9 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(badgeOf(stalled.root)).toBe(status.idle);
-    expect(stalled.root.querySelector('header')?.textContent).toContain(
-      STUDIO_LABELS.sketches.lastChange('Opus 5.5', STUDIO_LABELS.sketches.since(40)),
+    expect(badgeOf(stalled.root)).toBe(status.notReady);
+    expect(stalled.root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
+      STUDIO_LABELS.sketches.notReadyUnknown,
     );
     stalled.fixture.destroy();
 
@@ -741,17 +764,10 @@ describe('SketchViewComponent', () => {
       },
       noComments,
     );
-    const silentHead = silent.root.querySelector('header')?.textContent ?? '';
 
-    expect(badgeOf(silent.root)).toBe(status.idle);
-    expect(silentHead).toContain('Letzte Änderung von Opus 5.5');
-    expect(silentHead).not.toContain(' · ');
+    expect(badgeOf(silent.root)).toBe(status.notReady);
+    expect(buttonNamed(silent.root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
     silent.fixture.destroy();
-
-    const unknown = await render({ ...open, report: null }, noComments);
-
-    expect(unknown.root.querySelector('header')?.textContent).not.toContain('Letzte Änderung');
-    unknown.fixture.destroy();
 
     const ready = await render({ ...SKETCH, decision: undefined }, noComments);
 

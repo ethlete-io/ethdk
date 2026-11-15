@@ -13,6 +13,7 @@ import {
 } from './ready-shots';
 import { designSketch } from './sketch-command';
 import { holdTargetEndOf } from './system/sketch/merged-parts';
+import { recordedReadyRefusalOf } from './system/sketch/ready-refusal';
 import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { renderIssuesOf } from './system/render-check';
@@ -345,6 +346,13 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   });
 
+  const recordedRefusal = (target: string) => {
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const sketch = findSketch({ productDir, product: 'acme', sketch: { layer: 'components', name: 'button' } });
+
+    return typeof sketch === 'string' || sketch === null ? null : recordedReadyRefusalOf({ productDir, sketch });
+  };
+
   it('refuses ready on open points the variant adds and lists the ones the merged part already has', async () => {
     const target = acme();
     const lines = output();
@@ -368,6 +376,10 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.at(-1)).toBe(
       'components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)\ncomponents/button adds open points - close them before ready',
     );
+    expect(recordedRefusal(target)?.lines).toEqual([
+      'components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)',
+      'components/button adds open points - close them before ready',
+    ]);
     lines.length = 0;
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
@@ -387,6 +399,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain(inherited);
+    expect(existsSync(join(target, '.ethlete/cache/acme/ready-refusals'))).toBe(true);
+    expect(readdirSync(join(target, '.ethlete/cache/acme/ready-refusals'))).toEqual([]);
 
     vi.mocked(sketchOpenPointsOf).mockImplementation(() => ({ added: [], inherited: [] }));
   });

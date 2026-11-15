@@ -235,23 +235,8 @@
     "pid": 3380508
   },
   "components/sketch-status-badge": {
-    "hash": "d060ac4778384e56",
-    "files": {
-      ".ethlete/design/sdk/components/badge/badge.css": "2f043e0bb1464598",
-      ".ethlete/design/sdk/components/badge/badge.ts": "e3e79113f9d55c29",
-      ".ethlete/design/studio/components/sketch-status-badge/sketch-status-badge.ts": "60b617de9da6b04d",
-      "libs/components/design/badge.ts": "ae6d1b71fa14a024",
-      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
-      "libs/components/design/icon.ts": "829a95253b948ba9",
-      "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
-      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
-      "libs/components/src/lib/icon/headless/icon-styles.component.css": "ff8f5b368903719a"
-    },
     "actions": [],
-    "at": "2026-11-14T17:25:08.413Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 3380508
+    "at": "2026-11-14T17:25:08.413Z"
   },
   "components/title-bar": {
     "actions": ["emit:close", "emit:dismiss", "emit:maximize", "emit:minimize", "emit:restart", "emit:update"],

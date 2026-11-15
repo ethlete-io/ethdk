@@ -441,6 +441,8 @@ export type ListedSketch = {
   portAfterMerge?: { merged: string[]; parts: string[]; reasons: string[]; at: string };
   /** The commit whose rebase of the sketch the post-commit hook could not commit, `null` once nothing of it is left uncommitted. Missing from an `@ethlete/cli` older than it. */
   rebaseUncommitted?: { commit: string } | null;
+  /** Why the last `sketch ready` of the running round refused the sketch, `null` without one or once ready. Missing from an `@ethlete/cli` older than it. */
+  readyRefusal?: { lines: string[]; round: string; at: string } | null;
 };
 
 /** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */

@@ -93,6 +93,16 @@
             }
           </span>
         }
+        @case ('not-ready') {
+          <span class="flex items-center gap-space-2">
+            <div class="flex flex-wrap items-center">
+              <et-badge variant="tonal" size="sm">{{ LABELS.status.notReady }}</et-badge>
+            </div>
+            <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-not-ready>{{
+              readyReason() ?? LABELS.notReadyUnknown
+            }}</span>
+          </span>
+        }
       }
       <span class="flex-1"></span>
       <span class="w-56 flex-none"></span>

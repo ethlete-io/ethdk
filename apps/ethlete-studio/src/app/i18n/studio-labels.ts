@@ -132,8 +132,10 @@ export const STUDIO_LABELS = {
       picked: 'Variante gewählt',
       paused: 'Pausiert',
       idle: 'Keine Aktivität',
+      notReady: 'Noch nicht bereit',
       errored: 'Render-Fehler in dieser Runde',
     },
+    notReadyUnknown: 'Grund unbekannt - führe sketch ready aus',
     holdUntil: (until: string) => `Wartet auf ${until}`,
     lastChange: (by: string, since: string) =>
       by || since ? [by ? `Letzte Änderung von ${by}` : 'Letzte Änderung', since].filter(Boolean).join(' · ') : '',

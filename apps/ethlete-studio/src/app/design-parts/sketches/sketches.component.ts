@@ -215,6 +215,7 @@ export class SketchesComponent {
   public hold = input<SketchHold>(SKETCH_HOLD);
   public idle = input<SketchIdle>(SKETCH_IDLE);
   public reason = input(false);
+  public readyReason = input<string | null>(null);
   public agent = input<SketchAgentRun | null>(null);
   public question = input('');
   public port = input<SketchMergePort | null>(null);
@@ -380,7 +381,7 @@ export class SketchesComponent {
   protected shownStatus = computed(() =>
     (this.agent() && !this.agent()?.failed) || this.port()
       ? 'drawing'
-      : this.errored().length > 0 && (this.status() === 'waiting' || this.status() === 'idle')
+      : this.errored().length > 0 && ['waiting', 'idle', 'not-ready'].includes(this.status())
         ? 'errored'
         : this.status(),
   );
