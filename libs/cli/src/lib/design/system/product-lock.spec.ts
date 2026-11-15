@@ -1,5 +1,15 @@
 import { spawn, spawnSync } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -99,6 +109,28 @@ describe('withProductLock and writeDecisionFile', () => {
     expect(readFileSync(file, 'utf8')).toBe('{"a":8}\n');
     expect(readdirSync(dir)).toEqual(['ready.json']);
   }, 30_000);
+
+  it('leaves an equal ready.json and sketch.json untouched and rewrites a changed one', () => {
+    const dir = productDirOf();
+    const sketchDir = join(dir, 'sketches', 'components-button');
+    const old = new Date('2026-01-01T00:00:00Z');
+
+    mkdirSync(sketchDir, { recursive: true });
+
+    for (const file of [join(dir, 'ready.json'), join(sketchDir, 'sketch.json')]) {
+      writeDecisionFile(file, '{"a":1}\n');
+      utimesSync(file, old, old);
+
+      writeDecisionFile(file, '{"a":1}\n');
+
+      expect(statSync(file).mtimeMs).toBe(old.getTime());
+
+      writeDecisionFile(file, '{"a":2}\n');
+
+      expect(statSync(file).mtimeMs).not.toBe(old.getTime());
+      expect(readFileSync(file, 'utf8')).toBe('{"a":2}\n');
+    }
+  });
 
   it('takes over the lock of a dead pid', () => {
     const dir = productDirOf();
