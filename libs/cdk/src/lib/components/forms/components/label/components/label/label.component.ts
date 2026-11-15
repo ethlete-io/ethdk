@@ -36,5 +36,5 @@ let nextUniqueId = 0;
 export class LabelComponent {
   protected readonly formFieldStateService = inject(FormFieldStateService);
 
-  readonly id = `et-label-${++nextUniqueId}`;
+  readonly id = `et-cdk-label-${++nextUniqueId}`;
 }
