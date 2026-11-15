@@ -127,7 +127,7 @@
         <span class="text-ui-sm whitespace-nowrap text-et-surface-muted" data-sk-edit-hint>{{ LABELS.editHint }}</span>
       }
     </header>
-    @if (shownQuestion(); as question) {
+    @if (question(); as question) {
       <p
         class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface"
         data-sk-question
@@ -136,8 +136,8 @@
       </p>
     }
     <div
-      [class.top-14]="!shownQuestion()"
-      [class.top-24]="!!shownQuestion()"
+      [class.top-14]="!question()"
+      [class.top-24]="!!question()"
       class="absolute right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
     >
       <et-form-field size="sm">
@@ -189,8 +189,8 @@
       }
     </div>
     <div
-      [class.top-27]="!shownQuestion()"
-      [class.top-37]="!!shownQuestion()"
+      [class.top-27]="!question()"
+      [class.top-37]="!!question()"
       class="absolute right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
     >
       <ethlete-canvas-viewport

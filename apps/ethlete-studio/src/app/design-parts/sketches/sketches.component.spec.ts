@@ -167,6 +167,7 @@ describe('SketchesComponent', () => {
       camera: '100',
       rounds: [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }],
       round: 'r1',
+      question: 'Wo steht der Status?',
     });
     const root: HTMLElement = fixture.nativeElement;
     const framesOf = () =>
@@ -226,6 +227,7 @@ describe('SketchesComponent', () => {
       status: 'waiting',
       rounds: [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }],
       round: 'r1',
+      question: 'Wo steht der Status?',
     });
     const root: HTMLElement = fixture.nativeElement;
 

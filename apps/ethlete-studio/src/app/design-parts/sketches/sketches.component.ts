@@ -310,9 +310,6 @@ export class SketchesComponent {
       .filter((row) => shown.size > 0 || row.key !== SKETCH_CURRENT);
   });
   protected discardable = computed(() => !this.isEdit());
-  protected shownQuestion = computed(
-    () => this.question() || (this.rounds().find((option) => option.value === this.round())?.note ?? ''),
-  );
   public columns = computed(() => {
     const rows = this.shownRows();
     const widest = Math.max(1, ...rows.map((row) => row.width));

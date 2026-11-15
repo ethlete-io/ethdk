@@ -182,6 +182,7 @@ export const liveShotsOf = ({
         [drawn]="drawnVariant()"
         [rounds]="rounds()"
         [round]="shownRoundKey()"
+        [question]="roundQuestion()"
         [pins]="variantPins()"
         [selected]="picked() ?? undefined"
         [openPoints]="openPointGroups()"
@@ -494,6 +495,8 @@ export class SketchViewComponent {
   );
 
   protected shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
+
+  protected roundQuestion = computed(() => this.shownRounds().find((round) => round.open)?.note ?? '');
 
   protected heading = computed(() => sketchHeadTitleOf(this.sketch(), this.shownRoundKey()));
 

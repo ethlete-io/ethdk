@@ -402,6 +402,20 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
   });
 
+  it('shows the note of the open round as the question line', async () => {
+    const { fixture, root } = await render(
+      { ...ROUNDED, rounds: [ROUNDED.rounds[0]!, { key: 'r2', title: 'Second', note: 'Wo steht der Status?' }] },
+      noComments,
+    );
+
+    expect(root.querySelector('[data-sk-question]')?.textContent?.trim()).toBe('Wo steht der Status?');
+
+    (fixture.componentInstance as unknown as { pickRound: (key: string) => void }).pickRound('r1');
+    await settle(fixture);
+
+    expect(root.querySelector('[data-sk-question]')).toBeNull();
+  });
+
   it('ignores the round flags remembered for an earlier sketch of the same part', async () => {
     localStorage.setItem(
       'ethlete-studio.call-view',
