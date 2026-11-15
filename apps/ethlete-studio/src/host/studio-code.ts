@@ -8,6 +8,7 @@ export type StudioCodeState = {
   frontend: { latest: string | null };
   host: { running: string | null; latest: string | null };
   push?: PushState | null;
+  uncommitted?: string[] | null;
 };
 
 export const studioCodeState$ = (): Observable<StudioCodeState | null> =>

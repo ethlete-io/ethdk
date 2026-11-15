@@ -11,6 +11,7 @@
       [notice]="codeNoticeAction() !== null"
       [noticeText]="codeNoticeText()"
       [push]="codeWatch.push()"
+      [uncommitted]="codeWatch.uncommitted()"
       [product]="product()"
       [restart]="codeWatch.restart()"
       (update)="updateRequest.emit($event)"

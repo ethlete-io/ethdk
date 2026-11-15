@@ -43,6 +43,12 @@ export const STUDIO_LABELS = {
     restartFailedMessage: 'Der Design-Server antwortet nicht. Das Log steht im Studio-Menü.',
     push: ({ unpushed, age }: { unpushed: number; age: string }) => `${unpushed} ungepusht · ${age}`,
     pushAge: (hours: string) => `${hours} h`,
+    uncommitted: (count: number) => `${count} offen`,
+    uncommittedKinds: {
+      'READY UNCOMMITTED': 'Ready-Marke',
+      'SKETCH UNTRACKED': 'Sketch ungetrackt',
+      'SKETCH LEFTOVER': 'Sketch übrig',
+    } as Record<string, string>,
   },
   openFolder: {
     refusedTitle: 'Ordner nicht geöffnet',

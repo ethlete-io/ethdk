@@ -14,6 +14,7 @@ type Props = Omit<WindowChrome, 'preferNoCsd'> & {
   noticeText?: string | null;
   restart?: 'pending' | 'failed' | null;
   push?: TitleBarPush | null;
+  uncommitted?: string[];
   product?: string;
   part?: string;
 };
@@ -132,6 +133,50 @@ describe('TitleBarComponent', () => {
     );
 
     expect(text?.textContent?.trim()).toBe('3 ungepusht · 2 h');
+  });
+
+  describe('uncommitted', () => {
+    const UNCOMMITTED = [
+      'READY UNCOMMITTED studio components/menu: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
+      'SKETCH UNTRACKED studio pages/inbox: sketch folder is untracked',
+      'SKETCH LEFTOVER studio pages/a-very-long-sketch-name-for-the-hint: sketch folder is left over',
+      'READY UNCOMMITTED studio components/badge: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
+    ];
+
+    it('draws the open count after the push badge, muted', () => {
+      const bar = render({ ...linux([], []), push: { unpushed: 3, age: '2 h' }, uncommitted: UNCOMMITTED }).bar;
+      const mark = bar?.querySelector<HTMLElement>('[data-uncommitted-state]');
+
+      expect(mark?.textContent?.trim()).toBe('4 offen');
+      expect(mark?.classList).toContain('text-et-surface-muted');
+      expect(mark?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+      expect(mark?.previousElementSibling?.matches('[data-push-state]')).toBe(true);
+    });
+
+    it('names each entry on hover', async () => {
+      const { fixture, bar } = render({ ...linux([], []), uncommitted: UNCOMMITTED });
+      const mark = bar?.querySelector<HTMLElement>('[data-uncommitted-state]');
+      const enter = Object.assign(new Event('pointerenter'), { pointerType: 'mouse' });
+
+      mark?.dispatchEvent(enter);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await fixture.whenStable();
+
+      const text = document.body.textContent ?? '';
+
+      expect(text).toContain('Ready-Marke');
+      expect(text).toContain('components/menu');
+      expect(text).toContain('Sketch ungetrackt');
+      expect(text).toContain('pages/inbox');
+      expect(text).toContain('Sketch übrig');
+      expect(text).toContain('pages/a-very-long-sketch-name-for-the-hint');
+      expect(text).toContain('components/badge');
+      expect(text).not.toContain('HEAD has no mark');
+    });
+
+    it('draws no mark when nothing is uncommitted', () => {
+      expect(render({ ...linux([], []), uncommitted: [] }).bar?.querySelector('[data-uncommitted-state]')).toBeNull();
+    });
   });
 
   it('fires restart from the notice button and hides Update without an update', () => {

@@ -18,6 +18,14 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
 
 export type TitleBarPush = { unpushed: number; age: string };
 
+const UNCOMMITTED_LINE = /^(\S+ \S+) \S+ ([^:]+):/;
+
+const uncommittedEntryOf = (line: string) => {
+  const [, kind = line, what = ''] = UNCOMMITTED_LINE.exec(line) ?? [];
+
+  return { kind: STUDIO_LABELS.code.uncommittedKinds[kind] ?? kind, what };
+};
+
 @Component({
   selector: 'ethlete-title-bar',
   template: `
@@ -45,6 +53,41 @@ export type TitleBarPush = { unpushed: number; age: string };
               </span>
             </et-badge>
           </span>
+        }
+        @if (uncommittedEntries().length) {
+          <span
+            [etTooltip]="uncommittedList"
+            [etTooltipAriaDescription]="uncommittedDescription()"
+            class="inline-flex items-center gap-1 whitespace-nowrap text-et-surface-muted"
+            placement="bottom-end"
+            data-uncommitted-state
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />
+              <path d="m9 4.5 2.5 2.5" />
+            </svg>
+            {{ CODE_LABELS.uncommitted(uncommittedEntries().length) }}
+          </span>
+          <ng-template #uncommittedList>
+            <span class="flex flex-col gap-1.5">
+              @for (entry of uncommittedEntries(); track $index) {
+                <span class="flex flex-col">
+                  <span class="text-et-surface-muted">{{ entry.kind }}</span>
+                  <span class="whitespace-nowrap">{{ entry.what }}</span>
+                </span>
+              }
+            </span>
+          </ng-template>
         }
         @if (!notice() && noticeText(); as text) {
           <span class="whitespace-nowrap text-et-surface-muted" data-code-notice>{{ text }}</span>
@@ -302,6 +345,7 @@ export class TitleBarComponent {
   public noticeText = input<string | null>(null);
   public restart = input<'pending' | 'failed' | null>(null);
   public push = input<TitleBarPush | null>(null);
+  public uncommitted = input<string[]>([]);
   public product = input('');
 
   public part = input('');
@@ -321,6 +365,14 @@ export class TitleBarComponent {
   protected readonly SIZE = WINDOW_CONTROL_BUTTON_SIZES.MD;
 
   protected readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+
+  protected uncommittedEntries = computed(() => this.uncommitted().map(uncommittedEntryOf));
+
+  protected uncommittedDescription = computed(() =>
+    this.uncommittedEntries()
+      .map(({ kind, what }) => `${kind} ${what}`)
+      .join(', '),
+  );
 
   protected restarting = computed(() => this.restart() === 'pending');
   protected round = computed(() => this.os() === 'linux');

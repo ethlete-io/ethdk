@@ -14,6 +14,8 @@ export type RestartState = 'pending' | 'failed' | null;
 
 export type CodeNotice = { text: string; action: CodeAction | null };
 
+const NO_UNCOMMITTED: string[] = [];
+
 const short = (sha: string) => sha.slice(0, 7);
 
 export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string | null): CodeNotice | null => {
@@ -93,6 +95,7 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     notice: computed(() => codeNoticeOf(state(), pageLoadedAt())),
     push: computed(() => pushNoticeOf(state()?.push)),
+    uncommitted: computed(() => state()?.uncommitted ?? NO_UNCOMMITTED),
     act,
     restart: restart.asReadonly(),
     failRestart: () => restart.set('failed'),
