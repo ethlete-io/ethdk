@@ -8,6 +8,7 @@ import { partsCompletenessOf } from './complete';
 import { drawnFindingsFrom, drawnFindingsOf } from './drawn-open-points';
 import { renderIssuesOf } from './render-check';
 import { resolveProduct } from './resolve-product';
+import { createSketch, Sketch } from './sketch/sketch';
 
 vi.mock('./render-check', async (actual) => ({
   ...(await actual<typeof import('./render-check')>()),
@@ -40,6 +41,39 @@ const clipped = {
 
 describe('design check shows what design ready refuses', () => {
   afterEach(() => vi.clearAllMocks());
+
+  it('reports a type error of each open sketch variant, typed side by side before the static checks', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+
+    writeFileSync(
+      join(sketch.dir, 'b/elements/hero/hero.ts'),
+      "import { definePart } from '@design-system';\nexport default definePart<{ a: string }>({ note: '', states: { default: { a: 1 } }, render: () => ({ body: '', styles: '' }) });\n",
+    );
+    vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [], warnings: [] } as never);
+    vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
+
+    const lines: string[] = [];
+    const push = (line: unknown) => void lines.push(String(line));
+
+    vi.spyOn(console, 'log').mockImplementation(push);
+    vi.spyOn(console, 'error').mockImplementation(push);
+    vi.spyOn(console, 'warn').mockImplementation(push);
+
+    await checkSystemRendered({ target, config, products: ['acme'] });
+
+    const typeErrors = lines.filter((line) => line.startsWith('TYPE-ERROR .'));
+
+    expect(typeErrors).toHaveLength(1);
+    expect(typeErrors[0]).toContain('sketches/elements-hero/b: ');
+    expect(typeErrors[0]).toContain('hero.ts');
+  }, 120_000);
 
   it('lists the same missing states and undrawable parts as ready', async () => {
     const target = acme();

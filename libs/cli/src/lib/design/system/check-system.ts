@@ -80,7 +80,7 @@ import { pendingStateWarningsOf } from './rules/pending-state';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
-import { typecheckVariant } from './sketch/check-sketches';
+import { startVariantTypechecks, typecheckVariant, typecheckVariantAsync, variantKeyOf } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { keepHeldStampsInFiles, withStampsInMemory } from './stamp-files';
 import { readyUncommittedLinesOf } from '../uncommitted-state';
@@ -88,6 +88,7 @@ import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 import { repoInvocation } from '../../invocation';
+import { TypecheckResult } from '../typecheck';
 import { leftoverGateFilesWarningOf } from './leftover-gate-files';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
 import { timedPhase } from '../phase-timing';
@@ -310,6 +311,8 @@ type CheckOptions = {
   chromiumOf?: typeof chromiumOf;
   warm?: WarmDraw;
   typechecks?: Map<string, ReturnType<typeof typecheckProduct>>;
+  /** The typecheck of each open sketch variant by product, keyed by `variantKeyOf`; a variant missing here runs then. */
+  sketchTypechecks?: Map<string, Map<string, TypecheckResult>>;
 };
 
 const PRODUCT_LEVEL = PRODUCT_PART_KEY;
@@ -394,12 +397,18 @@ export const ruleSummaryText = (tally: Tally): string[] => {
   return [...counts].map(([rule, n]) => `${rule} ${n}`);
 };
 
-const typecheckOpenSketches = (options: { target: string; product: ResolvedProduct }): Problem[] =>
+const typecheckOpenSketches = (options: {
+  target: string;
+  product: ResolvedProduct;
+  done?: Map<string, TypecheckResult>;
+}): Problem[] =>
   listSketches({ productDir: options.product.dir, product: options.product.name }).flatMap((sketch) =>
     typeof sketch === 'string'
       ? []
       : sketch.variants.flatMap((variant): Problem[] => {
-          const result = typecheckVariant({ ...options, sketch, variant });
+          const result =
+            options.done?.get(variantKeyOf(sketch.target, variant)) ??
+            typecheckVariant({ target: options.target, product: options.product, sketch, variant });
 
           return result.kind === 'ok'
             ? []
@@ -527,7 +536,9 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: numbe
       report({ rule: 'TYPE-ERROR', file: product.dir, message: `\n${result.output}` }, product);
 
     if (options.warn && !options.part)
-      typecheckOpenSketches({ target, product }).forEach((problem) => report(problem, product));
+      typecheckOpenSketches({ target, product, done: options.sketchTypechecks?.get(name) }).forEach((problem) =>
+        report(problem, product),
+      );
 
     if (options.warn && !options.part)
       staleSketchBasesOf({
@@ -809,6 +820,39 @@ const oldIssuesOfRun = (options: {
   }
 };
 
+const SKETCH_TYPECHECKS_AT_ONCE = 4;
+
+const sketchTypechecksOf = async (options: CheckOptions) =>
+  new Map(
+    await Promise.all(
+      options.products.flatMap((name) => {
+        const entry = options.config.products?.[name];
+
+        if (!entry) return [];
+
+        const product = resolveProduct({ target: options.target, name, config: entry });
+        const started = startVariantTypechecks({
+          entries: listSketches({ productDir: product.dir, product: name }).flatMap((sketch) =>
+            typeof sketch === 'string' ? [] : sketch.variants.map((variant) => ({ sketch, variant })),
+          ),
+          limit: SKETCH_TYPECHECKS_AT_ONCE,
+          run: ({ sketch, variant }) => typecheckVariantAsync({ target: options.target, product, sketch, variant }),
+        });
+
+        return [
+          Promise.all(
+            [...started].map(([key, result]) =>
+              result.then(
+                (done): [string, TypecheckResult][] => [[key, done]],
+                (): [string, TypecheckResult][] => [],
+              ),
+            ),
+          ).then((done) => [name, new Map(done.flat())] as const),
+        ];
+      }),
+    ),
+  );
+
 const renderSystem = async (
   options: CheckOptions,
 ): Promise<{
@@ -818,7 +862,10 @@ const renderSystem = async (
   notDrawn?: string;
   completeness?: Map<string, Completeness | null>;
 }> => {
-  const { code, fatal } = timedPhase('static', () => reportSystem({ ...options, warn: true }));
+  const sketchTypechecks = options.part
+    ? undefined
+    : await timedPhase('sketch-typecheck', () => sketchTypechecksOf(options));
+  const { code, fatal } = timedPhase('static', () => reportSystem({ ...options, warn: true, sketchTypechecks }));
 
   if (fatal) return { code, rendered: null };
 
