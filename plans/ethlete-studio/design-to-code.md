@@ -3127,8 +3127,7 @@ B501 S1 as built (2026-11-13, 0a006a3c5): serve and `design check` write no trac
 `withStampsInCache` keeps a stamp write in `.ethlete/cache/<product>/stamps/` while the tracked text is unchanged; serve,
 check and the legacy rewrite use it; task, status and Studio read it (task refusal (d)). No pid churn; `cmd` is
 check/serve/ready (981). 468 rest: no writer left (b52ff697c, c7d88a573). Verified: P2 spec bites twice, vitest related,
-typecheck, spec:stress 4/4; P1 live (scratch, 3 min): tree clean, sdk settled, studio slow run failed every poll (`state
-"project-picker" of "elements/shell-main" failed`). Not verified: a live studio record, Studio UI. Changed: `design
+typecheck, spec:stress 4/4; P1 live (scratch, 3 min): tree clean; the studio slow run failed every poll. Not verified: a live studio record, Studio UI. Changed: `design
 ready` 422 loses the "embedded X changed" hint. Suspect: `design ready` also writes other parts' cached records.
 
 B501 S2 as built (2026-11-13): one atomic writer and a per-product lock for `ready.json`, `merged.json` and
@@ -3136,8 +3135,7 @@ B501 S2 as built (2026-11-13): one atomic writer and a per-product lock for `rea
 writer's temp file. `withProductLock` holds `.ethlete/cache/<product>/decisions.lock` (O_EXCL + pid, dead pid taken over,
 10 s wait, error names the holder) across the read-modify-write of `writePartRecord`, `dropPartRecord`, `recordMerged`,
 `forgetMerged`, `recordMergeReason`, the legacy ready rewrite and every stamp write; `writeDecisionFile` routes
-`writeSketchFile` and the merge commit's json rewrite and restore. Removes (spec): the lost update of two processes'
-read-modify-write of `ready.json` (bite, no lock: a 39/40, b 3/40) and torn reads (bite, plain write: 30 empty reads).
+`writeSketchFile` and the merge commit's json rewrite and restore. Removes (spec, bites): lost updates of `ready.json` and torn reads.
 None of the B501 findings is a torn write or interleave. Not covered: a `sketch.json` read in the caller.
 
 B501 S3 as built (2026-11-13, merge only): `write-journal.ts` keeps an undo journal in `.ethlete/cache/<product>/journal/`:
@@ -3161,16 +3159,10 @@ merge runs `journaledMergeOf` with the pick written inside the journal and its c
 unjournaled, step 1 half state). 574 (`sketch pick`, sketch-command spec "records the pick the designer gave in
 chat"), 434 (merge.spec "clean copy of HEAD", "refuses before any write"), 889 (edit-sketch.spec "adds no author")
 green. Open beyond S3: ready/pick journal, baseline ref on undo.
-B501 journal reland as built (2026-11-14): Cause (trace + 45 s hold, e2e red with the CI alert): the Studio merge worker
-removes the sketch folder before its gate and commit, so the view closes and the next merge's worker opened the journal
-while the first one still held it, and `openJournal` threw at once. Fix: `openJournal` waits (merge 5 min, else 10 s), one
-journal per thread, journal before product lock in discard/rebase, rebase-after-merge outside the merge's try. Verified:
-write-journal.spec bites, e2e case green with the hold and 5/5 with `--hold-listings 14000 --load 8`. Not verified: CI shard 7/7.
-Recheck of the CI red on 48a0f259a (run 43540261307, 2026-11-14): the same Cause, that commit still had the throwing
-`openJournal`. Trace of the built CLI: merge 1 holds the journal 13-15 s and the second pick asks 29-30 s after it, so no
-overlap locally (6/7 green with `--hold-listings 14000 --load 8`, the red one from a dist rebuild mid-run). With merge 1
-held 45 s: 9ec027eb2 waits 15 s and goes green, a throw at once goes red with the CI alert. No new change. CI run
-43541995496 on dd806e482: Studio e2e 7/7 green.
+B501 journal reland as built (2026-11-14): Cause (trace + 45 s hold): the Studio merge worker removes the sketch
+folder before its gate and commit, so the next merge opened the journal while the first held it, and `openJournal` threw.
+Fix: `openJournal` waits (merge 5 min, else 10 s), one journal per thread. Verified: write-journal.spec bites, e2e 5/5 with
+`--hold-listings 14000 --load 8`; CI red on 48a0f259a had the old throw; CI 43541995496 (dd806e482) e2e 7/7 green.
 B501 ready/pick journal as built (2026-11-15): Cause (bite): `sketch ready` and `sketch pick` each write `sketch.json`
 once, atomically, outside the journal; a kill between the temp file and its rename left a dead writer's
 `.sketch.json.<pid>.<n>.tmp` in the sketch folder (both bites, step 1), and a ready that holds its merge wrote the ready
@@ -3186,6 +3178,9 @@ opened by `journaledAsync`, which waits for another holder by yielding to the ev
 typecheck, e2e "picking old ..." 1/1. Not verified: CI.
 B501 (3) as built: `openEditSketch` (design check) runs in `journaledAsync`; `createSketch` notes its new folder.
 P3 case "edit sketch" in merge-journal.spec; bites (no journal; no note): step 7 neither state.
+B501 S4 as built (6bb13c4ec): `sketch ready` refuses a picked sketch whose variant changed without `--reopen`. `sharedBase` in sketch.json names a stale `shared/` copy in SKETCH-BASE-STALE; a rebase that
+ports only `shared/` copies keeps the ready mark. Bites: refusal, stale-copy line, kept mark. Not verified: live all-states;
+sketches older than 6bb13c4ec name no stale copy. Open: a reformat via `check --fix` drops the mark (S6, Suspect).
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
