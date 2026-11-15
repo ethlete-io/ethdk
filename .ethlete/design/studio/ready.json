@@ -550,13 +550,13 @@
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "embedded": {
-      "components/tree-row": "c2aaa1dc658e7233"
+      "components/tree-row": "d4060679c3d075f3"
     },
     "actions": ["emit:activate", "emit:expandedChange"],
     "at": "2026-11-13T13:27:36.528Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 3576116
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1725317
   },
   "elements/shell-main": {
     "actions": [
