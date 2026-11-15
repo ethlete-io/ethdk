@@ -968,6 +968,8 @@ export const createSketch = (options: {
 
   if (clash) return clash;
 
+  noteWrite(dir);
+
   for (const variant of variants) {
     mkdirSync(resolve(dir, variant, ASSETS_FOLDER), { recursive: true });
 

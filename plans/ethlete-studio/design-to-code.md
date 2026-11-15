@@ -3184,6 +3184,8 @@ B501 Studio pick journal as built (2026-11-15): `POST /__design/sketch-decision`
 opened by `journaledAsync`, which waits for another holder by yielding to the event loop. Spec: write-journal.spec
 "journaledAsync keeps the event loop running"; bite (sync wait): ticker 0, red. Verified: vitest related, lint,
 typecheck, e2e "picking old ..." 1/1. Not verified: CI.
+B501 (3) as built: `openEditSketch` (design check) runs in `journaledAsync`; `createSketch` notes its new folder.
+P3 case "edit sketch" in merge-journal.spec; bites (no journal; no note): step 7 neither state.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a

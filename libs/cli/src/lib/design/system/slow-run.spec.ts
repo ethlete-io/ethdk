@@ -231,7 +231,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     gitExec(['add', '.'], { cwd: target });
     commit();
     writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
-    expect(typeof openEditSketch({ target, product: product(), part: 'components/chip' })).toBe('object');
+    expect(typeof (await openEditSketch({ target, product: product(), part: 'components/chip' }))).toBe('object');
     gitExec(['add', chip], { cwd: target });
     commit();
 
@@ -270,7 +270,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     recordMerged({ product: product(), parts: ['components/chip'] });
     commitAll();
     writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
-    expect(typeof openEditSketch({ target, product: product(), part: 'components/chip' })).toBe('object');
+    expect(typeof (await openEditSketch({ target, product: product(), part: 'components/chip' }))).toBe('object');
     commitAll();
 
     const runner = startSlowRunner({ target, configOf: () => bare, log: () => undefined, intervalMs: 3_600_000 });

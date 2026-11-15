@@ -6,6 +6,8 @@ import { productSharedDirsOf } from '../imports';
 import { repoRootOf } from '../reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { EDIT_SKETCH, isEditSketch, readMerged } from './merged-parts';
+import { MERGE_WAIT_MS } from './merge-step';
+import { journaledAsync } from '../write-journal';
 import {
   createSketch,
   markSketchReady,
@@ -132,6 +134,22 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
  * `EDIT-OLD-NOT-FOUND` with it; else the sketch, or why it cannot open.
  */
 export const openEditSketch = (options: {
+  target: string;
+  product: ResolvedProduct;
+  part: string;
+  author?: string;
+}): Promise<Sketch | (EditOldNotFound & { sketch: Sketch }) | string> =>
+  journaledAsync(
+    {
+      productDir: options.product.dir,
+      root: options.target,
+      label: `edit sketch of ${options.part}`,
+      waitMs: MERGE_WAIT_MS,
+    },
+    () => openedEditSketch(options),
+  );
+
+const openedEditSketch = (options: {
   target: string;
   product: ResolvedProduct;
   part: string;

@@ -403,7 +403,7 @@ export const autoAcceptOf = async (options: {
         continue;
       }
 
-      const sketch = open(part);
+      const sketch = await open(part);
 
       if (isNotFound(sketch)) problem(resolved, sketch);
       else if (typeof sketch === 'string') opened(part, sketch);
@@ -499,7 +499,7 @@ export const autoAcceptOf = async (options: {
 
     if (baseline && changed.length > 0) {
       lines.push(`PICTURES CHANGED ${product.name} ${part}: ${changed.join(', ')}`);
-      const editSketch = sketch ?? open(part);
+      const editSketch = sketch ?? (await open(part));
 
       if (isNotFound(editSketch)) problem(resolved, editSketch);
       else opened(part, editSketch);

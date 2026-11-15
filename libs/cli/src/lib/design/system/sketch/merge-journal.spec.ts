@@ -9,6 +9,7 @@ import { gitResult } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { originOf } from '../write-origin';
 import { createComment } from '../comments/comment';
+import { recordMerged } from './merged-parts';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch } from './sketch';
 
 const PART = 'elements/hero';
@@ -100,6 +101,17 @@ const pickedCase = (comments = false) => {
   return target;
 };
 
+const editedCase = () => {
+  const target = checkoutCase();
+
+  recordMerged({ product: productOf(target), parts: [PART] });
+  gitResult(target, 'add', '.');
+  gitResult(target, 'commit', '-qm', 'merged');
+  writeFileSync(join(productOf(target).dir, PART, 'hero.css'), '.acme-hero { color: var(--acme-accent); }');
+
+  return target;
+};
+
 const staleCase = () => {
   const target = pickedCase();
   const hero = join(productOf(target).dir, PART, 'hero.ts');
@@ -163,8 +175,12 @@ const runChild = (target: string, killAt: number, action = 'merge') =>
     child.on('close', (code, signal) => done({ out: `${out}exit ${code}`, killed: signal === 'SIGKILL' }));
   });
 
-const recover = (target: string) =>
-  findSketch({ productDir: productOf(target).dir, product: 'acme', sketch: { layer: 'elements', name: 'hero' } });
+const recover = (target: string, sketch?: string) =>
+  findSketch({
+    productDir: productOf(target).dir,
+    product: 'acme',
+    sketch: { layer: 'elements', name: 'hero', ...(sketch ? { sketch } : {}) },
+  });
 
 const killEveryWrite = async (options: {
   action: string;
@@ -202,7 +218,9 @@ const killEveryWrite = async (options: {
 
     expect(rerun.out, `step ${step} re-run`).toContain(isOld ? done : gone);
     expect(stateOf(target), `step ${step} after the re-run`).toEqual(fresh);
-    expect(recover(target) === null).toBe(!['rebase', 'ready', 'pick'].includes(action));
+    expect(recover(target, action === 'edit' ? 'edit' : undefined) === null).toBe(
+      !['rebase', 'ready', 'pick', 'edit'].includes(action),
+    );
     outcomes.push(`${step}:${isOld ? 'old' : 'new'}`);
   };
 
@@ -271,5 +289,14 @@ describe('a merge killed at any write leaves the old or the new state', { timeou
       gone: `rebased ${PART} 0`,
       minSteps: 3,
       caseOf: staleCase,
+    }));
+
+  it('an edit sketch opened by design check is undone or finished, and a re-run opens it or finds it open', () =>
+    killEveryWrite({
+      action: 'edit',
+      done: `opened ${PART}`,
+      gone: `refused ${PART}@edit`,
+      minSteps: 3,
+      caseOf: editedCase,
     }));
 });

@@ -36,12 +36,12 @@ const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
 describe('openEditSketch', () => {
-  it('opens a ready sketch with the design at HEAD as old and the edit as new, and the part shows a direct edit', () => {
+  it('opens a ready sketch with the design at HEAD as old and the edit as new, and the part shows a direct edit', async () => {
     const { target, css, head } = acme();
 
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
 
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
 
     expect(sketch.target).toBe(`${HERO}@edit`);
     expect(sketch.status).toBe('ready');
@@ -56,14 +56,14 @@ describe('openEditSketch', () => {
     expect(points.some((point) => point.kind === 'unmerged-sketch')).toBe(false);
   });
 
-  it('merges a pick of old like any sketch: the part is back at HEAD and recorded', () => {
+  it('merges a pick of old like any sketch: the part is back at HEAD and recorded', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const { target, css, head } = acme();
 
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
 
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
     const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old', ...originOf('spec') } }) as Sketch;
     const merged = mergeSketch({
       target,
@@ -78,7 +78,7 @@ describe('openEditSketch', () => {
     expect(Object.keys(readMerged(join(target, DESIGN_DIR, 'acme')))).toContain(HERO);
   });
 
-  it('adds no author to the part file when old is picked', () => {
+  it('adds no author to the part file when old is picked', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const { target, css } = acme();
@@ -87,12 +87,12 @@ describe('openEditSketch', () => {
 
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
 
-    const sketch = openEditSketch({
+    const sketch = (await openEditSketch({
       target,
       product: resolveAcme(target),
       part: HERO,
       author: 'design check',
-    }) as Sketch;
+    })) as Sketch;
     const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old', ...originOf('spec') } }) as Sketch;
 
     mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked });
@@ -100,7 +100,7 @@ describe('openEditSketch', () => {
     expect(readFileSync(heroTs, 'utf8')).toBe(head);
   });
 
-  it('refuses the merge naming the commit order while a part the edit embeds holds an uncommitted change', () => {
+  it('refuses the merge naming the commit order while a part the edit embeds holds an uncommitted change', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const { target, css } = acme();
@@ -109,7 +109,7 @@ describe('openEditSketch', () => {
     writeFileSync(button, '.acme-button { padding: 0; }\n');
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
 
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
     const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'new', ...originOf('spec') } }) as Sketch;
     const mergeOnce = () =>
       mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked });
@@ -125,7 +125,7 @@ describe('openEditSketch', () => {
     expect(readFileSync(css, 'utf8')).toContain('padding: 0;');
   });
 
-  it('keeps the shared files at HEAD for old when the edit changed them', () => {
+  it('keeps the shared files at HEAD for old when the edit changed them', async () => {
     const { target } = acme((heroDir) => {
       mkdirSync(join(heroDir, 'shared'));
       writeFileSync(join(heroDir, 'shared', 'tone.ts'), "export const tone = 'head';\n");
@@ -138,14 +138,14 @@ describe('openEditSketch', () => {
 
     writeFileSync(tone, "export const tone = 'edit';\n");
 
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
 
     expect(readFileSync(join(sketch.dir, 'old', 'shared', 'tone.ts'), 'utf8')).toBe("export const tone = 'head';\n");
     expect(readFileSync(join(sketch.dir, 'shared', 'tone.ts'), 'utf8')).toBe("export const tone = 'edit';\n");
     expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.ts'), 'utf8')).toContain("from '@shared/tone'");
   });
 
-  it('points an import that leaves the old shared folder at the same file from the sketch', () => {
+  it('points an import that leaves the old shared folder at the same file from the sketch', async () => {
     const { target } = acme((heroDir) => {
       mkdirSync(join(heroDir, 'shared'));
       writeFileSync(join(heroDir, '..', '..', 'outside.ts'), 'export const outside = 1;\n');
@@ -162,14 +162,14 @@ describe('openEditSketch', () => {
 
     writeFileSync(join(product.dir, HERO, 'hero.css'), '.acme-hero { padding: 0; }\n');
 
-    const sketch = openEditSketch({ target, product, part: HERO }) as Sketch;
+    const sketch = (await openEditSketch({ target, product, part: HERO })) as Sketch;
     const written =
       /from '([^']+)'/u.exec(readFileSync(join(sketch.dir, 'old', 'shared', 'tone.ts'), 'utf8'))?.[1] ?? '';
 
     expect(`${resolve(sketch.dir, 'old', 'shared', written)}.ts`).toBe(join(product.dir, 'outside.ts'));
   });
 
-  it('takes old from the part at HEAD when no commit holds its merged hash', () => {
+  it('takes old from the part at HEAD when no commit holds its merged hash', async () => {
     const { target, css, head } = acme();
     const mergedFile = join(resolveAcme(target).dir, 'merged.json');
     const entries = JSON.parse(readFileSync(mergedFile, 'utf8')) as Record<string, { hash: string }>;
@@ -178,51 +178,51 @@ describe('openEditSketch', () => {
     commit(target);
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
 
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
 
     expect(sketch.variants).toEqual(['new', 'old']);
     expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.css'), 'utf8')).toBe(head);
   });
 
-  it('opens no sketch when the part folder is at HEAD', () => {
+  it('opens no sketch when the part folder is at HEAD', async () => {
     const { target } = acme();
 
-    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toBe(
+    expect(await openEditSketch({ target, product: resolveAcme(target), part: HERO })).toBe(
       `the folder of ${HERO} at HEAD equals the working one - there is no old design to show`,
     );
   });
 
-  it('opens no sketch for a committed edit, which HEAD holds as its merged design', () => {
+  it('opens no sketch for a committed edit, which HEAD holds as its merged design', async () => {
     const { target, css } = acme();
 
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
     commit(target);
 
-    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toMatch(
+    expect(await openEditSketch({ target, product: resolveAcme(target), part: HERO })).toMatch(
       /at HEAD equals the working one/u,
     );
   });
 
-  it('takes old from the newest committed edit when the part changed again after it', () => {
+  it('takes old from the newest committed edit when the part changed again after it', async () => {
     const { target, css } = acme();
 
     writeFileSync(css, '.acme-hero { padding: 1px; }\n');
     commit(target);
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
 
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
 
     expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 1px; }\n');
     expect(readFileSync(join(sketch.dir, 'new', HERO, 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 0; }\n');
   });
 
-  it('opens a ready sketch with only new and answers EDIT-OLD-NOT-FOUND when HEAD holds no file of the part', () => {
+  it('opens a ready sketch with only new and answers EDIT-OLD-NOT-FOUND when HEAD holds no file of the part', async () => {
     const { target } = acme();
 
     git(target, 'rm', '-r', '--cached', '-q', join(resolveAcme(target).dir, HERO));
     git(target, 'commit', '-qm', 'untrack');
 
-    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toEqual({
+    expect(await openEditSketch({ target, product: resolveAcme(target), part: HERO })).toEqual({
       rule: 'EDIT-OLD-NOT-FOUND',
       message: expect.stringContaining(`${HERO} gets a sketch with only the variant new`),
       sketch: expect.objectContaining({ target: `${HERO}@edit`, status: 'ready', variants: ['new'] }),

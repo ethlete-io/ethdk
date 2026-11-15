@@ -2,6 +2,7 @@ import { readConfig } from '../../design-config';
 import { journaledPickOf, journaledReadyOf, mergedUnchanged } from '../../sketch-command';
 import { resolveProduct } from '../resolve-product';
 import { originOf } from '../write-origin';
+import { openEditSketch } from './edit-sketch';
 import { discardSketch } from './merge';
 import { mergeAndRecord } from './merge-step';
 import { journaledRebaseOf } from './rebase-port';
@@ -11,9 +12,17 @@ const target = process.argv[2] ?? '';
 const part = process.argv[4] ?? '';
 const action = process.argv[5] ?? 'merge';
 
-const run = () => {
+const run = async () => {
   const config = readConfig(target) ?? {};
   const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+
+  if (action === 'edit') {
+    const opened = await openEditSketch({ target, product, part, author: 'design check' });
+
+    console.log(typeof opened === 'string' ? `refused ${opened}` : `opened ${part}`);
+
+    return;
+  }
   const parsed = parseTarget(part);
   const sketch =
     typeof parsed === 'string' ? parsed : findSketch({ productDir: product.dir, product: 'acme', sketch: parsed });
@@ -79,4 +88,4 @@ const run = () => {
   console.log(typeof merged === 'string' ? `refused ${merged}` : `merged ${merged.parts.join(',')}`);
 };
 
-run();
+void run();
