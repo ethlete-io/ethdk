@@ -82,7 +82,8 @@ import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
-import { keepHeldStampsInCache, withStampsInMemory } from './stamp-files';
+import { keepHeldStampsInFiles, withStampsInMemory } from './stamp-files';
+import { readyUncommittedLinesOf } from '../uncommitted-state';
 import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
@@ -999,7 +1000,16 @@ export const checkSystemRendered = async (
         code = Math.max(code, options.afterPart ? options.afterPart(part, checked) : checked);
       }
 
-      keepHeldStampsInCache(READY_FILE);
+      keepHeldStampsInFiles(READY_FILE);
+
+      for (const name of options.products) {
+        const entry = options.config.products?.[name];
+
+        if (entry)
+          readyUncommittedLinesOf(resolveProduct({ target: options.target, name, config: entry })).forEach((line) =>
+            console.log(line),
+          );
+      }
 
       return code;
     });

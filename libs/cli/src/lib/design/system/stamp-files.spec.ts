@@ -2,7 +2,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { readStampText, withStampsInCache, withStampsInMemory, writeStampFile } from './stamp-files';
+import {
+  keepHeldStampsInFiles,
+  readStampText,
+  withStampsInCache,
+  withStampsInMemory,
+  writeStampFile,
+} from './stamp-files';
 
 const dirs: string[] = [];
 
@@ -83,6 +89,22 @@ describe('withStampsInMemory', () => {
     await Promise.all([first, second]);
 
     expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 1 });
+  });
+});
+
+describe('keepHeldStampsInFiles', () => {
+  it('writes the entries the run changed into the tracked file and keeps a write made during the run', async () => {
+    const file = readyFile();
+
+    writeFileSync(file, '{"a":1,"b":1}\n');
+
+    await withStampsInMemory(async () => {
+      writeStampFile(file, { a: 2 });
+      writeFileSync(file, '{"a":1,"b":1,"c":3}\n');
+      keepHeldStampsInFiles('ready.json');
+    });
+
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 2, c: 3 });
   });
 });
 

@@ -77,6 +77,11 @@ const sketchLinesOf = (product: ResolvedProduct) => {
   return [...sketches, ...empty];
 };
 
+const hasHead = (product: ResolvedProduct) => gitIn(product.dir, ['rev-parse', '--verify', '-q', 'HEAD']) !== null;
+
+/** One `READY UNCOMMITTED` line per ready mark in a product's `ready.json` that differs from HEAD. */
+export const readyUncommittedLinesOf = (product: ResolvedProduct) => (hasHead(product) ? readyLinesOf(product) : []);
+
 /**
  * One line per ready mark in a product's `ready.json` that differs from HEAD, and per sketch folder git does not track
  * or that is left over: empty, or a direct-edit sketch whose part HEAD holds.
@@ -87,7 +92,7 @@ export const uncommittedLinesOf = (target: string) => {
   return Object.keys(config?.products ?? {}).flatMap((name) => {
     const product = config ? oneProductOf({ target, config, asked: name }) : null;
 
-    return product && typeof product !== 'string' && gitIn(product.dir, ['rev-parse', '--verify', '-q', 'HEAD'])
+    return product && typeof product !== 'string' && hasHead(product)
       ? [...readyLinesOf(product), ...sketchLinesOf(product)]
       : [];
   });

@@ -5,7 +5,9 @@ import { writeChangedFile, writeJsonFile } from '../../json-file';
 import { productCacheDirOf } from './product';
 import { withProductLock } from './product-lock';
 
-const inMemory = new AsyncLocalStorage<Map<string, string>>();
+type HeldStamp = { base: string | null; text: string };
+
+const inMemory = new AsyncLocalStorage<Map<string, HeldStamp>>();
 const inCache = new AsyncLocalStorage<true>();
 
 type CachedStamp = { base: string | null; text: string };
@@ -43,11 +45,13 @@ export const readStampText = (file: string): string | null => {
   const key = resolve(file);
   const held = inMemory.getStore()?.get(key);
 
-  if (held !== undefined) return held;
+  return held !== undefined ? held.text : diskStampTextOf(key);
+};
 
-  const tracked = trackedTextOf(key);
+const diskStampTextOf = (file: string) => {
+  const tracked = trackedTextOf(file);
 
-  return cachedStampOf(key, tracked)?.text ?? tracked;
+  return cachedStampOf(file, tracked)?.text ?? tracked;
 };
 
 const sameJson = (text: string | null, value: unknown) => {
@@ -73,10 +77,40 @@ const writeCachedStamp = (file: string, value: unknown) => {
   writeChangedFile(cacheFile, JSON.stringify({ base: tracked, text: `${JSON.stringify(value, null, 2)}\n` }));
 };
 
-/** Moves each stamp file named `name` that the current `withStampsInMemory` run holds into the cache. */
-export const keepHeldStampsInCache = (name: string) => {
-  for (const [file, text] of inMemory.getStore() ?? [])
-    if (basename(file) === name) withProductLock(dirname(file), () => writeCachedStamp(file, JSON.parse(text)));
+const entriesOf = (text: string | null): Record<string, unknown> => {
+  try {
+    const parsed: unknown = text === null ? {} : JSON.parse(text);
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+};
+
+/**
+ * Writes the entries that the current `withStampsInMemory` run changed in each stamp file named `name` into the
+ * tracked file, onto the entries the file holds now, so a write by another process during the run stays.
+ */
+export const keepHeldStampsInFiles = (name: string) => {
+  for (const [file, held] of inMemory.getStore() ?? []) {
+    if (basename(file) !== name) continue;
+
+    const [base, run] = [entriesOf(held.base), entriesOf(held.text)];
+
+    withProductLock(dirname(file), () => {
+      const next = entriesOf(diskStampTextOf(file));
+
+      for (const key of new Set([...Object.keys(base), ...Object.keys(run)])) {
+        if (JSON.stringify(base[key]) === JSON.stringify(run[key])) continue;
+        if (run[key] === undefined) delete next[key];
+        else next[key] = run[key];
+      }
+
+      const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)));
+
+      if (!sameJson(trackedTextOf(file), sorted)) writeJsonFile({ file, value: sorted });
+    });
+  }
 };
 
 /**
@@ -86,7 +120,11 @@ export const keepHeldStampsInCache = (name: string) => {
 export const writeStampFile = (file: string, value: unknown) => {
   const held = inMemory.getStore();
 
-  if (held) held.set(resolve(file), JSON.stringify(value));
-  else if (inCache.getStore()) withProductLock(dirname(file), () => writeCachedStamp(resolve(file), value));
+  if (held) {
+    const key = resolve(file);
+    const base = held.has(key) ? (held.get(key)?.base ?? null) : diskStampTextOf(key);
+
+    held.set(key, { base, text: JSON.stringify(value) });
+  } else if (inCache.getStore()) withProductLock(dirname(file), () => writeCachedStamp(resolve(file), value));
   else withProductLock(dirname(file), () => writeJsonFile({ file, value }));
 };

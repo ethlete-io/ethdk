@@ -7,7 +7,6 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { renderIssuesOf } from './render-check';
-import { readStampText } from './stamp-files';
 
 vi.mock('./render-check', async (actual) => ({
   ...(await actual<typeof import('./render-check')>()),
@@ -68,15 +67,15 @@ describe('a design check and the tracked stamp files', () => {
   });
 
   it.each([undefined, 'elements/hero'])(
-    'leaves merged.json and ready.json byte-identical, reports the dropped record and caches it for later reads (part %s)',
+    'leaves merged.json byte-identical, drops the record in ready.json uncommitted and reports it (part %s)',
     async (part) => {
       const { target, dir } = committedAcme();
 
       targets.push(target);
 
       const config = readConfig(target) ?? {};
-      const files = ['merged.json', 'ready.json'].map((file) => join(dir, file));
-      const before = files.map((file) => readFileSync(file, 'utf8'));
+      const merged = join(dir, 'merged.json');
+      const before = readFileSync(merged, 'utf8');
 
       vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [], warnings: [] } as never);
       vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
@@ -94,9 +93,13 @@ describe('a design check and the tracked stamp files', () => {
         drawPictures: async ({ parts }) => new Map(parts.map((name) => [name, 'not drawn in this spec'])),
       });
 
-      expect(files.map((file) => readFileSync(file, 'utf8'))).toEqual(before);
+      expect(readFileSync(merged, 'utf8')).toEqual(before);
       expect(lines).toContainEqual(expect.stringMatching(/^RECORD DROPPED acme elements\/hero: open-point/));
-      expect(JSON.parse(readStampText(join(dir, 'ready.json')) ?? '{}')).not.toHaveProperty(['elements/hero', 'hash']);
+      expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))).not.toHaveProperty(['elements/hero', 'hash']);
+      expect(git(target, 'rev-list', '--count', 'HEAD')).toBe('1');
+      expect(lines.slice(lines.findIndex((line) => line.startsWith('check complete')) + 1)).toContainEqual(
+        expect.stringMatching(/^READY UNCOMMITTED acme elements\/hero: the mark HEAD holds is gone/u),
+      );
     },
     120_000,
   );
@@ -123,7 +126,9 @@ describe('a design check and the tracked stamp files', () => {
     });
 
     expect(existsSync(join(dir, 'sketches/elements-hero.edit'))).toBe(true);
-    expect(lines.slice(lines.findIndex((line) => line.startsWith('check complete')) - 1)).toEqual([
+    const tail = lines.slice(lines.findIndex((line) => line.startsWith('check complete')) - 1);
+
+    expect(tail.filter((line) => !line.startsWith('READY UNCOMMITTED '))).toEqual([
       'OPENED acme elements/hero@edit: direct edit of elements/hero - pick old or new',
       expect.stringMatching(/^check complete: /u),
     ]);
