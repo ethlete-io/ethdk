@@ -170,10 +170,18 @@
               </button>
             </div>
           } @else if (server !== 'stopped') {
-            <div class="mx-auto mt-15 box-border w-full max-w-6xl px-space-5">
-              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">
-                {{ server === 'unanswered' ? LABELS.stopped : LABELS.starting }}
-              </h3>
+            <div
+              [attr.aria-busy]="server === 'starting' ? 'true' : null"
+              class="mx-auto mt-15 box-border w-full max-w-6xl px-space-5"
+            >
+              @if (server === 'starting') {
+                <div class="flex items-center gap-space-2 text-et-surface">
+                  <et-spinner />
+                  <h3 class="m-0 font-ui-strong text-ui-lg">{{ LABELS.starting }}</h3>
+                </div>
+              } @else {
+                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.stopped }}</h3>
+              }
               @if (server === 'unanswered') {
                 <p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.unanswered(serverUrl()) }}</p>
                 <div class="mt-space-3">

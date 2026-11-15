@@ -1,5 +1,5 @@
 import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { AutoSurfaceDirective, DragHandleDirective, DragMoveEvent } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
 import { injectCodeWatch } from '../../code-watch';
@@ -33,6 +33,7 @@ const HOVER_PRESS_RAISED =
     AutoSurfaceDirective,
     DragHandleDirective,
     ShellCollapseComponent,
+    SpinnerComponent,
     TitleBarComponent,
   ],
   host: { '[class]': "fill() ? 'block size-full' : 'block h-225 w-360'" },

@@ -1,6 +1,7 @@
 import { drawing, forceInteraction, html, interactionRows, slot, type Interaction, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
+import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import { shellCollapseStyles } from '@system/components/shell-collapse';
 import { SIDE_WIDTH } from '@system/components/shell-resize-handle';
 import titleBar from '@system/components/title-bar';
@@ -21,7 +22,7 @@ type Chrome = Pick<Parameters<typeof titleBar.render>[0], 'os' | 'left' | 'right
 
 const LINUX_CHROME: Chrome = { os: 'linux', left: [], right: ['minimize', 'maximize', 'close'] };
 
-export type Crash = { time: string; pid: number; port: number; path: string; stack: string[] };
+type Crash = { time: string; pid: number; port: number; path: string; stack: string[] };
 
 export type CrashScreen = (crash: Crash) => string;
 
@@ -173,10 +174,18 @@ const serverScreen = (
       server === 'crashed'
         ? crashScreen(crash)
         : server === 'starting' || server === 'unanswered'
-          ? html`<div class="mx-auto mt-15 w-full max-w-6xl box-border px-space-5">
-              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">
-                ${server === 'unanswered' ? 'Design-Server gestoppt' : 'Design-Server startet'}
-              </h3>
+          ? html`<div
+              class="mx-auto mt-15 w-full max-w-6xl box-border px-space-5"
+              ${server === 'starting' ? 'aria-busy="true"' : ''}
+            >
+              ${
+                server === 'starting'
+                  ? html`<div class="flex items-center gap-space-2 text-et-surface">
+                      ${spinner()}
+                      <h3 class="m-0 text-ui-lg font-ui-strong">Design-Server startet</h3>
+                    </div>`
+                  : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server gestoppt</h3>`
+              }
               ${
                 server === 'unanswered'
                   ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
@@ -320,7 +329,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
           ${panel === 'hidden' ? '' : system.surface}
         </div>
       </div>`,
-      styles: styles + buttonStyles + shellCollapseStyles + system.styles + bar.styles,
+      styles: styles + buttonStyles + loaderStyles + shellCollapseStyles + system.styles + bar.styles,
     });
   },
 });

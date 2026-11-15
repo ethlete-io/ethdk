@@ -123,6 +123,19 @@ describe('ShellMainComponent', () => {
     });
   });
 
+  it('draws a busy starting screen with a spinner and no restart', async () => {
+    const { fixture, host } = await setup('hidden');
+
+    fixture.componentRef.setInput('server', 'starting');
+    await fixture.whenStable();
+
+    const screen = host.querySelector('main [aria-busy="true"]');
+
+    expect(screen?.querySelector('h3')?.textContent?.trim()).toBe('Design-Server startet');
+    expect(screen?.querySelector('et-spinner')).not.toBeNull();
+    expect(screen?.querySelector('button')).toBeNull();
+  });
+
   it('names the url of a design server that does not answer and restarts it', async () => {
     const { fixture, host } = await setup('hidden');
     let restarts = 0;
@@ -136,6 +149,7 @@ describe('ShellMainComponent', () => {
 
     expect(main?.querySelector('h3')?.textContent?.trim()).toBe('Design-Server gestoppt');
     expect(main?.textContent).toContain('Design-Server antwortet nicht: http://localhost:5123');
+    expect(main?.querySelector('[aria-busy]')).toBeNull();
 
     main?.querySelector('button')?.click();
 

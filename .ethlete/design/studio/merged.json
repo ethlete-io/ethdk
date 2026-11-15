@@ -68,10 +68,10 @@
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "fe25d017a48626ee",
-    "variant": "b",
+    "hash": "759421921eb60e41",
+    "variant": "new",
     "decidedBy": "user",
-    "at": "2026-11-14T17:30:44.745Z"
+    "at": "2026-11-15T23:56:59.149Z"
   },
   "elements/studio-menu": {
     "hash": "9733c6c843979882",
