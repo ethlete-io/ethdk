@@ -140,13 +140,8 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
     ...(typeof post === 'string' ? { post } : {}),
   });
   const atOf = ({ url, accept, post }: ServedRequest) => `${accept ?? ''}\0${url}\0${post ?? ''}`;
-  const servedOf = (request: ServedRequest) => {
-    const at = atOf(request);
-    const known = held.get(at);
-
-    if (known) return known;
-
-    const hashed = fetchServed(request).then((served) => {
+  const hashedOf = (request: ServedRequest, answer: Promise<Served | null>) =>
+    answer.then((served) => {
       if (!served) recordNullHashes(1);
 
       const text = served ? withoutStartNoise(request.url, served.body.toString('latin1').replace(ownHost, '')) : null;
@@ -161,6 +156,13 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
         lines: served?.lines ?? [],
       };
     });
+  const servedOf = (request: ServedRequest) => {
+    const at = atOf(request);
+    const known = held.get(at);
+
+    if (known) return known;
+
+    const hashed = hashedOf(request, fetchServed(request));
 
     held.set(at, hashed);
 
@@ -168,6 +170,20 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
   };
 
   return {
+    /** Takes what the browser was answered for `request` as the server's answer, unless one is held; null fetches it. */
+    answered: (request: ServedRequest, answer: Promise<Served | null>) => {
+      const relative = relativeOf(request);
+      const at = atOf(relative);
+
+      if (!held.has(at))
+        held.set(
+          at,
+          hashedOf(
+            relative,
+            answer.then((served) => served ?? fetchServed(relative)),
+          ),
+        );
+    },
     inputsOf: async (requested: readonly ServedRequest[]): Promise<ServedInput[]> => {
       const unique = new Map(requested.map((request) => [atOf(relativeOf(request)), relativeOf(request)]));
       const sorted = [...unique].sort(([a], [b]) => a.localeCompare(b)).map(([, request]) => request);
@@ -264,25 +280,57 @@ export const writeServed = async <T>(
   return true;
 };
 
-/** Records every request `context` makes into `into`, a POST with its body. */
+type RecordedRequest = {
+  url(): string;
+  method(): string;
+  postData(): string | null;
+  headers(): Record<string, string>;
+};
+
+type RecordedResponse = {
+  request(): RecordedRequest;
+  status(): number;
+  headers(): Record<string, string>;
+  body(): Promise<Buffer>;
+};
+
+const servedRequestOf = (request: RecordedRequest): ServedRequest => ({
+  url: request.url(),
+  accept: request.headers()['accept'] ?? null,
+  ...(request.method() === 'POST' ? { post: request.postData() ?? '' } : {}),
+});
+
+const answerOf = async (response: RecordedResponse): Promise<Served | null> => {
+  try {
+    const body = await response.body();
+
+    return {
+      body: Buffer.concat([Buffer.from(`${response.status()}\0`), body]),
+      lines: servedLinesOf(response.headers()[SERVED_LINES_HEADER] ?? null),
+    };
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Records every request `context` makes into `into`, a POST with its body. With `served`, the answer to each render
+ * request is taken from the browser, so writing the entry does not render it again.
+ */
 export const recordRequests = (
   context: {
-    on(
-      event: 'request',
-      listener: (request: {
-        url(): string;
-        method(): string;
-        postData(): string | null;
-        headers(): Record<string, string>;
-      }) => void,
-    ): unknown;
+    on(event: 'request', listener: (request: RecordedRequest) => void): unknown;
+    on(event: 'response', listener: (response: RecordedResponse) => void): unknown;
   },
-  into: () => ServedRequest[],
-) =>
-  context.on('request', (request) =>
-    into().push({
-      url: request.url(),
-      accept: request.headers()['accept'] ?? null,
-      ...(request.method() === 'POST' ? { post: request.postData() ?? '' } : {}),
-    }),
-  );
+  { into, served }: { into: () => ServedRequest[]; served?: ServedHashes },
+) => {
+  context.on('request', (request) => into().push(servedRequestOf(request)));
+
+  if (served)
+    context.on('response', (response) => {
+      const request = response.request();
+
+      if (request.method() === 'POST' && isRender(request.url()))
+        served.answered(servedRequestOf(request), answerOf(response));
+    });
+};

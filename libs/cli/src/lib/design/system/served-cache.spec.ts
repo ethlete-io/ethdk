@@ -75,6 +75,25 @@ describe('served cache inputs', () => {
 
     expect(lines.map((line) => line.nullHashes)).toEqual([1, 0]);
   });
+  it("hashes a render the browser was answered without rendering it again, fetching it when the browser's answer is lost", async () => {
+    const fetched: string[] = [];
+    const served = createServedHashes(BASE, async (request) => {
+      fetched.push(request.post ?? '');
+
+      return ANSWERED(request);
+    });
+    const renderOf = (post: string) => ({ url: `${BASE}/__design/render`, accept: null, post });
+
+    served.answered(renderOf('a'), Promise.resolve({ body: Buffer.from('200\0/__design/render'), lines: ['seen'] }));
+    served.answered(renderOf('b'), Promise.resolve(null));
+
+    const inputs = await served.inputsOf([renderOf('a'), renderOf('b')]);
+
+    expect(fetched).toEqual(['b']);
+    expect(inputs[0]?.hash).toBe(inputs[1]?.hash);
+    await expect(served.linesOf([renderOf('a')])).resolves.toEqual(['seen']);
+  });
+
   it('prints on a hit the warnings the render worker logged while drawing, as the drawn run printed them', async () => {
     const WARNING = 'etProvideColor="brand" has no effect because no color themes are registered.';
     const printed: string[] = [];

@@ -30,6 +30,7 @@ import {
   reachableBaseOf,
   recordRequests,
   ServedCacheRun,
+  ServedHashes,
   ServedRequest,
   servedHitOf,
   writeServed,
@@ -1442,14 +1443,15 @@ const seeFrames = async (options: {
   ownCss: string[];
   controlParts: Record<string, string>;
   requested?: ServedRequest[];
+  served?: ServedHashes;
 }): Promise<Sight> => {
-  const { browser, base, frames, part, ownCss, controlParts, requested } = options;
+  const { browser, base, frames, part, ownCss, controlParts, requested, served } = options;
   const context = await browser.newContext();
   const seen: SeenFrame[] = [];
   const refused: string[] = [];
   const shots: { state: string; png: Buffer }[] = [];
 
-  if (requested) recordRequests(context, () => requested);
+  if (requested) recordRequests(context, { into: () => requested, served });
 
   try {
     const page = await context.newPage();
@@ -1690,7 +1692,15 @@ export const seePart = async (options: {
   const requested: ServedRequest[] = [];
   const drawn = async (): Promise<Sight> => {
     const sight = await draw((browser) =>
-      seeFrames({ browser, base, frames, part: key, ownCss, controlParts, requested: cache ? requested : undefined }),
+      seeFrames({
+        browser,
+        base,
+        frames,
+        part: key,
+        ownCss,
+        controlParts,
+        ...(cache ? { requested, served: cache.served } : {}),
+      }),
     );
 
     if (cache && cacheKey) await writeServed(cache, { key: cacheKey, requested, value: sight });

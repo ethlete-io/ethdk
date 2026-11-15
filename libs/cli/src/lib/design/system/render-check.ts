@@ -748,7 +748,7 @@ const inspect = async (options: {
   const context = await browser.newContext();
   let requested: ServedRequest[] = [];
 
-  if (cache) recordRequests(context, () => requested);
+  if (cache) recordRequests(context, { into: () => requested, served: cache.served });
 
   const issues: RenderIssue[] = [];
   const groups = new Map<string, Frame[]>();

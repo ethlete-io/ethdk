@@ -95,7 +95,7 @@ const fakeBrowser = (base: string) => ({
     let part = '';
 
     return {
-      on: (_event: 'request', listener: (request: Request) => void) => listeners.push(listener),
+      on: (event: string, listener: (request: Request) => void) => event === 'request' && listeners.push(listener),
       newCDPSession: async () => ({ send: async () => undefined }),
       close: async () => undefined,
       newPage: async () => ({

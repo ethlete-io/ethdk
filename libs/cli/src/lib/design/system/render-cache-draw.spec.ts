@@ -102,7 +102,7 @@ const fakeBrowser = (base: string) => ({
 
     return {
       addInitScript: async () => undefined,
-      on: (_event: 'request', listener: Listener) => listeners.push(listener),
+      on: (event: string, listener: Listener) => event === 'request' && listeners.push(listener),
       newCDPSession: async () => ({ send: async () => undefined }),
       close: async () => undefined,
       newPage: async () => ({
