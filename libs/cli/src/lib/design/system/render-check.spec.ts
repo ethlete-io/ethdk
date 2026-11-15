@@ -464,6 +464,44 @@ export default definePart({
     expect(navigations.length).toBeLessThanOrEqual(INSPECTS_AT_ONCE);
   }, 120_000);
 
+  it('reports a font face that does not load once for every state, whatever its schemes', async (context) => {
+    const target = checkout({});
+    const dir = join(target, DESIGN_DIR, 'shop', 'components', 'fonted');
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'fonted.css'),
+      '@font-face { font-family: "Gone"; src: url("/gone.woff2") format("woff2"); } .shop-text { color: #000; background: #fff; font-family: "Gone", sans-serif; } @media (prefers-color-scheme: dark) { .shop-text { color: #eee; background: #111; } }',
+    );
+    writeFileSync(
+      join(dir, 'fonted.ts'),
+      `import { definePart, drawing, html } from '@design-system';
+import styles from './fonted.css?inline';
+
+export default definePart({
+  note: 'A fixture.',
+  states: { a: {}, b: {} },
+  render: () => drawing({ body: html\`<p class="shop-text" style="margin: 0">Text</p>\`, styles }),
+});
+`,
+    );
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [{ product: 'shop', sketch: null, parts: null }],
+    });
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+    const faces = [...rendered.issues, ...rendered.warnings]
+      .filter((issue) => issue.rule === 'FONT-FACE')
+      .map((issue) => `${issue.state} ${issue.size}`)
+      .sort();
+
+    expect(faces).toEqual(['a fitted', 'b fitted']);
+  }, 120_000);
+
   it('names the states whose render is busy or holds a loading button, and keeps them out of the issues', async (context) => {
     const target = checkout({
       'components/send-busy': { body: '<button type="button" aria-busy="true">Senden</button>', states: 'sending: {}' },
