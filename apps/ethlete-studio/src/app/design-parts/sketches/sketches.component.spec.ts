@@ -1017,6 +1017,33 @@ describe('SketchesComponent', () => {
       expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(true);
     });
 
+    it('names each variant reason on its own line when the variants of one crop differ, one line when they agree', async () => {
+      const [current, x] = cropRows;
+
+      if (!current || !x) throw new Error('crop rows missing');
+
+      const other = { ...change, box: { x: 100, y: 100, width: 50, height: 50 }, pixels: 420, regions: 2 };
+      const y: SketchRow = {
+        ...x,
+        key: 'y',
+        label: 'Entwurf 2',
+        shots: x.shots.map((shot) => (shot.state === 'open' ? { ...shot, change: other } : shot)),
+      };
+      const root: HTMLElement = (await render({ rows: [current, x, y], camera: '100' })).nativeElement;
+      const reasonsOf = (state: string) =>
+        [
+          ...([...root.querySelectorAll('[data-sk-gutter]')]
+            .find((gutter) => gutter.querySelector('.font-code')?.textContent === state)
+            ?.querySelectorAll('[data-sk-crop-reason]') ?? []),
+        ].map(textOf);
+
+      expect(reasonsOf('open')).toEqual([
+        `${LABELS.variant('x')}: 1358 px in 3 Stellen`,
+        'Entwurf 2: 420 px in 2 Stellen · 1,7× vergrößert',
+      ]);
+      expect(reasonsOf('hover')).toEqual(['1358 px in 3 Stellen · 4,6× vergrößert']);
+    });
+
     it('draws the crop groups named in wholeScreens whole and reports a toggle back', async () => {
       const fixture = await render({ rows: cropRows, camera: '100', wholeScreens: ['moved'] });
       const root: HTMLElement = fixture.nativeElement;

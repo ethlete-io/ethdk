@@ -235,10 +235,12 @@
                     @if (group.states.length > 1) {
                       <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
                     }
-                    <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
-                      >{{ LABELS.changeReason(group.change.pixels, group.change.regions)
-                      }}{{ whole ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
-                    >
+                    @for (reason of group.reasons; track $index; let last = $last) {
+                      <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
+                        >{{ reasonTextOf(reason)
+                        }}{{ whole || !last ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
+                      >
+                    }
                     <span class="mt-space-1 flex items-end gap-space-2">
                       @let locator = locatorOf(group);
                       <span

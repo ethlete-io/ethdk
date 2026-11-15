@@ -5,11 +5,27 @@ type Box = SketchChange['box'];
 
 const MARGIN = 24;
 
+type CropVariant = Pick<SketchRow, 'key' | 'label'>;
+
+export type SketchCropReason = { variant?: CropVariant; pixels: number; regions: number };
+
 export type SketchCropGroup = {
   states: string[];
   change: SketchChange;
+  reasons: SketchCropReason[];
   crop: Box;
   magnify: number;
+};
+
+const reasonsOf = (changes: readonly { variant: CropVariant; change: SketchChange }[]): SketchCropReason[] => {
+  const reasons = changes.map(({ variant, change }) => ({ variant, pixels: change.pixels, regions: change.regions }));
+  const [first] = reasons;
+
+  if (!first) return [];
+
+  return reasons.every((reason) => reason.pixels === first.pixels && reason.regions === first.regions)
+    ? [{ pixels: first.pixels, regions: first.regions }]
+    : reasons;
 };
 
 const unionOf = (boxes: Box[]): Box => {
@@ -46,11 +62,12 @@ export const cropGroupsOf = (rows: readonly SketchRow[]): SketchCropGroup[] => {
   const groups = new Map<string, SketchCropGroup>();
 
   for (const state of states) {
-    const changes = variants.flatMap((row) => {
+    const named = variants.flatMap((row) => {
       const change = row.shots.find((shot) => shot.state === state)?.change;
 
-      return change ? [change] : [];
+      return change ? [{ variant: { key: row.key, label: row.label }, change }] : [];
     });
+    const changes = named.map(({ change }) => change);
     const [first] = changes;
 
     if (!first) continue;
@@ -65,7 +82,13 @@ export const cropGroupsOf = (rows: readonly SketchRow[]): SketchCropGroup[] => {
 
     const crop = cropOf(first, unionOf(changes.map((change) => change.box)));
 
-    groups.set(key, { states: [state], change: first, crop, magnify: first.width / crop.width });
+    groups.set(key, {
+      states: [state],
+      change: first,
+      reasons: reasonsOf(named),
+      crop,
+      magnify: first.width / crop.width,
+    });
   }
 
   return [...groups.values()];

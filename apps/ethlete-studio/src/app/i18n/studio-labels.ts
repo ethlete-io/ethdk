@@ -110,6 +110,7 @@ export const STUDIO_LABELS = {
     sameCrop: (count: number) => `${count} Zustände, gleicher Ausschnitt`,
     changeReason: (pixels: number, regions: number) =>
       `${pixels} px in ${regions} ${regions === 1 ? 'Stelle' : 'Stellen'}`,
+    variantReason: (variant: string, reason: string) => `${variant}: ${reason}`,
     magnified: (factor: string) => ` · ${factor}× vergrößert`,
     drawingMark: 'zeichnet',
     drawingVariant: 'zeichnet diese Variante',

@@ -66,7 +66,7 @@ import {
   cropOf,
   cropShot,
   markedScreen,
-  reasonOf,
+  reasonLinesOf,
   screenOf,
   zoomTextOf,
 } from './shared/change-crop';
@@ -505,9 +505,14 @@ const screenGutter = (group: ChangeGroup, line: number, whole: boolean, buttons:
   >
     <span class="font-code text-et-surface">${first}</span>
     ${count > 1 ? html`<span class="text-et-surface">${count} Zustände, gleicher Ausschnitt</span>` : ''}
-    <span class="text-et-surface-muted" data-cc-reason
-      >${reasonOf(group)}${whole ? '' : ` · ${zoomTextOf(cropOf(group.box))} vergrößert`}</span
-    >
+    ${reasonLinesOf(group)
+      .map(
+        (line, index, lines) =>
+          html`<span class="text-et-surface-muted" data-cc-reason
+            >${line}${whole || index < lines.length - 1 ? '' : ` · ${zoomTextOf(cropOf(group.box))} vergrößert`}</span
+          >`,
+      )
+      .join('')}
     <span class="mt-space-1 flex items-end gap-space-2">${locator(group)}${whole ? cropButton : wholeButton}</span>
   </div>`;
 };

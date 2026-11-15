@@ -55,7 +55,7 @@ import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../sh
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { OpenPointsChipComponent } from '../system-page/open-points-chip.component';
 import { OpenPointGroup, OpenPointTarget } from '../system-page/system-page-sample';
-import { cropGroupsOf, magnifyTextOf, SketchCropGroup } from './sketch-crops';
+import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
 import {
   SKETCH_CURRENT,
   SKETCH_DRAWN,
@@ -581,6 +581,14 @@ export class SketchesComponent {
       height: percent(group.crop.height, group.change.height),
       ratio: `${group.change.width} / ${group.change.height}`,
     };
+  }
+
+  protected reasonTextOf(reason: SketchCropReason) {
+    const text = this.LABELS.changeReason(reason.pixels, reason.regions);
+
+    const { variant } = reason;
+
+    return variant ? this.LABELS.variantReason(variant.label ?? this.LABELS.variant(variant.key), text) : text;
   }
 
   protected magnifyTextOf(group: SketchCropGroup) {
