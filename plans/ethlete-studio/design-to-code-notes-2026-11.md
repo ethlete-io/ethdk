@@ -718,3 +718,10 @@ crop example, the guide and the error-codes page. Verified: dropzone specs and s
 scenarios on the breaking commit, lint, typecheck of components and docs-examples, docs build, bundle goldens, the Crop
 story in Storybook headless (step renders, Crop uploads, no console errors). Not verified: fut-frontend (outside this
 repo); no crop e2e suite exists in apps/storybook-e2e.
+
+B514 as built (2026-11-15): Cause (probe): the compare case "no state is marked before the compare answers" unrouted
+its page route while a second held listing handler was still in flight; Playwright then continues that route
+server-side, and the handler's late `route.fulfill` threw `Route is already handled!` into the next case on the worker.
+A standalone Playwright probe shows the throw without draining and none with it. The case now switches its handler to
+`route.fallback()`, awaits the in-flight handlers, then unroutes. Verified: the probe; both cases locally (6/6, one
+worker). Not verified: the exact CI order (compare case directly before the frame case) did not occur locally.

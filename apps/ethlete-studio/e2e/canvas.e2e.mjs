@@ -1459,16 +1459,24 @@ const CASES = [
       let answered;
       const fullAnswered = new Promise((resolve) => (answered = resolve));
       let listed;
+      let passThrough = false;
+      const inFlight = new Set();
 
       await page.route('**/__design/sketches?*', async (route) => {
+        if (passThrough) return route.fallback();
         if (route.request().url().includes('unchanged=no')) return route.continue();
 
-        await held;
-        const response = await route.fetch();
+        const handled = (async () => {
+          await held;
+          const response = await route.fetch();
 
-        listed = await response.json();
-        await route.fulfill({ response, json: listed });
-        answered();
+          listed = await response.json();
+          await route.fulfill({ response, json: listed });
+          answered();
+        })();
+
+        inFlight.add(handled);
+        await handled.finally(() => inFlight.delete(handled));
       });
       const quickAnswered = page.waitForResponse(
         (response) => /unchanged=no$/.test(response.url()) && response.url().includes('/__design/sketches?'),
@@ -1490,6 +1498,9 @@ const CASES = [
       release();
       await fullAnswered;
       await listingAnswered(page);
+      passThrough = true;
+      // Removing the last page route continues its in-flight routes server-side, so a later fulfill throws.
+      await Promise.all(inFlight);
       await page.unroute('**/__design/sketches?*');
 
       const entry = entryOf(listed);
