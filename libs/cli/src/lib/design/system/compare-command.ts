@@ -32,7 +32,8 @@ import { baseCheckoutOf, baseCommitOf, gitOrNull } from './base-checkout';
 import {
   compareFrameOf,
   DroppedPropsError,
-  drawnPaneCountOf,
+  harnessDriveOf,
+  harnessPropsOf,
   harnessShotOf,
   AppFontError,
   LookMissError,
@@ -46,8 +47,6 @@ import {
   drawsSelectedOf,
   drawnSurfacesOf,
   forcedElementsOf,
-  forcesInFramesOf,
-  openedByElementsOf,
   frameLooksOf,
   harnessUrlOf,
   pointerOpensOf,
@@ -375,9 +374,9 @@ export const shootStatesWith =
           opens,
           slotOnly: appOnly ? new Map() : slotOnly,
           shoot: ({ state, design, open }) => {
-            const sent = open?.props ?? states[open?.from ?? state];
-            const forced = forcedElementsOf(design.markup ?? '');
-            const openedBy = openedByElementsOf(design.markup ?? '');
+            const sent = harnessPropsOf({ states, state, open });
+            const drive = harnessDriveOf({ markup: design.markup ?? '', open });
+            const { forced } = drive;
             const looks = frameLooksOf(design.markup ?? '');
             const shot: HarnessShot = {
               url: harnessUrlOf({
@@ -389,9 +388,7 @@ export const shootStatesWith =
               }),
               size: frame.size,
               width,
-              forced,
-              ...(openedBy.length > 0 ? { openedBy } : {}),
-              ...(forcesInFramesOf(design.markup ?? '') ? { forcesInFrames: true } : {}),
+              ...drive,
               ...(looks.length > 0 ? { looks } : {}),
               ...(appOnly
                 ? {}
@@ -412,10 +409,8 @@ export const shootStatesWith =
                     },
                   }),
               roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
-              panes: drawnPaneCountOf(design.markup ?? ''),
               frozen: frozenAnimationsOf(design.markup ?? ''),
               ...(design.ambient ? { ambient: design.ambient } : {}),
-              ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
             };
 
             return cachedAppShotOf({

@@ -87,27 +87,25 @@ describe('design dom', () => {
 describe('appRefusalOf', () => {
   const part = 'components/x';
 
-  it('refuses a state whose design forces hover, active or focus', () => {
+  it('lets a state through that compare forces or clicks open on the app', () => {
     expect(
       appRefusalOf({ part, state: 'hover', markup: '<button data-et-force="hover">Go</button>', open: undefined }),
-    ).toBe(
-      'design dom --app cannot render the forced state hover of components/x yet; run it without --app for the design markup',
-    );
+    ).toBeNull();
     expect(
       appRefusalOf({ part, state: 'x', markup: '<a data-et-force="hover active">Go</a>', open: undefined }),
-    ).toContain('the forced state x of components/x');
-  });
-
-  it('refuses a state the app reaches by clicking a trigger open', () => {
-    expect(appRefusalOf({ part, state: 'open', markup: '<div></div>', open: { control: 'menu', from: 'rest' } })).toBe(
-      'design dom --app cannot render the click-opened state open of components/x (a click on menu) yet; run it without --app for the design markup',
-    );
-    expect(appRefusalOf({ part, state: 'open', markup: '<div></div>', open: 'no state to click it open from' })).toBe(
-      'design dom --app cannot render the click-opened state open of components/x (no state to click it open from) yet; run it without --app for the design markup',
-    );
-  });
-
-  it('lets an idle state through', () => {
+    ).toBeNull();
+    expect(
+      appRefusalOf({ part, state: 'open', markup: '<div></div>', open: { control: 'menu', from: 'rest' } }),
+    ).toBeNull();
     expect(appRefusalOf({ part, state: 'rest', markup: '<button>Go</button>', open: undefined })).toBeNull();
+  });
+
+  it('refuses a state compare cannot reach either', () => {
+    expect(
+      appRefusalOf({ part, state: 'off', markup: '<button data-et-force="disabled">Go</button>', open: undefined }),
+    ).toBe('design dom --app cannot render the forced state off of components/x, nor can compare: it forces disabled');
+    expect(appRefusalOf({ part, state: 'open', markup: '<div></div>', open: 'no state to click it open from' })).toBe(
+      'design dom --app cannot render the click-opened state open of components/x, nor can compare: no state to click it open from',
+    );
   });
 });

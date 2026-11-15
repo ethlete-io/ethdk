@@ -588,7 +588,9 @@ export const createPartShooter = (options: {
         }
 
         const markup: unknown = await page.evaluate(
-          frame.boxes ? boxedMarkupScriptOf('#root', 'inner') : "document.getElementById('root')?.innerHTML ?? null",
+          frame.boxes
+            ? boxedMarkupScriptOf('#root', { which: 'inner' })
+            : "document.getElementById('root')?.innerHTML ?? null",
         );
         const ambient: unknown = await page.evaluate(AMBIENT_SCRIPT);
 

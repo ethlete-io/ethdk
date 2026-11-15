@@ -23,7 +23,7 @@ describe('boxedMarkupScriptOf', () => {
 
     await page.setContent(PAGE);
 
-    return (await page.evaluate(boxedMarkupScriptOf('#root', which))) as string | null;
+    return (await page.evaluate(boxedMarkupScriptOf('#root', { which }))) as string | null;
   };
 
   it('marks each element with its box relative to the host, inside the host', async (context) => {
@@ -47,6 +47,6 @@ describe('boxedMarkupScriptOf', () => {
 
     const page = await browser.newPage();
 
-    expect(await page.evaluate(boxedMarkupScriptOf('#missing', 'inner'))).toBeNull();
+    expect(await page.evaluate(boxedMarkupScriptOf('#missing', { which: 'inner' }))).toBeNull();
   });
 });

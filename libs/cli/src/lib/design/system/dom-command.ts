@@ -2,20 +2,12 @@ import { AddressInfo } from 'net';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../design-config';
 import { createDesignServer } from '../serve';
-import { createPartShooter, viewportOf } from '../shot';
-import { awaitFonts, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
-import { boxedMarkupScriptOf } from './dom-boxes';
-import { compareFrameOf } from './harness-shot';
+import { createPartShooter } from '../shot';
+import { createDrawQueue } from '../thumb';
+import { compareFrameOf, DRIVEN_INTERACTIONS, harnessDomOf, harnessDriveOf, harnessPropsOf } from './harness-shot';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
-import {
-  drawnSurfacesOf,
-  forcedElementsOf,
-  HARNESS_HOST_SELECTOR,
-  harnessUrlOf,
-  PointerOpen,
-  pointerOpensOf,
-} from './part-compare';
+import { drawnSurfacesOf, forcedElementsOf, harnessUrlOf, PointerOpen, pointerOpensOf } from './part-compare';
 import { formattedTextOf } from './prettier';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
@@ -36,10 +28,10 @@ export type ReadDom = (options: {
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-const refusedOf = ({ part, what, detail = '' }: { part: string; what: string; detail?: string }) =>
-  `design dom --app cannot render ${what} of ${part}${detail} yet; run it without --app for the design markup`;
-
-/** The reason `--app` cannot print a state: compare forces its hover, active or focus, or clicks a trigger to open it. */
+/**
+ * The reason `--app` cannot print a state that compare cannot reach either: a forced interaction the harness cannot
+ * drive, or a click-opened state without a single other state to click it open from.
+ */
 export const appRefusalOf = (options: {
   part: string;
   state: string;
@@ -47,16 +39,14 @@ export const appRefusalOf = (options: {
   open: PointerOpen | string | undefined;
 }) => {
   const { part, state, markup, open } = options;
+  const undriven = forcedElementsOf(markup).find(({ interaction }) => !DRIVEN_INTERACTIONS.includes(interaction));
 
-  if (forcedElementsOf(markup).length > 0) return refusedOf({ part, what: `the forced state ${state}` });
+  if (undriven)
+    return `design dom --app cannot render the forced state ${state} of ${part}, nor can compare: it forces ${undriven.interaction}`;
 
-  if (open === undefined) return null;
-
-  return refusedOf({
-    part,
-    what: `the click-opened state ${state}`,
-    detail: ` (${typeof open === 'string' ? open : `a click on ${open.control}`})`,
-  });
+  return typeof open === 'string'
+    ? `design dom --app cannot render the click-opened state ${state} of ${part}, nor can compare: ${open}`
+    : null;
 };
 
 export const readDom: ReadDom = async ({ target, config, product, part, state: asked, app, url }) => {
@@ -126,27 +116,27 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
       drawn: Object.fromEntries(Object.entries(markups).map(([name, markup]) => [name, drawnSurfacesOf(markup)])),
     });
     const refusal = appRefusalOf({ part, state, markup: markups[state] ?? '', open: opens[state] });
+    const open = opens[state];
 
-    if (refusal !== null) return refusal;
+    if (refusal !== null || typeof open === 'string') return refusal ?? '';
 
-    const pageUrl = harnessUrlOf({ url, part, state, props: states[state], layout: frame.layout });
-    const html = await queue.run(async (browser) => {
-      const context = await browser.newContext({ viewport: viewportOf(frame.size), deviceScaleFactor: 1 });
-
-      try {
-        const page = await context.newPage();
-
-        await page.goto(pageUrl, { timeout: DRAW_TIMEOUT_MS });
-        await page.locator(HARNESS_HOST_SELECTOR).first().waitFor({ state: 'visible', timeout: DRAW_TIMEOUT_MS });
-        await awaitFonts(page);
-
-        return (await page.evaluate(boxedMarkupScriptOf(HARNESS_HOST_SELECTOR, 'outer'))) as string | null;
-      } finally {
-        await context.close();
-      }
+    const pageUrl = harnessUrlOf({
+      url,
+      part,
+      state,
+      props: harnessPropsOf({ states, state, open }),
+      layout: frame.layout,
     });
+    const html = await queue.run((browser) =>
+      harnessDomOf({
+        browser,
+        url: pageUrl,
+        size: frame.size,
+        ...harnessDriveOf({ markup: markups[state] ?? '', open }),
+      }),
+    );
 
-    return html === null ? `the harness page ${pageUrl} showed no ${HARNESS_HOST_SELECTOR} element` : { state, html };
+    return { state, html };
   } catch (error) {
     return messageOf(error);
   } finally {
@@ -158,7 +148,8 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
 
 /**
  * `et design dom <layer>/<name> …` prints the pretty-printed HTML of one state of a part: its rendered design, or
- * with `--app` the harness host element of the app that compare shoots, each element with its box in `data-box`.
+ * with `--app` the harness host element of the app that compare shoots, driven into the state as compare drives it,
+ * followed by its open overlay panes, each element with its box in `data-box`.
  */
 export const designDom = async (options: {
   target: string;

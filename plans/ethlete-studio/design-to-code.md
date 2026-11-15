@@ -984,31 +984,27 @@ removed element. Fix: `toggleStepOf` answers null when the control is gone. Afte
 118 to 69 of 485; then visible: Erscheinungsbild/Hilfe close the menu (B502m), button System drift (B502n), and (a)-(c)
 of B502o. Spec red, then green; vitest, lint, tsc clean. Not verified: CI.
 
-**B502m as built (Linux builder subagent, 2026-11-15):** Cause (probe, spec): the runner, not the app. Before each click
-`tabAwayFrom` pressed Tab; from the autofocused item of the open Studio menu Tab closes the menu tree, so the click hit
-a closing item; Enter/Space never pressed Tab and passed. Fix: `tabAwayFrom` presses Shift (the last input is a key) and Tab only while the element itself holds
-focus. After: `actions elements/studio-menu --live` 12 to 0 failed; full `--live` 69 of 485 to 57 of 513 failed: the
-12 studio-menu checks gone, none new. Spec red on HEAD, green after; vitest, stress, lint, tsc clean. Left: button
-System drift (B502n). Not verified: CI.
+**B502m as built (Linux builder subagent, 2026-11-15):** Cause (probe, spec): `tabAwayFrom` pressed Tab before each click, which closes the open Studio menu. Fix: `tabAwayFrom` presses Shift, Tab only while the element holds focus. After: `actions elements/studio-menu --live` 12 to 0 failed; full `--live` 69 of 485 to 57 of 513 failed: the
+12 studio-menu checks gone, none new. Spec red on HEAD, green after. Not verified: CI.
 
 **B502n as built (Linux builder subagent, 2026-11-15):** Cause (probe, spec): the runner. On merge and sketches the
 section `Sketches` draws rail `System` current, so System is `aria-current=page` before the press and the outcome
-listed only gained ones: "unchanged". Fix: `liveOutcomeOf` also names the pressed control when it is current
+listed only gained ones. Fix: `liveOutcomeOf` also names the pressed control when it is current
 after the press. After: drift System ok; full `--live` 57 of 513 to 58 of 498, the rest one flaky
-merge load. Spec red, then green; vitest, stress, lint, tsc clean. Unverified: CI.
+merge load. Spec red, then green. Unverified: CI.
 
 **B502o as built (Linux builder subagent, 2026-11-15):** (a) studio (2.) productChange. Cause (probe, spec):
 the runner scanned the unstyled `#root` design copy, so `nearestControlOf` paired the app picker with the design
 rail bubble. Fix: the page picture is drawn
 with `boxes`, `liveControlsScriptOf` places by `data-box`; `expandedOf` reads the control of a key that has one.
-(b) separator sideWidthChange. Cause (live run): the runner pressed Enter/Space, not the arrow keys. Fix: `actionInputsOf` presses ArrowRight, ArrowLeft for separator, slider,
-input-range. Pointer drag not driven. (c) Sucheninstudio: Cause (read): `title-search.ts` declares no data-et-action; design decision. After: `actions elements/shell-main --live` 44 of 435 to 6 of 559 failed (the 6 search;
-a first run 1 flaky ring timeout). Specs red, then green; vitest related 1587 green; stress 4/4; lint, tsc clean. No
-part touched. Unverified: CI, the full `--live` run.
+(b) separator sideWidthChange: `actionInputsOf` presses ArrowRight, ArrowLeft for separator, slider,
+input-range (Cause, live run: Enter/Space only). (c) Sucheninstudio: Cause (read): `title-search.ts` declares no data-et-action; design decision. After: `actions elements/shell-main --live` 44 of 435 to 6 of 559 failed (the 6 search). Specs red, then green. Unverified: CI, the full `--live` run.
 
-**B502p as built (Linux builder subagent, 2026-11-15):** the lib design mock `anchoredDialogStyles` (libs/components/design/anchored-dialog.ts) draws `max-block-size: 80vh` next to its `80vw`, like `anchoredDialogOverlayStrategy`; the pane grid already scrolls the content. Compare pages/system: direct-edit 20848, blockers-open 1553 to ok (after `nx build components`: check refuses stale dist mocks). `design check` sdk anchored-dialog, studio pages/system, update-dialog unchanged clean, pages/sketches the old 4 CANVAS-UNDER-PANEL. Shots: design and app cut the dialog at the same row. Not verified: CI.
+**B502p as built (Linux builder subagent, 2026-11-15):** the lib design mock `anchoredDialogStyles` (libs/components/design/anchored-dialog.ts) draws `max-block-size: 80vh` next to its `80vw`, like `anchoredDialogOverlayStrategy`; the pane grid already scrolls the content. Compare pages/system: direct-edit 20848, blockers-open 1553 to ok (after `nx build components`: check refuses stale dist mocks). `design check` clean but the old 4 CANVAS-UNDER-PANEL. Not verified: CI.
 
 **B502q as built (Linux builder subagent, 2026-11-15):** `SketchesComponent` takes `agent`, `question` and `port` inputs and draws the design's agent line, question line (pickers to top-24, rows to top-37) and merge-port line; an agent not failed or a port shows zeichnet. B502r: sketch-view passes the open round's note as `question` (spec red without the binding); STATE-NO-SOURCE 7 to 5 (agent/port, parked in B154). The harness maps `agent`/`port` to samples. No host wiring (no data source yet), so `design check` adds 7 STATE-NO-SOURCE to the old 4 CANVAS-UNDER-PANEL. Compare pages/sketches: all 38 ok. Not verified: CI.
+
+**B502s as built (Linux builder subagent, 2026-11-15):** `design dom --app` drives forced and click-opened states as compare does: `harnessShotOf` and `harnessDomOf` share one driver and `harnessDriveOf`/`harnessPropsOf`. The DOM lists open overlay panes after the host, a forced element carries `data-et-forced`. Refused only what compare cannot reach: a force other than hover/active/focus-visible, a click open without a single origin state. Live: error-toast close-hover marks the dismiss button, pages/system blockers-open prints the dialog pane. Specs red on HEAD, green after; lint, tsc clean. Not verified: CI.
 
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das frisst den halben tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full

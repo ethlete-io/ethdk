@@ -3,13 +3,18 @@ import { timedPhase } from '../phase-timing';
 import { checkerScriptOf, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, DRAW_TIMEOUT_MS } from '../thumb';
 import { forcedSelectorOf } from '../force-interactions';
+import { boxedMarkupScriptOf } from './dom-boxes';
 import {
   ForcedElement,
+  forcedElementsOf,
+  forcesInFramesOf,
   FrameLook,
   droppedPropsOf,
   HARNESS_HOST_SELECTOR,
   hostBoxScriptOf,
+  openedByElementsOf,
   OVERLAY_PANES,
+  PointerOpen,
 } from './part-compare';
 import { watchSdkErrors } from './sdk-errors';
 import { PANE_COUNT_TIMEOUT_MS, settledPanesOf } from './settled-panes';
@@ -328,16 +333,7 @@ const forcedTargetOf = async (options: {
   }
 };
 
-/**
- * A PNG of the harness host element at `url`, in the viewport of `size` at device scale 1, or without `size` fitted
- * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels, with the
- * pointer off the page, after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named
- * `opened`, and with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
- * With `roomAbove`, for a design picture drawn above its part root, the fitted host gets room above and before it, so
- * an overlay that opens above neither flips below nor shifts off the viewport edge, and the shot grows up as well.
- * Without `size`, a `width` sets the viewport and the host to that width, as a design frame draws a part with `widths`.
- */
-export const harnessShotOf = async (options: {
+type HarnessDrive = {
   browser: Browser;
   url: string;
   size?: DesignPreset | null;
@@ -360,7 +356,19 @@ export const harnessShotOf = async (options: {
   props?: { sent: unknown; designOnly: ReadonlySet<string> };
   /** Records the steps of the shot as `<phase> load|prepare|drive|settle|screenshot` timing phases. */
   phase?: string;
-}) => {
+};
+
+type DrivenHarness = {
+  page: Page;
+  host: ReturnType<Page['locator']>;
+  room: boolean;
+  timeout: number;
+  step: <T>(name: string, run: () => Promise<T>) => Promise<T>;
+  sdkErrors: ReturnType<typeof watchSdkErrors>;
+  forcedTargets: { interaction: string; element: ReturnType<Page['locator']> }[];
+};
+
+const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHarness) => Promise<T>) => {
   const { browser, url } = options;
   const step = <T>(name: string, run: () => Promise<T>) =>
     options.phase ? timedPhase(`${options.phase} ${name}`, run) : run();
@@ -435,9 +443,13 @@ export const harnessShotOf = async (options: {
 
     if (opened) await step('open', () => clickOpen({ page, host, url, timeout, ...opened }));
 
+    const forcedTargets: DrivenHarness['forcedTargets'] = [];
+
     for (const forced of options.forced ?? []) {
       const { interaction } = forced;
       const element = await forcedTargetOf({ page, host, forced, url, timeout });
+
+      forcedTargets.push({ interaction, element });
 
       if (interaction === 'hover') await element.hover({ timeout });
       else if (interaction === 'active') {
@@ -485,6 +497,25 @@ export const harnessShotOf = async (options: {
     }
 
     if (options.forcesInFrames) await forceStylesOf(page);
+
+    return await use({ page, host, room, timeout, step, sdkErrors, forcedTargets });
+  } finally {
+    await context.close();
+  }
+};
+
+/**
+ * A PNG of the harness host element at `url`, in the viewport of `size` at device scale 1, or without `size` fitted
+ * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels, with the
+ * pointer off the page, after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named
+ * `opened`, and with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
+ * With `roomAbove`, for a design picture drawn above its part root, the fitted host gets room above and before it, so
+ * an overlay that opens above neither flips below nor shifts off the viewport edge, and the shot grows up as well.
+ * Without `size`, a `width` sets the viewport and the host to that width, as a design frame draws a part with `widths`.
+ */
+export const harnessShotOf = (options: HarnessDrive) =>
+  drivenHarnessOf(options, async ({ page, host, room, timeout, step, sdkErrors }) => {
+    const { url } = options;
 
     if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0) {
       const hostBox = await host.evaluate((element) => {
@@ -539,7 +570,53 @@ export const harnessShotOf = async (options: {
     if (sdkProblem) throw new HarnessError(sdkProblem);
 
     return png;
-  } finally {
-    await context.close();
-  }
+  });
+
+/**
+ * The boxed markup of the harness host at `url`, driven into a state as `harnessShotOf` drives it for a shot, followed by
+ * the open overlay panes; each element `forced` drives carries its interaction in `data-et-forced`.
+ */
+export const harnessDomOf = (options: HarnessDrive) =>
+  drivenHarnessOf(options, async ({ page, forcedTargets }) => {
+    for (const { interaction, element } of forcedTargets)
+      await element.evaluate((node, value) => {
+        (node as HTMLElement).dataset['etForced'] = value;
+      }, interaction);
+
+    const markup = (await page.evaluate(
+      boxedMarkupScriptOf(HARNESS_HOST_SELECTOR, { which: 'outer', also: OVERLAY_PANES }),
+    )) as string | null;
+
+    if (markup === null)
+      throw new HarnessError(`the harness page ${options.url} showed no ${HARNESS_HOST_SELECTOR} element`);
+
+    return markup;
+  });
+
+/** The forced interactions the harness drives: compare cannot reach a design state that forces another one. */
+export const DRIVEN_INTERACTIONS: readonly string[] = ['hover', 'active', 'focus-visible'];
+
+/** The props compare sends the harness for `state`: those of the state a click opens it from, else its own. */
+export const harnessPropsOf = (options: {
+  states: Record<string, unknown>;
+  state: string;
+  open: PointerOpen | undefined;
+}) => {
+  const { states, state, open } = options;
+
+  return open?.props ?? states[open?.from ?? state];
+};
+
+/** The forces, hover opens, overlay pane count and trigger click that drive the app harness into the state a design `markup` draws. */
+export const harnessDriveOf = (options: { markup: string; open: PointerOpen | undefined }) => {
+  const { markup, open } = options;
+  const openedBy = openedByElementsOf(markup);
+
+  return {
+    forced: forcedElementsOf(markup),
+    ...(openedBy.length > 0 ? { openedBy } : {}),
+    ...(forcesInFramesOf(markup) ? { forcesInFrames: true } : {}),
+    panes: drawnPaneCountOf(markup),
+    ...(open ? { opened: { control: open.control, markup } } : {}),
+  };
 };
