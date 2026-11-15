@@ -39,3 +39,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - undefined-class.spec under load (Linux, 15.11.): 2 tests red under load in `vitest related`, 7/7 green alone. Suspect, first time. Parked (ADR 0276). Second time (sweep 43727061520): joined B505, timeout 120 s in abbbb6906.
 - spec:stress skips dist/proof specs (machinery, 15.11.): only `*.perf` switches the vitest config, so a proof spec reports 0/4 in 0.3 s. Pre-existing. Parked (ADR 0276).
 - serve.perf two-hundred-sketches block over budget (CI, 15.11.): 236.8 > 199.9 s, red already on green push 2c9e6dbf6; job non-blocking. Suspect, first time. Parked (ADR 0276).
+- shot --at copy (Linux, 15.11.): `shot --variants --at HEAD` breaks a relative import in its `--at` copy, so the B502 port had no before/after compare. Suspect, first time. Parked (ADR 0276).
