@@ -147,16 +147,22 @@ export const ringProbeOrNullOf = (locator: Locator) =>
     return null;
   });
 
-/** Presses Tab so the last input is a key and the element itself does not hold focus. */
+/**
+ * Presses Shift so the last input is a key, and Tab only while the element itself holds focus: a Tab from an item of
+ * an open menu closes the menu the element sits in.
+ */
 export const tabAwayFrom = async (page: Page, locator: Locator) => {
-  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift');
 
-  if (
-    await locator.evaluate((element) => element.ownerDocument.activeElement === element, undefined, {
+  for (let tab = 0; tab < 2; tab++) {
+    const focused = await locator.evaluate((element) => element.ownerDocument.activeElement === element, undefined, {
       timeout: RING_PROBE_TIMEOUT_MS,
-    })
-  )
+    });
+
+    if (!focused) return;
+
     await page.keyboard.press('Tab');
+  }
 };
 
 /** Presses Shift, which moves no focus but makes the browser treat the last input as a key, and reads the probe again. */

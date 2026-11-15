@@ -9,6 +9,7 @@ import {
   ringProbeOrNullOf,
   RingStyle,
   ringVisibleOf,
+  tabAwayFrom,
 } from './pointer-focus';
 
 const none: RingStyle = {
@@ -144,4 +145,41 @@ describe('readRingProbe', () => {
     expect((await readRingProbe(page.locator('#kept')))?.control).toBe(true);
     await page.close();
   }, 10_000);
+}, 30_000);
+
+describe('tabAwayFrom', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('keeps an open menu open when focus is on another item, and moves focus off the element itself', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    page.setDefaultTimeout(3000);
+    await page.setContent(
+      `<div id="menu" onkeydown="if (event.key === 'Tab') this.remove()"><button id="first">First</button><button id="sub">Sub</button></div><button id="plain">Plain</button><button id="next">Next</button>`,
+    );
+    await page.locator('#first').focus();
+    await tabAwayFrom(page, page.locator('#sub'));
+
+    const menuKept = await page.locator('#sub').count();
+
+    await page.locator('#plain').focus();
+    await tabAwayFrom(page, page.locator('#plain'));
+
+    const active = await page.evaluate(() => document.activeElement?.id);
+
+    await page.close();
+
+    expect(menuKept).toBe(1);
+    expect(active).not.toBe('plain');
+  });
 }, 30_000);

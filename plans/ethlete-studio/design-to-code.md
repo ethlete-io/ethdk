@@ -784,50 +784,42 @@ the built look against a live app screenshot (read from the templates only); var
 
 **B502b as built (Linux builder subagent, 2026-11-14, commit "fix(repo): Draw the edit-sketch harness sample and fold no state when all are unchanged"):** Cause (measured): app harness drift, not a compare bug.
 `compare pages/sketches --product studio` on f6231d4b8: 140 actions missed, 139 in `edit-sketch` (71 "the design
-draws no element of this name", 68 click timeouts, all on title-bar buttons such as Sucheninstudio,Titlebar, Update,
-Minimieren) and 1 in `all-unchanged` (button AlleZuständezeigen, "the design draws no such element"). `design dom
---app` showed why: the design prop `part: 'edit'` had no case in `DESIGN_HARNESS_SAMPLES['pages/sketches']`, so the
-harness fell back to the title-bar rows and drew 24 live title-bar frames where the design draws the 8-frame
-`components/zoom-chip@edit` sketch; and the app folded every state when no variant changes one, while the merged
-design (`unchangedStates`, all-states variant a, ff1213561) folds none then and draws no fold row. Bisect: at
-b9802b4d6 (scratch copy) 19 actions missed in 19 other states, `all-unchanged` already the same miss, `edit-sketch`
-absent; its parent draws the same part (b9802b4d6 only adds the sketch folder). `edit-sketch` arrived with b685abce7
-(ADR 0270 edit sketch) and never had a harness sample; the `all-unchanged` miss predates b9802b4d6. Fix: an
-`SKETCH_EDIT_SAMPLE` (rows old/new) for `part: 'edit'`, `foldedStatesOf` folds none when every state would, and old
-of an @edit sketch is a base row like Current (the design's `isBase`), never folded as "Unverändert: Variante old".
-After: every declared action works; DIFF `edit-sketch` 96350 to 8805 px, `all-unchanged` 64399 to 12474 px; the
-other DIFFs unchanged (31 DIFF states before and after). Verified: specs red on HEAD sources, green after;
-`design check --part pages/sketches` 0 findings, no part file rewritten. Not verified: the real server's old row of
-an @edit sketch in the live app; the remaining DIFFs (B502 harness sample drift line); CI.
+draws no element of this name", 68 click timeouts on title-bar buttons such as Sucheninstudio, Update, Minimieren),
+1 in `all-unchanged` (AlleZuständezeigen, "no such element"). `design dom --app`: the design prop `part: 'edit'` had
+no case in `DESIGN_HARNESS_SAMPLES['pages/sketches']`, so the harness drew 24 title-bar frames where the design draws
+the 8-frame `components/zoom-chip@edit` sketch; and the app folded every state when no variant changes one, while the
+design (`unchangedStates`, ff1213561) folds none and draws no fold row. Bisect: `edit-sketch` came with b685abce7
+(ADR 0270) without a harness sample; the `all-unchanged` miss predates b9802b4d6. Fix: `SKETCH_EDIT_SAMPLE` (rows
+old/new) for `part: 'edit'`; `foldedStatesOf` folds none when every state would; old of an @edit sketch is a base row
+(the design's `isBase`), never folded. After: every declared action works; DIFF `edit-sketch` 96350 to 8805 px,
+`all-unchanged` 64399 to 12474 px; 31 DIFF states before and after. Specs red on HEAD, green after; `design check
+--part pages/sketches` 0 findings. Not verified: the real server's old row of an @edit sketch live; the other DIFFs; CI.
 
 **B502c as built (Linux builder subagent, 2026-11-14, commit "fix(ethlete-studio): Draw the sketches harness sample
 like its design"):** `compare pages/sketches --product studio` on 49e38b948: 31 DIFF states, sum 689346 px
 (page-sketch 3063, narrow-part 17426, all-unchanged 12474, edit-sketch 8805, change-crop 19650, change-crop-whole
 17950). After: 16 states ok, 15 DIFF, sum 358188 to 447115 px over three runs (page-sketch, narrow-part,
 all-unchanged, edit-sketch ok; change-crop 1369, change-crop-whole 146); `compare --base HEAD`: 0 new failures, 17
-fixed. Items, each measured with `design dom` (design vs `--app`): (1) zoom-chip@edit row, Cause: sample data; the
-design tree lists every `PARTS` key (title-bar, zoom-chip@edit, zoom-chip), the app samples listed two, and the edit
-sample selected zoom-chip; fixed (`componentsLayerOf` in sketches-sample.ts). (2) Avatar, Cause: sample data; the
+fixed. Items, each measured with `design dom` vs `--app`: (1) zoom-chip@edit row, Cause: sample data; the design
+tree lists every `PARTS` key (title-bar, zoom-chip@edit, zoom-chip), the app two, and its edit sample selected
+zoom-chip; fixed (`componentsLayerOf`, sketches-sample.ts). (2) Avatar, Cause: sample data; the
 design pin is `PAGE_PIN` with initials TB, `SKETCH_PINS` said H; fixed. (3) Stack edges, Cause: the design draws them
-inside the frame (`.sk-fit` border wraps shot and edges, height 73.7 px), the app bordered only the 62.2 px crop and
-hung the edges below; fixed (border on the wrapper when stacked); 1369 px residual on the edge corners, parked. (4)
-Fold row, Cause: the design's disclosure button is `w-full` in the row and shrinks the label to 166 px so it wraps;
-the app's `ethlete-disclosure` host is `block` at max-content; fixed (`class="w-full"` on that host). Found on the
-way: (5) the panel collapse button sat 8 px left in every shell, Cause: `ShellCollapseComponent` carried the design's
-preview wrapper `p-space-2` as host padding; the padding moved to the harness sample of components/shell-collapse; (6)
-the frame clipped focus rings (`overflow-hidden`; design `overflow-clip` with an 8 px clip margin), fixed, a crop
-clips on its scale box; (7) edit-sketch drew `round-1` and no edit hint, Cause: the sample lacked `round: 'edit'` and
-the app lacked the design's "Kein Verwerfen" line (`data-sk-edit-hint`); fixed. Fallback removal (ADR 0235):
+in the frame (`.sk-fit` border wraps shot and edges, 73.7 px), the app bordered only the 62.2 px crop, edges below;
+fixed (border on the stacked wrapper); 1369 px residual on the edge corners, parked. (4)
+Fold row, Cause: the design's disclosure button is `w-full`, the label shrinks to 166 px and wraps; the app's
+`ethlete-disclosure` host is `block` at max-content; fixed (`class="w-full"` on it). Also: (5) the
+collapse button sat 8 px left in every shell, Cause: `ShellCollapseComponent` carried the design's preview `p-space-2`
+as host padding; moved to the components/shell-collapse harness sample; (6) the frame clipped focus rings
+(`overflow-hidden`; design `overflow-clip`, 8 px margin), fixed, a crop clips on its scale box; (7) edit-sketch drew `round-1` and no edit hint,
+Cause: no `round: 'edit'` in the sample, no "Kein Verwerfen" line (`data-sk-edit-hint`) in the app; fixed. Fallback removal (ADR 0235):
 `DESIGN_HARNESS_SAMPLES['pages/sketches']` now throws `no sample for prop part=<value> of part pages/sketches` for a
 `part` value without a sample; it removes the silent fallback to the title-bar rows that drew b685abce7's edit state
 as 24 title-bar frames (spec in design-harness-samples.spec.ts fails on the old code). Parked: the wide head note
-renders larger in the compare shot of a few wide states (idle, paused-reason, new-part, comparing; which ones changes
-between harness builds, while `design dom --app` of idle measures the same 190.5 x 64.8 px note box as the design),
-not new at HEAD; the zoomed and matrix states (zoomed-page, below-fit, far-out, narrow-far-out, unchanged-matrix,
-unchanged-matrix-open, withdrawn-hidden, unchanged-open) were outside the four items and not measured. Checks: `design
-check --part pages/sketches` 0 findings, no part file rewritten; vitest related 439 green; tsc app and spec clean;
-lint clean. Verified: compare app shots of page-sketch, idle and change-crop viewed (tree rows, avatar, collapse
-button, stack edges). `compare --base HEAD`: components/shell-collapse all ok; elements/shell-main 0 new, 19 fixed.
+renders larger in the compare shot of some wide states (idle, paused-reason, new-part, comparing; varies per build;
+`design dom --app` of idle measures the design's 190.5 x 64.8 px), not new at HEAD; the zoomed and matrix states
+(zoomed-page, below-fit, far-out, narrow-far-out, unchanged-matrix(-open), withdrawn-hidden, unchanged-open) not
+measured. `design check --part pages/sketches` 0 findings; vitest related 439 green; tsc, lint clean. Viewed: app
+shots of page-sketch, idle, change-crop. `compare --base HEAD`: components/shell-collapse all ok; elements/shell-main 0 new, 19 fixed.
 Not verified: other pages that embed the shell; CI.
 
 **B502d as built (Linux builder subagent, 2026-11-14, commit "fix(repo): Fold the sketches states like the design"):**
@@ -1002,6 +994,15 @@ answered null. Fix: `toggleStepOf` answers null when the control is gone. After:
 reaching `studio-menu.appearance`/`.help`; button System drifts per page. Unchanged: studio (2.) productChange,
 Sucheninstudio no data-et-action, separator sideWidthChange. Spec red on HEAD in a scratch copy, green after; vitest
 related 1510 green; lint, tsc clean. No part touched, so no `design check`. Not verified: CI.
+
+**B502m as built (Linux builder subagent, 2026-11-15):** Cause (probe, spec): the runner, not the app. Before each click
+`tabAwayFrom` pressed Tab; from the autofocused item of the open Studio menu Tab closes the menu tree, so the click hit
+a closing item; Enter/Space never pressed Tab and passed. A logged probe: root `aria-expanded` true after the Tab, false
+after the click. Fix: `tabAwayFrom` presses Shift (the last input is a key) and Tab only while the element itself holds
+focus. After: `actions elements/studio-menu --live` 12 to 0 failed; full `--live` 69 of 485 to 57 of 513 failed: the
+12 studio-menu checks gone, none new. Spec red on HEAD, green after; vitest related 1587 green; spec:stress 4/4;
+lint, tsc clean. Left: button System drift (merge, sketches: current unchanged; flows, inbox: System current). Suspect,
+not probed: those hosts do not turn `sectionChange` into a section switch. Not verified: CI.
 
 485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
 only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
