@@ -476,7 +476,7 @@ sketch` zeigen ihn (Befund 180).
 - **D7** Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
-- **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Offen für Tom: menu item-active Kurzbefehl 4.10:1 (Empf. volle Textfarbe), chart bar-/pie-empty Umriss (Empf. contrast.exceptions).
+- **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Builder baut Empfehlung: menu item-active Kurzbefehl 4.10:1 (volle Textfarbe), chart bar-/pie-empty Umriss (contrast.exceptions).
 - **D19** Ein JSON-Writer für beide Libs statt zwei Kopien (`libs/agent-rules/src/lib/prettier.ts`, `libs/cli/src/lib/json-file.ts`). Subpath-Exports von agent-rules müssen im Workspace auf gebautes JS auflösen (`@ethlete/agent-rules/prettier` auf TS-Quelle ließ die gebaute CLI abstürzen, zurückgenommen). Danach `part-ready.ts` auf den Writer umstellen (nach A10).
 - **D20** core Head-Store (fifa 7.26, 15.11.): Titel-Teil ohne öffentliche Priorität; Schreiben aus einem Effect, der den Store liest, läuft endlos. [fifagg-sdk-findings-2026-11-15-seo.md](../fifagg-sdk-findings-2026-11-15-seo.md)
 
@@ -494,7 +494,7 @@ sketch` zeigen ihn (Befund 180).
   deutsche Tooltips am Zoom-Chip (Q41).
 - **E15** Codex-Agenten: über die tmux-Mailbox oder über einen Wrapper? (backlog-parallel/decisions-studio-ui.md)
 - **E16** Morgenrunde 15.11.: beantwortet (ADR 0300 B501, 0301 B502 `opens:`, 0302 B514 + 986 geparkt; fifa-Session
-  neu gestartet). Offen für Tom: Studio-Wahlen title-bar@uncommitted (blockiert B501 P4), pages/system@canvas-note,
-  shell-main@crashed, title-bar@notice-arrow, empty-state@row-layout, action-sheet@look (blockiert B508); `gh auth login`;
-  Erledigt vom Doc-Agent 15.11. (Tom erlaubt): `gh` angemeldet, B505-main gepusht, zshrc `claude2()`, Mac auf `next` mit
+  neu gestartet). Studio-Wahlen title-bar@uncommitted (B501 P4), pages/system@canvas-note, shell-main@crashed,
+  title-bar@notice-arrow, empty-state@row-layout, action-sheet@look (B508): Builder baut seine Empfehlung (Tom stellt
+  keine Design-Wahlen, 07.11.), Zeile "Empfehlung gebaut". Erledigt vom Doc-Agent 15.11. (Tom erlaubt): `gh` angemeldet, B505-main gepusht, zshrc `claude2()`, Mac auf `next` mit
   ssh-Schlüssel ohne Passphrase (`~/.ssh/id_ed25519_agent`).
