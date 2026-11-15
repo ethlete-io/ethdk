@@ -100,6 +100,15 @@ describe('liveOutcomeOf', () => {
       removed: ['menuitem "a" (2.)'],
     });
   });
+
+  it('names the pressed control when it already held its aria-current, so the outcome matches a page where it gained it', () => {
+    const before = [control('button "System"', { current: 'page' }), control('button "Inbox"', { current: 'true' })];
+    const after = [control('button "System"', { current: 'page' }), control('button "Inbox"', { current: 'true' })];
+
+    expect(liveOutcomeOf({ before, after, emitted: [], pressed: control('button "System"') }).current).toBe(
+      'button "System"=page',
+    );
+  });
 });
 
 describe('liveStateCompareOf', () => {

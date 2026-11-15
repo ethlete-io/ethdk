@@ -157,12 +157,24 @@ export const nearestControlOf = <T extends { key: string; x: number; y: number }
       null,
     );
 
-/** What a press changed: the outputs it fired, the expanded controls after it, the controls that gained an `aria-current`, and the controls it added or removed. */
-export const liveOutcomeOf = (options: { before: LiveControl[]; after: LiveControl[]; emitted: string[] }) => {
+/**
+ * What a press changed: the outputs it fired, the expanded controls after it, the controls that gained an
+ * `aria-current` (and the pressed control when it holds one after the press), and the controls it added or removed.
+ */
+export const liveOutcomeOf = (options: {
+  before: LiveControl[];
+  after: LiveControl[];
+  emitted: string[];
+  pressed?: Target;
+}) => {
   const { before, after } = options;
+  const pressed = options.pressed ? idOf(options.pressed) : null;
   const currentBefore = new Map(before.map((control) => [idOf(control), control.current]));
   const gained = after
-    .filter((control) => control.current !== null && currentBefore.get(idOf(control)) !== control.current)
+    .filter(
+      (control) =>
+        control.current !== null && (idOf(control) === pressed || currentBefore.get(idOf(control)) !== control.current),
+    )
     .map((control) => `${controlNameOf(control)}=${control.current}`);
   const ids = (controls: LiveControl[]) => new Set(controls.map(idOf));
   const had = ids(before);
@@ -696,7 +708,7 @@ export const checkLiveActions = async (options: {
                   input,
                   output: typeof action === 'object' && action?.kind === 'emit' ? action.output : null,
                 });
-                const outcome = liveOutcomeOf(result);
+                const outcome = liveOutcomeOf({ ...result, pressed: app });
 
                 rings.click ??= result.clickRing;
                 rings.clickThenKey ??= result.clickThenKeyRing;
