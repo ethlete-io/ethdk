@@ -2,7 +2,8 @@ import { DesignConfig } from '../../design-config';
 import { timedPhase } from '../../phase-timing';
 import { decisionRefsOf } from '../decision-refs';
 import { refreshHarnessMap } from '../harness-map';
-import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { portItemLineOf, unportedPropsOf } from '../dropped-props';
+import { partKeyOf, resolveProduct, ResolvedProduct } from '../resolve-product';
 import { configOf, isModelId, oneProductOf } from './cli-args';
 import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
 import { mergeSketch, MergeRefusal, rebaseOthersAfterMerge } from './merge';
@@ -99,6 +100,20 @@ export const mergeAndRecord = (options: {
   }
 
   return { variant, parts: result };
+};
+
+/** Prints a `PORT` line for each merged part whose design states now send a prop its app component has no input for. */
+export const printPortItems = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  parts: readonly string[];
+}) => {
+  const { target, config, product, parts } = options;
+  const merged = resolveProduct({ target, name: product.name, config: product.config });
+
+  for (const unported of await unportedPropsOf({ target, config, product: merged, parts }))
+    console.log(portItemLineOf(unported, product.name));
 };
 
 /**
@@ -215,6 +230,7 @@ export const mergeStepOf = (options: {
       }
 
       console.log(`merged ${sketch.target} variant ${merged.variant} into ${product.name}: ${merged.parts.join(', ')}`);
+      await printPortItems({ target, config, product, parts: merged.parts });
 
       return 0;
     },

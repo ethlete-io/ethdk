@@ -7,10 +7,10 @@ import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE } from '
 import { productSampledPropsOf } from './harness-samples';
 import { designOnlyPropsOf } from './part-compare';
 import { Problem } from './problem';
+import { linkedComponentOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { appSourcesOf, selectorOf } from './rules/implemented-components';
 import { KNOWN_UNBOUND_INPUTS } from './rules/unbound-input-known';
-import { partLinkOf } from './sketch/part-definition';
 import { productModuleIdOf } from './system-modules';
 import { sourceFileOf } from './ts-source';
 import {
@@ -19,7 +19,7 @@ import {
   undesignedBranchesOf,
   undesignedBranchMessageOf,
 } from './undesigned-branches';
-import { loadingOn, WarmDraw } from '../warm-draw';
+import { DesignServer, loadingOn, WarmDraw } from '../warm-draw';
 
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 
@@ -339,6 +339,76 @@ export const stateNoSourceMessageOf = (props: readonly string[], selector: strin
 export const droppedPropsMessageOf = (dropped: readonly string[]) =>
   `the design prop${dropped.length > 1 ? 's' : ''} ${dropped.join(', ')} ${dropped.length > 1 ? 'have' : 'has'} no input on the app component - the harness drops ${dropped.length > 1 ? 'them' : 'it'}, so compare cannot check this state`;
 
+const statesOn = async (server: DesignServer, options: { product: string; file: string }) => {
+  const module = (await server.ssrLoadModule(productModuleIdOf(options)).catch(() => null)) as {
+    default?: { states?: unknown };
+  } | null;
+
+  return module?.default?.states;
+};
+
+/** The props any of `states` sends that `inputs` lacks, as DROPPED-PROP counts them, each once. */
+export const unportedStatePropsOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  part: string;
+  states: Record<string, unknown>;
+  inputs: readonly string[];
+}) => {
+  const sampled = productSampledPropsOf({ target: options.target, product: options.product, part: options.part });
+
+  return [
+    ...new Set([...droppedStatePropsOf({ states: options.states, inputs: options.inputs, sampled }).values()].flat()),
+  ];
+};
+
+/** A part of `parts` whose design states send props its linked app component has no input for, by the DROPPED-PROP check. */
+export type UnportedProps = { part: string; component: string; props: string[] };
+
+/** The props each of `parts` sends from its design states that its app component takes no input for. */
+export const unportedPropsOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  parts: readonly string[];
+  warm?: WarmDraw;
+}): Promise<UnportedProps[]> => {
+  const { target, product } = options;
+  const linked = product.parts.flatMap((part) => {
+    const path = linkedComponentOf(part.source);
+    const file = path === null ? null : resolve(target, path);
+
+    if (!options.parts.includes(partKeyOf(part)) || part.origin === 'base' || file === null || !existsSync(file))
+      return [];
+
+    const inputs = componentInputsOf(readFileSync(file, 'utf8'));
+
+    return inputs === null ? [] : [{ part, component: path ?? '', inputs }];
+  });
+
+  if (linked.length === 0) return [];
+
+  return loadingOn(options, async (server) => {
+    const unported: UnportedProps[] = [];
+
+    for (const { part, component, inputs } of linked) {
+      const states = await statesOn(server, { file: part.file, product: product.name });
+
+      if (!isRecord(states)) continue;
+
+      const props = unportedStatePropsOf({ target, product, part: partKeyOf(part), states, inputs });
+
+      if (props.length > 0) unported.push({ part: partKeyOf(part), component, props });
+    }
+
+    return unported;
+  });
+};
+
+/** The merge output line that opens the port item of `unported`, pointing at the `design task` that lists it again. */
+export const portItemLineOf = (unported: UnportedProps, product: string) =>
+  `PORT ${product} ${unported.part}: the merged design states send ${unported.props.join(', ')} - ${unported.component} has no input for ${unported.props.length > 1 ? 'them' : 'it'}; add the input${unported.props.length > 1 ? 's' : ''}, see design task ${unported.part} --product ${product}`;
+
 /** `DROPPED-PROP` for each part whose design states set a prop its app component has no input for, loading the states without drawing. */
 export const droppedPropProblemsOf = async (options: {
   target: string;
@@ -351,8 +421,7 @@ export const droppedPropProblemsOf = async (options: {
   const { target, config, product } = options;
   const candidates = product.parts.flatMap((part) => {
     const key = partKeyOf(part);
-    const link = partLinkOf(part.source);
-    const path = link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
+    const path = linkedComponentOf(part.source);
     const file = path === null ? null : resolve(target, path);
 
     if (
@@ -395,10 +464,7 @@ export const droppedPropProblemsOf = async (options: {
     const problems: Problem[] = [];
 
     for (const { part, path, inputs, initials, template, defaults, unbound, selector, appDir } of candidates) {
-      const module = (await server
-        .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
-        .catch(() => null)) as { default?: { states?: unknown } } | null;
-      const states = module?.default?.states;
+      const states = await statesOn(server, { file: part.file, product: product.name });
 
       if (!isRecord(states)) continue;
 

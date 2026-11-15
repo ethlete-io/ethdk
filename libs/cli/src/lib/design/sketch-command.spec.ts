@@ -2847,7 +2847,7 @@ export default definePart({
         ),
       ).toBe(1);
       expect(lines.pop()).toContain('does not go with --allowed-by');
-      expect(write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(0);
+      expect(await write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(0);
       expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
         'components/button': { variant: 'a', decidedBy: 'human' },
       });

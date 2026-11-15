@@ -48,7 +48,14 @@ import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { editRefOf, humanPickOf, journaledMergeOf, MERGE_WAIT_MS, mergeAndRecord } from './system/sketch/merge-step';
+import {
+  editRefOf,
+  humanPickOf,
+  journaledMergeOf,
+  MERGE_WAIT_MS,
+  mergeAndRecord,
+  printPortItems,
+} from './system/sketch/merge-step';
 import { journaled, openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
@@ -297,7 +304,10 @@ const productAndSketchOf = (context: Context): { product: ResolvedProduct; sketc
   return { product, sketch };
 };
 
-const withSketch = (context: Context, run: (found: { product: ResolvedProduct; sketch: Sketch }) => number) => {
+const withSketch = (
+  context: Context,
+  run: (found: { product: ResolvedProduct; sketch: Sketch }) => number | Promise<number>,
+) => {
   const found = productAndSketchOf(context);
 
   return typeof found === 'string' ? fail(found) : run(found);
@@ -2088,7 +2098,9 @@ const merged = (context: Context) =>
 
     console.log(`merged ${sketch.target} variant ${result.variant} into ${product.name}: ${result.parts.join(', ')}`);
 
-    return 0;
+    return printPortItems({ target: context.target, config: context.config, product, parts: result.parts }).then(
+      () => 0,
+    );
   });
 
 const discarded = (context: Context) =>

@@ -1,9 +1,11 @@
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { createDesignServer } from '../serve';
 import { partActionFailuresOf } from './actions-command';
 import { appFilesOf } from './app-files';
 import { comparePart, ComparePart } from './compare-command';
 import { buildReadyInputsOf } from './check-system';
+import { componentInputsOf, unportedStatePropsOf } from './dropped-props';
 import { appStylesheetOf } from './harness-config';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -376,6 +378,11 @@ export const designTask = async (options: {
   if (since.changed.length > 0) console.log(`  changed: ${since.changed.join(', ')}`);
   if (since.all) console.log('  all states: render or styles changed');
   if (since.added.length === 0 && since.changed.length === 0 && !since.all) console.log('  no change');
+  const componentFile = resolve(target, task.component);
+  const inputs = existsSync(componentFile) ? componentInputsOf(readFileSync(componentFile, 'utf8')) : null;
+  const unported = inputs ? unportedStatePropsOf({ target, product, part: task.part, states, inputs }) : [];
+
+  if (unported.length > 0) console.log(`port: no input on ${task.component} for ${unported.join(', ')}`);
   console.log('allowed files:');
   allowed.forEach((pattern) => console.log(`  ${pattern}`));
   if (stylesheet) console.log(`  ${stylesheet} (@source lines)`);
