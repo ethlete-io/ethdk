@@ -1,0 +1,12 @@
+@layer components {
+  .st-title-bar {
+    width: 1440px;
+  }
+  .st-notice-hint {
+    container-type: inline-size;
+  }
+  .st-notice-hint .et-overlay-arrow {
+    left: auto;
+    right: calc(50cqi - 10px);
+  }
+}
