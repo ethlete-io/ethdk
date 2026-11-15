@@ -45,3 +45,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - real-open-points.spec under load (Linux, 15.11.): times out at 10 s when `sketch merge` runs it under load; 0.15 s alone and in the commit hook. Suspect, first time. Parked (ADR 0276).
 - e2e bite --revert on old fixes (machinery, 15.11.): `studio:e2e:bite --revert` refused both 435 fixes (e459da21e, 3c67d2143) because they no longer revert cleanly; the builder bit with a scratch script. Suspect, first time. Parked (ADR 0276).
 - compare pages/sketches picture drift (Linux, 15.11.): exits 1 on change-crop / change-crop-whole DIFF 33 px at df6ed7fa6, pre-existing. Suspect, first time. Parked (ADR 0276).
+- components select.directive.spec maxSelection red on CI (run 43771715435, 5093670c3, 7.6 s under load), local 134/134, select untouched since 14.11. Suspect: load timing, first time. Parked (ADR 0276).
