@@ -1304,26 +1304,32 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
   });
 
-  it('sets the note of one variant, and refuses an unknown sketch or variant', async () => {
+  it('sets the note of each variant without touching the others, and refuses an unknown sketch or variant', async () => {
     const target = acme();
     const lines = output();
     const note = (...argv: string[]) => write(target, 'note', ...argv, '--product', 'acme');
 
-    await write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+    const notes = () => {
+      const { variantInfo } = findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'elements', name: 'hero' },
+      }) as Sketch;
 
+      return ['a', 'b', 'c'].map((variant) => variantInfo[variant]?.note);
+    };
+
+    await write(target, 'new', 'elements/hero', '--variants', 'a,b,c', '--product', 'acme');
+
+    expect(note('elements/hero', 'a', 'wide')).toBe(0);
     expect(note('elements/hero', 'b', 'tighter', 'header')).toBe(0);
     expect(lines.pop()).toBe('elements/hero variant b: tighter header');
-    expect(
-      (
-        findSketch({
-          productDir: join(target, DESIGN_DIR, 'acme'),
-          product: 'acme',
-          sketch: { layer: 'elements', name: 'hero' },
-        }) as Sketch
-      ).variantInfo['b']?.note,
-    ).toBe('tighter header');
+    expect(note('elements/hero', 'c', 'no', 'image')).toBe(0);
+    expect(notes()).toEqual(['wide', 'tighter header', 'no image']);
+    expect(note('elements/hero', 'b', 'roomy')).toBe(0);
+    expect(notes()).toEqual(['wide', 'roomy', 'no image']);
     expect(note('elements/hero', 'z', 'x')).toBe(1);
-    expect(lines.pop()).toBe('elements/hero has no variant "z" - it has a, b');
+    expect(lines.pop()).toBe('elements/hero has no variant "z" - it has a, b, c');
     expect(note('elements/nope', 'a', 'x')).toBe(1);
     expect(note('elements/hero', 'a')).toBe(1);
     expect(lines.pop()).toContain('usage: sketch note <layer>/<name> [<variant>] <text>');
