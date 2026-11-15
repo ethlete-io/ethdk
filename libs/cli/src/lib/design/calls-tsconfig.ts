@@ -4,6 +4,8 @@ import { callsRootOf, DESIGN_DIR, readConfig } from './design-config';
 import { editorAssetRootOf, installedAssetRoot } from './package-root';
 import { workRootOf } from './work-root';
 import { renderPackagesOf, typePathsOf } from './render-packages';
+import { editorJsonTextOf, JsonStyle } from './system/prettier-json';
+import { jsonStyleOf } from './system/sketch/check-format';
 
 export const DRAWING_COMPILER_OPTIONS = {
   types: [],
@@ -35,7 +37,8 @@ export const writeCallsTsconfig = (target: string) => {
   const work = workRootOf(target);
   const path = resolve(work, 'tsconfig.json');
   const typePaths = typePathsOf({ packages: renderPackagesOf({ target, config: readConfig(target) }), target });
-  const textOf = (assetRoot: string) => {
+  const editorPath = resolve(target, DESIGN_DIR, 'tsconfig.json');
+  const textOf = (assetRoot: string, style: JsonStyle | null) => {
     const defineCall = resolve(assetRoot, 'define-call.ts');
     const inlineCss = resolve(assetRoot, 'css-inline.d.ts');
     const config = {
@@ -46,17 +49,16 @@ export const writeCallsTsconfig = (target: string) => {
       include: [`${callsRootOf(target)}/**/*.ts`, defineCall, inlineCss],
     };
 
-    return `${JSON.stringify(config, null, 2)}\n`;
+    return editorJsonTextOf(config, style);
   };
-  const editorPath = resolve(target, DESIGN_DIR, 'tsconfig.json');
   const editorRoot = editorAssetRootOf(target);
 
   mkdirSync(work, { recursive: true });
-  writeTsconfigText(path, textOf(installedAssetRoot()));
+  writeTsconfigText(path, textOf(installedAssetRoot(), null));
 
   if (editorRoot) {
     mkdirSync(dirname(editorPath), { recursive: true });
-    writeTsconfigText(editorPath, textOf(editorRoot));
+    writeTsconfigText(editorPath, textOf(editorRoot, jsonStyleOf({ target, dir: dirname(editorPath) })));
   }
 
   return path;

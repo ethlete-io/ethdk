@@ -45,3 +45,7 @@ const lineOf = (style: JsonStyle, { value, depth, head, tail }: Line): string =>
  */
 export const prettierJsonOf = (value: unknown, style: JsonStyle = DEFAULT_JSON_STYLE) =>
   `${lineOf(style, { value, depth: 0, head: '', tail: '' })}\n`;
+
+/** A generated editor file as JSON text: in the checkout's Prettier `style`, else as `JSON.stringify` writes it. */
+export const editorJsonTextOf = (value: unknown, style: JsonStyle | null) =>
+  style ? prettierJsonOf(value, style) : `${JSON.stringify(value, null, 2)}\n`;

@@ -1275,6 +1275,26 @@ export const changedSinceReadyOf = (sketch: Sketch) => {
   return sketch.variants.filter((variant) => judged[variant] !== variantContentHashOf(sketch, variant));
 };
 
+/**
+ * Runs `rewrite`, which may only reformat the files of `sketch`, and keeps the ready mark of each variant that was
+ * unchanged since `sketch ready` before it ran; a variant that had changed stays changed.
+ */
+export const keepReadyThrough = (sketch: Sketch, rewrite: () => void) => {
+  const changed = changedSinceReadyOf(sketch);
+  const kept =
+    sketch.status === 'ready' && sketch.readyContent ? sketch.variants.filter((v) => !changed.includes(v)) : [];
+
+  rewrite();
+
+  if (kept.length === 0) return;
+
+  const rehashed = Object.fromEntries(kept.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
+
+  if (kept.every((variant) => rehashed[variant] === sketch.readyContent?.[variant])) return;
+
+  writeSketchFile({ ...sketch, readyContent: { ...sketch.readyContent, ...rehashed } }, { base: sketch });
+};
+
 /** Why the picked variant of `sketch` cannot merge as judged, its files changed since `sketch ready`; `null` when unchanged or unrecorded. */
 export const staleReadyRefusalOf = (sketch: Sketch) => {
   const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : null;

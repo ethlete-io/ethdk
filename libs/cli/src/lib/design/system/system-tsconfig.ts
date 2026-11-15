@@ -17,7 +17,7 @@ import {
 import { KIT_SPECIFIER } from './kit';
 import { productDirOf } from './product';
 import { ResolvedProduct, resolveProduct } from './resolve-product';
-import { JsonStyle, prettierJsonOf } from './prettier-json';
+import { editorJsonTextOf, JsonStyle } from './prettier-json';
 import { jsonStyleOf } from './sketch/check-format';
 import { overlaySketch } from './sketch/overlay';
 import { listSketches, sharedDirOf, variantDirOf } from './sketch/sketch';
@@ -72,12 +72,12 @@ export const writeEditorTsconfig = (options: { target: string; product: Resolved
 
   if (!assetRoot) return;
 
+  const style = jsonStyleOf({ target, dir: product.dir });
+
   writeTsconfigText(
     resolve(product.dir, 'tsconfig.json'),
-    jsonTextOf(systemTsconfigOf({ target, product, assetRoot })),
+    editorJsonTextOf(systemTsconfigOf({ target, product, assetRoot }), style),
   );
-
-  const style = jsonStyleOf({ target, dir: product.dir });
 
   for (const sketch of listSketches({ productDir: product.dir, product: product.name })) {
     if (typeof sketch === 'string') continue;
@@ -113,7 +113,7 @@ const writeSketchEditorTsconfig = (options: {
     include: [options.dir],
   });
 
-  writeTsconfigText(options.file, options.style ? prettierJsonOf(config, options.style) : jsonTextOf(config));
+  writeTsconfigText(options.file, editorJsonTextOf(config, options.style));
 };
 
 /**

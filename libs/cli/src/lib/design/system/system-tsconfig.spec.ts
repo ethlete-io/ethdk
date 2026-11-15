@@ -1,8 +1,10 @@
+import { spawnSync } from 'child_process';
 import {
   cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   statSync,
@@ -10,7 +12,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { writeCallsTsconfig } from '../calls-tsconfig';
 import { DESIGN_DIR, readConfig } from '../design-config';
@@ -200,6 +202,28 @@ describe('editor tsconfigs', () => {
     writeEditorTsconfig({ target, product: resolveAcme(target) });
 
     expect(running.spawns).toBe(0);
+  });
+
+  it('writes every editor tsconfig in the form Prettier checks it with the checkout config', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+
+    writeFileSync(join(target, '.prettierrc.json'), JSON.stringify({ printWidth: 120, tabWidth: 2 }));
+    createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a', 'b'] });
+    writeCallsTsconfig(target);
+    writeEditorTsconfig({ target, product: resolveAcme(target) });
+
+    const files = (readdirSync(join(target, DESIGN_DIR), { recursive: true }) as string[])
+      .filter((file) => basename(file) === 'tsconfig.json')
+      .map((file) => join(target, DESIGN_DIR, file));
+    const prettier = require.resolve('prettier/bin/prettier.cjs');
+    const checked = spawnSync(process.execPath, [prettier, '--check', '--ignore-path', '/dev/null', ...files], {
+      cwd: target,
+      encoding: 'utf8',
+    });
+
+    expect(files).toHaveLength(5);
+    expect(checked.stdout + checked.stderr).toContain('All matched files use Prettier code style');
   });
 
   it('writes a variant tsconfig that the FORMAT rule accepts', () => {
