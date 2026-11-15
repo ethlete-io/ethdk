@@ -32,3 +32,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - et-label clash (SDK, 14.11., fifagg 9.7a2): cdk et-label and components et-label clash when one component imports both, so a half-migrated form loses the floating label. Suspect. fifa migrates whole forms (ADR 0297).
 - menu, select, pickers (SDK, 14.11.): schlucken den Klick auf ihren Trigger wie vorher das Toggletip (consumer-`(click)` auf dem Trigger geht verloren); Fix wäre closeOnOutsidePointer `except-origin` + Trigger schließt per Toggle. Geparkt, bis ein Consumer es trifft (nach 442f2ce40). Suspect.
 - RSS leak (Linux, 986): an RSS leak seen in the B499 runs did not reproduce. Parked until a recipe (ADR 0302).
+- agent-sessions up --dry-run (machinery, fifa 15.11.): `up --dry-run` ignores the flag and starts the tmux sessions; `run` inside an existing tmux session of its own name returns without starting the agent. Built only on red CI.
