@@ -232,6 +232,10 @@ export const STUDIO_LABELS = {
     sendAgain: 'Erneut senden',
     notSent: 'Kommentar nicht gesendet. Erneut versuchen.',
   },
+  commentPin: {
+    label: ({ author, count, resolved }: { author: string; count: number; resolved: boolean }) =>
+      `Comment by ${author}${count > 1 ? `, ${count} messages` : ''}${resolved ? ', resolved' : ''}`,
+  },
   shell: {
     designSystem: 'Design-System',
     preset: 'Voreinstellung',

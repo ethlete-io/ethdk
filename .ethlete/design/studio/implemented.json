@@ -40,7 +40,7 @@
   },
   "components/comment-pin": {
     "hash": "ee918ee33c8449b7",
-    "at": "2026-11-16T00:12:34.937Z",
+    "at": "2026-11-16T00:15:41.030Z",
     "states": {
       "count": "30640ee4d78ae17a",
       "count-12": "85c571f0926ed3d0",
@@ -129,7 +129,8 @@
     },
     "app": {
       "apps/ethlete-studio/src/app/design-parts/comment-pin/comment-pin.component.html": "72f9b86d39d57f90",
-      "apps/ethlete-studio/src/app/design-parts/comment-pin/comment-pin.component.ts": "4647025116efda6e",
+      "apps/ethlete-studio/src/app/design-parts/comment-pin/comment-pin.component.ts": "9096570c4e5487fb",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "c1f03631a202387e",
       "apps/ethlete-studio/src/app/icons/agent-logo.component.ts": "09af5e219dac3f4a",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "7141b2172d570bee",
       "libs/core/src/lib/providers/breakpoint-observer.ts": "cda08dc65e6f915c",
