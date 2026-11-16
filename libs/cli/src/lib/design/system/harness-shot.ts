@@ -231,10 +231,11 @@ const VOID_TAGS = new Set([
 /**
  * The number of overlay panes a design picture draws: each `<et-overlay-container>`, `.et-overlay-runtime-pane`,
  * `<et-menu>` and `<et-select-panel>` mock, as the app renders each of them in a pane of its own. A mock inside a
- * `hidden` element draws none.
+ * `hidden` element draws none, nor does one inside a framed drawing (a part root inside a `slot()` region): it is frame
+ * content, which the app draws inside the frame, not in an overlay root.
  */
 export const drawnPaneCountOf = (markup: string) => {
-  const open: { tag: string; hidden: boolean }[] = [];
+  const open: { tag: string; hidden: boolean; projected: boolean; inRegion: boolean; framed: boolean }[] = [];
   let count = 0;
 
   for (const [whole, closing, tag = '', attributes = ''] of markup.matchAll(/<(\/?)([a-zA-Z][\w-]*)(\s[^>]*)?>/g)) {
@@ -246,17 +247,21 @@ export const drawnPaneCountOf = (markup: string) => {
       continue;
     }
 
-    const hidden =
-      !!open[open.length - 1]?.hidden || /\shidden(?=[\s=/>]|$)/.test(attributes.replace(/"[^"]*"/g, '""'));
+    const parent = open[open.length - 1];
+    const hidden = !!parent?.hidden || /\shidden(?=[\s=/>]|$)/.test(attributes.replace(/"[^"]*"/g, '""'));
+    const inRegion = !!parent?.projected || !!parent?.inRegion;
+    const framed = !!parent?.framed || (inRegion && /\sdata-et-part="/.test(attributes));
 
     if (
       !hidden &&
+      !framed &&
       (['et-overlay-container', 'et-menu', 'et-select-panel'].includes(tag) ||
         /\sclass="(?:[^"]*\s)?et-overlay-runtime-pane[\s"]/.test(attributes))
     )
       count++;
 
-    if (!VOID_TAGS.has(tag.toLowerCase()) && !whole.endsWith('/>')) open.push({ tag, hidden });
+    if (!VOID_TAGS.has(tag.toLowerCase()) && !whole.endsWith('/>'))
+      open.push({ tag, hidden, projected: /\sdata-et-projected="/.test(attributes), inRegion, framed });
   }
 
   return count;

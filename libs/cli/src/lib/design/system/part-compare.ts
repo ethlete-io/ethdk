@@ -130,11 +130,11 @@ type OpeningTag = {
 };
 
 /**
- * Each opening tag of `markup`, `framed` when it lies in a framed drawing: a part root that is a child of a `slot()`
- * region, and everything inside it. `region` is the opening tag of a region the tag is a child of.
+ * Each opening tag of `markup`, `framed` when it lies in a framed drawing: a part root inside a `slot()` region, at any
+ * depth, and everything inside it. `region` is the opening tag of a region the tag is a child of.
  */
 const openingTagsOf = (markup: string) => {
-  const open: { name: string; attributes: string; projected: boolean; framed: boolean }[] = [];
+  const open: { name: string; attributes: string; projected: boolean; inRegion: boolean; framed: boolean }[] = [];
   const tags: OpeningTag[] = [];
 
   for (const found of markup.matchAll(
@@ -153,12 +153,19 @@ const openingTagsOf = (markup: string) => {
 
     const parent = open[open.length - 1];
     const region = parent?.projected ? parent : null;
-    const framed = !!parent?.framed || (!!region && attributeOf(attributes, 'data-et-part') !== undefined);
+    const inRegion = !!region || !!parent?.inRegion;
+    const framed = !!parent?.framed || (inRegion && attributeOf(attributes, 'data-et-part') !== undefined);
 
     tags.push({ whole, name, attributes, index: found.index, framed, region });
 
     if (!VOID_TAGS.has(name) && !selfClosing)
-      open.push({ name, attributes, projected: attributeOf(attributes, 'data-et-projected') !== undefined, framed });
+      open.push({
+        name,
+        attributes,
+        projected: attributeOf(attributes, 'data-et-projected') !== undefined,
+        inRegion,
+        framed,
+      });
   }
 
   return tags;

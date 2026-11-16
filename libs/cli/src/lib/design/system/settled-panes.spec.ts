@@ -134,4 +134,17 @@ describe('drawnPaneCountOf', () => {
     expect(drawnPaneCountOf(`<div hidden><br><input><img src="x"></div>${surface('')}`)).toBe(1);
     expect(drawnPaneCountOf(`<div class="a hidden" data-x="hidden"><et-menu></et-menu></div>`)).toBe(1);
   });
+
+  it('counts no pane of a drawing a slot region frames, at any depth', () => {
+    const tip = '<div class="et-overlay et-overlay-runtime-pane et-tooltip-panel"></div>';
+    const chip = `<div data-et-part="components/zoom-chip"><span>${tip}</span></div>`;
+
+    expect(drawnPaneCountOf(`<div data-et-projected="shot">${chip}</div>`)).toBe(0);
+    expect(
+      drawnPaneCountOf(
+        `<div data-et-projected="shot"><div><div data-et-part="components/tooltip">${tip}</div>${chip}</div></div>`,
+      ),
+    ).toBe(0);
+    expect(drawnPaneCountOf(`<div data-et-projected="shot">${tip}</div>${chip}`)).toBe(2);
+  });
 });

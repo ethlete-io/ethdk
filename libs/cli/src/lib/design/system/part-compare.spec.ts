@@ -169,7 +169,8 @@ describe('part compare', () => {
     const page =
       '<div data-et-part="pages/sketches"><button aria-label="Zoom" data-et-force="hover">Z</button>' +
       `<div data-et-part="elements/variant-cell"><div class="w-4 [&amp;_[data-camera-fit]_button]:font-ui-strong **:data-canvas-zoom:rounded-full [&>.a_b]:p-1" data-et-projected="shot">${chip('hover')}</div></div>` +
-      `<div data-et-projected="shot">${chip('active')}</div></div>`;
+      `<div data-et-projected="shot">${chip('active')}</div>` +
+      `<div data-et-projected="shot"><div data-sk-measured><div>${chip('focus-visible')}</div></div></div></div>`;
 
     expect(forcedElementsOf(page)).toEqual([{ interaction: 'hover', label: 'Zoom', role: 'button', text: 'Z' }]);
     expect(forcesInFramesOf(page)).toBe(true);
