@@ -40,10 +40,49 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 - `size`: `'xs' | 'sm' | 'md' | 'lg' | 'xl'` (default `md`; window controls: `sm | md | lg`).
 - `color` applies one of your app's [registered color themes](/core/theming), or `'surface'` - see below. Theme names are project-specific - the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
 - `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons - the single-icon flavors don't have it).
-- `pressedColor` (surface / icon buttons) swaps the color theme while the button is `pressed` - see below.
+- `pressed` makes surface, icon and window-control buttons toggles; `pressedColor` swaps the color theme while pressed - see [toggle buttons](#toggle-buttons).
 - `stretchContents` (surface buttons, default `false`) lets the label box fill the button beside the icon - see below.
 
 Icon buttons are round by default. Their `filled` variant has an inset edge and uses the active theme color on hover.
+
+### Toggle buttons
+
+Bind `pressed` and a surface, icon or window-control button becomes a toggle - a view switcher, a
+formatting button, the active entry of a nav bar. Style the active state through these inputs, never
+with `!`-utilities or by overriding `--et-*` properties:
+
+- `pressed` sets the state and `aria-pressed` (see [states](#states) for the details).
+- The **variant swaps** while pressed; there is no `pressedVariant` input, the swap is fixed per flavor and
+  shows on the host as `data-pressed-variant`:
+
+  | Resting variant | Surface button pressed | Icon button pressed |
+  | --------------- | ---------------------- | ------------------- |
+  | `filled`        | `outline`              | `transparent`       |
+  | `outline`       | `filled`               | `filled`            |
+  | `tonal`         | `filled`               | `filled`            |
+  | `transparent`   | `tonal`                | `tonal`             |
+
+- `pressedColor` re-themes the button while pressed - see [neutral until pressed](#neutral-until-pressed).
+
+A nav button marks the current route with `routerLinkActive`. The link announces itself with
+`aria-current`, so turn `aria-pressed` off:
+
+```html
+<a
+  #rla="routerLinkActive"
+  [pressed]="rla.isActive"
+  [emitAriaPressed]="false"
+  routerLink="/matches"
+  routerLinkActive
+  ariaCurrentWhenActive="page"
+  et-button
+  variant="transparent"
+  color="surface"
+  pressedColor="inherit"
+>
+  Matches
+</a>
+```
 
 ### The surface color
 

@@ -306,6 +306,11 @@ the SDK ships none. Never hardcode them as an SDK-defined union or reusable API 
 If an app-specific example names one, label it as belonging to that app. Semantic colours
 resolve by theme `type` (e.g. `injectSemanticColorTheme('error')`).
 
+**Style an SDK component's state through its inputs.** A pressed, active, selected or loading
+look comes from the component's state inputs (`pressed`, `pressedColor`, `variant`, `color`),
+never from a `!`-utility or an override of an `--et-*` custom property in an app template. If
+no input fits, ask the doc session for one instead of building the override.
+
 ## Delegating: name the subagent's model
 
 A subagent spawned without a `model` runs on the model leading the session, so an expensive
