@@ -1,3 +1,4 @@
+export * from './menu-config';
 export * from './menu-context-trigger.directive';
 export * from './menu-item.directive';
 export * from './menu-panel.directive';

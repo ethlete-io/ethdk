@@ -193,6 +193,16 @@ while it scrolls instead of the platform's own.
 
 This applies to root menus opening on the vertical axis. Submenus and context menus keep floating-ui's `flip`: they open on the x axis, where the equivalent shrink would make the panel narrower rather than shorter. Setting `fallbackPlacements` yourself also restores `flip`, since the two are alternatives - the [`minAvailableSpace`](/components/overlays#anchored-overlays-and-the-arrow) middleware replaces it rather than running alongside it.
 
+### App-wide offset
+
+`provideMenuConfig({ offset })` replaces the default root menu offset (`4`) for the whole app. An `[offset]` on a trigger still wins, and without the provider nothing changes. The arrow's own offset (`10`) is not affected.
+
+```ts
+bootstrapApplication(App, {
+  providers: [provideMenuConfig({ offset: 2 })],
+});
+```
+
 ### Keyboard
 
 | Key                                        | Action                                                                                                              |

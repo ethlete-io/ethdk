@@ -37,6 +37,7 @@ import { MENU_ERROR_CODES } from '../menu-errors';
 import { sortByDomOrder } from './internals/menu-dom-order';
 import { createMenuHoverIntent } from './internals/menu-hover-intent';
 import { createMenuTypeahead } from './internals/menu-typeahead';
+import { injectMenuConfig } from './menu-config';
 import { MenuContextTriggerDirective } from './menu-context-trigger.directive';
 import { MenuItemDirective } from './menu-item.directive';
 import { MenuPanelDirective } from './menu-panel.directive';
@@ -80,6 +81,7 @@ export class MenuDirective {
 
   public parent = inject(MenuDirective, { optional: true, skipSelf: true });
 
+  private menuConfig = injectMenuConfig();
   public placement = input<Placement | 'auto'>('auto');
   public fallbackPlacements = input<Placement[] | undefined>(undefined);
   public offset = input<OffsetOptions | null | 'auto'>('auto');
@@ -999,6 +1001,6 @@ export class MenuDirective {
       return 10;
     }
 
-    return this.isRoot && !this.anchorPoint() ? 4 : 0;
+    return this.isRoot && !this.anchorPoint() ? (this.menuConfig?.offset ?? 4) : 0;
   }
 }
