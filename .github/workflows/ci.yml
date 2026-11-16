@@ -126,7 +126,7 @@ jobs:
           echo "::notice title=unit-runner::nproc $(nproc), $(free -m | awk '/^Mem:/ {print "mem " $2 " MB, available " $7 " MB"}'), $(free -m | awk '/^Swap:/ {print "swap " $2 " MB"}')"
           nohup vmstat -n 5 > "$RUNNER_TEMP/vmstat.log" 2>&1 &
 
-      - run: set -o pipefail; yarn nx run-many -t test --exclude storybook-e2e --output-style=static -- --logHeapUsage 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
+      - run: set -o pipefail; yarn nx run-many -t test --exclude storybook-e2e --output-style=static --parallel 1 -- --logHeapUsage --maxWorkers "$(nproc)" 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
         env:
           TMPDIR: ${{ runner.temp }}/link-tmp
 
