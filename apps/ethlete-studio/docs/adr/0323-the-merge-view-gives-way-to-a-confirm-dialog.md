@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B540
+built: 3d78e9baa
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, the human during the comment structure round
 ---
