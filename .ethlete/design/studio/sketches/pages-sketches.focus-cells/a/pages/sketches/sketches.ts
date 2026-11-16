@@ -544,7 +544,7 @@ const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: b
           </div>`;
   const all = open ? [...shown, ...same] : shown;
   return html`<div
-    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),var(--sk-frame))_auto] gap-x-6 gap-y-space-3"
+    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))_auto] gap-x-6 gap-y-space-3"
     data-sk-matrix
   >
     ${gutter(part, top)} ${all.map((row, index) => column(part, row, index + 2, top, view)).join('')} ${group}

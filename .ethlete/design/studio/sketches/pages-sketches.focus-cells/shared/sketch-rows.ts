@@ -178,7 +178,10 @@ export const cell = (part: SketchPart, row: Row, state: string, place = '', pend
   });
 
 export const wrapStage = (part: SketchPart, row: Row, pending = false) =>
-  html`<div class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),var(--sk-frame))] gap-x-6 gap-y-space-3" data-sk-stage>
+  html`<div
+    class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 gap-y-space-3"
+    data-sk-stage
+  >
     ${part.states.map((state) => cell(part, row, state, '', pending)).join('')}
   </div>`;
 
@@ -258,7 +261,9 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     world.querySelectorAll<HTMLElement>('[data-sk-head-full]').forEach((head) => (head.hidden = note < MIN_LABEL));
     world.querySelectorAll<HTMLElement>('[data-sk-frame]').forEach((element) => {
       const inner = element.querySelector<HTMLElement>('[data-sk-fit-inner]');
-      if (inner) element.style.height = `${inner.offsetHeight * scale}px`;
+      if (!inner) return;
+      element.style.height = `${inner.offsetHeight * scale}px`;
+      element.style.width = inner.scrollWidth > inner.offsetWidth ? `${inner.scrollWidth * scale}px` : '';
     });
   };
 
