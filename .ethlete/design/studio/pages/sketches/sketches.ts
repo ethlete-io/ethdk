@@ -439,7 +439,7 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
     ${row.key === view.selected ? ' data-selected' : ''}
   >
     <div
-      class="sk-gutter relative z-2 min-w-0 self-stretch bg-et-surface-bg pr-space-3 before:absolute before:inset-y-0 before:right-full before:w-10 before:bg-et-surface-bg before:content-['']"
+      class="relative z-2 min-w-0 self-stretch bg-et-surface-bg pr-space-3 before:absolute before:inset-y-0 before:right-full before:w-10 before:bg-et-surface-bg before:content-['']"
       data-sk-sticky-head
     >
       <span

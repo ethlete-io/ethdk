@@ -146,10 +146,11 @@
     "at": "2026-11-12T10:01:35.873Z"
   },
   "pages/sketches": {
-    "hash": "b0317532a66e09d3",
+    "hash": "b2af743e02a56009",
     "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-16T00:55:20.988Z"
+    "decidedBy": "plan: grill 2026-11-16: B523 (a), Design ändern, kein Drift-Eintrag; ein angehefteter Listenkopf verdeckt Frames (Chip-e2e)",
+    "at": "2026-11-16T12:53:57.873Z",
+    "note": "merged without a pick: allowed by grill 2026-11-16: B523 (a), Design ändern, kein Drift-Eintrag; ein angehefteter Listenkopf verdeckt Frames (Chip-e2e)"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",
