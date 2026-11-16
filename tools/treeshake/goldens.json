@@ -39,9 +39,7 @@
     "query-devtools-lazy": {
       "entry": "import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';\nconsole.log(QueryDevtoolsLazyComponent);",
       "initialChunk": true,
-      "forbidInitial": [
-        "@ethlete/components"
-      ],
+      "forbidInitial": ["@ethlete/components"],
       "gzip": 4053
     },
     "query-devtools-toggle": {
