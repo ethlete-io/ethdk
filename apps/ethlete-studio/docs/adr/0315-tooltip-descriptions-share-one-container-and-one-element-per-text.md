@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B531
+built: 93b4415fa
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, screenshot of 25 tooltip description divs on body
 ---
