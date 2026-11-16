@@ -90,14 +90,14 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/title-bar": "b4b5cc1069227b5e",
-      "components/title-search": "c4722113b8da282a"
+      "components/title-bar": "c0f89afc03836cd8",
+      "components/title-search": "856018fcadf7ca38"
     },
     "actions": ["emit:close", "emit:maximize", "emit:minimize", "opens:command-palette"],
     "at": "2026-11-16T09:42:59.043Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 882630
   },
   "components/comment-draft": {
     "hash": "eed4109f054dbbd1",
@@ -560,6 +560,82 @@
     "pid": 1702847
   },
   "components/update-dialog": {
+    "hash": "a3eb2f570d7872ea",
+    "files": {
+      ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "cc95cf5e7b73338f",
+      ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "9b2589726aff9851",
+      ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
+      ".ethlete/design/sdk/components/button/button.ts": "bdaebbc96838db07",
+      ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
+      ".ethlete/design/studio/assets/icons/caption-close.svg": "e3fa41c27351ba40",
+      ".ethlete/design/studio/assets/icons/caption-maximize.svg": "90dd6b689aebc56c",
+      ".ethlete/design/studio/assets/icons/caption-minimize.svg": "154f6cab253c8114",
+      ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
+      ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
+      ".ethlete/design/studio/assets/icons/chevron-right.svg": "1a04df114a80da2e",
+      ".ethlete/design/studio/assets/icons/close.svg": "7c9d7c7b0369ac38",
+      ".ethlete/design/studio/assets/icons/comment.svg": "fb680460d7117789",
+      ".ethlete/design/studio/assets/icons/error.svg": "2d3285675d3b2d19",
+      ".ethlete/design/studio/assets/icons/flow.svg": "453c012e8a063e82",
+      ".ethlete/design/studio/assets/icons/grid.svg": "0325b982baf41f85",
+      ".ethlete/design/studio/assets/icons/inbox.svg": "e661f5cf4c65c1c9",
+      ".ethlete/design/studio/assets/icons/maximize.svg": "743f8061df8f16f7",
+      ".ethlete/design/studio/assets/icons/minimize.svg": "1bc111272e357d8d",
+      ".ethlete/design/studio/assets/icons/more.svg": "c899b8912231575e",
+      ".ethlete/design/studio/assets/icons/panel.svg": "05c325920c46d969",
+      ".ethlete/design/studio/assets/icons/pencil.svg": "61f6ed00cf70bfc1",
+      ".ethlete/design/studio/assets/icons/reply.svg": "34c9698a4d28d7b0",
+      ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
+      ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
+      ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
+      ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "b3dc703c72c177fc",
+      ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "c5ebe6fac8e161a3",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "ade81bff78b52b4f",
+      ".ethlete/design/studio/components/update-dialog/shared/window.ts": "3f416304eaa1e9fa",
+      ".ethlete/design/studio/components/update-dialog/update-dialog.css": "f6bbb8eb9c0bd8ed",
+      ".ethlete/design/studio/components/update-dialog/update-dialog.ts": "fcc082cce620dab8",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464",
+      "libs/components/design/anchored-dialog.ts": "459be8e004b757d9",
+      "libs/components/design/badge.ts": "ae6d1b71fa14a024",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6",
+      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/design/notification.ts": "6304c4bcd68d8946",
+      "libs/components/design/tooltip.ts": "8376d45e331e66e0",
+      "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "39a20bd59ff9864e",
+      "libs/components/src/lib/button/button.component.css": "1b93c651ccdb363a",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
+      "libs/components/src/lib/button/icon-button.component.css": "ff7eeb0527c6ebd7",
+      "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/icon/headless/circle-check-icon.ts": "a120b0cfbd95a3dc",
+      "libs/components/src/lib/icon/headless/circle-info-icon.ts": "b1958f06984def38",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "ff8f5b368903719a",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
+      "libs/components/src/lib/icon/headless/triangle-exclamation-icon.ts": "2ddf3400138f653a",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/components/src/lib/notification/notification.component.css": "829a7ae0d86c0826",
+      "libs/components/src/lib/overlay/floating-tip-styles.component.css": "68dd131cb9133beb",
+      "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
+      "libs/components/src/lib/overlay/overlay-main-styles.component.css": "a141c3135515466d",
+      "libs/components/src/lib/overlay/strategies/anchored-dialog-styles.component.css": "aa7dd87c860e4e62",
+      "libs/components/src/lib/overlay/strategies/overlay-arrow-styles.component.css": "072cf01f3393af28",
+      "libs/components/src/lib/tooltip/tooltip.component.css": "50e163741bd6a713",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
+    "embedded": {
+      "components/title-bar": "c0f89afc03836cd8",
+      "components/title-search": "856018fcadf7ca38"
+    },
     "actions": [
       "emit:close",
       "emit:later",
@@ -569,7 +645,10 @@
       "emit:update",
       "opens:command-palette"
     ],
-    "at": "2026-11-16T09:43:19.015Z"
+    "at": "2026-11-16T15:52:22.381Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 882630
   },
   "components/zoom-chip": {
     "hash": "110ecb8ab65365cc",
@@ -635,7 +714,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "ef0f343ab9c8ea30",
+      "components/canvas-viewport": "a28e1d400e5d679c",
       "components/zoom-chip": "70a6b306ed3dc343"
     },
     "actions": [
@@ -652,7 +731,7 @@
     "at": "2026-11-16T09:43:02.127Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 882630
   },
   "elements/part-tree": {
     "hash": "5cb438b5755f8332",
@@ -685,13 +764,13 @@
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "embedded": {
-      "components/tree-row": "aaa31b32cfa29f3a"
+      "components/tree-row": "8cb679aede7cf49c"
     },
     "actions": ["emit:activate", "emit:expandedChange"],
     "at": "2026-11-13T13:27:36.528Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 882630
   },
   "elements/shell-main": {
     "hash": "1593bb753f4d524f",
@@ -780,8 +859,8 @@
     },
     "embedded": {
       "components/shell-collapse": "70528973a652debd",
-      "components/title-bar": "b4b5cc1069227b5e",
-      "components/title-search": "c4722113b8da282a"
+      "components/title-bar": "c0f89afc03836cd8",
+      "components/title-search": "856018fcadf7ca38"
     },
     "actions": [
       "closed",
@@ -799,7 +878,7 @@
     "at": "2026-11-16T09:43:42.598Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 882630
   },
   "elements/studio-menu": {
     "actions": ["closed", "open"],
@@ -1056,12 +1135,12 @@
     },
     "embedded": {
       "components/shell-collapse": "70528973a652debd",
-      "components/title-bar": "b4b5cc1069227b5e",
-      "components/title-search": "c4722113b8da282a",
-      "components/tree-row": "aaa31b32cfa29f3a",
+      "components/title-bar": "c0f89afc03836cd8",
+      "components/title-search": "856018fcadf7ca38",
+      "components/tree-row": "8cb679aede7cf49c",
       "components/zoom-chip": "70a6b306ed3dc343",
-      "elements/shell-main": "00b24ccef36848bb",
-      "elements/studio-menu": "7c22466c544cb254"
+      "elements/shell-main": "2f93cb6647854b31",
+      "elements/studio-menu": "35563f039661e685"
     },
     "actions": [
       "emit:close",
@@ -1085,7 +1164,7 @@
     "at": "2026-11-16T09:43:44.518Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 882630
   },
   "pages/inbox": {
     "hash": "183e59fae8634286",
@@ -1226,15 +1305,15 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "ef0f343ab9c8ea30",
-      "components/comment-pin": "3721d1b660a28784",
+      "components/canvas-viewport": "a28e1d400e5d679c",
+      "components/comment-pin": "562eeca254671c3b",
       "components/shell-collapse": "70528973a652debd",
-      "components/title-bar": "b4b5cc1069227b5e",
-      "components/title-search": "c4722113b8da282a",
+      "components/title-bar": "c0f89afc03836cd8",
+      "components/title-search": "856018fcadf7ca38",
       "components/zoom-chip": "70a6b306ed3dc343",
-      "elements/canvas-frames": "d62515c6892edb66",
-      "elements/shell-main": "00b24ccef36848bb",
-      "elements/studio-menu": "7c22466c544cb254"
+      "elements/canvas-frames": "42d277900961a174",
+      "elements/shell-main": "2f93cb6647854b31",
+      "elements/studio-menu": "35563f039661e685"
     },
     "actions": [
       "comment-mode",
@@ -1261,7 +1340,7 @@
     "at": "2026-11-16T09:43:47.569Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 882630
   },
   "pages/inventory": {
     "hash": "8cb0d3bf0e6e5b48",
@@ -1363,12 +1442,12 @@
     },
     "embedded": {
       "components/shell-collapse": "70528973a652debd",
-      "components/title-bar": "b4b5cc1069227b5e",
-      "components/title-search": "c4722113b8da282a",
-      "components/tree-row": "aaa31b32cfa29f3a",
-      "elements/part-tree": "8bed2ef46b7ee315",
-      "elements/shell-main": "00b24ccef36848bb",
-      "elements/studio-menu": "7c22466c544cb254"
+      "components/title-bar": "c0f89afc03836cd8",
+      "components/title-search": "856018fcadf7ca38",
+      "components/tree-row": "8cb679aede7cf49c",
+      "elements/part-tree": "0bcded85ab28e5e8",
+      "elements/shell-main": "2f93cb6647854b31",
+      "elements/studio-menu": "35563f039661e685"
     },
     "actions": [
       "emit:activate",
@@ -1390,7 +1469,7 @@
     "at": "2026-11-16T09:43:43.564Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 882630
   },
   "pages/sketches": {
     "actions": [
@@ -1470,7 +1549,6 @@
       "emit:reload",
       "emit:rowPress",
       "emit:sectionChange",
-      "emit:sendComment",
       "emit:sideWidthChange",
       "open",
       "part",

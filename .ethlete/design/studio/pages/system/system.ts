@@ -1,9 +1,7 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, slot, withAction } from '@design-system';
-import { commentDraft } from '@system/components/comment-draft';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
-import { commentTarget } from '@system/components/comment-target';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
@@ -33,7 +31,16 @@ import {
   type BuildReady,
 } from './shared/build-ready';
 import { buildReadyView } from './build-ready-footer';
-import { commentList, draftPin, partPins } from './shared/comment-flow';
+import {
+  commentButton,
+  commentDraftAt,
+  commentLayer,
+  commentList,
+  commentPins,
+  draftPin,
+  type PlacedThread,
+  withCommentList,
+} from '@system/components/comment-flow';
 
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 
@@ -74,11 +81,32 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
   };
 };
 
-const commentButton = async (on: boolean, acting: boolean) => {
-  const drawn = await button.render({ label: 'Kommentar', variant: 'outline', size: 'sm', pressed: on });
-  const target = on ? 'points-closed' : 'comment-mode';
-  return { body: control(acting ? withAction(drawn.body, target) : drawn.body, 'comment'), styles: drawn.styles };
-};
+const PART_THREADS: PlacedThread[] = [
+  {
+    at: 'left-[22%] top-[30%]',
+    author: 'human',
+    initials: 'H',
+    when: 'vor 1 Std',
+    part: 'button',
+    state: 'tonal · rest',
+    text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    replies: 2,
+  },
+  {
+    at: 'left-[58%] top-[52%]',
+    author: 'Claude',
+    initials: 'C',
+    agent: 'claude',
+    when: 'vor 3 Min',
+    part: 'button',
+    state: 'filled · hover',
+    text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+    replies: 3,
+    unread: true,
+  },
+];
+
+const DRAFT_AT = 'left-[38%] top-[42%]';
 
 type SendPhase = 'busy' | 'error' | 'rejected';
 
@@ -420,22 +448,23 @@ export default definePart<{
     const shot = fit
       ? html`<div class="w-md h-45" ${slot('shot')}></div>`
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
-    const writing = draft === undefined ? undefined : await commentDraft({ text: draft, phase: send, reason });
-    const target = control(commentTarget({ frame: 'button', action: 'comment-draft' }), 'comment-target');
-    const pins = comments ? partPins(writing ? -1 : 0) + (writing ? draftPin : '') : '';
-    const at = comments ? 'left-[calc(38%+var(--space-6))] top-[42%]' : 'left-[38%] top-[42%]';
+    const at = comments ? 'left-[calc(38%+var(--space-6))] top-[42%]' : DRAFT_AT;
+    const writing = draft === undefined ? undefined : await commentDraftAt(at, { text: draft, phase: send, reason });
+    const target = commentLayer('button', 'comment-draft');
+    const pins = comments ? commentPins(PART_THREADS, writing ? -1 : 0) + (writing ? draftPin(DRAFT_AT) : '') : '';
     const body =
       commentMode || comments
-        ? html`<div class="relative">
-            ${shot}${pins}${commentMode ? target : ''}${writing ? html`<div class="absolute ${at}">${writing.body}</div>` : ''}
-          </div>`
+        ? html`<div class="relative">${shot}${pins}${commentMode ? target : ''}${writing?.body ?? ''}</div>`
         : shot;
     const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
     const acting = !fit && !clear;
     const exceptionCount = clear ? 0 : buttonExceptions.length;
     const toggle = await chip(points, !closed, chipFocus, acting && !commentMode, exceptionCount);
-    const comment = await commentButton(commentMode, acting);
+    const comment = await commentButton({
+      on: commentMode,
+      ...(acting ? { action: commentMode ? 'points-closed' : 'comment-mode' } : {}),
+    });
     const status: BuildReady =
       build === 'checking'
         ? { state: 'checking', rules: slowRules }
@@ -460,18 +489,13 @@ export default definePart<{
           exceptionCount > 0,
           blockersOpen,
         );
-    const list = comments ? commentList(writing ? -1 : 0) : undefined;
+    const list = comments ? commentList(PART_THREADS, writing ? -1 : 0) : undefined;
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
       studio: menu.body,
       section: 'System',
       product: 'studio',
-      side: list
-        ? html`${tree.body}
-            <div class="mx-space-2 mt-space-3 border-t border-et-surface-border pt-space-2" data-comment-list>
-              ${list.body}
-            </div>`
-        : tree.body,
+      side: list ? withCommentList(tree.body, list.body) : tree.body,
       content: html`${frames}
         <div class="absolute top-space-3 right-space-3 flex gap-space-2">
           ${comment.body}${toggle.body}${dialog?.body ?? ''}
