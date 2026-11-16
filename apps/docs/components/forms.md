@@ -234,7 +234,10 @@ Every value control distinguishes **read-only** from **disabled**: a read-only
 control (from a `readonly(...)` schema) keeps its normal box and stays focusable
 but drops every interactive affordance - no hover change, full-contrast value - so
 it reads as view-only content; **disabled** stays dimmed. A read-only text field
-also draws its frame dashed, and its focus as a 2px dashed frame. The choice
+draws a quiet solid frame in the surface border colour over a faint tinted fill,
+and takes the same 2px focus frame as an editable field, so keyboard focus stays
+visible while the value is selected or copied. Set
+`--et-form-field-control-border-color-readonly` to change its frame colour. The choice
 controls use `et-choice-field` instead of `et-form-field` - see
 [Choice & rating](/components/choice-inputs).
 
