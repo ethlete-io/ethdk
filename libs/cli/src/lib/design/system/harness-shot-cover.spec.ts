@@ -30,6 +30,16 @@ const PAGE = `<!doctype html>
   addEventListener('scroll', later);
 </script>`;
 
+const HOVER_PAGE = `<!doctype html>
+<style>
+  body { margin: 0; }
+  [data-design-harness-host] { display: block; }
+  .part { position: relative; width: 300px; height: 1000px; background: rgb(255 255 255); }
+  button { position: absolute; top: 950px; left: 0; width: 300px; height: 50px; border: 0; background: rgb(0 0 0); }
+  button:hover { background: rgb(0 200 0); }
+</style>
+<div data-design-harness-host><div class="part"><button aria-label="low"></button></div></div>`;
+
 const redRowsOf = (png: Buffer) => {
   const image = decodePng(png);
   const rows: number[] = [];
@@ -63,7 +73,9 @@ describe('harnessShotOf on a part taller than the viewport', () => {
       return undefined;
     });
 
-    server = createServer((_, response) => response.writeHead(200, { 'content-type': 'text/html' }).end(PAGE));
+    server = createServer((request, response) =>
+      response.writeHead(200, { 'content-type': 'text/html' }).end(request.url === '/hover' ? HOVER_PAGE : PAGE),
+    );
     await new Promise<void>((done) => server?.listen(0, '127.0.0.1', done));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -79,6 +91,16 @@ describe('harnessShotOf on a part taller than the viewport', () => {
     const rows = redRowsOf(await harnessShotOf({ browser, url: `${base}/` }));
 
     expect([rows[0], rows.at(-1)]).toEqual([850, 949]);
+  });
+
+  it('keeps a forced hover on an element below the first viewport', async (context) => {
+    if (!browser) return context.skip();
+
+    const forced = [{ interaction: 'hover', label: 'low', role: 'button', text: '' }];
+    const image = decodePng(await harnessShotOf({ browser, url: `${base}/hover`, forced }));
+    const at = (975 * image.width + 150) * 4;
+
+    expect([...image.data.subarray(at, at + 3)]).toEqual([0, 200, 0]);
   });
 
   it('grows the viewport only to cover the box', () => {

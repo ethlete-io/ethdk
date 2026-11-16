@@ -514,7 +514,7 @@ const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHar
  * Without `size`, a `width` sets the viewport and the host to that width, as a design frame draws a part with `widths`.
  */
 export const harnessShotOf = (options: HarnessDrive) =>
-  drivenHarnessOf(options, async ({ page, host, room, timeout, step, sdkErrors }) => {
+  drivenHarnessOf(options, async ({ page, host, room, timeout, step, sdkErrors, forcedTargets }) => {
     const { url } = options;
 
     if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0) {
@@ -549,6 +549,10 @@ export const harnessShotOf = (options: HarnessDrive) =>
 
         if (!(await settledPanesOf({ page, count: 0, timeout })).settled)
           throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
+
+        // The resize and scroll move the page under a resting pointer, so a hover forced before it lands elsewhere.
+        for (const { interaction, element } of forcedTargets)
+          if (interaction === 'hover') await element.hover({ timeout });
       });
       clip = await boxNow();
     }
