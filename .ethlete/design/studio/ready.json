@@ -466,10 +466,6 @@
     "cmd": "check",
     "pid": 1974334
   },
-  "components/zoom-chip": {
-    "actions": ["emit:fit", "emit:zoomIn", "emit:zoomOut", "emit:zoomReset"],
-    "at": "2026-11-12T01:31:43.926Z"
-  },
   "elements/canvas-frames": {
     "hash": "1674772fb3429046",
     "files": {

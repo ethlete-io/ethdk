@@ -1,5 +1,6 @@
 import { definePart, drawing, forceInteraction, html, interactionRows, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
+import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
 
 type ZoomControl = 'out' | 'reset' | 'in' | 'fit';
 
@@ -14,6 +15,19 @@ const ARIA_LABEL: Record<ZoomControl, string> = {
   fit: 'Einpassen',
 };
 
+const TITLE: Partial<Record<ZoomControl, string>> = {
+  reset: 'Zoom to 100 % (Shift+0)',
+  fit: 'Zoom to fit (Shift+1)',
+};
+
+const tooltipOpen = ({ target, interaction }: Props) =>
+  interaction === 'focus-visible' && target !== undefined && TITLE[target] !== undefined;
+
+const tooltipPane = (id: ZoomControl, text: string) =>
+  id === 'fit'
+    ? `<span class="absolute right-[calc(50%-30px)] bottom-full z-10 mb-2">${tooltip({ text, placement: 'top-end' })}</span>`
+    : `<span class="absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2">${tooltip({ text, placement: 'top' })}</span>`;
+
 const OUTPUT: Record<ZoomControl, string> = { out: 'zoomOut', reset: 'zoomReset', in: 'zoomIn', fit: 'fit' };
 
 const chipButton = (id: ZoomControl, label: string, { target, interaction }: Props) => {
@@ -25,8 +39,11 @@ const chipButton = (id: ZoomControl, label: string, { target, interaction }: Pro
     `emit:${OUTPUT[id]}`,
   );
 
+  const forced = interaction && target === id ? forceInteraction(markup, interaction) : markup;
+  const text = TITLE[id];
+
   return html`<span class="contents" data-camera-${id}
-    >${interaction && target === id ? forceInteraction(markup, interaction) : markup}</span
+    >${text && interaction === 'focus-visible' && target === id ? `<span class="relative inline-flex">${forced}${tooltipPane(id, text)}</span>` : forced}</span
   >`;
 };
 
@@ -60,19 +77,21 @@ export default definePart({
   controls: { out: BUTTON, reset: BUTTON, in: BUTTON, fit: BUTTON },
   render: (props: Props) =>
     drawing({
-      body: html`<div
-        class="inline-flex rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16)) bg-et-surface-bg ${
-          props.class ?? ''
-        }"
-        data-et-auto-surface
-        data-canvas-zoom
-      >
-        ${chipButton('out', '−', props)}${chipButton('reset', `${props.percent} %`, props)}${chipButton(
-          'in',
-          '+',
-          props,
-        )}${chipButton('fit', 'Fit', props)}
+      body: html`<div class="${tooltipOpen(props) ? 'pt-13 pr-1 pl-8' : ''}">
+        <div
+          class="inline-flex rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16)) bg-et-surface-bg ${
+            props.class ?? ''
+          }"
+          data-et-auto-surface
+          data-canvas-zoom
+        >
+          ${chipButton('out', '−', props)}${chipButton('reset', `${props.percent} %`, props)}${chipButton(
+            'in',
+            '+',
+            props,
+          )}${chipButton('fit', 'Fit', props)}
+        </div>
       </div>`,
-      styles: buttonStyles,
+      styles: [buttonStyles, tooltipStyles].join('\n'),
     }),
 });

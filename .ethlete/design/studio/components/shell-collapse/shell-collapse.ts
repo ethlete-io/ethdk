@@ -8,6 +8,7 @@ import {
   withAction,
 } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
+import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
 import { icon } from '@system/foundations/icons';
 
 type CollapseInteraction = Exclude<Interaction, 'disabled'>;
@@ -31,7 +32,11 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
     'emit:collapse',
   );
 
-  return interaction ? forceInteraction(markup, interaction) : markup;
+  const forced = interaction ? forceInteraction(markup, interaction) : markup;
+
+  return interaction === 'focus-visible'
+    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2">${tooltip({ text: 'Hide panel', placement: 'top' })}</span></span>`
+    : forced;
 };
 
 export default definePart({
@@ -43,9 +48,13 @@ export default definePart({
   ),
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-collapse/shell-collapse.component.ts',
   controls: { collapse: { kind: 'button', input: ['pointer', 'keyboard'] } },
-  styles: buttonStyles,
+  styles: [buttonStyles, tooltipStyles].join('\n'),
   render: (props: Props) =>
     drawing({
-      body: html`<div class="inline-flex p-space-2 text-et-surface font-ui">${shellCollapse(props)}</div>`,
+      body: html`<div
+        class="inline-flex p-space-2 ${props.interaction === 'focus-visible' ? 'px-8 pt-12' : ''} text-et-surface font-ui"
+      >
+        ${shellCollapse(props)}
+      </div>`,
     }),
 });
