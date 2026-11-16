@@ -34,11 +34,13 @@ const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: stri
           <div [style.width.px]="row.width" [style.height.px]="height" class="bg-et-surface-bg"></div>
         } @else {
           @let force = chipForceOf(state);
-          <ethlete-zoom-chip
-            [percent]="100"
-            [target]="force?.target ?? null"
-            [interaction]="force?.interaction ?? null"
-          />
+          <div [class]="tooltipRoomOf(force)">
+            <ethlete-zoom-chip
+              [percent]="100"
+              [target]="force?.target ?? null"
+              [interaction]="force?.interaction ?? null"
+            />
+          </div>
         }
       </div>
     </ng-template>
@@ -65,6 +67,12 @@ export class DesignHarnessSketchShotsComponent {
     return target && interaction
       ? { target: target as ZoomControl, interaction: interaction as ZoomInteraction }
       : null;
+  }
+
+  protected tooltipRoomOf(force: { target: ZoomControl; interaction: ZoomInteraction } | null) {
+    if (force?.interaction !== 'focus-visible') return '';
+
+    return force.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pl-[22.5px]';
   }
 
   protected lookOf(row: SketchRow, state: string) {

@@ -57,3 +57,9 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - shell-main product-hover compare (machinery, 16.11.): Cause (bite): a fitted app shot hovered the low rail button, then the cover step resized the viewport and scrolled to 0, so the pointer rested elsewhere; harnessShotOf re-hovers forced hover targets after the cover step.
 - query-devtools spec timeout on CI (16.11.): run 43789471942, query-devtools.component.spec.ts "should write the view state once a resize ends" timed out at 17.9 s, passed the run before. Joins B505 (CI runner load on unit specs, one cause, not per spec).
 - Studio e2e first frame (B516, 16.11.): CI 43701566927 and 43791562539 [Chip] "no text leaves its box" "no frame after 10 s". Cause (bite): `waitForFirstFrame` in case setup used Playwright's 10 s default, but the Sketches/Chip/Large frames come from the sketches listing; `--hold-listings 14000` failed every case on those pages (2 cases, 3 pages each), slow CI listings did the same. Setup now waits `COLD_START_MS` like `warmUp`; rerun 6/6 green with the hold.
+
+- B523 (5) part 2 (2026-11-16): the sketch stand-in pads focus-visible chips to the design frame (`pt-13 pl-[22.5px]` /
+  `pt-13 pr-1`, height 82). pages/sketches narrow states 137k -> 28.5k px. Rest: the design frame draws the chip's
+  tooltip inside the slot; the app chip opens its tooltip only on real focus (compare focuses one element per state), so
+  the stand-in shows none. narrow-wide-state 136k: the design wraps reset-focus-visible (now with its tooltip) plus a
+  second tooltip, and draws reset-focus-tooltip in Stand and Entwurf 1 where the app shows "neu"/"fehlt" cells.

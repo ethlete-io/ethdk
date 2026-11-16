@@ -63,9 +63,16 @@ const SOL = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' } as const
 
 const shotsOf = (
   changed: string[],
-  { height = () => 32, states = STATES }: { height?: (changed: boolean) => number; states?: string[] } = {},
+  {
+    height = () => 32,
+    states = STATES,
+  }: { height?: (changed: boolean, state: string) => number; states?: string[] } = {},
 ): SketchShot[] =>
-  states.map((state) => ({ state, changed: changed.includes(state), height: height(changed.includes(state)) }));
+  states.map((state) => ({
+    state,
+    changed: changed.includes(state),
+    height: height(changed.includes(state), state),
+  }));
 
 export const SKETCH_ROWS: SketchRow[] = [
   { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: 1440, shots: shotsOf([]) },
@@ -168,7 +175,12 @@ const CHIP_STATES = [
 
 const CHIP_HEIGHT = 30;
 
-const chipShotsOf = (changed: string[]) => shotsOf(changed, { height: () => CHIP_HEIGHT, states: CHIP_STATES });
+const CHIP_TOOLTIP_HEIGHT = 82;
+
+const chipHeightOf = (state: string) => (state.endsWith('-focus-visible') ? CHIP_TOOLTIP_HEIGHT : CHIP_HEIGHT);
+
+const chipShotsOf = (changed: string[]) =>
+  shotsOf(changed, { height: (_, state) => chipHeightOf(state), states: CHIP_STATES });
 
 export const SKETCH_WITHDRAWN = {
   key: 'b',
