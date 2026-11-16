@@ -101,13 +101,14 @@ export const applyInitialFocus = (
   paneElement: HTMLElement,
   autoFocus: OverlayRuntimeAutoFocusTarget | string | false,
   document: Document,
+  containerElement: HTMLElement = paneElement,
 ) => {
   if (autoFocus === false) {
     return;
   }
 
   if (autoFocus === 'container') {
-    focusElement(paneElement);
+    focusElement(containerElement);
 
     return;
   }

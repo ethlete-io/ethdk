@@ -167,7 +167,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           return;
         }
 
-        applyInitialFocus(paneElement, autoFocus, targetDocument);
+        applyInitialFocus(paneElement, autoFocus, targetDocument, hostElement);
       };
       let currentHasBackdrop = config.hasBackdrop !== false;
       let currentPositionStrategy = config.positionStrategy;
