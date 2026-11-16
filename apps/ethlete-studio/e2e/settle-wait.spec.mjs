@@ -37,3 +37,32 @@ test('a layout that still moves at the end does not throw', async () => {
     waitedFor: '10 s',
   });
 });
+
+test('a layout already still settles after three waits, each read seeing the same layout', async () => {
+  let waits = 0;
+  let reads = 0;
+
+  await settleLayout({
+    read: async () => (reads++, { pending: [], layout: 'a' }),
+    wait: async () => waits++,
+    polls: 40,
+    waitedFor: '10 s',
+  });
+
+  assert.deepEqual({ waits, reads }, { waits: 3, reads: 4 });
+});
+
+test('a layout that moves once holds still for three more waits before it settles', async () => {
+  const layouts = ['a', 'b', 'b', 'b', 'b'];
+  let waits = 0;
+  let at = 0;
+
+  await settleLayout({
+    read: async () => ({ pending: [], layout: layouts[Math.min(at++, layouts.length - 1)] }),
+    wait: async () => waits++,
+    polls: 40,
+    waitedFor: '10 s',
+  });
+
+  assert.equal(waits, 4);
+});

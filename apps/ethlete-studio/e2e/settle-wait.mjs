@@ -1,7 +1,7 @@
 export const settleLayout = async ({ read, wait, polls, quiet = 3, waitedFor }) => {
-  let last = null;
+  let now = await read();
+  let last = now.pending.length ? null : now.layout;
   let same = 0;
-  let now = { pending: [], layout: '' };
 
   for (let poll = 0; poll < polls && same < quiet; poll++) {
     await wait();
