@@ -168,7 +168,8 @@ describe('agent-sessions', () => {
   it.skipIf(!hasTmux)(
     'wakes the tmux session of the recipient for a message sent --to it',
     async () => {
-      const session = `mailbox-spec-${process.pid}`;
+      const agent = `mailbox-spec-${process.pid}`;
+      const session = `${agent}@${basename(dir)}`;
       const log = join(dir, 'pane.log');
 
       spawnSync('tmux', ['new-session', '-d', '-s', session, `cat > ${log}`]);
@@ -180,17 +181,17 @@ describe('agent-sessions', () => {
 
       try {
         await new Promise((resolve) => setTimeout(resolve, 1500));
-        run(['send', 'codex', '--to', session], 'line one\nline two\n');
-        run(['send', 'gemini', '--to', session, 'hello']);
+        run(['send', 'codex', '--to', agent], 'line one\nline two\n');
+        run(['send', 'gemini', '--to', agent, 'hello']);
         await new Promise((resolve) => setTimeout(resolve, 4500));
 
         expect(readFileSync(log, 'utf8')).toBe(
           'Mailbox message from codex: line one line two\nMailbox message from gemini: hello\n',
         );
-        expect(run(['inbox', session]).stdout).toBe('No new messages.\n');
+        expect(run(['inbox', agent]).stdout).toBe('No new messages.\n');
       } finally {
         dispatch.kill();
-        spawnSync('tmux', ['kill-session', '-t', session]);
+        spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
       }
     },
     10000,
@@ -199,7 +200,8 @@ describe('agent-sessions', () => {
   it.skipIf(!hasTmux)(
     'keeps the messages unread while a restart of the session is pending',
     async () => {
-      const session = `mailbox-spec-restart-${process.pid}`;
+      const agent = `mailbox-spec-restart-${process.pid}`;
+      const session = `${agent}@${basename(dir)}`;
       const log = join(dir, 'pane.log');
       const lock = join(dir, `restart.lock.${session}`);
 
@@ -213,7 +215,7 @@ describe('agent-sessions', () => {
 
       try {
         await new Promise((resolve) => setTimeout(resolve, 1500));
-        run(['send', 'codex', '--to', session, 'hello']);
+        run(['send', 'codex', '--to', agent, 'hello']);
         await new Promise((resolve) => setTimeout(resolve, 4500));
 
         expect(readFileSync(log, 'utf8')).toBe('');
@@ -225,7 +227,7 @@ describe('agent-sessions', () => {
           .toBe('Mailbox message from codex: hello\n');
       } finally {
         dispatch.kill();
-        spawnSync('tmux', ['kill-session', '-t', session]);
+        spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
       }
     },
     20_000,
@@ -234,7 +236,8 @@ describe('agent-sessions', () => {
   it.skipIf(!hasTmux)(
     'does not wake a session whose inbox already holds the message',
     async () => {
-      const session = `mailbox-spec-read-${process.pid}`;
+      const agent = `mailbox-spec-read-${process.pid}`;
+      const session = `${agent}@${basename(dir)}`;
       const log = join(dir, 'pane.log');
 
       spawnSync('tmux', ['new-session', '-d', '-s', session, `cat > ${log}`]);
@@ -246,14 +249,91 @@ describe('agent-sessions', () => {
 
       try {
         await new Promise((resolve) => setTimeout(resolve, 1500));
-        run(['send', 'codex', '--to', session, 'hello']);
-        expect(run(['inbox', session]).stdout).toContain('hello');
+        run(['send', 'codex', '--to', agent, 'hello']);
+        expect(run(['inbox', agent]).stdout).toContain('hello');
         await new Promise((resolve) => setTimeout(resolve, 4500));
 
         expect(readFileSync(log, 'utf8')).toBe('');
       } finally {
         dispatch.kill();
-        spawnSync('tmux', ['kill-session', '-t', session]);
+        spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
+      }
+    },
+    10000,
+  );
+
+  const seedHistory = () =>
+    writeFileSync(
+      join(dir, 'mailbox.jsonl'),
+      [
+        { sender: 'claude2', to: 'claude2-2', message: 'old one' },
+        { sender: 'claude2-2', to: 'claude2', message: 'old two' },
+        { sender: 'claude2', message: 'old broadcast' },
+      ]
+        .map((entry) => JSON.stringify({ timestamp: new Date().toISOString(), ...entry }))
+        .join('\n') + '\n',
+    );
+
+  it.skipIf(!hasTmux)(
+    'refuses send --to a session of another checkout and types nothing into it',
+    async () => {
+      const foreign = `fifa-${process.pid}`;
+      const otherCheckout = join(dir, 'fifagg');
+      const log = join(dir, 'pane.log');
+      mkdirSync(otherCheckout);
+      spawnSync('git', ['init', '-q'], { cwd: otherCheckout });
+      writeFileSync(log, '');
+      seedHistory();
+
+      spawnSync('tmux', ['new-session', '-d', '-s', foreign, '-c', otherCheckout, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const sent = run(['send', 'claude2', '--to', foreign, 'hello']);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(sent.status).not.toBe(0);
+        expect(sent.stderr).toContain(foreign);
+        expect(sent.stderr).toContain('fifagg');
+        expect(run(['read']).stdout).not.toContain('hello');
+        expect(readFileSync(log, 'utf8')).toBe('');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${foreign}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'wakes an agent with only the messages addressed to it',
+    async () => {
+      const agent = `mailbox-addressed-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      seedHistory();
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        expect(run(['send', 'codex', '--to', agent, 'hello']).status).toBe(0);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('Mailbox message from codex: hello\n');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
     },
     10000,
@@ -340,7 +420,7 @@ describe('agent-sessions', () => {
   });
 
   it.skipIf(!hasTmux)(
-    'wakes the repo-scoped session before a plain one',
+    'wakes the repo-scoped session of the recipient',
     async () => {
       const agent = `mailbox-scoped-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;

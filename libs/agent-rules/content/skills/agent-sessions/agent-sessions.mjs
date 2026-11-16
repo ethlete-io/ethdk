@@ -93,7 +93,7 @@ Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>
                                                        refuses while a ❓ question of a claude session has no later human message
                                                        and the resumed handoff does not name it under "Open for the human")
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
-Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
+Dispatch: node ${script} dispatch                      (wake the session <agent>@<repo> for each message sent --to <agent>)
 
 Protocol: append one JSON object per line; never rewrite or truncate.
 Fields: timestamp (UTC), sender, message. A claim also has paths and expires.
@@ -127,6 +127,22 @@ const agentCommandOf = (session) =>
     .replace(/^"(.*)"$/, '$1');
 const roleOf = (session) => tmux('show-options', '-v', '-t', `=${session}:`, ROLE_OPTION).stdout.trim() || null;
 const arePaired = (a, b) => (roleOf(a) === 'builder') !== (roleOf(b) === 'builder');
+const localSessionFor = (agent) => (sessionExists(sessionFor(agent)) ? sessionFor(agent) : null);
+const checkoutOfSession = (session) => {
+  const path = tmux('display-message', '-p', '-t', `=${session}:`, '#{session_path}').stdout.trim();
+  if (!path) return null;
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: path, encoding: 'utf8' });
+  return basename(top.status === 0 ? top.stdout.trim() : path);
+};
+const foreignCheckoutsOf = (agent) => [
+  ...new Set(
+    tmux('list-sessions', '-F', '#{session_name}')
+      .stdout.split('\n')
+      .filter((name) => name === agent || name.startsWith(`${agent}@`))
+      .map((name) => (name === agent ? checkoutOfSession(name) : name.slice(agent.length + 1)))
+      .filter(Boolean),
+  ),
+];
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
 const hasTerminal = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 const runsInSession = (agentArgs) => !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
@@ -530,6 +546,12 @@ if (command === 'send' && sender) {
   if (!message) {
     process.stderr.write('No message given.\n');
     process.exitCode = 1;
+  } else if (recipient && !localSessionFor(recipient)) {
+    const checkouts = foreignCheckoutsOf(recipient);
+    process.stderr.write(
+      `Refused: ${recipient} is not a session of ${repoSlug}${checkouts.length ? `; it belongs to ${checkouts.join(', ')}` : ''}. Nothing was sent. Pass the name of a session ${sessionFor('<agent>')} of this checkout.\n`,
+    );
+    process.exitCode = 1;
   } else {
     append({ sender, message, ...(recipient ? { to: recipient } : {}) });
     process.stdout.write(`Sent as ${sender}.\n`);
@@ -665,10 +687,10 @@ if (command === 'send' && sender) {
     }
   }
 } else if (command === 'restart' && sender && words.length) {
-  const session = [sessionFor(sender), sender].find(sessionExists);
   const own = process.env.TMUX_PANE
     ? tmux('display-message', '-p', '-t', process.env.TMUX_PANE, '#{session_name}').stdout.trim()
     : null;
+  const session = localSessionFor(sender) ?? (own === sender ? own : undefined);
   const dropped = session && !now ? droppedQuestions(session, own, words.join(' ')) : [];
   const pending = session ? pendingRestartOf(session) : null;
   if (!session) {
@@ -819,10 +841,14 @@ if (command === 'send' && sender) {
   let seen = entries().length;
   const due = {};
   const waiting = new Set();
+  const addressedTo = (agent) => {
+    const { count, unread } = unreadFor(agent);
+    return { count, unread: unread.filter((entry) => entry.to === agent) };
+  };
   const wake = (agent) => {
-    if (!unreadFor(agent).unread.length) return;
-    const session = [sessionFor(agent), agent].find(sessionExists);
-    if (!session) return process.stderr.write(`No tmux session for ${agent}.\n`);
+    if (!addressedTo(agent).unread.length) return;
+    const session = localSessionFor(agent);
+    if (!session) return process.stderr.write(`No tmux session ${sessionFor(agent)} in this checkout.\n`);
     if (pendingRestartOf(session)) {
       if (!waiting.has(agent)) process.stdout.write(`Waiting for the restart of ${session}.\n`);
       waiting.add(agent);
@@ -837,7 +863,7 @@ if (command === 'send' && sender) {
     }
     waiting.delete(agent);
     if (!leavePanel(session)) return process.stderr.write(`The focus of ${session} stays in the agent panel.\n`);
-    const { count, unread } = unreadFor(agent);
+    const { count, unread } = addressedTo(agent);
     unread.forEach((entry) => {
       spawnSync('tmux', [
         'send-keys',
