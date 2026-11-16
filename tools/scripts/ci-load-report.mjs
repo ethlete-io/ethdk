@@ -30,7 +30,7 @@ export const heapLinesOf = (text) =>
 const peakOf = (samples, column) => Math.max(...samples.map((sample) => sample[column] ?? 0));
 
 const minuteRowOf = (samples, index) =>
-  `min ${index + 1}: r ${peakOf(samples, 'r')}, cpu ${peakOf(samples, 'us') + peakOf(samples, 'sy')}%, st ${peakOf(samples, 'st')}%, wa ${peakOf(samples, 'wa')}%, free ${Math.round(Math.min(...samples.map((sample) => sample.free + sample.cache)) / 1024)} MB, si/so ${peakOf(samples, 'si')}/${peakOf(samples, 'so')}`;
+  `min ${index + 1}: r ${peakOf(samples, 'r')}, cpu ${Math.max(...samples.map((sample) => sample.us + sample.sy))}%, st ${peakOf(samples, 'st')}%, wa ${peakOf(samples, 'wa')}%, free ${Math.round(Math.min(...samples.map((sample) => sample.free + sample.cache)) / 1024)} MB, si/so ${peakOf(samples, 'si')}/${peakOf(samples, 'so')}`;
 
 /** The load report: one peak line and one row per minute (each the peak of its samples), and the top heap files. */
 export const loadReportOf = ({ vmstat, unitLog, cores }) => {
