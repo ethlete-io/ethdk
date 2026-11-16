@@ -12,7 +12,14 @@ import { readyMarkOf, writePartRecord } from './part-ready';
 import { doneParts, markImplemented } from './part-task';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashesHold, partHashHolds, partHashOf } from './sketch/baseline';
-import { staleLineOf, stalePartsOf, UNLISTED_FILES, upgradeLegacyMarksOf } from './stale-parts';
+import {
+  staleLineOf,
+  stalePartsOf,
+  UNLISTED_FILES,
+  unrecordedLineOf,
+  unrecordedPartsOf,
+  upgradeLegacyMarksOf,
+} from './stale-parts';
 import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
@@ -200,6 +207,35 @@ describe('transitive part hash', () => {
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
       { part: 'elements/icon', design: [UNLISTED_FILES], app: [], port: [] },
     ]);
+  });
+
+  it('counts an implemented record without a file list as unrecorded, not as stale', () => {
+    const { target, dir } = checkout();
+    const at = '2026-10-01T00:00:00.000Z';
+
+    writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
+    writeFileSync(
+      join(dir, 'implemented.json'),
+      JSON.stringify({
+        [CHIP]: {
+          hash: 'old',
+          at,
+          states: {},
+          app: appFilesOf({ root: target, component: 'apps/a/chip/chip.component.ts' }),
+        },
+      }),
+    );
+    appendFileSync(join(target, 'apps/a/chip/chip.component.html'), '<b></b>\n');
+
+    expect(unrecordedPartsOf({ product: productOf(target) })).toEqual([CHIP]);
+    expect(stalePartsOf({ product: productOf(target) })).toEqual([]);
+    expect(unrecordedLineOf({ product: 'app-a', part: CHIP, invocation: 'yarn et:design' })).toBe(
+      `UNRECORDED app-a ${CHIP}: implemented before file lists - run yarn et:design task ${CHIP} --product app-a --verify to record it`,
+    );
+
+    markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
+
+    expect(unrecordedPartsOf({ product: productOf(target) })).toEqual([]);
   });
 
   it('lists a legacy record stale when a file it reaches outside its folder was committed after the record', () => {

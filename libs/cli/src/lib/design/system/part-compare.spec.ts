@@ -752,44 +752,46 @@ describe('harnessShotOf', () => {
         `<body style="margin:0;font:${size}px/${size}px monospace"><div data-design-harness-host style="display:flow-root;width:fit-content"><span style="display:inline-block;width:1em;height:1em;background:#0000ff"></span></div></body>`;
 
       response.end(
-        request.url?.includes('components%2Fambient')
-          ? em(20)
-          : request.url?.includes('components%2Fnative')
-            ? em(5)
-            : request.url?.includes('components%2Finputs')
-              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i style="display:block;height:100%"></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
-              : request.url?.includes('components%2Ferroring')
-                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div><script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script></body>'
-                : request.url?.includes('components%2Fclear')
-                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><b style="display:block;height:100%"></b></div></body>'
-                  : request.url?.includes('components%2Fupward')
-                    ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
-                    : request.url?.includes('components%2Ffraction')
-                      ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
-                      : request.url?.includes('components%2Fbadge')
-                        ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
-                        : request.url?.includes('components%2Finpane')
-                          ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}.et-overlay-runtime-root{position:fixed;top:0;left:0}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div><div class="et-overlay-runtime-root"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Why</button></div></body>'
-                          : request.url?.includes('components%2Fpicker')
-                            ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-                            : request.url?.includes('components%2Fpaned')
-                              ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
-                              : request.url?.includes('components%2Fportal')
-                                ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
-                                : request.url?.includes('components%2Ftwice')
-                                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
-                                  : request.url?.includes('components%2Fframed')
-                                    ? '<style>i{display:block;width:7px;height:5px;background:#0000ff}i:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><div class="look"><i data-et-force="hover"></i></div></div></body>'
-                                    : request.url?.includes('components%2Fhint')
-                                      ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button:hover{background:#ff0000}.et-overlay-runtime-root{position:fixed;top:20px;left:20px}.et-overlay-runtime-pane{position:absolute;top:0;left:0;width:7px;height:2px;background:#ff0000}</style><body style="margin:20px"><div data-design-harness-host style="width:7px;height:5px"><button onpointerleave="clearTimeout(window.hint)" onpointerenter="if (event.pointerType === \'mouse\') window.hint = setTimeout(() => document.body.insertAdjacentHTML(\'beforeend\', \'<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane></div></div>\'), 300)">Go</button></div></body>'
-                                      : request.url?.includes('components%2Fhover')
-                                        ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                                        : request.url?.startsWith('/__design-harness') &&
-                                            request.url.includes('layout=page')
-                                          ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
-                                          : request.url?.startsWith('/__design-harness')
-                                            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
-                                            : '<body>no harness</body>',
+        request.url?.includes('components%2Floose-overlay')
+          ? '<style>.et-overlay-runtime-root{position:fixed;top:0;left:0}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><div class="et-overlay-runtime-root"><div style="position:fixed;inset:0"></div><div style="position:absolute;top:0;left:7px;width:5px;height:5px;background:#ff0000"></div></div></body>'
+          : request.url?.includes('components%2Fambient')
+            ? em(20)
+            : request.url?.includes('components%2Fnative')
+              ? em(5)
+              : request.url?.includes('components%2Finputs')
+                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i style="display:block;height:100%"></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
+                : request.url?.includes('components%2Ferroring')
+                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div><script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script></body>'
+                  : request.url?.includes('components%2Fclear')
+                    ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><b style="display:block;height:100%"></b></div></body>'
+                    : request.url?.includes('components%2Fupward')
+                      ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
+                      : request.url?.includes('components%2Ffraction')
+                        ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
+                        : request.url?.includes('components%2Fbadge')
+                          ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
+                          : request.url?.includes('components%2Finpane')
+                            ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}.et-overlay-runtime-root{position:fixed;top:0;left:0}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div><div class="et-overlay-runtime-root"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Why</button></div></body>'
+                            : request.url?.includes('components%2Fpicker')
+                              ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
+                              : request.url?.includes('components%2Fpaned')
+                                ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
+                                : request.url?.includes('components%2Fportal')
+                                  ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
+                                  : request.url?.includes('components%2Ftwice')
+                                    ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
+                                    : request.url?.includes('components%2Fframed')
+                                      ? '<style>i{display:block;width:7px;height:5px;background:#0000ff}i:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><div class="look"><i data-et-force="hover"></i></div></div></body>'
+                                      : request.url?.includes('components%2Fhint')
+                                        ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button:hover{background:#ff0000}.et-overlay-runtime-root{position:fixed;top:20px;left:20px}.et-overlay-runtime-pane{position:absolute;top:0;left:0;width:7px;height:2px;background:#ff0000}</style><body style="margin:20px"><div data-design-harness-host style="width:7px;height:5px"><button onpointerleave="clearTimeout(window.hint)" onpointerenter="if (event.pointerType === \'mouse\') window.hint = setTimeout(() => document.body.insertAdjacentHTML(\'beforeend\', \'<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane></div></div>\'), 300)">Go</button></div></body>'
+                                        : request.url?.includes('components%2Fhover')
+                                          ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                                          : request.url?.startsWith('/__design-harness') &&
+                                              request.url.includes('layout=page')
+                                            ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
+                                            : request.url?.startsWith('/__design-harness')
+                                              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
+                                              : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -810,6 +812,17 @@ describe('harnessShotOf', () => {
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
+  });
+
+  it('grows the shot over what an overlay root holds outside a pane, short of a viewport-covering backdrop', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/loose-overlay', state: 'a', props: {} }),
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(12, 5, (x) => (x < 7 ? BLUE : RED)));
   });
 
   it('fails a state whose design prop has no input on the mounted component', async (context) => {

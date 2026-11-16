@@ -1,4 +1,5 @@
 import { crc32, deflateSync, inflateSync } from 'zlib';
+import { OVERLAY_ROOTS } from './action-press';
 import { pixelsDiffer } from './anti-alias';
 
 export const HARNESS_PATH = '/__design-harness';
@@ -21,10 +22,14 @@ export const harnessUrlOf = (options: {
 /** The panes of the overlays an app opens outside the harness host. */
 export const OVERLAY_PANES = '.et-overlay-runtime-pane, .cdk-overlay-pane';
 
+const OVERLAY_CONTENT = OVERLAY_ROOTS.split(', ')
+  .map((root) => `${root} *`)
+  .join(', ');
+
 /**
  * A script that measures the harness host in page pixels as a design frame fits its root: grown down and right, and
- * `up` too, to cover each overlay pane and each absolutely or fixed positioned descendant as far as the
- * overflow boxes that clip it.
+ * `up` too, to cover each overlay pane, each other visible element in an overlay root short of one that covers the
+ * viewport, and each absolutely or fixed positioned descendant as far as the overflow boxes that clip it.
  */
 export const hostBoxScriptOf = (options: { up: boolean }) => `(() => {
   const host = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)});
@@ -61,9 +66,17 @@ export const hostBoxScriptOf = (options: { up: boolean }) => `(() => {
     .map(({ element, style }) => (style.position === 'fixed' ? element.getBoundingClientRect() : clipped(element)))
     .filter((rect) => rect.width > 0 && rect.height > 0);
   const extentOf = (side, start) => Math.max(0, ...outOfFlow.map((rect) => Math.ceil(rect[side] - start)));
-  const panes = [...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})]
-    .map((pane) => pane.getBoundingClientRect())
-    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const covers = (rect) => rect.width >= innerWidth && rect.height >= innerHeight;
+  const overlaid = [...document.querySelectorAll(${JSON.stringify(OVERLAY_CONTENT)})]
+    .filter((element) => !element.closest(${JSON.stringify(OVERLAY_PANES)}) && getComputedStyle(element).visibility !== 'hidden')
+    .map((element) => element.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0 && !covers(rect));
+  const panes = [
+    ...[...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})]
+      .map((pane) => pane.getBoundingClientRect())
+      .filter((rect) => rect.width > 0 && rect.height > 0),
+    ...overlaid,
+  ];
   const left = Math.min(box.left, ...panes.map((rect) => rect.left));
   const top = Math.min(box.top, ...panes.map((rect) => rect.top), ...(${options.up} ? outOfFlow.map((rect) => rect.top) : []));
   const right = Math.max(box.left + Math.max(box.width, extentOf('right', box.left)), ...panes.map((rect) => rect.right));

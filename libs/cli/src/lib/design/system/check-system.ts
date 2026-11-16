@@ -27,6 +27,8 @@ import { isDrawRule, isSlowRule, unjudgedStateWarningsOf } from './slow-checks';
 import {
   staleLineOf,
   stalePartsOf,
+  unrecordedLineOf,
+  unrecordedPartsOf,
   UNCOMPARED_RULE,
   uncomparedAppProblemsOf,
   upgradeLegacyMarksOf,
@@ -1116,7 +1118,15 @@ const checkProductTail = async (
     })?.problems.push(problem.rule);
   }
 
-  return problems.length;
+  const unrecorded = unrecordedPartsOf({ product: resolved, only: options.part });
+  const invocation = options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' });
+
+  for (const part of unrecorded) {
+    console.error(unrecordedLineOf({ product: name, part, invocation }));
+    tallyOf(tally, { product: name, part })?.problems.push('UNRECORDED');
+  }
+
+  return problems.length + unrecorded.length;
 };
 
 /**

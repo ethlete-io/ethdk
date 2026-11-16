@@ -34,8 +34,6 @@ export const UNLISTED_FILES = 'files unknown: recorded before file lists';
  */
 export type StalePart = { part: string; design: string[]; app: string[]; port: string[] };
 
-export const UNLISTED_PORT = 'files unknown: implemented before file lists';
-
 const changedSinceOf = (record: HashRecord, now: DesignHash) =>
   recordHolds(record, now) ? [] : record.files ? changedDesignFilesOf(record.files, now) : [UNLISTED_FILES];
 
@@ -51,15 +49,28 @@ const portOf = (options: {
     return [];
   }
 
-  if (!implemented.files) return design.length > 0 ? [] : [UNLISTED_PORT];
-
-  return changedDesignFilesOf(implemented.files, now)
+  return changedDesignFilesOf(implemented.files ?? {}, now)
     .filter((file) => !design.includes(file))
     .sort((a, b) => a.localeCompare(b));
 };
 
 const partsOf = (product: ResolvedProduct, only?: string) =>
   product.parts.filter((part) => !only || partKeyOf(part) === only);
+
+/**
+ * The parts whose implemented record predates file lists, so no design drift since it can be told: they count as
+ * unrecorded, not as stale.
+ */
+export const unrecordedPartsOf = (options: { product: ResolvedProduct; only?: string }): string[] =>
+  partsOf(options.product, options.only).flatMap((resolved) => {
+    const part = partKeyOf(resolved);
+    const implemented = readImplemented(partOwnerOf({ product: options.product, part: resolved }).dir)[part];
+
+    return resolved.origin !== 'base' && implemented && !implemented.files ? [part] : [];
+  });
+
+export const unrecordedLineOf = (options: { product: string; part: string; invocation: string }) =>
+  `UNRECORDED ${options.product} ${options.part}: implemented before file lists - run ${options.invocation} task ${options.part} --product ${options.product} --verify to record it`;
 
 /**
  * The parts with a check record or an implemented record whose design hash moved since the check record or the
@@ -71,7 +82,8 @@ export const stalePartsOf = (options: { product: ResolvedProduct; only?: string 
     const part = partKeyOf(resolved);
     const { dir } = partOwnerOf({ product, part: resolved });
     const ready = readReady(dir)[part];
-    const implemented = readImplemented(dir)[part];
+    const record = readImplemented(dir)[part];
+    const implemented = record?.files ? record : undefined;
 
     if (!ready && !implemented) return [];
 
