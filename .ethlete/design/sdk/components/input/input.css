@@ -16,7 +16,6 @@
       var(--et-surface-interaction-solid) 75%,
       var(--et-surface-color-solid)
     );
-    --_et-form-field-frame-focus: var(--et-surface-color-solid);
   }
 
   et-form-field[data-text-shell][data-error] {
@@ -42,12 +41,6 @@
         )
       )
     );
-    --_et-form-field-frame-focus: var(--et-theme-color-ink-solid);
-  }
-
-  et-form-field[data-text-shell]:is([data-focused], :has(:focus-visible)) .et-form-field-control-frame {
-    border-color: var(--_et-form-field-frame-focus);
-    box-shadow: inset 0 0 0 1px var(--_et-form-field-frame-focus);
   }
 
   et-form-field[data-text-shell] .et-form-field-prefix:not(:has(svg)) {

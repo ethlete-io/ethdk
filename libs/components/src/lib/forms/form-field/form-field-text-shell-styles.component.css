@@ -61,6 +61,10 @@
       );
       --_et-form-field-frame-focus: var(
         --et-form-field-control-border-color-focus,
+        var(--et-theme-color-primary-solid, currentColor)
+      );
+      --_et-form-field-frame-focus-readonly: var(
+        --et-form-field-control-border-color-focus,
         var(--et-surface-color-solid, currentColor)
       );
       --_et-form-field-label-color: var(--et-surface-color-muted-solid, currentColor);
@@ -90,6 +94,7 @@
           )
         );
         --_et-form-field-frame-focus: var(--et-theme-color-ink-solid);
+        --_et-form-field-frame-focus-readonly: var(--et-theme-color-ink-solid);
         --_et-form-field-label-color: var(--et-theme-color-ink-solid);
         --_et-form-field-label-color-active: var(--et-theme-color-ink-solid);
       }
@@ -284,8 +289,12 @@
       &:where([data-expanded]:not([data-readonly])) .et-form-field-control-frame,
       &:where([data-focused]) .et-form-field-control-frame {
         border-color: var(--_et-form-field-frame-focus);
+      }
+
+      &[data-readonly]:where([data-focused], :has(:focus-visible)) .et-form-field-control-frame {
+        border-color: var(--_et-form-field-frame-focus-readonly);
         box-shadow: inset 0 0 0 var(--et-form-field-control-focus-ring-width, var(--et-form-field-control-border-width))
-          var(--_et-form-field-frame-focus);
+          var(--_et-form-field-frame-focus-readonly);
       }
 
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-slot,

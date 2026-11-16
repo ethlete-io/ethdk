@@ -226,16 +226,16 @@ label band, the gap and the hint/counter row, so a pointer resting next to the
 counter leaves the frame at rest.
 
 A text field's frame keeps at least 3:1 against its surface at rest, also in
-error. Hover steps it a little stronger. Focus draws a 2px frame in the surface
-text colour (the error theme's ink while erroring) that hover leaves alone, with
-no halo. The placeholder keeps 4.5:1 and stays lighter than the value.
+error. Hover steps it a little stronger. Focus keeps the 1px border and turns it
+the theme colour (the error theme's ink while erroring); hover leaves it alone,
+and there is no halo. The placeholder keeps 4.5:1 and stays lighter than the value.
 
 Every value control distinguishes **read-only** from **disabled**: a read-only
 control (from a `readonly(...)` schema) keeps its normal box and stays focusable
 but drops every interactive affordance - no hover change, full-contrast value - so
 it reads as view-only content; **disabled** stays dimmed. A read-only text field
 draws a quiet solid frame in the surface border colour over a faint tinted fill,
-and takes the same 2px focus frame as an editable field, so keyboard focus stays
+and on focus draws a 2px frame in the surface text colour, so keyboard focus stays
 visible while the value is selected or copied. A read-only number input draws no
 stepper. Set
 `--et-form-field-control-border-color-readonly` to change its frame colour. The choice
@@ -994,10 +994,11 @@ The field shell declares public design tokens; override them in your CSS scope:
 | `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`, `-control-border-color` / `-border-color-hover` / `-border-color-focus` / `-focus-ring-width`, `-value-color` / `-value-color-active`, `-label-font-weight` / `-label-letter-spacing`, `-letter-spacing`, `-supporting-inset` |
 
 The border colours and `-value-color` default to the surface theme. `-value-color-active` applies
-while the frame is hovered, focused or open, and falls back to `-value-color`. The focus ring is drawn
-inside the border at `-control-focus-ring-width` (default: the border width); set it to `0px` for a
-plain border in `-control-border-color-focus`. In the error state the error theme still colours the
-border. `-letter-spacing` sets the value text; unset, it is inherited.
+while the frame is hovered, focused or open, and falls back to `-value-color`. `-control-border-color-focus`
+colours the focused border (default: the theme colour, on a read-only field the surface text colour). A
+focused read-only field adds a ring inside the border at `-control-focus-ring-width` (default: the border
+width); set it to `0px` for a plain border. In the error state the error theme still colours the border.
+`-letter-spacing` sets the value text; unset, it is inherited.
 
 `--et-form-field-supporting-inset` is the inline-start inset of the label (in `static` label mode), hint,
 errors, warnings and `et-description`. Unset, it is the control's `-padding-inline` plus `-border-width`, so the
