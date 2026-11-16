@@ -301,7 +301,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/title-search": "41c0689487468d91"
+      "components/title-search": "b5cde9820d2daa48"
     },
     "actions": [
       "emit:close",
@@ -315,7 +315,7 @@
     "at": "2026-11-15T22:02:35.215Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1747050
+    "pid": 1909573
   },
   "components/title-search": {
     "hash": "a0f1aad8bcab1c4b",
