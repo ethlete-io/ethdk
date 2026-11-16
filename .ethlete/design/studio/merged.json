@@ -147,11 +147,11 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "pages/sketches": {
-    "hash": "009a8574259a6032",
+    "hash": "f0d7be7f8d8aaf9a",
     "variant": "a",
-    "decidedBy": "plan: ADR 0322 and B539: one comment mode everywhere, the layout of pages/system variant b the human picked (list under the tree, toggle top right), from components/comment-flow",
-    "at": "2026-11-16T16:05:49.258Z",
-    "note": "merged without a pick: allowed by ADR 0322 and B539: one comment mode everywhere, the layout of pages/system variant b the human picked (list under the tree, toggle top right), from components/comment-flow"
+    "decidedBy": "plan: ADR 0323",
+    "at": "2026-11-16T16:13:59.500Z",
+    "note": "merged without a pick: allowed by ADR 0323"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",

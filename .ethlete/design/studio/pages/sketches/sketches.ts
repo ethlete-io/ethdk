@@ -113,7 +113,10 @@ type Props = {
   screen?: ScreenMode;
   multi?: MultiTargets;
   comments?: CommentPhase;
+  confirm?: ConfirmKind;
 };
+
+type ConfirmKind = 'merge' | 'discard';
 
 type View = {
   selected?: RowKey;
@@ -127,6 +130,7 @@ type View = {
   withdrawn?: Withdrawn;
   take: string;
   points: string;
+  confirm?: string;
   comments?: Record<string, string>;
 };
 
@@ -422,6 +426,54 @@ const pointsPopover = async (part: string) => {
   };
 };
 
+const confirmDialog = async (kind: ConfirmKind, part: string, variant: string) => {
+  const merge = kind === 'merge';
+  const cancel = await button.render({
+    label: 'Abbrechen',
+    variant: 'outline',
+    color: 'surface',
+    size: 'xs',
+    interaction: 'focus-visible',
+  });
+  const confirm = await button.render({
+    label: merge ? 'Übernehmen' : 'Verwerfen',
+    variant: 'filled',
+    size: 'xs',
+    ...(merge ? {} : { color: 'danger' as const }),
+  });
+  const content = html`<div
+    class="box-border flex w-80 flex-col gap-space-3 p-space-3 text-ui-sm"
+    data-sk-confirm-dialog
+  >
+    <div class="flex flex-col gap-space-1">
+      <span class="font-ui-strong wrap-anywhere text-et-surface"
+        >${merge ? `${variant} in ${part} übernehmen?` : `Skizze ${part} verwerfen?`}</span
+      >
+      <span class="text-et-surface-muted"
+        >${merge ? 'Die übrigen Varianten der Skizze gehen verloren.' : 'Alle Varianten der Skizze gehen verloren.'}</span
+      >
+    </div>
+    <div class="flex justify-end gap-space-2">${cancel.body}${confirm.body}</div>
+  </div>`;
+  const dialog = merge
+    ? await anchoredDialog.render({
+        label: 'Variante übernehmen',
+        placement: 'bottom-start',
+        anchor: '[data-sk-take]',
+        content,
+      })
+    : await anchoredDialog.render({ label: 'Skizze verwerfen', anchor: '[data-sk-discard]', content });
+  return {
+    body: html`<div
+      class="absolute top-full ${merge ? 'left-0' : 'right-0'} z-10 mt-2.5"
+      style="transform: translate3d(0, 0, 0)"
+    >
+      ${dialog.body}
+    </div>`,
+    styles: dialog.styles + cancel.styles + confirm.styles,
+  };
+};
+
 const pinFor = (row: Row) =>
   row.key === 'a'
     ? html`<span class="absolute top-space-1 right-space-1 z-1 flex in-data-sk-head-hidden:hidden" data-sk-pin
@@ -431,7 +483,11 @@ const pinFor = (row: Row) =>
 
 const headOf = (row: Row, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
-  const take = (view.status === 'waiting' || view.status === 'picked') && !isSame(row) ? view.take : '';
+  const offered = (view.status === 'waiting' || view.status === 'picked') && !isSame(row) ? view.take : '';
+  const take =
+    offered && view.confirm && row.key === view.selected
+      ? html`<span class="relative flex" data-sk-take>${offered}${view.confirm}</span>`
+      : offered;
   const withPoints =
     view.points && row.key === view.selected
       ? html`<span class="relative flex flex-wrap items-center gap-space-2">${take}${view.points}</span>`
@@ -787,6 +843,8 @@ export default definePart<Props>({
     comments: { camera: 'fit', part: 'narrow', comments: 'listed' },
     'comments-mode': { camera: 'fit', part: 'narrow', comments: 'mode' },
     'comments-draft': { camera: 'fit', part: 'narrow', comments: 'draft' },
+    'merge-confirm': { camera: 'fit', part: 'narrow', selected: 'b', confirm: 'merge' },
+    'discard-confirm': { camera: 'fit', part: 'narrow', confirm: 'discard' },
   },
   render: async ({
     camera,
@@ -813,6 +871,7 @@ export default definePart<Props>({
     screen,
     multi,
     comments,
+    confirm,
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const reload = await button.render({ label: 'Erneut laden', variant: 'outline', color: 'surface', size: 'sm' });
@@ -828,6 +887,10 @@ export default definePart<Props>({
     const side = await treeOf(screen ? SCREEN_KEY : part.key, multi, status);
     const all = rowsOf(part, fresh);
     const rows = visibleRows(all, withdrawn);
+    const picked = all.find((row) => row.key === selected);
+    const dialog = confirm
+      ? await confirmDialog(confirm, full.key, picked?.label ?? `Variante ${selected ?? ''}`)
+      : undefined;
     const hiddenCount = withdrawnCount(all, withdrawn);
     const same = comparing ? [] : rows.filter(isSame);
     const shown = rows.filter((row) => !same.includes(row));
@@ -852,6 +915,7 @@ export default definePart<Props>({
       error,
       withdrawn,
       take: takeAction(take.body),
+      confirm: confirm === 'merge' ? dialog?.body : undefined,
       points: pointsButton
         ? html`<span class="flex" data-sk-points>${pointsButton.body}</span>${popover?.body ?? ''}`
         : '',
@@ -893,7 +957,11 @@ export default definePart<Props>({
             ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
                 >Kein Verwerfen: wähle eine der beiden Zeilen</span
               >`
-            : (commentToggle?.body ?? '') + retry + withAction(discard.body, 'emit:discard')
+            : (commentToggle?.body ?? '') +
+              retry +
+              html`<span class="relative flex" data-sk-discard
+                >${withAction(discard.body, 'emit:discard')}${confirm === 'discard' ? (dialog?.body ?? '') : ''}</span
+              >`
         }
       </header>
       ${parts.body}
@@ -977,6 +1045,7 @@ export default definePart<Props>({
         take.styles +
         (pointsButton?.styles ?? '') +
         (popover?.styles ?? '') +
+        (dialog?.styles ?? '') +
         parts.styles +
         (list?.styles ?? '') +
         (commentToggle?.styles ?? '') +
