@@ -31,7 +31,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 
 0. Wartezeit (ADR 0236, 0237, 0238, Bef. 639): endet nach dem Beweis für 647 und dem Push (Tom, 09.11.). E2E-Schritt
    jetzt etwa 118 s statt 165-197 s; Fehler auf „Large“ an der Ursache behoben (Bef. 647). Rest im Werkzeug-Rückstand.
-1. Nacht 13.11. (ADR 0291): Abendliste gebaut bis auf den A8-Rest, der auf Toms Merge wartet (A2, A17, A23, A7, A36, A15, A26 wie gebaut in design-to-code.md); A30 und A4 fertig; danach B499, B500 (abgeschlossen). `rack` bleibt aus.
+1. Nacht 13.11. (ADR 0291): Abendliste gebaut bis auf den A8-Rest (Builder, 16.11.) (A2, A17, A23, A7, A36, A15, A26 wie gebaut in design-to-code.md); A30 und A4 fertig; danach B499, B500 (abgeschlossen). `rack` bleibt aus.
 2. B520 Ausstehende Ports (ADR 0205, 16.11.): App-Code an das gemergte Design angleichen für components/disclosure, shell-collapse, tree-row, zoom-chip, elements/part-tree, shell-main (Port-Zeilen von `design check`, 136ec0d7e) sowie die Drift von components/canvas-viewport und comment-pin (nicht in der Baseline). Je Teil `design task`, ein Slice pro Teil.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet):
@@ -241,7 +241,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   langen Namen passt die Reihe nicht in 248 px; Repo-Wechsel braucht das Untermenü. Empfehlung a (skaliert mit der Zahl der
   Systeme; die Schnellwahl in der Leiste deckt den schnellen Wechsel schon ab). Wartet auf Toms Merge.
 - **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
-- **A8** Rest: Skizze `components/zoom-chip@focus-tooltip` (studio, auch shell-collapse) zeichnet das offene SDK-Tooltip in den focus-visible-Zuständen; App und gemergte Teile behalten `title`. Gehalten: `sketch ready` verweigert, weil pages/sketches zoom-chip-Zustände in 176-px-Zellen zeigt und das Tooltip dort herausragt (CLIPPED, CUT-CONTROL, SEE-THROUGH, CANVAS-UNDER-PANEL); Dafür Skizze `pages/sketches@focus-tooltip` (a: Probezellen ohne focus-visible-Zustände; b: Zellen wachsen auf 208 px, im Crop-Bild 208 × 80 px); beide warten auf Toms Merge, zuerst pages/sketches, dann `sketch release` und `sketch ready` auf zoom-chip@focus-tooltip (Befund 116).
+- **A8** Rest: Skizze `components/zoom-chip@focus-tooltip` (studio, auch shell-collapse) zeichnet das offene SDK-Tooltip in den focus-visible-Zuständen; App und gemergte Teile behalten `title`. Gehalten: `sketch ready` verweigert, weil pages/sketches zoom-chip-Zustände in 176-px-Zellen zeigt und das Tooltip dort herausragt (CLIPPED, CUT-CONTROL, SEE-THROUGH, CANVAS-UNDER-PANEL); Dafür Skizze `pages/sketches@focus-tooltip` (a: Probezellen ohne focus-visible-Zustände; b: Zellen wachsen auf 208 px, im Crop-Bild 208 × 80 px); pages/sketches@focus-tooltip wurde verworfen (d9a775727); der Builder skizziert die Zellen neu, wählt und merged selbst, dann `sketch release` und `sketch ready` auf zoom-chip@focus-tooltip (Befund 116).
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
 - **A10** Baubereit (ADR 0048): der Kern ist gebaut, offen sind B250 und B251.
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
