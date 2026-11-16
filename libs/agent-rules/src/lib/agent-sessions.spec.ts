@@ -188,7 +188,7 @@ describe('agent-sessions', () => {
         expect(readFileSync(log, 'utf8')).toBe(
           'Mailbox message from codex: line one line two\nMailbox message from gemini: hello\n',
         );
-        expect(run(['inbox', agent]).stdout).toBe('No new messages.\n');
+        expect(run(['inbox', agent]).stdout).toContain('gemini: hello');
       } finally {
         dispatch.kill();
         spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
@@ -305,6 +305,39 @@ describe('agent-sessions', () => {
       } finally {
         dispatch.kill();
         spawnSync('tmux', ['kill-session', '-t', `=${foreign}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'types no message from before the dispatcher started on the first wake of an agent',
+    async () => {
+      const agent = `mailbox-first-wake-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      writeFileSync(
+        join(dir, 'mailbox.jsonl'),
+        `${JSON.stringify({ timestamp: new Date().toISOString(), sender: 'claude2', to: agent, message: 'old addressed' })}\n`,
+      );
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        run(['send', 'codex', '--to', agent, 'new']);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('Mailbox message from codex: new\n');
+        expect(run(['inbox', agent]).stdout).toContain('claude2: old addressed');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
     },
     10000,

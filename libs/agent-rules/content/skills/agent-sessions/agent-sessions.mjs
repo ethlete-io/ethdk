@@ -838,12 +838,21 @@ if (command === 'send' && sender) {
 } else if (command === 'dispatch') {
   prepare();
   appendFileSync(mailbox, '');
-  let seen = entries().length;
+  const started = entries().length;
+  let seen = started;
+  const woken = {};
   const due = {};
   const waiting = new Set();
   const addressedTo = (agent) => {
-    const { count, unread } = unreadFor(agent);
-    return { count, unread: unread.filter((entry) => entry.to === agent) };
+    const history = entries();
+    const cursor = inboxCursor(agent);
+    const read = existsSync(cursor) ? Number(readFileSync(cursor, 'utf8')) : 0;
+    return {
+      count: history.length,
+      unread: history
+        .slice(Math.max(read, woken[agent] ?? started))
+        .filter((entry) => entry.to === agent && entry.sender !== agent),
+    };
   };
   const wake = (agent) => {
     if (!addressedTo(agent).unread.length) return;
@@ -875,7 +884,8 @@ if (command === 'send' && sender) {
       sleep(ENTER_DELAY_MS);
       spawnSync('tmux', ['send-keys', '-t', `=${session}:`, 'Enter']);
     });
-    writeFileSync(inboxCursor(agent), String(count));
+    woken[agent] = count;
+    if (existsSync(inboxCursor(agent))) writeFileSync(inboxCursor(agent), String(count));
     process.stdout.write(`Woke ${session}.\n`);
   };
   const poll = () => {
