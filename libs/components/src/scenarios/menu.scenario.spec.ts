@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
+  MENU_CONFIG_TOKEN,
   MENU_ERROR_CODES,
   MENU_ITEM_VARIANTS,
   MenuComponent,
@@ -16,6 +17,8 @@ import {
   MenuSeparatorComponent,
   MenuSurfaceDirective,
   MenuTriggerDirective,
+  injectMenuConfig,
+  provideMenuConfig,
 } from '../index';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
@@ -468,5 +471,31 @@ describe('menu scenarios', () => {
     expect(document.querySelector('.et-menu-overlay-pane')).not.toBeNull();
 
     fixture.destroy();
+  });
+});
+
+describe('menu config scenarios', () => {
+  const configured = useScenario({
+    providers: [provideColorThemesWithTailwind4(COLOR_THEMES), provideMenuConfig({ offset: 2 })],
+  });
+
+  it('exposes the app-wide offset to injectors and still opens a menu', () => {
+    const s = configured();
+    const fixture = openFileMenu(s);
+
+    expect(TestBed.inject(MENU_CONFIG_TOKEN)).toEqual({ offset: 2 });
+    expect(TestBed.runInInjectionContext(() => injectMenuConfig())).toEqual({ offset: 2 });
+    expect(fixture.componentInstance.open()).toBe(true);
+    expect(document.querySelector('et-menu')).not.toBeNull();
+  });
+});
+
+describe('menu without config scenarios', () => {
+  const plain = useScenario({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
+
+  it('injects no menu config when none is provided', () => {
+    plain();
+
+    expect(TestBed.runInInjectionContext(() => injectMenuConfig())).toBeNull();
   });
 });
