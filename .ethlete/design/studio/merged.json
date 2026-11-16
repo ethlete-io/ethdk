@@ -47,10 +47,11 @@
     "at": "2026-11-15T21:29:49.115Z"
   },
   "components/title-bar": {
-    "hash": "89f1407931073744",
+    "hash": "22d12cc759bebf88",
     "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-16T01:48:29.485Z"
+    "decidedBy": "plan: finding 911 precedent: c8 decision 2026-11-16 (B523 (1)), shot shows bar and border unchanged, only the trigger moves 0.5 px to y 4",
+    "at": "2026-11-16T01:39:06.637Z",
+    "note": "merged without a pick: allowed by finding 911 precedent: c8 decision 2026-11-16 (B523 (1)), shot shows bar and border unchanged, only the trigger moves 0.5 px to y 4"
   },
   "components/tree-row": "72601799f8079cf2",
   "components/update-dialog": {

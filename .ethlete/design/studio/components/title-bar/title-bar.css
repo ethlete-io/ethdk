@@ -5,9 +5,6 @@
   .st-notice-hint {
     container-type: inline-size;
   }
-  .st-notice-hint .et-tooltip-panel {
-    transform: translate3d(0, 0, 0);
-  }
   .st-notice-hint .et-overlay-arrow {
     left: auto;
     right: calc(50cqi - 10px);
