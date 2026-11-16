@@ -1,5 +1,14 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  watchFile,
+  writeFileSync,
+} from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -16,18 +25,6 @@ const root = (() => {
 })();
 const mailbox = process.env.AGENT_MAILBOX ?? join(root, '.ethlete/mailbox.jsonl');
 const script = fileURLToPath(import.meta.url);
-const hasRootScript = (name) => {
-  try {
-    return Boolean(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts?.[name]);
-  } catch {
-    return false;
-  }
-};
-const inboxCommand = (agent) => {
-  if (existsSync(join(root, 'node_modules/.bin/ethlete-agents'))) return `npx ethlete-agents sessions inbox ${agent}`;
-  if (hasRootScript('agents:sessions')) return `yarn agents:sessions inbox ${agent}`;
-  return `node ${script} inbox ${agent}`;
-};
 const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
 const ENTER_DELAY_MS = 400;
@@ -40,6 +37,8 @@ const RESTART_WAIT_MS = Number(process.env.AGENT_RESTART_WAIT_MS ?? 30 * 60 * 10
 const RESTART_DRAFT_NOTICE_MS = Number(process.env.AGENT_RESTART_DRAFT_NOTICE_MS ?? 2 * 60 * 1000);
 const RESTART_CLEAR_WAIT_MS = Number(process.env.AGENT_RESTART_CLEAR_WAIT_MS ?? 60 * 1000);
 const RESTART_EXIT_WAIT_MS = Number(process.env.AGENT_RESTART_EXIT_WAIT_MS ?? 30 * 1000);
+const RESTART_RESUME_WAIT_MS = Number(process.env.AGENT_RESTART_RESUME_WAIT_MS ?? 60 * 1000);
+const RESTART_LOCK_MS = Number(process.env.AGENT_RESTART_LOCK_MS ?? RESTART_WAIT_MS + 10 * 60 * 1000);
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
 const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
@@ -129,8 +128,8 @@ const agentCommandOf = (session) =>
 const roleOf = (session) => tmux('show-options', '-v', '-t', `=${session}:`, ROLE_OPTION).stdout.trim() || null;
 const arePaired = (a, b) => (roleOf(a) === 'builder') !== (roleOf(b) === 'builder');
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
-const runsInSession = (agentArgs) =>
-  Boolean(process.stdin.isTTY && process.stdout.isTTY) && !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
+const hasTerminal = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+const runsInSession = (agentArgs) => !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
 const TEXT_VALUE_FLAGS = new Set(['--append-system-prompt', '--system-prompt']);
 const withoutPrompt = (words) => {
   const separator = words.indexOf('--');
@@ -309,6 +308,23 @@ const restartNotice = (message) => {
     .forEach((to) => append({ sender: 'restart', to, message }));
 };
 
+const restartLockOf = (session) => join(dirname(mailbox), `restart.lock.${session}`);
+const pendingRestartOf = (session) => {
+  const lock = readJson(restartLockOf(session));
+  return lock && isAlive(lock.pid) && Date.now() - lock.since < RESTART_LOCK_MS ? lock : null;
+};
+const lockRestart = (session, pid) => {
+  mkdirSync(dirname(mailbox), { recursive: true });
+  writeFileSync(restartLockOf(session), JSON.stringify({ pid, since: Date.now() }));
+};
+const unlockRestart = (session) => {
+  if (readJson(restartLockOf(session))?.pid === process.pid) rmSync(restartLockOf(session), { force: true });
+};
+const waitForFirstTurn = (session) => {
+  const end = Date.now() + RESTART_RESUME_WAIT_MS;
+  while (Date.now() < end && sessionExists(session) && busyLine(session) === null) sleep(RESTART_POLL_MS / 4);
+};
+
 /**
  * Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit.
  * With `allowBusy`, a running turn does not block, since Claude Code queues input typed during a turn.
@@ -433,7 +449,7 @@ const startSession = (name, shellCommand, quiet = false) => {
   if (!quiet) process.stdout.write(`Started ${name}. Attach with: tmux attach -t ${name}\n`);
 };
 
-const IGNORED = ['mailbox.jsonl', 'mailbox.cursor.*', 'restart.log', 'restart.prompt.*'];
+const IGNORED = ['mailbox.jsonl', 'mailbox.cursor.*', 'restart.log', 'restart.prompt.*', 'restart.lock.*'];
 
 const prepare = () => {
   mkdirSync(dirname(mailbox), { recursive: true });
@@ -551,7 +567,14 @@ if (command === 'send' && sender) {
   const roleEnv = role ? `ETHLETE_AGENT_ROLE=${role} ` : '';
   const shellCommand = withTempDir(`${roleEnv}${withRole(words).map(quote).join(' ')}`);
   const baseCommand = withTempDir(`${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`);
-  if (process.env.TMUX) {
+  if (!hasTerminal) {
+    if (!sessionExists(session)) {
+      tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
+      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
+      if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
+    }
+    process.stdout.write(`Started ${session}. Attach with: tmux attach -t ${session}\n`);
+  } else if (process.env.TMUX) {
     if (!sessionExists(session)) {
       tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
       tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
@@ -647,8 +670,15 @@ if (command === 'send' && sender) {
     ? tmux('display-message', '-p', '-t', process.env.TMUX_PANE, '#{session_name}').stdout.trim()
     : null;
   const dropped = session && !now ? droppedQuestions(session, own, words.join(' ')) : [];
+  const pending = session ? pendingRestartOf(session) : null;
   if (!session) {
     process.stderr.write(`No tmux session for ${sender}.\n`);
+    process.exitCode = 1;
+  } else if (pending && pending.pid !== process.pid) {
+    process.stderr.write(
+      `Refused: a restart of ${session} is already pending (pid ${pending.pid} since ${new Date(pending.since).toISOString()}). Let it finish, or end that process first.\n`,
+    );
+    restartLog(`${session} refused a second restart, pid ${pending.pid} still pending`);
     process.exitCode = 1;
   } else if (own && own !== session && !arePaired(own, session)) {
     process.stderr.write(
@@ -669,6 +699,8 @@ if (command === 'send' && sender) {
     );
     process.exitCode = 1;
   } else if (now) {
+    lockRestart(session, process.pid);
+    process.on('exit', () => unlockRestart(session));
     const type = (...keys) => tmux('send-keys', '-t', `=${session}:`, ...keys);
     sleep(Number(afterSeconds ?? RESTART_AFTER_SECONDS) * 1000);
     if (!waitForQuiet(session)) {
@@ -731,6 +763,7 @@ if (command === 'send' && sender) {
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'off');
       tmux('set-option', '-t', pane, COMMAND_OPTION, base);
       restartLog(`${session} started a new process: ${base}`);
+      waitForFirstTurn(session);
     } else {
       type('-l', sender.startsWith('codex') ? '/new' : '/clear');
       sleep(ENTER_DELAY_MS);
@@ -740,6 +773,7 @@ if (command === 'send' && sender) {
         type('-l', words.join(' '));
         sleep(ENTER_DELAY_MS);
         type('Enter');
+        waitForFirstTurn(session);
       } else {
         const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);
         writeFileSync(saved, `${words.join(' ')}\n`);
@@ -760,14 +794,16 @@ if (command === 'send' && sender) {
     const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
     const forward = notify ? ['--notify', notify] : [];
     const mode = [...(newProcess ? ['--process'] : []), ...(role ? ['--role', role] : [])];
-    spawn(
+    const child = spawn(
       process.execPath,
       [script, 'restart', sender, '--now', '--after', String(delay), ...forward, ...mode, ...words],
       {
         detached: true,
         stdio: 'ignore',
       },
-    ).unref();
+    );
+    lockRestart(session, child.pid);
+    child.unref();
     process.stdout.write(
       `${newProcess ? 'Starting a new process in' : 'Restarting'} ${session} once its turn ended and its prompt is empty, ${delay} seconds at the earliest. End your turn now.\n`,
     );
@@ -785,9 +821,14 @@ if (command === 'send' && sender) {
   const waiting = new Set();
   const wake = (agent) => {
     if (!unreadFor(agent).unread.length) return;
-    const text = `New mailbox message for ${agent}. Run: ${inboxCommand(agent)}`;
     const session = [sessionFor(agent), agent].find(sessionExists);
     if (!session) return process.stderr.write(`No tmux session for ${agent}.\n`);
+    if (pendingRestartOf(session)) {
+      if (!waiting.has(agent)) process.stdout.write(`Waiting for the restart of ${session}.\n`);
+      waiting.add(agent);
+      due[agent] = Date.now() + DRAFT_RETRY_MS;
+      return;
+    }
     if (hasDraft(session)) {
       if (!waiting.has(agent)) process.stdout.write(`Waiting for the typed text in ${session}.\n`);
       waiting.add(agent);
@@ -796,9 +837,19 @@ if (command === 'send' && sender) {
     }
     waiting.delete(agent);
     if (!leavePanel(session)) return process.stderr.write(`The focus of ${session} stays in the agent panel.\n`);
-    spawnSync('tmux', ['send-keys', '-t', `=${session}:`, '-l', text]);
-    sleep(ENTER_DELAY_MS);
-    spawnSync('tmux', ['send-keys', '-t', `=${session}:`, 'Enter']);
+    const { count, unread } = unreadFor(agent);
+    unread.forEach((entry) => {
+      spawnSync('tmux', [
+        'send-keys',
+        '-t',
+        `=${session}:`,
+        '-l',
+        `Mailbox message from ${entry.sender}: ${normalize(String(entry.message ?? ''))}`,
+      ]);
+      sleep(ENTER_DELAY_MS);
+      spawnSync('tmux', ['send-keys', '-t', `=${session}:`, 'Enter']);
+    });
+    writeFileSync(inboxCursor(agent), String(count));
     process.stdout.write(`Woke ${session}.\n`);
   };
   const poll = () => {

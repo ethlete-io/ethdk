@@ -183,8 +183,8 @@ blocking, about staged paths outside them; `.changeset/` and `plans/` are always
 
 ## Agent sessions
 
-If a prompt says `New mailbox message for <name>`, run the `inbox` command in that prompt and act on
-the messages. Before you edit a file that another agent may edit, read `.agents/skills/ethlete-agent-sessions/SKILL.md`.
+A prompt that starts with `Mailbox message from <sender>:` is a mailbox message from another agent: act
+on it. Before you edit a file that another agent may edit, read `.agents/skills/ethlete-agent-sessions/SKILL.md`.
 
 ## Comments: almost none, and never for the reviewer of your change
 
