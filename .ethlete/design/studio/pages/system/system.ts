@@ -33,6 +33,7 @@ import {
   type BuildReady,
 } from './shared/build-ready';
 import { buildReadyView } from './build-ready-footer';
+import { commentList, draftPin, partPins } from './shared/comment-flow';
 
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 
@@ -233,6 +234,7 @@ export default definePart<{
   fit?: boolean;
   chipFocus?: boolean;
   commentMode?: boolean;
+  comments?: boolean;
   draft?: string;
   send?: SendPhase;
   reason?: string;
@@ -284,6 +286,9 @@ export default definePart<{
       send: 'rejected',
       reason: REFUSED,
     },
+    comments: { closed: true, comments: true },
+    'comments-mode': { closed: true, comments: true, commentMode: true },
+    'comments-draft': { closed: true, comments: true, commentMode: true, draft: TYPED },
     'one-blocker': { nothingOpen: true, build: 'one-blocker' },
     checking: { nothingOpen: true, build: 'checking' },
     'blocked-checking': { nothingOpen: true, build: 'blocked-checking' },
@@ -323,6 +328,7 @@ export default definePart<{
     fit,
     chipFocus = false,
     commentMode = false,
+    comments = false,
     draft,
     send,
     reason,
@@ -416,11 +422,14 @@ export default definePart<{
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
     const writing = draft === undefined ? undefined : await commentDraft({ text: draft, phase: send, reason });
     const target = control(commentTarget({ frame: 'button', action: 'comment-draft' }), 'comment-target');
-    const body = commentMode
-      ? html`<div class="relative">
-          ${shot}${target}${writing ? html`<div class="absolute left-[38%] top-[42%]">${writing.body}</div>` : ''}
-        </div>`
-      : shot;
+    const pins = comments ? partPins(writing ? -1 : 0) + (writing ? draftPin : '') : '';
+    const at = comments ? 'left-[calc(38%+var(--space-6))] top-[42%]' : 'left-[38%] top-[42%]';
+    const body =
+      commentMode || comments
+        ? html`<div class="relative">
+            ${shot}${pins}${commentMode ? target : ''}${writing ? html`<div class="absolute ${at}">${writing.body}</div>` : ''}
+          </div>`
+        : shot;
     const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
     const acting = !fit && !clear;
@@ -451,12 +460,18 @@ export default definePart<{
           exceptionCount > 0,
           blockersOpen,
         );
+    const list = comments ? commentList(writing ? -1 : 0) : undefined;
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
       studio: menu.body,
       section: 'System',
       product: 'studio',
-      side: tree.body,
+      side: list
+        ? html`${tree.body}
+            <div class="mx-space-2 mt-space-3 border-t border-et-surface-border pt-space-2" data-comment-list>
+              ${list.body}
+            </div>`
+        : tree.body,
       content: html`${frames}
         <div class="absolute top-space-3 right-space-3 flex gap-space-2">
           ${comment.body}${toggle.body}${dialog?.body ?? ''}
@@ -472,6 +487,7 @@ export default definePart<{
         tree.styles +
         canvasFrameStyles +
         comment.styles +
+        (list?.styles ?? '') +
         (writing?.styles ?? '') +
         toggle.styles +
         (dialog?.styles ?? ''),
