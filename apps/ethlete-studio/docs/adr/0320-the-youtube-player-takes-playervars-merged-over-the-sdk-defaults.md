@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B538
+built: ae5d82435
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, fifa report L-8 (gg hero videos need controls=0)
 ---
