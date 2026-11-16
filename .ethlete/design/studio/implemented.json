@@ -221,7 +221,7 @@
   },
   "components/tree-row": {
     "hash": "5e2110f44c71d552",
-    "at": "2026-11-15T23:34:03.892Z",
+    "at": "2026-11-16T00:03:23.390Z",
     "states": {
       "active": "ec6e20e91b227601",
       "focus-visible": "cbef4f2028c6a6e5",
@@ -306,7 +306,7 @@
     "app": {
       "apps/ethlete-studio/src/app/design-parts/tree-row/tree-row-item.component.ts": "b1220503bf53eb3f",
       "apps/ethlete-studio/src/app/design-parts/tree-row/tree-row.component.ts": "28e7bf8154434d69",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "23692cb9c1e6f90f",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "54c136f6d60fd83e",
       "libs/components/src/lib/internals/id-factory.ts": "5f0e611a0df139ba",
       "libs/components/src/lib/overlay/floating-panel-styles.component.css": "220e20271d03b0e1",
       "libs/components/src/lib/overlay/floating-panel-styles.component.ts": "2531f8c2a66e945e",
@@ -350,7 +350,7 @@
       "libs/core/src/lib/overlay/overlay-position-anchored.ts": "6cdb401de136761f",
       "libs/core/src/lib/overlay/overlay-position.ts": "9092f4ed96b750f3",
       "libs/core/src/lib/overlay/overlay-runtime-ref.ts": "82439ecc2f27cc4f",
-      "libs/core/src/lib/overlay/overlay-runtime.ts": "c0e6aa6edbcda0b6",
+      "libs/core/src/lib/overlay/overlay-runtime.ts": "267dd167083a116b",
       "libs/core/src/lib/overlay/overlay-runtime.types.ts": "570eb42477633ea9",
       "libs/core/src/lib/overlay/overlay-viewport-inset.ts": "347fab843b63ee4d",
       "libs/core/src/lib/providers/boundary-element.ts": "4d81c4a526bbf8fc",
