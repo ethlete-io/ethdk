@@ -1,5 +1,12 @@
 # @ethlete/cli
 
+## 3.0.0-next.33
+
+### Patch Changes
+
+- A design frame opened fresh now draws a state like a switch into it, once its web fonts loaded, so `sketch check` no longer reports a variant as changed from Aktuell when only the draw mode differed.
+- A design check that waits for another process's Tailwind run reads its answer instead of running Tailwind again when that run ends between the cache read and the lock.
+
 ## 3.0.0-next.32
 
 ### Minor Changes

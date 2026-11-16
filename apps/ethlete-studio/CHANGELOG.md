@@ -1,5 +1,12 @@
 # ethlete-studio
 
+## 0.2.0-next.22
+
+### Patch Changes
+
+- Esc leaves comment mode in one press while the pointer rests on a comment target and its tooltip shows.
+- A sent comment shows its pin on the canvas at once, with the Inbox open or not. Esc in comment mode first discards an open draft, then leaves comment mode.
+
 ## 0.2.0-next.21
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.87
+
+### Minor Changes
+
+- `et-table` has a `headerHidden` input: it hides the header rows visually and keeps them for screen readers.
+- The YouTube player, slot and params directive take a `playerVars` input. Its keys win over the SDK's player vars; every other key keeps its default.
+
+### Patch Changes
+
+- A responsive pagination in a column flex parent no longer grows to the parent's height. It now fills the width without flex-grow.
+- A `rect` skeleton item follows its parent's alignment and its own margins again; in a stretching flex row it stretches, so add `self-start` there.
+
 ## 1.0.0-next.86
 
 ### Minor Changes
