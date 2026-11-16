@@ -44,7 +44,7 @@ Source inputs per platform:
 
 | Platform    | Source                                                       | Extras                              |
 | ----------- | ------------------------------------------------------------ | ----------------------------------- |
-| YouTube     | `videoId`                                                    | `startTime`                         |
+| YouTube     | `videoId`                                                    | `autoplay`, `host`, `startTime`     |
 | Twitch      | `src` - channel name, channel URL or `…/videos/<id>` VOD URL | `autoplay`, `chat`, `startTime`     |
 | Vimeo       | `videoId`                                                    | `startTime`                         |
 | Dailymotion | `videoId`                                                    | `startTime`                         |
@@ -54,6 +54,15 @@ Source inputs per platform:
 | SOOP        | `userId` or `videoId`                                        | -                                   |
 
 Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
+
+A YouTube slot embeds from `www.youtube.com` unless you set `host`. Pass a host name such as
+`www.youtube-nocookie.com` for YouTube's privacy-enhanced mode; a missing `https://` is added and a trailing
+slash dropped. `autoplay` starts the video once the player is ready, muted, because browsers block autoplay
+with sound - `currentState().isMuted` is `true` and `unmute()` turns the sound on.
+
+```html
+<et-youtube-player-slot class="aspect-video" videoId="dQw4w9WgXcQ" host="www.youtube-nocookie.com" autoplay />
+```
 
 A SOOP slot with neither `userId` nor `videoId`, or a Twitch `src` that is no channel or video (`twitch.tv/videos/`, a clip URL), shows the error overlay and reports `ET1611` to the `ErrorHandler` in development. When both SOOP ids are set, `userId` wins.
 
@@ -258,7 +267,8 @@ The YouTube, Vimeo, Twitch and Facebook players load their platform SDK as a `<s
 | TikTok      | -                              | `https://www.tiktok.com`                                  |
 | SOOP        | -                              | `https://play.afreecatv.com`, `https://vod.afreecatv.com` |
 
-The YouTube poster image comes from `https://img.youtube.com`.
+The YouTube poster image comes from `https://img.youtube.com`. A YouTube slot with a `host` also needs that
+host in `frame-src`, e.g. `https://www.youtube-nocookie.com`.
 
 ## Facebook SDK locale and version
 

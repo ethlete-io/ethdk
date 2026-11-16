@@ -298,6 +298,15 @@ class HighlightsComponent {
 }
 
 @Component({
+  selector: 'et-scenario-privacy-highlights',
+  imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS],
+  template: `<et-youtube-player-slot videoId="match-recap" host="www.youtube-nocookie.com" autoplay />`,
+})
+class PrivacyHighlightsComponent {
+  slot = viewChild.required(YoutubePlayerSlotComponent);
+}
+
+@Component({
   selector: 'et-scenario-headless-youtube',
   template: '',
   hostDirectives: [{ directive: YoutubePlayerParamsDirective, inputs: ['videoId'] }, YoutubePlayerDirective],
@@ -708,6 +717,25 @@ describe('stream player scenarios', () => {
 
     expect(slot.currentState().isReady).toBe(true);
     expect(slotHost.querySelector('et-stream-player-loading')).toBeNull();
+  });
+
+  it('embeds a slot from the no-cookie host and autoplays it muted', () => {
+    const s = scenario();
+    const players = installYoutube();
+    const fixture = TestBed.createComponent(PrivacyHighlightsComponent);
+
+    s.flush();
+    fireScript(s, YT_API_URL);
+
+    const [player] = players;
+
+    expect(player?.config.host).toBe('https://www.youtube-nocookie.com');
+    expect(player?.config.playerVars).toMatchObject({ autoplay: 1, mute: 1 });
+
+    player?.config.events?.onReady?.({ target: player as never });
+    s.flush();
+
+    expect(fixture.componentInstance.slot().controls.currentState()).toMatchObject({ isReady: true, isMuted: true });
   });
 
   it('swaps a failed SDK load for the error card and recovers through its retry button', async () => {

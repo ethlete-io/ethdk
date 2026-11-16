@@ -87,8 +87,11 @@ export class YoutubePlayerDirective implements StreamPlayer {
               const placeholder = this.renderer.createElement('div');
               this.renderer.appendChild(this.el, placeholder);
 
+              const autoplay = this.params.autoplay();
+
               const player = new win.YT.Player(placeholder, {
                 videoId,
+                host: this.params.hostUrl(),
                 width: this.params.width(),
                 height: this.params.height(),
                 playerVars: {
@@ -96,10 +99,16 @@ export class YoutubePlayerDirective implements StreamPlayer {
                   origin: this.document.defaultView?.location.origin ?? '',
                   start: this.params.startTime() || undefined,
                   rel: 0,
+                  ...(autoplay ? { autoplay: 1, mute: 1 } : {}),
                 },
                 events: {
                   onReady: () => {
-                    this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
+                    this.state.set({
+                      ...DEFAULT_STREAM_PLAYER_STATE,
+                      isReady: true,
+                      isLoading: false,
+                      isMuted: autoplay,
+                    });
                     subscriber.next(player);
                   },
                   onStateChange: (event) => {

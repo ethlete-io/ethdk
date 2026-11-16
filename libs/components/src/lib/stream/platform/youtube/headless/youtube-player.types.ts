@@ -15,6 +15,7 @@ export type YtWindow = Window & {
 };
 
 export type YtPlayerConfig = {
+  host?: string;
   width?: string | number;
   height?: string | number;
   videoId?: string;

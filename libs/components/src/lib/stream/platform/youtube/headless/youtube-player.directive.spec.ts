@@ -12,7 +12,10 @@ import { YtPlayerConfig, YtWindow } from './youtube-player.types';
   selector: 'et-test-youtube-host',
   template: '',
   hostDirectives: [
-    { directive: YoutubePlayerParamsDirective, inputs: ['videoId', 'startTime', 'width', 'height'] },
+    {
+      directive: YoutubePlayerParamsDirective,
+      inputs: ['videoId', 'startTime', 'width', 'height', 'autoplay', 'host'],
+    },
     YoutubePlayerDirective,
   ],
 })
@@ -127,6 +130,36 @@ describe('YoutubePlayerDirective', () => {
     const { instance } = await setup();
 
     expect(instance()?.config.playerVars?.start).toBeUndefined();
+  });
+
+  it('should embed from www.youtube.com and leave autoplay off by default', async () => {
+    const { instance } = await setup();
+
+    expect(instance()?.config.host).toBe('https://www.youtube.com');
+    expect(instance()?.config.playerVars?.autoplay).toBeUndefined();
+    expect(instance()?.config.playerVars?.mute).toBeUndefined();
+  });
+
+  it.each([
+    ['youtube-nocookie.com', 'https://youtube-nocookie.com'],
+    ['www.youtube-nocookie.com/', 'https://www.youtube-nocookie.com'],
+    ['https://www.youtube-nocookie.com', 'https://www.youtube-nocookie.com'],
+    ['  ', 'https://www.youtube.com'],
+  ])('should pass the host %j to the player as %j', async (host, expected) => {
+    const { instance } = await setup({ videoId: 'vid1', host });
+
+    expect(instance()?.config.host).toBe(expected);
+  });
+
+  it('should autoplay muted and report the muted state once ready', async () => {
+    const { player, instance, settle } = await setup({ videoId: 'vid1', autoplay: '' });
+
+    expect(instance()?.config.playerVars).toMatchObject({ autoplay: 1, mute: 1 });
+
+    instance()?.config.events?.onReady?.({ target: instance() as never });
+    await settle();
+
+    expect(player.state().isMuted).toBe(true);
   });
 
   it('should be loading until the player reports ready', async () => {

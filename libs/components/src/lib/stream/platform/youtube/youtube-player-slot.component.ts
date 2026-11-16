@@ -15,7 +15,7 @@ import { YoutubePlayerComponent } from './youtube-player.component';
   hostDirectives: [
     {
       directive: YoutubePlayerParamsDirective,
-      inputs: ['videoId', 'startTime', 'width', 'height'],
+      inputs: ['videoId', 'startTime', 'width', 'height', 'autoplay', 'host'],
     },
     {
       directive: StreamPlayerSlotDirective,
