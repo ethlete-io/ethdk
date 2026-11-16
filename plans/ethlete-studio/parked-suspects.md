@@ -66,3 +66,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
   narrow-wide-state 136k -> 36.8k px: the design state now renders reset-focus-visible itself (no second tooltip) and
   draws "neu"/"fehlt" cells in Stand and Entwurf 1 like the app; the app sample takes the wide state's height from the
   state it draws (82, was 30 and clipped the chip). Rest: the tooltips above, the Entwurf 2 note wraps one word apart.
+- B524 (2026-11-16): as built 0c9495aab, autoFocus 'container' focuses the overlay host (scenario overlay-container-autofocus). A selector that matches nothing keeps falling back to the pane, by decision (c8): the date/time-range pickers rely on focus staying in the field; fifa passes 'container'.
