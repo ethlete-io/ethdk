@@ -4077,7 +4077,8 @@ const prepareCheckout = () => {
   const dir = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
 
   for (const entry of readdirSync(root)) {
-    if (entry === '.ethlete' || entry === '.git' || (coldShots && entry === 'node_modules')) continue;
+    if (entry === '.ethlete' || entry === '.git' || entry === 'tmp' || (coldShots && entry === 'node_modules'))
+      continue;
     // git reads no symlinked .gitignore, so `git add -- .ethlete` would take .ethlete/cache.
     if (entry === '.gitignore') copyFileSync(join(root, entry), join(dir, entry));
     else symlinkSync(join(root, entry), join(dir, entry));
@@ -4090,6 +4091,12 @@ const prepareCheckout = () => {
     }
   }
 
+  // A linked tmp would put the design serve's resident lock and discovery file into the main checkout.
+  mkdirSync(join(dir, 'tmp'));
+  if (process.env['STUDIO_E2E_SHOTS']) {
+    mkdirSync(join(dir, '.ethlete/cache/design-explore'), { recursive: true });
+    symlinkSync(process.env['STUDIO_E2E_SHOTS'], join(dir, '.ethlete/cache/design-explore/part-shots'));
+  }
   cpSync(join(root, '.ethlete/design'), join(dir, '.ethlete/design'), { recursive: true });
 
   rmSync(join(dir, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
@@ -4580,6 +4587,7 @@ const lead = async () => {
   let quietTail = false;
   let firstCase = false;
   const scratch = built ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-build-'));
+  const shots = coldShots ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-shots-'));
   const record = (job, result) => {
     rows.push({ ...job, ...result });
     console.log(
@@ -4621,7 +4629,12 @@ const lead = async () => {
         fileURLToPath(import.meta.url),
         ['--worker', '--built', built ?? scratch, ...(checkFixtures ? ['--check-fixtures'] : [])],
         {
-          env: { ETHLETE_DESIGN_SLOW_CHECKS: 'off', ...process.env, DE_PORT: String(port) },
+          env: {
+            ETHLETE_DESIGN_SLOW_CHECKS: 'off',
+            ...process.env,
+            DE_PORT: String(port),
+            ...(shots ? { STUDIO_E2E_SHOTS: shots } : {}),
+          },
           stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
         },
       );
@@ -4701,6 +4714,7 @@ const lead = async () => {
     );
   } finally {
     if (scratch) rmSync(scratch, { recursive: true, force: true });
+    if (shots) rmSync(shots, { recursive: true, force: true });
   }
 
   const survivors = await residentSurvivors({ teardowns });
