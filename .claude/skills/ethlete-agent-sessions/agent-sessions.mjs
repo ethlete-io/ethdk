@@ -127,19 +127,22 @@ const agentCommandOf = (session) =>
     .replace(/^"(.*)"$/, '$1');
 const roleOf = (session) => tmux('show-options', '-v', '-t', `=${session}:`, ROLE_OPTION).stdout.trim() || null;
 const arePaired = (a, b) => (roleOf(a) === 'builder') !== (roleOf(b) === 'builder');
-const localSessionFor = (agent) => (sessionExists(sessionFor(agent)) ? sessionFor(agent) : null);
 const checkoutOfSession = (session) => {
-  const path = tmux('display-message', '-p', '-t', `=${session}:`, '#{session_path}').stdout.trim();
+  const path = tmux('display-message', '-p', '-t', `=${session}:`, '#{pane_current_path}').stdout.trim();
   if (!path) return null;
   const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: path, encoding: 'utf8' });
-  return basename(top.status === 0 ? top.stdout.trim() : path);
+  return top.status === 0 ? top.stdout.trim() : path;
 };
+const localSessionFor = (agent) =>
+  [sessionFor(agent), agent].find(
+    (name) => sessionExists(name) && (name === sessionFor(agent) || checkoutOfSession(name) === root),
+  ) ?? null;
 const foreignCheckoutsOf = (agent) => [
   ...new Set(
     tmux('list-sessions', '-F', '#{session_name}')
       .stdout.split('\n')
       .filter((name) => name === agent || name.startsWith(`${agent}@`))
-      .map((name) => (name === agent ? checkoutOfSession(name) : name.slice(agent.length + 1)))
+      .map((name) => (name === agent ? basename(checkoutOfSession(name) ?? '') : name.slice(agent.length + 1)))
       .filter(Boolean),
   ),
 ];

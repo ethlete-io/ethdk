@@ -311,6 +311,34 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
+    'accepts and wakes a plain-named session whose pane runs in this checkout',
+    async () => {
+      const agent = `mailbox-plain-${process.pid}`;
+      const log = join(dir, 'pane.log');
+      spawnSync('git', ['init', '-q'], { cwd: dir });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', agent, '-c', dir, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        expect(run(['send', 'codex', '--to', agent, 'hello']).status).toBe(0);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('Mailbox message from codex: hello\n');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${agent}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
     'types no message from before the dispatcher started on the first wake of an agent',
     async () => {
       const agent = `mailbox-first-wake-${process.pid}`;
