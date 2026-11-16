@@ -9,6 +9,8 @@ import {
   callLintGateLinesOf,
   changedLintFilesOf,
   LINT_BASELINE_FILE,
+  lintFindingsAsync,
+  lintFindingsOf,
   lintGateLinesOf,
   lintKeyOf,
   readLintBaseline,
@@ -19,6 +21,12 @@ import { resolveProduct } from './system/resolve-product';
 import { mergeSketch } from './system/sketch/merge';
 import { createSketch, decideSketch, markSketchReady, Sketch, variantDirOf } from './system/sketch/sketch';
 import { gitSpawn } from '../git-test-env.fixtures';
+
+vi.mock('./design-lint', async (original) => {
+  const actual = await original<typeof import('./design-lint')>();
+
+  return { ...actual, lintFindingsAsync: vi.fn(actual.lintFindingsAsync) };
+});
 
 const BANG = "const plus = ICONS.find((each) => each === 'et-plus')!;\n";
 const FAILED = "const plus = ICONS.find((each) => each === 'et-plus') ?? fail('no et-plus');\n";
@@ -222,5 +230,46 @@ describe('the design lint gate', { timeout: 60_000 }, () => {
     writeFileSync(fixture, PRELUDE + BANG);
 
     expect(callLintGateLinesOf({ target, slug: 'app/one' })).toEqual([]);
+  });
+
+  it('reuses the findings eslint gave ahead on unchanged files', async () => {
+    const target = acme();
+    const hero = heroFile(acmeProduct(target).dir);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    writeFileSync(hero, PRELUDE + FAILED);
+    vi.mocked(lintFindingsAsync).mockImplementationOnce(async ({ files }) => [
+      { file: files[0] ?? '', line: 1, column: 1, rule: 'ahead/sentinel', message: 'from the ahead run' },
+    ]);
+
+    expect(
+      await checkDesign({ target, argv: ['--product', 'acme', '--part', 'elements/hero'], invocation: 'et design' }),
+    ).toBe(1);
+    expect(errors.mock.calls.flat().join('\n')).toMatch(/^LINT .*icon\.ts:1:1 ahead\/sentinel: from the ahead run/mu);
+  });
+
+  it('lints again when a lint file changes after the ahead run started', async () => {
+    const target = acme();
+    const hero = heroFile(acmeProduct(target).dir);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    writeFileSync(hero, PRELUDE + FAILED);
+    vi.mocked(lintFindingsAsync).mockImplementationOnce(async (options) => {
+      const findings = lintFindingsOf(options);
+
+      writeFileSync(hero, PRELUDE + BANG);
+
+      return typeof findings === 'string' ? undefined : findings;
+    });
+
+    expect(
+      await checkDesign({ target, argv: ['--product', 'acme', '--part', 'elements/hero'], invocation: 'et design' }),
+    ).toBe(1);
+    expect(lintFindingsAsync).toHaveBeenCalled();
+    expect(errors.mock.calls.flat().join('\n')).toMatch(
+      /^LINT .*elements\/hero\/icon\.ts:5:\d+ @typescript-eslint\/no-non-null-assertion/mu,
+    );
   });
 });
