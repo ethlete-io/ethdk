@@ -81,10 +81,11 @@
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "759421921eb60e41",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-15T23:56:59.149Z"
+    "hash": "6ecb1c1aaf5afa84",
+    "variant": "a",
+    "decidedBy": "plan: finding 911 precedent: B523 (2) plan (handoff builder-b510, c8), shot shows only the system menu moving 2 px up to the app's 12 px trigger offset",
+    "at": "2026-11-16T01:53:59.566Z",
+    "note": "merged without a pick: allowed by finding 911 precedent: B523 (2) plan (handoff builder-b510, c8), shot shows only the system menu moving 2 px up to the app's 12 px trigger offset"
   },
   "elements/studio-menu": {
     "hash": "9733c6c843979882",

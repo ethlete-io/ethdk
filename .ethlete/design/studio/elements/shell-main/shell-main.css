@@ -81,7 +81,7 @@
   }
 
   .st-system-picker {
-    top: calc(var(--space-3) + 48px + var(--space-1));
+    top: calc(var(--space-3) + (48px + var(--control-md)) / 2 + 12px);
     left: calc(var(--space-3) + var(--space-2));
     box-shadow: 0 12px 32px var(--surface-shadow);
     transform: translate3d(0, 0, 0);
