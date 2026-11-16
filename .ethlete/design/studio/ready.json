@@ -534,7 +534,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": ["emit:fit", "emit:zoomIn", "emit:zoomOut", "emit:zoomReset"],
+    "actions": [],
     "at": "2026-11-16T00:59:33.259Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",

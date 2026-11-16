@@ -34,11 +34,11 @@
   },
   "components/disclosure": "55fb76d9d7dd3b96",
   "components/shell-collapse": {
-    "hash": "2e8c2904717874d6",
+    "hash": "61fa6a95dbd7a46f",
     "variant": "a",
-    "decidedBy": "plan: ADR 0293 + STATUS A8",
-    "at": "2026-11-16T00:56:41.250Z",
-    "note": "merged without a pick: allowed by ADR 0293 + STATUS A8"
+    "decidedBy": "plan: finding 911 precedent: harness frame correction, component unchanged",
+    "at": "2026-11-16T01:22:41.594Z",
+    "note": "merged without a pick: allowed by finding 911 precedent: harness frame correction, component unchanged"
   },
   "components/sketch-status-badge": {
     "hash": "35ff1719bb184376",
@@ -61,11 +61,11 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "components/zoom-chip": {
-    "hash": "6f2b37760379ba9d",
+    "hash": "7e5c0f777dd0c4fc",
     "variant": "a",
-    "decidedBy": "plan: ADR 0293 + STATUS A8",
-    "at": "2026-11-16T00:56:41.250Z",
-    "note": "merged without a pick: allowed by ADR 0293 + STATUS A8"
+    "decidedBy": "plan: finding 911 precedent: harness frame correction, component unchanged",
+    "at": "2026-11-16T01:22:41.594Z",
+    "note": "merged without a pick: allowed by finding 911 precedent: harness frame correction, component unchanged"
   },
   "elements/canvas-frames": {
     "hash": "0aba678db6202ece",
