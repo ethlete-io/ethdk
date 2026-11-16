@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
-import { ClubListView } from '../Club';
 import { MediaMinimalView } from './../Media/mediaMinimal.view';
+import { ClubView } from './club.view';
 
 export interface ParticipantListView {
     id: string;
@@ -10,7 +10,7 @@ export interface ParticipantListView {
     profileType: string | null;
     profileId: string | null;
     number: number | null;
-    footballClub: ClubListView | null;
+    footballClub: ClubView | null;
 }
 
 export default ParticipantListView;
