@@ -231,15 +231,6 @@ pages/sketches, auf B34 aufgesetzt); Berichte unter `.claude/handoffs/agent-resu
   Gebaut ff698951f (c8, ungepusht; SDK-Fensterknopf `shape: 'caption'`). Offen: die 12 übersprungenen Hover-Zustände
   (Befund 483), ein echtes Windows-Fenster, Sketch `components/title-bar@notice-hint` (Befund 484). `check --part
 elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
-- **A5** Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben die Auswahl der Design-Systeme; die Auswahl
-  unten entfällt. Skizze `elements/shell-main@logo-menu` gezeichnet (Teile elements/shell-main und elements/studio-menu; überlappt
-  `elements/shell-main@sidebar-resize`, beide auf dem gemergten shell-main): Fuß mit dem Projekt-Schalter entfällt (Zustände
-  project-picker gestrichen), das Logo-Menü trägt Projekt und „Projekt öffnen…“ über den Design-Server-Aktionen.
-  a: Kopf der Seitenleiste wird ein Auswahlknopf (Name + Chevron) mit SDK-Menü der Design-Systeme; Logo-Menü listet die
-  Repos direkt als Radio-Gruppe. Kosten: ein Klick mehr zum Wechseln. b: Kopf wird eine Segmentreihe aus SDK-Toggle-Knöpfen,
-  alle Design-Systeme sichtbar; Logo-Menü zeigt das offene Repo als Untermenü-Auslöser. Kosten: ab etwa vier Systemen oder
-  langen Namen passt die Reihe nicht in 248 px; Repo-Wechsel braucht das Untermenü. Empfehlung a (skaliert mit der Zahl der
-  Systeme; die Schnellwahl in der Leiste deckt den schnellen Wechsel schon ab). Gemergt als Variante c (6f4f97a17); offen ist nur der Port ins App-Code.
 - **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
 - **A8** Rest: Skizze `components/zoom-chip@focus-tooltip` (studio, auch shell-collapse) zeichnet das offene SDK-Tooltip in den focus-visible-Zuständen; App und gemergte Teile behalten `title`. Gehalten: `sketch ready` verweigert, weil pages/sketches zoom-chip-Zustände in 176-px-Zellen zeigt und das Tooltip dort herausragt (CLIPPED, CUT-CONTROL, SEE-THROUGH, CANVAS-UNDER-PANEL); Dafür Skizze `pages/sketches@focus-tooltip` (a: Probezellen ohne focus-visible-Zustände; b: Zellen wachsen auf 208 px, im Crop-Bild 208 × 80 px); pages/sketches@focus-tooltip wurde verworfen (d9a775727); der Builder skizziert die Zellen neu, wählt und merged selbst, dann `sketch release` und `sketch ready` auf zoom-chip@focus-tooltip (Befund 116).
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
