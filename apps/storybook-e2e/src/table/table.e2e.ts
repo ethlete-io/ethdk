@@ -691,11 +691,13 @@ test.describe('table / pointer', () => {
 });
 
 test.describe('table / layout', () => {
-  for (const variant of [
+  const headerHiddenVariants: { name: string; args: Record<string, boolean> }[] = [
     { name: 'plain', args: {} },
     { name: 'grouped', args: { grouped: true } },
     { name: 'page-sticky', args: { pageStickyHeader: true } },
-  ]) {
+  ];
+
+  for (const variant of headerHiddenVariants) {
     test(`headerHidden (${variant.name}) puts the first row at the top and keeps the column headers for screen readers`, async ({
       page,
     }) => {
