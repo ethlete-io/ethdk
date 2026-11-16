@@ -30,7 +30,11 @@ export default definePart({
         { imports: ['BUTTON_IMPORTS'] },
       ),
     });
-    const window = await studioWindow(html`<div class="absolute top-10 right-25">${dialog.body}</div>`);
+    const window = await studioWindow(
+      html`<div class="absolute top-[calc(anchor(bottom)+10px)] right-[anchor(right)] [position-anchor:--ud-update]">
+        ${dialog.body}
+      </div>`,
+    );
 
     return drawing({ body: window.body, styles: [window.styles, dialog.styles, styles].join('\n') });
   },
