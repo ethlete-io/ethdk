@@ -455,10 +455,14 @@ export const classFactsOf = (options: { product: StyleHolder; classes: PartClass
     }
 
     try {
+      const current = lock === 'held' ? factsRequestOf(options) : request;
+
+      if (current.missing.length === 0) return storedFactsOf(current, null);
+
       return storedFactsOf(
-        request,
-        execFileSync(process.execPath, ['-e', CLASS_FACTS, request.tailwind], {
-          input: request.input,
+        current,
+        execFileSync(process.execPath, ['-e', CLASS_FACTS, current.tailwind], {
+          input: current.input,
           encoding: 'utf8',
           maxBuffer: 1 << 28,
           stdio: ['pipe', 'pipe', 'pipe'],
@@ -488,14 +492,18 @@ const classFactsAsyncOf = async (options: { product: StyleHolder; classes: PartC
     }
 
     try {
-      const run = await spawnPlainAsync([process.execPath, '-e', CLASS_FACTS, request.tailwind], {
-        input: request.input,
+      const current = lock === 'held' ? untrackedRun(() => factsRequestOf(options)) : request;
+
+      if (current.missing.length === 0) return storedFactsOf(current, null);
+
+      const run = await spawnPlainAsync([process.execPath, '-e', CLASS_FACTS, current.tailwind], {
+        input: current.input,
       });
 
       if (run.error || run.status !== 0)
         throw Object.assign(run.error ?? new Error(`Tailwind exited ${run.status}`), { stderr: run.stderr });
 
-      return storedFactsOf(request, run.stdout);
+      return storedFactsOf(current, run.stdout);
     } finally {
       if (lock === 'held') rmSync(lockFile, { force: true });
     }
