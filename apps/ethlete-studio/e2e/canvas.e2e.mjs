@@ -454,15 +454,17 @@ const ringOf = (page) =>
     { CANVAS },
   );
 
-const focusUntil = async (page, done) => {
-  let ring = await ringOf(page);
+const readUntil = async (page, read, done) => {
+  let value = await read();
 
-  for (const until = Date.now() + WAIT_MS; !done(ring) && Date.now() < until; ring = await ringOf(page)) {
-    await page.waitForTimeout(100);
+  for (const until = Date.now() + WAIT_MS; !done(value) && Date.now() < until; value = await read()) {
+    await page.waitForTimeout(50);
   }
 
-  return ring;
+  return value;
 };
+
+const focusUntil = (page, done) => readUntil(page, () => ringOf(page), done);
 
 const LIVE_GRACE_MS = 5000;
 
@@ -520,11 +522,10 @@ const focusInto = async (page, id) => {
     id,
   );
   await page.keyboard.press('Tab');
-  await settle(page);
 
-  const focus = await frameFocusOf(page, id);
+  const inside = (focus) => focus.inFrame && !focus.active.endsWith('> body') && !focus.active.endsWith('> nothing');
 
-  return focus.inFrame && !focus.active.endsWith('> body') && !focus.active.endsWith('> nothing');
+  return inside(await readUntil(page, () => frameFocusOf(page, id), inside));
 };
 
 const noRingAfterPointer = async (page, point) => {
@@ -552,7 +553,6 @@ const drag = async (page, from, by, button = 'left') => {
     await page.mouse.move(from.x + (by.x * step) / 6, from.y + (by.y * step) / 6);
   }
   await page.mouse.up({ button });
-  await settle(page);
 };
 
 const near = (a, b) => Math.abs(a - b) <= 1.5;
@@ -1187,21 +1187,32 @@ const CASES = [
       const towardsMiddle = centreOf(before).y < (view.top + view.bottom) / 2 ? -120 : 120;
       await page.mouse.move(centreOf(before).x, centreOf(before).y);
       await page.mouse.wheel(0, towardsMiddle);
-      await settle(page);
-      const panned = (await frameBoxes(page, selector))[index];
+      const pansFrom = (panned) => Math.abs(panned.top - before.top) > 20 || Math.abs(panned.left - before.left) > 20;
+      const panned = (
+        await readUntil(
+          page,
+          () => frameBoxes(page, selector),
+          (boxes) => pansFrom(boxes[index]),
+        )
+      )[index];
 
       if (!seen(panned)) return { ok: false, detail: `the pan moved the frame centre out of view, top ${panned.top}` };
       await page.mouse.move(centreOf(panned).x, centreOf(panned).y);
       await page.keyboard.down('Control');
       await page.mouse.wheel(0, -240);
       await page.keyboard.up('Control');
-      await settle(page);
+      const zoomed = (
+        await readUntil(
+          page,
+          () => frameBoxes(page, selector),
+          (boxes) => boxes[index].zoom > panned.zoom * 1.05,
+        )
+      )[index];
       const unzoomed = await stillInFit(page, 'a ctrl-wheel zoom');
 
       if (unzoomed) return unzoomed;
 
-      const zoomed = (await frameBoxes(page, selector))[index];
-      const pans = Math.abs(panned.top - before.top) > 20 || Math.abs(panned.left - before.left) > 20;
+      const pans = pansFrom(panned);
       // A sketch row stays at the 1440 px fallback until its iframe measures it, which can land between two reads.
       const zooms = zoomed.zoom > panned.zoom * 1.05;
 
@@ -1244,9 +1255,16 @@ const CASES = [
         const before = (await probe(page)).camera;
         await page.mouse.move(point.x, point.y);
         await page.mouse.wheel(0, point.y < (view.top + view.bottom) / 2 ? -120 : 120);
-        await settle(page);
-        const after = (await probe(page)).camera;
-        const moved = Math.abs(after.x - before.x) + Math.abs(after.y - before.y);
+        const movedBy = (after) => Math.abs(after.x - before.x) + Math.abs(after.y - before.y);
+        const moved = movedBy(
+          (
+            await readUntil(
+              page,
+              () => probe(page),
+              (after) => !!after?.camera && movedBy(after.camera) > 20,
+            )
+          ).camera,
+        );
 
         return { ok: moved > 20, detail: `camera moved ${moved.toFixed(0)}px with the pointer over an iframe` };
       } finally {
@@ -1286,21 +1304,27 @@ const CASES = [
         await page.keyboard.down('Control');
         await page.mouse.wheel(0, delta);
         await page.keyboard.up('Control');
-        await settle(page);
 
+        const driftOf = (after) => {
+          const ratio = after.width / before.width;
+
+          return Math.hypot(
+            after.left + (pointer.x - before.left) * ratio - pointer.x,
+            after.top + (pointer.y - before.top) * ratio - pointer.y,
+          );
+        };
+        const after = (
+          await readUntil(
+            page,
+            () => frameBoxes(page, selector),
+            (boxes) => boxes[index].width !== before.width && driftOf(boxes[index]) <= 2,
+          )
+        )[index];
         const unzoomed = await stillInFit(page, `a ctrl-wheel of ${delta}`);
 
         if (unzoomed) return unzoomed;
 
-        const after = (await frameBoxes(page, selector))[index];
-        const ratio = after.width / before.width;
-
-        drifts.push(
-          Math.hypot(
-            after.left + (pointer.x - before.left) * ratio - pointer.x,
-            after.top + (pointer.y - before.top) * ratio - pointer.y,
-          ),
-        );
+        drifts.push(driftOf(after));
         before = after;
       }
 
@@ -1415,12 +1439,14 @@ const CASES = [
       await page.waitForSelector('[data-sk-state]');
       await settled(page, FRAME);
       await page.getByRole('button', { name: 'Einpassen' }).first().click();
-      await settle(page);
-      const again = await shown();
+      const again = await readUntil(page, shown, (again) => again !== null && Math.abs(again - percent) <= 1);
 
       await page.getByRole('button', { name: 'Vergrößern' }).first().click();
-      await settle(page);
-      const stepped = await shown();
+      const stepped = await readUntil(
+        page,
+        shown,
+        (stepped) => stepped !== null && Math.abs(stepped - Math.round(again * 1.5)) <= 1,
+      );
       const faults = [
         ...(again !== null && Math.abs(again - percent) <= 1
           ? []
@@ -2790,7 +2816,6 @@ const CASES = [
     run: async (page, state) => {
       if (!state.empty) return { ok: false, detail: 'no empty point' };
       await page.mouse.click(state.empty.x, state.empty.y);
-      await settle(page);
       const mark = (blurred) =>
         page.evaluate(
           ({ CANVAS, blurred }) => {
@@ -2808,7 +2833,7 @@ const CASES = [
           },
           { CANVAS, blurred },
         );
-      const clicked = await mark(false);
+      const clicked = await readUntil(page, () => mark(false), Boolean);
       await mark(true);
       await settle(page);
       const kept = await mark(false);
@@ -2930,7 +2955,11 @@ const CASES = [
       if (!state.empty) return { ok: false, detail: 'no empty point' };
       const by = { x: 90, y: 60 };
       await drag(page, state.empty, by);
-      const after = await probe(page);
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(state, after, by),
+      );
 
       return { ok: moved(state, after, by), detail: describe(state, after) };
     },
@@ -2940,8 +2969,11 @@ const CASES = [
     run: async (page, state) => {
       if (!state.frame) return { ok: false, detail: 'no frame point' };
       await page.mouse.click(state.frame.x, state.frame.y);
-      await settle(page);
-      const after = await probe(page);
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => !!after?.frames[state.frame.index]?.selected,
+      );
       const frame = after.frames[state.frame.index];
 
       return { ok: !!frame?.selected, detail: `selected=${!!frame?.selected}` };
@@ -2952,32 +2984,35 @@ const CASES = [
     run: async (page, state) => {
       if (!state.frame) return { ok: false, detail: 'no frame point' };
       await page.mouse.click(state.frame.x, state.frame.y);
-      await settle(page);
-      const outline = await page.evaluate(
-        ({ CANVAS }) => {
-          const canvas = [...document.querySelectorAll(CANVAS)].sort(
-            (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
-          )[0];
-          const border = canvas?.querySelector('[data-selected] [data-frame-border]');
+      const drawn = (outline) =>
+        !!outline && outline.style === 'solid' && Number.parseFloat(outline.width) > 1 && outline.fills;
+      const read = () =>
+        page.evaluate(
+          ({ CANVAS }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const border = canvas?.querySelector('[data-selected] [data-frame-border]');
 
-          if (!border) return null;
+            if (!border) return null;
 
-          const style = getComputedStyle(border);
-          const box = border.getBoundingClientRect();
-          const host = border.closest('[data-selected]').getBoundingClientRect();
+            const style = getComputedStyle(border);
+            const box = border.getBoundingClientRect();
+            const host = border.closest('[data-selected]').getBoundingClientRect();
 
-          return {
-            width: style.outlineWidth,
-            style: style.outlineStyle,
-            color: style.outlineColor,
-            fills: Math.abs(box.width - host.width) < 1 && Math.abs(box.height - host.height) < 1,
-          };
-        },
-        { CANVAS },
-      );
+            return {
+              width: style.outlineWidth,
+              style: style.outlineStyle,
+              color: style.outlineColor,
+              fills: Math.abs(box.width - host.width) < 1 && Math.abs(box.height - host.height) < 1,
+            };
+          },
+          { CANVAS },
+        );
+      const outline = await readUntil(page, read, drawn);
 
       return {
-        ok: !!outline && outline.style === 'solid' && Number.parseFloat(outline.width) > 1 && outline.fills,
+        ok: drawn(outline),
         detail: JSON.stringify(outline),
       };
     },
@@ -3066,11 +3101,14 @@ const CASES = [
     run: async (page, state) => {
       if (!state.empty) return { ok: false, detail: 'no empty point' };
       await page.mouse.click(state.empty.x, state.empty.y);
-      await settle(page);
+      await focusUntil(page, (ring) => ring.focused);
       const before = await probe(page);
       await page.keyboard.press('ArrowRight');
-      await settle(page);
-      const after = await probe(page);
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(before, after, { x: -ARROW_STEP, y: 0 }),
+      );
 
       return { ok: moved(before, after, { x: -ARROW_STEP, y: 0 }), detail: describe(before, after) };
     },
@@ -3105,8 +3143,11 @@ const CASES = [
       await page.keyboard.down('Space');
       await drag(page, from, by);
       await page.keyboard.up('Space');
-      await settle(page);
-      const after = await probe(page);
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(state, after, by),
+      );
 
       return { ok: moved(state, after, by), detail: describe(state, after) };
     },
@@ -3118,7 +3159,11 @@ const CASES = [
       if (!from) return { ok: false, detail: 'no point' };
       const by = { x: -50, y: 30 };
       await drag(page, from, by, 'middle');
-      const after = await probe(page);
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(state, after, by),
+      );
 
       return { ok: moved(state, after, by), detail: describe(state, after) };
     },
@@ -3129,7 +3174,7 @@ const CASES = [
     run: async (page, state, target) => {
       if (!state.empty) return { ok: false, detail: 'no empty point' };
       await page.mouse.click(state.empty.x, state.empty.y);
-      await settle(page);
+      await focusUntil(page, (ring) => ring.focused);
 
       const selector = target.frame ?? FRAME;
       const failed = [];
@@ -3142,11 +3187,15 @@ const CASES = [
 
         const presses = Math.max(1, Math.ceil(edge.room(content, before.view) / ARROW_STEP) + 1);
 
-        for (let press = 0; press < presses; press++) await page.keyboard.press(edge.key);
-        await settle(page);
-
-        const after = await probe(page);
         const by = { x: ARROWS_BY[edge.key].x * presses, y: ARROWS_BY[edge.key].y * presses };
+
+        for (let press = 0; press < presses; press++) await page.keyboard.press(edge.key);
+
+        const after = await readUntil(
+          page,
+          () => probe(page),
+          (after) => moved(before, after, by),
+        );
         const beyond = edge.room(contentOf(await frameBoxes(page, selector)), after.view) < 0;
 
         if (!moved(before, after, by) || !beyond) {
@@ -3318,7 +3367,6 @@ const CASES = [
           await page.getByRole('button', { name: 'Auf 100 % zoomen' }).first().click();
           for (let step = 0; step < outSteps; step++)
             await page.getByRole('button', { name: 'Verkleinern' }).first().click();
-          await settle(page);
           await settled(page, FRAME);
           if (process.env['STUDIO_E2E_SHOTS'])
             await page.screenshot({
@@ -3496,12 +3544,18 @@ const CASES = [
       });
 
       await page.mouse.move(canvasBox.x, canvasBox.y);
+      const wheeled = await probe(page);
       await page.mouse.wheel(60, 90);
-      await settle(page);
+      await readUntil(
+        page,
+        () => probe(page),
+        (now) => now?.camera?.x !== wheeled?.camera?.x || now?.camera?.y !== wheeled?.camera?.y,
+      );
+      const unwheeled = await screenRect();
       await page.keyboard.down('Control');
       await page.mouse.wheel(0, -120);
       await page.keyboard.up('Control');
-      await settle(page);
+      await readUntil(page, screenRect, (now) => now?.width !== unwheeled?.width);
 
       const unzoomed = await stillInFit(page, 'a ctrl-wheel zoom');
 
