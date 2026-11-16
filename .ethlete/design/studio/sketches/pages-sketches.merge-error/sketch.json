@@ -94,12 +94,12 @@
     "pages/inbox": "0e0fc08e618a94a0",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "0e69471347b333f1",
-    "pages/sketches": "cc81d4449e52a49f",
+    "pages/sketches": "9bc269978383861f",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "3856b5bb0e03bbef",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "c25e233e3e1f7f1fb01873fefd1e9de3aa4eebb0",
+  "baselineTree": "b67bfe04c9525d5480a9371eda05a32c2f207c57",
   "decision": {
     "kind": "pick",
     "variant": "b",
@@ -133,9 +133,9 @@
     }
   },
   "readyContent": {
-    "a": "a9db4a7f2149703e",
-    "b": "8d1add8bbbceb90d",
-    "c": "943f5f1b79530c00"
+    "a": "6023cbd9fa7ec38c",
+    "b": "678a4126dcaa216e",
+    "c": "0bc3c8ce9d3fc3c2"
   },
   "mergeHold": {
     "reason": "variant a changes merge-error; variant b changes merge-error; variant c changes merge-error",
