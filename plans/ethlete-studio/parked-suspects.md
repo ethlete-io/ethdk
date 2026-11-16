@@ -72,3 +72,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - vitest factory return (B528, 2026-11-16, abb97a699): a factory's `return { lock }` came back undefined until written `const api = ...; return api`. Suspect: stale transform cache; not hunted.
 - e2e class-facts growth (2026-11-16, fdb52c107): each Studio e2e run writes class-facts entries keyed by worker path into the main checkout's node_modules/.cache/ethlete-design/class-facts (1417 files, 239 MB, never hit). Suspect: a path-free slot plus a per-run dir stops the growth and lets the 8 workers share facts.
 - shell-main action probe (2026-11-16, B523): server-stopped "Flows" pointer focus showed no ring within 1000 ms; the run exited 0, not repeated. Suspect: load. First time.
+- Mac release smoke (2026-11-16, 70df2bb6e): FAIL. Suspect: stale dist/libs/cli on the Mac + locked screen, not the new tsconfig; retry queued with the builder. First time.
