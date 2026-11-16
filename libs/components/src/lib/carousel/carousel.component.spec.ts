@@ -110,6 +110,25 @@ describe('CarouselComponent', () => {
     expect(fixture.componentInstance.carousel().count()).toBe(1);
   });
 
+  it('renders no navigation for fewer than two slides', () => {
+    const fixture = createHost();
+    const navigation = '.et-carousel-controls, .et-carousel-control, .et-carousel-dot, .et-carousel-play-toggle-corner';
+
+    expect(host(fixture).querySelectorAll(navigation).length).toBeGreaterThan(0);
+
+    for (const slides of [[{ title: 'only one' }], []]) {
+      fixture.componentInstance.slides.set(slides);
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelectorAll(navigation).length).toBe(0);
+    }
+
+    fixture.componentInstance.slides.set([{ title: 'one' }, { title: 'two' }]);
+    fixture.detectChanges();
+
+    expect(host(fixture).querySelectorAll('.et-carousel-dot').length).toBe(2);
+  });
+
   it('renders a labelled dot per slide', () => {
     const fixture = createHost();
     const dots = host(fixture).querySelectorAll('.et-carousel-dot');

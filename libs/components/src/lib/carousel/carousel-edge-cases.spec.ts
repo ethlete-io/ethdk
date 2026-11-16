@@ -69,8 +69,7 @@ describe('CarouselDirective edge cases', () => {
       fixture.detectChanges();
 
       expect(scroll.calls()).toEqual([]);
-      expect(element(fixture).querySelector('[etCarouselNext]')?.getAttribute('aria-disabled')).toBe('true');
-      expect(element(fixture).querySelector('[etCarouselPrevious]')?.getAttribute('aria-disabled')).toBe('true');
+      expect(element(fixture).querySelector('[etCarouselNext], [etCarouselPrevious]')).toBeNull();
     });
 
     it('does not autoplay, and says why', async () => {
@@ -83,10 +82,10 @@ describe('CarouselDirective edge cases', () => {
       expect(fixture.componentInstance.autoplayDirective().isPlaying()).toBe(false);
     });
 
-    it('renders a dot per slide and no clones', async () => {
+    it('renders no dots and no clones', async () => {
       const fixture = await createHost(slides);
 
-      expect(element(fixture).querySelectorAll('.et-carousel-dot').length).toBe(slides.length);
+      expect(element(fixture).querySelectorAll('.et-carousel-dot').length).toBe(0);
       expect(element(fixture).querySelectorAll('.et-carousel-item').length).toBe(slides.length);
     });
   });

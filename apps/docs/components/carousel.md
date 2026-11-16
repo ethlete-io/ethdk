@@ -343,6 +343,11 @@ every value, and animating a registered property recalculates style every frame 
 not. Idle, the gradient version cost ~1120 paints and ~510 style recalculations over nine seconds; the
 rotations cost ~139 and ~89, which is within measurement noise of rendering no ring at all.
 
+## One slide
+
+A carousel with fewer than two slides renders no navigation: no arrows, no dots, no control bar and no play control.
+The slide itself still renders.
+
 ## Controls over the slides
 
 `controlsPosition="overlay"` lays the control bar over the bottom edge of the track instead of under it,

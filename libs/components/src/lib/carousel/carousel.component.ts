@@ -148,6 +148,8 @@ export class CarouselComponent {
 
   protected isAutoplayRunning = computed(() => this.autoplayDirective.isPlaying());
 
+  protected hasNavigation = computed(() => this.carousel.count() > 1);
+
   protected isPlayToggleInCorner = computed(
     () => this.isAutoplayEnabled() && this.pauseTogglePosition().startsWith('top-'),
   );

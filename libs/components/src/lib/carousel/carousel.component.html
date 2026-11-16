@@ -16,7 +16,7 @@
   }
 </et-scrollable>
 
-@if (showControls() || showDots() || isPlayToggleInBar()) {
+@if (hasNavigation() && (showControls() || showDots() || isPlayToggleInBar())) {
   <div class="et-carousel-controls">
     @if (pauseTogglePosition() === 'start') {
       <ng-container *ngTemplateOutlet="playToggle" />
@@ -72,7 +72,7 @@
   </div>
 }
 
-@if (isPlayToggleInCorner()) {
+@if (hasNavigation() && isPlayToggleInCorner()) {
   <div class="et-carousel-play-toggle-corner">
     <ng-container *ngTemplateOutlet="playToggle" />
   </div>
