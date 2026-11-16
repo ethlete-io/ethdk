@@ -31,7 +31,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 
 0. Wartezeit (ADR 0236, 0237, 0238, Bef. 639): endet nach dem Beweis für 647 und dem Push (Tom, 09.11.). E2E-Schritt
    jetzt etwa 118 s statt 165-197 s; Fehler auf „Large“ an der Ursache behoben (Bef. 647). Rest im Werkzeug-Rückstand.
-1. Nacht 13.11. (ADR 0291): Abendliste gebaut bis auf den A8-Rest (Builder, 16.11.) (A2, A17, A23, A7, A36, A15, A26 wie gebaut in design-to-code.md); A30 und A4 fertig; danach B499, B500 (abgeschlossen). `rack` bleibt aus.
+1. Nacht 13.11. (ADR 0291): Abendliste gebaut; A8-Rest gemergt (e7d32e7c9), App-Port in B520 (A2, A17, A23, A7, A36, A15, A26 wie gebaut in design-to-code.md); A30 und A4 fertig; danach B499, B500 (abgeschlossen). `rack` bleibt aus.
 2. B520 Ausstehende Ports (ADR 0205, 16.11.): App-Code an das gemergte Design angleichen für components/disclosure, shell-collapse, tree-row, zoom-chip, elements/part-tree, shell-main (Port-Zeilen von `design check`, 136ec0d7e) sowie die Drift von components/canvas-viewport und comment-pin (nicht in der Baseline). Je Teil `design task`, ein Slice pro Teil.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet):
@@ -234,7 +234,6 @@ pages/sketches, auf B34 aufgesetzt); Berichte unter `.claude/handoffs/agent-resu
   (Befund 483), ein echtes Windows-Fenster, Sketch `components/title-bar@notice-hint` (Befund 484). `check --part
 elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
 - **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
-- **A8** Rest: Skizze `components/zoom-chip@focus-tooltip` (studio, auch shell-collapse) zeichnet das offene SDK-Tooltip in den focus-visible-Zuständen; App und gemergte Teile behalten `title`. Die alten Varianten a/b für pages/sketches wurden am 13.11. verworfen; jetzt misst `pages/sketches@focus-cells` die Zellen für die zoom-chip-focus-visible-Zustände (ADR 0293), Builder wählt und merged selbst, dann `sketch release` und `sketch ready` auf zoom-chip@focus-tooltip (Befund 116).
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
 - **A10** Baubereit (ADR 0048): der Kern ist gebaut, offen sind B250 und B251.
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
@@ -284,7 +283,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **B8** Wiederholte Gruppen brauchen ein Control (Befund 102).
 - **B9** Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
 - **B10** Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
-- **B11** Lint-Regel `ethlete/no-native-title` und Design-Regel NATIVE-TITLE als Fehler einschalten, wenn A8 fertig ist (Befund 116).
+- **B11** Lint-Regel `ethlete/no-native-title` und Design-Regel NATIVE-TITLE als Fehler einschalten, wenn der zoom-chip/shell-collapse-Port aus B520 fertig ist (Befund 116).
 - **B12** Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
 - **B13** Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
 - **B16** Eine getestete Offset-Hilfe für Fit und Kamera (Befund 129).
