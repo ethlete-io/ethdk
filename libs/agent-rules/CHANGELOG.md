@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.36
+
+### Patch Changes
+
+- agent-sessions: the dispatcher types unread mailbox messages into the pane, a pending restart blocks a second one and the wake, and `run` without a terminal starts a detached session.
+
 ## 0.1.0-next.35
 
 ### Patch Changes

@@ -1,5 +1,65 @@
 # @ethlete/cli
 
+## 3.0.0-next.32
+
+### Minor Changes
+
+- `design check` writes its ready marks into `ready.json` uncommitted and reports each as `READY UNCOMMITTED`; `design ready` commits them.
+- A design `data-et-action` can name `opens:<part>`, which `design actions --live` passes when the press opens that part; Studio's title search declares `opens:command-palette`.
+
+### Patch Changes
+
+- `design compare --all` compares every implemented part and lists the ones not done with why, and `design check` names a part checked at a newer design than its implemented record as `port <files> - run design task <part>`.
+- The post-commit sketch rebase also runs for a commit to a part whose path holds a `sketches` folder, and for a commit that changed `libs/cli` (it builds the clean CLI when no copy exists yet).
+- `design check` drops the ready.json entry of a removed part, a sketch merge drops the recorded actions its
+  merged files no longer name, and a refused `design ready <part>` commits the part's dropped entry.
+- `design check` draws the completeness of a product while the render check runs, instead of after it.
+- The design render and completeness checks draw up to eight frames of a part at once instead of four.
+- The design render check sends fewer calls to Chromium per frame: it skips an unchanged colour scheme or viewport,
+  finishes transitions in the settle call, and reads the unstyled pass and the font faces in one call.
+- The design render check loads the font faces of a page once per load instead of once per colour scheme.
+- The design render worker forces each component's styles once instead of rewriting every render answer.
+- The design render and completeness checks inspect frames in a Chromium of their own, started with
+  `--disable-frame-rate-limit`, so their settle waits no longer pace at 60 Hz. Screenshots and motion shots keep the
+  normal browser.
+- The design check takes the render answer the browser got when it writes a cache entry, instead of rendering each part a second time.
+- `design check` types the open sketch variants of a product four at a time before its static checks, instead of one after the other.
+- Sketch ready records the picked-and-changed refusal, and Studio shows that sketch as not ready.
+- `design ready` settles a committed direct edit of a merged part into `merged.json` before it checks the part, so it no longer refuses with "changed outside a sketch" once HEAD holds the edit. An uncommitted edit still refuses.
+- `design check` no longer reports CANVAS-UNDER-PANEL for a control whose small child is nudged with `translate`, such as
+  the icon of an SDK button: only a moved child that fills the box in one direction makes it a pan viewport.
+- `design check --part` loads the drawn parts' modules on the design server while the typecheck runs, so its render check starts on a filled module graph and finishes sooner.
+- Keep a forced hover in a compare app shot when the shot grows the viewport to cover a tall part.
+- `design dom --app` prints forced and click-opened states, driven as `design compare` drives them, with the open overlay panes after the host.
+- Write the product and calls editor tsconfigs in the checkout's Prettier format, leave files git ignores out of the sketch FORMAT rule and `sketch check --fix`, and keep the ready mark of a variant that only the format pass changed
+- `design actions --live` no longer presses Tab before clicking a menu item, so a click on a submenu trigger reaches its submenu state instead of closing the menu.
+- `design actions --live` counts the pressed control's own `aria-current` in its outcome, so a nav button that is already current on one page no longer reports cross-page drift.
+- `design actions` drives a separator or slider with the arrow keys, and `--live` no longer mixes up two controls that share a name.
+- `sketch ready` ends the `portAfterMerge` mark of a sketch whose agent fixed it after a merge, as `sketch rebase`
+  already did, so the mark no longer outlives a port that only had to fix the re-check.
+- `et design sketch ready` refuses a picked sketch whose variant changed unless you pass `--reopen`.
+- Keep the call status path in its own module, so the design shot module no longer imports the status command and, through it, the action check
+- `et design status` and `et design check` name uncommitted ready marks, untracked or stale sketches, and a ready mark a rebase withdrew.
+- `et design compare` prints, for a drifting implemented part, the commit of its implemented record and the commits since that touched its app files.
+- `design check --part` starts eslint while the part is still being checked and resolves every prettier style in one process, so a part check is about half a second faster.
+- `design check --part` runs about 1.5 s faster: the class rules read only that part's files, the Tailwind class facts and the typecheck run side by side, and the done-part count is skipped.
+- A process spawned while a design command holds the product lock, such as the commit hook of `design sketch merge`, now runs under that lock instead of waiting 10 s and failing.
+- `et design` checks for uncommitted parts, shared files and merged sketches without taking git's index lock, so a `git add` or `git commit` running at the same time no longer fails on `index.lock`.
+- `et design` reads the checkout state for its timings without taking git's index lock, so a `git add` or `git commit` running at the same time no longer fails on `index.lock`.
+- The Tailwind class facts cache is keyed by the checkout's files, not its path, honours `ETHLETE_DESIGN_CLASS_FACTS_DIR`, and runs one Tailwind per entry across processes; the Studio e2e workers share one per-run dir.
+- `design check` opens the old/new sketch of a direct edit inside the product's write journal, so a killed run leaves no half-made sketch.
+- `design compare` no longer counts overlay panes or forced elements of a part drawn anywhere inside a `slot()` region as page-level ones.
+- `design sketch merge` prints a `PORT` line for each merged part whose design states send a prop its app component has no input for, and `design task` lists those props.
+- `et design ready` commits the product's `ready.json` alone after it writes the mark, so a checkout switch cannot drop it. When git refuses the commit, the mark stays written and the command warns `READY UNCOMMITTED`.
+- The `READY UNCOMMITTED` line of `design check` names `design ready <part>` as the command that commits a new or changed ready mark.
+- `sketch rebase --ported` keeps a ready sketch ready when every variant changed since `sketch ready` is one it names as ported by hand.
+- The render check reads the unstyled pass once per page load instead of once per colour scheme, and inspects a frame in the same call that waits for it to settle.
+- `SEE-THROUGH` no longer reports text that paints over an overlay pane clipped inside a scroll or overflow box the text is not part of.
+- Every design sketch records the command and agent session that created it in `sketch.json`, and `design status` names that command on its SKETCH UNTRACKED and SKETCH LEFTOVER lines.
+- Studio shows a sketch that is not ready as "Noch nicht bereit" with the reason `sketch ready` last refused it for.
+- `sketch ready` and `sketch pick` run as journaled steps, so a killed run leaves the sketch as it was or as it ends.
+- The Studio pick writes its decision inside the product's write journal and waits for a running merge without blocking the design server.
+
 ## 3.0.0-next.31
 
 ### Minor Changes

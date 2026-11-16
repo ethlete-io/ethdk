@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.0-next.86
+
+### Minor Changes
+
+- The alert dialog takes an optional `slot` - an app component or template rendered under the message.
+- `injectOverlayScrollBlocker().lock(document?)` locks page scroll outside any overlay and returns an idempotent release function. It shares one count per document with the modal-overlay locks, so a header menu or a third-party widget no longer needs the Angular CDK `BlockScrollStrategy`.
+- `OverlayRef.updateSize(size)` resizes an open overlay for the active breakpoint, and the update survives re-positioning and a switch back to that breakpoint. `updatePositionStrategy` now keeps the strategy's sizing too.
+- Breaking: the dropzone crop step left `DROPZONE_IMPORTS`; to crop, also import `DROPZONE_CROP_IMPORTS`. Apps that never crop save about 4.4 KB gzip.
+- Add `provideMenuConfig({ offset })` to replace the default root menu offset app-wide. An `[offset]` on a trigger still wins.
+- `et-segmented-button-group` takes a `stretch` input that gives every segment the same width and makes the group fill its container. `--et-segmented-button-group-segment-min-width` sets a minimum width per segment.
+- The YouTube player and slot get a `host` input (default `www.youtube.com`, e.g. `www.youtube-nocookie.com`; the scheme is optional) and an `autoplay` input like the Twitch slot. Autoplay starts the video muted, as browsers block autoplay with sound.
+
+### Patch Changes
+
+- The anchored dialog design mock caps its height at `80vh` and scrolls its content, like `anchoredDialogOverlayStrategy`.
+- A read-only text field draws a quiet solid frame and the normal focus frame instead of dashed lines.
+- A read-only number input no longer draws its stepper buttons.
+- `<et-carousel>` with fewer than two slides renders no navigation: no arrows, no dots, no control bar and no play control.
+- Anchored overlay panes and their arrows now sit on whole pixels, so pane borders no longer smear across two pixel columns; the tooltip design mock is drawn the same way.
+- A focused editable text field keeps its 1px border and turns it the theme colour instead of drawing a 2px ring.
+- The menu item shortcut takes the label colour while its item is active, so it keeps 4.5:1 contrast on the highlight.
+- Tooltip descriptions now live in one visually hidden container under `body`, and triggers with the same text share one description element.
+
 ## 1.0.0-next.85
 
 ### Patch Changes

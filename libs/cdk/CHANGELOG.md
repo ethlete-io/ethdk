@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 5.0.0-next.51
+
+### Patch Changes
+
+- List `et-alert-dialog-slot` among the components classes the cdk migration knows.
+- List `et-dropzone-crop-step` among the components classes the cdk migration knows.
+- The legacy `et-label` now generates ids with an `et-cdk-label-` prefix, so a page that renders it next to the `@ethlete/components` label no longer gets two elements with the same id.
+
 ## 5.0.0-next.50
 
 ### Minor Changes
