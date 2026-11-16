@@ -73,9 +73,9 @@
     },
     "actions": ["emit:pinToggle"],
     "at": "2026-11-13T11:47:44.042Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 685405
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1944725
   },
   "components/comment-row": {
     "actions": ["emit:pick"],
