@@ -4382,6 +4382,10 @@ const work = async () => {
       });
       const fixed = performance.now();
 
+      // Before the build wait: the warm-up's first frame waits on this listing's rule checks, so they run beside the build.
+      void page.request
+        .get(`http://[::1]:${designPort}/__design/system`, { timeout: COLD_START_MS })
+        .catch(() => undefined);
       await studioBuilt;
       const builtAt = performance.now();
 
