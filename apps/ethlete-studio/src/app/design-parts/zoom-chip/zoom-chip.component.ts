@@ -1,5 +1,5 @@
 import { Component, input, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 
 export type ZoomControl = 'out' | 'reset' | 'in' | 'fit';
@@ -32,7 +32,7 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
         variant="transparent"
         color="surface"
         size="sm"
-        title="Zoom to 100 % (Shift+0)"
+        etTooltip="Zoom to 100 % (Shift+0)"
         aria-label="Auf 100 % zoomen"
       >
         {{ percent() }} %
@@ -61,7 +61,8 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
         variant="transparent"
         color="surface"
         size="sm"
-        title="Zoom to fit (Shift+1)"
+        etTooltip="Zoom to fit (Shift+1)"
+        placement="top-end"
         aria-label="Einpassen"
       >
         Fit
@@ -69,7 +70,7 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
     </span>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS],
+  imports: [BUTTON_IMPORTS, TOOLTIP_IMPORTS],
   hostDirectives: [AutoSurfaceDirective],
   host: {
     class:

@@ -1,5 +1,5 @@
 import { Component, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 
 @Component({
   selector: 'ethlete-shell-collapse',
@@ -12,7 +12,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
       variant="transparent"
       color="surface"
       size="sm"
-      title="Hide panel"
+      etTooltip="Hide panel"
       aria-label="Hide panel"
     >
       <svg
@@ -32,7 +32,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
     </button>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS],
+  imports: [BUTTON_IMPORTS, TOOLTIP_IMPORTS],
   host: { class: 'inline-flex' },
 })
 export class ShellCollapseComponent {
