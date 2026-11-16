@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B530
+built: 223d69b8b
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, screenshot of a one-slide carousel
 ---
