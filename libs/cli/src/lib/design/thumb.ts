@@ -68,6 +68,24 @@ const frameWidthOf = (slug: string) => `(async (slug) => {
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
+// A part that measures its layout as it mounts measures the fallback font while a web font still loads, so a fresh
+// load drew other pixels than a switch into the same state. A draw during which a face loaded runs again.
+const drawnOnLoadedFontsOf = (options: { state: string; switching: boolean }) => `(async ({ state, switching }) => {
+  const drawn = () => document.querySelector('#root > :not(style)') !== null;
+  const loaded = () => [...document.fonts].filter((face) => face.status === 'loaded').length;
+  if (typeof window.etSwitchState !== 'function') return !switching && drawn();
+  let before = switching ? loaded() : 0;
+  if (switching) await window.etSwitchState(state);
+  for (let pass = 0; pass < 3 && drawn(); pass++) {
+    document.documentElement.getBoundingClientRect();
+    await document.fonts.ready;
+    if (loaded() === before) break;
+    before = loaded();
+    await window.etSwitchState(state);
+  }
+  return drawn();
+})(${JSON.stringify(options)})`;
+
 /**
  * Opens a frame and waits until it drew its content or its error, then for its embedded frames. Each wait is
  * `DRAW_TIMEOUT_MS` stretched by the machine load. A frame that draws nothing after one reload throws a
@@ -92,6 +110,9 @@ export const openFrame = async (page: Page, url: string) => {
   };
 
   if (!(await drawn()) && !(await drawn())) throw never('draw its content');
+  const state = new URL(url, 'http://frame').searchParams.get('state');
+
+  if (state !== null) await page.evaluate(drawnOnLoadedFontsOf({ state, switching: false }));
   await page
     .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
     .first()
@@ -115,13 +136,7 @@ export const bootKeyOf = (search: string) => {
  * its embedded frames. Resolves `false` when the frame cannot switch or drew nothing; open it with `openFrame` then.
  */
 export const switchFrame = async (page: Page, state: string) => {
-  const switched = await page.evaluate(
-    `(async (state) => {
-      if (typeof window.etSwitchState !== 'function') return false;
-      await window.etSwitchState(state);
-      return document.querySelector('#root > :not(style)') !== null;
-    })(${JSON.stringify(state)})`,
-  );
+  const switched = await page.evaluate(drawnOnLoadedFontsOf({ state, switching: true }));
 
   if (switched !== true) return false;
 

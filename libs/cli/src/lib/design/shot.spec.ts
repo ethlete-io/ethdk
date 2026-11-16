@@ -17,7 +17,7 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
 const drawnUrls = () => goto.mock.calls.flatMap(([url]) => (url === 'about:blank' ? [] : [url]));
-const switchedStates = () => evaluate.mock.calls.filter(([script]) => script.includes('etSwitchState'));
+const switchedStates = () => evaluate.mock.calls.filter(([script]) => script.includes('"switching":true'));
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
 const boundingBox = vi.fn<() => Promise<{ x: number; y: number; width: number; height: number } | null>>(async () => ({
   x: 10,
@@ -589,7 +589,7 @@ describe('createPartShooter', () => {
     const drawn = evaluate.getMockImplementation();
 
     onTestFinished(() => void evaluate.mockImplementation(drawn ?? (async () => true)));
-    evaluate.mockImplementation(async (script) => (script.includes('etSwitchState') ? false : drawn?.(script)));
+    evaluate.mockImplementation(async (script) => (script.includes('"switching":true') ? false : drawn?.(script)));
 
     await shots.pictureOf(address);
     await shots.pictureOf({ ...address, fresh: true });
