@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
-import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
@@ -1037,5 +1037,32 @@ describe('SketchViewComponent', () => {
 
     expect(pin?.textContent).toContain('2');
     expect(root.querySelector('[data-sk-row="a"] ethlete-comment-pin')).toBeNull();
+  });
+
+  it('pins a resolved thread of a variant only after a jump to it, as resolved', async () => {
+    const comment: ListedComment = {
+      id: 'c2',
+      part: 'components/card',
+      state: 'default',
+      size: 'fit',
+      text: 'Done here',
+      createdAt: '2026-10-27T11:00:00Z',
+      replies: [],
+      threadState: 'answered',
+      stale: null,
+      resolved: { by: 'user', resolvedAt: '2026-10-28T09:00:00Z' },
+      sketch: { target: 'components/card', variant: 'b', createdAt: SKETCH.createdAt },
+    };
+    const { fixture, root } = await render(SKETCH, (url) =>
+      url.includes('/__design/comments') ? json({ comments: [comment], unreadable: [] }) : noComments(url),
+    );
+    const pinButton = () => root.querySelector('[data-sk-row="b"] ethlete-comment-pin button');
+
+    expect(pinButton()).toBeNull();
+
+    fixture.componentInstance.jumpTo(comment);
+    await settle(fixture);
+
+    expect(pinButton()?.getAttribute('aria-label')).toBe('Comment by Du, resolved');
   });
 });

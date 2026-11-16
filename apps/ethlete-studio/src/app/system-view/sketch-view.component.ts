@@ -803,10 +803,13 @@ export class SketchViewComponent {
       new Set(sketchUsingPagesOf({ product: this.product(), sketch: this.sketch(), part: this.part() }).map(partKeyOf)),
   );
 
+  private jumpedCommentId = signal<string | null>(null);
+
   private sketchComments = computed(() =>
-    this.commentStore
-      .comments()
-      .filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
+    [
+      ...this.commentStore.comments(),
+      ...this.commentStore.resolved().filter((comment) => comment.id === this.jumpedCommentId()),
+    ].filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
   );
 
   protected variantPins = computed<SketchPin[]>(() =>
@@ -826,6 +829,7 @@ export class SketchViewComponent {
           initials: sender.initials,
           ...(sender.agent ? { agent: sender.agent } : {}),
           count: comments.reduce((count, comment) => count + 1 + comment.replies.length, 0),
+          ...(comments.every((comment) => comment.resolved) ? { resolved: true } : {}),
         },
       ];
     }),
@@ -877,6 +881,7 @@ export class SketchViewComponent {
   public jumpTo(comment: ListedComment) {
     const variant = comment.sketch?.variant;
 
+    this.jumpedCommentId.set(comment.id);
     if (variant) this.showVariant(variant);
   }
 

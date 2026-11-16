@@ -536,6 +536,7 @@
           [initials]="pin.initials"
           [agent]="pin.agent"
           [count]="pin.count"
+          [resolved]="!!pin.resolved"
           (pinToggle)="pinToggle.emit(row.key)"
           class="p-0!"
         />

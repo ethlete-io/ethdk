@@ -39,6 +39,7 @@ export type SketchPin = {
   initials: string;
   agent?: AgentLogoName;
   count: number;
+  resolved?: boolean;
 };
 
 export type SketchTitleBar = {
