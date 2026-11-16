@@ -9,6 +9,12 @@ import {
 } from './overlay-runtime.types';
 import { onOverlayViewportInsetsChange, overlayViewportInsetsFor } from './overlay-viewport-inset';
 
+export const WHOLE_PIXEL_WIDTH = 'calc-size(max-content, round(up, size, 1px))';
+export const WHOLE_PIXEL_HEIGHT = 'calc-size(auto, round(up, size, 1px))';
+
+export const supportsWholePixelSizes = () =>
+  typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('height', WHOLE_PIXEL_HEIGHT);
+
 const applyViewportInsets = (hostElement: HTMLElement, renderer: AngularRenderer) => {
   const insets = overlayViewportInsetsFor(hostElement);
 
@@ -118,6 +124,7 @@ export const resetPositioningStyles = (
     top: null,
     left: null,
     width: null,
+    ...(paneElement.style.height === WHOLE_PIXEL_HEIGHT && { height: null }),
     transform: null,
     visibility: null,
   });

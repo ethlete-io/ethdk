@@ -26,7 +26,7 @@ const tooltipOpen = ({ target, interaction }: Props) =>
 const tooltipPane = (id: ZoomControl, text: string) =>
   id === 'fit'
     ? `<span class="absolute right-[calc(50%-30px)] bottom-full z-10 mb-2">${tooltip({ text, placement: 'top-end' })}</span>`
-    : `<span class="absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2">${tooltip({ text, placement: 'top' })}</span>`;
+    : `<span class="absolute bottom-full left-1/2 z-10 mb-2 translate-x-[round(-50%,1px)]">${tooltip({ text, placement: 'top' })}</span>`;
 
 const OUTPUT: Record<ZoomControl, string> = { out: 'zoomOut', reset: 'zoomReset', in: 'zoomIn', fit: 'fit' };
 

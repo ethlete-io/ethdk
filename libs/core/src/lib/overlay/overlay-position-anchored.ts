@@ -15,7 +15,12 @@ import {
 } from '@floating-ui/dom';
 import { AngularRenderer } from '../providers';
 import { isElement, isHTMLElement } from './overlay-focus';
-import { registerAnchoredPositionSetup } from './overlay-position';
+import {
+  registerAnchoredPositionSetup,
+  supportsWholePixelSizes,
+  WHOLE_PIXEL_HEIGHT,
+  WHOLE_PIXEL_WIDTH,
+} from './overlay-position';
 import { OverlayRuntimeRef } from './overlay-runtime-ref';
 import { OverlayRuntimeAnchoredPosition } from './overlay-runtime.types';
 import {
@@ -32,7 +37,9 @@ const roundToDevicePixel = (value: number, shifted = 0) => {
 };
 
 const arrowOffset = (offset: number | undefined, roundingShift: number) =>
-  offset === undefined ? 0 : Number((offset + roundingShift).toFixed(4));
+  offset === undefined ? 0 : roundToDevicePixel(offset + roundingShift);
+
+const floorToDevicePixel = (value: number) => roundToDevicePixel(value, -1);
 
 const paneSize: Middleware = {
   name: 'paneSize',
@@ -250,12 +257,22 @@ export const createAnchoredPositionCleanup = (
   // A width the pane declares through `--et-overlay-width` must survive positioning, and the pane
   // has to be measured at it - the variable may be set only after this runs.
   const declaredWidth = () => paneElement.style.getPropertyValue('--et-overlay-width') || null;
+  const wholePixelSizes = supportsWholePixelSizes();
+  const naturalWidth = wholePixelSizes ? WHOLE_PIXEL_WIDTH : null;
+  // A height the strategy config sets inline is the pane's own and is never replaced.
+  const naturalHeight = () =>
+    wholePixelSizes && (!paneElement.style.height || paneElement.style.height === WHOLE_PIXEL_HEIGHT)
+      ? { height: WHOLE_PIXEL_HEIGHT }
+      : {};
 
   renderer.setStyle(paneElement, {
     position: 'absolute',
     top: '0',
     left: '0',
-    width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : 'var(--et-overlay-width, max-content)',
+    width: mirrorWidthElement
+      ? `${mirrorWidthElement.offsetWidth}px`
+      : `var(--et-overlay-width, ${naturalWidth ?? 'max-content'})`,
+    ...naturalHeight(),
   });
 
   /**
@@ -343,8 +360,8 @@ export const createAnchoredPositionCleanup = (
             padding: viewportPadding,
             apply({ availableHeight, availableWidth }) {
               renderer.setCssProperties(paneElement, {
-                '--et-overlay-max-width': `${availableWidth}px`,
-                '--et-overlay-max-height': `${availableHeight}px`,
+                '--et-overlay-max-width': `${floorToDevicePixel(availableWidth)}px`,
+                '--et-overlay-max-height': `${floorToDevicePixel(availableHeight)}px`,
               });
             },
           }),
@@ -412,7 +429,8 @@ export const createAnchoredPositionCleanup = (
 
       renderer.setStyle(paneElement, {
         transform: `translate3d(${x}px, ${y}px, 0)`,
-        width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : declaredWidth(),
+        width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : (declaredWidth() ?? naturalWidth),
+        ...naturalHeight(),
         visibility: null,
       });
       // exposed so animations can compose their transforms with the anchored position

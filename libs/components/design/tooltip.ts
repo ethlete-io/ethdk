@@ -28,13 +28,15 @@ export const tooltipStyles = /* @__PURE__ */ [
   `@layer components.sdk {
   .et-tooltip-mock-frame > .et-tooltip-panel {
     --_et-overlay-arrow-pane-border-width: 1px;
-    inline-size: max-content;
+    inline-size: calc-size(max-content, round(up, size, 1px));
+    block-size: calc-size(auto, round(up, size, 1px));
+    transform: translate3d(0, 0, 0);
   }
   .et-tooltip-mock-frame > .et-tooltip-panel:is([data-overlay-placement^='top'], [data-overlay-placement^='bottom']) > .et-overlay-arrow {
-    left: calc(50% - 10px);
+    left: calc(round(down, 50%, 1px) - 10px);
   }
   .et-tooltip-mock-frame > .et-tooltip-panel:is([data-overlay-placement^='left'], [data-overlay-placement^='right']) > .et-overlay-arrow {
-    top: calc(50% - 10px);
+    top: calc(round(down, 50%, 1px) - 10px);
   }
   .et-tooltip-mock-frame > .et-tooltip-panel:is([data-overlay-placement^='top-start'], [data-overlay-placement^='bottom-start']) > .et-overlay-arrow {
     left: 20px;

@@ -35,7 +35,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
   const forced = interaction ? forceInteraction(markup, interaction) : markup;
 
   return interaction === 'focus-visible'
-    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2">${tooltip({ text: 'Hide panel', placement: 'top' })}</span></span>`
+    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-1/2 z-10 mb-2 translate-x-[round(-50%,1px)]">${tooltip({ text: 'Hide panel', placement: 'top' })}</span></span>`
     : forced;
 };
 
