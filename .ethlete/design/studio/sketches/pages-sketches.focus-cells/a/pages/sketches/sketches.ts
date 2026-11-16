@@ -207,7 +207,7 @@ const missingCell = (row: Row, state: string) =>
 const stageOf = (part: SketchPart, row: Row, view: View) =>
   view.added || view.wideState
     ? html`<div
-        class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 [&_[data-sk-label]]:w-0 [&_[data-sk-label]]:min-w-full gap-y-space-3"
+        class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
         data-sk-stage
       >
         ${part.states
@@ -544,7 +544,7 @@ const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: b
           </div>`;
   const all = open ? [...shown, ...same] : shown;
   return html`<div
-    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))_auto] gap-x-6 [&_[data-sk-label]]:w-0 [&_[data-sk-label]]:min-w-full gap-y-space-3"
+    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))_auto] gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
     data-sk-matrix
   >
     ${gutter(part, top)} ${all.map((row, index) => column(part, row, index + 2, top, view)).join('')} ${group}

@@ -179,7 +179,7 @@ export const cell = (part: SketchPart, row: Row, state: string, place = '', pend
 
 export const wrapStage = (part: SketchPart, row: Row, pending = false) =>
   html`<div
-    class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 [&_[data-sk-label]]:w-0 [&_[data-sk-label]]:min-w-full gap-y-space-3"
+    class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
     data-sk-stage
   >
     ${part.states.map((state) => cell(part, row, state, '', pending)).join('')}
