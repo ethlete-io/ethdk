@@ -13,6 +13,7 @@ import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
+import tooltipPart from '@system/components/tooltip';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -87,6 +88,9 @@ type Props = {
   part?: PartKind;
   comparing?: boolean;
   listError?: string;
+  known?: string[];
+  added?: boolean;
+  wideState?: boolean;
   error?: string;
   same?: RowKey[];
   sameOpen?: boolean;
@@ -106,6 +110,8 @@ type View = {
   comparing: boolean;
   listError?: string;
   retry: string;
+  added?: Added;
+  wideState?: boolean;
   error?: string;
   withdrawn?: Withdrawn;
   take: string;
@@ -125,6 +131,7 @@ const failedMark = (reason: string) =>
     >Vergleich fehlgeschlagen: ${reason}</span
   >`;
 
+const RESET_STATES = ['reset', 'reset-hover', 'reset-active', 'reset-focus-visible'];
 const MERGE_ERROR = 'components/zoom-chip hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.';
 
 const errorText = (reason: string) =>
@@ -136,6 +143,84 @@ const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
 
 const foldedLabel = (count: number) =>
   count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`;
+
+const pendingLabel = (count: number) => (count === 1 ? 'vergleicht 1 Zustand …' : `vergleicht ${count} Zustände …`);
+
+const pendingFailedLabel = (count: number) =>
+  count === 1 ? 'Vergleich von 1 Zustand fehlgeschlagen' : `Vergleich von ${count} Zuständen fehlgeschlagen`;
+
+type Added = { state: string; in: RowKey[] };
+
+const ADDED: Added = { state: 'fit-disabled', in: ['a'] };
+
+const withAdded = (part: SketchPart): SketchPart => ({
+  ...part,
+  states: [...part.states, ADDED.state],
+  render: (state) => part.render(state === ADDED.state ? 'fit' : state),
+  rows: part.rows.map((row) => (ADDED.in.includes(row.key) ? { ...row, changed: [...row.changed, ADDED.state] } : row)),
+});
+
+const WIDE_STATE = 'reset-focus-tooltip';
+
+const MEASURED_WIDTH = 197;
+
+const tooltipOf = () =>
+  tooltipPart.render({ text: 'Auf 100 % zoomen', placement: 'bottom' }) as Promise<{ body: string; styles: string }>;
+
+const withWideState = (part: SketchPart, tip: string): SketchPart => ({
+  ...part,
+  states: [...part.states, WIDE_STATE],
+  render: async (state) => {
+    if (state !== WIDE_STATE) return part.render(state);
+    const chip = await part.render('reset-focus-visible');
+    return {
+      body: html`<div class="flex w-49.25 flex-col items-center gap-space-1" data-sk-measured>${chip.body}${tip}</div>`,
+      styles: chip.styles,
+    };
+  },
+  rows: part.rows.map((row) => (row.key === 'b' ? { ...row, changed: [...row.changed, WIDE_STATE] } : row)),
+});
+
+const measuredCell = (part: SketchPart, row: Row, state: string, pending: boolean) =>
+  cell(
+    { ...part, width: MEASURED_WIDTH },
+    row,
+    state,
+    `--sk-frame: calc(var(--sk-scale) * ${MEASURED_WIDTH}px)`,
+    pending,
+  );
+
+const missingCell = (row: Row, state: string) =>
+  html`<div class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1" data-sk-state="${state}" data-sk-missing>
+    <span class="row-start-1 flex min-w-0 items-center in-data-sk-labels-hidden:hidden" data-sk-label
+      ><span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+        >${state}</span
+      ></span
+    >
+    <div
+      class="row-start-2 box-border flex w-(--sk-frame) items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
+    >
+      ${row.key === 'current' ? 'neu in der Skizze' : 'fehlt in dieser Variante'}
+    </div>
+  </div>`;
+
+const stageOf = (part: SketchPart, row: Row, view: View) =>
+  view.added || view.wideState
+    ? html`<div
+        class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 gap-y-space-3"
+        data-sk-stage
+      >
+        ${part.states
+          .map((state) =>
+            state === view.added?.state && !view.added.in.includes(row.key)
+              ? missingCell(row, state)
+              : state === WIDE_STATE
+                ? measuredCell(part, row, state, view.comparing)
+                : cell(part, row, state, '', view.comparing),
+          )
+          .join('')}
+      </div>`
+    : wrapStage(part, row, view.comparing);
 
 const multiSketchOf = (multi: MultiTargets, status: SketchStatus) => ({
   open: true,
@@ -363,7 +448,10 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
     data-sk-row="${row.key}"
     ${row.key === view.selected ? ' data-selected' : ''}
   >
-    <div class="relative min-w-0">
+    <div
+      class="sk-gutter relative z-2 min-w-0 self-stretch bg-et-surface-bg pr-space-3 before:absolute before:inset-y-0 before:right-full before:w-10 before:bg-et-surface-bg before:content-['']"
+      data-sk-sticky-head
+    >
       <span
         class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
         data-sk-head-tag
@@ -372,7 +460,7 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
       <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
     </div>
     <div class="min-w-0 ${isWithdrawn(row, view.withdrawn) ? 'opacity-60' : ''}">
-      ${drawn ? drawingStage(row) : wrapStage(part, row, view.comparing)}
+      ${drawn ? drawingStage(row) : stageOf(part, row, view)}
     </div>
   </section>`;
 };
@@ -578,7 +666,7 @@ const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : ca
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
 export default definePart<Props>({
-  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert. Solange sketch ready nicht bestanden hat, steht Noch nicht bereit mit der ersten Zeile seiner letzten Ablehnung und danach der letzten Änderung daneben, ohne aufgezeichnete Ablehnung der Hinweis, sketch ready auszuführen; Übernehmen fehlt dann. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>. Schlägt Übernehmen oder eine andere Sketch-Aktion fehl, steht der Grund des Servers in der Fehlerfarbe im Kopf der gewählten Variante unter Übernehmen; der Seitenkopf bleibt ohne Fehler.',
+  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert. Solange sketch ready nicht bestanden hat, steht Noch nicht bereit mit der ersten Zeile seiner letzten Ablehnung und danach der letzten Änderung daneben, ohne aufgezeichnete Ablehnung der Hinweis, sketch ready auszuführen; Übernehmen fehlt dann. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; Zustände, deren Vergleich noch aussteht, liegen schon eingeklappt hinter einer Zeile vergleicht N Zustände …, sichtbar sind nur die bisher als geändert bekannten Zustände, neue hängen sich hinten an. Die Antwort ändert nur den Text dieser Zeile zu N unveränderte Zustände eingeklappt, das Raster springt nicht. Danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Fügt eine Variante einen Zustand hinzu, den Aktuell nicht hat, zeigt Aktuell dort einen gestrichelten Rahmen neu in der Skizze, eine Variante ohne ihn fehlt in dieser Variante. Eine Zelle ist so breit wie der gemessene Zustand (etwa die Zoom-Pille mit offenem Tooltip) und schneidet nie ab. Beim Verschieben bleibt der Kopf jeder Zeile (Variante, Modell, Notiz, Übernehmen) wie die Zustandsspalte der Matrix am linken Rand stehen, deckend, ebenso der Text der eingeklappten Zeile. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>; die eingeklappte Zeile liest dann Vergleich von N Zuständen fehlgeschlagen. Schlägt Übernehmen oder eine andere Sketch-Aktion fehl, steht der Grund des Servers in der Fehlerfarbe im Kopf der gewählten Variante unter Übernehmen; der Seitenkopf bleibt ohne Fehler.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   controls: {
@@ -601,6 +689,11 @@ export default definePart<Props>({
     comparing: { camera: 'fit', comparing: true },
     'comparing-narrow': { camera: 'fit', part: 'narrow', comparing: true },
     'list-error': { camera: 'fit', part: 'narrow', comparing: true, listError: LIST_ERROR },
+    'compare-pending': { camera: 'fit', part: 'narrow', comparing: true, known: [...RESET_STATES] },
+    'compare-answered': { camera: 'fit', part: 'narrow' },
+    'added-state': { camera: 'fit', part: 'narrow', added: true },
+    'narrow-wide-state': { camera: 'fit', part: 'narrow', wideState: true },
+    'panned-zoomed': { camera: { zoom: 1.5, x: -500, y: 0 }, part: 'narrow' },
     'merge-error': { camera: 'fit', part: 'narrow', selected: 'b', error: MERGE_ERROR },
     'below-fit': { camera: { zoom: 0.25, x: 0, y: 0 } },
     'far-out': { camera: { zoom: 0.1, x: 0, y: 0 } },
@@ -647,6 +740,9 @@ export default definePart<Props>({
     part: kind = 'wide',
     comparing = false,
     listError,
+    known = [],
+    added = false,
+    wideState = false,
     error,
     same: sameKeys = [],
     sameOpen = false,
@@ -664,9 +760,12 @@ export default definePart<Props>({
     const retry = listError ? withAction(reload.body, 'emit:retry') : '';
     const take = await takeButton();
     const run = agent ? AGENT_RUNS[agent] : undefined;
-    const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
+    const base = withSame(PARTS[kind], comparing ? [] : sameKeys);
+    const tip = wideState ? await tooltipOf() : undefined;
+    const full = added ? withAdded(base) : tip ? withWideState(base, tip.body) : base;
     const rowStyles = await prepareShots(full);
-    const hidden = comparing ? [] : unchangedStates(full);
+    const pending = comparing ? full.states.filter((state) => !known.includes(state)) : [];
+    const hidden = comparing ? pending : unchangedStates(full);
     const part = hidden.length > 0 ? { ...full, states: full.states.filter((state) => !hidden.includes(state)) } : full;
     const side = await treeOf(screen ? SCREEN_KEY : part.key, multi, status);
     const all = rowsOf(part, fresh);
@@ -682,6 +781,8 @@ export default definePart<Props>({
       comparing,
       listError,
       retry,
+      added: added ? ADDED : undefined,
+      wideState,
       error,
       withdrawn,
       take: takeAction(take.body),
@@ -763,8 +864,12 @@ export default definePart<Props>({
             ${world}
             ${
               folded > 0
-                ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
-                    ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(folded)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', hug: true, action: 'emit:statesToggle' })}</span>`}
+                ? html`<section
+                    class="sk-same rounded-control-md p-space-2"
+                    data-sk-folded
+                    ${pending.length > 0 ? 'data-sk-pending' : ''}
+                  >
+                    ${html`<span class="flex items-center gap-space-3" style="transform: translateX(var(--sk-pan-x, 0px))"><span class="text-ui-sm text-et-surface-muted">${pending.length > 0 ? (listError ? pendingFailedLabel(folded) : pendingLabel(folded)) : foldedLabel(folded)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', hug: true, action: 'emit:statesToggle' })}</span>`}
                   </section>`
                 : ''
             }
@@ -806,6 +911,7 @@ export default definePart<Props>({
         take.styles +
         (pointsButton?.styles ?? '') +
         (popover?.styles ?? '') +
+        (tip?.styles ?? '') +
         parts.styles +
         rowStyles +
         Object.values(tags)
