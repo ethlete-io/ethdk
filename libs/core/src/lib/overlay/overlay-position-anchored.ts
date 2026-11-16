@@ -31,6 +31,20 @@ const roundToDevicePixel = (value: number, shifted = 0) => {
   return round(Number((value * ratio).toFixed(4))) / ratio;
 };
 
+const arrowOffset = (offset: number | undefined, roundingShift: number) =>
+  offset === undefined ? 0 : Number((offset + roundingShift).toFixed(4));
+
+const paneSize: Middleware = {
+  name: 'paneSize',
+  fn: ({ rects }) => ({ data: { width: rects.floating.width, height: rects.floating.height } }),
+};
+
+const roundAlignedEdge = (start: number, size: number, shifted: number | undefined, alignedAtEnd: boolean) => {
+  if (!alignedAtEnd || shifted) return roundToDevicePixel(start, shifted);
+
+  return Number((roundToDevicePixel(start + size) - size).toFixed(4));
+};
+
 /**
  * The floating-ui middleware only a subset of anchored overlays needs. Installed by
  * `enableAnchoredOverlayPositionExtras()`.
@@ -366,6 +380,8 @@ export const createAnchoredPositionCleanup = (
       }
     }
 
+    middleware.push(paneSize);
+
     computePosition(strategy.referenceElement, paneElement, {
       placement: strategy.placement ?? 'bottom',
       strategy: 'absolute',
@@ -379,8 +395,14 @@ export const createAnchoredPositionCleanup = (
 
       // A fractional offset snaps the panel's content by a pixel whenever a child gets its own layer.
       // A shifted pane sits on the viewport padding, so it rounds inward instead of past it.
-      const x = roundToDevicePixel(rawX, middlewareData.shift?.x);
-      const y = roundToDevicePixel(rawY, middlewareData.shift?.y);
+      // An end-aligned pane of fractional size snaps the edge it shares with the reference instead.
+      const [side, alignment] = placement.split('-');
+      const verticalSide = side === 'top' || side === 'bottom';
+      const endAligned = alignment === 'end';
+      const rtl = verticalSide && endAligned && getComputedStyle(paneElement).direction === 'rtl';
+      const { width = 0, height = 0 } = middlewareData['paneSize'] ?? {};
+      const x = roundAlignedEdge(rawX, width, middlewareData.shift?.x, verticalSide && endAligned && !rtl);
+      const y = roundAlignedEdge(rawY, height, middlewareData.shift?.y, !verticalSide && endAligned);
 
       if (middlewareData.hide?.referenceHidden) {
         handleUnusableReference();
@@ -404,7 +426,7 @@ export const createAnchoredPositionCleanup = (
         renderer.setCssProperty(
           arrowElement,
           '--et-floating-arrow-translate',
-          `translate3d(${middlewareData.arrow.x ?? 0}px, ${middlewareData.arrow.y ?? 0}px, 0)`,
+          `translate3d(${arrowOffset(middlewareData.arrow.x, rawX - x)}px, ${arrowOffset(middlewareData.arrow.y, rawY - y)}px, 0)`,
         );
       }
     });
