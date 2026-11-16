@@ -48,6 +48,8 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and, until
   the migration is done, every `plans/ethlete-studio/**` decision block for the topic. If Tom already decided it,
   do not ask: name the ADR and send it to the builder. A repeated question is a finding.
+- A fifagg question: first search the decisions in
+  `../fifagg/fifagg-frontend/specs/tracks/20261030_post-angular-22-cleanup/`; if decided there, send it back to fifa.
 - Before you record a decision on files or send work on them, run `yarn adr:governs <files>` and read the ADRs it lists.
 - A question that applies an existing Tom decision to a new case is yours to decide; report it in one line.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
@@ -66,7 +68,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## When the user is away
 
 - If the user says they are away ("afk"), collect every design question. Do not send a grill round.
-- Keep chat output to one short line per event. The user does not read it while away.
+- Keep chat output to one short line per event.
 - Still record findings and decisions at once, and still answer the builder.
 - When the user says they are back, send all collected questions in one round.
 - Every night shift counts as away (ADR 0259): nothing waits on the user, the builder applies an ADR or parks the
