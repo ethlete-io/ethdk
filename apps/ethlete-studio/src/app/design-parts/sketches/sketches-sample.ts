@@ -6,7 +6,13 @@ import { OpenPointGroup } from '../system-page/system-page-sample';
 
 export type SketchModel = { short: string; id: string; agent: AgentLogoName; when?: string };
 
-export type SketchShot = { state: string; changed: boolean | null; height: number; change?: SketchChange };
+export type SketchShot = {
+  state: string;
+  changed: boolean | null;
+  height: number;
+  width?: number;
+  change?: SketchChange;
+};
 
 export type SketchRow = {
   key: string;
@@ -198,6 +204,18 @@ export const SKETCH_NARROW_SAMPLE = {
   tree: {
     layers: [componentsLayerOf('zoom-chip'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
   } satisfies PartTree,
+};
+
+/** A state only variant a of the narrow sample draws, so Current and variant b lack it. */
+export const SKETCH_ADDED_STATE = { state: 'fit-disabled', in: ['a'], height: CHIP_HEIGHT };
+
+/** A state of variant b of the narrow sample measured wider than the zoom chip. */
+export const SKETCH_WIDE_STATE = { state: 'reset-focus-tooltip', key: 'b', width: 197, height: CHIP_HEIGHT };
+
+/** The chip state the harness draws for a narrow sample state no chip state names. */
+export const SKETCH_DRAWN_AS: Record<string, string> = {
+  [SKETCH_ADDED_STATE.state]: 'fit',
+  [SKETCH_WIDE_STATE.state]: 'reset-focus-visible',
 };
 
 export const SKETCH_EDIT_SAMPLE = {

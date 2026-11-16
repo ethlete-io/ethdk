@@ -137,7 +137,7 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="current"] .opacity-50')).toBeNull();
   });
 
-  it('folds the states every variant draws like Aktuell, never a pending one, and shows all from the toggle', async () => {
+  it('folds every state no variant is known to change while a compare is pending, and shows all from the toggle', async () => {
     const rows: SketchRow[] = [
       ...ROWS.slice(0, 1).map((row) => ({
         ...row,
@@ -175,9 +175,10 @@ describe('SketchesComponent', () => {
         frame.getAttribute('data-sk-frame'),
       );
 
-    expect(framesOf()).toEqual(['x open', 'x busy']);
+    expect(framesOf()).toEqual(['x open']);
     expect(root.querySelector('[data-sk-row="current"] [data-sk-frame="current rest"]')).toBeNull();
-    expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.foldedStates(1));
+    expect(root.querySelector('[data-sk-folded]')?.hasAttribute('data-sk-pending')).toBe(true);
+    expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.pendingStates(2));
     expect(textOf(root.querySelector('[data-sk-folded] button'))).toBe(LABELS.showAllStates);
     expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
 
@@ -588,12 +589,57 @@ describe('SketchesComponent', () => {
 
   it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
     const pending = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) }));
-    const root: HTMLElement = (await render({ camera: '100', rows: pending })).nativeElement;
-    const states = [...root.querySelectorAll('[data-sk-row="x"] [data-sk-state]')];
+    const fixture = await render({ camera: '100', rows: pending });
+    const root: HTMLElement = fixture.nativeElement;
+    const statesOf = () => [...root.querySelectorAll('[data-sk-row="x"] [data-sk-state]')].map(textOf);
 
-    expect(states.map(textOf)).toEqual(['rest', 'open']);
+    expect(statesOf()).toEqual([]);
+    expect(root.querySelector('[data-sk-row="current"]')).not.toBeNull();
+    expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.pendingStates(2));
+
+    fixture.componentRef.setInput('listError', 'Failed to fetch');
+    await fixture.whenStable();
+
+    expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.pendingFailed(2));
+
+    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
+    await fixture.whenStable();
+
+    expect(statesOf()).toEqual(['rest', 'open']);
     expect(root.querySelector('[data-sk-row="x"] .opacity-50')).toBeNull();
     expect(root.querySelector('[data-sk-first-change]')).toBeNull();
+  });
+
+  it('marks a state a variant adds as new in Aktuell and as missing in a variant without it', async () => {
+    const rows: SketchRow[] = [
+      ...ROWS,
+      {
+        key: 'y',
+        note: 'Mit Ladezustand',
+        width: 400,
+        shots: [...ROWS[1]!.shots, { state: 'busy', changed: true, height: 90 }],
+      },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows })).nativeElement;
+    const missingOf = (key: string) =>
+      root.querySelector(`[data-sk-row="${key}"] [data-sk-missing][data-sk-state="busy"]`);
+
+    expect(textOf(missingOf('current'))).toBe(`busy ${LABELS.newInSketch}`);
+    expect(textOf(missingOf('x'))).toBe(`busy ${LABELS.missingInVariant}`);
+    expect(missingOf('y')).toBeNull();
+    expect(root.querySelector('[data-sk-row="y"] [data-sk-frame="y busy"]')).not.toBeNull();
+  });
+
+  it('draws a state measured wider than its row at its own width', async () => {
+    const rows: SketchRow[] = [
+      ROWS[0]!,
+      { ...ROWS[1]!, shots: [...ROWS[1]!.shots, { state: 'tip', changed: true, height: 90, width: 520 }] },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows })).nativeElement;
+    const widthOf = (key: string) => root.querySelector<HTMLElement>(`[data-sk-frame="${key}"]`)?.style.width;
+
+    expect(widthOf('x tip')).toBe('520px');
+    expect(widthOf('x open')).toBe(`${ROWS[1]!.width}px`);
   });
 
   it('keeps the note and the state names at 12 px or more down to fit', async () => {

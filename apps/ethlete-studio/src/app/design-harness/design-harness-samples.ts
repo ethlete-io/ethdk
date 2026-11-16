@@ -12,6 +12,7 @@ import {
 } from '../design-parts/system-page/system-page-sample';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
 import {
+  SKETCH_ADDED_STATE,
   SKETCH_AGENT_RUNS,
   SKETCH_CURRENT,
   SKETCH_EDIT_SAMPLE,
@@ -20,6 +21,7 @@ import {
   SKETCH_POINTS_SAMPLE,
   SKETCH_ROWS,
   SKETCH_SCREEN_SAMPLE,
+  SKETCH_WIDE_STATE,
   SKETCH_WITHDRAWN,
   sketchMultiSampleOf,
   SketchRow,
@@ -27,7 +29,10 @@ import {
 
 type Props = Record<string, unknown>;
 
-const sketchRowsOf = (rows: SketchRow[], { same = [], comparing = false }: { same?: string[]; comparing?: boolean }) =>
+const sketchRowsOf = (
+  rows: SketchRow[],
+  { same = [], comparing = false, known = [] }: { same?: string[]; comparing?: boolean; known?: string[] },
+) =>
   rows.map((row) =>
     row.key === SKETCH_CURRENT || (!comparing && !same.includes(row.key))
       ? row
@@ -35,7 +40,9 @@ const sketchRowsOf = (rows: SketchRow[], { same = [], comparing = false }: { sam
           ...row,
           shots: row.shots.map((shot) =>
             comparing
-              ? { ...shot, changed: null }
+              ? known.includes(shot.state)
+                ? shot
+                : { ...shot, changed: null }
               : {
                   ...shot,
                   changed: false,
@@ -43,6 +50,34 @@ const sketchRowsOf = (rows: SketchRow[], { same = [], comparing = false }: { sam
                 },
           ),
         },
+  );
+
+const withAddedState = (rows: SketchRow[]) =>
+  rows.map((row) =>
+    SKETCH_ADDED_STATE.in.includes(row.key)
+      ? {
+          ...row,
+          shots: [...row.shots, { state: SKETCH_ADDED_STATE.state, changed: true, height: SKETCH_ADDED_STATE.height }],
+        }
+      : row,
+  );
+
+const withWideState = (rows: SketchRow[]) =>
+  rows.map((row) =>
+    row.key === SKETCH_WIDE_STATE.key
+      ? {
+          ...row,
+          shots: [
+            ...row.shots,
+            {
+              state: SKETCH_WIDE_STATE.state,
+              changed: true,
+              height: SKETCH_WIDE_STATE.height,
+              width: SKETCH_WIDE_STATE.width,
+            },
+          ],
+        }
+      : row,
   );
 
 const SKETCH_PART_SAMPLES: Record<string, { rows: SketchRow[]; looks: Record<string, string> }> = {
@@ -67,6 +102,9 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     part,
     same,
     comparing,
+    known,
+    added,
+    wideState,
     withdrawn,
     points,
     pointsOpen,
@@ -92,8 +130,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     const { looks: _looks, ...sample } = screen
       ? { ...screenSample, looks: {}, wholeScreens: screen === 'whole' ? [wholeScreen] : [] }
       : partSample;
-    const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true }).map(
-      (row) => (withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row),
+    const drawn = added ? withAddedState(sample.rows) : wideState ? withWideState(sample.rows) : sample.rows;
+    const rows = sketchRowsOf(drawn, {
+      same: same as string[] | undefined,
+      comparing: comparing === true,
+      known: known as string[] | undefined,
+    }).map((row) =>
+      withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row,
     );
 
     return {

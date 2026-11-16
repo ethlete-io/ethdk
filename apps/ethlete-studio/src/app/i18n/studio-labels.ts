@@ -123,6 +123,11 @@ export const STUDIO_LABELS = {
     firstChange: 'erste Änderung',
     foldedStates: (count: number) =>
       count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`,
+    pendingStates: (count: number) => (count === 1 ? 'vergleicht 1 Zustand …' : `vergleicht ${count} Zustände …`),
+    pendingFailed: (count: number) =>
+      count === 1 ? 'Vergleich von 1 Zustand fehlgeschlagen' : `Vergleich von ${count} Zuständen fehlgeschlagen`,
+    newInSketch: 'neu in der Skizze',
+    missingInVariant: 'fehlt in dieser Variante',
     showAllStates: 'Alle Zustände zeigen',
     wholeScreen: 'Ganzer Screen',
     cropScreen: 'Ausschnitt',

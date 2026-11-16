@@ -102,7 +102,7 @@ const ROUNDED = {
     { key: 'r2', title: 'Second', note: '' },
   ],
   variantInfo: { a: { round: 'r1' }, b: { round: 'r2', note: 'Calmer' } },
-  targets: ['a', 'b'].map((variant) => ({ variant, states: ['default'], interactions: [] })),
+  targets: ['a', 'b'].map((variant) => ({ variant, states: ['default'], interactions: [], unchanged: [] })),
 } satisfies ListedSketch;
 
 const CARD: ListedPart = {
@@ -215,7 +215,7 @@ describe('SketchViewComponent', () => {
     const states = ['default', 'hover', 'focus'];
     const wide = {
       ...SKETCH,
-      targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [] })),
+      targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [], unchanged: [] })),
     } satisfies ListedSketch;
 
     const { root } = await render(wide, noComments, { ...CARD, states });
@@ -276,6 +276,8 @@ describe('SketchViewComponent', () => {
 
   it('makes no frame live while the listing names the sketch without its targets', async () => {
     const { fixture, root } = await render({ ...ROUNDED, targets: undefined }, noComments);
+    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
+    await settle(fixture);
 
     expect(root.querySelectorAll('[data-shot]').length).toBeGreaterThan(0);
     expect(root.querySelectorAll('iframe[data-state]').length).toBe(0);
@@ -294,6 +296,8 @@ describe('SketchViewComponent', () => {
       targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [] })),
     } satisfies ListedSketch;
     const { fixture, root } = await render(quick, noComments, { ...CARD, states });
+    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
+    await settle(fixture);
     const asked = () =>
       [...root.querySelectorAll<HTMLIFrameElement | HTMLImageElement>('iframe[data-state], img[data-shot-picture]')]
         .map((element) => element.closest('[data-shot]')?.getAttribute('data-shot'))
@@ -307,6 +311,8 @@ describe('SketchViewComponent', () => {
       problems: [],
       targets: quick.targets.map((target) => ({ ...target, unchanged: ['hover'] })),
     });
+    await settle(fixture);
+    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
     await settle(fixture);
 
     expect([...new Set(asked())]).toEqual(['a default', 'b default', 'current default']);

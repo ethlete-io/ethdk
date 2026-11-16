@@ -1,6 +1,7 @@
 import { Component, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
 import { TitleBarComponent } from '../components/title-bar/title-bar.component';
 import {
+  SKETCH_DRAWN_AS,
   SKETCH_LOOKS,
   SKETCH_NARROW_SAMPLE,
   SKETCH_ROWS,
@@ -58,7 +59,8 @@ export class DesignHarnessSketchShotsComponent {
   }
 
   protected chipForceOf(state: string) {
-    const [, target, interaction] = /^(out|reset|in|fit)-(hover|active|focus-visible)$/.exec(state) ?? [];
+    const [, target, interaction] =
+      /^(out|reset|in|fit)-(hover|active|focus-visible)$/.exec(SKETCH_DRAWN_AS[state] ?? state) ?? [];
 
     return target && interaction
       ? { target: target as ZoomControl, interaction: interaction as ZoomInteraction }

@@ -123,6 +123,15 @@ export const foldedStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> 
   return new Set(folded.length < states.length ? folded : []);
 };
 
+/** The states no variant is known to change yet: those still compared (`null`) and those known unchanged. */
+export const unknownStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> =>
+  new Set(
+    statesOf(rows).filter(
+      (state) =>
+        !rows.some((row) => !isBaseRow(row) && row.shots.some((shot) => shot.state === state && shot.changed === true)),
+    ),
+  );
+
 const WRAP_WIDTH = 1440;
 
 const MAX_COLUMNS = 4;
@@ -307,10 +316,34 @@ export class SketchesComponent {
   private hiddenWithdrawnRows = computed(() => (this.withdrawn() === 'shown' ? [] : this.rows().filter(isWithdrawn)), {
     equal: (a, b) => a === b || (a.length === 0 && b.length === 0),
   });
+  protected pendingStates = computed(
+    () =>
+      new Set(
+        this.listedRows().flatMap((row) =>
+          row.shots.flatMap((shot) => (shot.changed === null && !isBaseRow(row) ? [shot.state] : [])),
+        ),
+      ),
+  );
+  private pendingRows = computed(
+    () =>
+      new Set(
+        this.listedRows()
+          .filter(isPending)
+          .map((row) => row.key),
+      ),
+  );
   protected foldedStates = computed(() => {
     const hidden = this.hiddenWithdrawnRows();
+    const rows = hidden.length === 0 ? this.listedRows() : [...this.listedRows(), ...hidden];
 
-    return foldedStatesOf(hidden.length === 0 ? this.listedRows() : [...this.listedRows(), ...hidden]);
+    return this.pendingStates().size > 0 ? unknownStatesOf(rows) : foldedStatesOf(rows);
+  });
+  protected foldLabel = computed(() => {
+    const count = this.foldedStates().size;
+
+    if (this.pendingStates().size === 0) return this.LABELS.foldedStates(count);
+
+    return this.listError() ? this.LABELS.pendingFailed(count) : this.LABELS.pendingStates(count);
   });
   public shownRows = computed(() => {
     const rows = this.listedRows();
@@ -319,15 +352,14 @@ export class SketchesComponent {
 
     if (shown.size === statesOf(rows).length) return rows;
 
-    return rows
-      .map((row) => ({ ...row, shots: row.shots.filter((shot) => shown.has(shot.state)) }))
-      .filter((row) => shown.size > 0 || row.key !== SKETCH_CURRENT);
+    return rows.map((row) => ({ ...row, shots: row.shots.filter((shot) => shown.has(shot.state)) }));
   });
+  protected stageStates = computed(() => statesOf(this.shownRows()));
   protected discardable = computed(() => !this.isEdit());
   public columns = computed(() => {
     const rows = this.shownRows();
     const widest = Math.max(1, ...rows.map((row) => row.width));
-    const most = Math.max(1, ...rows.map((row) => row.shots.length));
+    const most = Math.max(1, this.stageStates().length);
 
     return Math.max(1, Math.min(MAX_COLUMNS, most, Math.floor(WRAP_WIDTH / widest)));
   });
@@ -535,7 +567,11 @@ export class SketchesComponent {
   }
 
   protected gridOf(row: SketchRow) {
-    return `repeat(${this.columns()}, ${row.width * this.scale()}px)`;
+    return `repeat(${this.columns()}, minmax(${row.width * this.scale()}px, max-content))`;
+  }
+
+  protected shotOf(row: SketchRow, state: string) {
+    return row.shots.find((shot) => shot.state === state) ?? null;
   }
 
   protected matrixLineOf(state: string) {
@@ -614,15 +650,15 @@ export class SketchesComponent {
   }
 
   protected isSame(row: SketchRow, unchanged: boolean | null) {
-    return !isBaseRow(row) && unchanged === false && !isPending(row);
+    return !isBaseRow(row) && unchanged === false && !this.isPending(row);
   }
 
   protected isPending(row: SketchRow) {
-    return row.key !== SKETCH_CURRENT && isPending(row);
+    return row.key !== SKETCH_CURRENT && this.pendingRows().has(row.key);
   }
 
   protected firstChangeOf(row: SketchRow) {
-    return isBaseRow(row) || isPending(row) || this.screenMode()
+    return isBaseRow(row) || this.isPending(row) || this.screenMode()
       ? null
       : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
   }
