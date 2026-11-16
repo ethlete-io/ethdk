@@ -1,15 +1,34 @@
 {
   "components/canvas-viewport": {
-    "hash": "36e9588a6f860c36",
-    "at": "2026-11-01T22:48:40.985Z",
+    "hash": "20096a92dc5d32d5",
+    "at": "2026-11-16T00:08:59.048Z",
     "states": {
       "canvas": "817390d43b97154e",
       "canvas-focus-visible": "b86902211c3f293e"
     },
+    "files": {
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "61d833c902ab2771",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "e4035d9d240e75fa",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6",
+      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "39a20bd59ff9864e",
+      "libs/components/src/lib/button/button.component.css": "1b93c651ccdb363a",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
+      "libs/components/src/lib/button/icon-button.component.css": "ff7eeb0527c6ebd7",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
     "app": {
-      "apps/ethlete-studio/src/app/components/design-canvas/pointer-focus.ts": "a8eb46c7d2218e59",
-      "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "cc38f17db7f2f564",
-      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
+      "apps/ethlete-studio/src/app/components/design-canvas/pointer-focus.ts": "a0438bd63e272c1b",
+      "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "9d4fe2d96370484c",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "54c136f6d60fd83e",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.ts": "9b2779fdd412f304",
       "libs/components/src/lib/focus-ring/focus-ring.directive.ts": "4d024884f07f2ba0",
       "libs/core/src/lib/providers/renderer.ts": "64c840bab8f7d263",
