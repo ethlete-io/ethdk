@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B533
+built: d285fbc4d
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, screenshot of the focused input in the B532 state sheet; supersedes ADR 0160 for editable fields
 ---
