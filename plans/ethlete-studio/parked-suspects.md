@@ -67,3 +67,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
   draws "neu"/"fehlt" cells in Stand and Entwurf 1 like the app; the app sample takes the wide state's height from the
   state it draws (82, was 30 and clipped the chip). Rest: the tooltips above, the Entwurf 2 note wraps one word apart.
 - B524 (2026-11-16): as built 0c9495aab, autoFocus 'container' focuses the overlay host (scenario overlay-container-autofocus). A selector that matches nothing keeps falling back to the pane, by decision (c8): the date/time-range pickers rely on focus staying in the field; fifa passes 'container'.
+- Publish "Reference does not exist" (2026-11-16, run 43798443026 at d1e915456): the changesets action failed deleting changeset-release/next while force-updating the release branch; the next run published green. Suspect: unknown, not hunted (c8); hunt only if it repeats.
