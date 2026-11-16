@@ -18,6 +18,7 @@ export default {
     localized: false,
     pageSizeSelect: false,
     footerRow: false,
+    footerColumn: false,
     surface: 'dark',
     size: 'md',
   },
@@ -34,6 +35,7 @@ export default {
     localized: { control: 'boolean' },
     pageSizeSelect: { control: 'boolean' },
     footerRow: { control: 'boolean' },
+    footerColumn: { control: 'boolean' },
     surface: { control: 'text' },
     size: { control: 'radio', options: ['sm', 'md'] },
   },
@@ -102,6 +104,17 @@ export const FooterRow: Story = {
           'A responsive paginator beside a page-size select, in a flex row. It grows into the free space, so ' +
           'the page window trims as the row narrows and comes back when it widens; `justify-end` on the ' +
           'paginator keeps its items at the far edge.',
+      },
+    },
+  },
+};
+
+export const FooterColumn: Story = {
+  args: { footerColumn: true, totalPages: 50, siblingCount: 2 },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A responsive paginator in a flex column. It fills the width and keeps its own height.',
       },
     },
   },

@@ -24,9 +24,10 @@
     gap: var(--et-pagination-gap);
   }
 
-  /* The fit measures the host. Sized to its trimmed content, a flex item would never see room return. */
+  /* The fit measures the host. Sized to its trimmed content, a flex item would never see room return. A full inline
+     size instead of flex-grow, so a column flex parent does not stretch the height. */
   :where(.et-pagination-host[data-fit-width]) {
-    flex-grow: 1;
+    inline-size: 100%;
   }
 
   /* Touch gets the comfortable 44px target. `:where()` holds this at zero specificity so the `sm` and

@@ -233,8 +233,8 @@ The compact pager is a range readout followed by previous/next - the item range
 with the readout _before_ the chevrons, and its width reserved for the longest range
 it can show, so the controls hold their position across page changes. `hidePreviousNext`
 applies here too, leaving the readout on its own. Because the fit measures the
-paginator's own box, a responsive paginator in a flex row grows into the row's free space
-(`flex-grow: 1`), so the window comes back when the row widens; align its items inside that
+paginator's own box, a responsive paginator takes the full inline size of its parent
+(`inline-size: 100%`, never `flex-grow`, so a flex column keeps its height), so the window comes back when the row widens; align its items inside that
 space with `justify-content` on the paginator (e.g. `justify-end`). Or skip measurement entirely
 with `compact` for a Material-style controls row where the paginator sits inline with a
 page-size select and keeps its content size:

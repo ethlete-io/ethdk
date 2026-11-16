@@ -7,6 +7,7 @@ const LINKS_STORY_ID = 'components-navigation-pagination--links';
 const RANGE_AND_JUMP_STORY_ID = 'components-navigation-pagination--with-range-and-jump';
 const PAGE_SIZE_SELECT_STORY_ID = 'components-navigation-pagination--page-size-select';
 const FOOTER_ROW_STORY_ID = 'components-navigation-pagination--footer-row';
+const FOOTER_COLUMN_STORY_ID = 'components-navigation-pagination--footer-column';
 
 const TOUCH_TARGET = 44;
 
@@ -270,6 +271,16 @@ test.describe('pagination / responsive', () => {
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect.poll(() => items.count()).toBe(wideCount);
+  });
+
+  test('in a flex column the paginator fills the width and keeps its own height', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const root = await openStory(page, FOOTER_COLUMN_STORY_ID);
+    const column = await boxOf(root.locator('[data-footer-column]'));
+    const host = await boxOf(root.locator('.et-pagination-host'));
+
+    expect(host.width).toBeCloseTo(column.width, 0);
+    expect(host.height).toBeLessThan(column.height / 2);
   });
 });
 
