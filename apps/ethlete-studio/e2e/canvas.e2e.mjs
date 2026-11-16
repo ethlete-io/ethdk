@@ -4592,6 +4592,7 @@ const lead = async () => {
   let firstCase = false;
   const scratch = built ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-build-'));
   const shots = coldShots ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-shots-'));
+  const classFacts = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-class-facts-'));
   const record = (job, result) => {
     rows.push({ ...job, ...result });
     console.log(
@@ -4638,6 +4639,7 @@ const lead = async () => {
             ...process.env,
             DE_PORT: String(port),
             ...(shots ? { STUDIO_E2E_SHOTS: shots } : {}),
+            ETHLETE_DESIGN_CLASS_FACTS_DIR: classFacts,
           },
           stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
         },
@@ -4719,6 +4721,7 @@ const lead = async () => {
   } finally {
     if (scratch) rmSync(scratch, { recursive: true, force: true });
     if (shots) rmSync(shots, { recursive: true, force: true });
+    rmSync(classFacts, { recursive: true, force: true });
   }
 
   const survivors = await residentSurvivors({ teardowns });

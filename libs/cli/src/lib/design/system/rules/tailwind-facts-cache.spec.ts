@@ -1,7 +1,8 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { spawn } from 'child_process';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { classFactsOf } from './tailwind-classes';
 
 const write = (root: string, path: string, content: string) => {
@@ -155,5 +156,82 @@ describe('classFactsOf', { timeout: 120_000 }, () => {
     write(target, 'theme.css', '@theme { --color-accent: green; }\n');
 
     expect(factsIn(target, ['bg-brand']).get('bg-brand')?.canonical).toBe('bg-brand');
+  });
+
+  describe('with a shared facts dir', () => {
+    const before = process.env['ETHLETE_DESIGN_CLASS_FACTS_DIR'];
+
+    afterEach(() => {
+      if (before === undefined) delete process.env['ETHLETE_DESIGN_CLASS_FACTS_DIR'];
+      else process.env['ETHLETE_DESIGN_CLASS_FACTS_DIR'] = before;
+    });
+
+    const sharedEntryOf = () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cli-tailwind-facts-shared-'));
+
+      process.env['ETHLETE_DESIGN_CLASS_FACTS_DIR'] = dir;
+
+      return dir;
+    };
+
+    const markEntry = (dir: string) => {
+      const [name] = readdirSync(dir).filter((file) => file.endsWith('.json'));
+      const file = join(dir, name ?? '');
+      const stored = JSON.parse(readFileSync(file, 'utf8')) as { known: [string, unknown][] };
+
+      return {
+        file,
+        text: JSON.stringify({ ...stored, known: [['bg-brand', { canonical: 'from-disk', emitsNothing: false }]] }),
+      };
+    };
+
+    it('answers a copy of the checkout with the same files from the entry of the first', () => {
+      const dir = sharedEntryOf();
+      const first = projectOf();
+
+      factsIn(first, ['bg-brand']);
+
+      const { file, text } = markEntry(dir);
+
+      writeFileSync(file, text);
+
+      const copy = mkdtempSync(join(tmpdir(), 'cli-tailwind-facts-copy-'));
+
+      cpSync(first, copy, { recursive: true });
+
+      expect(factsIn(copy, ['bg-brand']).get('bg-brand')?.canonical).toBe('from-disk');
+
+      write(copy, 'theme.css', '@theme { --color-accent: green; }\n');
+
+      expect(factsIn(copy, ['bg-brand']).get('bg-brand')?.canonical).toBe('bg-brand');
+    });
+
+    it('waits for another process that holds the Tailwind lock and reads its answer', async () => {
+      const dir = sharedEntryOf();
+      const target = projectOf();
+
+      factsIn(target, ['bg-brand']);
+
+      const { file, text } = markEntry(dir);
+      const lock = `${file.slice(0, -'.json'.length)}.json.lock`;
+
+      rmSync(file);
+
+      const holder = spawn(
+        process.execPath,
+        [
+          '-e',
+          `const fs = require('fs'); setTimeout(() => { fs.writeFileSync(${JSON.stringify(file)}, ${JSON.stringify(text)}); fs.rmSync(${JSON.stringify(lock)}); }, 400);`,
+        ],
+        { stdio: 'ignore' },
+      );
+
+      writeFileSync(lock, `${holder.pid}\n`);
+
+      expect(factsIn(target, ['bg-brand']).get('bg-brand')?.canonical).toBe('from-disk');
+      expect(existsSync(lock)).toBe(false);
+
+      await new Promise((done) => holder.on('exit', done));
+    });
   });
 });

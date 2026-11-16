@@ -1,15 +1,24 @@
 import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
-import { existsSync, readdirSync, readFileSync } from 'fs';
-import { dirname, join, relative, resolve } from 'path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'path';
 import postcss from 'postcss';
+import { setTimeout as delay } from 'timers/promises';
 import ts from 'typescript';
 import { ProductSource } from '../base';
 import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partOfFile, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { writeCacheEntry } from '../../cache-entry';
-import { inputsUnchanged, PrintedInput, readInputsOf, recordInputs, trackedRun, untrackedRun } from '../tracked-reads';
+import {
+  inputsUnchanged,
+  PrintedInput,
+  printOf,
+  readInputsOf,
+  recordInputs,
+  trackedRun,
+  untrackedRun,
+} from '../tracked-reads';
 import { perSource, sourceFileOf, textsOf } from '../ts-source';
 import { spawnPlainAsync } from '../../../plain-output';
 
@@ -278,23 +287,131 @@ export const stylesheetClassesOf = (product: ResolvedProduct) => {
 
 type Facts = { inputs: PrintedInput[]; rem: number; known: Map<string, ClassFacts> };
 
-type StoredFacts = Omit<Facts, 'known'> & { slot: string; known: [string, ClassFacts][] };
+type LocalInput = { path: string; hash: string };
 
-const factsDirOf = (target: string) => join(target, 'node_modules', '.cache', 'ethlete-design', 'class-facts');
+type StoredFacts = {
+  slot: string;
+  rem: number;
+  inputs: PrintedInput[];
+  local: LocalInput[];
+  known: [string, ClassFacts][];
+};
+
+const FACTS_DIR_ENV = 'ETHLETE_DESIGN_CLASS_FACTS_DIR';
+const FACTS_LOCK_WAIT_MS = 30_000;
+const UNWRITTEN_LOCK_GRACE_MS = 5_000;
+
+const sleeper = new Int32Array(new SharedArrayBuffer(4));
+
+const factsDirOf = (target: string) =>
+  process.env[FACTS_DIR_ENV] || join(target, 'node_modules', '.cache', 'ethlete-design', 'class-facts');
 
 const factsNameOf = (slot: string) => `${createHash('sha1').update(slot).digest('hex')}.json`;
+
+const localPathOf = (target: string, path: string) => {
+  const local = relative(target, path);
+
+  return local && !local.startsWith('..') && !isAbsolute(local) && local.split(sep)[0] !== 'node_modules'
+    ? local
+    : null;
+};
+
+const contentHashOf = (path: string) => {
+  try {
+    return createHash('sha1').update(readFileSync(path)).digest('hex');
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing file has its own print
+  } catch {
+    return 'missing';
+  }
+};
+
+const storedInputsOf = (target: string, inputs: PrintedInput[]) => {
+  const local: LocalInput[] = [];
+  const kept: PrintedInput[] = [];
+
+  for (const printed of inputs) {
+    const path = printed.input.kind === 'stat' ? localPathOf(target, printed.input.path) : null;
+
+    if (path !== null && printOf(printed.input) === printed.print)
+      local.push({ path, hash: contentHashOf(printed.input.path) });
+    else kept.push(printed);
+  }
+
+  return { inputs: kept, local };
+};
+
+const heldInputsOf = (target: string, held: StoredFacts): PrintedInput[] | null => {
+  if (!inputsUnchanged(held.inputs)) return null;
+
+  const local = held.local.map(({ path, hash }) => ({ path: join(target, path), hash }));
+
+  if (local.some(({ path, hash }) => contentHashOf(path) !== hash)) return null;
+
+  return [
+    ...held.inputs,
+    ...local.map(({ path }) => {
+      const input = { kind: 'stat', path } as const;
+
+      return { input, print: printOf(input) };
+    }),
+  ];
+};
 
 const heldFactsOf = (target: string, slot: string): Facts | null =>
   untrackedRun(() => {
     try {
       const held = JSON.parse(readFileSync(join(factsDirOf(target), factsNameOf(slot)), 'utf8')) as StoredFacts;
+      const inputs = held.slot === slot && Array.isArray(held.local) ? heldInputsOf(target, held) : null;
 
-      return held.slot === slot && inputsUnchanged(held.inputs) ? { ...held, known: new Map(held.known) } : null;
+      return inputs ? { inputs, rem: held.rem, known: new Map(held.known) } : null;
       // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing or unreadable entry is a cache miss
     } catch {
       return null;
     }
   });
+
+const tryFactsLock = (file: string) => {
+  try {
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, `${process.pid}\n`, { flag: 'wx' });
+
+    return true;
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- an existing lock is another holder
+  } catch {
+    return false;
+  }
+};
+
+const factsLockFileOf = (request: { target: string; slot: string }) =>
+  join(factsDirOf(request.target), `${factsNameOf(request.slot)}.lock`);
+
+const factsLockHolderOf = (file: string): 'self' | 'other' | 'none' => {
+  try {
+    const pid = Number.parseInt(readFileSync(file, 'utf8'), 10);
+
+    if (!Number.isInteger(pid) || pid <= 0)
+      return Date.now() - statSync(file).mtimeMs < UNWRITTEN_LOCK_GRACE_MS ? 'other' : 'none';
+    if (pid === process.pid) return 'self';
+    process.kill(pid, 0);
+
+    return 'other';
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM' ? 'other' : 'none';
+  }
+};
+
+// A holder in this process is never waited for: a synchronous wait blocks the event loop that ends its Tailwind run.
+const factsLockOf = (file: string): 'held' | 'wait' | 'unlocked' => {
+  if (tryFactsLock(file)) return 'held';
+
+  const holder = factsLockHolderOf(file);
+
+  if (holder === 'other') return 'wait';
+  if (holder === 'self') return 'unlocked';
+  rmSync(file, { force: true });
+
+  return tryFactsLock(file) ? 'held' : 'wait';
+};
 
 const freshFactsOf = (source: ProductSource | undefined): Facts => {
   const { value: rem, inputs } = trackedRun(() =>
@@ -309,42 +426,80 @@ const factsSlotOf = (options: { product: StyleHolder; classes: PartClasses }) =>
   const source = styleSourceOf(options.product);
   const css = stylesheets.map((file) => `@import ${JSON.stringify(file)};`).join('\n');
 
-  return { source, css, slot: JSON.stringify([target, css, source?.configFile ?? null, source?.config.styles ?? []]) };
+  const configFile = source?.configFile ? relative(target, source.configFile) : null;
+  const local = stylesheets.map((file) => relative(target, file));
+
+  return { source, css, slot: JSON.stringify([local, configFile, source?.config.styles ?? []]) };
 };
 
 /**
  * Tailwind's facts on each candidate under the product's stylesheets; the root font size they set on `html` is the rem
- * base. Kept on disk under the checkout's `node_modules/.cache/ethlete-design/class-facts`, shared by every process and
- * worker, until a file this process or Tailwind read for them changes.
+ * base. Kept on disk under the checkout's `node_modules/.cache/ethlete-design/class-facts`, or the dir
+ * `ETHLETE_DESIGN_CLASS_FACTS_DIR` names, shared by every process and worker and by checkouts of the same files, until
+ * a file this process or Tailwind read for them changes.
  */
 export const classFactsOf = (options: { product: StyleHolder; classes: PartClasses }) => {
-  const request = factsRequestOf(options);
+  const deadline = Date.now() + FACTS_LOCK_WAIT_MS;
 
-  return storedFactsOf(
-    request,
-    request.missing.length > 0
-      ? execFileSync(process.execPath, ['-e', CLASS_FACTS, request.tailwind], {
+  for (;;) {
+    const request = factsRequestOf(options);
+
+    if (request.missing.length === 0) return storedFactsOf(request, null);
+
+    const lockFile = factsLockFileOf(request);
+    const lock = Date.now() < deadline ? factsLockOf(lockFile) : 'unlocked';
+
+    if (lock === 'wait') {
+      Atomics.wait(sleeper, 0, 0, 25);
+      continue;
+    }
+
+    try {
+      return storedFactsOf(
+        request,
+        execFileSync(process.execPath, ['-e', CLASS_FACTS, request.tailwind], {
           input: request.input,
           encoding: 'utf8',
           maxBuffer: 1 << 28,
           stdio: ['pipe', 'pipe', 'pipe'],
-        })
-      : null,
-  );
+        }),
+      );
+    } finally {
+      if (lock === 'held') rmSync(lockFile, { force: true });
+    }
+  }
 };
 
 /** `classFactsOf` with the Tailwind run in a child process that does not block the event loop; records no reads. */
 const classFactsAsyncOf = async (options: { product: StyleHolder; classes: PartClasses }) => {
-  const request = untrackedRun(() => factsRequestOf(options));
+  const deadline = Date.now() + FACTS_LOCK_WAIT_MS;
 
-  if (request.missing.length === 0) return storedFactsOf(request, null);
+  for (;;) {
+    const request = untrackedRun(() => factsRequestOf(options));
 
-  const run = await spawnPlainAsync([process.execPath, '-e', CLASS_FACTS, request.tailwind], { input: request.input });
+    if (request.missing.length === 0) return storedFactsOf(request, null);
 
-  if (run.error || run.status !== 0)
-    throw Object.assign(run.error ?? new Error(`Tailwind exited ${run.status}`), { stderr: run.stderr });
+    const lockFile = factsLockFileOf(request);
+    const lock = Date.now() < deadline ? factsLockOf(lockFile) : 'unlocked';
 
-  return storedFactsOf(request, run.stdout);
+    if (lock === 'wait') {
+      await delay(25);
+      continue;
+    }
+
+    try {
+      const run = await spawnPlainAsync([process.execPath, '-e', CLASS_FACTS, request.tailwind], {
+        input: request.input,
+      });
+
+      if (run.error || run.status !== 0)
+        throw Object.assign(run.error ?? new Error(`Tailwind exited ${run.status}`), { stderr: run.stderr });
+
+      return storedFactsOf(request, run.stdout);
+    } finally {
+      if (lock === 'held') rmSync(lockFile, { force: true });
+    }
+  }
 };
 
 const factsRequestOf = (options: { product: StyleHolder; classes: PartClasses }) => {
@@ -393,7 +548,7 @@ const storedFactsOf = (request: ReturnType<typeof factsRequestOf>, output: strin
 
       writeCacheEntry(factsDirOf(target), {
         name: factsNameOf(slot),
-        text: JSON.stringify({ slot, rem: facts.rem, inputs, known } satisfies StoredFacts),
+        text: JSON.stringify({ slot, rem: facts.rem, ...storedInputsOf(target, inputs), known } satisfies StoredFacts),
       });
     });
 
