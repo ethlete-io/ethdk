@@ -74,6 +74,7 @@ export const createTestOverlayRef = <TResult = unknown, TComponent extends objec
       return () => closeGuards.delete(guard);
     },
     updatePositionStrategy: () => undefined,
+    updateSize: () => undefined,
     afterOpened: () => afterOpened$.asObservable(),
     beforeClosed: () => mapResult(beforeClosed$),
     beforeClosedEvent: () => beforeClosed$.asObservable(),

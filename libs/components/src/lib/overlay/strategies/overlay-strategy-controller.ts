@@ -34,7 +34,12 @@ import { resolveOverlayHasBackdrop } from '../overlay-has-backdrop';
 import { OverlayLayout, OverlayRef } from '../overlay-ref';
 import { OverlayArrowStylesComponent } from './overlay-arrow-styles.component';
 import { resolveOriginElement } from './resolve-origin-element';
-import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
+import {
+  OverlayBreakpointConfig,
+  OverlaySizeUpdate,
+  OverlayStrategy,
+  OverlayStrategyContext,
+} from './overlay-strategy.types';
 
 export type OverlayStrategyControllerMountConfig = {
   positionStrategy: OverlayRuntimePositionStrategy;
@@ -64,6 +69,12 @@ export type OverlayStrategyController = {
 
   /** Wires strategy lifecycle hooks and breakpoint switching. Must be called right after mounting. */
   attach: (runtimeRef: OverlayRuntimeRef<object, unknown>, overlayRef: OverlayRef<object, unknown>) => void;
+
+  /** Overrides sizing of the active strategy until the overlay closes - see `OverlayRef.updateSize`. */
+  updateSize: (size: OverlaySizeUpdate) => void;
+
+  /** Puts the active strategy's sizing back on the pane after positioning cleared it. */
+  reapplySizing: () => void;
 
   /** Releases the controller when the overlay never mounted. A mounted overlay releases it on close. */
   destroy: () => void;
@@ -237,7 +248,11 @@ export const createOverlayStrategyController = (
     return `min(${cssValue}, var(${cssVar}, ${cssValue}))`;
   };
 
-  const applySizingStyles = (paneElement: HTMLElement, strategyConfig: OverlayBreakpointConfig) => {
+  const sizeUpdates = new Map<OverlayStrategy, OverlayBreakpointConfig>();
+
+  const applySizingStyles = (paneElement: HTMLElement, strategy: OverlayStrategy) => {
+    const strategyConfig = { ...strategy.config, ...sizeUpdates.get(strategy) };
+
     renderer.setCssProperties(paneElement, {
       '--et-overlay-width': strategyConfig.width ? coerceCssPixelValue(strategyConfig.width) : null,
     });
@@ -383,7 +398,7 @@ export const createOverlayStrategyController = (
     applyClasses({ runtimeRef, prevConfig: prevStrategy.config, currConfig: currStrategy.config });
     runtimeRef.updatePositionStrategy(resolvePositionStrategy(currStrategy.config));
     // re-position clears inline pane styles, so sizing must be re-applied afterwards
-    applySizingStyles(runtimeRef.elements.paneElement, currStrategy.config);
+    applySizingStyles(runtimeRef.elements.paneElement, currStrategy);
   };
 
   const animationDelegate: OverlayRuntimeAnimationDelegate = {
@@ -419,6 +434,25 @@ export const createOverlayStrategyController = (
     },
   };
 
+  const reapplySizing = () => {
+    if (attachedRuntimeRef) applySizingStyles(attachedRuntimeRef.elements.paneElement, activeStrategy);
+  };
+
+  const updateSize = (size: OverlaySizeUpdate) => {
+    const merged: OverlayBreakpointConfig = { ...sizeUpdates.get(activeStrategy) };
+
+    for (const [key, value] of Object.entries(size) as [keyof OverlaySizeUpdate, number | string | null][]) {
+      if (value === null) {
+        delete merged[key];
+      } else if (value !== undefined) {
+        merged[key] = value;
+      }
+    }
+
+    sizeUpdates.set(activeStrategy, merged);
+    reapplySizing();
+  };
+
   const destroy = () => {
     if (!childInjector.destroyed) childInjector.destroy();
   };
@@ -427,7 +461,7 @@ export const createOverlayStrategyController = (
     attachedRuntimeRef = runtimeRef;
     attachedOverlayRef = overlayRef;
 
-    applySizingStyles(runtimeRef.elements.paneElement, activeStrategy.config);
+    applySizingStyles(runtimeRef.elements.paneElement, activeStrategy);
 
     const backdropElement = runtimeRef.elements.backdropElement();
     if (backdropElement) {
@@ -522,6 +556,8 @@ export const createOverlayStrategyController = (
     hasBackdrop: computed(() => resolveOverlayHasBackdrop(config, activeStrategyConfig())),
     layout: computed(() => resolveOverlayLayout(activeStrategyConfig().containerClass)),
     attach,
+    updateSize,
+    reapplySizing,
     destroy,
   };
 };

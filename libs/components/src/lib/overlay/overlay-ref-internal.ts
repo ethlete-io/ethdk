@@ -12,6 +12,12 @@ import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource, OverlayRuntimeRef,
 import { Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
 import { OverlayCloseGuard, OverlayLayout, OverlayRef } from './overlay-ref';
+import { OverlaySizeUpdate } from './strategies/overlay-strategy.types';
+
+export type OverlayRefSizing = {
+  updateSize: (size: OverlaySizeUpdate) => void;
+  reapplySizing: () => void;
+};
 
 export type OverlayRefInternals<TComponent extends object = object, TResult = unknown> = {
   attachRuntime: (runtimeRef: OverlayRuntimeRef<TComponent, TResult>, injector: Injector) => void;
@@ -20,6 +26,7 @@ export type OverlayRefInternals<TComponent extends object = object, TResult = un
   /** True from the moment a close was accepted until the overlay is destroyed. */
   isClosing: () => boolean;
   attachLayout: (layout: Signal<OverlayLayout | null>) => void;
+  attachSizing: (sizing: OverlayRefSizing) => void;
   registerHeaderTemplate: (template: TemplateRef<unknown>) => () => void;
   /** The result every close without one reports instead of `undefined`. */
   setDismissResult: (result: TResult) => void;
@@ -37,6 +44,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   let _runtimeRef: OverlayRuntimeRef<TComponent, TResult> | null = null;
   let _componentInstanceOverride: (() => TComponent | null) | null = null;
   let dismissResult: TResult | undefined;
+  let sizing: OverlayRefSizing | null = null;
 
   const busy = signal(false);
   const _headerTemplates = signal<TemplateRef<unknown>[]>([]);
@@ -159,7 +167,11 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
       return () => closeGuards.delete(guard);
     },
     forceClose: (result, source = 'api') => _runtimeRef?.forceClose(result, source),
-    updatePositionStrategy: (strategy) => _runtimeRef?.updatePositionStrategy(strategy),
+    updatePositionStrategy: (strategy) => {
+      _runtimeRef?.updatePositionStrategy(strategy);
+      sizing?.reapplySizing();
+    },
+    updateSize: (size) => sizing?.updateSize(size),
     afterOpened: () => afterOpened$.asObservable(),
     beforeClosed: () => beforeClosed$.asObservable(),
     beforeClosedEvent: () => beforeClosedEvent$.asObservable(),
@@ -180,6 +192,9 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
       return state === 'closing' || state === 'closed';
     },
     attachLayout: (source) => layoutSource.set(source),
+    attachSizing: (source) => {
+      sizing = source;
+    },
     registerHeaderTemplate: (template) => {
       _headerTemplates.update((templates) => [...templates.filter((t) => t !== template), template]);
 

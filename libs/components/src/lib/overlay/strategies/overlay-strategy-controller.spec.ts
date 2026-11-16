@@ -199,6 +199,59 @@ describe('overlay strategy controller', () => {
     expect(document.documentElement.classList.contains('large-document')).toBe(false);
   });
 
+  describe('updateSize', () => {
+    const maxWidthOf = (value: string) => `min(${value}, var(--et-overlay-max-width, ${value}))`;
+
+    it('applies to the pane at once and survives re-positioning', () => {
+      const overlayRef = openOverlay();
+      const pane = overlayRef.elements?.paneElement;
+
+      overlayRef.updateSize({ maxWidth: 1220, height: '50vh' });
+
+      expect(pane?.style.maxWidth).toBe(maxWidthOf('1220px'));
+      expect(pane?.style.height).toBe('50vh');
+      expect(pane?.style.width).toBe('100%');
+
+      overlayRef.updatePositionStrategy({ kind: 'global', vertical: 'end' });
+
+      expect(pane?.style.maxWidth).toBe(maxWidthOf('1220px'));
+      expect(pane?.style.width).toBe('100%');
+    });
+
+    it('belongs to the breakpoint active when called', () => {
+      const overlayRef = openOverlay();
+      const pane = overlayRef.elements?.paneElement;
+
+      overlayRef.updateSize({ maxWidth: 1220 });
+
+      fakeBreakpoints.setMatches(MD_QUERY, true);
+      TestBed.tick();
+
+      expect(pane?.style.maxWidth).toBe(maxWidthOf('80vw'));
+
+      fakeBreakpoints.setMatches(MD_QUERY, false);
+      TestBed.tick();
+
+      expect(pane?.style.maxWidth).toBe(maxWidthOf('1220px'));
+    });
+
+    it('merges later calls and drops a key set to null', () => {
+      const overlayRef = openOverlay();
+      const pane = overlayRef.elements?.paneElement;
+
+      overlayRef.updateSize({ maxWidth: 1220 });
+      overlayRef.updateSize({ width: 900 });
+
+      expect(pane?.style.maxWidth).toBe(maxWidthOf('1220px'));
+      expect(pane?.style.width).toBe('900px');
+
+      overlayRef.updateSize({ maxWidth: null });
+
+      expect(pane?.style.maxWidth).toBe(maxWidthOf('640px'));
+      expect(pane?.style.width).toBe('900px');
+    });
+  });
+
   it('renders the drag handle and arrow of the strategy switched to', () => {
     smallStrategy.config.dragToDismiss = { direction: 'to-bottom' };
     largeStrategy.config.arrow = true;

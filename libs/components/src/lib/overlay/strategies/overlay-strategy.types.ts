@@ -135,6 +135,14 @@ export type OverlayDragToDismissConfig = {
   snapPoints?: number[];
 };
 
+/**
+ * A size change for `OverlayRef.updateSize`. A number is in pixels; `null` drops an earlier update
+ * of that key, so the breakpoint config's value applies again.
+ */
+export type OverlaySizeUpdate = {
+  [K in 'width' | 'height' | 'minWidth' | 'maxWidth' | 'minHeight' | 'maxHeight']?: number | string | null;
+};
+
 export type OverlayBreakpointConfig = {
   /** Min-width of the overlay. If a number is provided, assumes pixel units. */
   minWidth?: number | string;

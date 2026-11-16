@@ -121,6 +121,7 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
 - `busy` - a writable signal that blocks every non-`api` close while `true`, see [Busy state](#busy-state)
 - `layout` - a signal with the layout the active strategy shows the overlay as (`'dialog'`, `'bottom-sheet'`, `'top-sheet'`, `'left-sheet'`, `'right-sheet'`, `'full-screen-dialog'`, `'anchored-dialog'`, or a custom strategy's own `et-overlay--<name>`), `null` without a strategy. It follows breakpoint switches, so `overlayRef.layout() === 'bottom-sheet'` is the way to tell a bottom sheet apart - do not key on the `.et-overlay--bottom-sheet` class
 - `updatePositionStrategy(strategy)` - reposition without remounting
+- `updateSize(size)` - resize the open overlay, see [Resizing an open overlay](#resizing-an-open-overlay)
 - `registerCloseGuard(guard)` - veto pending closes synchronously (returns an unregister fn); `forceClose(result?, source?)` commits a close bypassing all guards (same argument order as the core runtime ref). These are the low-level seam behind `createOverlayUnsavedChangesGuard` (below) - reach for that instead of wiring guards by hand
 - `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement()`) - identity and DOM access. `backdropElement` is a signal because a strategy switch can add or remove the backdrop
 
@@ -446,6 +447,22 @@ A switch carries the strategy's own `hasBackdrop`, `arrow` and `dragToDismiss` o
 Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `transformingFullScreenDialogToRightSheetOverlayStrategy`. Custom combinations are just arrays - each strategy provider (e.g. `injectDialogStrategy()`) exposes `.build(config)`, and app-wide defaults can be tuned via `provideDialogStrategyDefaults` and friends.
 
 Give the array one entry **without** a `breakpoint`: that is the base strategy, used below every breakpoint listed. An array whose entries all declare one falls back to its smallest entry and warns in dev mode; an empty array throws `ET1210`.
+
+### Resizing an open overlay
+
+`overlayRef.updateSize(size)` changes the pane's `width`, `height`, `minWidth`, `maxWidth`, `minHeight` and `maxHeight` while the overlay is open. A number is in pixels, like in the strategy config:
+
+```ts
+// a match overlay that widens once its details load
+overlayRef.updateSize({ maxWidth: 1220 });
+```
+
+Do not write those styles on the pane yourself: positioning and breakpoint switches put the strategy's sizing back and overwrite them. An update survives both, with one rule:
+
+- **The update belongs to the breakpoint that was active when you called it.** Re-positioning (`updatePositionStrategy`) and a switch back to that breakpoint keep it.
+- Another breakpoint uses its own strategy config. Call `updateSize` again after a switch if that breakpoint should change too.
+
+Later calls merge into earlier ones, so `updateSize({ width: 900 })` keeps an earlier `maxWidth`. A key set to `null` drops its update and the strategy config's value applies again. Updates last until the overlay closes.
 
 ### Anchored overlays and the arrow
 

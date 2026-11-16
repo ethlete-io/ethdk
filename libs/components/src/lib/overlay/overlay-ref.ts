@@ -8,6 +8,7 @@ import {
 } from '@ethlete/core';
 import { Observable } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
+import { OverlaySizeUpdate } from './strategies/overlay-strategy.types';
 
 /** A synchronous veto for a pending overlay close - see {@link OverlayRuntimeCloseGuard}. */
 export type OverlayCloseGuard<TResult = unknown> = OverlayRuntimeCloseGuard<TResult | undefined>;
@@ -52,6 +53,12 @@ export type OverlayRef<TComponent extends object = object, TResult = unknown> = 
    * A strategy-controller breakpoint switch overrides this with its own strategy again.
    */
   updatePositionStrategy: (strategy: OverlayRuntimePositionStrategy) => void;
+  /**
+   * Resizes the open overlay, e.g. `overlayRef.updateSize({ maxWidth: 1220 })`. The update belongs to
+   * the breakpoint active when called: it survives re-positioning and a switch back to that
+   * breakpoint, while another breakpoint keeps its own config. Later calls merge; `null` drops a key.
+   */
+  updateSize: (size: OverlaySizeUpdate) => void;
   afterOpened: () => Observable<void>;
   beforeClosed: () => Observable<TResult | undefined>;
   /** Like `beforeClosed`, but also reports how the close was initiated. */
