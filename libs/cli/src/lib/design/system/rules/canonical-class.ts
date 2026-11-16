@@ -20,8 +20,8 @@ import {
  * Tailwind IntelliSense reports it: `w-[420px]` that can be written as `w-2xl`. The root font size the
  * stylesheets set on `html` is the rem base.
  */
-export const canonicalClassesOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
-  const classes = partClassesOf(product);
+export const canonicalClassesOf = (product: ResolvedProduct & SharedDirs, only?: readonly string[]): Problem[] => {
+  const classes = partClassesOf(product, only);
 
   if (!classes) {
     skipRule({ rule: 'CANONICAL-CLASS', product: product.name, kind: 'not-applicable', reason: NO_STYLES });

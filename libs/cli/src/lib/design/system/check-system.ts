@@ -37,6 +37,8 @@ import { staleDistWarningsOf } from './stale-dist';
 import { instantLinesOf, partPointsOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
 import { partKeyOf, partOfFile, PRODUCT_PART_KEY, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
+import { prefetchPartClassFactsOf } from './rules/tailwind-classes';
+import { embeddedPartsOf } from './embedded-actions';
 import { componentCopiesOf } from './rules/component-copy';
 import { deniedClassesOf } from './rules/denied-class';
 import { nativeTitlesOf } from './rules/native-title';
@@ -86,7 +88,7 @@ import { keepHeldStampsInFiles, withStampsInMemory } from './stamp-files';
 import { readyUncommittedLinesOf } from '../uncommitted-state';
 import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
-import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
+import { typecheckProduct, typecheckProductAsync, writeEditorTsconfig } from './system-tsconfig';
 import { repoInvocation } from '../../invocation';
 import { TypecheckResult } from '../typecheck';
 import { leftoverGateFilesWarningOf } from './leftover-gate-files';
@@ -129,6 +131,11 @@ const RULES = [
   gluedInterpolationsOf,
   sdkAttributeValuesOf,
   sdkPrivateVarsOf,
+];
+
+const PART_SCOPED_RULES: ((product: ResolvedProduct, only?: readonly string[]) => Problem[])[] = [
+  canonicalClassesOf,
+  undefinedClassesOf,
 ];
 
 export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
@@ -252,10 +259,14 @@ export const uncomparedLinesOf = (options: {
   });
 };
 
-/** Every problem the rules find in a resolved product, its resolution problems first. */
-export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
+/** The resolution problems, then those of every static rule; with `only`, the class rules skip files outside those parts. */
+export const ruleProblemsOf = (product: ResolvedProduct, only?: readonly string[]): Problem[] => [
   ...product.problems,
-  ...RULES.flatMap((rule) => rule(product)),
+  ...RULES.flatMap((rule) => {
+    const scoped = PART_SCOPED_RULES.find((candidate) => candidate === rule);
+
+    return scoped ? scoped(product, only) : rule(product);
+  }),
 ];
 
 /**
@@ -273,6 +284,13 @@ export const buildReadyInputsOf = (
     pointsOf: (part) => partPointsOf(points, part),
     problemsOf: (part) => problems.filter((problem) => partOfFile(product, problem.file) === part),
   };
+};
+
+/** The parts whose rule problems the build-ready record of `part` reads: its own and those of its embedded parts. */
+const readyInputPartsOf = (product: ResolvedProduct, part: string) => {
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
+
+  return [part, ...(resolved ? embeddedPartsOf({ product, part: resolved }).map(partKeyOf) : [])];
 };
 
 const withTalliedProblems = (
@@ -502,7 +520,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: numbe
     const isWanted = (problem: Problem) => !options.part || partOfFile(product, problem.file) === options.part;
     const isOwn = (problem: Problem) => !isInBasePart(product, problem.file) && isWanted(problem);
     const warnings = warningProblemsOf(product);
-    const problems = ruleProblemsOf(product);
+    const problems = ruleProblemsOf(product, options.part ? [options.part] : undefined);
 
     warnings.filter(isOwn).forEach((problem) => {
       console.warn(`WARNING ${lineOf(target, problem)}`);
@@ -700,7 +718,13 @@ const printProductOpenPoints = async (
     parts: options.part
       ? [options.part]
       : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
-    inputs: withTalliedProblems(buildReadyInputsOf(product, { points: allPoints }), options.tally?.get(name)),
+    inputs: withTalliedProblems(
+      buildReadyInputsOf(product, {
+        points: allPoints,
+        problems: ruleProblemsOf(product, options.part ? readyInputPartsOf(product, options.part) : undefined),
+      }),
+      options.tally?.get(name),
+    ),
     ...(rendered === null
       ? {}
       : {
@@ -853,6 +877,29 @@ const sketchTypechecksOf = async (options: CheckOptions) =>
     ),
   );
 
+/** Runs the typecheck and the Tailwind class facts of `part` side by side, for the static rules to read. */
+const prefetchPartChecks = (options: CheckOptions & { part: string; typechecks: Map<string, TypecheckResult> }) =>
+  Promise.all(
+    options.products.map(async (name) => {
+      const entry = options.config.products?.[name];
+
+      if (!entry) return;
+
+      const product = resolveProduct({ target: options.target, name, config: entry });
+
+      if (!product.parts.some((part) => partKeyOf(part) === options.part)) return;
+
+      await Promise.all([
+        prefetchPartClassFactsOf(product, readyInputPartsOf(product, options.part)),
+        options.typechecks.has(name)
+          ? undefined
+          : typecheckProductAsync({ target: options.target, product }).then((result) =>
+              options.typechecks.set(name, result),
+            ),
+      ]);
+    }),
+  );
+
 const renderSystem = async (
   options: CheckOptions,
 ): Promise<{
@@ -865,7 +912,14 @@ const renderSystem = async (
   const sketchTypechecks = options.part
     ? undefined
     : await timedPhase('sketch-typecheck', () => sketchTypechecksOf(options));
-  const { code, fatal } = timedPhase('static', () => reportSystem({ ...options, warn: true, sketchTypechecks }));
+  const typechecks = options.typechecks ?? new Map<string, TypecheckResult>();
+  const part = options.part;
+
+  if (part) await timedPhase('static-prefetch', () => prefetchPartChecks({ ...options, part, typechecks }));
+
+  const { code, fatal } = timedPhase('static', () =>
+    reportSystem({ ...options, typechecks, warn: true, sketchTypechecks }),
+  );
 
   if (fatal) return { code, rendered: null };
 
@@ -1188,7 +1242,7 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
         parts,
         tally,
         only: options.part,
-        done: doneParts({ product: resolved, parts }).length,
+        done: options.part ? undefined : doneParts({ product: resolved, parts }).length,
       }).forEach((line) => console.log(line));
     }
   });

@@ -19,8 +19,8 @@ const definedIn = (name: string, source: string) =>
  * product's stylesheets, such as `bg-surface-sunken` once the theme drops `--color-surface-sunken`. A class
  * the product's stylesheets or the file itself give a rule is no utility and passes.
  */
-export const undefinedClassesOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
-  const classes = partClassesOf(product);
+export const undefinedClassesOf = (product: ResolvedProduct & SharedDirs, only?: readonly string[]): Problem[] => {
+  const classes = partClassesOf(product, only);
 
   if (!classes) {
     skipRule({ rule: 'CLASS-UNDEFINED', product: product.name, kind: 'not-applicable', reason: NO_STYLES });

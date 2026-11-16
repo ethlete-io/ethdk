@@ -7,10 +7,11 @@ import ts from 'typescript';
 import { ProductSource } from '../base';
 import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { productStylesheetFilesOf } from '../product-stylesheets';
-import { ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { partOfFile, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { writeCacheEntry } from '../../cache-entry';
 import { inputsUnchanged, PrintedInput, readInputsOf, recordInputs, trackedRun, untrackedRun } from '../tracked-reads';
 import { perSource, sourceFileOf, textsOf } from '../ts-source';
+import { spawnPlainAsync } from '../../../plain-output';
 
 const CLASS_FACTS = `
 const fs = require('fs');
@@ -189,8 +190,11 @@ const sourcesOf = (part: ResolvedPart) => [
   ...tsSourcesIn(dirname(part.file)).filter(({ file }) => file !== part.file),
 ];
 
-/** The candidate classes in the markup of the product's own parts, the files below them and the shared files they import, with the product's stylesheets. */
-export const partClassesOf = (product: ResolvedProduct & SharedDirs): PartClasses | null => {
+/**
+ * The candidate classes in the markup of the product's own parts, the files below them and the shared files they import,
+ * with the product's stylesheets; with `only`, of the files that belong to those parts.
+ */
+export const partClassesOf = (product: ResolvedProduct & SharedDirs, only?: readonly string[]): PartClasses | null => {
   const source = styleSourceOf(product);
 
   if (!source) return null;
@@ -205,6 +209,7 @@ export const partClassesOf = (product: ResolvedProduct & SharedDirs): PartClasse
     .filter((file) => file.endsWith('.ts'))
     .map((file) => ({ file, source: readFileSync(file, 'utf8') }));
   const files = [...new Map([...below, ...shared].map((entry) => [entry.file, entry])).values()]
+    .filter((entry) => !only || only.includes(partOfFile(product, entry.file)))
     .sort((a, b) => a.file.localeCompare(b.file))
     .map((entry) => ({
       ...entry,
@@ -313,6 +318,36 @@ const factsSlotOf = (options: { product: StyleHolder; classes: PartClasses }) =>
  * worker, until a file this process or Tailwind read for them changes.
  */
 export const classFactsOf = (options: { product: StyleHolder; classes: PartClasses }) => {
+  const request = factsRequestOf(options);
+
+  return storedFactsOf(
+    request,
+    request.missing.length > 0
+      ? execFileSync(process.execPath, ['-e', CLASS_FACTS, request.tailwind], {
+          input: request.input,
+          encoding: 'utf8',
+          maxBuffer: 1 << 28,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        })
+      : null,
+  );
+};
+
+/** `classFactsOf` with the Tailwind run in a child process that does not block the event loop; records no reads. */
+const classFactsAsyncOf = async (options: { product: StyleHolder; classes: PartClasses }) => {
+  const request = untrackedRun(() => factsRequestOf(options));
+
+  if (request.missing.length === 0) return storedFactsOf(request, null);
+
+  const run = await spawnPlainAsync([process.execPath, '-e', CLASS_FACTS, request.tailwind], { input: request.input });
+
+  if (run.error || run.status !== 0)
+    throw Object.assign(run.error ?? new Error(`Tailwind exited ${run.status}`), { stderr: run.stderr });
+
+  return storedFactsOf(request, run.stdout);
+};
+
+const factsRequestOf = (options: { product: StyleHolder; classes: PartClasses }) => {
   const { target, files } = options.classes;
   const { source, css, slot } = factsSlotOf(options);
   const held = heldFactsOf(target, slot);
@@ -323,14 +358,21 @@ export const classFactsOf = (options: { product: StyleHolder; classes: PartClass
 
   if (held) recordInputs(held.inputs);
 
-  if (missing.length > 0) {
-    const tailwind = require.resolve('@tailwindcss/node', { paths: [target, __dirname] });
-    const output = execFileSync(process.execPath, ['-e', CLASS_FACTS, tailwind], {
-      input: JSON.stringify({ css, base: target, rem: facts.rem, candidates: missing }),
-      encoding: 'utf8',
-      maxBuffer: 1 << 28,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
+  return {
+    target,
+    slot,
+    held,
+    facts,
+    missing,
+    tailwind: missing.length > 0 ? require.resolve('@tailwindcss/node', { paths: [target, __dirname] }) : '',
+    input: JSON.stringify({ css, base: target, rem: facts.rem, candidates: missing }),
+  };
+};
+
+const storedFactsOf = (request: ReturnType<typeof factsRequestOf>, output: string | null) => {
+  const { target, slot, held, facts, missing, tailwind } = request;
+
+  if (output !== null) {
     const answer = JSON.parse(output) as { reads: string[]; facts: ClassFacts[] };
 
     facts.inputs.push(...readInputsOf([tailwind, ...answer.reads]));
@@ -390,3 +432,17 @@ export const prefetchClassFactsOf = (products: (ResolvedProduct & SharedDirs)[])
       }
     }
   });
+
+/** Puts on disk the class facts of the candidates of `only`'s parts of `product`, in a child process; a failure is left to the rule runs. */
+export const prefetchPartClassFactsOf = async (product: ResolvedProduct & SharedDirs, only: readonly string[]) => {
+  const classes = untrackedRun(() => partClassesOf(product, only));
+
+  if (!classes) return;
+
+  try {
+    await classFactsAsyncOf({ product, classes });
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- the rule runs that follow report a Tailwind failure
+  } catch {
+    return;
+  }
+};

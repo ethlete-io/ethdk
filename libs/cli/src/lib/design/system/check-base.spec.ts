@@ -20,7 +20,11 @@ vi.mock('../warm-draw', async (importOriginal) => {
 vi.mock('./system-tsconfig', async (importOriginal) => {
   const original = await importOriginal<typeof tsconfig>();
 
-  return { ...original, typecheckProduct: vi.fn(original.typecheckProduct) };
+  return {
+    ...original,
+    typecheckProduct: vi.fn(original.typecheckProduct),
+    typecheckProductAsync: vi.fn(original.typecheckProductAsync),
+  };
 });
 
 const git = (target: string, ...args: string[]) =>
@@ -57,6 +61,7 @@ describe('design check --product --base', () => {
     vi.restoreAllMocks();
     vi.mocked(warmDraw.createRunDraw).mockClear();
     vi.mocked(tsconfig.typecheckProduct).mockClear();
+    vi.mocked(tsconfig.typecheckProductAsync).mockClear();
   });
 
   it('checks only the parts whose design changed since the base and the parts that embed them, and names them', async () => {
@@ -81,7 +86,10 @@ describe('design check --product --base', () => {
     await checkDesign({ target, argv: ['--product', 'acme', '--base', 'HEAD'], invocation: 'et design' });
 
     expect(warmDraw.createRunDraw).toHaveBeenCalledTimes(1);
-    expect(tsconfig.typecheckProduct).toHaveBeenCalledTimes(1);
+    expect(
+      vi.mocked(tsconfig.typecheckProduct).mock.calls.length +
+        vi.mocked(tsconfig.typecheckProductAsync).mock.calls.length,
+    ).toBe(1);
   });
 
   it('chooses a part whose implementing app files changed, and its hosts', () => {
