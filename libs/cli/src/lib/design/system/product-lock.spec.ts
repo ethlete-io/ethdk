@@ -154,6 +154,24 @@ describe('withProductLock and writeDecisionFile', () => {
     expect(readFileSync(lock, 'utf8')).toBe(`${process.pid}\n`);
   });
 
+  it('lets a child the holder waits on in a sync spawn run under its lock', () => {
+    const dir = productDirOf();
+    const lock = join(dir, '..', '..', 'cache', 'p', 'decisions.lock');
+    const script = `
+const { createJiti } = require(${JSON.stringify(JITI)});
+const { withProductLock, writeDecisionFile } = createJiti(${JSON.stringify(LOCK_MODULE)})(${JSON.stringify(LOCK_MODULE)});
+const dir = process.argv[1];
+withProductLock({ dir, waitMs: 200 }, () => writeDecisionFile(dir + '/ready.json', '{"child":1}\\n'));
+`;
+
+    const child = withProductLock(dir, () => spawnSync(process.execPath, ['-e', script, dir], { encoding: 'utf8' }));
+
+    expect(child.stderr).toBe('');
+    expect(child.status).toBe(0);
+    expect(readFileSync(join(dir, 'ready.json'), 'utf8')).toBe('{"child":1}\n');
+    expect(existsSync(lock)).toBe(false);
+  });
+
   it('is re-entrant when the nested call names the product through a symlink', () => {
     const dir = productDirOf();
     const root = join(dir, '..', '..', '..');

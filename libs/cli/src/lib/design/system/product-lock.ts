@@ -16,6 +16,7 @@ import { productCacheDirOf } from './product';
 import { hasJournal, recoverJournal } from './write-journal';
 
 const LOCK_FILE = 'decisions.lock';
+const HELD_ENV = 'ETHLETE_DESIGN_LOCKS_HELD';
 const WAIT_MS = 10_000;
 const UNWRITTEN_GRACE_MS = 5_000;
 
@@ -103,6 +104,21 @@ const takeOver = (lockFile: string, stalePid: number | null) => {
   unlinkSync(moved);
 };
 
+const heldEntriesOf = () => (process.env[HELD_ENV] ?? '').split('\n').filter(Boolean);
+
+const setHeldEntries = (entries: string[]) => {
+  if (entries.length) process.env[HELD_ENV] = entries.join('\n');
+  else delete process.env[HELD_ENV];
+};
+
+const heldByParent = (lockFile: string) => {
+  const pid = holderPidOf(lockFile);
+
+  return (
+    typeof pid === 'number' && pid !== process.pid && heldEntriesOf().includes(`${pid} ${lockFile}`) && isAlive(pid)
+  );
+};
+
 const acquire = (productDir: string, waitMs: number) => {
   const lockFile = lockFileOf(productDir);
   const deadline = Date.now() + waitMs;
@@ -131,19 +147,23 @@ const acquire = (productDir: string, waitMs: number) => {
 
 /**
  * Runs `run` while this process holds the write lock of a product's `ready.json`, `merged.json` and `sketch.json`
- * files, so a read-modify-write of them cannot interleave with another process. Re-entrant within one process; waits
- * up to `waitMs` (10 s) for another holder, takes over the lock of a dead pid, and throws naming the holder otherwise.
+ * files, so a read-modify-write of them cannot interleave with another process. Re-entrant within one process and in
+ * the child processes it spawns while holding the lock; waits up to `waitMs` (10 s) for another holder, takes over the
+ * lock of a dead pid, and throws naming the holder otherwise. A child runs under the lock only while the holder waits
+ * on it synchronously: a child that outlives the holder's `run` writes beside it.
  */
 export const withProductLock = <T>(product: string | { dir: string; waitMs?: number }, run: () => T): T => {
   const { dir, waitMs = WAIT_MS } = typeof product === 'string' ? { dir: product } : product;
   const key = canonicalDirOf(dir);
   const depth = heldLocks.get(key) ?? 0;
-  const lockFile = depth === 0 ? acquire(key, waitMs) : null;
+  const lockFile = depth === 0 && !heldByParent(lockFileOf(key)) ? acquire(key, waitMs) : null;
+  const entry = lockFile ? `${process.pid} ${lockFile}` : null;
 
   heldLocks.set(key, depth + 1);
+  if (entry) setHeldEntries([...heldEntriesOf(), entry]);
 
   try {
-    if (depth === 0) {
+    if (lockFile) {
       const recovered = recoverJournal(key);
 
       if (recovered) console.warn(recovered);
@@ -153,6 +173,7 @@ export const withProductLock = <T>(product: string | { dir: string; waitMs?: num
   } finally {
     if (depth === 0) {
       heldLocks.delete(key);
+      if (entry) setHeldEntries(heldEntriesOf().filter((held) => held !== entry));
       if (lockFile) unlinkSync(lockFile);
     } else heldLocks.set(key, depth);
   }
