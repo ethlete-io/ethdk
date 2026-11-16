@@ -121,9 +121,20 @@ jobs:
       - name: Create a symlinked temp directory
         run: mkdir -p "$RUNNER_TEMP/real-tmp" && ln -s "$RUNNER_TEMP/real-tmp" "$RUNNER_TEMP/link-tmp"
 
-      - run: set -o pipefail; yarn nx run-many -t test 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
+      - name: Start the runner load measurement
+        run: |
+          echo "::notice title=unit-runner::nproc $(nproc), $(free -m | awk '/^Mem:/ {print "mem " $2 " MB, available " $7 " MB"}'), $(free -m | awk '/^Swap:/ {print "swap " $2 " MB"}')"
+          nohup vmstat -n 5 > "$RUNNER_TEMP/vmstat.log" 2>&1 &
+
+      - run: set -o pipefail; yarn nx run-many -t test --exclude storybook-e2e --output-style=static -- --logHeapUsage 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
         env:
           TMPDIR: ${{ runner.temp }}/link-tmp
+
+      - run: yarn nx run storybook-e2e:test
+
+      - name: Report the runner load
+        if: always()
+        run: node tools/scripts/ci-load-report.mjs "$RUNNER_TEMP/vmstat.log" "$RUNNER_TEMP/unit-tests.log"
 
       - name: Name the failing specs
         if: failure()
