@@ -160,10 +160,9 @@
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "bef4fc1dc256ac04",
+    "hash": "7c722d00c70b6cbc",
     "variant": "a",
-    "decidedBy": "plan: ADR 0322 and B539: one comment flow, the layout of pages/system variant b the human picked; pages/system draws no pixel change",
-    "at": "2026-11-16T16:00:57.085Z",
-    "note": "merged without a pick: allowed by ADR 0322 and B539: one comment flow, the layout of pages/system variant b the human picked; pages/system draws no pixel change"
+    "decidedBy": "user",
+    "at": "2026-11-16T16:58:17.475Z"
   }
 }

@@ -1,6 +1,6 @@
 import { html } from '@design-system';
 import { canvasView } from '@system/elements/canvas-frames';
-import { groupCount, stateFrame, stateGroupsPage, SYSTEM_GROUPS, type StateGroup } from '@shared/state-groups';
+import { groupCount, stateFrame, stateGroupsPage, SYSTEM_GROUPS, type StateGroup } from './shared/state-groups';
 
 const section = (group: StateGroup) =>
   html`<section class="flex flex-col gap-space-4">
