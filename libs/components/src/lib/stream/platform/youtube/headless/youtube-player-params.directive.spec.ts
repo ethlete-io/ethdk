@@ -53,8 +53,8 @@ describe('YoutubePlayerParamsDirective', () => {
     expect(params.height()).toBe('50vh');
   });
 
-  it('should create 6 input bindings', () => {
-    expect(setup({ videoId: 'a' }).createBindings()).toHaveLength(6);
+  it('should create 7 input bindings', () => {
+    expect(setup({ videoId: 'a' }).createBindings()).toHaveLength(7);
   });
 
   it('should default the start time to 0 and coerce string values', () => {

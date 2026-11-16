@@ -14,7 +14,7 @@ import { YtPlayerConfig, YtWindow } from './youtube-player.types';
   hostDirectives: [
     {
       directive: YoutubePlayerParamsDirective,
-      inputs: ['videoId', 'startTime', 'width', 'height', 'autoplay', 'host'],
+      inputs: ['videoId', 'startTime', 'width', 'height', 'autoplay', 'host', 'playerVars'],
     },
     YoutubePlayerDirective,
   ],
@@ -160,6 +160,12 @@ describe('YoutubePlayerDirective', () => {
     await settle();
 
     expect(player.state().isMuted).toBe(true);
+  });
+
+  it('should merge the given player vars over the defaults', async () => {
+    const { instance } = await setup({ videoId: 'vid1', startTime: 30, playerVars: { controls: 0, rel: 1 } });
+
+    expect(instance()?.config.playerVars).toMatchObject({ enablejsapi: 1, start: 30, controls: 0, rel: 1 });
   });
 
   it('should be loading until the player reports ready', async () => {

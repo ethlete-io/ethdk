@@ -42,16 +42,16 @@ everything at once - handy in a playground, wasteful in an app.
 
 Source inputs per platform:
 
-| Platform    | Source                                                       | Extras                              |
-| ----------- | ------------------------------------------------------------ | ----------------------------------- |
-| YouTube     | `videoId`                                                    | `autoplay`, `host`, `startTime`     |
-| Twitch      | `src` - channel name, channel URL or `…/videos/<id>` VOD URL | `autoplay`, `chat`, `startTime`     |
-| Vimeo       | `videoId`                                                    | `startTime`                         |
-| Dailymotion | `videoId`                                                    | `startTime`                         |
-| Kick        | `channel`                                                    | `muted`                             |
-| Facebook    | `videoId`                                                    | -                                   |
-| TikTok      | `videoId`                                                    | portrait 9∶16 in picture-in-picture |
-| SOOP        | `userId` or `videoId`                                        | -                                   |
+| Platform    | Source                                                       | Extras                                        |
+| ----------- | ------------------------------------------------------------ | --------------------------------------------- |
+| YouTube     | `videoId`                                                    | `autoplay`, `host`, `playerVars`, `startTime` |
+| Twitch      | `src` - channel name, channel URL or `…/videos/<id>` VOD URL | `autoplay`, `chat`, `startTime`               |
+| Vimeo       | `videoId`                                                    | `startTime`                                   |
+| Dailymotion | `videoId`                                                    | `startTime`                                   |
+| Kick        | `channel`                                                    | `muted`                                       |
+| Facebook    | `videoId`                                                    | -                                             |
+| TikTok      | `videoId`                                                    | portrait 9∶16 in picture-in-picture           |
+| SOOP        | `userId` or `videoId`                                        | -                                             |
 
 Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
 
@@ -63,6 +63,17 @@ with sound - `currentState().isMuted` is `true` and `unmute()` turns the sound o
 ```html
 <et-youtube-player-slot class="aspect-video" videoId="dQw4w9WgXcQ" host="www.youtube-nocookie.com" autoplay />
 ```
+
+`playerVars` passes [YouTube player parameters](https://developers.google.com/youtube/player_parameters) (typed
+`YtPlayerVars`) to the embed. The keys you pass win over the SDK defaults (`enablejsapi: 1`, `origin`, `rel: 0`,
+`start` from `startTime`, and `autoplay` / `mute` from `autoplay`); every other key keeps its default. A hero video
+without the YouTube controls:
+
+```html
+<et-youtube-player-slot [playerVars]="{ controls: 0 }" class="aspect-video" videoId="dQw4w9WgXcQ" autoplay />
+```
+
+The player reads `playerVars` when it builds the embed; a later change takes effect with the next `videoId`.
 
 A SOOP slot with neither `userId` nor `videoId`, or a Twitch `src` that is no channel or video (`twitch.tv/videos/`, a clip URL), shows the error overlay and reports `ET1611` to the `ErrorHandler` in development. When both SOOP ids are set, `userId` wins.
 

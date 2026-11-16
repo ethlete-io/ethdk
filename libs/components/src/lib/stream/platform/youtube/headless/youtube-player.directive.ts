@@ -100,6 +100,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
                   start: this.params.startTime() || undefined,
                   rel: 0,
                   ...(autoplay ? { autoplay: 1, mute: 1 } : {}),
+                  ...this.params.playerVars(),
                 },
                 events: {
                   onReady: () => {
