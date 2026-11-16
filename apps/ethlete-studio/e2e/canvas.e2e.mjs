@@ -1713,6 +1713,149 @@ const CASES = [
     },
   },
   {
+    name: 'the comment button: crosshair, a click places the draft, Esc cancels it, a sent comment lands on disk, in the Inbox and as a pin',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const commentsDir = join(checkout, '.ethlete/design/studio/comments');
+      const filesOf = () =>
+        existsSync(commentsDir) ? readdirSync(commentsDir).filter((n) => n.endsWith('.json')) : [];
+      const before = new Set(filesOf());
+      const text = `B145 e2e ${Date.now()}`;
+      const fail = (detail) => ({ ok: false, detail });
+      const toggle = page.locator('ethlete-system-page button[et-button]', { hasText: /^\s*Kommentar\s*$/ }).first();
+
+      const toggled = await toggle.click({ timeout: WAIT_MS }).then(
+        () => null,
+        () =>
+          page.evaluate(() => {
+            const button = [...document.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Kommentar');
+            const box = button?.getBoundingClientRect();
+            const top = box && document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+
+            return button
+              ? `Kommentar in ${button.closest('[class]')?.tagName}, box ${Math.round(box.x)},${Math.round(box.y)} ${Math.round(box.width)}x${Math.round(box.height)}, covered by ${top?.tagName}.${top?.className}`
+              : 'no Kommentar button';
+          }),
+      );
+
+      if (toggled) return fail(`comment button not clickable: ${toggled}`);
+      await page.locator('[data-comment-target]').first().waitFor({ timeout: WAIT_MS });
+
+      const pickAt = (fx, fy) =>
+        page.evaluate(
+          ({ fx, fy }) => {
+            const canvas = document.querySelector('ethlete-design-canvas')?.getBoundingClientRect();
+
+            for (const target of document.querySelectorAll('[data-comment-target]')) {
+              const box = target.getBoundingClientRect();
+              const x = Math.round(box.left + box.width * fx);
+              const y = Math.round(box.top + box.height * fy);
+              const inside = !canvas || (x > canvas.left && x < canvas.right && y > canvas.top && y < canvas.bottom);
+
+              if (inside && document.elementFromPoint(x, y) === target)
+                return { x, y, cursor: getComputedStyle(target).cursor };
+            }
+
+            return null;
+          },
+          { fx, fy },
+        );
+      const draftBox = () =>
+        page.evaluate(() => {
+          const box = document.querySelector('[data-comment-draft]')?.getBoundingClientRect();
+
+          return box ? { left: box.left, top: box.top } : null;
+        });
+      const pinsNear = (point) =>
+        page.evaluate(
+          ({ x, y }) =>
+            [...document.querySelectorAll('[data-comment-pin]')]
+              .map((pin) => {
+                const box = pin.getBoundingClientRect();
+
+                return Math.round(Math.hypot(box.left - x, box.bottom - y));
+              })
+              .sort((a, b) => a - b),
+          point,
+        );
+
+      const first = await pickAt(0.3, 0.4);
+
+      if (!first) return fail('no comment target has a visible point');
+      if (first.cursor !== 'crosshair') return fail(`comment target cursor is ${first.cursor}, not crosshair`);
+
+      await page.mouse.click(first.x, first.y);
+      await page.locator('[data-comment-draft]').waitFor({ timeout: WAIT_MS });
+
+      const placed = await draftBox();
+
+      if (!placed || Math.abs(placed.left - first.x) > 2 || Math.abs(placed.top - first.y) > 2)
+        return fail(`draft at ${JSON.stringify(placed)}, click at ${first.x},${first.y}`);
+
+      await page.locator('[data-comment-draft] textarea').click();
+      await page.keyboard.type('weg damit');
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(SETTLE_MS);
+
+      const afterEsc = await page.evaluate(() => ({
+        draft: !!document.querySelector('[data-comment-draft]'),
+        targets: document.querySelectorAll('[data-comment-target]').length,
+      }));
+
+      if (afterEsc.draft) return fail('Esc left the draft open');
+      if (filesOf().length !== before.size) return fail('Esc wrote a comment');
+
+      const second = await pickAt(0.6, 0.55);
+
+      if (!second) return fail('no visible point for the second draft');
+
+      await page.mouse.click(second.x, second.y);
+      await page.locator('[data-comment-draft] textarea').click();
+      await page.keyboard.type(text);
+      await page.keyboard.press('Enter');
+
+      let deadline = Date.now() + WAIT_MS;
+
+      while (Date.now() < deadline && filesOf().length === before.size) await page.waitForTimeout(200);
+
+      const pinsBeforeInbox = (await pinsNear(second)).length;
+
+      await page.locator('button[aria-label="Inbox"]').first().click();
+      deadline = Date.now() + WAIT_MS;
+      let written = [];
+      let pins = [];
+      let listed = false;
+
+      while (Date.now() < deadline) {
+        written = filesOf().filter((name) => !before.has(name));
+        pins = await pinsNear(second);
+        listed = await page.evaluate(
+          (text) => !!document.querySelector('ethlete-inbox')?.textContent?.includes(text),
+          text,
+        );
+        if (written.length && pins[0] < 40 && listed) break;
+        await page.waitForTimeout(200);
+      }
+
+      const saved = written.map((name) => JSON.parse(readFileSync(join(commentsDir, name), 'utf8')));
+
+      for (const name of written) rmSync(join(commentsDir, name));
+
+      const ok =
+        saved.length === 1 &&
+        saved[0].text === text &&
+        !!saved[0].point &&
+        pins.filter((d) => d < 40).length === 1 &&
+        listed;
+
+      return {
+        ok,
+        detail: `crosshair, draft at click ${first.x},${first.y}, Esc closed it (comment mode ${afterEsc.targets ? 'on' : 'off'}), sent ${saved.length} file(s) ${JSON.stringify(saved.map((s) => ({ part: s.part, text: s.text, point: s.point })))}, pins with the Inbox closed ${pinsBeforeInbox}, in the Inbox ${listed}, pin distances to the click ${pins.join(',')} px`,
+      };
+    },
+  },
+  {
     name: 'a refused check record still offers the direct edit sketch',
     listingMayPend:
       'the evidence is the footer popover, read from a faked open-points response that the listing does not gate',
