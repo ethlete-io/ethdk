@@ -348,15 +348,7 @@
     "embedded": {
       "components/title-search": "ca243e3f26b92e91"
     },
-    "actions": [
-      "emit:close",
-      "emit:dismiss",
-      "emit:maximize",
-      "emit:minimize",
-      "emit:restart",
-      "emit:update",
-      "opens:command-palette"
-    ],
+    "actions": ["emit:dismiss", "emit:restart", "emit:update", "opens:command-palette"],
     "at": "2026-11-15T22:02:35.215Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
