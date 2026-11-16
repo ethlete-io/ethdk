@@ -267,6 +267,7 @@ Unsubscribing before the user answers closes the dialog and emits nothing - whic
 | ------------------ | --------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `title`            | both      | required                          | The heading, and the dialog's accessible name                                                                     |
 | `message`          | both      | none                              | Body text, wired to `aria-describedby`; line breaks are kept                                                      |
+| `slot`             | both      | none                              | An app component or template rendered under the message, see below                                                |
 | `confirmLabel`     | `confirm` | `ALERT_DIALOG_LABELS.confirm`     | Name the action (`'Delete project'`) rather than `'OK'`                                                           |
 | `cancelLabel`      | `confirm` | `ALERT_DIALOG_LABELS.cancel`      |                                                                                                                   |
 | `destructive`      | `confirm` | `false`                           | Renders the confirm action in the error color theme of the dialog's surface (`injectSemanticColorTheme('error')`) |
@@ -274,6 +275,24 @@ Unsubscribing before the user answers closes the dialog and emits nothing - whic
 | `origin`           | both      | the focused element               | Where the dialog animates from and returns focus to                                                               |
 
 The dialog is an `alertdialog`: initial focus lands on the least destructive action - **Cancel** on a confirm, even a destructive one, and the only action on an alert - <kbd>Escape</kbd> cancels, and a press on the backdrop does nothing, so an answer takes a deliberate choice. It uses the [dialog strategy](#strategies) at up to `420px` wide. The action labels come from [`ALERT_DIALOG_LABELS`](/components/localization) (`provideAlertDialogLabels({ confirm, cancel, acknowledge })`); the title and message are always yours. `destructive` needs a color theme with `type: 'error'` registered, the same requirement form fields have.
+
+`slot` puts an app block under the message and above the actions - a user's name and e-mail, say. It takes a component with getters for its signal inputs, like an opener's `inputs`, or a template with its context:
+
+```ts
+this.dialogs.confirm({
+  title: 'Remove editor?',
+  confirmLabel: 'Remove editor',
+  destructive: true,
+  slot: { component: UserCardComponent, inputs: { name: () => user.name, email: () => user.email } },
+});
+
+this.dialogs.confirm({
+  title: 'Invite editor?',
+  slot: { template: this.userBlock(), context: { $implicit: user.name, email: user.email } },
+});
+```
+
+The slot is not part of `aria-describedby`, which stays the message alone: a description is read as one flat string, so a structured block stays in the dialog for reading instead. Write the message so the question makes sense without it. Without a `slot` nothing extra renders. The gap above it is `--et-alert-dialog-slot-gap` (`12px`).
 
 For anything more than a title, a message and two actions - a form, a list, a third choice - write an overlay component with an [opener](/components/overlay-openers).
 

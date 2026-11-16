@@ -2,20 +2,33 @@ import { Observable, defer, finalize, map, tap } from 'rxjs';
 import { defineOverlay } from '../overlay-definition';
 import { createOverlayOpener } from '../overlay-opener';
 import { dialogOverlayStrategy } from '../strategies/dialog.strategy';
-import { ALERT_DIALOG_CONTENT, AlertDialogComponent, AlertDialogContent } from './alert-dialog.component';
+import {
+  ALERT_DIALOG_CONTENT,
+  AlertDialogComponent,
+  AlertDialogContent,
+  AlertDialogSlot,
+} from './alert-dialog.component';
 
-export type AlertDialogConfig = {
+export type AlertDialogConfig<TComponent = unknown, TContext = unknown> = {
   /** The dialog's heading, and its accessible name. */
   title: string;
   /** Body text, announced as the dialog's description. Line breaks are kept. */
   message?: string;
+  /**
+   * An app component (`{ component, inputs }`) or template (`{ template, context }`) rendered under the message.
+   * It is not part of the dialog's description.
+   */
+  slot?: AlertDialogSlot<TComponent, TContext>;
   /** Overrides `ALERT_DIALOG_LABELS.acknowledge` for this dialog. */
   acknowledgeLabel?: string;
   /** The element or event the dialog was opened from. Defaults to the focused element. */
   origin?: HTMLElement | Event;
 };
 
-export type ConfirmDialogConfig = Omit<AlertDialogConfig, 'acknowledgeLabel'> & {
+export type ConfirmDialogConfig<TComponent = unknown, TContext = unknown> = Omit<
+  AlertDialogConfig<TComponent, TContext>,
+  'acknowledgeLabel'
+> & {
   /** Overrides `ALERT_DIALOG_LABELS.confirm` for this dialog. Name the action ("Delete project"), not "OK". */
   confirmLabel?: string;
   /** Overrides `ALERT_DIALOG_LABELS.cancel` for this dialog. */
@@ -29,12 +42,16 @@ export type AlertDialogOpener = {
    * A cold observable: subscribing opens a confirm dialog, which emits `true` when the confirm action is
    * pressed and `false` on cancel or <kbd>Escape</kbd>, then completes. Unsubscribing early closes the dialog.
    */
-  confirm: (config: ConfirmDialogConfig) => Observable<boolean>;
+  confirm: <TComponent = unknown, TContext = unknown>(
+    config: ConfirmDialogConfig<TComponent, TContext>,
+  ) => Observable<boolean>;
   /**
    * A cold observable: subscribing opens an alert dialog, which emits once when it is acknowledged or
    * dismissed with <kbd>Escape</kbd>, then completes. Unsubscribing early closes the dialog.
    */
-  alert: (config: AlertDialogConfig) => Observable<void>;
+  alert: <TComponent = unknown, TContext = unknown>(
+    config: AlertDialogConfig<TComponent, TContext>,
+  ) => Observable<void>;
 };
 
 const alertDialogOverlay = /* @__PURE__ */ defineOverlay<AlertDialogComponent, boolean>({
@@ -96,6 +113,7 @@ export const createAlertDialogOpener = (): AlertDialogOpener => {
           cancelLabel: config.cancelLabel ?? null,
           acknowledgeLabel: null,
           destructive: config.destructive ?? false,
+          slot: (config.slot as AlertDialogSlot | undefined) ?? null,
         },
         config.origin,
       ),
@@ -109,6 +127,7 @@ export const createAlertDialogOpener = (): AlertDialogOpener => {
           cancelLabel: null,
           acknowledgeLabel: config.acknowledgeLabel ?? null,
           destructive: false,
+          slot: (config.slot as AlertDialogSlot | undefined) ?? null,
         },
         config.origin,
       ).pipe(map((): void => undefined)),

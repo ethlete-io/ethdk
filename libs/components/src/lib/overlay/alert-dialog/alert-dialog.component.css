@@ -11,6 +11,12 @@
     initial-value: 14px;
   }
 
+  @property --et-alert-dialog-slot-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-alert-dialog-actions-gap {
     syntax: '<length>';
     inherits: true;
@@ -33,6 +39,10 @@
       font-size: var(--et-alert-dialog-message-font-size);
       color: var(--et-surface-color-muted-solid, currentColor);
       white-space: pre-line;
+    }
+
+    .et-alert-dialog-message + .et-alert-dialog-slot {
+      margin-block-start: var(--et-alert-dialog-slot-gap);
     }
 
     .et-alert-dialog-actions {

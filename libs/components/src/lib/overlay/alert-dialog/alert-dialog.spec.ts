@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, TemplateRef, input, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import { Subscription, firstValueFrom } from 'rxjs';
@@ -12,9 +12,24 @@ import { createOverlayUnsavedChangesGuard } from '../utils/overlay-unsaved-chang
 import { provideAlertDialogLabels } from './alert-dialog-labels';
 import { createAlertDialogOpener } from './alert-dialog-opener';
 
-@Component({ template: '' })
+@Component({
+  template: `<ng-template #userBlock let-name let-email="email">
+    <span class="user-name">{{ name }}</span> <span class="user-email">{{ email }}</span>
+  </ng-template>`,
+})
 class HostComponent {
   public dialogs = createAlertDialogOpener();
+  public userBlock = viewChild.required<TemplateRef<{ $implicit: string; email: string }>>('userBlock');
+}
+
+@Component({
+  selector: 'et-test-user-card',
+  template: `<span class="user-name">{{ name() }}</span> <span class="user-email">{{ email() }}</span>`,
+})
+class UserCardComponent {
+  public name = input.required<string>();
+  // eslint-disable-next-line @angular-eslint/no-input-rename
+  public email = input('', { alias: 'mail' });
 }
 
 @Component({ template: 'editor', host: { class: 'guarded-editor' } })
@@ -210,6 +225,66 @@ describe('createAlertDialogOpener', () => {
     await settle();
 
     expect(dialogHost()?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('renders a slot component with its inputs under the message, above the actions, outside the description', async () => {
+    setup();
+
+    const name = signal('Ada');
+
+    subscription = host.dialogs
+      .confirm({
+        title: 'Remove editor?',
+        message: 'They lose access.',
+        slot: { component: UserCardComponent, inputs: { name: () => name(), email: () => 'ada@example.com' } },
+      })
+      .subscribe();
+    await settle();
+
+    const slot = document.querySelector<HTMLElement>('.et-alert-dialog .et-alert-dialog-slot');
+    const message = document.querySelector('.et-alert-dialog-message');
+    const actions = document.querySelector('.et-alert-dialog-actions');
+
+    expect(slot?.querySelector('.user-name')?.textContent).toBe('Ada');
+    expect(slot?.querySelector('.user-email')?.textContent).toBe('ada@example.com');
+    expect(message?.compareDocumentPosition(slot!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(slot?.compareDocumentPosition(actions!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(document.getElementById(dialogHost()?.getAttribute('aria-describedby') ?? '')?.textContent?.trim()).toBe(
+      'They lose access.',
+    );
+
+    name.set('Grace');
+    await settle();
+
+    expect(slot?.querySelector('.user-name')?.textContent).toBe('Grace');
+  });
+
+  it('renders a slot template with its context, also without a message', async () => {
+    setup();
+
+    subscription = host.dialogs
+      .alert({
+        title: 'Editor added',
+        slot: { template: host.userBlock(), context: { $implicit: 'Ada', email: 'ada@example.com' } },
+      })
+      .subscribe();
+    await settle();
+
+    const slot = document.querySelector<HTMLElement>('.et-alert-dialog .et-alert-dialog-slot');
+
+    expect(slot?.querySelector('.user-name')?.textContent).toBe('Ada');
+    expect(slot?.querySelector('.user-email')?.textContent).toBe('ada@example.com');
+    expect(dialogHost()?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('renders no slot element when no slot is given', async () => {
+    setup();
+
+    subscription = host.dialogs.confirm({ title: 'Delete?', message: 'This cannot be undone.' }).subscribe();
+    await settle();
+
+    expect(document.querySelector('.et-alert-dialog-message')).not.toBeNull();
+    expect(document.querySelector('.et-alert-dialog-slot')).toBeNull();
   });
 
   it('focuses the cancel action of a confirm, even when it is destructive', async () => {
