@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B529
+built: 4e7c14673
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, morning round
 ---
