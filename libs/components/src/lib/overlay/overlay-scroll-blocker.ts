@@ -1,4 +1,4 @@
-import { DOCUMENT, DestroyRef, computed, inject } from '@angular/core';
+import { DOCUMENT, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   createDocumentElementSignal,
@@ -21,9 +21,11 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
 
     markOverlayScrollBlockerActive(document);
 
+    const manualLocks = signal<ReadonlyMap<Document, number>>(new Map());
+
     const blockedDocuments = computed(
       () => {
-        const documents = new Set<Document>();
+        const documents = new Set<Document>(manualLocks().keys());
 
         for (const overlayRef of overlayManager.openOverlays()) {
           const elements = overlayRef.elements;
@@ -88,22 +90,52 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
 
     inject(DestroyRef).onDestroy(() => [...savedOffsets.keys()].forEach(unlock));
 
-    combineLatest([toObservable(blockedDocuments), toObservable(documentScrollState)])
-      .pipe(
-        tap(([blocked, scrollState]) => {
-          for (const target of [...savedOffsets.keys()]) {
-            if (!blocked.has(target)) unlock(target);
-          }
+    const reconcile = () => {
+      const blocked = blockedDocuments();
+      const mainDocumentCanScroll = documentScrollState().canScrollVertically;
 
-          for (const target of blocked) {
-            if (!savedOffsets.has(target) && canScrollVertically(target, scrollState.canScrollVertically)) {
-              lock(target);
-            }
-          }
-        }),
-        takeUntilDestroyed(),
-      )
+      for (const target of [...savedOffsets.keys()]) {
+        if (!blocked.has(target)) unlock(target);
+      }
+
+      for (const target of blocked) {
+        if (!savedOffsets.has(target) && canScrollVertically(target, mainDocumentCanScroll)) {
+          lock(target);
+        }
+      }
+    };
+
+    combineLatest([toObservable(blockedDocuments), toObservable(documentScrollState)])
+      .pipe(tap(reconcile), takeUntilDestroyed())
       .subscribe();
+
+    const lockDocument = (target: Document = document) => {
+      const next = new Map(manualLocks());
+      next.set(target, (next.get(target) ?? 0) + 1);
+      manualLocks.set(next);
+      reconcile();
+
+      let released = false;
+
+      return () => {
+        if (released) return;
+
+        released = true;
+
+        const after = new Map(manualLocks());
+        const count = (after.get(target) ?? 0) - 1;
+
+        if (count > 0) after.set(target, count);
+        else after.delete(target);
+
+        manualLocks.set(after);
+        reconcile();
+      };
+    };
+
+    const api = { lock: lockDocument };
+
+    return api;
   },
   { name: 'Overlay Scroll Blocker' },
 );
@@ -111,6 +143,8 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
 /**
  * Blocks page scrolling while a modal overlay is open, in the window the overlay is mounted in.
  * Register once via `provideOverlay()` (or call `injectOverlayScrollBlocker()` in an environment initializer).
+ * `injectOverlayScrollBlocker().lock(document?)` also locks page scroll outside any overlay and returns an idempotent
+ * release function; the page stays locked until every modal overlay and every manual lock is gone.
  */
 export const provideOverlayScrollBlocker = /* @__PURE__ */ toProvideFn(OVERLAY_SCROLL_BLOCKER_DEF);
 export const injectOverlayScrollBlocker = /* @__PURE__ */ toInjectFn(OVERLAY_SCROLL_BLOCKER_DEF);

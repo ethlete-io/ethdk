@@ -183,4 +183,98 @@ describe('overlay scroll blocker', () => {
       expect(isPopupLocked()).toBe(false);
     });
   });
+
+  describe('manual lock', () => {
+    const lockPage = () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const blocker = TestBed.runInInjectionContext(() => injectOverlayScrollBlocker());
+      TestBed.tick();
+
+      return { fixture, lock: blocker.lock };
+    };
+
+    it('locks the page outside any overlay and unlocks on release', () => {
+      const { lock } = lockPage();
+
+      const release = lock();
+
+      expect(isLocked()).toBe(true);
+
+      release();
+
+      expect(isLocked()).toBe(false);
+    });
+
+    it('restores the scroll position on release', () => {
+      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(500);
+      const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+      const { lock } = lockPage();
+
+      const release = lock();
+
+      expect(document.documentElement.style.top).toBe('-500px');
+
+      release();
+
+      expect(scrollToSpy).toHaveBeenCalledWith(0, 500);
+      expect(document.documentElement.style.top).toBe('');
+    });
+
+    it('keeps the page locked when the overlay closes while a manual lock is held', () => {
+      const { lock } = lockPage();
+      const release = lock();
+      const overlayRef = open({ mode: 'modal' });
+
+      overlayRef.close();
+      TestBed.tick();
+
+      expect(isLocked()).toBe(true);
+
+      release();
+
+      expect(isLocked()).toBe(false);
+    });
+
+    it('keeps the page locked when the manual lock is released while an overlay is open', () => {
+      const { lock } = lockPage();
+      const release = lock();
+
+      open({ mode: 'modal' });
+      release();
+      TestBed.tick();
+
+      expect(isLocked()).toBe(true);
+    });
+
+    it('stays locked until every manual lock is released', () => {
+      const { lock } = lockPage();
+      const first = lock();
+      const second = lock();
+
+      first();
+
+      expect(isLocked()).toBe(true);
+
+      second();
+
+      expect(isLocked()).toBe(false);
+    });
+
+    it('ignores a second release of the same lock', () => {
+      const { lock } = lockPage();
+      const first = lock();
+      const second = lock();
+
+      first();
+      first();
+
+      expect(isLocked()).toBe(true);
+
+      second();
+
+      expect(isLocked()).toBe(false);
+    });
+  });
 });

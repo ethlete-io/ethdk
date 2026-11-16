@@ -27,6 +27,20 @@ export const appConfig: ApplicationConfig = {
 
 Without it, overlays still open but the page keeps scrolling behind a modal one. In dev mode the first modal overlay logs a warning that names `provideOverlay()`.
 
+### Locking page scroll outside an overlay
+
+`injectOverlayScrollBlocker()` also returns the blocker's `lock(document?)`. It locks page scroll for something that is not an overlay (a header menu, a third-party widget) and returns a release function, so one place owns document scroll locking instead of a second `BlockScrollStrategy`:
+
+```ts
+const scrollBlocker = injectOverlayScrollBlocker();
+
+const release = scrollBlocker.lock();
+// later
+release();
+```
+
+Locks and modal overlays share one count per document. The page unlocks, and the scroll position is restored, only once the last overlay has closed and the last lock is released, in either order. Calling `release()` again does nothing. `lock()` takes the document of a same-origin pop-up; it defaults to the application document.
+
 ## Opening an overlay
 
 `injectOverlayManager()` returns the root `OverlayManager`. `open(component, config?)` mounts the component and returns a typed `OverlayRef`:
