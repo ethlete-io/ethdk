@@ -6,7 +6,7 @@ export default {
   component: SkeletonStorybookComponent,
   decorators: [moduleMetadata({ imports: [SkeletonStorybookComponent] })],
   args: { animated: true, surface: 'dark' },
-  argTypes: { animated: { control: 'boolean' }, surface: { control: 'text' } },
+  argTypes: { animated: { control: 'boolean' }, layouts: { control: 'boolean' }, surface: { control: 'text' } },
 } as Meta<SkeletonStorybookComponent>;
 
 type Story = StoryObj<SkeletonStorybookComponent>;
@@ -22,6 +22,19 @@ export const Static: Story = {
           '`animated="false"` leaves the same shapes without the shimmer - for a placeholder inside ' +
           'something that already moves, or a very long list where a sweep per row is noise. The shimmer ' +
           'is dropped automatically under `prefers-reduced-motion` regardless.',
+      },
+    },
+  },
+};
+
+export const InLayouts: Story = {
+  args: { layouts: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A `rect` follows its parent: centered in an `items-center` row or grid, full width minus its margins in a ' +
+          'block, and at its `aspect-ratio` height along a column.',
       },
     },
   },

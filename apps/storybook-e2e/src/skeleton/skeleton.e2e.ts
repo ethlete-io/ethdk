@@ -365,3 +365,48 @@ test.describe('skeleton / touch', () => {
     expect(shimmer.animationIterationCount).toBe('infinite');
   });
 });
+
+test.describe('skeleton / rect in layouts', () => {
+  const LAYOUTS_STORY_ID = 'components-feedback-skeleton--in-layouts';
+
+  const boxesOf = (root: Locator, layout: string) =>
+    root.locator(`[data-layout="${layout}"]`).evaluate((parent) => {
+      const item = (parent.querySelector('.et-skeleton-item') as HTMLElement).getBoundingClientRect();
+      const box = parent.getBoundingClientRect();
+
+      return {
+        top: item.top - box.top,
+        bottomGap: box.bottom - item.bottom,
+        left: item.left - box.left,
+        rightGap: box.right - item.right,
+        width: item.width,
+        height: item.height,
+      };
+    });
+
+  for (const layout of ['centered-row', 'centered-grid']) {
+    test(`a rect in an items-center ${layout.split('-')[1]} sits centered`, async ({ page }) => {
+      const root = await openStory(page, LAYOUTS_STORY_ID);
+      const box = await boxesOf(root, layout);
+
+      expect(box.top).toBeGreaterThan(0);
+      expect(box.top).toBeCloseTo(box.bottomGap, 0);
+    });
+  }
+
+  test('a rect with an inline margin fills its block without overflowing it', async ({ page }) => {
+    const root = await openStory(page, LAYOUTS_STORY_ID);
+    const box = await boxesOf(root, 'margin');
+
+    expect(box.left).toBeCloseTo(16, 0);
+    expect(box.rightGap).toBeCloseTo(16, 0);
+  });
+
+  test('a rect along a column keeps its aspect ratio at full width', async ({ page }) => {
+    const root = await openStory(page, LAYOUTS_STORY_ID);
+    const box = await boxesOf(root, 'ratio-column');
+
+    expect(box.width).toBeCloseTo(320, 0);
+    expect(box.height).toBeCloseTo(80, 0);
+  });
+});

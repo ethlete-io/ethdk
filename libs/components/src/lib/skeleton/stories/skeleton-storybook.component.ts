@@ -20,6 +20,21 @@ import { SKELETON_IMPORTS } from '../skeleton.imports';
       <p [style.max-inline-size.px]="420" class="text-medium">
         Real text, then <et-skeleton-item [style.max-inline-size.px]="120" shape="text" /> in the middle of it.
       </p>
+
+      @if (layouts()) {
+        <div class="flex items-center" data-layout="centered-row" style="block-size: 64px; inline-size: 320px">
+          <et-skeleton-item style="inline-size: 48px" shape="rect" />
+        </div>
+        <div class="grid items-center" data-layout="centered-grid" style="block-size: 64px; inline-size: 320px">
+          <et-skeleton-item style="inline-size: 48px" shape="rect" />
+        </div>
+        <div data-layout="margin" style="inline-size: 320px">
+          <et-skeleton-item style="margin-inline: 16px" shape="rect" />
+        </div>
+        <div class="flex" data-layout="ratio-column" style="flex-direction: column; inline-size: 320px">
+          <et-skeleton-item style="aspect-ratio: 4" shape="rect" />
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -27,5 +42,6 @@ import { SKELETON_IMPORTS } from '../skeleton.imports';
 })
 export class SkeletonStorybookComponent {
   public animated = input(true);
+  public layouts = input(false);
   public surface = input('dark');
 }

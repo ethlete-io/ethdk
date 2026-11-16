@@ -54,6 +54,8 @@
     position: relative;
     overflow: hidden;
     inline-size: 100%;
+    inline-size: -webkit-fill-available;
+    inline-size: stretch;
     block-size: var(--et-skeleton-size, 1em);
     border-radius: var(--et-skeleton-radius);
     background: var(
@@ -85,7 +87,6 @@
   /* The 1em default is content height, not block-size, so a consumer aspect-ratio (or block-size) wins.
      overflow: hidden on the item drops the content-based minimum an aspect-ratio would otherwise keep. */
   .et-skeleton-item:where([data-shape='rect']) {
-    align-self: start;
     block-size: auto;
     border-radius: var(--et-skeleton-radius);
 

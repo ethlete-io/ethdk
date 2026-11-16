@@ -31,8 +31,11 @@ describe('skeleton styles', () => {
     expect(rect).toMatch(/&::before \{[^}]*block-size:\s*var\(--et-skeleton-size, 1em\);/);
   });
 
-  it('keeps the rect at its 1em content height inside a stretching flex row', () => {
-    expect(ownDeclarations(ruleBody(".et-skeleton-item:where([data-shape='rect'])"))).toMatch(/align-self:\s*start;/);
+  it("leaves the rect's alignment to its parent and fills its block minus its margins", () => {
+    expect(ownDeclarations(ruleBody(".et-skeleton-item:where([data-shape='rect'])"))).not.toMatch(/align-self/);
+    expect(ruleBody('.et-skeleton-item')).toMatch(
+      /inline-size: 100%;\s*inline-size: -webkit-fill-available;\s*inline-size: stretch;/,
+    );
   });
 
   it('draws the bone and the shimmer from unregistered colour tokens over the surface default', () => {

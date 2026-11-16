@@ -52,9 +52,15 @@ announcement text, so a screen reader hears the outer container's `loadingConten
 `et-skeleton-text` takes `lines` (default `3`) and `lastLineWidth` (default `60`%); a
 full-width last line reads as a block rather than a paragraph.
 
+A `rect` takes its parent's alignment: it centers in an `items-center` row or grid, and a margin
+narrows it instead of pushing it out of its block. A stretching flex parent stretches it like any
+other flex item, so its `aspect-ratio` (or its `--et-skeleton-size` height) only holds along a
+column or where the item is not stretched; add `align-self: start` (`self-start`) in a stretching row.
+
 A `rect` stays full width when you set both a height and an `aspect-ratio`, so the ratio has no
 width left to set. Set `inline-size: auto` (`w-auto`) on that item too, and the ratio derives the
-width from the height: `40px` tall at `16 / 9` is `71px` wide, inside an `et-skeleton` column too.
+width from the height: `40px` tall at `16 / 9` is `71px` wide. Inside an `et-skeleton` column add
+`self-start` as well, or the column stretches it back to full width.
 
 ::: info Coming from the CDK
 The cdk's `<et-skeleton-item>` had no `shape` at all: it was a plain block sized entirely by your own
