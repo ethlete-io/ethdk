@@ -47,11 +47,11 @@
     "at": "2026-11-15T21:29:49.115Z"
   },
   "components/title-bar": {
-    "hash": "a952f50572d66bbd",
+    "hash": "0098ed8ae907b1ee",
     "variant": "a",
-    "decidedBy": "plan: finding 911 precedent: mock follows the SDK (B523 (2) picker-shadow); Cause: SDK tooltip arrowPadding 20 shifts a bottom-end pane 3 px right of a 55 px trigger; shot: only the pane moves 3 px",
-    "at": "2026-11-16T02:24:48.113Z",
-    "note": "merged without a pick: allowed by finding 911 precedent: mock follows the SDK (B523 (2) picker-shadow); Cause: SDK tooltip arrowPadding 20 shifts a bottom-end pane 3 px right of a 55 px trigger; shot: only the pane moves 3 px"
+    "decidedBy": "plan: finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves",
+    "at": "2026-11-16T02:27:51.159Z",
+    "note": "merged without a pick: allowed by finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves"
   },
   "components/tree-row": "72601799f8079cf2",
   "components/update-dialog": {

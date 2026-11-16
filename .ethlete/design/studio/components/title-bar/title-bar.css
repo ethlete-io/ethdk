@@ -5,8 +5,11 @@
   .st-notice-hint {
     container-type: inline-size;
   }
+  .st-notice-hint .et-tooltip-mock-frame {
+    margin-right: min(0px, calc(50cqi - 30px));
+  }
   .st-notice-hint .et-overlay-arrow {
     left: auto;
-    right: calc(50cqi - 10px);
+    right: max(20px, calc(50cqi - 10px));
   }
 }
