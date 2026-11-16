@@ -71,6 +71,22 @@ Open order decides what paints on top, and one stacking level is all an app need
 
 A press on such a higher level is never an outside press either: working in a devtools panel leaves an open dialog, sheet, menu or select alone. See [a press on a level above](/core/overlay-runtime#a-press-on-a-level-above-never-closes-what-is-below).
 
+### Foreign layers inside an overlay
+
+A panel another library renders outside the overlay DOM - an Angular CDK select panel opened from a dialog, a third-party date picker - is an outside press to the SDK, so picking an option would close the dialog. Mark the panel as part of the overlay with `markInsideOverlay` from `@ethlete/core`, passing any element inside the overlay as its owner, and call the returned function when the panel goes away:
+
+```ts
+import { markInsideOverlay } from '@ethlete/core';
+
+const host = inject(ElementRef<HTMLElement>).nativeElement;
+
+const release = markInsideOverlay(panelElement, host);
+// when the panel closes
+release();
+```
+
+A press inside the marked panel then counts as a press inside the overlay that `host` sits in, and only that overlay: a non-modal menu stacked above the dialog still closes on it, the dialog does not. An overlay opened from inside the panel resolves its [stacking level](/core/overlay-runtime#stacking-levels) through the owner too. The mark covers outside presses only - painting the panel above the overlay root (`2147483003`) stays the job of the library that renders it.
+
 ### Closing on navigation
 
 When the Angular Router starts a navigation to another path, every open overlay closes with the source `'navigation'`, so a dialog does not stay over the new page and its `afterClosed` callbacks still run. A navigation that changes only query params or the fragment keeps overlays open. Close guards still run, but `createOverlayUnsavedChangesGuard` does not veto this source. An overlay opened with `disableClose` stays open unless it also sets `closeOnNavigation: true`.

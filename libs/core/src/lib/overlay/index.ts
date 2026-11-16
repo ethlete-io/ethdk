@@ -1,4 +1,5 @@
 export * from './overlay-focus';
+export { markInsideOverlay } from './overlay-foreign-layer';
 export * from './overlay-layer';
 export { applyCenteredPosition, applyGlobalPosition, setupPositioning } from './overlay-position';
 export {

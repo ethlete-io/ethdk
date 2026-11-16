@@ -1,3 +1,5 @@
+import { overlayAncestors } from './overlay-foreign-layer';
+
 /**
  * Attribute an element uses to declare the stacking level it paints at. Its value is the z-index of
  * the runtime root an overlay opened from inside it mounts into, and the level every outside-pointer
@@ -13,7 +15,8 @@ export const DEFAULT_OVERLAY_LAYER = 2147483003;
 
 /**
  * The stacking level for an overlay opened from `element`: the one declared by the nearest ancestor
- * carrying `data-et-overlay-layer`, or {@link DEFAULT_OVERLAY_LAYER}.
+ * carrying `data-et-overlay-layer`, or {@link DEFAULT_OVERLAY_LAYER}. A foreign layer marked with
+ * {@link markInsideOverlay} resolves through its owner.
  *
  * Put the attribute on anything that paints above the default overlay layer - a devtools panel, an
  * always-on-top widget - so a menu, tooltip or dialog opened inside it is not rendered behind the
@@ -21,13 +24,19 @@ export const DEFAULT_OVERLAY_LAYER = 2147483003;
  * level share a runtime root and stack in open order.
  */
 export const resolveOverlayLayer = (element: Element | null | undefined) => {
-  const declaring = element?.closest?.(`[${OVERLAY_LAYER_ATTRIBUTE}]`);
+  let declared: string | undefined;
 
-  if (!declaring) {
-    return DEFAULT_OVERLAY_LAYER;
+  for (const ancestor of overlayAncestors(element)) {
+    if (typeof ancestor.getAttribute !== 'function') {
+      break;
+    }
+
+    if (ancestor.hasAttribute(OVERLAY_LAYER_ATTRIBUTE)) {
+      declared = ancestor.getAttribute(OVERLAY_LAYER_ATTRIBUTE)?.trim();
+      break;
+    }
   }
 
-  const declared = declaring.getAttribute(OVERLAY_LAYER_ATTRIBUTE)?.trim();
   const layer = Number(declared);
 
   if (!declared || !Number.isFinite(layer)) {

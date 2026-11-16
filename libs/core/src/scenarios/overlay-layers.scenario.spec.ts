@@ -3,6 +3,7 @@ import {
   anchoredOverlayPosition,
   DEFAULT_OVERLAY_LAYER,
   injectOverlayRuntime,
+  markInsideOverlay,
   OverlayRuntimeCloseEvent,
   OverlayRuntimeMountConfig,
   OverlayRuntimeRef,
@@ -157,6 +158,59 @@ describe('overlay layer scenarios', () => {
     expect(sources).toEqual(['outside-pointer']);
 
     origin.remove();
+  });
+
+  it('keeps an overlay open on a press inside a foreign layer marked inside it, and only then', () => {
+    const s = scenario();
+    const dialog = open(s, { id: 'dialog', closeOnOutsidePointer: true, hasBackdrop: false });
+    const menu = open(s, { id: 'menu', modal: false, hasBackdrop: false });
+    const dialogSources = closeSources(dialog);
+    const menuSources = closeSources(menu);
+    const foreignLayer = document.createElement('div');
+    const foreignOption = document.createElement('button');
+
+    foreignLayer.appendChild(foreignOption);
+    document.body.appendChild(foreignLayer);
+
+    const release = markInsideOverlay(foreignLayer, dialog.elements.paneElement.querySelector('button')!);
+
+    press(foreignOption);
+    s.flush();
+
+    expect(menuSources).toEqual(['outside-pointer']);
+    expect(dialogSources).toEqual([]);
+
+    press(foreignOption);
+    s.flush();
+
+    expect(dialogSources).toEqual([]);
+
+    release();
+    press(foreignOption);
+    s.flush();
+
+    expect(dialogSources).toEqual(['outside-pointer']);
+
+    foreignLayer.remove();
+  });
+
+  it('closes an overlay on a press inside a foreign layer that is not marked', () => {
+    const s = scenario();
+    const dialog = open(s, { id: 'dialog', closeOnOutsidePointer: true, hasBackdrop: false });
+    const sources = closeSources(dialog);
+    const marked = document.createElement('div');
+    const unmarked = document.createElement('div');
+
+    document.body.append(marked, unmarked);
+    markInsideOverlay(marked, dialog.elements.paneElement);
+
+    press(unmarked);
+    s.flush();
+
+    expect(sources).toEqual(['outside-pointer']);
+
+    marked.remove();
+    unmarked.remove();
   });
 
   it('releases the document when the app goes away between the closing press and its click', () => {

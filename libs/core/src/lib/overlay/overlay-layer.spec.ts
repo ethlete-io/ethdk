@@ -1,3 +1,4 @@
+import { markInsideOverlay } from './overlay-foreign-layer';
 import {
   DEFAULT_OVERLAY_LAYER,
   isOnHigherOverlayLayer,
@@ -37,6 +38,22 @@ describe('resolveOverlayLayer', () => {
     element.setAttribute(OVERLAY_LAYER_ATTRIBUTE, '42');
 
     expect(resolveOverlayLayer(element)).toBe(42);
+  });
+
+  it('resolves a foreign layer marked inside an overlay through its owner', () => {
+    const owner = createTree('42');
+    const foreignLayer = document.createElement('div');
+    const option = document.createElement('button');
+
+    foreignLayer.append(option);
+
+    const release = markInsideOverlay(foreignLayer, owner);
+
+    expect(resolveOverlayLayer(option)).toBe(42);
+
+    release();
+
+    expect(resolveOverlayLayer(option)).toBe(DEFAULT_OVERLAY_LAYER);
   });
 
   it('falls back to the default level for an unparsable value', () => {

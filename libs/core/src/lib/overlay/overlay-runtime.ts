@@ -17,6 +17,7 @@ import { injectRenderer } from '../providers';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyInitialFocus, isElement, isHTMLOrSVGElement, ownsActiveElement, setupFocusTrap } from './overlay-focus';
 import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE, isOnHigherOverlayLayer } from './overlay-layer';
+import { overlayContains } from './overlay-foreign-layer';
 import { resetPositioningStyles, setBackdropStyles, setBaseElementStyles, setupPositioning } from './overlay-position';
 import { OverlayRuntimeRef, createOverlayRuntimeRef } from './overlay-runtime-ref';
 import {
@@ -480,7 +481,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           }
 
           const target = event.target;
-          if (!isElement(target) || paneElement.contains(target)) {
+          if (!isElement(target) || overlayContains(paneElement, target)) {
             return;
           }
 
