@@ -20,7 +20,7 @@ const OPAQUE = 0.95;
  * The statements of the see-through check inside the frame script of `render-check`. They use `root` and `report`
  * of that script. Each point where text outside an open overlay pane lies under that pane must be covered by an
  * opaque background painted above the text, or the text shows through; text outside any overlay that paints above
- * the pane is reported too. They finish finite animations and force `pointer-events` on for the
+ * the pane is reported too, unless the pane sits in a clipping box that does not hold the text. They finish finite animations and force `pointer-events` on for the
  * hit test and restore it.
  */
 export const SEE_THROUGH_STATEMENTS = `
@@ -61,13 +61,22 @@ export const SEE_THROUGH_STATEMENTS = `
       const texts = [];
       for (let node = walker.nextNode(); node; node = walker.nextNode())
         if (node.textContent.trim() && node.parentElement && !node.parentElement.closest('style, script, template, head')) texts.push(node);
+      const clipsOf = (pane) => {
+        const clips = [];
+        for (let at = pane.parentElement; at && at !== document.body; at = at.parentElement) {
+          const style = getComputedStyle(at);
+          if (style.overflowX !== 'visible' || style.overflowY !== 'visible') clips.push(at);
+        }
+        return clips;
+      };
       const samples = ${SAMPLES_PER_SIDE};
       for (const pane of panes) {
         const box = pane.getBoundingClientRect();
+        const clips = clipsOf(pane);
         for (const node of texts) {
           const owner = node.parentElement;
           if (pane.contains(owner) || !shown(owner)) continue;
-          const floats = owner.closest(${JSON.stringify(OVERLAY_PANE_SELECTOR + ', [role="tooltip"]')}) !== null;
+          const floats = owner.closest(${JSON.stringify(OVERLAY_PANE_SELECTOR + ', [role="tooltip"]')}) !== null || clips.some((clip) => !clip.contains(owner));
           const range = document.createRange();
           range.selectNodeContents(node);
           let total = 0;

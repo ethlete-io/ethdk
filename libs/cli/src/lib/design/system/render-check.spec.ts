@@ -386,6 +386,9 @@ describe('renderIssuesOf', () => {
       'components/painted-over': {
         body: '<div style="position: relative; width: 300px; height: 160px"><header style="position: absolute; z-index: 1; top: 0; left: 0"><div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px; background: white">Pane</div></header><p style="position: absolute; z-index: 1; top: 40px; left: 8px; margin: 0">Round picker on top</p></div>',
       },
+      'components/clipped-under-hud': {
+        body: '<div style="position: relative; width: 300px; height: 160px"><div style="overflow: auto; width: 300px; height: 160px"><div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px; background: white">Pane</div></div><p style="position: absolute; z-index: 1; top: 40px; left: 8px; margin: 0">Zoom out</p></div>',
+      },
       'components/pane-over-pane': {
         body: '<div style="position: relative; width: 300px; height: 160px"><div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px; background: white">Pane</div><div class="et-overlay" role="menu" style="position: absolute; top: 40px; left: 8px; background: white">Nested menu</div></div>',
       },
