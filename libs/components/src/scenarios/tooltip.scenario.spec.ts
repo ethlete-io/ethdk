@@ -112,8 +112,11 @@ describe('tooltip scenarios', () => {
     leave(s, trigger);
 
     expect(tooltip()).toBeNull();
-    expect(describedBy(trigger)).toEqual(['delete-warning', idleDescription]);
-    expect(document.getElementById(idleDescription!)?.textContent).toBe('Delete for everyone');
+    const [, nextDescription] = describedBy(trigger);
+
+    expect(nextDescription).not.toBe(idleDescription);
+    expect(document.getElementById(idleDescription!)).toBeNull();
+    expect(document.getElementById(nextDescription!)?.textContent).toBe('Delete for everyone');
   });
 
   it('ignores touch and a pointer that leaves before the delay', () => {

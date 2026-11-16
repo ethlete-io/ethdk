@@ -1,4 +1,4 @@
-import { Component, PLATFORM_ID, TemplateRef, viewChild } from '@angular/core';
+import { Component, PLATFORM_ID, TemplateRef, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
@@ -474,5 +474,86 @@ describe('TooltipDirective on an svg element', () => {
 
     expect(tooltipDirective.overlayRef()).toBeNull();
     expect(driver.manager().openOverlays().length).toBe(0);
+  });
+});
+
+@Component({
+  template: `
+    @if (showFirst()) {
+      <button [etTooltip]="firstText()" class="first" type="button">First</button>
+    }
+    @if (showSecond()) {
+      <button class="second" etTooltip="Shared" type="button">Second</button>
+    }
+  `,
+  imports: [TooltipDirective],
+})
+class SharedDescriptionTestHost {
+  firstText = signal('Shared');
+  showFirst = signal(true);
+  showSecond = signal(true);
+}
+
+describe('TooltipDirective description container', () => {
+  let fixture: ComponentFixture<SharedDescriptionTestHost>;
+
+  const describedBy = (selector: string) =>
+    (fixture.nativeElement as HTMLElement).querySelector(selector)?.getAttribute('aria-describedby') ?? null;
+  const container = () => document.querySelector<HTMLElement>('.et-tooltip-descriptions');
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [SharedDescriptionTestHost] });
+
+    fixture = TestBed.createComponent(SharedDescriptionTestHost);
+    fixture.detectChanges();
+  });
+
+  it('gives two triggers with the same text one shared element', () => {
+    const id = describedBy('.first');
+
+    expect(id).toContain('et-tooltip-description');
+    expect(describedBy('.second')).toBe(id);
+    expect(container()?.children.length).toBe(1);
+    expect(document.getElementById(id ?? '')?.textContent).toBe('Shared');
+  });
+
+  it('puts the elements in one container under body that is only visually hidden', () => {
+    const element = container();
+
+    expect(element?.parentElement).toBe(document.body);
+    expect(element?.hasAttribute('aria-hidden')).toBe(false);
+    expect(element?.hidden).toBe(false);
+    expect(element?.style.clipPath).toBe('inset(50%)');
+    expect(document.querySelectorAll('.et-tooltip-descriptions').length).toBe(1);
+  });
+
+  it('keeps the shared element while one trigger remains and removes element and container after the last', () => {
+    const id = describedBy('.first') ?? '';
+
+    fixture.componentInstance.showFirst.set(false);
+    fixture.detectChanges();
+
+    expect(document.getElementById(id)?.textContent).toBe('Shared');
+
+    fixture.componentInstance.showSecond.set(false);
+    fixture.detectChanges();
+
+    expect(document.getElementById(id)).toBeNull();
+    expect(container()).toBeNull();
+  });
+
+  it('moves only the trigger whose text changes to the element of its new text', () => {
+    const sharedId = describedBy('.second');
+
+    fixture.componentInstance.firstText.set('Other');
+    fixture.detectChanges();
+
+    const otherId = describedBy('.first');
+
+    expect(otherId).not.toBe(sharedId);
+    expect(document.getElementById(otherId ?? '')?.textContent).toBe('Other');
+    expect(describedBy('.second')).toBe(sharedId);
+    expect(document.getElementById(sharedId ?? '')?.textContent).toBe('Shared');
+    expect(container()?.children.length).toBe(2);
   });
 });

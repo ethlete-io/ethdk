@@ -73,7 +73,7 @@ The tooltip auto-flips and shifts to stay in the viewport, and auto-hides when i
 
 ## Accessibility
 
-The tooltip is a **description**, not a name: the trigger gets `aria-describedby` pointing at a visually hidden description element (or the live tooltip while open). The description element is created once the tooltip has text, before it is ever shown, so screen readers in browse mode can read it; a tooltip with no text adds no node to `document.body`. The tooltip itself has `role="tooltip"`. An `aria-describedby` the trigger already carries is kept - the tooltip appends its id to the list. String content doubles as the description automatically; template content must provide `etTooltipAriaDescription` (enforced in dev mode).
+The tooltip is a **description**, not a name: the trigger gets `aria-describedby` pointing at a visually hidden description element (or the live tooltip while open). The description element is created once the tooltip has text, before it is ever shown, so screen readers in browse mode can read it. All description elements live in one visually hidden `.et-tooltip-descriptions` container under `document.body` (never `aria-hidden`), and triggers with the same text share one element; an element is removed when its last trigger goes, the container when it is empty. A tooltip with no text adds no node. The tooltip itself has `role="tooltip"`. An `aria-describedby` the trigger already carries is kept - the tooltip appends its id to the list. String content doubles as the description automatically; template content must provide `etTooltipAriaDescription` (enforced in dev mode).
 
 ## Theming
 

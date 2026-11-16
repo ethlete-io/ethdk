@@ -51,6 +51,7 @@ import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOOLTIP_ERROR_CODES } from '../tooltip-errors';
 import { TooltipComponent } from '../tooltip.component';
 import { createIdFactory } from '../../internals/id-factory';
+import { injectTooltipDescriptionRegistry } from './tooltip-description-registry';
 
 export type TooltipContent = string | TemplateRef<unknown>;
 
@@ -59,7 +60,6 @@ const LONG_PRESS_DELAY = 500;
 const TOUCH_HIDE_DELAY = 1500;
 
 const createTooltipId = /* @__PURE__ */ createIdFactory('et-tooltip');
-const createTooltipDescriptionId = /* @__PURE__ */ createIdFactory('et-tooltip-description');
 
 @Directive({
   selector: '[etTooltip]',
@@ -80,6 +80,7 @@ export class TooltipDirective {
   private renderer = injectRenderer();
   private hasTouchInput = injectHasTouchInput();
 
+  private descriptionRegistry = injectTooltipDescriptionRegistry();
   public content = input<TooltipContent | null>(null, { alias: 'etTooltip' });
   public ariaDescription = input<string | null>(null, { alias: 'etTooltipAriaDescription' });
   /**
@@ -100,16 +101,16 @@ export class TooltipDirective {
   public arrowPadding = input<Padding | null>(20);
   public viewportPadding = input<Padding | null>(8);
   public showDelay = input(DEFAULT_TOOLTIP_DELAY, { transform: numberAttribute });
+
   public disabled = input(false, { alias: 'etTooltipDisabled', transform: booleanAttribute });
 
   /** @internal */
   public overlayRef = signal<OverlayRef<TooltipComponent, unknown> | null>(null);
-
   private hasHover = signal(false);
   private hideRequest$ = new Subject<void>();
   private hasFocus = signal(false);
-  private descriptionId = createTooltipDescriptionId();
-  private descriptionElement: HTMLElement | null = null;
+  private descriptionText: string | null = null;
+  private descriptionId: string | null = null;
   private appliedDescriptionId: string | null = null;
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -151,7 +152,7 @@ export class TooltipDirective {
         this.syncDescriptionElement(description);
 
         if (!this.overlayRef()) {
-          this.syncHostDescription(this.descriptionElement ? this.descriptionId : null);
+          this.syncHostDescription(this.descriptionId);
         }
       });
     });
@@ -254,7 +255,7 @@ export class TooltipDirective {
             this.overlayRef.set(null);
           }
 
-          this.syncHostDescription(this.descriptionElement ? this.descriptionId : null);
+          this.syncHostDescription(this.descriptionId);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -452,46 +453,21 @@ export class TooltipDirective {
   }
 
   private syncDescriptionElement(description: string | null) {
-    if (!description) {
-      this.removeDescriptionElement();
+    if (description === this.descriptionText) return;
 
-      return;
-    }
+    this.removeDescriptionElement();
 
-    if (!this.descriptionElement) {
-      const descriptionElement = this.renderer.createElement('div');
+    if (!description) return;
 
-      this.renderer.setAttribute(descriptionElement, 'id', this.descriptionId);
-      this.renderer.setStyle(descriptionElement, {
-        position: 'absolute',
-        width: '1px',
-        height: '1px',
-        padding: '0',
-        margin: '-1px',
-        overflow: 'hidden',
-        clip: 'rect(1px, 1px, 1px, 1px)',
-        clipPath: 'inset(50%)',
-        whiteSpace: 'nowrap',
-        border: '0',
-      });
-
-      this.renderer.appendChild(this.document.body, descriptionElement);
-      this.descriptionElement = descriptionElement;
-    }
-
-    this.renderer.setTextContent(this.descriptionElement, description);
+    this.descriptionId = this.descriptionRegistry.acquire(description);
+    this.descriptionText = description;
   }
 
   private removeDescriptionElement() {
-    if (!this.descriptionElement) {
-      return;
-    }
+    if (this.descriptionText === null) return;
 
-    const parentNode = this.renderer.parentNode(this.descriptionElement);
-    if (parentNode) {
-      this.renderer.removeChild(parentNode, this.descriptionElement);
-    }
-
-    this.descriptionElement = null;
+    this.descriptionRegistry.release(this.descriptionText);
+    this.descriptionText = null;
+    this.descriptionId = null;
   }
 }
