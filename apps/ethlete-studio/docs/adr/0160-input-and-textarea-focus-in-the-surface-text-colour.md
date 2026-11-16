@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0316
 built: 377c4aaa0
 decided: 2026-10-31
 source: plans/ethlete-studio/backlog-parallel/decisions-mvp.md, "Input/textarea r2 and chat dogfood decisions", Q140
