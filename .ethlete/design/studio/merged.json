@@ -62,11 +62,11 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "components/zoom-chip": {
-    "hash": "7e5c0f777dd0c4fc",
+    "hash": "caf5d569d570af26",
     "variant": "a",
-    "decidedBy": "plan: finding 911 precedent: harness frame correction, component unchanged",
-    "at": "2026-11-16T01:22:41.594Z",
-    "note": "merged without a pick: allowed by finding 911 precedent: harness frame correction, component unchanged"
+    "decidedBy": "plan: finding 911 precedent: B523 (6), the design frame clipped its own 100 % tooltip by 3.5 px; the app draws it whole",
+    "at": "2026-11-16T02:50:39.316Z",
+    "note": "merged without a pick: allowed by finding 911 precedent: B523 (6), the design frame clipped its own 100 % tooltip by 3.5 px; the app draws it whole"
   },
   "elements/canvas-frames": {
     "hash": "0aba678db6202ece",

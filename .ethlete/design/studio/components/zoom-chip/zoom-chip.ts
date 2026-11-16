@@ -78,7 +78,7 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="${tooltipOpen(props) ? (props.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pr-1 pl-4.75') : ''}"
+        class="${tooltipOpen(props) ? (props.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pl-[22.5px]') : ''}"
       >
         <div
           class="inline-flex rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16)) bg-et-surface-bg ${
