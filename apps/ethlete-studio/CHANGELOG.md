@@ -1,5 +1,40 @@
 # ethlete-studio
 
+## 0.2.0-next.21
+
+### Patch Changes
+
+- The Sketches view shows the agent line: who draws, the report message, the variant and since when while a
+  variant draws, and a failed line naming the round and the variants that did not render.
+- Sketch ready records the picked-and-changed refusal, and Studio shows that sketch as not ready.
+- Read the canvas viewport's aria-label from the Studio labels.
+- The comment pin's count badge lets clicks pass through to the pin, as the design draws it.
+- The sketches page row head keeps its right padding and opaque background, so the variant note wraps like the design.
+- Draw the wide sample state of the sketch view at the height of the chip state it shows.
+- A design `data-et-action` can name `opens:<part>`, which `design actions --live` passes when the press opens that part; Studio's title search declares `opens:command-palette`.
+- The comment pin reads its aria-label from the Studio labels.
+- The sketches page row head stays pinned at the left edge while the canvas is panned, like the design.
+- The design server starting screen shows a spinner and is marked busy while the server starts after a restart.
+- A sketch that is not ready shows the last change after its reason; the unused idle status is gone.
+- Studio shows a sketch that is not ready as "Noch nicht bereit" with the reason `sketch ready` last refused it for.
+- A sketch variant pin shows a resolved thread as resolved after a jump to it from the inbox.
+- The sketches page shows a round's question on its own line above the pickers, and takes a running agent and a port after a merge as inputs.
+- Sketches: a start camera clamped before a font load no longer stays panned a few pixels once the content narrows.
+- The sketches page shows the open round's note on its question line through the new `question` input.
+- The change crop of a wide sketch names each variant's reason on its own line when the variants differ.
+- Show the zoom chip and shell collapse tooltips as SDK tooltips, so they also open on keyboard focus.
+- Fail a spec on a logged Angular NG0 warning, and stop the sketch outputs from emitting after their component is destroyed.
+- Show a crash screen with time, PID, port, stack and log path when the design server crashed. The host reads the
+  crashed server's own entry from the design server crash log and hands it to the shell.
+- The Sketches agent and port lines name a span past an hour in hours, past a day in days.
+- The Sketches view shows the port line ("Agent portiert nach Merge von ...") while the sketch carries a
+  `portAfterMerge` mark from the CLI, with the merged parts and since when; no mark, no line.
+- The sketches page folds every state no variant is known to change while a compare is pending, and marks added and wide states.
+- The release smoke's waiting line names the alert Studio shows, such as a stopped design server with its log.
+- The title bar draws its bottom border as an inset shadow, so its controls and their tooltips sit on whole pixels.
+- The title bar takes a `force` input that opens the uncommitted-entries hint, so design compare can check that state.
+- The title bar shows the uncommitted design entries as "N offen" next to the push badge; hovering names each entry.
+
 ## 0.2.0-next.20
 
 ### Patch Changes

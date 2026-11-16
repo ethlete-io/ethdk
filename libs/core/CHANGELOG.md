@@ -1,5 +1,20 @@
 # @ethlete/core
 
+## 5.0.0-next.78
+
+### Minor Changes
+
+- Add `markInsideOverlay(foreignLayer, owner)`, which marks a panel another library renders (e.g. an Angular CDK select panel) as part of an SDK overlay, so a press inside it no longer closes that overlay.
+
+### Patch Changes
+
+- `autoFocus: 'container'` now moves focus onto the overlay host, the focusable element that carries the dialog role, instead of the pane, which cannot take focus and left it on the trigger.
+- End-aligned anchored overlays no longer end a fraction of a pixel short of their reference, and their arrow points at the reference centre exactly.
+- An overlay opened from an Escape keydown no longer closes in that same keydown.
+- An outside click before an overlay's enter transition starts, such as the first click after a keyboard open, now closes it instead of being ignored.
+- Anchored overlay panes and their arrows now sit on whole pixels, so pane borders no longer smear across two pixel columns; the tooltip design mock is drawn the same way.
+- The overlay runtime no longer moves initial focus after the enter animation when focus already sits inside the pane, so a field the user focused while the overlay was entering keeps it.
+
 ## 5.0.0-next.77
 
 ### Minor Changes
