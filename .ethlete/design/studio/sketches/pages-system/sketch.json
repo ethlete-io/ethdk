@@ -1,6 +1,6 @@
 {
   "target": "pages/system",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-16T14:31:31.948Z",
   "createdBy": {
     "cmd": "design sketch new pages/system --variants a,b,c --by claude-opus-5-5 --product studio --round Wo stehen Liste und Kommentar-Taste --note B539, ADR 0322: ein Kommentarmodus in der Systemansicht und auf jeder Sketch-Variante; jede Ansicht listet ihre offenen Kommentare neben der Fläche. Die Varianten beantworten, wo Liste und Kommentar-Taste stehen; pages/system und pages/sketches tragen dieselben Buchstaben, wähle in beiden denselben.",
@@ -133,5 +133,14 @@
       "round": "r1",
       "note": "Kommentar-Taste unten rechts neben der Zoom-Pille, die Liste schwebt als Karte darüber. Die Fläche bleibt ganz frei, aber die Karte deckt Rahmen zu und muss umgeschaltet werden."
     }
+  },
+  "readyContent": {
+    "a": "050035f92c1b300c",
+    "b": "c91b043e5da16dd7",
+    "c": "a2788c600ccc3c47"
+  },
+  "mergeHold": {
+    "reason": "variant a changes comments, comments-mode, comments-draft; variant b changes comments, comments-mode, comments-draft; variant c changes part, fit, points-closed, nothing-open, part-focus-visible, points-closed-focus-visible, comment-mode, comment-draft, comment-draft-typed, send-busy, send-error, send-rejected, comments, comments-mode, comments-draft, one-blocker, checking, blocked-checking, direct-edit, direct-edit-closed, blockers-open, agent-working, agent-working-ready, agent-failed, agent-failed-ready, agent-waiting, agent-interrupted",
+    "at": "2026-11-16T15:29:40.943Z"
   }
 }
