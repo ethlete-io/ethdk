@@ -2285,7 +2285,6 @@ const CASES = [
     name: 'a sketch first paints the frame count it settles on',
     pages: ['Sketches'],
     labels: ['Large'],
-    open: 'B345: the first paint draws every state until the quick listing folds them',
     run: async (page) => {
       await page.addInitScript(() => {
         const observer = new MutationObserver(() => {
