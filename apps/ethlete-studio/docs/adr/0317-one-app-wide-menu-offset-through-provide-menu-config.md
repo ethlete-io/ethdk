@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B534
+built: c8bdca210
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, fifa report on the gg overlay migration (menu sits 4px from its trigger, the old gg menu 2px)
 ---
