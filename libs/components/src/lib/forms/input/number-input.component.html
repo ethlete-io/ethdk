@@ -21,7 +21,7 @@
   type="number"
 />
 
-@if (stepper()) {
+@if (stepper() && !numberInputDir.readonly()) {
   <div class="et-number-input-stepper">
     <button
       [attr.aria-label]="resolvedDecrementLabel()"

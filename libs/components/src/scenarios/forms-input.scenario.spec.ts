@@ -1,6 +1,6 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { form, FormField, max, min, required } from '@angular/forms/signals';
+import { form, FormField, max, min, readonly, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import {
   DEFAULT_INPUT_LABELS,
@@ -41,6 +41,7 @@ import { Scenario, useScenario } from './harness';
   `,
 })
 class PlayerSignupComponent {
+  shirtFrozen = signal(false);
   emailType = INPUT_TYPES.EMAIL;
   alignEnd = INPUT_TEXT_ALIGNMENTS.END;
   model = signal({ email: '', shirt: null as number | null, password: '' });
@@ -48,6 +49,7 @@ class PlayerSignupComponent {
     required(path.email, { message: 'Email is required' });
     min(path.shirt, 1, { message: 'Pick a shirt size from 1 to 3' });
     max(path.shirt, 3, { message: 'Pick a shirt size from 1 to 3' });
+    readonly(path.shirt, () => this.shirtFrozen());
     required(path.password, { message: 'Password is required' });
   });
   revealed = signal(false);
@@ -437,6 +439,20 @@ describe('forms input scenarios', () => {
     fixture.componentInstance.hint.set('');
     s.tick();
     expect(inputs.map((input) => input.hasAttribute('placeholder'))).toEqual([false, false, false]);
+  });
+
+  it('draws no stepper on a read-only number input', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(PlayerSignupComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    expect(host.querySelectorAll('.et-number-input-stepper-button')).toHaveLength(2);
+
+    fixture.componentInstance.shirtFrozen.set(true);
+    s.tick();
+    expect(query<HTMLInputElement>('.et-number-input-native', host).readOnly).toBe(true);
+    expect(host.querySelector('.et-number-input-stepper')).toBeNull();
   });
 
   it('renders the bound disabled, readonly and required state into native inputs', () => {

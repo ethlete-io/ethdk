@@ -236,7 +236,8 @@ but drops every interactive affordance - no hover change, full-contrast value - 
 it reads as view-only content; **disabled** stays dimmed. A read-only text field
 draws a quiet solid frame in the surface border colour over a faint tinted fill,
 and takes the same 2px focus frame as an editable field, so keyboard focus stays
-visible while the value is selected or copied. Set
+visible while the value is selected or copied. A read-only number input draws no
+stepper. Set
 `--et-form-field-control-border-color-readonly` to change its frame colour. The choice
 controls use `et-choice-field` instead of `et-form-field` - see
 [Choice & rating](/components/choice-inputs).
