@@ -160,6 +160,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         isHTMLOrSVGElement(targetDocument.activeElement) ? targetDocument.activeElement : null,
       );
       const autoFocus = config.autoFocus ?? 'first-tabbable';
+      const applyEnteredFocus = () => {
+        const activeElement = targetDocument.activeElement;
+
+        if (activeElement !== paneElement && paneElement.contains(activeElement)) {
+          return;
+        }
+
+        applyInitialFocus(paneElement, autoFocus, targetDocument);
+      };
       let currentHasBackdrop = config.hasBackdrop !== false;
       let currentPositionStrategy = config.positionStrategy;
 
@@ -584,7 +593,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         const lifecycle = getAnimatedLifecycle(componentRef);
         if (!lifecycle) {
           interactiveCloseReady = true;
-          applyInitialFocus(paneElement, autoFocus, targetDocument);
+          applyEnteredFocus();
           overlayRef.markOpened();
 
           return;
@@ -619,7 +628,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             filter((state) => state === 'entered'),
             take(1),
             tap(() => {
-              applyInitialFocus(paneElement, autoFocus, targetDocument);
+              applyEnteredFocus();
               overlayRef.markOpened();
             }),
           )
