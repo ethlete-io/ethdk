@@ -32,7 +32,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 0. Wartezeit (ADR 0236, 0237, 0238, Bef. 639): endet nach dem Beweis für 647 und dem Push (Tom, 09.11.). E2E-Schritt
    jetzt etwa 118 s statt 165-197 s; Fehler auf „Large“ an der Ursache behoben (Bef. 647). Rest im Werkzeug-Rückstand.
 1. Nacht 13.11. (ADR 0291): Abendliste gebaut; A8-Rest gemergt (e7d32e7c9), App-Port in B520 (A2, A17, A23, A7, A36, A15, A26 wie gebaut in design-to-code.md); A30 und A4 fertig; danach B499, B500 (abgeschlossen). `rack` bleibt aus.
-2. B520 Ausstehende Ports (ADR 0205, 16.11.): App-Code an das gemergte Design angleichen für components/disclosure, shell-collapse, tree-row, zoom-chip, elements/part-tree, shell-main (Port-Zeilen von `design check`, 136ec0d7e) sowie die Drift von components/canvas-viewport und comment-pin (nicht in der Baseline). Je Teil `design task`, ein Slice pro Teil.
+2. ~~B520~~ abgeschlossen (b7d4ee625). Rest als B523 (Prüf-Rest von B520, design-to-code.md, parked-suspects.md): offene, nicht geparkte DIFFs (shell-main product-hover nach dem Re-Hover-Fix, Entwurf-2-Notiz in pages/sketches) bauen; ist nichts mehr baubar, B523 schließen und die älteste offene Umbau-Gruppe nehmen.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet):
 Rest von Punkt 0 (ADR 0238: ruhige Messung gegen 90 s (volle Prüfung studio 16.11.: 99,4 s, render-inspect 50,8 s), Prüf-Cache auf der Festplatte).
