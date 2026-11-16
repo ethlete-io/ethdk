@@ -37,7 +37,7 @@ const uncommittedEntryOf = (line: string) => {
   template: `
     <div
       [class]="caption() ? 'pl-1.5' : 'px-1.5'"
-      class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-et-surface-border bg-et-surface-bg font-ui text-ui-sm text-et-surface"
+      class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 bg-et-surface-bg shadow-[inset_0_-1px_0_var(--color-et-surface-border)] font-ui text-ui-sm text-et-surface"
       data-et-surface
       data-tauri-drag-region="deep"
     >
