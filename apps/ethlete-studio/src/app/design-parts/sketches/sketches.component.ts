@@ -33,6 +33,7 @@ import {
   scan,
   Subject,
   switchMap,
+  take,
   tap,
   timer,
 } from 'rxjs';
@@ -62,6 +63,8 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { CommentListComponent } from '../comment-flow/comment-list.component';
+import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
@@ -79,6 +82,10 @@ import {
   SKETCH_ROWS,
   SKETCH_TREE,
   SketchAgentRun,
+  SketchComment,
+  SketchCommentDraft,
+  SketchCommentPlace,
+  SketchConfirm,
   SketchHold,
   SketchMergePort,
   SketchIdle,
@@ -204,6 +211,8 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     AgentLogoComponent,
     CanvasViewportComponent,
     CommentPinComponent,
+    CommentListComponent,
+    CommentDraftComponent,
     DisclosureComponent,
     PartTreeComponent,
     ShellPageComponent,
@@ -253,6 +262,14 @@ export class SketchesComponent {
   public tree = input(SKETCH_TREE);
   public error = input<string | null>(null);
   public listError = input<string | null>(null);
+  public comments = input<SketchComment[] | null>(null);
+  public selectedComment = input<string | null>(null);
+  public commentMode = model(false);
+  public commentDraft = input<SketchCommentDraft | null>(null);
+  public draftText = model('');
+  public sendPhase = input<CommentSendPhase | null>(null);
+  public sendReason = input('');
+  public confirm = model<SketchConfirm | null>(null);
   public retry = output();
   public shellAction = output<ShellAction>();
   public discard = output();
@@ -265,6 +282,10 @@ export class SketchesComponent {
   public cameraChange = output<Camera | null>();
   public listWidthChange = output<number>();
   public openPoint = output<OpenPointTarget>();
+  public commentStart = output<SketchCommentPlace>();
+  public commentCancel = output();
+  public sendComment = output<string>();
+  public commentPick = output<string>();
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
   private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
@@ -273,6 +294,8 @@ export class SketchesComponent {
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
   private frames = viewChildren('frame', { read: ElementRef<HTMLElement> });
+  private takes = viewChildren('take', { read: ElementRef<HTMLElement> });
+  private discardAnchor = viewChild('discardAnchor', { read: ElementRef<HTMLElement> });
   private gutters = viewChildren('gutter', { read: ElementRef<HTMLElement> });
   private notes = viewChildren('note', { read: ElementRef<HTMLElement> });
   private labels = viewChildren('stateLabel', { read: ElementRef<HTMLElement> });
@@ -280,6 +303,7 @@ export class SketchesComponent {
   private listSize = signalElementDimensions(this.list);
 
   protected readonly LABELS = STUDIO_LABELS.sketches;
+  protected readonly SYSTEM_LABELS = STUDIO_LABELS.system;
   protected readonly IS_WITHDRAWN = isWithdrawn;
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
@@ -293,6 +317,8 @@ export class SketchesComponent {
   });
   protected reasonOpen = linkedSignal(() => this.reason());
   protected selectedFrame = signal<string | null>(null);
+  private confirmRow = signal<string | null>(null);
+  private confirmRef: { close: () => void } | null = null;
   private fitAt = signal<{ scale: number; fonts: number } | null>(null);
   // fonts.ready resolves before the gutter's mono face loads; without loadingdone the fit keeps the fallback's gutter.
   private fontLoads = toSignal(
@@ -483,6 +509,12 @@ export class SketchesComponent {
   });
 
   constructor() {
+    afterRenderEffect(() => {
+      const kind = this.confirm();
+
+      untracked(() => this.showConfirm(kind));
+    });
+
     afterNextRender(() => {
       const teardown = mountFrameZoomViewport({
         viewport: this.list().nativeElement,
@@ -667,27 +699,67 @@ export class SketchesComponent {
     return this.pins().find((pin) => pin.variant === key);
   }
 
-  protected confirmDiscard(event: MouseEvent) {
-    const { label, question, note, confirm } = this.LABELS.discardConfirm;
-
-    this.openConfirm({
-      event,
-      label,
-      text: { question: question(this.part()), note, confirm },
-      destructive: true,
-      confirmed: () => this.discard.emit(),
-    });
+  protected askDiscard() {
+    this.confirmRow.set(null);
+    this.confirm.set('discard');
   }
 
-  protected confirmMerge(event: MouseEvent, row: SketchRow) {
-    const { label, question, note, confirm } = this.LABELS.mergeConfirm;
+  protected askMerge(row: SketchRow) {
+    this.confirmRow.set(row.key);
+    this.confirm.set('merge');
+  }
 
-    this.openConfirm({
-      event,
-      label,
-      text: { question: question(row.label ?? this.LABELS.variant(row.key), this.part()), note, confirm },
-      confirmed: () => this.merge.emit(row.key),
+  protected commentsOn(row: SketchRow, state: string) {
+    return (this.comments() ?? []).filter((comment) => comment.variant === row.key && comment.shot === state);
+  }
+
+  protected unplacedCommentsOf(row: SketchRow) {
+    const shown = new Set(row.shots.map((shot) => shot.state));
+
+    return (this.comments() ?? []).filter((comment) => comment.variant === row.key && !shown.has(comment.shot));
+  }
+
+  protected draftOn(row: SketchRow, state: string) {
+    const draft = this.commentDraft();
+
+    return draft && draft.variant === row.key && draft.shot === state ? draft : null;
+  }
+
+  protected toggleComments() {
+    this.commentMode.update((on) => !on);
+  }
+
+  protected startComment(event: MouseEvent | null, row: SketchRow) {
+    const frames = row.shots.flatMap((candidate) => {
+      const key = frameKeyOf(row, candidate.state);
+      const element = this.frames().find((frame) => frame.nativeElement.getAttribute('data-sk-frame') === key);
+
+      return element ? [{ shot: candidate.state, element: element.nativeElement }] : [];
     });
+    const found = event
+      ? frames.find(({ element }) => {
+          const box = element.getBoundingClientRect();
+
+          return (
+            event.clientX >= box.left &&
+            event.clientX <= box.right &&
+            event.clientY >= box.top &&
+            event.clientY <= box.bottom
+          );
+        })
+      : frames[0];
+    const hit = found?.element;
+    const shot = found?.shot;
+
+    if (!hit || !shot) return;
+
+    const box = hit.getBoundingClientRect();
+    const natural = hit.firstElementChild instanceof HTMLElement ? hit.firstElementChild.offsetWidth : box.width;
+    const factor = natural > 0 ? box.width / natural : 1;
+    const point =
+      event && factor > 0 ? { x: (event.clientX - box.left) / factor, y: (event.clientY - box.top) / factor } : null;
+
+    this.commentStart.emit({ variant: row.key, shot, point });
   }
 
   protected selectRound(value: unknown) {
@@ -715,34 +787,63 @@ export class SketchesComponent {
     this.zoomTo(this.shownZoom() / ZOOM_STEP);
   }
 
-  private openConfirm({
-    event,
-    label,
-    text,
-    destructive = false,
-    confirmed,
-  }: {
-    event: MouseEvent;
-    label: string;
-    text: SketchConfirmText;
-    destructive?: boolean;
-    confirmed: () => void;
-  }) {
+  private showConfirm(kind: SketchConfirm | null) {
+    const open = this.confirmRef;
+
+    this.confirmRef = null;
+    open?.close();
+
+    if (!kind) return;
+
+    const key = kind === 'merge' ? (this.confirmRow() ?? this.selected() ?? null) : null;
+    const row = this.rows().find((candidate) => candidate.key === key);
+    const origin =
+      kind === 'merge'
+        ? this.takes().find((take) => take.nativeElement.getAttribute('data-sk-take') === key)?.nativeElement
+        : this.discardAnchor()?.nativeElement;
+
+    if (!origin || (kind === 'merge' && !row)) {
+      this.confirm.set(null);
+
+      return;
+    }
+
+    const { label, question, note, confirm } = kind === 'merge' ? this.LABELS.mergeConfirm : this.LABELS.discardConfirm;
+    const text: SketchConfirmText = {
+      question: row ? question(row.label ?? this.LABELS.variant(row.key), this.part()) : question(this.part(), ''),
+      note,
+      confirm,
+    };
     const ref = this.overlay.open(SketchConfirmComponent, {
-      origin: event,
+      origin,
       role: 'alertdialog',
       ariaLabel: label,
       autoFocus: '[data-sk-confirm-cancel]',
       strategies: anchoredDialogOverlayStrategy(),
       bindings: [
         inputBinding('text', () => text),
-        inputBinding('destructive', () => destructive),
+        inputBinding('destructive', () => kind === 'discard'),
         outputBinding('confirm', () => {
           ref.close();
-          confirmed();
+          if (row) this.merge.emit(row.key);
+          else this.discard.emit();
         }),
       ],
     });
+
+    this.confirmRef = ref;
+    ref
+      .afterClosed()
+      .pipe(
+        take(1),
+        filter(() => this.confirmRef === ref),
+        tap(() => {
+          this.confirmRef = null;
+          this.confirmRow.set(null);
+          this.confirm.set(null);
+        }),
+      )
+      .subscribe();
   }
 
   private fitScaleOf(dom: FitDom) {

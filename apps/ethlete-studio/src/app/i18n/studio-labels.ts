@@ -243,6 +243,11 @@ export const STUDIO_LABELS = {
     sendAgain: 'Erneut senden',
     notSent: 'Kommentar nicht gesendet. Erneut versuchen.',
   },
+  commentList: {
+    title: 'Kommentare',
+    open: (count: number) => `${count} offen`,
+    unread: 'Ungelesen',
+  },
   commentPin: {
     label: ({ author, count, resolved }: { author: string; count: number; resolved: boolean }) =>
       `Comment by ${author}${count > 1 ? `, ${count} messages` : ''}${resolved ? ', resolved' : ''}`,

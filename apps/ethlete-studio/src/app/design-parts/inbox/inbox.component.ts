@@ -9,6 +9,7 @@ import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component'
 import { CommentDraftComponent } from '../system-page/comment-draft.component';
 import { FRAME_CLASS, FRAME_HEAD_CLASS } from '../system-page/system-page.component';
 import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
+import { CommentRowComponent } from '../comment-flow/comment-row.component';
 
 export type InboxOpenOn = 'all' | 'active' | 'others' | 'none';
 
@@ -29,6 +30,7 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
     CanvasFramesComponent,
     AgentLogoComponent,
     CommentDraftComponent,
+    CommentRowComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })

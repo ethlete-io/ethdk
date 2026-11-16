@@ -2,6 +2,7 @@ import { SketchChange } from '../../../host/design';
 import { AgentLogoName } from '../../icons/agent-logos';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { PartTree } from '../part-tree/part-tree.component';
+import { InboxComment } from '../inbox/inbox-sample';
 import { OpenPointGroup } from '../system-page/system-page-sample';
 
 export type SketchModel = { short: string; id: string; agent: AgentLogoName; when?: string };
@@ -38,6 +39,15 @@ export type SketchRound = { value: string; label: string; note?: string };
 export type SketchAgentRun = { by: SketchModel; task: string; step: string; since: string; failed?: boolean };
 
 export type SketchMergePort = { merged: string[]; since: string };
+
+/** Where on a variant a comment sits: the state's shot, and the point on it in CSS pixels, if any. */
+export type SketchCommentPlace = { variant: string; shot: string; point: { x: number; y: number } | null };
+
+export type SketchComment = InboxComment & SketchCommentPlace;
+
+export type SketchCommentDraft = SketchCommentPlace & { author: string; initials: string };
+
+export type SketchConfirm = 'merge' | 'discard';
 
 export type SketchPin = {
   variant: string;
@@ -380,3 +390,44 @@ export const SKETCH_SCREEN_SAMPLE = {
   } satisfies PartTree,
   wholeScreen: SCREEN_CHANGES[0]?.states[0] ?? '',
 };
+
+export const SKETCH_COMMENTS_SAMPLE: SketchComment[] = [
+  {
+    id: 'sk-c1',
+    variant: 'a',
+    shot: 'fit-hover',
+    point: { x: 32, y: 10 },
+    author: 'human',
+    initials: 'H',
+    when: 'vor 20 Min',
+    part: 'Entwurf 1',
+    state: 'fit-hover',
+    text: 'Die Pille wirkt hier zu eng, die Knöpfe kleben aneinander.',
+    replies: 1,
+  },
+  {
+    id: 'sk-c2',
+    variant: 'b',
+    shot: 'reset-hover',
+    point: { x: 92, y: 18 },
+    author: 'Claude',
+    initials: 'C',
+    agent: 'claude',
+    when: 'vor 4 Min',
+    part: 'Entwurf 2',
+    state: 'reset-hover',
+    text: 'Halbfett liest sich besser. Soll Entwurf 1 die Zahl auch so bekommen?',
+    replies: 2,
+    unread: true,
+  },
+];
+
+export const SKETCH_COMMENT_DRAFT_SAMPLE: SketchCommentDraft = {
+  variant: 'b',
+  shot: 'fit-hover',
+  point: { x: 52, y: 14 },
+  author: 'human',
+  initials: 'H',
+};
+
+export const SKETCH_COMMENT_DRAFT_TEXT = 'Der Reset-Knopf braucht hier mehr Luft zur Prozentzahl.';

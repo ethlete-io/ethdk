@@ -4,7 +4,7 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SketchesComponent, foldedStatesOf } from './sketches.component';
-import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchRow } from './sketches-sample';
+import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchComment, SketchRow } from './sketches-sample';
 
 const withTooltip = (root: Element | null | undefined, text: string) =>
   [...(root?.querySelectorAll<HTMLElement>('[aria-describedby]') ?? [])].find((element) =>
@@ -377,6 +377,71 @@ describe('SketchesComponent', () => {
     await take();
     await press('[data-sk-confirm]');
     expect(merged).toEqual(['x']);
+  });
+
+  it('opens the confirm a bound confirm names and clears it once the dialog closes', async () => {
+    const fixture = await render({ part: 'components/card', confirm: 'discard' });
+    const dialog = [...document.querySelectorAll<HTMLElement>('[role="alertdialog"]')].at(-1);
+
+    expect(textOf(dialog)).toContain(LABELS.discardConfirm.question('components/card'));
+
+    [...document.querySelectorAll<HTMLElement>('[data-sk-confirm-cancel]')].at(-1)?.click();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.confirm()).toBeNull();
+  });
+
+  it('lists the comments of the variants under the tree and pins each on its state', async () => {
+    const comments: SketchComment[] = ['one', 'two', 'three'].map((text, index) => ({
+      id: `k${index}`,
+      variant: 'x',
+      shot: index === 2 ? 'gone' : (ROWS[1]?.shots[0]?.state ?? ''),
+      point: { x: 4, y: 4 },
+      author: 'Mira Langname-Beispiel',
+      initials: 'ML',
+      when: 'jetzt',
+      part: 'Variante x',
+      state: 'rest',
+      text,
+      replies: 0,
+    }));
+    const fixture = await render({ comments, selectedComment: 'k1' });
+    const root: HTMLElement = fixture.nativeElement;
+    const picked: string[] = [];
+
+    fixture.componentInstance.commentPick.subscribe((id) => picked.push(id));
+
+    expect(textOf(root.querySelector('[data-comment-list]'))).toContain(STUDIO_LABELS.commentList.open(3));
+    expect(root.querySelectorAll('[data-comment-list] ethlete-comment-row')).toHaveLength(3);
+    expect(root.querySelectorAll('[data-sk-row="x"] ethlete-comment-pin')).toHaveLength(3);
+
+    root.querySelector<HTMLElement>('[data-comment-list] ethlete-comment-row [role="button"]')?.click();
+    expect(picked).toEqual(['k0']);
+  });
+
+  it('turns comment mode on with Kommentar and starts a draft on a variant, not on Aktuell', async () => {
+    const fixture = await render({ comments: [] });
+    const root: HTMLElement = fixture.nativeElement;
+    const started: unknown[] = [];
+
+    fixture.componentInstance.commentStart.subscribe((place) => started.push(place));
+    [...root.querySelectorAll<HTMLElement>('header button')]
+      .find((button) => textOf(button) === STUDIO_LABELS.system.comment)
+      ?.click();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.commentMode()).toBe(true);
+    expect(root.querySelector('[data-sk-row="current"] .cursor-crosshair')).toBeNull();
+
+    root
+      .querySelector<HTMLElement>('[data-sk-row="x"] .cursor-crosshair')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    const shown = root.querySelector('[data-sk-row="x"] [data-sk-frame]')?.getAttribute('data-sk-frame');
+
+    expect(started).toEqual([{ variant: 'x', shot: shown?.replace('x ', ''), point: null }]);
   });
 
   it('drops the current row and shows neu for a new part', async () => {

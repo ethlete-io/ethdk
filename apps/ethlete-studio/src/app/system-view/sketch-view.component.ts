@@ -54,6 +54,10 @@ import {
   SketchMergePort,
   SketchIdle,
   SketchModel,
+  SketchComment,
+  SketchCommentDraft,
+  SketchCommentPlace,
+  SketchConfirm,
   SketchPin,
   SketchRow,
   SketchStatus,
@@ -63,7 +67,7 @@ import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
-import { modelNameOf, senderOf } from './inbox-comments';
+import { inboxCommentOf, modelNameOf, senderOf } from './inbox-comments';
 import { refusalMessageOf } from './inventory';
 import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
 import { FramePaintedDirective } from '../components/design-canvas/partials/frame-painted';
@@ -153,6 +157,8 @@ export const liveShotsOf = ({
       [(statesOpen)]="statesOpen"
       [(withdrawn)]="withdrawn"
       [(wholeScreens)]="wholeScreens"
+      [(draftText)]="commentStore.draftText"
+      [(confirm)]="confirm"
       [part]="sketch().target"
       [heading]="heading()"
       [rows]="rows()"
@@ -174,10 +180,21 @@ export const liveShotsOf = ({
       [mergeHold]="sketch().mergeHold ?? null"
       [error]="mergeError()"
       [listError]="listError()"
+      [comments]="sketchCommentRows()"
+      [selectedComment]="jumpedCommentId()"
+      [commentMode]="commentStore.active()"
+      [commentDraft]="sketchDraft()"
+      [sendPhase]="commentStore.sendPhase()"
+      [sendReason]="commentStore.sendReason()"
       [shot]="shot"
       [tree]="shell().tree"
       [shell]="shell()"
       [restoredCamera]="openedCamera()"
+      (commentModeChange)="commentStore.toggle()"
+      (commentStart)="startComment($event)"
+      (commentCancel)="commentStore.cancel()"
+      (sendComment)="commentStore.send($event)"
+      (commentPick)="pickComment($event)"
       (retry)="retry.emit()"
       (cameraChange)="cameraChange.emit($event)"
       (listWidthChange)="saveListWidth($event)"
@@ -247,7 +264,7 @@ export class SketchViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
   private document = inject(DOCUMENT);
-  private commentStore = injectCommentStore();
+  public commentStore = injectCommentStore();
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
   public sketch = input.required<ListedSketch>();
@@ -642,7 +659,7 @@ export class SketchViewComponent {
       new Set(sketchUsingPagesOf({ product: this.product(), sketch: this.sketch(), part: this.part() }).map(partKeyOf)),
   );
 
-  private jumpedCommentId = signal<string | null>(null);
+  protected jumpedCommentId = signal<string | null>(null);
 
   private sketchComments = computed(() =>
     [
@@ -650,6 +667,45 @@ export class SketchViewComponent {
       ...this.commentStore.resolved().filter((comment) => comment.id === this.jumpedCommentId()),
     ].filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
   );
+
+  protected confirm = linkedSignal<SketchConfirm | null>(() => {
+    this.sketch();
+
+    return null;
+  });
+
+  protected sketchCommentRows = computed<SketchComment[] | null>(() => {
+    if (!this.commentStore.loaded()) return null;
+
+    const now = Date.now();
+    const userName = this.commentStore.userName();
+    const labels = new Map(this.rows().map((row) => [row.key, row.label ?? row.key]));
+
+    return this.sketchComments().flatMap((comment) => {
+      const variant = comment.sketch?.variant;
+
+      return variant
+        ? [
+            {
+              ...inboxCommentOf(comment, { now, userName }),
+              part: labels.get(variant) ?? variant,
+              variant,
+              shot: comment.state,
+              point: comment.point ?? null,
+            },
+          ]
+        : [];
+    });
+  });
+
+  protected sketchDraft = computed<SketchCommentDraft | null>(() => {
+    const draft = this.commentStore.draft();
+    const variant = draft?.place.sketch?.variant;
+
+    if (!draft || !variant || draft.place.sketch?.target !== this.sketch().target) return null;
+
+    return { variant, shot: draft.place.state, point: draft.point, ...senderOf('user', undefined) };
+  });
 
   protected variantPins = computed<SketchPin[]>(() =>
     this.rows().flatMap(({ key }) => {
@@ -715,6 +771,24 @@ export class SketchViewComponent {
             }),
       ),
   );
+
+  protected startComment({ variant, shot, point }: SketchCommentPlace) {
+    const target = this.sketch().target;
+    const row = this.rows().find((candidate) => candidate.key === variant);
+    const size = row?.shots.find((candidate) => candidate.state === shot)?.width ?? row?.width ?? 'fitted';
+
+    this.commentStore.start({
+      frameId: `${variant} ${shot}`,
+      place: { part: target, state: shot, size, sketch: { target, variant } },
+      point,
+    });
+  }
+
+  protected pickComment(id: string) {
+    const comment = this.sketchComments().find((candidate) => candidate.id === id);
+
+    if (comment) this.jumpTo(comment);
+  }
 
   /** Shows the round of the comment's variant. */
   public jumpTo(comment: ListedComment) {

@@ -7,6 +7,9 @@
       (expandedChange)="expandedChange.emit($event)"
       (activate)="pick.emit($event)"
     />
+    @if (comments(); as comments) {
+      <ethlete-comment-list [comments]="comments" [selectedId]="selectedComment()" (pick)="commentPick.emit($event)" />
+    }
   </div>
   <div
     class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
@@ -102,6 +105,18 @@
       @if (error(); as error) {
         <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert">{{ error }}</p>
       }
+      @if (comments() !== null && discardable()) {
+        <button
+          [pressed]="commentMode()"
+          (click)="toggleComments()"
+          et-button
+          type="button"
+          variant="outline"
+          size="sm"
+        >
+          {{ SYSTEM_LABELS.comment }}
+        </button>
+      }
       @if (listError()) {
         <button
           (click)="retry.emit()"
@@ -116,16 +131,11 @@
         </button>
       }
       @if (discardable()) {
-        <button
-          [color]="errorTheme()"
-          (click)="confirmDiscard($event)"
-          et-button
-          type="button"
-          variant="transparent"
-          size="sm"
-        >
-          {{ LABELS.discard }}
-        </button>
+        <span #discardAnchor class="relative flex" data-sk-discard>
+          <button [color]="errorTheme()" (click)="askDiscard()" et-button type="button" variant="transparent" size="sm">
+            {{ LABELS.discard }}
+          </button>
+        </span>
       } @else {
         <span class="text-ui-sm whitespace-nowrap text-et-surface-muted" data-sk-edit-hint>{{ LABELS.editHint }}</span>
       }
@@ -397,7 +407,16 @@
     >
       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
     </div>
-    <div [class.opacity-60]="IS_WITHDRAWN(row)" class="min-w-0">
+    <div [class.opacity-60]="IS_WITHDRAWN(row)" class="relative min-w-0">
+      @if (unplacedCommentsOf(row); as unplaced) {
+        @if (unplaced.length > 0) {
+          <span class="absolute top-0 left-0 z-10 flex">
+            @for (comment of unplaced; track comment.id) {
+              <ng-container *ngTemplateOutlet="commentPinTemplate; context: { $implicit: comment }" />
+            }
+          </span>
+        }
+      }
       @if (drawn) {
         <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
       } @else if (row.shots.length > 0) {
@@ -440,6 +459,16 @@
             }
           }
         </div>
+        @if (commentMode() && comments() !== null && row.key !== CURRENT) {
+          <div
+            [attr.aria-label]="SYSTEM_LABELS.commentOn(row.label ?? row.key)"
+            (click)="startComment($event, row)"
+            (keydown.enter)="startComment(null, row)"
+            class="absolute inset-0 z-1 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
+            role="button"
+            tabindex="0"
+          ></div>
+        }
       }
     </div>
   </section>
@@ -451,8 +480,8 @@
   @if (take || points) {
     <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">
       @if (take) {
-        <span class="flex">
-          <button (click)="confirmMerge($event, row)" et-button type="button" variant="outline" size="sm" data-sk-merge>
+        <span #take [attr.data-sk-take]="row.key" class="relative flex">
+          <button (click)="askMerge(row)" et-button type="button" variant="outline" size="sm" data-sk-merge>
             {{ LABELS.merge }}
           </button>
         </span>
@@ -557,7 +586,7 @@
       }
     }
   </div>
-  @if (!drawn && !IS_WITHDRAWN(row)) {
+  @if (!drawn && !IS_WITHDRAWN(row) && comments() === null) {
     @if (pinOf(row.key); as pin) {
       <span [class.hidden]="headHidden()" class="absolute top-space-1 right-space-1 z-1 flex">
         <ethlete-comment-pin
@@ -613,6 +642,34 @@
       [class]="stacked ? 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]' : ''"
       class="relative row-start-2 flex min-w-0 flex-col self-start"
     >
+      @for (comment of commentsOn(row, item.state); track comment.id) {
+        <span
+          [style.left.px]="(comment.point?.x ?? 0) * scale()"
+          [style.top.px]="(comment.point?.y ?? 0) * scale()"
+          class="absolute z-10 flex -translate-y-full"
+        >
+          <ng-container *ngTemplateOutlet="commentPinTemplate; context: { $implicit: comment }" />
+        </span>
+      }
+      @if (draftOn(row, item.state); as draft) {
+        <span
+          [style.left.px]="(draft.point?.x ?? 0) * scale()"
+          [style.top.px]="(draft.point?.y ?? 0) * scale()"
+          class="absolute z-10 flex -translate-y-full"
+        >
+          <ethlete-comment-pin [author]="draft.author" [initials]="draft.initials" [selected]="true" />
+        </span>
+        <ethlete-comment-draft
+          [(text)]="draftText"
+          [phase]="sendPhase()"
+          [reason]="sendReason()"
+          [style.left]="'calc(' + (draft.point?.x ?? 0) * scale() + 'px + var(--space-6))'"
+          [style.top.px]="(draft.point?.y ?? 0) * scale()"
+          (send)="sendComment.emit($event)"
+          (discard)="commentCancel.emit()"
+          class="absolute z-20"
+        />
+      }
       <div
         #frame
         [style.width.px]="cellWidth * scale()"
@@ -680,4 +737,15 @@
       }
     </div>
   </div>
+</ng-template>
+<ng-template #commentPinTemplate let-comment>
+  <ethlete-comment-pin
+    [author]="comment.author"
+    [initials]="comment.initials"
+    [agent]="comment.agent"
+    [count]="comment.replies + 1"
+    [selected]="comment.id === selectedComment()"
+    [resolved]="!!comment.resolved"
+    (pinToggle)="commentPick.emit(comment.id)"
+  />
 </ng-template>

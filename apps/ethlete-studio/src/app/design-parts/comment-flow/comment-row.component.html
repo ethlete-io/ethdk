@@ -1,0 +1,75 @@
+@let strong = comment().resolved ? 'text-et-surface-muted' : 'text-et-surface';
+<div
+  [class]="selected() ? 'bg-et-theme/20' : ''"
+  (click)="pick.emit()"
+  (keydown.enter)="pick.emit()"
+  (keydown.space)="$event.preventDefault(); pick.emit()"
+  class="flex gap-space-2 rounded-control-md p-space-2"
+  role="button"
+  tabindex="0"
+>
+  <span
+    class="flex size-5 flex-none items-center justify-center rounded-full bg-et-surface-bg font-ui-strong text-(length:--text-xs) text-et-surface"
+    etAutoSurface
+  >
+    @if (comment().agent; as agent) {
+      <svg [agent]="agent" class="size-3" ethlete-agent-logo></svg>
+    } @else {
+      {{ comment().initials }}
+    }
+  </span>
+  <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+    <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
+      <span [class]="strong" class="font-ui-medium">{{ comment().author }}</span>
+      <span class="flex-1 text-et-surface-muted">{{ comment().when }}</span>
+      @if (comment().unread) {
+        <span [etTooltip]="LABELS.unread" class="size-1.5 rounded-full bg-et-theme"></span>
+      }
+    </div>
+    <p [class]="strong" class="m-0 line-clamp-2 text-ui-sm">{{ comment().text }}</p>
+    <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
+      <span
+        [class]="selected() ? 'text-et-theme-ink' : 'text-et-surface-muted'"
+        class="min-w-0 flex-1 overflow-hidden font-code text-ellipsis"
+        >{{ comment().part }} › {{ comment().state }}</span
+      >
+      @if (comment().resolved) {
+        <span class="flex items-center gap-0.5 text-et-surface-muted">
+          <svg
+            class="flex-none"
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m3.5 8.5 3 3 6-7" />
+          </svg>
+        </span>
+      } @else if (comment().replies > 0) {
+        <span class="flex items-center gap-0.5 text-et-surface-muted">
+          <svg
+            class="flex-none"
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M6 4 2.5 7.5 6 11" />
+            <path d="M2.5 7.5H9a4.5 4.5 0 0 1 4.5 4.5" />
+          </svg>
+          {{ comment().replies }}
+        </span>
+      }
+    </div>
+  </div>
+</div>

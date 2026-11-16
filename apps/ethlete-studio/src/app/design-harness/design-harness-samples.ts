@@ -17,6 +17,9 @@ import {
   SKETCH_CURRENT,
   SKETCH_EDIT_SAMPLE,
   SKETCH_MERGE_PORTS,
+  SKETCH_COMMENT_DRAFT_SAMPLE,
+  SKETCH_COMMENT_DRAFT_TEXT,
+  SKETCH_COMMENTS_SAMPLE,
   SKETCH_NARROW_SAMPLE,
   SKETCH_POINTS_SAMPLE,
   SKETCH_ROWS,
@@ -112,6 +115,8 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     multi,
     agent,
     port,
+    comments,
+    confirm,
     ...props
   }) => {
     const { wholeScreen, ...screenSample } = SKETCH_SCREEN_SAMPLE;
@@ -148,6 +153,17 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(multi === 'three' || multi === 'many' ? sketchMultiSampleOf(multi) : {}),
       ...(run ? { agent: run } : {}),
       ...(merge ? { port: merge } : {}),
+      ...(comments
+        ? {
+            comments: SKETCH_COMMENTS_SAMPLE,
+            selectedComment: comments === 'listed' ? (SKETCH_COMMENTS_SAMPLE[0]?.id ?? null) : null,
+            commentMode: comments !== 'listed',
+            ...(comments === 'draft'
+              ? { commentDraft: SKETCH_COMMENT_DRAFT_SAMPLE, draftText: SKETCH_COMMENT_DRAFT_TEXT }
+              : {}),
+          }
+        : {}),
+      ...(confirm === 'merge' || confirm === 'discard' ? { confirm } : {}),
     };
   },
   'pages/system': ({ build, agent, call, listingError, ...props }) => {
