@@ -48,6 +48,7 @@ import {
   BusyState,
   ownerPartOf,
   RenderIssue,
+  preloadRenderModules,
   renderIssueLineOf,
   renderIssuesOf,
 } from './render-check';
@@ -915,7 +916,10 @@ const renderSystem = async (
   const typechecks = options.typechecks ?? new Map<string, TypecheckResult>();
   const part = options.part;
 
-  if (part) await timedPhase('static-prefetch', () => prefetchPartChecks({ ...options, part, typechecks }));
+  if (part) {
+    preloadRenderModules(options).catch(() => undefined);
+    await timedPhase('static-prefetch', () => prefetchPartChecks({ ...options, part, typechecks }));
+  }
 
   const { code, fatal } = timedPhase('static', () =>
     reportSystem({ ...options, typechecks, warn: true, sketchTypechecks }),

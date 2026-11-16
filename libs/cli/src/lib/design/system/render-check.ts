@@ -879,6 +879,26 @@ const inspect = async (options: {
   return issues;
 };
 
+/** Loads the module of every drawn part of `products` on the warm design server, in the order `renderIssuesOf` loads them. */
+export const preloadRenderModules = async (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  warm?: WarmDraw;
+}) => {
+  if (!options.warm) return;
+
+  const server = await options.warm.server(options.config).catch(() => null);
+
+  if (!server) return;
+
+  const system = createSystemModules({ target: options.target, config: options.config });
+
+  for (const product of options.products)
+    for (const part of system.drawnOf(product, null)?.parts ?? [])
+      await server.ssrLoadModule(productModuleIdOf({ file: part.file, product })).catch(() => undefined);
+};
+
 /**
  * Draws every state of the parts of each job in one headless Chromium, on one page of a design server of
  * its own: a page at each product preset, a part with `widths` at each width, any other part fitted to
