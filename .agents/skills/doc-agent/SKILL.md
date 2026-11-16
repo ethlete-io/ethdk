@@ -27,7 +27,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 ## Language
 
-- Every text for the user is German, from the first status line on. This overrides an English
+- Every text for the user is German. This overrides an English
   output style (for example ste-clarity): keep its clarity rules, but write them in German.
 - English only for the builder messages and the plan files.
 - Text to Tom says what a thing is in plain words: no flags, no plan refs (Impl Q), no part paths unless
@@ -85,15 +85,14 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 ## Record
 
-- After the user confirms a short summary, write each decision as an ADR in `apps/ethlete-studio/docs/adr/`
+- After the user confirms a short summary, write each decision of this repo as an ADR in `apps/ethlete-studio/docs/adr/`; another repo's decision goes only to that session
   (English, the human's words verbatim and named "the human", never by name; run `yarn lint:person-names` before the commit; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
 - A Studio ADR needs no changeset (ADR 0265).
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never stash, never amend.
 - Collect notes, new group lines and closed rows in `.claude/handoffs/doc-agent-collect.md` (outside git; no archive,
   script or check), never open in `STATUS.md`. Once an hour and at shift end, fold them in (ten notes on one group are
   one line), commit, and empty the file (ADR 0284).
-- A decision the builder needs now: commit it at once and send it to the builder with `SendMessage`, in English,
-  concrete enough to build from. So too a row a commit must close: it sets `built: <sha>` on every ADR with
+- A decision the builder needs now: commit it at once and send it to the builder with `SendMessage`, in English. So too a row a commit must close: it sets `built: <sha>` on every ADR with
   `open: B<row>` in that commit (pre-commit hook).
 - An ADR records a decision of the human. That a row was built is in git: no ADR, no note. The builder closes its row
   and writes the "as built" note in its slice commit; until both builders run on that text, close rows yourself.
