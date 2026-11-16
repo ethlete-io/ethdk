@@ -61,5 +61,8 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - B523 (5) part 2 (2026-11-16): the sketch stand-in pads focus-visible chips to the design frame (`pt-13 pl-[22.5px]` /
   `pt-13 pr-1`, height 82). pages/sketches narrow states 137k -> 28.5k px. Rest: the design frame draws the chip's
   tooltip inside the slot; the app chip opens its tooltip only on real focus (compare focuses one element per state), so
-  the stand-in shows none. narrow-wide-state 136k: the design wraps reset-focus-visible (now with its tooltip) plus a
-  second tooltip, and draws reset-focus-tooltip in Stand and Entwurf 1 where the app shows "neu"/"fehlt" cells.
+  the stand-in shows none. Cause (measured): the harness forces focus-visible only through data-et-force; the real
+  tooltip opens on real focus; the design draws it in the slot. Accepted (c8: option C), no still capture, no show().
+  narrow-wide-state 136k -> 36.8k px: the design state now renders reset-focus-visible itself (no second tooltip) and
+  draws "neu"/"fehlt" cells in Stand and Entwurf 1 like the app; the app sample takes the wide state's height from the
+  state it draws (82, was 30 and clipped the chip). Rest: the tooltips above, the Entwurf 2 note wraps one word apart.

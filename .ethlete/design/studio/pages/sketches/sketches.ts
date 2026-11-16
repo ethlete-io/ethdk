@@ -13,7 +13,6 @@ import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
-import tooltipPart from '@system/components/tooltip';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -160,25 +159,15 @@ const withAdded = (part: SketchPart): SketchPart => ({
   rows: part.rows.map((row) => (ADDED.in.includes(row.key) ? { ...row, changed: [...row.changed, ADDED.state] } : row)),
 });
 
-const WIDE_STATE = 'reset-focus-tooltip';
+const WIDE: Added = { state: 'reset-focus-tooltip', in: ['b'] };
 
 const MEASURED_WIDTH = 197;
 
-const tooltipOf = () =>
-  tooltipPart.render({ text: 'Auf 100 % zoomen', placement: 'bottom' }) as Promise<{ body: string; styles: string }>;
-
-const withWideState = (part: SketchPart, tip: string): SketchPart => ({
+const withWideState = (part: SketchPart): SketchPart => ({
   ...part,
-  states: [...part.states, WIDE_STATE],
-  render: async (state) => {
-    if (state !== WIDE_STATE) return part.render(state);
-    const chip = await part.render('reset-focus-visible');
-    return {
-      body: html`<div class="flex w-49.25 flex-col items-center gap-space-1" data-sk-measured>${chip.body}${tip}</div>`,
-      styles: chip.styles,
-    };
-  },
-  rows: part.rows.map((row) => (row.key === 'b' ? { ...row, changed: [...row.changed, WIDE_STATE] } : row)),
+  states: [...part.states, WIDE.state],
+  render: (state) => part.render(state === WIDE.state ? 'reset-focus-visible' : state),
+  rows: part.rows.map((row) => (WIDE.in.includes(row.key) ? { ...row, changed: [...row.changed, WIDE.state] } : row)),
 });
 
 const measuredCell = (part: SketchPart, row: Row, state: string, pending: boolean) =>
@@ -212,9 +201,10 @@ const stageOf = (part: SketchPart, row: Row, view: View) =>
       >
         ${part.states
           .map((state) =>
-            state === view.added?.state && !view.added.in.includes(row.key)
+            (state === view.added?.state && !view.added.in.includes(row.key)) ||
+            (view.wideState && state === WIDE.state && !WIDE.in.includes(row.key))
               ? missingCell(row, state)
-              : state === WIDE_STATE
+              : state === WIDE.state
                 ? measuredCell(part, row, state, view.comparing)
                 : cell(part, row, state, '', view.comparing),
           )
@@ -761,8 +751,7 @@ export default definePart<Props>({
     const take = await takeButton();
     const run = agent ? AGENT_RUNS[agent] : undefined;
     const base = withSame(PARTS[kind], comparing ? [] : sameKeys);
-    const tip = wideState ? await tooltipOf() : undefined;
-    const full = added ? withAdded(base) : tip ? withWideState(base, tip.body) : base;
+    const full = added ? withAdded(base) : wideState ? withWideState(base) : base;
     const rowStyles = await prepareShots(full);
     const pending = comparing ? full.states.filter((state) => !known.includes(state)) : [];
     const hidden = comparing ? pending : unchangedStates(full);
@@ -911,7 +900,6 @@ export default definePart<Props>({
         take.styles +
         (pointsButton?.styles ?? '') +
         (popover?.styles ?? '') +
-        (tip?.styles ?? '') +
         parts.styles +
         rowStyles +
         Object.values(tags)

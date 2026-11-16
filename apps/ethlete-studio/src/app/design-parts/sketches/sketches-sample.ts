@@ -221,13 +221,20 @@ export const SKETCH_NARROW_SAMPLE = {
 /** A state only variant a of the narrow sample draws, so Current and variant b lack it. */
 export const SKETCH_ADDED_STATE = { state: 'fit-disabled', in: ['a'], height: CHIP_HEIGHT };
 
+const WIDE_DRAWN_AS = 'reset-focus-visible';
+
 /** A state of variant b of the narrow sample measured wider than the zoom chip. */
-export const SKETCH_WIDE_STATE = { state: 'reset-focus-tooltip', key: 'b', width: 197, height: CHIP_HEIGHT };
+export const SKETCH_WIDE_STATE = {
+  state: 'reset-focus-tooltip',
+  key: 'b',
+  width: 197,
+  height: chipHeightOf(WIDE_DRAWN_AS),
+};
 
 /** The chip state the harness draws for a narrow sample state no chip state names. */
 export const SKETCH_DRAWN_AS: Record<string, string> = {
   [SKETCH_ADDED_STATE.state]: 'fit',
-  [SKETCH_WIDE_STATE.state]: 'reset-focus-visible',
+  [SKETCH_WIDE_STATE.state]: WIDE_DRAWN_AS,
 };
 
 export const SKETCH_EDIT_SAMPLE = {
