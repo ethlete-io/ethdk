@@ -414,6 +414,36 @@ describe('SystemViewComponent on a reload', () => {
     expectPicked('elements/badge', '2', 'Badge too loud', 'Too light');
   });
 
+  it('shows the comment pins on the canvas with the Inbox closed, and Esc on the page leaves comment mode', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [HOVER_COMMENT], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const view = fixture.componentInstance;
+    const store = view['commentStore'];
+
+    await settle(fixture);
+
+    expect(view['section']()).not.toBe('Inbox');
+    expect(
+      view
+        .partCanvas()
+        ?.pins()
+        .map((pin) => pin.id),
+    ).toContain('1');
+
+    store.toggle();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await settle(fixture);
+
+    expect(store.active()).toBe(false);
+  });
+
   it('selects a picked resolved Inbox comment and shows its pin resolved on the canvas, by click, Enter and Space', async () => {
     const resolvedComment: ListedComment = {
       ...HOVER_COMMENT,

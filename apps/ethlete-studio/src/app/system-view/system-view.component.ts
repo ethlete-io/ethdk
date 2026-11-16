@@ -342,7 +342,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     CommentDraftComponent,
   ],
   providers: [provideCommentStore(), provideCommandPaletteStore()],
-  host: { class: 'block size-full min-h-0' },
+  host: { class: 'block size-full min-h-0', '(document:keydown.escape)': 'leaveCommentStep($event)' },
 })
 export class SystemViewComponent {
   protected errorTheme = injectSemanticColorTheme('error');
@@ -1040,9 +1040,7 @@ export class SystemViewComponent {
   );
 
   protected partPins = computed(() =>
-    this.section() === 'Inbox'
-      ? pinsOf(this.placeableFrames(), [...this.commentStore.comments(), ...this.pickedResolved()])
-      : [],
+    pinsOf(this.placeableFrames(), [...this.commentStore.comments(), ...this.pickedResolved()]),
   );
 
   protected sketchPage = computed(() => {
@@ -1181,6 +1179,11 @@ export class SystemViewComponent {
     if (section !== 'Inbox') this.railSection.set(section);
     if (section === 'System' && (this.flow() || this.sketch())) this.activate(this.part()?.key ?? '');
     if (section === 'Sketches' && !this.sketch()) this.openFirstSketch();
+  }
+
+  protected leaveCommentStep(event: Event) {
+    if (event.defaultPrevented) return;
+    if (this.commentStore.escape()) event.preventDefault();
   }
 
   protected startComment(pick: FramePoint) {

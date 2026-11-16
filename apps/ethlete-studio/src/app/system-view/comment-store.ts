@@ -162,6 +162,20 @@ export class CommentStore {
     this.cancel();
   }
 
+  public escape() {
+    if (this.draft()) {
+      this.cancel();
+
+      return true;
+    }
+
+    if (!this.active()) return false;
+
+    this.end();
+
+    return true;
+  }
+
   public start(draft: CommentDraft) {
     if (this.sendPhase() === 'busy') return;
 

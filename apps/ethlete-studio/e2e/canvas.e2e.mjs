@@ -1713,7 +1713,7 @@ const CASES = [
     },
   },
   {
-    name: 'the comment button: crosshair, a click places the draft, Esc cancels it, a sent comment lands on disk, in the Inbox and as a pin',
+    name: 'the comment button: crosshair, a click places the draft, Esc cancels it, a sent comment lands on disk, in the Inbox and as a pin at once, Esc without a draft leaves comment mode, no button in the Inbox',
     pages: ['System'],
     viewport: WIDE,
     run: async (page) => {
@@ -1804,6 +1804,7 @@ const CASES = [
       }));
 
       if (afterEsc.draft) return fail('Esc left the draft open');
+      if (!afterEsc.targets) return fail('Esc with a draft open also left comment mode');
       if (filesOf().length !== before.size) return fail('Esc wrote a comment');
 
       const second = await pickAt(0.6, 0.55);
@@ -1819,7 +1820,22 @@ const CASES = [
 
       while (Date.now() < deadline && filesOf().length === before.size) await page.waitForTimeout(200);
 
-      const pinsBeforeInbox = (await pinsNear(second)).length;
+      deadline = Date.now() + WAIT_MS;
+      let pinsBeforeInbox = [];
+
+      while (Date.now() < deadline) {
+        pinsBeforeInbox = await pinsNear(second);
+        if (pinsBeforeInbox[0] < 40) break;
+        await page.waitForTimeout(200);
+      }
+
+      const pinAtOnce = pinsBeforeInbox.filter((d) => d < 40).length === 1;
+
+      await page.locator('[data-comment-draft]').waitFor({ state: 'detached', timeout: WAIT_MS });
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(SETTLE_MS);
+
+      const modeLeft = (await page.locator('[data-comment-target]').count()) === 0;
 
       await page.locator('button[aria-label="Inbox"]').first().click();
       deadline = Date.now() + WAIT_MS;
@@ -1838,6 +1854,8 @@ const CASES = [
         await page.waitForTimeout(200);
       }
 
+      const buttonInInbox = await toggle.isVisible();
+
       const saved = written.map((name) => JSON.parse(readFileSync(join(commentsDir, name), 'utf8')));
 
       for (const name of written) rmSync(join(commentsDir, name));
@@ -1847,11 +1865,14 @@ const CASES = [
         saved[0].text === text &&
         !!saved[0].point &&
         pins.filter((d) => d < 40).length === 1 &&
-        listed;
+        listed &&
+        pinAtOnce &&
+        modeLeft &&
+        !buttonInInbox;
 
       return {
         ok,
-        detail: `crosshair, draft at click ${first.x},${first.y}, Esc closed it (comment mode ${afterEsc.targets ? 'on' : 'off'}), sent ${saved.length} file(s) ${JSON.stringify(saved.map((s) => ({ part: s.part, text: s.text, point: s.point })))}, pins with the Inbox closed ${pinsBeforeInbox}, in the Inbox ${listed}, pin distances to the click ${pins.join(',')} px`,
+        detail: `crosshair, draft at click ${first.x},${first.y}, Esc closed it (comment mode ${afterEsc.targets ? 'on' : 'off'}), sent ${saved.length} file(s) ${JSON.stringify(saved.map((s) => ({ part: s.part, text: s.text, point: s.point })))}, pin at once with the Inbox closed ${pinAtOnce} (${pinsBeforeInbox.join(',')} px), Esc without a draft left comment mode ${modeLeft}, Kommentar button in the Inbox ${buttonInInbox}, in the Inbox ${listed}, pin distances to the click ${pins.join(',')} px`,
       };
     },
   },

@@ -267,5 +267,21 @@ describe('CommentStore', () => {
       expect(store.active()).toBe(false);
       expect(store.draft()).toBeNull();
     });
+
+    it('discards an open draft on Esc first, then leaves comment mode on the next Esc', () => {
+      const { store } = setup();
+
+      expect(store.escape()).toBe(false);
+
+      store.toggle();
+      store.start(DRAFT);
+
+      expect(store.escape()).toBe(true);
+      expect(store.draft()).toBeNull();
+      expect(store.active()).toBe(true);
+
+      expect(store.escape()).toBe(true);
+      expect(store.active()).toBe(false);
+    });
   });
 });
