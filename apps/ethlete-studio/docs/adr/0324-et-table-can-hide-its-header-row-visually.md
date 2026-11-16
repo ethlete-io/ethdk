@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B541
+built: d67d94d0a
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, fifa report Table L-1 (10 gg list tables without a header)
 ---
