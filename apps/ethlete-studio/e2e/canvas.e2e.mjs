@@ -1065,63 +1065,57 @@ const withEditSketch = async (page, designPort, run) => {
 
 const CASES = [
   {
-    name: 'a visible edit of a merged design part opens its old/new sketch with nothing folded',
-    listingMayPend: 'the evidence is the sketch the design check opens, which the case waits for itself',
-    pages: ['System'],
-    run: (page, _state, _target, { designPort }) =>
-      withEditSketch(page, designPort, async ({ edit }) => {
-        const shown = await edit();
-        const ok = shown.variants.includes('new') && shown.variants.includes('old') && !shown.folded && !shown.discard;
-
-        return {
-          ok,
-          detail: `variants ${shown.variants.join(', ')}, folded states: ${shown.folded}, Verwerfen: ${shown.discard}`,
-        };
-      }),
-  },
-  {
-    name: 'picking old of an edit sketch restores the design, picking new records the edit as merged',
-    listingMayPend: 'waits for the listing itself (listingAnswered) before each pick',
+    name: 'a visible edit of a merged design part opens its old/new sketch with nothing folded, picking old restores the design',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before the pick',
     ownShard: true,
     pages: ['System'],
     run: (page, _state, _target, { designPort }) =>
       withEditSketch(page, designPort, async ({ edit, pick, file, studio, git, base }) => {
         const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
-        const first = await edit();
+        const shown = await edit();
+        const opened =
+          shown.variants.includes('new') && shown.variants.includes('old') && !shown.folded && !shown.discard;
+        const shownDetail = `variants ${shown.variants.join(', ')}, folded states: ${shown.folded}, Verwerfen: ${shown.discard}`;
 
-        if (!first.variants.includes('old'))
-          return { ok: false, detail: `no old variant: ${first.variants.join(', ')}` };
+        if (!opened) return { ok: false, detail: shownDetail };
 
         const oldPick = await pick('old');
 
         const design = readFileSync(file, 'utf8');
         const drift = git('diff', base, '--', file).toString();
-        const identical = drift === '';
         const restored =
           design.includes(EDIT_LABEL.before) &&
           !design.includes(EDIT_LABEL.after) &&
-          identical &&
+          drift === '' &&
           !existsSync(sketchDir);
 
-        await edit();
+        return {
+          ok: restored && oldPick.changed > 0 && oldPick.outlined > 0 && oldPick.opened === EDIT_PART,
+          detail: `${shownDetail}, old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, Geändert rows of old: ${oldPick.changed} (${oldPick.outlined} with an outline), part opened after the merge: ${oldPick.opened}`,
+        };
+      }),
+  },
+  {
+    name: 'picking new of an edit sketch records the edit as merged',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before the pick',
+    ownShard: true,
+    pages: ['System'],
+    run: (page, _state, _target, { designPort }) =>
+      withEditSketch(page, designPort, async ({ edit, pick, file, studio }) => {
+        const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
+        const shown = await edit();
+
+        if (!shown.variants.includes('new'))
+          return { ok: false, detail: `no new variant: ${shown.variants.join(', ')}` };
 
         const newPick = await pick('new');
 
         const recorded = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'))[EDIT_PART];
         const kept = readFileSync(file, 'utf8').includes(EDIT_LABEL.after);
 
-        const opened = [oldPick.opened, newPick.opened];
-
         return {
-          ok:
-            restored &&
-            kept &&
-            recorded?.variant === 'new' &&
-            !existsSync(sketchDir) &&
-            oldPick.changed > 0 &&
-            oldPick.outlined > 0 &&
-            opened.every((part) => part === EDIT_PART),
-          detail: `old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}, Geändert rows of old: ${oldPick.changed} (${oldPick.outlined} with an outline), part opened after each merge: ${opened.join(', ')}`,
+          ok: kept && recorded?.variant === 'new' && !existsSync(sketchDir) && newPick.opened === EDIT_PART,
+          detail: `new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}, sketch folder gone: ${!existsSync(sketchDir)}, part opened after the merge: ${newPick.opened}`,
         };
       }),
   },
@@ -4526,8 +4520,9 @@ const lead = async () => {
   const declared = [...queue];
   const total = queue.length;
   const workers = Math.min(total, workerCount());
+  const tailWidth = Math.min(workers, Math.max(1, Math.floor(availableParallelism() / 5)));
   const rows = [];
-  const busy = new Set();
+  const busy = new Map();
   let quietTail = false;
   let firstCase = false;
   const scratch = built ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-build-'));
@@ -4586,18 +4581,18 @@ const lead = async () => {
       let workerCheckout;
 
       const giveJob = async () => {
-        if (quiet(queue[0]) && index !== 0) return child.send({ job: null });
-        while (quiet(queue[0]) && [...busy].some((other) => other !== index))
+        if (quiet(queue[0]) && index >= tailWidth) return child.send({ job: null });
+        while (quiet(queue[0]) && [...busy].some(([other, job]) => other !== index && !quiet(job)))
           await new Promise((done) => setTimeout(done, 200));
         if (quiet(queue[0]) && !quietTail) {
           quietTail = true;
           console.log(
-            `[canvas-e2e] quiet tail: ${queue.length} case(s) on worker ${index} after the parallel cases, at ${seconds(performance.now() - runStartedAt).trim()}`,
+            `[canvas-e2e] quiet tail: ${queue.length} case(s) on ${tailWidth} worker(s) after the parallel cases, at ${seconds(performance.now() - runStartedAt).trim()}`,
           );
         }
         current = queue.shift();
         tookJob ||= !!current;
-        if (current) busy.add(index);
+        if (current) busy.set(index, current);
         if (current && !firstCase) {
           firstCase = true;
           console.log(`[canvas-e2e] first case starting at ${seconds(performance.now() - runStartedAt).trim()}`);
@@ -4647,7 +4642,7 @@ const lead = async () => {
 
     await Promise.all(
       Array.from({ length: workers }, async (_, index) => {
-        while (queue.length && (index === 0 || !quiet(queue[0])) && (await runWorker(index)));
+        while (queue.length && (index < tailWidth || !quiet(queue[0])) && (await runWorker(index)));
       }),
     );
   } finally {
