@@ -2,7 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "types": []
+    "types": [],
+    "isolatedModules": true,
+    "emitDecoratorMetadata": false
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.spec.ts"]
