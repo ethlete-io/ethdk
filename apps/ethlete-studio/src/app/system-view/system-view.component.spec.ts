@@ -438,10 +438,44 @@ describe('SystemViewComponent on a reload', () => {
     ).toContain('1');
 
     store.toggle();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     await settle(fixture);
 
     expect(store.active()).toBe(false);
+  });
+
+  it('leaves comment mode on Esc while a hover tooltip takes Escape at the root, but not on an Esc inside an overlay', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const store = fixture.componentInstance['commentStore'];
+    const tooltipTakesEscape = (event: Event) => event.preventDefault();
+    const overlay = document.body.appendChild(document.createElement('div'));
+
+    await settle(fixture);
+    document.documentElement.addEventListener('keydown', tooltipTakesEscape);
+
+    try {
+      store.toggle();
+      overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await settle(fixture);
+
+      expect(store.active()).toBe(true);
+
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await settle(fixture);
+
+      expect(store.active()).toBe(false);
+    } finally {
+      document.documentElement.removeEventListener('keydown', tooltipTakesEscape);
+      overlay.remove();
+    }
   });
 
   it('selects a picked resolved Inbox comment and shows its pin resolved on the canvas, by click, Enter and Space', async () => {

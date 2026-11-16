@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   Injector,
   ViewEncapsulation,
   afterNextRender,
@@ -342,11 +343,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     CommentDraftComponent,
   ],
   providers: [provideCommentStore(), provideCommandPaletteStore()],
-  host: { class: 'block size-full min-h-0', '(document:keydown.escape)': 'leaveCommentStep($event)' },
+  // On body, not document: a hover tooltip's Escape dismissal prevents the event on <html>, before document.
+  host: { class: 'block size-full min-h-0', '(body:keydown.escape)': 'leaveCommentStep($event)' },
 })
 export class SystemViewComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected commentStore = injectCommentStore();
   private palette = injectCommandPaletteStore();
   private injector = inject(Injector);
@@ -1182,7 +1185,12 @@ export class SystemViewComponent {
   }
 
   protected leaveCommentStep(event: Event) {
-    if (event.defaultPrevented) return;
+    const target = event.target;
+    const onPage =
+      target === this.host.nativeElement.ownerDocument.body ||
+      (target instanceof Node && this.host.nativeElement.contains(target));
+
+    if (event.defaultPrevented || !onPage) return;
     if (this.commentStore.escape()) event.preventDefault();
   }
 
