@@ -1,5 +1,14 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.37
+
+### Patch Changes
+
+- The agent-sessions dispatcher no longer types messages from before it started, even ones addressed to the woken agent; `inbox` still lists them.
+- The agent-sessions dispatcher no longer types into a tmux session of another checkout, and `send --to` refuses an agent that has no session in this checkout.
+- `send --to` and the dispatcher accept a tmux session named only `<agent>` again when its pane runs in this checkout.
+- The styling rule tells agents to style an SDK component's state through its inputs, never with a `!`-utility or an `--et-*` override.
+
 ## 0.1.0-next.36
 
 ### Patch Changes
