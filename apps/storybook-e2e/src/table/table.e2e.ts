@@ -33,6 +33,7 @@ const RESIZABLE_STORY_ID = 'components-data-display-table--resizable-columns';
 const CSV_EXPORT_STORY_ID = 'components-data-display-table--csv-export';
 const CARD_ROWS_STORY_ID = 'components-data-display-table--card-rows';
 const INLINE_EDITING_STORY_ID = 'components-data-display-table--inline-editing';
+const HEADER_HIDDEN_STORY_ID = 'components-data-display-table--header-hidden';
 
 const VIRTUAL_ROW_COUNT = 2000;
 
@@ -690,6 +691,36 @@ test.describe('table / pointer', () => {
 });
 
 test.describe('table / layout', () => {
+  for (const variant of [
+    { name: 'plain', args: {} },
+    { name: 'grouped', args: { grouped: true } },
+    { name: 'page-sticky', args: { pageStickyHeader: true } },
+  ]) {
+    test(`headerHidden (${variant.name}) puts the first row at the top and keeps the column headers for screen readers`, async ({
+      page,
+    }) => {
+      const root = await openStory(page, HEADER_HIDDEN_STORY_ID, { args: variant.args });
+      const tableTop = (await boxOf(root.locator('et-table'))).y;
+
+      expect((await firstCellTop(root)) - tableTop).toBeLessThan(4);
+      await expect(root.getByRole('columnheader', { name: 'Email' })).toHaveCount(1);
+
+      for (const box of await root
+        .locator('.et-table-header-cell, .et-table-group-cell')
+        .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect()))) {
+        expect(box.width).toBeLessThanOrEqual(1);
+        expect(box.height).toBeLessThanOrEqual(1);
+      }
+    });
+  }
+
+  test('without headerHidden the header row sits above the first row', async ({ page }) => {
+    const root = await openStory(page, HEADER_HIDDEN_STORY_ID, { args: { headerHidden: false } });
+    const tableTop = (await boxOf(root.locator('et-table'))).y;
+
+    expect((await firstCellTop(root)) - tableTop).toBeGreaterThan(20);
+  });
+
   test('a virtualized table renders a window of rows sized from a measured row, not the estimate', async ({ page }) => {
     const root = await openStory(page, VIRTUALIZED_STORY_ID);
     const top = await readVirtualWindow(root);

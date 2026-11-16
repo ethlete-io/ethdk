@@ -27,6 +27,7 @@ export default {
     runtimePinning: false,
     dragScroll: false,
     pageStickyHeader: false,
+    headerHidden: false,
     footer: false,
     paginated: false,
     rowInteractive: false,
@@ -65,6 +66,7 @@ export default {
     runtimePinning: { control: 'boolean' },
     dragScroll: { control: 'boolean' },
     pageStickyHeader: { control: 'boolean' },
+    headerHidden: { control: 'boolean' },
     footer: { control: 'boolean' },
     paginated: { control: 'boolean' },
     rowInteractive: { control: 'boolean' },
@@ -174,6 +176,19 @@ export const PageStickyHeader: Story = {
     docs: {
       description: {
         story: 'An unbounded table pins its header to the page while its body remains horizontally scrollable.',
+      },
+    },
+  },
+};
+
+export const HeaderHidden: Story = {
+  args: { headerHidden: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`headerHidden` hides the header rows visually for a list that needs no visible column headers. ' +
+          'They stay in the accessibility tree, so screen readers still announce each column.',
       },
     },
   },

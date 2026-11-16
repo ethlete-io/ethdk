@@ -113,6 +113,7 @@ than resetting them.
 | `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                                                               |
 | `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`, `'cards'`. See [below](#appearance-density).                                 |
 | `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                                                                |
+| `headerHidden`        | `false`      | Hide the header rows visually; screen readers still announce the column headers. See [below](#hidden-header).                                        |
 | `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                                                         |
 | `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                                                        |
 | `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).                                      |
@@ -204,6 +205,16 @@ which you can also override directly for a bespoke value.
 The table is **its own scroll container**: give it a bounded height to scroll its
 body with the header pinned (see [Sticky header](#sticky-header)), rather than
 wrapping it in a scroller.
+
+### Hidden header
+
+A list that needs no visible column headers sets `headerHidden`. The header rows (and
+[grouped headers](#grouped-headers)) stay in the DOM and in the accessibility tree, so a
+screen reader still names each column; they only take no space on screen.
+
+```html
+<et-table [data]="rows()" [columns]="COLUMNS" headerHidden />
+```
 
 ## Columns
 

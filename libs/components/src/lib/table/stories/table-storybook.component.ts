@@ -161,6 +161,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
           [style.block-size.px]="constrainHeight() || virtualScroll() || paginated() ? 400 : null"
           [appearance]="appearance()"
           [density]="density()"
+          [headerHidden]="headerHidden()"
           [data]="displayRows()"
           [rowsSource]="serverPaged() ? serverRows : undefined"
           [columns]="columns()"
@@ -415,6 +416,7 @@ export class TableStorybookComponent {
   public virtualScroll = input(false);
   public dragScroll = input(false);
   public pageStickyHeader = input(false);
+  public headerHidden = input(false);
   public grouped = input(false);
   public stickyColumns = input(false);
   public runtimePinning = input(false);

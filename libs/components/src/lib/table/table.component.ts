@@ -312,6 +312,7 @@ let uniqueTableId = 0;
     '[class.et-table-host--scrolled-inline-start]': 'scrollFades().start',
     '[class.et-table-host--scrolled-inline-end]': 'scrollFades().end',
     '[class.et-table-host--header-adornments]': 'headerAdornments().length > 0',
+    '[class.et-table-host--header-hidden]': 'headerHidden()',
     '[style.--_et-table-viewport-inline-size.px]': 'viewportInlineSize()',
     '(scroll)': 'syncScrollState()',
   },
@@ -416,6 +417,12 @@ export class TableComponent<T> implements TableFeatureHost {
 
   /** Row density (cell padding): `'sm'` tight, `'md'` default, `'lg'` roomy. @default 'md' */
   public density = input<'sm' | 'md' | 'lg'>('md');
+
+  /**
+   * Hide the header rows visually. They stay in the DOM and in the accessibility tree, so screen
+   * readers still announce the column headers. @default false
+   */
+  public headerHidden = input(false, { transform: booleanAttribute });
 
   /**
    * The active sort, as an ordered list of `{ key, direction }`. Two-way bindable.
