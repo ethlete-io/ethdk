@@ -50,7 +50,7 @@
   }
   @if (count() > 1 && !resolved()) {
     <span
-      class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 font-ui-strong text-ui-xs leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg"
+      class="pointer-events-none absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 font-ui-strong text-ui-xs leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg"
       aria-hidden="true"
       >{{ count() }}</span
     >
