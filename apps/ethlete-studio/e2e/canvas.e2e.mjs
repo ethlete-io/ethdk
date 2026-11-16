@@ -4476,7 +4476,11 @@ const buildStudioAsync = (outputPath) =>
     const child = spawn(
       'npx',
       ['nx', 'build', 'ethlete-studio', `--outputPath=${outputPath}`, '--excludeTaskDependencies', '--skip-nx-cache'],
-      { cwd: root, stdio: ['ignore', 'inherit', 'inherit'], env: { ...process.env, NX_NO_CLOUD: 'true' } },
+      {
+        cwd: root,
+        stdio: ['ignore', 'inherit', 'inherit'],
+        env: { ...process.env, NX_NO_CLOUD: 'true', NG_BUILD_TYPE_CHECK: '0' },
+      },
     );
 
     child.on('error', () => done(1));
