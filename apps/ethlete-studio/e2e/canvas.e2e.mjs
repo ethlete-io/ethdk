@@ -4152,10 +4152,11 @@ const waitForFirstFrame = async (page, studioUrl, designPort, frame) => {
 
   try {
     await page.goto(studioUrl);
-    await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
-      CANVAS,
-      FRAME: frame,
-    });
+    await page.waitForFunction(
+      ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
+      { CANVAS, FRAME: frame },
+      { timeout: COLD_START_MS },
+    );
   } catch (error) {
     const short = (url) => url.slice(url.indexOf(port) + port.length - 1).slice(0, 90);
     const slow = [...requests.values()]
