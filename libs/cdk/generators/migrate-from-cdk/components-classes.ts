@@ -13,6 +13,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-alert-dialog',
   'et-alert-dialog-actions',
   'et-alert-dialog-message',
+  'et-alert-dialog-slot',
   'et-alert-dialog-title',
   'et-animation-enter-active',
   'et-animation-enter-done',
