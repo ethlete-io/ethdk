@@ -47,11 +47,11 @@
     "at": "2026-11-15T21:29:49.115Z"
   },
   "components/title-bar": {
-    "hash": "22d12cc759bebf88",
+    "hash": "a952f50572d66bbd",
     "variant": "a",
-    "decidedBy": "plan: finding 911 precedent: c8 decision 2026-11-16 (B523 (1)), shot shows bar and border unchanged, only the trigger moves 0.5 px to y 4",
-    "at": "2026-11-16T01:39:06.637Z",
-    "note": "merged without a pick: allowed by finding 911 precedent: c8 decision 2026-11-16 (B523 (1)), shot shows bar and border unchanged, only the trigger moves 0.5 px to y 4"
+    "decidedBy": "plan: finding 911 precedent: mock follows the SDK (B523 (2) picker-shadow); Cause: SDK tooltip arrowPadding 20 shifts a bottom-end pane 3 px right of a 55 px trigger; shot: only the pane moves 3 px",
+    "at": "2026-11-16T02:24:48.113Z",
+    "note": "merged without a pick: allowed by finding 911 precedent: mock follows the SDK (B523 (2) picker-shadow); Cause: SDK tooltip arrowPadding 20 shifts a bottom-end pane 3 px right of a 55 px trigger; shot: only the pane moves 3 px"
   },
   "components/tree-row": "72601799f8079cf2",
   "components/update-dialog": {
