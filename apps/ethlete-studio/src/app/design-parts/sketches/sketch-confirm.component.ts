@@ -3,13 +3,15 @@ import { BUTTON_IMPORTS, OverlayCloseDirective } from '@ethlete/components';
 import { injectSemanticColorTheme } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
+export type SketchConfirmText = { question: string; note: string; confirm: string };
+
 @Component({
-  selector: 'ethlete-sketch-discard-confirm',
+  selector: 'ethlete-sketch-confirm',
   template: `
     <div class="box-border flex w-80 flex-col gap-space-3 p-space-3 text-ui-sm">
       <div class="flex flex-col gap-space-1">
-        <span class="font-ui-strong wrap-anywhere text-et-surface">{{ LABELS.question(part()) }}</span>
-        <span class="text-et-surface-muted">{{ LABELS.note }}</span>
+        <span class="font-ui-strong wrap-anywhere text-et-surface">{{ text().question }}</span>
+        <span class="text-et-surface-muted">{{ text().note }}</span>
       </div>
       <div class="flex justify-end gap-space-2">
         <button
@@ -19,20 +21,20 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
           variant="outline"
           color="surface"
           size="xs"
-          data-sk-discard-cancel
+          data-sk-confirm-cancel
         >
           {{ LABELS.cancel }}
         </button>
         <button
-          [color]="errorTheme()"
+          [color]="destructive() ? errorTheme() : undefined"
           (click)="confirm.emit()"
           et-button
           type="button"
           variant="filled"
           size="xs"
-          data-sk-discard-confirm
+          data-sk-confirm
         >
-          {{ LABELS.confirm }}
+          {{ text().confirm }}
         </button>
       </div>
     </div>
@@ -40,11 +42,13 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, OverlayCloseDirective],
 })
-export class SketchDiscardConfirmComponent {
+export class SketchConfirmComponent {
   protected errorTheme = injectSemanticColorTheme('error');
 
-  public part = input.required<string>();
+  public text = input.required<SketchConfirmText>();
+
+  public destructive = input(false);
 
   public confirm = output();
-  protected readonly LABELS = STUDIO_LABELS.sketches.discardConfirm;
+  protected readonly LABELS = STUDIO_LABELS.sketches.confirm;
 }

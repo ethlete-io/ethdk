@@ -21,7 +21,6 @@ import {
   catchError,
   concatMap,
   distinctUntilChanged,
-  exhaustMap,
   filter,
   fromEvent,
   groupBy,
@@ -31,7 +30,6 @@ import {
   of,
   scan,
   share,
-  switchMap,
   tap,
 } from 'rxjs';
 import { FrameMessage, followedSizes, frameMessageOf } from '../components/design-canvas/canvas-frame';
@@ -48,11 +46,7 @@ import {
   mergeSketch$,
   rejectionOf,
   saveListWidth,
-  sketchPartOf,
-  sketchPreview$,
 } from '../../host/design';
-import { MergeComponent } from '../design-parts/merge/merge.component';
-import { MergeRow, MergeTarget, MergeUnchanged } from '../design-parts/merge/merge-sample';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import {
   SketchAgentRun,
@@ -70,7 +64,6 @@ import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-vi
 import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { modelNameOf, senderOf } from './inbox-comments';
-import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
 import { refusalMessageOf } from './inventory';
 import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
 import { FramePaintedDirective } from '../components/design-canvas/partials/frame-painted';
@@ -85,7 +78,6 @@ import {
 } from './sketch-frame-retries';
 import {
   CURRENT,
-  mergePreviewOf,
   partKeyOf,
   pickedVariantOf,
   sketchHeadTitleOf,
@@ -108,8 +100,6 @@ type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 type FrameSize = { width?: number; height?: number };
 
 const MEASURING_HEIGHT = 150;
-
-type Mode = 'sketches' | 'merge';
 
 const minutesSince = (at: number) => Math.max(0, Math.round((Date.now() - at) / 60_000));
 
@@ -158,82 +148,49 @@ export const liveShotsOf = ({
 @Component({
   selector: 'ethlete-sketch-view',
   template: `
-    @if (mode() === 'merge' && mergeVariant()) {
-      <ethlete-merge
-        [target]="mergeTarget()"
-        [changed]="changed()"
-        [selected]="selected()"
-        [unchangedStates]="unchangedStates()"
-        [error]="mergeError()"
-        [merging]="busy() === 'merge'"
-        [shotTemplate]="mergeShot"
-        [shell]="shell()"
-        (pick)="pickRow($event)"
-        (back)="showSketches()"
-        (merge)="merge(mergeVariant()!)"
-        (shellAction)="shellAction.emit($event)"
-        class="h-full!"
-      />
-    } @else {
-      <ethlete-sketches
-        [(sameOpen)]="sameOpen"
-        [(statesOpen)]="statesOpen"
-        [(withdrawn)]="withdrawn"
-        [(wholeScreens)]="wholeScreens"
-        [part]="sketch().target"
-        [heading]="heading()"
-        [rows]="rows()"
-        [fresh]="!part()"
-        [status]="sketchStatus()"
-        [lastChange]="lastChange()"
-        [readyReason]="readyReason()"
-        [hold]="held()"
-        [agent]="agentRun()"
-        [port]="mergePort()"
-        [drawn]="drawnVariant()"
-        [rounds]="rounds()"
-        [round]="shownRoundKey()"
-        [question]="roundQuestion()"
-        [pins]="variantPins()"
-        [selected]="picked() ?? undefined"
-        [openPoints]="openPointGroups()"
-        [errored]="erroredVariants()"
-        [mergeHold]="sketch().mergeHold ?? null"
-        [error]="mergeError()"
-        [listError]="listError()"
-        [shot]="shot"
-        [tree]="shell().tree"
-        [shell]="shell()"
-        [restoredCamera]="openedCamera()"
-        (retry)="retry.emit()"
-        (cameraChange)="cameraChange.emit($event)"
-        (listWidthChange)="saveListWidth($event)"
-        (discard)="discard()"
-        (merge)="openMerge($event)"
-        (roundChange)="pickRound($event)"
-        (pinToggle)="shellAction.emit({ kind: 'section', section: 'Inbox' })"
-        (expandedChange)="expandedChange.emit($event)"
-        (pick)="shellAction.emit({ kind: 'pick', key: $event })"
-        (openPoint)="openPoint.emit($event)"
-        (shellAction)="shellAction.emit($event)"
-        class="h-full!"
-      />
-    }
-
-    <ng-template #mergeShot let-row let-src="src">
-      @if (shotSources().get(src); as safe) {
-        <div class="relative w-fit">
-          <iframe
-            [src]="safe"
-            [title]="row.part + ' ' + row.state"
-            [style.width.px]="row.width"
-            [style.height.px]="row.height"
-            class="block border-0 scheme-normal"
-          ></iframe>
-          <ethlete-frame-shield class="pointer-events-auto" />
-        </div>
-      }
-    </ng-template>
+    <ethlete-sketches
+      [(sameOpen)]="sameOpen"
+      [(statesOpen)]="statesOpen"
+      [(withdrawn)]="withdrawn"
+      [(wholeScreens)]="wholeScreens"
+      [part]="sketch().target"
+      [heading]="heading()"
+      [rows]="rows()"
+      [fresh]="!part()"
+      [status]="sketchStatus()"
+      [lastChange]="lastChange()"
+      [readyReason]="readyReason()"
+      [hold]="held()"
+      [agent]="agentRun()"
+      [port]="mergePort()"
+      [drawn]="drawnVariant()"
+      [rounds]="rounds()"
+      [round]="shownRoundKey()"
+      [question]="roundQuestion()"
+      [pins]="variantPins()"
+      [selected]="picked() ?? undefined"
+      [openPoints]="openPointGroups()"
+      [errored]="erroredVariants()"
+      [mergeHold]="sketch().mergeHold ?? null"
+      [error]="mergeError()"
+      [listError]="listError()"
+      [shot]="shot"
+      [tree]="shell().tree"
+      [shell]="shell()"
+      [restoredCamera]="openedCamera()"
+      (retry)="retry.emit()"
+      (cameraChange)="cameraChange.emit($event)"
+      (listWidthChange)="saveListWidth($event)"
+      (discard)="discard()"
+      (merge)="merge($event)"
+      (roundChange)="pickRound($event)"
+      (pinToggle)="shellAction.emit({ kind: 'section', section: 'Inbox' })"
+      (expandedChange)="expandedChange.emit($event)"
+      (pick)="shellAction.emit({ kind: 'pick', key: $event })"
+      (openPoint)="openPoint.emit($event)"
+      (shellAction)="shellAction.emit($event)"
+      class="h-full!"
+    />
 
     <ng-template #shot let-row let-state="state">
       @let key = row.key + ' ' + state;
@@ -283,7 +240,7 @@ export const liveShotsOf = ({
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SketchesComponent, MergeComponent, FrameShieldComponent, ShotRankDirective, FramePaintedDirective],
+  imports: [SketchesComponent, FrameShieldComponent, ShotRankDirective, FramePaintedDirective],
   host: { class: 'block size-full' },
 })
 export class SketchViewComponent {
@@ -342,7 +299,7 @@ export class SketchViewComponent {
 
   private safeUrls = new Map<string, SafeResourceUrl>();
 
-  protected busy = signal<Busy | null>(null);
+  public busy = signal<Busy | null>(null);
 
   protected picked = computed(() => pickedVariantOf(this.sketch()));
 
@@ -380,130 +337,10 @@ export class SketchViewComponent {
       })),
   );
 
-  protected mode = linkedSignal<Mode>(() => (this.remembered().merge ? 'merge' : 'sketches'));
-
-  protected mergeVariant = linkedSignal<string | null>(() => this.picked());
-
   protected mergeError = linkedSignal<string | null, string | null>({
-    source: this.mergeVariant,
+    source: this.picked,
     computation: () => null,
   });
-
-  private previewReading = toSignal(
-    toObservable(
-      computed(() => ({ address: this.address(), variant: this.mergeVariant(), revision: this.revision() })),
-    ).pipe(
-      switchMap(({ address, variant }) =>
-        // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing preview reading renders as the existing empty preview
-        variant ? sketchPreview$({ ...address, variant }).pipe(catchError(() => of(null))) : of(null),
-      ),
-    ),
-    { initialValue: null },
-  );
-
-  private drawsAnyPart = computed(() => {
-    const preview = this.previewReading();
-
-    return (preview?.changed.length ?? 0) + (preview?.affected.length ?? 0) > 0;
-  });
-
-  private revision$ = toObservable(this.revision);
-
-  private compareReading = toSignal(
-    toObservable(
-      computed(
-        () => ({
-          address: this.address(),
-          variant: this.mergeVariant(),
-          on: this.mode() === 'merge' && this.drawsAnyPart(),
-          surface: this.surface(),
-          color: this.color(),
-        }),
-        { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
-      ),
-    ).pipe(
-      switchMap(({ address, variant, on, surface, color }) =>
-        variant && on
-          ? // A compare draws parts, and a changed picture it keeps announces a redraw that bumps `revision`; a revision
-            // that came while it ran must not cancel or re-ask it, or it never finishes.
-            this.revision$.pipe(
-              exhaustMap(() =>
-                // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing comparison renders as the existing empty comparison
-                sketchCompare$({ ...address, variant, surface, color }).pipe(catchError(() => of(null))),
-              ),
-            )
-          : of(null),
-      ),
-    ),
-    { initialValue: null },
-  );
-
-  protected mergeTarget = computed<MergeTarget>(() => {
-    const part = sketchPartOf(this.sketch());
-    const variant = this.mergeVariant() ?? '';
-
-    return { part, name: partNameOf(part), variant, note: this.sketch().variantInfo?.[variant]?.note ?? '' };
-  });
-
-  protected changed = computed<MergeRow[]>(() => {
-    const rows = this.compareReading()?.changed ?? [];
-    const variant = this.mergeVariant();
-
-    if (!variant || rows.length === 0) return [];
-
-    const frames = mergePreviewOf({
-      port: this.port(),
-      product: this.product(),
-      sketch: this.sketch(),
-      variant,
-      affected: [...new Set(rows.map((row) => row.part))],
-      rows,
-      epoch: this.epoch(),
-      revision: this.revision(),
-      surface: this.surface(),
-      color: this.color(),
-    }).frames;
-    const frameOf = (place: { column: MergeColumn; part: string; state: string }) =>
-      frames.find((frame) => frame.id === mergeFrameIdOf(place));
-
-    return rows.map(({ part, state, outlines, missing }) => {
-      const now = frameOf({ column: 'now', part, state });
-      const after = frameOf({ column: 'merged', part, state });
-      const size = now ?? after;
-
-      return {
-        part,
-        state,
-        instances: outlines.merged.length || outlines.now.length || 1,
-        width: size?.width ?? FALLBACK_SIZE.width,
-        height: size?.height ?? FALLBACK_SIZE.height,
-        now: now?.src ?? '',
-        after: after?.src ?? '',
-        missing: missing === 'merged' ? 'after' : missing,
-        crop: { now: outlines.now[0] ?? null, after: outlines.merged[0] ?? null },
-      };
-    });
-  });
-
-  protected unchangedStates = computed<MergeUnchanged>(() => {
-    const byPart = new Map<string, string[]>();
-
-    for (const { part, state } of this.compareReading()?.unchanged ?? [])
-      byPart.set(part, [...(byPart.get(part) ?? []), state]);
-
-    return [...byPart].map(([part, states]) => ({ part, states }));
-  });
-
-  protected selected = linkedSignal({ source: this.changed, computation: () => 0 });
-
-  protected shotSources = computed(
-    () =>
-      new Map(
-        this.changed().flatMap((row) =>
-          [row.now, row.after].filter(Boolean).map((src) => [src, this.safeUrlOf(src)] as const),
-        ),
-      ),
-  );
 
   protected shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
 
@@ -900,22 +737,6 @@ export class SketchViewComponent {
     this.remember({ rounds, roundsFor: this.sketch().createdAt });
   }
 
-  protected openMerge(variant: string) {
-    this.mergeVariant.set(variant);
-    this.showMode('merge');
-  }
-
-  protected showSketches() {
-    this.mergeVariant.set(this.picked());
-    this.showMode('sketches');
-  }
-
-  protected pickRow(key: string) {
-    const index = this.changed().findIndex((row) => `${row.part} ${row.state}` === key);
-
-    if (index >= 0) this.selected.set(index);
-  }
-
   protected merge(variant: string) {
     const address = this.address();
 
@@ -1004,11 +825,6 @@ export class SketchViewComponent {
       .find((candidate) => source !== null && candidate.contentWindow === source);
 
     return frame ? `${frame.dataset['variant']} ${frame.dataset['state']}` : null;
-  }
-
-  private showMode(mode: Mode) {
-    this.mode.set(mode);
-    this.remember({ merge: mode === 'merge' });
   }
 
   private remember(pick: SketchViewPick) {

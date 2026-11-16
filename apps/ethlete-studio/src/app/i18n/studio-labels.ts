@@ -101,9 +101,15 @@ export const STUDIO_LABELS = {
       label: 'Skizze verwerfen',
       question: (part: string) => `Skizze ${part} verwerfen?`,
       note: 'Alle Varianten der Skizze gehen verloren.',
-      cancel: 'Abbrechen',
       confirm: 'Verwerfen',
     },
+    mergeConfirm: {
+      label: 'Variante übernehmen',
+      question: (variant: string, part: string) => `${variant} in ${part} übernehmen?`,
+      note: 'Die übrigen Varianten der Skizze gehen verloren.',
+      confirm: 'Übernehmen',
+    },
+    confirm: { cancel: 'Abbrechen' },
     merge: 'Übernehmen',
     mergeHold: ({ reason, dirty }: { reason: string; dirty?: string[] }) =>
       dirty?.length
@@ -354,18 +360,6 @@ export const STUDIO_LABELS = {
     command: 'et design product new shop',
   },
   merge: {
-    back: 'Zurück zum Sketch',
-    picked: 'Gewählt',
-    changed: 'Geändert',
-    merge: 'Merge',
-    usedIn: (name: string) => `Wo ${name} vorkommt`,
-    now: 'Jetzt',
-    after: 'Nach dem Merge von',
-    addedIn: (variant: string) => `Neu in ${variant}`,
-    instances: (count: number) => (count === 1 ? '1 Instanz' : `${count} Instanzen`),
-    instance: (count: number, percent: number) => `Instanz 1 von ${count} · ${percent} %`,
-    unchanged: (count: number, part: string) =>
-      `${count === 1 ? '1 Zustand' : `${count} Zustände`} von ${part} ohne sichtbare Änderung`,
     needsRebase: (parts: readonly string[]) =>
       parts.length === 0
         ? 'Der Sketch hat keine Baseline. Lass deinen Agent den Sketch rebasen.'

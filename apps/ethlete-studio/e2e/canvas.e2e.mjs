@@ -846,14 +846,14 @@ const openDiscardConfirm = async (page) => {
 const discardAsksFirst = async (page) => {
   const dismissals = [
     ['Escape', () => page.keyboard.press('Escape')],
-    ['Abbrechen', () => page.locator('[role="alertdialog"] [data-sk-discard-cancel]').click()],
+    ['Abbrechen', () => page.locator('[role="alertdialog"] [data-sk-confirm-cancel]').click()],
   ];
 
   for (const [how, dismiss] of dismissals) {
     if (!(await openDiscardConfirm(page))) return { ok: false, detail: 'Verwerfen discarded without a confirm' };
 
     const focused = await page
-      .waitForFunction(() => document.activeElement?.hasAttribute('data-sk-discard-cancel'), null, { timeout: 3000 })
+      .waitForFunction(() => document.activeElement?.hasAttribute('data-sk-confirm-cancel'), null, { timeout: 3000 })
       .then(
         () => true,
         () => false,
@@ -893,7 +893,7 @@ const namedWait = async (page, label, predicate, arg) => {
     const shown = await page
       .evaluate(() => ({
         sketchView: !!document.querySelector('ethlete-sketch-view'),
-        merge: !!document.querySelector('ethlete-merge'),
+        confirm: !!document.querySelector('[role="alertdialog"]'),
         alerts: [...document.querySelectorAll('ethlete-sketch-view [role="alert"]')].map((alert) =>
           alert.textContent.trim(),
         ),
@@ -997,32 +997,7 @@ const withEditSketch = async (page, designPort, run) => {
   const pick = async (variant) => {
     await listingAnswered(page);
     await page.locator(`[data-sk-row="${variant}"] [data-sk-merge]`).first().click();
-
-    const rows = { changed: 0, outlined: 0 };
-
-    if (variant === 'old') {
-      await namedWait(
-        page,
-        `pick ${variant}: merge rows`,
-        () => document.querySelector('ethlete-merge li[tabindex="0"]'),
-        null,
-      );
-      Object.assign(
-        rows,
-        await page.evaluate(() => {
-          const texts = [...document.querySelectorAll('ethlete-merge li[tabindex="0"]')].map((row) =>
-            [...row.querySelectorAll('*')]
-              .filter((node) => node.children.length === 0)
-              .map((node) => node.textContent.trim())
-              .join(' '),
-          );
-
-          return { changed: texts.length, outlined: texts.filter((text) => /\b[1-9]\d* Instanz/.test(text)).length };
-        }),
-      );
-    }
-
-    await page.locator('ethlete-merge button[variant="filled"]').first().click();
+    await page.locator('[role="alertdialog"] [data-sk-confirm]').click({ timeout: EDIT_WAIT_MS });
     await namedWait(
       page,
       `pick ${variant}: sketch view closed`,
@@ -1045,7 +1020,7 @@ const withEditSketch = async (page, designPort, run) => {
       () => JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry,
     );
 
-    return { ...rows, opened: entry };
+    return { opened: entry };
   };
 
   try {
@@ -1090,8 +1065,8 @@ const CASES = [
           !existsSync(sketchDir);
 
         return {
-          ok: restored && oldPick.changed > 0 && oldPick.outlined > 0 && oldPick.opened === EDIT_PART,
-          detail: `${shownDetail}, old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, Geändert rows of old: ${oldPick.changed} (${oldPick.outlined} with an outline), part opened after the merge: ${oldPick.opened}`,
+          ok: restored && oldPick.opened === EDIT_PART,
+          detail: `${shownDetail}, old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, part opened after the merge: ${oldPick.opened}`,
         };
       }),
   },
@@ -1150,7 +1125,7 @@ const CASES = [
 
       return goneSketchLeavesToThePart(page, context, target, async () => {
         await openDiscardConfirm(page);
-        await page.locator('[role="alertdialog"] [data-sk-discard-confirm]').click();
+        await page.locator('[role="alertdialog"] [data-sk-confirm]').click();
 
         return { ok: true };
       });

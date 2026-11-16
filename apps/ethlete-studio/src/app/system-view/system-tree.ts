@@ -19,7 +19,6 @@ import {
 import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
 import { isAnswered, isQuestion } from './comment-pins';
-import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export type SystemGroupKey =
@@ -1293,103 +1292,6 @@ export const sketchMatrixOf = ({
     interaction,
     rowHeads: rowHeads.map(inBand),
     sections: [...(sections.length > 0 ? sections : [SKETCH_SECTION]), IN_CONTEXT],
-  };
-};
-
-export type MergePreviewSource = Omit<FramesSource, 'part'> & {
-  sketch: ListedSketch;
-  variant: string;
-  /** The parts that show the target, each as `<layer>/<name>`. */
-  affected: string[];
-  /** The preset or width the matrix shows; a part that offers it takes it, any other its first size. */
-  size?: string | null;
-  /** The compared states to show; without them, every state of every affected part. */
-  rows?: CompareRow[] | null;
-};
-
-/**
- * Each affected part in every state twice: as the product has it now, and as it looks once the
- * variant is merged. A page takes a preset, a part with `widths` a width, any other part fits its content.
- */
-export const mergePreviewOf = ({
-  port,
-  product,
-  sketch,
-  variant,
-  affected,
-  size = null,
-  rows = null,
-  epoch,
-  revision,
-  surface,
-  color,
-}: MergePreviewSource): SketchMatrix => {
-  const columns: MatrixColumn[] = [
-    { key: 'now', label: STUDIO_LABELS.systemTree.now, drawing: false },
-    { key: 'merged', label: STUDIO_LABELS.systemTree.afterMerging(variant), drawing: false },
-  ];
-  const frames = affected.flatMap((key) => {
-    const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
-
-    if (!part) return [];
-
-    const offered = part.layer === 'pages' ? Object.keys(product.presets) : (part.widths ?? []).map(String);
-    const cell = cellSizeOf(product, size !== null && offered.includes(size) ? size : (offered[0] ?? null));
-    const error = loadErrorOf(part.problems);
-    const states = part.states.length > 0 ? part.states : [''];
-    const rowOf = (state: string) => rows?.find((row) => row.part === key && (row.state === state || row.state === ''));
-    const added = (rows ?? []).filter((row) => row.part === key && !states.includes(row.state));
-    const shown =
-      rows === null
-        ? states
-        : [...states.filter((state) => rowOf(state) !== undefined), ...added.map((row) => row.state)];
-
-    return shown.flatMap((state) =>
-      MERGE_COLUMNS.filter((column) => rowOf(state)?.missing !== column).map((column): CanvasFrame => {
-        const rowError = rowOf(state)?.error;
-        const address: PartAddress = {
-          port,
-          product: product.name,
-          part: key,
-          state,
-          epoch,
-          revision,
-          surface,
-          color,
-          ...(column === 'merged' ? { sketch: sketch.target, variant } : {}),
-          ...(cell.width === undefined ? { fit: true } : {}),
-        };
-
-        return {
-          id: mergeFrameIdOf({ column, part: key, state }),
-          src: partFrameUrl(address),
-          ...(cell.width ? { width: cell.width } : {}),
-          ...(cell.height ? { height: cell.height } : {}),
-          label: cell.label,
-          row: state ? `${key} · ${state}` : key,
-          column,
-          screenshot: partShotUrl({
-            ...address,
-            preset: cell.preset,
-            width: cell.preset ? undefined : cell.width,
-            revision,
-          }),
-          schemes: schemesOf(product),
-          error: rowError ?? (column === 'now' ? error : undefined),
-        };
-      }),
-    );
-  });
-
-  return {
-    columns,
-    frames,
-    sizes: [],
-    size: null,
-    interactions: [REST],
-    interaction: REST,
-    rowHeads: [],
-    sections: [],
   };
 };
 

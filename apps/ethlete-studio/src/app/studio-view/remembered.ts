@@ -40,7 +40,6 @@ export type ViewState = {
 export type SketchViewPick = {
   size?: string;
   interaction?: string;
-  merge?: boolean;
   rounds?: Record<string, boolean>;
   roundsFor?: string;
   states?: Record<string, boolean>;
@@ -74,13 +73,12 @@ const sketchViewMap = (value: unknown): Record<string, SketchViewPick> | undefin
     Object.entries(value as Record<string, unknown>).flatMap(([key, pick]) => {
       if (!pick || typeof pick !== 'object') return [];
 
-      const { size, interaction, merge, rounds, roundsFor, states } = pick as SketchViewPick;
+      const { size, interaction, rounds, roundsFor, states } = pick as SketchViewPick;
       const openRounds = openFlags(rounds);
       const openStates = openFlags(states);
       const valid: SketchViewPick = {
         ...(typeof size === 'string' && { size }),
         ...(typeof interaction === 'string' && { interaction }),
-        ...(typeof merge === 'boolean' && { merge }),
         ...(openRounds &&
           Object.keys(openRounds).length > 0 &&
           typeof roundsFor === 'string' && { rounds: openRounds, roundsFor }),

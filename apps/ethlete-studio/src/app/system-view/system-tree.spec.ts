@@ -16,7 +16,6 @@ import {
   pickedVariantOf,
   pickedPartKeyOf,
   sketchLabelOf,
-  mergePreviewOf,
   multiPartTargetsOf,
   PENDING_LABEL,
   sketchHeadTitleOf,
@@ -27,7 +26,6 @@ import {
   TreeEntry,
   treeOf,
 } from './system-tree';
-import { CompareRow, mergeOutlinesOf } from './merge-preview';
 import { FrameRevisions, NO_FRAME_REVISIONS, frameRevisionsWith, revisionOf } from '../studio-view/frame-revisions';
 
 const SESSION = `&session=${SHOT_SESSION}`;
@@ -479,17 +477,6 @@ describe('framesOf', () => {
     expect(schemesOfFrames(framesOf({ port: 4402, product: dark, part: home }))).toEqual([['dark'], ['dark']]);
     expect(schemesOfFrames(framesOf({ port: 4402, product: dark, part: card }))).toEqual([['dark'], ['dark']]);
     expect(schemesOfFrames(framesOf({ port: 4402, product: dark, part: part() }))).toEqual([['dark']]);
-    expect(
-      schemesOfFrames(
-        mergePreviewOf({
-          port: 4402,
-          product: { ...dark, parts: [home] },
-          sketch: sketch(),
-          variant: 'b',
-          affected: ['pages/home'],
-        }).frames,
-      ),
-    ).toEqual([['dark'], ['dark']]);
   });
 
   it('draws a small part in one frame: a grid with a row per state and a column per interaction', () => {
@@ -1478,75 +1465,6 @@ describe('sketchMatrixOf', () => {
       ['a', 'empty', undefined],
       ['b', 'empty', 'boom'],
     ]);
-  });
-});
-
-describe('mergePreviewOf', () => {
-  it('draws each affected part now and after the merge, at a size it offers', () => {
-    const header = part({ layer: 'elements', name: 'header', states: ['default'] });
-    const home = part({ layer: 'pages', name: 'home', states: [] });
-    const preview = mergePreviewOf({
-      port: 4400,
-      product: product([part(), header, home]),
-      sketch: sketch(),
-      variant: 'b',
-      affected: ['elements/header', 'pages/home', 'pages/gone'],
-      size: 'desktop',
-    });
-
-    expect(preview.columns.map((column) => column.key)).toEqual(['now', 'merged']);
-    expect(preview.frames.map((frame) => [frame.column, frame.row, frame.width])).toEqual([
-      ['now', 'elements/header · default', undefined],
-      ['merged', 'elements/header · default', undefined],
-      ['now', 'pages/home', 1280],
-      ['merged', 'pages/home', 1280],
-    ]);
-    expect(preview.frames[0]?.src).not.toContain('variant=');
-    expect(preview.frames[1]?.src).toContain(
-      '&part=elements%2Fheader&state=default&sketch=components%2Fbutton&variant=b',
-    );
-    expect(preview.frames.map((frame) => frame.schemes)).toEqual(Array(4).fill(['light', 'dark']));
-  });
-});
-
-describe('mergePreviewOf with compared rows', () => {
-  const library = part({ layer: 'pages', name: 'library', states: ['one', 'empty', 'many'] });
-  const row = (state: string, extra: Partial<CompareRow> = {}): CompareRow => ({
-    part: 'pages/library',
-    state,
-    preset: 'desktop',
-    outlines: { now: [], merged: [] },
-    ...extra,
-  });
-  const previewOf = (rows: CompareRow[]) =>
-    mergePreviewOf({
-      port: 4400,
-      product: product([part(), library]),
-      sketch: sketch(),
-      variant: 'b',
-      affected: ['pages/library'],
-      rows,
-    });
-
-  it('draws only the compared states, and a row error on both sides', () => {
-    const preview = previewOf([row('empty'), row('many', { error: 'the variant threw' })]);
-
-    expect(preview.frames.map((frame) => [frame.id, frame.error])).toEqual([
-      ['now pages/library empty', undefined],
-      ['merged pages/library empty', undefined],
-      ['now pages/library many', 'the variant threw'],
-      ['merged pages/library many', 'the variant threw'],
-    ]);
-  });
-
-  it('puts each outline on the frame of its side', () => {
-    const rect = { x: 10, y: 20, width: 30, height: 40 };
-    const rows = [row('empty', { outlines: { now: [], merged: [rect] } })];
-    const ids = new Set(previewOf(rows).frames.map((frame) => frame.id));
-    const outlines = mergeOutlinesOf(rows);
-
-    expect(outlines).toEqual([{ frameId: 'merged pages/library empty', ...rect }]);
-    expect(outlines.every((outline) => ids.has(outline.frameId))).toBe(true);
   });
 });
 

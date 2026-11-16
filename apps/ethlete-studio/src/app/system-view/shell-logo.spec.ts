@@ -6,7 +6,6 @@ import { THEMES } from '../../themes';
 import { FlowsPageComponent } from '../design-parts/flows-page/flows-page.component';
 import { InboxComponent } from '../design-parts/inbox/inbox.component';
 import { InventoryPageComponent } from '../design-parts/inventory-page/inventory-page.component';
-import { MergeComponent } from '../design-parts/merge/merge.component';
 import { ShellAction } from '../design-parts/shell-main/shell-page.component';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
@@ -155,7 +154,6 @@ describe('the rail logo on every live page', () => {
     ['system', SystemPageComponent],
     ['flows', FlowsPageComponent],
     ['sketches', SketchesComponent],
-    ['merge', MergeComponent],
     ['inventory', InventoryPageComponent],
     ['inbox', InboxComponent],
   ];

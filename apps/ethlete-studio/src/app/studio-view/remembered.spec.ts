@@ -132,14 +132,14 @@ describe('remembered view', () => {
     });
   });
 
-  it('keeps the size, interaction and mode per sketch view', () => {
+  it('keeps the size and interaction per sketch view', () => {
     rememberSketchView('web sketch:elements/rating', { size: '520' });
-    rememberSketchView('web sketch:elements/rating', { interaction: 'hover', merge: true });
-    rememberSketchView('web sketch:components/card', { merge: false });
+    rememberSketchView('web sketch:elements/rating', { interaction: 'hover' });
+    rememberSketchView('web sketch:components/card', { size: '320' });
 
     expect(rememberedView().sketchViews).toEqual({
-      'web sketch:elements/rating': { size: '520', interaction: 'hover', merge: true },
-      'web sketch:components/card': { merge: false },
+      'web sketch:elements/rating': { size: '520', interaction: 'hover' },
+      'web sketch:components/card': { size: '320' },
     });
   });
 

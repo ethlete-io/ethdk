@@ -59,7 +59,7 @@ import { FrameZoom, frameZoomCamera } from '../../components/design-canvas/frame
 import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { SketchDiscardConfirmComponent } from './sketch-discard-confirm.component';
+import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
@@ -668,19 +668,25 @@ export class SketchesComponent {
   }
 
   protected confirmDiscard(event: MouseEvent) {
-    const ref = this.overlay.open(SketchDiscardConfirmComponent, {
-      origin: event,
-      role: 'alertdialog',
-      ariaLabel: this.LABELS.discardConfirm.label,
-      autoFocus: '[data-sk-discard-cancel]',
-      strategies: anchoredDialogOverlayStrategy(),
-      bindings: [
-        inputBinding('part', this.part),
-        outputBinding('confirm', () => {
-          ref.close();
-          this.discard.emit();
-        }),
-      ],
+    const { label, question, note, confirm } = this.LABELS.discardConfirm;
+
+    this.openConfirm({
+      event,
+      label,
+      text: { question: question(this.part()), note, confirm },
+      destructive: true,
+      confirmed: () => this.discard.emit(),
+    });
+  }
+
+  protected confirmMerge(event: MouseEvent, row: SketchRow) {
+    const { label, question, note, confirm } = this.LABELS.mergeConfirm;
+
+    this.openConfirm({
+      event,
+      label,
+      text: { question: question(row.label ?? this.LABELS.variant(row.key), this.part()), note, confirm },
+      confirmed: () => this.merge.emit(row.key),
     });
   }
 
@@ -707,6 +713,36 @@ export class SketchesComponent {
 
   protected zoomOut() {
     this.zoomTo(this.shownZoom() / ZOOM_STEP);
+  }
+
+  private openConfirm({
+    event,
+    label,
+    text,
+    destructive = false,
+    confirmed,
+  }: {
+    event: MouseEvent;
+    label: string;
+    text: SketchConfirmText;
+    destructive?: boolean;
+    confirmed: () => void;
+  }) {
+    const ref = this.overlay.open(SketchConfirmComponent, {
+      origin: event,
+      role: 'alertdialog',
+      ariaLabel: label,
+      autoFocus: '[data-sk-confirm-cancel]',
+      strategies: anchoredDialogOverlayStrategy(),
+      bindings: [
+        inputBinding('text', () => text),
+        inputBinding('destructive', () => destructive),
+        outputBinding('confirm', () => {
+          ref.close();
+          confirmed();
+        }),
+      ],
+    });
   }
 
   private fitScaleOf(dom: FitDom) {

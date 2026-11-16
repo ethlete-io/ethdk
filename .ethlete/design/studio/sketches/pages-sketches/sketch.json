@@ -1,6 +1,6 @@
 {
   "target": "pages/sketches",
-  "status": "ready",
+  "status": "in progress",
   "createdAt": "2026-11-16T14:31:36.699Z",
   "createdBy": {
     "cmd": "design sketch new pages/sketches --variants a,b,c --by claude-opus-5-5 --product studio --round Wo stehen Liste und Kommentar-Taste --note B539, ADR 0322: ein Kommentarmodus in der Systemansicht und auf jeder Sketch-Variante; jede Ansicht listet ihre offenen Kommentare neben der Fläche. Die Varianten beantworten, wo Liste und Kommentar-Taste stehen; pages/system und pages/sketches tragen dieselben Buchstaben, wähle in beiden denselben.",
@@ -97,13 +97,12 @@
     "pages/flows": "df04c02df74ca95e",
     "pages/inbox": "0e0fc08e618a94a0",
     "pages/inventory": "a7e25b0248e81b20",
-    "pages/merge": "0e69471347b333f1",
-    "pages/sketches": "b2af743e02a56009",
+    "pages/sketches": "0d173bedd5bfb577",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "3856b5bb0e03bbef",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "5bd12228dfbb8ef185122eda110919818456150b",
+  "baselineTree": "40c2c5dc03549711f73f270637a05d2403799137",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
     "pages/sketches/shared/multi-part.ts": "baa5ef7f1cd1fb1c",
@@ -135,14 +134,5 @@
       "round": "r1",
       "note": "Kommentar-Taste unten rechts neben der Zoom-Pille, die Liste schwebt als Karte darüber. Die Fläche bleibt ganz frei, aber die Karte deckt Rahmen zu und muss umgeschaltet werden."
     }
-  },
-  "readyContent": {
-    "a": "0b6112ffa1de3e44",
-    "b": "9497aba733189aa9",
-    "c": "b5ce77e825f37a92"
-  },
-  "mergeHold": {
-    "reason": "variant a changes comments, comments-mode, comments-draft; variant b changes comments, comments-mode, comments-draft; variant c changes comments, comments-mode, comments-draft",
-    "at": "2026-11-16T15:31:31.431Z"
   }
 }

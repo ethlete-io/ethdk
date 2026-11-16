@@ -144,11 +144,19 @@ const noComments = (url: string) =>
 const buttonNamed = (root: HTMLElement, name: string) =>
   [...root.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === name);
 
-const discardConfirmed = async (root: HTMLElement, fixture: ComponentFixture<unknown>) => {
-  buttonNamed(root, 'Verwerfen')?.click();
+const confirmed = async (button: HTMLButtonElement | undefined, fixture: ComponentFixture<unknown>) => {
+  button?.click();
   await fixture.whenStable();
-  [...document.querySelectorAll<HTMLElement>('[data-sk-discard-confirm]')].at(-1)?.click();
+  [...document.querySelectorAll<HTMLElement>('[data-sk-confirm]')].at(-1)?.click();
 };
+
+const discardConfirmed = (root: HTMLElement, fixture: ComponentFixture<unknown>) =>
+  confirmed(buttonNamed(root, 'Verwerfen'), fixture);
+
+const mergeButtons = (root: HTMLElement) =>
+  [...root.querySelectorAll<HTMLButtonElement>('button')].filter(
+    (button) => button.textContent?.trim() === STUDIO_LABELS.sketches.merge,
+  );
 
 const LIST_WIDTH = 10000;
 
@@ -436,15 +444,9 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-row="b"]')).not.toBeNull();
   });
 
-  it('opens the merge page from Übernehmen without picking the variant with the changed rows, now and after', async () => {
+  it('asks to confirm Übernehmen and merges the variant only once confirmed', async () => {
     const bodies: Record<string, unknown> = {};
-    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
-    const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
     const { fixture, root } = await render(SKETCH, (url, init) => {
-      if (url.includes('/__design/sketch-preview')) return json({ changed: [], affected: ['pages/home'] });
-      if (url.includes('/__design/sketch-compare'))
-        return json({ target: SKETCH.target, variant: 'a', changed: [changed], unchanged: [] });
-
       const path = ['sketch-decision', 'sketch-merge'].find((entry) => url.includes(`/__design/${entry}`));
 
       if (!path) return noComments(url);
@@ -455,191 +457,35 @@ describe('SketchViewComponent', () => {
     });
     const completed: string[] = [];
 
-    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
     fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
+
+    expect(mergeButtons(root)).toHaveLength(2);
+
+    mergeButtons(root)[1]?.click();
     await settle(fixture);
 
-    const picks = [...root.querySelectorAll<HTMLButtonElement>('button')].filter(
-      (button) => button.textContent?.trim() === STUDIO_LABELS.sketches.merge,
+    const dialog = [...document.querySelectorAll('[role="alertdialog"]')].at(-1);
+
+    expect(dialog?.textContent).toContain(
+      STUDIO_LABELS.sketches.mergeConfirm.question('Variante b', 'components/card'),
     );
+    expect(root.querySelector('ethlete-sketches')).not.toBeNull();
 
-    expect(picks).toHaveLength(2);
-
-    picks[0]?.click();
+    dialog?.querySelector<HTMLElement>('[data-sk-confirm-cancel]')?.click();
     await settle(fixture);
 
     expect(bodies).toEqual({});
-    expect(root.querySelector('ethlete-sketches')).toBeNull();
-    expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
 
-    const frames = [...root.querySelectorAll('ethlete-merge iframe')].map(
-      (frame) => new URL(frame.getAttribute('src') ?? ''),
-    );
-
-    expect(frames.map((frame) => frame.searchParams.get('part'))).toEqual(['pages/home', 'pages/home']);
-    expect(frames.map((frame) => frame.searchParams.get('variant'))).toEqual([null, 'a']);
-    expect(root.querySelectorAll('ethlete-merge iframe + ethlete-frame-shield.pointer-events-auto').length).toBe(2);
-
-    buttonNamed(root, STUDIO_LABELS.merge.back)?.click();
-    await settle(fixture);
-
-    expect(root.querySelector('ethlete-merge')).toBeNull();
-    expect(root.querySelector('ethlete-sketches')).not.toBeNull();
-
-    fixture.componentInstance['openMerge']('a');
-    await settle(fixture);
-    buttonNamed(root, 'Merge')?.click();
+    await confirmed(mergeButtons(root)[0], fixture);
     await settle(fixture);
 
     expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' }, 'sketch-merge': {} });
     expect(completed).toEqual(['components/card']);
   });
 
-  it('groups the unchanged states of the merge page by part', async () => {
-    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
-    const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
-    const unchanged = [
-      { part: 'pages/home', state: 'empty' },
-      { part: 'pages/inbox', state: 'all' },
-      { part: 'pages/home', state: 'wide' },
-    ];
-    const { fixture, root } = await render(SKETCH, (url) => {
-      if (url.includes('/__design/sketch-preview')) return json({ changed: ['pages/home'], affected: [] });
-      if (url.includes('/__design/sketch-compare'))
-        return json({ target: SKETCH.target, variant: 'a', changed: [changed], unchanged });
-
-      return noComments(url);
-    });
-
-    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
-    await settle(fixture);
-    fixture.componentInstance['openMerge']('a');
-    await settle(fixture);
-
-    const labels = [...root.querySelectorAll('ethlete-merge ethlete-disclosure button')].map((button) =>
-      button.textContent?.trim(),
-    );
-
-    expect(labels).toEqual([
-      STUDIO_LABELS.merge.unchanged(2, 'pages/home'),
-      STUDIO_LABELS.merge.unchanged(1, 'pages/inbox'),
-    ]);
-  });
-
-  it('compares a merge that changes only the sketched page, and draws a state only the variant has after the merge', async () => {
-    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
-    const added = { part: 'pages/home', state: 'added', missing: 'now', outlines: { now: [], merged: [] } };
-    const { fixture, root } = await render(SKETCH, (url) => {
-      if (url.includes('/__design/sketch-preview')) return json({ changed: ['pages/home'], affected: [] });
-      if (url.includes('/__design/sketch-compare'))
-        return json({ target: SKETCH.target, variant: 'a', changed: [added], unchanged: [] });
-      if (url.includes('/__design/sketch-decision')) return json({});
-
-      return noComments(url);
-    });
-
-    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
-    await settle(fixture);
-    fixture.componentInstance['openMerge']('a');
-    await settle(fixture);
-
-    expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
-
-    const frames = [...root.querySelectorAll('ethlete-merge iframe')].map(
-      (frame) => new URL(frame.getAttribute('src') ?? ''),
-    );
-
-    expect(frames.map((frame) => [frame.searchParams.get('state'), frame.searchParams.get('variant')])).toEqual([
-      ['added', 'a'],
-    ]);
-  });
-
-  it('lets a running compare finish when the frames redraw meanwhile, and compares again on a later redraw', async () => {
-    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
-    const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
-    const answers: (() => void)[] = [];
-    const { fixture, root } = await render(SKETCH, (url) => {
-      if (url.includes('/__design/sketch-preview')) return json({ changed: [], affected: ['pages/home'] });
-      if (url.includes('/__design/sketch-compare'))
-        return new Promise<Response>((done) =>
-          answers.push(() => done(json({ target: SKETCH.target, variant: 'a', changed: [changed], unchanged: [] }))),
-        );
-      if (url.includes('/__design/sketch-decision')) return json({});
-
-      return noComments(url);
-    });
-
-    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
-    await settle(fixture);
-    fixture.componentInstance['openMerge']('a');
-    await settle(fixture);
-
-    expect(answers).toHaveLength(1);
-
-    fixture.componentRef.setInput('sketch', { ...SKETCH });
-    await settle(fixture);
-    fixture.componentRef.setInput('revision', 1);
-    await settle(fixture);
-    fixture.componentRef.setInput('revision', 2);
-    await settle(fixture);
-    answers[0]?.();
-    await settle(fixture);
-
-    expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
-    expect(answers).toHaveLength(1);
-
-    fixture.componentRef.setInput('revision', 3);
-    await settle(fixture);
-
-    expect(answers).toHaveLength(2);
-  });
-
-  it('crops the changed instance on each side and labels the state a variant adds', async () => {
-    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
-    const rect = { x: 40, y: 80, width: 120, height: 32 };
-    const changed = { part: 'pages/home', state: 'default', outlines: { now: [rect], merged: [rect] } };
-    const added = { part: 'pages/home', state: 'added', missing: 'now', outlines: { now: [], merged: [rect] } };
-    const { fixture, root } = await render(SKETCH, (url) => {
-      if (url.includes('/__design/sketch-preview')) return json({ changed: [], affected: ['pages/home'] });
-      if (url.includes('/__design/sketch-compare'))
-        return json({ target: SKETCH.target, variant: 'a', changed: [changed, added], unchanged: [] });
-      if (url.includes('/__design/sketch-decision')) return json({});
-
-      return noComments(url);
-    });
-    const framesOf = () =>
-      [...root.querySelectorAll('ethlete-merge iframe')].map((frame) => {
-        const src = new URL(frame.getAttribute('src') ?? '');
-
-        return [src.searchParams.get('state'), src.searchParams.get('variant')];
-      });
-
-    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
-    await settle(fixture);
-    fixture.componentInstance['openMerge']('a');
-    await settle(fixture);
-
-    expect(root.textContent).not.toContain(STUDIO_LABELS.system.copyPrompt);
-    expect(framesOf()).toEqual([
-      ['default', null],
-      ['default', 'a'],
-      ['default', null],
-      ['default', 'a'],
-    ]);
-
-    fixture.componentInstance['pickRow']('pages/home added');
-    await settle(fixture);
-
-    expect(root.querySelector('ethlete-merge figure')?.textContent).toContain(STUDIO_LABELS.merge.addedIn('a'));
-    expect(framesOf()).toEqual([
-      ['added', 'a'],
-      ['added', 'a'],
-    ]);
-  });
-
-  it('shows the Merge button loading while the merge runs and ignores a second click', async () => {
+  it('ignores a second merge while one runs', async () => {
     const requests: string[] = [];
-    const { fixture, root } = await render(SKETCH, (url) => {
+    const { fixture } = await render(SKETCH, (url) => {
       if (url.includes('/__design/sketch-decision')) {
         requests.push('decision');
 
@@ -649,22 +495,14 @@ describe('SketchViewComponent', () => {
       return noComments(url);
     });
 
-    fixture.componentInstance['openMerge']('a');
-    await settle(fixture);
-    buttonNamed(root, 'Merge')?.click();
-    await settle(fixture);
-
-    const merge = buttonNamed(root, 'Merge');
-
-    expect(merge?.getAttribute('aria-busy')).toBe('true');
-
-    merge?.click();
+    fixture.componentInstance['merge']('a');
+    fixture.componentInstance['merge']('b');
     await settle(fixture);
 
     expect(requests).toEqual(['decision']);
   });
 
-  it('shows a merge refusal and a merge failure under the Merge button', async () => {
+  it('shows a merge refusal and a merge failure in the head', async () => {
     let refusal: { status: number; body: unknown } = {
       status: 422,
       body: { error: 'stale', changed: ['components/card'], rebase: 'design sketch rebase' },
@@ -676,17 +514,18 @@ describe('SketchViewComponent', () => {
 
       return noComments(url);
     });
-    const errorText = () => root.querySelector('ethlete-merge [role="alert"]')?.textContent?.trim();
+    const errorText = () => root.querySelector('ethlete-sketches [role="alert"]')?.textContent?.trim();
     const completed: string[] = [];
+    const merge = async () => {
+      await confirmed(mergeButtons(root)[0], fixture);
+      await settle(fixture);
+    };
 
     fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
-    fixture.componentInstance['openMerge']('a');
-    await settle(fixture);
 
     expect(errorText()).toBeUndefined();
 
-    buttonNamed(root, 'Merge')?.click();
-    await settle(fixture);
+    await merge();
 
     expect(errorText()).toBe(STUDIO_LABELS.merge.needsRebase(['components/card']));
 
@@ -698,16 +537,14 @@ describe('SketchViewComponent', () => {
         findings: ['INLINE-SVG components/title-bar/shared/chrome.ts: draws an <svg> inline'],
       },
     };
-    buttonNamed(root, 'Merge')?.click();
-    await settle(fixture);
+    await merge();
 
     expect(errorText()).toBe(
       'the check failed after the merge\nINLINE-SVG components/title-bar/shared/chrome.ts: draws an <svg> inline',
     );
 
     refusal = { status: 500, body: { error: 'boom' } };
-    buttonNamed(root, 'Merge')?.click();
-    await settle(fixture);
+    await merge();
 
     expect(errorText()).toBe('boom');
     expect(completed).toEqual([]);

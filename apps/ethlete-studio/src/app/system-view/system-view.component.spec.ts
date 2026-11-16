@@ -1359,11 +1359,7 @@ describe('SystemViewComponent on a merge', () => {
       clickButton('Übernehmen')[1]?.click();
       await settle(fixture);
 
-      const clickMerge = () => clickButton('Merge')[0]?.click();
-
-      clickMerge();
-      await settle(fixture);
-      clickMerge();
+      [...document.querySelectorAll<HTMLElement>('[data-sk-confirm]')].at(-1)?.click();
       await settle(fixture);
 
       const sketchRow = () =>
@@ -1371,7 +1367,6 @@ describe('SystemViewComponent on a merge', () => {
           .flatMap((group) => group.entries)
           .find((entry) => entry.key === `sketch:${target}`);
 
-      expect(root.querySelector('ethlete-merge button[aria-busy="true"]')).not.toBeNull();
       expect(sketchRow()?.badges).toEqual(['ready']);
 
       finishMerge();
@@ -1421,9 +1416,7 @@ describe('SystemViewComponent on a merge', () => {
 
     clickButton('Übernehmen')[1]?.click();
     await settle(fixture);
-    clickButton('Merge')[0]?.click();
-    await settle(fixture);
-    clickButton('Merge')[0]?.click();
+    [...document.querySelectorAll<HTMLElement>('[data-sk-confirm]')].at(-1)?.click();
     await settle(fixture);
 
     sketches = [];

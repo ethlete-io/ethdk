@@ -452,7 +452,7 @@
     <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">
       @if (take) {
         <span class="flex">
-          <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm" data-sk-merge>
+          <button (click)="confirmMerge($event, row)" et-button type="button" variant="outline" size="sm" data-sk-merge>
             {{ LABELS.merge }}
           </button>
         </span>

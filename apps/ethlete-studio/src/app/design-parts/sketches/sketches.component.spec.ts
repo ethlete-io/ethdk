@@ -345,16 +345,37 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-withdrawn-toggle]')).toBeNull();
   });
 
-  it('emits merge with the variant from Übernehmen', async () => {
-    const fixture = await render({});
+  it('asks to confirm Übernehmen and emits merge with the variant only once confirmed', async () => {
+    const fixture = await render({ part: 'components/very-long-part-name' });
     const merged: string[] = [];
+    const take = async () => {
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')]
+        .find((button) => textOf(button) === LABELS.merge)
+        ?.click();
+      await fixture.whenStable();
+
+      return [...document.querySelectorAll<HTMLElement>('[role="alertdialog"]')].at(-1);
+    };
+    const press = async (selector: string) => {
+      [...document.querySelectorAll<HTMLElement>(selector)].at(-1)?.click();
+      await fixture.whenStable();
+    };
 
     fixture.componentInstance.merge.subscribe((variant) => merged.push(variant));
 
-    const buttons = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')];
+    const dialog = await take();
 
-    buttons.find((button) => textOf(button) === LABELS.merge)?.click();
+    expect(textOf(dialog)).toContain(
+      LABELS.mergeConfirm.question(LABELS.variant('x'), 'components/very-long-part-name'),
+    );
+    expect(textOf(dialog)).toContain(LABELS.mergeConfirm.note);
+    expect(merged).toEqual([]);
 
+    await press('[data-sk-confirm-cancel]');
+    expect(merged).toEqual([]);
+
+    await take();
+    await press('[data-sk-confirm]');
     expect(merged).toEqual(['x']);
   });
 
@@ -400,11 +421,11 @@ describe('SketchesComponent', () => {
     expect(textOf(dialog)).toContain(LABELS.discardConfirm.note);
     expect(discarded).not.toHaveBeenCalled();
 
-    await press('[data-sk-discard-cancel]');
+    await press('[data-sk-confirm-cancel]');
     expect(discarded).not.toHaveBeenCalled();
 
     await open();
-    await press('[data-sk-discard-confirm]');
+    await press('[data-sk-confirm]');
     expect(discarded).toHaveBeenCalledTimes(1);
   });
 

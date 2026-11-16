@@ -123,37 +123,10 @@
     },
     {
       "id": "sketch-open-merge",
-      "label": "Sketch zum Mergen öffnen",
+      "label": "Variante nach Bestätigung mergen",
       "place": {
         "part": "pages/sketches",
         "action": "emit:merge"
-      },
-      "confirmed": true
-    },
-    {
-      "id": "sketch-merge",
-      "label": "Sketch mergen",
-      "place": {
-        "part": "pages/merge",
-        "action": "emit:merge"
-      },
-      "confirmed": true
-    },
-    {
-      "id": "merge-pick-change",
-      "label": "Änderung im Merge wählen",
-      "place": {
-        "part": "pages/merge",
-        "action": "emit:pick"
-      },
-      "confirmed": true
-    },
-    {
-      "id": "merge-back",
-      "label": "Zurück zu den Sketches",
-      "place": {
-        "part": "pages/merge",
-        "action": "emit:back"
       },
       "confirmed": true
     },

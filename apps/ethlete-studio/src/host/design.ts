@@ -500,12 +500,6 @@ export type SketchReport = { message: string; updatedAt: string; variant: string
 
 export type ListedSketches = { sketches: ListedSketch[]; unreadable: SystemProblem[] };
 
-/**
- * The parts a merge of one variant changes, the other parts a `shared/` file it edits reaches (also in `changed`), and
- * the elements and pages that show them, each as `<layer>/<name>`. `shared` is missing from an older `@ethlete/cli`.
- */
-export type MergePreview = { changed: string[]; shared?: string[]; affected: string[] };
-
 export type SketchAddress = { port: number; product: string; sketch: string };
 
 const sketchUrl = ({ path, port, product, sketch, extra = '' }: SketchAddress & { path: string; extra?: string }) =>
@@ -642,11 +636,6 @@ export const listedSketches$ = ({
     timeout(LISTED_SKETCHES_TIMEOUT_MS),
   );
 
-export const sketchPreview$ = (address: SketchAddress & { variant: string }): Observable<MergePreview> =>
-  designAnswer$<MergePreview>(
-    sketchUrl({ ...address, path: 'sketch-preview', extra: `&variant=${encodeURIComponent(address.variant)}` }),
-  );
-
 export type SketchDecisionWrite =
   | { kind: 'pick'; variant: string; comment?: string }
   | { kind: 'discard'; comment?: string }
@@ -671,14 +660,13 @@ export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWr
   );
 
 /**
- * Merges the picked variant into the product with `note` as the reason, and answers the merged parts. Without a note the
- * part keeps the note the variant file holds. A stale baseline fails with {@link MergeNeedsRebaseError}.
+ * Merges the picked variant into the product and answers the merged parts. A stale baseline fails with
+ * {@link MergeNeedsRebaseError}.
  */
-export const mergeSketch$ = (address: SketchAddress, note?: string): Observable<string[]> =>
-  designAnswer$<{ merged: string[] }>(
-    sketchUrl({ ...address, path: 'sketch-merge' }),
-    postJson(note ? { note } : {}),
-  ).pipe(map(({ merged }) => merged));
+export const mergeSketch$ = (address: SketchAddress): Observable<string[]> =>
+  designAnswer$<{ merged: string[] }>(sketchUrl({ ...address, path: 'sketch-merge' }), postJson({})).pipe(
+    map(({ merged }) => merged),
+  );
 
 /** Deletes the sketch with all its variants. */
 export const discardSketch$ = (address: SketchAddress): Observable<void> =>

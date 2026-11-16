@@ -31,7 +31,6 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
   'pages/inbox': () => import('../design-parts/inbox/inbox.component').then((m) => m.InboxComponent),
   'pages/inventory': () =>
     import('../design-parts/inventory-page/inventory-page.component').then((m) => m.InventoryPageComponent),
-  'pages/merge': () => import('../design-parts/merge/merge.component').then((m) => m.MergeComponent),
   'pages/sketches': () => import('../design-parts/sketches/sketches.component').then((m) => m.SketchesComponent),
   'pages/start': () => import('../design-parts/start/start.component').then((m) => m.StartComponent),
   'pages/system': () => import('../design-parts/system-page/system-page.component').then((m) => m.SystemPageComponent),
