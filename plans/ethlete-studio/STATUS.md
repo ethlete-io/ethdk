@@ -36,6 +36,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet):
 Rest von Punkt 0 (ADR 0238: ruhige Messung gegen 90 s (volle Prüfung studio 16.11.: 99,4 s, render-inspect 50,8 s), Prüf-Cache auf der Festplatte).
+Stand 16.11.: volle e2e-Läufe 100-102 s (68de9c1b3). Suspect: unter `--hold-listings 14000` laufen die 3 Fälle „Fit is stable“ nach dem Reload in den Timeout von `waitForSelector('[data-sk-state]')`, auch mit dem alten Runner.
 
 **Umbau-Gruppen (12.11., ADR 0279):** Offene Befunde laufen als Ursachen-Gruppen B498-B504, in dieser Reihenfolge, B506 (Schriften), dann B498 (ADR 0283); der Builder nimmt die älteste offene Gruppe, keinen Einzelbefund, aber nur, wenn Abendliste und zweite Liste des Menschen leer sind (ADR 0285). Maschinerie-Befunde (92) ruhen als Ganzes, außer bei rotem CI.
 
