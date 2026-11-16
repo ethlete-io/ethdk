@@ -22,7 +22,7 @@ const INVALID = {
 
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   states: {
     empty: message({ placeholder: undefined }),
     placeholder: message(),
