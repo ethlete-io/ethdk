@@ -207,7 +207,7 @@ const missingCell = (row: Row, state: string) =>
 const stageOf = (part: SketchPart, row: Row, view: View) =>
   view.added || view.wideState
     ? html`<div
-        class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 gap-y-space-3"
+        class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 [&_[data-sk-label]]:w-0 [&_[data-sk-label]]:min-w-full gap-y-space-3"
         data-sk-stage
       >
         ${part.states
@@ -328,7 +328,7 @@ const drawingMark = html`<span class="flex items-center gap-space-1 text-ui-sm t
 
 const drawingStage = (row: Row, place = '') =>
   html`<div
-    class="sk-shot flex min-h-24 items-center justify-center rounded-control-md"
+    class="sk-shot flex min-h-24 w-0 min-w-full items-center justify-center rounded-control-md"
     data-sk-placeholder-row
     style="${place}"
   >
@@ -497,7 +497,7 @@ const gutter = (part: SketchPart, top: number) =>
 const column = (part: SketchPart, row: Row, at: number, top: number, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
   const head = html`<section
-    class="sk-row relative min-w-0 rounded-control-md p-space-2"
+    class="sk-row relative w-0 min-w-full rounded-control-md p-space-2"
     data-sk-row="${row.key}"
     style="grid-column: ${at}; grid-row: ${top}"
     ${row.key === view.selected ? ' data-selected' : ''}
@@ -544,7 +544,7 @@ const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: b
           </div>`;
   const all = open ? [...shown, ...same] : shown;
   return html`<div
-    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))_auto] gap-x-6 gap-y-space-3"
+    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))_auto] gap-x-6 [&_[data-sk-label]]:w-0 [&_[data-sk-label]]:min-w-full gap-y-space-3"
     data-sk-matrix
   >
     ${gutter(part, top)} ${all.map((row, index) => column(part, row, index + 2, top, view)).join('')} ${group}
@@ -553,7 +553,7 @@ const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: b
 
 const screenHead = (row: Row, at: number, view: View) =>
   html`<section
-    class="sk-row relative min-w-0 rounded-control-md p-space-2"
+    class="sk-row relative w-0 min-w-full rounded-control-md p-space-2"
     data-sk-row="${row.key}"
     style="grid-column: ${at}; grid-row: 1"
   >
