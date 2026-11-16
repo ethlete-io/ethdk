@@ -1128,7 +1128,9 @@ export const checkSystemRendered = async (
     /** Checks each of these parts in turn as `part` does, on one design server, browser and typecheck. */
     parts?: string[];
     /** Runs after each part's check and returns the exit code that part counts with. */
-    afterPart?: (part: string | undefined, code: number) => number;
+    afterPart?: (part: string | undefined, code: number) => number | Promise<number>;
+    /** Runs once the part's edits are accepted, before its static and render checks. */
+    afterEdits?: (part: string | undefined) => void;
   },
 ) => {
   const run = options.warm
@@ -1143,7 +1145,7 @@ export const checkSystemRendered = async (
       for (const part of options.parts ?? [options.part]) {
         const checked = await checkSystemRenderedOn({ ...options, part, typechecks, warm: run.warm });
 
-        code = Math.max(code, options.afterPart ? options.afterPart(part, checked) : checked);
+        code = Math.max(code, options.afterPart ? await options.afterPart(part, checked) : checked);
       }
 
       keepHeldStampsInFiles(READY_FILE);
@@ -1167,7 +1169,9 @@ export const checkSystemRendered = async (
 export const deniedLineOf = (id: string) =>
   `SERVE-DENIED ${id}: the design server answered 403, the file is outside its allow list, so a drawing got other content`;
 
-const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw }) => {
+const checkSystemRenderedOn = async (
+  options: CheckOptions & { warm: WarmDraw; afterEdits?: (part: string | undefined) => void },
+) => {
   const tally: Tally = new Map();
 
   options.warm.takeDeniedIds?.();
@@ -1198,6 +1202,8 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
 
     lines.forEach((line) => console.log(line));
   }
+
+  options.afterEdits?.(options.part);
 
   const { code, rendered, busy, notDrawn, completeness } = await renderSystem(counted);
 

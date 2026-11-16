@@ -83,35 +83,50 @@ export const formatSketch = (options: { target: string; sketch: Sketch; variants
   );
 };
 
-const RESOLVE_CONFIG = `import(process.argv[1])
-  .then((module) => (module.resolveConfig ? module : module.default).resolveConfig(process.argv[2], { editorconfig: true }))
-  .then((config) => process.stdout.write(JSON.stringify(config ?? {})));`;
+const RESOLVE_CONFIGS = `import(process.argv[1])
+  .then((module) => (module.resolveConfig ? module : module.default))
+  .then((prettier) =>
+    Promise.all(
+      process.argv.slice(2).map((file) => prettier.resolveConfig(file, { editorconfig: true }).then((config) => config ?? {}, () => null)),
+    ),
+  )
+  .then((configs) => process.stdout.write(JSON.stringify(configs)));`;
 
 const PRETTIER = 'prettier';
 
 const jsonStyles = new Map<string, JsonStyle | null>();
 
-/**
- * The Prettier options of the checkout that shape a `.json` file in `dir`, or `null` when the checkout has no
- * Prettier. Spawns one process per folder and run, so a writer of many files formats them in-process.
- */
-export const jsonStyleOf = (options: { target: string; dir: string }): JsonStyle | null => {
-  const { target, dir } = options;
-  const known = jsonStyles.get(dir);
+/** Resolves the Prettier options of each of `dirs` in one process, so the `jsonStyleOf` calls after it spawn none. */
+export const primeJsonStyles = (options: { target: string; dirs: string[] }) => {
+  const { target } = options;
+  const dirs = [...new Set(options.dirs)].filter((dir) => !jsonStyles.has(dir));
 
-  if (known !== undefined) return known;
+  if (dirs.length === 0) return;
 
   const prettier = binaryOf({ target, pkg: PRETTIER, bin: PRETTIER });
   const entry = prettier ? require.resolve(PRETTIER, { paths: [target, __dirname] }) : null;
   const result = entry
-    ? spawnPlain([process.execPath, '-e', RESOLVE_CONFIG, pathToFileURL(entry).href, join(dir, 'x.json')], {
-        cwd: target,
-      })
+    ? spawnPlain(
+        [process.execPath, '-e', RESOLVE_CONFIGS, pathToFileURL(entry).href, ...dirs.map((dir) => join(dir, 'x.json'))],
+        { cwd: target },
+      )
     : null;
-  const config = result?.status === 0 ? (JSON.parse(result.stdout) as Partial<JsonStyle>) : null;
-  const style = config ? { ...DEFAULT_JSON_STYLE, ...config } : null;
+  const configs = result?.status === 0 ? (JSON.parse(result.stdout) as (Partial<JsonStyle> | null)[]) : [];
 
-  jsonStyles.set(dir, style);
+  dirs.forEach((dir, index) => {
+    const config = configs[index];
 
-  return style;
+    jsonStyles.set(dir, config ? { ...DEFAULT_JSON_STYLE, ...config } : null);
+  });
+};
+
+/**
+ * The Prettier options of the checkout that shape a `.json` file in `dir`, or `null` when the checkout has no
+ * Prettier. Spawns one process per folder and run unless `primeJsonStyles` resolved the folder, so a writer of many
+ * files formats them in-process.
+ */
+export const jsonStyleOf = (options: { target: string; dir: string }): JsonStyle | null => {
+  primeJsonStyles({ target: options.target, dirs: [options.dir] });
+
+  return jsonStyles.get(options.dir) ?? null;
 };

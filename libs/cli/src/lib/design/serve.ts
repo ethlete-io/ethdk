@@ -123,7 +123,9 @@ import { createAppStateShots } from './system/app-state-shot';
 import { ChromiumOf, sharedChromiumOf } from './shared-chromium';
 import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
-import { assetRoot, snapshotPackage, installedAssetRoot } from './package-root';
+import { assetRoot, editorAssetRootOf, snapshotPackage, installedAssetRoot } from './package-root';
+import { productDirOf } from './system/product';
+import { primeJsonStyles } from './system/sketch/check-format';
 import { claimViteCache, viteCacheOf } from './vite-cache';
 import { workRootOf } from './work-root';
 import {
@@ -1197,6 +1199,14 @@ export const createDesignServer = async (options: {
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
   const port = own ? await freePortOf() : options.listenOn;
+
+  if (editorAssetRootOf(target)) {
+    const productDirs = listen
+      ? Object.keys(config.products ?? {}).map((product) => productDirOf({ target, product }))
+      : [];
+
+    primeJsonStyles({ target, dirs: [resolve(target, DESIGN_DIR), ...productDirs] });
+  }
 
   writeCallsTsconfig(target);
 

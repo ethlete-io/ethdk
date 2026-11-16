@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { execPlain } from '../plain-output';
 import { chromiumOf } from './browser';
@@ -7,7 +7,13 @@ import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './d
 import { buildStampOf, serverProblemOf } from './stamp';
 import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';
-import { callLintGateLinesOf, changedLintFilesOf, lintGateLinesOf } from './design-lint';
+import {
+  callLintGateLinesOf,
+  changedLintFilesOf,
+  LintFinding,
+  lintFindingsAsync,
+  lintGateLinesOf,
+} from './design-lint';
 import { checkRules, checkSystemRendered } from './system/check-system';
 import { derivedLinksOf, writeDerivedLinks } from './system/derived-links';
 import { pagePropTakerOf } from './system/dropped-props';
@@ -389,21 +395,49 @@ export const checkDesign = async (options: {
   }
 };
 
-const lintedProducts = (options: { target: string; config: DesignConfig; products: string[]; part?: string }) => {
-  const { target, config, products, part } = options;
+type LintAhead = { files: string[]; texts: string[]; findings: Promise<LintFinding[] | null | undefined> };
+
+type LintOptions = { target: string; config: DesignConfig; products: string[]; part?: string };
+
+const productDirsOf = (options: LintOptions) =>
+  options.products.flatMap((name) => {
+    const entry = options.config.products?.[name];
+
+    return entry ? [{ name, productDir: resolveProduct({ target: options.target, name, config: entry }).dir }] : [];
+  });
+
+const textsOf = (files: string[]) => files.map((file) => readFileSync(file, 'utf8'));
+
+const lintAheadOf = (options: LintOptions) =>
+  new Map(
+    productDirsOf(options).map(({ productDir }): [string, LintAhead] => {
+      const files = changedLintFilesOf({ target: options.target, productDir, part: options.part });
+
+      return [
+        productDir,
+        { files, texts: textsOf(files), findings: lintFindingsAsync({ target: options.target, files }) },
+      ];
+    }),
+  );
+
+const sameFiles = (ahead: LintAhead, files: string[]) =>
+  ahead.files.length === files.length &&
+  ahead.files.every((file, index) => file === files[index]) &&
+  textsOf(files).every((text, index) => text === ahead.texts[index]);
+
+const lintedProducts = async (options: LintOptions & { ahead?: Map<string, LintAhead> }) => {
+  const { target, part } = options;
   let code = 0;
 
-  for (const name of products) {
-    const entry = config.products?.[name];
-
-    if (!entry) continue;
-
-    const productDir = resolveProduct({ target, name, config: entry }).dir;
+  for (const { name, productDir } of productDirsOf(options)) {
+    const files = changedLintFilesOf({ target, productDir, part });
+    const ahead = options.ahead?.get(productDir);
     const lines = lintGateLinesOf({
       target,
       productDir,
-      files: changedLintFilesOf({ target, productDir, part }),
+      files,
       shrink: true,
+      findings: ahead && sameFiles(ahead, files) ? await ahead.findings : undefined,
     });
 
     if (lines.length === 0) continue;
@@ -426,16 +460,20 @@ const lintedCalls = (target: string) => {
   return lines.length > 0 ? 1 : 0;
 };
 
-const renderedAndLinted = (options: Parameters<typeof checkSystemRendered>[0]) =>
-  checkSystemRendered({
+const renderedAndLinted = (options: Parameters<typeof checkSystemRendered>[0]) => {
+  const ahead = new Map<string | undefined, Map<string, LintAhead>>();
+
+  return checkSystemRendered({
     ...options,
-    afterPart: (part, code) => {
-      const lint = lintedProducts({ ...options, part });
+    afterEdits: options.parts ? undefined : (part) => ahead.set(part, lintAheadOf({ ...options, part })),
+    afterPart: async (part, code) => {
+      const lint = await lintedProducts({ ...options, part, ahead: ahead.get(part) });
       const calls = part ? 0 : lintedCalls(options.target);
 
       return code === 0 ? lint || calls : code;
     },
   });
+};
 
 const checkSinceBase = async (options: {
   target: string;

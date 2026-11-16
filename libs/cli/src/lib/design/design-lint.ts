@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve, sep } from 'path';
-import { spawnPlain } from '../plain-output';
+import { spawnPlain, spawnPlainAsync } from '../plain-output';
 import { callsRootOf } from './design-config';
 import { addedBaselineNamesOf } from './system/baseline-history';
 import { sharedDirOf, Sketch, sourceFilesIn, variantDirOf } from './system/sketch/sketch';
@@ -31,29 +31,19 @@ const hasEslintConfig = (from: string): boolean => {
   return parent !== from && hasEslintConfig(parent);
 };
 
-/**
- * ESLint's findings on `files` with the config the checkout `target` lints with, or `null` when it installs no eslint
- * or has no config, or why eslint failed.
- */
-export const lintFindingsOf = (options: { target: string; files: string[] }): LintFinding[] | null | string => {
+const eslintArgvOf = (options: { target: string; files: string[] }): string[] | null | undefined => {
   const { target } = options;
   const files = options.files.filter(isLintedFile);
 
-  if (files.length === 0 || !hasEslintConfig(target)) return [];
+  if (files.length === 0 || !hasEslintConfig(target)) return undefined;
 
   const eslint = binaryOf({ target, pkg: 'eslint', bin: 'eslint' });
 
-  if (!eslint) return null;
+  return eslint ? [process.execPath, eslint, '--format', 'json', '--no-warn-ignored', ...files] : null;
+};
 
-  const run = spawnPlain([process.execPath, eslint, '--format', 'json', '--no-warn-ignored', ...files], {
-    cwd: target,
-    maxBuffer: 1 << 26,
-  });
-
-  if (run.status !== 0 && run.status !== 1)
-    return `eslint failed (${run.status ?? run.signal}): ${trim(run.stderr || run.stdout || String(run.error ?? ''))}`;
-
-  return (JSON.parse(run.stdout) as EslintResult[]).flatMap((result) =>
+const findingsOfOutput = (stdout: string): LintFinding[] =>
+  (JSON.parse(stdout) as EslintResult[]).flatMap((result) =>
     result.messages.map((message) => ({
       file: result.filePath,
       line: message.line ?? 0,
@@ -62,6 +52,44 @@ export const lintFindingsOf = (options: { target: string; files: string[] }): Li
       message: message.message,
     })),
   );
+
+/**
+ * ESLint's findings on `files` with the config the checkout `target` lints with, or `null` when it installs no eslint
+ * or has no config, or why eslint failed.
+ */
+export const lintFindingsOf = (options: { target: string; files: string[] }): LintFinding[] | null | string => {
+  const argv = eslintArgvOf(options);
+
+  if (argv === undefined) return [];
+  if (argv === null) return null;
+
+  const run = spawnPlain(argv, { cwd: options.target, maxBuffer: 1 << 26 });
+
+  if (run.status !== 0 && run.status !== 1)
+    return `eslint failed (${run.status ?? run.signal}): ${trim(run.stderr || run.stdout || String(run.error ?? ''))}`;
+
+  return findingsOfOutput(run.stdout);
+};
+
+/** `lintFindingsOf` without blocking; `undefined` when eslint failed, so the caller reruns it with `lintFindingsOf`. */
+export const lintFindingsAsync = async (options: {
+  target: string;
+  files: string[];
+}): Promise<LintFinding[] | null | undefined> => {
+  const argv = eslintArgvOf(options);
+
+  if (argv === undefined) return [];
+  if (argv === null) return null;
+
+  const run = await spawnPlainAsync(argv, { cwd: options.target });
+
+  if (run.status !== 0 && run.status !== 1) return undefined;
+
+  try {
+    return findingsOfOutput(run.stdout);
+  } catch {
+    return undefined;
+  }
 };
 
 /** The lintable files under `productDir` that differ from HEAD or git does not track yet, of `part` only when given. */
@@ -202,9 +230,11 @@ export const lintGateLinesOf = (options: {
   productDir: string;
   files: string[];
   shrink?: boolean;
+  /** Findings eslint already gave on `files` as they are now; omitted, the gate runs eslint itself. */
+  findings?: LintFinding[] | null;
 }): string[] => {
   const { target, productDir, files, shrink } = options;
-  const findings = lintFindingsOf({ target, files });
+  const findings = options.findings === undefined ? lintFindingsOf({ target, files }) : options.findings;
 
   if (typeof findings === 'string') return [`LINT ${findings}`];
 
