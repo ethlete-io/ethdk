@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B145
+built: 89d334534
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, builder questions on the Studio comment button
 ---
