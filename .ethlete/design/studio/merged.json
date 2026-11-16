@@ -147,11 +147,11 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "pages/sketches": {
-    "hash": "b2af743e02a56009",
+    "hash": "009a8574259a6032",
     "variant": "a",
-    "decidedBy": "plan: grill 2026-11-16: B523 (a), Design ändern, kein Drift-Eintrag; ein angehefteter Listenkopf verdeckt Frames (Chip-e2e)",
-    "at": "2026-11-16T12:53:57.873Z",
-    "note": "merged without a pick: allowed by grill 2026-11-16: B523 (a), Design ändern, kein Drift-Eintrag; ein angehefteter Listenkopf verdeckt Frames (Chip-e2e)"
+    "decidedBy": "plan: ADR 0322 and B539: one comment mode everywhere, the layout of pages/system variant b the human picked (list under the tree, toggle top right), from components/comment-flow",
+    "at": "2026-11-16T16:05:49.258Z",
+    "note": "merged without a pick: allowed by ADR 0322 and B539: one comment mode everywhere, the layout of pages/system variant b the human picked (list under the tree, toggle top right), from components/comment-flow"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",

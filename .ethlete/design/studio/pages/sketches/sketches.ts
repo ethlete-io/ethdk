@@ -1,4 +1,15 @@
 import { definePart, drawing, html, withAction } from '@design-system';
+import {
+  commentButton,
+  commentDraftAt,
+  commentLayer,
+  commentList,
+  commentPins,
+  draftPin,
+  type CommentPhase,
+  type PlacedThread,
+  withCommentList,
+} from '@system/components/comment-flow';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import { icon } from '@system/foundations/icons';
@@ -101,6 +112,7 @@ type Props = {
   pointsOpen?: boolean;
   screen?: ScreenMode;
   multi?: MultiTargets;
+  comments?: CommentPhase;
 };
 
 type View = {
@@ -115,6 +127,7 @@ type View = {
   withdrawn?: Withdrawn;
   take: string;
   points: string;
+  comments?: Record<string, string>;
 };
 
 const DRAWN: RowKey = 'b';
@@ -428,7 +441,7 @@ const headOf = (row: Row, view: View) => {
   const failed = view.listError ? failedMark(view.listError) : comparingMark;
   const mark = view.comparing && row.key !== 'current' ? failed : '';
   if (isWithdrawn(row, view.withdrawn)) return rowHead(row, withdrawnMark, mark);
-  return rowHead(row, action, mark) + (drawn ? '' : pinFor(row));
+  return rowHead(row, action, mark) + (drawn || view.comments ? '' : pinFor(row));
 };
 
 const gridRow = (part: SketchPart, row: Row, view: View) => {
@@ -449,8 +462,8 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
       >
       <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
     </div>
-    <div class="min-w-0 ${isWithdrawn(row, view.withdrawn) ? 'opacity-60' : ''}">
-      ${drawn ? drawingStage(row) : stageOf(part, row, view)}
+    <div class="relative min-w-0 ${isWithdrawn(row, view.withdrawn) ? 'opacity-60' : ''}">
+      ${drawn ? drawingStage(row) : stageOf(part, row, view)}${view.comments?.[row.key] ?? ''}
     </div>
   </section>`;
 };
@@ -655,6 +668,54 @@ const screenControl = async () => ({ body: '', styles: '' });
 const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom);
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
+type RowThread = PlacedThread & { row: string };
+
+const VARIANT_THREADS: RowThread[] = [
+  {
+    row: 'a',
+    at: 'left-[18%] top-[30%]',
+    author: 'human',
+    initials: 'H',
+    when: 'vor 20 Min',
+    part: 'Entwurf 1',
+    state: 'fit-hover',
+    text: 'Die Pille wirkt hier zu eng, die Knöpfe kleben aneinander.',
+    replies: 1,
+  },
+  {
+    row: 'b',
+    at: 'left-[52%] top-[55%]',
+    author: 'Claude',
+    initials: 'C',
+    agent: 'claude',
+    when: 'vor 4 Min',
+    part: 'Entwurf 2',
+    state: 'reset-hover',
+    text: 'Halbfett liest sich besser. Soll Entwurf 1 die Zahl auch so bekommen?',
+    replies: 2,
+    unread: true,
+  },
+];
+
+const COMMENT_DRAFT_AT = 'left-[30%] top-[40%]';
+
+const variantComments = async (row: string, phase: CommentPhase | undefined) => {
+  if (!phase) return { body: '', styles: '' };
+  const own = VARIANT_THREADS.filter((thread) => thread.row === row);
+  const pins = commentPins(own, phase === 'listed' ? own.findIndex((thread) => thread === VARIANT_THREADS[0]) : -1);
+  const target = phase !== 'listed' && row !== 'current' ? commentLayer(row, 'comments-draft') : '';
+  const drafting = phase === 'draft' && row === 'b';
+  const draft = drafting
+    ? await commentDraftAt('top-[40%] left-[calc(30%+var(--space-6))] z-20', {
+        text: 'Der Reset-Knopf braucht hier mehr Luft zur Prozentzahl.',
+      })
+    : undefined;
+  return {
+    body: target + pins + (drafting ? draftPin(COMMENT_DRAFT_AT) : '') + (draft?.body ?? ''),
+    styles: draft?.styles ?? '',
+  };
+};
+
 export default definePart<Props>({
   note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das einen Bestätigungsdialog öffnet, erst Bestätigen übernimmt die Variante; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert. Solange sketch ready nicht bestanden hat, steht Noch nicht bereit mit der ersten Zeile seiner letzten Ablehnung und danach der letzten Änderung daneben, ohne aufgezeichnete Ablehnung der Hinweis, sketch ready auszuführen; Übernehmen fehlt dann. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; Zustände, deren Vergleich noch aussteht, liegen schon eingeklappt hinter einer Zeile vergleicht N Zustände …, sichtbar sind nur die bisher als geändert bekannten Zustände, neue hängen sich hinten an. Die Antwort ändert nur den Text dieser Zeile zu N unveränderte Zustände eingeklappt, das Raster springt nicht. Danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Fügt eine Variante einen Zustand hinzu, den Aktuell nicht hat, zeigt Aktuell dort einen gestrichelten Rahmen neu in der Skizze, eine Variante ohne ihn fehlt in dieser Variante. Eine Zelle ist so breit wie der gemessene Zustand (etwa die Zoom-Pille mit offenem Tooltip) und schneidet nie ab. Beim Verschieben bleibt der Kopf jeder Zeile (Variante, Modell, Notiz, Übernehmen) wie die Zustandsspalte der Matrix am linken Rand stehen, deckend, ebenso der Text der eingeklappten Zeile. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>; die eingeklappte Zeile liest dann Vergleich von N Zuständen fehlgeschlagen. Schlägt Übernehmen oder eine andere Sketch-Aktion fehl, steht der Grund des Servers in der Fehlerfarbe im Kopf der gewählten Variante unter Übernehmen; der Seitenkopf bleibt ohne Fehler.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
@@ -663,6 +724,10 @@ export default definePart<Props>({
     canvas: { kind: 'field', part: 'components/canvas-viewport' },
     hold: { kind: 'button', part: 'components/hold-trigger' },
     toggle: { kind: 'button', input: ['pointer', 'keyboard'] },
+    comment: { kind: 'button', part: 'components/button' },
+    'comment-cancel': { kind: 'button', part: 'components/button' },
+    'comment-send': { kind: 'button', part: 'components/button' },
+    'comment-target': { kind: 'button', part: 'components/comment-target' },
   },
   states: {
     'page-sketch': { camera: 'fit' },
@@ -719,6 +784,9 @@ export default definePart<Props>({
     'change-crop-whole': { camera: 'fit', part: 'narrow', screen: 'whole' },
     'multi-part': { camera: 'fit', part: 'narrow', multi: 'three' },
     'multi-part-many': { camera: 'fit', part: 'narrow', multi: 'many' },
+    comments: { camera: 'fit', part: 'narrow', comments: 'listed' },
+    'comments-mode': { camera: 'fit', part: 'narrow', comments: 'mode' },
+    'comments-draft': { camera: 'fit', part: 'narrow', comments: 'draft' },
   },
   render: async ({
     camera,
@@ -744,6 +812,7 @@ export default definePart<Props>({
     pointsOpen = false,
     screen,
     multi,
+    comments,
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const reload = await button.render({ label: 'Erneut laden', variant: 'outline', color: 'surface', size: 'sm' });
@@ -764,7 +833,15 @@ export default definePart<Props>({
     const shown = rows.filter((row) => !same.includes(row));
     const pointsButton = points ? await pointsChip(pointsOpen) : undefined;
     const popover = points && pointsOpen ? await pointsPopover(full.key) : undefined;
+    const layers = await Promise.all(
+      rows.map(async (row) => [row.key, await variantComments(row.key, comments)] as const),
+    );
+    const list = comments ? commentList(VARIANT_THREADS, comments === 'listed' ? 0 : -1) : undefined;
+    const commentToggle = comments
+      ? await commentButton({ on: comments !== 'listed', action: comments === 'listed' ? 'comments-mode' : 'comments' })
+      : undefined;
     const view: View = {
+      ...(comments ? { comments: Object.fromEntries(layers.map(([key, layer]) => [key, layer.body])) } : {}),
       selected,
       status,
       comparing,
@@ -816,7 +893,7 @@ export default definePart<Props>({
             ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
                 >Kein Verwerfen: wähle eine der beiden Zeilen</span
               >`
-            : retry + withAction(discard.body, 'emit:discard')
+            : (commentToggle?.body ?? '') + retry + withAction(discard.body, 'emit:discard')
         }
       </header>
       ${parts.body}
@@ -874,7 +951,7 @@ export default definePart<Props>({
       studio: menu.body,
       section: 'Sketches',
       product: 'studio',
-      side: side.body,
+      side: list ? withCommentList(side.body, list.body) : side.body,
       content,
     });
 
@@ -901,6 +978,9 @@ export default definePart<Props>({
         (pointsButton?.styles ?? '') +
         (popover?.styles ?? '') +
         parts.styles +
+        (list?.styles ?? '') +
+        (commentToggle?.styles ?? '') +
+        layers.map(([, layer]) => layer.styles).join('') +
         rowStyles +
         Object.values(tags)
           .map((entry) => entry.styles)
