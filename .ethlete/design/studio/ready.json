@@ -93,12 +93,7 @@
       "components/title-bar": "49f8bfdd72bb5a5a",
       "components/title-search": "6794ec04d0ac090a"
     },
-    "actions": [
-      "emit:close",
-      "emit:maximize",
-      "emit:minimize",
-      "opens:command-palette"
-    ],
+    "actions": ["emit:close", "emit:maximize", "emit:minimize", "opens:command-palette"],
     "at": "2026-11-16T09:42:59.043Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -163,10 +158,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": [
-      "comment-mode",
-      "emit:sendComment"
-    ],
+    "actions": ["comment-mode", "emit:sendComment"],
     "at": "2026-11-16T09:18:05.338Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -252,15 +244,7 @@
       "components/comment-pin": "5e8d606924963eea",
       "components/comment-row": "4eb3bec50e77bcc9"
     },
-    "actions": [
-      "comment-mode",
-      "draft",
-      "emit:pick",
-      "emit:pinToggle",
-      "emit:sendComment",
-      "mode",
-      "rest"
-    ],
+    "actions": ["comment-mode", "draft", "emit:pick", "emit:pinToggle", "emit:sendComment", "mode", "rest"],
     "at": "2026-11-16T16:03:51.364Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -304,18 +288,14 @@
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "7141b2172d570bee",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "actions": [
-      "emit:pinToggle"
-    ],
+    "actions": ["emit:pinToggle"],
     "at": "2026-11-13T11:47:44.042Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
     "pid": 1944725
   },
   "components/comment-row": {
-    "actions": [
-      "emit:pick"
-    ],
+    "actions": ["emit:pick"],
     "at": "2026-11-16T09:07:39.782Z"
   },
   "components/comment-target": {
@@ -323,9 +303,7 @@
     "files": {
       ".ethlete/design/studio/components/comment-target/comment-target.ts": "28810e30e6419d7f"
     },
-    "actions": [
-      "emit:comment"
-    ],
+    "actions": ["emit:comment"],
     "at": "2026-11-16T09:09:59.563Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -357,11 +335,7 @@
       ".ethlete/design/studio/components/disclosure/disclosure.ts": "215a03cd75d355de",
       ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464"
     },
-    "actions": [
-      "emit:openChange",
-      "open",
-      "rest"
-    ],
+    "actions": ["emit:openChange", "open", "rest"],
     "at": "2026-11-14T16:26:58.002Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
@@ -395,9 +369,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": [
-      "emit:dismiss"
-    ],
+    "actions": ["emit:dismiss"],
     "at": "2026-11-14T17:25:08.212Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -408,9 +380,7 @@
     "files": {
       ".ethlete/design/studio/components/hold-trigger/hold-trigger.ts": "34e680fe6cd4eb4d"
     },
-    "actions": [
-      "emit:openChange"
-    ],
+    "actions": ["emit:openChange"],
     "at": "2026-11-16T09:09:59.632Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -421,9 +391,7 @@
     "files": {
       ".ethlete/design/studio/components/list-row/list-row.ts": "34a8fdf1252fd0cf"
     },
-    "actions": [
-      "emit:pick"
-    ],
+    "actions": ["emit:pick"],
     "at": "2026-11-16T09:09:59.690Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -472,9 +440,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": [
-      "emit:collapse"
-    ],
+    "actions": ["emit:collapse"],
     "at": "2026-11-16T12:17:26.103Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -487,9 +453,7 @@
       ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "119da70ceedf52b2",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "actions": [
-      "emit:sideWidthChange"
-    ],
+    "actions": ["emit:sideWidthChange"],
     "at": "2026-11-13T12:54:16.321Z",
     "by": "et design check",
     "cmd": "check",
@@ -547,11 +511,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": [
-      "closed",
-      "emit:productChange",
-      "open"
-    ],
+    "actions": ["closed", "emit:productChange", "open"],
     "at": "2026-11-15T23:38:14.010Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
@@ -577,12 +537,7 @@
     "pid": 1898251
   },
   "components/title-bar": {
-    "actions": [
-      "emit:dismiss",
-      "emit:restart",
-      "emit:update",
-      "opens:command-palette"
-    ],
+    "actions": ["emit:dismiss", "emit:restart", "emit:update", "opens:command-palette"],
     "at": "2026-11-15T22:02:35.215Z"
   },
   "components/title-search": {
@@ -611,9 +566,7 @@
       ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "actions": [
-      "opens:command-palette"
-    ],
+    "actions": ["opens:command-palette"],
     "at": "2026-11-15T19:34:41.023Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
@@ -647,9 +600,7 @@
       ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "actions": [
-      "emit:rowPress"
-    ],
+    "actions": ["emit:rowPress"],
     "at": "2026-11-13T11:47:36.662Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
@@ -769,12 +720,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": [
-      "emit:fit",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset"
-    ],
+    "actions": ["emit:fit", "emit:zoomIn", "emit:zoomOut", "emit:zoomReset"],
     "at": "2026-11-16T12:17:23.547Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
@@ -867,10 +813,7 @@
     "embedded": {
       "components/tree-row": "7f9035bb50e082a1"
     },
-    "actions": [
-      "emit:activate",
-      "emit:expandedChange"
-    ],
+    "actions": ["emit:activate", "emit:expandedChange"],
     "at": "2026-11-13T13:27:36.528Z",
     "by": "et design serve",
     "cmd": "serve",
@@ -985,10 +928,7 @@
     "pid": 948628
   },
   "elements/studio-menu": {
-    "actions": [
-      "closed",
-      "open"
-    ],
+    "actions": ["closed", "open"],
     "at": "2026-11-12T03:33:29.013Z"
   },
   "elements/variant-cell": {
@@ -1815,11 +1755,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": [
-      "emit:copyPrompt",
-      "emit:openRepo",
-      "emit:otherRepo"
-    ],
+    "actions": ["emit:copyPrompt", "emit:openRepo", "emit:otherRepo"],
     "at": "2026-11-16T09:36:51.494Z",
     "by": "et design serve",
     "cmd": "serve",
