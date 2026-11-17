@@ -14,7 +14,12 @@
     "at": "2026-11-17T20:22:51.727Z"
   },
   "components/avatar": "1252da777499aba9",
-  "components/badge": "c5987a95f8f0899c",
+  "components/badge": {
+    "hash": "a0c3671045f0e0d0",
+    "variant": "b",
+    "decidedBy": "builder",
+    "at": "2026-11-17T20:31:21.565Z"
+  },
   "components/banner": "304a4eca399be5df",
   "components/bracket": {
     "hash": "2dcc2c1e45265aec",

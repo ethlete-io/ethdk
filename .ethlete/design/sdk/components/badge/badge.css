@@ -11,3 +11,21 @@
     --_et-badge-border-color: var(--et-theme-color-ink-solid);
   }
 }
+
+.badge-frame-narrow {
+  inline-size: 16rem;
+}
+
+@layer components {
+  .et-badge[data-long-label] {
+    --et-badge-max-width: 12rem;
+  }
+
+  .et-badge[data-long-label] .et-badge-label {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-box: normal;
+  }
+}

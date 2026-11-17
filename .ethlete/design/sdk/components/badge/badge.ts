@@ -7,7 +7,7 @@ const icon = (name: string) => SDK_ICONS.find((each) => each.name === name);
 
 type Variant = NonNullable<BadgeMockOptions['variant']>;
 
-type Props = { badges: BadgeMockOptions[] };
+type Props = { badges: BadgeMockOptions[]; narrow?: boolean };
 
 const themed = (variant: Variant, size?: BadgeMockOptions['size']): Props => ({
   badges: [
@@ -29,9 +29,21 @@ const sizes = (variant: Variant): Props => ({
   badges: (['sm', 'md', 'lg'] as const).map((size) => ({ label: size, variant, size })),
 });
 
+const longLabel = (variant: Variant): Props => ({
+  narrow: true,
+  badges: [
+    {
+      label: 'Awaiting confirmation from the tournament organiser',
+      variant,
+      color: 'warning',
+      attributes: 'data-long-label',
+    },
+  ],
+});
+
 export default definePart({
   note: 'Decided rules only',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     filled: themed('filled'),
     tonal: themed('tonal'),
@@ -42,6 +54,9 @@ export default definePart({
     'filled-sizes': sizes('filled'),
     'tonal-sizes': sizes('tonal'),
     'outline-sizes': sizes('outline'),
+    'filled-long-label': longLabel('filled'),
+    'tonal-long-label': longLabel('tonal'),
+    'outline-long-label': longLabel('outline'),
   },
   describe: {
     filled: 'Filled badges in the default, brand, warning and danger themes; check that each label reads on its fill.',
@@ -54,13 +69,21 @@ export default definePart({
     'filled-sizes': 'Filled badges at sm, md and lg; check that height, padding and text scale per step.',
     'tonal-sizes': 'Tonal badges at sm, md and lg; check that height, padding and text scale per step.',
     'outline-sizes': 'Outlined badges at sm, md and lg; check that height, padding and text scale per step.',
+    'filled-long-label':
+      'A filled warning badge with a label longer than its 12rem cap; check that the label stays on one line and ends in an ellipsis.',
+    'tonal-long-label':
+      'A tonal warning badge with a label longer than its cap; check that the label stays on one line and ends in an ellipsis.',
+    'outline-long-label':
+      'An outlined warning badge with a label longer than its cap; check the one-line label with its ellipsis inside the border.',
   },
   widths: [480],
   controls: {},
   frame: (body) => `<div class="badge-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: badgeRow(props.badges.map((each) => badge(each))),
+      body: props.narrow
+        ? `<div class="badge-frame-narrow">${badgeRow(props.badges.map((each) => badge(each)))}</div>`
+        : badgeRow(props.badges.map((each) => badge(each))),
       styles: [badgeStyles, frame].join('\n'),
     }),
 });
