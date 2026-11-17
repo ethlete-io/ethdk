@@ -89,7 +89,7 @@
     gap: var(--et-accordion-gap);
     inline-size: 100%;
     padding: calc(var(--_et-accordion-header-padding-block) - var(--_et-accordion-tint-inset))
-      var(--et-accordion-padding-inline);
+      var(--et-accordion-header-padding-inline, var(--et-accordion-padding-inline));
     border: 0;
     border-radius: var(--et-accordion-radius);
     background: transparent;

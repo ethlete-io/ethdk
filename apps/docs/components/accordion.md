@@ -196,19 +196,20 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 `--et-surface-interaction-solid`, and the focus ring from
 `--et-theme-color-primary-solid`. Geometry and timing are tokens:
 
-| Property                              | Default                        | Applies to                                                                             |
-| ------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------- |
-| `--et-accordion-padding-block`        | `14px`                         | header padding, and the panel's bottom padding                                         |
-| `--et-accordion-header-padding-block` | `--et-accordion-padding-block` | header padding only - sets the header height without moving the panel's bottom padding |
-| `--et-accordion-title-font-size`      | inherited                      | the header label's font size                                                           |
-| `--et-accordion-title-font-weight`    | `500`                          | the header label's weight                                                              |
-| `--et-accordion-hint-font-weight`     | `400`                          | the hint's weight                                                                      |
-| `--et-accordion-padding-inline`       | `12px`                         | header and panel side padding, so the hover tint has room                              |
-| `--et-accordion-gap`                  | `12px`                         | gap between label, hint and chevron                                                    |
-| `--et-accordion-chevron-size`         | `14px`                         | chevron box                                                                            |
-| `--et-accordion-radius`               | `8px`                          | the hover tint's shape - raise it when the group is a card                             |
-| `--et-accordion-duration`             | `240ms`                        | collapse and chevron rotation                                                          |
-| `--et-accordion-color-duration`       | `120ms`                        | the header's hover response - tint, hairline and chevron                               |
+| Property                               | Default                         | Applies to                                                                                                           |
+| -------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `--et-accordion-padding-block`         | `14px`                          | header padding, and the panel's bottom padding                                                                       |
+| `--et-accordion-header-padding-block`  | `--et-accordion-padding-block`  | header padding only - sets the header height without moving the panel's bottom padding                               |
+| `--et-accordion-title-font-size`       | inherited                       | the header label's font size                                                                                         |
+| `--et-accordion-title-font-weight`     | `500`                           | the header label's weight                                                                                            |
+| `--et-accordion-hint-font-weight`      | `400`                           | the hint's weight                                                                                                    |
+| `--et-accordion-padding-inline`        | `12px`                          | header and panel side padding, so the hover tint has room                                                            |
+| `--et-accordion-header-padding-inline` | `--et-accordion-padding-inline` | header side padding only - set it apart from the panel's to inset the header label and the panel content differently |
+| `--et-accordion-gap`                   | `12px`                          | gap between label, hint and chevron                                                                                  |
+| `--et-accordion-chevron-size`          | `14px`                          | chevron box                                                                                                          |
+| `--et-accordion-radius`                | `8px`                           | the hover tint's shape - raise it when the group is a card                                                           |
+| `--et-accordion-duration`              | `240ms`                         | collapse and chevron rotation                                                                                        |
+| `--et-accordion-color-duration`        | `120ms`                         | the header's hover response - tint, hairline and chevron                                                             |
 
 ### The hover response
 
