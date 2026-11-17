@@ -77,10 +77,16 @@ export default definePart({
       body: switchControl({
         ...options,
         color: 'brand',
-        attributes: [options.attributes, 'data-et-control="switch"', interaction && `data-et-force="${interaction}"`]
+        attributes: [
+          options.attributes,
+          options.label === undefined && 'data-et-control="switch"',
+          interaction && `data-et-force="${interaction}"`,
+        ]
           .filter(Boolean)
           .join(' '),
-      }).replace('class="et-choice-field-label-area', 'data-et-skip="CLIPPED" class="et-choice-field-label-area'),
+      })
+        .replace('<et-choice-field ', '<et-choice-field data-et-control="switch" ')
+        .replace('class="et-choice-field-label-area', 'data-et-skip="CLIPPED" class="et-choice-field-label-area'),
       styles: [switchStyles, offTrack].join('\n'),
     }),
 });
