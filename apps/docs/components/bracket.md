@@ -578,6 +578,10 @@ rounds resolve later than their upper-bracket feeders) are supported and align c
 front-truncated winners bracket whose opening round is played elsewhere. It also
 [folds](#double-elimination-stacks-two-folds).
 
+A source filtered to one side - only the upper bracket, only the lower bracket, or only the finals - draws
+that side as a single elimination tree, under its section title when `showSectionTitles` is on, and
+ignores `finalAlignment`.
+
 @example bracket/bracket-double-elimination 520px
 
 ### Section titles

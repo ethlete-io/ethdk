@@ -3,9 +3,11 @@ import { Bracket, BracketRound } from '../../linked';
 import {
   BracketComponents,
   BracketSubColumn,
+  createBracketElement,
   createBracketGrid,
   createBracketMasterColumn,
   createBracketMasterColumnSection,
+  createBracketSubColumn,
   BracketMasterColumnSection,
   finalizeBracketGrid,
 } from './core';
@@ -45,11 +47,33 @@ const resolveFoldedThirdPlaceRound = <TRoundData, TMatchData>(
   return rounds.find((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) ?? null;
 };
 
-export const createSingleEliminationGrid = <TRoundData, TMatchData>(
+const createSectionTitleBand = <TRoundData, TMatchData>(height: number) => {
+  const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection<TRoundData, TMatchData>({
+    type: 'gap',
+  });
+  const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({
+    span: { isStart: true, isEnd: true },
+  });
+
+  pushElement(
+    createBracketElement<TRoundData, TMatchData>({
+      area: '.',
+      type: 'colGap',
+      elementHeight: height,
+      partHeights: [height],
+    }),
+  );
+  pushSubColumn(subColumn);
+
+  return masterColumnSection;
+};
+
+export const buildSingleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: Bracket<TRoundData, TMatchData>,
   options: CreateBracketGridConfig,
   components: BracketComponents<TRoundData, TMatchData>,
-  // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
+  sectionTitleHeight: number,
+  // eslint-disable-next-line max-params -- grid builder signature plus the title band height
 ): ComputedBracketGrid<TRoundData, TMatchData> => {
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
   const rounds = Array.from(bracketData.rounds.values());
@@ -106,6 +130,8 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
     });
     pushSubColumn(sub);
 
+    if (sectionTitleHeight) mutableMasterColumn.pushSection(createSectionTitleBand(sectionTitleHeight));
+
     mutableMasterColumn.pushSection(masterColumnSection);
 
     grid.pushMasterColumn(masterColumn);
@@ -154,7 +180,9 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
           existingMasterColumns: grid.grid.masterColumns,
           columnWidth: options.continueElement.columnWidth,
           elementHeight: options.continueElement.elementHeight,
-          headerOffset: options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0,
+          headerOffset:
+            sectionTitleHeight +
+            (options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0),
           component: components.continue,
           matches: continueMatches,
         }),
@@ -179,3 +207,10 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
     matchElementMap: finalizedGrid.elementMap,
   };
 };
+
+export const createSingleEliminationGrid = <TRoundData, TMatchData>(
+  bracketData: Bracket<TRoundData, TMatchData>,
+  options: CreateBracketGridConfig,
+  components: BracketComponents<TRoundData, TMatchData>,
+  // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
+): ComputedBracketGrid<TRoundData, TMatchData> => buildSingleEliminationGrid(bracketData, options, components, 0);

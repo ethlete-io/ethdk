@@ -453,64 +453,63 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
   // Nothing is drawn yet, so there is nothing to relate - not a malformed structure.
   if (allRounds.length === 0) return relations;
 
-  if (!firstUpperRound)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.ROUND_RELATION_INVALID, 'No upper rounds found');
-
   const hasLowerRounds = lowerRounds.length > 0;
 
-  for (const [currentUpperRoundIndex] of upperRounds.entries()) {
-    const nav = getNavigationContext({
-      upperRounds,
-      upperRoundsByDepth,
-      currentUpperRoundIndex,
-    });
+  if (firstUpperRound) {
+    for (const [currentUpperRoundIndex] of upperRounds.entries()) {
+      const nav = getNavigationContext({
+        upperRounds,
+        upperRoundsByDepth,
+        currentUpperRoundIndex,
+      });
 
-    if (nav.isFinal && hasLowerRounds && lastLowerRound && firstLowerRound && nav.previousUpperRound) {
-      handleFinalRound({
-        relations,
-        currentUpperRound: nav.currentUpperRound,
-        previousUpperRound: nav.previousUpperRound,
-        nextUpperRound: nav.nextUpperRound,
-        lowerRounds: lowerFlow,
-        currentUpperRoundIndex,
-        firstUpperRound,
-        firstLowerRound,
-        lastLowerRound,
-      });
-    } else if (nav.isLastUpperRound && nav.previousUpperRound) {
-      relations.push(
-        createOneToNothingRelation({
-          currentRound: nav.currentUpperRound,
-          previousRound: nav.previousUpperRound,
-          rootRound: firstUpperRound,
-        }),
-      );
-    } else if (nav.currentUpperRound.isFirstRound && nav.nextUpperRound) {
-      handleFirstRound({
-        relations,
-        currentUpperRound: nav.currentUpperRound,
-        nextUpperRound: nav.nextUpperRound,
-        lowerRounds: lowerFlow,
-        currentUpperRoundIndex,
-      });
-    } else if (nav.nextUpperRound && !nav.previousUpperRound) {
-      relations.push(
-        createNothingToOneRelation({
-          currentRound: nav.currentUpperRound,
-          nextRound: nav.nextUpperRound,
-        }),
-      );
-    } else if (nav.previousUpperRound && nav.nextUpperRound) {
-      handleRegularRound({
-        relations,
-        currentUpperRound: nav.currentUpperRound,
-        previousUpperRound: nav.previousUpperRound,
-        nextUpperRound: nav.nextUpperRound,
-        lowerRounds: lowerFlow,
-        currentUpperRoundIndex,
-        firstUpperRound,
-        firstLowerRound,
-      });
+      if (nav.isFinal && hasLowerRounds && lastLowerRound && firstLowerRound && nav.previousUpperRound) {
+        handleFinalRound({
+          relations,
+          currentUpperRound: nav.currentUpperRound,
+          previousUpperRound: nav.previousUpperRound,
+          nextUpperRound: nav.nextUpperRound,
+          lowerRounds: lowerFlow,
+          currentUpperRoundIndex,
+          firstUpperRound,
+          firstLowerRound,
+          lastLowerRound,
+        });
+      } else if (nav.isLastUpperRound && nav.previousUpperRound) {
+        relations.push(
+          createOneToNothingRelation({
+            currentRound: nav.currentUpperRound,
+            previousRound: nav.previousUpperRound,
+            rootRound: firstUpperRound,
+          }),
+        );
+      } else if (nav.currentUpperRound.isFirstRound && nav.nextUpperRound) {
+        handleFirstRound({
+          relations,
+          currentUpperRound: nav.currentUpperRound,
+          nextUpperRound: nav.nextUpperRound,
+          lowerRounds: lowerFlow,
+          currentUpperRoundIndex,
+        });
+      } else if (nav.nextUpperRound && !nav.previousUpperRound) {
+        relations.push(
+          createNothingToOneRelation({
+            currentRound: nav.currentUpperRound,
+            nextRound: nav.nextUpperRound,
+          }),
+        );
+      } else if (nav.previousUpperRound && nav.nextUpperRound) {
+        handleRegularRound({
+          relations,
+          currentUpperRound: nav.currentUpperRound,
+          previousUpperRound: nav.previousUpperRound,
+          nextUpperRound: nav.nextUpperRound,
+          lowerRounds: lowerFlow,
+          currentUpperRoundIndex,
+          firstUpperRound,
+          firstLowerRound,
+        });
+      }
     }
   }
 

@@ -18,8 +18,7 @@ import {
 import { createBracketGapMasterColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
 import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
 import { resolveBracketGridRowSpan } from './row-span';
-import { BracketRuntimeError } from '../../bracket-runtime-error';
-import { BRACKET_ERROR_CODES } from '../../bracket-errors';
+import { createSingleEliminationGrid } from './single-elimination';
 
 const CENTRE_CHAIN_ORDER: Partial<Record<string, number>> = {
   [COMMON_BRACKET_ROUND_TYPE.FINAL]: 1,
@@ -171,12 +170,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
     hasReverseFinal,
   });
 
-  if (!winners || !losers) {
-    throw new BracketRuntimeError(
-      BRACKET_ERROR_CODES.ROUND_RELATION_INVALID,
-      'No upper or lower rounds found in bracket data',
-    );
-  }
+  if (!winners || !losers) return createSingleEliminationGrid(bracketData, options, components);
 
   const blocks = [winners, losers];
   const headerBlock = options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0;

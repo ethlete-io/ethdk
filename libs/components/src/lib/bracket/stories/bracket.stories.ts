@@ -184,6 +184,23 @@ export const DoubleEliminationCenteredFinal = {
   },
 };
 
+const upperBracketOnlySource = () => {
+  const source = generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true });
+  const rounds = source.rounds.filter((round) => round.type === 'upper-bracket');
+  const roundIds = new Set(rounds.map((round) => round.id));
+
+  return { ...source, rounds, matches: source.matches.filter((match) => roundIds.has(match.roundId)) };
+};
+
+/** A double elimination source filtered to its upper bracket draws that side as a single tree. */
+export const DoubleEliminationUpperBracketOnly = {
+  render: Template,
+  args: {
+    source: upperBracketOnlySource(),
+    showSectionTitles: true,
+  },
+};
+
 /** The same titles, drawn by a custom component bound through `sectionTitleComponent`. */
 export const DoubleEliminationCustomSectionTitles = {
   render: Template,

@@ -25,9 +25,34 @@ import {
 } from './prebuild';
 import { BRACKET_FINAL_ALIGNMENT, ComputedBracketGrid, CreateBracketGridConfig } from './types';
 import { resolveBracketGridRowSpan } from './row-span';
+import { buildSingleEliminationGrid } from './single-elimination';
 import { createBracketGridSections, doubleEliminationRoundSection } from './sections';
 import { BracketRuntimeError } from '../../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../../bracket-errors';
+
+const hasBothSides = <TRoundData, TMatchData>(bracketData: Bracket<TRoundData, TMatchData>) =>
+  !!bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET)?.first() &&
+  !!bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET)?.first();
+
+const createOneSidedGrid = <TRoundData, TMatchData>(
+  bracketData: Bracket<TRoundData, TMatchData>,
+  options: CreateBracketGridConfig,
+  components: BracketComponents<TRoundData, TMatchData>,
+  // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
+): ComputedBracketGrid<TRoundData, TMatchData> => {
+  const titleHeight = options.sectionTitleHeight ?? 0;
+  const grid = buildSingleEliminationGrid(bracketData, options, components, titleHeight);
+
+  return {
+    ...grid,
+    sections: createBracketGridSections({
+      columns: grid.columns,
+      sectionOf: doubleEliminationRoundSection,
+      titleHeight,
+      tops: { upper: titleHeight, lower: titleHeight, finals: titleHeight },
+    }),
+  };
+};
 
 export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: Bracket<TRoundData, TMatchData>,
@@ -35,6 +60,8 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   components: BracketComponents<TRoundData, TMatchData>,
   // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
 ): ComputedBracketGrid<TRoundData, TMatchData> => {
+  if (!hasBothSides(bracketData)) return createOneSidedGrid(bracketData, options, components);
+
   const grid = buildDoubleEliminationGrid(bracketData, options, components, new Map());
 
   if (options.finalAlignment !== BRACKET_FINAL_ALIGNMENT.CENTER) return grid;
