@@ -30,10 +30,11 @@ export default {
   ],
   argTypes: {
     orientation: { control: 'select', options: ['horizontal', 'vertical', 'auto'] },
+    align: { control: 'select', options: ['center', 'start'] },
     asLinks: { control: 'boolean' },
     routerLinks: { control: 'boolean' },
   },
-  args: { orientation: 'horizontal', asLinks: false },
+  args: { orientation: 'horizontal', align: 'center', asLinks: false },
 } as Meta<ProgressStepsStorybookComponent>;
 
 type Story = StoryObj<ProgressStepsStorybookComponent>;

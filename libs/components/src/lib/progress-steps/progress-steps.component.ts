@@ -1,5 +1,12 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { ProgressStepsDirective } from './headless/progress-steps.directive';
+
+export const PROGRESS_STEPS_ALIGNS = {
+  CENTER: 'center',
+  START: 'start',
+} as const;
+
+export type ProgressStepsAlign = (typeof PROGRESS_STEPS_ALIGNS)[keyof typeof PROGRESS_STEPS_ALIGNS];
 
 /**
  * Lays out a row - or a column - of `et-progress-step`s with automatic step numbering and a connecting line
@@ -21,6 +28,10 @@ import { ProgressStepsDirective } from './headless/progress-steps.directive';
   hostDirectives: [{ directive: ProgressStepsDirective, inputs: ['orientation', 'minStepSize'] }],
   host: {
     class: 'et-progress-steps',
+    '[attr.data-align]': 'align()',
   },
 })
-export class ProgressStepsComponent {}
+export class ProgressStepsComponent {
+  /** In a row, whether each step's marker, label and description center in the step or sit at its start. */
+  public align = input<ProgressStepsAlign>(PROGRESS_STEPS_ALIGNS.CENTER);
+}

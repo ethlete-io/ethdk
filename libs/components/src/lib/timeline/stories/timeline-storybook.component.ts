@@ -29,6 +29,8 @@ type TimelineStoryEvent = {
         [style.--et-timeline-rail-gap]="compact() ? '8px' : null"
         [style.--et-timeline-marker-size]="compact() ? '14px' : null"
         [style.--et-timeline-dot-size]="compact() ? '6px' : null"
+        [style.--et-timeline-upcoming-ring-width]="upcomingRingWidth()"
+        [style.--et-timeline-current-ring-width]="currentRingWidth()"
       >
         @for (event of EVENTS; track event.label) {
           <et-timeline-item [color]="showMarkers() ? event.color : null" [status]="showStatus() ? event.status : null">
@@ -61,6 +63,8 @@ export class TimelineStorybookComponent {
   public showMarkers = input(false);
   public showStatus = input(false);
   public compact = input(false);
+  public upcomingRingWidth = input<string | null>(null);
+  public currentRingWidth = input<string | null>(null);
 
   protected readonly EVENTS: TimelineStoryEvent[] = [
     {
@@ -94,6 +98,14 @@ export class TimelineStorybookComponent {
       icon: 'et-trophy',
       color: 'brand',
       status: 'current',
+    },
+    {
+      time: '18:00',
+      label: 'Post-match press conference',
+      description: 'Both coaches face the press.',
+      icon: 'et-clock',
+      color: 'brand',
+      status: 'upcoming',
     },
   ];
 }

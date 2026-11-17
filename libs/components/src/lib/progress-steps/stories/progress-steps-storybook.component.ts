@@ -3,6 +3,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 import { injectUrl } from '@ethlete/core';
 import { ProgressStepState } from '../headless/progress-step.directive';
 import { ProgressStepsOrientation } from '../headless/progress-steps.directive';
+import { ProgressStepsAlign } from '../progress-steps.component';
 import { PROGRESS_STEPS_IMPORTS } from '../progress-steps.imports';
 
 export type ProgressStepsStorybookStep = { label: string; state: ProgressStepState; description?: string };
@@ -11,7 +12,7 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
   selector: 'et-sb-progress-steps',
   template: `
     <div [style.max-inline-size.px]="width()" class="p-8 font-sans">
-      <et-progress-steps [orientation]="orientation()">
+      <et-progress-steps [orientation]="orientation()" [align]="align()">
         @for (step of steps(); track step.label) {
           @if (asLinks()) {
             <a [stepState]="step.state" href="#{{ step.label.toLowerCase() }}" et-progress-step>
@@ -60,6 +61,7 @@ export class ProgressStepsStorybookComponent {
   private url = injectUrl();
 
   public orientation = input<ProgressStepsOrientation>('horizontal');
+  public align = input<ProgressStepsAlign>('center');
   public width = input(480);
   public asLinks = input(false, { transform: booleanAttribute });
   public routerLinks = input(false, { transform: booleanAttribute });

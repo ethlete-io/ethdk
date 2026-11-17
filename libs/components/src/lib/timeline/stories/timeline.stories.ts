@@ -10,6 +10,12 @@ export default {
     showMarkers: false,
     showStatus: false,
     compact: false,
+    upcomingRingWidth: null,
+    currentRingWidth: null,
+  },
+  argTypes: {
+    upcomingRingWidth: { control: 'text' },
+    currentRingWidth: { control: 'text' },
   },
 } as Meta<TimelineStorybookComponent>;
 
@@ -27,4 +33,8 @@ export const Compact: Story = {
 
 export const ItemStatuses: Story = {
   args: { showStatus: true },
+};
+
+export const StatusRings: Story = {
+  args: { showStatus: true, upcomingRingWidth: '1px', currentRingWidth: '1px' },
 };

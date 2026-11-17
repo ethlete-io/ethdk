@@ -84,6 +84,20 @@ because in a column the gap _is_ the connector's length.
 
 @example progress-steps/progress-steps-vertical 220px
 
+## Start-aligned steps
+
+In a row, each step centers its marker, label and description by default. `align="start"` moves all
+three to the step's start edge, and the connector then runs from marker to marker at that edge. A column
+always aligns to the start, so `align` only changes a row.
+
+```html
+<et-progress-steps align="start">
+  <et-progress-step stepState="complete">Account</et-progress-step>
+  <et-progress-step stepState="current">Shipping</et-progress-step>
+  <et-progress-step stepState="upcoming">Payment</et-progress-step>
+</et-progress-steps>
+```
+
 ## A second line under the label
 
 Project `[etProgressStepDescription]` for detail the label has no room for - what the step covers,
@@ -147,10 +161,11 @@ normal case: only the steps behind the user are reachable.
 
 ### `et-progress-steps`
 
-| Input         | Type                                   | Default  | Description                                                                    |
-| ------------- | -------------------------------------- | -------- | ------------------------------------------------------------------------------ |
-| `orientation` | `'auto' \| 'horizontal' \| 'vertical'` | `'auto'` | A row, a column, or a row that stacks into a column once the steps do not fit. |
-| `minStepSize` | `number`                               | `96`     | In `auto`, the narrowest a step may get, in pixels, before the steps stack.    |
+| Input         | Type                                   | Default    | Description                                                                             |
+| ------------- | -------------------------------------- | ---------- | --------------------------------------------------------------------------------------- |
+| `orientation` | `'auto' \| 'horizontal' \| 'vertical'` | `'auto'`   | A row, a column, or a row that stacks into a column once the steps do not fit.          |
+| `minStepSize` | `number`                               | `96`       | In `auto`, the narrowest a step may get, in pixels, before the steps stack.             |
+| `align`       | `'center' \| 'start'`                  | `'center'` | In a row, whether marker, label and description center in the step or sit at its start. |
 
 ### `et-progress-step`
 

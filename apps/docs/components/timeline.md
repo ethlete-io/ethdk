@@ -63,6 +63,18 @@ Set `status` on an item to show where a process stands, with the same vocabulary
 
 @example timeline/timeline-status 280px
 
+The marker look per status is tunable on `et-timeline` (or one item). `--et-timeline-upcoming-ring-width`
+hollows the default dot of an `upcoming` item into a ring of that width - unset, the dot stays filled.
+`--et-timeline-current-ring-width` is the width of the `current` ring, which sits one
+`--et-timeline-line-thickness` outside the marker; unset, it equals the line thickness.
+
+```css
+.match-report {
+  --et-timeline-upcoming-ring-width: 1px;
+  --et-timeline-current-ring-width: 1px;
+}
+```
+
 ## Your own look: the headless directives
 
 `et-timeline` and `et-timeline-item` are the `etTimeline` and `etTimelineItem` directives plus the
@@ -112,4 +124,6 @@ Public design tokens, all inherited so they can be set once on `et-timeline`:
 | `--et-timeline-line-thickness` | `2px`   | Width of the connecting line.                            |
 | `--et-timeline-time-font-size` | `12px`  | Font size of the `[etTimelineTime]` slot.                |
 
-Two colors are deliberately not registered tokens, because they default to the theme: `--et-timeline-marker-color` falls back to the theme's ink in the light scheme and `--et-theme-color-primary-solid` in the dark scheme (which is what an item's `color` scope changes), and `--et-timeline-line-color` falls back to `--et-surface-border-solid`. Override them with other theme tokens rather than literals. The time text and the marker's backdrop read from the surface theme directly. See [theming](/core/theming) for the token set.
+Two colors are deliberately not registered tokens, because they default to the theme: `--et-timeline-marker-color` falls back to the theme's ink in the light scheme and `--et-theme-color-primary-solid` in the dark scheme (which is what an item's `color` scope changes), and `--et-timeline-line-color` falls back to `--et-surface-border-solid`. Override them with other theme tokens rather than literals. The status ring widths
+(`--et-timeline-upcoming-ring-width`, unset = filled dot; `--et-timeline-current-ring-width`, unset =
+`--et-timeline-line-thickness`) are unregistered for the same reason: their defaults derive from other tokens. The time text and the marker's backdrop read from the surface theme directly. See [theming](/core/theming) for the token set.

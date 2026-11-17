@@ -151,6 +151,18 @@
       font-weight: 600;
     }
 
+    .et-progress-steps:where([data-align='start']) & {
+      align-items: flex-start;
+
+      &:not(:last-child)::after {
+        inset-inline-start: calc(var(--et-progress-step-marker-size) / 2);
+      }
+
+      .et-progress-step-text {
+        text-align: start;
+      }
+    }
+
     /* --- Vertical --- */
 
     /* The connector is purpose-built rather than rotated: horizontally it spans marker-center to
