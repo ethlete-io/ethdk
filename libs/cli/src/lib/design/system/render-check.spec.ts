@@ -211,6 +211,9 @@ describe('renderIssuesOf', () => {
       'components/arrow-lost': { body: drawn('data-et-arrow-anchor="#gone"', 'left: 100px') },
       'components/arrow-by-hand': { body: drawn('', '--et-floating-arrow-translate: translate3d(100px, 0, 0)') },
       'components/arrow-default': { body: drawn('', 'left: 16px') },
+      'components/arrow-centred': {
+        body: `<div style="position: relative; padding: 80px 8px 8px 22.5px"><button id="go" style="display: block; margin-left: 34px; box-sizing: border-box; width: 61px; height: 20px; padding: 0; border: 0">Go</button><span style="position: absolute; top: 0; left: 0; width: max-content"><div class="et-anchored-dialog-mock" data-overlay-placement="top" data-et-arrow-anchor="#go" style="position: relative; width: 175px; height: 60px"><div class="et-overlay-arrow" style="position: absolute; bottom: -10px; left: 16px; width: 20px; height: 20px; transform: var(--et-floating-arrow-translate)"></div></div></span></div>`,
+      },
     });
     const config = readConfig(target) ?? {};
 

@@ -72,7 +72,7 @@ export class DesignHarnessSketchShotsComponent {
   protected tooltipRoomOf(force: { target: ZoomControl; interaction: ZoomInteraction } | null) {
     if (force?.interaction !== 'focus-visible') return '';
 
-    return force.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pl-[22.5px]';
+    return force.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pl-5.75';
   }
 
   protected lookOf(row: SketchRow, state: string) {

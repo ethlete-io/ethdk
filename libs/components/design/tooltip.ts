@@ -13,6 +13,11 @@ export type TooltipMockOptions = {
   placement?: Placement;
   /** A surface theme name the app registers. Left out, the pane takes the surface one elevation above its parent. */
   surface?: string;
+  /**
+   * A CSS selector of the drawn trigger. The design frame places the pane and aims the arrow at its centre on whole
+   * pixels, as the overlay runtime does, and the render check reports a tip that misses it.
+   */
+  anchor?: string;
   /** The tooltip id, which the trigger's `aria-describedby` points at. */
   id?: string;
   /** Extra attributes on the `<et-tooltip>`, e.g. design markers. */
@@ -83,7 +88,8 @@ export const tooltip = (options: TooltipMockOptions = {}) => {
     hasTemplate && 'data-has-template="true"',
   ].filter(Boolean);
 
+  const anchorAttribute = options.anchor ? ` data-et-arrow-anchor="${options.anchor.replaceAll('"', '&quot;')}"` : '';
   const body = hasTemplate ? options.content : `<p class="et-tooltip__text">${options.text ?? ''}</p>`;
 
-  return `<div class="et-tooltip-mock-frame"><div class="${paneClasses.join(' ')}" data-overlay-placement="${placement}"${surface ? '' : ' data-et-auto-surface'}><et-tooltip ${tooltipAttributes.join(' ')}><div class="et-tooltip__surface"><div class="et-tooltip__content">${body}</div></div></et-tooltip><div et-floating-arrow class="et-overlay-arrow"></div></div></div>`;
+  return `<div class="et-tooltip-mock-frame"><div class="${paneClasses.join(' ')}" data-overlay-placement="${placement}"${anchorAttribute}${surface ? '' : ' data-et-auto-surface'}><et-tooltip ${tooltipAttributes.join(' ')}><div class="et-tooltip__surface"><div class="et-tooltip__content">${body}</div></div></et-tooltip><div et-floating-arrow class="et-overlay-arrow"></div></div></div>`;
 };
