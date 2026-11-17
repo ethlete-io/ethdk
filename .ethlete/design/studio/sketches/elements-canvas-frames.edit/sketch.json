@@ -90,7 +90,7 @@
     "components/tree-row": "72601799f8079cf2",
     "components/update-dialog": "011b380413e2a556",
     "components/zoom-chip": "09ffd17403d466bc",
-    "elements/canvas-frames": "57e20d3953e63ede",
+    "elements/canvas-frames": "eb8ed915c7b9b2f5",
     "elements/part-tree": "b487e67aac3e89a5",
     "elements/shell-main": "7622e2366ba3215f",
     "elements/studio-menu": "251ee1f3be48f068",
@@ -103,7 +103,7 @@
     "pages/system": "7c722d00c70b6cbc",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "f8e1ab108ec6cffe718cad2ddbd39bb92595d959",
+  "baselineTree": "1c71753af3bef27cd318e833b24fc220650c201a",
   "sharedBase": {
     "elements/canvas-frames/shared/canvas-marks.ts": "58388182990ba2f8"
   },
