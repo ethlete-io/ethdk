@@ -3600,3 +3600,10 @@ its room (ADR 0293), and only the design harness pads the part for its own compa
 merge-confirm 20 px (scattered anti-aliasing); components/comment-pin all states ok and every action works (one earlier
 run timed out two clicks, a rerun was clean). Verified: studio `vitest related` 239/239 and sketches spec 75/75, lint,
 typecheck, e2e case "the comment button". Not verified: a live Studio shot.
+
+As built (B539 merge error row, 2026-11-17): `compare --base 9d846a8a6` shows every remaining pages/sketches diff
+(comparing, merge-error, unchanged-matrix-open, change-crop, change-crop-whole, sketch-only-points-open,
+merge-confirm) existed before the B539 sketches port; none is new. merge-error (8884 px): the app showed the merge error
+in the header, the design under the picked variant's Übernehmen. It now does the same, and keeps the header line only
+when no variant is picked (a failed discard). Verified: compare merge-error ok, sketches spec with a new case (bite:
+`errorInRow` forced false fails it), `vitest related` 185/185, lint. Not verified: a live Studio shot.

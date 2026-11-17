@@ -331,6 +331,9 @@ export class SketchesComponent {
   private userCamera$ = new Subject<Camera | null>();
   protected commentTargeting = computed(() => this.commentMode() && this.comments() !== null);
   protected withdrawnCount = computed(() => this.rows().filter(isWithdrawn).length);
+  protected errorInRow = computed(
+    () => this.error() !== null && this.rows().some((row) => row.key === this.selected() && row.key !== SKETCH_CURRENT),
+  );
   private isEdit = computed(() => this.part().endsWith('@edit'));
   private listedRows = computed(() => {
     const edit = this.isEdit();

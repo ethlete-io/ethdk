@@ -1032,6 +1032,21 @@ describe('SketchesComponent', () => {
     expect(textOf(root.querySelector('[data-sk-row="y"] [data-sk-merge]'))).toBe(LABELS.merge);
   });
 
+  it('shows a merge error under the picked variant, and in the header when no variant is picked', async () => {
+    const picked: HTMLElement = (
+      await render({ camera: '100', status: 'waiting', selected: 'x', error: 'zoom-chip changed' })
+    ).nativeElement;
+
+    expect(textOf(picked.querySelector('[data-sk-row="x"] [data-sk-merge-error]'))).toBe('zoom-chip changed');
+    expect(picked.querySelector('header [role="alert"]')).toBeNull();
+
+    const unpicked: HTMLElement = (await render({ camera: '100', status: 'waiting', error: 'zoom-chip changed' }))
+      .nativeElement;
+
+    expect(unpicked.querySelector('[data-sk-merge-error]')).toBeNull();
+    expect(textOf(unpicked.querySelector('header [role="alert"]'))).toBe('zoom-chip changed');
+  });
+
   it('opens at a restored camera and selects a clicked frame', async () => {
     mockWorldSize(LIST_WIDTH + 500, 900);
     const fixture = await render({ restoredCamera: { zoom: 0.5, x: -40, y: -60 }, statesOpen: true });

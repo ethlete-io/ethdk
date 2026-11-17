@@ -102,7 +102,7 @@
       }
       <span class="flex-1"></span>
       <span class="w-56 flex-none"></span>
-      @if (error(); as error) {
+      @if (!errorInRow() && error(); as error) {
         <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert">{{ error }}</p>
       }
       @if (comments() !== null && discardable()) {
@@ -500,6 +500,11 @@
         </span>
       }
     </span>
+  }
+  @if (errorInRow() && row.key === selected()) {
+    <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert" data-sk-merge-error>
+      {{ error() }}
+    </p>
   }
 </ng-template>
 <ng-template #placeholderTemplate let-row>
