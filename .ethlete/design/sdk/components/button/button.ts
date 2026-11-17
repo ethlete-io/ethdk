@@ -61,17 +61,20 @@ const iconOnly = interactionRows<Props, `icon-${(typeof VARIANTS)[number]}`, But
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
 );
 
-const sizeStates = Object.fromEntries(
-  SIZES.map((size) => [`size-${size}`, { label: 'Add', icon: plus, variant: 'filled', size }]),
-) as Record<`size-${Size}`, Props>;
+const sized = interactionRows<Props, `size-${Size}`, ButtonInteraction>(
+  Object.fromEntries(
+    SIZES.map((size) => [`size-${size}`, { label: 'Add', icon: plus, variant: 'filled', size }]),
+  ) as Record<`size-${Size}`, Props>,
+  { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+);
 
-export const states = { ...interactive.states, ...iconOnly.states, ...sizeStates };
+export const states = { ...interactive.states, ...iconOnly.states, ...sized.states };
 export const grid = {
   columns: interactive.grid.columns,
   rows: {
     ...interactive.grid.rows,
     ...Object.fromEntries(VARIANTS.map((variant) => [`icon ${variant}`, iconOnly.grid.rows[`icon-${variant}`]])),
-    ...Object.fromEntries(SIZES.map((size) => [`size ${size}`, { rest: `size-${size}` as const }])),
+    ...Object.fromEntries(SIZES.map((size) => [`size ${size}`, sized.grid.rows[`size-${size}`]])),
   },
 };
 
