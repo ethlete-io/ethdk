@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B553
+built: 662850c50
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 morning round, second sighting of a failure line with exit 0
 ---
