@@ -7,9 +7,11 @@ import {
   BRACKET_DENSITY,
   BRACKET_DENSITY_PRESETS,
   BRACKET_ERROR_CODES,
+  BRACKET_FINAL_ALIGNMENT,
   BRACKET_IMPORTS,
   BRACKET_LABELS,
   BRACKET_ROUND_HEADER_ALIGN,
+  BRACKET_SECTION_KEY,
   BRACKET_SKELETON_IMPORTS,
   BracketSkeletonComponent,
   BracketComponent,
@@ -17,6 +19,7 @@ import {
   BracketDefaultFinalMatchComponent,
   BracketDefaultMatchComponent,
   BracketDefaultRoundHeaderComponent,
+  BracketDefaultSectionTitleComponent,
   BRACKET_PARTICIPANTS_IMPORTS,
   BracketParticipantsComponent,
   BracketLayout,
@@ -29,6 +32,7 @@ import {
   BracketSkeletonRoundHeaderComponent,
   createNormalizedBracketMatch,
   doubleEliminationBracketLayout,
+  bracketSectionLabel,
   createPlaceholderBracketSource,
   DEFAULT_BRACKET_LABELS,
   EthleteBracketMatchInput,
@@ -253,6 +257,33 @@ class BracketOwnSkeletonComponent {
   finalMatch = BracketSkeletonFinalMatchComponent;
   header = BracketSkeletonRoundHeaderComponent;
   continue = BracketSkeletonContinueComponent;
+}
+
+@Component({
+  selector: 'et-scenario-bracket-section-titles',
+  imports: [BracketComponent],
+  providers: [provideBracketConfig({ layouts: [doubleEliminationBracketLayout()] })],
+  template: `
+    <et-bracket
+      [source]="source"
+      [matchComponent]="match"
+      [finalMatchComponent]="finalMatch"
+      [roundHeaderComponent]="header"
+      [sectionTitleComponent]="sectionTitle"
+      [finalAlignment]="finalAlignment()"
+      showSectionTitles
+    />
+  `,
+})
+class BracketSectionTitlesComponent {
+  source = createPlaceholderBracketSource({ mode: 'double-elimination', participantCount: 4, includeFinal: true });
+  match = BracketSkeletonMatchComponent;
+  finalMatch = BracketSkeletonFinalMatchComponent;
+  header = BracketSkeletonRoundHeaderComponent;
+  sectionTitle = BracketDefaultSectionTitleComponent;
+  finalAlignment = signal<(typeof BRACKET_FINAL_ALIGNMENT)[keyof typeof BRACKET_FINAL_ALIGNMENT]>(
+    BRACKET_FINAL_ALIGNMENT.UPPER,
+  );
 }
 
 describe('bracket scenarios', () => {
@@ -508,5 +539,33 @@ describe('bracket scenarios', () => {
     expect(host.querySelector('et-skeleton')?.classList.contains('et-skeleton--animated')).toBe(false);
     expect(host.querySelectorAll('.et-bracket-skeleton-match')).toHaveLength(1);
     expect(text(host.querySelector('.et-skeleton-ally-text'))).toBe('Loading…');
+  });
+
+  it('heads each part of a double elimination bracket with its localized section title', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(BracketSectionTitlesComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    const titles = Array.from(host.querySelectorAll('et-bracket-default-section-title'));
+    const keys = [BRACKET_SECTION_KEY.UPPER, BRACKET_SECTION_KEY.LOWER, BRACKET_SECTION_KEY.FINALS];
+
+    expect(titles.map((title) => text(title))).toEqual(
+      keys.map((key) => bracketSectionLabel(key, DEFAULT_BRACKET_LABELS)),
+    );
+    expect(titles[0]?.getAttribute('role')).toBe('heading');
+
+    const offsets = () =>
+      Array.from(host.querySelectorAll<HTMLElement>('[data-match-id]')).map((element) => element.style.transform);
+    const upper = offsets();
+
+    fixture.componentInstance.finalAlignment.set(BRACKET_FINAL_ALIGNMENT.CENTER);
+    s.tick();
+    s.flush();
+
+    expect(offsets()).toHaveLength(upper.length);
+    expect(offsets()).not.toEqual(upper);
   });
 });
