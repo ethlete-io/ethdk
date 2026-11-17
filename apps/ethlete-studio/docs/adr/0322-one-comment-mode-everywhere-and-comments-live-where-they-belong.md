@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B539
+built: 95d471046
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, the human on the comment structure ("Irgendwie ist diese Struktur an sich komisch")
 ---
