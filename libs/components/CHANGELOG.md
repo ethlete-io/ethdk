@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.0-next.88
+
+### Minor Changes
+
+- Add `finalAlignment` to `et-bracket`: `'center'` draws a double elimination's finals between the upper and the lower bracket final.
+- `et-table` columns take `rowLinkLabel`, which marks the column a row link takes its accessible name from. Without it, a row link skips image-only cells when it picks its name.
+- `et-bracket` can title the upper bracket, lower bracket and finals of a double elimination with `showSectionTitles`; the titles stay at the start while the bracket scrolls sideways, and `sectionTitleComponent` swaps in your own.
+- Add the `streamSlotLoadingComponent` input to stream player slots to override `StreamConfig.loadingComponent` per slot (`null` shows none).
+
+### Patch Changes
+
+- The `etScrollableButtons` next and previous buttons now scroll on through the scroll container's own padding and only disable once the track is truly at its edge, so the last items are reachable.
+- With `itemSize: 'auto'`, an `et-scrollable` child with a percent width (e.g. `width: 50%`) now sizes against the visible scroll container instead of collapsing to a sliver.
+- With `itemSize: 'auto'`, a percent margin on an `et-scrollable` child (e.g. `margin-inline-end: 10%` on the last one) now resolves against the scroll container, so trailing space no longer needs a `scrollableClass`.
+- An `etIcon` is now `display: inline-flex`, so it no longer stretches to the full width of a block parent.
+- A carousel with autoplay and fewer than two slides no longer throws ET3802 in dev mode: it does not play, so it needs no pause control.
+- Updated dependencies:
+  - @ethlete/bracket@1.0.0-next.6
+
 ## 1.0.0-next.87
 
 ### Minor Changes

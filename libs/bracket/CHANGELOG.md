@@ -1,5 +1,16 @@
 # @ethlete/bracket
 
+## 1.0.0-next.6
+
+### Minor Changes
+
+- Add `finalAlignment` to `et-bracket`: `'center'` draws a double elimination's finals between the upper and the lower bracket final.
+- `et-bracket` can title the upper bracket, lower bracket and finals of a double elimination with `showSectionTitles`; the titles stay at the start while the bracket scrolls sideways, and `sectionTitleComponent` swaps in your own.
+
+### Patch Changes
+
+- A double elimination source with only its upper bracket, lower bracket or finals now draws that side as a single elimination tree instead of throwing ET3405.
+
 ## 1.0.0-next.5
 
 ### Minor Changes
