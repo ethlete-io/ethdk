@@ -628,13 +628,13 @@
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "embedded": {
-      "components/tree-row": "0d1a99b1b9b1d4f3"
+      "components/tree-row": "0a440192fc389687"
     },
     "actions": ["emit:activate", "emit:expandedChange"],
     "at": "2026-11-17T15:25:19.301Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3899697
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 348531
   },
   "elements/shell-main": {
     "hash": "21c9d6370c7619eb",
