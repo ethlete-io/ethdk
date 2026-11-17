@@ -90,7 +90,7 @@
     "components/tree-row": "72601799f8079cf2",
     "components/update-dialog": "011b380413e2a556",
     "components/zoom-chip": "09ffd17403d466bc",
-    "elements/canvas-frames": "75b3a02b0cdb15ab",
+    "elements/canvas-frames": "50ccca9cdc29ee2c",
     "elements/part-tree": "b487e67aac3e89a5",
     "elements/shell-main": "7622e2366ba3215f",
     "elements/studio-menu": "251ee1f3be48f068",
@@ -103,7 +103,7 @@
     "pages/system": "7c722d00c70b6cbc",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "6c33fa5d837e915bfa2d92a040acfaae6ebccd9b",
+  "baselineTree": "c888f1b4b86b173407c7b0aabeb9eac3c0ea3c0f",
   "sharedBase": {
     "pages/inbox/shared/inbox.css": "fb26873e34ae1883",
     "pages/inbox/shared/inbox.ts": "e30b6071abd718a0"

@@ -139,6 +139,6 @@
     "merged": ["elements/canvas-frames"],
     "parts": ["elements/canvas-frames"],
     "reasons": ["old: elements/canvas-frames/canvas-frames.ts - the variant and the product both changed it"],
-    "at": "2026-11-17T03:13:25.534Z"
+    "at": "2026-11-17T03:50:56.130Z"
   }
 }
