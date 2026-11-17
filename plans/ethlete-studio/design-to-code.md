@@ -1824,6 +1824,16 @@ The motions `expand` (collapsed -> expanded) and `collapse` (expanded -> collaps
 `collapsed` and `rest`, `loading` and `busy` are unreachable: those tables have no expander column. missing-motion stays
 at 20. `definePart` no longer infers state names from `unreachable` (it narrowed them and failed the type check).
 
+As built (B135 slice 6): calendar previous/next `emit:activeMonthChange` (`stepUnit` writes `activeMonth` in every
+view); header label to the state of the next view `zoomOut` sets: `year-view` from the month view, `multi-year-view`
+from the year view, `selected` (month view) from the year grid; day cells `emit:valueChange`, or
+`emit:rangeValueChange` in the `range`, `range-focus-visible` and `comparison` states; month cells `emit:monthSelect`,
+year cells `emit:yearSelect`. All in the design part, no mock changed. ACTION-UNDECLARED 71 -> 15, no other count
+changed. Left undeclared, a press does nothing: the 4 filtered days and the 9 out-of-range days (`selectDay` returns
+early on a disabled day) and the natively disabled previous/next buttons in `limits`. Verified: `design complete` and
+`design check --part` (HELD, 0 findings). Not verified: press checks (calendar is not ready-marked); a press on the
+selected day fires nothing new.
+
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
 As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the

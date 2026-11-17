@@ -4,8 +4,10 @@ import frame from './calendar.css?inline';
 
 type Interaction = 'hover' | 'focus-visible';
 
+type View = NonNullable<CalendarMockOptions['view']>;
+
 type Props = {
-  view?: CalendarMockOptions['view'];
+  view?: View;
   selected?: boolean;
   range?: boolean;
   day?: Interaction;
@@ -25,11 +27,33 @@ const TODAY = '2026-09-14';
 const force = (interaction: Interaction | undefined, key: string) =>
   interaction ? { [key]: `data-et-force="${interaction}"` } : {};
 
+const ZOOM_OUT: Record<View, string> = { month: 'year-view', year: 'multi-year-view', multiYear: 'selected' };
+
+const action = (key: string) => `data-et-action="${key}"`;
+
+const cellAction = (view: View, range: boolean) =>
+  view === 'year'
+    ? 'emit:monthSelect'
+    : view === 'multiYear'
+      ? 'emit:yearSelect'
+      : range
+        ? 'emit:rangeValueChange'
+        : 'emit:valueChange';
+
+const declareCells = (html: string, key: string) =>
+  html.replace(/<button [^>]*class="et-calendar-cell[^>]*>/g, (cell) =>
+    cell.includes('aria-disabled') ? cell : cell.replace('<button ', `<button ${action(key)} `),
+  );
+
+const withAction = (key: string | undefined, extra?: string) =>
+  [key && action(key), extra].filter(Boolean).join(' ') || undefined;
+
 const render = (props: Props) => {
   const view = props.view ?? 'month';
   const coarseKey = view === 'year' ? '2026-03' : '2021';
+  const navigate = props.limits ? undefined : 'emit:activeMonthChange';
 
-  return calendar({
+  const html = calendar({
     view,
     month: '2026-09',
     today: TODAY,
@@ -55,10 +79,13 @@ const render = (props: Props) => {
       ...force(props.selectedDay, '2026-09-17'),
       ...force(props.rangeDay, '2026-09-09'),
     },
-    nextAttributes: props.nav ? `data-et-force="${props.nav}"` : undefined,
-    labelAttributes: props.label ? `data-et-force="${props.label}"` : undefined,
+    previousAttributes: withAction(navigate),
+    nextAttributes: withAction(navigate, props.nav ? `data-et-force="${props.nav}"` : undefined),
+    labelAttributes: withAction(ZOOM_OUT[view], props.label ? `data-et-force="${props.label}"` : undefined),
     attributes: props.compact ? 'style="--et-calendar-cell-size: 32px"' : undefined,
   });
+
+  return declareCells(html, cellAction(view, Boolean(props.range || props.comparison)));
 };
 
 export default definePart({
