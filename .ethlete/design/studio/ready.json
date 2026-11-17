@@ -1504,7 +1504,7 @@
     "pid": 948628
   },
   "pages/sketches": {
-    "hash": "f1a00a7624386381",
+    "hash": "5b8e6ac704382be4",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "cc95cf5e7b73338f",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "9b2589726aff9851",
@@ -1599,13 +1599,13 @@
       ".ethlete/design/studio/pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
       ".ethlete/design/studio/pages/sketches/shared/multi-part.ts": "baa5ef7f1cd1fb1c",
       ".ethlete/design/studio/pages/sketches/shared/open-points.ts": "60845bae9be69e07",
-      ".ethlete/design/studio/pages/sketches/shared/sketch-rows.ts": "43ec928a6fa5a050",
+      ".ethlete/design/studio/pages/sketches/shared/sketch-rows.ts": "1ceda2cd5bbb5a01",
       ".ethlete/design/studio/pages/sketches/shared/sketch-status.ts": "1703fa6f2507cc65",
       ".ethlete/design/studio/pages/sketches/shared/withdrawn.ts": "f41fa5225718c5cb",
       ".ethlete/design/studio/pages/sketches/sketch-data.css": "556dec06af60da8a",
       ".ethlete/design/studio/pages/sketches/sketch-data.ts": "6a58dbb60f749b81",
       ".ethlete/design/studio/pages/sketches/sketches.css": "1eb3e4ac3318b27f",
-      ".ethlete/design/studio/pages/sketches/sketches.ts": "2d79cd7454bf78a1",
+      ".ethlete/design/studio/pages/sketches/sketches.ts": "ceabd8412ff9a5ec",
       "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "be4b03f3fc5f9de1",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/anchored-dialog.ts": "459be8e004b757d9",
@@ -1698,10 +1698,14 @@
       "comments-draft",
       "comments-mode",
       "emit:activate",
+      "emit:close",
       "emit:collapse",
       "emit:discard",
       "emit:expandedChange",
+      "emit:fit",
+      "emit:maximize",
       "emit:merge",
+      "emit:minimize",
       "emit:pick",
       "emit:pinToggle",
       "emit:productChange",
@@ -1715,6 +1719,9 @@
       "emit:statesToggle",
       "emit:update",
       "emit:withdrawnToggle",
+      "emit:zoomIn",
+      "emit:zoomOut",
+      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "paused",
@@ -1723,10 +1730,10 @@
       "sketch-only-points-open",
       "system-picker"
     ],
-    "at": "2026-11-17T06:46:01.715Z",
+    "at": "2026-11-17T07:51:20.930Z",
     "by": "et design check",
     "cmd": "check",
-    "pid": 2459101
+    "pid": 2609185
   },
   "pages/start": {
     "hash": "90ba9fe96be9c372",
