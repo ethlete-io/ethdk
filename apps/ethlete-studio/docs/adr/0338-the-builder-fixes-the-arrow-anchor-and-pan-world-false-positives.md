@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B579
+built: c510481c6
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 (late evening), the human on the pages/sketches false positives
 ---
