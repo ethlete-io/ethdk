@@ -3,4 +3,24 @@
   .st-crow-unread {
     border-radius: 50%;
   }
+
+  .st-crow {
+    transition: var(--transition-state);
+  }
+
+  .st-crow[aria-pressed='true']:hover {
+    background:
+      linear-gradient(rgb(var(--et-theme-color-primary-rgb) / 0.2), rgb(var(--et-theme-color-primary-rgb) / 0.2)),
+      color-mix(in srgb, var(--et-surface-interaction-solid) 9%, transparent);
+  }
+
+  .st-crow[aria-pressed='true']:active {
+    background:
+      linear-gradient(rgb(var(--et-theme-color-primary-rgb) / 0.2), rgb(var(--et-theme-color-primary-rgb) / 0.2)),
+      color-mix(in srgb, var(--et-surface-interaction-solid) 15%, transparent);
+  }
+
+  .st-crow:focus-visible {
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
 }

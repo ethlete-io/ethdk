@@ -1798,3 +1798,11 @@ COMPARE blockers are gone. `design ready` then fails 42 action checks (was 60 be
 `emit:appearanceChange` / `emit:openShortcuts` elements (its appearance radios and help rows are disabled). Not
 verified: a live Studio shot. Side fix: sdk `components/menu` re-marked ready (its hash changed with B135 slice 2);
 the run committed 14 foreign serve marks, restored in a15b06a5b.
+
+As built (B574, comment parts): comment-row and comment-target draw their control via `control()` with
+`interactionRows` (hover, active, focus-visible; comment-row also selected via `aria-pressed`), like tree-row;
+comment-draft declares its two buttons as `part: 'components/button'` controls (the button render owns them, so
+`input:` left them undrawn). The app comment-row takes the same looks. `design complete` shows only PART-UNREVIEWED
+for all three; `design check --part` 0 findings for the three and comment-flow. The direct edit opened
+`components/comment-row@edit`; picked new and closed it by `sketch ready --reopen` (HELD). Not verified: compare or
+`task --verify` of comment-row's new states, pages/inbox check (it renders the row too).

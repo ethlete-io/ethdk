@@ -1,10 +1,12 @@
 @let strong = thread().resolved ? 'text-et-surface-muted' : 'text-et-surface';
 <div
-  [class]="selected() ? 'bg-et-theme/20' : ''"
+  [class]="selected() ? SELECTED_CLASS : ''"
+  [attr.aria-pressed]="selected()"
   (click)="pick.emit()"
   (keydown.enter)="pick.emit()"
   (keydown.space)="$event.preventDefault(); pick.emit()"
-  class="flex gap-space-2 rounded-control-md p-space-2"
+  class="flex cursor-pointer gap-space-2 rounded-control-md p-space-2 outline-none [transition:var(--transition-state)] hover:bg-et-surface-interaction/9 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)] active:bg-et-surface-interaction/15"
+  etSurfaceInteractive
   role="button"
   tabindex="0"
 >

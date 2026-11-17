@@ -68,8 +68,8 @@ export default definePart({
   motions: { busy: { from: 'busy', to: 'busy' } },
   instant: 'Typing and the error line change the draft at once; only the Senden spinner loops while busy.',
   controls: {
-    'comment-send': { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
-    'comment-cancel': { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
+    'comment-send': { kind: 'button', part: 'components/button', disabled: true },
+    'comment-cancel': { kind: 'button', part: 'components/button', disabled: true },
   },
   states: {
     empty: {},
