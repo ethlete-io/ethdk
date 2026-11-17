@@ -1836,3 +1836,11 @@ comment-draft declares its two buttons as `part: 'components/button'` controls (
 for all three; `design check --part` 0 findings for the three and comment-flow. The direct edit opened
 `components/comment-row@edit`; picked new and closed it by `sketch ready --reopen` (HELD). Not verified: compare or
 `task --verify` of comment-row's new states, pages/inbox check (it renders the row too).
+
+As built (B574, textarea): the sdk part marks `data-et-control="textarea"` and declares the control as
+`part: 'components/form-field'` (form-field draws the textarea's hover/focus-visible rows; `input:` asked for an own
+interaction grid), plus 14 `motions` for the hover and disabled pairs (the form-field CSS transitions them, so no
+`instant`). a086d6a37 (with the lowered open-points budget), ready cab95afd9, hash 0c8304459. The edit drew as before
+(HELD), so no sketch was needed. Not verified: a live Studio shot. Pre-existing: `design complete components/form-field`
+reports CONTROL-GRID-MISSING for the textAlign center/end rows (no hover/focus-visible cells); textarea's ready does not
+need it.
