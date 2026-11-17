@@ -88,27 +88,31 @@ const entriesOf = (text: string | null): Record<string, unknown> => {
 };
 
 /**
- * Writes the entries that the current `withStampsInMemory` run changed in each stamp file named `name` into the
- * tracked file, onto the entries the file holds now, so a write by another process during the run stays.
+ * Writes the entries of `keys` (or every entry with `'all'`) that the current `withStampsInMemory` run changed in each
+ * stamp file named `name` into the tracked file, onto the entries the tracked file holds now, so a write by another
+ * process during the run stays and no cached stamp entry reaches the tracked file.
  */
-export const keepHeldStampsInFiles = (name: string) => {
+export const keepHeldStampsInFiles = (name: string, keys: readonly string[] | 'all') => {
+  const asked = (key: string) => keys === 'all' || keys.includes(key);
+
   for (const [file, held] of inMemory.getStore() ?? []) {
     if (basename(file) !== name) continue;
 
     const [base, run] = [entriesOf(held.base), entriesOf(held.text)];
 
     withProductLock(dirname(file), () => {
-      const next = entriesOf(diskStampTextOf(file));
+      const tracked = trackedTextOf(file);
+      const next = entriesOf(tracked);
 
       for (const key of new Set([...Object.keys(base), ...Object.keys(run)])) {
-        if (JSON.stringify(base[key]) === JSON.stringify(run[key])) continue;
+        if (!asked(key) || JSON.stringify(base[key]) === JSON.stringify(run[key])) continue;
         if (run[key] === undefined) delete next[key];
         else next[key] = run[key];
       }
 
       const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)));
 
-      if (!sameJson(trackedTextOf(file), sorted)) writeJsonFile({ file, value: sorted });
+      if (!sameJson(tracked, sorted)) writeJsonFile({ file, value: sorted });
     });
   }
 };

@@ -1169,7 +1169,7 @@ export const checkSystemRendered = async (
         code = Math.max(code, options.afterPart ? await options.afterPart(part, checked) : checked);
       }
 
-      keepHeldStampsInFiles(READY_FILE);
+      keepHeldStampsInFiles(READY_FILE, options.parts ?? (options.part ? [options.part] : 'all'));
 
       for (const name of options.products) {
         const entry = options.config.products?.[name];

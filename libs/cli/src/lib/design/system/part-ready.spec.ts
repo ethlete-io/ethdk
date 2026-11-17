@@ -621,6 +621,25 @@ describe('a ready mark commits its own ready.json', () => {
     ]);
   });
 
+  it('commits only its own mark and leaves the foreign marks of the working ready.json uncommitted', async () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const foreign = { hash: 'h', at: '2026-10-01T09:00:00.000Z', by: 'serve' };
+
+    writeFileSync(file, JSON.stringify({ 'components/old': foreign }));
+    initGitRepo(target, 'base');
+    writeFileSync(file, JSON.stringify({ 'components/old': { ...foreign, hash: 'h2' }, 'components/new': foreign }));
+
+    await readyIn(target);
+
+    const committed = JSON.parse(gitResult(target, 'show', `HEAD:${DESIGN_DIR}/app-a/ready.json`).stdout);
+
+    expect(Object.keys(committed)).toEqual(['components/old', 'components/tag']);
+    expect(committed['components/old']).toEqual(foreign);
+    expect(Object.keys(readReady(dir)).sort()).toEqual(['components/new', 'components/old', 'components/tag']);
+    expect(readReady(dir)['components/old']).toMatchObject({ hash: 'h2' });
+  });
+
   it('commits a ready.json entry a check dropped, and drops and commits the entry of a removed part', async () => {
     const { target, dir } = checkout();
     const file = join(dir, 'ready.json');

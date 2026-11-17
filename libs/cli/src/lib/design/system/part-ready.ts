@@ -1,4 +1,5 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { writeJsonFile } from '../../json-file';
 import { resolve } from 'path';
 import { gitStatusOf } from '../git-reader';
 import { DesignConfig } from '../design-config';
@@ -307,19 +308,45 @@ export const forgetUnnamedActions = (options: { product: ResolvedProduct; parts:
   }
 };
 
-const headEntryOf = (dir: string, part: string): unknown => {
-  const shown = gitStatusOf(['show', `HEAD:./${READY_FILE}`], { cwd: dir, stdio: 'pipe' });
-
-  if (shown.status !== 0) return undefined;
-
+const entriesOfText = (text: string | null): Record<string, unknown> | undefined => {
   try {
-    const parsed: unknown = JSON.parse(shown.stdout);
+    const parsed: unknown = text === null ? undefined : JSON.parse(text);
 
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>)[part] : undefined;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : undefined;
   } catch {
     return undefined;
   }
 };
+
+const headEntriesOf = (dir: string) => {
+  const shown = gitStatusOf(['show', `HEAD:./${READY_FILE}`], { cwd: dir, stdio: 'pipe' });
+
+  return shown.status === 0 ? entriesOfText(shown.stdout) : undefined;
+};
+
+const headEntryOf = (dir: string, part: string): unknown => headEntriesOf(dir)?.[part];
+
+const commitOwnEntry = (options: { target: string; dir: string; part: string; slug: string; subject: string }) =>
+  withProductLock(options.dir, () => {
+    const { target, dir, part, slug, subject } = options;
+    const file = readyFileOf(dir);
+    const original = existsSync(file) ? readFileSync(file, 'utf8') : null;
+    const own = entriesOfText(original)?.[part];
+    const composed = Object.entries({ ...headEntriesOf(dir), [part]: own })
+      .filter(([, entry]) => entry !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+
+    writeJsonFile({ file, value: Object.fromEntries(composed) });
+
+    try {
+      return commitOwnFilesSync({ target, files: [file], slug, subject });
+    } finally {
+      if (original === null) rmSync(file, { force: true });
+      else writeFileSync(file, original);
+    }
+  });
 
 const commitDroppedEntry = (options: { target: string; product: ResolvedProduct; part: string }) => {
   const { product, part } = options;
@@ -339,14 +366,13 @@ const commitDroppedEntry = (options: { target: string; product: ResolvedProduct;
 
   if (head === undefined || isReady(now) || JSON.stringify(head) === JSON.stringify(now)) return;
 
-  const refused = withProductLock(dir, () =>
-    commitOwnFilesSync({
-      target: options.target,
-      files: [readyFileOf(dir)],
-      slug: `ready-drop-${part}`,
-      subject: `chore(repo): Drop the ready record of ${part} in ${product.name}`,
-    }),
-  );
+  const refused = commitOwnEntry({
+    target: options.target,
+    dir,
+    part,
+    slug: `ready-drop-${part}`,
+    subject: `chore(repo): Drop the ready record of ${part} in ${product.name}`,
+  });
 
   if (refused !== null)
     console.warn(`READY UNCOMMITTED ${part}: the record is dropped, but the commit failed: ${refused}`);
@@ -449,14 +475,13 @@ const markOf = async (options: MarkOptions): Promise<PartReady | ReadyRefusal> =
 };
 
 const commitReadyFile = (options: { target: string; product: ResolvedProduct; part: string; dir: string }) => {
-  const refused = withProductLock(options.dir, () =>
-    commitOwnFilesSync({
-      target: options.target,
-      files: [readyFileOf(options.dir)],
-      slug: `ready-${options.part}`,
-      subject: `feat(repo): Mark ${options.part} build-ready in ${options.product.name}`,
-    }),
-  );
+  const refused = commitOwnEntry({
+    target: options.target,
+    dir: options.dir,
+    part: options.part,
+    slug: `ready-${options.part}`,
+    subject: `feat(repo): Mark ${options.part} build-ready in ${options.product.name}`,
+  });
 
   if (refused !== null)
     console.warn(`READY UNCOMMITTED ${options.part}: the mark is written, but the commit failed: ${refused}`);

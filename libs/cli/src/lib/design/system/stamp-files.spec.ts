@@ -31,6 +31,19 @@ const gate = () => {
   return { open, opened };
 };
 
+const productReadyFile = () => {
+  const root = mkdtempSync(join(tmpdir(), 'cli-stamp-cache-'));
+
+  dirs.push(root);
+
+  const dir = join(root, '.ethlete/design/acme');
+
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'ready.json'), '{"a":1}\n');
+
+  return { root, file: join(dir, 'ready.json') };
+};
+
 afterEach(() => dirs.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
 describe('withStampsInMemory', () => {
@@ -101,27 +114,37 @@ describe('keepHeldStampsInFiles', () => {
     await withStampsInMemory(async () => {
       writeStampFile(file, { a: 2 });
       writeFileSync(file, '{"a":1,"b":1,"c":3}\n');
-      keepHeldStampsInFiles('ready.json');
+      keepHeldStampsInFiles('ready.json', 'all');
     });
 
     expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 2, c: 3 });
   });
+
+  it('writes only the entries of the asked keys', async () => {
+    const file = readyFile();
+
+    await withStampsInMemory(async () => {
+      writeStampFile(file, { a: 2, b: 2 });
+      keepHeldStampsInFiles('ready.json', ['b']);
+    });
+
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 1, b: 2 });
+  });
+
+  it('never carries an entry of the stamp cache into the tracked file', async () => {
+    const { file } = productReadyFile();
+
+    await withStampsInCache(async () => writeStampFile(file, { a: 1, serve: 9 }));
+    await withStampsInMemory(async () => {
+      writeStampFile(file, { ...JSON.parse(readStampText(file) ?? '{}'), asked: 1 });
+      keepHeldStampsInFiles('ready.json', ['asked']);
+    });
+
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 1, asked: 1 });
+  });
 });
 
 describe('withStampsInCache', () => {
-  const productReadyFile = () => {
-    const root = mkdtempSync(join(tmpdir(), 'cli-stamp-cache-'));
-
-    dirs.push(root);
-
-    const dir = join(root, '.ethlete/design/acme');
-
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'ready.json'), '{"a":1}\n');
-
-    return { root, file: join(dir, 'ready.json') };
-  };
-
   it('keeps a write in the gitignored cache, which every later read sees until the tracked file changes', async () => {
     const { root, file } = productReadyFile();
 

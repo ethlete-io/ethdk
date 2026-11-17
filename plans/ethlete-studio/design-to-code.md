@@ -1999,3 +1999,15 @@ menu ends after the server actions with no submenu trigger and one separator, re
 typecheck, 39 related spec files. Not verified: `design task --verify` / `compare` (the implemented record of
 elements/studio-menu is STALE), a live Studio run (no `studio:e2e` case opens the menu); the picked `@edit` sketch of
 elements/studio-menu still waits for its discard, which the session was not allowed to run.
+
+As built (B576 slice 1, ADR 0335): cause (by probe) - `keepHeldStampsInFiles` composed a check run's ready.json onto
+`diskStampTextOf`, which is the design server's stamp cache (`.ethlete/cache/<product>/stamps/ready.json`) while its
+base matches the tracked file, so every serve mark in that cache landed in the tracked file. A `check --part
+elements/part-tree` whose own record changed wrote 14 foreign marks (13 `cmd: serve`, plus studio-menu). The writer now
+composes onto the tracked text and takes the asked keys (`check --part` / `parts`, `'all'` for a whole-product check);
+an entry outside them is never written. `design ready` and the dropped-record commit commit HEAD's ready.json plus the
+own entry only (`commitOwnEntry` in part-ready.ts); the working file keeps every other entry. A check still writes the
+asked part's mark (ADR 0335 asks for "only", not "none"). Verified: stamp-files.spec (asked keys, no cache entry) and
+part-ready.spec (ready commits only its own mark), each red with its fix reverted. Live, from the same clean ready.json
+and stamp cache: the published cli (c510481c6) dropped part-tree and wrote 14 foreign marks; `--working-tree` dropped
+part-tree only. Not verified: a live `design ready` commit (no ready-clean part to spend on it).
