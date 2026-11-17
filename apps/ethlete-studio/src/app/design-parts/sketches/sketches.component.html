@@ -657,7 +657,7 @@
           [style.top.px]="(draft.point?.y ?? 0) * scale()"
           class="absolute z-10 flex -translate-y-full"
         >
-          <ethlete-comment-pin [author]="draft.author" [initials]="draft.initials" [selected]="true" />
+          <ethlete-comment-pin [author]="draft.author" [initials]="draft.initials" [selected]="true" class="p-0!" />
         </span>
         <ethlete-comment-draft
           [(text)]="draftText"
@@ -747,5 +747,6 @@
     [selected]="comment.id === selectedComment()"
     [resolved]="!!comment.resolved"
     (pinToggle)="commentPick.emit(comment.id)"
+    class="p-0!"
   />
 </ng-template>

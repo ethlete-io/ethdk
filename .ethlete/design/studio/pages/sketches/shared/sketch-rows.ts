@@ -47,11 +47,16 @@ const NARROW_STATES = Object.keys(zoomChipStates).filter((name) => name.startsWi
 
 const isBase = (row: Row) => row.key === 'current' || row.key === 'old' || row.key === 'new';
 
+const placeholderChip = async (state: string) => {
+  const drawn = (await zoomChip.render(zoomChipStates[state] as ZoomChipProps)) as Render;
+  return { ...drawn, body: html`<div class="contents [&_.et-tooltip-mock-frame]:hidden">${drawn.body}</div>` };
+};
+
 const narrowPart = (): SketchPart => ({
   key: 'components/zoom-chip',
   width: 176,
   states: NARROW_STATES,
-  render: async (state) => (await zoomChip.render(zoomChipStates[state] as ZoomChipProps)) as Render,
+  render: placeholderChip,
   rows: [],
 });
 
@@ -107,7 +112,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
     key: 'components/zoom-chip',
     width: 176,
     states: NARROW_STATES,
-    render: async (state) => (await zoomChip.render(zoomChipStates[state] as ZoomChipProps)) as Render,
+    render: placeholderChip,
     rows: [
       { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
       {
