@@ -23,10 +23,13 @@ const TITLE: Partial<Record<ZoomControl, string>> = {
 const tooltipOpen = ({ target, interaction }: Props) =>
   interaction === 'focus-visible' && target !== undefined && TITLE[target] !== undefined;
 
-const tooltipPane = (id: ZoomControl, text: string) =>
-  id === 'fit'
-    ? `<span class="absolute right-[calc(50%-30px)] bottom-full z-10 mb-2">${tooltip({ text, placement: 'top-end' })}</span>`
-    : `<span class="absolute bottom-full left-1/2 z-10 mb-2 translate-x-[round(-50%,1px)]">${tooltip({ text, placement: 'top' })}</span>`;
+const tooltipPane = (id: ZoomControl, text: string) => {
+  const anchor = `[data-et-control="${id}"]`;
+
+  return id === 'fit'
+    ? `<span class="absolute right-[calc(50%-30px)] bottom-full z-10 mb-2">${tooltip({ text, placement: 'top-end', anchor })}</span>`
+    : `<span class="absolute bottom-full left-0 z-10 mb-2 w-max">${tooltip({ text, placement: 'top', anchor })}</span>`;
+};
 
 const OUTPUT: Record<ZoomControl, string> = { out: 'zoomOut', reset: 'zoomReset', in: 'zoomIn', fit: 'fit' };
 
@@ -71,7 +74,7 @@ const BUTTON = { kind: 'button' as const, input: ['pointer' as const, 'keyboard'
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/zoom-chip/zoom-chip.component.ts',
   note: 'The zoom chip in the canvas corner: zoom out, the zoom in percent (resets to 100 %), zoom in, fit. Each row draws one button at rest, hovered, pressed and focused, at 25 %, 100 % or 250 %. The root has `data-canvas-zoom`; each button sits in a `data-camera-out`, `-reset`, `-in` or `-fit` wrapper for a setup to wire. A host places it through `class`, for example `absolute right-space-3 bottom-space-3`.',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   states,
   grid,
   describe: {
@@ -98,9 +101,7 @@ export default definePart({
   controls: { out: BUTTON, reset: BUTTON, in: BUTTON, fit: BUTTON },
   render: (props: Props) =>
     drawing({
-      body: html`<div
-        class="${tooltipOpen(props) ? (props.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pl-[22.5px]') : ''}"
-      >
+      body: html`<div class="${tooltipOpen(props) ? (props.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pl-5.75') : ''}">
         <div
           class="inline-flex rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16)) bg-et-surface-bg ${
             props.class ?? ''

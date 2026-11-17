@@ -553,10 +553,6 @@
     "cmd": "serve",
     "pid": 70002
   },
-  "components/zoom-chip": {
-    "actions": ["emit:fit", "emit:zoomIn", "emit:zoomOut", "emit:zoomReset"],
-    "at": "2026-11-17T13:37:14.831Z"
-  },
   "elements/canvas-frames": {
     "actions": [
       "active",
