@@ -80,6 +80,24 @@
     "cmd": "ready",
     "pid": 975979
   },
+  "components/badge": {
+    "hash": "8ff3db9e1d266277",
+    "files": {
+      ".ethlete/design/sdk/components/badge/badge.css": "1d9a7aa65576198e",
+      ".ethlete/design/sdk/components/badge/badge.ts": "fbe9ef7b5ad265a4",
+      "libs/components/design/badge.ts": "ae6d1b71fa14a024",
+      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b"
+    },
+    "actions": [],
+    "at": "2026-11-17T20:31:37.256Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1300751
+  },
   "components/button": {
     "hash": "fdcd94fedd3764cf",
     "files": {
