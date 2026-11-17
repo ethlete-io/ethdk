@@ -18,6 +18,7 @@ import {
   callDrawsFrom,
   createDrawQueue,
   DRAW_TIMEOUT_MS,
+  DrawPriority,
   DrawWant,
   openFrame,
   send,
@@ -994,15 +995,20 @@ export const createPartShooter = (options: {
     },
     viewMiddleware: shotViewMiddleware(board),
     /**
-     * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds,
-     * ahead of every shot asked with `priority=low`.
+     * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds. The default
+     * `priority: 'high'` draws it ahead of every shot asked with `priority=low`; `'low'` queues it behind the shots the
+     * board shows.
      */
-    pictureOf: (options: PartAddress & { params: URLSearchParams; fresh?: boolean }) => {
+    pictureOf: ({
+      priority = 'high',
+      ...options
+    }: PartAddress & { params: URLSearchParams; fresh?: boolean; priority?: DrawPriority }) => {
       let source: ShotSource | undefined;
 
-      return partShotOf({ ...options, want: { priority: 'high' }, onSource: (from) => (source = from) }).then(
-        (picture) => ({ ...picture, source }),
-      );
+      return partShotOf({ ...options, want: { priority }, onSource: (from) => (source = from) }).then((picture) => ({
+        ...picture,
+        source,
+      }));
     },
     /**
      * Draws `motion` of a part from its `from` state, `address.state`, at each keyframe time, with the motion's tracks;

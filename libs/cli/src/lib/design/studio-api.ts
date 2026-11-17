@@ -440,10 +440,14 @@ const listingOf = async ({
   );
   if (!light && asked.pictureOf) asked.warmRenderer?.();
 
+  const { pictureOf } = asked;
+  const listingPictureOf: PictureOf | undefined =
+    pictureOf && ((options) => pictureOf({ ...options, priority: 'low' }));
+
   const targetsListed = inTurns({ items: sketches, signal }, (sketch) =>
     listOnly
       ? Promise.resolve(null)
-      : targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf, signal, compare: !light }),
+      : targetsOf({ product, sketch, load: asked.load, pictureOf: listingPictureOf, signal, compare: !light }),
   );
   const [checked, sketchTargets] = await Promise.all([
     light || only !== null

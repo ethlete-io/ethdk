@@ -1793,6 +1793,15 @@ Update (builder, 2026-11-02): 1668e5ff6 (cli) + 94897104b (studio): the quick li
 runs no rules (8.5 s cold / 1.8 s warm -> 2 ms); problems and targets come with the full read. The new e2e
 sketches-tree.e2e.mjs (2 s budget) still fails the first reload after a cold start (2.6 s, then 0.9 s) under
 load 11-22; unproven cause: the previous full read blocks the Node thread. It is wired into nothing yet (B67).
+As built (builder, 2026-11-17, commit "fix(cli): Draw the sketch listing compare behind the shown shots"):
+measured headless (probe on withStudio, scratch checkout with 4 studio sketches, cold shot store, 1440x900) from
+navigation to every sketch cell drawn. Cause, proven by a draw-queue log: the full listing's compare drew through
+`pictureOf` at priority high (lane 0), 228 draws, so the 18 shown board shots waited up to 18.7 s for a slot.
+Fix: the listing compares at priority low, behind the active and shown shots; asked compares keep high. First open
+after server start 23.6 / 23.0 / 24.5 s -> 5.6 / 6.0 / 6.0 / 5.6 s; reload with a warm store 0.5-0.6 s before and
+after. Verified: spec (red without the fix), live shot of pages/inbox@edit after reload. Not verified: the Tauri
+app on Tom's checkout; the remaining ~6 s cold is cold draws plus a serial wait (old-variant shots are asked only
+after the 2.4 s per-sketch read; suspect, not measured further).
 
 162\. A go cannot be taken back (Tom, 2026-11-02): Studio has no action to withdraw a go, and `et design go`
 (libs/cli/src/lib/design/system/go-command.ts) only grants one. The auto-carried go on `components/title-bar`

@@ -226,6 +226,23 @@ describe('the first full sketch listing', () => {
     void listing(target, '', () => new Promise(() => undefined), { pictureOf, warmRenderer });
     await vi.waitFor(() => expect(warmRenderer).toHaveBeenCalledTimes(1));
   });
+
+  it('draws its compare pictures at low priority, behind the shots the Studio shows', async () => {
+    const target = acme();
+    const pictureOf = vi.fn<PictureOf>(async () => ({
+      png: encodePng({ width: 1, height: 1, data: Buffer.alloc(4, 255) }),
+      marks: [],
+    }));
+
+    const load = async (file: string) => ({
+      default: { note: 'n', states: { one: {} }, render: () => ({ body: file.includes('sketch') ? 'y' : 'x' }) },
+    });
+
+    await listing(target, '', load, { pictureOf });
+
+    expect(pictureOf).toHaveBeenCalled();
+    expect(new Set(pictureOf.mock.calls.map(([options]) => options.priority))).toEqual(new Set(['low']));
+  });
 });
 
 describe('what changed under a sketch since it was drawn or judged ready', () => {

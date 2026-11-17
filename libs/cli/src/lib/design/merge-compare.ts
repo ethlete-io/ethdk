@@ -7,6 +7,7 @@ import { mergePreviewOf } from './system/sketch/merge-preview';
 import { overlaySketch } from './system/sketch/overlay';
 import { Sketch } from './system/sketch/sketch';
 import { SketchVariant } from './system/system-modules';
+import { DrawPriority } from './thumb';
 
 export type Outline = Omit<PartMark, 'parts'>;
 
@@ -42,6 +43,7 @@ export type PictureOf = (options: {
   interaction: string | null;
   params: URLSearchParams;
   fresh?: boolean;
+  priority?: DrawPriority;
 }) => Promise<SourcedPicture>;
 
 /**
