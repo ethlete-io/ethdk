@@ -1837,6 +1837,11 @@ for all three; `design check --part` 0 findings for the three and comment-flow. 
 `components/comment-row@edit`; picked new and closed it by `sketch ready --reopen` (HELD). Not verified: compare or
 `task --verify` of comment-row's new states, pages/inbox check (it renders the row too).
 
+As built (comment-row record, 2026-11-17): `design task components/comment-row --product studio --verify` green in all
+11 states and recorded in `implemented.json`. `design check --part pages/inbox`: only UNRECORDED (inbox recorded before
+file lists); its `task --verify` stays red, 1-2 px in every state, twice: an anti-alias pixel on the switch thumb edge
+and one on a round avatar. Not caused by this record (no code change); not fixed.
+
 As built (B574, textarea): the sdk part marks `data-et-control="textarea"` and declares the control as
 `part: 'components/form-field'` (form-field draws the textarea's hover/focus-visible rows; `input:` asked for an own
 interaction grid), plus 14 `motions` for the hover and disabled pairs (the form-field CSS transitions them, so no
