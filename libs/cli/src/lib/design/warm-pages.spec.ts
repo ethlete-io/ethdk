@@ -109,6 +109,22 @@ describe('createWarmPages', () => {
     expect(contexts[0]?.close).toHaveBeenCalled();
   });
 
+  it('closes a page whose parking never ends and draws the next shot on a new page', async () => {
+    const { browser, contexts, evaluate } = fakeBrowser();
+    const warm = createWarmPages({ parkLimitMs: 20 });
+
+    evaluate.mockImplementationOnce(() => new Promise(() => undefined));
+
+    await warm.run({ browser, context: phone, limit: { ms: 20, what: 'shot 1' } }, async () => 1);
+    const second = warm.run({ browser, context: phone, limit: { ms: 20, what: 'shot 2' } }, async () => 2);
+
+    await expect(
+      Promise.race([second, new Promise((resolve) => setTimeout(() => resolve('still waiting'), 1000))]),
+    ).resolves.toBe(2);
+    expect(contexts).toHaveLength(2);
+    expect(contexts[0]?.close).toHaveBeenCalled();
+  });
+
   it('opens a page of its own per viewport and scale', async () => {
     const { browser, contexts } = fakeBrowser();
     const warm = createWarmPages();

@@ -960,3 +960,19 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
 - Verified: `cargo test a_restart_whose_build_fails_keeps_the_running_server` (fake checkout, failing build future);
   bite: awaiting the build after the stop fails the test. `cargo test design_server`, `cargo clippy --all-targets`,
   `cargo fmt`. Not verified: the real "Neu starten" click in Studio.
+
+## As built: B309 item 5 (per-shot timeout in `sketch check`)
+
+- Found: every shot draw is already bounded (`warm-pages` `limit`, `loadScaledMs(DRAW_LIMIT_MS)` in `shot.ts`, since
+  7a2c46230) and each render-check part is bounded (`partTimeoutMs`, specs in `render-progress.spec.ts`,
+  `render-check.spec.ts`). Still unbounded: parking a page between shots. `park` runs `page.evaluate` on the drawn page,
+  and the next shot with the same context waits on it before its limit starts. A page whose main thread is busy
+  after its draw never answers that `evaluate`, so `sketch check` waited forever (probe: real Chromium, a page with a
+  `for (;;)` after the screenshot, `evaluate` still pending after 5 s).
+- Built: `createWarmPages` bounds the park by `parkLimitMs` (default `loadScaledMs(DRAW_TIMEOUT_MS)`); a park past it
+  closes the page and the next shot draws on a new one.
+- Verified: `warm-pages.spec.ts` "closes a page whose parking never ends and draws the next shot on a new page"; bite:
+  with the old `warm-pages.ts` the next shot is still waiting after 1 s.
+- Not verified: a live `sketch check` on a hanging sketch. A shot past its draw limit still ends its whole phase with
+  one "could not render <sketch>: timed out … waiting for the draw of frame.html?…&state=…&variant=…" refusal, and
+  `sketch check` exits 0 ("check ok - ready will refuse"); the other shots of that phase do not run.

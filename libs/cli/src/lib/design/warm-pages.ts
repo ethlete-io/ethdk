@@ -1,6 +1,7 @@
 import { fromEvent, Subscription, take, tap } from 'rxjs';
 import { RunAbortedError } from './run-abort';
-import { abortingOf, Browser } from './thumb';
+import { loadScaledMs } from './system/no-verdict';
+import { abortingOf, Browser, DRAW_TIMEOUT_MS } from './thumb';
 import { withinLimit } from './wait';
 
 type ContextOptions = NonNullable<Parameters<Browser['newContext']>[0]>;
@@ -19,8 +20,9 @@ const BLANK = 'about:blank';
  * and cookies cleared, parked on a blank page or, after a draw with a `boot`, left on that drawing. A page whose draw
  * throws is closed, never lent again. The pages close with their browser.
  */
-export const createWarmPages = (options: { idleLimit?: number } = {}) => {
+export const createWarmPages = (options: { idleLimit?: number; parkLimitMs?: number } = {}) => {
   const idleLimit = options.idleLimit ?? IDLE_LIMIT;
+  const parkLimitMs = options.parkLimitMs ?? loadScaledMs(DRAW_TIMEOUT_MS);
   const idleByBrowser = new WeakMap<Browser, Idle[]>();
 
   const idleOf = (browser: Browser) => {
@@ -48,19 +50,21 @@ export const createWarmPages = (options: { idleLimit?: number } = {}) => {
   };
 
   const park = (warm: Warm) =>
-    warm.page
-      .evaluate('localStorage.clear(); sessionStorage.clear()')
-      .catch(() => undefined)
-      .then(() => warm.context.clearCookies())
-      .then(() => (warm.booted === null ? warm.page.goto(BLANK) : undefined))
-      .then(
-        () => true,
-        () => {
-          drop(warm);
+    withinLimit(
+      warm.page
+        .evaluate('localStorage.clear(); sessionStorage.clear()')
+        .catch(() => undefined)
+        .then(() => warm.context.clearCookies())
+        .then(() => (warm.booted === null ? warm.page.goto(BLANK) : undefined)),
+      { ms: parkLimitMs, what: 'parking a page' },
+    ).then(
+      () => true,
+      () => {
+        drop(warm);
 
-          return false;
-        },
-      );
+        return false;
+      },
+    );
 
   const borrow = async (lent: Lent, { key, boot }: { key: string; boot: string | null }): Promise<Warm> => {
     const kept = idleOf(lent.browser);
