@@ -76,7 +76,6 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - CLASS-UNDEFINED ternary (Linux, 17.11.): design check reads a ternary string literal (`merge ? 'bottom-start' : 'bottom-end'`) as a class name. Pre-existing, no hunt.
 - serve.perf red (CI, 17.11.): the non-blocking Perf job is red twice (serve.perf 325 > 224 ms). Parked until it blocks.
 - nav-tabs behavior flake (Linux, 17.11.): 3 of 60 local runs red with repeat-each 3, also before babbe94e0. No hunt until red CI.
-- Studio e2e discard click (Linux, 17.11.): discard click timeout under load once (babbe94e0), green on the next run.
 - chart tooltip shift (17.11.): after 43721532c (whole-pixel panes) the chart tooltip sits 8 px further in from the viewport edge; the spec was re-asserted, not checked as intended.
 - carousel slide growth (SDK, 17.11.): a headless carousel that grows from fewer than two slides is never checked for its pause control (the check runs once, 9d846a8a6).
 - overlay compare gap (Linux, B502 dc4a97a57): a page host smaller than the viewport with a preset size and no open pane may miss overlays in compare.
