@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B568
+built: 38b4b3a9f
 decided: 2026-11-17
 source: doc-agent session 2026-11-17, Rust audit red on new zip advisories
 ---
