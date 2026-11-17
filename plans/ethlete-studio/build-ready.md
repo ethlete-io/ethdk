@@ -1044,3 +1044,15 @@ As built (B494, 2026-11-17): already built; the STATUS row was stale. Leak check
 step that leaves a folder in `/tmp` fails and is named) after 43d71245b (`spec:tmp-leaks`, tools specs). Timer and
 `CLAUDE_CODE_TMPDIR` on `/home`: 7f71406ec; the human installed the timer, recorded in d354e97ed. ADR 0275 carries
 `built: 98cd69ccf`. This slice only deletes the row.
+
+As built (stale-row audit, 2026-11-17): five more rows were already built and are deleted; each as-built line sits under
+its finding in `plans/ethlete-studio/archive/findings-2026-11.md`.
+
+- B112: 02ed9a85d (CANONICAL-CLASS in design check), 47812bad7 (app source), 57e9d3f11 (`--fix`); `rules/canonical-class.ts`.
+- B191: 2086f4cda (first-line WARN), the repeat before the summary lines ("As built (B191, rest)"), f15c2cf25 (build
+  commit check). The one-time dist rebuild was an operator step, not code.
+- B192: 5e9b27114 (`dblclick:` prefix, `DBLCLICK_PREFIX` in `system/actions.ts`).
+- B193: 322581317 (`automatic` capabilities with a `why`).
+- B211: 90096d650 (`c: from withdrawn b`, `sketch-command.spec.ts`).
+  Verified: each commit exists and its symbol is in the code today. Not re-run: their specs. Rows with an open "offen:" item
+  stay (B140, B158, B179, B183, B201, B235, B237, B255-B257, B264b, B266, B268, B278, B281, B291).
