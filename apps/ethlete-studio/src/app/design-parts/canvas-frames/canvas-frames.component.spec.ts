@@ -1,6 +1,7 @@
 import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { CanvasFramesComponent, fitTransform } from './canvas-frames.component';
+import { fitTransform } from './canvas-frames-geometry';
+import { CanvasFramesComponent } from './canvas-frames.component';
 
 @Component({
   template: `
@@ -36,7 +37,14 @@ describe('CanvasFramesComponent', () => {
     const column = element.querySelector<HTMLElement>('ethlete-canvas-viewport [data-canvas-frames]');
 
     expect(column?.querySelector('[data-sample-frame]')).not.toBeNull();
-    expect(column?.style.zoom).toBe('25%');
+    expect(column?.style.transform).toBe('scale(0.25)');
+  });
+
+  it('keeps the frame heads at screen size through the label scale', async () => {
+    const element = (await render()).nativeElement as HTMLElement;
+    const column = element.querySelector<HTMLElement>('[data-canvas-frames]');
+
+    expect(column?.style.getPropertyValue('--st-canvas-label-scale')).toBe('4');
   });
 
   it('shows the zoom in percent on the zoom chip', async () => {

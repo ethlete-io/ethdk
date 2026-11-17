@@ -8,6 +8,7 @@ import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import { manyStatesView, treeRowGrid } from './shared/many-states';
 import { FOLDED_SAMPLE, foldedStatesPill } from './shared/folded-states';
+import { fitTransform } from '../../../../../apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import { icon, type IconName } from '@system/foundations/icons';
 import {
@@ -194,42 +195,19 @@ const popover = async (
 
 const TYPED = 'Der Abstand unter der Kopfzeile wirkt zu knapp.';
 
-const FIT_PADDING = 64;
-
-const insetOf = (canvas: HTMLElement) => {
-  const probe = document.createElement('div');
-
-  probe.style.width = 'var(--st-shell-inset-left, 0px)';
-  canvas.append(probe);
-
-  const inset = probe.offsetWidth;
-
-  probe.remove();
-
-  return inset;
-};
-
 const fitAll = (root: HTMLElement) => {
   const canvas = root.querySelector<HTMLElement>('.st-canvas');
-  const strip = canvas?.firstElementChild as HTMLElement | null;
+  const strip = canvas?.firstElementChild;
   const frame = strip?.querySelector<HTMLElement>('.st-cframe');
 
-  if (!canvas || !strip || !frame) return;
+  if (!canvas || !(strip instanceof HTMLElement) || !frame) return;
 
-  const width = canvas.clientWidth - insetOf(canvas);
-  const height = canvas.clientHeight;
-  const zoom = Math.min(
-    1,
-    (width - FIT_PADDING * 2) / frame.offsetWidth,
-    (height - FIT_PADDING * 2) / frame.offsetHeight,
-  );
-  const left = (width - frame.offsetWidth * zoom) / 2;
-  const top = Math.min((height - frame.offsetHeight * zoom) / 2, FIT_PADDING);
-  const frameLeft = frame.offsetLeft - strip.offsetLeft;
-  const frameTop = frame.offsetTop - strip.offsetTop;
+  const transform = fitTransform({ canvas, strip, frame });
+
+  if (!transform) return;
 
   strip.style.transformOrigin = '0 0';
-  strip.style.transform = `translate(${left - frameLeft * zoom}px, ${top - frameTop * zoom}px) scale(${zoom})`;
+  strip.style.transform = transform;
 };
 
 const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;

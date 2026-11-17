@@ -65,6 +65,7 @@ import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
 import { leavesWindow } from './pointer-focus';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 import { SHOT_FETCH_PRIORITY } from './partials/shot-rank';
+import { canvasLabelScale } from '../../design-parts/canvas-frames/canvas-frames-geometry';
 import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
 import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
@@ -109,7 +110,6 @@ export const CANVAS_LIVE_REST_MS = new InjectionToken<number>('CANVAS_LIVE_REST_
 const WHEEL_GESTURE_GAP_MS = 200;
 const LIVE_GRACE_MS = 5000;
 const MAX_LIVE_FRAMES = 6;
-const LABEL_MIN_ZOOM = 0.25;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 const DRAG_THRESHOLD = 4;
@@ -410,7 +410,7 @@ export class DesignCanvasComponent {
     return `translate(${x}px, ${y}px) scale(${zoom})`;
   });
 
-  protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, LABEL_MIN_ZOOM));
+  protected labelScale = computed(() => canvasLabelScale(this.camera().zoom));
 
   protected rowHeadScale = computed(() => Math.min(this.labelScale(), ROW_HEAD_MAX_SCALE));
 

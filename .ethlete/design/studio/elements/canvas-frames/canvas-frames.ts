@@ -4,6 +4,7 @@ import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import button from '@system/components/button';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import zoomChip from '@system/components/zoom-chip';
+import { canvasLabelScale } from '../../../../../apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry';
 import {
   FAILURE_REASON,
   failureBanner,
@@ -116,8 +117,6 @@ export const canvasFrameBox = (body: string, head = '', { class: extra = '', att
 export const canvasFrame = (name: string, body: string, width = '') =>
   canvasFrameBox(body, canvasFrameHead(name, width));
 
-const LABEL_MIN_ZOOM = 0.25;
-
 type ChipState = { target?: 'out' | 'reset' | 'in' | 'fit'; interaction?: 'hover' | 'active' | 'focus-visible' };
 
 /** The canvas: the frames from the top left at the given zoom, their heads and edges at screen size, and the zoom chip in the corner. */
@@ -136,7 +135,7 @@ export const canvasView = async (
   const scale = parseFloat(zoom) / 100;
   const body = html`<div
       class="flex origin-top-left flex-col items-start gap-30 px-10 py-12"
-      style="transform: scale(${scale}); --st-canvas-label-scale: ${1 / Math.max(scale, LABEL_MIN_ZOOM)}"
+      style="transform: scale(${scale}); --st-canvas-label-scale: ${canvasLabelScale(scale)}"
     >
       ${frames.join('')}
     </div>

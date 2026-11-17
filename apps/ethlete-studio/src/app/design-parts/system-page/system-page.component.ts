@@ -37,10 +37,11 @@ import {
   ThemeSwitch,
 } from './system-page-sample';
 
-export const FRAME_CLASS = 'relative m-0 bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
+export const FRAME_CLASS =
+  'relative m-0 bg-et-surface-bg shadow-[0_0_0_calc(1px*var(--st-canvas-label-scale,1))_var(--et-surface-border-solid)]';
 
 export const FRAME_HEAD_CLASS =
-  'absolute bottom-full left-0 flex gap-[0.6em] pb-space-2 text-[1.2rem]/[1.6rem] whitespace-nowrap text-et-surface';
+  'absolute bottom-full left-0 flex gap-[0.6em] pb-space-2 text-[calc(1.2rem*var(--st-canvas-label-scale,1))]/[calc(1.6rem*var(--st-canvas-label-scale,1))] whitespace-nowrap text-et-surface';
 
 @Component({
   selector: 'ethlete-system-page',
