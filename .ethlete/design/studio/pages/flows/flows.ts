@@ -48,7 +48,8 @@ export default definePart<FlowProps>({
     return drawing({
       body: shell.body,
       setup: menu.setup,
-      styles: shell.styles + menu.styles + list.styles + picker.styles + copy.styles + chip.styles + canvasViewportStyles,
+      styles:
+        shell.styles + menu.styles + list.styles + picker.styles + copy.styles + chip.styles + canvasViewportStyles,
     });
   },
 });
