@@ -122,6 +122,7 @@ class ArenaFrameDirective {
     aspectRatio: this.params.ASPECT_RATIO,
     streamSlotPriority: this.pinned,
     streamSlotOnPipBack: signal(undefined),
+    streamSlotLoadingComponent: signal(undefined),
     createPlayer: (environmentInjector, elementInjector) =>
       createComponent(ArenaPlayerComponent, {
         environmentInjector,

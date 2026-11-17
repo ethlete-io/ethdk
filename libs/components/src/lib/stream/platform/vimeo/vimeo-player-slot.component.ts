@@ -19,7 +19,7 @@ import { VimeoPlayerComponent } from './vimeo-player.component';
     },
     {
       directive: StreamPlayerSlotDirective,
-      inputs: ['streamSlotPriority', 'streamSlotOnPipBack'],
+      inputs: ['streamSlotPriority', 'streamSlotOnPipBack', 'streamSlotLoadingComponent'],
     },
   ],
   host: {

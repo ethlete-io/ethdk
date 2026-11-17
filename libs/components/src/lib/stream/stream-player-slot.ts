@@ -47,6 +47,8 @@ export type StreamPlayerSlotOptions = {
   streamSlotPriority: Signal<boolean>;
   /** Forwarded from the host directive's `streamSlotOnPipBack` input. */
   streamSlotOnPipBack: Signal<(() => void) | undefined>;
+  /** Forwarded from the host directive's `streamSlotLoadingComponent` input. */
+  streamSlotLoadingComponent: Signal<Type<unknown> | null | undefined>;
   /**
    * Creates and returns the platform player `ComponentRef`.
    * Receives the environment and element injectors so input bindings have the
@@ -109,6 +111,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
   let consentComponentRef: ComponentRef<unknown> | null = null;
   let pipPlaceholderComponentRef: ComponentRef<unknown> | null = null;
   let loadingComponentRef: ComponentRef<unknown> | null = null;
+  let mountedLoadingComponent: Type<unknown> | null = null;
   let errorComponentRef: ComponentRef<unknown> | null = null;
   let overlayPlayer: StreamPlayer | null = null;
 
@@ -155,7 +158,13 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     return null;
   };
 
-  const renderOverlay = (next: StreamOverlay | null) => {
+  const resolvedLoadingComponent = computed(() => {
+    const override = options.streamSlotLoadingComponent();
+
+    return override === undefined ? streamConfig.loadingComponent : override;
+  });
+
+  const renderOverlay = (next: StreamOverlay | null, loadingComponent: Type<unknown> | null) => {
     if (next?.player !== overlayPlayer) {
       loadingComponentRef = unmountComponent(loadingComponentRef);
       errorComponentRef = unmountComponent(errorComponentRef);
@@ -163,13 +172,15 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     }
 
     const display = next?.display ?? 'ready';
-    const { loadingComponent, errorComponent } = streamConfig;
+    const { errorComponent } = streamConfig;
 
-    if (display !== 'loading') loadingComponentRef = unmountComponent(loadingComponentRef);
+    if (display !== 'loading' || loadingComponent !== mountedLoadingComponent)
+      loadingComponentRef = unmountComponent(loadingComponentRef);
     if (display !== 'error') errorComponentRef = unmountComponent(errorComponentRef);
 
     if (display === 'loading' && loadingComponent && !loadingComponentRef) {
       loadingComponentRef = mountComponent(loadingComponent);
+      mountedLoadingComponent = loadingComponent;
     }
 
     if (next && display === 'error' && errorComponent && !errorComponentRef) {
@@ -365,8 +376,9 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
 
   effect(() => {
     const next = overlay();
+    const loading = resolvedLoadingComponent();
 
-    untracked(() => renderOverlay(next));
+    untracked(() => renderOverlay(next, loading));
   });
 
   const destroy = () => {

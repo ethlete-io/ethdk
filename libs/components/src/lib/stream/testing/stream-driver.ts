@@ -88,6 +88,14 @@ export class FakeStreamPlayerComponent {
 })
 export class FakeStreamChromeComponent {}
 
+/** A second loading component, for slot overrides. */
+@Component({
+  selector: 'et-fake-stream-slot-chrome',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+})
+export class FakeStreamSlotChromeComponent {}
+
 /** Stands in for the configured `errorComponent`. */
 @Component({
   selector: 'et-fake-stream-error',
@@ -200,6 +208,10 @@ export type StreamSlotDriverOptions = {
   consentGranted?: boolean;
   /** How many slots the host renders, all bound to `playerId`. Address them by index. @default 1 */
   slotCount?: number;
+  /** The slot's `streamSlotLoadingComponent` input. @default undefined */
+  slotLoadingComponent?: Type<unknown> | null;
+  /** The config's `loadingComponent`. @default FakeStreamChromeComponent */
+  configLoadingComponent?: Type<unknown> | null;
   providers?: Provider[];
 };
 
@@ -220,12 +232,14 @@ class StreamSlotTestDirective {
   public readonly playerId = signal(this.options.playerId ?? DEFAULT_TEST_PLAYER_ID);
   public readonly priority = signal(this.options.priority ?? false);
   public readonly onPipBack = signal<(() => void) | undefined>(undefined);
+  public readonly loadingComponent = signal<Type<unknown> | null | undefined>(this.options.slotLoadingComponent);
 
   public readonly slot = createStreamPlayerSlot({
     playerId: this.playerId,
     aspectRatio: 16 / 9,
     streamSlotPriority: this.priority,
     streamSlotOnPipBack: this.onPipBack,
+    streamSlotLoadingComponent: this.loadingComponent,
     createPlayer: (envInjector, elementInjector) =>
       createComponent(FakeStreamPlayerComponent, { environmentInjector: envInjector, elementInjector }),
   });
@@ -266,7 +280,8 @@ export const createStreamSlotDriver = (options: StreamSlotDriverOptions = {}) =>
     { provide: STREAM_USER_CONSENT_PROVIDER_TOKEN, useValue: consentHandler },
     ...provideStreamConfig({
       consentComponent: options.consentComponent ?? null,
-      loadingComponent: FakeStreamChromeComponent,
+      loadingComponent:
+        options.configLoadingComponent === undefined ? FakeStreamChromeComponent : options.configLoadingComponent,
       errorComponent: FakeStreamErrorComponent,
     }),
     ...(options.providers ?? []),
@@ -287,6 +302,9 @@ export const createStreamSlotDriver = (options: StreamSlotDriverOptions = {}) =>
     slotElement: (index = 0) => query(fixture, `[data-slot="${index}"]`),
 
     setPlayerId: (playerId: StreamPlayerId, index = 0) => directive(index).playerId.set(playerId),
+
+    setLoadingComponent: (component: Type<unknown> | null | undefined, index = 0) =>
+      directive(index).loadingComponent.set(component),
 
     setPriority: (priority: boolean, index = 0) => directive(index).priority.set(priority),
 

@@ -19,7 +19,7 @@ import { TwitchPlayerComponent } from './twitch-player.component';
     },
     {
       directive: StreamPlayerSlotDirective,
-      inputs: ['streamSlotPriority', 'streamSlotOnPipBack'],
+      inputs: ['streamSlotPriority', 'streamSlotOnPipBack', 'streamSlotLoadingComponent'],
     },
   ],
   host: {

@@ -6,7 +6,11 @@ import { Component } from '@angular/core';
 import { PipSlotPlaceholderComponent } from './pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from './stream-config';
 import { provideStreamPip } from './stream-pip.provider';
-import { FakeStreamConsentComponent, createStreamSlotDriver } from './testing/stream-driver';
+import {
+  FakeStreamConsentComponent,
+  FakeStreamSlotChromeComponent,
+  createStreamSlotDriver,
+} from './testing/stream-driver';
 
 @Component({ selector: 'et-test-pip-placeholder', template: '' })
 class TestPipPlaceholderComponent {}
@@ -151,6 +155,48 @@ describe('createStreamPlayerSlot', () => {
 
     expect(driver.slotElement(0)?.querySelector('et-fake-stream-error')).not.toBeNull();
     expect(driver.slotElement(0)?.querySelector('et-fake-stream-chrome')).toBeNull();
+  });
+
+  it('renders the slot loading component instead of the configured one', async () => {
+    const driver = createStreamSlotDriver({
+      consentGranted: true,
+      slotLoadingComponent: FakeStreamSlotChromeComponent,
+    });
+    await driver.settle();
+
+    expect(driver.slotElement()?.querySelector('et-fake-stream-slot-chrome')).not.toBeNull();
+    expect(driver.slotElement()?.querySelector('et-fake-stream-chrome')).toBeNull();
+  });
+
+  it('renders no loading component for a slot that sets null while the config has one', async () => {
+    const driver = createStreamSlotDriver({ consentGranted: true, slotLoadingComponent: null });
+    await driver.settle();
+
+    expect(driver.slotElement()?.querySelector('et-fake-stream-chrome')).toBeNull();
+    expect(driver.slotElement()?.querySelector('et-fake-stream-slot-chrome')).toBeNull();
+  });
+
+  it('follows the configured loading component when the slot sets none', async () => {
+    const driver = createStreamSlotDriver({ consentGranted: true });
+    await driver.settle();
+
+    expect(driver.slotElement()?.querySelector('et-fake-stream-chrome')).not.toBeNull();
+  });
+
+  it('swaps the mounted loading component when the slot input changes while loading', async () => {
+    const driver = createStreamSlotDriver({ consentGranted: true });
+    await driver.settle();
+
+    driver.setLoadingComponent(FakeStreamSlotChromeComponent);
+    await driver.settle();
+
+    expect(driver.slotElement()?.querySelector('et-fake-stream-slot-chrome')).not.toBeNull();
+    expect(driver.slotElement()?.querySelector('et-fake-stream-chrome')).toBeNull();
+
+    driver.setLoadingComponent(null);
+    await driver.settle();
+
+    expect(driver.slotElement()?.querySelector('et-fake-stream-slot-chrome')).toBeNull();
   });
 
   it('shows the error overlay after the slot that created the player is destroyed', async () => {

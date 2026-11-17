@@ -70,6 +70,9 @@ export class StreamPlayerSlotDirective {
   public streamSlotPriority = input(false, { transform: booleanAttribute });
   public streamSlotOnPipBack = input<() => void>();
 
+  /** Loading component for this slot. `undefined` uses `StreamConfig.loadingComponent`, `null` shows none. */
+  public streamSlotLoadingComponent = input<Type<unknown> | null | undefined>(undefined);
+
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
     const type = this.surfaceType();
@@ -84,6 +87,7 @@ export class StreamPlayerSlotDirective {
     aspectRatio: resolveStreamAspectRatio(this.params.ASPECT_RATIO),
     streamSlotPriority: this.streamSlotPriority,
     streamSlotOnPipBack: this.streamSlotOnPipBack,
+    streamSlotLoadingComponent: this.streamSlotLoadingComponent,
     createPlayer: (envInjector, elementInjector) =>
       createComponent(this.playerComponent, {
         environmentInjector: envInjector,

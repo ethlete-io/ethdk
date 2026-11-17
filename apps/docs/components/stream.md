@@ -53,7 +53,7 @@ Source inputs per platform:
 | TikTok      | `videoId`                                                    | portrait 9∶16 in picture-in-picture           |
 | SOOP        | `userId` or `videoId`                                        | -                                             |
 
-Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
+Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`) and `streamSlotLoadingComponent` (the [loading overlay](#per-slot-loading-component) for this slot).
 
 A YouTube slot embeds from `www.youtube.com` unless you set `host`. Pass a host name such as
 `www.youtube-nocookie.com` for YouTube's privacy-enhanced mode; a missing `https://` is added and a trailing
@@ -146,6 +146,15 @@ provideStreamConfig({
 ```
 
 The built-in `et-stream-consent` shows a lock icon, heading/description and an accept button; texts are configurable via `provideStreamLabels` and react to the app [locale](/core/providers#locale); `provideStreamConsentConfig` keeps only the accept button's color. Loading (`et-stream-player-loading`) and error (`et-stream-player-error`, with retry) overlays are equally replaceable via `provideStreamConfig`.
+
+### Per-slot loading component
+
+`streamSlotLoadingComponent` overrides `StreamConfig.loadingComponent` for one slot: `undefined` (the default) uses the config's component, `null` shows no loading overlay in that slot, and a component replaces the configured one. Changing it while the slot is loading swaps the mounted component. The error component stays config-only.
+
+```html
+<et-youtube-player-slot [streamSlotLoadingComponent]="MyLoadingComponent" videoId="abc" />
+<et-youtube-player-slot [streamSlotLoadingComponent]="null" videoId="abc" />
+```
 
 ### Loading and error overlays are opt-in
 

@@ -19,7 +19,7 @@ import { SoopPlayerComponent } from './soop-player.component';
     },
     {
       directive: StreamPlayerSlotDirective,
-      inputs: ['streamSlotPriority', 'streamSlotOnPipBack'],
+      inputs: ['streamSlotPriority', 'streamSlotOnPipBack', 'streamSlotLoadingComponent'],
     },
   ],
   host: {

@@ -19,7 +19,7 @@ import { FacebookPlayerParamsDirective } from './headless/facebook-player-params
     },
     {
       directive: StreamPlayerSlotDirective,
-      inputs: ['streamSlotPriority', 'streamSlotOnPipBack'],
+      inputs: ['streamSlotPriority', 'streamSlotOnPipBack', 'streamSlotLoadingComponent'],
     },
   ],
   host: {

@@ -19,7 +19,7 @@ import { DailymotionPlayerParamsDirective } from './headless/dailymotion-player-
     },
     {
       directive: StreamPlayerSlotDirective,
-      inputs: ['streamSlotPriority', 'streamSlotOnPipBack'],
+      inputs: ['streamSlotPriority', 'streamSlotOnPipBack', 'streamSlotLoadingComponent'],
     },
   ],
   host: {
