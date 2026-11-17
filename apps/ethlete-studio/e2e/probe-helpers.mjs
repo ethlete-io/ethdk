@@ -50,8 +50,8 @@ const censusCells = (page, only = null) =>
               box.right > view.left &&
               box.left < view.right,
             picture: !!img && img.complete && img.naturalWidth > 0 && showing(img),
-            pictureSrc: img?.src ?? null,
-            wantedPictureSrc: cell.querySelector('img[data-shot-picture]')?.src ?? null,
+            drawnPictureSrc: img?.src ?? null,
+            pictureSrc: cell.querySelector('img[data-shot-picture]')?.src ?? null,
             framed: !!iframe && showing(iframe),
           };
         });

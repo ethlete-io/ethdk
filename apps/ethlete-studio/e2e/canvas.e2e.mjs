@@ -2251,7 +2251,7 @@ const CASES = [
       const note = (cells) =>
         cells.forEach((cell) => {
           if ((cell.visible && cell.shows) || cell.picture) had.add(cell.key);
-          if (cell.picture) loadedPictures.add(cell.pictureSrc);
+          if (cell.picture) loadedPictures.add(cell.drawnPictureSrc);
         });
       const steps = [];
       const empties = [];
@@ -2277,7 +2277,7 @@ const CASES = [
             .filter((cell) => cell.visible)
             .map(
               (cell) =>
-                `${cell.key} ${cell.framed ? 'iframe' : '-'}/${cell.drawn ? 'drawn' : '-'}/${cell.pictureSrc ? (cell.picture ? 'picture' : 'pending') : '-'}`,
+                `${cell.key} ${cell.framed ? 'iframe' : '-'}/${cell.drawn ? 'drawn' : '-'}/${cell.drawnPictureSrc ? (cell.picture ? 'picture' : 'pending') : '-'}`,
             )
             .join(
               ', ',
@@ -2303,7 +2303,7 @@ const CASES = [
             const cells = await sketchCells(page);
             const visible = cells.filter((cell) => cell.visible);
             const empty = visible.filter(
-              (cell) => !cell.shows && (had.has(cell.key) || loadedPictures.has(cell.pictureSrc)),
+              (cell) => !cell.shows && (had.has(cell.key) || loadedPictures.has(cell.drawnPictureSrc)),
             );
 
             reread += cells.filter((cell) => cell.gone).length;
@@ -2612,10 +2612,10 @@ const CASES = [
           const cell = await cellOf(key);
 
           if (
-            cell?.wantedPictureSrc &&
+            cell?.pictureSrc &&
             (await page.evaluate(
               (src) => [...document.images].some((img) => img.src === src && img.complete && img.naturalWidth > 0),
-              cell.wantedPictureSrc,
+              cell.pictureSrc,
             )) &&
             accept(cell)
           )
@@ -2638,7 +2638,7 @@ const CASES = [
 
       if (!before) return { ok: false, detail: `${top.key} loads no picture` };
 
-      const tag = await tagOf(before.wantedPictureSrc);
+      const tag = await tagOf(before.pictureSrc);
       const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS[top.key.split(' ')[0]]);
       const original = readFileSync(stylesheet, 'utf8');
 
@@ -2663,7 +2663,7 @@ const CASES = [
         }
 
         const returned = Date.now();
-        const renewed = (cell) => !!cell?.wantedPictureSrc && cell.wantedPictureSrc !== before.wantedPictureSrc;
+        const renewed = (cell) => !!cell?.pictureSrc && cell.pictureSrc !== before.pictureSrc;
         let cell = await cellOf(top.key);
 
         for (const until = returned + WAIT_MS; !renewed(cell) && Date.now() < until; cell = await cellOf(top.key))
@@ -2682,7 +2682,7 @@ const CASES = [
           };
 
         const drawnMs = Date.now() - returned;
-        const newTag = await tagOf(after.wantedPictureSrc);
+        const newTag = await tagOf(after.pictureSrc);
 
         return {
           ok: newTag !== tag,
