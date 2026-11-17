@@ -1056,3 +1056,12 @@ its finding in `plans/ethlete-studio/archive/findings-2026-11.md`.
 - B211: 90096d650 (`c: from withdrawn b`, `sketch-command.spec.ts`).
   Verified: each commit exists and its symbol is in the code today. Not re-run: their specs. Rows with an open "offen:" item
   stay (B140, B158, B179, B183, B201, B235, B237, B255-B257, B264b, B266, B268, B278, B281, B291).
+
+As built (B235, 2026-11-17): superseded by a733db40b (2026-11-02): a design command rebuilds a stale cli dist before it
+draws and refuses only when the rebuild fails. That makes stale findings impossible, which is stronger than the row's
+exit 2; no ADR holds the exit 2 (grill decision). Row deleted.
+
+As built (B179, 2026-11-17): built in dd5ff755d (2026-11-03): compare checks only the actions a part draws itself, and
+the host note now says `host <name>: skipped - the app's own chrome around the part, which the design does not draw`
+(`hostLineOf` in `system/actions-command.ts`). Verified: the `part-ready.spec.ts` case that asserts this
+line passes on HEAD. Not verified: a live compare run. Row deleted.
