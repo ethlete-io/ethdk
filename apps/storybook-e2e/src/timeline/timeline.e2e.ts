@@ -8,8 +8,14 @@ const COMPACT_STORY_ID = 'components-data-display-timeline--compact';
 const ITEM = 'et-timeline-item';
 const MARKER = '.et-timeline-item-marker';
 
-const EVENT_LABELS = ['Squad announced', 'Goal by A. Rossi', 'Second yellow for L. Turner', 'Fulltime - 2:1'];
-const EVENT_TIMES = ['18:30', "23'", "67'", "90+4'"];
+const EVENT_LABELS = [
+  'Squad announced',
+  'Goal by A. Rossi',
+  'Second yellow for L. Turner',
+  'Fulltime - 2:1',
+  'Post-match press conference',
+];
+const EVENT_TIMES = ['18:30', "23'", "67'", "90+4'", '18:00'];
 
 interface RailSegment {
   lineTop: number;

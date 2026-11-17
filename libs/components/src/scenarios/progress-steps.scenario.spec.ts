@@ -7,12 +7,14 @@ import {
   injectProgressStepLabels,
   PROGRESS_STEP_LABELS,
   PROGRESS_STEP_STATES,
+  PROGRESS_STEPS_ALIGNS,
   PROGRESS_STEPS_IMPORTS,
   PROGRESS_STEPS_ORIENTATIONS,
   ProgressStepComponent,
   ProgressStepDirective,
   ProgressStepRouterActiveDirective,
   ProgressStepsComponent,
+  ProgressStepsAlign,
   ProgressStepsDirective,
   ProgressStepsOrientation,
   ProgressStepState,
@@ -39,7 +41,7 @@ const text = (element: Element | null | undefined) => element?.textContent?.repl
   selector: 'et-scenario-checkout-steps',
   imports: [PROGRESS_STEPS_IMPORTS],
   template: `
-    <et-progress-steps [orientation]="orientation()">
+    <et-progress-steps [orientation]="orientation()" [align]="align()">
       <a
         [stepState]="account()"
         (click)="$event.preventDefault(); visited.push('account')"
@@ -61,6 +63,7 @@ const text = (element: Element | null | undefined) => element?.textContent?.repl
 })
 class CheckoutStepsComponent {
   orientation = signal<ProgressStepsOrientation>(PROGRESS_STEPS_ORIENTATIONS.HORIZONTAL);
+  align = signal<ProgressStepsAlign>(PROGRESS_STEPS_ALIGNS.CENTER);
   account = signal<ProgressStepState>(PROGRESS_STEP_STATES.COMPLETE);
   shipping = signal<ProgressStepState>(PROGRESS_STEP_STATES.CURRENT);
   payment = signal<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
@@ -176,6 +179,7 @@ describe('progress steps scenarios', () => {
     ]);
     expect(row.classList).toContain('et-progress-steps');
     expect(row.getAttribute('data-orientation')).toBe('horizontal');
+    expect(row.getAttribute('data-align')).toBe('center');
     expect(steps.map((step) => step.tagName)).toEqual(['A', 'BUTTON', 'BUTTON', 'ET-PROGRESS-STEP']);
     expect(steps.map((step) => step.getAttribute('data-state'))).toEqual([
       'complete',
@@ -209,6 +213,10 @@ describe('progress steps scenarios', () => {
     s.tick();
     expect(steps[2]?.classList).toContain('et-color--inherited');
     expect(markers()[2]).toBe('number');
+
+    app.align.set(PROGRESS_STEPS_ALIGNS.START);
+    s.tick();
+    expect(row.getAttribute('data-align')).toBe('start');
 
     app.orientation.set(PROGRESS_STEPS_ORIENTATIONS.VERTICAL);
     s.tick();

@@ -537,6 +537,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-nav-tab-link__content',
   'et-nav-tabs',
   'et-nav-tabs__container',
+  'et-nav-tabs__scrollable',
   'et-notification',
   'et-notification-custom-content',
   'et-notification-dismiss-btn',
