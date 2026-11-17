@@ -1,9 +1,9 @@
 import { catFilesOf, git as gitText } from '../../git-reader';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { dirname, relative, resolve } from 'path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { assetDirsOf, filesBelow } from '../assets';
-import { partHashHolds } from './baseline';
-import { productSharedDirsOf } from '../imports';
+import { partInputsOf } from './baseline';
+import { productSharedDirsOf, SHARED_PREFIX } from '../imports';
 import { repoRootOf } from '../reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { EDIT_SKETCH, isEditSketch, readMerged } from './merged-parts';
@@ -16,7 +16,10 @@ import {
   rebaseOutsideImports,
   rewriteSharedImports,
   SHARED_FOLDER,
+  sharedDirOf,
   Sketch,
+  SOURCE_FILE,
+  variantDirOf,
   variantSharedDirOf,
   writeSketchFile,
 } from './sketch';
@@ -63,21 +66,85 @@ export const isOpenOrPickedEditSketch = (
   !sketch.hold &&
   Object.values(sketch.rejections ?? {}).every((rejections) => rejections.length === 0);
 
+type Roots = { part: string; shared: string[] };
+
+const insideOf = (dir: string, path: string) => {
+  const rest = relative(dir, path);
+
+  return rest !== '' && !rest.startsWith('..') && !isAbsolute(rest);
+};
+
+const canonicalOf = (file: string, roots: Roots) => {
+  const source = readFileSync(file);
+
+  if (!SOURCE_FILE.test(file)) return source.toString('base64');
+
+  return source
+    .toString('utf8')
+    .replace(/(['"])(\.{1,2}\/[^'"]+)\1/gu, (...[, quote = '', specifier = '']: string[]) => {
+      const path = resolve(dirname(file), specifier);
+      const shared = roots.shared.find((dir) => insideOf(dir, path));
+
+      if (shared !== undefined) return `${quote}${SHARED_PREFIX}${relative(shared, path).split(sep).join('/')}${quote}`;
+
+      return `${quote}${insideOf(roots.part, path) ? `<part>/${relative(roots.part, path).split(sep).join('/')}` : path}${quote}`;
+    });
+};
+
 /**
- * Whether `sketch` is an edit sketch picked against its part: the part does not hold the picked variant, `old` as its
- * merged hash, `new` as the sketch's baseline. A check keeps such a sketch; `pickedEditRemedyOf` names its way out.
+ * Whether the part folder holds `variant` of its edit sketch: each file alike once relative imports name the file they
+ * reach, the part's own `shared/` files matched with the variant's (`variantSharedDirOf`, else the sketch's `shared/`).
  */
-export const pickContradictsPart = (
-  product: ResolvedProduct,
-  sketch: Pick<Sketch, 'target' | 'layer' | 'name' | 'decision' | 'baseline'>,
-) => {
+const partHoldsVariant = (options: {
+  product: ResolvedProduct;
+  resolved: ResolvedPart;
+  sketch: Sketch;
+  variant: string;
+}) => {
+  const { product, resolved, sketch, variant } = options;
+  const partDir = dirname(resolved.file);
+  const partShared = resolve(partDir, SHARED_FOLDER);
+  const variantDir = resolve(variantDirOf(sketch, variant), resolved.layer, resolved.name);
+  const variantShared = [variantSharedDirOf(sketch, variant), sharedDirOf(sketch)];
+  const files = partInputsOf({ product, dir: partDir }).files;
+  const generated = new Set(
+    filesBelow(partDir)
+      .filter((file) => !files.includes(file))
+      .map((file) => relative(partDir, file)),
+  );
+  const own = files.filter((file) => !insideOf(partShared, file));
+  const drawn = filesBelow(variantDir).filter((file) => !generated.has(relative(variantDir, file)));
+
+  if (drawn.length !== own.length) return false;
+
+  const partRoots = { part: partDir, shared: [partShared] };
+  const variantRoots = { part: variantDir, shared: variantShared };
+  const sameFile = (file: string, twin: string | undefined) =>
+    twin !== undefined && existsSync(twin) && canonicalOf(file, partRoots) === canonicalOf(twin, variantRoots);
+
+  return (
+    own.every((file) => sameFile(file, resolve(variantDir, relative(partDir, file)))) &&
+    files
+      .filter((file) => insideOf(partShared, file))
+      .every((file) =>
+        sameFile(
+          file,
+          variantShared.map((dir) => resolve(dir, relative(partShared, file))).find((twin) => existsSync(twin)),
+        ),
+      )
+  );
+};
+
+/**
+ * Whether `sketch` is an edit sketch picked against its part: the part folder does not hold the picked variant's files.
+ * A check keeps such a sketch; `pickedEditRemedyOf` names its way out.
+ */
+export const pickContradictsPart = (product: ResolvedProduct, sketch: Sketch) => {
   if (!isEditSketch(sketch) || sketch.decision?.kind !== 'pick') return false;
 
-  const part = partKeyOf(sketch);
-  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
-  const hash = sketch.decision.variant === EDIT_OLD ? readMerged(product.dir)[part] : sketch.baseline?.[part];
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(sketch));
 
-  return resolved !== undefined && !partHashHolds({ product, dir: dirname(resolved.file), hash });
+  return resolved !== undefined && !partHoldsVariant({ product, resolved, sketch, variant: sketch.decision.variant });
 };
 
 /** The one way out of an edit sketch whose pick contradicts its part (`pickContradictsPart`): its merge, which writes the picked variant into the part. */

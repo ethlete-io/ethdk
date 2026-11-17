@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { dirname, join } from 'path';
+import { basename, dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
 import {
@@ -457,6 +457,19 @@ describe('autoAcceptOf', () => {
 
       decide(dir, 'old');
       gitExec(['checkout', '--', chip], { cwd: target });
+
+      expect(await autoAccept(target, draw)).toEqual([STALE_DISCARDED]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+    });
+
+    it('is deleted as stale once the user picked a new variant edited after open and HEAD holds that variant', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+      const variant = join(dir, 'sketches', 'components-chip.edit', 'new', CHIP, basename(chip));
+
+      appendFileSync(variant, '// edited in the sketch\n');
+      decide(dir, 'new');
+      writeFileSync(chip, readFileSync(variant));
+      commitChip(target, chip);
 
       expect(await autoAccept(target, draw)).toEqual([STALE_DISCARDED]);
       expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);

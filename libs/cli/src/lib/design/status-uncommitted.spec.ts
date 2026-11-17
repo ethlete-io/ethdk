@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -110,8 +110,10 @@ describe('design status and uncommitted design state', () => {
 
   const pickAndCommitHero = (variant: string) => {
     const target = committedAcme();
+    const css = join(productDirOf(target), 'elements/hero/hero.css');
+    const merged = readFileSync(css);
 
-    writeFileSync(join(productDirOf(target), 'elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+    writeFileSync(css, '.acme-hero { padding: 0; }');
 
     const product = resolveAcme(target);
     const sketch = createSketch({
@@ -119,6 +121,8 @@ describe('design status and uncommitted design state', () => {
       sketch: { layer: 'elements', name: 'hero', sketch: 'edit' },
       variants: ['new', 'old'],
     }) as Sketch;
+
+    writeFileSync(join(sketch.dir, 'old/elements/hero/hero.css'), merged);
 
     const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
 
