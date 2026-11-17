@@ -90,7 +90,7 @@
       "inputs": ["{projectRoot}/src-tauri/**/*"],
       "options": {
         "cwd": "apps/ethlete-studio/src-tauri",
-        "command": "cargo fmt --check"
+        "command": "cargo fmt --check && cargo fmt --check --manifest-path design-project/Cargo.toml"
       }
     },
     "lint-rust": {
@@ -99,7 +99,7 @@
       "inputs": ["{projectRoot}/src-tauri/**/*"],
       "options": {
         "cwd": "apps/ethlete-studio/src-tauri",
-        "command": "cargo clippy --all-targets -- -D warnings"
+        "command": "cargo clippy --all-targets -- -D warnings && cargo clippy --manifest-path design-project/Cargo.toml --all-targets -- -D warnings"
       }
     },
     "test-rust": {
@@ -108,7 +108,7 @@
       "inputs": ["{projectRoot}/src-tauri/**/*"],
       "options": {
         "cwd": "apps/ethlete-studio/src-tauri",
-        "command": "cargo test"
+        "command": "cargo test && cargo test --manifest-path design-project/Cargo.toml"
       }
     },
     "audit-rust": {

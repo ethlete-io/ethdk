@@ -24,6 +24,7 @@ import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs'
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
+import { shootProducts } from './product-matrix.mjs';
 import { settleLayout } from './settle-wait.mjs';
 import { shardShareOf } from './shard-share.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
@@ -1700,6 +1701,13 @@ const CASES = [
 
       return { ok: Math.abs(after.top - target) <= 2, detail: `scrolled to ${target}, ${after.top} after the reload` };
     },
+  },
+  {
+    name: 'every product view shows a described state',
+    holdListings: false,
+    listingMayPend: 'waits for the described state of each product view, not for a listing',
+    pages: ['System'],
+    run: (page) => shootProducts(page, checkout),
   },
   {
     name: 'open points chip pressed matches its popup',

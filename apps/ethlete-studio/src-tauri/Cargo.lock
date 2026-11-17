@@ -1279,6 +1279,7 @@ dependencies = [
 name = "ethlete-studio"
 version = "0.2.0-next.24"
 dependencies = [
+ "ethlete-studio-design",
  "fix-path-env",
  "libc",
  "notify",
@@ -1295,6 +1296,14 @@ dependencies = [
  "tokio",
  "wayland-client",
  "wayland-protocols",
+]
+
+[[package]]
+name = "ethlete-studio-design"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

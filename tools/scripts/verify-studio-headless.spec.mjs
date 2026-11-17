@@ -1,9 +1,30 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
-import { missingBuildInputs, WEBKIT_BLIND_EXIT, webkitVerdict } from './verify-studio-headless.mjs';
+import {
+  designProject,
+  missingBuildInputs,
+  studioHostAnswer,
+  WEBKIT_BLIND_EXIT,
+  webkitVerdict,
+} from './verify-studio-headless.mjs';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const appSource = join(root, 'apps/ethlete-studio/src');
+
+const invokedHostCommands = () =>
+  new Set(
+    readdirSync(appSource, { recursive: true })
+      .filter((file) => file.endsWith('.ts') && !file.endsWith('.spec.ts'))
+      .flatMap((file) =>
+        [
+          ...readFileSync(join(appSource, file), 'utf8').matchAll(/\binvoke(?:Host\$)?(?:<[^(]*>)?\(\s*'([\w:|]+)'/g),
+        ].map((match) => match[1]),
+      ),
+  );
 
 test('names each missing build input with the command that builds it', () => {
   const checkout = tempDir('studio-headless-inputs-');
@@ -45,4 +66,28 @@ test('still fails a WebKit run when another check failed next to a blind one', (
 
 test('passes a WebKit run only when every check passed', () => {
   assert.deepEqual(webkitVerdict({ 'frame-wheel': 0, edges: 0 }), { exit: 0, lines: [] });
+});
+
+test('answers every host command the app invokes', async () => {
+  const commands = invokedHostCommands();
+  const unanswered = [];
+
+  assert.ok(commands.has('design_project'), `found no design_project invoke among ${[...commands].join(', ')}`);
+  for (const command of commands) {
+    await studioHostAnswer(command, root, 4402).catch((error) => unanswered.push(`${command}: ${error.message}`));
+  }
+
+  assert.deepEqual(unanswered, []);
+});
+
+test('gives a product view the themes the app gives it', () => {
+  const config = JSON.parse(readFileSync(join(root, '.ethlete/design/config.json'), 'utf8'));
+  const themed = Object.entries(config.projects).filter(([, project]) => project.themes);
+  const project = designProject(root, 4999);
+
+  assert.ok(themed.length > 0, 'the design config themes no project');
+  assert.equal(project.port, 4999);
+  assert.ok(project.calls.length > 0, 'the project has no calls');
+  assert.deepEqual(Object.keys(project.themes).sort(), themed.map(([name]) => name).sort());
+  for (const [name, { themes }] of themed) assert.deepEqual(project.themes[name], themes);
 });

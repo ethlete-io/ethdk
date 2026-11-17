@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B572
+built: 4b8b409e0
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 (evening), the human on the product studio headless shot
 ---

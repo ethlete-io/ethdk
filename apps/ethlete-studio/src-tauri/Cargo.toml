@@ -13,6 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
+ethlete-studio-design = { path = "design-project" }
 # Not on crates.io - the Tauri team publishes it as a git repo, with no version tags to pin.
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673" }
 notify = "8.2.0"

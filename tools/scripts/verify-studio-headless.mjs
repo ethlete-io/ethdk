@@ -113,23 +113,48 @@ export const buildStudio = (outputPath, stamp) => {
   stamp('studio build done');
 };
 
-export const studioHostAnswer = async (command, checkout, designPort) => {
-  if (command === 'design_roots') return { search: '', roots: [checkout] };
-  if (command === 'design_project') {
-    const calls = await (await fetch(`http://[::1]:${designPort}/__design/calls`)).json();
-    const config = JSON.parse(readFileSync(join(checkout, '.ethlete/design/config.json'), 'utf8'));
-    const themes = Object.fromEntries(
-      Object.keys(config.projects ?? {}).map((name) => [name, { surface: [], color: [] }]),
-    );
+const designHostManifest = join(root, 'apps/ethlete-studio/src-tauri/design-project/Cargo.toml');
+const designHostBinary = join(dirname(designHostManifest), 'target/release/design-host');
+let designHostBuilt = false;
 
-    return {
-      callsRoot: join(checkout, '.ethlete/design/calls'),
-      port: designPort,
-      defaultCall: config.defaultCall ?? null,
-      themes,
-      calls,
-    };
-  }
+export const ensureDesignHost = () => {
+  if (designHostBuilt) return designHostBinary;
+  execFileSync(
+    'cargo',
+    ['build', '--release', '--quiet', '--manifest-path', designHostManifest, '--bin', 'design-host'],
+    {
+      cwd: root,
+      stdio: 'inherit',
+    },
+  );
+  designHostBuilt = true;
+
+  return designHostBinary;
+};
+
+/** Answers `design_project` with the app's own `project()` (the `design-host` bin), on the port the harness's server listens on. */
+export const designProject = (checkout, designPort) => ({
+  ...JSON.parse(execFileSync(ensureDesignHost(), [checkout], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })),
+  port: designPort,
+});
+
+const IDLE_HOST_COMMANDS = [
+  'design_action_refused',
+  'design_status_watch',
+  'studio_code_state',
+  'studio_quit_for_rebuild',
+  'update_ready',
+  'update_restart',
+  'window_chrome_watch',
+];
+
+export const studioHostAnswer = async (command, checkout, designPort) => {
+  if (command === 'design_roots' || command === 'design_roots_add') return { search: '', roots: [checkout] };
+  if (command === 'design_project') return designProject(checkout, designPort);
+  if (command === 'workspace_root') return checkout;
+  if (command === 'workspace_status' || command === 'workspace_diff') return '';
+  if (command === 'workspace_check') return 'git diff --check passed.';
+  if (IDLE_HOST_COMMANDS.includes(command)) return null;
   if (command.startsWith('design_server_')) {
     return {
       port: designPort,
@@ -152,7 +177,7 @@ export const studioHostAnswer = async (command, checkout, designPort) => {
  * what it started. `built` serves an existing Studio build folder instead of building one. `restartDesign(downMs)` stops
  * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
  * `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
- * without it the stubbed shell has no window chrome and Studio draws no title bar.
+ * without it the stubbed shell sends no window chrome and Studio draws no title bar.
  */
 export const withStudio = async (run, { checkout = root, build = true, built, chrome, echoDesign = false } = {}) => {
   const startedAt = Date.now();
@@ -164,6 +189,7 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
 
   try {
     ensureCli();
+    ensureDesignHost();
 
     if (build && !built) buildStudio(scratch, stamp);
 
