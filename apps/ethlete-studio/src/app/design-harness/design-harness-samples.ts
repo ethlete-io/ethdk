@@ -35,6 +35,7 @@ import {
   sketchMultiSampleOf,
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
+import { SHELL_SAMPLE } from '../design-parts/shell-main/shell-page.component';
 
 type Props = Record<string, unknown>;
 
@@ -241,6 +242,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
+  'elements/studio-menu': (props) => ({ project: SHELL_SAMPLE.project, projects: SHELL_SAMPLE.projects, ...props }),
   'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads, diff, ...props }) => {
     const scale = parseFloat(String(zoom ?? '100%')) / 100;
     const id = String(part);

@@ -1788,3 +1788,13 @@ e2e canvas ("every declared action works"). Not verified: the call/read-error ti
   calendar 71, chart 36, scheduler 31, pagination 26, tree 12, grid 12, carousel 9, table 7, standings 6, tabs 4,
   query-error 4, stream 3, copy-button 3, breadcrumb 3. Every sdk part already reports PART-UNREVIEWED in
   `design complete` (query-error did before this slice too).
+
+### B574 in progress 2026-11-17: studio-menu harness data (builder)
+
+As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the
+non-bare host is `h-100 w-3xl` like the design frame. `design check --part elements/studio-menu`: the 3 option
+COMPARE blockers are gone. `design ready` then fails 42 action checks (was 60 before the host size): submenu states
+7 px wider in the design (500 vs 493), keyboard open/close focus states differ, and the app draws no
+`emit:appearanceChange` / `emit:openShortcuts` elements (its appearance radios and help rows are disabled). Not
+verified: a live Studio shot. Side fix: sdk `components/menu` re-marked ready (its hash changed with B135 slice 2);
+the run committed 14 foreign serve marks, restored in a15b06a5b.

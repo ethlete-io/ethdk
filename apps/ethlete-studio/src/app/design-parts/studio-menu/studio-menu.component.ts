@@ -26,7 +26,7 @@ const APPEARANCES: { value: Appearance; enabled: boolean }[] = [
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective],
   host: {
-    '[class]': "bare() ? 'block size-10' : 'box-border block h-64 w-xl p-space-3 font-ui text-ui-md text-et-surface'",
+    '[class]': "bare() ? 'block size-10' : 'box-border block h-100 w-3xl p-space-3 font-ui text-ui-md text-et-surface'",
   },
 })
 export class StudioMenuComponent {
