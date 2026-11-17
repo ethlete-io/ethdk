@@ -3730,3 +3730,4 @@ groups, ADR 0137). Findings and changed-since-merge not wired: no per-state data
 state `state-groups` still draws prefix groups. Verified: specs, stress, lint, design check. Not: a live shot.
 
 In progress (B557): `describe` per state, STATE-SENTENCE warns until `STATE_SENTENCES_REFUSE`; fill open.
+As built (B557 studio-lab): this commit, 41 states, 16 parts. Verified: check, live shot.

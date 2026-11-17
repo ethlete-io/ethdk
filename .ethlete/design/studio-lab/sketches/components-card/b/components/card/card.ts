@@ -12,6 +12,11 @@ export default definePart<Props>({
       body: 'A longer body that runs over several lines to test wrapping inside the frame.',
     },
   },
+  describe: {
+    default:
+      'A card with a short title and one body line; check the wide padding, the rounded corners and the gap under the title at each width.',
+    long: 'A card with a long title and a multi-line body; check that both wrap inside the card at the narrow width without overflowing.',
+  },
   render: ({ title, body }) =>
     drawing({
       body: `<article class="lab-card box-border font-ui"><h3 class="m-0">${title}</h3><p class="m-0">${body}</p></article>`,

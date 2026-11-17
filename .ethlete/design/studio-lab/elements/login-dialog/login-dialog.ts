@@ -6,6 +6,11 @@ type Props = { error: boolean };
 export default definePart<Props>({
   note: 'The login dialog. It has no URL of its own, so a page shows it in a "login open" state.',
   states: { rest: { error: false }, error: { error: true } },
+  describe: {
+    rest: 'The login dialog with email and password filled and the Log in button; check the field spacing and that no error line shows.',
+    error:
+      'The login dialog after a wrong password; check the accent error line between the password field and Log in.',
+  },
   render: async ({ error }) => {
     const submit = await button.render({ label: 'Log in', variant: 'solid' });
 

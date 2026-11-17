@@ -8,6 +8,11 @@ export default definePart<Props>({
   note: 'Wireframe of the film detail page: poster, synopsis and actions, with a review field once the user starts one.',
   madeBy: ['claude-sonnet-5-5'],
   states: { rest: { index: 0, reviewing: false }, reviewing: { index: 1, reviewing: true } },
+  describe: {
+    rest: 'The wireframe of Night Train with the poster beside its title, synopsis lines and the two actions; check that no review field shows.',
+    reviewing:
+      'The wireframe of The Long Field with a review field under the actions; check the Your review label and its placeholder.',
+  },
   render: ({ index, reviewing }) => {
     const film = films[index] ?? { title: 'Untitled', year: 0 };
 

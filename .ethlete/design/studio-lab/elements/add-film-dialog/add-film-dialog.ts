@@ -4,6 +4,9 @@ import button from '@system/components/button';
 export default definePart({
   note: 'The add-a-film dialog. It has no URL of its own, so the library shows it in an "add open" state.',
   states: { rest: {} },
+  describe: {
+    rest: 'The add-a-film dialog with title and year filled and the Save film button; check the field spacing and the button at the bottom.',
+  },
   render: async () => {
     const save = await button.render({ label: 'Save film', variant: 'solid' });
 

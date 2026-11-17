@@ -19,6 +19,18 @@ export default definePart<Props>({
     'login error': { count: 3, overlay: 'login error' },
     'signed in': { count: 3, overlay: 'none', user: 'Ada' },
   },
+  describe: {
+    three:
+      'The library with all three films as rows under the Library heading; check each title on the left and its year on the right.',
+    one: 'The library with a single film row; check that the page stays aligned with only Night Train listed.',
+    empty: 'The empty library; check the No films yet card and the Add a film button under it instead of rows.',
+    'add open':
+      'The empty library behind a scrim with the add-a-film dialog; check that the dialog sits centred over the dimmed page.',
+    'login open':
+      'The library behind a scrim with the login dialog; check that the dialog sits centred and the rows stay dimmed behind it.',
+    'login error': 'The login dialog over the library after a wrong password; check the error line above Log in.',
+    'signed in': 'The library for a signed-in user; check that Ada shows at the right of the bar in place of Log in.',
+  },
   render: async ({ count, overlay, user }) => {
     const empty = await card.render({ title: 'No films yet', body: 'Add a film to start the library.' });
     const addButton = await button.render({ label: 'Add a film', variant: 'solid' });

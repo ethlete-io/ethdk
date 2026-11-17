@@ -15,6 +15,13 @@ export default definePart<Props>({
     watchlist: { active: 'watchlist', content: '' },
     'signed in': { active: 'library', content: '', user: 'Ada' },
   },
+  describe: {
+    library: 'The shell with Library active and a Log in button; check that only Library shows in the accent colour.',
+    watchlist:
+      'The shell with Watchlist active; check that the accent and bold weight moved from Library to Watchlist.',
+    'signed in':
+      'The shell for a signed-in user; check that the name Ada replaces the Log in button at the right of the bar.',
+  },
   render: ({ active, content, user }) =>
     drawing({
       body: `<div class="lab-shell relative font-ui"><header class="lab-shell-bar flex items-center justify-between"><strong>Filmbox</strong><nav class="flex">${LINKS.map(

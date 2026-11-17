@@ -9,6 +9,12 @@ export default definePart<Props>({
     solid: { label: 'Save', variant: 'solid' },
     outline: { label: 'Cancel', variant: 'outline' },
   },
+  describe: {
+    solid:
+      'The solid Save button filled with the accent; check that hover lightens and active darkens the fill, and disabled fades it.',
+    outline:
+      'The outlined Cancel button on a transparent fill; check that the accent border stays visible and hover tints the inside.',
+  },
   interactions: ['hover', 'focus-visible', 'active', 'disabled'],
   render: ({ label, variant }) =>
     drawing({
