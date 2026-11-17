@@ -37,6 +37,8 @@ There is deliberately **no size or color input** - the SVGs use `width/height="1
 
 Dev mode validates every registered SVG for this: it must have `xmlns`, `width/height="100%"`, and no hardcoded colors (opt out per usage with `allowHardcodedColor` for intentionally multi-colored artwork).
 
+The icon host is `display: inline-flex`, so it sits in the text flow and takes its own size, even in a plain block parent.
+
 ### Inside SDK components the size is already set
 
 The `size-*` class above is only needed for a **standalone** icon. Every SDK component with an

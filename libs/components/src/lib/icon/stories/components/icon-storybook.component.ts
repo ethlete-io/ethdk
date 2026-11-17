@@ -40,6 +40,13 @@ import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../hea
           <i class="size-6 text-[#7c3aed]" etIcon="et-times"></i>
         </div>
       </div>
+
+      <div class="flex flex-col gap-3">
+        <p class="m-0 text-xs font-semibold uppercase tracking-widest">inside a block parent</p>
+        <div class="block-parent w-[300px] border border-solid p-2">
+          <i class="h-6" etIcon="et-chevron"></i>
+        </div>
+      </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

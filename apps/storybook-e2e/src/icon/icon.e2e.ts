@@ -164,14 +164,14 @@ test.describe('icon / structure', () => {
         const style = getComputedStyle(el);
         return {
           inline: (el as HTMLElement).style.cssText,
-          centring: `${style.display} ${style.alignItems} ${style.justifyContent}`,
+          centring: `${style.alignItems} ${style.justifyContent}`,
         };
       }),
     );
 
     expect(hosts.length).toBeGreaterThan(0);
     expect(hosts.every((it) => it.inline === '')).toBe(true);
-    expect(hosts.every((it) => it.centring === 'flex center center')).toBe(true);
+    expect(hosts.every((it) => it.centring === 'center center')).toBe(true);
   });
 });
 
@@ -225,5 +225,18 @@ test.describe('icon / touch', () => {
 
     expect(boxes.every((box) => box.svg === box.host)).toBe(true);
     expect([...new Set(boxes.map((box) => box.host))].sort((a, b) => a - b)).toEqual([16, 24, 32, 48]);
+  });
+});
+
+test.describe('icon / flow', () => {
+  test('an icon in a block parent is as wide as its own size, not the parent', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const parent = root.locator('.block-parent');
+    const icon = parent.locator(ICON);
+    const [parentBox, iconBox] = await Promise.all([parent.boundingBox(), icon.boundingBox()]);
+
+    expect(Math.round(parentBox?.width ?? 0)).toBe(300);
+    expect(Math.round(iconBox?.width ?? 0)).toBe(24);
+    expect(Math.round(iconBox?.height ?? 0)).toBe(24);
   });
 });
