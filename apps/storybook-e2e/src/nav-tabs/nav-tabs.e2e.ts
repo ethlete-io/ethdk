@@ -1,5 +1,7 @@
 import { Locator, Page, expect, test } from '@playwright/test';
 import {
+  afterSpansIn,
+  boxOf,
   expectFocusVisible,
   expectTouchMode,
   focusedDescriptor,
@@ -353,6 +355,25 @@ test.describe('nav-tabs / keyboard', () => {
 
     await expect(links(root).nth(1)).toHaveAttribute('aria-selected', 'false');
     await expectRoute(page, root, 'One', 'Route One Content');
+  });
+});
+
+test.describe('nav-tabs / baseline', () => {
+  test('the baseline spans the whole bar while the links scroll under it', async ({ page }) => {
+    await page.setViewportSize({ width: 260, height: 720 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const scrollable = bar(root).locator('.et-nav-tabs__scrollable');
+
+    expect((await scrollState(root, 3))?.overflows).toBe(true);
+
+    await bar(root)
+      .locator('.et-nav-tabs__container')
+      .evaluate((el) => (el.scrollLeft = el.scrollWidth));
+    await expect.poll(async () => (await scrollState(root, 3))?.scrollOffset).toBeGreaterThan(0);
+
+    const box = await boxOf(scrollable);
+
+    expect(await afterSpansIn(scrollable)).toEqual([{ start: Math.round(box.x), end: Math.round(box.x + box.width) }]);
   });
 });
 

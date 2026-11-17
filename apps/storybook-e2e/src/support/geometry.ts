@@ -32,3 +32,31 @@ export function viewportOf(page: Page): ViewportSize {
 
   return viewport;
 }
+
+export interface Span {
+  start: number;
+  end: number;
+}
+
+/**
+ * The on-screen horizontal span of every absolutely positioned `::after` drawn inside `scope`,
+ * the scope's own included. A pseudo-element has no box of its own, so it is derived from its
+ * host's box and computed `left`/`width`, minus the host's scroll offset when the host scrolls.
+ */
+export function afterSpansIn(scope: Locator): Promise<Span[]> {
+  return scope.evaluate((root) =>
+    [root, ...root.querySelectorAll('*')].flatMap((el) => {
+      const after = getComputedStyle(el, '::after');
+
+      if (after.content === 'none' || after.display === 'none' || after.position !== 'absolute') {
+        return [];
+      }
+
+      const scrolls = getComputedStyle(el).overflowX !== 'visible';
+      const start =
+        el.getBoundingClientRect().left + el.clientLeft + parseFloat(after.left) - (scrolls ? el.scrollLeft : 0);
+
+      return [{ start: Math.round(start), end: Math.round(start + parseFloat(after.width)) }];
+    }),
+  );
+}

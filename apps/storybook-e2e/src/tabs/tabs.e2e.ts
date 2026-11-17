@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, expectFocusVisible, openStory, pressKey, settle, tabSequence, tap } from '../support';
+import { afterSpansIn, boxOf, expectFocusVisible, openStory, pressKey, settle, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-navigation-tabs-tabs--default';
 const DISABLED_STORY_ID = 'components-navigation-tabs-tabs--with-disabled-tabs';
@@ -270,6 +270,21 @@ test.describe('tabs / overflow', () => {
     await expect.poll(async () => (await headerState(group)).scrollOffset).toBe(0);
     await settle(page, 100);
     await expect(start).toBeDisabled();
+  });
+});
+
+test.describe('tabs / baseline', () => {
+  test('the baseline spans the whole bar while the triggers scroll under it', async ({ page }) => {
+    await page.setViewportSize({ width: 200, height: 720 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const bar = root.locator(GROUP_SELECTOR).locator('.et-tab-group__header-scrollable');
+
+    await bar.locator('.et-scrollable-container').evaluate((el) => (el.scrollLeft = el.scrollWidth));
+    await expect.poll(async () => (await headerState(root.locator(GROUP_SELECTOR))).scrollOffset).toBeGreaterThan(0);
+
+    const box = await boxOf(bar);
+
+    expect(await afterSpansIn(bar)).toEqual([{ start: Math.round(box.x), end: Math.round(box.x + box.width) }]);
   });
 });
 
