@@ -61,3 +61,21 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     work.
 17. **Rows of zero duration are listed.** The `zero-duration` warning names them, and they still
     take a line.
+
+## Nights and weekends
+
+18. **Accepted and edited rows run through whole nights and weekends.** 2026-11-07, a Saturday,
+    shows ET-772 from 00:00 to 14:15 with 13 h 30 min and a day total of 21 h; 2026-11-12 and
+    2026-11-13 hold ET-772 rows from 00:00 into the morning. The agents worked, the user slept. On
+    Linux these days hold no `input-active` event, so the only sign of the user is an
+    `agent-prompt` with `askedBy: "human"`, and a night holds one or two of those per half hour
+    too.
+19. **A dragged end sets the duration to the span.** A row that says "5 h of 16 h" becomes 9 h when
+    its start is dragged from 00:00 to 07:00 (`edits.ts`, `roundedSpan`). The CLI has no way to cut
+    the span and keep the observed share, so the three parallel ethlete-sdk rows of 2026-11-11
+    could only be rejected whole.
+20. **One day page shows about forty slivers.** 2026-11-10 lists 45 rows, most of them 15 minutes
+    in the ethlete-sdk lane under one issue.
+21. **An agent that names rows from the `unattended` flag alone books night work.** The tidy-up
+    session named rows the app called attended, and eight of them lay in the night, until the user
+    said that he is away at night. The flag is not enough to tell his work from the agents' work.
