@@ -176,6 +176,52 @@ export const readIndex = (root) => {
   return buildIndex({ componentFiles, e2eFolders, previewSource });
 };
 
+const BEHAVIOR_JOB = /(^|\/ )Component behavior tests \(\d+\/\d+\)$/;
+const STORYBOOK_JOB = /(^|\/ )Storybook$/;
+
+export const behaviorSuitePassed = (jobs) => {
+  const shards = jobs.filter((job) => BEHAVIOR_JOB.test(job.name));
+  const storybook = jobs.find((job) => STORYBOOK_JOB.test(job.name));
+  return (
+    storybook?.conclusion === 'success' && shards.length > 0 && shards.every((job) => job.conclusion === 'success')
+  );
+};
+
+/** The newest run, newest first, whose behavior suite passed and whose commit `usable` accepts. */
+export const lastPassedBase = (runs, usable) =>
+  runs.find((run) => behaviorSuitePassed(run.jobs) && usable(run.headSha))?.headSha;
+
+const git = (root, args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+
+const gh = (path) =>
+  JSON.parse(execFileSync('gh', ['api', path], { encoding: 'utf8', timeout: 30_000, maxBuffer: 32 * 1024 * 1024 }));
+
+// A run counts only when its commit carries this selector: a run from the old `github.event.before` base could pass
+// with a skipped suite over a red one, and every run here passes only over the diff since an earlier passed run.
+const usesThisSelector = (root, sha) =>
+  git(root, ['merge-base', '--is-ancestor', sha, 'HEAD']).status === 0 &&
+  git(root, ['rev-parse', 'HEAD']).stdout.trim() !== sha &&
+  git(root, ['show', `${sha}:apps/storybook-e2e/affected.mjs`]).stdout.includes('lastPassedBase');
+
+const findPassedBase = (root) => {
+  const { GITHUB_REPOSITORY: repo, GITHUB_REF_NAME: branch, GITHUB_WORKFLOW_REF: workflowRef } = process.env;
+  const workflow = workflowRef?.match(/\.github\/workflows\/([^@]+)@/)?.[1];
+  if (!repo || !branch || !workflow) return undefined;
+
+  const { workflow_runs: runs } = gh(
+    `repos/${repo}/actions/workflows/${workflow}/runs?branch=${encodeURIComponent(branch)}&event=push&status=completed&per_page=30`,
+  );
+
+  for (const run of runs) {
+    if (!usesThisSelector(root, run.head_sha)) continue;
+    const { jobs } = gh(`repos/${repo}/actions/runs/${run.id}/attempts/${run.run_attempt}/jobs?per_page=100`);
+    const base = lastPassedBase([{ headSha: run.head_sha, jobs }], () => true);
+    if (base) return base;
+  }
+
+  return undefined;
+};
+
 const changedFilesSince = (root, base) => {
   try {
     return execFileSync('git', ['diff', '--name-only', base.includes('..') ? base : `${base}...HEAD`], {
@@ -192,6 +238,17 @@ const changedFilesSince = (root, base) => {
 const main = () => {
   const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
   const args = process.argv.slice(2);
+  if (args[0] === '--passed-base') {
+    let base;
+    try {
+      base = findPassedBase(root);
+    } catch (error) {
+      console.error(`No passed base: ${error.message}`);
+    }
+    console.log(base ?? '');
+    return;
+  }
+
   const run = args.includes('--run');
   const [base, ...playwrightArgs] = args.filter((arg) => arg !== '--run');
   const changedFiles = base && !/^0+$/.test(base) ? changedFilesSince(root, base) : undefined;

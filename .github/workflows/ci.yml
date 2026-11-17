@@ -206,6 +206,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
     outputs:
       e2e-folders: ${{ steps.e2e-selection.outputs.folders }}
     steps:
@@ -217,13 +218,20 @@ jobs:
         with:
           nx-cache-key: storybook
 
-      # `ALL`, nothing, or the behavior test folders the changes since the base can reach. A release,
-      # a new branch and a force push have no usable base, so they run everything.
+      # `ALL`, nothing, or the behavior test folders the changes since the base can reach. A push's base
+      # is the last commit whose behavior suite passed, so a skipped suite never shows green over a red
+      # one. A release, and a push with no passed run to build on, run everything.
       - id: e2e-selection
+        timeout-minutes: 3
         env:
-          BASE: ${{ github.ref != 'refs/heads/main' && (github.event.pull_request.base.sha || github.event.before) || '' }}
+          GH_TOKEN: ${{ github.token }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          IS_PUSH: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
         run: |
-          selection=$(node apps/storybook-e2e/affected.mjs "$BASE")
+          base=$PR_BASE
+          if [ "$IS_PUSH" = true ]; then base=$(node apps/storybook-e2e/affected.mjs --passed-base); fi
+          echo "Behavior test base: ${base:-none}"
+          selection=$(node apps/storybook-e2e/affected.mjs "$base")
           if [ -n "$selection" ] && [ "$selection" != ALL ]; then
             selection=$(printf 'apps/storybook-e2e/src/%s/ ' $selection)
           fi

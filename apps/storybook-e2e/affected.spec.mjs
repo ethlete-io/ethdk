@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ALL, buildIndex, selectE2eFolders, titleToId } from './affected.mjs';
+import { readFileSync } from 'node:fs';
+import { ALL, behaviorSuitePassed, buildIndex, lastPassedBase, selectE2eFolders, titleToId } from './affected.mjs';
 
 const lib = (path) => `libs/components/src/lib/${path}`;
 
@@ -91,4 +92,37 @@ test('shared code, other libs and components the preview loads select everything
   ]) {
     assert.equal(selectE2eFolders([lib('table/table.component.ts'), file], index), ALL, file);
   }
+});
+
+const runsAfterRedSuite = JSON.parse(
+  readFileSync(new URL('./fixtures/ci-next-runs-after-red-suite.json', import.meta.url), 'utf8'),
+);
+
+test('a push after a red behavior suite builds on the last passed suite, not on the red commit', () => {
+  const [red] = runsAfterRedSuite;
+  assert.equal(red.headSha.slice(0, 9), '1c975b7eb');
+  assert.equal(behaviorSuitePassed(red.jobs), false);
+  assert.equal(lastPassedBase(runsAfterRedSuite, () => true)?.slice(0, 9), '1255d5797');
+});
+
+test('a cancelled run or a missing shard does not count as passed', () => {
+  const passed = runsAfterRedSuite.find((run) => behaviorSuitePassed(run.jobs));
+  const cancelled = runsAfterRedSuite.find((run) => run.headSha.startsWith('79470b486'));
+  assert.equal(behaviorSuitePassed(cancelled.jobs), false);
+  assert.equal(behaviorSuitePassed(passed.jobs.filter((job) => !job.name.endsWith('(2/3)'))), true);
+  assert.equal(
+    behaviorSuitePassed(
+      passed.jobs.map((job) => (job.name.endsWith('(2/3)') ? { ...job, conclusion: 'skipped' } : job)),
+    ),
+    false,
+  );
+  assert.equal(behaviorSuitePassed(passed.jobs.filter((job) => !/behavior/.test(job.name))), false);
+});
+
+test('a passed run whose commit the caller rejects is skipped', () => {
+  assert.equal(lastPassedBase(runsAfterRedSuite, (sha) => !sha.startsWith('1255d5797'))?.slice(0, 9), '13d27be26');
+  assert.equal(
+    lastPassedBase(runsAfterRedSuite, () => false),
+    undefined,
+  );
 });
