@@ -23,6 +23,7 @@ const page = (states: Record<string, PageProps>) =>
     {
       note: 'page',
       states,
+      describe: Object.fromEntries(Object.keys(states).map((state) => [state, `the page in ${state}`])),
       render: async ({ steady = [], place = '', other = [], unnamed = false }: PageProps) => ({
         body: ['rest', 'hover']
           .map((state) =>

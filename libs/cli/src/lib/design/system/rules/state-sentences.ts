@@ -2,18 +2,12 @@ import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 import { stateNamesOf, stateSentencesOf } from '../sketch/part-definition';
 
-/**
- * Whether a part without a sentence for each state fails `design check` (ADR 0330). While false, the parts still
- * missing one are listed as warnings.
- */
-export const STATE_SENTENCES_REFUSE = false;
-
 const RULE = 'STATE-SENTENCE';
 
 const missingOf = (source: string): string[] | 'all' | null => {
   const sentences = stateSentencesOf(source);
 
-  if (sentences === 'none') return 'all';
+  if (sentences === 'none') return /\bdefinePart\s*[<(]/u.test(source) ? 'all' : null;
   if (sentences === 'unknown') return null;
 
   const states = stateNamesOf(source) ?? Object.keys(sentences);

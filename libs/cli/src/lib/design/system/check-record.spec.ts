@@ -31,7 +31,7 @@ const staleChip = () => {
   mkdirSync(join(dir, 'components/chip'), { recursive: true });
   writeFileSync(
     join(dir, 'components/chip/chip.ts'),
-    "export default definePart({ implements: 'apps/app-a/src/chip.component.ts', controls: {}, states: {} });\n",
+    "export default definePart({ implements: 'apps/app-a/src/chip.component.ts', controls: {}, describe: {}, states: {} });\n",
   );
   writeFileSync(
     join(dir, 'ready.json'),

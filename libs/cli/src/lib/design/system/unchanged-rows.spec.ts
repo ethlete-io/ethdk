@@ -29,6 +29,17 @@ const dialogOf = (laterButton: string) => {
   return definePart({
     note: 'an update-dialog-like part',
     states: { open: {}, ...restart.states, ...later.states },
+    describe: {
+      open: 'the dialog at rest',
+      restart: 'restart at rest',
+      'restart-hover': 'restart hovered',
+      'restart-active': 'restart pressed',
+      'restart-focus-visible': 'restart with keyboard focus',
+      later: 'later at rest',
+      'later-hover': 'later hovered',
+      'later-active': 'later pressed',
+      'later-focus-visible': 'later with keyboard focus',
+    },
     grid: { columns: restart.grid.columns, rows: { ...restart.grid.rows, ...later.grid.rows } },
     render: async (props: Props) => ({
       body: await ng(

@@ -151,7 +151,7 @@ describe('checkDesign --tsconfig', () => {
 
     writeFileSync(
       join(sketch.dir, 'b/elements/hero/hero.ts'),
-      "import { definePart } from '@design-system';\nexport default definePart<{ a: string }>({ note: '', states: { default: { a: 1 } }, render: () => ({ body: '', styles: '' }) });\n",
+      "import { definePart } from '@design-system';\nexport default definePart<{ a: string }>({ note: '', describe: { default: 'at rest' }, states: { default: { a: 1 } }, render: () => ({ body: '', styles: '' }) });\n",
     );
 
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -178,7 +178,7 @@ describe('checkDesign --tsconfig', () => {
     writeFileSync(join(sketch.dir, 'a/assets/icons/dot.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
     writeFileSync(
       join(sketch.dir, 'a/elements/hero/hero.ts'),
-      "import { definePart } from '@design-system';\nimport mark from '@assets/mark.png';\nimport dot from '@assets/icons/dot.svg?raw';\nconst body: string = `<img src=\"${mark}\">${dot.trim()}`;\nexport default definePart({ note: '', states: { default: {} }, render: () => ({ body, styles: '' }) });\n",
+      "import { definePart } from '@design-system';\nimport mark from '@assets/mark.png';\nimport dot from '@assets/icons/dot.svg?raw';\nconst body: string = `<img src=\"${mark}\">${dot.trim()}`;\nexport default definePart({ note: '', describe: { default: 'at rest' }, states: { default: {} }, render: () => ({ body, styles: '' }) });\n",
     );
 
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);

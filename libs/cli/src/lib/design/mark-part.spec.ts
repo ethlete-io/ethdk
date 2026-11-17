@@ -67,6 +67,7 @@ describe('markPart', () => {
   const part = {
     note: 'n',
     states: { one: { label: 'a' } },
+    describe: { one: 'the label a' },
     widths: [320],
     render: ({ label }: { label: string }) => ({ body: `<b>${label}</b>`, styles: 's' }),
   };
@@ -86,6 +87,7 @@ describe('markPart', () => {
       {
         note: 'n',
         states: { one: props },
+        describe: { one: 'the shell with one slotted row' },
         render: ({ label, rows }: typeof props) => ({ body: `<div>${label}${rows[0]?.body}</div>`, styles: '' }),
       },
       'elements/shell',

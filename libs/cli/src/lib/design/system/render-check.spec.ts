@@ -118,6 +118,7 @@ ${css ? `import styles from './${name}.css?inline';` : ''}
 
 export default definePart({
   note: 'A fixture.',
+  describe: { ${[...states.matchAll(/(?:^|, )('?[\w-]+'?): /g)].map((match) => `${match[1]}: 'a state'`).join(', ')} },
   states: { ${states} },
   ${extra}
   render: () => drawing({ body: html\`${body}\`, styles: ${css ? 'font + styles' : 'font'} }),
@@ -439,6 +440,7 @@ import styles from './stated.css?inline';
 
 export default definePart({
   note: 'A fixture.',
+  describe: { a: 'a', b: 'b', c: 'c', d: 'd', e: 'e', f: 'f' },
   states: { a: { cut: false }, b: { cut: true }, c: { cut: false }, d: { cut: false }, e: { cut: true }, f: { cut: false } },
   render: ({ cut }: { cut: boolean }) =>
     drawing({
@@ -511,6 +513,7 @@ import styles from './fonted.css?inline';
 
 export default definePart({
   note: 'A fixture.',
+  describe: { a: 'a', b: 'b' },
   states: { a: {}, b: {} },
   render: () => drawing({ body: html\`<p class="shop-text" style="margin: 0">Text</p>\`, styles: font + styles }),
 });
@@ -1158,6 +1161,7 @@ import { filler } from '@system/components/clean';
 
 export default definePart({
   note: 'A fixture.',
+  describe: { default: 'at rest' },
   states: { default: {} },
   render: () => drawing({ body: html\`<main>\${filler()}</main>\`, styles: '' }),
 });

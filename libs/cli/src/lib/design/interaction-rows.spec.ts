@@ -38,7 +38,13 @@ describe('interactionRows', () => {
   });
 
   it('keeps the built state names in the type of a part', () => {
-    const part = definePart({ note: 'n', ...built, render: ({ label }: Props) => ({ body: label, styles: '' }) });
+    const describe = Object.fromEntries(Object.keys(built.states).map((state) => [state, `the ${state} row`]));
+    const part = definePart({
+      note: 'n',
+      ...built,
+      describe: describe as Record<keyof typeof built.states, string>,
+      render: ({ label }: Props) => ({ body: label, styles: '' }),
+    });
     const hovered: Props = part.states['count-hover'];
 
     // @ts-expect-error a state the rows do not build

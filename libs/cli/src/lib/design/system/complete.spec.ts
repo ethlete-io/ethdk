@@ -321,6 +321,9 @@ const BODIES: Record<string, string> = ${JSON.stringify(states)};
 
 export default definePart({
   note: 'A fixture.',
+  describe: { ${Object.keys(states)
+    .map((state) => `'${state}': 'a state'`)
+    .join(', ')} },
   states: { ${Object.keys(states)
     .map((state) => `'${state}': { state: '${state}' }`)
     .join(', ')} },
@@ -1072,6 +1075,7 @@ const BODIES: Record<string, string> = ${JSON.stringify({ rest: more(''), hovere
 
 export default definePart({
   note: 'A fixture.',
+  describe: { rest: 'at rest', hovered: 'hovered' },
   states: { rest: { state: 'rest' }, hovered: { state: 'hovered' } },
   controls: { more: { kind: 'button', input: ['pointer'] } },
   render: async ({ state }: { state: string }) =>
@@ -1105,6 +1109,7 @@ const BODIES: Record<string, string> = ${JSON.stringify({ rest: more(0), zoomed:
 
 export default definePart({
   note: 'A fixture.',
+  describe: { rest: 'at rest', zoomed: 'zoomed' },
   states: { rest: { state: 'rest' }, zoomed: { state: 'zoomed' } },
   controls: { more: { kind: 'button', input: ['pointer'] } },
   render: async ({ state }: { state: string }) =>

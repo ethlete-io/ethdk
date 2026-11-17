@@ -47,4 +47,8 @@ describe('missingStateSentencesOf', () => {
       messagesOf(productOf({ source: partWith(''), origin: 'base' }, { source: partWith('describe: sentences,') })),
     ).toEqual([]);
   });
+
+  it('leaves a file without definePart to the load check', () => {
+    expect(messagesOf(productOf({ source: "throw new Error('broken on load');\n" }))).toEqual([]);
+  });
 });

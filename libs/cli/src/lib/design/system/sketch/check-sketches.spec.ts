@@ -64,7 +64,7 @@ describe('openSketchProblemsOf', () => {
 
     writeFileSync(
       file,
-      "import { definePart } from '@design-system';\nconst part = definePart({ note: `hello` });\nexport default part;\n",
+      "import { definePart } from '@design-system';\nconst part = definePart({ note: `hello`, describe: { default: 'at rest' }, states: { default: {} } });\nexport default part;\n",
     );
     expect(openSketchProblemsOf(product).variants.find(({ variant }) => variant === 'a')?.problems).toEqual([]);
   });
@@ -119,7 +119,12 @@ describe('openSketchProblemsOf', () => {
     const heroOf = (dir: string) => join(dir, 'elements/hero/hero.ts');
     const productHero = heroOf(join(target, DESIGN_DIR, 'acme'));
     const withStates = (source: string, states: string) =>
-      source.replace(/states: \{ default: .*\} \},/u, `states: { ${states} },`);
+      source
+        .replace(/states: \{ default: .*\} \},/u, `states: { ${states} },`)
+        .replace(
+          /describe: \{ default: .*\},/u,
+          `describe: { ${[...states.matchAll(/(?:^|, )(\w+): /g)].map((match) => `${match[1]}: 'a state'`).join(', ')} },`,
+        );
     const film = 'default: { film: films[0] ?? { title: "" } }';
 
     writeFileSync(
@@ -144,7 +149,7 @@ describe('openSketchProblemsOf', () => {
     mkdirSync(join(sketch.dir, 'c/elements/banner'), { recursive: true });
     writeFileSync(
       banner,
-      "import { definePart, drawing } from '@design-system';\nexport default definePart({ note: '', states: { only: {} }, render: () => drawing({ body: '', styles: '' }) });\n",
+      "import { definePart, drawing } from '@design-system';\nexport default definePart({ note: '', describe: { only: 'only' }, states: { only: {} }, render: () => drawing({ body: '', styles: '' }) });\n",
     );
 
     expect(openSketchProblemsOf(product).variants.map(({ variant, problems }) => [variant, problems])).toEqual([
@@ -175,7 +180,12 @@ describe('openSketchProblemsOf', () => {
       variants: ['a'],
     }) as Sketch;
 
-    writeFileSync(heroOf(join(sketch.dir, 'a')), hero.replace(/states: \{ default:/u, 'states: { fit: {}, default:'));
+    writeFileSync(
+      heroOf(join(sketch.dir, 'a')),
+      hero
+        .replace(/states: \{ default:/u, 'states: { fit: {}, default:')
+        .replace(/describe: \{ default:/u, "describe: { fit: 'fit', default:"),
+    );
     mkdirSync(join(target, 'apps/a'), { recursive: true });
     writeFileSync(
       join(target, 'apps/a/design-live.json'),
@@ -233,7 +243,12 @@ describe('openSketchProblemsOf', () => {
     const heroOf = (dir: string) => join(dir, 'elements/hero/hero.ts');
     const productHero = heroOf(join(target, DESIGN_DIR, 'acme'));
     const withStates = (source: string, states: string) =>
-      source.replace(/states: \{ default: .*\} \},/u, `states: { ${states} },`);
+      source
+        .replace(/states: \{ default: .*\} \},/u, `states: { ${states} },`)
+        .replace(
+          /describe: \{ default: .*\},/u,
+          `describe: { ${[...states.matchAll(/(?:^|, )(\w+): /g)].map((match) => `${match[1]}: 'a state'`).join(', ')} },`,
+        );
     const film = 'default: { film: films[0] ?? { title: "" } }';
 
     writeFileSync(
@@ -328,7 +343,7 @@ describe('typecheckVariant', () => {
 
     writeFileSync(
       join(sketch.dir, 'b/elements/hero/hero.ts'),
-      "import { definePart } from '@design-system';\nexport default definePart<{ a: string }>({ note: '', states: { default: { a: 1 } }, render: () => ({ body: '', styles: '' }) });\n",
+      "import { definePart } from '@design-system';\nexport default definePart<{ a: string }>({ note: '', describe: { default: 'at rest' }, states: { default: { a: 1 } }, render: () => ({ body: '', styles: '' }) });\n",
     );
 
     expect(typecheckVariant({ target, product, sketch, variant: 'a' })).toEqual({ kind: 'ok' });

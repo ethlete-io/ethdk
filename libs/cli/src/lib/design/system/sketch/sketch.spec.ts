@@ -108,6 +108,7 @@ describe('createSketch', () => {
     expect(source).not.toContain('tokens');
     expect(source).toContain("madeBy: ['model-x']");
     expect(source).toContain('widths: [390, 1280]');
+    expect(source).toContain("describe: { default: '' }");
     expect(existsSync(join(folder, 'start.css'))).toBe(false);
   });
 
@@ -143,6 +144,7 @@ describe('createSketch', () => {
     expect(stub).toContain('export default definePart({');
     expect(stub).toContain('render: (props: Props) =>');
     expect(stub).toContain("import styles from './header.css?inline';");
+    expect(stub).toContain("states: { default: {} },\n  describe: { default: '' },");
   });
 
   it('keeps one open sketch per target', () => {

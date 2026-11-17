@@ -242,6 +242,21 @@ export const inbox = definePart<Props>({
     'load-error': { ...open, load: 'error' },
     'long-list': { ...open, comments: LONG },
   },
+  describe: {
+    open: 'Open threads on the active part and on others; check the two groups, the selected row and its pin on the canvas frame.',
+    'with-resolved':
+      'The list with resolved threads shown; check Erledigte zeigen turned on and the resolved rows muted with their check mark.',
+    'active-only':
+      'Open threads only on the part on the canvas; check that the lower group is gone and the top group keeps its rows.',
+    'active-clear':
+      'No open thread on the active part but some on others; check the Keine offenen Kommentare line under the top group head, above the other threads.',
+    'all-clear':
+      'No open threads at all; check the centred check icon with the empty message in the panel and that the canvas shows no pins.',
+    loading: 'The thread list while it loads; check the loading placeholder in the panel and that no stale rows show.',
+    'load-error': 'A failed load; check the error line and Erneut laden in the panel, and that no rows show.',
+    'long-list':
+      'A list longer than the panel; check that the list scrolls inside the panel and the last row is not cut by the panel foot.',
+  },
   controls: {
     pin: { kind: 'button' as const, part: 'components/comment-pin' },
     resolved: { kind: 'button' as const, part: 'components/switch' },

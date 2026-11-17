@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -28,9 +28,12 @@ const checkout = () => {
 
   part(
     'components/chip',
-    "export default definePart({ implements: 'libs/chip.component.ts', controls: { remove: {} }, states: { default: {} } });\n",
+    "export default definePart({ implements: 'libs/chip.component.ts', controls: { remove: {} }, describe: { default: 'at rest' }, states: { default: {} } });\n",
   );
-  part('pages/home', "export default definePart({ implements: { route: '/' }, states: { default: {} } });\n");
+  part(
+    'pages/home',
+    "export default definePart({ implements: { route: '/' }, describe: { default: 'at rest' }, states: { default: {} } });\n",
+  );
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
 
   return target;
@@ -98,7 +101,7 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
 
     writeFileSync(
       join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts'),
-      "export default definePart({ implements: 'libs/chip.component.ts', states: { default: {} } });\n",
+      "export default definePart({ implements: 'libs/chip.component.ts', describe: { default: 'at rest' }, states: { default: {} } });\n",
     );
 
     expect(await pointsOf('components/chip')).toEqual(['missing-state']);
@@ -109,6 +112,15 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
     const product = oneProductOf({ target, config: readConfig(target)!, asked: 'app-a' }) as ResolvedProduct;
     const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'rating' }, variants: ['a', 'b'] });
     const ready = markSketchReady({ checkout: target, sketch: sketch as Sketch });
+
+    for (const variant of ['a', 'b']) {
+      const file = join(variantDirOf(ready as Sketch, variant), 'elements/rating/rating.ts');
+
+      writeFileSync(
+        file,
+        readFileSync(file, 'utf8').replace("describe: { default: '' }", "describe: { default: 'at rest' }"),
+      );
+    }
 
     decideSketch({
       sketch: ready as Sketch,
@@ -138,6 +150,15 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
     const product = oneProductOf({ target, config: readConfig(target)!, asked: 'app-a' }) as ResolvedProduct;
     const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'rating' }, variants: ['a', 'b'] });
     const ready = markSketchReady({ checkout: target, sketch: sketch as Sketch }) as Sketch;
+
+    for (const variant of ['a', 'b']) {
+      const file = join(variantDirOf(ready, variant), 'elements/rating/rating.ts');
+
+      writeFileSync(
+        file,
+        readFileSync(file, 'utf8').replace("describe: { default: '' }", "describe: { default: 'at rest' }"),
+      );
+    }
 
     writeFileSync(join(variantDirOf(ready, 'a'), 'elements/rating/rating.css'), '.rating { display: flex; }\n');
 

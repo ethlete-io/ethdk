@@ -55,7 +55,7 @@ export type Part<TProps, TState extends string = string> = {
   note: string;
   madeBy?: string[];
   states: Record<TState, TProps>;
-  describe?: Record<TState, string>;
+  describe: Record<TState, string>;
   styles?: string;
   frame?: (body: string, props: TProps) => string;
   widths?: number[];
@@ -194,7 +194,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   motions?: Record<string, Motion<NoInfer<TState>>>;
   rules?: PartRule<NoInfer<TState>>[];
   states: Record<TState, NoInfer<TProps>>;
-  describe?: Record<NoInfer<TState>, string>;
+  describe: Record<NoInfer<TState>, string>;
   controls?: Record<string, Control<NoInfer<TState>>>;
   grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
   render: (props: TProps) => Drawing | Promise<Drawing>;

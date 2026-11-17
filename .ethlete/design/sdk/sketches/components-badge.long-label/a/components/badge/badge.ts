@@ -69,6 +69,12 @@ export default definePart({
     'filled-sizes': 'Filled badges at sm, md and lg; check that height, padding and text scale per step.',
     'tonal-sizes': 'Tonal badges at sm, md and lg; check that height, padding and text scale per step.',
     'outline-sizes': 'Outlined badges at sm, md and lg; check that height, padding and text scale per step.',
+    'filled-long-label':
+      'A filled warning badge with a label longer than its 16rem frame; check that the label wraps onto centred lines inside the fill.',
+    'tonal-long-label':
+      'A tonal warning badge with a label longer than its frame; check that the label wraps onto centred lines and the tint grows with it.',
+    'outline-long-label':
+      'An outlined warning badge with a label longer than its frame; check that the label wraps and the border wraps every line.',
   },
   widths: [480],
   frame: (body) => `<div class="badge-frame">${body}</div>`,

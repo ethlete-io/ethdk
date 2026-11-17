@@ -38,7 +38,7 @@ const staleChip = () => {
   mkdirSync(join(dir, 'components/chip'), { recursive: true });
   writeFileSync(
     join(dir, 'components/chip/chip.ts'),
-    "export default definePart({ implements: 'apps/acme/src/chip.component.ts', controls: {}, states: {} });\n",
+    "export default definePart({ implements: 'apps/acme/src/chip.component.ts', controls: {}, describe: {}, states: {} });\n",
   );
   writeFileSync(
     join(dir, 'ready.json'),
@@ -133,7 +133,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
 
     writeFileSync(
       join(dir, 'components/chip/chip.ts'),
-      "import { definePart } from '@design-system';\nexport default definePart({ controls: {}, states: {} });\n",
+      "import { definePart } from '@design-system';\nexport default definePart({ controls: {}, describe: {}, states: {} });\n",
     );
 
     const runner = startSlowRunner({
@@ -184,18 +184,24 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     const chip = join(dir, 'components/chip/chip.ts');
     const lines: string[] = [];
 
-    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
     recordMerged({
       product: resolveProduct({ target, name: 'acme', config: bare.products.acme }),
       parts: ['components/chip'],
     });
-    writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', default: 'at rest' }, states: { hover: {}, default: {} } });\n",
+    );
     gitExec(['init', '-q'], { cwd: target });
     gitExec(['add', '.'], { cwd: target });
     gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
     gitExec(['rm', '-r', '--cached', '-q', join(dir, 'components/chip')], { cwd: target });
     gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'untrack'], { cwd: target });
-    writeFileSync(chip, 'export default definePart({ states: { hover: {}, active: {}, default: {} } });\n');
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', active: 'pressed', default: 'at rest' }, states: { hover: {}, active: {}, default: {} } });\n",
+    );
 
     const runner = startSlowRunner({
       target,
@@ -225,12 +231,15 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     const commit = () =>
       gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
 
-    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
     recordMerged({ product: product(), parts: ['components/chip'] });
     gitExec(['init', '-q'], { cwd: target });
     gitExec(['add', '.'], { cwd: target });
     commit();
-    writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', default: 'at rest' }, states: { hover: {}, default: {} } });\n",
+    );
     expect(typeof (await openEditSketch({ target, product: product(), part: 'components/chip' }))).toBe('object');
     gitExec(['add', chip], { cwd: target });
     commit();
@@ -264,12 +273,15 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
     };
 
-    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
     writeFileSync(join(target, '.gitignore'), '.ethlete/cache/\n.ethlete/design/*/pictures.json\n');
     gitExec(['init', '-q'], { cwd: target });
     recordMerged({ product: product(), parts: ['components/chip'] });
     commitAll();
-    writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', default: 'at rest' }, states: { hover: {}, default: {} } });\n",
+    );
     expect(typeof (await openEditSketch({ target, product: product(), part: 'components/chip' }))).toBe('object');
     commitAll();
 
@@ -300,14 +312,17 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       });
     };
 
-    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
     writeFileSync(join(target, '.gitignore'), '.ethlete/cache/\n.ethlete/design/*/pictures.json\n');
     gitExec(['init', '-q'], { cwd: target });
     recordMerged({ product: product(), parts: [CHIP] });
     writeCache({ default: 'a1' });
     gitExec(['add', '.'], { cwd: target });
     gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'merged'], { cwd: target });
-    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n// direct edit\n');
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n// direct edit\n",
+    );
     writeCache(now);
 
     if (commits)
@@ -359,7 +374,10 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect([answer.directEdit, kindsOf(answer)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
     expect(readMerged(product().dir)[CHIP]).not.toBe(partHashOf({ product: product(), dir: dirname(chip) }));
 
-    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n// another edit\n');
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n// another edit\n",
+    );
 
     const again = openPointsOf({ product: product(), part: CHIP }) as PartOpenPointsAnswer;
     const againInWorker = (await openPointsInWorker({ product: product(), part: CHIP })) as PartOpenPointsAnswer;

@@ -8,6 +8,10 @@ export default definePart<ButtonProps>({
     default: { label: 'Save', disabled: false },
     disabled: { label: 'Save', disabled: true },
   },
+  describe: {
+    default: 'The Save button at rest; check the label and the fill.',
+    disabled: 'The Save button disabled; check that it reads as not clickable.',
+  },
   render: async ({ label, disabled }) =>
     drawing({
       body: await ng(`<button et-button${disabled ? ' disabled' : ''}>${label}</button>`, {

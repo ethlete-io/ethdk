@@ -57,6 +57,7 @@ const implementedHero = () => {
     variantTs,
     readFileSync(variantTs, 'utf8')
       .replace('{ film: Film }', '{ film: Film; withdrawn?: boolean }')
+      .replace('describe: { default:', "describe: { withdrawn: 'A withdrawn film; check the marker.', default:")
       .replace(
         "states: { default: { film: films[0] ?? { title: '' } } },",
         "states: {\n    default: { film: films[0] ?? { title: '' }, withdrawn: false },\n    withdrawn: { film: films[0] ?? { title: '' }, withdrawn: true },\n  },",

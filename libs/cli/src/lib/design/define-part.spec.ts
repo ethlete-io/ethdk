@@ -7,6 +7,7 @@ type Props = { label: string };
 const source = {
   note: 'n',
   states: { filled: { label: 'Save' }, 'outline-wide': { label: 'Go' } },
+  describe: { filled: 'the filled button', 'outline-wide': 'the wide outline button' },
   render: ({ label }: Props) => ({ body: `<button class="b">${label}</button>`, styles: 's' }),
 };
 

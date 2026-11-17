@@ -90,6 +90,15 @@ const output = () => {
 
 const run = (target: string, ...argv: string[]) => designSketch({ target, argv, invocation: 'et design' });
 
+const sentenceNewPart = (target: string) => {
+  const file = join(target, DESIGN_DIR, 'acme/sketches/components-new-part/a/components/new-part/new-part.ts');
+
+  writeFileSync(
+    file,
+    readFileSync(file, 'utf8').replace("describe: { default: '' }", "describe: { default: 'at rest' }"),
+  );
+};
+
 const write = (target: string, ...argv: string[]) => run(target, ...argv, '--by', 'claude-opus-5-5');
 
 const actualRender = async () =>
@@ -102,6 +111,7 @@ const wideHero = (target: string, attributes: string) => {
 
 export default definePart({
   note: 'A hero.',
+  describe: { default: 'at rest' },
   states: { default: {} },
   render: () => drawing({ body: html\`<button data-et-control="save" ${attributes} style="width: 60px">Save the draft now</button>\`, styles: '' }),
 });
@@ -385,10 +395,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
     await newButton(target);
     writeFileSync(
       variantFile,
-      readFileSync(variantFile, 'utf8').replace(
-        "long: { label: 'Play from the beginning' }",
-        "$&, wide: { label: 'Go' }",
-      ),
+      readFileSync(variantFile, 'utf8')
+        .replace("long: { label: 'Play from the beginning' }", "$&, wide: { label: 'Go' }")
+        .replace("long: 'A long label; check that it fits.'", "$&, wide: 'A wide button; check its width.'"),
     );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -479,6 +488,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
+    sentenceNewPart(target);
 
     expect(await write(target, 'ready', 'components/new-part', '--product', 'acme')).toBe(1);
     expect(lines.at(-1)).toMatch(
@@ -1251,6 +1261,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
+    sentenceNewPart(target);
     vi.mocked(variantChangesShown).mockClear();
 
     expect(await write(target, 'ready', 'components/new-part', '--product', 'acme')).toBe(0);
@@ -2737,6 +2748,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
 export default definePart({
   note: 'A hero.',
+  describe: { default: 'at rest' },
   states: { default: {} },
   render: () => drawing({ body: html\`<button data-et-control="save" style="width: 60px">Save the draft now</button>\`, styles: '' }),
 });

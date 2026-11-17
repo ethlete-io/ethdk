@@ -47,6 +47,7 @@ describe('checkSystem', () => {
 import { box, button, icon, image, input, textLines } from '@design-system/kit';
 export default definePart({
   note: '',
+  describe: { rest: 'at rest' },
   states: { rest: {} },
   render: () => drawing({ body: box([icon(), image({ height: 80 }), textLines({ lines: 2 }), input({ label: 'Mail' }), button('Go', { primary: true })], { direction: 'column' }), styles: '' }),
 });
@@ -96,7 +97,7 @@ export default definePart({
 
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/pages/home/home.ts'),
-      "import { definePart } from '@design-system';\nexport default definePart({ states: {}, render: () => ({ body: '', styles: '' }) });\n",
+      "import { definePart } from '@design-system';\nexport default definePart({ describe: {}, states: {}, render: () => ({ body: '', styles: '' }) });\n",
     );
 
     expect(check(target, ['acme'])).toBe(1);

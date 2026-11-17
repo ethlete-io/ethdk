@@ -207,12 +207,12 @@ describe('listSystem', () => {
     write(
       target,
       'acme/components/chip/chip.ts',
-      "import { definePart, drawing } from '@design-system';\nexport default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {} }, render: () => drawing({ body: '' }) });\n",
+      "import { definePart, drawing } from '@design-system';\nexport default definePart({ implements: 'libs/chip/chip.component.ts', describe: { default: 'at rest' }, states: { default: {} }, render: () => drawing({ body: '' }) });\n",
     );
     write(
       target,
       'acme/elements/panel/panel.ts',
-      "import { definePart, drawing } from '@design-system';\nexport default definePart({ implements: { route: '/', component: './libs/panel.component.ts' }, states: { default: {} }, render: () => drawing({ body: '' }) });\n",
+      "import { definePart, drawing } from '@design-system';\nexport default definePart({ implements: { route: '/', component: './libs/panel.component.ts' }, describe: { default: 'at rest' }, states: { default: {} }, render: () => drawing({ body: '' }) });\n",
     );
 
     const [product] = await list(target, ['acme']);
@@ -313,6 +313,7 @@ describe('listSystem', () => {
       `import { definePart, drawing } from '@design-system';
 export default definePart({
   note: '',
+  describe: { leaf: 'a leaf', hover: 'hovered', selected: 'selected', tree: 'a tree' },
   states: { leaf: {}, hover: {}, selected: {}, tree: {} },
   grid: {
     columns: ['rest', 'hover'],
@@ -347,7 +348,7 @@ export default definePart({
       'acme/pages/login/login.ts',
       `import { definePart, drawing } from '@design-system';
 import { box, button, input } from '@design-system/kit';
-export default definePart({ note: '', states: { rest: {} }, render: () => drawing({ body: box([input(), button('Go')]), styles: '' }) });
+export default definePart({ note: '', describe: { rest: 'at rest' }, states: { rest: {} }, render: () => drawing({ body: box([input(), button('Go')]), styles: '' }) });
 `,
     );
 

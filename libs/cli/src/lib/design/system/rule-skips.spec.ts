@@ -13,7 +13,7 @@ const checkout = () => {
   const file = join(target, DESIGN_DIR, 'app-a', 'components', 'chip', 'chip.ts');
 
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `export default definePart({ states: { default: {} } });\n`);
+  writeFileSync(file, `export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n`);
   writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify(CONFIG));
 
   const git = (...args: string[]) => gitExec(args, { cwd: target, stdio: 'pipe' });

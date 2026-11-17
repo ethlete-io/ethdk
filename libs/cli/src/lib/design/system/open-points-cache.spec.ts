@@ -30,7 +30,7 @@ const appA = () => {
   mkdirSync(join(design, 'app-a/components/chip'), { recursive: true });
   writeFileSync(
     join(design, 'app-a/components/chip/chip.ts'),
-    "export default definePart({ implements: 'apps/other/src/chip.component.ts', states: { default: {} } });\n",
+    "export default definePart({ implements: 'apps/other/src/chip.component.ts', describe: { default: 'at rest' }, states: { default: {} } });\n",
   );
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
   mkdirSync(join(target, 'apps/other/src'), { recursive: true });

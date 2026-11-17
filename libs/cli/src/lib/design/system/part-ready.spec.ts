@@ -59,9 +59,9 @@ const checkout = () => {
 
   part(
     'components/chip',
-    "export default definePart({ implements: 'libs/chip.component.ts', controls: { remove: {} }, states: { default: {} } });\n",
+    "export default definePart({ implements: 'libs/chip.component.ts', controls: { remove: {} }, describe: { default: 'at rest' }, states: { default: {} } });\n",
   );
-  part('components/tag', 'export default definePart({ states: { default: {} } });\n');
+  part('components/tag', "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
   mkdirSync(join(target, 'libs'), { recursive: true });
   writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
@@ -477,7 +477,7 @@ describe('ready on a merged part edited outside a sketch', () => {
     initGitRepo(target, 'base');
     writeFileSync(
       join(dir, 'components/tag/tag.ts'),
-      'export default definePart({ states: { default: {}, on: {} } });\n',
+      "export default definePart({ describe: { default: 'off', on: 'on' }, states: { default: {}, on: {} } });\n",
     );
 
     return { target, dir, merged: readMerged(dir)['components/tag'] };
@@ -513,7 +513,7 @@ describe('ready on an unchanged part', () => {
     mkdirSync(join(dir, 'pages/inbox'), { recursive: true });
     writeFileSync(
       join(dir, 'pages/inbox/inbox.ts'),
-      "import chip from '@system/components/chip';\nexport default definePart({ implements: 'libs/inbox.component.ts', states: { default: {} } });\nexport const shown = chip;\n",
+      "import chip from '@system/components/chip';\nexport default definePart({ implements: 'libs/inbox.component.ts', describe: { default: 'at rest' }, states: { default: {} } });\nexport const shown = chip;\n",
     );
     mkdirSync(join(target, 'libs'), { recursive: true });
     writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');

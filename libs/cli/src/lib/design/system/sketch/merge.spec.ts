@@ -355,6 +355,16 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
       variants: ['a', 'b'],
       variantNotes: new Map([['b', 'Round badge.']]),
     }) as Sketch;
+
+    for (const variant of ['a', 'b']) {
+      const file = join(created.dir, variant, 'elements/badge/badge.ts');
+
+      writeFileSync(
+        file,
+        readFileSync(file, 'utf8').replace("describe: { default: '' }", "describe: { default: 'at rest' }"),
+      );
+    }
+
     const sketch = picked(markSketchReady({ checkout: target, sketch: created }) as Sketch);
 
     expect(

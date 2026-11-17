@@ -84,7 +84,7 @@ import { utilityCssOf } from './rules/utility-css';
 import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
 import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
 import { pendingStateWarningsOf } from './rules/pending-state';
-import { missingStateSentencesOf, STATE_SENTENCES_REFUSE } from './rules/state-sentences';
+import { missingStateSentencesOf } from './rules/state-sentences';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
@@ -138,7 +138,7 @@ const RULES = [
   gluedInterpolationsOf,
   sdkAttributeValuesOf,
   sdkPrivateVarsOf,
-  ...(STATE_SENTENCES_REFUSE ? [missingStateSentencesOf] : []),
+  missingStateSentencesOf,
 ];
 
 const PART_SCOPED_RULES: ((product: ResolvedProduct, only?: readonly string[]) => Problem[])[] = [
@@ -154,7 +154,6 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...sampleDefaultWarningsOf(product),
   ...inlineUiInPageWarningsOf(product),
   ...pendingStateWarningsOf(product),
-  ...(STATE_SENTENCES_REFUSE ? [] : missingStateSentencesOf(product)),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
