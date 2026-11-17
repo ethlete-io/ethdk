@@ -69,7 +69,7 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "components/zoom-chip": {
-    "hash": "caf5d569d570af26",
+    "hash": "09ffd17403d466bc",
     "variant": "a",
     "decidedBy": "plan: finding 911 precedent: B523 (6), the design frame clipped its own 100 % tooltip by 3.5 px; the app draws it whole",
     "at": "2026-11-16T02:50:39.316Z",
