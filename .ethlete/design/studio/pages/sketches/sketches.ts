@@ -24,6 +24,7 @@ import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
+import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -988,8 +989,10 @@ export default definePart<Props>({
         class="absolute ${question ? 'top-37' : 'top-27'} right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
         ${lifted(question ? 37 : 27)}
       >
-        <div class="size-full" data-sk-rows>
-          <div
+        ${canvasViewport({
+          class: 'size-full',
+          attrs: 'data-sk-rows',
+          body: html`<div
             class="flex flex-col gap-space-2 pb-16 ${transposed ? 'w-max' : ''}"
             data-sk-rows-world
             data-w="${screen ? SCREEN_WIDTH : part.width}"
@@ -1007,8 +1010,8 @@ export default definePart<Props>({
                   </section>`
                 : ''
             }
-          </div>
-        </div>
+          </div>`,
+        })}
       </div>
       ${chip.body}
     </div>`;
@@ -1055,6 +1058,7 @@ export default definePart<Props>({
           .map((entry) => entry.styles)
           .join('') +
         variantCellStyles +
+        canvasViewportStyles +
         kit +
         styles +
         below,
