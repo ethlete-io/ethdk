@@ -147,10 +147,10 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "pages/sketches": {
-    "hash": "1757c25613a72cf6",
+    "hash": "dc18e99e54d235f3",
     "variant": "a",
-    "decidedBy": "grill",
-    "at": "2026-11-17T06:27:27.292Z"
+    "decidedBy": "user",
+    "at": "2026-11-17T06:43:13.746Z"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",

@@ -89,6 +89,10 @@ type SketchStatus = Exclude<BadgeStatus, 'idle'>;
 
 type ScreenMode = 'crop' | 'whole';
 
+type AddedSkip = { part: string; classes: string };
+
+type AddedSkips = Partial<Record<RowKey, AddedSkip[]>>;
+
 type Props = {
   camera: 'fit' | '100' | Camera;
   selected?: RowKey;
@@ -96,6 +100,7 @@ type Props = {
   reason?: boolean;
   readyReason?: string;
   errored?: RowKey[];
+  skips?: AddedSkips;
   fresh?: boolean;
   part?: PartKind;
   comparing?: boolean;
@@ -124,6 +129,7 @@ type View = {
   selected?: RowKey;
   status: SketchStatus;
   errored: RowKey[];
+  skips: AddedSkips;
   comparing: boolean;
   listError?: string;
   retry: string;
@@ -145,6 +151,32 @@ const LIST_ERROR = 'missing build: pages/sketches';
 const NOT_READY_REASON = 'components/title-bar b: SHOT-NOT-VIEWED default draws a pixel diff nobody viewed';
 const NOT_READY_UNKNOWN = 'Grund unbekannt - führe sketch ready aus';
 const FAILED_REASON = 'b · default: boom is not defined';
+const ADDED_SKIPS: AddedSkips = {
+  a: [{ part: 'components/zoom-chip', classes: 'WRAP' }],
+  b: [
+    { part: 'components/zoom-chip', classes: 'CLIPPED OFF-CENTRE' },
+    { part: 'components/button', classes: 'CONTROL-HEIGHT' },
+  ],
+};
+
+const skipLines = (skips: AddedSkip[] | undefined) =>
+  skips?.length
+    ? html`<ul class="m-0 flex list-none flex-col gap-space-1 p-0" data-sk-added-skips>
+        ${skips
+          .map(
+            ({ part, classes }) =>
+              html`<li class="flex min-w-0 items-start gap-space-1 text-ui-xs text-et-surface-muted" data-sk-added-skip>
+                <span class="contents" data-et-semantic-color="warning"
+                  >${icon('warning', { size: 14, cls: 'mt-px flex-none text-et-theme' })}</span
+                ><span class="min-w-0 wrap-anywhere"
+                  >Neuer Skip <code class="font-code text-et-surface">${classes}</code> in ${part} - stellt eine Prüfung
+                  stumm</span
+                >
+              </li>`,
+          )
+          .join('')}
+      </ul>`
+    : '';
 
 const failedMark = (reason: string) =>
   html`<span class="text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-compare-failed
@@ -513,7 +545,7 @@ const headOf = (row: Row, view: View) => {
       ? html`<span class="relative flex flex-wrap items-center gap-space-2">${take}${view.points}</span>`
       : take;
   const mergeFailed = view.error && row.key === view.selected ? errorText(view.error) : '';
-  const action = drawn ? drawingMark : withPoints + mergeFailed;
+  const action = drawn ? drawingMark : skipLines(view.skips[row.key]) + withPoints + mergeFailed;
   const failed = view.listError ? failedMark(view.listError) : comparingMark;
   const mark = view.comparing && row.key !== 'current' ? failed : '';
   if (isWithdrawn(row, view.withdrawn)) return rowHead(row, withdrawnMark, mark);
@@ -793,7 +825,7 @@ const variantComments = async (row: string, phase: CommentPhase | undefined) => 
 };
 
 export default definePart<Props>({
-  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das einen Bestätigungsdialog öffnet, erst Bestätigen übernimmt die Variante; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert. Solange sketch ready nicht bestanden hat, steht Noch nicht bereit mit der ersten Zeile seiner letzten Ablehnung und danach der letzten Änderung daneben, ohne aufgezeichnete Ablehnung der Hinweis, sketch ready auszuführen; Übernehmen fehlt dann. Zeichnet eine Variante nicht, während der Sketch wartet oder noch nicht bereit ist, steht Render fehlgeschlagen in der Fehlerfarbe mit dem ersten Fehler daneben (Variante · Zustand: Fehler, weitere als (+N)), wie die Zeile von Noch nicht bereit; solange eine Variante einen Render-Fehler hat, fehlt Übernehmen in jeder Zeile, auch wenn schon gewählt ist. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; Zustände, deren Vergleich noch aussteht, liegen schon eingeklappt hinter einer Zeile vergleicht N Zustände …, sichtbar sind nur die bisher als geändert bekannten Zustände, neue hängen sich hinten an. Die Antwort ändert nur den Text dieser Zeile zu N unveränderte Zustände eingeklappt, das Raster springt nicht. Danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Fügt eine Variante einen Zustand hinzu, den Aktuell nicht hat, zeigt Aktuell dort einen gestrichelten Rahmen neu in der Skizze, eine Variante ohne ihn fehlt in dieser Variante. Eine Zelle ist so breit wie der gemessene Zustand (etwa die Zoom-Pille mit offenem Tooltip) und schneidet nie ab. Beim Verschieben bleibt der Kopf jeder Zeile (Variante, Modell, Notiz, Übernehmen) wie die Zustandsspalte der Matrix am linken Rand stehen, deckend, ebenso der Text der eingeklappten Zeile. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>; die eingeklappte Zeile liest dann Vergleich von N Zuständen fehlgeschlagen. Schlägt Übernehmen oder eine andere Sketch-Aktion fehl, steht der Grund des Servers in der Fehlerfarbe im Kopf der gewählten Variante unter Übernehmen; der Seitenkopf bleibt ohne Fehler.',
+  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), it shows both rows named, Änderung behalten (new) and Zuletzt gemergter Stand (old), each with its own Übernehmen, never folded as unverändert. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das einen Bestätigungsdialog öffnet, erst Bestätigen übernimmt die Variante; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert. Solange sketch ready nicht bestanden hat, steht Noch nicht bereit mit der ersten Zeile seiner letzten Ablehnung und danach der letzten Änderung daneben, ohne aufgezeichnete Ablehnung der Hinweis, sketch ready auszuführen; Übernehmen fehlt dann. Zeichnet eine Variante nicht, während der Sketch wartet oder noch nicht bereit ist, steht Render fehlgeschlagen in der Fehlerfarbe mit dem ersten Fehler daneben (Variante · Zustand: Fehler, weitere als (+N)), wie die Zeile von Noch nicht bereit; solange eine Variante einen Render-Fehler hat, fehlt Übernehmen in jeder Zeile, auch wenn schon gewählt ist. Setzt eine Variante ein neues data-et-skip, steht im Kopf dieser Variante je Marker eine Zeile mit Warnsymbol über Übernehmen: Neuer Skip <Klassen> in <Teil> - stellt eine Prüfung stumm; wer wählt, sieht so jede stumm geschaltete Prüfung. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, nie unter 12 px bis Einpassen, danach skaliert er mit der Fläche, unter 9 px ausgeblendet). Die Beispielzeilen tragen eigene Namen (Stand, Entwurf 1, Entwurf 2), damit sie sich von den echten Spalten ums Bild unterscheiden. Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; Zustände, deren Vergleich noch aussteht, liegen schon eingeklappt hinter einer Zeile vergleicht N Zustände …, sichtbar sind nur die bisher als geändert bekannten Zustände, neue hängen sich hinten an. Die Antwort ändert nur den Text dieser Zeile zu N unveränderte Zustände eingeklappt, das Raster springt nicht. Danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Fügt eine Variante einen Zustand hinzu, den Aktuell nicht hat, zeigt Aktuell dort einen gestrichelten Rahmen neu in der Skizze, eine Variante ohne ihn fehlt in dieser Variante. Eine Zelle ist so breit wie der gemessene Zustand (etwa die Zoom-Pille mit offenem Tooltip) und schneidet nie ab. Beim Verschieben bleibt der Kopf jeder Zeile (Variante, Modell, Notiz, Übernehmen) wie die Zustandsspalte der Matrix am linken Rand stehen, deckend, ebenso der Text der eingeklappten Zeile. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher. Schlägt das Auflisten der Sketches fehl, steht im Kopf vor Verwerfen der Button Erneut laden, und jede Zeile, die noch vergleicht, zeigt statt vergleicht … in der Fehlerfarbe Vergleich fehlgeschlagen: <Grund des Servers>; die eingeklappte Zeile liest dann Vergleich von N Zuständen fehlgeschlagen. Schlägt Übernehmen oder eine andere Sketch-Aktion fehl, steht der Grund des Servers in der Fehlerfarbe im Kopf der gewählten Variante unter Übernehmen; der Seitenkopf bleibt ohne Fehler.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   controls: {
@@ -815,6 +847,7 @@ export default definePart<Props>({
     'not-ready': { camera: 'fit', status: 'not-ready', readyReason: NOT_READY_REASON },
     'not-ready-unknown': { camera: 'fit', status: 'not-ready' },
     failed: { camera: 'fit', status: 'failed', errored: ['b'], readyReason: FAILED_REASON },
+    'added-skips': { camera: 'fit', part: 'narrow', skips: ADDED_SKIPS },
     'picked-errored': { camera: 'fit', part: 'narrow', status: 'picked', selected: 'b', errored: ['a'] },
     'new-part': { camera: 'fit', fresh: true },
     'narrow-part': { camera: 'fit', part: 'narrow' },
@@ -875,6 +908,7 @@ export default definePart<Props>({
     reason = false,
     readyReason,
     errored = [],
+    skips = {},
     fresh = false,
     part: kind = 'wide',
     comparing = false,
@@ -931,6 +965,7 @@ export default definePart<Props>({
       selected,
       status,
       errored,
+      skips,
       comparing,
       listError,
       retry,
