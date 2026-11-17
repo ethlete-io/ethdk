@@ -1847,6 +1847,10 @@ the same file (58 / 60 / 46 px over 5 `design dom` runs). HEAD and the edit draw
 removed, and their shots are pixel-identical. `sketch ready` closed the sketch as HELD. Not fixed: the width wobble, so
 any scheduler check can reopen a sketch.
 
+B135 done: all 14 parts with own behaviour declare their keys; ACTION-UNDECLARED in them 227 -> 29, each left
+element named above with its reason (a press does nothing, the consumer owns the target, or no state draws the result).
+No ADR records B135.
+
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
 As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the
