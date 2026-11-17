@@ -1011,3 +1011,7 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
   a font load only re-reports a loaded face" fails when every event counts. `design check --product studio --part
 pages/sketches`: only the UNRECORDED finding, which comes from the committed implemented record and was there before.
 - Not verified: Safari/WebKit and Firefox (Tauri on macOS); whether they re-fire `loadingdone` the same way.
+
+As built (B149, 2026-11-17): the one-variant sketch from b637b6259 (review placeholder on `--lab-surface`, AA) was picked
+(builder, grill decision, ADR 0010 Empfehlung gebaut) and merged into studio-lab in afe1b7763. Verified:
+`design check --product studio-lab --part pages/film-detail` 0 findings (CONTRAST 0). Not verified: a live shot in Studio.
