@@ -98,10 +98,8 @@
     {
       "id": "exception-approve",
       "label": "Ausnahme freigeben",
-      "place": null,
-      "confirmed": true,
-      "why": "system-view/exception-list.component.ts calls /__design/exception-approve; no design part draws it",
-      "missing": "B175"
+      "place": { "part": "pages/system", "action": "emit:approveException" },
+      "confirmed": true
     },
     {
       "id": "inventory-approve",
@@ -190,18 +188,14 @@
     {
       "id": "call-transfer",
       "label": "Auftrag als übertragen markieren",
-      "place": null,
-      "confirmed": true,
-      "why": "system-view.component.ts calls transferCall$ (markTransferred); no design part draws it",
-      "missing": "B175"
+      "place": { "part": "pages/system", "action": "emit:markTransferred" },
+      "confirmed": true
     },
     {
       "id": "theme-pick",
       "label": "Theme wählen",
-      "place": null,
-      "confirmed": true,
-      "why": "system-view.component.ts has a theme switch (pickTheme); no design part draws it",
-      "missing": "B175"
+      "place": { "part": "pages/system", "action": "emit:pickTheme" },
+      "confirmed": true
     },
     {
       "id": "preset-pick",

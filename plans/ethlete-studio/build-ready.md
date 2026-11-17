@@ -1015,3 +1015,9 @@ pages/sketches`: only the UNRECORDED finding, which comes from the committed imp
 As built (B149, 2026-11-17): the one-variant sketch from b637b6259 (review placeholder on `--lab-surface`, AA) was picked
 (builder, grill decision, ADR 0010 Empfehlung gebaut) and merged into studio-lab in afe1b7763. Verified:
 `design check --product studio-lab --part pages/film-detail` 0 findings (CONTRAST 0). Not verified: a live shot in Studio.
+
+As built (B175, 2026-11-17): the drawing was already done; c02c7aede (pick b of the bbbda5227 sketch, 2026-11-03) put
+`shared/capabilities.ts` into pages/system with `emit:approveException`, `emit:markTransferred` and `emit:pickTheme`.
+Only `capabilities.json` still listed the three as unplaced (`missing: B175`); they now name their pages/system place.
+Verified: `design check --product studio --part pages/system` CAPABILITY-PLACE 0. Its other findings (STATE-NO-SOURCE
+on the B539 comment states, UNRECORDED file lists) come from parts this slice did not touch. Not verified: a live shot.
