@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 3.0.0-next.35
+
+### Minor Changes
+
+- Design parts can describe each state in one sentence with `definePart({ describe })`, and Studio shows it under the state's title on the part canvas.
+
 ## 3.0.0-next.34
 
 ### Patch Changes

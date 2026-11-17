@@ -1,5 +1,14 @@
 # ethlete-studio
 
+## 0.2.0-next.24
+
+### Patch Changes
+
+- Keep the Verwerfen and Übernehmen confirm open when a new sketch listing names the same sketch
+- A frame title and its state sentence on the part canvas now stop with an ellipsis before the chips at the top right instead of running under them.
+- The System page part draws the folded-states pill of a part with many states, in the design and through the system-page component, instead of the old prefix state groups.
+- Design parts can describe each state in one sentence with `definePart({ describe })`, and Studio shows it under the state's title on the part canvas.
+
 ## 0.2.0-next.23
 
 ### Patch Changes
