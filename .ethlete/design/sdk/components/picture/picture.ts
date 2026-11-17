@@ -87,6 +87,21 @@ export default definePart({
     'error-slot': { error: 'slot' },
     'error-bare': { error: 'bare' },
   },
+  describe: {
+    default:
+      'A 16 / 9 picture with a short caption; check that the image fills the ratio box and the caption sits below.',
+    'ratio-4-3': 'The picture at 4 / 3; check that the box is taller and the image crops instead of stretching.',
+    'no-ratio': 'The picture with no ratio; check that it takes the natural height of the image.',
+    'width-height':
+      'The fallback image with width 800 and height 450; check that it scales to the frame at that ratio.',
+    'no-caption': 'The picture without a caption; check that no empty space is left below the image.',
+    'long-caption': 'The picture with a long caption; check that the caption wraps under the image without overflow.',
+    fit: 'Five cells for contain, cover, fill, none and scale-down; check that each image follows its object-fit.',
+    loading: 'A picture still loading; check that a skeleton fills the 16 / 9 box.',
+    'error-slot': 'A broken image with an error slot; check that This image is unavailable shows in the 16 / 9 box.',
+    'error-bare':
+      'A broken image with no error slot; check that the box keeps its ratio and shows no broken-image icon.',
+  },
   widths: [480],
   frame: (body) => `<div class="picture-frame">${body}</div>`,
   render: (props: Props) =>

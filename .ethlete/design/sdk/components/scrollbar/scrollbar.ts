@@ -114,6 +114,21 @@ export default definePart({
     dragging: { layout: 'vertical', scroll: 424, thumb: 'dragging' },
     'auto-hidden': { layout: 'vertical', visible: false },
   },
+  describe: {
+    vertical:
+      '24 rows at the top with a vertical bar; check that the thumb sits at the top of the track, inset from the edge.',
+    'vertical-scrolled': 'The rows scrolled halfway; check that the thumb sits in the middle of the track.',
+    'vertical-end': 'The rows scrolled to the end; check that the thumb meets the bottom inset.',
+    horizontal: '14 cards at the start with a horizontal bar; check that the thumb starts at the left inset.',
+    'horizontal-scrolled': 'The cards scrolled 600px; check that the thumb moved along the track to match.',
+    'both-axes': 'A grid scrolled on both axes; check that both bars show and do not overlap in the corner.',
+    rtl: 'The cards in right-to-left; check that the thumb starts at the right edge.',
+    'short-content': 'Six rows scrolled slightly; check that the thumb is long, close to the track length.',
+    'long-content': '200 rows scrolled deep; check that the thumb keeps its minimum size of 24px.',
+    'thumb-hover': 'The halfway thumb hovered; check that the thumb darkens or grows.',
+    dragging: 'The halfway thumb being dragged; check that it shows the dragging look, stronger than hover.',
+    'auto-hidden': 'The rows with the bar auto-hidden; check that no thumb or track shows.',
+  },
   widths: [480],
   frame: (body, props) => `<div class="scrollbar-frame"${props.layout === 'rtl' ? ' dir="rtl"' : ''}>${body}</div>`,
   render: (props: Props) =>

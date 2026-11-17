@@ -28,6 +28,13 @@ export default definePart({
     'single-column': { items: 'few' },
     rtl: { items: 'rest', columnWidth: 130, dir: 'rtl' },
   },
+  describe: {
+    rest: 'Eight cards of similar height in 130px columns; check that columns fill evenly with equal gaps.',
+    uneven: 'Nine cards of very different heights; check that each card goes to the shortest column and no gap opens.',
+    narrow: 'The cards in a 280px container; check that the layout drops to fewer columns without overflow.',
+    'single-column': 'Three cards with no column width; check that they stack in one column at full width.',
+    rtl: 'The cards in right-to-left; check that the first card starts at the right edge.',
+  },
   widths: [480],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

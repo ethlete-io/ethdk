@@ -75,6 +75,18 @@ export default definePart({
     'without-sparkline': { form: 'without-sparkline' },
     loading: { form: 'loading' },
   },
+  describe: {
+    default:
+      'Weekly active users 25.2K, up 6.8% and good, with a sparkline; check that the delta reads positive and the line fits.',
+    'up-bad': 'p95 latency 212 ms, up 18 and bad; check that the delta takes the danger color though it points up.',
+    'down-good': 'Churn rate 3.4%, down 2.1% and good; check that the delta reads positive though it points down.',
+    'down-unrated': 'Page views down 310 with no sentiment; check that the delta stays neutral in color.',
+    unchanged: 'Open tickets with a delta of 0; check that the neutral arrow and text show.',
+    unit: 'p95 latency 212 with the ms unit and no delta; check that the unit sits after the value, smaller.',
+    'no-value': 'Weekly active users with no value; check that a placeholder holds the value line.',
+    'without-sparkline': 'The default tile without a sparkline; check that the tile closes after the caption.',
+    loading: 'The default tile loading; check that skeletons replace value, delta and sparkline at the same size.',
+  },
   widths: [480],
   frame: (body) => `<div class="stat-tile-frame">${body}</div>`,
   render: ({ form }: Props) =>

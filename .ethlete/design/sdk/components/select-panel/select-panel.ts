@@ -108,8 +108,26 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   states: {
     ...states,
+    'disabled-hover': 'The disabled option under the pointer; check that it gives no highlight.',
+    'disabled-active': 'The disabled option pressed; check that it gives no press look.',
+    'disabled-focus-visible': 'The disabled option reached by keyboard; check that it shows no focus look.',
     'panel-grouped': { panel: true },
     'panel-all-selected': { panel: true, allSelected: true },
+  },
+  describe: {
+    option: 'One unselected In review option in an open panel; check its padding and the empty check slot.',
+    'option-hover': 'The option hovered; check that the row takes the pointer highlight.',
+    'option-active': 'The option pressed; check that the pressed tint is deeper than hover.',
+    'option-focus-visible': 'The option active by keyboard; check that the row shows the keyboard focus look.',
+    selected: 'One selected In review option; check that the check mark and selected color show.',
+    'selected-hover': 'The selected option hovered; check that the highlight shows and the check stays visible.',
+    'selected-active': 'The selected option pressed; check that the press look keeps the check readable.',
+    'selected-focus-visible': 'The selected option active by keyboard; check that focus shows with the check mark.',
+    disabled: 'One disabled In review option; check that the label fades and no highlight shows.',
+    'panel-grouped':
+      'A multi-select panel with Select all and two groups; check the group labels, the mixed Select all and Merged active.',
+    'panel-all-selected':
+      'The grouped panel with all selected; check that Select all is checked and disabled Archived stays off.',
   },
   grid,
   widths: [280],

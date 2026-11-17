@@ -66,6 +66,22 @@ export default definePart({
     hover: { card: { ...finished, interactive: true, force: 'hover' } },
     'focus-visible': { card: { ...finished, interactive: true, force: 'focus-visible' } },
   },
+  describe: {
+    finished:
+      'A finished match won 2-1 by the home side; check that the winner reads emphasized and the start time shows.',
+    live: 'A live match at 1-1; check that the live marker uses the danger color and both scores show.',
+    scheduled: 'A scheduled match with no score; check that the start time takes the place of the scores.',
+    series:
+      'A best-of-3 series won by the away side, with seeds; check that game scores and seeds line up with the teams.',
+    outcome:
+      'A finished match decided by outcome, not score; check that the away side reads as winner without numbers.',
+    tbd: 'A final with the away side not yet known; check that the empty side shows a placeholder, not a broken row.',
+    compact: 'The finished match at compact size; check that names and scores shrink but stay readable.',
+    expanded: 'The finished match at expanded size; check that the extra room adds detail without stretching rows.',
+    wide: 'The finished match at wide size; check that teams and scores spread on one line and stay aligned.',
+    hover: 'An interactive finished match under hover; check that the card gives a hover tint without moving.',
+    'focus-visible': 'An interactive finished match with keyboard focus; check that a focus ring wraps the whole card.',
+  },
   widths: [280, 480, 720],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

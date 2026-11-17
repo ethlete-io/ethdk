@@ -108,6 +108,28 @@ export default definePart({
     'brand-retry-hover': { shape: 'retryable', color: 'brand', retry: 'hover' },
     'brand-retry-focus-visible': { shape: 'retryable', color: 'brand', retry: 'focus-visible' },
   },
+  describe: {
+    message: 'A 403 Forbidden with one message and no retry; check the danger title, status and message.',
+    violations: 'A 422 with three violation messages; check that each message shows as its own line.',
+    'class-validator': 'A 400 with two class-validator messages; check that both show as separate lines.',
+    retryable: 'A 503 that can retry; check that the Retry button shows under the message.',
+    'empty-body': 'A 500 with the fallback message; check that the generic text and code show.',
+    'echoes-title': 'A 404 whose message echoes the title; check that the title and message both read cleanly.',
+    network: 'A network error with status 0 and Retry; check the connection message and the Retry button.',
+    'always-allow-retry': 'The 404 with retry forced on; check that Retry shows though the error cannot retry.',
+    'long-message':
+      'A 409 with a long message and a long URL; check that the text wraps and the URL breaks in the box.',
+    'custom-slots':
+      'The 403 with custom Try again and Contact support actions; check that both show in place of Retry.',
+    'retry-hover': 'The 503 with Retry hovered; check that only Retry takes the hover look.',
+    'retry-active': 'The 503 with Retry pressed; check that the pressed look is deeper than hover.',
+    'retry-focus-visible': 'The 503 with Retry focused by keyboard; check that the focus ring wraps Retry.',
+    'slot-retry-focus-visible':
+      'The custom Try again button focused; check that the focus ring wraps the slotted button.',
+    'brand-color': 'The 503 in brand instead of danger; check that title and Retry take the brand color.',
+    'brand-retry-hover': 'The brand 503 with Retry hovered; check that the hover look uses the brand color.',
+    'brand-retry-focus-visible': 'The brand 503 with Retry focused; check that the focus ring uses the brand color.',
+  },
   widths: [480],
   controls: {
     retry: { kind: 'button', input: ['pointer', 'keyboard'] },

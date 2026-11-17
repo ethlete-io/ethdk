@@ -48,6 +48,18 @@ export default definePart({
     'shortcut-list-apple': { form: 'shortcut-list', platform: 'apple' },
     'shortcut-list-other': { form: 'shortcut-list', platform: 'other' },
   },
+  describe: {
+    single: 'A single Esc key cap; check that the cap has its border, padding and baseline shadow.',
+    'combo-apple': 'The ⌘ K combination on Apple; check that both caps sit side by side with an even gap.',
+    'combo-other':
+      'The Ctrl K combination on other platforms; check that the wider Ctrl cap keeps the same height as K.',
+    'in-text':
+      'Key caps inside a sentence; check that the caps align to the text baseline without stretching the line.',
+    'shortcut-list-apple':
+      'A list of shortcuts with Apple symbols; check that labels sit left, key caps right, and rows align.',
+    'shortcut-list-other':
+      'A list of shortcuts with Ctrl, Shift and Alt; check that the longer key names still align on the right.',
+  },
   widths: [480],
   frame: (body) => `<div class="kbd-frame">${body}</div>`,
   render: (props: Props) =>

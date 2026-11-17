@@ -26,6 +26,17 @@ export default definePart({
     'consent-active': { state: 'consent', button: 'active' },
     'consent-focus-visible': { state: 'consent', button: 'focus-visible' },
   },
+  describe: {
+    player: 'The stream slot holding the player; check that the video fills the slot at its ratio.',
+    consent: 'The consent screen before the player loads; check the message and the action button, centered.',
+    loading: 'The stream slot loading; check that the spinner sits centered in the slot.',
+    error: 'The stream slot after an error; check the error message, centered in the slot.',
+    'pip-placeholder':
+      'The placeholder while the stream plays picture-in-picture; check its message in the empty slot.',
+    'consent-hover': 'The consent action hovered; check that only the button shows the hover look.',
+    'consent-active': 'The consent action pressed; check that the press look is deeper than hover.',
+    'consent-focus-visible': 'The consent action focused by keyboard; check that the focus ring wraps the button.',
+  },
   widths: [320, 480, 720],
   controls: {
     action: { kind: 'button', input: ['pointer', 'keyboard'] },

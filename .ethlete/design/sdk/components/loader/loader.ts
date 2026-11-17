@@ -58,6 +58,17 @@ export default definePart({
     'progress-bar-themed': { form: 'progress-bar-themed' },
     'brand-loader': { form: 'brand-loader' },
   },
+  describe: {
+    spinner:
+      'Indeterminate spinners in three sizes, with and without a track; check that stroke widths scale and tracks show.',
+    'spinner-determinate':
+      'Determinate spinners at 0, 65 and 100 percent; check that the arc length matches each value.',
+    'spinner-themed': 'Spinners in brand, danger and warning; check that each arc and track takes its theme color.',
+    'progress-bar': 'Progress bars at 42 and 100 percent and indeterminate; check that the fill matches each value.',
+    'progress-bar-themed':
+      'Progress bars in brand, danger and warning; check that each fill and track takes its theme color.',
+    'brand-loader': 'The brand loader; check that the mark shows whole and centered in the frame.',
+  },
   checks: { skip: ['CLIPPED'] },
   widths: [480],
   frame: (body) => `<div class="loader-frame">${body}</div>`,

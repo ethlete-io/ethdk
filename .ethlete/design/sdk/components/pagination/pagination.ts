@@ -62,6 +62,27 @@ export default definePart({
     links: { ...MIDDLE, renderAs: 'links' },
     compact: { ...MIDDLE, compactStatus: '10 / 20' },
   },
+  describe: {
+    first: 'Page 1 of 20; check that first and previous are disabled and the ellipsis sits before 20.',
+    middle:
+      'Page 10 of 20 with ellipses on both sides; check that page 10 reads as current and all arrows are enabled.',
+    last: 'Page 20 of 20; check that next and last are disabled and the ellipsis sits after 1.',
+    few: 'Page 2 of 5 with every page shown; check that no ellipsis appears.',
+    page: 'Page 10 of 20 at rest; check that page 11 looks like any other plain page.',
+    'page-hover': 'Page 11 hovered; check that only page 11 takes the hover tint.',
+    'page-active': 'Page 11 pressed; check that the pressed tint is deeper than hover.',
+    'page-focus-visible':
+      'Page 11 focused by keyboard; check that the focus ring wraps page 11 without shifting neighbours.',
+    current: 'Page 10 of 20 at rest; check that the current page 10 stands out from the plain pages.',
+    'current-hover': 'The current page hovered; check that it keeps its current look under hover.',
+    'current-active': 'The current page pressed; check that it keeps its current look while pressed.',
+    'current-focus-visible':
+      'The current page focused by keyboard; check that the focus ring shows around the current fill.',
+    range: 'Page 10 with the Showing 91–100 of 200 range; check that the range text sits beside the controls.',
+    sm: 'Page 10 at size sm; check that buttons and text shrink together.',
+    links: 'Page 10 rendered as links; check that it looks the same as the button version.',
+    compact: 'Page 10 with the compact 10 / 20 status; check that the status replaces the page list.',
+  },
   grid,
   widths: [480],
   controls: {

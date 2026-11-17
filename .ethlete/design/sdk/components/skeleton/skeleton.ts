@@ -41,6 +41,13 @@ export default definePart({
     'in-text': { form: 'in-text', animated: true },
     static: { form: 'card', animated: false },
   },
+  describe: {
+    card: 'An animated card skeleton with avatar, two lines and an image block; check the shimmer and the rounded image.',
+    text: 'An animated text skeleton; check that the lines vary in length like a paragraph.',
+    shapes: 'A line, a block and circles at 24, 40 and 64px; check that each shape keeps its size and radius.',
+    'in-text': 'A skeleton bar inside a sentence; check that it sits on the text line and is capped at 120px.',
+    static: 'The card skeleton without animation; check that no shimmer runs and the shapes match the animated card.',
+  },
   widths: [480],
   frame: (body) => `<div class="skeleton-frame">${body}</div>`,
   render: (props: Props) =>

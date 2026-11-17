@@ -78,6 +78,17 @@ export default definePart({
     'long-content': { long: true, markers: true },
     single: { count: 1 },
   },
+  describe: {
+    default:
+      'Four match events with times, labels and descriptions; check that dots line up on one rail with even gaps.',
+    'with-markers': 'The events with icon markers in their theme colors; check that each icon centers on the rail.',
+    'themed-dots': 'The events with plain dots in their theme colors; check that each dot takes its color.',
+    compact: 'The events with labels only; check that rows tighten and the rail stays continuous.',
+    'compact-markers': 'The compact events with icon markers; check that markers fit the tighter rows.',
+    'no-time': 'The events without times; check that the content shifts over and the rail stays aligned.',
+    'long-content': 'A long label and a long URL in the second event; check that both wrap and nothing overflows.',
+    single: 'A single event; check that no rail runs past its dot.',
+  },
   widths: [480],
   render: (props: Props) =>
     drawing({

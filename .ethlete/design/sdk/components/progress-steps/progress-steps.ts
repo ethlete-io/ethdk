@@ -78,6 +78,22 @@ export default definePart({
     'complete-hover': { set: 'links', complete: 'hover' },
     'complete-focus-visible': { set: 'links', complete: 'focus-visible' },
   },
+  describe: {
+    default:
+      'A four-step checkout on Shipping; check that Account reads complete, Shipping current and the rest upcoming.',
+    outcomes: 'Steps ending in success, warning and error; check that each marker takes its icon and theme color.',
+    described:
+      'Steps with a description under each label; check that descriptions sit under labels and the error reads danger.',
+    vertical:
+      'Four steps stacked vertically with descriptions; check that the connector line runs between the markers.',
+    links: 'The checkout steps as links; check that they look the same as the plain steps at rest.',
+    'upcoming-hover': 'The Payment link hovered; check that only the upcoming Payment step shows the hover look.',
+    'upcoming-active': 'The Payment link pressed; check that the pressed look is deeper than hover.',
+    'upcoming-focus-visible': 'The Payment link focused by keyboard; check that the focus ring wraps the Payment step.',
+    'complete-hover': 'The complete Account link hovered; check that it shows hover and keeps its complete marker.',
+    'complete-focus-visible':
+      'The complete Account link focused by keyboard; check that the ring wraps it, marker included.',
+  },
   widths: [480],
   controls: {
     complete: { kind: 'button', input: ['pointer', 'keyboard'] },

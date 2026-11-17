@@ -45,7 +45,7 @@ const gridStates = Object.fromEntries(
   (Object.keys(ROWS) as Row[]).flatMap((row) =>
     COLUMNS.map((column) => [stateOf(row, column), { group: cellOf(row, column) }]),
   ),
-) as Record<string, Props>;
+) as Record<Row | `${Row}-${Exclude<Column, 'rest'>}`, Props>;
 
 const marked = (markup: string) =>
   markup.replace(/<et-radio(?=[\s>])/gu, (tag) => control(`${tag}>`, 'radio').slice(0, -1));
@@ -126,6 +126,47 @@ export default definePart({
     'card-hover': { group: formatGroup(1, ['hover']) },
     'card-focus-visible': { group: formatGroup(1, ['focus-visible']) },
     'card-checked-focus-visible': { group: formatGroup(0, ['focus-visible']) },
+  },
+  describe: {
+    unchecked: 'One unchecked radio at rest; check that the empty circle border shows next to the label.',
+    'unchecked-hover': 'The unchecked radio hovered; check that the circle border darkens.',
+    'unchecked-focus-visible':
+      'The unchecked radio focused by keyboard; check that the focus ring shows around the circle.',
+    'unchecked-active': 'The unchecked radio pressed; check that the press look shows on the circle.',
+    'unchecked-disabled': 'The unchecked radio disabled; check that circle and label fade.',
+    'unchecked-readonly': 'The unchecked radio read-only; check that it draws like rest.',
+    checked: 'One checked radio at rest; check that the primary ring and dot show.',
+    'checked-hover': 'The checked radio hovered; check that ring and dot shift visibly from rest.',
+    'checked-focus-visible':
+      'The checked radio focused by keyboard; check that the focus ring shows around the checked circle.',
+    'checked-active': 'The checked radio pressed; check that ring and dot darken.',
+    'checked-disabled': 'The checked radio disabled; check that ring, dot and label fade but stay recognisable.',
+    'checked-readonly': 'The checked radio read-only; check that it draws like the checked rest.',
+    'group-none':
+      'The three-option Kick-off reminder group with nothing picked; check the group label and even option gaps.',
+    'group-checked': 'The reminder group with One hour before picked; check that only the first option shows the dot.',
+    'group-support':
+      'A group with option descriptions and a hint; check that descriptions sit under labels and the hint below.',
+    'group-option-hover': 'The group with Fifteen minutes before hovered; check that only that circle shows hover.',
+    'group-option-pressed': 'The group with Fifteen minutes before pressed; check the press look on that circle.',
+    'group-option-focus-visible':
+      'The group with the second option picked and focused by keyboard; check the focus ring on its circle.',
+    'group-mixed': 'The group in bulk edit with mixed values; check the dashed circles and the mixed hint.',
+    'group-disabled': 'The whole group disabled; check that options fade and the group label stays.',
+    'group-readonly': 'The whole group read-only; check that it draws like the checked group.',
+    invalid: 'The required group with nothing picked and an error; check the danger circles and error text.',
+    'invalid-focus-visible':
+      'The invalid group, nothing picked, second option focused; check that the focus ring takes the danger ink.',
+    'invalid-checked': 'The invalid group with the second option picked; check that the error stays and the dot shows.',
+    'group-horizontal':
+      'The Show matches at group laid out in a row; check that options sit side by side with even gaps.',
+    'card-rest': 'Two card options with descriptions, none picked; check the card borders and the radio at the end.',
+    'card-checked': 'The Short card picked; check that its edge and ring take the checked color.',
+    'card-hover': 'The Full card picked and the Short card hovered; check that only Short shows the hover look.',
+    'card-focus-visible':
+      'The Full card picked and Short focused by keyboard; check that the focus ring wraps the whole Short card.',
+    'card-checked-focus-visible':
+      'The checked Short card focused; check that focus and checked edge both stay visible.',
   },
   grid: {
     columns: COLUMNS,

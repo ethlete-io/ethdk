@@ -89,6 +89,22 @@ export default definePart({
     disabled: { rows: [row('Rename'), row('Export as PDF', { disabled: true }), row('Duplicate')] },
     'submenu-open': { rows: [row('Rename'), row('Move to', { submenu: 'open', active: true }), row('Duplicate')] },
   },
+  describe: {
+    menu: 'The full menu with label, shortcuts, submenu, disabled, checkbox and radio groups and Delete; check alignment and separators.',
+    item: 'Three plain items, one with a shortcut, one with a submenu arrow; check that shortcuts and arrow align on the right.',
+    'item-hover': 'The items with Duplicate hovered; check that only that row takes the hover tint.',
+    'item-active': 'The items with Duplicate pressed; check that the pressed tint is deeper than hover.',
+    'item-focus-visible':
+      'The items with Duplicate focused by keyboard; check that the row shows the keyboard focus look.',
+    checked:
+      'A checkbox off, a checkbox on and a checked radio; check that the check and dot marks sit in the leading slot.',
+    'checked-hover': 'The checked row hovered; check that the tint shows and the check mark stays visible.',
+    'checked-active': 'The checked row pressed; check that the pressed tint keeps the check mark readable.',
+    'checked-focus-visible':
+      'The checked row focused by keyboard; check that focus shows without hiding the check mark.',
+    disabled: 'Export as PDF disabled between two items; check that it fades and its neighbours stay full.',
+    'submenu-open': 'Move to with its submenu open; check that the row stays highlighted as the open parent.',
+  },
   grid,
   widths: [480],
   controls: {

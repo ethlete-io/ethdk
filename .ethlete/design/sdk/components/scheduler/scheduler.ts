@@ -230,6 +230,18 @@ export default definePart({
     'month-cell-focus-visible': { view: 'month', cell: 'focus-visible' },
     agenda: { view: 'agenda' },
   },
+  describe: {
+    week: 'The week of March 2 with overlapping, all-day and selected appointments; check the now line on Wednesday and the gridlines.',
+    'week-dragging': 'The week with Retro lifted half an hour; check that it shows the drag shadow and the new time.',
+    'appointment-hover': "Monday's Daily sync hovered; check that only that appointment takes the hover tint.",
+    'appointment-focus-visible': "Monday's Daily sync focused by keyboard; check that the focus ring wraps the block.",
+    'slot-focus-visible': 'The Thursday 11:00 slot focused by keyboard; check that the ring marks one hour cell.',
+    day: 'Wednesday alone in the day view; check the today column, the now line at 11:15 and the selected Design review.',
+    month: 'March 2026 in the month grid; check the dim outside-month days, the today circle and the +3 more trigger.',
+    'month-cell-focus-visible': 'The month with March 19 focused by keyboard; check that the ring wraps that one cell.',
+    agenda:
+      'The agenda from Wednesday to Friday; check the month heading, nested rows with tree guides and the selection.',
+  },
   widths: [560, 800, 1200],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

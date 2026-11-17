@@ -83,6 +83,24 @@ export default definePart({
     'success-action-focus-visible': { status: 'success', action: 'focus-visible' },
     stack: { status: 'stack' },
   },
+  describe: {
+    success:
+      'The success notification with Undo; check the status icon, title, message, action and dismiss button align.',
+    error:
+      'The error notification in danger with Retry and Details; check that the danger theme colors icon and actions.',
+    info: 'The info notification with no action; check that the pane closes neatly after the message and dismiss button.',
+    loading: 'The loading notification; check that a spinner takes the status icon slot.',
+    'close-hover': 'The error notification with the dismiss button hovered; check that only the dismiss button tints.',
+    'close-focus-visible':
+      'The error notification with the dismiss button focused; check its focus ring is not clipped.',
+    'action-focus-visible': 'The error notification with Retry focused; check that the focus ring wraps Retry only.',
+    'secondary-focus-visible':
+      'The error notification with Details focused; check that the focus ring wraps Details only.',
+    'success-close-focus-visible':
+      'The success notification with the dismiss button focused; check the ring in the success pane.',
+    'success-action-focus-visible': 'The success notification with Undo focused; check that the ring wraps Undo.',
+    stack: 'The four statuses stacked; check even gaps and that each pane sits one surface level above the page.',
+  },
   widths: [480],
   controls: {
     close: { kind: 'button', input: ['pointer', 'keyboard'] },

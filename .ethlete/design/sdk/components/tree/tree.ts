@@ -53,6 +53,18 @@ export default definePart({
     collapsed: { items: FILES },
     expanded: { items: FILES, expanded: ['src', 'src/app', 'docs'], value: 'src/app/app.config.ts' },
   },
+  describe: {
+    row: 'Three flat rows, none selected; check row padding and that notes.md looks like the others.',
+    'row-hover': 'The notes.md row hovered; check that only that row tints.',
+    'row-active': 'The notes.md row pressed; check that the press tint is deeper than hover.',
+    'row-focus-visible': 'The notes.md row focused by keyboard; check that the focus ring wraps the row.',
+    selected: 'The notes.md row selected; check the selected tint on that row.',
+    'selected-hover': 'The selected notes.md row hovered; check that hover and selection both read.',
+    'selected-active': 'The selected notes.md row pressed; check that the selected tint stays readable.',
+    'selected-focus-visible': 'The selected notes.md row focused by keyboard; check that ring and tint both show.',
+    collapsed: 'The file tree collapsed; check that folders show closed chevrons and files have none.',
+    expanded: 'src, app and docs open with app.config.ts selected; check the indent per level and the dim legacy.ts.',
+  },
   grid,
   widths: [320],
   controls: {

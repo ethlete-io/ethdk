@@ -20,6 +20,17 @@ export default definePart<TooltipMockOptions>({
     'bottom-start': { text: 'Copy the link to this board', placement: 'bottom-start' },
     'top-end': { text: 'Copy the link to this board', placement: 'top-end' },
   },
+  describe: {
+    short: 'The tooltip with Copy link; check the pane padding and the arrow.',
+    long: 'A long tooltip text; check that it wraps at the 34ch max width.',
+    template: 'Template content with a bold shortcut and a line; check the spacing between the two paragraphs.',
+    top: 'The tooltip placed on top; check that the arrow points down, centered.',
+    right: 'The tooltip placed on the right; check that the arrow points left, centered.',
+    bottom: 'The tooltip placed below; check that the arrow points up, centered.',
+    left: 'The tooltip placed on the left; check that the arrow points right, centered.',
+    'bottom-start': 'The tooltip below at start; check that the arrow points up, 20px in from the start.',
+    'top-end': 'The tooltip on top at end; check that the arrow points down, 20px in from the end.',
+  },
   render: (options: TooltipMockOptions) =>
     drawing({
       body: `<div class="sdk-tooltip-stage">${tooltip(options)}</div>`,

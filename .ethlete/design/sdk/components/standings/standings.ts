@@ -121,6 +121,18 @@ export default definePart({
     'pick-dragging': { view: 'pick', dragging: true },
     'pick-locked': { view: 'pick', locked: true },
   },
+  describe: {
+    table:
+      'Six teams with zones, a legend and Pinewood highlighted; check the zone marks, the form dots and the numbers align.',
+    'table-plain': 'The six teams without zones, highlight or legend; check that rows read evenly with no zone marks.',
+    'table-empty': 'The table with no rows; check that the header stays and the empty body does not collapse oddly.',
+    pick: 'The pick list of six teams with two advancing; check the cut line after the second card and the point marks.',
+    'pick-card-hover': 'Harbor City hovered in the pick list; check that only that card shows the hover look.',
+    'pick-card-focus-visible': 'Harbor City focused by keyboard; check that the focus ring wraps that card.',
+    'pick-dragging':
+      'Pinewood lifted and dragged up; check the drag shadow, the ghost slot and the shifted card below.',
+    'pick-locked': 'The pick list locked; check that cards show no drag handle and read as fixed.',
+  },
   widths: [480, 800],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

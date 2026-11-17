@@ -75,6 +75,21 @@ export default definePart({
     'size-lg': { size: 'lg' },
     'size-xl': { size: 'xl' },
   },
+  describe: {
+    default:
+      'Seven format buttons in three groups with Bold and Bulleted pressed; check the dividers and the pressed fill.',
+    hover: 'Pressed Bold and unpressed Italic hovered; check that hover reads on both and Bold stays pressed.',
+    active: 'Pressed Bold and unpressed Italic pressed down; check that the press look is deeper than hover on both.',
+    'focus-visible': 'The pressed Bold button focused by keyboard; check that the ring shows around the pressed fill.',
+    'focus-visible-unpressed':
+      'Italic as tab stop and focused by keyboard; check that the ring wraps the unpressed button.',
+    disabled: 'Italic disabled; check that only Italic fades.',
+    vertical: 'The toolbar stacked vertically; check that dividers turn horizontal between the groups.',
+    'size-xs': 'The toolbar at size xs; check that buttons and icons shrink together.',
+    'size-md': 'The toolbar at size md; check button and icon sizes against the default.',
+    'size-lg': 'The toolbar at size lg; check that buttons and icons grow together.',
+    'size-xl': 'The toolbar at size xl; check that it still fits the 528px frame.',
+  },
   widths: [528],
   controls: Object.fromEntries(
     BUTTONS.map(({ control }) => [control, { kind: 'button', input: ['pointer', 'keyboard'] }]),
