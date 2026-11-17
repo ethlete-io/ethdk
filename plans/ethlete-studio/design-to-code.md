@@ -1812,6 +1812,16 @@ elevation up (SDK: backdrop-less overlay = parent + 1, bg 43 vs 32), while the d
 draws it flat; and `studio-menu.stopped` -> Hilfe, where the design places the help submenu at a fixed `top: 279px`
 although the row sits one row higher. Both need a design decision (draw the submenu elevated and row-anchored). Verified:
 studio specs (231), lint, development build. Not verified: `design check` after the change, a live Studio shot.
+Second slice: the design draws both submenus one elevation up (`data-et-auto-surface` on the submenu wrapper, so the
+panel resolves parent + 2 like the SDK) and anchors each to its row (`anchor-name` on the row, `top: calc(anchor(top)
+
+- 6px)`), 39e0bae54 (merged via `@edit`, 6273abdb1). An input-opened help submenu draws at the same elevation as a
+click-opened one (compare `studio-menu.help`ok). The app kept a model-opened submenu open when the sibling opened;`setAppearanceOpen`/`setHelpOpen`now close the other, acc9db48a.`design ready`went from 24 to 15 failures, a
+compare with the width fix below to 3 (help -> Erscheinungsbild, which the app commit addresses). Still open: the
+design submenu was 180 px wide (SDK`--et-menu-min-width`) against the app's 176 (`min-w-0`); the fix
+`.st-studio-submenu { --et-menu-min-width: 0px }`is uncommitted in`elements/studio-menu@edit`, whose `sketch ready
+  --reopen`refuses "variants alike" (rebase --ported old copied the edit into old) and whose merge refuses "in
+progress". Verified: studio specs (231), lint, compare of appearance/help/stopped with the width fix. Not verified:`design ready`passing,`task --verify`, checks of the embedding parts.
 
 As built (B574, comment parts): comment-row and comment-target draw their control via `control()` with
 `interactionRows` (hover, active, focus-visible; comment-row also selected via `aria-pressed`), like tree-row;
