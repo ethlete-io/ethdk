@@ -2600,6 +2600,12 @@ B485 closed (Linux builder, 2026-11-17): `design compare pages/system --product 
 prints `listing-error ok`; `design check pages/system --product studio` names no listing-error problem, only the known
 STATE-NO-SOURCE x3 (comments, B233) and UNRECORDED. Not verified: a live shot of a real failed listing in the app.
 
+B165 as built (Linux builder, 2026-11-17): `AgentLogoName` gains `generic`, the neutral mark of the design's
+agent-logos foundation (`currentColor`, even-odd path); `sketchModelOf` falls back to it instead of `claude` for an
+author no agent pattern matches. Verified: agent-logo spec (generic draws `currentColor` and `fill-rule="evenodd"`),
+studio related specs 248/248, typecheck, lint, part checks components/comment-pin and pages/sketches. Not verified:
+a live shot of a paused hint with an unknown model id.
+
 B500 P5 red, as built (Linux builder subagent, 2026-11-13): Cause (probe): no `design check` path wrote the files; the
 design server's own slow runner did. Each `ready.json` entry carries the writer's pid, and every entry the earlier
 probe and three new ones changed carries the pid of the `yarn design` serve (3659499) and `"by": "et design check"`,

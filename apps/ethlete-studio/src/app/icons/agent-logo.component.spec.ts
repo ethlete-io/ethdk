@@ -9,6 +9,12 @@ import { AGENT_LOGOS } from './agent-logos';
 })
 class HostComponent {}
 
+@Component({
+  template: `<svg agent="generic" ethlete-agent-logo></svg>`,
+  imports: [AgentLogoComponent],
+})
+class GenericHostComponent {}
+
 describe('AgentLogoComponent', () => {
   it('draws the shared logo of the agent as a hidden 24 by 24 svg', async () => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
@@ -24,5 +30,19 @@ describe('AgentLogoComponent', () => {
     expect(svg?.getAttribute('aria-hidden')).toBe('true');
     expect(svg?.querySelector('path')?.getAttribute('d')).toBe(AGENT_LOGOS.gemini.path);
     expect(svg?.querySelector('path')?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+  });
+
+  it('draws the neutral logo for a model without its own mark in the current colour', async () => {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+    const fixture = TestBed.createComponent(GenericHostComponent);
+
+    await fixture.whenStable();
+
+    const svg = (fixture.nativeElement as HTMLElement).querySelector('svg');
+
+    expect(svg?.getAttribute('fill')).toBe('currentColor');
+    expect(svg?.querySelector('path')?.getAttribute('fill-rule')).toBe('evenodd');
+    expect(svg?.querySelector('path')?.getAttribute('d')).toBe(AGENT_LOGOS.generic.path);
   });
 });

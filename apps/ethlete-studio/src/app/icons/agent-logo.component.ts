@@ -3,7 +3,7 @@ import { AGENT_LOGOS, AgentLogoName } from './agent-logos';
 
 @Component({
   selector: 'svg[ethlete-agent-logo]',
-  template: `<svg:path [attr.d]="logo().path" />`,
+  template: `<svg:path [attr.d]="logo().path" [attr.fill-rule]="logo().fillRule ?? null" />`,
   encapsulation: ViewEncapsulation.None,
   host: {
     viewBox: '0 0 24 24',

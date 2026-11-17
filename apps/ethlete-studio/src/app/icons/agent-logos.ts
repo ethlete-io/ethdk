@@ -1,6 +1,6 @@
-export type AgentLogoName = 'claude' | 'codex' | 'gemini';
+export type AgentLogoName = 'claude' | 'codex' | 'gemini' | 'generic';
 
-export type AgentLogo = { fill: string; path: string };
+export type AgentLogo = { fill: string; path: string; fillRule?: 'evenodd' };
 
 export const AGENT_LOGOS: Record<AgentLogoName, AgentLogo> = {
   claude: {
@@ -15,7 +15,12 @@ export const AGENT_LOGOS: Record<AgentLogoName, AgentLogo> = {
     fill: '#8E75B2',
     path: 'M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81',
   },
+  generic: {
+    fill: 'currentColor',
+    fillRule: 'evenodd',
+    path: 'M12 1.5a1.5 1.5 0 0 1 .75 2.8V7H17a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-6a4 4 0 0 1 4-4h4.25V4.3A1.5 1.5 0 0 1 12 1.5zM8.5 11.5a2 2 0 1 0 0 4 2 2 0 1 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 1 0 0-4zm-5.75 5.75a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5z',
+  },
 };
 
 export const agentLogoSvg = (name: AgentLogoName) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${AGENT_LOGOS[name].fill}"><path d="${AGENT_LOGOS[name].path}"/></svg>\n`;
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${AGENT_LOGOS[name].fill}"><path${AGENT_LOGOS[name].fillRule ? ` fill-rule="${AGENT_LOGOS[name].fillRule}"` : ''} d="${AGENT_LOGOS[name].path}"/></svg>\n`;

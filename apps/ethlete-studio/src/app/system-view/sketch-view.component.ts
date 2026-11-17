@@ -110,7 +110,7 @@ const minutesSince = (at: number) => Math.max(0, Math.round((Date.now() - at) / 
 const sketchModelOf = (author: string): SketchModel => ({
   short: author ? modelNameOf(author) : '',
   id: author,
-  agent: senderOf('agent', author).agent ?? 'claude',
+  agent: senderOf('agent', author).agent ?? 'generic',
 });
 
 const FALLBACK_SIZE = { width: 1440, height: 900 };
