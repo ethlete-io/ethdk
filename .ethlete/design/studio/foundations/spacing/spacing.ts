@@ -22,6 +22,10 @@ export default definePart({
   note: 'The Studio spacing, radius and control heights on their own sheet, split from foundations/tokens.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5'],
   states: { scale: {} },
+  describe: {
+    scale:
+      'The spacing, radius and control height tokens with their pixel values; check that the bars grow in even steps and each height matches its label.',
+  },
   render: () =>
     tokenSheet({
       title: 'Spacing, radius and heights',

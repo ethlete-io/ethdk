@@ -27,5 +27,10 @@ export default definePart({
     open: { content: demo, open: true },
   },
   instant: 'The reason the trigger reveals appears at once.',
+  describe: {
+    closed:
+      'The bare trigger around the muted Pausiert text, closed; check that it draws no border, fill or padding of its own.',
+    open: 'The trigger with its reason shown; check that it looks the same as closed, only aria-expanded changes.',
+  },
   render: (props: Props) => drawing({ body: holdTrigger(props) }),
 });

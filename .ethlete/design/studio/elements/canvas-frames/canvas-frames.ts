@@ -658,6 +658,24 @@ export default definePart({
     rounds: { ...defaultFrames, zoom: '75%', heads: 'open' },
     'round-folded': { ...defaultFrames, zoom: '75%', heads: 'folded' },
   },
+  describe: {
+    default:
+      'The button frame in the state grid look with the zoom chip; check the sunken body, the hairline dividers and the labels outside the sheet.',
+    out: 'The canvas at 25 % with − hovered on the zoom chip; check that the frame shrinks around its top left and its labels stay readable.',
+    reset: 'The canvas at 100 % with the percent hovered; check the hover fill on 100 % and the frame at its own size.',
+    in: 'The canvas at 250 % with + hovered; check that the frame grows past the view and the zoom chip stays on top.',
+    fit: 'The canvas with Fit hovered; check the hover fill on Fit and the frame fitted into the view.',
+    selected: 'A selected frame; check the 2px primary outline around the whole frame, head included.',
+    active: 'A live frame; check the dashed outline and the Live · Esc badge in its head.',
+    'load-failed':
+      'A frame whose page failed to load; check the reason and Neu laden over the frame and that no stale cells show.',
+    loading:
+      'A frame while its page loads; check the loading mark in place of the cells and that the frame keeps its size.',
+    rounds:
+      'The variant grid at 75 % with an open round head; check the round title, the unchanged-states switch and the variant names above the columns.',
+    'round-folded':
+      'A folded round at 75 %; check the one narrow column with the round note and that the other rounds stay open.',
+  },
   controls: {
     button: { kind: 'button', part: 'components/button' },
     out: ZOOM,

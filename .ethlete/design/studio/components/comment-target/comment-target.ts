@@ -19,5 +19,8 @@ export default definePart({
   controls: { target: { kind: 'button', input: ['pointer', 'keyboard'] } },
   states: { rest: { frame: 'button' } },
   frame: (body) => html`<div class="relative h-30">${body}</div>`,
+  describe: {
+    rest: 'The comment-mode layer over a frame; check that the faint accent wash covers the whole frame and the cursor is a crosshair.',
+  },
   render: (props: Props) => drawing({ body: commentTarget(props) }),
 });

@@ -48,6 +48,12 @@ export default definePart({
   ),
   controls: { canvas: { kind: 'field', input: ['keyboard'] } },
   styles: canvasViewportStyles,
+  describe: {
+    canvas:
+      'The pannable canvas with two sample cards; check that the cards sit at the top left and the viewport clips them without a ring.',
+    'canvas-focus-visible':
+      'The focused canvas; check that the focus ring sits 2px inside the viewport edge and is not clipped at any side.',
+  },
   render: ({ class: extra, interaction }: Props) =>
     drawing({ body: canvasViewport({ body: sampleCards, class: extra, attrs: slot('content'), interaction }) }),
 });

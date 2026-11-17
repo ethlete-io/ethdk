@@ -33,6 +33,10 @@ export default definePart({
   note: 'The Studio duration and easing tokens. An interaction state fades its colours; an appearing element fades its opacity. No scale or slide.',
   madeBy: ['claude-opus-5-5'],
   states: { scale: {} },
+  describe: {
+    scale:
+      'The duration and easing tokens with a hover-fill and an opacity strip; check that the bars grow with each duration and nothing scales or slides.',
+  },
   render: () =>
     tokenSheet({
       title: 'Motion',

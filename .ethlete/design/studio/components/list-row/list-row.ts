@@ -32,5 +32,10 @@ export default definePart({
     html`<ul class="flex flex-col m-0 p-0 list-none">
       ${body}
     </ul>`,
+  describe: {
+    rest: 'A compact list row with pages/system, empty and 1 Instanz; check that the second line wraps under the name and no tint shows.',
+    selected:
+      'The same row selected; check the rounded accent tint under the whole row and that the muted text stays readable.',
+  },
   render: (props: Props) => drawing({ body: listRow(props) }),
 });

@@ -46,6 +46,13 @@ export default definePart({
     { collapse: {} },
     { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
   ),
+  describe: {
+    collapse: 'The transparent panel button with the panel icon; check that no ring or raised fill shows at rest.',
+    'collapse-hover': 'The panel button hovered; check the SDK hover fill behind the icon.',
+    'collapse-active': 'The panel button pressed; check the darker SDK press fill.',
+    'collapse-focus-visible':
+      'The panel button focused by keyboard; check the focus ring and the Hide panel tooltip above it, not clipped.',
+  },
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-collapse/shell-collapse.component.ts',
   controls: { collapse: { kind: 'button', input: ['pointer', 'keyboard'] } },
   styles: [buttonStyles, tooltipStyles].join('\n'),

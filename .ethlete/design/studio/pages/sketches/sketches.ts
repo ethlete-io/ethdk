@@ -905,6 +905,99 @@ export default definePart<Props>({
     'merge-confirm': { camera: 'fit', part: 'narrow', selected: 'b', confirm: 'merge' },
     'discard-confirm': { camera: 'fit', part: 'narrow', confirm: 'discard' },
   },
+  describe: {
+    'page-sketch':
+      'A sketch fitted to the view with Aktuell and the first variant; check each row head with variant, model, note and Übernehmen and the state grid beside it.',
+    'page-100': 'The sketch at 100 %; check the 15px notes and 13px state names and that no cell is cut off.',
+    'zoomed-page':
+      'The sketch zoomed to 60 % and panned with variant a selected; check that the row heads stay pinned at the left edge, opaque over the cells.',
+    drawing: 'A variant still drawing; check the zeichnet badge in the header and that Übernehmen is missing.',
+    paused: 'A paused sketch; check the Pausiert badge in the header.',
+    'paused-reason':
+      'A paused sketch with its reason open; check the reason beside the Pausiert trigger, on one line with it.',
+    'not-ready':
+      'A sketch that failed sketch ready; check Noch nicht bereit with the first line of its rejection and that Übernehmen is missing.',
+    'not-ready-unknown':
+      'A sketch never run through sketch ready; check Noch nicht bereit with the hint to run sketch ready.',
+    failed:
+      'Variant b failed to render; check Render fehlgeschlagen in the error colour with b · default: and the error, and no Übernehmen in any row.',
+    'added-skips':
+      'Variants that add data-et-skip markers; check one warning line per marker above Übernehmen in that variant head.',
+    'picked-errored':
+      'Variant b picked while a has a render error; check Variante gewählt and that no row offers Übernehmen.',
+    'new-part': 'A sketch of a new part; check that there is no Aktuell row and the neu badge shows.',
+    'narrow-part':
+      'A narrow part as one row per variant; check the state grid with its names and the cell widths that follow each measured state.',
+    'sticky-names':
+      'A wide part as a matrix panned at 80 %; check that the state-name column stays pinned at the left edge, opaque over the cells.',
+    comparing: 'The comparison still running; check vergleicht … in the header and that every frame stays neutral.',
+    'comparing-narrow':
+      'A narrow part while comparing; check the neutral frames and the folded vergleicht N Zustände … line.',
+    'list-error':
+      'The sketch listing failed while comparing; check Erneut laden before Verwerfen and Vergleich fehlgeschlagen with the reason in the error colour.',
+    'compare-pending':
+      'Some states known as changed while the rest still compare; check that only those show and the rest sit folded behind one line.',
+    'compare-answered':
+      'The comparison done; check that unchanged states are dimmed, the first change is marked and the grid did not jump.',
+    'added-state':
+      'A variant adds a state Aktuell lacks; check the dashed neu in der Skizze frame in Aktuell and fehlt in dieser Variante where it is missing.',
+    'narrow-wide-state':
+      'A narrow part with one wide state; check that this cell takes its measured width and nothing in the row is cut off.',
+    'panned-zoomed':
+      'A narrow part at 150 % panned; check that the row heads stay pinned at the left and the notes keep their size.',
+    'merge-error':
+      'Übernehmen of b failed; check the server reason in the error colour under Übernehmen of b and no error in the page header.',
+    'below-fit':
+      'The sketch at 25 %, below fit; check that the heads scale with the canvas and the text hides below 9px.',
+    'far-out': 'The sketch at 10 %; check that only frames show and every head and state name text is hidden.',
+    'narrow-below-fit':
+      'A narrow part zoomed out below fit; check that notes and names stay at 12px or more until fit and do not overlap.',
+    'narrow-far-out': 'A narrow part zoomed far out; check that the heads scale with the canvas and no text overlaps.',
+    unchanged:
+      'Variant b equal to Aktuell in every state; check that it sits in the folded area under the changed rows.',
+    'unchanged-open': 'The unchanged area opened; check that b shows below the changed rows as before.',
+    'all-unchanged':
+      'Every variant equal to Aktuell; check that both sit in the folded area and only Aktuell stays open.',
+    'unchanged-matrix': 'A matrix with variants b and c unchanged; check the narrow folded column at the right.',
+    'unchanged-matrix-open': 'The folded matrix column opened; check that b and c show as full columns again.',
+    'withdrawn-hidden': 'A variant the agent withdrew, hidden; check the switch to show it and that its row is gone.',
+    'withdrawn-shown':
+      'The withdrawn variant shown; check its faded row and Vom Agent zurückgezogen with the reason in its head.',
+    'agent-round':
+      'An agent drawing a new round; check the pulsing dot, the model, the task and its step and time beside the picker.',
+    'agent-variant':
+      'An agent drawing one variant; check the agent line with its task beside the picker and the zeichnet badge.',
+    'agent-failed': 'A failed agent run; check that the dot stops pulsing and the task turns to the error colour.',
+    folded:
+      'A sketch round with an open question; check the question line above the canvas and that the grid moves down below it.',
+    'question-only':
+      'A round that only asks a question; check Wo soll der Reset-Knopf der Zoom-Pille stehen? above the canvas, not over the cells.',
+    'port-after-merge':
+      'The agent porting after one merge; check Agent portiert nach Merge von with the merged part beside the picker.',
+    'port-after-merge-long':
+      'The agent porting after two merges; check that the longer port line stays on one line and does not hit the picker.',
+    picked: 'Variant b picked; check Variante gewählt in the header and the picked mark on row b.',
+    'sketch-only-points':
+      'A picked new part with open points; check the open-points chip beside Übernehmen in the head of b.',
+    'sketch-only-points-open':
+      'The open-points list opened; check the Offene Punkte popover under the chip, not cut off by the canvas.',
+    'edit-sketch':
+      'A direct edit; check the rows Änderung behalten and Zuletzt gemergter Stand, each with Übernehmen, and no Verwerfen.',
+    'change-crop':
+      'A round showing a cropped screen; check the Runde 2 · Port nach dem Merge picker and the cropped cells.',
+    'change-crop-whole':
+      'The same round showing the whole screen; check that the full frame fits each cell without cutting it.',
+    'multi-part': 'A sketch over three parts; check that each part shows its own block of state rows with its name.',
+    'multi-part-many':
+      'A sketch over many parts; check that the part blocks stay readable and the list stays inside the canvas.',
+    comments: 'The comment pins of the sketch; check their numbers and where they sit on the cells.',
+    'comments-mode': 'Comment mode on; check the pressed Kommentar toggle and the crosshair over the cells.',
+    'comments-draft':
+      'A comment draft on a cell; check that the draft card sits beside its pin and does not cover a numbered pin.',
+    'merge-confirm':
+      'Übernehmen of b asks first; check the confirmation dialog anchored to the button with Bestätigen.',
+    'discard-confirm': 'Verwerfen asks first; check the confirmation dialog under Verwerfen in the header.',
+  },
   render: async ({
     camera,
     selected,

@@ -119,6 +119,14 @@ export default definePart({
     mode: { phase: 'mode' },
     draft: { phase: 'draft' },
   },
+  describe: {
+    rest: 'The frame before any comment; check that only the Kommentar toggle shows above it, with no pins and no list.',
+    listed:
+      'The comment list beside the frame with the first thread selected; check that its pin is highlighted and the numbers match the list.',
+    mode: 'Comment mode on; check the pressed Kommentar toggle, the accent wash with a crosshair over the frame and the pins above it.',
+    draft:
+      'A draft at a clicked point in comment mode; check the draft pin and the card beside it, clear of the numbered pins.',
+  },
   render: async ({ phase, threads = SAMPLE_THREADS }: Props) => {
     const toggle = await commentButton({ on: phase === 'mode' || phase === 'draft', action: phase ? 'rest' : 'mode' });
     const writing =

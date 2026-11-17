@@ -189,6 +189,16 @@ export default definePart<{ group: Group }>({
     warning: { group: 'warning' },
     error: { group: 'error' },
   },
+  describe: {
+    surfaces:
+      'The surface, border and text tokens with a card per dark surface; check that every contrast ratio meets its need and no ratio shows red.',
+    accent:
+      'The accent and focus-ring tokens on each surface with fills in every interaction and a focus ring; check the ratios and that disabled reads faded.',
+    warning:
+      'The warning tokens on each surface with fills, ink and a subtle note; check the ratios and that the warning ink stays readable on its tint.',
+    error:
+      'The danger tokens on each surface with fills, ink and a subtle note; check the ratios and that the error ink stays readable on its tint.',
+  },
   render: ({ group }) =>
     tokenSheet({
       title: groups[group].title,

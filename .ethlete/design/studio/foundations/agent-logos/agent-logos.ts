@@ -105,5 +105,11 @@ export default definePart<{ view: View }>({
   note: 'The agent logos as SVG assets with one named export; generic stands for a provider without its own mark',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: { hosts: { view: 'hosts' }, detail: { view: 'detail' } },
+  describe: {
+    hosts:
+      'Every agent logo at 1.2rem on the three dark surfaces; check that each mark stays legible on each surface and sits level with its name.',
+    detail:
+      'Every agent logo at 3.2rem in one row with its name; check the marks are crisp, centred over their names and generic reads as a fallback.',
+  },
   render: ({ view }) => drawing({ body: view === 'hosts' ? hosts : detail }),
 });

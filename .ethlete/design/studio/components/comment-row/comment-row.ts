@@ -94,5 +94,12 @@ export default definePart({
     'no-replies': { thread: { ...person, replies: 0 } },
   },
   instant: 'Each state is another thread or a selection the list sets at once.',
+  describe: {
+    rest: 'A teammate thread row with initials, part, state, text and reply count; check that the text truncates and the count sits right.',
+    selected: 'The same row selected; check the accent tint behind the whole row and that the text keeps its contrast.',
+    agent: 'A thread by an AI agent; check that its logo replaces the initials avatar and keeps the same size.',
+    resolved: 'A resolved thread; check the muted text and the check mark in place of the reply count.',
+    'no-replies': 'A thread without replies; check that the reply count is gone and the row keeps its height.',
+  },
   render: (props: Props) => drawing({ body: commentRow(props), styles }),
 });

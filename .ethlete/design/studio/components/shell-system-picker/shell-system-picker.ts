@@ -105,6 +105,24 @@ export default definePart({
     'system.option-focus-visible': { open: true, option: 'focus-visible' },
     'system.option-selected': { open: true, option: 'selected' },
   },
+  describe: {
+    closed:
+      'The closed picker with studio and the up-down chevron; check that the name sits level with the chevron and no fill shows.',
+    'closed-hover': 'The closed picker hovered; check the SDK hover fill behind the name and chevron.',
+    'closed-active': 'The closed picker pressed; check the darker SDK press fill.',
+    'closed-focus-visible': 'The closed picker focused by keyboard; check the focus ring around the whole button.',
+    open: 'The open picker with its menu of studio, timetrack and docs; check that studio is checked and highlighted and the menu sits under the button.',
+    'open-hover': 'The open picker hovered; check the hover fill on the button and that the menu below stays the same.',
+    'open-active': 'The open picker pressed; check the press fill on the button while the menu stays open.',
+    'open-focus-visible':
+      'The menu opened by keyboard; check that the focus moves into the menu onto studio and the button shows no ring.',
+    'system.option-hover':
+      'The menu with timetrack hovered; check that only timetrack is highlighted and studio keeps its check mark.',
+    'system.option-focus-visible':
+      'The menu with timetrack focused by keyboard; check its keyboard highlight and that studio keeps its check mark.',
+    'system.option-selected':
+      'The menu with no row highlighted; check that only the check mark on studio marks the open design system.',
+  },
   grid: { columns: closedRows.grid.columns, rows: { ...closedRows.grid.rows, ...openRows.grid.rows } },
   controls: { system: { kind: 'select', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: shellSystemPickerStyles,

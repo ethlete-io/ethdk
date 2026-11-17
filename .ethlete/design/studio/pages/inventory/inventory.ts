@@ -137,6 +137,15 @@ export default definePart<Props>({
     approved: { inventory: 'approved' },
     loading: { inventory: 'loading' },
   },
+  describe: {
+    open: 'The inventory with open entries; check the numbered boxes on the frames, the matching numbered list with statuses and a disabled Inventory freigeben.',
+    approvable:
+      'Every entry resolved but not yet approved; check Noch nicht freigegeben in the header and that Inventory freigeben is enabled.',
+    approved:
+      'An approved inventory; check the approval line with date and time in the header and that Inventory freigeben is disabled.',
+    loading:
+      'The inventory while it loads; check that Neu laden and Inventory freigeben are disabled and no stale boxes or list show.',
+  },
   controls: {
     'inventory-toggle': { kind: 'button', part: 'components/button' },
     reload: { kind: 'button', part: 'components/button' },

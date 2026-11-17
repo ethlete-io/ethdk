@@ -83,6 +83,14 @@ export default definePart({
     },
   },
   frame: (body) => html`<div class="relative min-h-40 p-space-3">${body}</div>`,
+  describe: {
+    empty:
+      'An empty comment draft; check the placeholder in the field and that Senden stays disabled beside Abbrechen.',
+    typed: 'A typed two-sentence draft; check that the text wraps inside the field and Senden is enabled.',
+    busy: 'A draft being sent; check that the field and Abbrechen are disabled and Senden shows its spinner.',
+    error: 'A failed send; check the retry line under the field, the kept text and Erneut senden.',
+    rejected: 'A send the server refused; check its reason under the field and that no retry is offered.',
+  },
   render: async (props: Props) => {
     const drawn = await commentDraft(props);
     return drawing({ body: drawn.body, styles: drawn.styles });

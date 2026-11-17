@@ -74,6 +74,15 @@ export default definePart({
     unchanged: { ...base, same: true },
     loading: { ...base, loading: true },
   },
+  describe: {
+    changed:
+      'A changed state cell with rest above the half-scale Speichern shot; check that the label sits on the first row and the shot fits the 240px frame.',
+    first: 'The first changed state; check the erste Änderung mark beside the state name, on one line with it.',
+    unchanged:
+      'A state the variant leaves as it was; check that the whole cell is dimmed and the label reads rest · unverändert.',
+    loading:
+      'A cell whose shot still loads; check the spinner with Lädt beside the label and the empty busy frame below.',
+  },
   motions: { loading: { from: 'loading', to: 'loading' } },
   controls: {},
   sample: { id: 'sample', marks: ['look', 'same', 'first'] },

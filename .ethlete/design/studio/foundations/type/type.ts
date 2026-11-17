@@ -40,6 +40,10 @@ export default definePart({
   note: 'The Studio type scale, fonts and weights on their own sheet, split from foundations/tokens.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   states: { scale: {} },
+  describe: {
+    scale:
+      'The UI and code font specimens and each type step with its line box; check that every step sits in its tinted line and none wraps or clips.',
+  },
   render: () =>
     tokenSheet({
       title: 'Type scale',

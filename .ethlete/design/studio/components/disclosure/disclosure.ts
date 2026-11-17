@@ -56,5 +56,23 @@ export default definePart({
   states,
   grid,
   controls: { toggle: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'open' } } },
+  describe: {
+    rest: 'The closed disclosure with a muted chevron and label; check that the chevron points right and the label sits level with it.',
+    'rest-hover':
+      'The closed toggle hovered; check that the label and chevron darken to the surface text colour without a fill.',
+    'rest-active': 'The closed toggle pressed; check the faint rounded press fill behind it and the darkened label.',
+    'rest-focus-visible':
+      'The closed toggle focused by keyboard; check the inset focus ring around the whole row and the darkened label.',
+    open: 'The open disclosure with its list of two states; check that the chevron turns 90 degrees and the list sits under the label.',
+    'open-hover': 'The open toggle hovered; check that the label darkens and the list below keeps its muted text.',
+    'open-active': 'The open toggle pressed; check the rounded press fill on the toggle row only, not over the list.',
+    'open-focus-visible':
+      'The open toggle focused by keyboard; check that the inset ring wraps the toggle row and not the list.',
+    xs: 'The closed disclosure at the xs size; check the smaller text and that the chevron stays level with the label.',
+    'xs-hover': 'The xs toggle hovered; check that the label darkens like the sm one does.',
+    'xs-active': 'The xs toggle pressed; check the rounded press fill around the smaller row.',
+    'xs-focus-visible':
+      'The xs toggle focused by keyboard; check that the inset ring fits the smaller row and is not clipped.',
+  },
   render: (props: Props) => drawing({ body: disclosure(props), styles }),
 });

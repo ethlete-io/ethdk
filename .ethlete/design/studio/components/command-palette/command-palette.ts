@@ -95,6 +95,15 @@ export default definePart({
     results: { state: 'results' },
     none: { state: 'none' },
   } satisfies Record<string, Props>,
+  describe: {
+    start:
+      'The palette with no recent items; check the placeholder in the field and the centred Noch nichts zuletzt geöffnet hint with its keys.',
+    empty:
+      'The palette before typing; check the placeholder and the Zuletzt geöffnet group with its three rows and their kind hints.',
+    results:
+      'Results for tit grouped into Parts, Seiten and Befehle; check each group heading and that only Title search shows the selected tint.',
+    none: 'A query without a match; check the typed xyz with its caret and the centred Nichts gefunden with its explanation line.',
+  },
   render: async (props: Props) => {
     const w = await window(await ng(body(props.state), { imports: ['KBD_IMPORTS'] }), true);
     return drawing({ body: w.body, styles: w.styles });

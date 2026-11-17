@@ -181,6 +181,29 @@ export default definePart({
     'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
     'studio-menu.option-active': { open: true, option: 'active' },
   },
+  describe: {
+    closed: 'The neutral logo tile with the menu closed; check that the tile shows no fill or ring and no menu shows.',
+    'closed-hover': 'The logo tile hovered; check the hover fill on the tile only.',
+    'closed-active': 'The logo tile pressed; check the darker press fill on the tile.',
+    'closed-focus-visible': 'The logo tile focused by keyboard; check the focus ring around the tile, not clipped.',
+    open: 'The open menu beside the tile; check Projekt with ethlete-sdk checked, Projekt öffnen…, the server actions and both submenu rows.',
+    'open-hover': 'The open menu in its hover state; check that the menu keeps its place and the rows stay readable.',
+    'open-active': 'The open menu in its press state; check that no row loses its label or check mark.',
+    'open-focus-visible':
+      'The menu opened by keyboard; check that the keyboard highlight sits inside the menu and the tile shows no ring.',
+    'studio-menu.stopped':
+      'The menu with the design server stopped; check that only Design-Server starten shows under Design-Server.',
+    'studio-menu.appearance':
+      'The Erscheinungsbild submenu open; check Hell, Dunkel and Wie System with Dunkel checked, beside its highlighted row.',
+    'studio-menu.help':
+      'The Hilfe & Einstellungen submenu open; check the four rows and the Ctrl , and Ctrl / shortcuts aligned right.',
+    'studio-menu.option-hover':
+      'fut-frontend hovered; check that only that row is highlighted and ethlete-sdk keeps its check mark.',
+    'studio-menu.option-focus-visible':
+      'fut-frontend focused by keyboard; check its keyboard highlight and that ethlete-sdk keeps its check mark.',
+    'studio-menu.option-active':
+      'fut-frontend pressed; check its press highlight and that the other rows do not change.',
+  },
   grid: menuRows.grid,
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: styles + buttonStyles,

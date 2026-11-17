@@ -41,6 +41,16 @@ export default definePart({
     'not-ready': { status: 'not-ready' },
     failed: { status: 'failed' },
   },
+  describe: {
+    drawing: 'The tonal badge zeichnet while a variant is drawn; check that it fits its label on one line.',
+    waiting: 'The tonal badge Wartet auf deine Wahl; check that the longest label stays on one line inside 200px.',
+    picked: 'The tonal badge Variante gewählt; check that it uses the same tonal look as the others.',
+    paused: 'The tonal badge Pausiert; check that it keeps the same height and padding as the others.',
+    idle: 'The tonal badge Keine Aktivität; check that it reads as neutral, not as a warning.',
+    'not-ready': 'The tonal badge Noch nicht bereit; check that it keeps the neutral tonal look.',
+    failed:
+      'The badge Render fehlgeschlagen in the error colour; check that the tint and text switch to the error theme.',
+  },
   controls: {},
   instant: 'The badge swaps its label at once when the sketch status changes.',
   render: ({ status }: Props) => sketchStatusBadge(status),

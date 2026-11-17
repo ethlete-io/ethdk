@@ -38,5 +38,13 @@ export default definePart<{ view: View }>({
   note: 'Pilot — ein eigenständiger Agentencharakter aus einer schrägen Feder- und Cursor-Silhouette. Zwei ausgesparte Augen geben dem Gestaltungswerkzeug Persönlichkeit; bewusst spielerischer.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   states: { sizes: { view: 'sizes' }, sidebar: { view: 'sidebar' }, 'app-icon': { view: 'app-icon' } },
+  describe: {
+    sizes:
+      'The tiled mark at 16, 32 and 512 px and the line mark at 16 to 32 px; check that the eyes stay open at 16 px on dark and light.',
+    sidebar:
+      'The mark at 20 px beside Studio in a sidebar header; check that it sits level with the word and the header keeps its height.',
+    'app-icon':
+      'The app icon from 16 to 256 px on dark and light; check that the silhouette stays readable at 16 px and the tile corners stay even.',
+  },
   render: ({ view }) => (view === 'sizes' ? sizes : view === 'app-icon' ? appIconSheet : drawing({ body: sidebar })),
 });

@@ -41,6 +41,19 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   states,
   grid,
+  describe: {
+    studio:
+      'The title search with studio / Title bar and the shortcut; check the muted icon, product and shortcut and the strong part name, centred.',
+    'studio-hover': 'The search field hovered; check that the icon, product and shortcut take the full text colour.',
+    'studio-active': 'The search field pressed; check the tonal press fill and the full text colour.',
+    'studio-focus-visible':
+      'The search field focused by keyboard; check the focus ring around the field and the full text colour.',
+    long: 'A long part name on macOS; check that the part name truncates with an ellipsis and the ⌘ K shortcut stays whole.',
+    'long-hover': 'The long field hovered; check that the truncation stays and the text takes the full colour.',
+    'long-active': 'The long field pressed; check the press fill and that the shortcut is not pushed out.',
+    'long-focus-visible':
+      'The long field focused by keyboard; check the focus ring and that the truncated name does not overflow.',
+  },
   controls: { search: { kind: 'button', input: ['pointer', 'keyboard'] } },
   render: async (props: Props) =>
     drawing({

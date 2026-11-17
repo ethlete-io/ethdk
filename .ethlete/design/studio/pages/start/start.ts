@@ -54,6 +54,12 @@ export default definePart<Props>({
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
   states: { 'no-repo': {}, 'no-products': { repo: 'ethlete-sdk' } },
+  describe: {
+    'no-repo':
+      'The start page without a repo; check the mark, the centred Kein Repo geöffnet card and the filled Repo öffnen button, without the shell.',
+    'no-products':
+      'A repo without products; check the repo name in the header, Noch keine Produkte with the et design product new shop prompt and Prompt kopieren.',
+  },
   render: async ({ repo }) => {
     const open = await button.render({ label: 'Repo öffnen', variant: 'filled' });
     const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });

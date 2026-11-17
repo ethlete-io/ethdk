@@ -135,6 +135,88 @@ export default definePart({
   widths: [1440],
   states,
   grid,
+  describe: {
+    push: 'The Linux bar with the tonal 158 ungepusht · 5 h badge; check that the badge sits left of the window buttons on one line.',
+    uncommitted:
+      'The Linux bar with the muted pencil and 3 offen; check that the count sits left of the window buttons.',
+    'uncommitted-push':
+      'The bar with both the push badge and 3 offen; check their order and that neither wraps or pushes the search field.',
+    'uncommitted-push-hint':
+      '3 offen hovered with its tooltip; check the three kinds with their part names in the tooltip under the bar, aligned to the right.',
+    'push-update': 'The push badge beside the brand Update button; check that both fit before the window buttons.',
+    'macos-push':
+      'The macOS bar with the push badge; check the reserved traffic-light space on the left and the badge at the right end.',
+    'linux-full':
+      'The Linux bar at rest; check minimize, maximize and close at the right and the centred search field with studio / Title bar.',
+    'linux-left':
+      'The left-hand Linux bar at rest; check close, minimize and maximize at the left and nothing at the right.',
+    'linux-close': 'The close-only Linux bar at rest; check that only close shows at the right.',
+    windows:
+      'The Windows bar at rest; check the square window buttons at the full bar height, flush with the right edge.',
+    macos: 'The macOS bar at rest; check the empty traffic-light space at the left and no window buttons.',
+    'linux-full-update':
+      'The Linux bar with the brand Update button; check that Update sits before the window buttons and keeps the bar at 32 px.',
+    'linux-left-update':
+      'The left-hand Linux bar with the brand Update button; check that Update sits alone at the right end and keeps the bar at 32 px.',
+    'linux-close-update':
+      'The close-only Linux bar with the brand Update button; check that Update sits before the window buttons and keeps the bar at 32 px.',
+    'windows-update':
+      'The Windows bar with the brand Update button; check that Update sits before the window buttons and keeps the bar at 32 px.',
+    'macos-update':
+      'The macOS bar with the brand Update button; check that Update sits at the right end and keeps the bar at 32 px.',
+    'linux-full-notice':
+      'The Linux bar with the tonal Neu starten button and its CLI geändert hint; check the hint under the bar and Update beside it.',
+    'linux-left-notice':
+      'The left-hand Linux bar with the tonal Neu starten button and its CLI geändert hint; check the hint under the bar and Update beside it.',
+    'linux-close-notice':
+      'The close-only Linux bar with the tonal Neu starten button and its CLI geändert hint; check the hint under the bar and Update beside it.',
+    'windows-notice':
+      'The Windows bar with the tonal Neu starten button and its CLI geändert hint; check the hint under the bar and Update beside it.',
+    'macos-notice':
+      'The macOS bar with the tonal Neu starten button and its CLI geändert hint; check the hint under the bar and Update beside it.',
+    'linux-full-cli-dirty':
+      'The Linux bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
+    'linux-left-cli-dirty':
+      'The left-hand Linux bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
+    'linux-close-cli-dirty':
+      'The close-only Linux bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
+    'windows-cli-dirty':
+      'The Windows bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
+    'macos-cli-dirty':
+      'The macOS bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
+    'linux-full-update-hover':
+      'Update hovered in the Linux bar; check its hover fill and that the bar keeps its height.',
+    'linux-full-update-active': 'Update pressed in the Linux bar; check its press fill.',
+    'linux-full-update-focus-visible':
+      'Update focused by keyboard in the Linux bar; check its focus ring, not clipped by the 32 px bar.',
+    'linux-full-notice-hover':
+      'Neu starten hovered in the Linux bar; check its hover fill and that the bar keeps its height.',
+    'linux-full-notice-active': 'Neu starten pressed in the Linux bar; check its press fill.',
+    'linux-full-notice-focus-visible':
+      'Neu starten focused by keyboard in the Linux bar; check its focus ring, not clipped by the 32 px bar.',
+    'linux-left-hover':
+      'Minimize hovered in the left-hand Linux bar; check its hover fill and that the bar keeps its height.',
+    'linux-left-active': 'Minimize pressed in the left-hand Linux bar; check its press fill.',
+    'linux-left-focus-visible':
+      'Minimize focused by keyboard in the left-hand Linux bar; check its focus ring, not clipped by the 32 px bar.',
+    'linux-close-hover':
+      'Close hovered in the close-only Linux bar; check its hover fill and that the bar keeps its height.',
+    'linux-close-active': 'Close pressed in the close-only Linux bar; check its press fill.',
+    'linux-close-focus-visible':
+      'Close focused by keyboard in the close-only Linux bar; check its focus ring, not clipped by the 32 px bar.',
+    'windows-hover': 'Maximize hovered in the Windows bar; check its hover fill and that the bar keeps its height.',
+    'windows-active': 'Maximize pressed in the Windows bar; check its press fill.',
+    'windows-focus-visible':
+      'Maximize focused by keyboard in the Windows bar; check its focus ring, not clipped by the 32 px bar.',
+    'windows-update-hover': 'Close hovered in the Windows bar; check its hover fill and that the bar keeps its height.',
+    'windows-update-active': 'Close pressed in the Windows bar; check its press fill.',
+    'windows-update-focus-visible':
+      'Close focused by keyboard in the Windows bar; check its focus ring, not clipped by the 32 px bar.',
+    'linux-full-notice-pending':
+      'Neu starten after the click; check its spinner, that the hint is gone and the button takes no second click.',
+    'linux-full-notice-failed':
+      'A failed restart; check the Neustart fehlgeschlagen toast under the bar at the right, with its message and dismiss button.',
+  },
   controls,
   render: async (props: Props) => {
     const search = await titleSearchPart.render({ product: props.product, part: props.part, os: props.os });

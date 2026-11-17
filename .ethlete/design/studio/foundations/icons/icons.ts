@@ -81,5 +81,11 @@ export default definePart<{ view: View }>({
   note: 'The icon set as one SVG asset per icon with one icon() export',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: { catalogue: { view: 'catalogue' }, construction: { view: 'construction' } },
+  describe: {
+    catalogue:
+      'Every icon at 12, 14, 16 and 20 px; check that the 1.5 stroke stays even and no icon reads heavier or blurrier than its neighbours.',
+    construction:
+      'Every icon on the 16 px grid with pixel lines, centre lines and the 2 px padding; check that each glyph sits centred inside the padding.',
+  },
   render: ({ view }) => iconSheet({ view, title: titles[view], icons: sheetIcons, sizes: [12, 14, 16, 20] }),
 });

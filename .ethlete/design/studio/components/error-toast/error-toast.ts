@@ -39,6 +39,14 @@ export default definePart({
   grid,
   widths: [480],
   controls: { close: { kind: 'button', input: ['pointer', 'keyboard'] } },
+  describe: {
+    close:
+      'The error toast Ordner nicht geöffnet with its message on the danger theme; check the readable message and the faded dismiss button.',
+    'close-hover': 'The dismiss button hovered; check that it brightens a step and the toast itself does not change.',
+    'close-active': 'The dismiss button pressed; check its press look and that the toast stays put.',
+    'close-focus-visible':
+      'The dismiss button focused by keyboard; check that the focus ring shows clearly on the danger fill.',
+  },
   render: ({ heading, message, interaction }: Props) =>
     drawing({
       body: notificationStack([

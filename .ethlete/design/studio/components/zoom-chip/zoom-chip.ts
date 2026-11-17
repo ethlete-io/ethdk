@@ -74,6 +74,27 @@ export default definePart({
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states,
   grid,
+  describe: {
+    out: 'The zoom chip at 25 % with −, the percent, + and Fit; check that the four buttons sit flush in one bordered chip with its shadow.',
+    'out-hover': 'The − button hovered; check the SDK hover fill on − only, inside the chip radius.',
+    'out-active': 'The − button pressed; check the darker press fill on − only.',
+    'out-focus-visible':
+      'The − button focused by keyboard; check its focus ring, not clipped by the chip border, and that no tooltip shows.',
+    reset: 'The zoom chip at 100 %; check that the percent label keeps its width and stays centred between − and +.',
+    'reset-hover': 'The 100 % button hovered; check the hover fill fits the wider label.',
+    'reset-active': 'The 100 % button pressed; check the press fill on the percent only.',
+    'reset-focus-visible':
+      'The 100 % button focused by keyboard; check its focus ring and the Zoom to 100 % (Shift+0) tooltip centred above it.',
+    in: 'The zoom chip at 250 %; check that the wider percent does not push + or Fit out of the chip.',
+    'in-hover': 'The + button hovered; check the hover fill on + only.',
+    'in-active': 'The + button pressed; check the press fill on + only.',
+    'in-focus-visible': 'The + button focused by keyboard; check its focus ring and that no tooltip shows.',
+    fit: 'The zoom chip at 100 % with Fit at the end; check that Fit sits flush against the right chip edge.',
+    'fit-hover': 'The Fit button hovered; check the hover fill follows the right chip corner.',
+    'fit-active': 'The Fit button pressed; check the press fill on Fit only.',
+    'fit-focus-visible':
+      'The Fit button focused by keyboard; check its focus ring and the Zoom to fit (Shift+1) tooltip aligned to its end, not clipped.',
+  },
   controls: { out: BUTTON, reset: BUTTON, in: BUTTON, fit: BUTTON },
   render: (props: Props) =>
     drawing({

@@ -27,6 +27,19 @@ export default definePart({
   widths: [232],
   grid: treeGrid,
   states: treeStates,
+  describe: {
+    'components-open':
+      'The open sketches on top and Components open with title-search nested under title-bar; check the indents, tree-row selected and the select warning.',
+    remembered:
+      'Sketches closed, Components and Elements open, title-bar folded; check that the remembered groups stay open and title-search is hidden.',
+    'legacy-open':
+      'Every layer closed and Legacy open with the studio project and its calls; check the deeper indent of the calls, with timetrack still closed.',
+    row: 'The nested title-search row at rest in the open tree; check that it sits one level under title-bar without a fill.',
+    'row-hover': 'The nested title-search row hovered; check the faint raised fill on that row only.',
+    'row-active': 'The nested title-search row pressed; check the stronger press fill on that row only.',
+    'row-focus-visible':
+      'The nested title-search row focused by keyboard; check the focus ring around that row, not clipped by the tree edge.',
+  },
   controls: { row: { kind: 'row', part: 'components/tree-row' } },
   render: (props: Props) => {
     const { sketches, layers, legacy } = segments(props, sketchRows);

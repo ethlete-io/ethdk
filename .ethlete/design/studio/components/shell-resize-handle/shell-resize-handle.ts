@@ -33,6 +33,12 @@ export default definePart({
       }),
     },
   ),
+  describe: {
+    resize: 'The resize handle at rest; check that it draws nothing on the panel edge.',
+    'resize-hover': 'The handle hovered; check the thin accent line at half opacity on the panel edge.',
+    'resize-active': 'The handle while dragging; check that the accent line is fully opaque.',
+    'resize-focus-visible': 'The handle focused by keyboard; check that the line takes the focus-ring colour.',
+  },
   controls: { resize: { kind: 'button', input: ['pointer', 'keyboard'] } },
   styles,
   render: (props: Props) =>

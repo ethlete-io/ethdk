@@ -30,6 +30,11 @@ export default definePart<FlowProps>({
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/flows-page/flows-page.component.ts' },
   states: { flow: { flow: 'open' }, empty: { flow: 'none' } },
+  describe: {
+    flow: 'An open flow on the canvas; check the flow list with the open one marked, its name in the header with the size picker and the zoom chip in the corner.',
+    empty:
+      'A product without flows; check the empty side panel and the centred card with its copy button on the empty canvas.',
+  },
   controls: { canvas: { kind: 'field', part: 'components/canvas-viewport' } },
   render: async ({ flow }) => {
     const picker = await presetPickerOf();
