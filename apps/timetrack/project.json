@@ -42,6 +42,13 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "demo": {
+          "browser": "apps/timetrack/src/main.demo.ts",
+          "outputPath": "dist/apps/timetrack-demo",
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": false
         }
       }
     },
