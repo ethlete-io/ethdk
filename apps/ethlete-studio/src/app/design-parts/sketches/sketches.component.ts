@@ -977,7 +977,7 @@ export class SketchesComponent {
     const zoom = this.canvas.zoom();
     const row = this.shownRows().find((candidate) => candidate.key !== this.drawnKey() && candidate.shots.length > 0);
 
-    return zoom === 'fit' ? (row ? this.scale() : 1) : zoom;
+    return zoom === 'fit' ? (row || this.transposed() ? this.scale() : 1) : zoom;
   }
 
   private zoomTo(zoom: number) {

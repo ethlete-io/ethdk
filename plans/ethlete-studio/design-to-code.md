@@ -3614,3 +3614,9 @@ the world's left edge, ~290 px under the sidebar at camera x -4000. The section 
 is read from `scrollWidth` and the translated label otherwise grew it each pan (first try: 26337 px). Verified: compare
 unchanged-matrix-open ok (from 1497 px), full pages/sketches compare without new diffs, `vitest related` 193/193,
 lint. Not verified: a live Studio shot.
+
+As built (B539 matrix fit percent, 2026-11-17): the zoom chip of the Sketches view showed 100 % at fit when no row had
+shots. Cause (measured): `shownZoom` fell back to 1 without a shot, while the design's `matrixFit` sizes the matrix
+from its columns alone (17 % in the comparing state). The fallback now applies only to the grid layout, where the
+design's `gridFit` also gives 1 without a stage. Verified: compare comparing ok (from 401 px), full pages/sketches
+compare without new diffs, `vitest related` 193/193, lint. Not verified: a live Studio shot.
