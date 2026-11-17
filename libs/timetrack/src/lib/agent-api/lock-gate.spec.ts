@@ -61,10 +61,11 @@ describe('AGENT_API_OP_CLASSES', () => {
     expect(opsOf('external')).toEqual(['jira.create']);
   });
 
-  it('classes the local day and stand-in edits as local', () => {
+  it('classes the local day, stand-in and rule edits as local', () => {
     expect(opsOf('local')).toEqual([
       'agentSessions.resync',
       'day.edits',
+      'rules.repoint',
       'standIn.rename',
       'standIn.resolve',
       'standIn.split',

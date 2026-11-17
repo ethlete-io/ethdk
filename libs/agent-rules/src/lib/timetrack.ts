@@ -581,6 +581,13 @@ export const timetrackCalendarEvents = (options: { from: string; to: string }) =
 export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });
 
 /**
+ * Queues pointing every attribution rule that names issue `from` at issue `to`, optionally only the
+ * rules of one checkout. The app checks a rule names `from` and that `to` exists before it queues.
+ */
+export const timetrackRepointRules = (options: { from: string; to: string; repoPath?: string }) =>
+  askTimetrack<TimetrackQueued>({ op: 'rules.repoint', ...options });
+
+/**
  * Queues a read of the agent session logs under `paths` again, so sessions the app dropped while no
  * project link held them are stored. Once approved, the read runs in the background.
  *

@@ -30,6 +30,7 @@ import {
   timetrackIssue,
   timetrackNaming,
   timetrackRepoProject,
+  timetrackRepointRules,
   timetrackRules,
   timetrackSearch,
   timetrackRemoveStandIn,
@@ -578,6 +579,54 @@ const approvalExitCode = (found: TimetrackApprovalStatus) => {
 };
 
 /**
+ * Lists the attribution rules that name `--from`, and with `--force` queues pointing them at `--to`.
+ * The plan reads the rules the app holds now, so it works against an app that predates the write.
+ */
+const repointRules = async (options: { root: string; argv: string[]; json: boolean }) => {
+  const { root, argv, json } = options;
+  const from = flagValue(argv, '--from')?.toUpperCase();
+  const to = flagValue(argv, '--to')?.toUpperCase();
+  const repo = flagValue(argv, '--repo');
+  const repoPath = repo === undefined ? undefined : resolve(root, repo);
+
+  if (!from || !to) {
+    say('Pass --from <KEY> and --to <KEY>.');
+
+    return 1;
+  }
+
+  if (from === to) {
+    say(`--from and --to both name ${from}.`);
+
+    return 1;
+  }
+
+  const matching = (await timetrackRules()).attributionRules.filter(
+    (rule) => rule.issueKey === from && (repoPath === undefined || rule.repoPath === repoPath),
+  );
+
+  if (!matching.length) {
+    say(`No attribution rule names ${from}${repoPath ? ` in ${repoPath}` : ''}.`);
+
+    return 1;
+  }
+
+  if (!argv.includes('--force')) {
+    if (!json) {
+      say(`${matching.length} rule(s) name ${from}${repoPath ? ` in ${repoPath}` : ''}`);
+      matching.forEach((rule) => say(`  ${describeRule(rule)}`));
+      say(`Would point them at ${to}. Pass --force to queue it.`);
+    }
+
+    return printed({ from, to, ...(repoPath ? { repoPath } : {}), rules: matching }, json);
+  }
+
+  const queued = await timetrackRepointRules({ from, to, ...(repoPath ? { repoPath } : {}) });
+
+  return printedQueued({ queued, what: `pointing ${matching.length} rule(s) from ${from} at ${to}`, json });
+};
+
+/**
  * Cuts a placeholder that covered a whole checkout into one per directory its commits worked in.
  *
  * The directories are read here rather than in the app: a commit collected before Timetrack recorded
@@ -715,6 +764,9 @@ A waiting write can be rejected from here; only the user approves one, in the ap
                                 Print every row the change altered since; exit 1 when any did
   timetrack edit <row-id> …     Change one row of a day: its times, its name, its note or its state
   timetrack rules               The rules that name a day's work: attribution, project links, apps
+  timetrack rules --repoint --from <KEY> --to <KEY> [--repo <dir>] [--force]
+                                List the attribution rules naming one issue; --force queues pointing
+                                them at another
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
   timetrack standins --remove <id>
                                 Delete one placeholder, and the rule that named it
@@ -1021,6 +1073,8 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
   }
 
   if (subcommand === 'rules') {
+    if (argv.includes('--repoint')) return await repointRules({ root, argv, json });
+
     const rules = await timetrackRules();
 
     if (!json) {

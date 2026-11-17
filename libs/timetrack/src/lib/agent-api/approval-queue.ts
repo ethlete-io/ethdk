@@ -390,6 +390,8 @@ export const describeApproval = (request: AgentApprovalRequest) => {
       return `Merges stand-in ${request.id} into ${request.into}`;
     case 'standIn.resolve':
       return `Resolves stand-in ${request.name ?? request.id}: ${request.fromIssueKey ? `${request.fromIssueKey} → ` : ''}${`${request.issueKey} ${request.summary ?? ''}`.trim()}`;
+    case 'rules.repoint':
+      return `Points every rule naming ${request.from} at ${`${request.to} ${request.summary ?? ''}`.trim()}${request.repoPath ? ` in ${request.repoPath}` : ''}`;
     case 'standIn.split':
       return `Splits stand-in ${request.id} into one per directory`;
     case 'tempo.sync':

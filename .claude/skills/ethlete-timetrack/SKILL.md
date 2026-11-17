@@ -73,6 +73,7 @@ nobody can rotate.
 | `rows [YYYY-MM-DD]`                        | You need the rows the day drew, and the ids an edit names them by            |
 | `edit <row-id> …`                          | The user asks you to correct one row of a day                                |
 | `rules`                                    | You need to know why a band was named, or why it was not                     |
+| `rules --repoint --from <KEY> --to <KEY>`  | Every rule naming one issue must name another (plan; `--force` queues it)    |
 | `standins`                                 | You need to know which work still waits for a ticket, and for how long       |
 | `standins --remove <id>`                   | A placeholder is wrong or too wide, and the user asked you to delete it      |
 | `standins --rename <id> --name <text>`     | The name a placeholder carries is wrong, and the user asked you to fix it    |

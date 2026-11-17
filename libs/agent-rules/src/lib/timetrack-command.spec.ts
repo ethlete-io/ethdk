@@ -409,6 +409,93 @@ describe('timetrack standins --resolve', () => {
   });
 });
 
+describe('timetrack rules --repoint', () => {
+  const rule = (over: Record<string, unknown>) => ({
+    id: 'rule-1',
+    repoPath: '/repo/a',
+    issueKey: 'FIFAGG-12069',
+    donates: false,
+    createdAtMs: 0,
+    ...over,
+  });
+  const rules = {
+    attributionRules: [
+      rule({}),
+      rule({ id: 'rule-2', repoPath: '/repo/b' }),
+      rule({ id: 'rule-3', issueKey: 'FIP-1' }),
+    ],
+    projectLinks: [],
+  };
+
+  it('lists the rules naming the old issue and queues nothing without --force', async () => {
+    const { handler, asked } = answeredByOp({ 'settings.rules': rules });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['rules', '--repoint', '--from', 'fifagg-12069', '--to', 'FIFAGG-12769'])).resolves.toBe(0);
+    expect(asked).toEqual(['settings.rules']);
+    expect(lines.join('\n')).toContain('2 rule(s) name FIFAGG-12069');
+    expect(lines.join('\n')).toContain('Pass --force');
+  });
+
+  it('queues the repoint with --force, limited to the checkout --repo names', async () => {
+    const sent: Record<string, unknown>[] = [];
+    const handler: Handler = (request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        const parsed = JSON.parse(body || '{}') as Record<string, unknown>;
+
+        sent.push(parsed);
+        response.setHeader('content-type', 'application/json');
+        response.end(
+          JSON.stringify({
+            ok: true,
+            value: parsed['op'] === 'settings.rules' ? rules : { status: 'queued', approvalId: 'ap-9' },
+          }),
+        );
+      });
+    };
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(
+      run(['rules', '--repoint', '--from', 'FIFAGG-12069', '--to', 'FIFAGG-12769', '--repo', 'b', '--force']),
+    ).resolves.toBe(0);
+    expect(sent.at(-1)).toEqual(
+      expect.objectContaining({ op: 'rules.repoint', from: 'FIFAGG-12069', to: 'FIFAGG-12769', repoPath: '/repo/b' }),
+    );
+    expect(lines.join('\n')).toContain('ap-9');
+  });
+
+  it('refuses a repoint without --to, and asks nothing of the endpoint', async () => {
+    const { handler, asked } = answeredByOp({ 'settings.rules': rules });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['rules', '--repoint', '--from', 'FIFAGG-12069'])).resolves.toBe(1);
+    expect(asked).toEqual([]);
+    expect(lines.join('\n')).toContain('Pass --from <KEY> and --to <KEY>');
+  });
+
+  it('refuses when no rule names the old issue', async () => {
+    const { handler, asked } = answeredByOp({ 'settings.rules': rules });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['rules', '--repoint', '--from', 'X-1', '--to', 'X-2', '--force'])).resolves.toBe(1);
+    expect(asked).toEqual(['settings.rules']);
+  });
+});
+
 describe('timetrack worklogs', () => {
   const worklog = (over: Record<string, unknown>) => ({
     id: '1',

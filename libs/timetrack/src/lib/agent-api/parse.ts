@@ -151,6 +151,22 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return into ? { ok: true, request: { op, id, into } } : missing(op, 'into');
   }
 
+  if (op === 'rules.repoint') {
+    const from = asText(raw['from']).toUpperCase();
+    const to = asText(raw['to']).toUpperCase();
+    const repoPath = asText(raw['repoPath']);
+    const summary = asText(raw['summary']);
+
+    if (!from) return missing(op, 'from');
+    if (!to) return missing(op, 'to');
+    if (from === to) return failed(`${op} needs two different issues.`);
+
+    return {
+      ok: true,
+      request: { op, from, to, ...(repoPath ? { repoPath } : {}), ...(summary ? { summary } : {}) },
+    };
+  }
+
   if (op === 'standIn.resolve') {
     const id = asText(raw['id']);
     const issueKey = asText(raw['issueKey']).toUpperCase();

@@ -47,6 +47,7 @@ import {
   withStandInDay,
   withStandInsKeyedByHand,
   withReplacedAttributionRule,
+  withRepointedAttributionRules,
   withoutAttributionRule,
   withoutFavoriteProject,
   withoutMaskedName,
@@ -366,6 +367,15 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Writes a rule and takes back the one it stands in for, as the one write they are. */
     replaceAttributionRule: (options: { rule: AttributionRule; supersededIds?: readonly string[] }) =>
       apply(withReplacedAttributionRule({ settings: settings(), ...options })),
+
+    /** Points every rule naming issue `from` at `to`, and answers the ids of the rules it changed. */
+    repointAttributionRules: (options: { from: string; to: string; repoPath?: string }) => {
+      const repoint = withRepointedAttributionRules({ settings: settings(), ...options });
+
+      if (repoint.repointedIds.length) apply(repoint.settings);
+
+      return repoint.repointedIds;
+    },
 
     addStandIn: (standIn: StandIn) => apply(withStandIn({ settings: settings(), standIn })),
 

@@ -14,6 +14,8 @@ import {
   AgentApiReviewedRow,
   AgentApiRules,
   AgentApiStandIn,
+  AgentApiRulesRepoint,
+  AgentApiRulesRepointed,
   AgentApiStandInResolve,
   AgentApiStandInSplit,
   AgentApiStatus,
@@ -695,6 +697,40 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return merge.problem ? throwError(() => new Error(merge.problem)) : standIns$();
   };
 
+  const repointRequestOf$ = (request: AgentApiRulesRepoint): Observable<AgentApiRulesRepoint> => {
+    const matching = settings
+      .settings()
+      .attributionRules.filter(
+        (rule) =>
+          issueKeyOf(rule) === request.from && (request.repoPath === undefined || rule.repoPath === request.repoPath),
+      );
+
+    if (!matching.length) {
+      return throwError(
+        () =>
+          new Error(
+            `No attribution rule names ${request.from}${request.repoPath ? ` in ${request.repoPath}` : ''}. Nothing was queued.`,
+          ),
+      );
+    }
+
+    return issue$(request.to).pipe(
+      map(({ issue }) => ({
+        op: request.op,
+        from: request.from,
+        to: issue.key,
+        ...(request.repoPath ? { repoPath: request.repoPath } : {}),
+        ...(issue.summary ? { summary: issue.summary } : {}),
+      })),
+    );
+  };
+
+  const repointRules$ = (request: AgentApiRulesRepoint): Observable<AgentApiRulesRepointed> => {
+    const ruleIds = settings.repointAttributionRules(request);
+
+    return of({ from: request.from, to: request.to, repointed: ruleIds.length, ruleIds });
+  };
+
   const resolveRequestOf$ = (request: AgentApiStandInResolve): Observable<AgentApiStandInResolve> => {
     const standIn = settings.settings().standIns.find((entry) => entry.id === request.id);
 
@@ -826,6 +862,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return editDay$(request);
       case 'settings.rules':
         return rules$();
+      case 'rules.repoint':
+        return repointRules$(request);
       case 'standIn.list':
         return standIns$();
       case 'standIn.remove':
@@ -883,6 +921,14 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (!parsed.ok) return of({ ok: false, message: parsed.message });
 
     const { request } = parsed;
+
+    if (request.op === 'rules.repoint') {
+      return answered(
+        repointRequestOf$(request).pipe(
+          switchMap((repoint) => approvals.enqueue$({ request: repoint, client: agentApiCallerOf(body) })),
+        ),
+      );
+    }
 
     if (request.op === 'standIn.resolve') {
       return answered(

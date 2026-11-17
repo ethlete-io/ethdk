@@ -63,3 +63,27 @@ export const withReplacedAttributionRule = (options: {
 
   return withAttributionRule({ settings, rule: options.rule });
 };
+
+/**
+ * Points every rule that names issue `from` at issue `to` instead, keeping each rule's context, author
+ * and id. `repoPath` limits the rewrite to the rules of one checkout.
+ */
+export const withRepointedAttributionRules = (options: {
+  settings: TimetrackSettings;
+  from: string;
+  to: string;
+  repoPath?: string;
+}): { settings: TimetrackSettings; repointedIds: string[] } => {
+  const { settings, from, to, repoPath } = options;
+  const repointedIds: string[] = [];
+  const attributionRules = settings.attributionRules.map((rule): AttributionRule => {
+    if (rule.target.kind !== 'issue' || rule.target.issueKey !== from) return rule;
+    if (repoPath !== undefined && rule.repoPath !== repoPath) return rule;
+
+    repointedIds.push(rule.id);
+
+    return { ...rule, target: { kind: 'issue', issueKey: to } };
+  });
+
+  return { settings: repointedIds.length ? { ...settings, attributionRules } : settings, repointedIds };
+};

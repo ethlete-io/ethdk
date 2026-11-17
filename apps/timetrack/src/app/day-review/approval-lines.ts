@@ -16,6 +16,8 @@ export const approvalIssueKeysOf = (item: AgentApproval): string[] => {
     case 'autoMode.apply':
     case 'standIn.resolve':
       return [request.issueKey];
+    case 'rules.repoint':
+      return [request.from, request.to];
     default:
       return [];
   }
@@ -63,6 +65,15 @@ export const approvalLinesOf = (
           label: 'Ticket',
           value: `${request.name ?? request.id}: ${request.fromIssueKey ? `${request.fromIssueKey} → ` : ''}${`${request.issueKey} ${request.summary ?? summaryOf(request.issueKey) ?? ''}`.trim()}`,
         },
+        asked,
+      ];
+    case 'rules.repoint':
+      return [
+        {
+          label: 'Rules',
+          value: `${named(request.from)} → ${request.summary ? `${request.to} ${request.summary}` : named(request.to)}`,
+        },
+        ...(request.repoPath ? [{ label: 'Checkout', value: request.repoPath }] : []),
         asked,
       ];
     case 'autoMode.resolve':

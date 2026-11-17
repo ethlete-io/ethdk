@@ -203,6 +203,25 @@ describe('parseAgentRequest', () => {
     expect(parseAgentRequest(stored)).toEqual({ ok: true, request: stored });
   });
 
+  it('reads a rule repoint with both keys in capitals, and refuses one that names one issue twice', () => {
+    expect(parseAgentRequest({ op: 'rules.repoint', from: 'fifagg-12069', to: ' FIFAGG-12769 ' })).toEqual({
+      ok: true,
+      request: { op: 'rules.repoint', from: 'FIFAGG-12069', to: 'FIFAGG-12769' },
+    });
+    expect(parseAgentRequest({ op: 'rules.repoint', from: 'A-1', to: 'B-2', repoPath: '/dev/a' })).toEqual({
+      ok: true,
+      request: { op: 'rules.repoint', from: 'A-1', to: 'B-2', repoPath: '/dev/a' },
+    });
+    expect(parseAgentRequest({ op: 'rules.repoint', from: 'A-1' })).toEqual({
+      ok: false,
+      message: 'rules.repoint needs a to.',
+    });
+    expect(parseAgentRequest({ op: 'rules.repoint', from: 'A-1', to: 'a-1' })).toEqual({
+      ok: false,
+      message: 'rules.repoint needs two different issues.',
+    });
+  });
+
   it('takes the stand-in split op, and drops a commit that names no day or no file', () => {
     expect(
       parseAgentRequest({

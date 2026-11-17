@@ -498,6 +498,7 @@ export type AgentApiRequest =
   | { op: 'transcript.day'; day: string }
   | { op: 'day.edits'; day: string; edits: AgentApiRowEdit[] }
   | { op: 'settings.rules' }
+  | AgentApiRulesRepoint
   | { op: 'standIn.list' }
   | { op: 'standIn.remove'; id: string }
   | { op: 'standIn.rename'; id: string; name: string }
@@ -546,6 +547,21 @@ export type AgentApiStandInResolve = {
   fromIssueKey?: string;
   summary?: string;
 };
+
+/**
+ * Points every attribution rule that names issue `from` at issue `to`, optionally only the rules of
+ * one checkout. The endpoint fills `summary` from Jira before it queues the request.
+ */
+export type AgentApiRulesRepoint = {
+  op: 'rules.repoint';
+  from: string;
+  to: string;
+  repoPath?: string;
+  summary?: string;
+};
+
+/** What a repoint changed: the ids of the rules that now name `to`. */
+export type AgentApiRulesRepointed = { from: string; to: string; repointed: number; ruleIds: string[] };
 
 /**
  * One commit a split reads a directory out of: the local day it counts toward, and its changed files.
@@ -619,6 +635,7 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'transcript.day': 'read',
   'day.edits': 'local',
   'settings.rules': 'read',
+  'rules.repoint': 'local',
   'standIn.list': 'read',
   'standIn.remove': 'human-only',
   'standIn.rename': 'local',
