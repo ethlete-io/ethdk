@@ -952,6 +952,9 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
   frame into the live set shows "zeichnet" until it reports.
 - Design gap: `pages/sketches` declares no head state `failed` and no text slot for it; the app renders the
   `sketch-status-badge` `failed` state and puts the error line in the not-ready reason line's style (`data-sk-failed`).
+- Empfehlung gebaut: pages-sketches (sketch on `pages/sketches`), variant a, 21ec32f0e. Adds the `failed` status, the
+  states `failed` (badge plus `data-sk-failed` error line) and `picked-errored`, and the `errored` prop that drops
+  Übernehmen on every row; the app needed no change.
 
 ## As built: B309 item 3 (restart builds first)
 
