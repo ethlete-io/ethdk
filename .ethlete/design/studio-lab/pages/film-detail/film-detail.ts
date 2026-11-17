@@ -6,9 +6,15 @@ type Props = { index: number; reviewing: boolean };
 
 export default definePart<Props>({
   note: 'Wireframe of the film detail page: poster, synopsis and actions, with a review field once the user starts one.',
+  madeBy: ['claude-sonnet-5-5'],
   states: { rest: { index: 0, reviewing: false }, reviewing: { index: 1, reviewing: true } },
   render: ({ index, reviewing }) => {
     const film = films[index] ?? { title: 'Untitled', year: 0 };
+
+    const reviewField = input({ label: 'Your review', placeholder: 'What did you think?' }).replace(
+      /color:#b4b4b4;font/,
+      'color:var(--lab-surface);font',
+    );
 
     return drawing({
       body: box(
@@ -26,7 +32,7 @@ export default definePart<Props>({
                     plain: true,
                     padding: 0,
                   }),
-                  reviewing ? input({ label: 'Your review', placeholder: 'What did you think?' }) : '',
+                  reviewing ? reviewField : '',
                 ],
                 { plain: true, padding: 0, grow: true },
               ),
