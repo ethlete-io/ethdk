@@ -979,3 +979,17 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
 - Not verified: a live `sketch check` on a hanging sketch. A shot past its draw limit still ends its whole phase with
   one "could not render <sketch>: timed out … waiting for the draw of frame.html?…&state=…&variant=…" refusal, and
   `sketch check` exits 0 ("check ok - ready will refuse"); the other shots of that phase do not run.
+
+## As built: B547 (Übernehmen row kept while the sketch draws, 2026-11-17, Linux)
+
+- Empfehlung gebaut: pages-sketches (sketch on `pages/sketches`), variant a, 65a2a8ab3. While the sketch draws, every
+  variant head that would offer Übernehmen shows it disabled, so the head keeps its height and no frame moves when
+  drawing ends; the drawn variant keeps its "zeichnet" mark.
+- Built: 1403bb95e. `sketches.component.html` renders a disabled `data-sk-merge` button without `data-sk-take` while
+  `status` is `drawing`, so a bound merge confirm still waits for the enabled Übernehmen.
+- Verified: `sketches.component.spec.ts` "keeps a disabled Übernehmen in every head while the frames still draw …" and
+  the two adjusted `sketch-view.component.spec.ts` cases; bite: with the old `@let take` all three fail.
+- Not verified: the `sketchDrawn` waits in `canvas.e2e.mjs` stay. Without them `--case "hiding the panel"` passes twice
+  at `--delay-frames 3000`, but at `--delay-frames 0` the Sketches page of "hiding the panel at a panned and zoomed
+  camera" fails twice: the first frame moves 3.9 px left (x 306.53 -> 302.62, same y and width), so something besides
+  the merge row still shifts horizontally when drawing ends. With the waits it passes twice at delay 0.
