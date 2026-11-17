@@ -41,6 +41,12 @@ const axisRows = Object.fromEntries(
   ),
 ) as Record<string, Props>;
 
+const ALIGNMENTS = ['center', 'end'] as const;
+
+const alignRows = Object.fromEntries(
+  ALIGNMENTS.map((textAlign) => [`text-align-${textAlign}`, { ...axisRow, textAlign }]),
+) as Record<`text-align-${(typeof ALIGNMENTS)[number]}`, Props>;
+
 const interactive = interactionRows(
   {
     empty: { hint: 'Shown on your profile' },
@@ -50,6 +56,7 @@ const interactive = interactionRows(
     'textarea-filled': { control: 'textarea', value: multiLine },
     'textarea-error': { control: 'textarea', error: 'This field is required' },
     ...axisRows,
+    ...alignRows,
   } satisfies Record<string, Props>,
   {
     interactions: ['hover', 'focus-visible'],
@@ -57,22 +64,8 @@ const interactive = interactionRows(
   },
 );
 
-const ALIGNMENTS = ['center', 'end'] as const;
-
-const alignStates = Object.fromEntries(
-  ALIGNMENTS.map((textAlign) => [`text-align-${textAlign}`, { ...axisRow, textAlign }]),
-) as Record<`text-align-${(typeof ALIGNMENTS)[number]}`, Props>;
-
-const states = { ...interactive.states, ...alignStates };
-const grid = {
-  columns: interactive.grid.columns,
-  rows: {
-    ...interactive.grid.rows,
-    ...Object.fromEntries(
-      ALIGNMENTS.map((textAlign) => [`textAlign ${textAlign}`, { rest: `text-align-${textAlign}` as const }]),
-    ),
-  },
-};
+const states = interactive.states;
+const grid = interactive.grid;
 
 const markControl = (markup: string, control: FieldControl, interaction: FieldInteraction | undefined) => {
   const frame = ['data-et-control-part', interaction && `data-et-force="${interaction}"`].filter(Boolean);

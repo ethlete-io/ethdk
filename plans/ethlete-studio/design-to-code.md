@@ -1851,6 +1851,13 @@ B135 done: all 14 parts with own behaviour declare their keys; ACTION-UNDECLARED
 element named above with its reason (a press does nothing, the consumer owns the target, or no state draws the result).
 No ADR records B135.
 
+### B575 as built 2026-11-17: form-field text-align rows (builder)
+
+The sdk form-field part draws `text-align-center` and `text-align-end` through `interactionRows` with the other rows,
+so each gets a hover and a focus-visible state. `design complete components/form-field`: CONTROL-GRID-MISSING (input
+and textarea) gone, only PART-UNREVIEWED left. The check opened `components/form-field@edit`; `sketch ready` closed it
+as HELD (every existing state draws as before) and recorded the hash. Not verified: a look at the four new pictures.
+
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
 As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the
