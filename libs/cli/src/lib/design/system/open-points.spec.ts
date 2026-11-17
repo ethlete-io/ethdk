@@ -349,6 +349,38 @@ describe('sketchAddedPointsOf', () => {
     });
   });
 
+  it('asks a motion only for a pair an interaction word connects, not between showcase variants (B297)', () => {
+    expect(
+      openPointsOf(
+        input({
+          parts: [
+            {
+              key: 'components/a',
+              layer: 'components',
+
+              controls: true,
+              motion: {
+                states: ['empty', 'filled', 'hover', 'hover-filled', 'tonal', 'size-sm'],
+                motions: [],
+                unreachable: [],
+              },
+            },
+          ],
+        }),
+      ),
+    ).toEqual([
+      {
+        part: 'components/a',
+        points: [
+          { kind: 'missing-motion', from: 'empty', to: 'hover' },
+          { kind: 'missing-motion', from: 'filled', to: 'hover-filled' },
+          { kind: 'missing-motion', from: 'hover', to: 'empty' },
+          { kind: 'missing-motion', from: 'hover-filled', to: 'filled' },
+        ],
+      },
+    ]);
+  });
+
   it('asks no motion between different states of a part that declares instant switches, but still a loop in an ongoing-work state', () => {
     expect(
       openPointsOf(

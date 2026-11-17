@@ -315,3 +315,10 @@ Each slice gets an "in progress" note here when it starts.
   centred; Reduced kept it live and driven. Before the fix desktop left "closed phone" live and the timeline on images.
   Not checked: a grid part with several presets (grid cells carry no preset, so they never retarget); the desktop page
   element (both schemes) is 854 px tall in a 593 px canvas, only its first scheme copy is focused.
+
+## As built: B297 interaction pairs (2026-11-17)
+
+`missingMotionsOf` in `libs/cli/src/lib/design/system/open-points.ts` asks a motion only for a pair whose names differ
+only in interaction words; a name of interaction words alone stands on the first state. Measured over every committed
+part: sdk 5116 -> 194 missing motions, studio 0 -> 0. Verified: open-points spec (new case fails without the filter).
+Not verified: a live `design check --product sdk` run.

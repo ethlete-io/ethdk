@@ -44,8 +44,8 @@ Archived: Design to code decisions (2026-10-31), see [findings-2026-10](archive/
      3:1 measure (Q169, Q175): borders only of controls (native inputs, `[data-et-control]`, control roles) and of
      the nearest bordered ancestor that wraps a control inside its part; icons (`svg` fill or stroke, best paint
      counts). Disabled, invisible and excepted elements are skipped.
-   - Missing motion (Q168): every ordered pair of `states`, static, on every check. A pair with a `focus` state is
-     exempt. A loop is a motion with `from === to`; an ongoing-work state (name contains loading, pending, busy,
+   - Missing motion (Q168): every ordered pair of `states` that an interaction connects (names differ only in
+     interaction words; B297), static, on every check. A pair with a `focus` state is exempt. A loop is a motion with `from === to`; an ongoing-work state (name contains loading, pending, busy,
      progress, indeterminate or spinner) needs one. `definePart({ unreachable: [{ from, to, reason }] })` drops a
      pair; rules `MOTION-UNREACHABLE-STATE`, `-REASON`, `-LITERAL`. Foundations are exempt.
    - Verified: specs that fail without each change, the design folder (916 tests), both tsc configs, lint.

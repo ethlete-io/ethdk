@@ -82,6 +82,49 @@ const ONGOING_WORK = ['loading', 'pending', 'busy', 'progress', 'indeterminate',
 const isOngoingWork = (state: string, busy: string[]) =>
   busy.includes(state) || ONGOING_WORK.some((word) => state.includes(word));
 
+const INTERACTION_WORDS = [
+  'hover',
+  'active',
+  'pressed',
+  'disabled',
+  'open',
+  'closed',
+  'expanded',
+  'collapsed',
+  'checked',
+  'unchecked',
+  'selected',
+  'dragging',
+  ...ONGOING_WORK,
+];
+
+const REST_WORDS = ['rest', 'idle', 'default'];
+
+const showcaseWordsOf = (state: string) =>
+  state
+    .split('-')
+    .filter((word) => !INTERACTION_WORDS.includes(word) && !REST_WORDS.includes(word))
+    .sort()
+    .join('-');
+
+const interactionWordsOf = (state: string) =>
+  state
+    .split('-')
+    .filter((word) => INTERACTION_WORDS.includes(word))
+    .sort()
+    .join('-');
+
+/**
+ * Whether a user interaction moves the part from one state to the other: the two names differ in their interaction
+ * words (hover, open, loading, …) and in nothing else. A name of interaction words alone stands on the first state.
+ */
+const interactionConnects = ({ from, to, first }: { from: string; to: string; first: string }) => {
+  const base = showcaseWordsOf(first);
+  const showcase = (state: string) => showcaseWordsOf(state) || base;
+
+  return interactionWordsOf(from) !== interactionWordsOf(to) && showcase(from) === showcase(to);
+};
+
 const missingMotionsOf = ({
   layer,
   motion,
@@ -99,7 +142,12 @@ const missingMotionsOf = ({
 
   return motion.states.flatMap((from) =>
     motion.states.flatMap((to) => {
-      const needed = from === to ? isOngoingWork(from, busy) : !from.includes('focus') && !to.includes('focus');
+      const needed =
+        from === to
+          ? isOngoingWork(from, busy)
+          : !from.includes('focus') &&
+            !to.includes('focus') &&
+            interactionConnects({ from, to, first: motion.states[0] ?? '' });
 
       return needed && !covered(from, to) ? [{ kind: 'missing-motion' as const, from, to }] : [];
     }),

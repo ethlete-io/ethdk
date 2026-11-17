@@ -36,9 +36,9 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines.filter((line) => /^PARTS? /u.test(line))).toEqual([
-      `PART acme components/button: ${renderWarningsOf(lines).length > 0 ? '1 warning, ' : ''}3 open points`,
+      `PART acme components/button: ${renderWarningsOf(lines).length > 0 ? '1 warning, ' : ''}1 open point`,
       'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
-      'PART acme components/card: 3 open points',
+      'PART acme components/card: 1 open point',
       'PARTS acme: 2 of 4 clean',
     ]);
   });

@@ -389,24 +389,24 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const variantFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts');
     const actual = await actualSketchOpenPoints();
     const inherited =
-      'NOTE components/button a: components/button: no controls declared; 2 missing motions (default -> long, long -> default) (inherited from the merged part)';
+      'NOTE components/button a: components/button: no controls declared (inherited from the merged part)';
 
     vi.mocked(sketchOpenPointsOf).mockImplementation(actual);
     await newButton(target);
     writeFileSync(
       variantFile,
       readFileSync(variantFile, 'utf8')
-        .replace("long: { label: 'Play from the beginning' }", "$&, wide: { label: 'Go' }")
-        .replace("long: 'A long label; check that it fits.'", "$&, wide: 'A wide button; check its width.'"),
+        .replace("long: { label: 'Play from the beginning' }", "$&, hover: { label: 'Play from the beginning' }")
+        .replace("long: 'A long label; check that it fits.'", "$&, hover: 'The button hovered; check its fill.'"),
     );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines).toContain(inherited);
     expect(lines.at(-1)).toBe(
-      'components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)\ncomponents/button adds open points - close them before ready',
+      'components/button a: components/button: 2 missing motions (default -> hover, hover -> default)\ncomponents/button adds open points - close them before ready',
     );
     expect(recordedRefusal(target)?.lines).toEqual([
-      'components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)',
+      'components/button a: components/button: 2 missing motions (default -> hover, hover -> default)',
       'components/button adds open points - close them before ready',
     ]);
     lines.length = 0;
@@ -414,7 +414,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
     expect(lines).toContain(
-      'ready will refuse: components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)',
+      'ready will refuse: components/button a: components/button: 2 missing motions (default -> hover, hover -> default)',
     );
     expect(
       findSketch({
@@ -424,7 +424,10 @@ describe('designSketch', { timeout: 120_000 }, () => {
       }),
     ).toMatchObject({ status: 'in progress' });
 
-    writeFileSync(variantFile, readFileSync(variantFile, 'utf8').replace(", wide: { label: 'Go' }", ''));
+    writeFileSync(
+      variantFile,
+      readFileSync(variantFile, 'utf8').replace(", hover: { label: 'Play from the beginning' }", ''),
+    );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain(inherited);

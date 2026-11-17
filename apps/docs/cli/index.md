@@ -405,8 +405,12 @@ warning does not fail the check.
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged`. A point is a
 comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is
-not an open point: `et design check` lists those on one `UNLINKED <product>: <part>, ...` line. Outside `foundations/` and `pages/`, every ordered pair of a part's states needs a
-motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
+not an open point: `et design check` lists those on one `UNLINKED <product>: <part>, ...` line. Outside `foundations/` and `pages/`, a pair of a part's states needs a
+motion when an interaction connects them: the two names differ only in interaction words (`hover`, `active`,
+`pressed`, `disabled`, `open`, `closed`, `expanded`, `collapsed`, `checked`, `unchecked`, `selected`, `dragging` or an
+ongoing-work word), so `filled -> hover-filled` needs one and `filled -> tonal` does not. A name of interaction words
+alone, like `hover`, stands on the first state. A pair is exempt when it is `unreachable` or a state name contains
+`focus`; a missing one prints as `no motion collapsed -> expanded`, and
 a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner`, or whose drawing
 holds `aria-busy="true"` or a loading button whatever its name, needs a looping motion: `no looping motion in loading`. The list does not change the exit code. The render step runs even when a static rule fails, so both
 kinds of findings show in one run. A part that does not load or draw gets no render rule checked: one line names
