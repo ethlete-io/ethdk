@@ -1947,3 +1947,18 @@ with a sentence per new state (79412ea21, HELD: every state draws as before; rea
 sketch stale for ready and merge; deleting the untracked sketch and re-running the check gave a clean HELD. Verified:
 design check select and switch 0 findings, shots of every select state viewed. Not verified: a live Studio shot of
 the three pages; the switch OPTION-VALUE-MISSING hints (size, variant, controlPosition) stay open as hints.
+
+As built (pages/sketches ready): not ready. `design ready` marked it (254979f7b, which also took 5 marks a design serve
+had written; restored 4677112b7; merged hash adeb6ffd0), but `design check --part pages/sketches` still finds
+CANVAS-UNDER-PANEL and 2x ARROW-ANCHOR in `change-crop` and `change-crop-whole`, so the mark was dropped b4da6b459.
+Cause (proven in a scratch probe): the mock screen draws 12 zoom chips, and both the frame aim
+(`libs/cli/design/arrow-anchor.ts` `anchorOf`) and the check (`system/arrow-anchor.ts`) resolve
+`data-et-arrow-anchor` with `root.querySelector`, so the Fit tooltip is measured against the first chip's fit button.
+Resolving from the nearest ancestor that holds a match cleared both ARROW-ANCHOR hits. CANVAS-UNDER-PANEL: the aim's
+device-pixel rounding gives the tooltip wrapper `translate: 0.25px -0.16px`; it is wider than its 42px span, and the
+span inherits `cursor: grab` from the canvas, so `holdsPannedWorld` counts the tooltip above the button as a pan
+world. Proposed: count a moved child as a world only when it overlaps the viewport box. Both fixes are libs/cli check
+changes, which the builder slice may not make (refused); open for the cli owner.
+Suspect, not probed: `design ready` passed on the same tree that `check --part` fails, so the ready gate may read a
+cached or narrower render result. Verified: probe check in a scratch copy with the anchor scoping (ARROW-ANCHOR 0) and
+a debug line naming the panned child. Not verified: the overlap fix, a cli spec, a live Studio shot.
