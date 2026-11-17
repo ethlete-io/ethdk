@@ -5,6 +5,7 @@ import { grid, moreStates, selectBody, SelectProps, states } from './shared/sele
 
 export default definePart<SelectProps>({
   note: 'scale of the decided shape, Q182, lead merge',
+  consumerAction: 'a form control whose value the consumer binds',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: { ...states, ...moreStates },
   describe: {

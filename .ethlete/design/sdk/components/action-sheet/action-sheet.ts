@@ -64,6 +64,7 @@ const sheet = ({ header: withHeader = true, action, cancel }: Props) =>
 
 export default definePart({
   note: 'Full-width sheet flush to the bottom edge, Cancel as the last row',
+  consumerAction: 'its actions are the items the consumer passes in',
   madeBy: ['claude-opus-5-5'],
   states: {
     default: {},

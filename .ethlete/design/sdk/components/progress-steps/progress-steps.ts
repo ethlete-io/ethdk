@@ -65,6 +65,7 @@ const steps = (props: Props) => {
 
 export default definePart({
   note: 'Decided rules only',
+  consumerAction: 'its steps link where the consumer points them',
   madeBy: ['claude-opus-5-5'],
   states: {
     default: {},

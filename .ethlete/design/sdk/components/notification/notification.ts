@@ -69,6 +69,7 @@ const render = ({ status, ...interactions }: Props) =>
 
 export default definePart({
   note: 'The SDK notification (et-notification), drawn by its mock from @ethlete/components/design: one notification per status with title, message, dismiss icon button and, where the status has them, a primary and a secondary text-button action; the four statuses in the stack column. The pane sits one surface level above the page, as the component forces elevation 1. Error takes the danger theme (the semantic error theme); success, info and loading take the theme around them, since the design product registers no success theme.',
+  consumerAction: 'its buttons are actions the consumer projects',
   madeBy: ['claude-opus-5-5'],
   states: {
     success: { status: 'success' },

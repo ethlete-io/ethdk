@@ -82,6 +82,7 @@ export const grid = {
 
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
+  consumerAction: 'a button whose click the consumer binds',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   states,
   grid,

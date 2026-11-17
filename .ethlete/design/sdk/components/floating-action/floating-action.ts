@@ -39,6 +39,7 @@ const render = ({ state = 'inline', interaction, filterIcon, color, inset }: Pro
 
 export default definePart({
   note: 'Q138: the floating trigger gets the Q99a 1px inset ink edge in light only, so it reaches 3:1 on a light grey row (4.68) and the page (5.48); dark unchanged.',
+  consumerAction: 'its button runs the action the consumer binds',
   madeBy: ['claude-opus-5-5'],
   states: {
     inline: {},

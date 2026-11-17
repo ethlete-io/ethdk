@@ -34,6 +34,7 @@ const filter = (apply: string) => `<header class="anchored-dialog-header"><span>
 
 export default definePart({
   note: 'An open popover anchored to its trigger: surface pane, arrow, free content',
+  consumerAction: 'the field inside is content the consumer projects',
   madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
   states: {
     'open-points': { kind: 'open-points', modal: false },

@@ -52,6 +52,7 @@ const render = ({ kind, long, close, confirm, cancel }: Props) =>
 
 export default definePart({
   note: 'Decided rules only',
+  consumerAction: 'its buttons are actions the consumer projects',
   madeBy: ['claude-opus-5-5'],
   states: {
     default: { kind: 'dialog' },

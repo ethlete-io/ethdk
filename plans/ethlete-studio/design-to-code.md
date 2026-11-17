@@ -1780,5 +1780,11 @@ e2e canvas ("every declared action works"). Not verified: the call/read-error ti
   Never inferred. Verified: complete/actions specs, vitest related (1680), typecheck, lint.
 - Baseline before any declaration: `design complete` over the 58 sdk parts gives 361 ACTION-UNDECLARED in 37 parts
   (calendar 71, chart 36, scheduler 31, pagination 26, menu 14, ...). `design check --product sdk` reports none.
-- Next: declare `consumerAction` on the parts whose controls the consumer wires; parts with own behaviour
-  (calendar, carousel, pagination, tree, ...) declare real `data-et-action` keys instead.
+- Slice 2: 23 sdk parts declare `consumerAction` (button, checkbox, switch, radio-group, select, select-panel, chip,
+  menu, toolbar, dialog, banner, card, empty-state, notification, action-sheet, floating-action, match,
+  progress-steps, bracket, scrollable, anchored-dialog, accent-on-light, foundations/elevation). ACTION-UNDECLARED
+  361 -> 227; `design check --product sdk` HELD all 23 (no pixel changed), 0 findings.
+- Left: 227 hits in 14 parts with own behaviour, which need real `data-et-action` keys, not `consumerAction`:
+  calendar 71, chart 36, scheduler 31, pagination 26, tree 12, grid 12, carousel 9, table 7, standings 6, tabs 4,
+  query-error 4, stream 3, copy-button 3, breadcrumb 3. Every sdk part already reports PART-UNREVIEWED in
+  `design complete` (query-error did before this slice too).

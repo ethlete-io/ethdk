@@ -59,6 +59,7 @@ const render = ({ type, ...rest }: Props) =>
 
 export default definePart({
   note: 'Decided rules only',
+  consumerAction: 'its buttons are actions the consumer projects',
   madeBy: ['claude-opus-5-5'],
   states: {
     info: { type: 'info' },

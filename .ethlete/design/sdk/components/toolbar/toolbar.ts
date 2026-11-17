@@ -61,6 +61,7 @@ const render = (props: Props) => {
 
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
+  consumerAction: 'its buttons run the commands the consumer binds',
   madeBy: ['claude-opus-5-5'],
   states: {
     default: {},

@@ -82,6 +82,7 @@ const { states, grid } = interactionRows(
 
 export default definePart({
   note: 'Decided rules only',
+  consumerAction: 'its items are actions the consumer passes in',
   madeBy: ['claude-opus-5-5'],
   states: {
     menu: { rows: FULL },

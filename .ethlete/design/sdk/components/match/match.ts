@@ -20,6 +20,7 @@ const finished: MatchMockOptions = {
 
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
+  consumerAction: 'its link goes where the consumer points it',
   madeBy: ['claude-opus-5-5'],
   states: {
     finished: { card: finished },

@@ -94,6 +94,7 @@ const render = (props: Props) => {
 
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
+  consumerAction: 'the buttons inside are content the consumer projects',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     'horizontal-start': {},

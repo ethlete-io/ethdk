@@ -105,6 +105,7 @@ const { states, grid } = interactionRows(
 
 export default definePart({
   note: 'The SDK select option and open panel, shared by select, page-size-select and phone-input, drawn by the mocks from @ethlete/components/design.',
+  consumerAction: 'a form control whose value the consumer binds',
   madeBy: ['claude-opus-5-5'],
   states: {
     ...states,
