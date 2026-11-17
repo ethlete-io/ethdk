@@ -1,0 +1,12 @@
+@layer components {
+  .st-hold {
+    background: none;
+    font: inherit;
+    transition: var(--transition-state);
+  }
+
+  .st-hold:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
+}

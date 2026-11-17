@@ -17,7 +17,7 @@ import select from '@system/components/select';
 import switchPart from '@system/components/switch';
 import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
-import { holdTrigger } from '@system/components/hold-trigger';
+import { holdTrigger, holdTriggerStyles } from '@system/components/hold-trigger';
 import { type SketchBadgeStatus as BadgeStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
 import { variantCell, variantCellStyles } from '@system/elements/variant-cell';
 import partTree from '@system/elements/part-tree';
@@ -1208,6 +1208,7 @@ export default definePart<Props>({
         canvasViewportStyles +
         kit +
         styles +
+        holdTriggerStyles +
         below,
     });
   },
