@@ -1395,11 +1395,13 @@ const CASES = [
                 range.selectNodeContents(node);
 
                 const text = range.getBoundingClientRect();
+                const style = getComputedStyle(node.parentElement);
+                const ellipsis = style.textOverflow === 'ellipsis' && style.overflowX === 'hidden';
 
                 if (
                   text.width > 0 &&
                   (text.left < box.left - 1 ||
-                    text.right > box.right + 1 ||
+                    (!ellipsis && text.right > box.right + 1) ||
                     text.top < box.top - 1 ||
                     text.bottom > box.bottom + 1)
                 )
