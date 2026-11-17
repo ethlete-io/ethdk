@@ -50,6 +50,17 @@ export default definePart({
     'header-active': { open: true, shipping: 'active' },
     'header-focus-visible': { open: true, shipping: 'focus-visible' },
   },
+  describe: {
+    collapsed:
+      'Four closed items, the second with a hint, the last disabled; check the dividers, chevrons and the muted disabled header.',
+    expanded:
+      'Match rules opened with its text; check that the chevron turns and the panel text sits under its header.',
+    disabled: 'The disabled Archive header hovered; check that it shows no hover tint and keeps the muted text.',
+    'header-hover': 'The Shipping header hovered; check the 7 % tint inside the inset with the 8 px radius.',
+    'header-active': 'The Shipping header pressed; check that the tint deepens to 14 % past hover.',
+    'header-focus-visible':
+      'The Shipping header with keyboard focus; check the 2 px inset outline in the primary colour.',
+  },
   widths: [480],
   controls: {
     rules: { kind: 'button', input: ['pointer', 'keyboard'] },

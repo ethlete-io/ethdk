@@ -68,6 +68,20 @@ export default definePart({
     'overflow-focus-visible': { long: true, overflow: 'focus-visible' },
     'overflow-open': { long: true, open: true },
   },
+  describe: {
+    default:
+      'Home, Competitions and the current Regionalliga Nordost; check the separators and the current page in plain text.',
+    'link-hover': 'Competitions hovered; check the hover look of the link.',
+    'link-active': 'Competitions pressed; check that the press differs from hover.',
+    'link-focus-visible': 'Competitions with keyboard focus; check the focus ring around the link.',
+    'current-page': 'The current page crumb hovered; check that it shows no link hover.',
+    long: 'A six-crumb trail with the middle four folded into the overflow button; check that Home, the button and the match fit one line.',
+    'overflow-hover': 'The overflow button hovered; check its hover tint.',
+    'overflow-active': 'The overflow button pressed; check that the tint goes past hover.',
+    'overflow-focus-visible': 'The overflow button with keyboard focus; check the focus ring around it.',
+    'overflow-open':
+      'The overflow panel open with the four hidden crumbs; check that it sits under the button and lists them in order.',
+  },
   widths: [480],
   controls: {
     link: { kind: 'button', input: ['pointer', 'keyboard'] },

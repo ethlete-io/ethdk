@@ -64,6 +64,19 @@ export default definePart({
     'alert-confirm-focus-visible': { kind: 'alert', confirm: 'focus-visible' },
     'long-body': { kind: 'dialog', long: true },
   },
+  describe: {
+    default:
+      'Move kick-off over the backdrop with text, close, Cancel and Save; check the title row and the actions at the end.',
+    'close-hover': 'The close button hovered; check its round hover tint.',
+    'close-focus-visible': 'The close button with keyboard focus; check the focus ring around it.',
+    'confirm-focus-visible': 'Save with keyboard focus; check the focus ring around the filled button.',
+    'cancel-focus-visible': 'Cancel with keyboard focus; check the focus ring around the outline button.',
+    alert: 'The Delete this match? alert with Cancel and Delete; check the message and the two actions.',
+    'alert-cancel-focus-visible': 'The alert Cancel with keyboard focus; check the focus ring around it.',
+    'alert-confirm-focus-visible': 'The alert Delete with keyboard focus; check the focus ring around it.',
+    'long-body':
+      'Move the season with eight paragraphs; check that the body scrolls and the dividers show above and below it.',
+  },
   widths: [480],
   controls: {
     close: { kind: 'button', input: ['pointer', 'keyboard'] },

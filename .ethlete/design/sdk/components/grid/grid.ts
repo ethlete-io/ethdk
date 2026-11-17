@@ -67,6 +67,18 @@ export default definePart({
     resizing: { layout: 'spans', resize: true },
     'long-title': { layout: 'spans', actions: true, longTitle: true },
   },
+  describe: {
+    rest: 'Four equal tiles in a 4-column grid; check the gaps and the title and subtitle in each tile.',
+    spans: 'Five tiles with column and row spans; check that Visitors spans two rows and Activity the full width.',
+    'item-hover': 'The Visitors tile hovered; check its hover look.',
+    'item-focus-visible': 'The Visitors tile with keyboard focus; check the focus ring around the tile.',
+    actions: 'The tiles with their remove actions; check that each action sits in the tile corner.',
+    'action-hover': 'The Revenue remove action hovered; check its hover tint.',
+    'action-focus-visible': 'The Revenue remove action with keyboard focus; check the focus ring around it.',
+    dragging: 'Orders dragged off its cell with the ghost behind; check the lifted tile and the ghost cell.',
+    resizing: 'Activity resized to two rows from its bottom edge; check the active edge and the new size.',
+    'long-title': 'Revenue with a long title and its action; check that the title is cut before the action.',
+  },
   widths: [480],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

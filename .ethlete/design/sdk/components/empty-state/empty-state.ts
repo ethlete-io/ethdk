@@ -44,6 +44,15 @@ export default definePart({
     'action-active': { form: 'default', action: 'active' },
     'action-focus-visible': { form: 'default', action: 'focus-visible' },
   },
+  describe: {
+    default: 'No results with icon, text and Clear filters; check that everything sits centred.',
+    'without-action': 'No results without an action; check the spacing under the text.',
+    errored: 'Something went wrong with the triangle icon and Try again; check the icon and the action.',
+    'heading-only': 'Nothing here yet without icon or text; check that the heading stands alone, centred.',
+    'action-hover': 'Clear filters hovered; check its hover look.',
+    'action-active': 'Clear filters pressed; check that the press goes past hover.',
+    'action-focus-visible': 'Clear filters with keyboard focus; check the focus ring around it.',
+  },
   widths: [480],
   controls: {
     action: { kind: 'button', input: ['pointer', 'keyboard'] },

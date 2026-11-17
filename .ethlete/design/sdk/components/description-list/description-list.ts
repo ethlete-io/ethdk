@@ -44,6 +44,16 @@ export default definePart({
     grouped: { items: GROUPED },
     'grouped-stacked': { items: GROUPED, variant: 'stacked' },
   },
+  describe: {
+    default:
+      'Name, Email, Role and Notes inline; check that terms align in one column and the long note wraps beside it.',
+    stacked: 'The same list with each detail under its term; check the gap between term and detail.',
+    'long-value': 'A long URL and a long term inline; check that the URL breaks and the term wraps without overlap.',
+    'long-value-stacked': 'The long values stacked; check that the URL breaks inside the width.',
+    'empty-value': 'A list with an empty Phone detail; check how the empty detail shows.',
+    grouped: 'The list with grouped items inline; check the group look around the items.',
+    'grouped-stacked': 'The grouped items stacked; check the group look and the gaps.',
+  },
   widths: [480],
   frame: (body) => `<div class="description-list-frame">${body}</div>`,
   render: ({ variant, items = STORY }: Props) =>

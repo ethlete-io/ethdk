@@ -34,6 +34,11 @@ export default definePart({
     vertical: { set: 'vertical' },
     list: { set: 'list' },
   },
+  describe: {
+    default: 'A horizontal divider between two paragraphs; check its colour and the gap above and below.',
+    vertical: 'Vertical dividers between Overview, Squad and Fixtures; check that they span the text height.',
+    list: 'Decorative dividers between three list rows; check that they run the full width.',
+  },
   widths: [480],
   frame: (body) => `<div class="divider-frame">${body}</div>`,
   render: (props: Props) =>

@@ -54,6 +54,20 @@ export default definePart({
     'floating-over-row': { state: 'floating', overRow: true },
     hidden: { state: 'hidden' },
   },
+  describe: {
+    inline: 'Filter (2) inline above the results at the top of the page; check that it sits in the flow.',
+    floating: 'Scrolled into the results, Filter (2) floats at the bottom end; check its inset and shadow.',
+    'floating-hover': 'The floating trigger hovered; check its hover look.',
+    'floating-active': 'The floating trigger pressed; check that the press goes past hover.',
+    'floating-focus-visible': 'The floating trigger with keyboard focus; check the focus ring around it.',
+    'inline-focus-visible': 'The inline trigger with keyboard focus; check the focus ring in the flow.',
+    'floating-icon': 'The floating trigger with a filter icon; check the icon and the wider trigger.',
+    'floating-inset': 'The floating trigger at a 12 px inset; check that it moves closer to the corner.',
+    'floating-danger': 'The floating trigger in the danger colour; check that the label reads on the fill.',
+    'floating-danger-hover': 'The danger trigger hovered; check its hover step.',
+    'floating-over-row': 'The floating trigger over a result row; check that it stays readable over the row.',
+    hidden: 'Scrolled past the results; check that the trigger is gone.',
+  },
   widths: [480],
   render: (props: Props) =>
     drawing({

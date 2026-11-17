@@ -41,6 +41,15 @@ export default definePart({
     'no-arrow': { kind: 'filter', placement: 'bottom-start', arrow: false },
     'top-start': { kind: 'open-points', placement: 'top-start', modal: false },
   },
+  describe: {
+    'open-points':
+      'The open points popover under its trigger, end-aligned, with an arrow; check that the arrow points at the trigger and the list reads.',
+    filter:
+      'The modal filter popover start-aligned with checkboxes and Apply; check the checked boxes and that Apply sits in the footer.',
+    'no-arrow': 'The filter popover without its arrow; check that the pane keeps its gap to the trigger.',
+    'top-start':
+      'The open points popover above its trigger, start-aligned; check that the arrow flips to the bottom edge and points at the trigger.',
+  },
   widths: [480],
   controls: {
     option: { kind: 'row', input: ['pointer', 'keyboard'] },

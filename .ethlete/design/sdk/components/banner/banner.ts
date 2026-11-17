@@ -74,6 +74,22 @@ export default definePart({
     'error-action-focus-visible': { type: 'error', action: 'focus-visible' },
     all: { type: 'all' },
   },
+  describe: {
+    info: 'The info banner with heading, text, View fixtures and close; check the icon, the action and the close button in one row.',
+    success: 'The success banner without an action; check its icon and colour and that the text fills the row.',
+    warning: 'The warning banner with Upgrade; check that the warning tint and the text keep their contrast.',
+    error: 'The error banner with Retry in the danger colour; check the icon and that Retry reads on the tint.',
+    'without-dismiss': 'The info banner without its close button; check that the text and action take the freed space.',
+    'close-hover': 'The info close button hovered; check the round hover tint behind the icon.',
+    'close-focus-visible': 'The info close button with keyboard focus; check that the focus ring shows around it.',
+    'action-hover': 'View fixtures hovered; check that the action shows its hover look.',
+    'action-focus-visible': 'View fixtures with keyboard focus; check that the focus ring shows around it.',
+    'error-close-focus-visible':
+      'The error close button with keyboard focus; check that the ring stays visible on the danger tint.',
+    'error-action-focus-visible':
+      'Retry with keyboard focus on the error banner; check that the ring stays visible on the danger tint.',
+    all: 'The four banner types stacked; check that info, success, warning and error each read as their own colour.',
+  },
   widths: [480],
   controls: {
     close: { kind: 'button', input: ['pointer', 'keyboard'] },

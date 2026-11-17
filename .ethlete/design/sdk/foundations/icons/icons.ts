@@ -115,5 +115,11 @@ export default definePart<{ view: View }>({
   note: "Today's look",
   madeBy: ['claude-opus-5-5'],
   states: { catalogue: { view: 'catalogue' }, construction: { view: 'construction' } },
+  describe: {
+    catalogue:
+      'Every icon the SDK ships at 16, 20 and 24 px; check that each stays crisp and optically even across the sizes.',
+    construction:
+      'Every icon on the candidate grid with pixel lines, centre lines and padding; check that strokes sit on the pixel lines inside the padding.',
+  },
   render: ({ view }) => iconSheet({ view, title: titles[view], icons, sizes: [16, 20, 24] }),
 });

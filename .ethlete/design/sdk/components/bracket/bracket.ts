@@ -120,6 +120,22 @@ export default definePart({
     continue: { stage: 'groups-done' },
     mirrored: { stage: 'decided', density: 'compact', mirrored: true },
   },
+  describe: {
+    'in-progress':
+      'Quarter-finals done, one semi-final live at 1 : 1, the final still open; check the LIVE badge, the kick-off and the connectors.',
+    decided: 'Westport Albion beat Northbridge Rovers 2 : 1 in the final; check the winner bars and the champion line.',
+    'journey-hover':
+      'The hover journey of Riverside Wanderers; check that the rest dims and their lost semi-final is dashed and struck through.',
+    'journey-pinned':
+      'The pinned journey of the champion with the legend; check the pressed toggle and the rest at a quarter opacity.',
+    'legend-focus-visible':
+      'The legend with the Eastvale United toggle under keyboard focus; check the focus ring in the primary colour.',
+    compact:
+      'The in-progress bracket at compact density; check that cells shrink and the live card still fits its cell.',
+    continue:
+      'Quarter- and semi-finals with the continue cell; check the dashed connectors and the 2 winners advance cell.',
+    mirrored: 'The decided bracket folded in half at compact density; check that both halves meet at the final card.',
+  },
   widths: [1040, 1680],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

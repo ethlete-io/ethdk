@@ -6,6 +6,12 @@ export default definePart<ElevationProps>({
   note: 'How the SDK lifts things off the base surface: a card, an elevated panel and an overlay pane (the select panel mock), side by side and as a pane over a panel. Fills come from the elevated surface tokens; no background colour differs from the product. In the dark scheme a 1 px ring in --et-surface-ring-solid (24 % --et-surface-color-solid over the fill) replaces the border colour. The token is defined here; the generator does not emit it yet.',
   madeBy: ['claude-opus-5-5'],
   states: ELEVATION_STATES,
+  describe: {
+    overview:
+      'A card, an elevated panel and an overlay pane side by side; check that each lifts off the base surface and the dark scheme shows the 1 px ring.',
+    stacked:
+      'An overlay pane over an elevated panel; check that the pane stays apart from the panel under it in both schemes.',
+  },
   render: (props: ElevationProps) =>
     elevationScene(props, { card: 'sdk-ring', panel: 'sdk-ring', pane: 'sdk-ring' }, edge),
 });

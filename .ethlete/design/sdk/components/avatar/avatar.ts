@@ -66,6 +66,22 @@ export default definePart({
       ],
     },
   },
+  describe: {
+    themes:
+      'Initials avatars in the default, brand, warning and danger themes as circles; check that each fill differs and the initials read on it.',
+    'themes-square':
+      'The themed initials avatars as squares; check the corner radius and that the initials read on each fill.',
+    forms:
+      'Image, initials, given initials, icon and empty avatars as circles; check that each fallback fills the circle evenly.',
+    'forms-square':
+      'The image, initials, icon and empty avatars as squares; check that the image is cropped to the square.',
+    sizes: 'The initials avatar from xs to xl as circles; check that the text scales with each step.',
+    'sizes-square':
+      'The initials avatar from xs to xl as squares; check that the radius and text scale with each step.',
+    group: 'A group of four overlapping avatars; check the overlap and the ring that separates them.',
+    'group-overflow':
+      'Two groups that show three and four avatars plus a count; check the +n counter and the small square group.',
+  },
   widths: [480],
   frame: (body) => `<div class="avatar-frame">${body}</div>`,
   render: (props: Props) =>

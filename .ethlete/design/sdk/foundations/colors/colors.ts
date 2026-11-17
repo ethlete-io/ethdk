@@ -190,5 +190,27 @@ export default definePart<Props>({
     'contrast-light': { group: 'contrast', surface: 'light' },
     'contrast-dark': { group: 'contrast', surface: 'dark' },
   },
+  describe: {
+    'surface-light':
+      'The light surface tokens: background, text steps, border, interaction tints and shadow; check that the text steps stay apart and the tints read on the page.',
+    'surface-dark':
+      'The dark surface tokens: background, text steps, border, interaction tints and shadow; check that the text steps stay apart and the tints read on the page.',
+    'brand-light':
+      'The brand colour tokens on the light surface: primary, its ink and on-colour in each interaction step; check that the steps differ and the on-colour reads on the fill.',
+    'brand-dark':
+      'The brand colour tokens on the dark surface in each interaction step; check that the steps differ and the on-colour reads on the fill.',
+    'danger-light':
+      'The danger colour tokens on the light surface in each interaction step; check that the steps differ and the on-colour reads on the fill.',
+    'danger-dark':
+      'The danger colour tokens on the dark surface in each interaction step; check that the steps differ and the on-colour reads on the fill.',
+    'warning-light':
+      'The warning colour tokens on the light surface in each interaction step; check that the ink stays readable and the on-colour reads on the fill.',
+    'warning-dark':
+      'The warning colour tokens on the dark surface in each interaction step; check that the steps differ and the on-colour reads on the fill.',
+    'contrast-light':
+      'The AA contrast pairs of text and fills on the light surface; check that every pair shows its ratio and none falls under its threshold.',
+    'contrast-dark':
+      'The AA contrast pairs of text and fills on the dark surface; check that every pair shows its ratio and none falls under its threshold.',
+  },
   render,
 });

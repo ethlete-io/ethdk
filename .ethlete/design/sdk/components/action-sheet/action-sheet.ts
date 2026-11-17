@@ -73,6 +73,18 @@ export default definePart({
     'action-focus-visible': { action: 'focus-visible' },
     'cancel-focus-visible': { cancel: 'focus-visible' },
   },
+  describe: {
+    default:
+      'The sheet over a dimmed page with title, message, four actions and Cancel; check that it sits flush at the bottom and Delete match is red.',
+    'without-header':
+      'The sheet with only its actions and Cancel; check that the list starts at the top edge without a gap.',
+    'action-hover': 'Edit match hovered; check that the row takes the hover tint across the full width.',
+    'action-active': 'Edit match pressed; check that the tint goes a step past hover.',
+    'action-focus-visible':
+      'Edit match with keyboard focus; check that the focus ring shows inside the sheet and is not cut.',
+    'cancel-focus-visible':
+      'Cancel with keyboard focus; check that the focus ring shows around the last row and is not cut at the bottom.',
+  },
   widths: [390],
   instant:
     'Rows take their hover and press tint at once; the sheet enters and leaves with the overlay strategy motion.',

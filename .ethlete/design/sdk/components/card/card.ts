@@ -48,6 +48,15 @@ export default definePart({
     'confirm-focus-visible': { variant: 'outlined', confirm: 'focus-visible' },
     'cancel-focus-visible': { variant: 'outlined', cancel: 'focus-visible' },
   },
+  describe: {
+    outlined: 'The outlined card with title, subtitle, text, Cancel and Open; check the border against the page.',
+    elevated: 'The elevated card; check the shadow and the raised fill against the page.',
+    filled: 'The filled card; check that its fill differs from the page without a border.',
+    media: 'The outlined card with a media image on top; check that the image fills the top edge inside the radius.',
+    plain: 'A plain outlined card with Revenue and an amount only; check the padding without actions.',
+    'confirm-focus-visible': 'Open with keyboard focus; check the focus ring around the button inside the card.',
+    'cancel-focus-visible': 'Cancel with keyboard focus; check the focus ring around the outline button.',
+  },
   widths: [480],
   controls: {
     cancel: { kind: 'button', input: ['pointer', 'keyboard'] },

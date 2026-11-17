@@ -44,7 +44,7 @@ const gridStates = Object.fromEntries(
   (Object.keys(ROWS) as Row[]).flatMap((row) =>
     COLUMNS.map((column) => [stateOf(row, column), { checkbox: cellOf(row, column) }]),
   ),
-) as Record<string, Props>;
+) as Record<Row | `${Row}-${Exclude<Column, 'rest'>}`, Props>;
 
 const CARD: CheckboxMockOptions = {
   id: 'card',
@@ -141,6 +141,47 @@ export default definePart({
     'group-option-focus-visible': { group: eventsGroup(2, { force: ['focus-visible'] }) },
     'group-select-all-focus-visible': { group: eventsGroup(2, { selectAllForce: ['focus-visible'] }) },
     'group-horizontal': { group: venueGroup },
+  },
+  describe: {
+    unchecked: 'The unchecked checkbox; check the box edge, the mark and the label.',
+    'unchecked-hover': 'The unchecked checkbox hovered; check the hover tint around the box.',
+    'unchecked-focus-visible': 'The unchecked checkbox with keyboard focus; check the focus ring around the box.',
+    'unchecked-active': 'The unchecked checkbox pressed; check that the press goes past hover.',
+    'unchecked-disabled': 'The unchecked checkbox disabled; check that box and label fade.',
+    'unchecked-readonly': 'The unchecked checkbox readonly; check that it reads as not editable but stays legible.',
+    checked: 'The checked checkbox; check the box edge, the mark and the label.',
+    'checked-hover': 'The checked checkbox hovered; check the hover tint around the box.',
+    'checked-focus-visible': 'The checked checkbox with keyboard focus; check the focus ring around the box.',
+    'checked-active': 'The checked checkbox pressed; check that the press goes past hover.',
+    'checked-disabled': 'The checked checkbox disabled; check that box and label fade.',
+    'checked-readonly': 'The checked checkbox readonly; check that it reads as not editable but stays legible.',
+    indeterminate: 'The mixed checkbox; check the box edge, the mark and the label.',
+    'indeterminate-hover': 'The mixed checkbox hovered; check the hover tint around the box.',
+    'indeterminate-focus-visible': 'The mixed checkbox with keyboard focus; check the focus ring around the box.',
+    'indeterminate-active': 'The mixed checkbox pressed; check that the press goes past hover.',
+    'indeterminate-disabled': 'The mixed checkbox disabled; check that box and label fade.',
+    'indeterminate-readonly': 'The mixed checkbox readonly; check that it reads as not editable but stays legible.',
+    'box-only': 'A checked box without a label; check that the box alone keeps its size and touch area.',
+    support: 'The checkbox with a description and a hint; check that both sit under the label in muted text.',
+    invalid: 'A required unchecked box with its error; check the danger edge and the error text under it.',
+    'invalid-focus-visible':
+      'The invalid box with keyboard focus; check that the focus ring and the error colour both show.',
+    'card-rest': 'The Weekly digest card with its description and the box at the end; check the card edge and padding.',
+    'card-checked': 'The card checked; check that the card edge and the box take the accent.',
+    'card-hover': 'The card hovered; check the hover tint over the whole card.',
+    'card-focus-visible': 'The card with keyboard focus; check the focus ring around the card.',
+    'card-checked-focus-visible':
+      'The checked card with keyboard focus; check that the ring and the checked edge both show.',
+    'group-unchecked':
+      'The Notify me about group with All events and four options off; check the indent under All events.',
+    'group-partial': 'Two of four options checked; check that All events shows the mixed mark.',
+    'group-checked': 'All four options checked; check that All events shows the check.',
+    'group-option-hover': 'The Goals option hovered; check its hover tint.',
+    'group-option-pressed': 'The Goals option pressed; check that the press goes past hover.',
+    'group-option-focus-visible': 'The Goals option with keyboard focus; check the focus ring around its box.',
+    'group-select-all-focus-visible':
+      'All events with keyboard focus over a partial group; check the ring around the mixed box.',
+    'group-horizontal': 'The Show matches group in one row; check the gaps between Home, Away and Neutral ground.',
   },
   grid: {
     columns: COLUMNS,
