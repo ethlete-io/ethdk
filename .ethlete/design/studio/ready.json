@@ -424,9 +424,9 @@
     },
     "actions": ["opens:command-palette"],
     "at": "2026-11-17T13:37:16.490Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 70002
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 272546
   },
   "components/tree-row": {
     "hash": "4017f6e8c9dfa080",
