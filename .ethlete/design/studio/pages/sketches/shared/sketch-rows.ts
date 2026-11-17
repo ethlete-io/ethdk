@@ -1,8 +1,8 @@
 import { html, withAction } from '@design-system';
 import button from '@system/components/button';
+import { panInsideRoom } from '@system/components/canvas-viewport';
 import titleBar from '@system/components/title-bar';
 import zoomChip from '@system/components/zoom-chip';
-import { panInsideRoom } from '../../../../../../apps/ethlete-studio/src/app/components/design-canvas/canvas-math';
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 

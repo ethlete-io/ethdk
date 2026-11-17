@@ -2,13 +2,12 @@ import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, slot, withAction } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
-import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
+import { canvasFrame, canvasFrameStyles, canvasView, fitTransform, stateGrid } from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import { manyStatesView, treeRowGrid } from './shared/many-states';
 import { FOLDED_SAMPLE, foldedStatesPill } from './shared/folded-states';
-import { fitTransform } from '../../../../../apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import { icon, type IconName } from '@system/foundations/icons';
 import {

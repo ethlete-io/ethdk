@@ -87,7 +87,8 @@
         "shared": [
           "apps/ethlete-studio/src/app/i18n/**",
           "apps/ethlete-studio/src/app/icons/agent-logos.ts",
-          "apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry.ts"
+          "apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry.ts",
+          "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts"
         ],
         "specs": "apps/ethlete-studio/vite.config.mts"
       },

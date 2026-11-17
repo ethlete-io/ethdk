@@ -5,6 +5,8 @@ import button from '@system/components/button';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasLabelScale } from '../../../../../apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry';
+
+export { fitTransform } from '../../../../../apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry';
 import {
   FAILURE_REASON,
   failureBanner,

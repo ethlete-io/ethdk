@@ -3,6 +3,8 @@ import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, forceInteraction, html, interactionRows, slot } from '@design-system';
 import styles from './canvas-viewport.css?inline';
 
+export { panInsideRoom } from '../../../../../apps/ethlete-studio/src/app/components/design-canvas/canvas-math';
+
 type Props = { class?: string; interaction?: 'focus-visible' };
 
 export const canvasViewportStyles = buttonStyles + styles;
