@@ -24,6 +24,7 @@ export default [
             '{projectRoot}/vitest.proof.config.mts',
             '{projectRoot}/vitest.dist.config.mts',
             '{projectRoot}/vitest.skip-reporter.mts',
+            '{projectRoot}/vitest.global-setup.ts',
             '{projectRoot}/scripts/**/*.spec.mts',
           ],
         },

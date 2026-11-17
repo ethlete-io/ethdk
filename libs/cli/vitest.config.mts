@@ -12,6 +12,7 @@ export default defineConfig({
       'src/**/*.perf.spec.ts',
       'src/lib/design/font-proof.spec.ts',
       'src/**/*.proof.spec.ts',
+      'src/**/*.dist.spec.ts',
     ],
     globalSetup: ['./vitest.global-setup.ts'],
     setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', './vitest.setup.ts'],

@@ -22,7 +22,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { changedSharesOf } from '../contact-sheet';
 import { partHashOf } from './sketch/baseline';
 import { readMerged } from './sketch/merged-parts';
-import { INSPECTS_AT_ONCE } from './render-check';
+import { INSPECTS_AT_ONCE, renderErrorDetailOf } from './render-check';
 import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system-modules';
 import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
@@ -1907,7 +1907,7 @@ export const partsCompletenessOf = async (options: {
 
       const sight = await sightOf(resolved);
 
-      if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];
+      if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: renderErrorDetailOf(sight) }];
 
       const { definition, states, seen, refused, changes, owner, hash } = sight;
       if (options.undeclaredOnly)

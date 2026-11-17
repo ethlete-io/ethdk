@@ -14,6 +14,25 @@ const isAlive = (pid: number) => {
   }
 };
 
+export const RENDER_WORKER_ENV = 'ETHLETE_SPEC_RENDER_WORKER';
+
+const buildRenderWorker = async (root: string) => {
+  const { buildSync } = await import('esbuild');
+  const outfile = join(root, 'render-worker', 'render-worker.js');
+
+  buildSync({
+    entryPoints: [join(__dirname, 'src/lib/design/render-worker.ts')],
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    external: ['@angular/*'],
+    outfile,
+    logLevel: 'error',
+  });
+
+  return outfile;
+};
+
 const removeRoot = (root: string) => rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
 const removeOrphanedRoots = (parent: string) => {
@@ -26,7 +45,7 @@ const removeOrphanedRoots = (parent: string) => {
   }
 };
 
-export default function setup() {
+export default async function setup() {
   const parent = tmpdir();
 
   removeOrphanedRoots(parent);
@@ -36,10 +55,13 @@ export default function setup() {
 
   // Must be set before vitest spawns its workers: they and every child process they start inherit it.
   process.env['TMPDIR'] = root;
+  process.env[RENDER_WORKER_ENV] = await buildRenderWorker(root);
 
   const teardown = () => {
     if (originalTmpdir === undefined) delete process.env['TMPDIR'];
     else process.env['TMPDIR'] = originalTmpdir;
+
+    delete process.env[RENDER_WORKER_ENV];
 
     removeRoot(root);
   };

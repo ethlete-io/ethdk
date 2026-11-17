@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 
-/** On-demand proofs of a rebuild row: red while the row is open, so no CI job runs them. Needs `dist/libs/{cli,components,core}` built. */
+/** On-demand proofs of a rebuild row: red while the row is open, so no CI job runs them. Needs `dist/libs/{components,core}` built. */
 export default defineConfig({
   root: import.meta.dirname,
   test: {

@@ -202,6 +202,26 @@ describe('renderIssuesOf', () => {
     expect('hints' in complete && complete.hints?.some((hint) => hint.includes('OPTION-VALUE-MISSING'))).toBe(true);
   }, 120_000);
 
+  it('reports a part that fails to load with its whole error, not only the first line', async (context) => {
+    const target = checkout({ 'components/broken': { body: '<p>Broken</p>', extra: 'broken: (,' } });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    const details = rendered.issues.filter((issue) => issue.rule === 'RENDER').map((issue) => issue.detail);
+
+    expect(details).toEqual([
+      expect.stringMatching(
+        /^Transform failed with 1 error: - \[PARSE_ERROR\] Unexpected token - .*broken\.ts\?design-product=shop:9:12 /,
+      ),
+    ]);
+  }, 120_000);
+
   it('aims an anchored arrow in the frame, reports a tip that cannot reach its anchor and a hand-moved arrow', async (context) => {
     const drawn = (attributes: string, arrow: string, buttonLeft = 100) =>
       `<div style="padding: 8px"><button id="go" style="display: block; margin-left: ${buttonLeft}px; box-sizing: border-box; width: 40px; height: 20px; padding: 0; border: 0">Go</button><div class="et-anchored-dialog-mock" data-overlay-placement="bottom-start" ${attributes} style="position: relative; width: 200px; height: 60px; margin-top: 10px"><div class="et-overlay-arrow" style="position: absolute; top: -10px; width: 20px; height: 20px; transform: var(--et-floating-arrow-translate); ${arrow}"></div></div></div>`;

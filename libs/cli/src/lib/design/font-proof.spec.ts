@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { chromium, type Browser, type CDPSession, type Page } from 'playwright';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { settleFrames } from './settle-frames';
@@ -9,31 +9,6 @@ import { partKeyOf } from './system/resolve-product';
 import { reachableBaseOf } from './system/served-cache';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 import { facesInUse, openFrame, switchFrame } from './thumb';
-
-// A worker thread cannot load the TypeScript source of the render worker, so the parts drawn by an app render need it bundled.
-vi.mock('./package-root', async (importOriginal) => {
-  const { buildSync } = await import('esbuild');
-  const { mkdtempSync } = await import('fs');
-  const { tmpdir } = await import('os');
-  const { join } = await import('path');
-  const original = await importOriginal<typeof import('./package-root')>();
-  const worker = join(mkdtempSync(join(tmpdir(), 'font-proof-')), 'render-worker.js');
-
-  buildSync({
-    entryPoints: [join(__dirname, 'render-worker.ts')],
-    bundle: true,
-    platform: 'node',
-    format: 'cjs',
-    external: ['@angular/*'],
-    outfile: worker,
-    logLevel: 'error',
-  });
-
-  return {
-    ...original,
-    packageFileOf: (file: string) => (file.endsWith('render-worker.js') ? worker : original.packageFileOf(file)),
-  };
-});
 
 const TARGET = resolve(__dirname, '../../../../..');
 const RED_FILE = resolve(__dirname, 'font-proof-red.json');

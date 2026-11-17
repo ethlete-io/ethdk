@@ -1,4 +1,5 @@
 import { firstValueFrom, from, map, race, timer } from 'rxjs';
+import { stripVTControlCharacters } from 'util';
 import { AddressInfo } from 'net';
 import { yieldRun } from '../run-yield';
 import { WarmDraw } from '../warm-draw';
@@ -172,6 +173,14 @@ const SINGLE_LINE =
 const ESCAPABLE = ESCAPABLE_RULES;
 
 /** The render rules that warn instead of failing. A new rule fails, with a rule baseline for its old hits (ADR 0201). */
+/** A multi-line render error as one RENDER detail line, every line kept. */
+export const renderErrorDetailOf = (error: string) =>
+  stripVTControlCharacters(error)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' - ');
+
 export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
 /** The render rules whose hits on merged parts the rule baseline of their product lists (ADR 0201). */
@@ -1001,7 +1010,7 @@ export const renderIssuesOf = async (options: {
               state: '-',
               size: '-',
               path: '-',
-              detail: loaded.error.split('\n')[0] ?? '',
+              detail: renderErrorDetailOf(loaded.error),
               sketch,
               undrawn: 'part',
             });

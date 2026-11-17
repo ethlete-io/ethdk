@@ -1962,3 +1962,17 @@ changes, which the builder slice may not make (refused); open for the cli owner.
 Suspect, not probed: `design ready` passed on the same tree that `check --part` fails, so the ready gate may read a
 cached or narrower render result. Verified: probe check in a scratch copy with the anchor scoping (ARROW-ANCHOR 0) and
 a debug line naming the panned child. Not verified: the overlap fix, a cli spec, a live Studio shot.
+
+As built (B182): `libs/cli/vitest.global-setup.ts` bundles `render-worker.ts` with esbuild once per run into the
+run's private temp root and passes its path in `ETHLETE_SPEC_RENDER_WORKER`; `vitest.setup.ts` points
+`packageFileOf('…/render-worker.js')` at it, so every cli spec config (default, dist, perf, proof) draws `ng()` parts
+from source without `dist/libs/cli`. The per-spec worker builds in `font-proof.spec.ts` and
+`ready-signal.proof.spec.ts` are gone. `real-part-render.dist.spec.ts` (cli-dist config, CI `cli:test-dist`) draws
+studio `components/update-dialog` and expects no RENDER issue and drawn states; without the setup it is red with 10
+"Cannot find module …/render-worker.js" RENDER issues (the 246 symptom, reproduced at bd6153d33). RENDER details
+keep the whole error: `renderErrorDetailOf` strips ANSI codes and joins every line with `-` for a part that fails to
+load (`render-check.ts`) and in the completeness sight (`complete.ts`); a spec loads a part with a syntax error and
+expects the parse error and its `file:line:col`, red when the detail is cut back to the first line, which reads
+only "Transform failed with 1 error:". Suspect, not probed: the post-B155 "Transform failed" (finding 270) was such a
+real transform error whose cause line the first-line cut dropped. Still on the shared dist: `@ethlete/components` and
+`@ethlete/core` come from `dist/libs/*` via `render.packages`, so the real-part spec stays in the dist config.
