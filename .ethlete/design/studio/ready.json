@@ -458,9 +458,9 @@
     },
     "actions": ["emit:rowPress"],
     "at": "2026-11-17T15:25:10.400Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3892904
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 294916
   },
   "components/update-dialog": {
     "hash": "8d059e5f2d962d06",
