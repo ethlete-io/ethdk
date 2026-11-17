@@ -1621,8 +1621,6 @@
       "emit:zoomReset",
       "open",
       "opens:command-palette",
-      "paused",
-      "paused-reason",
       "sketch-only-points",
       "sketch-only-points-open",
       "system-picker"

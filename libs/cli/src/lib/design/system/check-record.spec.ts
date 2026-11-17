@@ -17,6 +17,7 @@ const runners: Partial<SlowRunners> = {
   controlState: async () => [],
   droppedProps: async () => [],
   actionLost: async () => [],
+  pageStateInner: async () => [],
 };
 
 const staleChip = () => {

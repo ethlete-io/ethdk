@@ -119,6 +119,7 @@ describe('CONTRAST-PAIR in the slow set', { timeout: 30_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
+        pageStateInner: async () => [],
       },
     });
 

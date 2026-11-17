@@ -132,6 +132,7 @@ describe('the draw rules in the slow set', { timeout: 30_000 }, () => {
         controlState: async ({ parts }) => (parts?.includes('components/chip') ? [hit('section'), hit('product')] : []),
         droppedProps: async () => [],
         actionLost: async () => [],
+        pageStateInner: async () => [],
       },
     });
 

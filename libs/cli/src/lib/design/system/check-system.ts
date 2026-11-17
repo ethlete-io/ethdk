@@ -10,6 +10,7 @@ import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
 import { actionLostProblemsOf, declaredPartActionsOf } from './action-lost';
+import { pageStateInnerProblemsOf } from './rules/page-state-inner';
 import { refreshHarnessMap } from './harness-map';
 import { runningCliBuildLine, runningCliStaleWarning } from '../stale-cli-dist';
 import { capabilityPlaceOf } from './rules/capability-place';
@@ -1102,6 +1103,7 @@ const checkProductTail = async (
       ...(await droppedPropProblemsOf({ ...options, product: resolved })),
       ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
       ...(await contrastPairProblemsOf({ ...options, product: resolved })),
+      ...(await pageStateInnerProblemsOf({ ...options, product: resolved })),
       ...(await actionLostProblemsOf({
         ...options,
         product: resolved,

@@ -97,7 +97,6 @@ type Props = {
   camera: 'fit' | '100' | Camera;
   selected?: RowKey;
   status?: SketchStatus;
-  reason?: boolean;
   readyReason?: string;
   errored?: RowKey[];
   skips?: AddedSkips;
@@ -344,19 +343,14 @@ const controlsOf = async () => ({
 
 type Tags = Awaited<ReturnType<typeof controlsOf>>['tags'];
 
-const statusMarkup = (status: SketchStatus, reason: boolean, tags: Tags, readyReason?: string) => {
+const statusMarkup = (status: SketchStatus, tags: Tags, readyReason?: string) => {
   if (status === 'paused') {
-    return html`<span class="flex min-w-0 items-center gap-space-2">
-      ${holdTrigger({ content: tags.paused.body, open: reason, action: reason ? 'paused' : 'paused-reason' })}
-      <span
-        class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
-        data-sk-hold-reason
-        ${reason ? '' : 'hidden'}
-      >
-        <span class="font-ui-medium text-et-surface">Wartet auf ${HOLD.until}</span>
-        <span>·</span>${modelName(HOLD.by)}<span>· ${HOLD.since}</span>
-      </span>
-    </span>`;
+    return holdTrigger({
+      content: tags.paused.body,
+      open: false,
+      reason: html`<span class="font-ui-medium text-et-surface">Wartet auf ${HOLD.until}</span>
+        <span>·</span>${modelName(HOLD.by)}<span>· ${HOLD.since}</span>`,
+    });
   }
   if (status === 'failed') {
     return html`<span class="flex min-w-0 items-center gap-space-2"
@@ -847,7 +841,6 @@ export default definePart<Props>({
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
     drawing: { camera: 'fit', status: 'drawing' },
     paused: { camera: 'fit', status: 'paused' },
-    'paused-reason': { camera: 'fit', status: 'paused', reason: true },
     'not-ready': { camera: 'fit', status: 'not-ready', readyReason: NOT_READY_REASON },
     'not-ready-unknown': { camera: 'fit', status: 'not-ready' },
     failed: { camera: 'fit', status: 'failed', errored: ['b'], readyReason: FAILED_REASON },
@@ -913,8 +906,6 @@ export default definePart<Props>({
       'The sketch zoomed to 60 % and panned with variant a selected; check that the row heads stay pinned at the left edge, opaque over the cells.',
     drawing: 'A variant still drawing; check the zeichnet badge in the header and that Übernehmen is missing.',
     paused: 'A paused sketch; check the Pausiert badge in the header.',
-    'paused-reason':
-      'A paused sketch with its reason open; check the reason beside the Pausiert trigger, on one line with it.',
     'not-ready':
       'A sketch that failed sketch ready; check Noch nicht bereit with the first line of its rejection and that Übernehmen is missing.',
     'not-ready-unknown':
@@ -1002,7 +993,6 @@ export default definePart<Props>({
     camera,
     selected,
     status = 'waiting',
-    reason = false,
     readyReason,
     errored = [],
     skips = {},
@@ -1107,7 +1097,7 @@ export default definePart<Props>({
       >
         <span class="text-ui-lg font-ui-strong">${multi ? MULTI_PART.title : screen ? SCREEN_KEY : part.key}</span>
         ${fresh ? tags.fresh.body : ''}
-        ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, reason, tags, readyReason)}
+        ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, tags, readyReason)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${

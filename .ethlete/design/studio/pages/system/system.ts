@@ -306,12 +306,6 @@ export default definePart<{
       commentMode: true,
       draft: TYPED,
     },
-    'send-busy': {
-      closed: true,
-      commentMode: true,
-      draft: TYPED,
-      send: 'busy',
-    },
     'send-error': {
       closed: true,
       commentMode: true,
@@ -359,7 +353,6 @@ export default definePart<{
     'comment-mode': 'Comment mode on; check the pressed Kommentar toggle and the crosshair over the frame.',
     'comment-draft': 'An empty comment draft; check the text field, Abbrechen and Senden at the clicked point.',
     'comment-draft-typed': 'A typed comment draft; check that the text wraps inside the field and Senden is enabled.',
-    'send-busy': 'A comment being sent; check that the field and Abbrechen are disabled and Senden shows a spinner.',
     'send-error': 'A failed send; check the retry line under the field, the kept text and Erneut senden.',
     'send-rejected':
       'A send the server refused; check its reason under the field and that Senden stays without a retry.',

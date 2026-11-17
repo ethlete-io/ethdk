@@ -150,8 +150,8 @@
       "id": "sketch-paused-reason",
       "label": "Pausengrund zeigen",
       "place": {
-        "part": "pages/sketches",
-        "action": "paused-reason"
+        "part": "components/hold-trigger",
+        "action": "emit:openChange"
       },
       "confirmed": true
     },

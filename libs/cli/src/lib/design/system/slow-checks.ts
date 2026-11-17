@@ -8,6 +8,7 @@ import {
   CONTRAST_PAIR_RULE,
   CONTROL_STATE_RULE,
   DROPPED_PROP_RULE,
+  PAGE_STATE_INNER_RULE,
   SDK_ERROR_RULE,
   SlowProblemsOf,
   STATE_NO_SOURCE_RULE,
@@ -23,6 +24,7 @@ import { APP_SPEC_RULE } from './rules/app-spec';
 import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
 import { unbaselinedProblemsOf } from './rule-baseline';
 import { appSourcesOf } from './rules/implemented-components';
+import { checksPageStates } from './rules/page-state-inner';
 import { partLinkOf } from './sketch/part-definition';
 
 export const PRODUCT_PART = '(product)';
@@ -35,6 +37,7 @@ export const isDrawRule = (rule: string) =>
     STATE_UNDESIGNED_RULE,
     ACTION_LOST_RULE,
     CONTRAST_PAIR_RULE,
+    PAGE_STATE_INNER_RULE,
   ].includes(rule);
 
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
@@ -188,6 +191,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const rules = [
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
     ...(measuresContrastPairs(part) ? [CONTRAST_PAIR_RULE] : []),
+    ...(checksPageStates(part) ? [PAGE_STATE_INNER_RULE] : []),
     ...(own && linked !== null && existsSync(resolve(root, linked))
       ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE]
       : []),

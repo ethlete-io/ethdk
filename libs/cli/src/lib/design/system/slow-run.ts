@@ -2,6 +2,7 @@ import { exhaustMap, from, interval } from 'rxjs';
 import { relative, resolve } from 'path';
 import { DesignConfig } from '../design-config';
 import { actionLostProblemsOf } from './action-lost';
+import { pageStateInnerProblemsOf } from './rules/page-state-inner';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { contrastPairProblemsOf } from './contrast-pairs';
 import {
@@ -10,6 +11,7 @@ import {
   CONTRAST_PAIR_RULE,
   CONTROL_STATE_RULE,
   DROPPED_PROP_RULE,
+  PAGE_STATE_INNER_RULE,
   SDK_ERROR_RULE,
 } from './build-ready-contract';
 import { shootStates, ShootStates } from './compare-command';
@@ -62,6 +64,7 @@ export type SlowRunners = {
   droppedProps: typeof droppedPropProblemsOf;
   pageProps: typeof pagePropTakerOf;
   actionLost: typeof actionLostProblemsOf;
+  pageStateInner: typeof pageStateInnerProblemsOf;
 };
 
 const defaultRunners: SlowRunners = {
@@ -78,6 +81,7 @@ const defaultRunners: SlowRunners = {
   droppedProps: droppedPropProblemsOf,
   pageProps: pagePropTakerOf,
   actionLost: actionLostProblemsOf,
+  pageStateInner: pageStateInnerProblemsOf,
 };
 
 const merge = (into: Map<string, Problem[]>, from: Map<string, Problem[]>) => {
@@ -193,6 +197,12 @@ export const runSlowChecks = async (options: {
 
   if (ruled(DROPPED_PROP_RULE).length > 0)
     merge(results, byPart(await runners.droppedProps({ target, config, product, parts: ruled(DROPPED_PROP_RULE) })));
+
+  if (ruled(PAGE_STATE_INNER_RULE).length > 0)
+    merge(
+      results,
+      byPart(await runners.pageStateInner({ target, config, product, parts: ruled(PAGE_STATE_INNER_RULE) })),
+    );
 
   if (inputs[PRODUCT_PART]?.rules.includes(ACTION_LOST_RULE)) {
     const lost = await runners.actionLost({

@@ -12,6 +12,7 @@ const spies = vi.hoisted(() => ({
   bespoke: vi.fn(async () => []),
   dropped: vi.fn(async () => []),
   actionLost: vi.fn(async () => []),
+  pageStateInner: vi.fn(async () => []),
   render: vi.fn(async () => ({ unavailable: 'no Chromium in this spec' })),
 }));
 
@@ -36,6 +37,10 @@ vi.mock('./action-lost', async (actual) => ({
   ...(await actual<typeof import('./action-lost')>()),
   actionLostProblemsOf: spies.actionLost,
 }));
+vi.mock('./rules/page-state-inner', async (actual) => ({
+  ...(await actual<typeof import('./rules/page-state-inner')>()),
+  pageStateInnerProblemsOf: spies.pageStateInner,
+}));
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-check-warm-'));
@@ -46,7 +51,7 @@ const acme = () => {
 };
 
 const drawsOf = () =>
-  [spies.render, spies.bespoke, spies.dropped, spies.actionLost].map(
+  [spies.render, spies.bespoke, spies.dropped, spies.actionLost, spies.pageStateInner].map(
     (step) => (step.mock.calls.at(-1) as unknown as [{ warm?: WarmDraw }] | undefined)?.[0].warm,
   );
 

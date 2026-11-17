@@ -72,6 +72,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
+        pageStateInner: async () => [],
       },
       record: (request) =>
         recordSettledBuildReady({ ...request, actionsOf: async () => [], declaredActionsOf: async () => ['open'] }),
@@ -110,6 +111,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
+        pageStateInner: async () => [],
       },
       record: (request) =>
         recordSettledBuildReady({ ...request, actionsOf: async () => [], declaredActionsOf: async () => ['open'] }),
@@ -141,7 +143,12 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       configOf: () => config,
       log: () => undefined,
       intervalMs: 3_600_000,
-      runners: { controlState: async () => [], droppedProps: async () => [], actionLost: async () => [] },
+      runners: {
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        pageStateInner: async () => [],
+      },
     });
 
     await runner.poll();
@@ -163,7 +170,12 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       configOf: () => bare,
       log: () => undefined,
       intervalMs: 3_600_000,
-      runners: { controlState: async () => [], droppedProps: async () => [], actionLost: async () => [] },
+      runners: {
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        pageStateInner: async () => [],
+      },
     });
 
     await runner.poll();

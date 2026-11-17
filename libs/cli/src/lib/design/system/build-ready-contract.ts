@@ -40,5 +40,7 @@ export const ACTION_LOST_RULE = 'ACTION-LOST';
 
 export const CONTRAST_PAIR_RULE = 'CONTRAST-PAIR';
 
+export const PAGE_STATE_INNER_RULE = 'PAGE-STATE-INNER';
+
 export const blockerKindOfRule = (rule: string): BlockerKind =>
   rule === COMPARE_RULE ? 'compare' : rule === SDK_ERROR_RULE ? 'sdk-error' : 'problem';
