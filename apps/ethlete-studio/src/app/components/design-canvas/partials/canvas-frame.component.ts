@@ -54,7 +54,7 @@ import {
   withScheme,
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
-import { FrameLoad, designServerBack$, failedLoadReason$, frameLoad$ } from '../frame-paint';
+import { FRAME_UNREPORTED_PAINT_MS, FrameLoad, designServerBack$, failedLoadReason$, frameLoad$ } from '../frame-paint';
 import { STUDIO_LABELS } from '../../../i18n/studio-labels';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameBorderComponent } from './canvas-frame-border.component';
@@ -354,6 +354,7 @@ export class CanvasFrameComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private sanitizer = inject(DomSanitizer);
   private queue = injectFrameRenderQueue();
+  private unreportedPaintMs = inject(FRAME_UNREPORTED_PAINT_MS);
   private host = injectHostElement();
 
   private renderer = injectRenderer();
@@ -382,11 +383,7 @@ export class CanvasFrameComponent {
   protected readonly LABELS = STUDIO_LABELS.canvas;
 
   protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
-  public bordered = computed(
-    () =>
-      this.selected() ||
-      (this.frame().empty === undefined && (this.frame().width !== undefined || this.frame().grid !== undefined)),
-  );
+  public bordered = computed(() => this.selected() || this.frame().empty === undefined);
 
   protected copies = computed(() => schemeCopiesOf(this.frame(), { width: this.width(), height: this.height() }));
 
@@ -539,7 +536,7 @@ export class CanvasFrameComponent {
 
           let retried = false;
 
-          return frameLoad$(iframe).pipe(
+          return frameLoad$(iframe, this.unreportedPaintMs).pipe(
             switchMap((load) => {
               const retry = load === 'failed' && !retried;
 

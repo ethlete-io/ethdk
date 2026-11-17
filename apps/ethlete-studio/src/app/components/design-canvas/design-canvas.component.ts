@@ -10,6 +10,7 @@ import {
   inject,
   input,
   linkedSignal,
+  model,
   output,
   signal,
   untracked,
@@ -305,6 +306,10 @@ export class DesignCanvasComponent {
   /** Where the projected `[canvasDraft]` content sits, on a frame; `null` hides it. */
   public draft = input<FramePoint | null>(null);
 
+  public selectedId = model<string | null>(null);
+
+  public activeId = model<string | null>(null);
+
   public pointPick = output<FramePoint>();
 
   /** The camera after the user moved it and it came to rest; `null` after a fit, so a reload fits again. */
@@ -323,10 +328,9 @@ export class DesignCanvasComponent {
 
   /** Frames the page projects into the world instead of `frames`, each marked with `ethleteCanvasFrame`. */
   private projected = contentChildren(CanvasFrameDirective, { descendants: true });
-
   private shellInsetProbe = viewChild.required<ElementRef<HTMLElement>>('shellInsetProbe');
-
   private world = viewChild.required<ElementRef<HTMLElement>>('world');
+
   private keyShown = linkedSignal<string | null, { seen: boolean; switched: boolean }>({
     source: this.cameraKey,
     computation: (key, previous) => ({
@@ -334,9 +338,9 @@ export class DesignCanvasComponent {
       switched: key !== null && !!previous?.value.seen,
     }),
   });
+
   /** `high` after a switch to another key, so the pictures of the frames switched to all load at once; the first view keeps the browser's own order. */
   public shotPriority = computed(() => (this.keyShown().switched ? 'high' : null));
-
   public projectedRects = signal<Rect[]>([], {
     equal: (a, b) =>
       a.length === b.length &&
@@ -352,7 +356,6 @@ export class DesignCanvasComponent {
         );
       }),
   });
-
   private selectedProjected = signal<CanvasFrameDirective | null>(null);
   private projectedWorld = signal<Rect>(
     { x: 0, y: 0, width: 0, height: 0 },
@@ -361,12 +364,10 @@ export class DesignCanvasComponent {
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
-  public selectedId = signal<string | null>(null);
   public selectedCellId = linkedSignal<string | null, string | null>({
     source: this.selectedId,
     computation: () => null,
   });
-  public activeId = signal<string | null>(null);
   protected spaceHeld = signal(false);
   protected panning = signal(false);
   private wheel$ = new Subject<void>();

@@ -1,3 +1,4 @@
+import { InjectionToken } from '@angular/core';
 import {
   Observable,
   catchError,
@@ -18,9 +19,15 @@ import {
   timer,
 } from 'rxjs';
 import { DESIGN_STAMP_PATH } from '../../../host/design-server-pid';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { FrameMessage, frameMessageOf } from './canvas-frame';
 
 export const UNREPORTED_PAINT_MS = 1000;
+
+/** How long after its load event a frame page that sent no message counts as failed. */
+export const FRAME_UNREPORTED_PAINT_MS = new InjectionToken<number>('FRAME_UNREPORTED_PAINT_MS', {
+  factory: () => UNREPORTED_PAINT_MS,
+});
 
 export const SERVER_BACK_POLL_MS = 1000;
 
@@ -56,7 +63,7 @@ const nextPaint$ = (view: Window) =>
     return () => view.cancelAnimationFrame(frame);
   });
 
-export const frameLoad$ = (iframe: HTMLIFrameElement): Observable<FrameLoad> => {
+export const frameLoad$ = (iframe: HTMLIFrameElement, unreportedMs = UNREPORTED_PAINT_MS): Observable<FrameLoad> => {
   const host = iframe.ownerDocument.defaultView;
 
   if (!host) return of('painted');
@@ -70,7 +77,7 @@ export const frameLoad$ = (iframe: HTMLIFrameElement): Observable<FrameLoad> => 
     ),
   );
   const fallback$ = fromEvent(iframe, 'load').pipe(
-    switchMap(() => timer(UNREPORTED_PAINT_MS)),
+    switchMap(() => timer(unreportedMs)),
     map((): PaintEvent => ({ type: 'fallback' })),
   );
 
@@ -99,9 +106,8 @@ export const failedLoadReason$ = (src: string): Observable<string> => {
         ? 'The page loaded but sent no frame message.'
         : `The design server answered ${response.status} ${response.statusText}`.trim() + '.',
     ),
-    catchError((error: unknown) =>
-      of(`Nothing answers at ${url.host}, the design server may be restarting (${String(error)}).`),
-    ),
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- a refused fetch is the reason the banner names
+    catchError(() => of(STUDIO_LABELS.canvas.unanswered)),
   );
 };
 

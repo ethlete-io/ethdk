@@ -163,9 +163,7 @@ describe('CanvasFrameComponent failed page load', () => {
     await flush();
 
     expect(visible()).toEqual([iframes()[0]]);
-    expect(host().querySelector('[data-frame-failed]')?.textContent).toContain(
-      'Nothing answers at localhost:4402, the design server may be restarting',
-    );
+    expect(host().querySelector('[data-frame-failed]')?.textContent).toContain('Der Design-Server antwortet nicht.');
     expect(host().querySelector('[data-frame-failed]')?.textContent).toContain('Laden fehlgeschlagen.');
     expect(host().querySelector('[data-frame-reload]')?.textContent?.trim()).toBe('Neu laden');
     expect(host().querySelector('[data-frame-failed]')?.closest('[data-et-projected]')).toBeNull();

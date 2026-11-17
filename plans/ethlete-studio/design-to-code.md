@@ -3662,3 +3662,12 @@ selected and active as the 2 px primary outline. Labels in `STUDIO_LABELS.canvas
 lint, typecheck; `design check` keeps 1 finding, UNRECORDED (the open edit sketch). Not verified: compare - the harness still gives the design canvas
 no frames, so default/out/reset/in/fit DIFF (design frame vs empty app canvas), the four marks fail "prop mark has no
 input", rounds/round-folded have no button to hover. Half 2: harness samples with real frames and marks, round heads.
+
+In progress (B233 half 2a, 2026-11-17): the harness gives the design canvas one real frame per state (a data page that
+reports 942 x 221 and paints, or posts `loading`; a refused page for the failure; a transparent SVG shot of the size),
+`selectedId`/`activeId` of the design canvas are models the harness sets from `mark`, and the harness mounts the part
+with `FRAME_UNREPORTED_PAINT_MS` 0 (`DESIGN_HARNESS_PROVIDERS`). Every non-empty frame now draws its hairline edge (the
+design draws it on fitted frames too); the unanswered reason is `STUDIO_LABELS.canvas.unanswered`. Open: load-failed
+still shows Lädt in the shot (Suspect: the refused page fires `load` within ~3 ms, before `frameLoad$` subscribes);
+rounds/round-folded (round bodies need a sized `slot('frame')`, the app heads laid out like the design); the open edit
+sketch `elements/canvas-frames@edit`.

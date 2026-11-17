@@ -1,4 +1,5 @@
-import { Type } from '@angular/core';
+import { StaticProvider, Type } from '@angular/core';
+import { FRAME_UNREPORTED_PAINT_MS } from '../components/design-canvas/frame-paint';
 import {
   AGENT_ON_READY_PART_SAMPLE,
   AGENT_SAMPLES,
@@ -93,6 +94,28 @@ const SKETCH_PART_SAMPLES: Record<string, { rows: SketchRow[]; looks: Record<str
   edit: SKETCH_EDIT_SAMPLE,
 };
 
+type FrameSize = { width: number; height: number };
+
+const framePageOf = (message: 'painted' | 'loading', { width, height }: FrameSize) =>
+  `data:text/html,<script>parent.postMessage({ type: 'design-explore:height', height: ${height}, width: ${width} }, '*');parent.postMessage({ type: 'design-explore:${message}' }, '*')</script>`;
+
+const frameShotOf = ({ width, height }: FrameSize) =>
+  `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"/>`;
+
+const GRID_FRAME_SIZE = { width: 942, height: 221 };
+
+const LOADING_FRAME_SIZE = { width: 560, height: 288 };
+
+const REFUSED_PAGE = 'http://127.0.0.1:9/';
+
+const CANVAS_FRAME_SOURCES = {
+  rest: { src: framePageOf('painted', GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
+  selected: { src: framePageOf('painted', GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
+  active: { src: framePageOf('painted', GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
+  loading: { src: framePageOf('loading', LOADING_FRAME_SIZE), screenshot: frameShotOf(LOADING_FRAME_SIZE) },
+  failed: { src: REFUSED_PAGE, screenshot: frameShotOf(GRID_FRAME_SIZE) },
+};
+
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
   'components/comment-pin': ({ class: extra, ...props }) => ({
@@ -103,12 +126,21 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
-  'elements/canvas-frames': ({ zoom, class: extra, ...props }) => ({
-    ...props,
-    class: `${typeof extra === 'string' ? extra : ''} min-h-120`,
-    cameraKey: 'elements/canvas-frames',
-    restoredCamera: { x: 0, y: 0, zoom: parseFloat(String(zoom ?? '100%')) / 100 },
-  }),
+  'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads: _heads, ...props }) => {
+    const scale = parseFloat(String(zoom ?? '100%')) / 100;
+    const id = String(part);
+    const kind = (mark ?? 'rest') as keyof typeof CANVAS_FRAME_SOURCES;
+
+    return {
+      ...props,
+      class: `${typeof extra === 'string' ? extra : ''} min-h-120`,
+      frames: [{ id, label: id, ...CANVAS_FRAME_SOURCES[kind] }],
+      selectedId: mark === 'selected' || mark === 'active' ? id : null,
+      activeId: mark === 'active' ? id : null,
+      cameraKey: 'elements/canvas-frames',
+      restoredCamera: { x: 40 * scale, y: 48 * scale, zoom: scale },
+    };
+  },
   'pages/sketches': ({
     part,
     same,
@@ -203,4 +235,9 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
 export const DESIGN_HARNESS_TEMPLATES: Record<string, Type<{ templates: () => Record<string, unknown> }>> = {
   'pages/sketches': DesignHarnessSketchShotsComponent,
   'pages/system': DesignHarnessSystemShotsComponent,
+};
+
+/** Providers the harness mounts a part with, beside its own. */
+export const DESIGN_HARNESS_PROVIDERS: Record<string, StaticProvider[]> = {
+  'elements/canvas-frames': [{ provide: FRAME_UNREPORTED_PAINT_MS, useValue: 0 }],
 };

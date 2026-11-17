@@ -641,7 +641,7 @@ describe('DesignCanvasComponent', () => {
     expect(wide?.hasAttribute('data-fitted')).toBe(false);
   });
 
-  it('draws the border of a frame above its content, and only where the frame has one', async () => {
+  it('draws the border of every frame but an empty one above its content', async () => {
     const fixture = await render([
       FITTED,
       { ...FITTED, id: 'wide', width: 320, height: 200 },
@@ -655,15 +655,15 @@ describe('DesignCanvasComponent', () => {
 
     const [fitted, wide, empty] = frames();
 
-    expect(border(fitted)).toBeNull();
+    expect(fitted?.lastElementChild?.hasAttribute('data-frame-border')).toBe(true);
     expect(border(empty)).toBeNull();
     expect(wide?.lastElementChild?.hasAttribute('data-frame-border')).toBe(true);
     expect(border(wide)?.classList).toContain('pointer-events-none');
 
-    fixture.componentInstance.selectedId.set('default');
+    fixture.componentInstance.selectedId.set('empty');
     await fixture.whenStable();
 
-    expect(frames()[0]?.lastElementChild?.hasAttribute('data-frame-border')).toBe(true);
+    expect(frames()[2]?.lastElementChild?.hasAttribute('data-frame-border')).toBe(true);
   });
 
   it('sets the text of an empty frame in its own line height, so wrapped lines stay apart at any zoom', async () => {

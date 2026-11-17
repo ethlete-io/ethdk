@@ -62,6 +62,7 @@ export const STUDIO_LABELS = {
     label: 'Design Canvas',
     loading: 'Lädt',
     loadFailed: 'Laden fehlgeschlagen.',
+    unanswered: 'Der Design-Server antwortet nicht.',
     reload: 'Neu laden',
   },
   titleBar: {

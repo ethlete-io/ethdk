@@ -46,6 +46,7 @@ vi.mock('./design-harness-parts', () => ({
 
 vi.mock('./design-harness-samples', () => ({
   DESIGN_HARNESS_SAMPLES: {},
+  DESIGN_HARNESS_PROVIDERS: {},
   get DESIGN_HARNESS_TEMPLATES() {
     return { 'pages/frame': FakeFrameShotsComponent };
   },

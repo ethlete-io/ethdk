@@ -23,7 +23,7 @@ import { injectRenderer } from '@ethlete/core';
 import { catchError, from, map, Observable, of, tap } from 'rxjs';
 import { WINDOW_CHROME, WindowChrome } from '../../host/window';
 import { DESIGN_HARNESS_PARTS } from './design-harness-parts';
-import { DESIGN_HARNESS_SAMPLES, DESIGN_HARNESS_TEMPLATES } from './design-harness-samples';
+import { DESIGN_HARNESS_PROVIDERS, DESIGN_HARNESS_SAMPLES, DESIGN_HARNESS_TEMPLATES } from './design-harness-samples';
 
 /** Each output a mounted part emits, in order, for `et design actions` to read. */
 export type HarnessEmits = { output: string; value: unknown }[];
@@ -111,6 +111,7 @@ export class DesignHarnessComponent {
               useValue: { close: () => undefined, busy: signal(false) } as unknown as OverlayRef,
             },
             { provide: WINDOW_CHROME, useValue: signal(LINUX_CHROME).asReadonly() },
+            ...((Object.hasOwn(DESIGN_HARNESS_PROVIDERS, state.part) && DESIGN_HARNESS_PROVIDERS[state.part]) || []),
           ],
         });
         const ref = outlet.createComponent(state.component, { injector });

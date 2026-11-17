@@ -179,7 +179,7 @@ describe('failedLoadReason$', () => {
     });
 
     expect(await reasonOf('http://localhost:4402/frame.html?product=a')).toContain(
-      'Nothing answers at localhost:4402, the design server may be restarting',
+      'Der Design-Server antwortet nicht.',
     );
   });
 
