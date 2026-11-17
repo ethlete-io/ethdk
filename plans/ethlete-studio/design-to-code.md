@@ -2596,6 +2596,10 @@ change-crop-whole DIFF 35643 px: the design draws mock screens with zoom chips i
 stand-in, and the reason reads "3 Zellen" in the design but "3 Stellen" in the app. Not verified: compare of
 pages/system listing-error, the per-part checks (--part pages/sketches, pages/system), CI.
 
+B485 closed (Linux builder, 2026-11-17): `design compare pages/system --product studio --state listing-error`
+prints `listing-error ok`; `design check pages/system --product studio` names no listing-error problem, only the known
+STATE-NO-SOURCE x3 (comments, B233) and UNRECORDED. Not verified: a live shot of a real failed listing in the app.
+
 B500 P5 red, as built (Linux builder subagent, 2026-11-13): Cause (probe): no `design check` path wrote the files; the
 design server's own slow runner did. Each `ready.json` entry carries the writer's pid, and every entry the earlier
 probe and three new ones changed carries the pid of the `yarn design` serve (3659499) and `"by": "et design check"`,
