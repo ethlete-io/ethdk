@@ -90,7 +90,7 @@
     "components/tree-row": "72601799f8079cf2",
     "components/update-dialog": "011b380413e2a556",
     "components/zoom-chip": "09ffd17403d466bc",
-    "elements/canvas-frames": "3a487354d74113f2",
+    "elements/canvas-frames": "75b3a02b0cdb15ab",
     "elements/part-tree": "b487e67aac3e89a5",
     "elements/shell-main": "7622e2366ba3215f",
     "elements/studio-menu": "251ee1f3be48f068",
@@ -98,12 +98,12 @@
     "pages/flows": "df04c02df74ca95e",
     "pages/inbox": "1c2fbca619ee339d",
     "pages/inventory": "a7e25b0248e81b20",
-    "pages/sketches": "f0d7be7f8d8aaf9a",
+    "pages/sketches": "f8c13a8d2c227e03",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "7c722d00c70b6cbc",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "80e12a12c07eca989fede78ede735f6e2f8da1cf",
+  "baselineTree": "6c33fa5d837e915bfa2d92a040acfaae6ebccd9b",
   "sharedBase": {
     "pages/inbox/shared/inbox.css": "fb26873e34ae1883",
     "pages/inbox/shared/inbox.ts": "e30b6071abd718a0"
