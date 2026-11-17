@@ -484,10 +484,10 @@
     "pid": 1262332
   },
   "components/sketch-status-badge": {
-    "hash": "e7d2e55ebfbfed4f",
+    "hash": "8d92cc1b5fcf2eb9",
     "files": {
-      ".ethlete/design/sdk/components/badge/badge.css": "2f043e0bb1464598",
-      ".ethlete/design/sdk/components/badge/badge.ts": "13a2912102e58329",
+      ".ethlete/design/sdk/components/badge/badge.css": "1d9a7aa65576198e",
+      ".ethlete/design/sdk/components/badge/badge.ts": "fbe9ef7b5ad265a4",
       ".ethlete/design/studio/components/sketch-status-badge/sketch-status-badge.ts": "7319b864a173a812",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
@@ -497,10 +497,10 @@
       "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b"
     },
     "actions": [],
-    "at": "2026-11-17T13:28:36.120Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 70002
+    "at": "2026-11-17T22:38:10.005Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 3891517
   },
   "components/title-bar": {
     "hash": "ea710725e941e854",
