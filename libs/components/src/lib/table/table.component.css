@@ -48,7 +48,10 @@
     /* The opaque paint behind the two bars rows pass under: the sticky header row and the footer bar.
        Both read it, so an app that recolours one cannot leave the other behind. */
     --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background-solid, Canvas));
-    --_et-table-header-border: var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    --_et-table-header-border: var(
+      --et-table-header-border-color,
+      var(--et-surface-border-solid, rgb(128 128 128 / 0.3))
+    );
     --_et-table-row-divider: transparent;
     /* The box of a header adornment (a filter trigger, a column menu trigger), read both by the button
        itself and by the height the header row reserves for it. */
@@ -201,7 +204,7 @@
   }
 
   .et-table-host:where([data-appearance='bare']) {
-    --_et-table-header-border: transparent;
+    --_et-table-header-border: var(--et-table-header-border-color, transparent);
   }
 
   /* Cards: every row is a box of its own (see `.et-table-row--box`), painted one surface elevation above

@@ -2279,11 +2279,17 @@ it, so recolouring one cannot leave the other behind. Reach for it where the app
 own band is too close to the surface under it to read as a header: `cards` on a near-black
 page, for one, where the band and the page are the same near-black.
 
+`--et-table-header-border-color` colours the 1px rule under the header row, and under the group
+header tier when there is one. It defaults to `--et-surface-border-solid` (`transparent` in `bare`)
+and wins over every appearance, so `--et-table-header-border-color: transparent` drops the rule from
+`cards` or any other appearance.
+
 These knobs cover what apps restyle most:
 
 | Property                           | Default                          | Sets                                                                                                                  |
 | ---------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `--et-table-header-color`          | `--et-surface-color-muted-solid` | The header labels' ink.                                                                                               |
+| `--et-table-header-border-color`   | `--et-surface-border-solid`      | The rule under the header row and the group header tier. `transparent` drops it.                                      |
 | `--et-table-header-font-size`      | inherited                        | The header labels' font size.                                                                                         |
 | `--et-table-header-font-weight`    | `600`                            | The header labels' weight.                                                                                            |
 | `--et-table-header-line-height`    | inherited                        | The header labels' line height.                                                                                       |
