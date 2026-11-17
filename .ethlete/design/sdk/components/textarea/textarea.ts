@@ -20,6 +20,12 @@ const INVALID = {
   errorColor: 'danger',
 } satisfies Partial<TextareaFieldMockOptions>;
 
+const markControl = (markup: string) =>
+  markup
+    .replace('<et-form-field ', '<et-form-field data-et-control="textarea" ')
+    .replace('<div class="et-form-field-control-frame"', '$& data-et-control-part')
+    .replace('<textarea ', '<textarea data-et-control-part ');
+
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
@@ -86,12 +92,34 @@ export default definePart({
     'size-lg': 'The filled textarea at size lg; check that padding and text grow together.',
   },
   widths: [320, 360, 640],
+  controls: {
+    textarea: { kind: 'field', part: 'components/form-field', disabled: true },
+  },
+  motions: {
+    'hover-in': { from: 'empty', to: 'hover' },
+    'hover-out': { from: 'hover', to: 'empty' },
+    'hover-in-filled': { from: 'filled', to: 'hover-filled' },
+    'hover-out-filled': { from: 'hover-filled', to: 'filled' },
+    'hover-in-invalid': { from: 'invalid', to: 'invalid-hover' },
+    'hover-out-invalid': { from: 'invalid-hover', to: 'invalid' },
+    disable: { from: 'empty', to: 'disabled' },
+    enable: { from: 'disabled', to: 'empty' },
+    'disable-hovered': { from: 'hover', to: 'disabled' },
+    'enable-hovered': { from: 'disabled', to: 'hover' },
+    'disable-filled': { from: 'filled', to: 'disabled-filled' },
+    'enable-filled': { from: 'disabled-filled', to: 'filled' },
+    'disable-hovered-filled': { from: 'hover-filled', to: 'disabled-filled' },
+    'enable-hovered-filled': { from: 'disabled-filled', to: 'hover-filled' },
+  },
   frame: (body, props) => `<div class="t-frame ${props.scrolled ? 't-scrolled' : ''}">${body}</div>`,
   render: (props: Props) =>
     drawing({
       body: props.scrolled
-        ? textareaField(props.field).replace('<div class="et-form-field-control-frame"', '$& data-et-skip="CLIPPED"')
-        : textareaField(props.field),
+        ? markControl(textareaField(props.field)).replace(
+            '<div class="et-form-field-control-frame"',
+            '$& data-et-skip="CLIPPED"',
+          )
+        : markControl(textareaField(props.field)),
       styles: [textareaFieldStyles, frame].join('\n'),
     }),
 });

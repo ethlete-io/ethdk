@@ -51,8 +51,6 @@
     "components/stream missing-motion": 9,
     "components/table missing-motion": 20,
     "components/table missing-state": 1,
-    "components/textarea missing-motion": 14,
-    "components/textarea missing-state": 1,
     "components/timeline missing-state": 1,
     "components/toolbar missing-motion": 12,
     "components/tooltip missing-state": 1
@@ -109,8 +107,6 @@
     "components/stream missing-motion": 9,
     "components/table missing-motion": 20,
     "components/table missing-state": 1,
-    "components/textarea missing-motion": 14,
-    "components/textarea missing-state": 1,
     "components/timeline missing-state": 1,
     "components/toolbar missing-motion": 12,
     "components/tooltip missing-state": 1
