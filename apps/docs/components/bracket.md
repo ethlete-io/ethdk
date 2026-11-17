@@ -338,6 +338,7 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `roundHeaderLevel`        | `3`          | `aria-level` the default round headers announce themselves at.                                                             |
 | `showSectionTitles`       | `false`      | Title the parts of a double elimination - see [Section titles](#section-titles).                                           |
 | `sectionTitleHeight`      | `40`         | Height of the section title band.                                                                                          |
+| `finalAlignment`          | `'upper'`    | Where a double elimination draws its finals - see [Final alignment](#final-alignment).                                     |
 
 ### The final's own column
 
@@ -621,6 +622,28 @@ export class SectionTitleComponent {
 With titles on and no title card registered, the bracket throws [`ET3414`](#error-codes).
 
 @example bracket/bracket-section-titles 560px
+
+### Final alignment
+
+By default the grand final and the bracket reset sit level with the upper bracket final. Set
+`finalAlignment` to `'center'` to draw them halfway down instead: each final card's centre lands on the
+midpoint between the centres of the upper bracket final and the lower bracket final, and both feeder lines
+bend into it.
+
+```html
+<et-bracket [source]="source" finalAlignment="center" />
+```
+
+| Input / config key | Default   | Purpose                                                                |
+| ------------------ | --------- | ---------------------------------------------------------------------- |
+| `finalAlignment`   | `'upper'` | `'upper'` (`BRACKET_FINAL_ALIGNMENT.UPPER`) or `'center'` (`.CENTER`). |
+
+Only the final cards move. Their round headers and the finals [section title](#section-titles) stay in the
+row above, with the other rounds' headers and titles. A third-place playoff below the final stays where it
+is, and a centred final stops one `rowGap` above it rather than overlap it. Only the left-to-right double
+elimination layout reads the setting.
+
+@example bracket/bracket-centered-final 520px
 
 ## Swiss
 

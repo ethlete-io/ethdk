@@ -15,7 +15,9 @@ import { BracketParticipantsComponent } from '../bracket-participants.component'
 import { BRACKET_ROUND_HEADER_ALIGN, BracketRoundHeaderAlign, provideBracketConfig } from '../bracket.config';
 import {
   BRACKET_DATA_LAYOUT,
+  BRACKET_FINAL_ALIGNMENT,
   BracketDataLayout,
+  BracketFinalAlignment,
   BracketMatch,
   BracketRound,
   BracketGridSection,
@@ -302,6 +304,7 @@ export class StorybookBracketDensityComponent {
         [finalRoundHeaderGap]="finalRoundHeaderGap()"
         [showSectionTitles]="showSectionTitles()"
         [sectionTitleComponent]="customSectionTitle() ? SECTION_TITLE_COMPONENT : undefined"
+        [finalAlignment]="finalAlignment()"
       />
     </et-scrollable>
   `,
@@ -355,6 +358,7 @@ export class StorybookBracketComponent {
 
   public showSectionTitles = input(false, { transform: booleanAttribute });
   public customSectionTitle = input(false, { transform: booleanAttribute });
+  public finalAlignment = input<BracketFinalAlignment>(BRACKET_FINAL_ALIGNMENT.UPPER);
 
   /** Render the participants legend that pins a journey - the focus-mode demo. */
   public withParticipantList = input(false, { transform: booleanAttribute });

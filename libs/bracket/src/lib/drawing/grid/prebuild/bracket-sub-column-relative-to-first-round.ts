@@ -23,6 +23,8 @@ export type CreateRoundBracketSubColumnRelativeToFirstRoundConfig<TRoundData, TM
    */
   bottomPadding?: number;
 
+  topPadding?: number;
+
   /**
    * How many first-round rows each of this round's matches owns. Derived from the round's own match
    * count when unset; a folded round is placed by its offset instead and takes `1`.
@@ -71,6 +73,15 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
         elementHeight: roundHeaderGap,
       },
     );
+  }
+
+  if (config.topPadding) {
+    elementsToCreate.push({
+      type: 'colGap',
+      area: '.',
+      partHeights: [config.topPadding],
+      elementHeight: config.topPadding,
+    });
   }
 
   for (const [matchIndex, match] of matches.entries()) {

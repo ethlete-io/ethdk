@@ -1,5 +1,6 @@
 export {
   BRACKET_DATA_LAYOUT,
+  BRACKET_FINAL_ALIGNMENT,
   BRACKET_ROUND_MIRROR_TYPE,
   BRACKET_SWISS_GROUP_COLOR_TYPE,
   BracketMap,
@@ -26,6 +27,7 @@ export type {
   BracketComponents,
   BracketContinueComponent,
   BracketDataLayout,
+  BracketFinalAlignment,
   BracketDrawing,
   BracketEdge,
   BracketGradient,

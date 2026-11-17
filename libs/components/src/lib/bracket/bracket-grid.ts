@@ -59,6 +59,7 @@ export const createBracketGridConfig = (
   swissGroupPadding: settings.swissGroupPadding,
   swissGroupBorderWidth: settings.lineWidth,
   sectionTitleHeight: settings.showSectionTitles ? settings.sectionTitleHeight : 0,
+  finalAlignment: settings.finalAlignment,
   continueElement:
     settings.showContinueElement && dataLayout === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT
       ? {

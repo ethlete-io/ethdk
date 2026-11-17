@@ -1,11 +1,13 @@
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../../core';
 import { BracketDataSource } from '../../integrations';
+import { createPlaceholderBracketSource } from '../../placeholder-source';
+import { drawMan } from '../draw-man';
 import { createBracket } from '../../linked';
 import { BracketComponents } from './core';
 import { createDoubleEliminationGrid } from './double-elimination';
 import { createStackedDoubleEliminationGrid } from './double-elimination-stacked';
 import { BRACKET_SECTION_KEY, doubleEliminationRoundSection } from './sections';
-import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
+import { BRACKET_FINAL_ALIGNMENT, ComputedBracketGrid, CreateBracketGridConfig } from './types';
 
 const config = (layout: BracketDataLayout): CreateBracketGridConfig => ({
   includeRoundHeaders: false,
@@ -146,6 +148,121 @@ describe('double elimination sections', () => {
     expect(doubleEliminationRoundSection(round('final'))).toBe(BRACKET_SECTION_KEY.FINALS);
     expect(doubleEliminationRoundSection(round('reverse-final'))).toBe(BRACKET_SECTION_KEY.FINALS);
     expect(doubleEliminationRoundSection(round('third-place'))).toBe(BRACKET_SECTION_KEY.FINALS);
+  });
+});
+
+describe('double elimination final alignment', () => {
+  const eightTeams = (shape: { includeReverseFinal?: boolean; includeThirdPlace?: boolean } = {}) =>
+    createBracket(
+      createPlaceholderBracketSource({
+        mode: 'double-elimination',
+        participantCount: 8,
+        includeReverseFinal: false,
+        ...shape,
+      }),
+      { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+    );
+
+  const box = (grid: ComputedBracketGrid<null, null>, matchId: string) => {
+    const { top, height, left } = grid.matchElementMap.getOrThrow(matchId).dimensions;
+
+    return { top, bottom: top + height, center: top + height / 2, left };
+  };
+
+  const midpoint = (grid: ComputedBracketGrid<null, null>) =>
+    (box(grid, 'ub-r2-m0').center + box(grid, 'lb-r3-m0').center) / 2;
+
+  const WITH_HEADERS: CreateBracketGridConfig = {
+    ...CONFIG,
+    includeRoundHeaders: true,
+    roundHeaderHeight: 30,
+    roundHeaderGap: 10,
+    rowRoundGap: 40,
+  };
+
+  const CENTER = { finalAlignment: BRACKET_FINAL_ALIGNMENT.CENTER };
+
+  it('keeps the final level with the upper bracket final by default', () => {
+    const bracket = eightTeams({ includeReverseFinal: true });
+
+    for (const options of [CONFIG, { ...CONFIG, finalAlignment: BRACKET_FINAL_ALIGNMENT.UPPER }]) {
+      const grid = createDoubleEliminationGrid(bracket, options, COMPONENTS);
+
+      expect(box(grid, 'final-m0').center).toBe(box(grid, 'ub-r2-m0').center);
+      expect(box(grid, 'reverse-final-m0').center).toBe(box(grid, 'ub-r2-m0').center);
+    }
+  });
+
+  it.each([
+    ['without round headers', CONFIG],
+    ['with round headers', WITH_HEADERS],
+    ['with section titles', { ...WITH_HEADERS, sectionTitleHeight: 40 }],
+  ])('centres the final and the bracket reset between the upper and lower finals %s', (_, options) => {
+    const bracket = eightTeams({ includeReverseFinal: true });
+    const upper = createDoubleEliminationGrid(bracket, options, COMPONENTS);
+    const grid = createDoubleEliminationGrid(bracket, { ...options, ...CENTER }, COMPONENTS);
+
+    expect(box(grid, 'final-m0').center).toBe(midpoint(grid));
+    expect(box(grid, 'reverse-final-m0').center).toBe(midpoint(grid));
+    expect(box(grid, 'final-m0').center).toBeGreaterThan(box(grid, 'ub-r2-m0').center);
+    expect(placement(grid).filter((p) => !p.startsWith('final') && !p.startsWith('reverse-final'))).toEqual(
+      placement(upper).filter((p) => !p.startsWith('final') && !p.startsWith('reverse-final')),
+    );
+    expect(grid.raw.grid.masterColumns.map((column) => column.dimensions.height)).toEqual(
+      upper.raw.grid.masterColumns.map((column) => column.dimensions.height),
+    );
+    expect(grid.raw.grid.dimensions.height).toBe(upper.raw.grid.dimensions.height);
+  });
+
+  it('keeps the round header and the finals title in their row above a centred final', () => {
+    const bracket = eightTeams();
+    const options = { ...WITH_HEADERS, sectionTitleHeight: 40 };
+    const upper = createDoubleEliminationGrid(bracket, options, COMPONENTS);
+    const grid = createDoubleEliminationGrid(bracket, { ...options, ...CENTER }, COMPONENTS);
+    const headerTops = (g: ComputedBracketGrid<null, null>) =>
+      g.columns.flatMap((column) =>
+        column.elements.flatMap((element) => (element.type === 'header' ? [element.dimensions.top] : [])),
+      );
+    const finals = grid.sections?.find((section) => section.key === 'finals');
+
+    expect(headerTops(grid)).toEqual(headerTops(upper));
+    expect(finals?.titleDimensions).toEqual(
+      upper.sections?.find((section) => section.key === 'finals')?.titleDimensions,
+    );
+    expect(finals?.dimensions.top).toBe(0 + 40);
+    expect(box(grid, 'final-m0').bottom).toBeLessThanOrEqual(
+      (finals?.dimensions.top ?? 0) + (finals?.dimensions.height ?? 0),
+    );
+  });
+
+  it('ends the connector from the upper and the lower bracket final on the centred final', () => {
+    const grid = createDoubleEliminationGrid(eightTeams(), { ...CONFIG, ...CENTER }, COMPONENTS);
+    const { edges } = drawMan({
+      columnWidth: 200,
+      matchHeight: 80,
+      roundHeaderHeight: 0,
+      columnGap: 50,
+      upperLowerGap: 0,
+      rowGap: 10,
+      path: { width: 1, dashArray: 0, dashOffset: 0 },
+      curve: { lineStartingCurveAmount: 10, lineEndingCurveAmount: 10 },
+      bracketGrid: grid,
+    });
+    const final = box(grid, 'final-m0');
+
+    for (const id of ['ub-r2-m0|final-m0', 'lb-r3-m0|final-m0']) {
+      expect(edges.find((edge) => edge.id === id)?.d).toMatch(new RegExp(` ${final.center} H ${final.left}$`));
+    }
+  });
+
+  it('stops a centred final above a third place below it', () => {
+    const bracket = eightTeams({ includeThirdPlace: true });
+    const grid = createDoubleEliminationGrid(bracket, { ...CONFIG, ...CENTER }, COMPONENTS);
+    const upper = createDoubleEliminationGrid(bracket, CONFIG, COMPONENTS);
+
+    expect(box(grid, 'third-place-m0')).toEqual(box(upper, 'third-place-m0'));
+    expect(box(grid, 'final-m0').center).toBeGreaterThan(box(upper, 'final-m0').center);
+    expect(box(grid, 'final-m0').bottom).toBeLessThanOrEqual(box(grid, 'third-place-m0').top - CONFIG.rowGap);
   });
 });
 

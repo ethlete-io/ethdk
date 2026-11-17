@@ -1,6 +1,6 @@
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { Meta, StoryFn } from '@storybook/angular';
-import { BRACKET_DATA_LAYOUT } from '@ethlete/bracket';
+import { BRACKET_DATA_LAYOUT, BRACKET_FINAL_ALIGNMENT } from '@ethlete/bracket';
 import { BracketDataSource } from '../integrations/base';
 import { generateBracketDataForEthlete } from '../integrations/ethlete';
 import { StorybookBracketComponent } from './bracket-storybook.component';
@@ -41,6 +41,10 @@ export default {
     withParticipantList: { control: { type: 'boolean' } },
     showSectionTitles: { control: { type: 'boolean' } },
     customSectionTitle: { control: { type: 'boolean' } },
+    finalAlignment: {
+      options: [BRACKET_FINAL_ALIGNMENT.UPPER, BRACKET_FINAL_ALIGNMENT.CENTER],
+      control: { type: 'select' },
+    },
   },
   args: {
     columnGap: 60,
@@ -70,6 +74,7 @@ export default {
     withParticipantList: false,
     showSectionTitles: false,
     customSectionTitle: false,
+    finalAlignment: BRACKET_FINAL_ALIGNMENT.UPPER,
   },
 } as Meta<StorybookBracketComponent>;
 
@@ -167,6 +172,15 @@ export const DoubleEliminationSectionTitles = {
   args: {
     source: generateDoubleEliminationBracket({ participantCount: 32, includeFinal: true }),
     showSectionTitles: true,
+  },
+};
+
+/** The grand final and the bracket reset centred between the upper and the lower bracket final. */
+export const DoubleEliminationCenteredFinal = {
+  render: Template,
+  args: {
+    source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }),
+    finalAlignment: BRACKET_FINAL_ALIGNMENT.CENTER,
   },
 };
 

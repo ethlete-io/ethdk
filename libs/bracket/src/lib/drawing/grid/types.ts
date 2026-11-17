@@ -8,12 +8,25 @@ export type ComputedBracketGrid<TRoundData, TMatchData> = {
   matchElementMap: FinalizedBracketMatchElementMap<TRoundData, TMatchData>;
   /** The parts of the bracket and where they sit. Only the left-to-right double elimination grid sets it. */
   sections?: BracketGridSection<TRoundData, TMatchData>[];
+  /** @internal Set when the finals were moved off the upper bracket final's row. */
+  finalAlignment?: BracketFinalAlignment;
 };
 
 /** Returns the width needed to render a computed bracket grid without horizontal clipping. */
 export const bracketGridNaturalWidth = <TRoundData, TMatchData>(
   grid: ComputedBracketGrid<TRoundData, TMatchData>,
 ): number => grid.raw.grid.dimensions.width;
+
+export const BRACKET_FINAL_ALIGNMENT = {
+  UPPER: 'upper',
+  CENTER: 'center',
+} as const;
+
+/**
+ * Where a left-to-right double elimination puts its finals: `'upper'` level with the upper bracket final,
+ * `'center'` on the midpoint between the centres of the upper bracket final and the lower bracket final.
+ */
+export type BracketFinalAlignment = (typeof BRACKET_FINAL_ALIGNMENT)[keyof typeof BRACKET_FINAL_ALIGNMENT];
 
 export type CreateBracketGridConfig = {
   includeRoundHeaders: boolean;
@@ -51,6 +64,12 @@ export type CreateBracketGridConfig = {
    * grid reserves it; unset or `0` reserves none.
    */
   sectionTitleHeight?: number;
+
+  /**
+   * Where the left-to-right double elimination grid puts the final and the bracket reset, see
+   * {@link BracketFinalAlignment}. Unset means `'upper'`; a centred final never overlaps a third place below it.
+   */
+  finalAlignment?: BracketFinalAlignment;
   layout: BracketDataLayout;
   continueElement?: {
     columnWidth: number;

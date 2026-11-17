@@ -1,7 +1,7 @@
 import { BRACKET_ROUND_MIRROR_TYPE, COMMON_BRACKET_ROUND_TYPE } from '../core';
 import { CurveOptions, curvePath } from './curve';
 import { Dimensions } from './grid/core/types';
-import { ComputedBracketGrid } from './grid/types';
+import { BRACKET_FINAL_ALIGNMENT, ComputedBracketGrid } from './grid/types';
 import { isBracketContinueMatch } from './grid/prebuild/bracket-continue-master-column';
 import { gutterPath, linePath, LineOptions, verticalPath } from './line';
 import { BracketPosition } from './math';
@@ -173,7 +173,7 @@ export const drawMan = <TRoundData, TMatchData>(
             path: { ...dimensions.path, id: upperId, className: '' },
           };
 
-          if (isLowerUpperMerger) {
+          if (isLowerUpperMerger && dimensions.bracketGrid.finalAlignment !== BRACKET_FINAL_ALIGNMENT.CENTER) {
             pushEdge(
               straightPath(prevUpperPos, currentPos, {
                 path: { ...dimensions.path, id: upperId, className: currentMatchParticipantsShortIds },

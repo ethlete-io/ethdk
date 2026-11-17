@@ -4,6 +4,7 @@ import { BracketDensity } from './bracket-density';
 import { BracketLayout } from './bracket-layout';
 import {
   BracketContinueComponent,
+  BracketFinalAlignment,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
   BracketSectionTitleComponent,
@@ -102,6 +103,11 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   showSectionTitles?: boolean;
   /** The band each section title gets above its part of the bracket, in px. */
   sectionTitleHeight?: number;
+  /**
+   * Where a left-to-right double elimination draws its final and bracket reset: `'upper'` level with the
+   * upper bracket final, or `'center'` on the midpoint between the upper and the lower bracket final.
+   */
+  finalAlignment?: BracketFinalAlignment;
   showContinueElement?: boolean;
   continueColumnWidth?: number;
   continueElementHeight?: number;
@@ -179,6 +185,7 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   hideRoundHeaders: false,
   showSectionTitles: false,
   sectionTitleHeight: 40,
+  finalAlignment: 'upper',
   showContinueElement: false,
   continueColumnWidth: 250,
   continueElementHeight: 75,

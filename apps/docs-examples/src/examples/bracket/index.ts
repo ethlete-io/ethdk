@@ -5,6 +5,8 @@ export const BRACKET_EXAMPLES = {
     import('./bracket-double-elimination.example').then((m) => m.BracketDoubleEliminationExampleComponent),
   'bracket/bracket-section-titles': () =>
     import('./bracket-section-titles.example').then((m) => m.BracketSectionTitlesExampleComponent),
+  'bracket/bracket-centered-final': () =>
+    import('./bracket-centered-final.example').then((m) => m.BracketCenteredFinalExampleComponent),
   'bracket/bracket-mirrored-single-elimination': () =>
     import('./bracket-mirrored-single-elimination.example').then(
       (m) => m.BracketMirroredSingleEliminationExampleComponent,

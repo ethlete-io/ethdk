@@ -23,7 +23,7 @@ import {
   createRoundBracketSubColumnRelativeToFirstRound,
   getBracketContinueMatches,
 } from './prebuild';
-import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
+import { BRACKET_FINAL_ALIGNMENT, ComputedBracketGrid, CreateBracketGridConfig } from './types';
 import { resolveBracketGridRowSpan } from './row-span';
 import { createBracketGridSections, doubleEliminationRoundSection } from './sections';
 import { BracketRuntimeError } from '../../bracket-runtime-error';
@@ -34,6 +34,83 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   options: CreateBracketGridConfig,
   components: BracketComponents<TRoundData, TMatchData>,
   // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
+): ComputedBracketGrid<TRoundData, TMatchData> => {
+  const grid = buildDoubleEliminationGrid(bracketData, options, components, new Map());
+
+  if (options.finalAlignment !== BRACKET_FINAL_ALIGNMENT.CENTER) return grid;
+
+  return {
+    ...buildDoubleEliminationGrid(bracketData, options, components, centeredFinalOffsets(bracketData, grid, options)),
+    finalAlignment: BRACKET_FINAL_ALIGNMENT.CENTER,
+  };
+};
+
+const matchBlock = <TRoundData, TMatchData>(
+  grid: ComputedBracketGrid<TRoundData, TMatchData>,
+  round: BracketRound<TRoundData, TMatchData> | null | undefined,
+) => {
+  if (!round) return null;
+
+  let top = Infinity;
+  let bottom = -Infinity;
+
+  for (const match of round.matches.values()) {
+    const element = grid.matchElementMap.get(match.id);
+
+    if (!element) continue;
+
+    top = Math.min(top, element.dimensions.top);
+    bottom = Math.max(bottom, element.dimensions.top + element.dimensions.height);
+  }
+
+  return top <= bottom ? { top, bottom, center: (top + bottom) / 2 } : null;
+};
+
+const centeredFinalOffsets = <TRoundData, TMatchData>(
+  bracketData: Bracket<TRoundData, TMatchData>,
+  grid: ComputedBracketGrid<TRoundData, TMatchData>,
+  options: CreateBracketGridConfig,
+  // eslint-disable-next-line max-params -- (data, measured grid, options)
+) => {
+  const offsets = new Map<string, number>();
+  const upperFinal = matchBlock(
+    grid,
+    bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET)?.last(),
+  );
+  const lowerFinal = matchBlock(
+    grid,
+    bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET)?.last(),
+  );
+
+  if (!upperFinal || !lowerFinal) return offsets;
+
+  const target = (upperFinal.center + lowerFinal.center) / 2;
+  const thirdPlace = matchBlock(grid, bracketData.roundsByType.get(COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE)?.first());
+  const finalRounds = [
+    ...(bracketData.roundsByType.get(COMMON_BRACKET_ROUND_TYPE.FINAL)?.values() ?? []),
+    ...(bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL)?.values() ?? []),
+  ];
+
+  for (const round of finalRounds) {
+    const final = matchBlock(grid, round);
+
+    if (!final) continue;
+
+    const offset = Math.max(0, target - final.center);
+    const room = thirdPlace ? Math.max(0, thirdPlace.top - options.rowGap - final.bottom) : Infinity;
+
+    offsets.set(round.id, Math.min(offset, room));
+  }
+
+  return offsets;
+};
+
+const buildDoubleEliminationGrid = <TRoundData, TMatchData>(
+  bracketData: Bracket<TRoundData, TMatchData>,
+  options: CreateBracketGridConfig,
+  components: BracketComponents<TRoundData, TMatchData>,
+  finalOffsets: ReadonlyMap<string, number>,
+  // eslint-disable-next-line max-params -- grid builder signature plus the measured final offsets
 ): ComputedBracketGrid<TRoundData, TMatchData> => {
   const resolvedOptions = resolveBracketGridRowSpan(bracketData, options);
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: resolvedOptions.columnWidth });
@@ -316,9 +393,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       type: 'round',
     });
 
+    const finalOffset = finalOffsets.get(round.id) ?? 0;
+
     const { masterColumnSection: upperLowerGapSection, pushSubColumn: pushUpperLowerSubColumn } =
       createBracketMasterColumnSection<TRoundData, TMatchData>({
         type: 'gap',
+        padding: finalOffset ? { top: -finalOffset, bottom: 0, left: 0, right: 0 } : undefined,
       });
 
     const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection<
@@ -338,6 +418,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         isEnd: true,
       },
       components,
+      topPadding: finalOffset,
     });
 
     pushUpperSubColumn(upperSubColumn);

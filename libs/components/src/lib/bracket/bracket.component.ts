@@ -18,6 +18,7 @@ import {
 import { createComponentId, injectRenderer, injectStyleManager } from '@ethlete/core';
 import {
   BracketContinueComponent,
+  BracketFinalAlignment,
   FinalizedBracketElement,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
@@ -177,6 +178,12 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     transform: optionalNumberAttribute,
   });
 
+  /**
+   * Where a left-to-right double elimination draws its final and bracket reset: `'upper'` (the default)
+   * level with the upper bracket final, or `'center'` between the upper and the lower bracket final.
+   */
+  public finalAlignment = input<BracketFinalAlignment | undefined>(undefined);
+
   public showContinueElement = input<boolean | undefined, OptionalBooleanInput>(undefined, {
     transform: optionalBooleanAttribute,
   });
@@ -275,6 +282,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       hideRoundHeaders: this.hideRoundHeaders() ?? this.config.hideRoundHeaders,
       showSectionTitles: this.showSectionTitles() ?? this.config.showSectionTitles,
       sectionTitleHeight: this.sectionTitleHeight() ?? this.config.sectionTitleHeight,
+      finalAlignment: this.finalAlignment() ?? this.config.finalAlignment,
       showContinueElement: this.showContinueElement() ?? this.config.showContinueElement,
       continueColumnWidth: this.continueColumnWidth() ?? this.config.continueColumnWidth,
       continueElementHeight: this.continueElementHeight() ?? this.config.continueElementHeight,
