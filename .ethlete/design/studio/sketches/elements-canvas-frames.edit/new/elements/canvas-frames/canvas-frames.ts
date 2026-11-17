@@ -105,9 +105,11 @@ export const canvasFrameBox = (body: string, head = '', { class: extra = '', att
 export const canvasFrame = (name: string, body: string, width = '') =>
   canvasFrameBox(body, canvasFrameHead(name, width));
 
+const LABEL_MIN_ZOOM = 0.25;
+
 type ChipState = { target?: 'out' | 'reset' | 'in' | 'fit'; interaction?: 'hover' | 'active' | 'focus-visible' };
 
-/** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
+/** The canvas: the frames from the top left at the given zoom, their heads and edges at screen size, and the zoom chip in the corner. */
 export const canvasView = async (
   frames: string[],
   zoom: string,
@@ -120,7 +122,11 @@ export const canvasView = async (
     class: 'absolute right-space-3 bottom-space-3',
     ...chipState,
   });
-  const body = html`<div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">
+  const scale = parseFloat(zoom) / 100;
+  const body = html`<div
+      class="flex origin-top-left flex-col items-start gap-30 px-10 py-12"
+      style="transform: scale(${scale}); --st-canvas-label-scale: ${1 / Math.max(scale, LABEL_MIN_ZOOM)}"
+    >
       ${frames.join('')}
     </div>
     ${chip.body}`;
@@ -168,7 +174,12 @@ const buttonGrid = async (states: string[], columns: readonly Interaction[] = in
 
 const loadingBody = `<div class="h-72 w-4xl" aria-busy="true" data-loading ${slot('frame')}></div>`;
 
-const gridBody = (body: string) => `<div style="width: 942px; height: 221px" ${slot('frame')}>${body}</div>`;
+const slotted = (width: number, height: number) => (body: string) =>
+  `<div style="width: ${width}px; height: ${height}px" ${slot('frame')}>${body}</div>`;
+
+const gridBody = slotted(944, 224);
+
+const roundBody = slotted(556, 132);
 
 const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span>`;
 
@@ -194,7 +205,10 @@ const roundOf = async (part: string, round: RoundSample) => ({
   columns: await Promise.all(
     round.columns.map(async (column) => ({
       ...column,
-      frame: canvasFrame(`${part} · ${column.label}`, await buttonGrid(['filled'], ['rest', 'hover', 'pressed'])),
+      frame: canvasFrame(
+        `${part} · ${column.label}`,
+        roundBody(await buttonGrid(['filled'], ['rest', 'hover', 'pressed'])),
+      ),
     })),
   ),
 });

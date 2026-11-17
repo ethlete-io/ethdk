@@ -90,7 +90,7 @@
     "components/tree-row": "72601799f8079cf2",
     "components/update-dialog": "011b380413e2a556",
     "components/zoom-chip": "09ffd17403d466bc",
-    "elements/canvas-frames": "3b73a5587092f718",
+    "elements/canvas-frames": "57e20d3953e63ede",
     "elements/part-tree": "b487e67aac3e89a5",
     "elements/shell-main": "7622e2366ba3215f",
     "elements/studio-menu": "251ee1f3be48f068",
@@ -103,9 +103,9 @@
     "pages/system": "7c722d00c70b6cbc",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "2d98b8e9fcc0cef4da3a3aae9c10701cae7a51bf",
+  "baselineTree": "f8e1ab108ec6cffe718cad2ddbd39bb92595d959",
   "sharedBase": {
-    "elements/canvas-frames/shared/canvas-marks.ts": "0eaedc5737357ac1"
+    "elements/canvas-frames/shared/canvas-marks.ts": "58388182990ba2f8"
   },
   "decision": {
     "kind": "pick",
@@ -134,11 +134,5 @@
       "round": "r1",
       "note": "der zuletzt gemergte Stand"
     }
-  },
-  "portAfterMerge": {
-    "merged": ["elements/canvas-frames"],
-    "parts": ["elements/canvas-frames"],
-    "reasons": ["old: elements/canvas-frames/canvas-frames.ts - the variant and the product both changed it"],
-    "at": "2026-11-17T03:50:56.130Z"
   }
 }
