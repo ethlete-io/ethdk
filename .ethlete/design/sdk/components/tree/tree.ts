@@ -28,6 +28,8 @@ const FILES: TreeMockItem[] = [
   { label: 'package.json' },
 ];
 
+const SELECT = 'data-et-action="emit:valueChange"';
+
 const SHORT: TreeMockItem[] = [{ label: 'docs' }, { label: 'notes.md' }, { label: 'README.md' }];
 
 const { states, grid } = interactionRows(
@@ -76,7 +78,12 @@ export default definePart({
         ...props,
         label: 'Files',
         rowAttributes: forced && { [forced.row]: `data-et-force="${forced.interaction}"` },
-      }).replaceAll('role="treeitem"', 'data-et-control="row" role="treeitem"'),
+      }).replace(/<div [^>]*role="treeitem"[^>]*>/g, (row) =>
+        row.replace(
+          'role="treeitem"',
+          `data-et-control="row"${row.includes('aria-disabled') ? '' : ` ${SELECT}`} role="treeitem"`,
+        ),
+      ),
       styles: [treeStyles, selectedTint].join('\n'),
     }),
 });

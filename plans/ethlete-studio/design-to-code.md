@@ -1800,6 +1800,15 @@ query-error "Contact support" link (consumer navigation), and the table selectio
 and `design check --part` per part. Not verified: `design ready` press checks (none of the 8 is ready-marked); an
 emit on an unchanged value (active dot, selected tab) fires nothing.
 
+As built (B135 slice 4): tree rows `emit:valueChange` (click, Enter and Space all select; `nodeActivate` misses
+Space); pagination first/previous/page/next/last items, buttons and links, `emit:pageChange` (links intercept the
+click); grid remove actions `emit:remove`. All in the design parts, no mock changed. ACTION-UNDECLARED in the 3 parts
+50 -> 7, no other count changed. Left undeclared, no key exists: the disabled tree row legacy.ts (a press does
+nothing) and the 6 grid tiles (click, Enter and Space do nothing; only drag, arrow keys and Ctrl+Delete move,
+resize or remove a tile). Verified: `design complete` and `design check --part` per part (HELD, 0 findings).
+Refused: `design ready components/pagination` before the commit ("changed outside a sketch - design check draws it"), so
+the pagination mark is not renewed. Not verified: a press on the current page or the selected row fires nothing.
+
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
 As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the

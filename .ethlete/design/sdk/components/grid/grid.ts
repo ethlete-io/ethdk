@@ -87,7 +87,10 @@ export default definePart({
         items: itemsOf(props),
         actions: props.actions,
         ghost: props.drag ? { col: 1, row: 1, colSpan: 1, rowSpan: 1 } : undefined,
-      }),
+      }).replaceAll(
+        'class="et-grid-item-default-actions__remove',
+        'data-et-action="emit:remove" class="et-grid-item-default-actions__remove',
+      ),
       styles: [gridStyles, frame].join('\n'),
     }),
 });

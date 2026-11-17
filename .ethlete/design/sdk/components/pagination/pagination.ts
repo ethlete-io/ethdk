@@ -17,7 +17,7 @@ type Props = Omit<PaginationMockOptions, 'items'> & {
   forced?: ItemInteraction;
 };
 
-const MARK = 'data-et-control="item" data-can-animate';
+const MARK = 'data-et-control="item" data-et-action="emit:pageChange" data-can-animate';
 
 const items = ({ page, pages, total, target, forced }: Props): PaginationMockItem[] => {
   const attributes = (entry: number) => (forced && entry === target ? `${MARK} data-et-force="${forced}"` : MARK);
