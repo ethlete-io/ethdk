@@ -3650,3 +3650,15 @@ As built (B371 follow-up, 2026-11-17): the harness-only `stateGroups` input of t
 STATE-NO-SOURCE 0; the three comments* DROPPED-PROP stay (from before). The `comment-write` capability now
 points at components/comment-draft, since fdd635b40 took the draft out of pages/inbox (capability-place spec
 was red). Verified: cli vitest related 1594 tests, capability-place 11/11.
+
+In progress (B233 half 1, 2026-11-17): the canvas-frames design no longer wraps the frames in `slot('frames')`; only the
+frame body is a slot (`slot('frame')`, 942 x 221 px for the grid, `h-72 w-4xl` while loading), so the head, the
+marks, the failure banner and the Lädt badge are compared. The design canvas gets `max-h-120` so it clips at 250 %
+like the app (the `in` state was SIZE). Edit sketch `elements/canvas-frames@edit` is open: `sketch rebase` refuses ("old: the variant and the product both changed it"), so it is not picked or merged. App `canvas-frame`: the body
+sits in `data-et-projected="frame"`; head `text-et-surface`, 1.6rem line height, `pb-space-2`; banner "Laden
+fehlgeschlagen. … Neu laden" with the design classes; a Lädt spinner badge while the frame loads (`loading`: a
+render slot pending, or a live page not painted yet); `canvas-frame-border` draws the 1 px edge as a box shadow,
+selected and active as the 2 px primary outline. Labels in `STUDIO_LABELS.canvas`. Verified: vitest related (517),
+lint, typecheck; `design check` keeps 1 finding, UNRECORDED (the open edit sketch). Not verified: compare - the harness still gives the design canvas
+no frames, so default/out/reset/in/fit DIFF (design frame vs empty app canvas), the four marks fail "prop mark has no
+input", rounds/round-folded have no button to hover. Half 2: harness samples with real frames and marks, round heads.

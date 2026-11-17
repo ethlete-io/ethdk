@@ -65,11 +65,14 @@ describe('CanvasFrameComponent swap between shot and page', () => {
     await flush();
 
     expect(shown()).toEqual({ shot: true, page: false, mounted: true });
+    expect(fixture.nativeElement.querySelector('[data-loading-badge]')?.textContent?.trim()).toBe('Lädt');
+    expect(fixture.nativeElement.querySelector('[data-loading-badge] et-spinner')).not.toBeNull();
 
     post({ type: 'design-explore:painted' });
     await flush();
 
     expect(shown()).toEqual({ shot: false, page: true, mounted: true });
+    expect(fixture.nativeElement.querySelector('[data-loading-badge]')).toBeNull();
   });
 
   it('keeps the page after it leaves live until the shot decoded, then shows the shot in one step', async () => {
@@ -163,6 +166,10 @@ describe('CanvasFrameComponent failed page load', () => {
     expect(host().querySelector('[data-frame-failed]')?.textContent).toContain(
       'Nothing answers at localhost:4402, the design server may be restarting',
     );
+    expect(host().querySelector('[data-frame-failed]')?.textContent).toContain('Laden fehlgeschlagen.');
+    expect(host().querySelector('[data-frame-reload]')?.textContent?.trim()).toBe('Neu laden');
+    expect(host().querySelector('[data-frame-failed]')?.closest('[data-et-projected]')).toBeNull();
+    expect(failing.closest('[data-et-projected]')).not.toBeNull();
 
     Object.defineProperty(failing, 'src', { configurable: true, set: (src: string) => reloads.push(src) });
     up = true;
@@ -297,7 +304,7 @@ describe('CanvasFrameComponent caption', () => {
     expect(label?.classList).toContain('min-w-0');
     expect(others.length).toBeGreaterThan(0);
     expect(others.every((child) => child.classList.contains('shrink-0'))).toBe(true);
-    expect(label?.parentElement?.classList).toContain('leading-normal');
+    expect(label?.parentElement?.classList).toContain('leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]');
   });
 
   it.each([false, true])(

@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import {
   ProvideColorDirective,
   injectHostElement,
@@ -55,6 +55,7 @@ import {
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { FrameLoad, designServerBack$, failedLoadReason$, frameLoad$ } from '../frame-paint';
+import { STUDIO_LABELS } from '../../../i18n/studio-labels';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameBorderComponent } from './canvas-frame-border.component';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
@@ -76,13 +77,13 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         }}</span>
       }
       <span class="min-w-0 truncate" data-frame-label>{{ frame().label }}</span>
-      @if (reload(); as state) {
+      @if (loading()) {
         <span
-          [class.animate-pulse]="state === 'rendering'"
-          [etTooltip]="state === 'rendering' ? 'Rendering' : 'Waiting to render'"
-          [attr.data-reload]="state"
-          class="size-[0.6em] shrink-0 self-center rounded-full bg-(--et-theme-color-primary-solid)"
-        ></span>
+          [attr.data-reload]="reload()"
+          class="flex shrink-0 items-center gap-space-1 text-et-surface-muted"
+          data-loading-badge
+          ><et-spinner [diameter]="14" [strokeWidth]="1.75" />{{ LABELS.loading }}</span
+        >
       }
       @if (frame().width !== undefined) {
         <span class="shrink-0 tabular-nums text-text-muted">{{ width() }}</span>
@@ -113,130 +114,134 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     <span
       [class]="labelPlacement()"
       [style.max-width.px]="captionMaxWidth()"
-      class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-normal"
+      class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-et-surface text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
       ><ng-container [ngTemplateOutlet]="caption"
     /></span>
-    @if (frame().empty; as empty) {
-      <div
-        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),4))] leading-tight text-text-muted"
-        data-empty-cell
-      >
-        {{ empty }}
-      </div>
-    } @else if (frame().error) {
-      <div
-        [etProvideColor]="errorTheme()"
-        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-4 font-(--font-code) text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
-        role="alert"
-      >
-        {{ frame().error }}
-      </div>
-    } @else if (frame().grid; as grid) {
-      <ethlete-canvas-frame-grid
-        [grid]="grid"
-        [live]="live()"
-        [liveCells]="liveCells()"
-        (sizeChange)="readGridSize($event)"
-        (cellsChange)="cellsChange.emit($event)"
-      />
-    } @else if (cropped(); as cropped) {
-      @if (frame().screenshot; as screenshot) {
+    <div class="absolute inset-0" data-et-projected="frame">
+      @if (frame().empty; as empty) {
         <div
-          [style.width.px]="cropped.thumb.width"
-          [style.height.px]="cropped.thumb.height"
-          class="absolute top-0 left-0 overflow-hidden outline outline-(--et-surface-border-solid)"
-          data-crop-thumb
+          class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),4))] leading-tight text-text-muted"
+          data-empty-cell
         >
-          <img
-            [src]="screenshot"
-            [ethleteShotRank]="screenshot"
-            [style.transform]="'scale(' + cropped.thumb.scale + ')'"
-            class="absolute top-0 left-0 max-w-none origin-top-left"
-            alt=""
-          />
-          @for (outline of cropped.thumb.outlines; track $index) {
-            <div
-              [style.left.px]="outline.x"
-              [style.top.px]="outline.y"
-              [style.width.px]="outline.width"
-              [style.height.px]="outline.height"
-              class="absolute outline-2 outline-(--et-theme-color-primary-solid) outline-solid"
-              data-crop-outline
-            ></div>
-          }
+          {{ empty }}
         </div>
-      }
-      @for (view of cropped.views; track $index) {
+      } @else if (frame().error) {
         <div
-          [style.top.px]="view.top"
-          [style.width.px]="view.width"
-          [style.height.px]="view.height"
-          class="absolute left-0 overflow-hidden"
-          data-crop-view
+          [etProvideColor]="errorTheme()"
+          class="absolute inset-0 box-border size-full overflow-hidden border-0 p-4 font-(--font-code) text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
+          role="alert"
         >
+          {{ frame().error }}
+        </div>
+      } @else if (frame().grid; as grid) {
+        <ethlete-canvas-frame-grid
+          [grid]="grid"
+          [live]="live()"
+          [liveCells]="liveCells()"
+          (sizeChange)="readGridSize($event)"
+          (cellsChange)="cellsChange.emit($event)"
+        />
+      } @else if (cropped(); as cropped) {
+        @if (frame().screenshot; as screenshot) {
           <div
-            [style.width.px]="cropped.page.width"
-            [style.height.px]="cropped.page.height"
-            [style.transform]="'scale(' + view.scale + ') translate(' + -view.area.x + 'px, ' + -view.area.y + 'px)'"
-            class="absolute top-0 left-0 origin-top-left"
+            [style.width.px]="cropped.thumb.width"
+            [style.height.px]="cropped.thumb.height"
+            class="absolute top-0 left-0 overflow-hidden outline outline-(--et-surface-border-solid)"
+            data-crop-thumb
           >
-            @if ($first) {
-              <ng-container [ngTemplateOutlet]="page" />
-            } @else if (frame().screenshot; as screenshot) {
-              <img
-                [src]="live() ? screenshot : (admittedShot() ?? screenshot)"
-                [ethleteShotRank]="screenshot"
-                class="absolute inset-0 size-full border-0 object-none object-top-left"
-                alt=""
-              />
-            }
-          </div>
-        </div>
-      }
-    } @else {
-      <div
-        [class]="copies().length > 0 ? 'absolute left-0 top-0 bg-(--et-surface-background-solid)' : 'absolute inset-0'"
-        [style.width.px]="copies().length > 0 ? width() : null"
-        [style.height.px]="copies().length > 0 ? height() : null"
-        [attr.data-scheme-copy]="copies()[0]?.scheme ?? null"
-      >
-        <ng-container [ngTemplateOutlet]="page" />
-      </div>
-      @for (copy of laterCopies(); track copy.scheme) {
-        <div
-          [style.left.px]="copy.x"
-          [style.top.px]="copy.y"
-          [style.width.px]="width()"
-          [style.height.px]="height()"
-          [attr.data-scheme-copy]="copy.scheme"
-          class="absolute overflow-hidden bg-(--et-surface-background-solid)"
-        >
-          @if (copy.shot) {
             <img
-              #copyShot="ethleteShot"
-              [src]="copy.shot"
-              [ethleteShotRank]="copy.shot"
-              [shotRankActive]="active()"
-              class="absolute inset-0 size-full border-0 object-none object-top-left"
-              ethleteShot
+              [src]="screenshot"
+              [ethleteShotRank]="screenshot"
+              [style.transform]="'scale(' + cropped.thumb.scale + ')'"
+              class="absolute top-0 left-0 max-w-none origin-top-left"
               alt=""
             />
-            @if (!live()) {
-              <ethlete-shot-state [state]="copyShot.state()" />
+            @for (outline of cropped.thumb.outlines; track $index) {
+              <div
+                [style.left.px]="outline.x"
+                [style.top.px]="outline.y"
+                [style.width.px]="outline.width"
+                [style.height.px]="outline.height"
+                class="absolute outline-2 outline-(--et-theme-color-primary-solid) outline-solid"
+                data-crop-outline
+              ></div>
             }
-          }
-          @if (live()) {
-            <iframe
-              [src]="copy.url"
-              [title]="frame().label + ' ' + labelOf(copy.scheme)"
-              [class.pointer-events-none]="!active()"
-              [style.min-height.px]="frame().height === undefined ? FOLLOWED_VIEWPORT_HEIGHT : null"
-              class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
-            ></iframe>
-          }
+          </div>
+        }
+        @for (view of cropped.views; track $index) {
+          <div
+            [style.top.px]="view.top"
+            [style.width.px]="view.width"
+            [style.height.px]="view.height"
+            class="absolute left-0 overflow-hidden"
+            data-crop-view
+          >
+            <div
+              [style.width.px]="cropped.page.width"
+              [style.height.px]="cropped.page.height"
+              [style.transform]="'scale(' + view.scale + ') translate(' + -view.area.x + 'px, ' + -view.area.y + 'px)'"
+              class="absolute top-0 left-0 origin-top-left"
+            >
+              @if ($first) {
+                <ng-container [ngTemplateOutlet]="page" />
+              } @else if (frame().screenshot; as screenshot) {
+                <img
+                  [src]="live() ? screenshot : (admittedShot() ?? screenshot)"
+                  [ethleteShotRank]="screenshot"
+                  class="absolute inset-0 size-full border-0 object-none object-top-left"
+                  alt=""
+                />
+              }
+            </div>
+          </div>
+        }
+      } @else {
+        <div
+          [class]="
+            copies().length > 0 ? 'absolute left-0 top-0 bg-(--et-surface-background-solid)' : 'absolute inset-0'
+          "
+          [style.width.px]="copies().length > 0 ? width() : null"
+          [style.height.px]="copies().length > 0 ? height() : null"
+          [attr.data-scheme-copy]="copies()[0]?.scheme ?? null"
+        >
+          <ng-container [ngTemplateOutlet]="page" />
         </div>
+        @for (copy of laterCopies(); track copy.scheme) {
+          <div
+            [style.left.px]="copy.x"
+            [style.top.px]="copy.y"
+            [style.width.px]="width()"
+            [style.height.px]="height()"
+            [attr.data-scheme-copy]="copy.scheme"
+            class="absolute overflow-hidden bg-(--et-surface-background-solid)"
+          >
+            @if (copy.shot) {
+              <img
+                #copyShot="ethleteShot"
+                [src]="copy.shot"
+                [ethleteShotRank]="copy.shot"
+                [shotRankActive]="active()"
+                class="absolute inset-0 size-full border-0 object-none object-top-left"
+                ethleteShot
+                alt=""
+              />
+              @if (!live()) {
+                <ethlete-shot-state [state]="copyShot.state()" />
+              }
+            }
+            @if (live()) {
+              <iframe
+                [src]="copy.url"
+                [title]="frame().label + ' ' + labelOf(copy.scheme)"
+                [class.pointer-events-none]="!active()"
+                [style.min-height.px]="frame().height === undefined ? FOLLOWED_VIEWPORT_HEIGHT : null"
+                class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
+              ></iframe>
+            }
+          </div>
+        }
       }
-    }
+    </div>
     <ng-template #page>
       @if (pageShot()) {
         <img
@@ -295,13 +300,13 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     @if (failure(); as reason) {
       <div
         [etProvideColor]="errorTheme()"
-        class="absolute top-[0.8em] right-[0.8em] left-[0.8em] flex items-center gap-[0.6em] rounded-md border border-(--et-theme-color-primary-solid) bg-(--et-surface-background-solid) p-[0.6em] text-[calc(1.2rem*min(var(--et-design-canvas-label-scale,1),2))] text-(--et-theme-color-primary-solid) shadow-md"
+        class="absolute top-space-2 right-space-2 left-space-2 flex items-center gap-space-2 rounded-md border border-solid border-(--et-theme-color-primary-solid) bg-et-surface-bg p-space-2 text-(length:--text-xs) text-(--et-theme-color-primary-solid) shadow-md"
         role="alert"
         data-frame-failed
       >
-        <span class="min-w-0 flex-1">Load failed. {{ reason }}</span>
+        <span class="min-w-0 flex-1">{{ LABELS.loadFailed }} {{ reason }}</span>
         <button (click)="reloadPage()" et-button type="button" variant="outline" size="xs" data-frame-reload>
-          Reload
+          {{ LABELS.reload }}
         </button>
       </div>
     }
@@ -318,7 +323,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
-    TOOLTIP_IMPORTS,
+    SpinnerComponent,
     NgTemplateOutlet,
     ProvideColorDirective,
     CanvasFrameBorderComponent,
@@ -349,10 +354,10 @@ export class CanvasFrameComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private sanitizer = inject(DomSanitizer);
   private queue = injectFrameRenderQueue();
-
   private host = injectHostElement();
 
   private renderer = injectRenderer();
+
   public frame = input.required<CanvasFrame>();
   /** The width of one scheme copy; the host spans every copy. */
   public width = input.required<number>();
@@ -362,18 +367,19 @@ export class CanvasFrameComponent {
   public liveCells = input<ReadonlySet<string> | null>(null);
   public active = input(false);
   public selected = input(false);
-
   public captionBelow = input(false);
+
   public heightChange = output<number>();
   public widthChange = output<number>();
   public escapeKeydown = output();
-
   public cellsChange = output<Record<string, Rect>>();
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
-  private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
 
+  private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
   private gridView = viewChild(CanvasFrameGridComponent);
+
+  protected readonly LABELS = STUDIO_LABELS.canvas;
 
   protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
   public bordered = computed(
@@ -428,7 +434,7 @@ export class CanvasFrameComponent {
   /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */
   protected shown = signal<string | null>(null);
 
-  protected labelPlacement = computed(() => (this.captionBelow() ? 'top-full pt-[0.4em]' : 'bottom-full pb-[0.4em]'));
+  protected labelPlacement = computed(() => (this.captionBelow() ? 'top-full pt-space-2' : 'bottom-full pb-space-2'));
 
   protected painted = computed(() => this.shown() !== null);
 
@@ -480,6 +486,10 @@ export class CanvasFrameComponent {
     source: () => this.newest(),
     computation: () => null,
   });
+
+  protected loading = computed(
+    () => this.reload() !== null || (this.drawn() && !this.painted() && this.failure() === null),
+  );
 
   /** The window of the live page once it painted, to post messages to; `null` while the frame shows a shot. */
   public liveWindow = computed(() => {

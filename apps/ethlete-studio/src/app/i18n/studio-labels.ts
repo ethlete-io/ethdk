@@ -60,6 +60,9 @@ export const STUDIO_LABELS = {
   },
   canvas: {
     label: 'Design Canvas',
+    loading: 'Lädt',
+    loadFailed: 'Laden fehlgeschlagen.',
+    reload: 'Neu laden',
   },
   titleBar: {
     search: (product: string, part: string) => `Suchen in ${product}, ${part}`,

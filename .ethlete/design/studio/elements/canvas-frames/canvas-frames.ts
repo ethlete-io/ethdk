@@ -166,7 +166,9 @@ const buttonGrid = async (states: string[], columns: readonly Interaction[] = in
   return stateGrid({ columns: [...columns], rows }, { cellWidth: '120px', place: 'center' });
 };
 
-const loadingBody = `<div class="h-72 w-4xl" aria-busy="true" data-loading></div>`;
+const loadingBody = `<div class="h-72 w-4xl" aria-busy="true" data-loading ${slot('frame')}></div>`;
+
+const gridBody = (body: string) => `<div style="width: 942px; height: 221px" ${slot('frame')}>${body}</div>`;
 
 const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span>`;
 
@@ -174,7 +176,11 @@ const markedFrame = async (name: string, body: string, mark?: FrameMark) => {
   const action = MARK_ACTION[mark ?? 'rest'];
 
   return canvasFrameBox(
-    mark === 'loading' ? loadingBody : mark === 'failed' ? body + (await failureBanner(FAILURE_REASON)) : body,
+    mark === 'loading'
+      ? loadingBody
+      : mark === 'failed'
+        ? gridBody(body) + (await failureBanner(FAILURE_REASON))
+        : gridBody(body),
     canvasFrameHead(name, '', mark === 'active' ? liveBadge : mark === 'loading' ? loadingBadge : ''),
     {
       class: mark ? MARK_CLASS[mark] : '',
@@ -206,7 +212,7 @@ const defaultFrames: Props = {
   part: 'button',
   states: ['filled', 'outline', 'tonal'],
   zoom: '100%',
-  class: 'w-250',
+  class: 'w-250 max-h-120',
 };
 
 export default definePart({
@@ -642,7 +648,7 @@ export default definePart({
 
     return drawing({
       body: await canvasView(
-        [html`<div class="contents" ${slot('frames')}>${frames}</div>`],
+        [frames],
         zoom,
         {
           target,
