@@ -426,10 +426,10 @@
     "pid": 232633
   },
   "components/shell-system-picker": {
-    "hash": "d318985b0ffc6a6b",
+    "hash": "5a8b97a4d997826d",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
-      ".ethlete/design/sdk/components/menu/menu.ts": "13fc3916a1cf880a",
+      ".ethlete/design/sdk/components/menu/menu.ts": "63756c3ecafc67df",
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
       ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
@@ -478,10 +478,10 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": ["closed", "emit:productChange", "open"],
-    "at": "2026-11-17T13:28:56.615Z",
+    "at": "2026-11-17T20:30:48.939Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 242938
+    "pid": 1262332
   },
   "components/sketch-status-badge": {
     "hash": "e7d2e55ebfbfed4f",
