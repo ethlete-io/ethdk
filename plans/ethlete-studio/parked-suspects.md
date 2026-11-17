@@ -73,3 +73,11 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - e2e class-facts growth (2026-11-16, fdb52c107): each Studio e2e run writes class-facts entries keyed by worker path into the main checkout's node_modules/.cache/ethlete-design/class-facts (1417 files, 239 MB, never hit). Suspect: a path-free slot plus a per-run dir stops the growth and lets the 8 workers share facts.
 - shell-main action probe (2026-11-16, B523): server-stopped "Flows" pointer focus showed no ring within 1000 ms; the run exited 0, not repeated. Suspect: load. First time.
 - Mac release smoke (2026-11-16, 70df2bb6e): FAIL. Suspect: stale dist/libs/cli on the Mac + locked screen, not the new tsconfig; retry queued with the builder. First time.
+- CLASS-UNDEFINED ternary (Linux, 17.11.): design check reads a ternary string literal (`merge ? 'bottom-start' : 'bottom-end'`) as a class name. Pre-existing, no hunt.
+- serve.perf red (CI, 17.11.): the non-blocking Perf job is red twice (serve.perf 325 > 224 ms). Parked until it blocks.
+- nav-tabs behavior flake (Linux, 17.11.): 3 of 60 local runs red with repeat-each 3, also before babbe94e0. No hunt until red CI.
+- Studio e2e discard click (Linux, 17.11.): discard click timeout under load once (babbe94e0), green on the next run.
+- chart tooltip shift (17.11.): after 43721532c (whole-pixel panes) the chart tooltip sits 8 px further in from the viewport edge; the spec was re-asserted, not checked as intended.
+- carousel slide growth (SDK, 17.11.): a headless carousel that grows from fewer than two slides is never checked for its pause control (the check runs once, 9d846a8a6).
+- overlay compare gap (Linux, B502 dc4a97a57): a page host smaller than the viewport with a preset size and no open pane may miss overlays in compare.
+- scrollable buttons skip visible items (fifa, 17.11.): not reproduced in the SDK; waits on fifa's markup.
