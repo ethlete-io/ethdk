@@ -66,7 +66,7 @@ A directive cannot be applied conditionally, so each takes a value to switch it 
 
 The edge fade is a CSS `mask-image` on the scroll container, so the faded edge shows whatever is behind the track - a card's class background or a background image - instead of a painted colour. Only an edge that can scroll further fades. The fade is `--mask-size` wide on the `<et-scrollable>` (`25px` for the gradient variant, `32px` for the border variant, which also draws a line on that edge). The native scrollbar (`renderScrollbars`) is not faded.
 
-With `itemSize: 'auto'` a child is as wide as its content (`min-content`) unless it sets its own width, and a percent width resolves against the scroll container: `width: 50%` is half the visible track.
+With `itemSize: 'auto'` a child is as wide as its content (`min-content`) unless it sets its own width, and percent widths and margins resolve against the scroll container: `width: 50%` is half the visible track, and `margin-inline-end: 10%` on the last child leaves a tenth of it as trailing space, no `scrollableClass` needed.
 
 ### Snapping
 

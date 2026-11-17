@@ -536,4 +536,34 @@ test.describe('scrollable / item sizing', () => {
 
     expect(Math.abs(sizes.item - sizes.expected), JSON.stringify(sizes)).toBeLessThanOrEqual(1);
   });
+
+  test('a percent margin on the last child under itemSize auto resolves against the scroll container', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { itemSize: 'auto' } });
+    const container = root.locator(CONTAINER);
+    await container.evaluate((el) => {
+      const last = [...el.querySelectorAll<HTMLElement>('.et-sb-scrollable-item')].at(-1);
+      if (last) last.style.marginInlineEnd = '10%';
+    });
+    await scrollTrackTo(container, 'end');
+    await settledScrollLeft(container);
+
+    const end = await container.evaluate((el) => {
+      const style = getComputedStyle(el);
+      const content = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const contentEnd =
+        el.getBoundingClientRect().left + el.clientLeft + el.clientWidth - parseFloat(style.paddingRight);
+      const last = [...el.querySelectorAll('.et-sb-scrollable-item')].at(-1)?.getBoundingClientRect();
+
+      return {
+        trailing: last ? Math.round(contentEnd - last.right) : -1,
+        expected: Math.round(content / 10),
+        remaining: Math.round(el.scrollWidth - el.clientWidth - el.scrollLeft),
+      };
+    });
+
+    expect(Math.abs(end.trailing - end.expected), JSON.stringify(end)).toBeLessThanOrEqual(1);
+    expect(end.remaining).toBe(0);
+  });
 });
