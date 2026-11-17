@@ -10,22 +10,6 @@
     }
   },
   "DROPPED-PROP": {
-    "elements/canvas-frames: load-failed": {
-      "finding": "489",
-      "sketch": "elements/canvas-frames: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "elements/canvas-frames: loading": {
-      "finding": "489",
-      "sketch": "elements/canvas-frames: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "elements/canvas-frames: round-folded": {
-      "finding": "489",
-      "sketch": "elements/canvas-frames: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "elements/canvas-frames: rounds": {
-      "finding": "489",
-      "sketch": "elements/canvas-frames: not opened yet - an app input for the prop, or a state that does not set it"
-    },
     "pages/sketches: folded": {
       "finding": "489",
       "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
