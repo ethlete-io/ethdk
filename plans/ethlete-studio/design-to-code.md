@@ -1822,6 +1822,12 @@ design submenu was 180 px wide (SDK`--et-menu-min-width`) against the app's 176 
 `.st-studio-submenu { --et-menu-min-width: 0px }`is uncommitted in`elements/studio-menu@edit`, whose `sketch ready
   --reopen`refuses "variants alike" (rebase --ported old copied the edit into old) and whose merge refuses "in
 progress". Verified: studio specs (231), lint, compare of appearance/help/stopped with the width fix. Not verified:`design ready`passing,`task --verify`, checks of the embedding parts.
+Third slice: the width fix merged through a fresh `@edit`(pick new, merge; no rebase), e1d1d2c0d, CSS 24aed8c88:
+ready 15 -> 6. The 6 left were the check's goal picture, not the app: a probe in Chromium showed the app closes the
+sibling submenu within 200 ms, while the goal adds the opener's keys to the start state and drew both submenus. The
+design states now say`help: false`/`appearance: false`, 64199e401. `design ready`passes (4f2935e7c),`task --verify`recorded it (e7c06e5bf).`design check --base 9b716d32d` over the five embedding pages: no new problem (UNRECORDED on
+  flows/inbox/inventory/sketches and the sketches canvas findings were there before); their ready stays blocked by
+  embedded parts that are not build-ready. Not verified: a live Studio shot.
 
 As built (B574, comment parts): comment-row and comment-target draw their control via `control()` with
 `interactionRows` (hover, active, focus-visible; comment-row also selected via `aria-pressed`), like tree-row;
