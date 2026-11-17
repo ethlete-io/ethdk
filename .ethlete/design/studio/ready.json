@@ -169,8 +169,16 @@
     "at": "2026-11-17T13:37:19.747Z"
   },
   "components/comment-target": {
+    "hash": "df6f679fa1607481",
+    "files": {
+      ".ethlete/design/studio/components/comment-target/comment-target.ts": "2fc91395119c6fe8",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6"
+    },
     "actions": ["emit:comment"],
-    "at": "2026-11-17T13:37:09.131Z"
+    "at": "2026-11-17T20:29:11.349Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1189340
   },
   "components/disclosure": {
     "hash": "17f459ae69df97ec",
