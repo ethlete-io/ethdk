@@ -1034,3 +1034,8 @@ As built (B162, 2026-11-17): already built in 4373e3a4c (2026-11-07); the STATUS
 `readyContent` (hash per variant, its folder plus `shared/`), and `sketch check`/`sketch ready` reopen an undecided
 ready sketch whose hash changed. It removes the hand edit of `sketch.json` (finding 239). This slice only deletes the
 row. Verified: the commit and `readyContent` in `libs/cli/src/lib/design/system/sketch/sketch.ts`. Not re-run: its specs.
+
+As built (B484, 2026-11-17): already built in 588bb8e8b (2026-11-10); the STATUS row was stale. The workflow messages
+carry the `repo` scope (`chore(repo): Update prereleases`, `chore(repo): Update versions`), and
+`yarn lint:commit-messages` (`tools/scripts/check-workflow-commit-messages.mjs`, run in ci.yml) checks every
+`commit_message:`. Verified: the check passes on HEAD. This slice only deletes the row.
