@@ -12,6 +12,8 @@ import {
   PART_EXCEPTIONS_SAMPLE,
   STATE_GROUPS_SAMPLE_STATES,
   STATE_GROUPS_TREE,
+  SYSTEM_COMMENT_WRITER_SAMPLE,
+  SYSTEM_COMMENTS_SAMPLE,
   THEME_SWITCHES_SAMPLE,
 } from '../design-parts/system-page/system-page-sample';
 import { stateGroupsOf } from '../design-parts/system-page/state-groups';
@@ -280,7 +282,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(confirm === 'merge' || confirm === 'discard' ? { confirm } : {}),
     };
   },
-  'pages/system': ({ build, agent, call, listingError, stateGroups, ...props }) => {
+  'pages/system': ({ build, agent, call, listingError, stateGroups, comments, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;
     const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptions.length);
     const agentState = agent as keyof typeof AGENT_SAMPLES | undefined;
@@ -297,6 +299,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       call: call ? { ...LEGACY_CALL_SAMPLE, transferred: call === 'transferred' } : null,
       themeSwitches: call ? THEME_SWITCHES_SAMPLE : [],
       ...(stateGroups ? { stateGroups: stateGroupsOf(STATE_GROUPS_SAMPLE_STATES), tree: STATE_GROUPS_TREE } : {}),
+      ...(comments
+        ? {
+            comments: SYSTEM_COMMENTS_SAMPLE,
+            selectedComment: props['draft'] === undefined ? (SYSTEM_COMMENTS_SAMPLE[0]?.id ?? null) : null,
+            writer: SYSTEM_COMMENT_WRITER_SAMPLE,
+          }
+        : {}),
       buildReady: buildReadySampleOf(
         (build as BuildReadySample | undefined) ?? (props['nothingOpen'] ? 'ready' : 'blocked'),
         openCount,

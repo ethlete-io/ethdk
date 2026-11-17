@@ -54,4 +54,44 @@ describe('SystemPageComponent', () => {
     expect(root.querySelector('[data-listing-error]')).toBeNull();
     expect(root.querySelector('ethlete-part-tree')).not.toBeNull();
   });
+
+  it('places a pin per comment and lists them under the tree, with the picked one selected', async () => {
+    const comment = {
+      author: 'human',
+      initials: 'MK',
+      when: 'gestern',
+      part: 'card',
+      state: 'rest',
+      text: 'Zu viel Abstand',
+      replies: 0,
+    };
+    const root: HTMLElement = (
+      await render({
+        comments: [
+          { ...comment, id: 'a', at: { x: 10, y: 80 } },
+          { ...comment, id: 'b', at: { x: 90, y: 5 } },
+          { ...comment, id: 'c', at: { x: 50, y: 50 } },
+        ],
+        selectedComment: 'b',
+      })
+    ).nativeElement;
+    const pins = [...root.querySelectorAll<HTMLElement>('ethlete-comment-pin')];
+
+    expect(pins).toHaveLength(3);
+    expect(pins[1]?.parentElement?.style.left).toBe('90%');
+    expect(root.querySelector('[data-comment-list]')?.textContent).toContain(STUDIO_LABELS.commentList.open(3));
+  });
+
+  it('pins the draft of the writer only beside listed comments', async () => {
+    const writer = { author: 'human', initials: 'LS' };
+    const listed = await render({ commentMode: true, draft: 'x', writer, comments: [] });
+
+    expect(listed.nativeElement.querySelectorAll('ethlete-comment-pin')).toHaveLength(1);
+
+    TestBed.resetTestingModule();
+
+    const alone = await render({ commentMode: true, draft: 'x', writer });
+
+    expect(alone.nativeElement.querySelectorAll('ethlete-comment-pin')).toHaveLength(0);
+  });
 });

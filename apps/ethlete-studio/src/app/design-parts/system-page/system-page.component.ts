@@ -10,14 +10,18 @@ import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../sh
 import { StateGroup } from './state-groups';
 import { SystemEmptyComponent } from './system-empty.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { CommentListComponent } from '../comment-flow/comment-list.component';
+import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
 import {
+  CommentWriter,
   LegacyCall,
   MANY_STATES_LAYERS,
   OpenPointTarget,
   OPEN_POINTS_SAMPLE,
   PartException,
+  PlacedComment,
   SYSTEM_TREE,
   ThemePick,
   ThemeSwitch,
@@ -44,6 +48,9 @@ export const FRAME_HEAD_CLASS =
               (expandedChange)="expandedChange.emit($event)"
               (activate)="activate.emit($event)"
             />
+            @if (comments(); as comments) {
+              <ethlete-comment-list [comments]="comments" [selectedId]="selectedComment()" />
+            }
           }
         </ng-content>
       </ng-container>
@@ -210,6 +217,21 @@ export const FRAME_HEAD_CLASS =
                 <div [class.w-md]="fit()" [class.h-45]="fit()">
                   <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
                 </div>
+                @for (comment of comments() ?? []; track comment.id) {
+                  <span
+                    [style.left.%]="comment.at.x"
+                    [style.top.%]="comment.at.y"
+                    class="absolute z-10 flex -translate-y-full"
+                  >
+                    <ethlete-comment-pin
+                      [author]="comment.author"
+                      [initials]="comment.initials"
+                      [agent]="comment.agent"
+                      [count]="comment.replies + 1"
+                      [selected]="comment.id === selectedComment()"
+                    />
+                  </span>
+                }
                 @if (commentMode()) {
                   <div
                     [etTooltip]="LABELS.commentOn(frame())"
@@ -221,14 +243,24 @@ export const FRAME_HEAD_CLASS =
                     tabindex="0"
                   ></div>
                   @if (draft() !== null) {
+                    @if (comments()) {
+                      <span class="absolute top-[42%] left-[38%] z-10 flex -translate-y-full">
+                        <ethlete-comment-pin
+                          [author]="writer().author"
+                          [initials]="writer().initials"
+                          [selected]="true"
+                        />
+                      </span>
+                    }
                     <ethlete-comment-draft
                       [text]="draft() ?? ''"
                       [phase]="send()"
                       [reason]="reason()"
+                      [class]="comments() ? 'left-[calc(38%+var(--space-6))]' : 'left-[38%]'"
                       (textChange)="draft.set($event)"
                       (send)="sendComment.emit($event)"
                       (discard)="draft.set(null)"
-                      class="absolute top-[42%] left-[38%] z-4"
+                      class="absolute top-[42%] z-4"
                     />
                   }
                 }
@@ -278,6 +310,8 @@ export const FRAME_HEAD_CLASS =
     TOOLTIP_IMPORTS,
     CanvasFramesComponent,
     CommentDraftComponent,
+    CommentListComponent,
+    CommentPinComponent,
     NgTemplateOutlet,
     OpenPointsChipComponent,
     PartTreeComponent,
@@ -305,6 +339,9 @@ export class SystemPageComponent {
   public draft = model<string | null>(null);
   public send = input<CommentSendPhase | null>(null);
   public reason = input('');
+  public comments = input<PlacedComment[] | null>(null);
+  public selectedComment = input<string | null>(null);
+  public writer = input<CommentWriter>({ author: '', initials: '' });
   public tree = input(SYSTEM_TREE);
   public manyStatesLayers = input(MANY_STATES_LAYERS);
   public frame = input('button');

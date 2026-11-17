@@ -1,3 +1,4 @@
+import { InboxComment } from '../inbox/inbox-sample';
 import { PartTree, PartTreeLayer, PartTreeSketch } from '../part-tree/part-tree.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 
@@ -154,6 +155,40 @@ export type LegacyCall = { slug: string; headline: string; transferred: boolean 
 export type ThemeSwitch = { kind: 'surface' | 'color'; names: string[]; current: string };
 
 export type ThemePick = { kind: ThemeSwitch['kind']; name: string };
+
+/** A comment with its pin on the frame, `at` in percent of the frame's width and height. */
+export type PlacedComment = InboxComment & { at: { x: number; y: number } };
+
+export type CommentWriter = { author: string; initials: string };
+
+export const SYSTEM_COMMENTS_SAMPLE: PlacedComment[] = [
+  {
+    id: 'sys-c1',
+    at: { x: 22, y: 30 },
+    author: 'human',
+    initials: 'H',
+    when: 'vor 1 Std',
+    part: 'button',
+    state: 'tonal · rest',
+    text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    replies: 2,
+  },
+  {
+    id: 'sys-c2',
+    at: { x: 58, y: 52 },
+    author: 'Claude',
+    initials: 'C',
+    agent: 'claude',
+    when: 'vor 3 Min',
+    part: 'button',
+    state: 'filled · hover',
+    text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+    replies: 3,
+    unread: true,
+  },
+];
+
+export const SYSTEM_COMMENT_WRITER_SAMPLE: CommentWriter = { author: 'human', initials: 'H' };
 
 export const LISTING_ERROR_SAMPLE = 'missing build: pages/system';
 
