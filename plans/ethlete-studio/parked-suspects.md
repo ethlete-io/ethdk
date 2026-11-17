@@ -82,3 +82,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - overlay compare gap (Linux, B502 dc4a97a57): a page host smaller than the viewport with a preset size and no open pane may miss overlays in compare.
 - scrollable buttons skip visible items (fifa, 17.11.): not reproduced in the SDK; waits on fifa's markup.
 - orphan sketch-status-badge (Linux, 17.11.): components/sketch-status-badge has no implements link and no app file embeds it; `design ready` on it refuses because components/badge is not build-ready. Cleanup, no hunt.
+- OPENED without sketch (Linux, 17.11.): `design check` printed "OPENED pages/flows@edit pick old or new" while it held the edit and no sketch was on disk (B142 run). Suspect, code not read.
