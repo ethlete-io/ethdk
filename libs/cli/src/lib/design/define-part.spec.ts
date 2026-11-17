@@ -181,6 +181,22 @@ describe('definePart', () => {
     expect(Object.keys(moving.motions ?? {})).toEqual(['fold']);
     expect(button.motions).toBeUndefined();
   });
+
+  it('takes the state names from states only, not from unreachable pairs', () => {
+    const narrowed = definePart({
+      ...source,
+      unreachable: [{ from: 'filled', to: 'filled', reason: 'r' }],
+    });
+    const outline: Props = narrowed.states['outline-wide'];
+
+    definePart({
+      ...source,
+      // @ts-expect-error a state the part does not have
+      unreachable: [{ from: 'filled', to: 'open', reason: 'r' }],
+    });
+
+    expect(outline).toEqual({ label: 'Go' });
+  });
 });
 
 describe('drawState', () => {
