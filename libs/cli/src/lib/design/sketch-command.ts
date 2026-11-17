@@ -1,6 +1,7 @@
+import { writeDesignFile } from './system/design-file';
 import { unusedInVariantOf } from './system/sketch/unused-closure';
 import { createHash } from 'crypto';
-import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, realpathSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, relative, resolve } from 'path';
 import { DesignConfig } from './design-config';
@@ -837,7 +838,7 @@ const lockedReady = (sketch: Sketch) => {
 
   if (holder > 0 && isRunning(holder)) return null;
 
-  writeFileSync(lock, String(process.pid));
+  writeDesignFile(lock, String(process.pid));
 
   return () => rmSync(lock, { force: true });
 };

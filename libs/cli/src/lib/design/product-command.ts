@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { existsSync, mkdirSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { dirname, relative } from 'path';
 import { jsonLayoutOf } from './json-layout';
@@ -50,11 +51,11 @@ export const createProduct = (options: {
   const configPath = configPathOf(target);
 
   mkdirSync(dirname(configPath), { recursive: true });
-  writeFileSync(configPath, jsonLayoutOf({ ...config, products: { ...config.products, [name]: entry } }));
+  writeDesignFile(configPath, jsonLayoutOf({ ...config, products: { ...config.products, [name]: entry } }));
 
   for (const layer of LAYERS) mkdirSync(`${dir}/${layer}`, { recursive: true });
 
-  if (!base) writeFileSync(`${dir}/fixtures.ts`, '');
+  if (!base) writeDesignFile(`${dir}/fixtures.ts`, '');
 
   return null;
 };

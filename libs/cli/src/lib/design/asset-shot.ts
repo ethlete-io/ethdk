@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { existsSync, mkdirSync, readFileSync, statSync } from 'fs';
 import { dirname, extname, resolve } from 'path';
 import { workRootOf } from './work-root';
 import { assetFileOf, assetPathOf } from './system/assets';
@@ -142,7 +143,7 @@ export const designAssetShot = async (options: { target: string; argv: string[];
     );
 
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, png);
+    writeDesignFile(out, png);
     console.log(out);
 
     return 0;

@@ -1,5 +1,6 @@
+import { writeDesignFile } from '../system/design-file';
 import { spawn } from 'child_process';
-import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, openSync, readFileSync } from 'fs';
 import { request as httpRequest } from 'http';
 import { join, resolve } from 'path';
 import { setTimeout as delay } from 'timers/promises';
@@ -188,7 +189,7 @@ const startResident = async (target: string, client: ResidentClient): Promise<Di
     const started = liveDiscoveryOf({ target, alive: client.alive });
 
     if (started && fits({ found: started, target, client }) && (await answers(started, client))) {
-      writeFileSync(coldStartFileOf(target), JSON.stringify({ seconds: Math.ceil((client.now() - began) / 1000) }));
+      writeDesignFile(coldStartFileOf(target), JSON.stringify({ seconds: Math.ceil((client.now() - began) / 1000) }));
 
       return started;
     }

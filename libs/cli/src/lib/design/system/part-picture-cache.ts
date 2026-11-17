@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './design-file';
+import { mkdirSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { designPictureCodeOf } from '../code-hash';
 import { workRootOf } from '../work-root';
@@ -91,7 +92,7 @@ export const createPartPictureCache = (options: {
       const file = fileOf(part, partHash);
 
       mkdirSync(dirname(file), { recursive: true });
-      writeFileSync(file, JSON.stringify({ states, others: othersOf(part) }));
+      writeDesignFile(file, JSON.stringify({ states, others: othersOf(part) }));
     },
   };
 };

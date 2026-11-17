@@ -1,3 +1,4 @@
+import { writeDesignFile } from '../design-file';
 import { gitStatusOf } from '../../git-reader';
 import { spawnPlain } from '../../../plain-output';
 import {
@@ -312,7 +313,7 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
 
   replace(entries);
 
-  for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
+  for (const { noteFile, noted } of notedTargets) writeDesignFile(noteFile, noted);
 
   for (const part of parts)
     rebaseOutsideImports({

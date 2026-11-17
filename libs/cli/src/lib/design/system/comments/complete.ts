@@ -1,4 +1,5 @@
-import { cpSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from '../design-file';
+import { cpSync, readFileSync } from 'fs';
 import { dirname, resolve, sep } from 'path';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { overlaySketch } from '../sketch/overlay';
@@ -50,7 +51,7 @@ export const completeComment = (options: {
 
       if (noted === null) return `${drawn.file} holds no definePart({ note: '…' }) to set the note on`;
 
-      writeFileSync(drawn.file, noted);
+      writeDesignFile(drawn.file, noted);
     }
 
     if (author) {
@@ -76,7 +77,7 @@ export const completeComment = (options: {
 
   if (part.origin === 'base') cpSync(dirname(part.file), partDir, { recursive: true });
 
-  writeFileSync(resolve(partDir, `${part.name}.ts`), noted);
+  writeDesignFile(resolve(partDir, `${part.name}.ts`), noted);
 
   return addressComment({ products: [{ name: product.name, dir: product.dir }], id, author, note });
 };

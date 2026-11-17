@@ -1,5 +1,6 @@
+import { writeDesignFile } from './design-file';
 import { git } from '../git-reader';
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { repoRootOf } from './reachable-files';
 import { RenderIssue } from './render-check';
@@ -96,7 +97,7 @@ export const oldRenderIssuesOf = (options: {
 
   if (written) {
     mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, `${JSON.stringify(stored, null, 2)}\n`);
+    writeDesignFile(file, `${JSON.stringify(stored, null, 2)}\n`);
   }
 
   return old;

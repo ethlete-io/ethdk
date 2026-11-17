@@ -1,17 +1,7 @@
+import { writeDesignFile } from '../design-file';
 import { gitStatusOf } from '../../git-reader';
 import { createHash } from 'crypto';
-import {
-  cpSync,
-  Dirent,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from 'fs';
+import { cpSync, Dirent, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { setImmediate } from 'timers/promises';
 import { productDirOfSketch, recoverInterrupted, withProductLock, writeDecisionFile } from '../product-lock';
@@ -229,7 +219,7 @@ export const rebaseOutsideImports = (options: {
       },
     );
 
-    if (rewritten !== source) writeFileSync(file, rewritten);
+    if (rewritten !== source) writeDesignFile(file, rewritten);
   }
 };
 
@@ -239,7 +229,7 @@ export const rewriteSharedImports = (partDir: string) => {
     const source = readFileSync(file, 'utf8');
     const rewritten = withSharedImports({ source, file, partDir });
 
-    if (rewritten !== source) writeFileSync(file, rewritten);
+    if (rewritten !== source) writeDesignFile(file, rewritten);
   }
 };
 
@@ -874,7 +864,7 @@ const copyPartAs = (options: { from: SketchSource; to: string; name: string }) =
 
   const source = readFileSync(file, 'utf8').split(`./${from.name}.css`).join(`./${name}.css`);
 
-  writeFileSync(file, withMadeBy(source, []) ?? source);
+  writeDesignFile(file, withMadeBy(source, []) ?? source);
 };
 
 /** Why the sketch cannot open with `merge` on its targets, or `null`: a base part merges into the base unless `override`. */
@@ -938,10 +928,10 @@ const seedTarget = (options: {
     seeded(resolve(existing.file, '..'));
   } else if (target.layer === 'pages') {
     const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
-    writeFileSync(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
+    writeDesignFile(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
   } else {
-    writeFileSync(resolve(folder, `${target.name}.ts`), stubOf(target.name));
-    writeFileSync(resolve(folder, `${target.name}.css`), '');
+    writeDesignFile(resolve(folder, `${target.name}.ts`), stubOf(target.name));
+    writeDesignFile(resolve(folder, `${target.name}.css`), '');
   }
 };
 
@@ -1187,7 +1177,7 @@ export const reportSketch = (options: {
   };
 
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(report));
+  writeDesignFile(path, JSON.stringify(report));
 
   return reported;
 };

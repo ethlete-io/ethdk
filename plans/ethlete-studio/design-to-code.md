@@ -3720,3 +3720,6 @@ As built (B553, 2026-11-17): `failure-line.ts` (libs/cli design) spells every fa
 printed line holds one. A spec scans libs/cli sources for the words outside it. Verified: `failure-line.spec.ts` (red
 on the old code: compare, sketch check, guard), related vitest, typecheck, lint. Not verified: a live run, the
 resident path, the cause of the 16 compare lines at exit 0 (Suspect: not found in source).
+
+As built (B554): `design-file.ts` formats each tracked `.ethlete/design` write (`writeChangedFile` too). Cause: merge
+commit's own entries. No guard. Verified: specs, typecheck, lint. Not: a live merge, Prettier cost.

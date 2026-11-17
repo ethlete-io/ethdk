@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from '../design-file';
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { SharedDirs } from '../imports';
 import { Problem } from '../problem';
@@ -109,7 +110,7 @@ const applyRewrites = (rewrites: Rewrite[]) => {
       source = next;
     }
 
-    writeFileSync(file, source);
+    writeDesignFile(file, source);
   }
 
   return count;

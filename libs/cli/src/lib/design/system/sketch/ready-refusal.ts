@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { writeDesignFile } from '../design-file';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { resolve } from 'path';
 import { productCacheDirOf } from '../product';
 import { runningRoundOf, Sketch } from './sketch';
@@ -31,7 +32,7 @@ export const recordReadyRefusal = (asked: Asked & { message: string }) => {
   const refusal: SketchReadyRefusal = { lines, round: runningRoundOf(asked.sketch).key, at: new Date().toISOString() };
 
   mkdirSync(resolve(file, '..'), { recursive: true });
-  writeFileSync(file, `${JSON.stringify(refusal, null, 2)}\n`);
+  writeDesignFile(file, `${JSON.stringify(refusal, null, 2)}\n`);
 };
 
 export const clearReadyRefusal = (asked: Asked) => rmSync(refusalFileOf(asked), { force: true });

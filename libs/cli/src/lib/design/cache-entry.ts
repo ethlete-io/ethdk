@@ -1,4 +1,5 @@
-import { mkdirSync, renameSync, rmSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { mkdirSync, renameSync, rmSync } from 'fs';
 import { join } from 'path';
 import { threadId } from 'worker_threads';
 import { runSignal } from './run-abort';
@@ -18,7 +19,7 @@ export const writeCacheEntry = (dir: string, entry: { name: string; text: string
 
   try {
     mkdirSync(dir, { recursive: true });
-    writeFileSync(temp, text);
+    writeDesignFile(temp, text);
     renameSync(temp, join(dir, name));
 
     return true;

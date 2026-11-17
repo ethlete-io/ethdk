@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { mkdirSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { spawnPlain } from '../plain-output';
@@ -158,7 +159,7 @@ export const ciStatusOf = (checkout: string, { now = Date.now(), gh = 'gh' }: St
 
   try {
     mkdirSync(join(ciCachePath(checkout), '..'), { recursive: true });
-    writeFileSync(ciCachePath(checkout), JSON.stringify({ head, fetchedAt: now, status } satisfies CiCache));
+    writeDesignFile(ciCachePath(checkout), JSON.stringify({ head, fetchedAt: now, status } satisfies CiCache));
   } catch {
     return status;
   }

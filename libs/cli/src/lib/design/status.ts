@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { statusPath } from './call-status-path';
 import { callsRootOf, readConfig } from './design-config';
@@ -30,7 +31,7 @@ export const writeStatus = (options: { checkout: string; slug: string; state: Ca
   };
 
   mkdirSync(join(path, '..'), { recursive: true });
-  writeFileSync(path, JSON.stringify(status));
+  writeDesignFile(path, JSON.stringify(status));
 };
 
 /** Remembers a call's status as it is now, and answers with the function that puts it back. */
@@ -42,7 +43,7 @@ export const holdStatus = (options: { checkout: string; slug: string }) => {
     if (held === null) {
       rmSync(path, { force: true });
     } else {
-      writeFileSync(path, held);
+      writeDesignFile(path, held);
     }
   };
 };

@@ -1,6 +1,7 @@
+import { writeDesignFile } from './design-file';
 import { randomUUID } from 'crypto';
 import { hostname } from 'os';
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { acquireApiLock, LockSystem, releaseApiLock } from '../../api/lock';
@@ -104,7 +105,7 @@ export const readFreshLibBuild = async (options: {
     const token = randomUUID();
     const file = join(readers, `${system.pid}-${token}.json`);
 
-    writeFileSync(file, JSON.stringify({ pid: system.pid, hostname: system.hostname() }));
+    writeDesignFile(file, JSON.stringify({ pid: system.pid, hostname: system.hostname() }));
     env[LIB_READER_ENV] = token;
     recordPhase('lib-build-wait', system.now() - began);
     recordConcurrentHeavy(liveReadersOf(readers, system).length - 1);

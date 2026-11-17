@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { existsSync, readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { callFilesOf } from './calls';
 import { callsRootOf } from './design-config';
@@ -56,7 +57,7 @@ export const markLegacy = (options: { target: string; argv: string[]; invocation
 
     const stageLine = (indent: string) => (stage ? `${indent}stage: '${stage}',\n` : '');
 
-    writeFileSync(
+    writeDesignFile(
       path,
       isLegacy
         ? text.replace(LEGACY_LINE, (line, indent: string) => `${line}${stageLine(indent)}`)
@@ -90,7 +91,7 @@ export const markTransferred = (options: { target: string; slug: string }): Tran
   if (HAS_TRANSFERRED.test(text)) return 'already';
 
   if (LEGACY_LINE.test(text)) {
-    writeFileSync(
+    writeDesignFile(
       path,
       text.replace(LEGACY_LINE, (line, indent: string) => `${line}${indent}transferred: true,\n`),
     );
@@ -100,7 +101,7 @@ export const markTransferred = (options: { target: string; slug: string }): Tran
 
   if (!OPENING.test(text)) return 'unreadable';
 
-  writeFileSync(
+  writeDesignFile(
     path,
     text.replace(OPENING, (opening) => `${opening}  transferred: true,\n`),
   );

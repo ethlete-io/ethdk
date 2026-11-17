@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './design-file';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { noteWrite } from './write-journal';
 import { dirname, relative, resolve, sep } from 'path';
 import { DesignHarness } from '../design-config';
@@ -116,7 +117,7 @@ export const harnessMapOf = (options: { target: string; product: ResolvedProduct
 export const writeHarnessMap = (map: HarnessMap) => {
   mkdirSync(dirname(map.file), { recursive: true });
   noteWrite(map.file);
-  writeFileSync(map.file, map.text);
+  writeDesignFile(map.file, map.text);
 };
 
 /** Why compare cannot trust the product's harness map, or `null` when it is current or the product has no harness. */

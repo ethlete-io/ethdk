@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './design-file';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { addedBaselineNamesOf } from './baseline-history';
 import { Problem } from './problem';
@@ -164,5 +165,5 @@ export const writeRuleBaseline = (options: {
       .map(([rule, hits]) => [rule, Object.fromEntries(Object.entries(hits).sort(([a], [b]) => a.localeCompare(b)))]),
   );
 
-  writeFileSync(ruleBaselineFileOf(options.product), `${JSON.stringify(sorted, null, 2)}\n`);
+  writeDesignFile(ruleBaselineFileOf(options.product), `${JSON.stringify(sorted, null, 2)}\n`);
 };

@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { existsSync, mkdirSync } from 'fs';
 import { join, relative } from 'path';
 import { callsRootOf, readConfig } from './design-config';
 import { argsOf } from './system/sketch/cli-args';
@@ -142,11 +143,11 @@ export const newCall = (options: { target: string; argv: string[]; invocation: s
   }
 
   mkdirSync(folder, { recursive: true });
-  writeFileSync(join(folder, 'call.ts'), callFile({ slug, keys, stage, feature }));
-  writeFileSync(join(folder, 'fixture.ts'), FIXTURE_FILE);
+  writeDesignFile(join(folder, 'call.ts'), callFile({ slug, keys, stage, feature }));
+  writeDesignFile(join(folder, 'fixture.ts'), FIXTURE_FILE);
 
   for (const key of keys) {
-    writeFileSync(join(folder, `variant-${key}.ts`), rendersComponents ? ngVariantFile(key) : variantFile(key));
+    writeDesignFile(join(folder, `variant-${key}.ts`), rendersComponents ? ngVariantFile(key) : variantFile(key));
   }
 
   writeStatus({ checkout: target, slug, state: 'scaffolded' });

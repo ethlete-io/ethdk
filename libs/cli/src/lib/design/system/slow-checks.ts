@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './design-file';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { appFilesOf } from './app-files';
 import {
@@ -88,7 +89,7 @@ export const writeSlowResults = (options: {
   }
 
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify(cache, null, 2)}\n`);
+  writeDesignFile(file, `${JSON.stringify(cache, null, 2)}\n`);
 };
 
 /** The component a part's `implements` link names, `null` for none. */

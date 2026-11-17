@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { mkdirSync, readFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { execPlain } from '../plain-output';
 import { chromiumOf } from './browser';
@@ -335,7 +336,7 @@ const writeReceipt = (options: { path: string; argv: string[]; ok: boolean; said
   const flags = parse(options.argv, ['--lint', '--tsconfig', '--call', '--variant', '--product']);
 
   mkdirSync(dirname(options.path), { recursive: true });
-  writeFileSync(
+  writeDesignFile(
     options.path,
     JSON.stringify({
       call: flags['--call']?.[0] ?? null,

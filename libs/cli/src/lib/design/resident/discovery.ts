@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs';
+import { writeDesignFile } from '../system/design-file';
+import { mkdirSync, readFileSync, renameSync, rmSync } from 'fs';
 import { join } from 'path';
 
 /** What a resident design process writes so the CLI of its checkout finds it. */
@@ -50,7 +51,7 @@ export const writeDiscovery = (target: string, discovery: Discovery) => {
   const written = `${file}.${discovery.pid}`;
 
   mkdirSync(residentDirOf(target), { recursive: true });
-  writeFileSync(written, `${JSON.stringify(discovery, null, 2)}\n`);
+  writeDesignFile(written, `${JSON.stringify(discovery, null, 2)}\n`);
   renameSync(written, file);
 };
 

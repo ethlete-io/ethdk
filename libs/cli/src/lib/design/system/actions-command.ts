@@ -1,7 +1,8 @@
+import { writeDesignFile } from './design-file';
 import { failedText } from '../failure-line';
 import { createHash } from 'crypto';
 import { NoVerdict, noVerdictOf } from './no-verdict';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
@@ -771,9 +772,9 @@ export const checkActions = async (options: {
 
                 const stem = `${state}--${name}--${input}`.replace(/[^\w.-]/g, '-');
 
-                writeFileSync(join(dir, `${stem}.design.png`), goalPicture.png);
-                writeFileSync(join(dir, `${stem}.app.png`), run.app);
-                writeFileSync(join(dir, `${stem}.diff.png`), result.diff);
+                writeDesignFile(join(dir, `${stem}.design.png`), goalPicture.png);
+                writeDesignFile(join(dir, `${stem}.app.png`), run.app);
+                writeDesignFile(join(dir, `${stem}.diff.png`), result.diff);
               }
 
               out.push({ state, element: name, input, failure });

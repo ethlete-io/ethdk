@@ -11,6 +11,7 @@ import {
   writeSync,
 } from 'fs';
 import { basename, dirname, resolve } from 'path';
+import { designContentOf } from './design/system/design-file';
 import { formattedTextOf } from './design/system/prettier';
 import { noteWrite } from './design/system/write-journal';
 
@@ -46,11 +47,7 @@ const dropDeadTmpFiles = (file: string) => {
   }
 };
 
-/**
- * Writes `text` to `file` through a temporary file in the same folder and a rename, so a reader or a killed writer
- * sees either the old or the new text, never a part of it; the next write drops a dead writer's temporary file. An equal file is left untouched and keeps its mtime.
- */
-export const writeChangedFile = (file: string, text: string | Buffer) => {
+const writeBytesAtomically = (file: string, text: string | Buffer) => {
   const bytes = typeof text === 'string' ? Buffer.from(text, 'utf8') : text;
 
   if (existsSync(file) && readFileSync(file).equals(bytes)) return;
@@ -82,10 +79,20 @@ export const writeChangedFile = (file: string, text: string | Buffer) => {
   }
 };
 
+/**
+ * Writes `text` to `file` through a temporary file in the same folder and a rename, so a reader or a killed writer
+ * sees either the old or the new text, never a part of it; the next write drops a dead writer's temporary file. A file under `.ethlete/design` is formatted first (see `designContentOf`). An equal file is left untouched and keeps its mtime.
+ */
+export const writeChangedFile = (file: string, text: string | Buffer) =>
+  writeBytesAtomically(file, designContentOf(file, text));
+
 /** `value` serialized as JSON and written to `file`, formatted like {@link formattedJsonTextOf}; an equal file stays untouched. */
 export const writeJsonFile = (options: { file: string; value: unknown }) => {
   const file = resolve(options.file);
   const target = dirname(file);
 
-  writeChangedFile(file, formattedJsonTextOf({ target, file, text: `${JSON.stringify(options.value, null, 2)}\n` }));
+  writeBytesAtomically(
+    file,
+    formattedJsonTextOf({ target, file, text: `${JSON.stringify(options.value, null, 2)}\n` }),
+  );
 };

@@ -1,3 +1,4 @@
+import { writeDesignFile } from './design-file';
 import { git as gitText } from '../git-reader';
 import { createHash } from 'crypto';
 import {
@@ -10,7 +11,6 @@ import {
   readlinkSync,
   rmSync,
   symlinkSync,
-  writeFileSync,
 } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -91,7 +91,7 @@ export const baseCheckoutOf = (options: { root: string; commit: string }) => {
   const held = existsSync(lock) && alive(Number(readFileSync(lock, 'utf8')));
   const dir = held ? mkdtempSync(join(tmpdir(), 'et-design-visible-change-')) : stable;
 
-  if (!held) writeFileSync(lock, String(process.pid));
+  if (!held) writeDesignFile(lock, String(process.pid));
 
   const reused =
     existsSync(join(dir, '.git')) &&

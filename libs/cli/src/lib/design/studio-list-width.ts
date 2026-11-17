@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { dirname, resolve } from 'path';
 import { CACHE_DIR } from './design-config';
@@ -50,7 +51,7 @@ export const studioListWidthMiddleware = (target: string) => (request: IncomingM
       const path = studioListWidthPathOf(target);
 
       mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, `${JSON.stringify({ width })}\n`);
+      writeDesignFile(path, `${JSON.stringify({ width })}\n`);
     }
 
     response.statusCode = width === null ? 400 : 204;

@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { tap, timer } from 'rxjs';
@@ -92,7 +93,7 @@ export const withRunDeadline = async (
 
     try {
       mkdirSync(dir, { recursive: true });
-      writeFileSync(file, `${log}\n`);
+      writeDesignFile(file, `${log}\n`);
       process.stderr.write(
         `design-explore: \`${argv[0]}\` passed its deadline of ${Math.round(ms / 1000)} s; log: ${file}\n`,
       );

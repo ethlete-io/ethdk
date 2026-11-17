@@ -1,4 +1,5 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from '../design-file';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { noteWrite } from '../write-journal';
 import { join, relative, sep } from 'path';
 
@@ -109,7 +110,7 @@ export const writeMergeChangeset = (options: { top: string; files: string[]; slu
   for (let n = 2; existsSync(file); n++) file = join(dir, `${base}-${n}.md`);
 
   noteWrite(file);
-  writeFileSync(file, `---\n${packages.map((name) => `'${name}': none`).join('\n')}\n---\n`);
+  writeDesignFile(file, `---\n${packages.map((name) => `'${name}': none`).join('\n')}\n---\n`);
 
   return file;
 };

@@ -1,3 +1,4 @@
+import { writeDesignFile } from './design-file';
 import { git } from '../git-reader';
 import { createHash } from 'crypto';
 import {
@@ -11,7 +12,6 @@ import {
   rmSync,
   statSync,
   utimesSync,
-  writeFileSync,
 } from 'fs';
 import { tmpdir } from 'os';
 import { join, relative, resolve, sep } from 'path';
@@ -194,7 +194,7 @@ export const claimHarnessBuild = (dir: string, key: string) => {
 
   if (!existsSync(build)) return null;
 
-  writeFileSync(marker, '');
+  writeDesignFile(marker, '');
 
   if (!existsSync(build)) {
     rmSync(marker, { force: true });

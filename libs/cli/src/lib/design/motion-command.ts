@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { mkdirSync } from 'fs';
 import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
 import { contactSheetOf, SheetCell } from './contact-sheet';
@@ -136,8 +137,8 @@ const writeMotionSheet = async (options: {
       const { png } = await queue.run((browser) => contactSheetOf({ browser, rows }));
 
       mkdirSync(dirname(out), { recursive: true });
-      writeFileSync(out, png);
-      writeFileSync(json, `${JSON.stringify(sheet.report, null, 2)}\n`);
+      writeDesignFile(out, png);
+      writeDesignFile(json, `${JSON.stringify(sheet.report, null, 2)}\n`);
 
       console.log(out);
       console.log(json);

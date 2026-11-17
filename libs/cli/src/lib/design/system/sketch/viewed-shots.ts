@@ -1,5 +1,6 @@
+import { writeDesignFile } from '../design-file';
 import { createHash } from 'crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { workRootOf } from '../../work-root';
 import { Sketch, variantContentHashOf } from './sketch';
@@ -86,8 +87,8 @@ export const recordShotViewed = (
   };
 
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(shot, png);
-  writeFileSync(file, JSON.stringify({ ...readViewed(file), [variant]: record }));
+  writeDesignFile(shot, png);
+  writeDesignFile(file, JSON.stringify({ ...readViewed(file), [variant]: record }));
 };
 
 const unviewedReasonOf = (record: ViewedShot | string | undefined, content: string) => {

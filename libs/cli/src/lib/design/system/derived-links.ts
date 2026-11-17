@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+import { writeDesignFile } from './design-file';
 import { refreshHarnessMap } from './harness-map';
 import { UncoveredState } from './live-uncovered';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -155,7 +155,7 @@ export const writeDerivedLinks = (options: { target: string; product: ResolvedPr
     if (source === null) continue;
 
     noteWrite(resolved.file);
-    writeFileSync(resolved.file, source);
+    writeDesignFile(resolved.file, source);
     written.set(part, source);
     lines.push(`LINKED ${part} implements ${to}${from ? ` (was ${from})` : ''}`);
   }

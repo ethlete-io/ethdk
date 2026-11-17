@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { gitResult } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
+import { formattedTextOf } from '../prettier';
 import { mergeInWorker } from './merge-runner';
 import { mergeAndRecord } from './merge-step';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch, SketchTarget } from './sketch';
@@ -124,6 +125,48 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     expect(committed['elements/hero']).toBeDefined();
     expect(committed['pages/home']).toBe('aaaaaaaaaaaaaaaa');
     expect(git('diff', '--', merged).stdout).toContain('bbbbbbbbbbbbbbbb');
+  });
+
+  it('commits its own entries of a foreign-edited ready.json formatted', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = gitOf(target);
+    const ready = join(target, DESIGN_DIR, 'acme/ready.json');
+    const readyOf = (at: string) => ({
+      'elements/hero': { actions: ['emit:gone'], at: '2026-01-01T00:00:00.000Z' },
+      'pages/home': { actions: ['emit:a', 'emit:b'], at },
+    });
+
+    writeFileSync(
+      ready,
+      formattedTextOf({ target, file: ready, text: JSON.stringify(readyOf('2026-01-01')) }) as string,
+    );
+    git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
+
+    writeFileSync(
+      ready,
+      formattedTextOf({ target, file: ready, text: JSON.stringify(readyOf('2026-02-02')) }) as string,
+    );
+
+    expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
+
+    const committed = git('show', `HEAD:${DESIGN_DIR}/acme/ready.json`).stdout;
+
+    expect(git('show', '--name-only', '--format=', 'HEAD').stdout).toContain('acme/ready.json');
+    expect(JSON.parse(committed)['pages/home'].at).toBe('2026-01-01');
+    expect(committed).toBe(formattedTextOf({ target, file: ready, text: committed }));
   });
 
   it('carries a none changeset for the workspace package the merge changes', () => {

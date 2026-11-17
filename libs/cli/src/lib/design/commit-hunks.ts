@@ -1,3 +1,4 @@
+import { writeDesignFile } from './system/design-file';
 import { git as gitText } from './git-reader';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { basename, isAbsolute, join, relative, resolve } from 'path';
@@ -185,7 +186,7 @@ export const designCommitHunks = async (options: { target: string; argv: string[
   const message = args.values['--message'] ?? `chore(repo): Record ${names.join(', ')} in ${basename(file)}`;
 
   await waitForIndexLock(target);
-  writeFileSync(
+  writeDesignFile(
     absolute,
     headText === `${JSON.stringify(head, null, 2)}\n`
       ? `${JSON.stringify(composed, null, 2)}\n`

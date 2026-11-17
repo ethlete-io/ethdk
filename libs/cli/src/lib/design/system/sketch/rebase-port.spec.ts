@@ -42,6 +42,7 @@ const sketched = (options: { sharedLabel?: boolean } = {}) => {
 
   targets.push(target);
   cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+  writeFileSync(join(target, '.prettierrc.json'), JSON.stringify({ printWidth: 120, singleQuote: true }));
 
   if (options.sharedLabel) {
     mkdirSync(join(heroDir(target), 'shared'));

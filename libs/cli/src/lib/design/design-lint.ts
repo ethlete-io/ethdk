@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { existsSync, readFileSync } from 'fs';
 import { dirname, relative, resolve, sep } from 'path';
 import { spawnPlain, spawnPlainAsync } from '../plain-output';
 import { callsRootOf } from './design-config';
@@ -216,7 +217,7 @@ export const shrinkLintBaseline = (options: { productDir: string; linted: string
     }
   }
 
-  if (lines.length > 0) writeFileSync(lintBaselineFileOf(productDir), `${JSON.stringify(next, null, 2)}\n`);
+  if (lines.length > 0) writeDesignFile(lintBaselineFileOf(productDir), `${JSON.stringify(next, null, 2)}\n`);
 
   return lines;
 };

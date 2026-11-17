@@ -1,7 +1,8 @@
+import { writeDesignFile } from './design-file';
 import { failedText } from '../failure-line';
 import { createHash } from 'crypto';
 import { noVerdictLineOf } from './no-verdict';
-import { mkdtempSync, realpathSync, writeFileSync } from 'fs';
+import { mkdtempSync, realpathSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join, relative } from 'path';
@@ -517,9 +518,9 @@ export const comparePart = async (
       if (options.quiet) continue;
 
       dir ??= mkdtempSync(join(tmpdir(), 'et-design-compare-'));
-      writeFileSync(join(dir, `${fileNameOf(state)}.design.png`), design);
-      writeFileSync(join(dir, `${fileNameOf(state)}.app.png`), app);
-      writeFileSync(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
+      writeDesignFile(join(dir, `${fileNameOf(state)}.design.png`), design);
+      writeDesignFile(join(dir, `${fileNameOf(state)}.app.png`), app);
+      writeDesignFile(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
     }
 
     if (dir !== null) log(`pictures: ${dir}`);

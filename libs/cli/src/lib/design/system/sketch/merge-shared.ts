@@ -1,4 +1,5 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeDesignFile } from '../design-file';
+import { cpSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { dirname, join, relative, resolve, sep } from 'path';
 import { filesBelow } from '../assets';
 import { ProductSource } from '../base';
@@ -186,6 +187,6 @@ export const carryShared = (options: {
         : `${quote}${relativeSpecifierOf({ from: file, to: resolve(shared, path) })}${quote}`;
     });
 
-    if (rewritten !== source) writeFileSync(file, rewritten);
+    if (rewritten !== source) writeDesignFile(file, rewritten);
   }
 };

@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from 'fs';
+import { writeDesignFile } from './system/design-file';
+import { mkdirSync } from 'fs';
 import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
 import { changedCropsOf, changedSharesOf, contactSheetOf, pngSizeOf, SheetCell } from './contact-sheet';
@@ -785,7 +786,7 @@ export const designShot = async (options: {
         });
         const { png, diffs } = await queue.run((browser) => contactSheetOf({ browser, rows: shown }));
 
-        writeFileSync(out, png);
+        writeDesignFile(out, png);
         for (const line of shotReportOf({ out, diffs, sheet: shown })) console.log(line);
       }
 
