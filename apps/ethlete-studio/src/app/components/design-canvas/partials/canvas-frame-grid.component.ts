@@ -256,7 +256,9 @@ export class CanvasFrameCellComponent {
             }
           }
           @for (row of sheet.interactive; track row) {
-            <span class="self-center pr-2 font-code" data-grid-row>{{ row }}</span>
+            <span class="self-center pr-2"
+              ><ng-container *ngTemplateOutlet="rowHead; context: { $implicit: row, code: true }"
+            /></span>
             @for (scheme of schemes(); track $index; let firstScheme = $first) {
               @if (!firstScheme) {
                 <span></span>
@@ -300,7 +302,9 @@ export class CanvasFrameCellComponent {
                 <span></span>
               }
               @for (row of line; track row) {
-                <span [class.pt-3]="!firstLine" class="self-end pb-1 font-code" data-grid-row>{{ row }}</span>
+                <span [class.pt-3]="!firstLine" class="self-end pb-1"
+                  ><ng-container *ngTemplateOutlet="rowHead; context: { $implicit: row, code: true }"
+                /></span>
               }
               @for (blank of blanksOf(line); track $index) {
                 <span></span>
@@ -354,7 +358,9 @@ export class CanvasFrameCellComponent {
           }
         }
         @for (row of grid().rows; track row) {
-          <span class="pr-2" data-grid-row>{{ row }}</span>
+          <span class="pr-2"
+            ><ng-container *ngTemplateOutlet="rowHead; context: { $implicit: row, code: false }"
+          /></span>
           @for (scheme of schemes(); track $index; let firstScheme = $first) {
             @if (!firstScheme) {
               <span></span>
@@ -380,6 +386,16 @@ export class CanvasFrameCellComponent {
         }
       </div>
     }
+    <ng-template #rowHead let-row let-code="code">
+      <span [class.font-code]="code" data-grid-row>{{ row }}</span>
+      @if (grid().descriptions?.[row]; as description) {
+        <span
+          class="block w-0 min-w-full whitespace-normal font-sans text-[1rem]/[1.3rem] text-text-muted"
+          data-grid-row-description
+          >{{ description }}</span
+        >
+      }
+    </ng-template>
     <ng-template #schemeHeads let-placement>
       @if (schemes().length > 1) {
         <span></span>
@@ -434,7 +450,9 @@ export class CanvasFrameGridComponent {
     const repeat = `repeat(${this.grid().columns.length}, ${this.grid().sheet ? 'max-content' : 'auto'})`;
     const groups = this.schemes().map(() => repeat);
 
-    return this.grid().sheet ? `minmax(12rem, max-content) ${groups.join(' 1.6rem ')}` : `auto ${groups.join(' 0 ')}`;
+    const head = this.grid().descriptions ? '20rem' : '12rem';
+
+    return this.grid().sheet ? `minmax(${head}, max-content) ${groups.join(' 1.6rem ')}` : `auto ${groups.join(' 0 ')}`;
   });
 
   private shotsKey = computed(() =>

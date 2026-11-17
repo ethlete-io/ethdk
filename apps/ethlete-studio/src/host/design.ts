@@ -235,6 +235,8 @@ export type ListedPart = {
   implements?: string;
   note: string | null;
   states: string[];
+  /** The sentence each state declares: what it shows and what to check. Missing from an `@ethlete/cli` older than state sentences. */
+  descriptions?: Record<string, string>;
   widths?: number[];
   /** The interactions each state is also drawn in besides rest. Missing from an `@ethlete/cli` older than interactions. */
   interactions?: string[];

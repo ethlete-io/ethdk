@@ -6,5 +6,6 @@ export type ButtonProps = { label: string };
 export default definePart<ButtonProps>({
   note: 'A filled button in the accent colour.',
   states: { default: { label: 'Play' } },
+  describe: { default: 'The play button; check its label.' },
   render: ({ label }) => drawing({ body: html`<button class="acme-button">${label}</button>`, styles }),
 });

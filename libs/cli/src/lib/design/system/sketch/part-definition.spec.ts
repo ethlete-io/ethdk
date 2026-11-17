@@ -125,6 +125,7 @@ describe('PARSED_PART_FIELDS', () => {
       note: 'Every field.',
       madeBy: ['model'],
       states: { rest: { open: false }, open: { open: true } },
+      describe: { rest: 'The closed toggle; check its label.', open: 'The open toggle; check its panel.' },
       widths: [320],
       interactions: ['hover'],
       controls: { toggle: { kind: 'button', input: ['pointer'] } },

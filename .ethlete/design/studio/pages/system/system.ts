@@ -234,10 +234,20 @@ const fitAll = (root: HTMLElement) => {
 
 const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
 
+const BUTTON_SENTENCES = {
+  filled:
+    'The filled button in every interaction; check that hover and active darken the fill and the pressed one stays dark.',
+  outline:
+    'The outlined button in every interaction; check that the border stays visible on hover and disabled fades it.',
+  tonal:
+    'The tonal button in every interaction; check that the tint deepens on hover and the label keeps its contrast.',
+};
+
 const buttonGrid = async () => {
   const rows = await Promise.all(
     (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
       label: variant,
+      description: BUTTON_SENTENCES[variant],
       cells: await Promise.all(
         interactions.map(async (interaction) => {
           const props = { label: 'Save', variant, pressed: interaction === 'pressed' };
@@ -332,6 +342,45 @@ export default definePart<{
     'agent-interrupted': { agent: 'interrupted' },
     call: { call: 'open' },
     'call-transferred': { call: 'transferred' },
+  },
+  describe: {
+    part: 'The button part on the canvas with its state grid; check that each row shows its sentence under the state name.',
+    empty: 'A product without parts; check the short line in the panel and the centred card with the example prompt.',
+    'listing-error':
+      'A failed listing read; check the centred error card with the server reason and Erneut laden, and that no frames show.',
+    'canvas-note':
+      'A note instead of a part; check the card with its icon, title and the hint, and that no chip or comment button shows.',
+    'many-states': 'A part with many states; check that only the states with an open comment open and the rest fold.',
+    'many-states-folded':
+      'The folded states; check the pill at the bottom centre with the count and Alle Zustände zeigen.',
+    fit: 'The canvas fitted to its frame; check that the frame sits centred with room at the top.',
+    'points-closed': 'The open-points chip closed; check its count beside the Kommentar toggle.',
+    'nothing-open': 'A part with no open points; check that the chip reads Nichts offen.',
+    'comment-mode': 'Comment mode on; check the pressed Kommentar toggle and the crosshair over the frame.',
+    'comment-draft': 'An empty comment draft; check the text field, Abbrechen and Senden at the clicked point.',
+    'comment-draft-typed': 'A typed comment draft; check that the text wraps inside the field and Senden is enabled.',
+    'send-busy': 'A comment being sent; check that the field and Abbrechen are disabled and Senden shows a spinner.',
+    'send-error': 'A failed send; check the retry line under the field, the kept text and Erneut senden.',
+    'send-rejected':
+      'A send the server refused; check its reason under the field and that Senden stays without a retry.',
+    comments: 'The comment pins of the part; check their numbers and where they sit on the frame.',
+    'comments-mode': 'Comment pins in comment mode; check that the pins stay visible over the crosshair.',
+    'comments-draft': 'A draft beside existing pins; check that the draft pin does not cover a numbered pin.',
+    'one-blocker': 'One definite blocker; check that the badge reads Nicht baubereit (1) in the warning colour.',
+    checking: 'Slow rules still running with no definite blocker; check that the badge reads Wird geprüft.',
+    'blocked-checking':
+      'A definite blocker while slow rules run; check that the badge reads Nicht baubereit, not Wird geprüft.',
+    'direct-edit': 'A direct edit with the blockers open; check the grouped reasons and Sketch öffnen.',
+    'direct-edit-closed': 'A direct edit with the blockers closed; check the badge and Gründe in the footer.',
+    'blockers-open': 'The blockers grouped by kind; check every group heading and its entries.',
+    'agent-working': 'The agent fixing open points; check the Agent behebt badge beside the build status.',
+    'agent-working-ready': 'The agent working on a ready part; check that Baubereit and Agent behebt both show.',
+    'agent-failed': 'The agent failed; check the Agent fehlgeschlagen badge in the error colour and its detail title.',
+    'agent-failed-ready': 'The agent failed on a ready part; check that Baubereit stays beside the error badge.',
+    'agent-waiting': 'The agent waiting; check the Agent wartet badge.',
+    'agent-interrupted': 'The agent interrupted; check the Agent unterbrochen badge.',
+    call: 'A legacy call; check the header with its slug, headline, theme switches and Als übertragen markieren.',
+    'call-transferred': 'A transferred call; check the übertragen badge in place of the button.',
   },
   controls: {
     comment: { kind: 'button', part: 'components/button' },

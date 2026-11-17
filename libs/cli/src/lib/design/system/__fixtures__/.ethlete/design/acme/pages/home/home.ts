@@ -8,6 +8,7 @@ export type HomeProps = { films: Film[] };
 export default definePart<HomeProps>({
   note: 'A hero over a list of cards.',
   states: { default: { films }, empty: { films: [] } },
+  describe: { default: 'The home page with films; check the hero.', empty: 'The home page without films; check the hero text.' },
   render: async (props) => {
     const top = await hero.render({ film: props.films[0] ?? { title: 'Nothing yet' } });
     const cards = await Promise.all(props.films.map((film) => card.render({ title: film.title })));

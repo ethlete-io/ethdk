@@ -8,6 +8,7 @@ export type HeroProps = { film: Film };
 export default definePart<HeroProps>({
   note: 'One featured film with its play button.',
   states: { default: { film: films[0] ?? { title: '' } } },
+  describe: { default: 'The hero of the first film; check its title.' },
   render: async ({ film }) => {
     const play = await button.render({ label: 'Play' });
 

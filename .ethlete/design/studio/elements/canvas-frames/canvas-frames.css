@@ -22,6 +22,18 @@
     grid-template-columns: 12rem repeat(var(--st-cols), calc(var(--st-cell-w) + 2 * var(--space-1)));
   }
 
+  .st-sgrid[data-described] .st-sgrid-group {
+    grid-template-columns: 20rem repeat(var(--st-cols), calc(var(--st-cell-w) + 2 * var(--space-1)));
+  }
+
+  .st-sgrid-description {
+    width: 0;
+    min-width: 100%;
+    font-size: 1rem;
+    line-height: 1.3rem;
+    white-space: normal;
+  }
+
   .st-sgrid-head {
     color: var(--text-subtle, var(--text-muted));
     font-size: 1rem;

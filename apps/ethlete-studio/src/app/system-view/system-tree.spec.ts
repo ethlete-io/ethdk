@@ -454,6 +454,19 @@ describe('framesOf', () => {
     expect(frames.map((frame) => frame.schemes)).toEqual(Array(4).fill(['light', 'dark']));
   });
 
+  it('puts the sentence of each state under its frames, and on the rows of a fitted table', () => {
+    const descriptions = { part: 'The card; check the title.', error: 'The failed card; check the reason.' };
+    const card = part({ name: 'card', states: ['part', 'empty', 'error'], widths: [320], descriptions });
+    const chip = part({ name: 'chip', states: ['part', 'error'], descriptions });
+
+    expect(framesOf({ port: 4402, product: product(), part: card }).map((frame) => frame.description)).toEqual([
+      descriptions.part,
+      undefined,
+      descriptions.error,
+    ]);
+    expect(framesOf({ port: 4402, product: product(), part: chip })[0]?.grid?.descriptions).toEqual(descriptions);
+  });
+
   it('leaves the folded states out of the frames and keeps their order', () => {
     const card = part({ name: 'card', states: ['part', 'empty', 'busy', 'error'], widths: [320] });
     const frames = framesOf({ port: 4402, product: product(), part: card, folded: new Set(['empty', 'busy']) });

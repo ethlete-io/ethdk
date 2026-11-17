@@ -33,6 +33,7 @@ const nameOf = (name: ts.PropertyName) =>
 /** The top-level `definePart` fields this file reads. Each must be a key of `Part`, which a spec checks. */
 export const PARSED_PART_FIELDS = [
   'states',
+  'describe',
   'note',
   'madeBy',
   'widths',
@@ -74,6 +75,27 @@ export const stateNamesOf = (source: string): string[] | null => {
   );
 
   return names.includes(null) ? null : (names as string[]);
+};
+
+/**
+ * The sentences a part file writes in `definePart({ describe: { … } })`, by state name, read without running it: `none`
+ * without the field, `unknown` when it is not an object literal of string literals there.
+ */
+export const stateSentencesOf = (source: string): 'none' | 'unknown' | Record<string, string> => {
+  const { definition } = definitionOf(source);
+  const field = definition ? fieldOf(definition, 'describe') : undefined;
+
+  if (!field) return 'none';
+  if (!ts.isObjectLiteralExpression(field.initializer)) return 'unknown';
+
+  const sentences = field.initializer.properties.map((property) => {
+    const name = ts.isPropertyAssignment(property) ? nameOf(property.name) : null;
+    const text = ts.isPropertyAssignment(property) ? literalOf(property.initializer) : null;
+
+    return name === null || text === null ? null : ([name, text] as const);
+  });
+
+  return sentences.includes(null) ? 'unknown' : Object.fromEntries(sentences as (readonly [string, string])[]);
 };
 
 /** The string literal props each state of `definePart({ states: { … } })` writes, by state name, read without running it. */

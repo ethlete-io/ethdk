@@ -156,6 +156,19 @@ describe('CanvasFrameGridComponent', () => {
     ...['group', 'part', 'inert', 'mark'].map((row) => cellAt(row, 'rest')),
   ];
 
+  it('shows the sentence of a row under its label, and none for a row without one', async () => {
+    const host = await renderGrid({
+      columns,
+      rows,
+      cells,
+      sheet: 'groups',
+      descriptions: { group: 'The group; check it.' },
+    });
+
+    expect(textsOf(host, '[data-grid-row]')).toEqual(rows);
+    expect(textsOf(host, '[data-grid-row-description]')).toEqual(['The group; check it.']);
+  });
+
   it('splits a sheet into the rows that use more than rest and the rest-only rows, packed a line per column count', async () => {
     const host = await renderGrid({ columns, rows, cells, sheet: 'groups' });
 

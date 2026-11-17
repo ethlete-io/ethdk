@@ -19,7 +19,7 @@ import {
 } from './shared/canvas-marks';
 import styles from './canvas-frames.css?inline';
 
-export type GridRow = { label: string; cells: (string | undefined)[] };
+export type GridRow = { label: string; description?: string; cells: (string | undefined)[] };
 export type StateGridDrawing = { columns: string[]; rows: GridRow[] };
 export type StateGridOptions = { cellWidth?: string; place?: 'fill' | 'center' };
 
@@ -30,8 +30,11 @@ const perLine = 4;
 
 const restOnly = (row: GridRow) => row.cells.every((cell, index) => index === 0 || cell === undefined);
 
-const label = (text: string, extra = '') =>
-  `<span class="st-sgrid-label self-end pb-1 font-code ${extra}">${text}</span>`;
+const described = (description?: string) =>
+  description ? `<span class="st-sgrid-description block font-sans">${description}</span>` : '';
+
+const label = (text: string, extra = '', description?: string) =>
+  `<span class="st-sgrid-label self-end pb-1 ${extra}"><span class="font-code">${text}</span>${described(description)}</span>`;
 
 type Place = NonNullable<StateGridOptions['place']>;
 
@@ -40,14 +43,15 @@ const cell = (place: Place) => (body: string | undefined) =>
 
 const tableRow =
   (place: Place) =>
-  ({ label: text, cells }: GridRow) =>
-    `<span class="self-center font-code">${text}</span>` + cells.map(cell(place)).join('');
+  ({ label: text, description, cells }: GridRow) =>
+    `<span class="self-center pr-2"><span class="font-code">${text}</span>${described(description)}</span>` +
+    cells.map(cell(place)).join('');
 
 const packedLine = (place: Place) => (rows: GridRow[], index: number) => {
   const blanks = '<span></span>'.repeat(perLine - rows.length);
   return (
     '<span></span>' +
-    rows.map((row) => label(row.label, index === 0 ? 'pt-0' : '')).join('') +
+    rows.map((row) => label(row.label, index === 0 ? 'pt-0' : '', row.description)).join('') +
     blanks +
     '<span></span>' +
     rows.map((row) => cell(place)(row.cells[0])).join('') +
@@ -83,6 +87,7 @@ export const stateGrid = (
   return html`<div
     class="st-sgrid flex flex-col gap-6 w-max bg-et-surface-bg text-et-surface-muted pt-4 px-6 pb-6"
     data-place="${place}"
+    ${rows.some((row) => row.description) ? 'data-described' : ''}
     style="--st-cols: ${columns.length}; --st-cell-w: ${cellWidth}"
   >
     ${interactionGroup} ${restGroup}

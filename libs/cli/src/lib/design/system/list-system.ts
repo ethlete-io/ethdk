@@ -26,6 +26,8 @@ export type ListedPart = {
   /** The model ids that drew the part, written by the last sketch merge; empty when none is known. */
   madeBy: string[];
   states: string[];
+  /** The sentence each state declares in `describe`, by state name; a state without one is missing. */
+  descriptions?: Record<string, string>;
   /** The container widths the part is drawn at, when it declares valid ones. */
   widths?: number[];
   /** The interactions the part is drawn in besides rest, in the order it declares them. */
@@ -71,6 +73,7 @@ type PartModule = {
     note?: unknown;
     madeBy?: unknown;
     states?: unknown;
+    describe?: unknown;
     widths?: unknown;
     interactions?: unknown;
     grid?: unknown;
@@ -101,6 +104,18 @@ const motionsOf = (motions: unknown): Pick<ListedPart, 'motions'> => {
   });
 
   return listed.length > 0 ? { motions: Object.fromEntries(listed) } : {};
+};
+
+const descriptionsOf = (describe: unknown, states: string[]): Pick<ListedPart, 'descriptions'> => {
+  if (!isRecord(describe)) return {};
+
+  const listed = states.flatMap((state) => {
+    const sentence = describe[state];
+
+    return typeof sentence === 'string' && sentence.trim() ? [[state, sentence.trim()] as const] : [];
+  });
+
+  return listed.length > 0 ? { descriptions: Object.fromEntries(listed) } : {};
 };
 
 const madeByOf = (madeBy: unknown) =>
@@ -172,7 +187,7 @@ const implementsOf = (options: { target: string; source: string }) => {
 const belongsTo = (part: ResolvedPart, problem: Problem) =>
   problem.file === part.file || problem.file.startsWith(`${dirname(part.file)}${sep}`);
 
-/** The note, state names, widths, interactions and grid a part module declares, or the problem that kept it from loading. */
+/** The note, state names and their sentences, widths, interactions and grid a part module declares, or the problem that kept it from loading. */
 export const readPartModule = async (options: {
   part: Pick<ResolvedPart, 'file'> & Partial<Pick<ResolvedPart, 'cssSource'>>;
   product: string;
@@ -200,6 +215,7 @@ export const readPartModule = async (options: {
       note: typeof loaded.note === 'string' ? loaded.note : null,
       madeBy: madeByOf(loaded.madeBy),
       states: names,
+      ...descriptionsOf(loaded.describe, names),
       ...widthsOf(loaded.widths),
       interactions: interactionsOf(loaded.interactions),
       ...gridOf(loaded.grid, names),

@@ -38,6 +38,8 @@ export type CanvasFrame = {
   place?: FramePlace;
   /** A muted line after the label. */
   note?: string;
+  /** What the frame shows and what to check, under the label. */
+  description?: string;
   /** Dims the frame and shows this text over it, while what it draws is not final. */
   pending?: string;
   /** Dims the frame of a variant the designer or an agent rejected. */
@@ -169,6 +171,8 @@ export type ColorScheme = 'light' | 'dark';
 export type FrameGrid = {
   columns: string[];
   rows: string[];
+  /** What each row shows and what to check, under the row label. */
+  descriptions?: Record<string, string>;
   cells: FrameCell[];
   sheet?: 'table' | 'groups';
   schemes?: ColorScheme[];

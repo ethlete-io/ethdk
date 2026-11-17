@@ -7,6 +7,7 @@ export type CardProps = { title: string };
 export default definePart<CardProps>({
   note: 'A card with one action.',
   states: { default: { title: 'A film' }, long: { title: 'A film with a much longer title than most' } },
+  describe: { default: 'A film card; check its title.', long: 'A long title; check that it wraps.' },
   render: async ({ title }) => {
     const action = await button.render({ label: 'Play' });
 

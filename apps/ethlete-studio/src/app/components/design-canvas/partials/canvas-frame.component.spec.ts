@@ -335,7 +335,37 @@ describe('CanvasFrameComponent caption', () => {
     expect(label?.classList).toContain('min-w-0');
     expect(others.length).toBeGreaterThan(0);
     expect(others.every((child) => child.classList.contains('shrink-0'))).toBe(true);
-    expect(label?.parentElement?.classList).toContain('leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]');
+    expect(label?.parentElement?.parentElement?.classList).toContain(
+      'leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]',
+    );
+  });
+
+  it('shows the sentence of a frame on its own line under the label', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(CanvasFrameComponent);
+
+    fixture.componentRef.setInput('frame', {
+      id: 'phone',
+      src: 'about:blank',
+      label: 'part · phone',
+      screenshot: 'phone.png',
+      width: 375,
+      description: 'The part; check the title.',
+    });
+    fixture.componentRef.setInput('width', 375);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('[data-frame-description]')?.textContent?.trim()).toBe('The part; check the title.');
+    expect(
+      host
+        .querySelector('[data-frame-description]')
+        ?.previousElementSibling?.contains(host.querySelector('[data-frame-label]')),
+    ).toBe(true);
   });
 
   it.each([false, true])(

@@ -28,6 +28,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * One part of a product's design system. `note` records why the part has its current shape, and
  * `madeBy` the model ids that drew it, written by a sketch merge.
  * `states` names each state it is drawn in with the props for that state, and `render` draws it.
+ * `describe` holds one sentence per state: what the state shows and what to check in it. Studio shows it under the
+ * state's title; a missing or unknown state name in it does not compile.
  * `frame` wraps the body of each of the part's own states in a demo frame (padding, a page background); a part that
  * calls `render` of this one gets the part without it.
  * `styles` is the part's stylesheet: every drawing of the part gets it before the styles `render` returns, and a
@@ -53,6 +55,7 @@ export type Part<TProps, TState extends string = string> = {
   note: string;
   madeBy?: string[];
   states: Record<TState, TProps>;
+  describe?: Record<TState, string>;
   styles?: string;
   frame?: (body: string, props: TProps) => string;
   widths?: number[];
@@ -183,7 +186,7 @@ export type RenderOptions = { interaction?: Interaction };
 
 type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   Part<TProps, TState>,
-  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame' | 'sample' | 'coverage'
+  'states' | 'describe' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame' | 'sample' | 'coverage'
 > & {
   coverage?: PartCoverage<NoInfer<TState>>;
   sample?: PartSample<NoInfer<TProps>>;
@@ -191,6 +194,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   motions?: Record<string, Motion<NoInfer<TState>>>;
   rules?: PartRule<NoInfer<TState>>[];
   states: Record<TState, NoInfer<TProps>>;
+  describe?: Record<NoInfer<TState>, string>;
   controls?: Record<string, Control<NoInfer<TState>>>;
   grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
   render: (props: TProps) => Drawing | Promise<Drawing>;

@@ -114,9 +114,14 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     <span
       [class]="labelPlacement()"
       [style.max-width.px]="captionMaxWidth()"
-      class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-et-surface text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
-      ><ng-container [ngTemplateOutlet]="caption"
-    /></span>
+      class="absolute left-0 flex flex-col overflow-hidden whitespace-nowrap text-et-surface text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
+      ><span class="flex gap-[0.6em]"><ng-container [ngTemplateOutlet]="caption" /></span>
+      @if (frame().description; as description) {
+        <span [style.max-width.px]="width()" class="truncate text-text-muted" data-frame-description>{{
+          description
+        }}</span>
+      }
+    </span>
     <div class="absolute inset-0" data-et-projected="frame">
       @if (frame().empty; as empty) {
         <div

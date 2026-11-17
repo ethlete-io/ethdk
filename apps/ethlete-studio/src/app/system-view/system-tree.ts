@@ -638,6 +638,11 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
     state === undefined ? {} : { place: { part: key, state, size, ...(interaction === REST ? {} : { interaction }) } };
   const idOf = ({ state, interaction }: Cell, size?: string | number) =>
     [state ?? '', ...(size === undefined ? [] : [size]), ...(interaction === REST ? [] : [interaction])].join(' ');
+  const descriptionOf = ({ state }: Cell) => {
+    const description = state === undefined ? undefined : part.descriptions?.[state];
+
+    return description ? { description } : {};
+  };
 
   if (part.layer === 'pages') {
     return cells.flatMap((cell) =>
@@ -647,6 +652,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         width,
         height,
         label: stateSizeLabelOf(cell, preset),
+        ...descriptionOf(cell),
         row: cell.state,
         screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
         schemes: schemesOf(product),
@@ -668,6 +674,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
           src: partFrameUrl(addressOf(cell)),
           width,
           label: stateSizeLabelOf(cell, 'width'),
+          ...descriptionOf(cell),
           row: cell.state,
           screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
           schemes,
@@ -694,6 +701,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         schemes,
         columns: interactions,
         rows: states.filter((state) => state !== undefined),
+        ...(part.descriptions ? { descriptions: part.descriptions } : {}),
         cells: cells.map((cell) => ({
           id: idOf(cell),
           row: cell.state ?? '',

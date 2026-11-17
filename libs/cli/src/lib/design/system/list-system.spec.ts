@@ -264,6 +264,28 @@ describe('listSystem', () => {
     expect(product?.parts.find((part) => part.name === 'palette')).not.toHaveProperty('motions');
   });
 
+  it('lists the sentence each state declares, and none for a blank or unknown one', async () => {
+    const target = acme();
+    const file = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(
+      file,
+      readFileSync(file, 'utf8').replace(
+        "describe: { default: 'The hero of the first film; check its title.' },",
+        "describe: { default: ' The first film; check its title. ', gone: 'No such state.' } as never,",
+      ),
+    );
+
+    const [product] = await list(target, ['acme']);
+
+    expect(product?.parts.find((part) => part.name === 'hero')?.descriptions).toEqual({
+      default: 'The first film; check its title.',
+    });
+    expect(product?.parts.find((part) => part.name === 'palette')?.descriptions).toEqual({
+      default: 'The accent swatch; check its colour.',
+    });
+  });
+
   it("lists a part's known interactions once each, and an INTERACTIONS problem for an unknown one", async () => {
     const target = acme();
     const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
