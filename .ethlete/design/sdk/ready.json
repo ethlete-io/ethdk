@@ -262,6 +262,34 @@
     "cmd": "check",
     "pid": 2686644
   },
+  "components/textarea": {
+    "hash": "48a1911479461cc4",
+    "files": {
+      ".ethlete/design/sdk/components/textarea/textarea.css": "e0a2d2284eeab65d",
+      ".ethlete/design/sdk/components/textarea/textarea.ts": "d8ef7e9a68136852",
+      "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
+      "libs/components/design/textarea.ts": "d111b478450a84d9",
+      "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
+      "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "e4f70765b72267ab",
+      "libs/components/src/lib/forms/form-field/form-field-textarea-styles.component.css": "3cdff8e980e47658",
+      "libs/components/src/lib/forms/form-field/form-field.component.css": "934d0fc0e7a53ff4",
+      "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
+      "libs/components/src/lib/forms/form-field/hint.component.css": "b1531941f843c188",
+      "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
+      "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "5b69cdc878fe83fc",
+      "libs/components/src/lib/forms/textarea/textarea.component.css": "0983f19962cc1c64",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
+    "actions": [],
+    "at": "2026-11-17T20:18:45.858Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 804051
+  },
   "foundations/colors": {
     "hash": "614b1b030fd5f8a7",
     "files": {
