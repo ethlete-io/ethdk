@@ -354,6 +354,7 @@ const SCREEN_UNCHANGED = [
   'unchanged-matrix',
   'unchanged-matrix-open',
   'folded',
+  'picked',
 ];
 
 const screenShotsOf = (changed: boolean): SketchShot[] => [

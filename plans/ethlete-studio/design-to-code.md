@@ -3620,3 +3620,10 @@ shots. Cause (measured): `shownZoom` fell back to 1 without a shot, while the de
 from its columns alone (17 % in the comparing state). The fallback now applies only to the grid layout, where the
 design's `gridFit` also gives 1 without a stage. Verified: compare comparing ok (from 401 px), full pages/sketches
 compare without new diffs, `vitest related` 193/193, lint. Not verified: a live Studio shot.
+
+As built (B539 crop frames, 2026-11-17): change-crop and change-crop-whole had two diffs. Cause (measured): a cropped
+frame's inner box clips the magnified shot itself, so its `scrollWidth` counts the clipped overflow and the frame grew
+~24 px past the design's (x 964 and 1404); a cropped frame now keeps the part width. The folded count read 15, the
+design's `UNCHANGED_COUNT` is 16: the screen sample gains the unchanged state `picked`. Verified: compare change-crop
+and change-crop-whole ok (from 261/275 px), full pages/sketches compare without new diffs, `vitest related` 193/193,
+lint. Not verified: a live Studio shot.

@@ -935,7 +935,8 @@ export class SketchesComponent {
       const inner = frame.firstElementChild;
 
       if (inner instanceof HTMLElement) {
-        const width = inner.scrollWidth > inner.offsetWidth ? inner.scrollWidth : parseFloat(inner.style.width);
+        const grows = !frame.hasAttribute('data-sk-cropped') && inner.scrollWidth > inner.offsetWidth;
+        const width = grows ? inner.scrollWidth : parseFloat(inner.style.width);
 
         setStyle(frame, {
           width: `${width * scale}px`,
