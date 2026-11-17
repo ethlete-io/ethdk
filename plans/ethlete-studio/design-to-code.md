@@ -3670,3 +3670,14 @@ ready, and the edit sketch `elements/canvas-frames@edit` blocks that in a gate l
 `sketch withdraw --variant old` "only the agent that drew it withdraws it" (author: `design check`), `sketch discard`
 refuses an edit sketch. The verify also asks for pages/system in the set. Fit tooltip flake (Suspect: compare hovers Fit
 and the 300 ms showDelay runs out on a slow run).
+
+As built (B142, 2026-11-17): (a) the pages/sketches design draws its canvas with `canvasViewport` of
+components/canvas-viewport (4fca3b554); `design check pages/sketches` HELD, every state draws as before; compare
+pages/sketches all ok. The app already used `ethlete-canvas-viewport` on Sketches and Flows. pages/flows on the
+canvas part opens an edit sketch that asks old/new (a picture change), so it is not committed: the patch waits for
+that pick, and its hit is baselined. (b) OWN-CANVAS (db2bd9f7e): with `canvas: { part, zoom }` in a product config,
+a part that reaches the zoom part but not the canvas part fails; run over studio, studio-lab, sdk: only pages/flows
+(baselined, finding 228). (c) Cause (live shots, panned-zoomed, unchanged-matrix-open): the rail-edge clip is gone
+since 3ef78653b (finding 867, canvas runs under the panel); the pinned list row head was dropped by the later
+decision 96423df97 / d64a93790 (B523), the matrix gutter keeps its pin, so nothing was built. Not verified: the
+pages/flows switch, Tauri.
