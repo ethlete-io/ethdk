@@ -319,6 +319,7 @@ export class SketchesComponent {
   protected selectedFrame = signal<string | null>(null);
   private confirmRow = signal<string | null>(null);
   private confirmRef: { close: () => void } | null = null;
+  private confirmOrigin: HTMLElement | null = null;
   private fitAt = signal<{ scale: number; fonts: number } | null>(null);
   // fonts.ready resolves before the gutter's mono face loads; without loadingdone the fit keeps the fallback's gutter.
   private fontLoads = toSignal(
@@ -512,8 +513,9 @@ export class SketchesComponent {
   constructor() {
     afterRenderEffect(() => {
       const kind = this.confirm();
+      const target = kind ? this.confirmTargetOf(kind) : null;
 
-      untracked(() => this.showConfirm(kind));
+      untracked(() => this.showConfirm(kind, target));
     });
 
     this.destroyRef.onDestroy(() => {
@@ -795,27 +797,30 @@ export class SketchesComponent {
     this.zoomTo(this.shownZoom() / ZOOM_STEP);
   }
 
-  private showConfirm(kind: SketchConfirm | null) {
-    const open = this.confirmRef;
-
-    this.confirmRef = null;
-    open?.close();
-
-    if (!kind) return;
-
+  private confirmTargetOf(kind: SketchConfirm) {
     const key = kind === 'merge' ? (this.confirmRow() ?? this.selected() ?? null) : null;
-    const row = this.rows().find((candidate) => candidate.key === key);
+    const row = this.rows().find((candidate) => candidate.key === key) ?? null;
     const origin =
       kind === 'merge'
         ? this.takes().find((take) => take.nativeElement.getAttribute('data-sk-take') === key)?.nativeElement
         : this.discardAnchor()?.nativeElement;
 
-    if (!origin || (kind === 'merge' && !row)) {
-      this.confirm.set(null);
+    return origin && (kind === 'discard' || row) ? { origin, row } : null;
+  }
 
-      return;
-    }
+  private showConfirm(kind: SketchConfirm | null, target: { origin: HTMLElement; row: SketchRow | null } | null) {
+    if (kind && this.confirmRef && this.confirmOrigin === target?.origin) return;
 
+    const open = this.confirmRef;
+
+    this.confirmRef = null;
+    this.confirmOrigin = null;
+    open?.close();
+
+    // The rows render only once the list is measured, so a bound merge confirm waits for its Übernehmen.
+    if (!kind || !target) return;
+
+    const { origin, row } = target;
     const { label, question, note, confirm } = kind === 'merge' ? this.LABELS.mergeConfirm : this.LABELS.discardConfirm;
     const text: SketchConfirmText = {
       question: row ? question(row.label ?? this.LABELS.variant(row.key), this.part()) : question(this.part(), ''),
@@ -827,7 +832,7 @@ export class SketchesComponent {
       role: 'alertdialog',
       ariaLabel: label,
       autoFocus: '[data-sk-confirm-cancel]',
-      strategies: anchoredDialogOverlayStrategy(),
+      strategies: anchoredDialogOverlayStrategy(kind === 'merge' ? { placement: 'bottom-start' } : undefined),
       bindings: [
         inputBinding('text', () => text),
         inputBinding('destructive', () => kind === 'discard'),
@@ -840,6 +845,7 @@ export class SketchesComponent {
     });
 
     this.confirmRef = ref;
+    this.confirmOrigin = origin;
     ref
       .afterClosed()
       .pipe(
@@ -847,6 +853,7 @@ export class SketchesComponent {
         filter(() => this.confirmRef === ref),
         tap(() => {
           this.confirmRef = null;
+          this.confirmOrigin = null;
           this.confirmRow.set(null);
           this.confirm.set(null);
         }),

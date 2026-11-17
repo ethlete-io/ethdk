@@ -395,8 +395,8 @@ export const SKETCH_COMMENTS_SAMPLE: SketchComment[] = [
   {
     id: 'sk-c1',
     variant: 'a',
-    shot: 'fit-hover',
-    point: { x: 32, y: 10 },
+    shot: 'reset',
+    point: { x: 139.9123, y: 16.3613 },
     author: 'human',
     initials: 'H',
     when: 'vor 20 Min',
@@ -408,8 +408,8 @@ export const SKETCH_COMMENTS_SAMPLE: SketchComment[] = [
   {
     id: 'sk-c2',
     variant: 'b',
-    shot: 'reset-hover',
-    point: { x: 92, y: 18 },
+    shot: 'reset-active',
+    point: { x: 2.6426, y: 70.5806 },
     author: 'Claude',
     initials: 'C',
     agent: 'claude',
@@ -424,8 +424,8 @@ export const SKETCH_COMMENTS_SAMPLE: SketchComment[] = [
 
 export const SKETCH_COMMENT_DRAFT_SAMPLE: SketchCommentDraft = {
   variant: 'b',
-  shot: 'fit-hover',
-  point: { x: 52, y: 14 },
+  shot: 'reset',
+  point: { x: 233.1871, y: 45.4194 },
   author: 'human',
   initials: 'H',
 };

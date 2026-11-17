@@ -400,6 +400,19 @@ describe('SketchesComponent', () => {
     expect(textOf(dialog)).toContain(LABELS.mergeConfirm.question(LABELS.variant('x'), 'components/card'));
   });
 
+  it('keeps a bound merge confirm until its Übernehmen renders, then opens it', async () => {
+    const fixture = await render({ part: 'components/card', selected: 'x', confirm: 'merge', status: 'drawing' });
+
+    expect(document.querySelectorAll('[role="alertdialog"]')).toHaveLength(0);
+    expect(fixture.componentInstance.confirm()).toBe('merge');
+
+    fixture.componentRef.setInput('status', 'waiting');
+    await fixture.whenStable();
+    const dialog = [...document.querySelectorAll<HTMLElement>('[role="alertdialog"]')].at(-1);
+
+    expect(textOf(dialog)).toContain(LABELS.mergeConfirm.question(LABELS.variant('x'), 'components/card'));
+  });
+
   it('lists the comments of the variants under the tree and pins each on its state', async () => {
     const comments: SketchComment[] = ['one', 'two', 'three'].map((text, index) => ({
       id: `k${index}`,
