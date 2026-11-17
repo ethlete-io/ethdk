@@ -82,6 +82,27 @@ describe('CarouselDirective edge cases', () => {
       expect(fixture.componentInstance.autoplayDirective().isPlaying()).toBe(false);
     });
 
+    it('starts with autoplay on without a pause control error, and plays once a second slide arrives', async () => {
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const fixture = TestBed.createComponent(CarouselEdgeHostComponent);
+
+      fixture.componentInstance.slides.set(slides);
+      fixture.componentInstance.autoplay.set(true);
+      fixture.detectChanges();
+      await settle(fixture);
+
+      expect(fixture.componentInstance.autoplayDirective().pauseReason()).toBe('no-slides');
+
+      fixture.componentInstance.slides.set([...slides, { title: 'a' }, { title: 'b' }]);
+      fixture.detectChanges();
+      await settle(fixture);
+
+      expect(fixture.componentInstance.autoplayDirective().pauseReason()).not.toBe('no-slides');
+      expect(element(fixture).querySelector('[etCarouselPlayToggle]')).not.toBeNull();
+      expect(errors).not.toHaveBeenCalled();
+      errors.mockRestore();
+    });
+
     it('renders no dots and no clones', async () => {
       const fixture = await createHost(slides);
 

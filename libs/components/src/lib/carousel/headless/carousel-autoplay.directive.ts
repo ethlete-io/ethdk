@@ -227,7 +227,7 @@ export class CarouselAutoplayDirective {
           );
         }
 
-        if (this.isEnabled() && !this.pauseControl()) {
+        if (this.isEnabled() && this.carousel.count() > 1 && !this.pauseControl()) {
           throw new RuntimeError(
             CAROUSEL_ERROR_CODES.AUTOPLAY_WITHOUT_PAUSE_CONTROL,
             '[CarouselAutoplayDirective] A carousel that advances on its own needs a control to stop it (WCAG 2.2.2). ' +

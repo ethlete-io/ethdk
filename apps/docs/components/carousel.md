@@ -324,8 +324,8 @@ protected restLongerOnText = (slide: Slide) => (slide.body ? 9000 : null);
 ```
 
 A carousel that moves on its own must offer a way to stop it (WCAG 2.2.2) - `<et-carousel>` renders the
-pause control for you, and the headless `etCarouselAutoplay` throws in dev mode if no
-`etCarouselPlayToggle` is registered. Hovering or focusing **that control** is not counted as the hover or
+pause control for you, and the headless `etCarouselAutoplay` throws in dev mode if it first renders
+with two or more slides and no `etCarouselPlayToggle` is registered (with fewer slides it does not play). Hovering or focusing **that control** is not counted as the hover or
 focus pause: it lives inside the carousel, so pressing play would otherwise be cancelled by the pointer
 still resting on the button that was just pressed, and autoplay could never be restarted. Hovering a
 _slide_ pauses as it should. The control's icon and its label follow `pauseReason()` rather than only
