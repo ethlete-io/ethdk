@@ -77,6 +77,7 @@ export default definePart({
       'An outlined warning badge with a label longer than its frame; check that the label wraps and the border wraps every line.',
   },
   widths: [480],
+  controls: {},
   frame: (body) => `<div class="badge-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({

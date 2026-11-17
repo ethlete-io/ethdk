@@ -77,6 +77,7 @@ export default definePart({
       'An outlined warning badge with a label longer than its cap; check the one-line label with its ellipsis inside the border.',
   },
   widths: [480],
+  controls: {},
   frame: (body) => `<div class="badge-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
