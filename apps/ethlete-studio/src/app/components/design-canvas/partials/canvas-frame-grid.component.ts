@@ -13,7 +13,7 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import {
   EMPTY,
@@ -39,7 +39,9 @@ import {
   frameMessageOf,
   withScheme,
 } from '../canvas-frame';
+import { stateDiff$ } from '../../../../host/design';
 import { Rect, Size } from '../canvas-math';
+import { diffMarkOf } from './diff-mark';
 import { paintedFrame$ } from '../frame-paint';
 import { ShotRankDirective } from './shot-rank';
 import { ShotStateComponent, ShotStateDirective } from './shot-state';
@@ -81,6 +83,17 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
         class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
       ></iframe>
     }
+    @if (diffMark(); as mark) {
+      <div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark>
+        <div
+          [style.left]="mark.left"
+          [style.top]="mark.top"
+          [style.width]="mark.width"
+          [style.height]="mark.height"
+          class="absolute rounded-control-sm outline-solid outline-(--et-theme-color-primary-solid) outline-[calc(0.2rem*var(--et-design-canvas-label-scale,1))] -outline-offset-[calc(0.2rem*var(--et-design-canvas-label-scale,1))] shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_78%,transparent)]"
+        ></div>
+      </div>
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [ShotStateDirective, ShotStateComponent, ShotRankDirective],
@@ -118,6 +131,22 @@ export class CanvasFrameCellComponent {
   protected screenshot = computed(() => this.schemed(this.cell().screenshot ?? ''));
 
   protected url = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.src()));
+
+  private diff = toSignal(
+    toObservable(computed(() => this.schemed(this.cell().diff ?? ''))).pipe(
+      switchMap((url) =>
+        url
+          ? stateDiff$(url).pipe(
+              // eslint-disable-next-line ethlete/no-silent-catch-error -- a cell whose difference cannot be read stays unmarked
+              catchError(() => of(null)),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  protected diffMark = computed(() => diffMarkOf(this.diff()));
 
   protected size = signal<Size | null>(null);
 

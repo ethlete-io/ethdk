@@ -13,6 +13,7 @@ import {
   frameUrl,
   partFrameUrl,
   partShotUrl,
+  partStateDiffUrl,
   rejectionOf,
   sketchPartOf,
 } from '../../host/design';
@@ -592,6 +593,7 @@ const gridFrameOf = (options: {
   revision?: number;
 }): CanvasFrame => {
   const { grid, width, addressOf, placeOf, idOf, schemes, revision } = options;
+  const base = grid.cells[0]?.state;
 
   return {
     id: GRID,
@@ -613,6 +615,9 @@ const gridFrameOf = (options: {
           src: partFrameUrl({ ...addressOf(cell), fill: SHEET_FILL, ...(width === undefined ? { fit: true } : {}) }),
           ...(width === undefined ? {} : { width }),
           screenshot: partShotUrl({ ...addressOf(cell), fill: SHEET_FILL, width, revision }),
+          ...(base === undefined || state === base
+            ? {}
+            : { diff: partStateDiffUrl({ ...addressOf(cell), base, fill: SHEET_FILL, width }) }),
           ...placeOf(cell, width ?? FITTED),
         };
       }),
@@ -704,6 +709,11 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
   const [first] = cells;
 
   if (!first) return gridFrames;
+
+  const diffOf = (cell: Cell) =>
+    cell === first || first.state === undefined
+      ? {}
+      : { diff: partStateDiffUrl({ ...addressOf(cell), base: first.state, fill: SHEET_FILL }) };
   if (error) return [{ id: key, src: partFrameUrl({ ...addressOf(first), fit: true }), label: part.name, error }];
 
   return [
@@ -724,6 +734,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
           label: `${cell.state} · ${cell.interaction}`,
           src: partFrameUrl({ ...addressOf(cell), fill: SHEET_FILL, fit: true }),
           screenshot: partShotUrl({ ...addressOf(cell), fill: SHEET_FILL, revision }),
+          ...diffOf(cell),
           ...placeOf(cell, FITTED),
         })),
       },

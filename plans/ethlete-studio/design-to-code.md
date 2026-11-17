@@ -1708,3 +1708,14 @@ As built (B558 sketch): sketch `elements/canvas-frames@diff-mark` (product studi
 hold-trigger grid (closed/open x rest/hover/active/focus-visible). `shared/diff-grid.ts` derives the marked region
 of each cell from its difference to closed rest (interaction: the trigger, open: the reason, both: the whole part);
 variants a outline + dim, b outline only, c dim only. Waits on the user's pick; no app code.
+
+As built (B558): variant a (outline + dim the rest) of `elements/canvas-frames@diff-mark` built into the part canvas as
+the builder's recommendation, without a pick round. The design server answers `/__design/state-diff` (libs/cli
+`state-diff.ts`): it draws a cell's state in its interaction and the part's base state (first state, rest) and returns
+the box around the changed pixels. `framesOf` gives every fitted table cell and every part `grid` cell but the base a
+`diff` URL; the grid cell outlines the box (stroke `0.2rem * --et-design-canvas-label-scale`, so about 2 screen px at
+any zoom) and dims the rest. Verified: vitest related (studio 369, cli 1618), typecheck, lint, live Studio shots of
+components/hold-trigger at 100 %, fit (67 %) and 20 % (`.claude/handoffs/agent-results/b558-*.png`). Not done: the
+sketch is not merged (the agent's merge was refused by the permission check; the human picks or merges it), so
+`design task` still lists the open sketch; `design check --part elements/canvas-frames` not run; widths/page frames get
+no mark.

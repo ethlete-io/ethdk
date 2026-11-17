@@ -347,6 +347,32 @@ export const partShotUrl = (address: PartAddress & { preset?: string; width?: nu
   schemeQuery() +
   '&priority=low';
 
+/** The box around the pixels one state of a part changes against its `base` state at rest, in the picture `frame` the box was found in. */
+export type StateDiff = {
+  box: { x: number; y: number; width: number; height: number } | null;
+  frame: { width: number; height: number };
+};
+
+/** Where the design server answers the `StateDiff` of a state, fitted or at `width`, against the part's `base` state, drawn like its shot. */
+export const partStateDiffUrl = (address: PartAddress & { base: string; width?: number }) =>
+  `http://localhost:${address.port}/__design/state-diff?${partQuery(address)}&base=${encodeURIComponent(address.base)}` +
+  (address.width ? `&width=${address.width}` : '') +
+  themeQuery(address) +
+  (address.epoch ? `&epoch=${address.epoch}` : '') +
+  (address.revision ? `&revision=${address.revision}` : '') +
+  sessionQuery() +
+  schemeQuery();
+
+/** Reads the `StateDiff` at `url`, a `partStateDiffUrl`. */
+export const stateDiff$ = (url: string): Observable<StateDiff> =>
+  fromFetch(url).pipe(
+    switchMap((response) => {
+      if (!response.ok) throw new Error(designReadError(response.status));
+
+      return designJson(response) as Promise<StateDiff>;
+    }),
+  );
+
 /** A call of the old design-call workflow, as the design server lists it. One that fails to load carries its error. */
 export type ListedCall =
   | {

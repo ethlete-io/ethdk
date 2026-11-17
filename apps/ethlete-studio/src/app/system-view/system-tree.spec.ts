@@ -567,6 +567,38 @@ describe('framesOf', () => {
     );
   });
 
+  it('reads the difference of every fitted cell but the first state at rest against that state', () => {
+    const button = part({ states: ['solid', 'ghost'], interactions: ['hover'] });
+    const [frame] = framesOf({ port: 4402, product: product(), part: button, revision: 3 });
+    const cells = frame?.grid?.cells ?? [];
+
+    expect(cells.map((cell) => cell.diff === undefined)).toEqual([true, false, false, false]);
+    expect(cells[3]?.diff).toBe(
+      `http://localhost:4402/__design/state-diff?product=acme&part=components%2Fbutton&state=ghost&interaction=hover&base=solid&fill=surface&revision=3${SESSION}`,
+    );
+  });
+
+  it('reads the difference of every cell of a part grid but its first against that first state', () => {
+    const grid = {
+      columns: ['rest', 'hover'],
+      rows: ['closed', 'open'],
+      cells: [
+        { row: 'closed', column: 'rest', state: 'closed' },
+        { row: 'closed', column: 'hover', state: 'closed-hover' },
+        { row: 'open', column: 'rest', state: 'open' },
+      ],
+    };
+    const trigger = part({ states: ['closed', 'closed-hover', 'open'], grid });
+    const cells = framesOf({ port: 4402, product: product(), part: trigger }).find((frame) => frame.id === 'grid')?.grid
+      ?.cells;
+
+    expect(cells?.map((cell) => cell.diff)).toEqual([
+      undefined,
+      `http://localhost:4402/__design/state-diff?product=acme&part=components%2Fbutton&state=closed-hover&base=closed&fill=surface${SESSION}`,
+      `http://localhost:4402/__design/state-diff?product=acme&part=components%2Fbutton&state=open&base=closed&fill=surface${SESSION}`,
+    ]);
+  });
+
   it('forces each interaction on its grid cell, and each cell takes comments in its state and interaction', () => {
     const button = part({ states: ['solid', 'ghost'], interactions: ['hover', 'disabled'] });
     const [frame, ...rest] = framesOf({ port: 4402, product: product(), part: button });

@@ -55,12 +55,14 @@ import {
   SKETCH_DECISION_PATH,
   SKETCH_DISCARD_PATH,
   SKETCH_CROP_PATH,
+  STATE_DIFF_PATH,
   SKETCH_DIFF_PATH,
   SKETCH_MERGE_PATH,
   SKETCHES_PATH,
   sketchDecisionAnswer,
   sketchDiscardAnswer,
   sketchCropAnswer,
+  stateDiffAnswer,
   sketchDiffAnswer,
   detachRunningListings,
   sketchesAnswer,
@@ -1066,6 +1068,7 @@ const designExplore = ({
       studio(SKETCHES_PATH, sketchesAnswer);
       studio(SKETCH_DIFF_PATH, sketchDiffAnswer);
       studio(SKETCH_CROP_PATH, sketchCropAnswer);
+      studio(STATE_DIFF_PATH, stateDiffAnswer);
       studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
       studio(SKETCH_MERGE_PATH, sketchMergeAnswer);
       studio(SKETCH_DISCARD_PATH, sketchDiscardAnswer);

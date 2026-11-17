@@ -52,6 +52,7 @@ import { DrawStates } from './system/accepted-pictures';
 import { readPartModule } from './system/list-system';
 import { PictureOf } from './merge-compare';
 import { BoxOf, changedAreaOf, diffVariant } from './variant-diff';
+import { stateDiffOf } from './state-diff';
 import { addedSkipsOf } from './system/sketch/added-skips';
 import { overlaySketch } from './system/sketch/overlay';
 import {
@@ -75,6 +76,7 @@ import { SketchVariant } from './system/system-modules';
 export const SKETCHES_PATH = '/__design/sketches';
 export const SKETCH_DIFF_PATH = '/__design/sketch-diff';
 export const SKETCH_CROP_PATH = '/__design/sketch-crop';
+export const STATE_DIFF_PATH = '/__design/state-diff';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
 export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
 
@@ -607,6 +609,36 @@ export const sketchDiffAnswer = withSketch('GET', async ({ asked, product, sketc
       pictureOf,
       boxOf,
       load,
+    }),
+  };
+});
+
+/**
+ * `?product=&part=&state=&interaction=&base=&preset=&width=` plus the theme params of a shot: `{ box, frame }`, the box
+ * around the pixels `state` in `interaction` changes against the part's `base` state at rest, `null` for none.
+ */
+export const stateDiffAnswer = withProduct('GET', async ({ asked, product }) => {
+  const { pictureOf, boxOf } = stoppingOn(asked, asked.signal);
+  const params = asked.url.searchParams;
+  const [part, state, base] = ['part', 'state', 'base'].map((name) => params.get(name) ?? '');
+  const width = params.get('width');
+
+  if (!part || !state || !base) return failure(400, 'part, state and base are required');
+  if (!pictureOf || !boxOf) return failure(503, 'this server draws no pictures');
+
+  return {
+    status: 200,
+    body: await stateDiffOf({
+      product: product.name,
+      part,
+      state,
+      interaction: params.get('interaction'),
+      base,
+      preset: params.get('preset'),
+      width: width === null ? null : Number(width),
+      params,
+      pictureOf,
+      boxOf,
     }),
   };
 });

@@ -160,6 +160,8 @@ export type FrameCell = {
   width?: number;
   screenshot?: string;
   place?: FramePlace;
+  /** Where the box this cell changes against its part's base state is read; the cell outlines it and dims the rest. */
+  diff?: string;
 };
 
 export type ColorScheme = 'light' | 'dark';
