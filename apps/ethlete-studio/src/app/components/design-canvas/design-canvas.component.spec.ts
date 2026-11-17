@@ -590,7 +590,9 @@ describe('DesignCanvasComponent', () => {
     expect(drawn?.style.left).toBe('0px');
     expect(older?.style.left).toBe('0px');
     expect(parseFloat(older?.style.top ?? '')).toBeGreaterThan(100);
-    expect(groups.map((group) => [group.textContent?.trim(), group.parentElement?.style.marginTop])).toEqual([
+    expect(
+      groups.map((group) => [group.textContent?.trim(), group.parentElement?.parentElement?.style.marginTop]),
+    ).toEqual([
       ['r2', '0px'],
       ['r1', older?.style.top],
     ]);

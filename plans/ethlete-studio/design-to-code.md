@@ -3687,3 +3687,13 @@ outlines are drawn on a `::after` layer over the body, like the app's frame bord
 columns are 80 apart and its round heads sit at the design's gaps. Compare: default/out/reset/in/fit/selected/active/
 load-failed/loading ok (fit flaked once on the Fit tooltip); rounds DIFF 6094, round-folded DIFF 6655. Open: the app
 column head wraps its note and sits ~1 line too high, the group head buttons differ by a few px from the design's.
+
+In progress (B233 half 2d, 2026-11-17): Cause of the wrapped column note: the absolute head shrank to its min-content
+width; it is now `w-max` up to the column width. Cause of the wider design buttons: the design zooms its heads (CSS
+`zoom`), the app scaled them with a transform, and Noto Sans lays out wider at the zoomed size (174.8 vs 169 px); the
+group and folded heads now zoom an inner box. A round head no longer truncates its note to its columns. The harness
+offset is the heads' screen height (27.5 + 1.4 x 28.8) with the frame body snapped to a whole canvas pixel, as the
+design's flow paints it. rounds DIFF 2104, round-folded DIFF 2272 (from 6094/6655). Cause of the rest: that snap moves
+the design's body 0.43 canvas px up against its heads, the app anchors the heads to the body, so every head paints
+0.3 px higher; ok needs the design to anchor its heads to the body like the app (open edit sketch on this part).
+fit was ok in 4 of 4 runs; the tooltip Cause is not found (Suspect: the 300 ms tooltip delay against a slow settle).

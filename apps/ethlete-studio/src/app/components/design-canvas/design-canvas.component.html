@@ -44,49 +44,50 @@
     <div
       [style.left.px]="group.x"
       [style.margin-top.px]="group.y"
-      [style.width.px]="group.width / labelScale()"
-      [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
+      [style.min-width.px]="group.width"
       [class]="
         columnHeadsNoted()
           ? 'top-[calc(-6.8rem_-_4.032rem*var(--et-design-canvas-label-scale))]'
           : 'top-[calc(-6.8rem_-_2.24rem*var(--et-design-canvas-label-scale))]'
       "
-      class="absolute flex origin-top-left items-center gap-space-2 text-(length:--text-sm) whitespace-nowrap"
+      class="absolute w-max -translate-y-full"
     >
-      <button
-        [etTooltip]="group.title ?? group.label"
-        (click)="toggleColumn(group.key, $event)"
-        class="min-w-0 shrink-0"
-        et-button
-        type="button"
-        variant="transparent"
-        color="surface"
-        size="sm"
-        aria-expanded="true"
-      >
-        {{ group.label }}
-      </button>
-      @if (group.switch; as groupSwitch) {
+      <div [style.zoom]="labelScale()" class="flex items-center gap-space-2 text-(length:--text-sm) whitespace-nowrap">
         <button
-          [pressed]="groupSwitch.on"
-          [etTooltip]="groupSwitch.title ?? groupSwitch.label"
-          [attr.data-group-switch]="group.key"
-          (click)="switchGroup(group.key, $event)"
-          class="shrink-0"
+          [etTooltip]="group.title ?? group.label"
+          (click)="toggleColumn(group.key, $event)"
+          class="min-w-0 shrink-0"
           et-button
           type="button"
-          variant="outline"
+          variant="transparent"
           color="surface"
           size="sm"
+          aria-expanded="true"
         >
-          {{ groupSwitch.label }}
+          {{ group.label }}
         </button>
-      }
-      @if (group.note) {
-        <span [etTooltip]="group.note" class="min-w-0 truncate text-text-muted">
-          {{ group.note }}
-        </span>
-      }
+        @if (group.switch; as groupSwitch) {
+          <button
+            [pressed]="groupSwitch.on"
+            [etTooltip]="groupSwitch.title ?? groupSwitch.label"
+            [attr.data-group-switch]="group.key"
+            (click)="switchGroup(group.key, $event)"
+            class="shrink-0"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="sm"
+          >
+            {{ groupSwitch.label }}
+          </button>
+        }
+        @if (group.note) {
+          <span [etTooltip]="group.note" class="min-w-0 truncate text-text-muted">
+            {{ group.note }}
+          </span>
+        }
+      </div>
     </div>
   }
 
@@ -108,33 +109,34 @@
       <div
         [style.left.px]="column.x"
         [style.margin-top.px]="column.y"
-        [style.width.px]="column.width / labelScale()"
-        [style.transform]="'scale(' + labelScale() + ')'"
+        [style.width.px]="column.width"
         [class]="
           columnHeadsNoted()
             ? 'top-[calc(-6.8rem_-_4.032rem*var(--et-design-canvas-label-scale))]'
             : 'top-[calc(-6.8rem_-_2.24rem*var(--et-design-canvas-label-scale))]'
         "
-        class="absolute flex origin-top-left flex-col gap-space-3 text-(length:--text-sm) leading-[1.4]"
+        class="absolute"
       >
-        <div class="flex h-0 flex-col justify-end">
-          <button
-            [etTooltip]="column.title ?? column.label"
-            (click)="toggleColumn(column.key, $event)"
-            class="w-full whitespace-normal"
-            et-button
-            type="button"
-            variant="outline"
-            color="surface"
-            size="sm"
-            aria-expanded="false"
-          >
-            {{ column.label }}
-          </button>
+        <div [style.zoom]="labelScale()" class="flex flex-col gap-space-3 text-(length:--text-sm) leading-[1.4]">
+          <div class="flex h-0 flex-col justify-end">
+            <button
+              [etTooltip]="column.title ?? column.label"
+              (click)="toggleColumn(column.key, $event)"
+              class="w-full whitespace-normal"
+              et-button
+              type="button"
+              variant="outline"
+              color="surface"
+              size="sm"
+              aria-expanded="false"
+            >
+              {{ column.label }}
+            </button>
+          </div>
+          @if (folded.note) {
+            <p [textContent]="folded.note" class="m-0 line-clamp-12 whitespace-pre-wrap text-text-muted"></p>
+          }
         </div>
-        @if (folded.note) {
-          <p [textContent]="folded.note" class="m-0 line-clamp-12 whitespace-pre-wrap text-text-muted"></p>
-        }
       </div>
     } @else {
       <span
@@ -143,7 +145,7 @@
         [style.max-width.px]="column.width"
         [class]="column.muted ? 'italic text-text-muted' : 'text-text'"
         [etTooltip]="column.title ?? column.label"
-        class="absolute -top-12 -translate-y-full overflow-hidden text-[calc(1.6rem*var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
+        class="absolute -top-12 w-max -translate-y-full overflow-hidden text-[calc(1.6rem*var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
       >
         {{ column.label }}
         @if (column.note) {

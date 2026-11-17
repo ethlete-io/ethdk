@@ -143,7 +143,11 @@ const ROUND_FRAME_SIZE = { width: 555, height: 131 };
 
 const ROUND_HEADS_ROOM = 68;
 
-const ROUND_HEADS_SCREEN = 67.5;
+const ROUND_GROUP_HEAD_SCREEN = 27.5;
+
+const ROUND_COLUMN_HEAD_SCREEN = 1.4 * (16 + 12.8);
+
+const ROUND_HEADS_SCREEN = ROUND_GROUP_HEAD_SCREEN + ROUND_COLUMN_HEAD_SCREEN;
 
 const openColumnsOf = (part: string, round: CanvasRound) => {
   const group = {
@@ -205,7 +209,8 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       cameraKey: 'elements/canvas-frames',
       restoredCamera: {
         x: 40 * scale,
-        y: 48 * scale + (heads ? ROUND_HEADS_ROOM * scale + ROUND_HEADS_SCREEN : 0),
+        // The design flows its screen-size heads above the frame body and Chrome snaps that body to a whole canvas pixel.
+        y: (heads ? Math.round(48 + ROUND_HEADS_ROOM + ROUND_HEADS_SCREEN / scale) : 48) * scale,
         zoom: scale,
       },
     };
