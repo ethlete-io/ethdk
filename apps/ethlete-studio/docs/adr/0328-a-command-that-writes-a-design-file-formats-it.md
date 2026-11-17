@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B554
+built: 9824a12e2
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 morning round, second unformatted ready.json from sketch merge
 ---
