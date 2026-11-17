@@ -70,6 +70,8 @@ import { commentDraftOf, otherSizeFrameOf, pinsOf, placedCommentsOf } from './co
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
+import { DisclosureComponent } from '../design-parts/disclosure/disclosure.component';
+import { commentedStatesOf, foldedStatesOf } from '../design-parts/system-page/state-groups';
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
 import { inboxCommentOf, inboxPartOf, writerOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
@@ -151,6 +153,25 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               />
             }
           </ethlete-design-canvas>
+          @if (foldedStates().size > 0) {
+            <div
+              class="absolute bottom-space-3 left-1/2 flex -translate-x-1/2 items-center gap-space-3 rounded-control-md border border-et-surface-border bg-et-surface-bg px-space-3 py-space-2 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
+              data-folded-states
+            >
+              @if (!allStatesShown()) {
+                <span class="text-ui-sm text-et-surface-muted">{{
+                  EMPTY_LABELS.foldedStates(foldedStates().size)
+                }}</span>
+              }
+              <ethlete-disclosure
+                [open]="allStatesShown()"
+                [label]="EMPTY_LABELS.showAllStates"
+                (openChange)="showAllStates($event)"
+                hug
+                size="xs"
+              />
+            </div>
+          }
         }
       </main>
     </ng-template>
@@ -328,6 +349,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   encapsulation: ViewEncapsulation.None,
   imports: [
     RememberedTreeScrollDirective,
+    DisclosureComponent,
     BUTTON_IMPORTS,
     NgTemplateOutlet,
     PartTreeComponent,
@@ -869,6 +891,30 @@ export class SystemViewComponent {
     return key ? (this.cameras()[key] ?? null) : null;
   });
 
+  protected pickedCommentId = signal<string | null>(null);
+
+  private pickedResolved = computed(() =>
+    this.commentStore.resolved().filter((comment) => comment.id === this.pickedCommentId()),
+  );
+
+  private pinnedComments = computed(() => [...this.commentStore.comments(), ...this.pickedResolved()]);
+
+  protected foldedStates = computed(() => {
+    const part = this.part();
+
+    return part
+      ? foldedStatesOf(part.listed.states, commentedStatesOf(this.pinnedComments(), part.key))
+      : new Set<string>();
+  });
+
+  private allStatesPart = signal<string | null>(null);
+
+  protected allStatesShown = computed(() => {
+    const key = this.part()?.key;
+
+    return key !== undefined && this.allStatesPart() === key;
+  });
+
   public frames = computed(() => {
     const port = this.port();
     const product = this.product();
@@ -877,6 +923,7 @@ export class SystemViewComponent {
     if (!port || !product || !part) return [];
 
     return framesOf({
+      folded: this.allStatesShown() ? undefined : this.foldedStates(),
       port,
       product,
       part: part.listed,
@@ -1012,8 +1059,6 @@ export class SystemViewComponent {
 
   public placeableFrames = computed(() => placeableFramesOf(this.frames()));
 
-  protected pickedCommentId = signal<string | null>(null);
-
   public shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
 
   public panel = signal<'open' | 'hidden'>('open');
@@ -1036,12 +1081,6 @@ export class SystemViewComponent {
   protected listingError = computed(() =>
     this.port() && this.section() === 'System' && !this.call() ? (this.reading()?.error ?? null) : null,
   );
-
-  private pickedResolved = computed(() =>
-    this.commentStore.resolved().filter((comment) => comment.id === this.pickedCommentId()),
-  );
-
-  private pinnedComments = computed(() => [...this.commentStore.comments(), ...this.pickedResolved()]);
 
   protected partPins = computed(() => pinsOf(this.placeableFrames(), this.pinnedComments()));
 
@@ -1169,6 +1208,10 @@ export class SystemViewComponent {
         else this.mergingSketch.set(null);
       });
     });
+  }
+
+  public showAllStates(open: boolean) {
+    this.allStatesPart.set(open ? (this.part()?.key ?? null) : null);
   }
 
   /** Shows the part or sketch a comment sits on, moves the camera to its pin and opens it. */
@@ -1392,10 +1435,19 @@ export class SystemViewComponent {
     this.activate(entry.key);
   }
 
-  private focusState(part: string, state: string) {
-    const frame = otherSizeFrameOf(this.placeableFrames(), { part, state, size: '' });
+  private focusFolded({ part, state }: { part: string; state: string }, focus: () => void) {
+    if (part !== this.part()?.key || !this.foldedStates().has(state)) return focus();
 
-    if (frame) this.partCanvas()?.focusFrame(frame);
+    this.allStatesPart.set(part);
+    afterNextRender(focus, { injector: this.injector });
+  }
+
+  private focusState(part: string, state: string) {
+    this.focusFolded({ part, state }, () => {
+      const frame = otherSizeFrameOf(this.placeableFrames(), { part, state, size: '' });
+
+      if (frame) this.partCanvas()?.focusFrame(frame);
+    });
   }
 
   private openSketch(part: string, { sketch: name, variant }: Extract<OpenPointTarget, { kind: 'sketch' }>) {
@@ -1430,10 +1482,13 @@ export class SystemViewComponent {
   }
 
   private openFrame({ part, frame }: TreeFrame) {
-    if (part === this.selectedKey()) return this.partCanvas()?.focusFrame(frame);
+    const focus = () =>
+      this.focusFolded({ part, state: frame.split(' ')[0] ?? frame }, () => this.partCanvas()?.focusFrame(frame));
+
+    if (part === this.selectedKey()) return focus();
 
     this.activate(part);
-    afterNextRender(() => this.partCanvas()?.focusFrame(frame), { injector: this.injector });
+    afterNextRender(focus, { injector: this.injector });
   }
 
   private focusComment(comment: ListedComment) {

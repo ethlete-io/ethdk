@@ -100,32 +100,6 @@ describe('DesignCanvasComponent', () => {
     expect(priorities()).toEqual(['high']);
   });
 
-  it('heads each state group with its name and count and places its frames side by side', async () => {
-    const frame = (id: string, section: string, count: number): CanvasFrame => ({
-      id,
-      src: 'about:blank',
-      label: id,
-      row: id,
-      width: 200,
-      height: 100,
-      section: { name: section, count },
-    });
-    const fixture = await render([
-      frame('send-busy', 'send', 2),
-      frame('send-error', 'send', 2),
-      frame('part', 'Weitere', 1),
-    ]);
-    const host = fixture.nativeElement as HTMLElement;
-    const heads = [...host.querySelectorAll<HTMLElement>('[data-section-head]')];
-    const [busy, error] = fixture.debugElement
-      .queryAll(By.directive(CanvasFrameComponent))
-      .map((placed) => placed.nativeElement as HTMLElement);
-
-    expect(heads.map((head) => head.textContent?.replace(/\s+/g, ''))).toEqual(['send2', 'Weitere1']);
-    expect(error?.style.left).toBe('240px');
-    expect(error?.style.top).toBe(busy?.style.top);
-  });
-
   it('draws no row label beside a frame row', async () => {
     const fixture = await render([
       { id: 'default 640', src: 'about:blank', label: 'button', row: 'default', width: 640 },

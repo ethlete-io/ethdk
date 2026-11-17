@@ -8,7 +8,6 @@ import {
   fitRect,
   focusRect,
   layoutGrid,
-  layoutSections,
   layoutMatrix,
   layoutMatrixSections,
   layoutSheet,
@@ -191,27 +190,6 @@ describe('canvas math', () => {
       { id: 'a-375', x: 0, y: 0 },
       { id: 'a-1280', x: 415, y: 0 },
       { id: 'b-375', x: 0, y: 380 },
-    ]);
-  });
-
-  it('wraps the frames of each section and flows the sections side by side within the line width', () => {
-    const frame = (id: string, section: string) => ({ id, width: 100, height: 50, row: id, section });
-    const layout = layoutSections(
-      [frame('a1', 'a'), frame('b1', 'b'), frame('a2', 'a'), frame('a3', 'a'), frame('c1', 'c')],
-      { columnGap: 10, rowGap: 20, lineWidth: 320, sectionColumnGap: 30, sectionRowGap: 200, below: { b1: 15 } },
-    );
-
-    expect(layout.sections).toEqual([
-      { name: 'a', x: 0, y: 0, width: 320 },
-      { name: 'b', x: 0, y: 200 + 50, width: 100 },
-      { name: 'c', x: 130, y: 250, width: 100 },
-    ]);
-    expect(layout.frames.map(({ id, x, y }) => ({ id, x, y }))).toEqual([
-      { id: 'a1', x: 0, y: 0 },
-      { id: 'a2', x: 110, y: 0 },
-      { id: 'a3', x: 220, y: 0 },
-      { id: 'b1', x: 0, y: 250 },
-      { id: 'c1', x: 130, y: 250 },
     ]);
   });
 

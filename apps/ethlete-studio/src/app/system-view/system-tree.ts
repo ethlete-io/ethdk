@@ -19,7 +19,6 @@ import {
 import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
 import { isAnswered, isQuestion } from './comment-pins';
-import { partStateGroupsOf } from '../design-parts/system-page/state-groups';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export type SystemGroupKey =
@@ -453,6 +452,8 @@ export type FramesSource = {
   revision?: number;
   surface?: string;
   color?: string;
+  /** The states left out of the frames, folded behind a count. */
+  folded?: ReadonlySet<string>;
 };
 
 const loadErrorOf = (problems: { rule: string; message: string }[]) =>
@@ -617,21 +618,11 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
   const error = loadErrorOf(part.problems);
   const grid = part.layer === 'pages' || error ? undefined : part.grid;
   const gridded = new Set(grid?.cells.map((cell) => cell.state));
-  const states = statesOf(part, error).filter((state) => state === undefined || !gridded.has(state));
-  const interactions = interactionsOf(part);
-  const groups = partStateGroupsOf(states.filter((state) => state !== undefined));
-  const sections = new Map(
-    groups.flatMap((group) =>
-      group.states.map((state) => [state, { name: group.name, count: group.states.length }] as const),
-    ),
+  const states = statesOf(part, error).filter(
+    (state) => state === undefined || (!gridded.has(state) && !source.folded?.has(state)),
   );
-  const ordered = groups.length > 0 ? groups.flatMap((group) => group.states) : states;
-  const cells = ordered.flatMap((state) => interactions.map((interaction) => ({ state, interaction })));
-  const sectionOf = ({ state }: Cell) => {
-    const section = state === undefined ? undefined : sections.get(state);
-
-    return section ? { section } : {};
-  };
+  const interactions = interactionsOf(part);
+  const cells = states.flatMap((state) => interactions.map((interaction) => ({ state, interaction })));
   const addressOf = ({ state, interaction }: Cell) => ({
     port,
     product: product.name,
@@ -657,7 +648,6 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         height,
         label: stateSizeLabelOf(cell, preset),
         row: cell.state,
-        ...sectionOf(cell),
         screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
         schemes: schemesOf(product),
         error,
@@ -679,7 +669,6 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
           width,
           label: stateSizeLabelOf(cell, 'width'),
           row: cell.state,
-          ...sectionOf(cell),
           screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
           schemes,
           error,

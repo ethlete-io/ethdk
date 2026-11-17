@@ -3723,3 +3723,8 @@ resident path, the cause of the 16 compare lines at exit 0 (Suspect: not found i
 
 As built (B554): `design-file.ts` formats each tracked `.ethlete/design` write (`writeChangedFile` too). Cause: merge
 commit's own entries. No guard. Verified: specs, typecheck, lint. Not: a live merge, Prettier cost.
+
+As built (B556): a part with 12+ states opens on its states with an open comment; the rest fold behind `N weitere
+Zustände eingeklappt` + Alle Zustände zeigen. No id-prefix sections, no unused canvas section layout (no declared
+groups, ADR 0137). Findings and changed-since-merge not wired: no per-state data in Studio. Open: `pages/system`
+state `state-groups` still draws prefix groups. Verified: specs, stress, lint, design check. Not: a live shot.

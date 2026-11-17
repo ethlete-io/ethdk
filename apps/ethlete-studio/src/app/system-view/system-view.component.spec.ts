@@ -1886,3 +1886,43 @@ describe('SystemViewComponent on a tree pick', () => {
     expect(fixture.nativeElement.querySelector('[data-sketch-missing]')).toBeNull();
   });
 });
+
+describe('SystemViewComponent on a part with many states', () => {
+  const states = Array.from({ length: 12 }, (_, index) => `not-${index}`);
+  const card: ListedPart = { ...part('elements', 'card'), states, widths: [320] };
+  const comment: ListedComment = { ...HOVER_COMMENT, part: 'elements/card', state: 'not-4', interaction: undefined };
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('EventSource', SilentEventSource);
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([{ ...PRODUCT, parts: [card] }]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [comment], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('opens on the commented state, folds the rest behind a count and shows them all on request', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/card' });
+    const element: HTMLElement = fixture.nativeElement;
+    const view = fixture.componentInstance;
+    const bar = () => element.querySelector<HTMLElement>('[data-folded-states]');
+
+    expect(view.frames().map((frame) => frame.row)).toEqual(['not-4']);
+    expect(bar()?.textContent).toContain(STUDIO_LABELS.system.foldedStates(11));
+
+    bar()?.querySelector('button')?.click();
+    await settle(fixture);
+
+    expect(view.frames().map((frame) => frame.row)).toEqual(states);
+    expect(bar()?.textContent).not.toContain(STUDIO_LABELS.system.foldedStates(11));
+  });
+});

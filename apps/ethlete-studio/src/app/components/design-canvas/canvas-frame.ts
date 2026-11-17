@@ -20,8 +20,6 @@ export type FramePlace = {
   sketch?: { target: string; variant: string };
 };
 
-export type CanvasSection = { name: string; count: number };
-
 export type CanvasFrame = {
   id: string;
   src: string;
@@ -33,8 +31,6 @@ export type CanvasFrame = {
   /** Shown beside the row instead of its name. */
   /** Rows of one group sit closer to each other than to the rows of the next group. */
   rowGroup?: string;
-  /** The state group a `sheet` puts the frame in; frames with one are laid out in sections under a heading. */
-  section?: CanvasSection;
   /** The `matrix` column the frame sits in. */
   column?: string;
   screenshot?: string;

@@ -192,6 +192,9 @@ export const STUDIO_LABELS = {
     none: 'Noch keine Teile.',
     sketchMissing: 'Sketch nicht gefunden',
     otherStates: 'Weitere',
+    foldedStates: (count: number) =>
+      count === 1 ? '1 weiterer Zustand eingeklappt' : `${count} weitere Zustände eingeklappt`,
+    showAllStates: 'Alle Zustände zeigen',
     listingFailed: 'Auflistung fehlgeschlagen',
     reload: 'Erneut laden',
     emptyTitle: 'Noch keine Teile',
