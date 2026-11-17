@@ -199,9 +199,9 @@
     },
     "actions": ["emit:openChange", "open", "rest"],
     "at": "2026-11-17T13:28:32.149Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 70002
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 179683
   },
   "components/error-toast": {
     "hash": "ede6976bb7e79b35",
