@@ -4,6 +4,7 @@ export {
   BRACKET_SWISS_GROUP_COLOR_TYPE,
   BracketMap,
   BracketRuntimeError,
+  BRACKET_SECTION_KEY,
   COMMON_BRACKET_ROUND_TYPE,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   GROUP_BRACKET_ROUND_TYPE,
@@ -71,6 +72,9 @@ export type {
   BracketRoundType,
   BracketSlotResolutionPolicy,
   BracketStandingRankSide,
+  BracketGridSection,
+  BracketSectionKey,
+  BracketSectionTitleComponent,
   BracketSwissColors,
   BracketSwissGroupColorType,
   BracketWarning,
@@ -107,6 +111,7 @@ export * from './bracket-default-continue.component';
 export * from './bracket-default-final-match.component';
 export * from './bracket-default-match.component';
 export * from './bracket-default-round-header.component';
+export * from './bracket-default-section-title.component';
 export * from './bracket-rounds-list.component';
 export * from './bracket-skeleton.component';
 export * from './bracket.component';

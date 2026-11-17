@@ -2,7 +2,12 @@ import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core
 import { BracketMatchNormalizer } from './bracket-card-context';
 import { BracketDensity } from './bracket-density';
 import { BracketLayout } from './bracket-layout';
-import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from '@ethlete/bracket';
+import {
+  BracketContinueComponent,
+  BracketMatchComponent,
+  BracketRoundHeaderComponent,
+  BracketSectionTitleComponent,
+} from '@ethlete/bracket';
 
 export const BRACKET_ROUND_HEADER_ALIGN = {
   START: 'start',
@@ -88,6 +93,15 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
    */
   density?: BracketDensity;
   hideRoundHeaders?: boolean;
+  /**
+   * Draws a title over each part of the bracket - a double elimination's upper bracket, lower bracket and
+   * finals - that stays at the inline start of the scroll container while the bracket scrolls sideways.
+   * Adds a `sectionTitleHeight` band above each part. Only the left-to-right double elimination layout has
+   * parts to title.
+   */
+  showSectionTitles?: boolean;
+  /** The band each section title gets above its part of the bracket, in px. */
+  sectionTitleHeight?: number;
   showContinueElement?: boolean;
   continueColumnWidth?: number;
   continueElementHeight?: number;
@@ -97,6 +111,7 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
   finalMatchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
   continueComponent?: BracketContinueComponent<TRoundData, TMatchData>;
+  sectionTitleComponent?: BracketSectionTitleComponent<TRoundData, TMatchData>;
 
   /**
    * How to read your match data - required by the **default** cards, ignored by cards of your own. See
@@ -121,6 +136,7 @@ export type BracketLayoutConfig = Omit<
   | 'matchComponent'
   | 'finalMatchComponent'
   | 'continueComponent'
+  | 'sectionTitleComponent'
   | 'matchNormalizer'
 >;
 
@@ -161,6 +177,8 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   swissGroupBorderRadius: 12,
   density: 'default',
   hideRoundHeaders: false,
+  showSectionTitles: false,
+  sectionTitleHeight: 40,
   showContinueElement: false,
   continueColumnWidth: 250,
   continueElementHeight: 75,

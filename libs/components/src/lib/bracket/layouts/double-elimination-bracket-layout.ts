@@ -1,39 +1,22 @@
 import { BracketLayout, BracketListSection } from '../bracket-layout';
-import { BracketLabels } from '../bracket-labels';
+import { BracketLabels, bracketSectionLabel } from '../bracket-labels';
 import {
   BRACKET_DATA_LAYOUT,
-  COMMON_BRACKET_ROUND_TYPE,
-  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
   createDoubleEliminationGrid,
   ɵcreateStackedDoubleEliminationGrid,
   BracketRound,
+  doubleEliminationRoundSection,
 } from '@ethlete/bracket';
 import { drawEliminationEdges } from './draw-elimination-edges';
 
-/**
- * Where a double elimination round sits in `<et-bracket-rounds-list>`: the winners bracket, the losers
- * bracket, or the deciding rounds.
- */
 const doubleEliminationListSection = <TRoundData, TMatchData>(
   round: BracketRound<TRoundData, TMatchData>,
   labels: BracketLabels,
 ): BracketListSection => {
-  switch (round.type) {
-    case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET:
-      return { id: 'upper', name: labels.upperBracketSection };
+  const id = doubleEliminationRoundSection(round);
 
-    case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET:
-      return { id: 'lower', name: labels.lowerBracketSection };
-
-    // The grand final, the bracket reset and the third-place playoff - everything a double elimination
-    // source has left once the two brackets are accounted for.
-    case COMMON_BRACKET_ROUND_TYPE.FINAL:
-    case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL:
-    case COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE:
-    default:
-      return { id: 'finals', name: labels.finalsSection };
-  }
+  return { id, name: bracketSectionLabel(id, labels) };
 };
 
 /**

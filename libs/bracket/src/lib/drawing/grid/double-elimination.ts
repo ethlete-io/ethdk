@@ -2,6 +2,7 @@ import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from
 import { Bracket, BracketRound } from '../../linked';
 import {
   BracketComponents,
+  BracketMasterColumnSection,
   BracketSubColumnSpan,
   createBracketElement,
   createBracketGrid,
@@ -24,6 +25,7 @@ import {
 } from './prebuild';
 import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
 import { resolveBracketGridRowSpan } from './row-span';
+import { createBracketGridSections, doubleEliminationRoundSection } from './sections';
 import { BracketRuntimeError } from '../../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../../bracket-errors';
 
@@ -35,6 +37,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 ): ComputedBracketGrid<TRoundData, TMatchData> => {
   const resolvedOptions = resolveBracketGridRowSpan(bracketData, options);
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: resolvedOptions.columnWidth });
+  const sectionTitleHeight = options.sectionTitleHeight ?? 0;
 
   const presentUpperBracketRounds = Array.from(
     bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET)?.values() ?? [],
@@ -125,13 +128,36 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     const element = createBracketElement<TRoundData, TMatchData>({
       area: '.',
       type: 'roundGap',
-      elementHeight: options.rowRoundGap,
-      partHeights: [options.rowRoundGap],
+      elementHeight: options.rowRoundGap + sectionTitleHeight,
+      partHeights: [options.rowRoundGap + sectionTitleHeight],
     });
 
     pushElement(element);
 
     return subColumn;
+  };
+
+  /** The band above the upper bracket and the finals that holds their section titles. */
+  const pushSectionTitleBand = (pushSection: (section: BracketMasterColumnSection<TRoundData, TMatchData>) => void) => {
+    if (!sectionTitleHeight) return;
+
+    const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection<TRoundData, TMatchData>({
+      type: 'gap',
+    });
+    const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({
+      span: { isStart: true, isEnd: true },
+    });
+
+    pushElement(
+      createBracketElement<TRoundData, TMatchData>({
+        area: '.',
+        type: 'colGap',
+        elementHeight: sectionTitleHeight,
+        partHeights: [sectionTitleHeight],
+      }),
+    );
+    pushSubColumn(subColumn);
+    pushSection(masterColumnSection);
   };
 
   let lastRoundLastSubColumnUpperIndex = -1;
@@ -246,6 +272,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       }
     }
 
+    pushSectionTitleBand(pushSection);
     pushSection(upperSection, upperLowerGapSection, lowerSection);
 
     grid.pushMasterColumn(masterColumn);
@@ -325,8 +352,8 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     const upperLowerGapElement = createBracketElement<TRoundData, TMatchData>({
       area: '.',
       type: 'roundGap',
-      elementHeight: options.rowRoundGap,
-      partHeights: [options.rowRoundGap],
+      elementHeight: options.rowRoundGap + sectionTitleHeight,
+      partHeights: [options.rowRoundGap + sectionTitleHeight],
     });
 
     upperLowerGapSubColumn.pushElement(upperLowerGapElement);
@@ -384,6 +411,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       pushLowerSubColumn(lowerSubColumn.subColumn);
     }
 
+    pushSectionTitleBand(pushSection);
     pushSection(upperSection, upperLowerGapSection, lowerSection);
 
     grid.pushMasterColumn(masterColumn);
@@ -414,7 +442,9 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
           existingMasterColumns: grid.grid.masterColumns,
           columnWidth: options.continueElement.columnWidth,
           elementHeight: options.continueElement.elementHeight,
-          headerOffset: options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0,
+          headerOffset:
+            sectionTitleHeight +
+            (options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0),
           component: components.continue,
           matches: continueMatches,
         }),
@@ -426,10 +456,22 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   grid.calculateDimensions();
 
   const finalizedGrid = finalizeBracketGrid(grid);
+  const [upperRows, lowerRows] =
+    grid.grid.masterColumns[0]?.sections.filter((section) => section.type === 'round') ?? [];
 
   return {
     raw: grid,
     columns: finalizedGrid.columns,
     matchElementMap: finalizedGrid.elementMap,
+    sections: createBracketGridSections({
+      columns: finalizedGrid.columns,
+      sectionOf: doubleEliminationRoundSection,
+      titleHeight: sectionTitleHeight,
+      tops: {
+        upper: upperRows?.dimensions.top,
+        lower: lowerRows?.dimensions.top,
+        finals: upperRows?.dimensions.top,
+      },
+    }),
   };
 };

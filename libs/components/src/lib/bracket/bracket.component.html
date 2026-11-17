@@ -57,6 +57,21 @@
       }
     </svg>
 
+    @for (section of sectionTitles(); track section.key) {
+      <div
+        [attr.data-section]="section.key"
+        [style.width.px]="section.titleDimensions.width"
+        [style.height.px]="section.titleDimensions.height"
+        [style.left.px]="section.titleDimensions.left"
+        [style.top.px]="section.titleDimensions.top"
+        class="et-bracket-section-title"
+      >
+        <div class="et-bracket-section-title-sticky">
+          <ng-container *ngComponentOutlet="resolvedSectionTitleComponent(); inputs: { bracketSection: section }" />
+        </div>
+      </div>
+    }
+
     @for (round of grid.columns; track $index) {
       <ul
         [style.width.px]="round.dimensions.width"

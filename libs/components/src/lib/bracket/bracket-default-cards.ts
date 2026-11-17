@@ -2,6 +2,7 @@ import { BracketDefaultContinueComponent } from './bracket-default-continue.comp
 import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
 import { BracketDefaultMatchComponent } from './bracket-default-match.component';
 import { BracketDefaultRoundHeaderComponent } from './bracket-default-round-header.component';
+import { BracketDefaultSectionTitleComponent } from './bracket-default-section-title.component';
 import { BracketConfig } from './bracket.config';
 
 /**
@@ -16,4 +17,5 @@ export const BRACKET_DEFAULT_CARDS = {
   matchComponent: BracketDefaultMatchComponent,
   finalMatchComponent: BracketDefaultFinalMatchComponent,
   continueComponent: BracketDefaultContinueComponent,
+  sectionTitleComponent: BracketDefaultSectionTitleComponent,
 } satisfies Partial<BracketConfig>;

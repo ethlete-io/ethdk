@@ -1,0 +1,14 @@
+@layer components.sdk {
+  .et-bracket-default-section-title-host {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    block-size: 100%;
+    padding-inline: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--et-surface-color-solid, currentColor);
+    white-space: nowrap;
+  }
+}

@@ -1,4 +1,5 @@
 import { BracketMatch, BracketRound, BracketRoundSwissGroup } from '../../../linked';
+import { BracketGridSection } from '../sections';
 
 export type BracketComponentType<TInputs> = new (...args: never[]) => TInputs;
 export type BracketComponentInput<TValue> = () => TValue;
@@ -35,6 +36,11 @@ export type BracketMatchComponent<TRoundData, TMatchData> = BracketComponentType
 export type BracketContinueComponent<TRoundData, TMatchData> = BracketComponentType<{
   /** The matches whose winners advance to the next competition stage */
   bracketMatches: BracketComponentInput<BracketMatch<TRoundData, TMatchData>[]>;
+}>;
+
+/** A component that draws a section's title, e.g. "Upper bracket" over a double elimination's upper rounds. */
+export type BracketSectionTitleComponent<TRoundData, TMatchData> = BracketComponentType<{
+  bracketSection: BracketComponentInput<BracketGridSection<TRoundData, TMatchData>>;
 }>;
 
 export type BracketComponents<TRoundData, TMatchData> = {

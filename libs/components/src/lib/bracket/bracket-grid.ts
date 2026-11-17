@@ -58,6 +58,7 @@ export const createBracketGridConfig = (
   thirdPlaceTopOffset: settings.thirdPlaceTopOffset,
   swissGroupPadding: settings.swissGroupPadding,
   swissGroupBorderWidth: settings.lineWidth,
+  sectionTitleHeight: settings.showSectionTitles ? settings.sectionTitleHeight : 0,
   continueElement:
     settings.showContinueElement && dataLayout === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT
       ? {

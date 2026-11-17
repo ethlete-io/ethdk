@@ -336,6 +336,8 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `continueLineDashArray`   | `6`          | Dash length for the continue connectors.                                                                                   |
 | `matchNormalizer`         | -            | How to read your match data, for the default cards (see below).                                                            |
 | `roundHeaderLevel`        | `3`          | `aria-level` the default round headers announce themselves at.                                                             |
+| `showSectionTitles`       | `false`      | Title the parts of a double elimination - see [Section titles](#section-titles).                                           |
+| `sectionTitleHeight`      | `40`         | Height of the section title band.                                                                                          |
 
 ### The final's own column
 
@@ -466,19 +468,19 @@ The cards' own strings - the match count, "N winners advance", the champion line
 `provideBracketLabels()`. Everything inside a match card (TBD, Live, the composed accessible
 name) comes from [`provideMatchLabels()`](/components/match#localization).
 
-| Label                 | Default                                                                     |
-| --------------------- | --------------------------------------------------------------------------- |
-| `roundMatchCount`     | `(n) => '<n> matches'`, `'1 match'` for one                                 |
-| `winnersAdvance`      | `(n) => '<n> winners advance'`, `'1 winner advances'` for one               |
-| `continueLabel`       | `(n) => '<n> winners advance to the next stage'`, `'1 winner advances ...'` |
-| `champion`            | `(name) => 'Champion: <name>'`                                              |
-| `championPending`     | `'Champion not decided yet'`                                                |
-| `upperBracketSection` | `'Upper bracket'` - heads the winners rounds in a double-elimination list   |
-| `lowerBracketSection` | `'Lower bracket'` - heads the losers rounds in a double-elimination list    |
-| `finalsSection`       | `'Finals'` - heads the grand final, bracket reset and third place in a list |
-| `participantsLegend`  | `'Participants'` - names the `et-bracket-participants` group                |
-| `pickCardPicked`      | `'Your pick'`, announced on the picked side of a locked pick card           |
-| `pickCardPredicted`   | `'Prediction'`, announced after a predicted pick-card side                  |
+| Label                 | Default                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `roundMatchCount`     | `(n) => '<n> matches'`, `'1 match'` for one                                                                    |
+| `winnersAdvance`      | `(n) => '<n> winners advance'`, `'1 winner advances'` for one                                                  |
+| `continueLabel`       | `(n) => '<n> winners advance to the next stage'`, `'1 winner advances ...'`                                    |
+| `champion`            | `(name) => 'Champion: <name>'`                                                                                 |
+| `championPending`     | `'Champion not decided yet'`                                                                                   |
+| `upperBracketSection` | `'Upper bracket'` - heads the winners rounds in a double-elimination list and [section title](#section-titles) |
+| `lowerBracketSection` | `'Lower bracket'` - heads the losers rounds in a double-elimination list and section title                     |
+| `finalsSection`       | `'Finals'` - heads the grand final, bracket reset and third place in a list and section title                  |
+| `participantsLegend`  | `'Participants'` - names the `et-bracket-participants` group                                                   |
+| `pickCardPicked`      | `'Your pick'`, announced on the picked side of a locked pick card                                              |
+| `pickCardPredicted`   | `'Prediction'`, announced after a predicted pick-card side                                                     |
 
 `describeBracketSlot` words a [slot nobody stands on](/components/bracket-prediction#wording-a-slot-nobody-stands-on)
 from the same
@@ -576,6 +578,49 @@ front-truncated winners bracket whose opening round is played elsewhere. It also
 [folds](#double-elimination-stacks-two-folds).
 
 @example bracket/bracket-double-elimination 520px
+
+### Section titles
+
+Set `showSectionTitles` to title each part of a double-elimination bracket - the upper bracket, the
+lower bracket and the finals. A title sits in a band of its own above its part, and stays at the inline
+start of the scroll container while the bracket scrolls sideways, so a viewer deep in the later rounds
+still sees which bracket they are in.
+
+```html
+<et-scrollable>
+  <et-bracket [source]="source" showSectionTitles />
+</et-scrollable>
+```
+
+| Input / config key      | Default                               | Purpose                                                   |
+| ----------------------- | ------------------------------------- | --------------------------------------------------------- |
+| `showSectionTitles`     | `false`                               | Draw the section titles.                                  |
+| `sectionTitleHeight`    | `40` (`28` in compact density)        | Height of the band each title gets above its part, in px. |
+| `sectionTitleComponent` | `BracketDefaultSectionTitleComponent` | The title card, from `BRACKET_DEFAULT_CARDS` or your own. |
+
+All three are also keys of `provideBracketConfig`. The titles are off by default because the band makes
+the bracket taller. Only the left-to-right double elimination layout has parts to title; single
+elimination, swiss and the [mirrored layouts](#mirrored-layouts) ignore the setting.
+
+The default title reads its text from the `upperBracketSection`, `lowerBracketSection` and
+`finalsSection` [labels](#localization), and is a `role="heading"` one level above
+`roundHeaderLevel`. A custom title is a component with one required input, `bracketSection`
+(`BracketGridSection`): its `key` (`'upper'`, `'lower'` or `'finals'`), an English default `name`, its
+`rounds` and its box in the grid.
+
+```ts
+@Component({
+  selector: 'app-section-title',
+  template: `{{ bracketSection().name }}`,
+})
+export class SectionTitleComponent {
+  public bracketSection = input.required<BracketGridSection>();
+}
+```
+
+With titles on and no title card registered, the bracket throws [`ET3414`](#error-codes).
+
+@example bracket/bracket-section-titles 560px
 
 ## Swiss
 

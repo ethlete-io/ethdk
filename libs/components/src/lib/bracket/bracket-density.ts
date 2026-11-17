@@ -26,6 +26,7 @@ export const BRACKET_DENSITY_PRESETS: Record<BracketDensity, Partial<BracketLayo
     finalMatchHeight: 132,
     roundHeaderHeight: 34,
     roundHeaderGap: 12,
+    sectionTitleHeight: 28,
     columnGap: 32,
     rowGap: 16,
     rowRoundGap: 12,

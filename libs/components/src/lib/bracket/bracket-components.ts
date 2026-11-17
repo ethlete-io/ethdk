@@ -22,7 +22,8 @@ export type BracketComponentOverrides<TRoundData, TMatchData> = {
   continue?: BracketContinueComponent<TRoundData, TMatchData>;
 };
 
-const cardNotRegistered = (card: string) =>
+/** @internal */
+export const bracketCardNotRegistered = (card: string) =>
   new RuntimeError(
     BRACKET_ERROR_CODES.CARD_NOT_REGISTERED,
     ngDevMode
@@ -53,9 +54,9 @@ export const resolveBracketComponents = <TRoundData, TMatchData>(options: {
   const roundHeader = overrides.roundHeader ?? layoutComponents?.roundHeader ?? config.roundHeaderComponent;
   const continueCard = overrides.continue ?? layoutComponents?.continue ?? config.continueComponent;
 
-  if (!match) throw cardNotRegistered('match');
-  if (!roundHeader) throw cardNotRegistered('round header');
-  if (options.showsContinueElement && !continueCard) throw cardNotRegistered('continue');
+  if (!match) throw bracketCardNotRegistered('match');
+  if (!roundHeader) throw bracketCardNotRegistered('round header');
+  if (options.showsContinueElement && !continueCard) throw bracketCardNotRegistered('continue');
 
   return {
     match,

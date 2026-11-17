@@ -1,4 +1,4 @@
-import { BracketSlotSource } from '@ethlete/bracket';
+import { BRACKET_SECTION_KEY, BracketSectionKey, BracketSlotSource } from '@ethlete/bracket';
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
@@ -19,11 +19,11 @@ export type BracketLabels = {
   champion: (participant: string) => string;
   /** Announced on the final's card while it is still to be played. */
   championPending: string;
-  /** Heads the winners-bracket rounds in a double-elimination `et-bracket-rounds-list`. */
+  /** Heads the winners-bracket rounds in a double-elimination `et-bracket-rounds-list` and its section title. */
   upperBracketSection: string;
-  /** Heads the losers-bracket rounds in a double-elimination `et-bracket-rounds-list`. */
+  /** Heads the losers-bracket rounds in a double-elimination `et-bracket-rounds-list` and its section title. */
   lowerBracketSection: string;
-  /** Heads the deciding rounds - grand final, bracket reset, third place - in a rounds list. */
+  /** Heads the deciding rounds - grand final, bracket reset, third place - in a rounds list and the grid. */
   finalsSection: string;
   /** A slot an earlier match's winner walks into. */
   slotMatchWinner: string;
@@ -111,6 +111,18 @@ export const GERMAN_BRACKET_LABELS: BracketLabels = {
   participantsLegend: 'Teilnehmer',
   pickCardPicked: 'Auswahl',
   pickCardPredicted: 'Tipp',
+};
+
+/** The label a section of the bracket is headed with, by its key. */
+export const bracketSectionLabel = (key: BracketSectionKey, labels: BracketLabels) => {
+  switch (key) {
+    case BRACKET_SECTION_KEY.UPPER:
+      return labels.upperBracketSection;
+    case BRACKET_SECTION_KEY.LOWER:
+      return labels.lowerBracketSection;
+    case BRACKET_SECTION_KEY.FINALS:
+      return labels.finalsSection;
+  }
 };
 
 /** The label set for a locale. Anything other than English and German needs {@link provideBracketLabels}. */

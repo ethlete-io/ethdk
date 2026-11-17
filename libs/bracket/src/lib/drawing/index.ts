@@ -7,6 +7,7 @@ export { createStackedDoubleEliminationGrid as ɵcreateStackedDoubleEliminationG
 export * from './grid/double-elimination-utils';
 export * from './grid/prebuild';
 export * from './grid/row-span';
+export * from './grid/sections';
 export * from './grid/single-elimination';
 export * from './grid/swiss';
 export * from './grid/types';

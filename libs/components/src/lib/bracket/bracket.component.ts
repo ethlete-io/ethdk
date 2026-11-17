@@ -21,6 +21,7 @@ import {
   FinalizedBracketElement,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
+  BracketSectionTitleComponent,
   createBracket,
   BracketSwissColors,
   CreateBracketOptions,
@@ -33,7 +34,7 @@ import {
   setupJourneyHighlight as setupJourneyHighlightListeners,
 } from './journey-highlight';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
-import { resolveBracketComponents } from './bracket-components';
+import { bracketCardNotRegistered, resolveBracketComponents } from './bracket-components';
 import { BracketDensity } from './bracket-density';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import {
@@ -165,6 +166,17 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     transform: optionalBooleanAttribute,
   });
 
+  /**
+   * Titles each part of the bracket - a double elimination's upper bracket, lower bracket and finals -
+   * and keeps the title at the inline start of the scroll container while the bracket scrolls sideways.
+   */
+  public showSectionTitles = input<boolean | undefined, OptionalBooleanInput>(undefined, {
+    transform: optionalBooleanAttribute,
+  });
+  public sectionTitleHeight = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
+
   public showContinueElement = input<boolean | undefined, OptionalBooleanInput>(undefined, {
     transform: optionalBooleanAttribute,
   });
@@ -183,6 +195,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public matchInputs = input<BracketMatchInputs<TRoundData, TMatchData> | undefined>();
   public continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
+  public sectionTitleComponent = input<BracketSectionTitleComponent<TRoundData, TMatchData> | undefined>();
 
   /**
    * How to read your match data, for the **default** cards - see {@link BracketMatchNormalizer}. Cards of
@@ -260,6 +273,8 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       swissGroupPadding: this.swissGroupPadding() ?? this.config.swissGroupPadding,
       swissGroupBorderRadius: this.swissGroupBorderRadius() ?? this.config.swissGroupBorderRadius,
       hideRoundHeaders: this.hideRoundHeaders() ?? this.config.hideRoundHeaders,
+      showSectionTitles: this.showSectionTitles() ?? this.config.showSectionTitles,
+      sectionTitleHeight: this.sectionTitleHeight() ?? this.config.sectionTitleHeight,
       showContinueElement: this.showContinueElement() ?? this.config.showContinueElement,
       continueColumnWidth: this.continueColumnWidth() ?? this.config.continueColumnWidth,
       continueElementHeight: this.continueElementHeight() ?? this.config.continueElementHeight,
@@ -319,6 +334,17 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       this.matchInputs(),
     ),
   );
+
+  /** The sections whose titles the grid draws - none unless `showSectionTitles` is on. */
+  public sectionTitles = computed(() => (this.settings().showSectionTitles ? (this.bracketGrid().sections ?? []) : []));
+
+  protected resolvedSectionTitleComponent = computed(() => {
+    const component = this.sectionTitleComponent() ?? this.config.sectionTitleComponent;
+
+    if (!component && this.sectionTitles().length) throw bracketCardNotRegistered('section title');
+
+    return component as Type<unknown>;
+  });
 
   /** The connectors, group borders and gradients the active layout draws for this grid. */
   public drawing = computed(() =>

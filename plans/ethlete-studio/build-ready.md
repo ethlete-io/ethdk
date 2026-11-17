@@ -1070,3 +1070,21 @@ As built (B237, 2026-11-17): folded into B248 (finding 303); the draft is the sh
 that pages/system embeds. Verified (live, 2026-11-17): `design compare pages/system --product studio` reports
 `comment-draft ok`, `comment-draft-typed ok`, `comments-draft ok` and no COVERED line; `design check --product studio
 --part pages/system` has only STATE-NO-SOURCE (the B539 comment states) and UNRECORDED, both there before. Row deleted.
+
+As built (B549, 2026-11-17): `et-bracket` titles the parts of a left-to-right double elimination (upper bracket, lower
+bracket, finals). `@ethlete/bracket`: `BRACKET_SECTION_KEY`, `BRACKET_SECTION_DEFAULT_NAMES`, `BracketGridSection`,
+`createBracketGridSections`, `BracketSectionTitleComponent`, `CreateBracketGridConfig.sectionTitleHeight`,
+`ComputedBracketGrid.sections` (title band above each part, left-to-right double elimination only).
+`@ethlete/components`: inputs and config keys `showSectionTitles` (default false), `sectionTitleHeight` (40, compact 28),
+`sectionTitleComponent`; `BracketDefaultSectionTitleComponent` in `BRACKET_DEFAULT_CARDS` (`role="heading"`, one level
+above `roundHeaderLevel`, text from the `upperBracketSection` / `lowerBracketSection` / `finalsSection` labels); `ET3414`
+when titles are on and no title card is registered. Default off because the band changes every double-elimination
+bracket's height. A title box is placed with left/top, not a transform: sticky pins against the untransformed box, so the
+first build pinned the finals title to its box's far end (found in the Storybook check, fixed here). Stories
+`DoubleEliminationSectionTitles`, `DoubleEliminationCustomSectionTitles`; guide section "Section titles" in
+`apps/docs/components/bracket.md` with example `bracket/bracket-section-titles`. Verified: e2e
+`apps/storybook-e2e/src/bracket/bracket-section-titles.e2e.ts` (3 cases, desktop and touch) passes; bite: without
+`position: sticky` 5 of 6 fail, with the old transform placement the finals case fails on both projects; a real wheel
+scroll in Storybook keeps upper/lower titles at the scroll start and the finals title at its own start; spec:stress 4/4
+for both specs; vitest related, lint, typecheck for bracket, components, docs-examples, storybook-e2e; `nx build docs`. Not verified: RTL
+documents, the docs example rendered in the built site, real touch devices.

@@ -39,6 +39,8 @@ export default {
     customFinalCard: { control: { type: 'boolean' } },
     roundHeaderLevel: { control: { type: 'number' } },
     withParticipantList: { control: { type: 'boolean' } },
+    showSectionTitles: { control: { type: 'boolean' } },
+    customSectionTitle: { control: { type: 'boolean' } },
   },
   args: {
     columnGap: 60,
@@ -66,6 +68,8 @@ export default {
     customFinalCard: false,
     roundHeaderLevel: 3,
     withParticipantList: false,
+    showSectionTitles: false,
+    customSectionTitle: false,
   },
 } as Meta<StorybookBracketComponent>;
 
@@ -154,6 +158,25 @@ export const DoubleEliminationWithContinue = {
     // No grand final - the winners of the last winners/losers rounds advance to a later stage.
     source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: false }),
     showContinueElement: true,
+  },
+};
+
+/** Section titles stay at the inline start while the bracket scrolls sideways. */
+export const DoubleEliminationSectionTitles = {
+  render: Template,
+  args: {
+    source: generateDoubleEliminationBracket({ participantCount: 32, includeFinal: true }),
+    showSectionTitles: true,
+  },
+};
+
+/** The same titles, drawn by a custom component bound through `sectionTitleComponent`. */
+export const DoubleEliminationCustomSectionTitles = {
+  render: Template,
+  args: {
+    source: generateDoubleEliminationBracket({ participantCount: 32, includeFinal: true }),
+    showSectionTitles: true,
+    customSectionTitle: true,
   },
 };
 

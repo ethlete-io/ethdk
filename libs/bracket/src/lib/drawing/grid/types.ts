@@ -1,10 +1,13 @@
 import { BracketDataLayout } from '../../core';
 import { FinalizedBracketColumn, FinalizedBracketMatchElementMap, MutableBracketGrid } from './core';
+import { BracketGridSection } from './sections';
 
 export type ComputedBracketGrid<TRoundData, TMatchData> = {
   raw: MutableBracketGrid<TRoundData, TMatchData>;
   columns: FinalizedBracketColumn<TRoundData, TMatchData>[];
   matchElementMap: FinalizedBracketMatchElementMap<TRoundData, TMatchData>;
+  /** The parts of the bracket and where they sit. Only the left-to-right double elimination grid sets it. */
+  sections?: BracketGridSection<TRoundData, TMatchData>[];
 };
 
 /** Returns the width needed to render a computed bracket grid without horizontal clipping. */
@@ -42,6 +45,12 @@ export type CreateBracketGridConfig = {
   thirdPlaceTopOffset?: number | null;
   swissGroupPadding: number;
   swissGroupBorderWidth: number;
+
+  /**
+   * The band reserved above each section for its title, in px. Only the left-to-right double elimination
+   * grid reserves it; unset or `0` reserves none.
+   */
+  sectionTitleHeight?: number;
   layout: BracketDataLayout;
   continueElement?: {
     columnWidth: number;

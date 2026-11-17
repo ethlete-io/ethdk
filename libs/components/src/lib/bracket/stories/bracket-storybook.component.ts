@@ -18,6 +18,7 @@ import {
   BracketDataLayout,
   BracketMatch,
   BracketRound,
+  BracketGridSection,
   BracketRoundSwissGroup,
   BracketSwissColors,
 } from '@ethlete/bracket';
@@ -116,6 +117,42 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
 export class StorybookRoundHeaderComponent<TRoundData = unknown, TMatchData = unknown> {
   public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
   public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+}
+
+/** Demo custom section title, wired via the `sectionTitleComponent` input. */
+@Component({
+  selector: 'et-sb-section-title',
+  template: `
+    <span class="et-sb-section-title-key">{{ bracketSection().key }}</span>
+    <span>{{ bracketSection().name }}</span>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-section-title-host',
+  },
+  styles: `
+    @layer components {
+      .et-sb-section-title-host {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        block-size: 100%;
+        padding-inline: 12px;
+        border-inline-start: 4px solid var(--et-surface-border-solid);
+        background: var(--et-surface-background-solid);
+        font-weight: 700;
+      }
+
+      .et-sb-section-title-key {
+        font-size: 11px;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+    }
+  `,
+})
+export class StorybookSectionTitleComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketSection = input.required<BracketGridSection<TRoundData, TMatchData>>();
 }
 
 /**
@@ -263,6 +300,8 @@ export class StorybookBracketDensityComponent {
         [alignRoundHeaders]="alignRoundHeaders()"
         [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
         [finalRoundHeaderGap]="finalRoundHeaderGap()"
+        [showSectionTitles]="showSectionTitles()"
+        [sectionTitleComponent]="customSectionTitle() ? SECTION_TITLE_COMPONENT : undefined"
       />
     </et-scrollable>
   `,
@@ -314,6 +353,9 @@ export class StorybookBracketComponent {
   public customFinalCard = input(false, { transform: booleanAttribute });
   public roundHeaderLevel = input(3, { transform: numberAttribute });
 
+  public showSectionTitles = input(false, { transform: booleanAttribute });
+  public customSectionTitle = input(false, { transform: booleanAttribute });
+
   /** Render the participants legend that pins a journey - the focus-mode demo. */
   public withParticipantList = input(false, { transform: booleanAttribute });
 
@@ -348,4 +390,5 @@ export class StorybookBracketComponent {
   });
 
   protected readonly FINAL_MATCH_COMPONENT = StorybookFinalMatchComponent;
+  protected readonly SECTION_TITLE_COMPONENT = StorybookSectionTitleComponent;
 }

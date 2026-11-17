@@ -26,6 +26,23 @@
       opacity 0.2s;
   }
 
+  /* Placed with left/top, not a transform: sticky offsets its title against the untransformed box, so
+     a translated section would pin its title to the box's far end. */
+  .et-bracket-section-title {
+    position: absolute;
+    transition:
+      left var(--et-bracket-move-duration, 0.2s) var(--et-bracket-move-easing, ease),
+      top var(--et-bracket-move-duration, 0.2s) var(--et-bracket-move-easing, ease);
+  }
+
+  .et-bracket-section-title-sticky {
+    position: sticky;
+    inset-inline-start: 0;
+    inline-size: max-content;
+    max-inline-size: 100%;
+    block-size: 100%;
+  }
+
   /* Only the centered case has a rule: a header that fills its column - the shipped one does - is
      centered already, so `start` has to leave it exactly as it was. */
   .et-bracket-element--header:where([data-align='center']) {
@@ -58,6 +75,7 @@
   @media (prefers-reduced-motion: reduce) {
     .et-bracket,
     .et-bracket-round,
+    .et-bracket-section-title,
     .et-bracket-element,
     .et-bracket-svg path {
       transition: none;
