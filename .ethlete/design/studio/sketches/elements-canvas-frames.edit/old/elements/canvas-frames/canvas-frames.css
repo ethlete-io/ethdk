@@ -3,14 +3,18 @@
     padding-left: var(--st-shell-inset-left, 0px);
   }
 
-  .st-cframe {
-    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
+  .st-cframe::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: 0 0 0 calc(1px * var(--st-canvas-label-scale, 1)) var(--et-surface-border-solid);
   }
 
   .st-cframe-head {
     gap: 0.6em;
-    font-size: 1.2rem;
-    line-height: 1.6rem;
+    font-size: calc(1.2rem * var(--st-canvas-label-scale, 1));
+    line-height: calc(1.6rem * var(--st-canvas-label-scale, 1));
   }
 
   .st-sgrid {
