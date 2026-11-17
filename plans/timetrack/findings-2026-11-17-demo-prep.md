@@ -56,7 +56,15 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 
 15. **A day tidied on one machine stays untidy on the other.** Row edits, rules and stand-ins do not
     sync (ADR 0039), so the Mac names nothing of what Linux named. A presentation machine that is
-    not the work machine shows the raw day.
+    not the work machine shows the raw day. The events do arrive: the Mac's 17.11. holds Linux
+    checkouts, and the fifagg ones are matched to its own. The sent rows are drawn only on a day
+    the receiving machine booked itself (`withFrozenRows` in `libs/timetrack/src/lib/review/frozen-rows.ts`);
+    a day only the peer booked stays open. So the Mac proposed the booked 17.11. again: "12h 45m
+    proposed and 8h 30m already in Tempo". A sync there would book the day twice, and its auto mode
+    queued 21 writes (15 `jira.create`, 6 `autoMode.apply` partly on the retired FIFAGG-12069) for
+    work Linux had named. The Mac day for the demo was matched to Linux by 19 edits by hand.
+    Proposed: a day a paired machine booked counts as booked on every machine - its sent rows are
+    drawn, nothing is proposed, auto mode leaves it alone.
 16. **Old stand-ins pile up.** Linux holds 110 open stand-ins, many 50 to 63 days old with 0 days of
     work.
 17. **Rows of zero duration are listed.** The `zero-duration` warning names them, and they still
