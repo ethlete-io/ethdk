@@ -70,10 +70,11 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     Linux these days hold no `input-active` event, so the only sign of the user is an
     `agent-prompt` with `askedBy: "human"`, and a night holds one or two of those per half hour
     too.
-19. **A dragged end sets the duration to the span.** A row that says "5 h of 16 h" becomes 9 h when
-    its start is dragged from 00:00 to 07:00 (`edits.ts`, `roundedSpan`). The CLI has no way to cut
-    the span and keep the observed share, so the three parallel ethlete-sdk rows of 2026-11-11
-    could only be rejected whole.
+19. **The cut-off part of a dragged row comes back as an unnamed row.** The start of the
+    2026-11-16 row 01:30-10:45 was dragged to 09:30; the day then drew a new unnamed row
+    01:30-09:30 with 8 h. The night stays on the page until that row is rejected too. The kept part
+    also shows fewer hours than its span (2026-11-07: 12:45-14:45 shows 1 h), so "keep 2 h" needs
+    a second look after the approval.
 20. **One day page shows about forty slivers.** 2026-11-10 lists 45 rows, most of them 15 minutes
     in the ethlete-sdk lane under one issue.
 21. **An agent that names rows from the `unattended` flag alone books night work.** The tidy-up
