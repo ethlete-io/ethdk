@@ -3,7 +3,14 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
-import { autoAcceptOf, DrawStates, readPictures, StatePictures, writePictures } from './accepted-pictures';
+import {
+  autoAcceptOf,
+  DrawStates,
+  readPictures,
+  settleCommittedEdits,
+  StatePictures,
+  writePictures,
+} from './accepted-pictures';
 import { designHashOf } from './design-hash';
 import { Problem } from './problem';
 import { partPointsOf, readOpenPoints } from './read-open-points';
@@ -412,23 +419,47 @@ describe('autoAcceptOf', () => {
       expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
     });
 
-    it('is named as stale, left for its discard, once the user decided it and its part is restored to HEAD', async () => {
-      const { target, dir, chip, draw } = await openSketch();
+    const decide = (dir: string, variant: string) => {
       const file = sketchFileOf(dir);
 
       writeFileSync(
         file,
         JSON.stringify({
           ...JSON.parse(readFileSync(file, 'utf8')),
-          decision: { kind: 'pick', variant: 'new', decidedAt: '2026-11-04T00:00:00.000Z' },
+          decision: { kind: 'pick', variant, decidedAt: '2026-11-04T00:00:00.000Z' },
         }),
       );
+    };
+
+    it('is deleted as stale once the user picked new and HEAD holds the edit', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+
+      decide(dir, 'new');
+      commitChip(target, chip);
+
+      expect(await autoAccept(target, draw)).toEqual([STALE_DISCARDED]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+      expect(readMerged(dir)[CHIP]).toBe(partHashOf({ product: productOf(target), dir: dirname(chip) }));
+    });
+
+    it('is deleted as stale by a run that writes no tracked file once the user decided it and HEAD holds the edit', async () => {
+      const { target, dir, chip } = await openSketch();
+
+      decide(dir, 'new');
+      commitChip(target, chip);
+
+      expect(settleCommittedEdits({ target, product: productOf(target), writesTracked: false })).toEqual([CHIP]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+    });
+
+    it('is deleted as stale once the user decided it and its part is restored to HEAD', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+
+      decide(dir, 'old');
       gitExec(['checkout', '--', chip], { cwd: target });
 
-      expect(await autoAccept(target, draw)).toEqual([
-        `STALE EDIT SKETCH app-a ${CHIP}@edit: ${CHIP} matches HEAD - discard it: sketch discard ${CHIP}@edit --product app-a --by <model id>`,
-      ]);
-      expect(existsSync(file)).toBe(true);
+      expect(await autoAccept(target, draw)).toEqual([STALE_DISCARDED]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
     });
 
     it('may be discarded only once its part matches HEAD', async () => {

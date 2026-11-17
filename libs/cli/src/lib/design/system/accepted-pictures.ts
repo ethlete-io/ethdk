@@ -17,6 +17,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import {
   EDIT_OLD,
+  isOpenOrPickedEditSketch,
   EditOldNotFound,
   headHoldsPart,
   isStaleEditSketch,
@@ -26,7 +27,7 @@ import {
   tracksFileBelow,
 } from './sketch/edit-sketch';
 import { discardSketch } from './sketch/merge';
-import { changedOutsideSketchOf, EDIT_SKETCH, readMerged, recordMerged } from './sketch/merged-parts';
+import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { listSketches, Sketch } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { drawnStateNamesOf } from './unchanged-rows';
@@ -247,19 +248,14 @@ const drawPartsWith = async (options: {
 const baselineOf = (pictures: PartPictures, merged: string | undefined) =>
   merged !== undefined && pictures.record?.partHash === merged ? pictures.record : null;
 
-const isUndecidedEditSketch = (sketch: Sketch) =>
-  sketch.target === `${partKeyOf(sketch)}@${EDIT_SKETCH}` &&
-  sketch.status === 'ready' &&
-  !sketch.decision &&
-  !sketch.hold &&
-  Object.values(sketch.rejections ?? {}).every((rejections) => rejections.length === 0);
+const isUndecidedEditSketch = (sketch: Sketch) => isOpenOrPickedEditSketch(sketch) && !sketch.decision;
 
 type Need = { part: ResolvedPart; design: string; baseline: AcceptedPictures | null; sketch?: Sketch };
 
-const undecidedEditSketchesOf = (product: ResolvedProduct) =>
+const editSketchesOf = (product: ResolvedProduct, matches: (sketch: Sketch) => boolean) =>
   new Map(
     listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
-      typeof sketch !== 'string' && isUndecidedEditSketch(sketch) ? [[partKeyOf(sketch), sketch] as const] : [],
+      typeof sketch !== 'string' && matches(sketch) ? [[partKeyOf(sketch), sketch] as const] : [],
     ),
   );
 
@@ -278,7 +274,7 @@ const leftStaleEditLinesOf = (product: ResolvedProduct, parts: string[] | undefi
 
 /**
  * Settles each direct edit of a merged part, or of `parts`, that HEAD already holds: records its hash in `merged.json`
- * and deletes its open edit sketch, without a pick. Answers the parts it settled. With `writesTracked: false` it records
+ * and deletes its edit sketch, open or picked. Answers the parts it settled. With `writesTracked: false` it records
  * nothing and deletes only an edit sketch git does not track and no comment is on. `held` gets each settled part with
  * its part hash; `lines` gets a STALE EDIT SKETCH line per edit sketch whose part HEAD holds, deleted or left.
  */
@@ -292,7 +288,7 @@ export const settleCommittedEdits = (options: {
 }) => {
   const { target, product } = options;
   const writesTracked = options.writesTracked ?? true;
-  const sketches = undecidedEditSketchesOf(product);
+  const sketches = editSketchesOf(product, isOpenOrPickedEditSketch);
   const candidates = new Set([...changedOutsideSketchOf(product), ...sketches.keys()]);
   const settled = product.parts.filter((resolved) => {
     const part = partKeyOf(resolved);
@@ -377,7 +373,7 @@ export const autoAcceptOf = async (options: {
   );
 
   const edited = new Set(changedOutsideSketchOf(product));
-  const editSketches = undecidedEditSketchesOf(product);
+  const editSketches = editSketchesOf(product, isUndecidedEditSketch);
   const merged = readMerged(product.dir);
   const records: Need[] = [];
   const edits: Need[] = [];

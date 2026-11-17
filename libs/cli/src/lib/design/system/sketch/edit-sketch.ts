@@ -52,6 +52,16 @@ export const isStaleEditSketch = (product: ResolvedProduct, sketch: Pick<Sketch,
   return resolved !== undefined && resolved.origin !== 'base' && headHoldsPart(product, resolved);
 };
 
+/** Whether `sketch` is a ready old/new edit sketch, undecided or picked, without a hold or a rejection: the one a check settles once HEAD holds its part. */
+export const isOpenOrPickedEditSketch = (
+  sketch: Pick<Sketch, 'target' | 'layer' | 'name' | 'status' | 'decision' | 'hold' | 'rejections'>,
+) =>
+  sketch.target === `${partKeyOf(sketch)}@${EDIT_SKETCH}` &&
+  sketch.status === 'ready' &&
+  (!sketch.decision || sketch.decision.kind === 'pick') &&
+  !sketch.hold &&
+  Object.values(sketch.rejections ?? {}).every((rejections) => rejections.length === 0);
+
 /** Whether `renders` show an edit sketch's `new` and `old` drawing like the part now in every state; never for a pick of `old`. */
 export const editHoldsOf = (
   sketch: Pick<Sketch, 'target' | 'layer' | 'name' | 'decision'>,

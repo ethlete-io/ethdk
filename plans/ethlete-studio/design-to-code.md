@@ -2035,3 +2035,14 @@ rule baseline, the rules per part) and `withFoundRules`; ready keeps its draw's 
 with `problem: CANVAS-UNDER-PANEL`), red with ready's old inputs restored. Not verified: a live `design ready` on a
 part with a render issue (no such part at hand to spend a mark on); the rest of check's tally (edit problems, the tail
 after the record) still reaches ready only where both read the same static rules.
+
+As built (B577 slice 1, ADR 0336): cause (by spec bite) - `settleCommittedEdits` (accepted-pictures.ts) took only
+undecided `@edit` sketches, so a picked one whose part HEAD holds (live: `elements/studio-menu@edit`, picked `new`,
+committed) was named STALE EDIT SKETCH and left for a discard the classifier refuses, while status also printed
+SKETCH-BASE-STALE with a rebase that `@edit` has no use for. Now the settle takes every ready `@edit` sketch, undecided
+or picked, without hold or rejection (`isOpenOrPickedEditSketch`, edit-sketch.ts): check, ready and the design server
+delete it once HEAD holds its part. `staleSketchBasesOf` skips a stale edit sketch, and status names it once as SKETCH
+LEFTOVER with the check that clears it. Verified: accepted-pictures.spec (picked new + committed, picked old +
+restored, a `writesTracked: false` run) and status-uncommitted.spec, red with the fix reverted. Live: status
+printed one line for studio-menu@edit, and `design check --product studio --part elements/studio-menu` deleted it
+(STALE EDIT SKETCH ... discarded). Not verified: a picked `old` whose HEAD holds the `new` edit also closes silently.

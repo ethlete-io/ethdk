@@ -6,7 +6,8 @@ import { git } from '../git-test-env.fixtures';
 import { readConfig } from './design-config';
 import { designStatus } from './status';
 import { resolveProduct } from './system/resolve-product';
-import { createSketch } from './system/sketch/sketch';
+import { createSketch, decideSketch, markSketchReady, Sketch } from './system/sketch/sketch';
+import { originOf } from './system/write-origin';
 
 vi.mock('./push-status', () => ({
   pushStatusOf: () => ({ base: 'origin/next', unpushed: 0 }),
@@ -105,5 +106,31 @@ describe('design status and uncommitted design state', () => {
     commitAll(target);
 
     expect(statusLines(target)).toEqual([]);
+  });
+
+  it('names a picked edit sketch whose changed part HEAD holds once, with the check that clears it', () => {
+    const target = committedAcme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero', sketch: 'edit' },
+      variants: ['new'],
+    }) as Sketch;
+
+    markSketchReady({ checkout: target, sketch });
+    decideSketch({ sketch, decision: { kind: 'pick', variant: 'new', ...originOf('spec') } });
+    writeFileSync(join(productDirOf(target), 'elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+    git(target, 'add', join(productDirOf(target), 'elements/hero'));
+    git(target, '-c', 'user.name=spec', '-c', 'user.email=spec@example.com', 'commit', '-q', '-m', 'hero');
+
+    const lines: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation((line: unknown) => void lines.push(...String(line).split('\n')));
+    expect(designStatus({ target, argv: [], invocation: 'et design' })).toBe(0);
+    expect(lines.filter((line) => /elements[/-]hero[@.]edit/u.test(line))).toEqual([
+      expect.stringMatching(
+        /^SKETCH LEFTOVER acme elements-hero\.edit: elements\/hero@edit, ready, .* the next check clears it: design check --product acme --part elements\/hero$/u,
+      ),
+    ]);
   });
 });

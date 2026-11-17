@@ -2,6 +2,7 @@ import { dirname, isAbsolute, relative } from 'path';
 import { reachableFilesOf } from '../reachable-files';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { partHashHolds, staleBaselineOf } from './baseline';
+import { isStaleEditSketch } from './edit-sketch';
 import { overlaySketch } from './overlay';
 import { Problem } from '../problem';
 import { listSketches, Sketch } from './sketch';
@@ -66,7 +67,7 @@ export const staleBaseOf = (options: { product: ResolvedProduct; sketch: Sketch 
 
 /**
  * One SKETCH-BASE-STALE problem, with its printed line, per undiscarded sketch (open or picked) whose base changed since it was drawn or
- * rebased; with `parts`, only the sketches where one of those parts changed; with `targets`, only the sketches on those targets.
+ * rebased, except a stale edit sketch (`isStaleEditSketch`), which closes instead; with `parts`, only the sketches where one of those parts changed; with `targets`, only the sketches on those targets.
  */
 export const staleSketchBasesOf = (options: {
   product: ResolvedProduct;
@@ -83,6 +84,7 @@ export const staleSketchBasesOf = (options: {
     const changed = staleBaseOf({ product, sketch });
 
     if (!changed?.length || (parts && !changed.some((part) => parts.has(part)))) return [];
+    if (isStaleEditSketch(product, sketch)) return [];
 
     const copies = staleSharedCopiesOf(product, sketch.sharedBase).map(
       ({ copy, base, commit }) => `; ${copy} is a stale copy of ${base} (${commit})`,
