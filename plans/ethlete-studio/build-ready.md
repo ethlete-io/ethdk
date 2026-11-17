@@ -1039,3 +1039,8 @@ As built (B484, 2026-11-17): already built in 588bb8e8b (2026-11-10); the STATUS
 carry the `repo` scope (`chore(repo): Update prereleases`, `chore(repo): Update versions`), and
 `yarn lint:commit-messages` (`tools/scripts/check-workflow-commit-messages.mjs`, run in ci.yml) checks every
 `commit_message:`. Verified: the check passes on HEAD. This slice only deletes the row.
+
+As built (B494, 2026-11-17): already built; the STATUS row was stale. Leak check: 98cd69ccf (a spec file or push-suite
+step that leaves a folder in `/tmp` fails and is named) after 43d71245b (`spec:tmp-leaks`, tools specs). Timer and
+`CLAUDE_CODE_TMPDIR` on `/home`: 7f71406ec; the human installed the timer, recorded in d354e97ed. ADR 0275 carries
+`built: 98cd69ccf`. This slice only deletes the row.
