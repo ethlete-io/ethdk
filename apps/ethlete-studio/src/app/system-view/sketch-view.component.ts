@@ -695,8 +695,10 @@ export class SketchViewComponent {
     ].filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
   );
 
+  private sketchTarget = computed(() => this.sketch().target);
+
   protected confirm = linkedSignal<SketchConfirm | null>(() => {
-    this.sketch();
+    this.sketchTarget();
 
     return null;
   });

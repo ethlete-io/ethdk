@@ -888,6 +888,17 @@ describe('SketchViewComponent', () => {
     expect(asked.some((url) => url.includes('/__design/sketch-discard'))).toBe(true);
   });
 
+  it('keeps the Verwerfen confirm open when a new listing names the same sketch', async () => {
+    const { fixture, root } = await render(SKETCH, noComments);
+
+    buttonNamed(root, 'Verwerfen')?.click();
+    await settle(fixture);
+    fixture.componentRef.setInput('sketch', { ...SKETCH });
+    await settle(fixture);
+
+    expect(document.querySelectorAll('[role="alertdialog"] [data-sk-confirm-cancel]')).toHaveLength(1);
+  });
+
   it('shows the reason of a refused discard next to the decide controls and clears it on the next action', async () => {
     const reason = 'components/card is in progress - a variant is picked once it is ready';
     let refuse = true;
