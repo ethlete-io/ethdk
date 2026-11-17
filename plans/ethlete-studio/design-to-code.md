@@ -1703,3 +1703,8 @@ parts with 2+ users never nest. tree-row draws the tag (`mark-layer`, `selected-
 (`cross-layer`: hold-trigger under pages/sketches); app tree-row/part-tree mirror it. Verified: vitest related 368 pass,
 app tsc, check --part tree-row/part-tree 0 findings. Not verified: live Studio shot; `design task --verify` runs after
 the commit (DIRECT EDIT open point blocks the check record before it).
+
+As built (B558 sketch): sketch `elements/canvas-frames@diff-mark` (product studio), state `diff-mark` on the
+hold-trigger grid (closed/open x rest/hover/active/focus-visible). `shared/diff-grid.ts` derives the marked region
+of each cell from its difference to closed rest (interaction: the trigger, open: the reason, both: the whole part);
+variants a outline + dim, b outline only, c dim only. Waits on the user's pick; no app code.
