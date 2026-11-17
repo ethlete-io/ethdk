@@ -91,6 +91,10 @@ const SKETCH_PART_SAMPLES: Record<string, { rows: SketchRow[]; looks: Record<str
 
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
+  'components/comment-pin': ({ class: extra, ...props }) => ({
+    ...props,
+    class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
+  }),
   'components/shell-collapse': ({ class: extra, ...props }) => ({
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,

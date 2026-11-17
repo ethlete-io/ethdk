@@ -596,7 +596,6 @@
           [count]="pin.count"
           [resolved]="!!pin.resolved"
           (pinToggle)="pinToggle.emit(row.key)"
-          class="p-0!"
         />
       </span>
     }
@@ -605,7 +604,6 @@
 <ng-template #cellTemplate let-row let-item="item" let-column="column" let-line="line">
   @let same = isSame(row, item.changed);
   <div
-    [class.opacity-50]="same"
     [attr.data-sk-state]="item.state"
     [attr.data-sk-variant]="row.key"
     [attr.data-sk-changed]="item.changed ?? 'pending'"
@@ -616,6 +614,7 @@
     <span
       #labelRow
       [class.hidden]="labelSize() === null"
+      [class.opacity-50]="same"
       class="row-start-1 flex w-0 min-w-full flex-wrap items-center gap-x-space-2"
       data-sk-label
       ><span
@@ -657,7 +656,7 @@
           [style.top.px]="(draft.point?.y ?? 0) * scale()"
           class="absolute z-10 flex -translate-y-full"
         >
-          <ethlete-comment-pin [author]="draft.author" [initials]="draft.initials" [selected]="true" class="p-0!" />
+          <ethlete-comment-pin [author]="draft.author" [initials]="draft.initials" [selected]="true" />
         </span>
         <ethlete-comment-draft
           [(text)]="draftText"
@@ -678,6 +677,7 @@
         [attr.data-selected]="key === selectedFrame() ? '' : null"
         [attr.data-sk-cropped]="cropTransform ? '' : null"
         [class]="stacked ? 'z-1' : 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]'"
+        [class.opacity-50]="same"
         class="relative overflow-clip [overflow-clip-margin:8px]"
       >
         <div
@@ -747,6 +747,5 @@
     [selected]="comment.id === selectedComment()"
     [resolved]="!!comment.resolved"
     (pinToggle)="commentPick.emit(comment.id)"
-    class="p-0!"
   />
 </ng-template>

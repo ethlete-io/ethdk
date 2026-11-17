@@ -459,7 +459,7 @@ const confirmDialog = async (kind: ConfirmKind, part: string, variant: string) =
     ? await anchoredDialog.render({
         label: 'Variante übernehmen',
         placement: 'bottom-start',
-        anchor: '[data-sk-take]',
+        anchor: '[data-sk-take] > :first-child',
         content,
       })
     : await anchoredDialog.render({ label: 'Skizze verwerfen', anchor: '[data-sk-discard]', content });

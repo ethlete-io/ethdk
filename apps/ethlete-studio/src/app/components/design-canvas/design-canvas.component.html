@@ -186,9 +186,7 @@
     <div
       [style.left.px]="placed.x"
       [style.top.px]="placed.y"
-      [style.transform]="
-        'scale(' + labelScale() + ') translate(calc(var(--space-2) * -1), calc(var(--space-2) - 100%))'
-      "
+      [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
       [class]="placed.open ? 'z-4' : 'z-3'"
       class="absolute origin-top-left"
     >

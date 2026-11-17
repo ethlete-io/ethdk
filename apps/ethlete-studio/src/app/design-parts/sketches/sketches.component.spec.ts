@@ -130,8 +130,8 @@ describe('SketchesComponent', () => {
       'x',
     ]);
     expect(textOf(states[0])).toBe(`rest${LABELS.stateSeparator}${LABELS.unchanged}`);
-    expect(states[0]?.classList.contains('opacity-50')).toBe(true);
-    expect(states[1]?.classList.contains('opacity-50')).toBe(false);
+    expect(states[0]?.querySelector('[data-sk-label]')?.classList.contains('opacity-50')).toBe(true);
+    expect(states[1]?.querySelector('[data-sk-label]')?.classList.contains('opacity-50')).toBe(false);
     expect(textOf(variant?.querySelector('[data-sk-first-change]'))).toBe(LABELS.firstChange);
     expect(root.querySelector('[data-sk-row="current"] [data-sk-first-change]')).toBeNull();
     expect(root.querySelector('[data-sk-row="current"] .opacity-50')).toBeNull();
@@ -570,14 +570,16 @@ describe('SketchesComponent', () => {
 
     expect(frame?.style.width).toBe('400px');
     expect(frame?.style.height).toBe('240px');
-    expect(stage?.style.gridTemplateColumns).toBe('repeat(2, 400px)');
+    expect(stage?.style.gridTemplateColumns).toBe('repeat(2, minmax(400px, max-content))');
   });
 
   it('keeps a part as wide as the window in one column', async () => {
     const wide = ROWS.map((row) => ({ ...row, width: 1440 }));
     const root: HTMLElement = (await render({ camera: '100', rows: wide })).nativeElement;
 
-    expect(root.querySelector<HTMLElement>('[data-sk-stage]')?.style.gridTemplateColumns).toBe('repeat(1, 1440px)');
+    expect(root.querySelector<HTMLElement>('[data-sk-stage]')?.style.gridTemplateColumns).toBe(
+      'repeat(1, minmax(1440px, max-content))',
+    );
   });
 
   it('turns the rows into columns for a wide part, but not for a width no frame has reported yet', async () => {

@@ -35,7 +35,7 @@ const FACE_INTERACTIVE = `${FACE} group-hover/pin:bg-et-surface-interaction/9 gr
   templateUrl: './comment-pin.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, AutoSurfaceDirective, SurfaceInteractiveDirective, AgentLogoComponent],
-  host: { class: 'inline-flex p-space-2 font-ui' },
+  host: { class: 'inline-flex font-ui' },
 })
 export class CommentPinComponent {
   public author = input('');

@@ -3589,3 +3589,14 @@ pins and the draft pin now take `p-0!` like the row pin, and the sample points s
 room (diffs 116k-275k). Open: (1) the ~900 px per row at x>=1400: the app's reset-focus-visible frame box stays 176 px
 while the design's box grows with the chip's `pl-[22.5px]` room; (2) row a's selected pin is dimmed in the app because
 pins sit inside the `opacity-50` unchanged cell, the design draws them over the row. Not verified: a live Studio shot.
+
+As built (B539 pin room + frame width, 2026-11-17): `ethlete-comment-pin` drops its host `p-space-2`, so the three
+`p-0!` in the Sketches view and the `design-canvas` translate compensation are gone; the page that places a pin owns
+its room (ADR 0293), and only the design harness pads the part for its own compare. A sketch frame grows to
+`scrollWidth` when its shot overflows the part width (stage columns `minmax(<w>px, max-content)`), like the design's
+`sk-fit`. An unchanged state dims its label and frame, not the pin layer. Cause of the last merge-confirm diff
+(measured): the design mock aimed the arrow at the stretched `[data-sk-take]` span; it now aims at its first child, the
+Übernehmen button. Compare after: multi-part-many, comments, comments-mode, comments-draft, discard-confirm ok;
+merge-confirm 20 px (scattered anti-aliasing); components/comment-pin all states ok and every action works (one earlier
+run timed out two clicks, a rerun was clean). Verified: studio `vitest related` 239/239 and sketches spec 75/75, lint,
+typecheck, e2e case "the comment button". Not verified: a live Studio shot.

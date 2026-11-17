@@ -923,15 +923,19 @@ export class SketchesComponent {
       const inner = frames.find((frame) => stage.contains(frame))?.firstElementChild;
 
       if (inner instanceof HTMLElement) {
-        setStyle(stage, { gridTemplateColumns: `repeat(${columns}, ${parseFloat(inner.style.width) * scale}px)` });
+        setStyle(stage, {
+          gridTemplateColumns: `repeat(${columns}, minmax(${parseFloat(inner.style.width) * scale}px, max-content))`,
+        });
       }
     }
     for (const frame of frames) {
       const inner = frame.firstElementChild;
 
       if (inner instanceof HTMLElement) {
+        const width = inner.scrollWidth > inner.offsetWidth ? inner.scrollWidth : parseFloat(inner.style.width);
+
         setStyle(frame, {
-          width: `${parseFloat(inner.style.width) * scale}px`,
+          width: `${width * scale}px`,
           height: `${parseFloat(inner.style.height) * scale}px`,
         });
       }
