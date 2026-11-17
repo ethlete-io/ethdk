@@ -66,12 +66,12 @@ import {
   sketchLabelOf,
   treeOf,
 } from './system-tree';
-import { commentDraftOf, otherSizeFrameOf, pinsOf } from './comment-pins';
+import { commentDraftOf, otherSizeFrameOf, pinsOf, placedCommentsOf } from './comment-pins';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
-import { inboxCommentOf, inboxPartOf } from './inbox-comments';
+import { inboxCommentOf, inboxPartOf, writerOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 import { FlowRead, flowRead$, keepLastFlows } from './flow-read';
@@ -247,6 +247,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [buildReady]="buildReady()"
         [missingShots]="failedShots.count()"
         [commentMode]="commentStore.active()"
+        [comments]="placedComments()"
+        [selectedComment]="pickedCommentId()"
+        [writer]="commentWriter()"
         (commentModeChange)="commentStore.toggle()"
         (reload)="reloadListing()"
         (markTransferred)="markTransferred($event)"
@@ -1038,9 +1041,18 @@ export class SystemViewComponent {
     this.commentStore.resolved().filter((comment) => comment.id === this.pickedCommentId()),
   );
 
-  protected partPins = computed(() =>
-    pinsOf(this.placeableFrames(), [...this.commentStore.comments(), ...this.pickedResolved()]),
+  private pinnedComments = computed(() => [...this.commentStore.comments(), ...this.pickedResolved()]);
+
+  protected partPins = computed(() => pinsOf(this.placeableFrames(), this.pinnedComments()));
+
+  protected placedComments = computed(() =>
+    placedCommentsOf(
+      { frames: this.placeableFrames(), pins: this.partPins(), comments: this.pinnedComments() },
+      { now: Date.now(), userName: this.commentStore.userName() },
+    ),
   );
+
+  protected commentWriter = computed(() => writerOf(this.commentStore.userName()));
 
   protected sketchPage = computed(() => {
     const read = this.reading();

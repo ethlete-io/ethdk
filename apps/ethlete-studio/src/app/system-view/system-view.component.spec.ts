@@ -13,6 +13,7 @@ import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
+import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 
 const withTooltip = (root: Element | null | undefined, text: string) =>
@@ -442,6 +443,58 @@ describe('SystemViewComponent on a reload', () => {
     await settle(fixture);
 
     expect(store.active()).toBe(false);
+  });
+
+  it('hands the system page the comments its canvas pins, the picked one and the writer', async () => {
+    const resolvedComment: ListedComment = {
+      ...HOVER_COMMENT,
+      id: '2',
+      text: 'Fixed',
+      resolved: { by: 'user', resolvedAt: '2026-10-28T09:00:00Z' },
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) {
+        return json({ comments: [HOVER_COMMENT, resolvedComment], unreadable: [] });
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating', resolvedShown: true });
+    const view = fixture.componentInstance;
+    const page = () =>
+      fixture.debugElement.query(By.directive(SystemPageComponent)).componentInstance as SystemPageComponent;
+    const canvasPinIds = () =>
+      view
+        .partCanvas()
+        ?.pins()
+        .map((pin) => pin.id);
+
+    await settle(fixture);
+
+    expect(
+      page()
+        .comments()
+        ?.map((comment) => comment.id),
+    ).toEqual(['1']);
+    expect(canvasPinIds()).toEqual(['1']);
+    expect(page().comments()?.[0]).toMatchObject({ text: 'Too light', author: 'Du' });
+    expect(page().selectedComment()).toBeNull();
+    expect(page().writer()).toEqual({ author: 'Du', initials: 'Du' });
+
+    view['pickedCommentId'].set('2');
+    await settle(fixture);
+
+    expect(
+      page()
+        .comments()
+        ?.map((comment) => comment.id),
+    ).toEqual(['1', '2']);
+    expect(canvasPinIds()).toEqual(['1', '2']);
+    expect(page().selectedComment()).toBe('2');
   });
 
   it('leaves comment mode on Esc while a hover tooltip takes Escape at the root, but not on an Esc inside an overlay', async () => {

@@ -1,7 +1,8 @@
 import { CommentPlace, CommentResolution, ListedComment } from '../../host/design';
 import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
-import { senderOf } from './inbox-comments';
+import { PlacedComment } from '../design-parts/system-page/system-page-sample';
+import { inboxCommentOf, senderOf } from './inbox-comments';
 
 export type NumberedComment = ListedComment & { number: number };
 
@@ -71,6 +72,32 @@ export const pinsOf = (frames: CanvasFrame[], comments: (ListedComment & { numbe
             count: comment.replies.length + 1,
             ...(comment.resolved ? { resolved: true } : {}),
             ...(comment.point ? { point: comment.point } : {}),
+          },
+        ]
+      : [];
+  });
+
+const atOf = (frame: CanvasFrame | undefined, point: CanvasPin['point']) =>
+  point && frame?.width && frame.height
+    ? { x: (point.x / frame.width) * 100, y: (point.y / frame.height) * 100 }
+    : { x: 100, y: 0 };
+
+/** The comments behind `pins`, in pin order, each `at` its pin in percent of the frame. */
+export const placedCommentsOf = (
+  { frames, pins, comments }: { frames: CanvasFrame[]; pins: CanvasPin[]; comments: ListedComment[] },
+  context: { now: number; userName?: string | null },
+): PlacedComment[] =>
+  pins.flatMap((pin) => {
+    const comment = comments.find((candidate) => candidate.id === pin.id);
+
+    return comment
+      ? [
+          {
+            ...inboxCommentOf(comment, context),
+            at: atOf(
+              frames.find((frame) => frame.id === pin.frameId),
+              pin.point,
+            ),
           },
         ]
       : [];

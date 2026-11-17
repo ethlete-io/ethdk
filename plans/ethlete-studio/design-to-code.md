@@ -2005,15 +2005,6 @@ both messages get a scope and a valid subject, for example `chore(repo): Update 
 `lint:*` script in pre-push) runs every `commit_message:` in `.github/workflows/*.yml` through commitlint, so a new
 gate or a new workflow message fails locally first.
 
-750\. The human (2026-11-10, Studio screen shot after the B483 serve restart): `components-title-bar.edit` is gone (B483
-works on the real repo). Left is the marker sketch `pages/system` (round 1 "Fehlende Build-Antwort der Auflistung",
-variant a, last change by a Sonnet subagent): Studio shows "27 unveränderte Zustände eingeklappt" and not one changed
-state, so the human sees a sketch with nothing to look at. Its files have uncommitted changes in the Linux tree
-(`build-ready-footer.ts`, `system.ts`, `sketch.json`); the sketch is from 21ff32b31 (2026-11-07). Cause (proven by diff, Linux builder): variant a was never drawn; the marker commit 21ff32b31 copied the design and added no state, and the uncommitted Sonnet edits only resync the variant to 7fec742b2. The doc agent suspect (a state without a frame) was wrong. Lesson: a sketch
-with zero changed states reached the human. Decided by the doc agent (tool internal): `sketch check` and `sketch ready`
-refuse a variant with zero changed states and name the state that should differ; Studio never lists such a sketch as
-waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first. Added: `sketch new` for a marker sketch refuses to finish when variant a has no state beyond the design. Decided by the doc agent (applies ADR 0010 to pages/system): variant a = the built look (subtle note line), b = an error card in the canvas like the empty-product card ("Auflistung fehlgeschlagen", server reason, "Erneut laden"), c = a head banner in the error colour with "Erneut laden", tree still shown; the human picks by merge. The human merged variant b (514dbc881, 2026-11-10 night); the app build is STATUS row B485. As built (Linux builder, 64c27a08c, tool guard): `sketch ready` refuses and `sketch check` warns with NO-CHANGED-STATE when a variant draws no state that differs from the design in pixels; Studio shows it as a problem on the variant and blocks the pick. Bite: 2 sketch-command tests and 1 listing test fail on the old code. A flag `--no-visible-change` keeps the auto-merge of a rule-only sketch that must change no pixel (decided by the doc agent: keep, it preserves existing behaviour). Backlog: `sketch new --ready` does not take the flag; `sketch check` is slower now because it takes the per-variant change shot (738).
-
 751\. The human (2026-11-10, late evening): "würde schon gern mal wieder ins schaffen mit resultaten kommen, aktuell
 haben wir echt wieder so ein fix loop". Cause (read in this session): the doc agent sent each new tool lesson (746 HEAD
 hint, 748 STATUS check, 750 sketch guard) to a builder as work at once, and the Mac builder ran B482 bite rounds, a tool
@@ -3712,3 +3703,14 @@ of that sketch shows the line in variant a's head (finding 792); shot
 `/home/tom/.cache/claude-tmp/claude-1000/-home-tom-dev-ethlete-sdk/8c7e0f84-833d-4ae5-a4e9-2a60b8e3e11e/scratchpad/b127-live.png`.
 Not verified: several skips in one head, and several variants with different skips. A variant that renders identical to
 the current part gets no head (only the collapsed "Unverändert" row), so no skip line shows there.
+
+As built (B552, 2026-11-17): per ADR 0326 the system view binds `comments`, `selectedComment` and `writer` on
+`<ethlete-system-page>`. The pinned comments (open ones plus the picked resolved one) are one signal in
+`system-view.component.ts`; `pinsOf` turns it into the canvas pins, and `placedCommentsOf` (`comment-pins.ts`) turns
+those pins into the page's `comments`, `at` the pin's point in percent of its frame (top right without a point or a
+frame size), so the page gets exactly the comments the canvas pins. `selectedComment` is the picked comment id, `writer`
+comes from `writerOf(userName)` (`inbox-comments.ts`, shared with the Inbox rows). The page's own stand-in pins and
+comment list stay: they render only when no `systemCanvas`/`systemSide` is projected, i.e. in the design states, as the
+Inbox stand-in does. Verified: new system-view spec (red on the old view: the page got no comments) and a
+`placedCommentsOf` spec; related vitest, typecheck, lint; e2e case "the comment button: ..." plain and with
+`--hold-listings 14000`; `design check --part pages/system` before and after. Not verified: a live Studio shot, Tauri.

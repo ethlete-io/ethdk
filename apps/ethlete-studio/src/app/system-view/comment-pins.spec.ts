@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ListedComment } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
-import { isInSketch, isQuestion, numberedCommentsOf, otherSizeFrameOf } from './comment-pins';
+import { isInSketch, isQuestion, numberedCommentsOf, otherSizeFrameOf, pinsOf, placedCommentsOf } from './comment-pins';
 import { treeOf } from './system-tree';
 
 const comment = (id: string, rest: Partial<ListedComment>): ListedComment => ({
@@ -121,5 +121,26 @@ describe('comments', () => {
     const tree = treeOf([part], { comments: answered });
 
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['answered']);
+  });
+});
+
+describe('placedCommentsOf', () => {
+  it('places exactly the pinned comments, at their point in percent of the frame', () => {
+    const frames = [{ ...frame('a'), width: 400, height: 200 }];
+    const comments = [
+      comment('1', { point: { x: 100, y: 50 } }),
+      comment('2', {}),
+      comment('3', { part: 'components/other' }),
+    ];
+
+    const placed = placedCommentsOf(
+      { frames, pins: pinsOf(frames, comments), comments },
+      { now: 0, userName: 'Ada Lovelace' },
+    );
+
+    expect(placed.map(({ id, at, author, initials }) => ({ id, at, author, initials }))).toEqual([
+      { id: '1', at: { x: 25, y: 25 }, author: 'Ada Lovelace', initials: 'AL' },
+      { id: '2', at: { x: 100, y: 0 }, author: 'Ada Lovelace', initials: 'AL' },
+    ]);
   });
 });

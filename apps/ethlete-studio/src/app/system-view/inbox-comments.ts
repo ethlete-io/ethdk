@@ -52,6 +52,9 @@ export const senderOf = (by: 'user' | 'agent', author: string | undefined) => {
     : { author: author ?? 'Agent', initials: 'A' };
 };
 
+export const writerOf = (userName: string | null | undefined) =>
+  userName ? { author: userName, initials: initialsOf(userName) } : senderOf('user', undefined);
+
 export const inboxCommentOf = (
   comment: ListedComment,
   { now, userName }: { now: number; userName?: string | null },
@@ -66,9 +69,7 @@ export const inboxCommentOf = (
 
   return {
     id: comment.id,
-    ...(last.by === 'user' && userName
-      ? { author: userName, initials: initialsOf(userName) }
-      : senderOf(last.by, last.author)),
+    ...(last.by === 'user' ? writerOf(userName) : senderOf(last.by, last.author)),
     when: inboxAgeOf(last.createdAt, now),
     part: inboxPartOf(comment.part),
     state: `${comment.state}${interaction}`,
