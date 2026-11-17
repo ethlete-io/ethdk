@@ -88,3 +88,9 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 21. **An agent that names rows from the `unattended` flag alone books night work.** The tidy-up
     session named rows the app called attended, and eight of them lay in the night, until the user
     said that he is away at night. The flag is not enough to tell his work from the agents' work.
+22. **A six-hour call nobody held.** Both machines draw an unnamed `lane:call` row 17:45-23:45 on
+    2026-11-17. Which event opened the call is unknown.
+23. **Rejected rows stay on the page.** The Mac's 17.11. still shows `elrond` and `3d-projekte`
+    rows after they were rejected; hiding them takes a second edit (`--hide`) per row.
+24. **A manual row exists on one machine only.** Linux holds `manual:FIFAGG-12769` 13:00-15:15 on
+    17.11.; the Mac shows a gap there.
