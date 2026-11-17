@@ -71,6 +71,7 @@ import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.compon
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
+const MATRIX_COLUMN_GAP = 80;
 
 const cellAt = (event: MouseEvent) => {
   const frame = event.currentTarget;
@@ -457,6 +458,7 @@ export class DesignCanvasComponent {
     const rowGap = frames.every((frame) => frame.width === undefined) ? FITTED_ROW_GAP : SPACING.rowGap;
     const spacing = {
       ...SPACING,
+      columnGap: MATRIX_COLUMN_GAP,
       rowGap,
       groupGap: rowGap * GROUP_GAP_FACTOR,
       headGap: ROW_HEAD_GAP,
@@ -556,6 +558,8 @@ export class DesignCanvasComponent {
   protected placedRowHeads = computed(() => this.layout().rowHeads);
 
   protected columnHeads = computed(() => this.layout().heads);
+
+  protected columnHeadsNoted = computed(() => this.columns().some((column) => column.note && !column.folded));
 
   protected groupHeads = computed(() => this.layout().groups);
 

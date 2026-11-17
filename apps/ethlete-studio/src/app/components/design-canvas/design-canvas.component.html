@@ -46,7 +46,12 @@
       [style.margin-top.px]="group.y"
       [style.width.px]="group.width / labelScale()"
       [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
-      class="absolute top-[calc(-6rem*var(--et-design-canvas-label-scale))] flex origin-top-left items-center gap-2 text-[1.3rem] whitespace-nowrap"
+      [class]="
+        columnHeadsNoted()
+          ? 'top-[calc(-6.8rem_-_4.032rem*var(--et-design-canvas-label-scale))]'
+          : 'top-[calc(-6.8rem_-_2.24rem*var(--et-design-canvas-label-scale))]'
+      "
+      class="absolute flex origin-top-left items-center gap-space-2 text-(length:--text-sm) whitespace-nowrap"
     >
       <button
         [etTooltip]="group.title ?? group.label"
@@ -105,21 +110,28 @@
         [style.margin-top.px]="column.y"
         [style.width.px]="column.width / labelScale()"
         [style.transform]="'scale(' + labelScale() + ')'"
-        class="absolute top-[calc(-6rem*var(--et-design-canvas-label-scale))] flex origin-top-left flex-col gap-3 text-[1.3rem] leading-[1.4]"
+        [class]="
+          columnHeadsNoted()
+            ? 'top-[calc(-6.8rem_-_4.032rem*var(--et-design-canvas-label-scale))]'
+            : 'top-[calc(-6.8rem_-_2.24rem*var(--et-design-canvas-label-scale))]'
+        "
+        class="absolute flex origin-top-left flex-col gap-space-3 text-(length:--text-sm) leading-[1.4]"
       >
-        <button
-          [etTooltip]="column.title ?? column.label"
-          (click)="toggleColumn(column.key, $event)"
-          class="w-full whitespace-normal"
-          et-button
-          type="button"
-          variant="outline"
-          color="surface"
-          size="sm"
-          aria-expanded="false"
-        >
-          {{ column.label }}
-        </button>
+        <div class="flex h-0 flex-col justify-end">
+          <button
+            [etTooltip]="column.title ?? column.label"
+            (click)="toggleColumn(column.key, $event)"
+            class="w-full whitespace-normal"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="sm"
+            aria-expanded="false"
+          >
+            {{ column.label }}
+          </button>
+        </div>
         @if (folded.note) {
           <p [textContent]="folded.note" class="m-0 line-clamp-12 whitespace-pre-wrap text-text-muted"></p>
         }
@@ -131,7 +143,7 @@
         [style.max-width.px]="column.width"
         [class]="column.muted ? 'italic text-text-muted' : 'text-text'"
         [etTooltip]="column.title ?? column.label"
-        class="absolute top-[calc(-3.2rem*var(--et-design-canvas-label-scale))] -translate-y-full overflow-hidden text-[calc(1.6rem*var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
+        class="absolute -top-12 -translate-y-full overflow-hidden text-[calc(1.6rem*var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
       >
         {{ column.label }}
         @if (column.note) {

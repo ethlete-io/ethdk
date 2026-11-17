@@ -119,6 +119,66 @@ const CANVAS_FRAME_SOURCES = {
   failed: { src: REFUSED_PAGE, screenshot: frameShotOf(GRID_FRAME_SIZE) },
 };
 
+type CanvasRound = { key: string; title: string; note: string; columns: { label: string; note: string }[] };
+
+const CANVAS_ROUNDS: [CanvasRound, CanvasRound] = [
+  {
+    key: 'round-1',
+    title: 'Runde 1 · Fenstertasten',
+    note: 'Kachel oder runde Taste unter Windows',
+    columns: [
+      { label: 'a', note: 'Caption-Form im SDK' },
+      { label: 'b', note: 'Nur in Studio' },
+    ],
+  },
+  {
+    key: 'round-2',
+    title: 'Runde 2 · Kombination',
+    note: 'Kachel aus a, Fokus aus b',
+    columns: [{ label: 'c', note: 'Kombination' }],
+  },
+];
+
+const ROUND_FRAME_SIZE = { width: 555, height: 131 };
+
+const ROUND_HEADS_ROOM = 68;
+
+const ROUND_HEADS_SCREEN = 67.5;
+
+const openColumnsOf = (part: string, round: CanvasRound) => {
+  const group = {
+    key: round.key,
+    label: round.title,
+    note: round.note,
+    switch: { label: 'Unveränderte Zustände zeigen', on: false },
+  };
+
+  return {
+    columns: round.columns.map(({ label, note }) => ({ key: label, label, note, group })),
+    frames: round.columns.map(({ label }) => ({
+      id: `${part}-${label}`,
+      label: `${part} · ${label}`,
+      column: label,
+      src: paintedPageOf(ROUND_FRAME_SIZE),
+      screenshot: frameShotOf(ROUND_FRAME_SIZE),
+    })),
+  };
+};
+
+const roundsOf = (part: string, heads: 'open' | 'folded') => {
+  const [first, second] = CANVAS_ROUNDS;
+
+  if (heads === 'open') return { arrangement: 'matrix', ...openColumnsOf(part, first) };
+
+  const open = openColumnsOf(part, second);
+
+  return {
+    arrangement: 'matrix',
+    columns: [{ key: first.key, label: first.title, folded: { width: 240, note: first.note } }, ...open.columns],
+    frames: open.frames,
+  };
+};
+
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
   'components/comment-pin': ({ class: extra, ...props }) => ({
@@ -129,7 +189,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
-  'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads: _heads, ...props }) => {
+  'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads, ...props }) => {
     const scale = parseFloat(String(zoom ?? '100%')) / 100;
     const id = String(part);
     const kind = (mark ?? 'rest') as keyof typeof CANVAS_FRAME_SOURCES;
@@ -137,11 +197,17 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     return {
       ...props,
       class: `${typeof extra === 'string' ? extra : ''} min-h-120`,
-      frames: [{ id, label: id, ...CANVAS_FRAME_SOURCES[kind] }],
+      ...(heads === 'open' || heads === 'folded'
+        ? roundsOf(id, heads)
+        : { frames: [{ id, label: id, ...CANVAS_FRAME_SOURCES[kind] }] }),
       selectedId: mark === 'selected' || mark === 'active' ? id : null,
       activeId: mark === 'active' ? id : null,
       cameraKey: 'elements/canvas-frames',
-      restoredCamera: { x: 40 * scale, y: 48 * scale, zoom: scale },
+      restoredCamera: {
+        x: 40 * scale,
+        y: 48 * scale + (heads ? ROUND_HEADS_ROOM * scale + ROUND_HEADS_SCREEN : 0),
+        zoom: scale,
+      },
     };
   },
   'pages/sketches': ({

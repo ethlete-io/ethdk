@@ -3678,3 +3678,12 @@ mounts with `CANVAS_LIVE_REST_MS` 0, so frames go live before the shot, and the 
 default/reset/fit/selected/active/load-failed/loading compare ok. Open: out/in (the design scales the frame head and edge
 with the zoom, the app keeps them at screen size), rounds/round-folded, the edit sketch. Neu laden now emits `reload`
 with the frame id and no longer selects the frame; every declared action works.
+
+In progress (B233 half 2c, 2026-11-17): out/in follow the human's decision "Sketches zoom label decisions" (2026-11-02:
+a constant-size tag above each frame): `canvasView` scales its world with `transform` (like the app camera) and sets
+`--st-canvas-label-scale`, so the frame head, the edge and the round heads keep screen size; the edge and the mark
+outlines are drawn on a `::after` layer over the body, like the app's frame border. Round bodies are a 555 x 131
+`slot('frame')`; the harness gives `heads` a matrix with the rounds' columns and a folded round 1. The app's matrix
+columns are 80 apart and its round heads sit at the design's gaps. Compare: default/out/reset/in/fit/selected/active/
+load-failed/loading ok (fit flaked once on the Fit tooltip); rounds DIFF 6094, round-folded DIFF 6655. Open: the app
+column head wraps its note and sits ~1 line too high, the group head buttons differ by a few px from the design's.
