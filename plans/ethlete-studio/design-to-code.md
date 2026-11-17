@@ -3607,3 +3607,10 @@ merge-confirm) existed before the B539 sketches port; none is new. merge-error (
 in the header, the design under the picked variant's Übernehmen. It now does the same, and keeps the header line only
 when no variant is picked (a failed discard). Verified: compare merge-error ok, sketches spec with a new case (bite:
 `errorInRow` forced false fails it), `vitest related` 185/185, lint. Not verified: a live Studio shot.
+
+As built (B539 folded label, 2026-11-17): the folded-states label of the Sketches view now takes the canvas
+`stickyLeft()` translate, like the design's `translateX(var(--sk-pan-x))`. Cause (measured): the app label stayed at
+the world's left edge, ~290 px under the sidebar at camera x -4000. The section clips its overflow, since the pan room
+is read from `scrollWidth` and the translated label otherwise grew it each pan (first try: 26337 px). Verified: compare
+unchanged-matrix-open ok (from 1497 px), full pages/sketches compare without new diffs, `vitest related` 193/193,
+lint. Not verified: a live Studio shot.

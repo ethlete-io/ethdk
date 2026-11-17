@@ -367,10 +367,13 @@
           @if (foldedStates().size > 0) {
             <section
               [attr.data-sk-pending]="pendingStates().size > 0 ? '' : null"
-              class="rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+              class="overflow-clip rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
               data-sk-folded
             >
-              <span class="flex items-center gap-space-3">
+              <span
+                [style.transform]="'translateX(' + canvas.stickyLeft() + 'px)'"
+                class="flex items-center gap-space-3"
+              >
                 <span class="text-ui-sm text-et-surface-muted">{{ foldLabel() }}</span>
                 <ethlete-disclosure [(open)]="statesOpen" [label]="LABELS.showAllStates" hug size="xs" />
               </span>
