@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.52
+
+### Patch Changes
+
+- List `et-nav-tabs__scrollable` among the components classes the cdk migration knows, and cover the progress steps `align` input in a scenario.
+
 ## 5.0.0-next.51
 
 ### Patch Changes
