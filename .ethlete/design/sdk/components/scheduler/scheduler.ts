@@ -210,6 +210,27 @@ const render = (props: Props) => {
   return scheduler({ view: props.view, headerLabel: HEADER_LABELS[props.view], addAction: true, body });
 };
 
+const action = (key: string) => `data-et-action="${key}"`;
+
+const BUTTON_ACTIONS: [string, string][] = [
+  ['et-scheduler-today-button', 'emit:focusedDateChange'],
+  ['et-scheduler-nav-button--previous', 'emit:focusedDateChange'],
+  ['et-scheduler-nav-button--next', 'emit:focusedDateChange'],
+  ['et-scheduler-month-view-overflow-trigger', 'opens:components/menu'],
+];
+
+const declareActions = (markup: string) =>
+  BUTTON_ACTIONS.reduce(
+    (html, [name, key]) => html.replace(new RegExp(`<button ([^>]*\\b${name}\\b)`), `<button ${action(key)} $1`),
+    markup,
+  )
+    .replaceAll('<et-segmented-button value=', `<et-segmented-button ${action('emit:viewChange')} value=`)
+    .replace(/<button [^>]*class="et-scheduler-(appointment|time-grid-block)[^>]*>/g, (appointment) =>
+      appointment.includes('data-selected')
+        ? appointment
+        : appointment.replace('<button ', `<button ${action('emit:selectedAppointmentIdChange')} `),
+    );
+
 const skipClipped = (markup: string) =>
   markup.replaceAll(
     'class="et-scheduler-time-grid-block',
@@ -246,7 +267,7 @@ export default definePart({
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: skipClipped(render(props)),
+      body: skipClipped(declareActions(render(props))),
       styles: [schedulerStyles, frame].join('\n'),
     }),
 });

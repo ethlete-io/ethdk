@@ -1838,6 +1838,14 @@ As built (B135 slice 7): chart bars, line slices and pie slices `emit:markActiva
 Enter and Space), added to the drawn markup in the design part, no mock changed. ACTION-UNDECLARED 36 -> 0, no other
 count changed. Verified: `design complete` and `design check --part` (HELD, 0 findings). Not verified: press checks
 (chart is not ready-marked).
+Scheduler: Today, previous and next `emit:focusedDateChange`; the four view-switch buttons `emit:viewChange`; "+3 more"
+`opens:components/menu`; every unselected appointment `emit:selectedAppointmentIdChange`. ACTION-UNDECLARED 31 -> 4,
+no other count changed. Left undeclared, no drawn state: "Add appointment" and the selected "Design review" (week,
+month, agenda), which open the edit surface. Two check runs opened `components/scheduler@edit` with PICTURES CHANGED in
+month, agenda and month-cell-focus-visible. Cause: the bare check picture's shrink-to-fit width wobbles between draws of
+the same file (58 / 60 / 46 px over 5 `design dom` runs). HEAD and the edit draw the same HTML once the attributes are
+removed, and their shots are pixel-identical. `sketch ready` closed the sketch as HELD. Not fixed: the width wobble, so
+any scheduler check can reopen a sketch.
 
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
