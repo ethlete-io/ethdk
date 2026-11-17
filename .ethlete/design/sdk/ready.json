@@ -94,10 +94,10 @@
     "pid": 1898251
   },
   "components/menu": {
-    "hash": "ee285ae223747761",
+    "hash": "4812183b2b4465cd",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
-      ".ethlete/design/sdk/components/menu/menu.ts": "41081c4a032cf65d",
+      ".ethlete/design/sdk/components/menu/menu.ts": "13fc3916a1cf880a",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/menu.ts": "d9aabbb5a9eff093",
       "libs/components/src/lib/icon/headless/chevron-icon.ts": "d2c88d30d687a8bf",
@@ -111,10 +111,10 @@
       "libs/components/src/lib/menu/menu.component.css": "892ce1929a53330f"
     },
     "actions": [],
-    "at": "2026-11-15T18:36:37.101Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3225752
+    "at": "2026-11-17T18:25:41.722Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 214164
   },
   "components/pagination": {
     "hash": "7de3c8fc430dd78a",
