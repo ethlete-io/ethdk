@@ -1504,14 +1504,14 @@
     "pid": 948628
   },
   "pages/sketches": {
-    "hash": "fb8e9e79054a918f",
+    "hash": "62a42346a3afad97",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "cc95cf5e7b73338f",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "9b2589726aff9851",
       ".ethlete/design/sdk/components/badge/badge.css": "2f043e0bb1464598",
       ".ethlete/design/sdk/components/badge/badge.ts": "e3e79113f9d55c29",
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
-      ".ethlete/design/sdk/components/button/button.ts": "bdaebbc96838db07",
+      ".ethlete/design/sdk/components/button/button.ts": "3504c9e630a84f12",
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "41081c4a032cf65d",
       ".ethlete/design/sdk/components/select/select.css": "f0b7d98fc106a3d8",
@@ -1727,10 +1727,10 @@
       "sketch-only-points-open",
       "system-picker"
     ],
-    "at": "2026-11-17T04:18:26.408Z",
+    "at": "2026-11-17T04:47:08.560Z",
     "by": "et design check",
     "cmd": "check",
-    "pid": 1260994
+    "pid": 1663437
   },
   "pages/start": {
     "hash": "90ba9fe96be9c372",

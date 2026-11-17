@@ -147,7 +147,7 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "pages/sketches": {
-    "hash": "f0d7be7f8d8aaf9a",
+    "hash": "f8c13a8d2c227e03",
     "variant": "a",
     "decidedBy": "plan: ADR 0323",
     "at": "2026-11-16T16:13:59.500Z",
