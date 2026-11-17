@@ -24,7 +24,8 @@ import { actionsRerunOf, READY_FILE, readyPartsOf } from './part-ready';
 import { BuildReadyInputs } from './part-build-ready';
 import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
-import { renderProblemOf, ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
+import { APP_CODE, renderFindingsOf, tallyKeyOf, withFoundRules } from './render-findings';
+import { ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
 import { isDrawRule, isSlowRule, unjudgedStateWarningsOf } from './slow-checks';
 import {
   staleLineOf,
@@ -50,7 +51,6 @@ import { commandTextOf } from './rules/command-text';
 import {
   BASELINED_RENDER_RULES,
   BusyState,
-  ownerPartOf,
   RenderIssue,
   preloadRenderModules,
   renderIssueLineOf,
@@ -302,20 +302,6 @@ const readyInputPartsOf = (product: ResolvedProduct, part: string) => {
   return [part, ...(resolved ? embeddedPartsOf({ product, part: resolved }).map(partKeyOf) : [])];
 };
 
-const withTalliedProblems = (
-  inputs: BuildReadyInputs,
-  tally: Map<string, PartTally> | undefined,
-): BuildReadyInputs => ({
-  ...inputs,
-  problemsOf: (part) => {
-    const own = inputs.problemsOf(part);
-    const ruled = new Set(own.map((problem) => problem.rule));
-    const tallied = [...new Set(tally?.get(part)?.problems ?? [])].filter((rule) => !ruled.has(rule));
-
-    return [...own, ...tallied.map((rule) => ({ rule, file: '', message: 'found by design check' }))];
-  },
-});
-
 const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
 
@@ -343,16 +329,6 @@ type CheckOptions = {
 };
 
 const PRODUCT_LEVEL = PRODUCT_PART_KEY;
-
-const APP_CODE = 'app code:';
-
-/** The tally key of `file`: its part, `(product)` for a design file outside every part, or `app code:<file>` for app code. */
-const tallyKeyOf = (target: string, { product, file }: { product: ResolvedProduct; file: string }) => {
-  const part = partOfFile(product, file);
-  const inDesign = [product.dir, product.base?.dir].some((dir) => dir && !relative(dir, file).startsWith('..'));
-
-  return part !== PRODUCT_LEVEL || inDesign ? part : `${APP_CODE}${relative(target, file) || '.'}`;
-};
 
 const tallyOf = (tally: Tally | undefined, at: { product: string; part: string }) => {
   const { product, part } = at;
@@ -458,9 +434,6 @@ const warnChangedOutsideSketch = (product: ResolvedProduct) => {
 
 const isInBasePart = (product: ResolvedProduct, file: string) =>
   product.parts.some((part) => part.origin === 'base' && !relative(dirname(part.file), file).startsWith('..'));
-
-const isBasePartKey = (product: ResolvedProduct, key: string) =>
-  product.parts.find((part) => partKeyOf(part) === key)?.origin === 'base';
 
 const printBaseFindings = (product: ResolvedProduct, rules: string[]) => {
   if (rules.length === 0 || !product.base) return;
@@ -727,12 +700,12 @@ const printProductOpenPoints = async (
     parts: options.part
       ? [options.part]
       : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
-    inputs: withTalliedProblems(
+    inputs: withFoundRules(
       buildReadyInputsOf(product, {
         points: allPoints,
         problems: ruleProblemsOf(product, options.part ? readyInputPartsOf(product, options.part) : undefined),
       }),
-      options.tally?.get(name),
+      (part) => options.tally?.get(name)?.get(part)?.problems ?? [],
     ),
     ...(rendered === null
       ? {}
@@ -991,50 +964,12 @@ const renderSystem = async (
 
     return { code: ci ? code : 1, rendered: null, notDrawn: rendered.unavailable };
   }
-  const isBaseOf = (issue: RenderIssue, key: string) =>
-    resolved.some((product) => product.name === issue.product && isBasePartKey(product, key));
-  const countedPartOf = (issue: RenderIssue) => (isBaseOf(issue, ownerPartOf(issue)) ? issue.part : ownerPartOf(issue));
-  const isInBase = (issue: RenderIssue) => isBaseOf(issue, countedPartOf(issue));
-  const own = rendered.issues.filter((issue) => !isInBase(issue));
-  const baselined = resolved.map((product) => {
-    const baselinedOwn = own.filter(
-      (issue) => issue.product === product.name && BASELINED_RENDER_RULES.has(issue.rule),
-    );
-    const undrawn = new Set(
-      own
-        .filter((issue) => issue.product === product.name && (isPartUndrawn(issue) || isStateUndrawn(issue)))
-        .map((issue) => issue.part),
-    );
-    const problemOf = new Map(baselinedOwn.map((issue) => [renderProblemOf(product, issue), issue]));
-    const result = ruleBaselineOf({
-      product,
-      problems: [...problemOf.keys()],
-      checked: (rule, part) =>
-        BASELINED_RENDER_RULES.has(rule) && !undrawn.has(part) && (!options.part || part === options.part),
-    });
+  const found = renderFindingsOf({ target: options.target, resolved, issues: rendered.issues, part: options.part });
+  const { issues, countedPartOf, isInBase } = found;
 
-    return {
-      product,
-      own: baselinedOwn,
-      lines: result.lines,
-      failing: result.problems.flatMap((problem) => problemOf.get(problem) ?? []),
-      problems: result.problems.filter((problem) => !problemOf.has(problem)),
-    };
-  });
-  const passed = new Set(baselined.flatMap(({ own, failing }) => own.filter((issue) => !failing.includes(issue))));
-  const issues = own.filter((issue) => !passed.has(issue));
-  const baselineProblems = baselined.flatMap(({ product, problems }) =>
-    problems.map((problem) => ({ product, problem })),
-  );
-
-  baselined.forEach(({ lines }) => lines.forEach((line) => console.log(line)));
-  baselineProblems.forEach(({ product, problem }) => {
-    console.error(lineOf(options.target, problem));
-    tallyOf(options.tally, {
-      product: product.name,
-      part: tallyKeyOf(options.target, { product, file: problem.file }),
-    })?.problems.push(problem.rule);
-  });
+  found.baselineLines.forEach((line) => console.log(line));
+  found.baselineProblems.forEach(({ problem }) => console.error(lineOf(options.target, problem)));
+  found.failed.forEach(({ product, part, rule }) => tallyOf(options.tally, { product, part })?.problems.push(rule));
 
   rendered.warnings
     .filter((issue) => !isInBase(issue))
@@ -1053,7 +988,6 @@ const renderSystem = async (
 
   issues.forEach((issue) => {
     console.error(old.has(issue) ? `OLD ${renderIssueLineOf(issue)}` : renderIssueLineOf(issue));
-    tallyOf(options.tally, { product: issue.product, part: countedPartOf(issue) })?.problems.push(issue.rule);
   });
   printUndrawn(issues.filter((issue) => isPartUndrawn(issue) || isStateUndrawn(issue)));
 
@@ -1065,7 +999,7 @@ const renderSystem = async (
       );
 
   return {
-    code: code !== 0 || issues.length > 0 || baselineProblems.length > 0 ? 1 : 0,
+    code: code !== 0 || issues.length > 0 || found.baselineProblems.length > 0 ? 1 : 0,
     rendered: issues,
     busy: rendered.busy,
     completeness,

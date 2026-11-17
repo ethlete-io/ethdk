@@ -35,7 +35,7 @@ import { resolveProduct } from './resolve-product';
 import { readMerged, recordMerged } from './sketch/merged-parts';
 
 vi.mock('./drawn-open-points', () => ({
-  drawnFindingsOf: vi.fn(async () => ({ missingStates: [] })),
+  drawnFindingsOf: vi.fn(async () => ({ missingStates: [], issues: [] })),
 }));
 
 vi.mock('./actions-command', async (importOriginal) => {
@@ -196,6 +196,7 @@ describe('part ready', () => {
     vi.mocked(drawnFindingsOf).mockResolvedValueOnce({
       missingStates: [{ part: 'components/chip', control: 'remove' }],
       busyStates: [],
+      issues: [],
     });
 
     expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({

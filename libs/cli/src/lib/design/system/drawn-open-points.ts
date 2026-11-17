@@ -60,15 +60,15 @@ export const drawnFindingsFrom = (options: {
 };
 
 /**
- * Draws the named parts of a product as `design check` does and answers their missing control states,
- * or why they could not be drawn.
+ * Draws the named parts of a product as `design check` does and answers their missing control states and the render
+ * issues of the draw, or why they could not be drawn.
  */
 export const drawnFindingsOf = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   parts: string[];
-}): Promise<DrawnFindings | { unavailable: string }> => {
+}): Promise<(DrawnFindings & { issues: RenderIssue[] }) | { unavailable: string }> => {
   const { target, config, product, parts } = options;
   const rendered = await renderIssuesOf({ target, config, jobs: [{ product: product.name, sketch: null, parts }] });
 
@@ -88,5 +88,5 @@ export const drawnFindingsOf = async (options: {
     stateful,
   });
 
-  return failed.length > 0 ? { unavailable: failed.join('; ') } : findings;
+  return failed.length > 0 ? { unavailable: failed.join('; ') } : { ...findings, issues: rendered.issues };
 };

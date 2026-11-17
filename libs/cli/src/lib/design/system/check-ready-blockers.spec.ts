@@ -6,6 +6,7 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { drawnFindingsFrom, drawnFindingsOf } from './drawn-open-points';
+import { readyBlockersOf } from './ready-command';
 import { renderIssuesOf } from './render-check';
 import { resolveProduct } from './resolve-product';
 import { createSketch, Sketch } from './sketch/sketch';
@@ -13,6 +14,11 @@ import { createSketch, Sketch } from './sketch/sketch';
 vi.mock('./render-check', async (actual) => ({
   ...(await actual<typeof import('./render-check')>()),
   renderIssuesOf: vi.fn(),
+}));
+
+vi.mock('./slow-run', async (actual) => ({
+  ...(await actual<typeof import('./slow-run')>()),
+  runSlowChecks: vi.fn(async () => undefined),
 }));
 
 vi.mock('./complete', async (actual) => ({
@@ -198,5 +204,29 @@ describe('design check shows what design ready refuses', () => {
       'CANNOT DRAW acme elements/hero: no browser - et design ready refuses the part until it draws',
     );
     expect(lines.filter((line) => line.startsWith('CANNOT DRAW'))).toHaveLength(1);
+  }, 120_000);
+
+  it('refuses ready for each render rule check fails the part by', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+    const canvas = { ...clipped, rule: 'CANVAS-UNDER-PANEL', detail: 'clips the pan viewport' };
+
+    vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [canvas], warnings: [] } as never);
+    vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
+
+    const lines: string[] = [];
+    const push = (line: unknown) => void lines.push(String(line));
+
+    vi.spyOn(console, 'log').mockImplementation(push);
+    vi.spyOn(console, 'error').mockImplementation(push);
+    vi.spyOn(console, 'warn').mockImplementation(push);
+
+    expect(await checkSystemRendered({ target, config, products: ['acme'], part: 'elements/hero' })).toBe(1);
+    expect(lines.some((line) => line.startsWith('CANVAS-UNDER-PANEL acme elements/hero'))).toBe(true);
+    expect(await readyBlockersOf({ target, config, product, part: 'elements/hero', issues: [canvas] })).toContainEqual({
+      kind: 'problem',
+      text: 'CANVAS-UNDER-PANEL: found by design check',
+    });
   }, 120_000);
 });

@@ -2024,3 +2024,14 @@ checks and re-decide every own part (`recordedPartsOf`). The `(product)` inputs 
 B578; canvas-viewport/canvas-frames in d7d017cc2). Existing marks: the ready mark format is unchanged, so no mark goes
 stale; the `(product)` slow result reruns once on the new key. Verified: slow-checks.spec, both directions red with
 its half of the fix reverted. Not verified live: serve's re-decision of every part after a `(product)` settle.
+
+As built (B576 slice 3, ADR 0335): cause (by spec bite) - `design ready` and `design check --part` drew the same
+render issues but decided them apart. Check tallied each failing render issue (CANVAS-UNDER-PANEL, ARROW-ANCHOR and
+every other render rule, after the ADR 0201 baseline) into the problems its build-ready record reads; ready kept only
+the undrawn issues of its draw and gated on the static rule problems, so a render rule never blocked a ready mark. No
+cache was involved: ready draws fresh. Both now decide through `renderFindingsOf` (render-findings.ts: base filter,
+rule baseline, the rules per part) and `withFoundRules`; ready keeps its draw's issues and passes them through
+`readyBlockersOf`. Verified: check-ready-blockers.spec (check --part fails a CANVAS-UNDER-PANEL part and ready refuses it
+with `problem: CANVAS-UNDER-PANEL`), red with ready's old inputs restored. Not verified: a live `design ready` on a
+part with a render issue (no such part at hand to spend a mark on); the rest of check's tally (edit problems, the tail
+after the record) still reaches ready only where both read the same static rules.
