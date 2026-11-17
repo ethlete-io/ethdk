@@ -17,6 +17,7 @@ import {
   type GridHeads,
   type RoundSample,
 } from './shared/canvas-marks';
+import { diffGrid, diffGridStyles } from './shared/diff-grid';
 import styles from './canvas-frames.css?inline';
 
 export type GridRow = { label: string; description?: string; cells: (string | undefined)[] };
@@ -152,6 +153,7 @@ type Props = {
   zoom: string;
   mark?: FrameMark;
   heads?: GridHeads;
+  diff?: boolean;
 } & ChipState;
 
 const buttonStates = {
@@ -232,6 +234,11 @@ const gridOf = async (part: string, heads: GridHeads) =>
 
 const ZOOM = { kind: 'button', part: 'components/zoom-chip' } as const;
 
+const DIFF_LOOK =
+  '**:data-diff-region:relative **:data-diff-region:z-1 **:data-diff-region:after:pointer-events-none **:data-diff-region:after:absolute **:data-diff-region:after:-inset-0.75 **:data-diff-region:after:rounded-control-sm **:data-diff-region:after:outline-2 **:data-diff-region:after:outline-solid **:data-diff-region:after:outline-(--et-theme-color-primary-solid) **:data-diff-region:after:shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_78%,transparent)]';
+
+const diffFrame = () => canvasFrame('hold-trigger', stateGrid(diffGrid(DIFF_LOOK), { cellWidth: '220px' }));
+
 const defaultFrames: Props = {
   part: 'button',
   states: ['filled', 'outline', 'tonal'],
@@ -247,6 +254,12 @@ export default definePart({
   instant:
     'Selecting, going live, leaving with Escape, a failed load and every zoom state switch at once: the outline, the Live badge and the banner appear with no motion, and the canvas never moves between states.',
   unreachable: [
+    {
+      from: 'default',
+      to: 'diff-mark',
+      reason:
+        'The difference mark is drawn on the hold-trigger sample, a different part than the button sample of the other states; no step leads from one to the other.',
+    },
     {
       from: 'default',
       to: 'rounds',
@@ -659,6 +672,7 @@ export default definePart({
     loading: { ...defaultFrames, mark: 'loading' },
     rounds: { ...defaultFrames, zoom: '75%', heads: 'open' },
     'round-folded': { ...defaultFrames, zoom: '75%', heads: 'folded' },
+    'diff-mark': { ...defaultFrames, diff: true, class: 'w-300 max-h-120' },
   },
   describe: {
     default:
@@ -677,6 +691,8 @@ export default definePart({
       'The variant grid at 75 % with an open round head; check the round title, the unchanged-states switch and the variant names above the columns.',
     'round-folded':
       'A folded round at 75 %; check the one narrow column with the round note and that the other rounds stay open.',
+    'diff-mark':
+      'The hold-trigger frame with the automatic difference mark; check that every state but closed rest outlines the region that differs from closed rest and dims the rest of its cell, and closed rest stays unmarked.',
   },
   controls: {
     button: { kind: 'button', part: 'components/button' },
@@ -685,8 +701,12 @@ export default definePart({
     in: ZOOM,
     fit: ZOOM,
   },
-  render: async ({ class: extra, part, states, zoom, target, interaction, mark, heads }: Props) => {
-    const frames = heads ? await gridOf(part, heads) : await markedFrame(part, await buttonGrid(states), mark);
+  render: async ({ class: extra, part, states, zoom, target, interaction, mark, heads, diff }: Props) => {
+    const frames = diff
+      ? diffFrame()
+      : heads
+        ? await gridOf(part, heads)
+        : await markedFrame(part, await buttonGrid(states), mark);
 
     return drawing({
       body: await canvasView(
@@ -699,7 +719,7 @@ export default definePart({
         extra,
         true,
       ),
-      styles: canvasFrameStyles,
+      styles: diff ? canvasFrameStyles + diffGridStyles : canvasFrameStyles,
     });
   },
 });
