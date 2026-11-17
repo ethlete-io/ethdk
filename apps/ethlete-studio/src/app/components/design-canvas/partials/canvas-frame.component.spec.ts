@@ -331,7 +331,8 @@ describe('CanvasFrameComponent caption', () => {
     const others = [...(label?.parentElement?.children ?? [])].filter((child) => child !== label);
 
     expect(label?.textContent?.trim()).toBe('pages/library · a long state name');
-    expect(label?.classList).toContain('truncate');
+    expect(label?.classList).toContain('text-ellipsis');
+    expect(label?.classList).toContain('overflow-x-clip');
     expect(label?.classList).toContain('min-w-0');
     expect(others.length).toBeGreaterThan(0);
     expect(others.every((child) => child.classList.contains('shrink-0'))).toBe(true);
@@ -363,7 +364,8 @@ describe('CanvasFrameComponent caption', () => {
     const description = host.querySelector<HTMLElement>('[data-frame-description]');
 
     expect(description?.style.maxWidth).toBe('333px');
-    expect(description?.classList).toContain('truncate');
+    expect(description?.classList).toContain('text-ellipsis');
+    expect(description?.classList).toContain('overflow-x-clip');
     expect(description?.parentElement?.style.maxWidth).toBe('333px');
 
     fixture.componentRef.setInput('captionLimit', null);

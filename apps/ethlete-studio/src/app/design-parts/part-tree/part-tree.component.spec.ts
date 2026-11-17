@@ -214,7 +214,7 @@ describe('PartTreeComponent', () => {
             name: 'title-bar',
             key: 'components/title-bar',
             open: false,
-            warns: 'LOAD: broken',
+            warns: ['LOAD: broken'],
             nested: [{ name: 'title-search', key: 'components/title-bar/title-search' }],
           },
         ],

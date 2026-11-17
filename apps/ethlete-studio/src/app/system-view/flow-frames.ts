@@ -19,7 +19,7 @@ export const withFlowGroup = (tree: TreeGroup[], flows: ListedFlow[]): TreeGroup
     entries: flows.map((flow) => ({
       key: flowKeyOf(flow.name),
       name: flow.name,
-      title: flow.file,
+      title: [flow.file],
       badges: flow.problems.length > 0 ? ['error'] : [],
     })),
   };

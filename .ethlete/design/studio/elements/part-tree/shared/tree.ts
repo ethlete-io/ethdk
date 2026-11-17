@@ -51,7 +51,7 @@ export const partRows = (part: TreePart, depth: number): Row[] => {
       ...(host ? { expanded: open } : {}),
       selected: part.selected === true,
       ...(part.interaction ? { interaction: part.interaction } : {}),
-      ...(part.warns ? { warning: 'Render check: 1 warning' } : {}),
+      ...(part.warns ? { warning: ['Render check: 1 warning'] } : {}),
     },
     ...(open ? (part.nested ?? []).flatMap((child) => partRows(child, depth + 1)) : []),
   ];

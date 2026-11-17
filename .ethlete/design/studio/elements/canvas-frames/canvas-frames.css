@@ -27,11 +27,8 @@
   }
 
   .st-sgrid-description {
-    width: 0;
-    min-width: 100%;
     font-size: 1rem;
     line-height: 1.3rem;
-    white-space: normal;
   }
 
   .st-sgrid-head {

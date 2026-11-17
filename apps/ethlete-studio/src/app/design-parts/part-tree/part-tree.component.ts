@@ -6,8 +6,8 @@ import { TreeRow, TreeRowItemComponent, TreeRowStatus } from '../tree-row/tree-r
 type Marks = {
   key?: string;
   selected?: boolean;
-  /** A string is the warning's own title instead of `warningTitle`. */
-  warns?: boolean | string;
+  /** Lines are the warning's own findings, one per line, instead of `warningTitle`. */
+  warns?: boolean | string[];
 };
 
 /** A part; one with `nested` parts is their host and opens unless `open` is false. */
@@ -90,7 +90,7 @@ export class PartTreeComponent {
     const children = new Map<string | null, TreeNode<string>[]>();
     const marks = new Map<string, RowMarks>();
     const open: string[] = [];
-    const warning = this.warningTitle();
+    const warning = [this.warningTitle()];
 
     const add = (node: {
       value: string;
@@ -109,7 +109,7 @@ export class PartTreeComponent {
     const markOf = (kind: RowMarks['kind'], own: Marks = {}): RowMarks => ({
       kind,
       selected: own.selected,
-      warning: typeof own.warns === 'string' ? own.warns : own.warns ? warning : undefined,
+      warning: Array.isArray(own.warns) ? own.warns : own.warns ? warning : undefined,
     });
 
     const partNode = (parentKey: string, part: PartTreePart): TreeNode<string> => {

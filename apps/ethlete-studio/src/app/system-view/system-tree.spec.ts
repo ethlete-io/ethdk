@@ -99,7 +99,7 @@ describe('treeOf', () => {
       part({ name: 'b' }),
     ]);
 
-    expect(group?.entries.map((entry) => entry.title)).toEqual(['UTILITY-CSS: utility classes', undefined]);
+    expect(group?.entries.map((entry) => entry.title)).toEqual([['UTILITY-CSS: utility classes'], undefined]);
   });
 
   it('badges a part changed outside a sketch', () => {
@@ -143,8 +143,8 @@ describe('product problems in the tree', () => {
 
     expect(tree.map((group) => group.key)).toEqual(['pages']);
     expect(tree[0]?.entries.map((entry) => [entry.name, entry.title, entry.badges])).toEqual([
-      ['inbox', 'UNBOUND-INPUT: draft', ['error']],
-      ['system', 'UNBOUND-INPUT: send', ['error']],
+      ['inbox', ['UNBOUND-INPUT: draft'], ['error']],
+      ['system', ['UNBOUND-INPUT: send'], ['error']],
     ]);
   });
 
@@ -163,7 +163,7 @@ describe('product problems in the tree', () => {
       ['components', 'Components'],
     ]);
     expect(tree[0]?.entries).toEqual([
-      { key: 'product:acme', name: 'acme', title: 'UNBOUND-INPUT: a', badges: ['error'] },
+      { key: 'product:acme', name: 'acme', title: ['UNBOUND-INPUT: a'], badges: ['error'] },
     ]);
   });
 
@@ -184,10 +184,10 @@ describe('product problems in the tree', () => {
       {
         key: 'app-code:app/shell.ts',
         name: 'app/shell.ts',
-        title: 'UNBOUND-INPUT: a\nUNBOUND-INPUT: c',
+        title: ['UNBOUND-INPUT: a', 'UNBOUND-INPUT: c'],
         badges: ['error'],
       },
-      { key: 'app-code:app/other.ts', name: 'app/other.ts', title: 'UNBOUND-INPUT: b', badges: ['error'] },
+      { key: 'app-code:app/other.ts', name: 'app/other.ts', title: ['UNBOUND-INPUT: b'], badges: ['error'] },
     ]);
     expect(tree[1]?.entries[0]?.badges).toEqual([]);
   });
@@ -202,7 +202,7 @@ describe('product problems in the tree', () => {
       ...group.entries,
       ...(group.sections ?? []).flatMap((section) => section.entries),
     ]);
-    const lines = (entry: TreeEntry) => (entry.badges.includes('error') ? (entry.title ?? '').split('\n') : []);
+    const lines = (entry: TreeEntry) => (entry.badges.includes('error') ? (entry.title ?? []) : []);
     const shown = rows.flatMap(lines);
     const listed = [
       ...studio.problems,
@@ -235,15 +235,15 @@ describe('treeOf with calls', () => {
         key: 'legacy/acme',
         label: 'acme',
         entries: [
-          { key: 'legacy:acme/components/button', name: 'components/button', title: 'Which button?', badges: [] },
-          { key: 'legacy:acme/pages/home', name: 'pages/home', title: 'Which button?', badges: ['transferred'] },
-          { key: 'legacy:acme/x', name: 'x', title: 'boom', badges: ['error'] },
+          { key: 'legacy:acme/components/button', name: 'components/button', title: ['Which button?'], badges: [] },
+          { key: 'legacy:acme/pages/home', name: 'pages/home', title: ['Which button?'], badges: ['transferred'] },
+          { key: 'legacy:acme/x', name: 'x', title: ['boom'], badges: ['error'] },
         ],
       },
       {
         key: 'legacy/other',
         label: 'other',
-        entries: [{ key: 'legacy:other/a', name: 'a', title: 'Which button?', badges: [] }],
+        entries: [{ key: 'legacy:other/a', name: 'a', title: ['Which button?'], badges: [] }],
       },
     ]);
   });
@@ -718,8 +718,8 @@ describe('sketches in the tree', () => {
     expect(tree.map((group) => group.key)).toEqual(['sketches', 'components']);
     expect(tree[1]?.entries.map((entry) => entry.badges)).toEqual([['sketch open'], []]);
     expect(tree[0]?.entries.map((entry) => [entry.key, entry.name, entry.title, entry.badges])).toEqual([
-      ['sketch:components/button', 'button', 'components/button', ['in progress']],
-      ['sketch:elements/header', 'header', 'a: LAYER: m', ['ready', 'error']],
+      ['sketch:components/button', 'button', ['components/button'], ['in progress']],
+      ['sketch:elements/header', 'header', ['a: LAYER: m'], ['ready', 'error']],
     ]);
   });
 
@@ -741,10 +741,10 @@ describe('sketches in the tree', () => {
     });
 
     expect(sketches?.entries.map((entry) => [entry.title, entry.badges])).toEqual([
-      ['Seit Freigabe geändert: a', ['in progress', 'changed since ready']],
-      ['Braucht Rebase: components/chip geändert', ['in progress', 'needs rebase']],
-      ['Braucht Rebase: keine Baseline', ['in progress', 'needs rebase']],
-      ['elements/c', ['ready']],
+      [['Seit Freigabe geändert: a'], ['in progress', 'changed since ready']],
+      [['Braucht Rebase: components/chip geändert'], ['in progress', 'needs rebase']],
+      [['Braucht Rebase: keine Baseline'], ['in progress', 'needs rebase']],
+      [['elements/c'], ['ready']],
     ]);
   });
 
@@ -766,10 +766,10 @@ describe('sketches in the tree', () => {
     });
 
     expect(sketches?.entries.map((entry) => [entry.title, entry.badges])).toEqual([
-      ['Pausiert auf components/chip@calm, das übernommen ist: Pause aufheben', ['in progress', 'hold target ended']],
-      ['Pausiert auf pages/x, das verworfen ist: Pause aufheben', ['in progress', 'hold target ended']],
-      ['elements/b', ['in progress']],
-      ['elements/c', ['in progress']],
+      [['Pausiert auf components/chip@calm, das übernommen ist: Pause aufheben'], ['in progress', 'hold target ended']],
+      [['Pausiert auf pages/x, das verworfen ist: Pause aufheben'], ['in progress', 'hold target ended']],
+      [['elements/b'], ['in progress']],
+      [['elements/c'], ['in progress']],
     ]);
   });
 
@@ -782,8 +782,8 @@ describe('sketches in the tree', () => {
     });
 
     expect(sketches?.entries.map((entry) => [entry.title, entry.badges])).toEqual([
-      ['Rebase nach abc1234 nicht committet', ['in progress', 'rebase not committed']],
-      ['elements/a', ['in progress']],
+      [['Rebase nach abc1234 nicht committet'], ['in progress', 'rebase not committed']],
+      [['elements/a'], ['in progress']],
     ]);
   });
 
@@ -805,7 +805,7 @@ describe('sketches in the tree', () => {
       ],
     });
 
-    expect(sketches?.entries[0]?.title).toBe('b: LAYER: uses a page\nb: HARD-CODED-COLOUR: #fff');
+    expect(sketches?.entries[0]?.title).toEqual(['b: LAYER: uses a page', 'b: HARD-CODED-COLOUR: #fff']);
   });
 
   it('marks a sketch with a variant that fails to render, and titles it with the reason', () => {
@@ -821,7 +821,7 @@ describe('sketches in the tree', () => {
       ],
     });
 
-    expect(sketches?.entries[0]?.title).toBe('old: old fails to render');
+    expect(sketches?.entries[0]?.title).toEqual(['old: old fails to render']);
     expect(sketches?.entries[0]?.badges).toContain('error');
   });
 

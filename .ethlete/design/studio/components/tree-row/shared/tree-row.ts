@@ -11,7 +11,7 @@ export type Row = {
   expanded?: boolean;
   selected?: boolean;
   inert?: boolean;
-  warning?: string;
+  warning?: string[];
   status?: 'in-progress' | 'ready';
   comments?: number;
   interaction?: RowInteraction;
@@ -75,7 +75,7 @@ const tree: Row[] = [
   { label: 'form-field', depth: 1, kind: 'part', expanded: true },
   { label: 'empty', depth: 2, kind: 'leaf', interaction: 'hover' },
   { label: 'filled', depth: 2, kind: 'leaf', inert: true },
-  { label: 'select', depth: 1, kind: 'part', expanded: false, warning: 'Render check: 1 warning' },
+  { label: 'select', depth: 1, kind: 'part', expanded: false, warning: ['Render check: 1 warning'] },
   { label: 'tree-row', depth: 1, kind: 'leaf', status: 'in-progress' },
   { label: 'Elements', depth: 0, kind: 'group', expanded: true },
   { label: 'part-tree', depth: 1, kind: 'leaf', status: 'ready', comments: 3 },
@@ -95,7 +95,7 @@ const others = interactionRows(
     'leaf-flat': one({ label: 'Review a sketch', depth: 0, kind: 'leaf' }),
     'mark-in-progress': one({ ...button, label: 'tree-row', status: 'in-progress' }),
     'mark-ready': one({ ...button, label: 'part-tree', status: 'ready' }),
-    'mark-warning': one({ label: 'select', depth: 1, kind: 'part', warning: 'Render check: 1 warning' }),
+    'mark-warning': one({ label: 'select', depth: 1, kind: 'part', warning: ['Render check: 1 warning'] }),
     'mark-comments': one({ ...button, label: 'part-tree', comments: 3 }),
     'selected-marks': one({ ...button, label: 'part-tree', selected: true, status: 'ready', comments: 3 }),
     inert: one({ label: 'filled', depth: 2, kind: 'leaf', inert: true }),

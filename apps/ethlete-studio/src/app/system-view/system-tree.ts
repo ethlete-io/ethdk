@@ -84,7 +84,7 @@ export type TreeFrame = { key: string; name: string; part: string; frame: string
 export type TreeEntry = {
   key: string;
   name: string;
-  title?: string;
+  title?: string[];
   badges: PartBadge[];
   comments?: number;
   count?: number;
@@ -110,8 +110,9 @@ const badgesOf = (
   ...(problems.length > 0 ? (['error'] as const) : []),
 ];
 
-const problemTitleOf = (problems: SystemProblem[]) =>
-  problems.map((found) => `${found.rule}: ${found.message}`).join('\n');
+const problemTitleOf = (problems: SystemProblem[]) => problems.map((found) => `${found.rule}: ${found.message}`);
+
+const orFallback = (lines: string[], fallback: string) => (lines.length > 0 ? lines : [fallback]);
 
 const ownerOf = (parts: ListedPart[], file: string) =>
   parts.find((part) => part.implements === file) ??
@@ -197,7 +198,7 @@ export const sketchLabelOf = (key: string): { part: string; name?: string } => {
 const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
-  title:
+  title: orFallback(
     [
       ...(sketch.targets ?? []).flatMap(({ variant, error }) => (error ? [`${variant}: ${error}`] : [])),
       ...(sketch.problems ?? []).flatMap(({ variant, problems }) =>
@@ -213,7 +214,9 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
       ...(sketch.hold?.untilSketch && sketch.holdTargetEnd
         ? [STUDIO_LABELS.treeRow.sketchHoldTargetEnded(sketch.hold.untilSketch.target, sketch.holdTargetEnd)]
         : []),
-    ].join('\n') || sketch.target,
+    ],
+    sketch.target,
+  ),
   ...commentsOf(sketch.target, marks),
   badges: [
     ...(sketch.status === 'ready' && !sketch.staleBase && !sketch.changedSinceReady?.length
@@ -238,7 +241,7 @@ const callBadgesOf = (call: ListedCall): PartBadge[] =>
 const callEntryOf = (call: ListedCall, name: string): TreeEntry => ({
   key: callKeyOf(call.slug),
   name,
-  title: 'error' in call ? call.error : call.headline,
+  title: ['error' in call ? call.error : call.headline],
   badges: callBadgesOf(call),
 });
 

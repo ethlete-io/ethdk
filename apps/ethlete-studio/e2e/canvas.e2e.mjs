@@ -1396,7 +1396,20 @@ const CASES = [
 
                 const text = range.getBoundingClientRect();
                 const style = getComputedStyle(node.parentElement);
-                const ellipsis = style.textOverflow === 'ellipsis' && style.overflowX === 'hidden';
+                const ellipsis = style.textOverflow === 'ellipsis' && style.overflowX !== 'visible';
+                let clip = { top: -Infinity, bottom: Infinity };
+
+                for (let at = node.parentElement; at && at !== canvas; at = at.parentElement) {
+                  const rect = at.getBoundingClientRect();
+
+                  if (rect.height > 3 * text.height) break;
+                  if (getComputedStyle(at).overflowY === 'visible') continue;
+
+                  clip = { top: Math.max(clip.top, rect.top), bottom: Math.min(clip.bottom, rect.bottom) };
+                }
+
+                if (text.width > 0 && (text.top < clip.top - 0.5 || text.bottom > clip.bottom + 0.5))
+                  found.push(`${label}: "${node.textContent.trim().slice(0, 30)}" is clipped at its top or bottom`);
 
                 if (
                   text.width > 0 &&

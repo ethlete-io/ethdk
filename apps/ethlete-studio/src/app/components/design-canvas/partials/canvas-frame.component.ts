@@ -76,7 +76,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           labelOf(copy.scheme)
         }}</span>
       }
-      <span class="min-w-0 truncate" data-frame-label>{{ frame().label }}</span>
+      <span class="min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap" data-frame-label>{{ frame().label }}</span>
       @if (loading()) {
         <span
           [attr.data-reload]="reload()"
@@ -114,12 +114,15 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     <span
       [class]="labelPlacement()"
       [style.max-width.px]="captionMaxWidth()"
-      class="absolute left-0 flex flex-col overflow-hidden whitespace-nowrap text-et-surface text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
+      class="absolute left-0 flex flex-col overflow-x-clip whitespace-nowrap text-et-surface text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
       ><span class="flex gap-[0.6em]"><ng-container [ngTemplateOutlet]="caption" /></span>
       @if (frame().description; as description) {
-        <span [style.max-width.px]="descriptionMaxWidth()" class="truncate text-text-muted" data-frame-description>{{
-          description
-        }}</span>
+        <span
+          [style.max-width.px]="descriptionMaxWidth()"
+          class="overflow-x-clip text-ellipsis whitespace-nowrap text-text-muted"
+          data-frame-description
+          >{{ description }}</span
+        >
       }
     </span>
     <div class="absolute inset-0" data-et-projected="frame">
