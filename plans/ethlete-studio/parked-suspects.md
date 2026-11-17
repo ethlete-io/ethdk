@@ -82,3 +82,7 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - scrollable buttons skip visible items (fifa, 17.11.): not reproduced in the SDK; waits on fifa's markup.
 - orphan sketch-status-badge (Linux, 17.11.): components/sketch-status-badge has no implements link and no app file embeds it; `design ready` on it refuses because components/badge is not build-ready. Cleanup, no hunt.
 - OPENED without sketch (Linux, 17.11.): `design check` printed "OPENED pages/flows@edit pick old or new" while it held the edit and no sketch was on disk (B142 run). Suspect, code not read.
+- compare FAILED with exit 0 (Linux, 17.11.): `design compare pages/system` prints 16 "canvas-note treeitem <name> FAILED the design draws no such element" lines and exits 0. Suspect, code not read.
+- inbox unknown author (Linux, 17.11.): inbox senderOf gives an unknown author no agent (initials "A", no logo), while sketches fall back to the generic logo since B165.
+- sketch listing rest (Linux, 17.11.): first Sketches open still ~6 s after 79e7fe93b. Suspect: old-variant shots are requested only after the 2.4 s single-sketch read.
+- unused build-ready exports (Linux, 17.11.): UNUSED-EXPORT statusIcon/agentMark in pages/system/shared/build-ready.ts. Cleanup, no hunt.
