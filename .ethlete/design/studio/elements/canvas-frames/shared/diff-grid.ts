@@ -1,5 +1,5 @@
 import { html } from '@design-system';
-import { holdTrigger, holdTriggerStyles } from '@system/components/hold-trigger';
+import holdTriggerPart, { holdTriggerStyles } from '@system/components/hold-trigger';
 
 type Interaction = 'rest' | 'hover' | 'active' | 'focus-visible';
 
@@ -36,23 +36,25 @@ const marked = (markup: string, region: ReturnType<typeof regionOf>) => {
   }
 };
 
-const drawCell = (cell: Cell, look: string) => {
-  const trigger = holdTrigger({
+const drawCell = async (cell: Cell, look: string) => {
+  const { body } = await holdTriggerPart.render({
     content,
     reason,
     open: cell.open,
     interaction: cell.interaction === 'rest' ? undefined : cell.interaction,
   });
-  return html`<div class="relative isolate overflow-clip p-space-2 ${look}">${marked(trigger, regionOf(cell))}</div>`;
+  return html`<div class="relative isolate overflow-clip p-space-2 ${look}">${marked(body, regionOf(cell))}</div>`;
 };
 
-/** The states of components/hold-trigger as a state grid, the region each state changes against closed rest marked by `data-diff-region`; `look` styles that region. */
-export const diffGrid = (look: string) => ({
+/** The states of components/hold-trigger as a state grid of framed part stills, the region each state changes against closed rest marked by `data-diff-region`; `look` styles that region. */
+export const diffGrid = async (look: string) => ({
   columns: interactions,
-  rows: [false, true].map((open) => ({
-    label: open ? 'open' : 'closed',
-    cells: interactions.map((interaction) => drawCell({ open, interaction }, look)),
-  })),
+  rows: await Promise.all(
+    [false, true].map(async (open) => ({
+      label: open ? 'open' : 'closed',
+      cells: await Promise.all(interactions.map((interaction) => drawCell({ open, interaction }, look))),
+    })),
+  ),
 });
 
 /** The CSS the cells of `diffGrid` need on top of the canvas frame styles. */

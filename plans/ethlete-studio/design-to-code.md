@@ -1724,8 +1724,9 @@ note: the harness sample turns the `diff` prop into a hold-trigger grid whose ce
 data path, so the component needs no `diff` input; `styles.css` sources the state's `w-300` class. Known gaps:
 
 - Parts with `widths` and page frames get no mark.
-- `design check --part elements/canvas-frames` writes no record: compare cannot drive `diff-mark`, whose design draws
-  live hold-trigger buttons in the cells (forced hover on "Pausiert"), while the app cells are iframes of the part.
+- Closed: the `diff-mark` cells are framed stills of `components/hold-trigger` (its part render inside a
+  `slot('frame')` region), so compare no longer forces hover on "Pausiert"; `design check --part
+elements/canvas-frames` now ends with only UNRECORDED (no compare stop).
 - Glyph touch fixed: the outline sits one stroke outside the changed box, clamped one stroke inside the cell; a cell
   only as tall as its text still meets the outline at the cell edge (`b558-100b.png`, `b558-fitb.png`).
 
