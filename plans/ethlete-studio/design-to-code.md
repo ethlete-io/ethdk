@@ -3679,5 +3679,6 @@ that pick, and its hit is baselined. (b) OWN-CANVAS (db2bd9f7e): with `canvas: {
 a part that reaches the zoom part but not the canvas part fails; run over studio, studio-lab, sdk: only pages/flows
 (baselined, finding 228). (c) Cause (live shots, panned-zoomed, unchanged-matrix-open): the rail-edge clip is gone
 since 3ef78653b (finding 867, canvas runs under the panel); the pinned list row head was dropped by the later
-decision 96423df97 / d64a93790 (B523), the matrix gutter keeps its pin, so nothing was built. Not verified: the
-pages/flows switch, Tauri.
+decision 96423df97 / d64a93790 (B523), the matrix gutter keeps its pin, so nothing was built. Flows: 3bd28bc77 draws
+the graph in components/canvas-viewport, the baseline entry is gone; `design check` HELD it (every state draws as before,
+recorded in 4a1efd91b, no pick needed); compare pages/flows all ok (subagent run, same diff). Not verified: Tauri.
