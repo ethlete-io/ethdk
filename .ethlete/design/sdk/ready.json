@@ -34,10 +34,10 @@
     "pid": 1898251
   },
   "components/button": {
-    "hash": "ea718605b639cbaf",
+    "hash": "fdcd94fedd3764cf",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
-      ".ethlete/design/sdk/components/button/button.ts": "b44ab5f783d8b758",
+      ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -56,10 +56,10 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-17T18:23:32.636Z",
+    "at": "2026-11-17T20:23:44.313Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 111211
+    "pid": 954605
   },
   "components/checkbox": {
     "actions": [],
