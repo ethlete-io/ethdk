@@ -3644,3 +3644,9 @@ harness-only shot template for the design's frame thumbnail. Verified: compare s
 state-groups gone, `vitest related` 392/392 plus the new canvas spec, lint. Not verified: a live Studio shot. Open:
 design check now reports STATE-NO-SOURCE for state-groups, since no app template binds `stateGroups` (the app groups in
 the design canvas, not through that input); it needs a decision, not a rename.
+
+As built (B371 follow-up, 2026-11-17): the harness-only `stateGroups` input of the system page is listed in
+`KNOWN_UNBOUND_INPUTS` (the live canvas groups the frames itself), so `design check pages/system` counts
+STATE-NO-SOURCE 0; the three comments* DROPPED-PROP stay (from before). The `comment-write` capability now
+points at components/comment-draft, since fdd635b40 took the draft out of pages/inbox (capability-place spec
+was red). Verified: cli vitest related 1594 tests, capability-place 11/11.

@@ -3,7 +3,7 @@
     {
       "id": "comment-write",
       "label": "Kommentar schreiben",
-      "place": { "part": "pages/inbox", "action": "emit:sendComment" },
+      "place": { "part": "components/comment-draft", "action": "emit:sendComment" },
       "confirmed": true
     },
     {
