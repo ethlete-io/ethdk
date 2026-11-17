@@ -38,18 +38,20 @@ const PLAYERS: [string, string, string, string][] = [
 
 const LONG = 'Hoffmann-Wiesenthal-Brandenburger-Lindqvist-Oberhausen';
 
+const SORT = 'data-et-action="emit:sortChange"';
+
 const columns = (
   sort: Props['sort'],
   header: Props['header'],
   align: TableColumnMock['align'] = 'end',
 ): TableColumnMock[] => [
-  { header: 'Player', sortable: true, sort: sort ?? 'asc' },
+  { header: 'Player', sortable: true, sort: sort ?? 'asc', labelAttributes: SORT },
   {
     header: 'Team',
     sortable: true,
-    labelAttributes: header ? `data-et-force="${header}"` : undefined,
+    labelAttributes: header ? `${SORT} data-et-force="${header}"` : SORT,
   },
-  { header: 'Goals', sortable: true, align },
+  { header: 'Goals', sortable: true, align, labelAttributes: SORT },
   { header: 'Assists', align },
 ];
 
@@ -66,7 +68,13 @@ const wideTable = (scrolled: boolean) =>
     errorColor: 'danger',
     tracks: '140px 132px repeat(5, 96px)',
     columns: [
-      { header: 'Player', sortable: true, sort: 'asc', sticky: scrolled ? { side: 'start', offset: 0 } : undefined },
+      {
+        header: 'Player',
+        sortable: true,
+        sort: 'asc',
+        labelAttributes: SORT,
+        sticky: scrolled ? { side: 'start', offset: 0 } : undefined,
+      },
       ...WIDE_HEADERS.map((header, index) => ({ header, align: index === 0 ? undefined : ('end' as const) })),
     ],
     rows: WIDE.map((cells, index) => ({ cells: [PLAYERS[index]?.[0] ?? '', ...cells] })),

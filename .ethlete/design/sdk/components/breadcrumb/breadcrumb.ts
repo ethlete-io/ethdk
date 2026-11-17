@@ -49,7 +49,7 @@ const longMarkup = (props: Props) => {
   return `<div class="breadcrumb-overflow-stage">${panel}${breadcrumb({
     crumbs: trail,
     collapsed: hiddenCrumbs,
-    overflowAttributes: mark('overflow', props.overflow),
+    overflowAttributes: `${mark('overflow', props.overflow)} data-et-action="${props.open ? 'long' : 'overflow-open'}"`,
   })}</div>`;
 };
 

@@ -17,7 +17,9 @@ const TITLES = ['Kick-off', 'First half', 'Half time', 'Second half', 'Full time
 const LONG_CAPTION =
   'A long caption that wraps over several lines inside the slide, the way a match report teaser runs on past a single line of text.';
 
-const force = (interaction: Interaction | undefined) => (interaction ? `data-et-force="${interaction}"` : undefined);
+const INDEX_CHANGE = 'data-et-action="emit:activeIndexChange"';
+
+const force = (interaction: Interaction | undefined) => (interaction ? `data-et-force="${interaction}"` : '');
 
 const slideContent = (index: number, count: number, longCaption: boolean) =>
   `<div class="carousel-slide"><p class="carousel-slide-title">${index + 1}. ${TITLES[index % TITLES.length]}</p>` +
@@ -28,10 +30,15 @@ const render = ({ count = 5, longCaption = false, previous, next, playToggle, do
   carousel({
     ...options,
     slides: Array.from({ length: count }, (_, index) => ({ content: slideContent(index, count, longCaption) })),
-    previousAttributes: force(previous),
-    nextAttributes: force(next),
-    playToggleAttributes: force(playToggle),
-    dotAttributes: dot ? { [dot.index]: `data-et-force="${dot.interaction}"` } : undefined,
+    previousAttributes: `${INDEX_CHANGE} ${force(previous)}`,
+    nextAttributes: `${INDEX_CHANGE} ${force(next)}`,
+    playToggleAttributes: `data-et-action="${options.playing === false ? 'autoplay-playing' : 'autoplay-paused'}" ${force(playToggle)}`,
+    dotAttributes: Object.fromEntries(
+      Array.from({ length: count }, (_, index) => [
+        index,
+        `${INDEX_CHANGE} ${dot?.index === index ? force(dot.interaction) : ''}`,
+      ]),
+    ),
     trackAttributes: 'data-et-skip="CLIPPED"',
   }).replaceAll(
     'class="et-carousel-dot-progress-half"',

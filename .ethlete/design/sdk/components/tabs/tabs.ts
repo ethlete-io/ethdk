@@ -89,7 +89,7 @@ export default definePart({
         triggerAttributes: forced
           ? { ...props.triggerAttributes, [forced.tab]: `data-et-force="${forced.interaction}"` }
           : props.triggerAttributes,
-      }).replaceAll('role="tab"', 'data-et-control="tab" role="tab"'),
+      }).replaceAll('role="tab"', 'data-et-control="tab" data-et-action="emit:selectedIndexChange" role="tab"'),
       styles: [tabsStyles, edge].join('\n'),
     }),
 });

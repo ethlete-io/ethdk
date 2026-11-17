@@ -1789,6 +1789,17 @@ e2e canvas ("every declared action works"). Not verified: the call/read-error ti
   query-error 4, stream 3, copy-button 3, breadcrumb 3. Every sdk part already reports PART-UNREVIEWED in
   `design complete` (query-error did before this slice too).
 
+As built (B135 slice 3): breadcrumb overflow `overflow-open` (`long` when open); copy-button both buttons
+`emit:copySucceed`; stream consent and error retry `loading`, pip "Back to player" `player`; query-error Retry and the
+slot "Try again" `emit:retryRequest`; tabs triggers `emit:selectedIndexChange`; standings pick cards
+`emit:orderChange`; table sort labels `emit:sortChange`; carousel previous/next/dots `emit:activeIndexChange`, play
+toggle `autoplay-paused` / `autoplay-playing`. All in the design parts, no mock changed. ACTION-UNDECLARED in the 8
+parts 39 -> 7, no new problem kind. Left undeclared, no key exists: the breadcrumb Home/Competitions links and the
+query-error "Contact support" link (consumer navigation), and the table selection checkboxes and row expanders
+(the features write the consumer's signal, no output, and no state draws the result). Verified: `design complete`
+and `design check --part` per part. Not verified: `design ready` press checks (none of the 8 is ready-marked); an
+emit on an unchanged value (active dot, selected tab) fires nothing.
+
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
 As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the

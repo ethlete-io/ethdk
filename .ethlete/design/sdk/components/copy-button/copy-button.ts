@@ -12,7 +12,10 @@ type Props = {
 };
 
 const mark = (control: 'icon' | 'text', interaction?: Interaction) =>
-  [`data-et-control="${control}" data-can-animate`, interaction && `data-et-force="${interaction}"`]
+  [
+    `data-et-control="${control}" data-et-action="emit:copySucceed" data-can-animate`,
+    interaction && `data-et-force="${interaction}"`,
+  ]
     .filter(Boolean)
     .join(' ');
 

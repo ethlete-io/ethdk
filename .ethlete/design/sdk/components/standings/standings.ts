@@ -137,7 +137,10 @@ export default definePart({
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: props.view === 'table' ? table(props) : pick(props),
+      body:
+        props.view === 'table'
+          ? table(props)
+          : pick(props).replaceAll('role="group"', 'role="group" data-et-action="emit:orderChange"'),
       styles: [standingsStyles, frame].join('\n'),
     }),
 });

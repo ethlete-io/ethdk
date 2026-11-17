@@ -64,7 +64,10 @@ const SHAPES: Record<Shape, { status: number; title: string; messages: string[];
 };
 
 const mark = (control: string, interaction?: Interaction) =>
-  [`data-et-control="${control}" data-can-animate`, interaction && `data-et-force="${interaction}"`]
+  [
+    `data-et-control="${control}" data-et-action="emit:retryRequest" data-can-animate`,
+    interaction && `data-et-force="${interaction}"`,
+  ]
     .filter(Boolean)
     .join(' ');
 

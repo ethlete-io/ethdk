@@ -8,8 +8,17 @@ type Props = { state: StreamMockState; button?: Interaction };
 
 const VIDEO = '<div class="t-video" aria-hidden="true"></div>';
 
-const buttonAttributes = (interaction: Interaction | undefined) =>
-  ['data-et-control="action" data-can-animate', interaction && `data-et-force="${interaction}"`]
+const ACTIONS: Partial<Record<StreamMockState, string>> = {
+  consent: 'loading',
+  error: 'loading',
+  'pip-placeholder': 'player',
+};
+
+const buttonAttributes = (state: StreamMockState, interaction: Interaction | undefined) =>
+  [
+    `data-et-control="action" data-et-action="${ACTIONS[state]}" data-can-animate`,
+    interaction && `data-et-force="${interaction}"`,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -47,7 +56,7 @@ export default definePart({
       body: streamPlayerSlot({
         state: props.state,
         player: VIDEO,
-        buttonAttributes: buttonAttributes(props.button),
+        buttonAttributes: buttonAttributes(props.state, props.button),
       }).replace('<et-spinner ', '<et-spinner data-et-skip="CLIPPED" '),
       styles: [streamStyles, frame].join('\n'),
     }),
