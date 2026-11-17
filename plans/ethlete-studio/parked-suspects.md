@@ -81,3 +81,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - carousel slide growth (SDK, 17.11.): a headless carousel that grows from fewer than two slides is never checked for its pause control (the check runs once, 9d846a8a6).
 - overlay compare gap (Linux, B502 dc4a97a57): a page host smaller than the viewport with a preset size and no open pane may miss overlays in compare.
 - scrollable buttons skip visible items (fifa, 17.11.): not reproduced in the SDK; waits on fifa's markup.
+- orphan sketch-status-badge (Linux, 17.11.): components/sketch-status-badge has no implements link and no app file embeds it; `design ready` on it refuses because components/badge is not build-ready. Cleanup, no hunt.
