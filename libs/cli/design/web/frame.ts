@@ -35,12 +35,18 @@ const propsVariant = params.get('props-variant') ?? '';
 const motionName = product ? params.get('motion') : null;
 const flowTo = product ? params.get('flow-to') : null;
 
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
 // Listens before the drawing loads, so an error it throws while loading counts; `report` exists only once `reporting` is set.
 let errored = false;
+let errorText: string | null = null;
 let reporting = false;
 
-const reportError = () => {
+const reportError = (event: Event) => {
   errored = true;
+  errorText ??= messageOf(
+    event instanceof ErrorEvent ? (event.error ?? event.message) : (event as PromiseRejectionEvent).reason,
+  );
   if (reporting) report();
 };
 
@@ -64,6 +70,7 @@ if (fit) fitRoot(root, { padded: !params.has('bare') });
 
 const markFailed = (message: string) => {
   errored = true;
+  errorText ??= message;
   document.documentElement.setAttribute('data-et-error', message);
 };
 
@@ -130,8 +137,6 @@ const showSetupError = (message: string) => {
   document.body.append(banner);
   banners.push(banner);
 };
-
-const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 const RETRY_DELAYS = [300, 1500];
 
@@ -257,7 +262,7 @@ const report = () => {
       ...width,
       viewport: { width: innerWidth, height: innerHeight },
       href: location.href,
-      ...(errored ? { errored: true } : {}),
+      ...(errored ? { errored: true, ...(errorText ? { error: errorText } : {}) } : {}),
     },
     '*',
   );
@@ -526,6 +531,7 @@ const switchStateOf = (rootAttributes: [string, string][], undone: () => void) =
     (document.activeElement as HTMLElement | null)?.blur?.();
     scrollTo(0, 0);
     errored = false;
+    errorText = null;
     drawnPart = null;
     key = state;
     ngStylesStart?.();

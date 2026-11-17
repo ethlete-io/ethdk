@@ -28,7 +28,7 @@ export type SketchRow = {
 
 export type SketchWithdrawn = 'hidden' | 'shown';
 
-export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'not-ready';
+export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'not-ready' | 'failed';
 
 export type SketchHold = { until: string; by: SketchModel; since: string };
 

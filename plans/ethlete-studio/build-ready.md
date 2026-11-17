@@ -935,3 +935,20 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
 - Fix: a merge of `old` in an `@edit` sketch adds no author; `new` and every other sketch keep today's behaviour.
 - Tests: `edit-sketch.spec.ts` "adds no author to the part file when old is picked" (failed before the fix); the 4c e2e
   case now also diffs the part file against the base commit after the `old` pick (the merge commits, so a diff against the index would be empty). Under `--hold-listings 14000` the case fails on HEAD too (a 10 s click timeout and a 120 s selector wait), not caused by this slice.
+
+## As built: B309 items 1 and 4 (finding 363, 2026-11-17, Linux)
+
+- Item 1: `sketchRenderOf` (`system-view/sketch-frame-retries.ts`) reads the frame reports of the live variants:
+  `failed` when a frame errored or a target fails to load, `drawing` while a mounted frame has not reported a height,
+  else drawn. `sketchStatus` returns `failed`/`drawing` after the drawn/hold/not-ready checks, so `waiting` only shows
+  when every mounted frame drew. Übernehmen renders only for `waiting`/`picked` and no errored variant.
+- Item 4: `frame.ts` (`@ethlete/cli`) posts the first error text as `error` with the errored height message;
+  `frameMessageOf` reads it. The head shows the badge state `failed` ("Render fehlgeschlagen", error colour) with
+  "variant · state: message" (or "variant: message" for a load error, "(+N)" for more), and the agent chip step uses
+  the same text. The app's own "Render-Fehler in dieser Runde" badge is gone (not in the design).
+- Verified: specs in `sketch-frame-retries.spec.ts`, `sketch-view.component.spec.ts` ("waits for a pick only once
+  every live frame drew …"), `sketches.component.spec.ts`, `canvas-frame.spec.ts`, `frame-bootstrap.spec.ts`.
+- Not verified: live in the running Studio. "drawing" counts only mounted frames, so scrolling a not yet reported
+  frame into the live set shows "zeichnet" until it reports.
+- Design gap: `pages/sketches` declares no head state `failed` and no text slot for it; the app renders the
+  `sketch-status-badge` `failed` state and puts the error line in the not-ready reason line's style (`data-sk-failed`).

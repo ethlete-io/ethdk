@@ -1022,14 +1022,33 @@ describe('SketchesComponent', () => {
     expect(document.querySelector('[role="dialog"] ul')?.classList.contains('divide-y')).toBe(false);
   });
 
-  it('offers no Übernehmen for a variant with an errored frame and says the round has a render error', async () => {
+  it('offers no Übernehmen while a variant has an errored frame and names the error in the head', async () => {
     const y = { ...ROWS[1], key: 'y', note: 'Variante y' } as SketchRow;
-    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', rows: [...ROWS, y], errored: ['x'] }))
-      .nativeElement;
+    const root: HTMLElement = (
+      await render({
+        camera: '100',
+        status: 'waiting',
+        rows: [...ROWS, y],
+        errored: ['x'],
+        readyReason: 'x · default: boom is not defined',
+      })
+    ).nativeElement;
 
-    expect(textOf(root.querySelector('header et-badge'))).toBe(LABELS.status.errored);
-    expect(root.querySelector('[data-sk-row="x"] [data-sk-merge]')).toBeNull();
-    expect(textOf(root.querySelector('[data-sk-row="y"] [data-sk-merge]'))).toBe(LABELS.merge);
+    expect(textOf(root.querySelector('header et-badge'))).toBe(LABELS.status.failed);
+    expect(textOf(root.querySelector('header [data-sk-failed]'))).toBe('x · default: boom is not defined');
+    expect(root.querySelector('[data-sk-merge]')).toBeNull();
+  });
+
+  it('offers no Übernehmen while the sketch fails or its frames still draw', async () => {
+    const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
+
+    expect(waiting.querySelector('[data-sk-merge]')).not.toBeNull();
+
+    for (const status of ['failed', 'drawing'] as const) {
+      const root: HTMLElement = (await render({ camera: '100', status })).nativeElement;
+
+      expect(root.querySelector('[data-sk-merge]')).toBeNull();
+    }
   });
 
   it('shows a merge error under the picked variant, and in the header when no variant is picked', async () => {

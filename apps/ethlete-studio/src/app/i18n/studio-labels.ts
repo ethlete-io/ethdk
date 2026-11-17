@@ -157,7 +157,7 @@ export const STUDIO_LABELS = {
       picked: 'Variante gewählt',
       paused: 'Pausiert',
       notReady: 'Noch nicht bereit',
-      errored: 'Render-Fehler in dieser Runde',
+      failed: 'Render fehlgeschlagen',
     },
     notReadyUnknown: 'Grund unbekannt - führe sketch ready aus',
     holdUntil: (until: string) => `Wartet auf ${until}`,
@@ -168,6 +168,8 @@ export const STUDIO_LABELS = {
       failed: (round: number | null) => (round === null ? 'Runde fehlgeschlagen' : `Runde ${round} fehlgeschlagen`),
       errored: (variants: readonly string[]) =>
         `Render-Fehler in ${variants.length === 1 ? 'Variante' : 'Varianten'} ${variants.join(', ')}`,
+      errors: (lines: readonly string[]) =>
+        lines.length > 1 ? `${lines[0]} (+${lines.length - 1})` : (lines[0] ?? ''),
       ago: (minutes: number) => `vor ${spanOf(minutes)}`,
     },
     roundSelect: 'Runde',

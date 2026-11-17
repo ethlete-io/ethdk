@@ -77,6 +77,7 @@ import {
   NO_SKETCH_FRAME_RETRIES,
   SketchFrameEvent,
   erroredVariantsOf,
+  sketchRenderOf,
   retriedSrcOf,
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
@@ -500,7 +501,12 @@ export class SketchViewComponent {
           (report): report is { shot: string; message: HeightMessage } =>
             report.shot !== null && report.message?.type === 'height',
         ),
-        map(({ shot, message }): SketchFrameEvent => ({ kind: 'report', shot, errored: !!message.errored })),
+        map(({ shot, message }): SketchFrameEvent => ({
+          kind: 'report',
+          shot,
+          errored: !!message.errored,
+          ...(message.error ? { error: message.error } : {}),
+        })),
       ),
     ).pipe(scan(sketchFrameRetriesWith, NO_SKETCH_FRAME_RETRIES)),
     { initialValue: NO_SKETCH_FRAME_RETRIES },
@@ -513,6 +519,17 @@ export class SketchViewComponent {
       targets: this.sketch().targets,
     });
   });
+
+  private renderState = computed(() =>
+    sketchRenderOf({
+      rows: this.sketchRows(),
+      retries: this.frameRetries(),
+      mounted: this.shotFrames().map(
+        ({ nativeElement }) => `${nativeElement.dataset['variant']} ${nativeElement.dataset['state']}`,
+      ),
+      targets: this.sketch().targets,
+    }),
+  );
 
   private rowShots = computed(() => {
     const { retry } = this.frameRetries();
@@ -607,7 +624,7 @@ export class SketchViewComponent {
     return {
       by: sketchModelOf(report?.author ?? this.newestAuthor() ?? ''),
       task: labels.failed(round < 0 ? null : round + 1),
-      step: labels.errored(errored),
+      step: labels.errors(this.renderState().errors) || labels.errored(errored),
       since: minutes === null ? '' : labels.ago(minutes),
       failed: true,
     };
@@ -623,13 +640,19 @@ export class SketchViewComponent {
     return { merged: mark.merged, since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)) };
   });
 
-  protected readyReason = computed(() => this.sketch().readyRefusal?.lines[0] ?? null);
+  protected readyReason = computed(() =>
+    this.renderState().state === 'failed'
+      ? STUDIO_LABELS.sketches.agentRun.errors(this.renderState().errors)
+      : (this.sketch().readyRefusal?.lines[0] ?? null),
+  );
 
   protected sketchStatus = computed<SketchStatus>(() => {
     if (this.drawnVariant() !== null) return 'drawing';
     if (this.sketch().hold) return 'paused';
 
     if (this.sketch().status !== 'ready' || this.sketch().readyRefusal) return 'not-ready';
+    if (this.renderState().state === 'failed') return 'failed';
+    if (this.renderState().state === 'drawing') return 'drawing';
 
     return waitsForPick(this.sketch()) ? 'waiting' : 'picked';
   });

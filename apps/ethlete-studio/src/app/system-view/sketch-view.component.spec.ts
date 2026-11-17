@@ -690,7 +690,7 @@ describe('SketchViewComponent', () => {
     expect(stalled.root.querySelector('[data-sk-agent]')).toBeNull();
   });
 
-  it('shows a failed agent line naming the round and every variant that did not render', async () => {
+  it('shows a failed agent line and a failed head naming the round and the load error of each variant', async () => {
     const updatedAt = new Date(Date.now() - 50 * 60_000).toISOString();
     const { root } = await render(
       {
@@ -708,9 +708,50 @@ describe('SketchViewComponent', () => {
     const labels = STUDIO_LABELS.sketches.agentRun;
 
     expect(line).toContain('Opus 5.5');
-    expect(line).toContain(labels.errored(['a', 'b']));
+    expect(line).toContain(labels.errors(['a: tsc failed', 'b: tsc failed']));
     expect(line).toContain(labels.ago(50));
     expect(line).toMatch(/Runde (\d+ )?fehlgeschlagen/);
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.failed);
+    expect(root.querySelector('header [data-sk-failed]')?.textContent?.trim()).toBe('a: tsc failed (+1)');
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+  });
+
+  it('waits for a pick only once every live frame drew, and names the error of a frame that failed', async () => {
+    const { fixture, root } = await render({ ...ROUNDED, decision: undefined, report: null }, noComments);
+    const frames = [...root.querySelectorAll<HTMLIFrameElement>('iframe[data-state]')];
+    const failing = frames.at(-1)!;
+    const status = STUDIO_LABELS.sketches.status;
+    const badge = () => root.querySelector('header et-badge')?.textContent?.trim();
+    const report = async (frame: HTMLIFrameElement, extra: object = {}) => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: frame.contentWindow,
+          data: { type: 'design-explore:height', height: 80, ...extra },
+        }),
+      );
+      await settle(fixture);
+    };
+
+    expect(frames.length).toBeGreaterThan(0);
+    expect(badge()).toBe(status.drawing);
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+
+    for (const frame of frames.slice(0, -1)) await report(frame);
+    await report(failing, { errored: true, error: 'design-explore: state "default" failed\nboom is not defined' });
+
+    const variant = failing.dataset['variant'];
+
+    expect(badge()).toBe(status.failed);
+    expect(root.querySelector('header [data-sk-failed]')?.textContent?.trim()).toBe(
+      `${variant} · default: boom is not defined`,
+    );
+    expect(root.querySelector('[data-sk-agent]')?.textContent).toContain(`${variant} · default: boom is not defined`);
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+
+    await report(failing);
+
+    expect(badge()).toBe(status.waiting);
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeDefined();
   });
 
   it('shows no agent line while nothing draws and every variant rendered', async () => {

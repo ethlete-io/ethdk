@@ -72,11 +72,16 @@
             </div>
           </span>
         }
-        @case ('errored') {
-          <span class="flex items-center gap-space-2">
-            <div class="flex flex-wrap items-center">
-              <et-badge variant="tonal" size="sm" data-sk-render-error>{{ LABELS.status.errored }}</et-badge>
-            </div>
+        @case ('failed') {
+          <span class="flex min-w-0 items-center gap-space-2">
+            <span [etProvideColor]="errorTheme()" class="flex w-fit">
+              <div class="flex flex-wrap items-center">
+                <et-badge variant="tonal" size="sm" data-sk-render-error>{{ LABELS.status.failed }}</et-badge>
+              </div>
+            </span>
+            @if (readyReason(); as reason) {
+              <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-failed>{{ reason }}</span>
+            }
           </span>
         }
         @case ('drawing') {
@@ -477,8 +482,7 @@
   </section>
 </ng-template>
 <ng-template #mergeTemplate let-row>
-  @let take =
-    (status() === 'waiting' || status() === 'picked') && !errored().includes(row.key) && !sameKeys().has(row.key);
+  @let take = (status() === 'waiting' || status() === 'picked') && errored().length === 0 && !sameKeys().has(row.key);
   @let points = openPoints().length > 0 && row.key === selected();
   @if (take || points) {
     <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">

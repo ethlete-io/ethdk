@@ -2,6 +2,7 @@ import {
   NO_SKETCH_FRAME_RETRIES,
   SketchFrameEvent,
   erroredVariantsOf,
+  sketchRenderOf,
   retriedSrcOf,
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
@@ -60,7 +61,7 @@ describe('sketch frame retries', () => {
       { kind: 'reset' },
     );
 
-    expect(state).toEqual({ seq: 1, failing: {}, retry: {} });
+    expect(state).toEqual({ seq: 1, failing: {}, retry: {}, reported: {}, errors: {} });
   });
 
   it('adds the retry to the frame URL', () => {
@@ -87,5 +88,78 @@ describe('sketch frame retries', () => {
         targets: [{ variant: 'a' }, { variant: 'b', error: 'Failed to load url ./missing.ts' }, { variant: 'c' }],
       }),
     ).toEqual(['b', 'c']);
+  });
+
+  describe('render', () => {
+    const rows = [
+      { key: 'a', shots: [{ state: 'default' }, { state: 'hover' }] },
+      { key: 'b', shots: [{ state: 'default' }] },
+    ];
+    const mounted = ['a default', 'a hover', 'b default'];
+
+    it('is drawing while a mounted frame has not reported, though no frame errored', () => {
+      const retries = run({ kind: 'report', shot: 'a default', errored: false });
+
+      expect(sketchRenderOf({ rows, retries, mounted })).toEqual({ state: 'drawing', errors: [] });
+    });
+
+    it('is drawn once every mounted frame of a live variant reported without error', () => {
+      const retries = run(
+        { kind: 'report', shot: 'a default', errored: false },
+        { kind: 'report', shot: 'a hover', errored: false },
+        { kind: 'report', shot: 'b default', errored: false },
+        { kind: 'report', shot: 'old default', errored: false },
+      );
+
+      expect(sketchRenderOf({ rows, retries, mounted: [...mounted, 'old hover'] })).toEqual({
+        state: 'drawn',
+        errors: [],
+      });
+    });
+
+    it('fails with the message of each failing frame and of each variant that does not load', () => {
+      const retries = run(
+        {
+          kind: 'report',
+          shot: 'a hover',
+          errored: true,
+          error: 'design-explore: state "hover" of "x" failed\nboom is not defined',
+        },
+        { kind: 'report', shot: 'b default', errored: true },
+      );
+
+      expect(
+        sketchRenderOf({
+          rows,
+          retries,
+          mounted,
+          targets: [
+            { variant: 'b', error: 'Failed to load url ./b.ts' },
+            { variant: 'gone', error: 'x' },
+          ],
+        }),
+      ).toEqual({
+        state: 'failed',
+        errors: ['b: Failed to load url ./b.ts', 'a · hover: boom is not defined', 'b · default'],
+      });
+    });
+
+    it('forgets the message once the frame draws again', () => {
+      const retries = run(
+        { kind: 'report', shot: 'a default', errored: true, error: 'boom' },
+        { kind: 'report', shot: 'a default', errored: false },
+      );
+
+      expect(retries.errors).toEqual({});
+      expect(sketchRenderOf({ rows, retries, mounted: ['a default'] }).state).toBe('drawn');
+    });
+
+    it('keeps the state object when a report changes nothing', () => {
+      const retries = run({ kind: 'report', shot: 'a default', errored: true, error: 'boom' });
+
+      expect(sketchFrameRetriesWith(retries, { kind: 'report', shot: 'a default', errored: true, error: 'boom' })).toBe(
+        retries,
+      );
+    });
   });
 });

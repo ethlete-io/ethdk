@@ -230,7 +230,7 @@ export const placeableFramesOf = (frames: readonly CanvasFrame[]): CanvasFrame[]
       : [frame],
   );
 
-/** A `height` message names the frame page's `href`, and is `errored` when the page failed to draw or threw since it loaded. */
+/** A `height` message names the frame page's `href`, and is `errored` when the page failed to draw or threw since it loaded, with the first `error` text when known. */
 export type FrameMessage =
   | { type: 'loading' }
   | { type: 'painted' }
@@ -241,6 +241,7 @@ export type FrameMessage =
       viewport?: { width: number; height: number };
       href?: string;
       errored?: true;
+      error?: string;
     }
   | { type: 'escape' };
 
@@ -274,6 +275,9 @@ export const frameMessageOf = (data: unknown): FrameMessage | null => {
     ...(viewport ? { viewport } : {}),
     ...('href' in data && typeof data.href === 'string' ? { href: data.href } : {}),
     ...('errored' in data && data.errored === true ? { errored: true as const } : {}),
+    ...('errored' in data && data.errored === true && 'error' in data && typeof data.error === 'string'
+      ? { error: data.error }
+      : {}),
   };
 };
 

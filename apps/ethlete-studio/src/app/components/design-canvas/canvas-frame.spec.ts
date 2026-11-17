@@ -58,6 +58,18 @@ describe('frameMessageOf', () => {
     ).toEqual({ type: 'height', height: 80, href, errored: true });
   });
 
+  it('reads the error text of a frame page that hit an error, and drops one without the flag', () => {
+    const message = { type: 'design-explore:height', height: 80, error: 'boom is not defined' };
+
+    expect(frameMessageOf({ ...message, errored: true })).toEqual({
+      type: 'height',
+      height: 80,
+      errored: true,
+      error: 'boom is not defined',
+    });
+    expect(frameMessageOf(message)).toEqual({ type: 'height', height: 80 });
+  });
+
   it('reads an Esc from inside the frame', () => {
     expect(frameMessageOf({ type: 'design-explore:escape', variant: 'default' })).toEqual({ type: 'escape' });
   });

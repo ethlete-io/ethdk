@@ -11,7 +11,7 @@ type Result = {
   ticked: string;
   pageFill: string;
   styles: string[];
-  messages: { type: string; errored?: boolean }[];
+  messages: { type: string; errored?: boolean; error?: string }[];
   imports: number;
   frames: number;
 };
@@ -76,6 +76,7 @@ describe('design frame bootstrap', { timeout: 30_000 }, () => {
     expect(result.body).toContain('Environment failed');
     expect(result.error).toContain('Environment failed');
     expect(result.messages.at(-2)).toMatchObject({ type: 'design-explore:height', errored: true });
+    expect(result.messages.at(-2)?.error).toContain('Environment failed');
     expect(result.messages.at(-1)).toMatchObject({ type: 'design-explore:painted' });
   });
 

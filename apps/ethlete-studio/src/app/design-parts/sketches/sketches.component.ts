@@ -458,7 +458,7 @@ export class SketchesComponent {
     (this.agent() && !this.agent()?.failed) || this.port()
       ? 'drawing'
       : this.errored().length > 0 && ['waiting', 'not-ready'].includes(this.status())
-        ? 'errored'
+        ? 'failed'
         : this.status(),
   );
 
