@@ -47,11 +47,8 @@
   padding: 0.6rem 1.2rem;
 }
 
-.anchored-dialog-list label {
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
-  flex: 1;
+.anchored-dialog-group {
+  padding: 0.8rem 1.2rem;
 }
 
 .anchored-dialog-footer {

@@ -7,7 +7,12 @@
     "decidedBy": "user",
     "at": "2026-11-15T21:49:47.204Z"
   },
-  "components/anchored-dialog": "1e60e9f9e74b4c91",
+  "components/anchored-dialog": {
+    "hash": "3f2c8b995e5d8510",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-17T20:22:51.727Z"
+  },
   "components/avatar": "1252da777499aba9",
   "components/badge": "c5987a95f8f0899c",
   "components/banner": "304a4eca399be5df",

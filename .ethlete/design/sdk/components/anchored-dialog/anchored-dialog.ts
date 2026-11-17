@@ -1,4 +1,6 @@
 import { anchoredDialog, anchoredDialogStyles } from '@ethlete/components/design/anchored-dialog';
+import { checkboxGroup, checkboxGroupStyles } from '@ethlete/components/design/checkbox';
+import { control } from '@ethlete/components/design/control';
 import { definePart, drawing } from '@design-system';
 import button from '@system/components/button';
 import edge from './anchored-dialog.css?inline';
@@ -25,17 +27,19 @@ const FILTERS = [
   { label: 'Has comments', checked: true },
 ];
 
+const options = () =>
+  checkboxGroup({ id: 'filter', options: FILTERS }).replace(/<et-checkbox-option(?=[\s>])/gu, (tag) =>
+    control(`${tag}>`, 'option').slice(0, -1),
+  );
+
 const filter = (apply: string) => `<header class="anchored-dialog-header"><span>Filter</span></header>
-<ul class="anchored-dialog-list">${FILTERS.map(
-  ({ label, checked }) =>
-    `<li><label><input type="checkbox" data-et-control="option"${checked ? ' checked' : ''} />${label}</label></li>`,
-).join('')}</ul>
-<footer class="anchored-dialog-footer">${apply}</footer>`;
+<div class="anchored-dialog-group">${options()}</div>
+<footer class="anchored-dialog-footer">${control(apply, 'apply')}</footer>`;
 
 export default definePart({
   note: 'An open popover anchored to its trigger: surface pane, arrow, free content',
   consumerAction: 'the field inside is content the consumer projects',
-  madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
+  madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5', 'design check'],
   states: {
     'open-points': { kind: 'open-points', modal: false },
     filter: { kind: 'filter', placement: 'bottom-start' },
@@ -53,7 +57,7 @@ export default definePart({
   },
   widths: [480],
   controls: {
-    option: { kind: 'row', input: ['pointer', 'keyboard'] },
+    option: { kind: 'button', part: 'components/checkbox' },
     apply: { kind: 'button', part: 'components/button' },
   },
   frame: (body, { placement = 'bottom-end' }) =>
@@ -79,7 +83,7 @@ export default definePart({
         modal,
         content: pane,
       }),
-      styles: [anchoredDialogStyles, apply.styles, edge].join('\n'),
+      styles: [anchoredDialogStyles, apply.styles, checkboxGroupStyles, edge].join('\n'),
     });
   },
 });
