@@ -199,7 +199,7 @@ describe('scrollable scenarios', () => {
     expect(getDebugNode(query('et-scrollable-masks', host))?.componentInstance).toBeInstanceOf(
       ScrollableMasksComponent,
     );
-    expect(app.states.at(-1)).toEqual({ canScroll: true, isAtStart: true, isAtEnd: true });
+    expect(app.states.at(-1)).toEqual({ canScroll: true, isAtStart: true, isAtEnd: false });
     expect(track.scrollLeftWrites).toEqual([2 * SLIDE_WIDTH]);
     expect(
       directiveOf(host)

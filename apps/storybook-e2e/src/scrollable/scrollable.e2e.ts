@@ -110,6 +110,13 @@ async function settledScrollLeft(container: Locator): Promise<number> {
   return previous;
 }
 
+async function pressUntilDisabled(button: Locator, container: Locator): Promise<void> {
+  for (let press = 0; press < 30 && (await button.isEnabled()); press++) {
+    await button.dispatchEvent('click');
+    await settledScrollLeft(container);
+  }
+}
+
 test.describe('scrollable / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
 
@@ -435,6 +442,36 @@ test.describe('scrollable / scroll origin and margin', () => {
       .poll(async () => (await childOffsets(root)).some((child) => Math.abs(child.start - 40) <= 1))
       .toBe(true);
   });
+
+  for (const [storyId, args] of [
+    [DEFAULT_STORY_ID, { scrollMode: 'element' }],
+    [DEFAULT_STORY_ID, { scrollMode: 'container' }],
+    [SNAP_STORY_ID, {}],
+  ] as const) {
+    test(`pressing next reaches the trailing padding of the track (${storyId}, ${JSON.stringify(args)})`, async ({
+      page,
+    }) => {
+      const root = await openStory(page, storyId, { args });
+      const container = root.locator(CONTAINER);
+      await container.evaluate((el) => (el.style.paddingInline = '48px'));
+      const next = root.locator(NEXT_BUTTON);
+
+      await pressUntilDisabled(next, container);
+
+      const end = await container.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const last = [...el.querySelectorAll('.et-sb-scrollable-item')].at(-1)?.getBoundingClientRect();
+
+        return {
+          remaining: Math.round(el.scrollWidth - el.clientWidth - el.scrollLeft),
+          lastFullyVisible: !!last && last.left >= box.left && last.right <= box.right,
+        };
+      });
+
+      expect(end).toEqual({ remaining: 0, lastFullyVisible: true });
+      await expect(next).toBeDisabled();
+    });
+  }
 });
 
 test.describe('scrollable / touch', () => {

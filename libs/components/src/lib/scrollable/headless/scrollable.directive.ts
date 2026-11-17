@@ -11,6 +11,7 @@ import {
   numberAttribute,
   signal,
 } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   CursorDragScrollVelocity,
   RuntimeError,
@@ -32,6 +33,7 @@ import {
   typedBreakpointTransform,
   mountEasingTokens,
 } from '@ethlete/core';
+import { EMPTY, fromEvent, switchMap } from 'rxjs';
 import { ResolvedScrollableChrome, ScrollableChrome } from './scrollable-chrome';
 import { SCROLLABLE_ERROR_CODES } from './scrollable-errors';
 import { SCROLLABLE_SCROLL_CONTAINER } from './scrollable-scroll-container';
@@ -48,6 +50,8 @@ const isScrollableChildIgnored = (el: HTMLElement) => {
   const attr = el.attributes.getNamedItem(SCROLLABLE_IGNORE_CHILD_ATTRIBUTE)?.value;
   return attr === 'true' || attr === '';
 };
+
+const SCROLL_EDGE_TOLERANCE_PX = 1;
 
 const ELEMENT_INTERSECTION_THRESHOLD = /* @__PURE__ */ (() => [
   ...Array.from({ length: 21 }, (_, i) => i * 0.05),
@@ -118,8 +122,19 @@ export class ScrollableDirective {
     initialScrollPosition: this.initialActiveChildScrollPosition,
   });
 
-  public isAtStart = computed(() => this.scrollObserverRef()?.isAtStart() ?? false);
-  public isAtEnd = computed(() => this.scrollObserverRef()?.isAtEnd() ?? false);
+  private containerScrolls = toSignal(
+    toObservable(this.scrollContainerRef).pipe(
+      // eslint-disable-next-line ethlete/prefer-scroll-state
+      switchMap((ref) => (ref ? fromEvent(ref.nativeElement, 'scroll', { passive: true }) : EMPTY)),
+    ),
+  );
+
+  // The sentinels sit on the first and last child, so they report the edge while the container's own
+  // padding is still left to scroll - the offset has to agree too.
+  public isAtStart = computed(
+    () => (this.scrollObserverRef()?.isAtStart() ?? false) && this.isScrollOffsetAtEdge('start'),
+  );
+  public isAtEnd = computed(() => (this.scrollObserverRef()?.isAtEnd() ?? false) && this.isScrollOffsetAtEdge('end'));
 
   public canScroll = computed(() =>
     this.direction() === 'horizontal'
@@ -377,7 +392,11 @@ export class ScrollableDirective {
       this.direction(),
     );
 
-    if (!target) return;
+    if (!target) {
+      this.scrollToEdge(scrollDirection);
+
+      return;
+    }
 
     this.scrollToElement(target);
   }
@@ -436,6 +455,36 @@ export class ScrollableDirective {
 
   public getScrollContainerRef() {
     return this.scrollContainerRef.asReadonly();
+  }
+
+  private scrollToEdge(edge: 'start' | 'end') {
+    const scrollElement = this.scrollContainerRef()?.nativeElement;
+    if (!scrollElement) return;
+
+    const isHorizontal = this.direction() === 'horizontal';
+    const isRtl = isHorizontal && getComputedStyle(scrollElement).direction === 'rtl';
+    const extent = isHorizontal ? scrollElement.scrollWidth : scrollElement.scrollHeight;
+    const offset = edge === 'start' ? 0 : isRtl ? -extent : extent;
+
+    scrollElement.scrollTo({ [isHorizontal ? 'left' : 'top']: offset, behavior: 'smooth' });
+  }
+
+  private isScrollOffsetAtEdge(edge: 'start' | 'end') {
+    this.containerScrolls();
+
+    const scrollElement = this.scrollContainerRef()?.nativeElement;
+    if (!scrollElement) return true;
+
+    const isHorizontal = this.direction() === 'horizontal';
+    const offset = Math.abs(isHorizontal ? scrollElement.scrollLeft : scrollElement.scrollTop);
+
+    if (edge === 'start') return offset <= SCROLL_EDGE_TOLERANCE_PX;
+
+    const maxOffset = isHorizontal
+      ? scrollElement.scrollWidth - scrollElement.clientWidth
+      : scrollElement.scrollHeight - scrollElement.clientHeight;
+
+    return offset >= maxOffset - SCROLL_EDGE_TOLERANCE_PX;
   }
 }
 
