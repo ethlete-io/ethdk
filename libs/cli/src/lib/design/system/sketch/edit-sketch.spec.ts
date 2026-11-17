@@ -7,6 +7,7 @@ import { DESIGN_DIR, readConfig } from '../../design-config';
 import { readOpenPoints } from '../read-open-points';
 import { commitAll, git, initGitRepo } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
+import { variantProblemsOf } from './check-sketches';
 import { openEditSketch } from './edit-sketch';
 import { mergeSketch } from './merge';
 import { changedOutsideSketchOf, readMerged, recordMerged } from './merged-parts';
@@ -54,6 +55,35 @@ describe('openEditSketch', () => {
 
     expect(points).toContainEqual({ kind: 'direct-edit', sketch: `${HERO}@edit` });
     expect(points.some((point) => point.kind === 'unmerged-sketch')).toBe(false);
+  });
+
+  it('lets old lack the states the edit adds, and still holds new to every state of the part', async () => {
+    const { target } = acme();
+    const hero = join(resolveAcme(target).dir, HERO, 'hero.ts');
+
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8')
+        .replace('states: { default:', "states: { empty: { film: { title: '' } }, default:")
+        .replace('describe: { default:', "describe: { empty: 'No title.', default:"),
+    );
+
+    const product = resolveAcme(target);
+    const sketch = (await openEditSketch({ target, product, part: HERO })) as Sketch;
+    const statesOf = (variant: string) =>
+      variantProblemsOf({ product, sketch, productProblems: [] })
+        .find((entry) => entry.variant === variant)
+        ?.problems.filter(({ rule }) => rule === 'STATES');
+
+    expect(statesOf('old')).toEqual([]);
+    expect(statesOf('new')).toEqual([]);
+
+    writeFileSync(
+      join(sketch.dir, 'new', HERO, 'hero.ts'),
+      readFileSync(join(sketch.dir, 'old', HERO, 'hero.ts'), 'utf8'),
+    );
+
+    expect(statesOf('new')?.[0]?.message).toContain('drops the state empty');
   });
 
   it('merges a pick of old like any sketch: the part is back at HEAD and recorded', async () => {

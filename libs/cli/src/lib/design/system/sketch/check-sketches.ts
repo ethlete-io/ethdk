@@ -13,6 +13,8 @@ import { overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf, withMadeBy, withNote } from './part-definition';
+import { EDIT_OLD } from './edit-sketch';
+import { isEditSketch } from './merged-parts';
 import { leftoverSketchFoldersOf, listSketches, Sketch, sketchFolderOf, variantDirOf } from './sketch';
 
 /** `problems` are the ones a variant brings in; `before` are the ones the product already has, which do not fail the variant. */
@@ -128,7 +130,9 @@ export const variantProblemsOf = (options: {
       problems: [
         ...found.filter((problem) => !wasThere(problem)),
         ...metadataProblem,
-        ...droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] }),
+        ...(isEditSketch(options.sketch) && variant === EDIT_OLD
+          ? []
+          : droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] })),
         ...liveStateProblemsOf({ product: options.product, overlaid }),
       ],
       before: found.filter(wasThere),
