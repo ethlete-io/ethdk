@@ -7,7 +7,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
   encapsulation: ViewEncapsulation.None,
   host: {
     class:
-      'pointer-events-none absolute shadow-[0_0_0_calc(0.1rem*var(--et-design-canvas-label-scale))_var(--et-surface-border-solid)] outline-0 outline-solid group-data-active/frame:outline-dashed group-data-selected/frame:outline-[calc(0.2rem*var(--et-design-canvas-label-scale))] group-data-selected/frame:outline-(--et-theme-color-primary-solid)',
+      'pointer-events-none absolute -z-1 shadow-[0_0_0_calc(0.1rem*var(--et-design-canvas-label-scale))_var(--et-surface-border-solid)] outline-0 outline-solid group-data-active/frame:outline-dashed group-data-selected/frame:outline-[calc(0.2rem*var(--et-design-canvas-label-scale))] group-data-selected/frame:outline-(--et-theme-color-primary-solid)',
     'data-frame-border': '',
   },
 })

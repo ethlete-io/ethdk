@@ -54,28 +54,42 @@ const groupHead = async (round: RoundSample) =>
     <span class="min-w-0 truncate text-et-surface-muted">${round.note}</span>
   </div>`;
 
-/** A round on the grid: its head with the fold button and the group switch, then one column per variant; the heads keep their screen size at any zoom. */
+/** Rounded to 4 canvas px, so frames sit on whole screen pixels at 25 % steps; the harness camera rounds the same room. */
+const HEADS_ROOM = 'round(calc(6.8rem + 6.782rem * var(--st-canvas-label-scale, 1)), 4px)';
+
+const GROUP_HEAD_GAP = 'calc(6.8rem + 4.032rem * var(--st-canvas-label-scale, 1))';
+
+/** A round on the grid: its head with the fold button and the group switch, then one column per variant; the heads keep their screen size at any zoom and hang from the frame bodies. */
 export const openRound = async (round: Round) =>
-  html`<div class="flex flex-col gap-space-5">
-    ${await groupHead(round)}
-    <div class="flex items-start gap-20">
-      ${round.columns
-        .map((column) => `<div class="flex flex-col gap-12">${columnHead(column)}${column.frame}</div>`)
-        .join('')}
+  html`<div class="relative flex items-start gap-20" style="margin-top: ${HEADS_ROOM}">
+    <div class="absolute left-0 w-max min-w-full -translate-y-full" style="top: calc(-1 * ${GROUP_HEAD_GAP})">
+      ${await groupHead(round)}
     </div>
+    ${round.columns
+      .map(
+        (column) =>
+          `<div class="relative"><div class="absolute bottom-full left-0 mb-12 w-max">${columnHead(column)}</div>${column.frame}</div>`,
+      )
+      .join('')}
   </div>`;
 
 /** A folded round: its title as the unfold button and its note below, in place of its columns, 240 px of the canvas wide. */
 export const foldedRound = async (round: RoundSample) =>
-  html`<div
-    class="flex flex-col gap-space-3 text-(length:--text-sm) leading-[1.4]"
-    style="${LABEL_ZOOM}; width: calc(24rem / var(--st-canvas-label-scale, 1))"
-  >
-    ${await ng(
-      `<button et-button type="button" variant="outline" color="surface" size="sm" class="w-full whitespace-normal" aria-expanded="false" data-et-action="emit:columnToggle">${round.title}</button>`,
-      BUTTON_IMPORTS,
-    )}
-    <p class="m-0 whitespace-pre-wrap text-et-surface-muted">${round.note}</p>
+  html`<div class="relative w-[24rem] shrink-0" style="margin-top: ${HEADS_ROOM}">
+    <div class="absolute inset-x-0" style="top: calc(-1 * ${GROUP_HEAD_GAP})">
+      <div
+        class="flex flex-col gap-space-3 text-(length:--text-sm) leading-[1.4]"
+        style="${LABEL_ZOOM}; width: calc(24rem / var(--st-canvas-label-scale, 1))"
+      >
+        <div class="flex h-0 flex-col justify-end">
+          ${await ng(
+            `<button et-button type="button" variant="outline" color="surface" size="sm" class="w-full whitespace-normal" aria-expanded="false" data-et-action="emit:columnToggle">${round.title}</button>`,
+            BUTTON_IMPORTS,
+          )}
+        </div>
+        <p class="m-0 line-clamp-12 whitespace-pre-wrap text-et-surface-muted">${round.note}</p>
+      </div>
+    </div>
   </div>`;
 
 export const ROUNDS: Record<'first' | 'second', RoundSample> = {

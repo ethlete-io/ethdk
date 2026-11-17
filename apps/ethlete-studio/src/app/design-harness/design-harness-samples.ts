@@ -105,7 +105,7 @@ const LOADING_PAGE = `data:text/html,<script>parent.postMessage({ type: 'design-
 const frameShotOf = ({ width, height }: FrameSize) =>
   `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"/>`;
 
-const GRID_FRAME_SIZE = { width: 942, height: 221 };
+const GRID_FRAME_SIZE = { width: 944, height: 224 };
 
 const LOADING_FRAME_SIZE = { width: 560, height: 288 };
 
@@ -139,7 +139,7 @@ const CANVAS_ROUNDS: [CanvasRound, CanvasRound] = [
   },
 ];
 
-const ROUND_FRAME_SIZE = { width: 555, height: 131 };
+const ROUND_FRAME_SIZE = { width: 556, height: 132 };
 
 const ROUND_HEADS_ROOM = 68;
 
@@ -209,8 +209,8 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       cameraKey: 'elements/canvas-frames',
       restoredCamera: {
         x: 40 * scale,
-        // The design flows its screen-size heads above the frame body and Chrome snaps that body to a whole canvas pixel.
-        y: (heads ? Math.round(48 + ROUND_HEADS_ROOM + ROUND_HEADS_SCREEN / scale) : 48) * scale,
+        // The design rounds the room above its round bodies to 4 canvas px.
+        y: (heads ? 48 + Math.round((ROUND_HEADS_ROOM + ROUND_HEADS_SCREEN / scale) / 4) * 4 : 48) * scale,
         zoom: scale,
       },
     };

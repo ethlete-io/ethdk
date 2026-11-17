@@ -177,9 +177,9 @@ const loadingBody = `<div class="h-72 w-4xl" aria-busy="true" data-loading ${slo
 const slotted = (width: number, height: number) => (body: string) =>
   `<div style="width: ${width}px; height: ${height}px" ${slot('frame')}>${body}</div>`;
 
-const gridBody = slotted(942, 221);
+const gridBody = slotted(944, 224);
 
-const roundBody = slotted(555, 131);
+const roundBody = slotted(556, 132);
 
 const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span>`;
 
