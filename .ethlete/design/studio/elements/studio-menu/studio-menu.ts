@@ -40,23 +40,33 @@ const REPOS = ['ethlete-sdk', 'fut-frontend', 'design-playground'];
 const optionAttributes = (base: string, option?: MenuInteraction) =>
   option ? `${base} data-et-force="${option}"` : base;
 
-const studioRows = (server: Server, appearance: boolean, help: boolean, option?: MenuInteraction): MenuMockRow[] => [
+const studioRows = (
+  server: Server,
+  appearance: boolean,
+  help: boolean,
+  option?: MenuInteraction,
+  keyboard = false,
+): MenuMockRow[] => [
   {
     kind: 'radio-group',
     label: 'Projekt',
-    items: REPOS.map((repo, index) => ({
-      kind: 'radio' as const,
-      label: repo,
-      checked: index === 0,
-      active: index === 1 && !!option,
-      activeSource: index === 1 && option === 'focus-visible' ? ('keyboard' as const) : undefined,
-      attributes: optionAttributes(
-        index === 0
-          ? `${action('project')} data-et-action="closed"`
-          : `${action('project')} data-et-action="emit:projectChange"`,
-        index === 1 ? option : undefined,
-      ),
-    })),
+    items: REPOS.map((repo, index) => {
+      const forced = index === 1 ? option : index === 0 && keyboard ? 'focus-visible' : undefined;
+
+      return {
+        kind: 'radio' as const,
+        label: repo,
+        checked: index === 0,
+        active: !!forced,
+        activeSource: forced === 'focus-visible' ? ('keyboard' as const) : undefined,
+        attributes: optionAttributes(
+          index === 0
+            ? `${action('project')} data-et-action="closed"`
+            : `${action('project')} data-et-action="emit:projectChange"`,
+          forced,
+        ),
+      };
+    }),
   },
   { label: 'Projekt öffnen…', attributes: `${action('open-project')} data-et-action="emit:openProject"` },
   { kind: 'separator' },
@@ -109,7 +119,11 @@ const studioPanel = (
   help: boolean,
   interaction?: MenuInteraction,
   option?: MenuInteraction,
-) => menu.render({ rows: studioRows(server, appearance, help, option), forced: interaction });
+) =>
+  menu.render({
+    rows: studioRows(server, appearance, help, option, interaction === 'focus-visible'),
+    forced: interaction === 'focus-visible' ? undefined : interaction,
+  });
 
 export const studioMenu = async ({
   open,
@@ -171,7 +185,7 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 
 export default definePart({
   note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, the design server actions the server state allows (restart and stop while it runs, start while it is stopped), then Erscheinungsbild as a submenu with Hell, Dunkel and Wie System (studio-menu.appearance) and Hilfe & Einstellungen as a submenu with Einstellungen…, Tastenkürzel…, Hilfe and Über Studio… (studio-menu.help). An entry ending in … opens a dialog; Hilfe opens the documentation in the browser. The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot.',
-  madeBy: ['gpt-6', 'claude-opus-5-5'],
+  madeBy: ['gpt-6', 'claude-opus-5-5', 'design check'],
   states: {
     ...menuRows.states,
     'studio-menu.stopped': { open: true, server: 'stopped' },
@@ -190,7 +204,7 @@ export default definePart({
     'open-hover': 'The open menu in its hover state; check that the menu keeps its place and the rows stay readable.',
     'open-active': 'The open menu in its press state; check that no row loses its label or check mark.',
     'open-focus-visible':
-      'The menu opened by keyboard; check that the keyboard highlight sits inside the menu and the tile shows no ring.',
+      'The menu opened by keyboard; check that the keyboard highlight sits on ethlete-sdk, the first row, and the tile shows no ring.',
     'studio-menu.stopped':
       'The menu with the design server stopped; check that only Design-Server starten shows under Design-Server.',
     'studio-menu.appearance':
