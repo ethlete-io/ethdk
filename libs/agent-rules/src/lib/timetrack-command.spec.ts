@@ -467,7 +467,7 @@ describe('timetrack rules --repoint', () => {
     await expect(
       run(['rules', '--repoint', '--from', 'FIFAGG-12069', '--to', 'FIFAGG-12769', '--repo', 'b', '--force']),
     ).resolves.toBe(0);
-    expect(sent.at(-1)).toEqual(
+    expect(sent[sent.length - 1]).toEqual(
       expect.objectContaining({ op: 'rules.repoint', from: 'FIFAGG-12069', to: 'FIFAGG-12769', repoPath: '/repo/b' }),
     );
     expect(lines.join('\n')).toContain('ap-9');
