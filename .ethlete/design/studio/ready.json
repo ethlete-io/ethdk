@@ -298,9 +298,9 @@
     },
     "actions": ["emit:collapse"],
     "at": "2026-11-17T17:53:13.751Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3040544
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 3294810
   },
   "components/shell-resize-handle": {
     "hash": "b7b7754eedba1c72",
