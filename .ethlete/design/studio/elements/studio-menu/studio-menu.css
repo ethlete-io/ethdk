@@ -30,6 +30,7 @@
   .st-studio-submenu {
     top: calc(anchor(--st-studio-appearance top) - 6px);
     left: calc(100% + var(--space-1));
+    --et-menu-min-width: 0px;
   }
 
   .st-studio-help {
