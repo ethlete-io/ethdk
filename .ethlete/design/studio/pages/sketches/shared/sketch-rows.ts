@@ -193,7 +193,8 @@ export const wrapStage = (part: SketchPart, row: Row, pending = false) =>
 export const wrapColumns = (part: SketchPart) =>
   Math.max(1, Math.min(4, part.states.length, Math.floor(1440 / part.width)));
 
-export const takeButton = () => button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm' });
+export const takeButton = (disabled = false) =>
+  button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm', disabled });
 
 export const takeAction = (take: string) => html`<span class="flex">${withAction(take, 'emit:merge')}</span>`;
 

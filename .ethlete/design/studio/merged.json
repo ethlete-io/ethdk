@@ -147,10 +147,10 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "pages/sketches": {
-    "hash": "dc18e99e54d235f3",
+    "hash": "6cef940a01328323",
     "variant": "a",
-    "decidedBy": "user",
-    "at": "2026-11-17T06:43:13.746Z"
+    "decidedBy": "B547 grill decision (ADR 0010 Empfehlung gebaut)",
+    "at": "2026-11-17T07:44:49.979Z"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",

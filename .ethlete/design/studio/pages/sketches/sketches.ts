@@ -138,6 +138,7 @@ type View = {
   error?: string;
   withdrawn?: Withdrawn;
   take: string;
+  takeLocked: string;
   points: string;
   confirm?: string;
   comments?: Record<string, string>;
@@ -532,9 +533,12 @@ const pinFor = (row: Row) =>
 
 const headOf = (row: Row, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
+  const open = view.status === 'waiting' || view.status === 'picked';
   const offered =
-    (view.status === 'waiting' || view.status === 'picked') && view.errored.length === 0 && !isSame(row)
-      ? view.take
+    (open || view.status === 'drawing') && view.errored.length === 0 && !isSame(row)
+      ? open
+        ? view.take
+        : view.takeLocked
       : '';
   const take =
     offered && view.confirm && row.key === view.selected
@@ -934,6 +938,7 @@ export default definePart<Props>({
     const reload = await button.render({ label: 'Erneut laden', variant: 'outline', color: 'surface', size: 'sm' });
     const retry = listError ? withAction(reload.body, 'emit:retry') : '';
     const take = await takeButton();
+    const takeLocked = await takeButton(true);
     const run = agent ? AGENT_RUNS[agent] : undefined;
     const base = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const full = added ? withAdded(base) : wideState ? withWideState(base) : base;
@@ -974,6 +979,7 @@ export default definePart<Props>({
       error,
       withdrawn,
       take: takeAction(take.body),
+      takeLocked: html`<span class="flex">${takeLocked.body}</span>`,
       confirm: confirm === 'merge' ? dialog?.body : undefined,
       points: pointsButton
         ? html`<span class="flex" data-sk-points>${pointsButton.body}</span>${popover?.body ?? ''}`
