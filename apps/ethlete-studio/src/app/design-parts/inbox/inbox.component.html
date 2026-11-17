@@ -94,7 +94,7 @@
         />
         @for (comment of onActivePart(); track comment.id) {
           <ethlete-comment-row
-            [comment]="comment"
+            [thread]="comment"
             [selected]="comment.id === selectedId()"
             (pick)="pick.emit(comment.id)"
           />
@@ -108,7 +108,7 @@
         <ng-container *ngTemplateOutlet="groupHead; context: { $implicit: 'Andere', count: onOtherParts().length }" />
         @for (comment of onOtherParts(); track comment.id) {
           <ethlete-comment-row
-            [comment]="comment"
+            [thread]="comment"
             [selected]="comment.id === selectedId()"
             (pick)="pick.emit(comment.id)"
           />

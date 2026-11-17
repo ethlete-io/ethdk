@@ -81,6 +81,7 @@ const agent: Thread = {
 };
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/comment-flow/comment-row.component.ts',
   note: 'One comment thread in the inbox list: avatar or agent logo, author, time, an unread dot, the latest message clamped to two lines, the part and state it sits on, and a reply count or a check when resolved. Selection lays an accent tint under the row and turns the part line accent. A click, or Enter or Space on the focused row, picks the thread.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [320],

@@ -328,6 +328,7 @@ export class SketchesComponent {
     { initialValue: 0 },
   );
   private userCamera$ = new Subject<Camera | null>();
+  protected commentTargeting = computed(() => this.commentMode() && this.comments() !== null);
   protected withdrawnCount = computed(() => this.rows().filter(isWithdrawn).length);
   private isEdit = computed(() => this.part().endsWith('@edit'));
   private listedRows = computed(() => {
@@ -513,6 +514,13 @@ export class SketchesComponent {
       const kind = this.confirm();
 
       untracked(() => this.showConfirm(kind));
+    });
+
+    this.destroyRef.onDestroy(() => {
+      const open = this.confirmRef;
+
+      this.confirmRef = null;
+      open?.close();
     });
 
     afterNextRender(() => {

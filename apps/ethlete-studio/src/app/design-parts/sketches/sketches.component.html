@@ -459,9 +459,9 @@
             }
           }
         </div>
-        @if (commentMode() && comments() !== null && row.key !== CURRENT) {
+        @if (commentTargeting() && row.key !== CURRENT) {
           <div
-            [attr.aria-label]="SYSTEM_LABELS.commentOn(row.label ?? row.key)"
+            [attr.aria-label]="SYSTEM_LABELS.commentOn(row.key)"
             (click)="startComment($event, row)"
             (keydown.enter)="startComment(null, row)"
             class="absolute inset-0 z-1 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"

@@ -13,7 +13,7 @@ import { CommentRowComponent } from './comment-row.component';
       </div>
       @for (comment of comments(); track comment.id) {
         <ethlete-comment-row
-          [comment]="comment"
+          [thread]="comment"
           [selected]="comment.id === selectedId()"
           (pick)="pick.emit(comment.id)"
         />

@@ -13,7 +13,7 @@ import { InboxComment } from '../inbox/inbox-sample';
   host: { class: 'block' },
 })
 export class CommentRowComponent {
-  public comment = input.required<InboxComment>();
+  public thread = input.required<InboxComment>();
   public selected = input(false);
 
   public pick = output();
