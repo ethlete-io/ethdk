@@ -112,7 +112,13 @@ describe('tempoRequest$', () => {
       { errors: [{ message: 'Worklog must have a start time' }, { message: 'Account is closed' }] },
       'Tempo responded 400 for the new worklog: Worklog must have a start time; Account is closed',
     ],
-    [403, { message: 'Missing scope' }, 'Tempo rejected the token (403) for the new worklog: Missing scope'],
+    [403, { message: 'Missing scope' }, 'Tempo refused the new worklog (403): Missing scope'],
+    [
+      403,
+      { errors: [{ message: 'Der Account ist geschlossen oder archiviert' }] },
+      'Tempo refused the new worklog (403): Der Account ist geschlossen oder archiviert',
+    ],
+    [401, { message: 'Bad token' }, 'Tempo rejected the token (401) for the new worklog: Bad token'],
     [400, 'not json', 'Tempo responded 400 for the new worklog.'],
   ])('appends the reason tempo gives for a %i', (status, body, message) => {
     const { transport } = stubTransport([{ status, body }]);

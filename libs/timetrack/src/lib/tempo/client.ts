@@ -94,6 +94,8 @@ const statusMessageFor = (options: { status: number; describe: string }) => {
 const messageFor = (options: { status: number; describe: string; body: unknown }) => {
   const reason = reasonIn(options.body);
 
+  if (reason && options.status === 403) return `Tempo refused ${options.describe} (403): ${reason}`;
+
   return reason ? `${statusMessageFor(options)}: ${reason}` : `${statusMessageFor(options)}.`;
 };
 
