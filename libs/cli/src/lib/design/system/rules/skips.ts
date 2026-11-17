@@ -37,3 +37,25 @@ export const badSkipsOf = (product: ResolvedProduct): Problem[] =>
       }),
     ),
   );
+
+const skipMarksOf = (source: string) =>
+  textsOf(source).flatMap((text) =>
+    [...text.matchAll(SKIP_ATTRIBUTE)].map((match) =>
+      (match[1] ?? match[2] ?? match[3] ?? '').split(/\s+/u).filter(Boolean).join(' '),
+    ),
+  );
+
+/** The `data-et-skip` values `after` holds beyond `before` (one per marker, so a second copy of a kept one counts). */
+export const addedSkipMarksOf = (before: string | null, after: string): string[] => {
+  const left = before === null ? [] : skipMarksOf(before);
+
+  return skipMarksOf(after).filter((mark) => {
+    const kept = left.indexOf(mark);
+
+    if (kept === -1) return true;
+
+    left.splice(kept, 1);
+
+    return false;
+  });
+};

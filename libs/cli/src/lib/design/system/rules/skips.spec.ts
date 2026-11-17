@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
-import { badSkipsOf } from './skips';
+import { addedSkipMarksOf, badSkipsOf } from './skips';
 
 const problemsOf = (markup: string, { product = 'acme', part = 'elements/hero' } = {}) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -78,5 +78,24 @@ describe('badSkipsOf', () => {
       expect.stringContaining('names no reason class'),
       expect.stringContaining('names "CUT"'),
     ]);
+  });
+});
+
+describe('addedSkipMarksOf', () => {
+  const source = (markup: string) => `export default definePart({ render: () => ({ body: \`${markup}\` }) });`;
+
+  it('lists each marker the new source adds, a second copy of a kept one too', () => {
+    expect(
+      addedSkipMarksOf(
+        source('<p data-et-skip="WRAP"></p>'),
+        source('<p data-et-skip="WRAP"></p><i data-et-skip="WRAP"></i><b data-et-skip="CLIPPED  WRAP"></b>'),
+      ),
+    ).toEqual(['WRAP', 'CLIPPED WRAP']);
+  });
+
+  it('lists nothing for kept or removed markers, and every marker of a new part', () => {
+    expect(addedSkipMarksOf(source('<p data-et-skip="WRAP"></p>'), source('<p data-et-skip="WRAP"></p>'))).toEqual([]);
+    expect(addedSkipMarksOf(source('<p data-et-skip="WRAP"></p>'), source('<p></p>'))).toEqual([]);
+    expect(addedSkipMarksOf(null, source('<p data-et-skip="WRAP"></p>'))).toEqual(['WRAP']);
   });
 });

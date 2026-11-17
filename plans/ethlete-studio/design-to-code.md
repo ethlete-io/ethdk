@@ -3697,3 +3697,9 @@ since 3ef78653b (finding 867, canvas runs under the panel); the pinned list row 
 decision 96423df97 / d64a93790 (B523), the matrix gutter keeps its pin, so nothing was built. Flows: 3bd28bc77 draws
 the graph in components/canvas-viewport, the baseline entry is gone; `design check` HELD it (every state draws as before,
 recorded in 4a1efd91b, no pick needed); compare pages/flows all ok (subagent run, same diff). Not verified: Tauri.
+
+B127 CLI half as built (2026-11-17): `sketch ready` prints `NOTE <sketch> <variant>: new data-et-skip="<classes>" in
+<part> - it silences a check, the pick shows it` for each skip marker a variant's part holds beyond the merged part
+(`addedSkipMarksOf` in `system/rules/skips.ts`, counted per marker). Verified: skips.spec + a sketch-command.spec case,
+bite (helper broken -> 3 red). Not built: the Studio round head showing the same list (a pages/sketches design change,
+ADR 0010 sketch first).

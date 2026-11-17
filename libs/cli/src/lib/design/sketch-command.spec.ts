@@ -346,6 +346,26 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   });
 
+  it('prints a NOTE on ready for each skip marker a variant adds', async () => {
+    const target = acme();
+    const lines = output();
+    const variantFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts');
+
+    await newButton(target);
+    writeFileSync(
+      variantFile,
+      readFileSync(variantFile, 'utf8').replace(
+        '<button class="acme-button">',
+        '<button class="acme-button" data-et-skip="WRAP">',
+      ),
+    );
+    await write(target, 'ready', 'components/button', '--product', 'acme');
+
+    expect(lines).toContain(
+      'NOTE components/button a: new data-et-skip="WRAP" in components/button - it silences a check, the pick shows it',
+    );
+  });
+
   const recordedRefusal = (target: string) => {
     const productDir = join(target, DESIGN_DIR, 'acme');
     const sketch = findSketch({ productDir, product: 'acme', sketch: { layer: 'components', name: 'button' } });
