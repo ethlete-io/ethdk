@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, settle, tabSequence, tap } from '../support';
+import { boxOf, openStory, pressKey, settle, tabSequence, tap, viewportOf } from '../support';
 
 const STORY_ID = 'components-data-display-bar-chart--default';
 const NEGATIVE_STORY_ID = 'components-data-display-bar-chart--negative';
@@ -30,6 +30,7 @@ async function expectBarFocusVisible(barLocator: Locator): Promise<void> {
 }
 
 const TOOLTIP_GAP_MAX = 10;
+const TOOLTIP_VIEWPORT_PADDING = 8;
 
 type BarEnd = 'top' | 'bottom' | 'right';
 
@@ -45,7 +46,21 @@ const CENTER_ALONG_BAR_END: Record<BarEnd, (box: Box) => number> = {
   right: (box) => box.y + box.height / 2,
 };
 
+const EXTENT_ALONG_BAR_END: Record<BarEnd, (box: { width: number; height: number }) => number> = {
+  top: (box) => box.width,
+  bottom: (box) => box.width,
+  right: (box) => box.height,
+};
+
 type Box = Awaited<ReturnType<typeof boxOf>>;
+
+/** Where the panel's center lands when it centers on the bar but the viewport padding shifts it in. */
+function panelCenterFor(page: Page, panel: Box, markCenter: number, end: BarEnd): number {
+  const half = EXTENT_ALONG_BAR_END[end](panel) / 2;
+  const viewport = EXTENT_ALONG_BAR_END[end](viewportOf(page));
+
+  return Math.min(Math.max(markCenter, TOOLTIP_VIEWPORT_PADDING + half), viewport - TOOLTIP_VIEWPORT_PADDING - half);
+}
 
 async function tooltipOffsetFromBarEnd(page: Page, barLocator: Locator, end: BarEnd) {
   const mark = await boxOf(barLocator.locator('.et-bar-chart-bar-mark'));
@@ -56,7 +71,7 @@ async function tooltipOffsetFromBarEnd(page: Page, barLocator: Locator, end: Bar
 
   return {
     arrowOffCenter: Math.round(Math.abs(center(arrow) - markCenter)),
-    panelOffCenter: Math.round(Math.abs(center(panel) - markCenter)),
+    panelOffCenter: Math.round(Math.abs(center(panel) - panelCenterFor(page, panel, markCenter, end))),
     gap: Math.round(GAP_TO_BAR_END[end](mark, panel)),
   };
 }

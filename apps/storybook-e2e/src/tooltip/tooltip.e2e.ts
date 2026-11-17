@@ -38,7 +38,10 @@ test.describe('tooltip / placement', () => {
 
     expect(tooltipBox.width / 2).toBeGreaterThan(triggerBox.x + triggerBox.width / 2);
     expect(tooltipBox.x).toBeGreaterThanOrEqual(0);
-    expect(arrowBox.x + arrowBox.width / 2).toBeCloseTo(triggerBox.x + triggerBox.width / 2, 0);
+    const devicePixel = 1 / (await page.evaluate(() => devicePixelRatio));
+    const arrowOffCenter = Math.abs(arrowBox.x + arrowBox.width / 2 - (triggerBox.x + triggerBox.width / 2));
+
+    expect(arrowOffCenter).toBeLessThanOrEqual(devicePixel / 2);
   });
 
   test('a top tooltip with no room above its trigger flips below it', async ({ page }) => {

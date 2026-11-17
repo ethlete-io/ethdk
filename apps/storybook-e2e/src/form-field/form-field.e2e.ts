@@ -450,43 +450,49 @@ test.describe('form-field / frame states', () => {
     expect(await contrastAgainstPage(marker, 'color')).toBeGreaterThanOrEqual(4.5);
   });
 
-  test('focus draws a 2px frame in the surface text colour that hover does not change', async ({ page }) => {
+  test('focus keeps the 1px frame and turns it the theme colour, and hover does not change it', async ({ page }) => {
     const { field, frame, control } = fieldParts(await openStory(page, INPUT_STORY_ID));
-    const ink = await colorIn(field, 'var(--et-surface-color-solid)');
+    const theme = await colorIn(field, 'var(--et-theme-color-primary-solid)');
 
     await pressKey(page, 'Tab');
     await expect(control).toBeFocused();
-    await expect(frame).toHaveCSS('border-top-color', ink);
-    await expect(frame).toHaveCSS('box-shadow', `${ink} 0px 0px 0px 1px inset`);
+    await expect(frame).toHaveCSS('border-top-color', theme);
+    await expect(frame).toHaveCSS('border-top-width', '1px');
+    await expect(frame).toHaveCSS('box-shadow', 'none');
 
     await frame.hover();
-    await expect(frame).toHaveCSS('border-top-color', ink);
+    await expect(frame).toHaveCSS('border-top-color', theme);
   });
 
-  test('an invalid field draws its focus frame in the error ink', async ({ page }) => {
+  test('an invalid field turns its 1px focus frame the error ink', async ({ page }) => {
     const { field, frame, control } = await invalidField(page);
     const ink = await colorIn(field, 'var(--et-theme-color-ink-solid)');
 
     await control.focus();
     await expect(frame).toHaveCSS('border-top-color', ink);
-    await expect(frame).toHaveCSS('box-shadow', `${ink} 0px 0px 0px 1px inset`);
+    await expect(frame).toHaveCSS('border-top-width', '1px');
+    await expect(frame).toHaveCSS('box-shadow', 'none');
   });
 
   for (const control of ['input', 'textarea'] as const) {
-    test(`a readonly ${control} draws a dashed frame, and a 2px dashed focus frame`, async ({ page }) => {
+    test(`a readonly ${control} draws a quiet solid frame, and a 2px focus frame in the surface text colour`, async ({
+      page,
+    }) => {
       const root = await openStory(page, READONLY_STORY_ID);
       const field = root.locator(`et-form-field:has(.et-${control}-native)`).first();
       const frame = field.locator('.et-form-field-control-frame');
       const native = field.locator(`.et-${control}-native`);
 
       await expect(field).toHaveAttribute('data-readonly');
-      await expect(frame).toHaveCSS('border-top-style', 'dashed');
-      await expect(frame).toHaveCSS('outline-style', 'none');
+      await expect(frame).toHaveCSS('border-top-style', 'solid');
+      await expect(frame).toHaveCSS('border-top-color', await colorIn(field, 'var(--et-surface-border-solid)'));
+      await expect(frame).toHaveCSS('box-shadow', 'none');
 
       await native.focus();
-      await expect(frame).toHaveCSS('outline-style', 'dashed');
-      await expect(frame).toHaveCSS('outline-width', '2px');
-      await expect(frame).toHaveCSS('outline-color', await colorIn(field, 'var(--et-surface-color-solid)'));
+      const ink = await colorIn(field, 'var(--et-surface-color-solid)');
+      await expect(frame).toHaveCSS('border-top-color', ink);
+      await expect(frame).toHaveCSS('border-top-width', '1px');
+      await expect(frame).toHaveCSS('box-shadow', `${ink} 0px 0px 0px 1px inset`);
     });
   }
 });
