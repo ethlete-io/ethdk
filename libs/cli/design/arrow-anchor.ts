@@ -1,11 +1,17 @@
 const ARROW_PADDING = 16;
 
 const anchorOf = (root: HTMLElement, pane: HTMLElement) => {
+  const selector = pane.getAttribute('data-et-arrow-anchor') ?? '';
+  let anchor: Element | null = null;
+
   try {
-    return root.querySelector(pane.getAttribute('data-et-arrow-anchor') ?? '');
+    for (let holder = pane.parentElement; holder && !anchor; holder = holder === root ? null : holder.parentElement)
+      anchor = [...holder.querySelectorAll(selector)].find((match) => !pane.contains(match)) ?? null;
   } catch {
     return null;
   }
+
+  return anchor;
 };
 
 const toDevicePixel = (value: number) => {
@@ -94,7 +100,8 @@ const aim = (root: HTMLElement, pane: HTMLElement) => {
 
 /**
  * Aims the arrow of every drawn pane with `data-et-arrow-anchor` (from `anchoredDialog({ anchor })` or
- * `tooltip({ anchor })`) at the centre of the element that selector names, again whenever the pane or the anchor
+ * `tooltip({ anchor })`) at the centre of the nearest element that selector names (the first ancestor of the pane, up to `root`,
+ * that holds a match outside the pane), again whenever the pane or the anchor
  * resizes or the viewport resizes. Like the anchored strategy, a centred pane is placed, through the margin of its nearest absolutely
  * positioned ancestor so the frame fits and checks its real box, at the rounded
  * `centre - size / 2` and any other pane is moved onto a device pixel (its end edge when end-aligned), then the arrow is kept `16px` off the pane corners and rounded to a device pixel, so its tip lands on the rounded

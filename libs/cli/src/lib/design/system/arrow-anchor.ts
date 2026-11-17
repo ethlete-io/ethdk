@@ -4,7 +4,8 @@ export const ARROW_ANCHOR_RULE = 'ARROW-ANCHOR';
 /**
  * The statements of the arrow-anchor check inside the frame script of `render-check`. They use `root` and `report` of
  * that script. A pane with `data-et-arrow-anchor` (from `anchoredDialog({ anchor })`) has its arrow tip measured
- * against the anchor's centre; a drawn anchored-dialog arrow moved by hand without an anchor is reported too, since
+ * against the centre of the nearest match: the first ancestor of the pane, up to `root`, that holds a match outside
+ * the pane; a drawn anchored-dialog arrow moved by hand without an anchor is reported too, since
  * its offset fits one layout only.
  */
 export const ARROW_ANCHOR_STATEMENTS = `
@@ -19,7 +20,8 @@ export const ARROW_ANCHOR_STATEMENTS = `
     }
     let anchor = null;
     try {
-      anchor = root.querySelector(selector);
+      for (let holder = pane.parentElement; holder && !anchor; holder = holder === root ? null : holder.parentElement)
+        anchor = [...holder.querySelectorAll(selector)].find((match) => !pane.contains(match)) ?? null;
     } catch {}
     if (!anchor || anchor.getClientRects().length === 0) {
       report('${ARROW_ANCHOR_RULE}', arrow, 'the arrow anchor "' + selector + '" matches no drawn element');

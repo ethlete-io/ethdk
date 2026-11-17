@@ -1976,3 +1976,14 @@ expects the parse error and its `file:line:col`, red when the detail is cut back
 only "Transform failed with 1 error:". Suspect, not probed: the post-B155 "Transform failed" (finding 270) was such a
 real transform error whose cause line the first-line cut dropped. Still on the shared dist: `@ethlete/components` and
 `@ethlete/core` come from `dist/libs/*` via `render.packages`, so the real-part spec stays in the dist config.
+
+As built (B579, ADR 0338): ARROW-ANCHOR (cause, by probe) - the check and the frame aimer both resolved
+`data-et-arrow-anchor` with `root.querySelector`, so the zoom-chip tooltip in pages/sketches measured against the first
+of 12 fit buttons. Both now take the nearest match: the first ancestor of the pane, up to the root, holding a match
+outside the pane (same code in `design/arrow-anchor.ts` and `system/arrow-anchor.ts`). CANVAS-UNDER-PANEL (suspect,
+confirmed by probe) - the aimer's device-pixel `translate: 0.25078px -0.156958px` on the tooltip's absolute wrapper,
+wider than the chip's `span.relative`, read as a panned world; `holdsPannedWorld` now ignores a nonzero translate under
+1 px. Verified: `design --working-tree check --part pages/sketches` went from 2 ARROW-ANCHOR + 1 CANVAS-UNDER-PANEL to
+0 + 0 (only the pre-existing UNRECORDED left); render-check.spec cases for 12 fit buttons and a nudged world, each bit
+when its fix was reverted (check resolver, aimer, pan fix separately); 167 related cli spec files green. Not verified:
+the published cli build (et:design without `--working-tree` still runs b5c2c3b03 until rebuilt), a live Studio shot.

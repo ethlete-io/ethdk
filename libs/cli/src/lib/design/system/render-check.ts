@@ -333,11 +333,17 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   };
   const clipMarginOf = (style, axis) => (style[axis] === 'clip' ? parseFloat((style.overflowClipMargin ?? '').split(' ').pop()) || 0 : 0);
   const drawsByClipping = (element) => element.closest('.et-spinner') !== null;
+  const isNudged = (style) => {
+    const shift = style.translate && style.translate !== 'none' ? style.translate.split(' ') : style.transform.slice('matrix(1, 0, 0, 1,'.length, -1).split(',');
+    const offsets = shift.map((value) => parseFloat(value));
+    return offsets.every((offset) => Math.abs(offset) < 1) && offsets.some((offset) => offset !== 0);
+  };
   const holdsPannedWorld = (element) =>
     [...element.children].some((child) => {
       const rect = child.getBoundingClientRect();
       const fills = rect.width >= element.clientWidth || rect.height >= element.clientHeight;
-      return rect.width > 0 && rect.height > 0 && fills && isPanned(getComputedStyle(child));
+      const style = getComputedStyle(child);
+      return rect.width > 0 && rect.height > 0 && fills && isPanned(style) && !isNudged(style);
     });
   const pansItself = (element, style) => /^grab/.test(style.cursor) || holdsPannedWorld(element);
   const pans = (element, style) => pansItself(element, style) || [...element.children].some((child) => pansItself(child, getComputedStyle(child)));
