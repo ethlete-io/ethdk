@@ -172,7 +172,7 @@ Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 | Input           | Values                                                            | Default         |
 | --------------- | ----------------------------------------------------------------- | --------------- |
 | `appearance`    | `'box' \| 'underline'`                                            | `'box'`         |
-| `fill`          | `'transparent' \| 'filled'`                                       | `'transparent'` |
+| `fill`          | `'transparent' \| 'filled' \| 'sunken'`                           | `'transparent'` |
 | `labelMode`     | `'static' \| 'inline' \| 'floating-inside' \| 'floating-outside'` | `'static'`      |
 | `size`          | `'sm' \| 'md' \| 'lg'`                                            | `'md'`          |
 | `labelPosition` | `'top' \| 'start'`                                                | `'top'`         |
@@ -211,12 +211,24 @@ content-height and the rule sits right under the value (`sm` renders at 27px vs 
 `box`). That density also means a smaller tap target - prefer `box`/`filled`, or a larger
 `size`, where touch matters more than compactness.
 
-A box field's minimum height is 32px, 50px and 58px for `sm`, `md` and `lg`. Put the `hidden` attribute on an
+A box field's minimum height is 32px, 50px and 58px for `sm`, `md` and `lg`. To change one size app-wide, set
+`--et-form-field-control-min-height-sm`, `-md` or `-lg` in a scope above the fields; an underline field
+keeps its content height:
+
+```css
+:root {
+  --et-form-field-control-min-height-lg: 62px;
+}
+```
+
+Put the `hidden` attribute on an
 `et-label` to drop it from the layout: the static label then reserves no height above the field.
 
-Only `fill: 'filled'` paints a surface behind the control, so only a filled field
-raises the surface elevation for its contents. A `transparent` field stays
-flush with its parent surface. An overlay anchored inside a field (the select panel, the
+`fill: 'filled'` paints the surface one elevation above the field's parent behind the control and
+raises the surface elevation for its contents. `fill: 'sunken'` paints the surface one elevation
+below, so the field reads as recessed into the page. It needs a surface theme of the same `type` at
+that elevation (e.g. `elevation: -1` under a page at `0`); without one the field paints the parent
+surface. A `transparent` field stays flush with its parent surface. An overlay anchored inside a field (the select panel, the
 date picker, the rich text editor's autocomplete) stacks on the surface around the field,
 so it paints the same elevation whatever the field's `fill`.
 
@@ -989,9 +1001,9 @@ A form can be migrated one screen at a time; the cdk and the components controls
 
 The field shell declares public design tokens; override them in your CSS scope:
 
-| Component       | Tokens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`, `-control-border-color` / `-border-color-hover` / `-border-color-focus` / `-focus-ring-width`, `-value-color` / `-value-color-active`, `-label-font-weight` / `-label-letter-spacing`, `-letter-spacing`, `-supporting-inset` |
+| Component       | Tokens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-control-min-height-sm` / `-md` / `-lg`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`, `-control-border-color` / `-border-color-hover` / `-border-color-focus` / `-focus-ring-width`, `-value-color` / `-value-color-active`, `-label-font-weight` / `-label-letter-spacing`, `-letter-spacing`, `-supporting-inset` |
 
 The border colours and `-value-color` default to the surface theme. `-value-color-active` applies
 while the frame is hovered, focused or open, and falls back to `-value-color`. `-control-border-color-focus`

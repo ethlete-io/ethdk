@@ -7,7 +7,7 @@
       --et-form-field-control-padding-inline: 10px;
       --et-form-field-control-affix-gap: 6px;
       --et-form-field-control-font-size: 12px;
-      --et-form-field-control-min-height: 32px;
+      --et-form-field-control-min-height: var(--et-form-field-control-min-height-sm, 32px);
       --et-form-field-label-font-size: 12px;
       --_et-form-field-float-inside-label-inset: 1px;
     }
@@ -21,7 +21,7 @@
       --et-form-field-control-padding-inline: 12px;
       --et-form-field-control-affix-gap: 8px;
       --et-form-field-control-font-size: 14px;
-      --et-form-field-control-min-height: 50px;
+      --et-form-field-control-min-height: var(--et-form-field-control-min-height-md, 50px);
       --et-form-field-label-font-size: 13px;
     }
 
@@ -32,11 +32,12 @@
       --et-form-field-control-padding-inline: 14px;
       --et-form-field-control-affix-gap: 10px;
       --et-form-field-control-font-size: 16px;
-      --et-form-field-control-min-height: 58px;
+      --et-form-field-control-min-height: var(--et-form-field-control-min-height-lg, 58px);
       --et-form-field-label-font-size: 14px;
     }
 
-    &[data-fill='filled'] {
+    &[data-fill='filled'],
+    &[data-fill='sunken'] {
       --_et-form-field-control-background: var(
         --et-surface-background-solid,
         var(--et-surface-base-solid, transparent)

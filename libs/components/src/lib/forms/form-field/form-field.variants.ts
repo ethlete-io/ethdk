@@ -8,6 +8,7 @@ export type FormFieldAppearance = (typeof FORM_FIELD_APPEARANCES)[keyof typeof F
 export const FORM_FIELD_FILLS = {
   TRANSPARENT: 'transparent',
   FILLED: 'filled',
+  SUNKEN: 'sunken',
 } as const;
 
 export type FormFieldFill = (typeof FORM_FIELD_FILLS)[keyof typeof FORM_FIELD_FILLS];

@@ -152,6 +152,14 @@ export class FormFieldComponent {
     () => this.formFieldDir.usesTextFieldShell() && this.fill() === FORM_FIELD_FILLS.FILLED,
   );
 
+  private fillElevationOffset = computed(() => {
+    if (this.paintsElevatedFill()) {
+      return 1;
+    }
+
+    return this.formFieldDir.usesTextFieldShell() && this.fill() === FORM_FIELD_FILLS.SUNKEN ? -1 : 0;
+  });
+
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
     const parentSurface = this.parentSurface();
@@ -160,11 +168,7 @@ export class FormFieldComponent {
       return null;
     }
 
-    return resolveSurfaceByElevation(
-      themes,
-      parentSurface.type,
-      parentSurface.elevation + (this.paintsElevatedFill() ? 1 : 0),
-    );
+    return resolveSurfaceByElevation(themes, parentSurface.type, parentSurface.elevation + this.fillElevationOffset());
   });
 
   public canAnimate = createCanAnimateSignal();

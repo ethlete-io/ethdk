@@ -21,7 +21,7 @@ export default {
   ],
   argTypes: {
     appearance: { control: 'select', options: ['box', 'underline'] },
-    fill: { control: 'select', options: ['transparent', 'filled'] },
+    fill: { control: 'select', options: ['transparent', 'filled', 'sunken'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     labelMode: { control: 'select', options: ['static', 'inline'] },
     label: { control: 'text' },
