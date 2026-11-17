@@ -34,9 +34,10 @@ const API: ApiDefinition = {
   services: ['app', 'database'],
   execService: 'app',
   port: 8040,
-  exec: { warm: ['bin/console cache:warmup'] },
+  exec: { warm: ['bin/console cache:warmup'], reindex: ['bin/console search:reindex'] },
   profiles: {
     e2e: { seeds: ['fixtures', 'users', 'warm'], snapshot: SNAPSHOT },
+    indexed: { seeds: ['users'], snapshot: SNAPSHOT, postRestore: ['reindex', 'warm'] },
     plain: { seeds: ['users'] },
     healthy: { seeds: ['users'], health: { url: 'http://localhost:8040/health', expect: 204 } },
     typo: { seeds: ['user'] },
@@ -182,6 +183,60 @@ describe('et api ready', () => {
     expect(calls.seeds).toEqual([]);
     expect(errors.join('\n')).toContain('Restoring the e2e snapshot');
     expect(readApiState(directory)).toMatchObject({ profile: 'e2e', fingerprint, dirty: false });
+  });
+
+  it('runs the post-restore steps in order after a restore, not after seeding', async () => {
+    const { ready, calls, directory } = setup();
+
+    expect(await ready('indexed')).toBe(0);
+    expect(calls.seeds).toEqual([{ kind: 'steps', steps: [{ label: 'users', lines: ['php users.php'], env: {} }] }]);
+
+    const fingerprint = readApiState(directory)?.fingerprint ?? null;
+
+    writeApiState({ directory, state: { profile: 'indexed', fingerprint, dirty: true } });
+    calls.seeds.length = 0;
+
+    expect(await ready('indexed')).toBe(0);
+    expect(calls.seeds).toEqual([
+      { kind: 'exec', name: 'reindex' },
+      { kind: 'exec', name: 'warm' },
+    ]);
+    expect(readApiState(directory)).toMatchObject({ profile: 'indexed', fingerprint, dirty: false });
+  });
+
+  it('fails ready and leaves the state dirty when a post-restore step fails', async () => {
+    const { ready, calls, directory } = setup();
+
+    await ready('indexed');
+
+    const fingerprint = readApiState(directory)?.fingerprint ?? null;
+
+    writeApiState({ directory, state: { profile: 'indexed', fingerprint, dirty: true } });
+    calls.seeds.length = 0;
+    logs.length = 0;
+
+    const runSeeds = async (unit: ReadySeedUnit) => {
+      calls.seeds.push(unit);
+
+      return unit.kind === 'exec' && unit.name === 'reindex' ? 5 : 0;
+    };
+
+    expect(await ready('indexed', { runSeeds })).toBe(5);
+    expect(calls.seeds).toEqual([{ kind: 'exec', name: 'reindex' }]);
+    expect(errors.join('\n')).toContain(
+      'The post-restore step reindex of the indexed profile failed with exit code 5.',
+    );
+    expect(readApiState(directory)).toMatchObject({ dirty: true });
+    expect(logs.join('\n')).not.toContain('hub is ready');
+    expect(existsSync(lockPath(directory))).toBe(false);
+  });
+
+  it('rejects an unknown post-restore step before anything runs', async () => {
+    const { ready, calls } = setup({ ...API, profiles: { e2e: { seeds: ['users'], postRestore: ['reindx'] } } });
+
+    expect(await ready('e2e')).toBe(1);
+    expect(errors.join('\n')).toContain('Did you mean "reindex"?');
+    expect(calls.up).toBe(0);
   });
 
   it('seeds again when the stored state belongs to another profile and there is no snapshot', async () => {

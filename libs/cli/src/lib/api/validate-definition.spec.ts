@@ -74,6 +74,10 @@ describe('validateApiDefinition', () => {
       { profiles: { e2e: { seeds: ['a'], snapshot: { service: 'db', databases: ['x'], save: 's' } } } },
       'hub.profiles.e2e.snapshot.restore must be a shell line',
     ],
+    [
+      { profiles: { e2e: { seeds: ['a'], postRestore: 'reindex' } } },
+      'hub.profiles.e2e.postRestore must be a list of seed or exec entry names',
+    ],
   ])('rejects %j', (extra, message) => {
     expect(problem(extra)).toContain(`ethlete.apis.js: ${message}`);
   });

@@ -56,6 +56,8 @@ export type ApiProfile = {
   health?: { url: string; expect?: number };
   /** How to dump and restore the databases: `save` writes to stdout, `restore` reads stdin, both see `$DATABASES`. */
   snapshot?: { service: string; databases: string[]; save: string; restore: string };
+  /** Seeds or `exec` entries `ready` runs in order after it restores the snapshot, such as a search reindex. */
+  postRestore?: string[];
 };
 
 export type ApiDefinitions = Record<string, ApiDefinition>;

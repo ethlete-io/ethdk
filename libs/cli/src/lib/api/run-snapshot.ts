@@ -1,6 +1,7 @@
 import { relative } from 'path';
 import { definedEntries, stateDirectoryOf } from './api-context';
 import { ApiDefinition, ApiProfile } from './definition';
+import { markApiStateDirty } from './api-state';
 import { fingerprintApi } from './fingerprint';
 import { ignoredByGit } from './git';
 import { acquireApiLock, describeApiLock, heldLockFromEnv, releaseApiLock } from './lock';
@@ -137,8 +138,15 @@ export const runSnapshotCommand = async (options: RunSnapshotOptions): Promise<n
   if (action === 'save') return saveSnapshot({ file, snapshot: profile.snapshot, compose });
 
   const state = { directory, profile: profileName, fingerprint };
+  const restore = async () => {
+    const code = await restoreSnapshot({ file, snapshot: profile.snapshot, compose, state });
 
-  if (heldLockFromEnv(directory)) return restoreSnapshot({ file, snapshot: profile.snapshot, compose, state });
+    if (code === 0 && (profile.postRestore?.length ?? 0) > 0) markApiStateDirty(directory);
+
+    return code;
+  };
+
+  if (heldLockFromEnv(directory)) return restore();
 
   const acquired = await acquireApiLock({
     directory,
@@ -155,7 +163,7 @@ export const runSnapshotCommand = async (options: RunSnapshotOptions): Promise<n
   }
 
   try {
-    return await restoreSnapshot({ file, snapshot: profile.snapshot, compose, state });
+    return await restore();
   } finally {
     releaseApiLock(directory, acquired.lock.token);
   }

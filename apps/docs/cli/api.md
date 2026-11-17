@@ -110,23 +110,23 @@ module.exports = {
 
 Adding an API is an entry in this map. Nothing else changes.
 
-| Field           | Required | Meaning                                                                                                                                     |
-| --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `composeDir`    | yes      | Directory inside the checkout that holds the compose file.                                                                                  |
-| `services`      | yes      | Services to start. Leave out anything the app does not need, such as a frontend container or a GPU-bound worker.                            |
-| `execService`   | yes      | Service that `shell`, `logs` and every `exec` entry run in.                                                                                 |
-| `port`          | yes      | Published host port, not the port inside the container. Used for the printed url.                                                           |
-| `envFile`       | no       | File that must exist in `composeDir` before the API can start.                                                                              |
-| `setupCommand`  | no       | Command that creates `envFile`, run by `setup` in `composeDir`.                                                                             |
-| `network`       | no       | External container network created before the first `up`.                                                                                   |
-| `repoUrl`       | no       | Where to clone this API from when the developer has no checkout of their own.                                                               |
-| `envKey`        | no       | localStorage key the app reads to pick its API. Printed by `--host`.                                                                        |
-| `examplePath`   | no       | Example path shown in the error that asks for this API's checkout.                                                                          |
-| `env`           | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`.                       |
-| `exec`          | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                                           |
-| `checks`        | no       | Ordered preconditions run by [`doctor`](#checking-the-setup).                                                                               |
-| `profiles`      | no       | Named states (`seeds`, `health`, `snapshot`) used by [`ready`](#getting-a-profile-ready), [`snapshot`](#snapshots) and [`status`](#status). |
-| `migrationsDir` | no       | Migrations folder relative to the checkout root. Its contents are part of the [fingerprint](#the-fingerprint).                              |
+| Field           | Required | Meaning                                                                                                                                                    |
+| --------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `composeDir`    | yes      | Directory inside the checkout that holds the compose file.                                                                                                 |
+| `services`      | yes      | Services to start. Leave out anything the app does not need, such as a frontend container or a GPU-bound worker.                                           |
+| `execService`   | yes      | Service that `shell`, `logs` and every `exec` entry run in.                                                                                                |
+| `port`          | yes      | Published host port, not the port inside the container. Used for the printed url.                                                                          |
+| `envFile`       | no       | File that must exist in `composeDir` before the API can start.                                                                                             |
+| `setupCommand`  | no       | Command that creates `envFile`, run by `setup` in `composeDir`.                                                                                            |
+| `network`       | no       | External container network created before the first `up`.                                                                                                  |
+| `repoUrl`       | no       | Where to clone this API from when the developer has no checkout of their own.                                                                              |
+| `envKey`        | no       | localStorage key the app reads to pick its API. Printed by `--host`.                                                                                       |
+| `examplePath`   | no       | Example path shown in the error that asks for this API's checkout.                                                                                         |
+| `env`           | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`.                                      |
+| `exec`          | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                                                          |
+| `checks`        | no       | Ordered preconditions run by [`doctor`](#checking-the-setup).                                                                                              |
+| `profiles`      | no       | Named states (`seeds`, `health`, `snapshot`, `postRestore`) used by [`ready`](#getting-a-profile-ready), [`snapshot`](#snapshots) and [`status`](#status). |
+| `migrationsDir` | no       | Migrations folder relative to the checkout root. Its contents are part of the [fingerprint](#the-fingerprint).                                             |
 
 Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`, `exec`, `doctor`, `run`, `ready`, `snapshot`, `status`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
 
@@ -307,6 +307,7 @@ profiles: {
     seeds: ['fixtures', 'users', 'warmup'],
     health: { url: 'http://localhost:8040/health', expect: 200 },
     snapshot: { service: 'database', databases: ['app'], save: '…', restore: '…' },
+    postRestore: ['reindex'],
   },
 },
 ```
@@ -319,9 +320,11 @@ profiles: {
 | anything else, and the profile's snapshot file exists | Restores `.ethlete/snapshots/<api>/<profile>-<fingerprint>.sql.gz`.                           |
 | anything else, and no snapshot file                   | Runs the profile's `seeds` in order, then saves that snapshot when it has a `snapshot` block. |
 
+After a restore, `ready` runs the profile's `postRestore` entries in order, resolved like `seeds`. Use them for data the dump does not hold, such as a search index that still points at the old ids. A step that exits non-zero fails `ready` with its exit code and a line naming the step, and leaves the state dirty. `postRestore` does not run after seeding, and `snapshot restore` does not run it either: it leaves the state dirty instead, so the next `ready` restores and runs the steps.
+
 Then the state is clean for that profile and fingerprint, and `health.url` is fetched every 2 s until it answers `health.expect` (default `200`), for up to 60 s. Each entry of `seeds` is `fixtures` (the manifest's fixtures list), a seed from `.ethlete/seeds/<api>/seeds.json`, or an `exec` entry of the API, checked in that order. A name that is none of them fails before anything runs. The state is marked dirty before the first seed runs, so an interrupted or failed seed leaves it dirty and the next `ready` seeds again.
 
-Each step prints a heading on stderr; the last line, on stdout, names the profile, the fingerprint and the time taken. The exit code is `0` when the API is ready, the exit code of `up`, a seed or the snapshot command when one fails, `1` for a failed check, a failed health check or an unknown profile, and `75` when `--wait` ran out.
+Each step prints a heading on stderr; the last line, on stdout, names the profile, the fingerprint and the time taken. The exit code is `0` when the API is ready, the exit code of `up`, a seed, a post-restore step or the snapshot command when one fails, `1` for a failed check, a failed health check or an unknown profile, and `75` when `--wait` ran out.
 
 An end-to-end run holds the lock for the whole test run and lets its global setup call `ready` under it:
 
@@ -365,7 +368,7 @@ The dump must drop and create each database, because `restore` only runs what th
 
 The file is `.ethlete/snapshots/<api>/<name>-<fingerprint>.sql.gz`, with the fingerprint of that profile, so a snapshot made for other migrations, seeds or API commit is never picked up by accident. A path that git does not ignore prints a warning on stderr, because dumps hold real data: add `/.ethlete/snapshots/` to `.gitignore`. Restoring a missing file lists the snapshots that exist for the API and exits 1.
 
-`restore` takes the [API lock](#running-under-the-lock) unless `ETHLETE_API_LOCK` names the held one, waiting for `--wait <seconds>` (exit `75` on timeout) or without end. On success the state becomes clean for that profile and fingerprint; a failed restore marks it dirty. `save` only reads and takes no lock. The order `snapshot <api> save|restore <name>` works too.
+`restore` takes the [API lock](#running-under-the-lock) unless `ETHLETE_API_LOCK` names the held one, waiting for `--wait <seconds>` (exit `75` on timeout) or without end. On success the state becomes clean for that profile and fingerprint, or stays dirty when the profile has `postRestore` steps; a failed restore marks it dirty. `save` only reads and takes no lock. The order `snapshot <api> save|restore <name>` works too.
 
 ### The fingerprint
 

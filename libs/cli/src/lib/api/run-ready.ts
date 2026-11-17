@@ -138,6 +138,9 @@ export type RunReadyOptions = {
 
 const step = (text: string) => console.error(`\n==> ${text}`);
 
+const unitLabel = (unit: ReadySeedUnit) =>
+  unit.kind === 'exec' ? unit.name : unit.steps.map(({ label }) => label).join(', ');
+
 /** Runs `ready <api> --profile <p>` and returns the exit code. */
 export const runReadyCommand = async (options: RunReadyOptions): Promise<number> => {
   const { root, name, api, invocation, profile: profileName, wait, now = Date.now } = options;
@@ -160,6 +163,14 @@ export const runReadyCommand = async (options: RunReadyOptions): Promise<number>
 
   if (!units.ok) {
     console.error(units.problem);
+
+    return 1;
+  }
+
+  const postRestoreUnits = resolveProfileSeeds({ root, name, api, profileName, seeds: profile.postRestore ?? [] });
+
+  if (!postRestoreUnits.ok) {
+    console.error(postRestoreUnits.problem);
 
     return 1;
   }
@@ -235,19 +246,32 @@ export const runReadyCommand = async (options: RunReadyOptions): Promise<number>
     } else if (profile.snapshot && existsSync(file)) {
       step(`Restoring the ${profileName} snapshot ${fingerprint}`);
 
-      const restored = await restoreSnapshot({
-        file,
-        snapshot: profile.snapshot,
-        compose,
-        state: { directory, profile: profileName, fingerprint },
-      });
+      markApiStateDirty(directory);
+
+      const restored = await restoreSnapshot({ file, snapshot: profile.snapshot, compose });
 
       if (restored !== 0) return restored;
+
+      for (const unit of postRestoreUnits.value) {
+        const label = unitLabel(unit);
+
+        step(`Running the post-restore step ${label}`);
+
+        const code = await options.runSeeds(unit);
+
+        if (code !== 0) {
+          console.error(`The post-restore step ${label} of the ${profileName} profile failed with exit code ${code}.`);
+
+          return code;
+        }
+      }
+
+      writeApiState({ directory, state: { profile: profileName, fingerprint, dirty: false } });
     } else {
       markApiStateDirty(directory);
 
       for (const unit of units.value) {
-        step(`Seeding ${unit.kind === 'exec' ? unit.name : unit.steps.map(({ label }) => label).join(', ')}`);
+        step(`Seeding ${unitLabel(unit)}`);
 
         const seeded = await options.runSeeds(unit);
 

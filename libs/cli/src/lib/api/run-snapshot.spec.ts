@@ -85,6 +85,20 @@ describe('et api snapshot', () => {
     expect(existsSync(lockPath(directory))).toBe(false);
   });
 
+  it('leaves the state dirty after a restore when the profile has post-restore steps, so ready runs them', async () => {
+    const { directory, run } = setup({
+      ...api,
+      exec: { reindex: ['bin/console search:reindex'] },
+      profiles: { e2e: { ...profile(['app']), postRestore: ['reindex'] } },
+    });
+
+    vi.stubEnv('OUT', join(tmpdir(), 'cli-api-restored.sql'));
+
+    expect(await run(['snapshot', 'save', 'hub', 'base', '--profile', 'e2e'])).toBe(0);
+    expect(await run(['snapshot', 'restore', 'hub', 'base', '--profile', 'e2e'])).toBe(0);
+    expect(readApiState(directory)).toMatchObject({ profile: 'e2e', dirty: true });
+  });
+
   it('accepts the api before the action', async () => {
     const { root, run } = setup();
 

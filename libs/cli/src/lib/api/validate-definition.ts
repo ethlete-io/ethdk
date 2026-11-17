@@ -61,7 +61,7 @@ export const validateApiDefinition = ({
 
       if (!isRecord(profile)) return fail(path, 'must be an object');
 
-      const { seeds, health, snapshot } = profile;
+      const { seeds, health, snapshot, postRestore } = profile;
 
       if (!Array.isArray(seeds) || seeds.length === 0 || !seeds.every(isText)) {
         fail(`${path}.seeds`, 'must be a non-empty list of seed names');
@@ -93,6 +93,10 @@ export const validateApiDefinition = ({
         if (!isText(snapshot['save'])) fail(`${path}.snapshot.save`, 'must be a shell line');
 
         if (!isText(snapshot['restore'])) fail(`${path}.snapshot.restore`, 'must be a shell line');
+      }
+
+      if (postRestore !== undefined && (!Array.isArray(postRestore) || !postRestore.every(isText))) {
+        fail(`${path}.postRestore`, 'must be a list of seed or exec entry names');
       }
     }
   }
