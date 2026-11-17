@@ -236,28 +236,6 @@
           "design": "open"
         }
       }
-    },
-    "pages/merge": {
-      "answers": {
-        "/__design/sketches": "design-live/merge-sketches.json",
-        "/__design/sketch-compare": "design-live/merge-compare.json",
-        "/__design/sketch-preview": "design-live/merge-preview.json"
-      },
-      "storage": {
-        "ethlete-studio.call-view": {
-          "systemEntry": "sketch:components/button",
-          "sketchViews": {
-            "studio sketch:components/button": {
-              "merge": true
-            }
-          }
-        }
-      },
-      "states": {
-        "open": {
-          "design": "open"
-        }
-      }
     }
   }
 }

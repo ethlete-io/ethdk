@@ -50,9 +50,8 @@ import { discardSketch, mergeRefusalOf } from './system/sketch/merge';
 import { mergeInWorker } from './system/sketch/merge-runner';
 import { DrawStates } from './system/accepted-pictures';
 import { readPartModule } from './system/list-system';
-import { compareMerge, PictureOf } from './merge-compare';
+import { PictureOf } from './merge-compare';
 import { BoxOf, changedAreaOf, diffVariant } from './variant-diff';
-import { mergePreviewOf } from './system/sketch/merge-preview';
 import { addedSkipsOf } from './system/sketch/added-skips';
 import { overlaySketch } from './system/sketch/overlay';
 import {
@@ -74,8 +73,6 @@ import { keptComparisonOf, unchangedStatesOf } from './system/sketch/unchanged-s
 import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
-export const SKETCH_PREVIEW_PATH = '/__design/sketch-preview';
-export const SKETCH_COMPARE_PATH = '/__design/sketch-compare';
 export const SKETCH_DIFF_PATH = '/__design/sketch-diff';
 export const SKETCH_CROP_PATH = '/__design/sketch-crop';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
@@ -583,41 +580,6 @@ export const sketchesAnswer = withProduct('GET', ({ asked, config, product }) =>
   else if (asked.signal) fromEvent(asked.signal, 'abort').pipe(take(1)).subscribe(leave);
 
   return listing.answer;
-});
-
-/** `?product=&sketch=<layer>/<name>&variant=`: the parts a merge of that variant changes and the elements and pages that show them. */
-export const sketchPreviewAnswer = withSketch('GET', ({ asked, product, sketch }) => {
-  const variant = asked.url.searchParams.get('variant') ?? '';
-
-  return sketch.variants.includes(variant)
-    ? { status: 200, body: { target: sketch.target, ...mergePreviewOf({ product, sketch, variant }) } }
-    : failure(404, `${sketch.target} has no variant "${variant}"`);
-});
-
-/**
- * `?product=&sketch=&variant=` with optional `size=` (a preset or a width) and `surface=`/`color=`: each state of every
- * element and page that shows the sketch target, drawn now and after merging the variant, split into `changed` and
- * `unchanged` by whether any pixel differs, with the outline of every instance of the target in both pictures.
- */
-export const sketchCompareAnswer = withSketch('GET', async ({ asked, product, sketch }) => {
-  const variant = asked.url.searchParams.get('variant') ?? '';
-  const { load, pictureOf } = asked;
-
-  if (!sketch.variants.includes(variant)) return failure(404, `${sketch.target} has no variant "${variant}"`);
-  if (!load || !pictureOf) return failure(503, 'this server draws no pictures');
-
-  return {
-    status: 200,
-    body: await compareMerge({
-      product,
-      sketch,
-      variant,
-      size: asked.url.searchParams.get('size'),
-      params: asked.url.searchParams,
-      pictureOf,
-      load,
-    }),
-  };
 });
 
 /**

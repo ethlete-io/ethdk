@@ -1354,21 +1354,6 @@ describe('the design server for sketches and comments', () => {
     expect(system).toContain('export const tokens = {\n\n};');
   });
 
-  it('previews the merge of a variant, and 404 for a variant the sketch lacks', async () => {
-    const target = acme();
-
-    readySketch(target);
-
-    const { ask } = await serveAcme(target);
-
-    expect(await ask('/__design/sketch-preview', `${sketchQuery}&variant=a`)).toMatchObject({
-      status: 200,
-      body: { target: 'components/card', changed: ['components/card'], affected: expect.any(Array) },
-    });
-    expect((await ask('/__design/sketch-preview', `${sketchQuery}&variant=z`)).status).toBe(404);
-    expect((await ask('/__design/sketch-compare', `${sketchQuery}&variant=z`)).status).toBe(404);
-  });
-
   it('marks the root of a part module, as the product or a sketch variant draws it', async () => {
     const target = acme();
 

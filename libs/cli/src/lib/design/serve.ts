@@ -54,21 +54,17 @@ import {
   commentsAnswer,
   SKETCH_DECISION_PATH,
   SKETCH_DISCARD_PATH,
-  SKETCH_COMPARE_PATH,
   SKETCH_CROP_PATH,
   SKETCH_DIFF_PATH,
   SKETCH_MERGE_PATH,
-  SKETCH_PREVIEW_PATH,
   SKETCHES_PATH,
   sketchDecisionAnswer,
   sketchDiscardAnswer,
-  sketchCompareAnswer,
   sketchCropAnswer,
   sketchDiffAnswer,
   detachRunningListings,
   sketchesAnswer,
   sketchMergeAnswer,
-  sketchPreviewAnswer,
 } from './studio-api';
 import { forceInteractionsPlugin } from './force-interactions';
 import { newProductAnswer, PRODUCT_PATH } from './product-command';
@@ -1068,8 +1064,6 @@ const designExplore = ({
         );
 
       studio(SKETCHES_PATH, sketchesAnswer);
-      studio(SKETCH_PREVIEW_PATH, sketchPreviewAnswer);
-      studio(SKETCH_COMPARE_PATH, sketchCompareAnswer);
       studio(SKETCH_DIFF_PATH, sketchDiffAnswer);
       studio(SKETCH_CROP_PATH, sketchCropAnswer);
       studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
