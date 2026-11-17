@@ -1,5 +1,5 @@
 {
-  "apiLevel": 9,
+  "apiLevel": 10,
   "routes": [
     "/__design/calls",
     "/__design/comment",
@@ -36,6 +36,7 @@
     "/__design/sketch-merge",
     "/__design/sketches",
     "/__design/stamp",
+    "/__design/state-diff",
     "/__design/system",
     "/__design/thumb",
     "/__design/transfer",
