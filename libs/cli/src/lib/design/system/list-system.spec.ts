@@ -188,6 +188,29 @@ describe('listSystem', () => {
     expect(problemsOf('home')).toEqual([]);
   });
 
+  it('lists the states a problem of the part is placed at', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const vite = await createDesignServer({ target, config, listen: false });
+
+    closing.push(() => vite.close());
+
+    const [product] = await listSystem({
+      target,
+      system: createSystemModules({ target, config }),
+      products: ['acme'],
+      load: ({ file, product }) => vite.ssrLoadModule(productModuleIdOf({ file, product })),
+      problemsOf: (_name, resolved) =>
+        resolved.parts
+          .filter((part) => part.name === 'home')
+          .map((part) => ({ rule: 'R', file: part.file, message: 'm', at: 'empty at 390: .title' })),
+    });
+    const partOf = (name: string) => product?.parts.find((part) => part.name === name);
+
+    expect(partOf('home')?.problemStates).toEqual(['empty']);
+    expect(partOf('hero')).not.toHaveProperty('problemStates');
+  });
+
   it('keeps a warning-rule problem out of the problems of every part and product', async () => {
     const target = acme();
 

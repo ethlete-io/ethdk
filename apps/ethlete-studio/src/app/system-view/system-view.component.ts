@@ -70,7 +70,7 @@ import { commentDraftOf, otherSizeFrameOf, pinsOf, placedCommentsOf } from './co
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
-import { commentedStatesOf, foldedStatesOf } from '../design-parts/system-page/folded-states';
+import { foldedStatesOf, lookStatesOf } from '../design-parts/system-page/folded-states';
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
 import { inboxCommentOf, inboxPartOf, writerOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
@@ -884,9 +884,7 @@ export class SystemViewComponent {
   protected foldedStates = computed(() => {
     const part = this.part();
 
-    return part
-      ? foldedStatesOf(part.listed.states, commentedStatesOf(this.pinnedComments(), part.key))
-      : new Set<string>();
+    return part ? foldedStatesOf(part.listed.states, lookStatesOf(this.pinnedComments(), part)) : new Set<string>();
   });
 
   private allStatesPart = signal<string | null>(null);

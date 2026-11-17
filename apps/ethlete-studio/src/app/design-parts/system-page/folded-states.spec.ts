@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MANY_STATES, commentedStatesOf, foldedStatesOf } from './folded-states';
+import { MANY_STATES, commentedStatesOf, foldedStatesOf, lookStatesOf } from './folded-states';
 
 describe('foldedStatesOf', () => {
   const states = Array.from({ length: MANY_STATES }, (_, index) => `not-${index}`);
@@ -27,5 +27,18 @@ describe('commentedStatesOf', () => {
     ];
 
     expect([...commentedStatesOf(comments, 'pages/system')]).toEqual(['empty']);
+  });
+});
+
+describe('lookStatesOf', () => {
+  it('names the commented states, the states with a problem and the states changed since the last merge', () => {
+    const comments = [
+      { part: 'pages/system', state: 'empty' },
+      { part: 'pages/inbox', state: 'error' },
+    ];
+    const listed = { problemStates: ['busy'], changedStates: ['busy', 'long'] };
+
+    expect([...lookStatesOf(comments, { key: 'pages/system', listed })]).toEqual(['empty', 'busy', 'long']);
+    expect([...lookStatesOf([], { key: 'pages/system', listed: {} })]).toEqual([]);
   });
 });

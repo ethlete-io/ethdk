@@ -1,4 +1,4 @@
-import { ListedComment } from '../../../host/design';
+import { ListedComment, ListedPart } from '../../../host/design';
 
 /** From this many states on, a part folds the states that need no look behind a count. */
 export const MANY_STATES = 12;
@@ -21,3 +21,14 @@ export const commentedStatesOf = (
   part: string,
 ): ReadonlySet<string> =>
   new Set(comments.filter((comment) => comment.part === part && !comment.sketch).map((comment) => comment.state));
+
+/** The states of `part` that need a look: an open comment outside a sketch, a problem, or a change since the last merge. */
+export const lookStatesOf = (
+  comments: readonly Pick<ListedComment, 'part' | 'state' | 'sketch'>[],
+  part: { key: string; listed: Pick<ListedPart, 'problemStates' | 'changedStates'> },
+): ReadonlySet<string> =>
+  new Set([
+    ...commentedStatesOf(comments, part.key),
+    ...(part.listed.problemStates ?? []),
+    ...(part.listed.changedStates ?? []),
+  ]);

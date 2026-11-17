@@ -1719,3 +1719,12 @@ components/hold-trigger at 100 %, fit (67 %) and 20 % (`.claude/handoffs/agent-r
 sketch is not merged (the agent's merge was refused by the permission check; the human picks or merges it), so
 `design task` still lists the open sketch; `design check --part elements/canvas-frames` not run; widths/page frames get
 no mark.
+
+As built (B561): the system listing carries `problemStates` (a part problem whose `at` names the state, or whose
+message names `state "<s>"`) and `changedStates` (`state-marks.ts`: pictures at the merged hash, from `pictures.json`
+or the picture cache, against the cached pictures at the current part hash; nothing is drawn, ~15 ms per product).
+Studio's fold keeps those states open next to the commented ones. No static rule places a hit at a state yet, so
+`problemStates` is empty on today's data. Verified: specs, stress, typecheck, lint, a live shot on a scratch copy
+with an edited `components/disclosure` (4 open-row states changed, 8 folded; `.claude/handoffs/agent-results/b561-shot.png`).
+Not: a live problem state; a changed state whose current pictures no check has drawn stays folded; a grid part still
+draws every cell in its grid frame.

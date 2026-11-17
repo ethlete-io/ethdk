@@ -254,6 +254,10 @@ export type ListedPart = {
   unusedInProduct?: true;
   /** Whether the part changed since its last sketch merge while no open sketch holds it. Missing from an `@ethlete/cli` older than merge records. */
   changedOutsideSketch?: boolean;
+  /** The states a problem is placed at. Missing when none is, or from an `@ethlete/cli` older than state marks. */
+  problemStates?: string[];
+  /** The states whose picture differs from the one the last sketch merge accepted. Missing when none is known to, or from an `@ethlete/cli` older than state marks. */
+  changedStates?: string[];
   problems: SystemProblem[];
 };
 

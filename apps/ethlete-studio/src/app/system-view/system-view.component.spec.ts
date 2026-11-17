@@ -1924,12 +1924,14 @@ describe('SystemViewComponent on a part with many states', () => {
   const states = Array.from({ length: 12 }, (_, index) => `not-${index}`);
   const card: ListedPart = { ...part('elements', 'card'), states, widths: [320] };
   const comment: ListedComment = { ...HOVER_COMMENT, part: 'elements/card', state: 'not-4', interaction: undefined };
+  let served = card;
 
   beforeEach(() => {
+    served = card;
     localStorage.clear();
     vi.stubGlobal('EventSource', SilentEventSource);
     vi.stubGlobal('fetch', (url: string) => {
-      if (url.includes('/__design/system')) return json([{ ...PRODUCT, parts: [card] }]);
+      if (url.includes('/__design/system')) return json([{ ...PRODUCT, parts: [served] }]);
       if (url.includes('/__design/calls')) return json([]);
       if (url.includes('/__design/comments')) return json({ comments: [comment], unreadable: [] });
 
@@ -1957,5 +1959,15 @@ describe('SystemViewComponent on a part with many states', () => {
 
     expect(view.frames().map((frame) => frame.row)).toEqual(states);
     expect(bar()?.textContent).not.toContain(STUDIO_LABELS.system.foldedStates(11));
+  });
+
+  it('also opens on the states with a problem and the states changed since the last merge', async () => {
+    served = { ...card, problemStates: ['not-1'], changedStates: ['not-7', 'not-4'] };
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/card' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(fixture.componentInstance.frames().map((frame) => frame.row)).toEqual(['not-1', 'not-4', 'not-7']);
+    expect(element.querySelector('[data-folded-states]')?.textContent).toContain(STUDIO_LABELS.system.foldedStates(9));
   });
 });

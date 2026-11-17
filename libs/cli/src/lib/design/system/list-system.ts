@@ -7,6 +7,7 @@ import { kitUsesOf } from './kit';
 import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { openDirectEditPartsOf } from './sketch/merged-parts';
+import { changedStatesSinceMergeOf, problemStatesOf } from './state-marks';
 import { partLinkOf } from './sketch/part-definition';
 import { SystemModules } from './system-modules';
 import { drawnStateNamesOf, ownStylesheetOf } from './unchanged-rows';
@@ -46,6 +47,10 @@ export type ListedPart = {
   unusedInProduct?: true;
   /** Whether the part changed since its last sketch merge while no open sketch holds it. */
   changedOutsideSketch: boolean;
+  /** The states a problem is placed at, when any is. */
+  problemStates?: string[];
+  /** The states whose picture differs from the one the part's last sketch merge accepted, when any is known to. */
+  changedStates?: string[];
   problems: Problem[];
 };
 
@@ -260,6 +265,7 @@ export const listSystem = async (options: {
 
       const ruled = problemsOf(name, product);
       const changedOutsideSketch = new Set(openDirectEditPartsOf(product));
+      const changedStates = changedStatesSinceMergeOf({ target, product });
       const unused = unusedBasePartsOf(product);
       const users = partUsersOf(product);
 
@@ -281,6 +287,8 @@ export const listSystem = async (options: {
                   load,
                 });
                 const own = problems.filter((found) => belongsTo(part, found));
+                const problemStates = problemStatesOf(states, own);
+                const changed = changedStates.get(partKeyOf(part));
 
                 return {
                   layer: part.layer,
@@ -298,6 +306,8 @@ export const listSystem = async (options: {
                   usedBy: [...(users.get(partKeyOf(part)) ?? [])],
                   ...(unused.has(partKeyOf(part)) ? { unusedInProduct: true as const } : {}),
                   changedOutsideSketch: changedOutsideSketch.has(partKeyOf(part)),
+                  ...(problemStates.length > 0 ? { problemStates } : {}),
+                  ...(changed ? { changedStates: changed } : {}),
                   problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
                     relativeTo,
                   ),
