@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B560
+built: 6cac17d0e
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 afternoon, part tree
 ---
