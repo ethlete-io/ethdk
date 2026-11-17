@@ -626,7 +626,7 @@ describe('SketchViewComponent', () => {
     );
 
     expect(badgeOf(drawing.root)).toBe(status.drawing);
-    expect(buttonNamed(drawing.root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(buttonNamed(drawing.root, STUDIO_LABELS.sketches.merge)?.disabled).toBe(true);
     drawing.fixture.destroy();
 
     const stalled = await render(
@@ -754,7 +754,7 @@ describe('SketchViewComponent', () => {
 
     expect(frames.length).toBeGreaterThan(0);
     expect(badge()).toBe(status.drawing);
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)?.disabled).toBe(true);
 
     for (const frame of frames.slice(0, -1)) await report(frame);
     await report(failing, { errored: true, error: 'design-explore: state "default" failed\nboom is not defined' });
@@ -771,7 +771,7 @@ describe('SketchViewComponent', () => {
     await report(failing);
 
     expect(badge()).toBe(status.waiting);
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeDefined();
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)?.disabled).toBe(false);
   });
 
   it('shows no agent line while nothing draws and every variant rendered', async () => {

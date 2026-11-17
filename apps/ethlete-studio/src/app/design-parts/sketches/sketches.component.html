@@ -514,13 +514,20 @@
       </ul>
     }
   }
-  @let take = (status() === 'waiting' || status() === 'picked') && errored().length === 0 && !sameKeys().has(row.key);
+  @let mergeOpen = status() === 'waiting' || status() === 'picked';
+  @let take = (mergeOpen || status() === 'drawing') && errored().length === 0 && !sameKeys().has(row.key);
   @let points = openPoints().length > 0 && row.key === selected();
   @if (take || points) {
     <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">
-      @if (take) {
+      @if (take && mergeOpen) {
         <span #take [attr.data-sk-take]="row.key" class="relative flex">
           <button (click)="askMerge(row)" et-button type="button" variant="outline" size="sm" data-sk-merge>
+            {{ LABELS.merge }}
+          </button>
+        </span>
+      } @else if (take) {
+        <span class="relative flex">
+          <button et-button type="button" variant="outline" size="sm" disabled data-sk-merge>
             {{ LABELS.merge }}
           </button>
         </span>

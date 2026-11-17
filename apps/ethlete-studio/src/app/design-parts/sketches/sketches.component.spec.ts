@@ -1064,16 +1064,36 @@ describe('SketchesComponent', () => {
     expect(root.querySelectorAll('[data-sk-added-skip]')).toHaveLength(2);
   });
 
-  it('offers no Übernehmen while the sketch fails or its frames still draw', async () => {
+  it('offers no Übernehmen while the sketch fails', async () => {
     const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
 
     expect(waiting.querySelector('[data-sk-merge]')).not.toBeNull();
 
-    for (const status of ['failed', 'drawing'] as const) {
-      const root: HTMLElement = (await render({ camera: '100', status })).nativeElement;
+    const failed: HTMLElement = (await render({ camera: '100', status: 'failed' })).nativeElement;
 
-      expect(root.querySelector('[data-sk-merge]')).toBeNull();
-    }
+    expect(failed.querySelector('[data-sk-merge]')).toBeNull();
+  });
+
+  it('keeps a disabled Übernehmen in every head while the frames still draw, so the heads keep their height', async () => {
+    const fixture = await render({ camera: '100', status: 'drawing' });
+    const root: HTMLElement = fixture.nativeElement;
+    const locked = [...root.querySelectorAll<HTMLButtonElement>('[data-sk-merge]')];
+
+    expect(locked.length).toBeGreaterThan(0);
+    expect(locked.every((button) => button.disabled)).toBe(true);
+    expect(root.querySelector('[data-sk-take]')).toBeNull();
+
+    locked[0]?.click();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.confirm()).toBeNull();
+
+    fixture.componentRef.setInput('status', 'waiting');
+    await fixture.whenStable();
+    const open = [...root.querySelectorAll<HTMLButtonElement>('[data-sk-merge]')];
+
+    expect(open).toHaveLength(locked.length);
+    expect(open.some((button) => button.disabled)).toBe(false);
   });
 
   it('shows a merge error under the picked variant, and in the header when no variant is picked', async () => {
