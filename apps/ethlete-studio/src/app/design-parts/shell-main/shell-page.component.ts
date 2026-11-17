@@ -19,7 +19,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { UpdateDialogComponent } from '../../components/update-dialog/update-dialog.component';
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
-import { Appearance, DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { ServerCrash, ShellMainComponent, ShellSection } from './shell-main.component';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
@@ -41,8 +41,6 @@ export type ShellAction =
   | { kind: 'product'; name: string }
   | { kind: 'project'; name: string }
   | { kind: 'openProject' }
-  | { kind: 'appearance'; appearance: Appearance }
-  | { kind: 'studioDialog'; dialog: 'settings' | 'shortcuts' | 'help' | 'about' }
   | { kind: 'server'; action: DesignServerAction };
 
 export const SHELL_SAMPLE: ShellState = {
@@ -82,19 +80,12 @@ export const SHELL_SAMPLE: ShellState = {
     >
       <ethlete-studio-menu
         [(open)]="menuOpen"
-        [(appearanceOpen)]="appearanceOpen"
-        [(helpOpen)]="helpOpen"
         [server]="shell().server === 'stopped' || shell().server === 'crashed' ? 'stopped' : 'running'"
         [project]="shell().project"
         [projects]="shell().projects"
         (projectChange)="action.emit({ kind: 'project', name: $event })"
         (openProject)="action.emit({ kind: 'openProject' })"
         (serverAction)="action.emit({ kind: 'server', action: $event })"
-        (appearanceChange)="action.emit({ kind: 'appearance', appearance: $event })"
-        (openSettings)="action.emit({ kind: 'studioDialog', dialog: 'settings' })"
-        (openShortcuts)="action.emit({ kind: 'studioDialog', dialog: 'shortcuts' })"
-        (openHelp)="action.emit({ kind: 'studioDialog', dialog: 'help' })"
-        (openAbout)="action.emit({ kind: 'studioDialog', dialog: 'about' })"
         shellMainStudio
         bare
       />
@@ -123,8 +114,6 @@ export class ShellPageComponent {
   protected closeWindow$ = closeWindow$;
 
   protected menuOpen = signal(false);
-  protected appearanceOpen = signal(false);
-  protected helpOpen = signal(false);
   protected systemPicker = signal<'open' | 'closed'>('closed');
   protected sideWidth = signal(clampSideWidth(rememberedView().sideWidth ?? SIDE_WIDTH.rest));
   protected screen = computed(() => {

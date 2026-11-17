@@ -19,24 +19,6 @@
     transform: translate3d(0, 0, 0);
   }
 
-  .st-studio-menu [data-et-action='studio-menu.appearance'] {
-    anchor-name: --st-studio-appearance;
-  }
-
-  .st-studio-menu [data-et-action='studio-menu.help'] {
-    anchor-name: --st-studio-help;
-  }
-
-  .st-studio-submenu {
-    top: calc(anchor(--st-studio-appearance top) - 6px);
-    left: calc(100% + var(--space-1));
-    --et-menu-min-width: 0px;
-  }
-
-  .st-studio-help {
-    top: calc(anchor(--st-studio-help top) - 6px);
-  }
-
   .st-studio-trigger path {
     transform: scale(0.72);
     transform-origin: center;
