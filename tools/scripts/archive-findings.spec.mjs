@@ -161,7 +161,7 @@ test('archives old dated decision sections and keeps cited, open and fresh ones'
     assert.match(rest, new RegExp(kept));
 });
 
-test('an old orphan finding with a built line leaves with its trailing notes; a new or unbuilt one stays', () => {
+test('an old orphan finding leaves with its trailing notes, built or not; a new one without its own built line stays', () => {
   const orphanPlan = `# Plan
 
 30\\. Tom (2026-10-01): old built orphan.
@@ -178,11 +178,12 @@ As built: today.
   const { plan: rest, moved } = archiveFindings(orphanPlan, status, { today: new Date('2026-11-10'), days: 5 });
   assert.deepEqual(
     moved.map((m) => m.number),
-    [30],
+    [30, 31],
   );
   assert.equal(moved[0].text, '30\\. Tom (2026-10-01): old built orphan.\n\nBuilt (2026-10-02): the fix.');
-  assert.ok(!rest.includes('old built orphan') && !rest.includes('Built (2026-10-02)'));
-  assert.ok(rest.includes('31\\.') && rest.includes('32\\.') && rest.includes('## Next'));
+  assert.equal(moved[1].text, '31\\. Tom (2026-10-01): old orphan, not built.');
+  assert.ok(!rest.includes('old built orphan') && !rest.includes('Built (2026-10-02)') && !rest.includes('31\\.'));
+  assert.ok(rest.includes('32\\.') && rest.includes('## Next'));
 });
 
 test('moves a young finding whose own As built line names it, unless STATUS names it', () => {
@@ -249,16 +250,16 @@ test('a plain run moves the old done finding', () => {
   assert.match(lines.at(-1), /^moved [1-9]/);
 });
 
-test('an old finding with no STATUS row and a built marker in its text leaves; a pushed sha counts, an unpushed one does not', () => {
+test('a young finding with no STATUS row and a built marker in its text leaves; a pushed sha counts, an unpushed one does not', () => {
   const markerPlan = `# Plan
 
-40\\. Tom (2026-10-01): old. As built in the note.
+40\\. Tom (2026-11-08): young. As built in the note.
 
-41\\. Tom (2026-10-01): old. Built in bbbbbbb2.
+41\\. Tom (2026-11-08): young. Built in bbbbbbb2.
 
-42\\. Tom (2026-10-01): old, open.
+42\\. Tom (2026-11-08): young, open.
 
-43\\. Tom (2026-10-01): old. Built in aaaaaaa1.
+43\\. Tom (2026-11-08): young. Built in aaaaaaa1.
 `;
   const { plan: rest, moved } = archiveFindings(markerPlan, status, {
     today: new Date('2026-11-10'),
@@ -272,14 +273,14 @@ test('an old finding with no STATUS row and a built marker in its text leaves; a
   assert.ok(rest.includes('41\\.') && rest.includes('42\\.') && !rest.includes('40\\.'));
 });
 
-test('a context sha or loose built prose moves nothing; only the Built in marker does', () => {
+test('in a young finding a context sha or loose built prose moves nothing; only the Built in marker does', () => {
   const contextPlan = `# Plan
 
-50\\. Tom (2026-10-01): old, cites context aaaaaaa1 and was not built in aaaaaaa1 yet.
+50\\. Tom (2026-11-08): young, cites context aaaaaaa1 and was not built in aaaaaaa1 yet.
 
-51\\. Tom (2026-10-01): old, fixed in aaaaaaa1.
+51\\. Tom (2026-11-08): young, fixed in aaaaaaa1.
 
-52\\. Tom (2026-10-01): old. Built in aaaaaaa1.
+52\\. Tom (2026-11-08): young. Built in aaaaaaa1.
 `;
   const { moved } = archiveFindings(contextPlan, status, {
     today: new Date('2026-11-10'),
@@ -292,7 +293,7 @@ test('a context sha or loose built prose moves nothing; only the Built in marker
   );
 });
 
-test('an old orphan in the tool backlog leaves an index line; an unlisted or young one stays, the old one with its reason', () => {
+test('an old orphan in the tool backlog leaves an index line; an unlisted one leaves whole; a young one stays', () => {
   const backlogStatus = `| ID | Was | Stand | Wo |
 | -- | -- | -- | -- |
 | B1 | open (Bef. 44) | ⏳ | |
@@ -328,16 +329,18 @@ Prose after.
   });
   assert.deepEqual(moved, [
     { number: 40, month: '2026-11', text: '40\\. Tom (2026-11-01): in a backlog range.\nFollow-up note.' },
+    { number: 42, month: '2026-11', text: '42\\. Tom (2026-11-01): in no backlog.' },
   ]);
   assert.equal(
     rest,
-    orphanPlan.replace(
-      '40\\. Tom (2026-11-01): in a backlog range.\nFollow-up note.',
-      `40 -> archive/findings-2026-11.md, backlog ${BACKLOG_WHERE}`,
-    ),
+    orphanPlan
+      .replace(
+        '40\\. Tom (2026-11-01): in a backlog range.\nFollow-up note.',
+        `40 -> archive/findings-2026-11.md, backlog ${BACKLOG_WHERE}`,
+      )
+      .replace('42\\. Tom (2026-11-01): in no backlog.\n\n', ''),
   );
   assert.deepEqual(stays, [
-    { number: 42, reason: STAY_REASONS.unbuilt },
     { number: 44, reason: STAY_REASONS.open },
     { number: 46, reason: STAY_REASONS.named },
   ]);
@@ -400,4 +403,74 @@ test('a finding whose last paragraph follows its built one stays', () => {
   const { moved, stays } = archiveToday(reordered);
   assert.ok(!moved.some((m) => m.number === 941));
   assert.ok(stays.some((s) => s.number === 941 && s.reason === STAY_REASONS.reopened));
+});
+
+const mixedSectionPlan = `# Plan
+
+### Old mixed decisions (Tom, 2026-11-01)
+
+- A decision item.
+
+A8 as built (2026-11-02): prose of another item.
+
+12\\. Tom (2026-11-01): open, a row cites it.
+Its second line.
+
+12 update: still open.
+
+14\\. Tom (2026-11-02): old orphan, not built.
+
+## Next
+`;
+
+test('an old section holding open findings moves its prose; the open findings stay under its heading', () => {
+  const today = new Date('2026-11-10');
+  const first = archiveFindings(mixedSectionPlan, status, { today, isPushed: () => true });
+  assert.deepEqual(
+    first.moved.map((m) => m.number),
+    [14],
+  );
+  const { plan: rest, moved } = archiveSections(first.plan, status, '', { today, days: 5 });
+  assert.equal(moved.length, 1);
+  assert.equal(
+    moved[0].text,
+    '### Old mixed decisions (Tom, 2026-11-01)\n\n- A decision item.\n\nA8 as built (2026-11-02): prose of another item.',
+  );
+  assert.equal(
+    rest,
+    `# Plan
+
+### Old mixed decisions (Tom, 2026-11-01)
+
+Archived: Old mixed decisions (2026-11-01), see [findings-2026-11](archive/findings-2026-11.md).
+
+12\\. Tom (2026-11-01): open, a row cites it.
+Its second line.
+
+12 update: still open.
+
+## Next
+`,
+  );
+  assert.deepEqual(archiveSections(rest, status, '', { today, days: 5 }), { plan: rest, moved: [] });
+});
+
+test('a run archives old orphans and section prose, and every removed line is in the archive', () => {
+  const root = tempDir('archive-sections-');
+  const studio = join(root, 'plans/ethlete-studio');
+  mkdirSync(join(studio, 'archive'), { recursive: true });
+  const planFile = join(studio, 'design-to-code.md');
+  writeFileSync(planFile, mixedSectionPlan.replaceAll('2026-11-0', '2020-01-0'));
+  writeFileSync(join(studio, 'STATUS.md'), status);
+  const archiveFile = join(studio, 'archive/findings-2020-01.md');
+  writeFileSync(archiveFile, '# Findings 2020-01\n\nKept line.\n');
+
+  assert.equal(main([], { root, log: () => undefined }), 0);
+  const rest = readFileSync(planFile, 'utf8');
+  const archived = readFileSync(archiveFile, 'utf8');
+  assert.ok(archived.startsWith('# Findings 2020-01\n\nKept line.\n'));
+  for (const line of mixedSectionPlan.replaceAll('2026-11-0', '2020-01-0').split('\n'))
+    if (line.trim() !== '' && !rest.includes(line)) assert.ok(archived.includes(line), line);
+  assert.match(rest, /12\\\. Tom/);
+  assert.doesNotMatch(rest, /14\\\.|A8 as built|A decision item/);
 });

@@ -119,7 +119,6 @@ export const backlogNumbers = (statusText) => {
 export const STAY_REASONS = {
   open: 'open in STATUS',
   named: 'named in STATUS outside a row and the backlog',
-  unbuilt: 'no built, closed or withdrawn paragraph, no built line, not parked, no backlog row',
   unpushed: 'its built paragraph names a sha that is not on origin/next',
   reopened: 'a later paragraph follows its built, closed or withdrawn one',
   undated: 'no date in the finding',
@@ -177,8 +176,7 @@ export const archiveFindings = (
     } else {
       const to = extentOf(lines, block.from, block.number);
       const builtLines = lines.slice(block.from, to).filter((line) => isBuiltLine(line, isPushed));
-      if (!builtLines.length) stay(STAY_REASONS.unbuilt);
-      else if (old || builtLines.some((line) => namedIn(line, block.number))) take(to);
+      if (old || builtLines.some((line) => namedIn(line, block.number))) take(to);
     }
   }
 
@@ -219,10 +217,22 @@ const sectionTitle = (heading) =>
     .replace(/\s*\([^()]*\)\s*$/, '')
     .trim();
 
+const ARCHIVED_LINE = /^Archived: /;
+
+const keptFindingLines = (body) => {
+  const kept = new Set();
+  const numbers = new Set();
+  for (const block of splitFindings(body.join('\n'))) {
+    numbers.add(block.number);
+    for (let n = block.from; n < extentOf(body, block.from, block.number); n++) kept.add(n);
+  }
+  for (const p of findingParagraphs(body.join('\n')))
+    if (p.numbers.some((n) => numbers.has(n))) for (let n = p.from; n < p.to; n++) kept.add(n);
+  return kept;
+};
+
 export const archiveSections = (planText, statusText, adrText, { today, days = 5 }) => {
-  const rows = parseStatusRows(statusText);
-  const done = doneFindingNumbers(rows);
-  const openRows = rows
+  const openRows = parseStatusRows(statusText)
     .filter((row) => !row.done)
     .map((row) => row.text)
     .join('\n');
@@ -242,19 +252,38 @@ export const archiveSections = (planText, statusText, adrText, { today, days = 5
     const body = lines.slice(i, end);
     const title = sectionTitle(heading);
     const age = (today - new Date(date[0])) / DAY_MS;
-    const holdsOpenFinding = splitFindings(body.join('\n')).some((block) => !done.has(block.number));
-    if (age <= days || holdsOpenFinding || openRows.includes(title) || adrText.includes(title)) {
+    const kept = keptFindingLines(body);
+    const leaves = (line, n) => n > 0 && !kept.has(n) && !ARCHIVED_LINE.test(line) && line.trim() !== '';
+    if (age <= days || openRows.includes(title) || adrText.includes(title) || !body.some(leaves)) {
       out.push(...body);
       i = end;
       continue;
     }
     const month = `${date[1]}-${date[2]}`;
-    const text = body.join('\n').trimEnd();
-    moved.push({ number: 0, month, text });
-    out.push(`Archived: ${title} (${date[0]}), see [findings-${month}](archive/findings-${month}.md).`, '');
+    const pointer = `Archived: ${title} (${date[0]}), see [findings-${month}](archive/findings-${month}.md).`;
+    if (kept.size === 0) {
+      moved.push({ number: 0, month, text: body.join('\n').trimEnd() });
+      out.push(pointer, '');
+      i = end;
+      continue;
+    }
+    const leaving = body.filter((line, n) => n === 0 || leaves(line, n) || (line.trim() === '' && !kept.has(n)));
+    moved.push({ number: 0, month, text: squeezeBlankLines(leaving).join('\n').trimEnd() });
+    const staying = body.filter((line, n) => n > 0 && !leaves(line, n));
+    const hasPointer = staying.some((line) => line === pointer);
+    out.push(heading, '', ...(hasPointer ? [] : [pointer, '']), ...squeezeBlankLines(staying));
     i = end;
   }
   return { plan: out.join('\n'), moved };
+};
+
+const squeezeBlankLines = (lines) => {
+  const out = [];
+  for (const line of lines) {
+    if (line.trim() === '' && (out.length === 0 || out.at(-1).trim() === '')) continue;
+    out.push(line);
+  }
+  return out;
 };
 
 export const readAdrText = (root) => {
@@ -296,8 +325,8 @@ const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dr
   moves done findings and old decision sections of plans/ethlete-studio/design-to-code.md into archive/
   a finding is done by a done STATUS row, a paragraph "NNN built|closed|withdrawn|as built ...", a line in
   parked-suspects.md, or a built line; it leaves with every paragraph that starts with its number
-  --days=<n>  age in days an orphan finding (no STATUS row) must reach to move by a built line or a
-              tool-backlog entry in STATUS.md, and a decision section to move (default 5)
+  --days=<n>  age in days an orphan finding (no STATUS row, not named in STATUS) must reach to move, and a
+              decision section to move; the section's remaining findings stay under its heading (default 5)
   --dry-run   list what would move and why each old finding stays, write nothing
   --orphans   list old findings with no STATUS row, write nothing`;
 
