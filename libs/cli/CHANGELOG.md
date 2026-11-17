@@ -1,5 +1,26 @@
 # @ethlete/cli
 
+## 3.0.0-next.34
+
+### Patch Changes
+
+- `et api ready` runs a profile's new `postRestore` steps, seeds or exec entries such as a search reindex, after every snapshot restore, and fails naming the step and exit code when one fails.
+- The sketch listing answers `addedSkips` for an open sketch: each `data-et-skip` marker a live variant adds over the merged part, with its variant, part and classes.
+- `design sketch ready` prints a NOTE for each `data-et-skip` marker a sketch variant adds over the merged part, so a silenced check is visible to the person who picks.
+- `et design check` fails with `OWN-CANVAS` when a product names its `canvas` part and zoom control in config.json and a part draws the zoom control without reaching the canvas part.
+- The design server draws the compare pictures of the Studio sketch listing behind the shots the Studio shows, so a reload no longer waits for the whole compare before the sketch view fills.
+- A shot no longer waits forever for a page that stays busy after its last draw: the page closes once parking it outlasts
+  the draw timeout, and the shot draws on a new page.
+- A sketch offers Übernehmen only once every frame drew; a failed frame shows "Render fehlgeschlagen" with its error text.
+- A design command that prints a FAILED or "could not render" line now exits non-zero.
+- Design commands write every file under `.ethlete/design` Prettier-formatted, so a sketch merge no longer commits an unformatted `ready.json`.
+- A drawn anchored-dialog arrow aimed with `anchoredDialog({ anchor })` now lands on a whole device pixel, like the arrow of `anchoredDialogOverlayStrategy`.
+- The design check knows the `stateGroups` input of the Studio system page as a harness-only input.
+- `design check` reports a part implemented before file lists as `UNRECORDED`, and `design compare` shoots overlay content outside panes too.
+- `design sketch ready` on an old/new edit sketch whose variants draw the same pixels now holds the direct edit and closes the sketch instead of asking for a withdraw.
+- The design server no longer serves `/__design/sketch-preview` and `/__design/sketch-compare`: the Studio merge view that called them is gone.
+- A render issue now carries an `undrawn` flag for a part or state that did not draw, instead of the check reading its message text.
+
 ## 3.0.0-next.33
 
 ### Patch Changes

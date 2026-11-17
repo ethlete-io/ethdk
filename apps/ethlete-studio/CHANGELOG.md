@@ -1,5 +1,39 @@
 # ethlete-studio
 
+## 0.2.0-next.23
+
+### Patch Changes
+
+- The sketch view names each `data-et-skip` marker a variant adds in that variant's head, above Übernehmen.
+- A sketch whose model id names no known agent shows the neutral agent logo in its status hint instead of the Claude mark.
+- Canvas frames draw their chrome like the design: the head in surface text, a German failure banner with Neu laden, a Lädt spinner badge while a frame loads, and a 1 px edge.
+- Draw the canvas frame edge under the live page, so it stays crisp at fractional zoom levels instead of blurring with the page layer.
+- The variant grid lays its round heads out like the design: the group head, the column heads and the folded round sit above the frames with the design's gaps, and matrix columns are 80 px apart.
+- A sketch offers Übernehmen only once every frame drew; a failed frame shows "Render fehlgeschlagen" with its error text.
+- The Sketches view closes an open Übernehmen or Verwerfen confirm when it goes away, and the comment row renders in the design harness.
+- The Inbox is the overview of open comments only; a comment is drafted on the canvas of its view, no longer in an Inbox editor.
+- The Sketches view shows a failed Übernehmen under the picked variant, like the design, and in the header only when no variant is picked.
+- The Sketches view places comment pins without the pin part's own padding, so they sit on the drawn spots like the design.
+- Sketches view: comment pins sit on their spots and stay undimmed, and a frame grows to a shot wider than its part.
+- Comment on sketch variants in the Sketches view and see the sketch's open comments under the tree.
+- The Sketches view opens a bound merge confirm once its Übernehmen renders, below-start like the design, and the comment sample sits on the drawn spots.
+- While a sketch draws, each variant head keeps a disabled Übernehmen, so the frames no longer jump down when drawing ends.
+- The system view hands its pinned comments, the picked comment and the writer to the system page, so pins come from one place.
+- A part with many states opens on the states with an open comment; the others fold behind a count with Alle Zustände zeigen. Its frames no longer group under the first word of the state name.
+- Canvas frames: a page that fails to load before the frame listens now shows its failure banner instead of loading forever.
+- Canvas frames: Neu laden on a failed frame no longer selects the frame, and the design canvas reports the reload through a `reload` output with the frame id.
+- Canvas frames: every frame but an empty one draws its hairline edge, the selected and live frame are bindable, and an unanswered design server reads "Der Design-Server antwortet nicht."
+- Lay out the canvas round and folded column heads at screen size with CSS zoom like the design, keep a column note on one line where it fits, and let a round head's note run past its columns.
+- Übernehmen on a sketch variant opens a confirm dialog instead of the merge view; confirming merges the variant. The merge view is gone.
+- Restarting the design server builds the new design tool copy first and stops the running server only after that build succeeded.
+- Give the design canvas section heading a line height its text fits in, so the heading and count no longer leave their box at 100 % zoom.
+- A cropped sketch frame keeps the part width instead of growing to its magnified, clipped content.
+- The Sketches view keeps the folded states label at the visible left edge while the canvas is panned, like the design.
+- At a held zoom on the Sketches page the frames no longer shift sideways when a sketch starts or stops drawing: a font load event that only re-reports already loaded fonts no longer re-fits the head and gutter text.
+- The Sketches zoom chip shows the fit percent in the matrix layout even before a variant has shots.
+- The System page groups the frames of a part with many states into sections by the first segment of the state name, each with a heading and its count; unshared prefixes go under Weitere.
+- The System page takes placed comments, the selected one and the writer: it pins each comment on the frame, lists them under the tree and pins the draft beside them.
+
 ## 0.2.0-next.22
 
 ### Patch Changes
