@@ -3633,3 +3633,14 @@ As built (B539 arrow rounding, 2026-11-17): sketch-only-points-open and merge-co
 `libs/cli/design/arrow-anchor.ts` aimed at the exact centre 409.5. The mock now rounds its offset the same way (ADR
 0311, no core change). Verified: compare of both states ok, design check over the four parts that draw an anchored
 dialog. Not verified: a live Studio shot.
+
+As built (B371 state groups, 2026-11-17): `stateGroupsOf` (`design-parts/system-page/state-groups.ts`, spec beside it)
+groups states by the first `-` segment in first-seen order, unshared prefixes last under Weitere (`STUDIO_LABELS`).
+The live canvas groups from `MANY_STATES` = 12 states on (a threshold the design does not name): `framesOf` orders the
+frames by group and tags each with its section, the design canvas lays sections out with `layoutSections` (frames
+wrap at five frame widths, sections flow side by side) and draws a heading with the count over a hairline. Fitted
+parts stay one table frame. The harness reaches the state through a `stateGroups` input on the system page and a
+harness-only shot template for the design's frame thumbnail. Verified: compare state-groups ok, DROPPED-PROP for
+state-groups gone, `vitest related` 392/392 plus the new canvas spec, lint. Not verified: a live Studio shot. Open:
+design check now reports STATE-NO-SOURCE for state-groups, since no app template binds `stateGroups` (the app groups in
+the design canvas, not through that input); it needs a decision, not a rename.

@@ -167,3 +167,52 @@ export const THEME_SWITCHES_SAMPLE: ThemeSwitch[] = [
   { kind: 'surface', names: ['light', 'dark'], current: 'light' },
   { kind: 'color', names: ['brand', 'danger', 'warning'], current: 'brand' },
 ];
+
+export const STATE_GROUPS_SAMPLE_STATES = [
+  'part',
+  'empty',
+  'listing-error',
+  'canvas-note',
+  'many-states',
+  'fit',
+  'points-closed',
+  'nothing-open',
+  'part-focus-visible',
+  'points-closed-focus-visible',
+  'comment-mode',
+  'comment-draft',
+  'comment-draft-typed',
+  'send-busy',
+  'send-error',
+  'send-rejected',
+  'comments',
+  'comments-mode',
+  'comments-draft',
+  'one-blocker',
+  'checking',
+  'blocked-checking',
+  'direct-edit',
+  'direct-edit-closed',
+  'blockers-open',
+  'agent-working',
+  'agent-working-ready',
+  'agent-failed',
+  'agent-failed-ready',
+  'agent-waiting',
+  'agent-interrupted',
+  'call',
+  'call-transferred',
+];
+
+export const STATE_GROUPS_TREE: PartTree = {
+  layers: [
+    { title: 'Foundations', open: false, parts: [] },
+    { title: 'Components', open: false, parts: [] },
+    { title: 'Elements', open: false, parts: [] },
+    {
+      title: 'Pages',
+      open: true,
+      parts: [{ name: 'inbox' }, { name: 'sketches' }, { name: 'start' }, { name: 'system', selected: true }],
+    },
+  ],
+};

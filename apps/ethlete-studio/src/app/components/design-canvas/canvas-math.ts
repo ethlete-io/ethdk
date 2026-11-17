@@ -212,6 +212,57 @@ export const layoutGrid = (
   return { frames: placed, rows: [] };
 };
 
+export type SectionFrame = SheetFrame & { section: string };
+
+export type PlacedSection = { name: string; x: number; y: number; width: number };
+
+export type SectionsLayout = SheetLayout & { sections: PlacedSection[] };
+
+export type SectionsSpacing = SheetSpacing & {
+  /** The width a section's frames wrap at and the sections flow side by side within. */
+  lineWidth: number;
+  sectionColumnGap: number;
+  sectionRowGap: number;
+};
+
+/**
+ * Lays out each section's frames as a wrapping row, sections in the order they first appear, and flows the
+ * sections side by side, starting a new line of sections once one would pass `lineWidth`.
+ */
+export const layoutSections = (
+  frames: SectionFrame[],
+  { below = {}, lineWidth, sectionColumnGap, sectionRowGap, ...spacing }: SectionsSpacing & { below?: HangingBelow },
+): SectionsLayout => {
+  const bySection = new Map<string, SectionFrame[]>();
+
+  for (const frame of frames) bySection.set(frame.section, [...(bySection.get(frame.section) ?? []), frame]);
+
+  const placed: SectionsLayout['frames'] = [];
+  const sections: PlacedSection[] = [];
+  let x = 0;
+  let y = 0;
+  let lineHeight = 0;
+
+  for (const [name, members] of bySection) {
+    const inner = layoutGrid(members, { ...spacing, lineWidth, below });
+    const width = Math.max(...inner.frames.map((frame) => frame.x + frame.width));
+    const height = Math.max(...inner.frames.map((frame) => frame.y + frame.height + (below[frame.id] ?? 0)));
+
+    if (x > 0 && x + width > lineWidth) {
+      x = 0;
+      y += lineHeight + sectionRowGap;
+      lineHeight = 0;
+    }
+
+    sections.push({ name, x, y, width });
+    placed.push(...inner.frames.map((frame) => ({ ...frame, x: frame.x + x, y: frame.y + y })));
+    x += width + sectionColumnGap;
+    lineHeight = Math.max(lineHeight, height);
+  }
+
+  return { frames: placed, rows: [], sections };
+};
+
 export type MatrixFrame = SheetFrame & { column: string; rowGroup?: string; fitted?: boolean };
 
 export type MatrixColumnPlace = { name: string; x: number; width: number; y?: number };

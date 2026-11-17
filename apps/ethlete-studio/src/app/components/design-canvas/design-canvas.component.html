@@ -85,6 +85,19 @@
     </div>
   }
 
+  @for (section of sectionHeads(); track section.name) {
+    <h3
+      [style.left.px]="section.x"
+      [style.margin-top.px]="section.y"
+      [style.width.px]="section.width / labelScale()"
+      [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
+      class="absolute top-[calc(-4.8rem*var(--et-design-canvas-label-scale))] m-0 flex origin-top-left items-baseline gap-2 border-b border-(--et-surface-border-solid) pb-2 text-[1.6rem] font-normal whitespace-nowrap text-text"
+      data-section-head
+    >
+      {{ section.name }}<span class="text-text-muted tabular-nums">{{ section.count }}</span>
+    </h3>
+  }
+
   @for (column of columnHeads(); track column.key) {
     @if (column.folded; as folded) {
       <div

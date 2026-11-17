@@ -55,6 +55,7 @@ import {
   layoutGrid,
   layoutMatrix,
   layoutMatrixSections,
+  layoutSections,
   layoutSheet,
   panCamera,
   zoomAtPoint,
@@ -85,6 +86,8 @@ const cellAt = (event: MouseEvent) => {
 const FITTED_ROW_GAP = 48;
 const GROUP_GAP_FACTOR = 2;
 const SECTION_GAP_FACTOR = 4;
+const SECTION_COLUMN_GAP_FACTOR = 3;
+const SECTION_LINE_FRAMES = 5;
 const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
@@ -435,6 +438,7 @@ export class DesignCanvasComponent {
         id: frame.id,
         row: frame.row ?? '',
         ...(frame.rowGroup === undefined ? {} : { rowGroup: frame.rowGroup }),
+        section: frame.section?.name ?? '',
         column: frame.column ?? '',
         fitted: frame.width === undefined,
         ...box,
@@ -485,8 +489,21 @@ export class DesignCanvasComponent {
               heads: this.rowHeads().map(headOf),
               emptyWidths,
             });
+    const sectioned =
+      arrangement === 'sheet' && frames.some((frame) => frame.section)
+        ? layoutSections(sized, {
+            ...SPACING,
+            lineWidth:
+              SECTION_LINE_FRAMES * Math.max(...sized.map((frame) => frame.width)) +
+              (SECTION_LINE_FRAMES - 1) * SPACING.columnGap,
+            sectionColumnGap: SPACING.columnGap * SECTION_COLUMN_GAP_FACTOR,
+            sectionRowGap: rowGap * SECTION_GAP_FACTOR,
+          })
+        : null;
     const sheet =
-      matrix ?? (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : layoutSheet(sized, SPACING));
+      matrix ??
+      sectioned ??
+      (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : layoutSheet(sized, SPACING));
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
       const column = columns.find((candidate) => candidate.key === placed.name);
 
@@ -506,9 +523,17 @@ export class DesignCanvasComponent {
     const rowHeads = this.rowHeads();
     const right = Math.max(0, ...heads.map((head) => head.x + head.width));
 
+    const sectionCounts = new Map(
+      frames.flatMap((frame) => (frame.section ? [[frame.section.name, frame.section.count]] : [])),
+    );
+
     return {
       heads,
       groups,
+      sections: (sectioned?.sections ?? []).map((section) => ({
+        ...section,
+        count: sectionCounts.get(section.name) ?? 0,
+      })),
       rowHeads: sheet.rows.flatMap((row) => {
         const head = row.head ? rowHeads.find((candidate) => candidate.key === row.name) : undefined;
 
@@ -527,6 +552,8 @@ export class DesignCanvasComponent {
   protected columnHeads = computed(() => this.layout().heads);
 
   protected groupHeads = computed(() => this.layout().groups);
+
+  protected sectionHeads = computed(() => this.layout().sections);
 
   private projectedScene = computed(() => {
     const outline = this.frameOutline();

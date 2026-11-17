@@ -8,9 +8,13 @@ import {
   LISTING_ERROR_SAMPLE,
   OPEN_POINTS_SAMPLE,
   PART_EXCEPTIONS_SAMPLE,
+  STATE_GROUPS_SAMPLE_STATES,
+  STATE_GROUPS_TREE,
   THEME_SWITCHES_SAMPLE,
 } from '../design-parts/system-page/system-page-sample';
+import { stateGroupsOf } from '../design-parts/system-page/state-groups';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
+import { DesignHarnessSystemShotsComponent } from './design-harness-system-shots.component';
 import {
   SKETCH_ADDED_STATE,
   SKETCH_AGENT_RUNS,
@@ -170,7 +174,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(confirm === 'merge' || confirm === 'discard' ? { confirm } : {}),
     };
   },
-  'pages/system': ({ build, agent, call, listingError, ...props }) => {
+  'pages/system': ({ build, agent, call, listingError, stateGroups, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;
     const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptions.length);
     const agentState = agent as keyof typeof AGENT_SAMPLES | undefined;
@@ -186,6 +190,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       listingError: listingError ? LISTING_ERROR_SAMPLE : null,
       call: call ? { ...LEGACY_CALL_SAMPLE, transferred: call === 'transferred' } : null,
       themeSwitches: call ? THEME_SWITCHES_SAMPLE : [],
+      ...(stateGroups ? { stateGroups: stateGroupsOf(STATE_GROUPS_SAMPLE_STATES), tree: STATE_GROUPS_TREE } : {}),
       buildReady: buildReadySampleOf(
         (build as BuildReadySample | undefined) ?? (props['nothingOpen'] ? 'ready' : 'blocked'),
         openCount,
@@ -197,4 +202,5 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
 /** Template inputs a part takes, read from `templates()` of a component the harness creates beside it. */
 export const DESIGN_HARNESS_TEMPLATES: Record<string, Type<{ templates: () => Record<string, unknown> }>> = {
   'pages/sketches': DesignHarnessSketchShotsComponent,
+  'pages/system': DesignHarnessSystemShotsComponent,
 };

@@ -7,6 +7,7 @@ import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component'
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { ShellSection } from '../shell-main/shell-main.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
+import { StateGroup } from './state-groups';
 import { SystemEmptyComponent } from './system-empty.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
@@ -141,6 +142,35 @@ export const FRAME_HEAD_CLASS =
         </div>
       } @else if (empty()) {
         <ethlete-system-empty [product]="shell().product" (copyPrompt)="copyPrompt.emit()" />
+      } @else if (stateGroups().length > 0) {
+        <ethlete-canvas-frames
+          (zoomOut)="zoomOut.emit()"
+          (zoomReset)="zoomReset.emit()"
+          (zoomIn)="zoomIn.emit()"
+          (fit)="fitAll.emit()"
+          class="w-full"
+          zoom="75%"
+        >
+          <div class="flex w-340 flex-wrap items-start gap-x-30 gap-y-20">
+            @for (group of stateGroups(); track group.name) {
+              <section class="flex flex-col gap-space-4">
+                <h3
+                  class="m-0 flex items-baseline gap-space-2 border-b border-et-surface-border pb-space-2 font-ui text-ui-lg text-et-surface"
+                >
+                  {{ group.name }}<span class="text-et-surface-muted tabular-nums">{{ group.states.length }}</span>
+                </h3>
+                <div class="flex flex-wrap gap-x-10 gap-y-16 pt-10">
+                  @for (state of group.states; track state) {
+                    <figure [class]="FRAME_CLASS">
+                      <figcaption [class]="FRAME_HEAD_CLASS">{{ state }}</figcaption>
+                      <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: state }" />
+                    </figure>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+        </ethlete-canvas-frames>
       } @else if (manyStates()) {
         <ethlete-canvas-frames
           (zoomOut)="zoomOut.emit()"
@@ -267,6 +297,7 @@ export class SystemPageComponent {
   public empty = input(false);
   public listingError = input<string | null>(null);
   public manyStates = input(false);
+  public stateGroups = input<StateGroup[]>([]);
   public nothingOpen = input(false);
   public fit = input(false);
   public closed = model(false);

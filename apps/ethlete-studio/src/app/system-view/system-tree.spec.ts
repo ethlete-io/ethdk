@@ -454,6 +454,29 @@ describe('framesOf', () => {
     expect(frames.map((frame) => frame.schemes)).toEqual(Array(4).fill(['light', 'dark']));
   });
 
+  it('puts the frames of a part with many states into state groups, Weitere last', () => {
+    const states = [
+      'part',
+      'agent-working',
+      'empty',
+      'agent-failed',
+      ...Array.from({ length: 8 }, (_, i) => `send-${i}`),
+    ];
+    const card = part({ name: 'card', states, widths: [320] });
+    const frames = framesOf({ port: 4402, product: product(), part: card });
+
+    expect(frames.map((frame) => [frame.row, frame.section?.name, frame.section?.count])).toEqual([
+      ['agent-working', 'agent', 2],
+      ['agent-failed', 'agent', 2],
+      ...Array.from({ length: 8 }, (_, i) => [`send-${i}`, 'send', 8]),
+      ['part', 'Weitere', 2],
+      ['empty', 'Weitere', 2],
+    ]);
+    expect(framesOf({ port: 4402, product: product(), part: part({ layer: 'pages', name: 'home' }) })[0]?.section).toBe(
+      undefined,
+    );
+  });
+
   it('draws a part at a declared width in the light and the dark scheme', () => {
     const card = part({ name: 'card', widths: [320] });
 

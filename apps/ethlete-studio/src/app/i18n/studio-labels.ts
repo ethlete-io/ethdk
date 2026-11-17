@@ -183,6 +183,7 @@ export const STUDIO_LABELS = {
   system: {
     none: 'Noch keine Teile.',
     sketchMissing: 'Sketch nicht gefunden',
+    otherStates: 'Weitere',
     listingFailed: 'Auflistung fehlgeschlagen',
     reload: 'Erneut laden',
     emptyTitle: 'Noch keine Teile',
