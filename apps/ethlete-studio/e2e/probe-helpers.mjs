@@ -5,19 +5,16 @@ const drawnIn = async (iframe) => {
 
   if (!frame) return 'no frame';
 
-  return Promise.race([
-    frame
-      .evaluate(
-        () =>
-          document.readyState !== 'loading' &&
-          [...(document.body?.children ?? [])].some(
-            (child) => child.tagName !== 'SCRIPT' && child.getBoundingClientRect().height > 0,
-          ),
-      )
-      .then((drawn) => (drawn ? 'drawn' : 'blank'))
-      .catch(() => 'no context'),
-    new Promise((done) => setTimeout(() => done('no answer in 250 ms'), 250)),
-  ]);
+  return frame
+    .evaluate(
+      () =>
+        document.readyState !== 'loading' &&
+        [...(document.body?.children ?? [])].some(
+          (child) => child.tagName !== 'SCRIPT' && child.getBoundingClientRect().height > 0,
+        ),
+    )
+    .then((drawn) => (drawn ? 'drawn' : 'blank'))
+    .catch(() => 'no context');
 };
 
 const censusCells = (page, only = null) =>

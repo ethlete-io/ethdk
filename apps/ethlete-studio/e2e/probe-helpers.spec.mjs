@@ -27,6 +27,10 @@ test('a cell with a live frame is drawn', () => {
   );
 });
 
+test('a drawn frame whose thread is busy past the probe is drawn, not empty', () => {
+  assert.deepEqual({ probe: cells.busy.probe, shows: cells.busy.shows }, { probe: 'drawn', shows: true });
+});
+
 test('a cell with an empty frame is blank and shows nothing', () => {
   assert.deepEqual(
     { probe: cells.empty.probe, framed: cells.empty.framed, shows: cells.empty.shows, gone: cells.empty.gone },

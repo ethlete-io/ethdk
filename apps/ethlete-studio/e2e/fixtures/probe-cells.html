@@ -21,6 +21,11 @@
   <body>
     <ethlete-sketch-view>
       <ethlete-design-canvas>
+        <div data-shot="busy">
+          <iframe
+            srcdoc="<p style='height: 20px'>drawn</p><script>const measure = Element.prototype.getBoundingClientRect; Element.prototype.getBoundingClientRect = function () { const end = performance.now() + 1000; while (performance.now() < end); return measure.call(this); };</script>"
+          ></iframe>
+        </div>
         <div data-shot="live"><iframe srcdoc="<p style='height: 20px'>drawn</p>"></iframe></div>
         <div data-shot="empty"><iframe srcdoc=""></iframe></div>
         <div data-shot="gone">
