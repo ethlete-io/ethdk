@@ -58,6 +58,18 @@ export default definePart({
     'tonal-long-label': longLabel('tonal'),
     'outline-long-label': longLabel('outline'),
   },
+  describe: {
+    filled: 'Filled badges in the default, brand, warning and danger themes; check that each label reads on its fill.',
+    tonal: 'Tonal badges in the four themes; check that each tint differs and the coloured label reads on it.',
+    outline: 'Outlined badges in the four themes; check that each border shows against the page and the label reads.',
+    'filled-icons':
+      'Filled badges with a check icon at the start and a star at the end; check the icon gap and alignment.',
+    'tonal-icons': 'Tonal badges with a start and an end icon; check that the icons take the label colour.',
+    'outline-icons': 'Outlined badges with a start and an end icon; check the icon gap and that the border wraps both.',
+    'filled-sizes': 'Filled badges at sm, md and lg; check that height, padding and text scale per step.',
+    'tonal-sizes': 'Tonal badges at sm, md and lg; check that height, padding and text scale per step.',
+    'outline-sizes': 'Outlined badges at sm, md and lg; check that height, padding and text scale per step.',
+  },
   widths: [480],
   frame: (body) => `<div class="badge-frame">${body}</div>`,
   render: (props: Props) =>
