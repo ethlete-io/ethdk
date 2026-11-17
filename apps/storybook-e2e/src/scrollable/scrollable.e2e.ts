@@ -517,3 +517,23 @@ test.describe('scrollable / touch', () => {
     await expect(root.locator(DOT).first()).toHaveAttribute('aria-hidden', 'true');
   });
 });
+
+test.describe('scrollable / item sizing', () => {
+  test('a percent width under itemSize auto resolves against the scroll container', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { itemSize: 'auto' } });
+    const container = root.locator(CONTAINER);
+
+    const sizes = await container.evaluate((el) => {
+      const item = el.querySelector<HTMLElement>('.et-sb-scrollable-item');
+      if (!item) return { item: -1, expected: 0 };
+      item.style.minWidth = '0';
+      item.style.width = '50%';
+      const style = getComputedStyle(el);
+      const content = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+
+      return { item: item.getBoundingClientRect().width, expected: content / 2 };
+    });
+
+    expect(Math.abs(sizes.item - sizes.expected), JSON.stringify(sizes)).toBeLessThanOrEqual(1);
+  });
+});
