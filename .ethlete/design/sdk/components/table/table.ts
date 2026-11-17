@@ -4,14 +4,17 @@ import frame from './table.css?inline';
 
 type Interaction = 'hover' | 'active' | 'focus-visible';
 
+type Selection = 'some' | 'row-added' | 'row-removed' | 'all' | 'none';
+
 type Props = {
   appearance?: TableMockOptions['appearance'];
   sort?: 'asc' | 'desc';
   header?: Interaction;
   row?: Interaction;
   cell?: 'focus-visible';
-  selection?: boolean;
+  selection?: Selection;
   expanded?: boolean;
+  collapsed?: boolean;
   expander?: Interaction;
   groups?: boolean;
   cellError?: boolean;
@@ -39,6 +42,19 @@ const PLAYERS: [string, string, string, string][] = [
 const LONG = 'Hoffmann-Wiesenthal-Brandenburger-Lindqvist-Oberhausen';
 
 const SORT = 'data-et-action="emit:sortChange"';
+
+const action = (state: string) => `data-et-action="${state}"`;
+
+const SELECTED: Record<Selection, number[]> = {
+  some: [1, 2],
+  'row-added': [0, 1, 2],
+  'row-removed': [2],
+  all: [0, 1, 2, 3],
+  none: [],
+};
+
+const selectAll = (selection: Selection): TableMockOptions['selection'] =>
+  selection === 'all' ? 'checked' : selection === 'none' ? 'unchecked' : 'mixed';
 
 const columns = (
   sort: Props['sort'],
@@ -82,6 +98,8 @@ const wideTable = (scrolled: boolean) =>
     attributes: scrolled ? 'data-scrolled' : undefined,
   });
 
+const expandable = (props: Props) => props.expanded || props.collapsed || props.expander !== undefined;
+
 const rows = (props: Props): TableRowMock[] =>
   PLAYERS.slice(props.stickyHeader ? 3 : 0, props.stickyHeader ? 8 : 4).map((cells, index) => {
     const row: TableRowMock = { cells: [...cells] };
@@ -92,12 +110,18 @@ const rows = (props: Props): TableRowMock[] =>
     }
     if (props.cell && index === 1) row.cells[1] = { value: cells[1], attributes: `data-et-force="${props.cell}"` };
     if (props.row && index === 1) row.attributes = `data-et-force="${props.row}"`;
-    if (props.selection) row.selected = index === 1 || index === 2;
+    if (props.selection) {
+      row.selected = SELECTED[props.selection].includes(index);
+      row.selectAttributes = action(row.selected ? 'selection-removed' : 'selection-added');
+    }
     if (props.expanded && index === 1) {
       row.detail = `<div class="t-detail"><span>Club since 2021</span><span>Left foot</span><span>2 hat-tricks this season</span></div>`;
     }
-    if (props.expander && index === 1) row.expanderAttributes = `data-et-force="${props.expander}"`;
-    if (props.expanded && index === 3) row.noExpander = true;
+    if (expandable(props)) {
+      const force = props.expander && index === 1 ? ` data-et-force="${props.expander}"` : '';
+      row.expanderAttributes = `${action(row.detail === undefined ? 'expanded' : 'collapsed')}${force}`;
+    }
+    if (expandable(props) && index === 3) row.noExpander = true;
 
     return row;
   });
@@ -112,8 +136,11 @@ const render = (props: Props) => {
     density: props.density,
     columns: columns(props.sort, props.header, props.center ? 'center' : undefined),
     rows: rows(props),
-    selection: props.selection ? 'mixed' : undefined,
-    expandable: props.expanded || props.expander !== undefined,
+    selection: props.selection ? selectAll(props.selection) : undefined,
+    selectAllAttributes: props.selection
+      ? action(props.selection === 'all' ? 'selection-none' : 'selection-all')
+      : undefined,
+    expandable: expandable(props),
     groups: props.groups ? [{ span: 2 }, { label: 'Season', span: 2 }] : undefined,
     message: props.message,
     placeholder: props.loading ? { rows: 4, widths: [70, 55, 30, 30] } : undefined,
@@ -140,9 +167,14 @@ export default definePart({
     zebra: { appearance: 'zebra' },
     grid: { appearance: 'grid' },
     bare: { appearance: 'bare' },
-    selection: { selection: true },
-    'selection-hover': { selection: true, row: 'hover' },
+    selection: { selection: 'some' },
+    'selection-hover': { selection: 'some', row: 'hover' },
+    'selection-added': { selection: 'row-added' },
+    'selection-removed': { selection: 'row-removed' },
+    'selection-all': { selection: 'all' },
+    'selection-none': { selection: 'none' },
     expanded: { expanded: true },
+    collapsed: { collapsed: true },
     'expander-hover': { expanded: true, expander: 'hover' },
     'expander-focus-visible': { expanded: true, expander: 'focus-visible' },
     'group-header': { groups: true },
@@ -175,8 +207,13 @@ export default definePart({
     selection: 'A selection column with two rows selected; check the mixed header checkbox and the selected row tint.',
     'selection-hover':
       'The selection table with the selected second row hovered; check that hover and selection both read.',
+    'selection-added': 'Lena selected on top of the selection; check her checkbox and row tint, header still mixed.',
+    'selection-removed': 'Mara cleared from the selection; only Ida stays selected and the header stays mixed.',
+    'selection-all': 'Every row selected; check that the header checkbox is checked and all four rows tint.',
+    'selection-none': 'No row selected; check that every checkbox, the header one too, is empty and no row tints.',
     expanded:
       'The second row expanded with its detail; check that the detail sits under the row and Pia has no expander.',
+    collapsed: 'The expander column with every row collapsed; check the closed chevrons and that Pia has no expander.',
     'expander-hover': 'The second row expander hovered; check that only the expander button shows hover.',
     'expander-focus-visible': 'The second row expander focused by keyboard; check that the ring wraps the expander.',
     'group-header': 'A Season group over Goals and Assists; check that the group label spans its two columns.',
@@ -194,6 +231,42 @@ export default definePart({
     'align-center': 'Goals and Assists centered; check that numbers and headers sit in the middle of their columns.',
   },
   widths: [480],
+  motions: {
+    expand: { from: 'collapsed', to: 'expanded' },
+    collapse: { from: 'expanded', to: 'collapsed' },
+  },
+  unreachable: [
+    {
+      from: 'rest',
+      to: 'collapsed',
+      reason: 'The collapsed table has an expander column the rest table lacks; no step adds or drops that column.',
+    },
+    {
+      from: 'collapsed',
+      to: 'rest',
+      reason: 'The collapsed table has an expander column the rest table lacks; no step adds or drops that column.',
+    },
+    {
+      from: 'loading',
+      to: 'collapsed',
+      reason: 'The loading table draws placeholder rows without an expander column; no step adds that column.',
+    },
+    {
+      from: 'collapsed',
+      to: 'loading',
+      reason: 'The loading table draws placeholder rows without an expander column; no step drops that column.',
+    },
+    {
+      from: 'busy',
+      to: 'collapsed',
+      reason: 'The busy table has no expander column, the collapsed one has; no step adds that column.',
+    },
+    {
+      from: 'collapsed',
+      to: 'busy',
+      reason: 'The busy table has no expander column, the collapsed one has; no step drops that column.',
+    },
+  ],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({

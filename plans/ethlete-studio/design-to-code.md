@@ -1809,6 +1809,21 @@ resize or remove a tile). Verified: `design complete` and `design check --part` 
 Refused: `design ready components/pagination` before the commit ("changed outside a sketch - design check draws it"), so
 the pagination mark is not renewed. Not verified: a press on the current page or the selected row fires nothing.
 
+As built (B135 slice 5): the table part gets design-only states for what its selection and expansion write into the
+consumer's signal: `selection-added` (Lena joins the two selected rows), `selection-removed` (only Ida stays),
+`selection-all`, `selection-none` and `collapsed` (expander column, no row open). An unselected row's checkbox
+reaches `selection-added`, a selected one `selection-removed`; the select-all checkbox reaches `selection-none` when
+every row is selected, else `selection-all` (as `toggleAll` does); "Expand row" reaches `expanded`, "Collapse row"
+`collapsed`. A key names the kind of result, not the row: Pia's checkbox and Lena's expander reach a state that draws
+another row. The table mock takes `selectAllAttributes` and a row's `selectAttributes` for the keys. The names avoid
+`-selected`, which `design complete` reads as an interaction state (CONTROL-STATE). ACTION-UNDECLARED in table 4 -> 0,
+no new problem kind. The three consumer-target links (breadcrumb "Home"/"Competitions", query-error "Contact support")
+stay undeclared: `consumerAction` is part-wide, so declaring it would also stop asking keys of breadcrumb's overflow
+button and query-error's retry, which have own behaviour; the consumer owns only those links' targets.
+The motions `expand` (collapsed -> expanded) and `collapse` (expanded -> collapsed) are declared, and the pairs between
+`collapsed` and `rest`, `loading` and `busy` are unreachable: those tables have no expander column. missing-motion stays
+at 20. `definePart` no longer infers state names from `unreachable` (it narrowed them and failed the type check).
+
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
 As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the

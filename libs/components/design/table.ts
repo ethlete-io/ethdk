@@ -51,6 +51,8 @@ export type TableRowMock = {
   attributes?: string;
   /** Extra attributes on the expander button, e.g. design markers. */
   expanderAttributes?: string;
+  /** Extra attributes on the row's select checkbox, e.g. design markers. */
+  selectAttributes?: string;
 };
 
 export type TableMockOptions = {
@@ -64,6 +66,8 @@ export type TableMockOptions = {
   density?: 'sm' | 'md' | 'lg';
   /** Draws the selection column; the value is the select-all checkbox state. */
   selection?: 'unchecked' | 'checked' | 'mixed';
+  /** Extra attributes on the select-all checkbox, e.g. design markers. */
+  selectAllAttributes?: string;
   /** Draws the expander column (`etTableRowExpansion`). */
   expandable?: boolean;
   /** Draws the group header row (`etTableGroupHeaders`) over the data columns. */
@@ -107,11 +111,14 @@ export const tableStyles = /* @__PURE__ */ [
 }`,
 ].join('\n');
 
-const checkbox = (state: 'unchecked' | 'checked' | 'mixed', label: string) => {
+const checkbox = (
+  state: 'unchecked' | 'checked' | 'mixed',
+  { label, attributes }: { label: string; attributes?: string },
+) => {
   const checked = state === 'checked' ? 'true' : state === 'mixed' ? 'mixed' : 'false';
 
   return (
-    `<et-checkbox class="et-checkbox" role="checkbox" aria-checked="${checked}" aria-label="${label}" tabindex="0">` +
+    `<et-checkbox class="et-checkbox" role="checkbox" aria-checked="${checked}" aria-label="${label}" tabindex="0"${attributes ? ` ${attributes}` : ''}>` +
     `<div class="et-checkbox-box">` +
     `<svg class="et-checkbox-checkmark" viewBox="0 0 16 16" aria-hidden="true"><polyline class="et-checkbox-checkmark-path" points="3.5 8 6.5 11 12.5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>` +
     `<svg class="et-checkbox-indeterminate" viewBox="0 0 16 16" aria-hidden="true"><line class="et-checkbox-indeterminate-path" x1="4" y1="8" x2="12" y2="8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>` +
@@ -165,7 +172,7 @@ const bodyCell = (options: TableMockOptions, column: number) => (cell: TableCell
 const leadHeaderCells = (options: TableMockOptions) =>
   [
     options.selection
-      ? `<div class="et-table-select-cell et-table-header-cell" role="columnheader"><et-table-select-all-cell>${checkbox(options.selection, 'Select all rows')}</et-table-select-all-cell></div>`
+      ? `<div class="et-table-select-cell et-table-header-cell" role="columnheader"><et-table-select-all-cell>${checkbox(options.selection, { label: 'Select all rows', attributes: options.selectAllAttributes })}</et-table-select-all-cell></div>`
       : '',
     options.expandable ? `<div class="et-table-expander-cell et-table-header-cell" role="columnheader"></div>` : '',
   ].join('');
@@ -179,7 +186,7 @@ const leadBodyCells = (row: TableRowMock, options: TableMockOptions) => {
 
   return [
     options.selection
-      ? `<div class="et-table-select-cell et-table-cell" role="cell"><et-table-select-cell>${checkbox(row.selected ? 'checked' : 'unchecked', 'Select row')}</et-table-select-cell></div>`
+      ? `<div class="et-table-select-cell et-table-cell" role="cell"><et-table-select-cell>${checkbox(row.selected ? 'checked' : 'unchecked', { label: 'Select row', attributes: row.selectAttributes })}</et-table-select-cell></div>`
       : '',
     options.expandable
       ? `<div class="et-table-expander-cell et-table-cell" role="cell"><et-table-expander-cell>${expander}</et-table-expander-cell></div>`
