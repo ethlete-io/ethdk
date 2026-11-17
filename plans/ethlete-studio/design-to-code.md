@@ -1987,3 +1987,15 @@ wider than the chip's `span.relative`, read as a panned world; `holdsPannedWorld
 0 + 0 (only the pre-existing UNRECORDED left); render-check.spec cases for 12 fit buttons and a nudged world, each bit
 when its fix was reverted (check resolver, aimer, pan fix separately); 167 related cli spec files green. Not verified:
 the published cli build (et:design without `--working-tree` still runs b5c2c3b03 until rebuilt), a live Studio shot.
+
+As built (B578, ADR 0337): no app code acted on the appearance radios or the settings, shortcuts, help and about rows -
+`runShellAction` in `system-view.component.ts` has no case for `appearance` or `studioDialog`. Both submenus and their
+separator are gone from elements/studio-menu (states `studio-menu.appearance` and `studio-menu.help` with them) and from
+the app component, with their outputs, the two open models, the shell-page bindings, the two `ShellAction` kinds, the
+harness sample props and the labels. The project switch, Projekt öffnen… and the server actions keep their targets and
+stay. Verified: `design check --part` before and after for studio-menu, shell-main, part-tree and pages/flows,
+inventory, sketches, system and inbox - no new problem (only the pre-existing UNRECORDED); the app spec asserts that the
+menu ends after the server actions with no submenu trigger and one separator, red against the old template; lint,
+typecheck, 39 related spec files. Not verified: `design task --verify` / `compare` (the implemented record of
+elements/studio-menu is STALE), a live Studio run (no `studio:e2e` case opens the menu); the picked `@edit` sketch of
+elements/studio-menu still waits for its discard, which the session was not allowed to run.

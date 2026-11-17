@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B578
+built: ba59a6f25
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 (late evening), the human on the studio menu rows
 ---
