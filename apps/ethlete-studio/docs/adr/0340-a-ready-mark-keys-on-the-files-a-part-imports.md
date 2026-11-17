@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B576
+built: 282456c14
 decided: 2026-11-18
 source: doc-agent session 2026-11-18, the human on the ready mark grain
 ---

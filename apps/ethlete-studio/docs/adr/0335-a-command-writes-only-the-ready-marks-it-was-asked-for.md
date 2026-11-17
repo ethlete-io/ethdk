@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B576
+built: 282456c14
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 (late evening), the human on the ready marks family
 ---
