@@ -52,6 +52,9 @@ const textOf = (element: Element | null | undefined) => element?.textContent?.re
 
 const LIST_WIDTH = 10000;
 
+const fontsLoaded = (...fontfaces: FontFace[]) =>
+  document.fonts.dispatchEvent(Object.assign(new Event('loadingdone'), { fontfaces }));
+
 const mockWorldSize = (width: number, height: number) => {
   const isWorld = (element: HTMLElement) => element.parentElement?.hasAttribute('data-sk-rows') ?? false;
 
@@ -689,10 +692,30 @@ describe('SketchesComponent', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       return new DOMRect(this.matches('section[data-sk-row]') ? 2000 : 0, 0, 0, 0);
     });
-    document.fonts.dispatchEvent(new Event('loadingdone'));
+    fontsLoaded({} as FontFace);
     await fixture.whenStable();
 
     expect(columns()).not.toBe(before);
+  });
+
+  it('keeps the fit when a font load only re-reports a loaded face', async () => {
+    const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
+    const fixture = await render({ rows: wide, camera: 'fit' });
+    const root: HTMLElement = fixture.nativeElement;
+    const columns = () => root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns;
+    const face = {} as FontFace;
+
+    fontsLoaded(face);
+    await fixture.whenStable();
+    const before = columns();
+
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return new DOMRect(this.matches('section[data-sk-row]') ? 2000 : 0, 0, 0, 0);
+    });
+    fontsLoaded(face);
+    await fixture.whenStable();
+
+    expect(columns()).toBe(before);
   });
 
   it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
@@ -1154,7 +1177,7 @@ describe('SketchesComponent', () => {
     expect(transform()).toBe('translate(-2px, 0px) scale(1)');
 
     mockWorldSize(LIST_WIDTH, 500);
-    document.fonts.dispatchEvent(new Event('loadingdone'));
+    fontsLoaded({} as FontFace);
     await fixture.whenStable();
 
     expect(transform()).toBe('translate(0px, 0px) scale(1)');

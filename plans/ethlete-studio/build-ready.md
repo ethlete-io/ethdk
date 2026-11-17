@@ -993,3 +993,21 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
   at `--delay-frames 3000`, but at `--delay-frames 0` the Sketches page of "hiding the panel at a panned and zoomed
   camera" fails twice: the first frame moves 3.9 px left (x 306.53 -> 302.62, same y and width), so something besides
   the merge row still shifts horizontally when drawing ends. With the waits it passes twice at delay 0.
+
+## As built: B548 (frames hold still when a sketch starts or stops drawing, 2026-11-17, Linux)
+
+- Cause (measured with a per-frame probe in the e2e case and the component's signals): each `status` flip between
+  `drawing` and `waiting` makes Chromium fire `document.fonts` `loadingdone` again with the same four Noto faces it had
+  already loaded (`document.fonts.size` stays 6). `fontLoads` counted every event, so `noteFit` re-based to the current
+  fit (0.289 -> 0.379 after the panel hid) at a held user zoom: the gutter text went 12 px -> 11.74 px, the `max-content`
+  gutter column 180 -> 176.1 px, and the first frame 306.53 -> 302.62 px. The head column (`headColumns`) was not the
+  cause; this sketch renders transposed, with the gutter in column 1.
+- Built: `fontLoads` in `sketches.component.ts` counts a `loadingdone` only when it reports a face (keyed by family,
+  weight, style, stretch, unicode-range) not seen before; `fonts.ready` still counts. Object identity does not work:
+  with it the case still failed 3/3 runs. No visual change to the head.
+- Dropped the `sketchDrawn` waits, their comment and `STUDIO_DRAWING` from `canvas.e2e.mjs`.
+- Verified: `--case "hiding the panel" --delay-frames 0` without the waits failed before the fix (Sketches or Large,
+  every run) and passed 10/10 in 3 runs after it; `--hold-listings 14000` passed 10/10. New spec "keeps the fit when
+  a font load only re-reports a loaded face" fails when every event counts. `design check --product studio --part
+pages/sketches`: only the UNRECORDED finding, which comes from the committed implemented record and was there before.
+- Not verified: Safari/WebKit and Firefox (Tauri on macOS); whether they re-fire `loadingdone` the same way.

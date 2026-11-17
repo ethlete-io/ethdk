@@ -192,6 +192,17 @@ const textAt = (size: number, { scale, fit }: { scale: number; fit: number }) =>
   return scale >= fit ? Math.max(MIN_TEXT, size * scale) : (floor * scale) / fit;
 };
 
+const faceKeyOf = ({ family, weight, style, stretch, unicodeRange }: FontFace) =>
+  [family, weight, style, stretch, unicodeRange].join('|');
+
+const countNewFaces = (
+  { loads, seen }: { loads: number; seen: ReadonlySet<string> },
+  faces: readonly string[] | null,
+) =>
+  faces === null || faces.some((face) => !seen.has(face))
+    ? { loads: loads + 1, seen: new Set([...seen, ...(faces ?? [])]) }
+    : { loads, seen };
+
 const isWithdrawn = (row: SketchRow) => row.withdrawn !== undefined;
 
 const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === null);
@@ -325,9 +336,18 @@ export class SketchesComponent {
   private confirmOrigin: HTMLElement | null = null;
   private fitAt = signal<{ scale: number; fonts: number } | null>(null);
   // fonts.ready resolves before the gutter's mono face loads; without loadingdone the fit keeps the fallback's gutter.
+  // Chromium re-fires loadingdone with faces it already loaded whenever new text renders, so only a new face counts:
+  // a counted re-fire would re-base the held note fit and move every frame at a user zoom.
   private fontLoads = toSignal(
-    merge(from(this.document.fonts.ready), fromEvent(this.document.fonts, 'loadingdone')).pipe(
-      scan((loads) => loads + 1, 0),
+    merge(
+      from(this.document.fonts.ready).pipe(map(() => null)),
+      fromEvent<FontFaceSetLoadEvent>(this.document.fonts, 'loadingdone').pipe(
+        map(({ fontfaces }) => fontfaces.map(faceKeyOf)),
+      ),
+    ).pipe(
+      scan(countNewFaces, { loads: 0, seen: new Set<string>() }),
+      map(({ loads }) => loads),
+      distinctUntilChanged(),
     ),
     { initialValue: 0 },
   );
