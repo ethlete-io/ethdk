@@ -102,7 +102,10 @@
     }
 
     .et-bracket-journey-endpoint {
-      outline: 1px dashed var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
+      outline: var(
+        --et-bracket-journey-endpoint-outline,
+        1px dashed var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
+      );
       outline-offset: 2px;
       border-radius: var(--et-match-card-border-radius, 10px);
     }

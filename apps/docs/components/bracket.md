@@ -888,6 +888,16 @@ a loss - so a pending lower-bracket match keeps them in, and a champion who drop
 winners bracket is never marked. In a swiss stage that loss must also be the one that reaches the
 elimination threshold, so a first-round loser stays in while the next round is not drawn yet.
 
+The outline reads `--et-bracket-journey-endpoint-outline`, a full `outline` shorthand that defaults
+to a `1px dashed` line in the connector line color. Set it to `none` to keep the highlight but drop
+the endpoint outline, or to any other outline value to restyle it.
+
+```css
+et-bracket {
+  --et-bracket-journey-endpoint-outline: none;
+}
+```
+
 ### Per-participant hit-testing needs a marked row
 
 Single-participant highlighting works because each participant's row carries
@@ -984,12 +994,13 @@ Connector and swiss-group-border colors are public custom properties. They defau
 ambient [surface](/core/theming) border color, so the bracket blends into whatever surface
 it sits on - set them to override:
 
-| Token                                   | Default                        | Purpose                                                                 |
-| --------------------------------------- | ------------------------------ | ----------------------------------------------------------------------- |
-| `--et-bracket-line-color`               | `--et-surface-border-solid`    | Connector line color.                                                   |
-| `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)` | Swiss group border color (per-group overrides come from `swissColors`). |
-| `--et-bracket-move-duration`            | `0.2s`                         | How long a relayout takes - see [Narrow screens](#narrow-screens).      |
-| `--et-bracket-move-easing`              | `ease`                         | The timing function of a relayout.                                      |
+| Token                                   | Default                                   | Purpose                                                                 |
+| --------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |
+| `--et-bracket-line-color`               | `--et-surface-border-solid`               | Connector line color.                                                   |
+| `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)`            | Swiss group border color (per-group overrides come from `swissColors`). |
+| `--et-bracket-move-duration`            | `0.2s`                                    | How long a relayout takes - see [Narrow screens](#narrow-screens).      |
+| `--et-bracket-move-easing`              | `ease`                                    | The timing function of a relayout.                                      |
+| `--et-bracket-journey-endpoint-outline` | `1px dashed var(--et-bracket-line-color)` | The outline around the match a journey ends in. `none` hides it.        |
 
 These are not declared via `@property`: an `@property` `initial-value` can't contain a
 `var()`, and the defaults intentionally resolve to a theme token. The bracket doesn't
