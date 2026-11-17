@@ -1850,3 +1850,13 @@ As built (B574, anchored-dialog): the filter options draw as `checkboxGroup` wit
 in `components/anchored-dialog@edit`, 27b023bad (the merge's own commit hit an index lock; committed by hand; merged.json
 records `decidedBy: "user"`, the merge default). `components/button` had gone stale (button.ts changed after 18:23):
 re-marked 19d26a654, hash 30290c267. Ready 442e5df7c. Not verified: a live Studio shot.
+
+As built (B574, pages/system): 17 embedded parts blocked. 13 only had stale marks and re-marked in place. sdk
+`components/badge` declares `controls: {}` (25a18fcab, budget lowered); its `long-label` sketch picked b, one-line
+ellipsis, because the built `et-badge` already truncates (`nowrap`, `--et-badge-max-width`); variant a wraps on purpose
+(WRAP skipped); merged 08dac7545 with `decidedBy: "builder"`, ready 3ab1ecef9. `components/title-bar` failed
+STATE-NO-SOURCE on 19 states: the app had a `force` input fed by no template, added only so compare could open the
+uncommitted hint. The input is gone; the design marks the hint trigger `data-et-opened-by="hover"` (4036143a8, HELD: every
+state draws as before). pages/system ready f5d42a622. Gotcha: after each ready, studio merged.json hash drift makes the
+next embedded marks read stale; commit it between parts. Verified: design check title-bar 0 findings, studio app lint,
+typecheck, 11 related spec files. Not verified: a live Studio shot of the hint on hover.
