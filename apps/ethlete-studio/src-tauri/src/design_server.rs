@@ -590,17 +590,53 @@ fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> Studi
 /// Starts the checkout's server. Started from this repository, it runs from a copy of the committed
 /// CLI build, never from the build agents rewrite in the working tree, and the frontend server
 /// switches to the build of the last committed frontend.
-async fn start(servers: &DesignServers, checkout: &str) -> StudioResult<Option<crate::studio_code::AppCopy>> {
+enum Prepared {
+    Script,
+    RepoBuild {
+        copy: crate::studio_code::CliCopy,
+        preface: Vec<String>,
+        app_copy: crate::studio_code::AppCopy,
+    },
+}
+
+async fn prepare(checkout: &str) -> StudioResult<Prepared> {
     if !crate::studio_code::starts_from_repo_build(Path::new(checkout)) {
-        return spawn(servers, checkout, Vec::new()).map(|()| None);
+        return Ok(Prepared::Script);
     }
 
     let (copy, preface) = crate::studio_code::cli_copy().await?;
     let app_copy = crate::studio_code::app_copy().await?;
 
-    spawn_from(servers, checkout, &copy.entry, preface, Some(copy.sha))?;
+    Ok(Prepared::RepoBuild {
+        copy,
+        preface,
+        app_copy,
+    })
+}
 
-    Ok(Some(app_copy))
+fn launch(
+    servers: &DesignServers,
+    checkout: &str,
+    prepared: Prepared,
+) -> StudioResult<Option<crate::studio_code::AppCopy>> {
+    match prepared {
+        Prepared::Script => spawn(servers, checkout, Vec::new()).map(|()| None),
+        Prepared::RepoBuild {
+            copy,
+            preface,
+            app_copy,
+        } => {
+            spawn_from(servers, checkout, &copy.entry, preface, Some(copy.sha))?;
+
+            Ok(Some(app_copy))
+        }
+    }
+}
+
+async fn start(servers: &DesignServers, checkout: &str) -> StudioResult<Option<crate::studio_code::AppCopy>> {
+    let prepared = prepare(checkout).await?;
+
+    launch(servers, checkout, prepared)
 }
 
 /// Studio runs the design tool itself, so a checkout needs no script and no design tooling of its
@@ -786,19 +822,18 @@ pub async fn design_server_stop(
     state(servers.inner(), &checkout, port, None).await
 }
 
-/// Stops whatever listens on the checkout's port, then starts the server Studio owns.
-#[tauri::command]
-pub async fn design_server_restart(
-    app: tauri::AppHandle,
-    servers: tauri::State<'_, DesignServers>,
-    checkout: String,
-) -> StudioResult<ServerState> {
-    let port = port_of_checkout(&checkout)?;
+async fn restart(
+    servers: &DesignServers,
+    checkout: &str,
+    port: u16,
+    prepared: impl std::future::Future<Output = StudioResult<Prepared>>,
+) -> StudioResult<Option<crate::studio_code::AppCopy>> {
+    let prepared = prepared.await?;
     let taken = servers
         .table
         .lock()
         .map_err(|_| StudioError::Poisoned)?
-        .remove(&checkout);
+        .remove(checkout);
 
     if let Some(mut server) = taken {
         end(&mut server.child).await;
@@ -814,9 +849,23 @@ pub async fn design_server_restart(
         )));
     }
 
-    let app_copy = start(servers.inner(), &checkout).await?;
-    forget_verdict(servers.inner(), &checkout, port)?;
-    await_listening(servers.inner(), &checkout, port).await;
+    let app_copy = launch(servers, checkout, prepared)?;
+    forget_verdict(servers, checkout, port)?;
+    await_listening(servers, checkout, port).await;
+
+    Ok(app_copy)
+}
+
+/// Builds the design tool copy first, then stops whatever listens on the checkout's port and starts
+/// the server Studio owns. A failed build leaves the running server alone.
+#[tauri::command]
+pub async fn design_server_restart(
+    app: tauri::AppHandle,
+    servers: tauri::State<'_, DesignServers>,
+    checkout: String,
+) -> StudioResult<ServerState> {
+    let port = port_of_checkout(&checkout)?;
+    let app_copy = restart(servers.inner(), &checkout, port, prepare(&checkout)).await?;
 
     let answer = judged(servers.inner(), &checkout, port, None).await;
 
@@ -988,6 +1037,32 @@ mod tests {
 
             tokio::time::sleep(POLL).await;
         }
+    }
+
+    #[tokio::test]
+    async fn a_restart_whose_build_fails_keeps_the_running_server() {
+        const PORT: u16 = 45874;
+
+        let checkout = fake_checkout(PORT);
+        let servers = DesignServers::default();
+
+        spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
+        await_listening(&servers, &checkout, PORT).await;
+        assert!(listening(PORT).await);
+
+        let failed = restart(&servers, &checkout, PORT, async {
+            Err(StudioError::Rejected("the build failed".to_owned()))
+        })
+        .await;
+
+        assert!(failed.is_err());
+        assert!(listening(PORT).await);
+
+        let taken = servers.table.lock().expect("the table").remove(&checkout);
+
+        end(&mut taken.expect("the server").child).await;
+        await_stopped(PORT).await;
+        let _ = std::fs::remove_dir_all(&checkout);
     }
 
     #[tokio::test]
