@@ -1844,3 +1844,9 @@ interaction grid), plus 14 `motions` for the hover and disabled pairs (the form-
 (HELD), so no sketch was needed. Not verified: a live Studio shot. Pre-existing: `design complete components/form-field`
 reports CONTROL-GRID-MISSING for the textAlign center/end rows (no hover/focus-visible cells); textarea's ready does not
 need it.
+
+As built (B574, anchored-dialog): the filter options draw as `checkboxGroup` with each `et-checkbox-option` marked
+`option`, declared `part: 'components/checkbox'`; Apply is marked `apply` via `control()` (it was undrawn). Picked new
+in `components/anchored-dialog@edit`, 27b023bad (the merge's own commit hit an index lock; committed by hand; merged.json
+records `decidedBy: "user"`, the merge default). `components/button` had gone stale (button.ts changed after 18:23):
+re-marked 19d26a654, hash 30290c267. Ready 442e5df7c. Not verified: a live Studio shot.
