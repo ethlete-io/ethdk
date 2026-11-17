@@ -5,6 +5,8 @@
 - [`one-session-one-piece.md`](./one-session-one-piece.md), [`ticket-flow.md`](./ticket-flow.md) and [`auto-mode.md`](./auto-mode.md)
   are the open feature plans.
 - [`booking-lessons.md`](./booking-lessons.md) holds the rules a manual month of booking taught.
+- [`findings-2026-11-17-demo-prep.md`](./findings-2026-11-17-demo-prep.md) holds what tidying sixteen days through the
+  agent CLI found.
 - [`m7-sync-research.md`](./m7-sync-research.md) holds the research and the recommendations for the six M7 sync decisions.
 - The glossary is [`libs/timetrack/CONTEXT.md`](../../libs/timetrack/CONTEXT.md), and the decision
   records are in [`libs/timetrack/docs/adr/`](../../libs/timetrack/docs/adr/).
