@@ -81,7 +81,7 @@ const firstChangeOf = async (boxOf: BoxOf, pair: { drawn: Drawn; current: Drawn 
 
 const likeOf = (drawn: Drawn) => (drawn.name === AKTUELL ? AKTUELL : `variant ${drawn.name}`);
 
-export type IdenticalRender = { variant: string; sibling: string | null; line: string };
+export type IdenticalRender = { variant: string; sibling: string | null; everyState: boolean; line: string };
 
 const withdrawAdviceOf = (target: string, variant: string) =>
   `withdraw it with \`sketch withdraw ${target} --variant ${variant} --by <model id>\` or redraw it`;
@@ -123,6 +123,7 @@ const refusalsOf = async (options: {
         refusals.push({
           variant: drawn.name,
           sibling: like.other.name === AKTUELL ? null : like.other.name,
+          everyState: false,
           line: `variant ${drawn.name}${of} first changes ${shown.state}, which draws the same pixels as ${likeOf(like.other)} draws at its first change ${like.first.state}, so the Studio sketch view shows identical frames - ${withdrawAdviceOf(target, drawn.name)}`,
         });
 
@@ -132,6 +133,7 @@ const refusalsOf = async (options: {
     refusals.push({
       variant: drawn.name,
       sibling: twin.name === AKTUELL ? null : twin.name,
+      everyState: true,
       line: `variant ${drawn.name}${of} draws the same pixels as ${likeOf(twin)} in every state (${[...drawn.states.keys()].join(', ')}) - it adds nothing visible: ${twin.name === AKTUELL ? 'redraw it' : withdrawAdviceOf(target, drawn.name)}`,
     });
   }

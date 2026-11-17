@@ -1446,7 +1446,12 @@ describe('designSketch', { timeout: 120_000 }, () => {
     };
     const withdraw = (target: string, ...rest: string[]) =>
       run(target, 'withdraw', 'components/button', '--variant', 'b', '--product', 'acme', ...rest);
-    const twinOfA = { variant: 'b', sibling: 'a', line: 'components/button variant b draws like variant a' };
+    const twinOfA = {
+      variant: 'b',
+      sibling: 'a',
+      everyState: true,
+      line: 'components/button variant b draws like variant a',
+    };
     const sketchOf = (target: string) =>
       findSketch({
         productDir: join(target, DESIGN_DIR, 'acme'),
@@ -1553,7 +1558,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
     await write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
     vi.mocked(identicalRenders).mockResolvedValueOnce([
-      { variant: 'b', sibling: 'a', line: 'components/button variant b draws like variant a' },
+      { variant: 'b', sibling: 'a', everyState: true, line: 'components/button variant b draws like variant a' },
     ]);
     expect(
       await run(

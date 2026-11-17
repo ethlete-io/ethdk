@@ -8,6 +8,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { EDIT_SKETCH, isEditSketch, readMerged } from './merged-parts';
 import { MERGE_WAIT_MS } from './merge-step';
 import { journaledAsync } from '../write-journal';
+import { IdenticalRender } from './identical-renders';
 import {
   createSketch,
   markSketchReady,
@@ -49,6 +50,19 @@ export const isStaleEditSketch = (product: ResolvedProduct, sketch: Pick<Sketch,
   const resolved = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(sketch));
 
   return resolved !== undefined && resolved.origin !== 'base' && headHoldsPart(product, resolved);
+};
+
+/** Whether `renders` show an edit sketch's `new` and `old` drawing like the part now in every state; never for a pick of `old`. */
+export const editHoldsOf = (
+  sketch: Pick<Sketch, 'target' | 'layer' | 'name' | 'decision'>,
+  renders: IdenticalRender[],
+) => {
+  if (!isEditSketch(sketch) || (sketch.decision?.kind === 'pick' && sketch.decision.variant === EDIT_OLD)) return false;
+
+  const twinOf = (variant: string) => renders.find((render) => render.variant === variant && render.everyState);
+  const old = twinOf(EDIT_OLD);
+
+  return twinOf(NEW)?.sibling === null && old !== undefined && (old.sibling === null || old.sibling === NEW);
 };
 
 export type EditOldNotFound = { rule: typeof EDIT_OLD_NOT_FOUND; message: string };

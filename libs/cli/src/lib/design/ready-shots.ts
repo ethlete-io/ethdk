@@ -121,7 +121,7 @@ export const identicalRenders = async (options: SketchShots): Promise<IdenticalR
       });
     });
   } catch (error) {
-    return [{ variant: '', sibling: null, line: couldNotRender(options.sketch, error) }];
+    return [{ variant: '', sibling: null, everyState: false, line: couldNotRender(options.sketch, error) }];
   }
 };
 

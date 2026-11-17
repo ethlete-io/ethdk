@@ -59,8 +59,8 @@ import {
 import { journaled, openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
-import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
-import { MERGED_FILE, untilSketchOf } from './system/sketch/merged-parts';
+import { editDiscardRefusalOf, editHoldsOf } from './system/sketch/edit-sketch';
+import { isEditSketch, MERGED_FILE, recordMerged, untilSketchOf } from './system/sketch/merged-parts';
 import { noVerdictLineOf } from './system/no-verdict';
 import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
@@ -960,9 +960,16 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
       `${drifts.join('\n')}\n${sketch.target} draws one sample with different marks - align them before ready`,
     );
 
-  const identical = await timedPhase('identical', () =>
-    identicalRenderLines({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
-  );
+  const shots = { target: context.target, config: context.config, product, sketch, warm: context.warm };
+  const identical = await timedPhase('identical', async () => {
+    if (!isEditSketch(sketch)) return identicalRenderLines(shots);
+
+    const renders = await identicalRenders(shots);
+
+    return editHoldsOf(sketch, renders) ? null : renders.map((render) => render.line);
+  });
+
+  if (identical === null) return heldEdit(context, { product, sketch });
 
   if (identical.length > 0)
     return readyRefused(
@@ -1015,6 +1022,18 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     return fail(`${sketch.target} is gone: another run merged or discarded it while this one checked it`);
 
   return timedPhase('auto-merge', () => autoMerged({ context, product, sketch, changes }));
+};
+
+const heldEdit = (context: Context, { product, sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
+  const part = partKeyOf(sketch);
+
+  discardSketch({ target: context.target, sketch, author: authorOf(context.args) ?? undefined });
+  recordMerged({ product, parts: [part] });
+  console.log(
+    `HELD ${product.name} ${part}: changed outside a sketch, every state draws as before - closed ${sketch.target}`,
+  );
+
+  return 0;
 };
 
 const targetsInProduct = ({ product, sketch }: { product: ResolvedProduct; sketch: Sketch }) =>
