@@ -56,6 +56,7 @@ export default definePart({
     'outline-sizes': 'Outlined badges at sm, md and lg; check that height, padding and text scale per step.',
   },
   widths: [480],
+  controls: {},
   frame: (body) => `<div class="badge-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
