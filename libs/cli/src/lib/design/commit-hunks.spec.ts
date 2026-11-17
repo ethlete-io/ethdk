@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, relative, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -178,14 +178,13 @@ describe('designCommitHunks with a locked index', () => {
 const DESIGN_ROOT = resolve(__dirname, '../../../../../.ethlete/design');
 
 const sharedJsonFiles = (dir: string): string[] =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name);
-
-    if (entry.isDirectory())
-      return ['sketches', 'comments', 'notes', 'node_modules'].includes(entry.name) ? [] : sharedJsonFiles(path);
-
-    return entry.name.endsWith('.json') && entry.name !== 'tsconfig.json' ? [path] : [];
-  });
+  git(dir, 'ls-files', '--', '*.json')
+    .split('\n')
+    .filter((path) => path && !path.endsWith('tsconfig.json'))
+    .filter(
+      (path) => !path.split('/').some((segment) => ['sketches', 'comments', 'notes', 'node_modules'].includes(segment)),
+    )
+    .map((path) => join(dir, path));
 
 const SPLIT = [
   'merged.json',
