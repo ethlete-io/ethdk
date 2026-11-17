@@ -53,6 +53,7 @@ import { readPartModule } from './system/list-system';
 import { compareMerge, PictureOf } from './merge-compare';
 import { BoxOf, changedAreaOf, diffVariant } from './variant-diff';
 import { mergePreviewOf } from './system/sketch/merge-preview';
+import { addedSkipsOf } from './system/sketch/added-skips';
 import { overlaySketch } from './system/sketch/overlay';
 import {
   decideSketch,
@@ -480,6 +481,7 @@ const listingOf = async ({
           ...sketchOf({ sketch, target }),
           staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
           rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
+          addedSkips: sketch.decision ? [] : addedSkipsOf({ product, sketch }),
           readyRefusal:
             sketch.status === 'ready' && changedSinceReadyOf(sketch).length === 0
               ? null

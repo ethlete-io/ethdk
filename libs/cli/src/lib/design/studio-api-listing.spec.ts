@@ -1,4 +1,4 @@
-import { appendFileSync, cpSync, mkdtempSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -18,6 +18,7 @@ type Listed = {
     dir: string;
     changedSinceReady: string[];
     staleBase: string[] | null;
+    addedSkips: { variant: string; part: string; classes: string }[];
     readyRefusal: { lines: string[] } | null;
     targets?: { variant: string; unchanged?: string[]; crops?: Record<string, { box: unknown }> }[];
   }[];
@@ -296,5 +297,20 @@ describe('what changed under a sketch since it was drawn or judged ready', () =>
     detachRunningListings();
 
     expect(await staleOf()).toEqual([['components/card']]);
+  });
+
+  it('lists each skip marker a variant adds over the merged part', async () => {
+    const target = acme();
+    const never = () => new Promise(() => undefined);
+    const skipsOf = async () =>
+      (await listing(target, '&unchanged=no&targets=no', never)).sketches.map(({ addedSkips }) => addedSkips);
+    const dir = join(target, (await listing(target, '&unchanged=no&targets=no', never)).sketches[0]?.dir ?? '');
+    const card = readFileSync(join(target, '.ethlete/design/acme-base/components/card/card.ts'), 'utf8');
+
+    mkdirSync(join(dir, 'b/components/card'), { recursive: true });
+    writeFileSync(join(dir, 'b/components/card/card.ts'), card.replace('<h3>', '<h3 data-et-skip="WRAP  CLIPPED">'));
+    detachRunningListings();
+
+    expect(await skipsOf()).toEqual([[{ variant: 'b', part: 'components/card', classes: 'WRAP CLIPPED' }]]);
   });
 });

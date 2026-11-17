@@ -66,7 +66,7 @@ import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderI
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
 import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
-import { addedSkipMarksOf } from './system/rules/skips';
+import { addedSkipsOf } from './system/sketch/added-skips';
 import { overlaySketch } from './system/sketch/overlay';
 import { productModuleIdOf, SketchVariant } from './system/system-modules';
 import { unchangedStatesOf } from './system/sketch/unchanged-states';
@@ -1376,23 +1376,10 @@ const openPointLinesOf = ({
 };
 
 const addedSkipLinesOf = ({ product, sketch }: { product: ResolvedProduct; sketch: Sketch }) =>
-  sketch.variants
-    .filter((variant) => !rejectionOf(sketch, variant))
-    .flatMap((variant) => {
-      const drawn = overlaySketch({ product, sketch, variant });
-
-      return drawn.sketched.flatMap((key) => {
-        const after = drawn.parts.find((part) => partKeyOf(part) === key);
-        const before = product.parts.find((part) => partKeyOf(part) === key);
-
-        return after
-          ? addedSkipMarksOf(before?.source ?? null, after.source).map(
-              (mark) =>
-                `${sketch.target} ${variant}: new data-et-skip="${mark}" in ${key} - it silences a check, the pick shows it`,
-            )
-          : [];
-      });
-    });
+  addedSkipsOf({ product, sketch }).map(
+    ({ variant, part, classes }) =>
+      `${sketch.target} ${variant}: new data-et-skip="${classes}" in ${part} - it silences a check, the pick shows it`,
+  );
 
 const roundNoteRefusalOf = (sketch: Sketch): string | null => {
   const running = runningRoundOf(sketch);
