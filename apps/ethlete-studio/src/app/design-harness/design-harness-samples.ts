@@ -182,6 +182,54 @@ const roundsOf = (part: string, heads: 'open' | 'folded') => {
   };
 };
 
+const DIFF_CELL_SIZE = { width: 220, height: 96 };
+
+const DIFF_INTERACTIONS = ['rest', 'hover', 'active', 'focus-visible'];
+
+const DIFF_BOXES = {
+  trigger: { x: 8, y: 8, width: 120, height: 28 },
+  reason: { x: 8, y: 48, width: 150, height: 20 },
+  both: { x: 8, y: 8, width: 150, height: 60 },
+};
+
+const diffUrlOf = (box: (typeof DIFF_BOXES)[keyof typeof DIFF_BOXES]) =>
+  `data:application/json,${encodeURIComponent(JSON.stringify({ box, frame: DIFF_CELL_SIZE }))}`;
+
+const diffBoxOf = (open: boolean, interaction: string) => {
+  if (open && interaction !== 'rest') return DIFF_BOXES.both;
+  if (open) return DIFF_BOXES.reason;
+  if (interaction !== 'rest') return DIFF_BOXES.trigger;
+  return null;
+};
+
+const diffFramesOf = (part: string) => [
+  {
+    id: part,
+    src: '',
+    label: part,
+    grid: {
+      sheet: 'table',
+      columns: DIFF_INTERACTIONS,
+      rows: ['closed', 'open'],
+      cells: ['closed', 'open'].flatMap((row) =>
+        DIFF_INTERACTIONS.map((interaction) => {
+          const box = diffBoxOf(row === 'open', interaction);
+
+          return {
+            id: `${part}-${row}-${interaction}`,
+            row,
+            column: interaction,
+            label: `${row} · ${interaction}`,
+            src: paintedPageOf(DIFF_CELL_SIZE),
+            screenshot: frameShotOf(DIFF_CELL_SIZE),
+            ...(box ? { diff: diffUrlOf(box) } : {}),
+          };
+        }),
+      ),
+    },
+  },
+];
+
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
   'components/comment-pin': ({ class: extra, ...props }) => ({
@@ -192,7 +240,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
-  'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads, ...props }) => {
+  'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads, diff, ...props }) => {
     const scale = parseFloat(String(zoom ?? '100%')) / 100;
     const id = String(part);
     const kind = (mark ?? 'rest') as keyof typeof CANVAS_FRAME_SOURCES;
@@ -200,9 +248,11 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     return {
       ...props,
       class: `${typeof extra === 'string' ? extra : ''} min-h-120`,
-      ...(heads === 'open' || heads === 'folded'
-        ? roundsOf(id, heads)
-        : { frames: [{ id, label: id, ...CANVAS_FRAME_SOURCES[kind] }] }),
+      ...(diff
+        ? { frames: diffFramesOf('hold-trigger') }
+        : heads === 'open' || heads === 'folded'
+          ? roundsOf(id, heads)
+          : { frames: [{ id, label: id, ...CANVAS_FRAME_SOURCES[kind] }] }),
       selectedId: mark === 'selected' || mark === 'active' ? id : null,
       activeId: mark === 'active' ? id : null,
       cameraKey: 'elements/canvas-frames',

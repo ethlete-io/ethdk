@@ -84,13 +84,16 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
       ></iframe>
     }
     @if (diffMark(); as mark) {
-      <div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark>
+      <div
+        class="pointer-events-none absolute inset-0 overflow-clip [--et-diff-mark-stroke:calc(0.2rem*var(--et-design-canvas-label-scale,1))]"
+        data-diff-mark
+      >
         <div
           [style.left]="mark.left"
           [style.top]="mark.top"
-          [style.width]="mark.width"
-          [style.height]="mark.height"
-          class="absolute rounded-control-sm outline-solid outline-(--et-theme-color-primary-solid) outline-[calc(0.2rem*var(--et-design-canvas-label-scale,1))] -outline-offset-[calc(0.2rem*var(--et-design-canvas-label-scale,1))] shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_78%,transparent)]"
+          [style.right]="mark.right"
+          [style.bottom]="mark.bottom"
+          class="absolute rounded-control-sm outline-solid outline-(--et-theme-color-primary-solid) outline-(length:--et-diff-mark-stroke) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_78%,transparent)]"
         ></div>
       </div>
     }

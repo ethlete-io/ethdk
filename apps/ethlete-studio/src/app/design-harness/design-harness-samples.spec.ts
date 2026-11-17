@@ -13,6 +13,27 @@ const sketchesOf = (props: Record<string, unknown>) => {
 };
 
 describe('DESIGN_HARNESS_SAMPLES', () => {
+  it('feeds the diff-mark state the hold-trigger grid whose cells but closed rest carry a state difference', () => {
+    const sample = DESIGN_HARNESS_SAMPLES['elements/canvas-frames'];
+
+    if (!sample) throw new Error('no elements/canvas-frames sample');
+
+    const props = sample({ part: 'button', zoom: '100%', diff: true });
+    const [frame] = props['frames'] as { grid: { cells: { label: string; diff?: string }[] } }[];
+    const diffs = Object.fromEntries(
+      (frame?.grid.cells ?? []).map((cell) => [
+        cell.label,
+        cell.diff ? JSON.parse(decodeURIComponent(cell.diff.replace('data:application/json,', ''))).box : null,
+      ]),
+    );
+
+    expect(props).not.toHaveProperty('diff');
+    expect(Object.keys(diffs)).toHaveLength(8);
+    expect(diffs['closed · rest']).toBeNull();
+    expect(diffs['closed · hover']).toMatchObject({ y: 8 });
+    expect(diffs['open · rest']).toMatchObject({ y: 48 });
+  });
+
   it('feeds the change-crop states a screen sketch whose variant carries the crop data', () => {
     const props = sketchesOf({ camera: 'fit', part: 'narrow', screen: 'crop' });
     const groups = cropGroupsOf(props['rows'] as SketchRow[]);
