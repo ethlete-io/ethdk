@@ -132,6 +132,7 @@ const WIDE_SKETCH = {
 
 const EDITED_PART = 'components/disclosure';
 const WAIT_MS = 10000;
+const STUDIO_DRAWING = 'zeichnet';
 const FULL_COMPARE_MS = 60000;
 // Playwright's API request agent ignores the server's `Keep-Alive: timeout=5` hint, so reusing an idle socket races the
 // design server's idle close and resets (ECONNRESET under load). Each API request opens its own connection.
@@ -335,6 +336,14 @@ const markPartLeaves = (page) =>
   }, NOT_PART_GROUPS);
 
 const settle = (page) => page.waitForTimeout(SETTLE_MS);
+
+// A sketch head drops its "zeichnet" badge and gains the Übernehmen row once every frame drew, which moves the frames.
+const sketchDrawn = async (page) => {
+  const drawing = page.getByText(STUDIO_DRAWING, { exact: true });
+
+  for (const until = Date.now() + WAIT_MS; (await drawing.count()) && Date.now() < until;)
+    await page.waitForTimeout(250);
+};
 
 const underPanel = (page) =>
   page.evaluate(
@@ -3669,6 +3678,7 @@ const CASES = [
 
       if (unzoomed) return unzoomed;
 
+      await sketchDrawn(page);
       const before = await probe(page);
       const frameBefore = await firstFrame();
       const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
@@ -3698,6 +3708,7 @@ const CASES = [
     name: 'hiding the panel at a panned and zoomed camera keeps the frames on screen',
     pages: ['System', 'Sketches', 'Flow'],
     run: async (page) => {
+      await sketchDrawn(page);
       const screenRect = () =>
         page.evaluate(
           ({ CANVAS, FRAME }) => {
