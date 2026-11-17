@@ -1065,3 +1065,8 @@ As built (B179, 2026-11-17): built in dd5ff755d (2026-11-03): compare checks onl
 the host note now says `host <name>: skipped - the app's own chrome around the part, which the design does not draw`
 (`hostLineOf` in `system/actions-command.ts`). Verified: the `part-ready.spec.ts` case that asserts this
 line passes on HEAD. Not verified: a live compare run. Row deleted.
+
+As built (B237, 2026-11-17): folded into B248 (finding 303); the draft is the shared `components/comment-draft` part
+that pages/system embeds. Verified (live, 2026-11-17): `design compare pages/system --product studio` reports
+`comment-draft ok`, `comment-draft-typed ok`, `comments-draft ok` and no COVERED line; `design check --product studio
+--part pages/system` has only STATE-NO-SOURCE (the B539 comment states) and UNRECORDED, both there before. Row deleted.
