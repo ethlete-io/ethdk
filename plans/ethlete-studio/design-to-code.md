@@ -1681,3 +1681,5 @@ names the retainer; then a fix with a spec that bounds the heap over 200 shots.
 986 update (Linux builder, 2026-11-13, B499 S6): not reproduced; main heap +1.1 MB a round over 200 shots with listings (see B499 S6 as built). Stays open.
 
 986 update (Linux builder, 2026-11-15, B499 close): parked: the leak is not reproduced (B499 S6) and no P-proof covers RSS outside the heap; it needs a reproduction recipe first.
+
+As built (B557 studio + sdk fill): 9fa99c42f studio (422 states, 37 parts); 810136f34, 5f5620ddf, 1fc186f9f, 9b2b62075 sdk (58 parts). Verified: design check studio and sdk, 0 STATE-SENTENCE, no new problem type; sdk live shot (accordion). Open: the refuse switch.
