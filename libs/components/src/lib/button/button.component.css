@@ -22,7 +22,8 @@
     font-weight: var(--et-button-font-weight);
     letter-spacing: var(--et-button-letter-spacing, revert-layer);
     text-transform: var(--et-button-text-transform, revert-layer);
-    border: var(--et-button-border-width, 0.1rem) solid var(--_et-button-border-color);
+    border: var(--et-button-border-width, 0.1rem) solid
+      var(--_et-button-state-border-color, var(--_et-button-border-color));
     box-shadow: var(--_et-button-shadow);
     cursor: var(--et-button-cursor);
     text-decoration: none;

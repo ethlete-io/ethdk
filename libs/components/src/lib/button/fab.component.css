@@ -186,7 +186,10 @@
 
     &:where([data-variant='outline'])::after {
       border-width: var(--et-button-border-width, 0.1rem);
-      border-color: var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
+      border-color: var(
+        --_et-button-state-border-color,
+        var(--et-button-outline-border-color, var(--et-theme-color-ink-solid))
+      );
     }
 
     &[data-icon-alignment='end'] {

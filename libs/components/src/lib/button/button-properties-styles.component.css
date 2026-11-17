@@ -107,15 +107,18 @@
     @media (hover: hover) {
       &:hover {
         --_et-button-state-background: var(--et-button-outline-hover-background);
+        --_et-button-state-border-color: var(--et-button-outline-hover-border-color);
       }
     }
 
     &:focus-visible {
       --_et-button-state-background: var(--et-button-outline-hover-background);
+      --_et-button-state-border-color: var(--et-button-outline-hover-border-color);
     }
 
     &:active {
       --_et-button-state-background: var(--et-button-outline-active-background);
+      --_et-button-state-border-color: var(--et-button-outline-active-border-color);
     }
   }
 

@@ -118,7 +118,7 @@
 
     &:where([data-variant='outline']) {
       border: var(--et-button-border-width, 0.1rem) solid
-        var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
+        var(--_et-button-state-border-color, var(--et-button-outline-border-color, var(--et-theme-color-ink-solid)));
     }
 
     &[data-pressed='true']:where([data-pressed-variant='filled']) {

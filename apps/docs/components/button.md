@@ -241,6 +241,8 @@ Surface, FAB and icon button also share one opacity-ramp recipe for their outlin
 
 The ramp tints the theme's accent, so it cannot reach an arbitrary color. To give the outline or transparent variant an exact state color, set its background tokens on the surface button, icon button or FAB: `--et-button-outline-hover-background` and `--et-button-outline-active-background`, `--et-button-transparent-hover-background` and `--et-button-transparent-active-background`. Each takes any CSS color and replaces the background outright. Keyboard focus (`:focus-visible`) shows the hover color; while pressed (`:active`) the active color wins over both. A token left unset keeps the opacity ramp for that state, so setting only the hover token leaves the active state at the ramp's tint. A surface button that is `pressed` from `filled` (it then looks like outline) reads the outline tokens; a pressed button in a tonal or filled look reads none of them.
 
+The outline variant's border takes the same states: `--et-button-outline-hover-border-color` (hover and keyboard focus) and `--et-button-outline-active-border-color` (pressed) replace `--et-button-outline-border-color` for that state, for example `transparent` when the hover fills the button grey. A token left unset keeps the resting border.
+
 ```css
 .my-toolbar .et-icon-button {
   --et-button-transparent-hover-background: rgb(40 49 64);
