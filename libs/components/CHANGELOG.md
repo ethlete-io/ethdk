@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-next.89
+
+### Minor Changes
+
+- Add an `align` input (`'center' | 'start'`) to `et-progress-steps`, and the `--et-timeline-upcoming-ring-width` and `--et-timeline-current-ring-width` tokens to `et-timeline` for a hollow upcoming dot and a tunable current ring.
+- Add a `sunken` `fill` to `et-form-field` that paints the surface one elevation below its parent, and the `--et-form-field-control-min-height-sm` / `-md` / `-lg` tokens that set a size's minimum field height app-wide
+- Add the `--et-table-header-border-color` token to recolour or drop (`transparent`) the rule under the `et-table` header in any appearance.
+- Add the `--et-accordion-title-font-size`, `--et-accordion-title-font-weight`, `--et-accordion-hint-font-weight` and `--et-accordion-header-padding-block` tokens to `et-accordion`, and a `lastDivider` input to `et-accordion-group` that keeps the hairline under the last accordion.
+- Add the `--et-button-outline-hover-background`, `--et-button-outline-active-background`, `--et-button-transparent-hover-background` and `--et-button-transparent-active-background` tokens to `et-button`, `et-icon-button` and `et-fab`, so the outline and transparent variants can take an exact hover, focus and active color.
+- Add the `--et-button-outline-hover-border-color` and `--et-button-outline-active-border-color` tokens to `et-button`, `et-icon-button` and `et-fab`, so the outline variant's border can change color, or turn transparent, on hover, focus and active.
+- Add the `--et-accordion-header-padding-inline` token to `et-accordion`: it sets the header's side padding apart from the panel's, so the header can reach past the panel content without a class rule.
+
+### Patch Changes
+
+- Keep the baseline of `et-nav-tabs` and `et-tab-group` under the whole tab bar while the tabs scroll. It used to move with the scrolled tabs, ending before the right edge and starting after the start scroll button.
+
 ## 1.0.0-next.88
 
 ### Minor Changes
