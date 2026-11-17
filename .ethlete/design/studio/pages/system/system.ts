@@ -61,7 +61,7 @@ const emptyCanvasOf = (copy: string) =>
     </div>
   </div>`;
 
-const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, acting: boolean, exceptions: number) => {
+const chip = async (open: PartOpenPoints, pressed: boolean, acting: boolean, exceptions: number) => {
   const count = open.points.length + exceptions;
   const drawn = await button.render(
     {
@@ -73,7 +73,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
       size: 'sm',
       pressed,
     },
-    focused ? { interaction: 'focus-visible' } : {},
+    {},
   );
   const target = pressed ? 'points-closed' : 'part';
   return {
@@ -262,7 +262,6 @@ export default definePart<{
   nothingOpen?: boolean;
   closed?: boolean;
   fit?: boolean;
-  chipFocus?: boolean;
   commentMode?: boolean;
   comments?: boolean;
   draft?: string;
@@ -289,8 +288,6 @@ export default definePart<{
     fit: { fit: true },
     'points-closed': { closed: true },
     'nothing-open': { nothingOpen: true },
-    'part-focus-visible': { chipFocus: true },
-    'points-closed-focus-visible': { closed: true, chipFocus: true },
     'comment-mode': { closed: true, commentMode: true },
     'comment-draft': { closed: true, commentMode: true, draft: '' },
     'comment-draft-typed': {
@@ -358,7 +355,6 @@ export default definePart<{
     nothingOpen: clear,
     closed,
     fit,
-    chipFocus = false,
     commentMode = false,
     comments = false,
     draft,
@@ -468,7 +464,7 @@ export default definePart<{
     const points = clear ? nothingOpen : buttonPoints;
     const acting = !fit && !clear;
     const exceptionCount = clear ? 0 : buttonExceptions.length;
-    const toggle = await chip(points, !closed, chipFocus, acting && !commentMode, exceptionCount);
+    const toggle = await chip(points, !closed, acting && !commentMode, exceptionCount);
     const comment = await commentButton({
       on: commentMode,
       ...(acting ? { action: commentMode ? 'points-closed' : 'comment-mode' } : {}),

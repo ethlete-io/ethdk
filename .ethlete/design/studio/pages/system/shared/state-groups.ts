@@ -13,8 +13,6 @@ const SYSTEM_STATES = [
   'fit',
   'points-closed',
   'nothing-open',
-  'part-focus-visible',
-  'points-closed-focus-visible',
   'comment-mode',
   'comment-draft',
   'comment-draft-typed',
