@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B552
+built: 1d3b11fd3
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 morning round, the KNOWN_UNBOUND_INPUTS question for pages/system
 ---
