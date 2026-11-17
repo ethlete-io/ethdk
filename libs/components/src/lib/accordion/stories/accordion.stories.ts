@@ -19,10 +19,11 @@ export default {
       ],
     }),
   ],
-  args: { autoCloseOthers: false, preventCloseLast: false, surface: 'dark' },
+  args: { autoCloseOthers: false, preventCloseLast: false, lastDivider: false, surface: 'dark' },
   argTypes: {
     autoCloseOthers: { control: 'boolean' },
     preventCloseLast: { control: 'boolean' },
+    lastDivider: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<AccordionStorybookComponent>;

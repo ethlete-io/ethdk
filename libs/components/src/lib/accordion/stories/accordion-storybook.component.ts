@@ -10,6 +10,7 @@ import { ACCORDION_IMPORTS } from '../accordion.imports';
       <et-accordion-group
         [autoCloseOthers]="autoCloseOthers()"
         [preventCloseLast]="preventCloseLast()"
+        [lastDivider]="lastDivider()"
         [style.max-inline-size.px]="560"
       >
         <et-accordion label="How long does shipping take?" isOpenByDefault>
@@ -40,6 +41,7 @@ export class AccordionStorybookComponent {
   public surface = input('dark');
   public autoCloseOthers = input(false);
   public preventCloseLast = input(false);
+  public lastDivider = input(false);
 }
 
 let creationOrder = 0;

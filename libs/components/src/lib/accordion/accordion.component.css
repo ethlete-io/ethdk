@@ -11,6 +11,18 @@
     initial-value: 12px;
   }
 
+  @property --et-accordion-title-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 500;
+  }
+
+  @property --et-accordion-hint-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 400;
+  }
+
   @property --et-accordion-gap {
     syntax: '<length>';
     inherits: true;
@@ -62,7 +74,8 @@
   }
 
   .et-accordion-heading {
-    --_et-accordion-tint-inset: min(4px, var(--et-accordion-padding-block));
+    --_et-accordion-header-padding-block: var(--et-accordion-header-padding-block, var(--et-accordion-padding-block));
+    --_et-accordion-tint-inset: min(4px, var(--_et-accordion-header-padding-block));
 
     display: block;
     padding-block: var(--_et-accordion-tint-inset);
@@ -75,14 +88,15 @@
     align-items: center;
     gap: var(--et-accordion-gap);
     inline-size: 100%;
-    padding: calc(var(--et-accordion-padding-block) - var(--_et-accordion-tint-inset))
+    padding: calc(var(--_et-accordion-header-padding-block) - var(--_et-accordion-tint-inset))
       var(--et-accordion-padding-inline);
     border: 0;
     border-radius: var(--et-accordion-radius);
     background: transparent;
     color: inherit;
     font: inherit;
-    font-weight: 500;
+    font-size: var(--et-accordion-title-font-size, 1em);
+    font-weight: var(--et-accordion-title-font-weight);
     text-align: start;
     cursor: pointer;
 
@@ -124,7 +138,7 @@
     .et-accordion-hint {
       flex: none;
       color: var(--_et-accordion-secondary-color);
-      font-weight: 400;
+      font-weight: var(--et-accordion-hint-font-weight);
     }
 
     .et-accordion-chevron {

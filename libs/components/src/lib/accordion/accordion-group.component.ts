@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, input } from '@angular/core';
 import { AccordionGroupDirective } from './headless';
 
 /**
@@ -24,6 +24,10 @@ import { AccordionGroupDirective } from './headless';
   ],
   host: {
     class: 'et-accordion-group',
+    '[attr.data-last-divider]': 'lastDivider() || null',
   },
 })
-export class AccordionGroupComponent {}
+export class AccordionGroupComponent {
+  /** Keep the hairline under the last accordion, which the group drops by default. */
+  public lastDivider = input(false, { transform: booleanAttribute });
+}

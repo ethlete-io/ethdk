@@ -51,6 +51,7 @@ import { ACCORDION_IMPORTS } from '@ethlete/components';
 | `autoCloseOthers`    | `false` | Keep at most one panel open - expanding one collapses the rest.                    |
 | `preventCloseLast`   | `false` | Keep at least one panel open - collapsing the last open one does nothing.          |
 | `arrowKeyNavigation` | `true`  | Move focus between headers with `ArrowUp`/`ArrowDown`, and jump with `Home`/`End`. |
+| `lastDivider`        | `false` | Keep the hairline under the last accordion, which the group drops by default.      |
 
 Leaving `autoCloseOthers` off lets a reader compare two sections side by side; turn it
 on when the panels are long enough that several open at once push the headers off
@@ -195,15 +196,19 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 `--et-surface-interaction-solid`, and the focus ring from
 `--et-theme-color-primary-solid`. Geometry and timing are tokens:
 
-| Property                        | Default | Applies to                                                 |
-| ------------------------------- | ------- | ---------------------------------------------------------- |
-| `--et-accordion-padding-block`  | `14px`  | header padding, and the panel's bottom padding             |
-| `--et-accordion-padding-inline` | `12px`  | header and panel side padding, so the hover tint has room  |
-| `--et-accordion-gap`            | `12px`  | gap between label, hint and chevron                        |
-| `--et-accordion-chevron-size`   | `14px`  | chevron box                                                |
-| `--et-accordion-radius`         | `8px`   | the hover tint's shape - raise it when the group is a card |
-| `--et-accordion-duration`       | `240ms` | collapse and chevron rotation                              |
-| `--et-accordion-color-duration` | `120ms` | the header's hover response - tint, hairline and chevron   |
+| Property                              | Default                        | Applies to                                                                             |
+| ------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------- |
+| `--et-accordion-padding-block`        | `14px`                         | header padding, and the panel's bottom padding                                         |
+| `--et-accordion-header-padding-block` | `--et-accordion-padding-block` | header padding only - sets the header height without moving the panel's bottom padding |
+| `--et-accordion-title-font-size`      | inherited                      | the header label's font size                                                           |
+| `--et-accordion-title-font-weight`    | `500`                          | the header label's weight                                                              |
+| `--et-accordion-hint-font-weight`     | `400`                          | the hint's weight                                                                      |
+| `--et-accordion-padding-inline`       | `12px`                         | header and panel side padding, so the hover tint has room                              |
+| `--et-accordion-gap`                  | `12px`                         | gap between label, hint and chevron                                                    |
+| `--et-accordion-chevron-size`         | `14px`                         | chevron box                                                                            |
+| `--et-accordion-radius`               | `8px`                          | the hover tint's shape - raise it when the group is a card                             |
+| `--et-accordion-duration`             | `240ms`                        | collapse and chevron rotation                                                          |
+| `--et-accordion-color-duration`       | `120ms`                        | the header's hover response - tint, hairline and chevron                               |
 
 ### The hover response
 
@@ -219,6 +224,9 @@ last row tapped, and a header that is `disabled` responds to none of them.
 Under `prefers-reduced-motion: reduce` the chevron stops rotating but keeps its colour fade - a
 cross-fade is not motion.
 
+A taller or shorter header is `--et-accordion-header-padding-block`: it sets the space above and below
+the header label and leaves the space under an open panel at `--et-accordion-padding-block`.
+
 Every accordion brings its own bottom hairline and the group drops the trailing one, so
 a boxed group is a border and a radius away without having to undo anything:
 
@@ -228,6 +236,16 @@ a boxed group is a border and a radius away without having to undo anything:
   border-radius: 12px;
   --et-accordion-padding-inline: 16px;
 }
+```
+
+An open list - one that ends on a rule rather than in a box - keeps that last hairline with
+`lastDivider`:
+
+```html
+<et-accordion-group lastDivider>
+  <et-accordion label="Shipping">Ships in 2–4 days.</et-accordion>
+  <et-accordion label="Returns">30 days, no questions asked.</et-accordion>
+</et-accordion-group>
 ```
 
 ## Error codes
