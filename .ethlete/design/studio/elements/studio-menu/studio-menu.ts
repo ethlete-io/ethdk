@@ -159,14 +159,22 @@ export const studioMenu = async ({
         ${panel.body}
         ${
           submenu
-            ? html`<div class="st-studio-submenu absolute w-44" data-et-surface="studio-menu.appearance">
+            ? html`<div
+                class="st-studio-submenu absolute w-44"
+                data-et-auto-surface
+                data-et-surface="studio-menu.appearance"
+              >
                 ${submenu.body}
               </div>`
             : ''
         }
         ${
           helpMenu
-            ? html`<div class="st-studio-submenu st-studio-help absolute w-56" data-et-surface="studio-menu.help">
+            ? html`<div
+                class="st-studio-submenu st-studio-help absolute w-56"
+                data-et-auto-surface
+                data-et-surface="studio-menu.help"
+              >
                 ${helpMenu.body}
               </div>`
             : ''
