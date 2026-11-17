@@ -182,17 +182,17 @@
     "pid": 2178327
   },
   "components/pagination": {
-    "hash": "7de3c8fc430dd78a",
+    "hash": "06d3fb18614c6301",
     "files": {
       ".ethlete/design/sdk/components/pagination/pagination.css": "98768d0907be651f",
-      ".ethlete/design/sdk/components/pagination/pagination.ts": "7e4336a384e053fd",
+      ".ethlete/design/sdk/components/pagination/pagination.ts": "dd8cc556f00be096",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/pagination.ts": "f259f3d3ca9bfb9b",
-      "libs/components/src/lib/button/button-properties-styles.component.css": "39a20bd59ff9864e",
-      "libs/components/src/lib/button/button.component.css": "1b93c651ccdb363a",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
+      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
-      "libs/components/src/lib/button/icon-button.component.css": "ff7eeb0527c6ebd7",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
@@ -202,11 +202,11 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "actions": [],
-    "at": "2026-11-16T15:50:04.560Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 882630
+    "actions": ["emit:pageChange"],
+    "at": "2026-11-17T21:13:44.652Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 3081054
   },
   "components/radio-group": {
     "hash": "6c4b9fd45c5ad5c6",
