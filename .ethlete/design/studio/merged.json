@@ -76,7 +76,7 @@
     "note": "merged without a pick: allowed by finding 911 precedent: B523 (6), the design frame clipped its own 100 % tooltip by 3.5 px; the app draws it whole"
   },
   "elements/canvas-frames": {
-    "hash": "0aba678db6202ece",
+    "hash": "eb8ed915c7b9b2f5",
     "variant": "a",
     "decidedBy": "auto: no visible change",
     "at": "2026-11-05T14:07:16.480Z"
