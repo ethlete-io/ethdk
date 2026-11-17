@@ -242,7 +242,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
-  'elements/studio-menu': (props) => ({ project: SHELL_SAMPLE.project, projects: SHELL_SAMPLE.projects, ...props }),
+  'elements/studio-menu': ({ appearance, help, ...props }) => ({
+    project: SHELL_SAMPLE.project,
+    projects: SHELL_SAMPLE.projects,
+    appearanceOpen: appearance ?? false,
+    helpOpen: help ?? false,
+    ...props,
+  }),
   'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads, diff, ...props }) => {
     const scale = parseFloat(String(zoom ?? '100%')) / 100;
     const id = String(part);

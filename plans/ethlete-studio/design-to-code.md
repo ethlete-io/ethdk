@@ -1799,6 +1799,20 @@ COMPARE blockers are gone. `design ready` then fails 42 action checks (was 60 be
 verified: a live Studio shot. Side fix: sdk `components/menu` re-marked ready (its hash changed with B135 slice 2);
 the run committed 14 foreign serve marks, restored in a15b06a5b.
 
+As built (B574, studio-menu): the app now emits `appearanceChange` (all three radios enabled, `(activate)`) and
+`openSettings` / `openShortcuts` / `openHelp` / `openAbout` (help rows enabled); shell-page forwards them as
+`ShellAction` kinds `appearance` and `studioDialog`, which no view acts on yet (no light theme, no dialogs, no URL
+opener). The submenu open models are renamed `appearanceOpen` / `helpOpen` (a model `appearance` clashes with the
+`appearanceChange` output, NG1054); the harness sample maps the design props onto them. Closing the menu closes both
+submenus; the submenus take `offset { mainAxis: 11, crossAxis: -6 }` and `min-w-0` to sit at the design's place and
+width. Design (merged via `elements/studio-menu@edit`, 6364e0ba0): `open-focus-visible` highlights ethlete-sdk, where
+the SDK puts keyboard focus on open, instead of the generic second row. `design ready` went from 42 to 24 failures;
+closed, open-focus-visible and all emit checks pass. Still failing (not ready): a submenu opened by click draws one
+elevation up (SDK: backdrop-less overlay = parent + 1, bg 43 vs 32), while the design
+draws it flat; and `studio-menu.stopped` -> Hilfe, where the design places the help submenu at a fixed `top: 279px`
+although the row sits one row higher. Both need a design decision (draw the submenu elevated and row-anchored). Verified:
+studio specs (231), lint, development build. Not verified: `design check` after the change, a live Studio shot.
+
 As built (B574, comment parts): comment-row and comment-target draw their control via `control()` with
 `interactionRows` (hover, active, focus-visible; comment-row also selected via `aria-pressed`), like tree-row;
 comment-draft declares its two buttons as `part: 'components/button'` controls (the button render owns them, so

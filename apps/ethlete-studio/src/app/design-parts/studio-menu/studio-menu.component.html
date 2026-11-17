@@ -1,7 +1,7 @@
 <div
   [open]="open()"
   [offset]="{ mainAxis: 20, crossAxis: 0 }"
-  (openChange)="open.set($event)"
+  (openChange)="setOpen($event)"
   class="relative size-10"
   etMenu
   arrow="false"
@@ -50,32 +50,32 @@
         <button (click)="serverAction.emit(item.action)" et-menu-item type="button">{{ item.label }}</button>
       }
       <et-menu-separator />
-      <div [(open)]="appearance" etMenu>
+      <div [(open)]="appearanceOpen" [offset]="SUBMENU_OFFSET" etMenu>
         <button et-menu-item etMenuTrigger type="button">{{ LABELS.appearance }}</button>
         <ng-template etMenuSurface>
-          <et-menu class="box-border w-44 text-ui-md">
+          <et-menu class="box-border w-44 min-w-0 text-ui-md">
             <et-menu-radio-group value="dark">
-              @for (appearance of APPEARANCES; track appearance.value) {
-                <et-menu-radio-item [value]="appearance.value" [disabled]="!appearance.enabled">{{
-                  LABELS.appearances[appearance.value]
+              @for (mode of APPEARANCES; track mode) {
+                <et-menu-radio-item [value]="mode" (activate)="appearanceChange.emit(mode)">{{
+                  LABELS.appearances[mode]
                 }}</et-menu-radio-item>
               }
             </et-menu-radio-group>
           </et-menu>
         </ng-template>
       </div>
-      <div [(open)]="help" etMenu>
+      <div [(open)]="helpOpen" [offset]="SUBMENU_OFFSET" etMenu>
         <button et-menu-item etMenuTrigger type="button">{{ LABELS.help }}</button>
         <ng-template etMenuSurface>
           <et-menu class="box-border w-56 text-ui-md">
-            <button disabled et-menu-item type="button">
+            <button (click)="openSettings.emit()" et-menu-item type="button">
               {{ LABELS.settings }}<et-menu-item-shortcut>{{ LABELS.settingsKeys }}</et-menu-item-shortcut>
             </button>
-            <button disabled et-menu-item type="button">
+            <button (click)="openShortcuts.emit()" et-menu-item type="button">
               {{ LABELS.shortcuts }}<et-menu-item-shortcut>{{ LABELS.shortcutsKeys }}</et-menu-item-shortcut>
             </button>
-            <button disabled et-menu-item type="button">{{ LABELS.docs }}</button>
-            <button disabled et-menu-item type="button">{{ LABELS.about }}</button>
+            <button (click)="openHelp.emit()" et-menu-item type="button">{{ LABELS.docs }}</button>
+            <button (click)="openAbout.emit()" et-menu-item type="button">{{ LABELS.about }}</button>
           </et-menu>
         </ng-template>
       </div>
