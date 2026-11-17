@@ -2600,6 +2600,11 @@ B485 closed (Linux builder, 2026-11-17): `design compare pages/system --product 
 prints `listing-error ok`; `design check pages/system --product studio` names no listing-error problem, only the known
 STATE-NO-SOURCE x3 (comments, B233) and UNRECORDED. Not verified: a live shot of a real failed listing in the app.
 
+B288 closed (Linux builder, 2026-11-17): the exceptions group, the build-ready footer and the chip count were built
+in 9bc56da98 (later 6783f5c4a). `design compare pages/system --product studio` prints `ok` for direct-edit,
+one-blocker, blockers-open and agent-failed. part-focus-visible and points-closed-focus-visible stay undrivable: the
+design prop `chipFocus` has no app input, so the harness drops it. Not verified: those two focus states.
+
 B165 as built (Linux builder, 2026-11-17): `AgentLogoName` gains `generic`, the neutral mark of the design's
 agent-logos foundation (`currentColor`, even-odd path); `sketchModelOf` falls back to it instead of `claude` for an
 author no agent pattern matches. Verified: agent-logo spec (generic draws `currentColor` and `fill-rule="evenodd"`),

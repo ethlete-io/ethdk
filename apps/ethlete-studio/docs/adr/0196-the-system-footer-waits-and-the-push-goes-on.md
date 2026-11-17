@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B288
+built: 9bc56da98
 decided: 2026-11-05
 source: grill session 2026-11-05
 ---
