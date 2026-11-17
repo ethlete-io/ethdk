@@ -1023,3 +1023,9 @@ Verified: `design check --product studio --part pages/system` CAPABILITY-PLACE 0
 on the B539 comment states, UNRECORDED file lists) come from parts this slice did not touch. Not verified: a live shot.
 
 As built (B170, 2026-11-17): `RenderIssue` carries `undrawn?: "part" | "state"`, set where the issue is made: the RENDER-TIMEOUT issue and the module-load RENDER issue say `part`; the in-frame `design-explore:` refusal says `part` or `state` by the state of its frame. `isPartUndrawn` and `isStateUndrawn` in `drawn-open-points.ts` read the flag, so a reworded detail no longer changes the verdict. The flag is a plain property, so it survives the served-cache JSON and the page evaluation. Verified: new `drawn-open-points.spec.ts` failed before the change (2 of 3) and passes; `vitest related` over the four touched files (153 files), `nx lint cli`, `nx run cli:typecheck` pass. Not verified: a live `et design check` run. Left: `render-progress.spec.ts` filters on `detail.includes("SDK error")` to pick the logged-error issue under test; it is not a did-not-draw decision.
+
+As built (B164, 2026-11-17): closed without a demo. Cause: no demo body can bite, geometry differs only next to
+ng-content, and the harness cannot project (measured: reverting f05409524 kept compare 16/16 green with a block-body
+state). Added `disclosure.component.spec.ts`: the open panel carries no padding, the body wrapper carries it. Verified:
+the spec fails with the template of f05409524^ and passes on HEAD. No harness change, no input change. Not verified: a
+live shot (no visual change).
