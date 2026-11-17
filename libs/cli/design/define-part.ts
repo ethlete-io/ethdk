@@ -189,12 +189,23 @@ export type RenderOptions = { interaction?: Interaction };
 
 type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   Part<TProps, TState>,
-  'states' | 'describe' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame' | 'sample' | 'coverage'
+  | 'states'
+  | 'describe'
+  | 'grid'
+  | 'controls'
+  | 'motions'
+  | 'unreachable'
+  | 'rules'
+  | 'render'
+  | 'frame'
+  | 'sample'
+  | 'coverage'
 > & {
   coverage?: PartCoverage<NoInfer<TState>>;
   sample?: PartSample<NoInfer<TProps>>;
   frame?: (body: string, props: NoInfer<TProps>) => string;
   motions?: Record<string, Motion<NoInfer<TState>>>;
+  unreachable?: { from: NoInfer<TState>; to: NoInfer<TState>; reason: string }[];
   rules?: PartRule<NoInfer<TState>>[];
   states: Record<TState, NoInfer<TProps>>;
   describe: Record<NoInfer<TState>, string>;
