@@ -2055,3 +2055,13 @@ HEAD, `new` takes the change. Verified: edit-sketch.spec (a change in another fi
 of old works; a change on the edited line rebases without a conflict), both red with the skip removed. Not verified:
 a live rebase on an `@edit` (no live sketch touched); `old` does not follow a HEAD that moved since open - the
 check's `refreshEditOld` covers that.
+
+As built (B577 slice 3, ADR 0336): cause (by spec bite) - slice 1 settled a picked `@edit` once HEAD held its part,
+whatever the part held, so a pick of `old` with the `new` edit committed closed silently and the pick was lost. Now
+`pickContradictsPart` (edit-sketch.ts) compares the part with the picked variant: `old` as its merged hash, `new` as
+the sketch's baseline. The settle keeps a contradicted sketch, and check (STALE EDIT SKETCH) and status (SKETCH
+LEFTOVER) name its one way out: `sketch merge <target>`, which writes the picked variant into the part. Undecided
+sketches settle as before. Verified: accepted-pictures.spec (picked old + new committed: kept, merged hash unchanged)
+and status-uncommitted.spec (picked old: the merge line), red with the fix reverted; the slice 1 status spec decided a
+stale sketch object, so its pick was refused and it ran undecided - fixed. Not verified: a live picked `old` with `new`
+committed (no live sketch touched); `sketch discard` still accepts a contradicted stale sketch, unnamed.

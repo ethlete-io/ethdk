@@ -108,18 +108,23 @@ describe('design status and uncommitted design state', () => {
     expect(statusLines(target)).toEqual([]);
   });
 
-  it('names a picked edit sketch whose changed part HEAD holds once, with the check that clears it', () => {
+  const pickAndCommitHero = (variant: string) => {
     const target = committedAcme();
+
+    writeFileSync(join(productDirOf(target), 'elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+
     const product = resolveAcme(target);
     const sketch = createSketch({
       product,
       sketch: { layer: 'elements', name: 'hero', sketch: 'edit' },
-      variants: ['new'],
+      variants: ['new', 'old'],
     }) as Sketch;
 
-    markSketchReady({ checkout: target, sketch });
-    decideSketch({ sketch, decision: { kind: 'pick', variant: 'new', ...originOf('spec') } });
-    writeFileSync(join(productDirOf(target), 'elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+    expect(typeof decideSketch({ sketch: ready, decision: { kind: 'pick', variant, ...originOf('spec') } })).toBe(
+      'object',
+    );
     git(target, 'add', join(productDirOf(target), 'elements/hero'));
     git(target, '-c', 'user.name=spec', '-c', 'user.email=spec@example.com', 'commit', '-q', '-m', 'hero');
 
@@ -127,9 +132,22 @@ describe('design status and uncommitted design state', () => {
 
     vi.spyOn(console, 'log').mockImplementation((line: unknown) => void lines.push(...String(line).split('\n')));
     expect(designStatus({ target, argv: [], invocation: 'et design' })).toBe(0);
-    expect(lines.filter((line) => /elements[/-]hero[@.]edit/u.test(line))).toEqual([
+
+    return lines.filter((line) => /elements[/-]hero[@.]edit/u.test(line));
+  };
+
+  it('names a picked edit sketch whose changed part HEAD holds once, with the check that clears it', () => {
+    expect(pickAndCommitHero('new')).toEqual([
       expect.stringMatching(
         /^SKETCH LEFTOVER acme elements-hero\.edit: elements\/hero@edit, ready, .* the next check clears it: design check --product acme --part elements\/hero$/u,
+      ),
+    ]);
+  });
+
+  it('names an edit sketch picked old whose part HEAD holds changed once, with its merge', () => {
+    expect(pickAndCommitHero('old')).toEqual([
+      expect.stringMatching(
+        /^SKETCH LEFTOVER acme elements-hero\.edit: elements\/hero@edit, ready, .* its part matches HEAD, but the pick of old contradicts the part at HEAD - merge it to restore the part to old: sketch merge elements\/hero@edit --product acme --by <model id>$/u,
       ),
     ]);
   });

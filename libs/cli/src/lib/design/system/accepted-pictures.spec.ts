@@ -462,6 +462,20 @@ describe('autoAcceptOf', () => {
       expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
     });
 
+    it('is kept with its merge as the one way out once the user picked old and HEAD holds the edit', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+      const merged = readMerged(dir)[CHIP];
+
+      decide(dir, 'old');
+      commitChip(target, chip);
+
+      expect(await autoAccept(target, draw)).toEqual([
+        `STALE EDIT SKETCH app-a ${CHIP}@edit: ${CHIP} matches HEAD, but the pick of old contradicts the part at HEAD - merge it to restore the part to old: sketch merge ${CHIP}@edit --product app-a --by <model id>`,
+      ]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(true);
+      expect(readMerged(dir)[CHIP]).toBe(merged);
+    });
+
     it('may be discarded only once its part matches HEAD', async () => {
       const { target, chip } = await openSketch();
       const sketch = { target: `${CHIP}@edit`, layer: 'components', name: 'chip' } as const;

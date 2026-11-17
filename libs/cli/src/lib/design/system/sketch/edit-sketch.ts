@@ -2,6 +2,7 @@ import { catFilesOf, git as gitText } from '../../git-reader';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { assetDirsOf, filesBelow } from '../assets';
+import { partHashHolds } from './baseline';
 import { productSharedDirsOf } from '../imports';
 import { repoRootOf } from '../reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
@@ -61,6 +62,30 @@ export const isOpenOrPickedEditSketch = (
   (!sketch.decision || sketch.decision.kind === 'pick') &&
   !sketch.hold &&
   Object.values(sketch.rejections ?? {}).every((rejections) => rejections.length === 0);
+
+/**
+ * Whether `sketch` is an edit sketch picked against its part: the part does not hold the picked variant, `old` as its
+ * merged hash, `new` as the sketch's baseline. A check keeps such a sketch; `pickedEditRemedyOf` names its way out.
+ */
+export const pickContradictsPart = (
+  product: ResolvedProduct,
+  sketch: Pick<Sketch, 'target' | 'layer' | 'name' | 'decision' | 'baseline'>,
+) => {
+  if (!isEditSketch(sketch) || sketch.decision?.kind !== 'pick') return false;
+
+  const part = partKeyOf(sketch);
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
+  const hash = sketch.decision.variant === EDIT_OLD ? readMerged(product.dir)[part] : sketch.baseline?.[part];
+
+  return resolved !== undefined && !partHashHolds({ product, dir: dirname(resolved.file), hash });
+};
+
+/** The one way out of an edit sketch whose pick contradicts its part (`pickContradictsPart`): its merge, which writes the picked variant into the part. */
+export const pickedEditRemedyOf = (product: ResolvedProduct, sketch: Pick<Sketch, 'target' | 'decision'>) => {
+  const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
+
+  return `the pick of ${variant} contradicts the part at HEAD - merge it to restore the part to ${variant}: sketch merge ${sketch.target} --product ${product.name} --by <model id>`;
+};
 
 /** Whether `renders` show an edit sketch's `new` and `old` drawing like the part now in every state; never for a pick of `old`. */
 export const editHoldsOf = (

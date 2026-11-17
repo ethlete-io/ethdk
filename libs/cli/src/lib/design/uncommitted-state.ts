@@ -5,7 +5,12 @@ import { gitStatusOf } from './git-reader';
 import { READY_FILE } from './system/part-ready';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { oneProductOf } from './system/sketch/cli-args';
-import { isOpenOrPickedEditSketch, isStaleEditSketch } from './system/sketch/edit-sketch';
+import {
+  isOpenOrPickedEditSketch,
+  isStaleEditSketch,
+  pickContradictsPart,
+  pickedEditRemedyOf,
+} from './system/sketch/edit-sketch';
 import { leftoverSketchFoldersOf, listSketches } from './system/sketch/sketch';
 
 type ReadyEntries = Record<string, { hash?: unknown }>;
@@ -67,9 +72,11 @@ const sketchLinesOf = (product: ResolvedProduct) => {
 
     if (isStaleEditSketch(product, sketch))
       return [
-        isOpenOrPickedEditSketch(sketch)
-          ? `SKETCH LEFTOVER ${product.name} ${folder}: ${about} - its part matches HEAD, the next check clears it: design check --product ${product.name} --part ${partKeyOf(sketch)}`
-          : `SKETCH LEFTOVER ${product.name} ${folder}: ${about} - its part matches HEAD, discard it: ${discard(sketch.target)}`,
+        pickContradictsPart(product, sketch)
+          ? `SKETCH LEFTOVER ${product.name} ${folder}: ${about} - its part matches HEAD, but ${pickedEditRemedyOf(product, sketch)}`
+          : isOpenOrPickedEditSketch(sketch)
+            ? `SKETCH LEFTOVER ${product.name} ${folder}: ${about} - its part matches HEAD, the next check clears it: design check --product ${product.name} --part ${partKeyOf(sketch)}`
+            : `SKETCH LEFTOVER ${product.name} ${folder}: ${about} - its part matches HEAD, discard it: ${discard(sketch.target)}`,
       ];
     if (tracked !== null && !trackedFolders.has(folder))
       return [`SKETCH UNTRACKED ${product.name} ${folder}: ${about} - commit it or discard it`];
