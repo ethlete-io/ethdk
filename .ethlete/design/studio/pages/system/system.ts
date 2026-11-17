@@ -246,6 +246,8 @@ export default definePart<{
   empty?: boolean;
   listingError?: boolean;
   noted?: boolean;
+  sketchMissing?: boolean;
+  noteHint?: string;
   manyStates?: boolean;
   folded?: boolean;
   nothingOpen?: boolean;
@@ -271,7 +273,8 @@ export default definePart<{
     part: {},
     empty: { empty: true },
     'listing-error': { listingError: true },
-    'canvas-note': { noted: true },
+    'canvas-note': { noted: true, noteHint: CANVAS_NOTE },
+    'sketch-missing': { noted: true, sketchMissing: true },
     'many-states': { manyStates: true },
     'many-states-folded': { closed: true, comments: true, folded: true },
     fit: { fit: true },
@@ -322,6 +325,8 @@ export default definePart<{
       'A failed listing read; check the centred error card with the server reason and Erneut laden, and that no frames show.',
     'canvas-note':
       'A note instead of a part; check the card with its icon, title and the hint, and that no chip or comment button shows.',
+    'sketch-missing':
+      'A picked sketch that no longer exists; check the card with its icon and title and that no hint shows.',
     'many-states': 'A part with many states; check that only the states with an open comment open and the rest fold.',
     'many-states-folded':
       'The folded states; check the pill at the bottom centre with the count and Alle Zustände zeigen.',
@@ -371,6 +376,8 @@ export default definePart<{
     empty,
     listingError,
     noted,
+    sketchMissing = false,
+    noteHint = '',
     manyStates,
     folded = false,
     nothingOpen: clear,
@@ -442,8 +449,10 @@ export default definePart<{
         content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
           <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
             ${icon('warning', { size: 24, cls: 'text-et-surface-muted' })}
-            <p class="m-0 text-et-surface font-ui-strong text-ui-md">Design-Server läuft nicht</p>
-            <p class="m-0 text-et-surface-muted">${CANVAS_NOTE}</p>
+            <p class="m-0 text-et-surface font-ui-strong text-ui-md">
+              ${sketchMissing ? 'Sketch nicht gefunden' : 'Design-Server läuft nicht'}
+            </p>
+            ${noteHint ? html`<p class="m-0 text-et-surface-muted">${noteHint}</p>` : ''}
           </div>
         </div>`,
       });

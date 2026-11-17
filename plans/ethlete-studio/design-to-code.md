@@ -1762,3 +1762,13 @@ bare `<p systemNote>` is gone. Verified: `compare pages/system --state canvas-no
 compare before and after differs only in that state (many-states 910 px and fit 2270 px fail both times, not B420);
 `design check --part pages/system` shows only the existing UNUSED-EXPORT warnings; vitest related, typecheck, lint,
 e2e canvas ("every declared action works"). Not verified: the call/read-error titles in a live app.
+
+### As built 2026-11-17: pages/system sketch-missing state (builder)
+
+- New design state `sketch-missing` (title only, no hint); `canvas-note` passes its hint as a prop, which clears
+  STATE-UNDESIGNED of `@if (noteHint())`. Picked and merged pages/system@edit variant new, task verified.
+- Verified: compare pages/system 32/32, design check --part pages/system without STATE-UNDESIGNED.
+- Not done: `design ready pages/system` still refuses with 11 embedded parts: open points in anchored-dialog,
+  badge, comment-draft, comment-row, comment-target, textarea (missing states/motions/controls), comment-flow,
+  title-bar (19 parked STATE-NO-SOURCE), canvas-frames (load-failed action), shell-main, studio-menu (2 compares).
+  The other 13 embedded parts were only stale and are ready again.

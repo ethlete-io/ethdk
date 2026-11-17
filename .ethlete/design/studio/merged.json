@@ -1,6 +1,6 @@
 {
   "components/canvas-viewport": {
-    "hash": "773836bb044dd526",
+    "hash": "f6d599daca0797df",
     "variant": "a",
     "decidedBy": "auto: no visible change",
     "at": "2026-11-07T17:19:30.454Z"
@@ -13,35 +13,35 @@
     "note": "merged without a pick: allowed by Palette Leerzustand, Wahl durch Grill"
   },
   "components/comment-draft": {
-    "hash": "ad14ceb6f41d913d",
+    "hash": "2ba47fd70efd5858",
     "variant": "raised",
     "decidedBy": "user",
     "at": "2026-11-05T15:36:53.628Z"
   },
   "components/comment-flow": {
-    "hash": "173cb5a5e64b4db5",
+    "hash": "8d457e1c80746ffd",
     "variant": "a",
     "decidedBy": "plan: ADR 0322 and B539: one comment flow, the layout of pages/system variant b the human picked; pages/system draws no pixel change",
     "at": "2026-11-16T16:00:57.085Z",
     "note": "merged without a pick: allowed by ADR 0322 and B539: one comment flow, the layout of pages/system variant b the human picked; pages/system draws no pixel change"
   },
   "components/comment-pin": {
-    "hash": "7822b65218699dfc",
+    "hash": "e5cb923fb2497b47",
     "variant": "a",
     "decidedBy": "plan: finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md",
     "at": "2026-11-12T00:13:38.669Z",
     "note": "merged without a pick: allowed by finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md - merged: 911: sample author human, initials H; only author text and initials change"
   },
   "components/comment-row": {
-    "hash": "e7a0ad76ec72b6d8",
+    "hash": "ce6e9978c34882a5",
     "variant": "a",
     "decidedBy": "plan: finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md",
     "at": "2026-11-12T00:13:38.669Z",
     "note": "merged without a pick: allowed by finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md - merged: 911: sample author human, initials H; only author text and initials change"
   },
-  "components/disclosure": "55fb76d9d7dd3b96",
+  "components/disclosure": "b97eec377fdf2ec5",
   "components/shell-collapse": {
-    "hash": "61fa6a95dbd7a46f",
+    "hash": "9374f927bf35e857",
     "variant": "a",
     "decidedBy": "plan: finding 911 precedent: harness frame correction, component unchanged",
     "at": "2026-11-16T01:22:41.594Z",
@@ -54,13 +54,13 @@
     "at": "2026-11-15T21:29:49.115Z"
   },
   "components/title-bar": {
-    "hash": "0098ed8ae907b1ee",
+    "hash": "ed2393023e7b6924",
     "variant": "a",
     "decidedBy": "plan: finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves",
     "at": "2026-11-16T02:27:51.159Z",
     "note": "merged without a pick: allowed by finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves"
   },
-  "components/tree-row": "72601799f8079cf2",
+  "components/tree-row": "bf7bd4857a66660a",
   "components/update-dialog": {
     "hash": "fa791c1a54978622",
     "variant": "new",
@@ -75,26 +75,26 @@
     "at": "2026-11-17T17:55:04.370Z"
   },
   "elements/canvas-frames": {
-    "hash": "ae4ebb7e6cbe7347",
+    "hash": "830a08e94c5b66e0",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-17T15:56:19.710Z",
     "note": "merged: Builder recommendation a (outline + dim the rest), picked per ADR 0305"
   },
   "elements/part-tree": {
-    "hash": "b487e67aac3e89a5",
+    "hash": "8cfdc85c3fa08ebf",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "7622e2366ba3215f",
+    "hash": "0f9e11d16fbb4fbe",
     "variant": "a",
     "decidedBy": "auto: no visible change",
     "at": "2026-11-16T01:58:57.843Z"
   },
   "elements/studio-menu": {
-    "hash": "9733c6c843979882",
+    "hash": "9b657284681a5a43",
     "variant": "c",
     "decidedBy": "user",
     "at": "2026-11-13T11:00:10.421Z"
