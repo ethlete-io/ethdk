@@ -2612,10 +2612,10 @@ const CASES = [
           const cell = await cellOf(key);
 
           if (
-            cell?.pictureSrc &&
+            cell?.wantedPictureSrc &&
             (await page.evaluate(
               (src) => [...document.images].some((img) => img.src === src && img.complete && img.naturalWidth > 0),
-              cell.pictureSrc,
+              cell.wantedPictureSrc,
             )) &&
             accept(cell)
           )
@@ -2638,7 +2638,7 @@ const CASES = [
 
       if (!before) return { ok: false, detail: `${top.key} loads no picture` };
 
-      const tag = await tagOf(before.pictureSrc);
+      const tag = await tagOf(before.wantedPictureSrc);
       const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS[top.key.split(' ')[0]]);
       const original = readFileSync(stylesheet, 'utf8');
 
@@ -2663,7 +2663,7 @@ const CASES = [
         }
 
         const returned = Date.now();
-        const renewed = (cell) => !!cell?.pictureSrc && cell.pictureSrc !== before.pictureSrc;
+        const renewed = (cell) => !!cell?.wantedPictureSrc && cell.wantedPictureSrc !== before.wantedPictureSrc;
         let cell = await cellOf(top.key);
 
         for (const until = returned + WAIT_MS; !renewed(cell) && Date.now() < until; cell = await cellOf(top.key))
@@ -2682,7 +2682,7 @@ const CASES = [
           };
 
         const drawnMs = Date.now() - returned;
-        const newTag = await tagOf(after.pictureSrc);
+        const newTag = await tagOf(after.wantedPictureSrc);
 
         return {
           ok: newTag !== tag,
