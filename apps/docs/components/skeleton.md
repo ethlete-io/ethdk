@@ -57,6 +57,8 @@ narrows it instead of pushing it out of its block. A stretching flex parent stre
 other flex item, so its `aspect-ratio` (or its `--et-skeleton-size` height) only holds along a
 column or where the item is not stretched; add `align-self: start` (`self-start`) in a stretching row.
 
+In a flex row a `rect` is still `100%` wide, so an `aspect-ratio` alone makes it as tall as the row is wide (`400px` by `400px` in a `400px` row); give it an explicit width (`w-20`) to get the square. `block-size: auto` is already the default for a `rect`, so it is only needed to undo a height you set yourself.
+
 A `rect` stays full width when you set both a height and an `aspect-ratio`, so the ratio has no
 width left to set. Set `inline-size: auto` (`w-auto`) on that item too, and the ratio derives the
 width from the height: `40px` tall at `16 / 9` is `71px` wide. Inside an `et-skeleton` column add
