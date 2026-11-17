@@ -482,6 +482,38 @@
   </section>
 </ng-template>
 <ng-template #mergeTemplate let-row>
+  @if (skips()[row.key]; as rowSkips) {
+    @if (rowSkips.length > 0) {
+      <ul class="m-0 flex list-none flex-col gap-space-1 p-0" data-sk-added-skips>
+        @for (skip of rowSkips; track $index) {
+          <li class="flex min-w-0 items-start gap-space-1 text-ui-xs text-et-surface-muted" data-sk-added-skip>
+            <span [etProvideColor]="warningTheme()" class="contents">
+              <svg
+                class="mt-px flex-none text-et-theme"
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 2.5 14 13H2z" />
+                <path d="M8 6.5v3" />
+                <path d="M8 11.25v.01" />
+              </svg>
+            </span>
+            <span class="min-w-0 wrap-anywhere"
+              >{{ LABELS.addedSkip }} <code class="font-code text-et-surface">{{ skip.classes }}</code>
+              {{ LABELS.addedSkipIn(skip.part) }}</span
+            >
+          </li>
+        }
+      </ul>
+    }
+  }
   @let take = (status() === 'waiting' || status() === 'picked') && errored().length === 0 && !sameKeys().has(row.key);
   @let points = openPoints().length > 0 && row.key === selected();
   @if (take || points) {

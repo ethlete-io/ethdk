@@ -1039,6 +1039,31 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
 
+  it('lists each skip marker a variant adds in its head, above Übernehmen', async () => {
+    const root: HTMLElement = (
+      await render({
+        camera: '100',
+        status: 'waiting',
+        skips: {
+          x: [
+            { part: 'elements/header', classes: 'WRAP' },
+            { part: 'components/card', classes: 'CLIPPED OFF-CENTRE' },
+          ],
+        },
+      })
+    ).nativeElement;
+    const lines = [...root.querySelectorAll('[data-sk-row="x"] [data-sk-added-skip]')];
+
+    expect(lines.map(textOf)).toEqual([
+      `${LABELS.addedSkip} WRAP ${LABELS.addedSkipIn('elements/header')}`,
+      `${LABELS.addedSkip} CLIPPED OFF-CENTRE ${LABELS.addedSkipIn('components/card')}`,
+    ]);
+    const merge = root.querySelector('[data-sk-row="x"] [data-sk-merge]');
+
+    expect(merge && lines[1]?.compareDocumentPosition(merge)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(root.querySelectorAll('[data-sk-added-skip]')).toHaveLength(2);
+  });
+
   it('offers no Übernehmen while the sketch fails or its frames still draw', async () => {
     const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
 
