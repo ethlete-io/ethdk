@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B557
+built: 20924b427
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 afternoon, part canvas with many states
 ---
