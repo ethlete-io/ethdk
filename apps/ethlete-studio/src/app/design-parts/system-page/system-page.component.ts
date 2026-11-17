@@ -7,7 +7,7 @@ import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component'
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { ShellSection } from '../shell-main/shell-main.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
-import { StateGroup } from './state-groups';
+import { DisclosureComponent } from '../disclosure/disclosure.component';
 import { SystemEmptyComponent } from './system-empty.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { CommentListComponent } from '../comment-flow/comment-list.component';
@@ -149,35 +149,6 @@ export const FRAME_HEAD_CLASS =
         </div>
       } @else if (empty()) {
         <ethlete-system-empty [product]="shell().product" (copyPrompt)="copyPrompt.emit()" />
-      } @else if (stateGroups().length > 0) {
-        <ethlete-canvas-frames
-          (zoomOut)="zoomOut.emit()"
-          (zoomReset)="zoomReset.emit()"
-          (zoomIn)="zoomIn.emit()"
-          (fit)="fitAll.emit()"
-          class="w-full"
-          zoom="75%"
-        >
-          <div class="flex w-340 flex-wrap items-start gap-x-30 gap-y-20">
-            @for (group of stateGroups(); track group.name) {
-              <section class="flex flex-col gap-space-4">
-                <h3
-                  class="m-0 flex items-baseline gap-space-2 border-b border-et-surface-border pb-space-2 font-ui text-ui-lg text-et-surface"
-                >
-                  {{ group.name }}<span class="text-et-surface-muted tabular-nums">{{ group.states.length }}</span>
-                </h3>
-                <div class="flex flex-wrap gap-x-10 gap-y-16 pt-10">
-                  @for (state of group.states; track state) {
-                    <figure [class]="FRAME_CLASS">
-                      <figcaption [class]="FRAME_HEAD_CLASS">{{ state }}</figcaption>
-                      <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: state }" />
-                    </figure>
-                  }
-                </div>
-              </section>
-            }
-          </div>
-        </ethlete-canvas-frames>
       } @else if (manyStates()) {
         <ethlete-canvas-frames
           (zoomOut)="zoomOut.emit()"
@@ -268,6 +239,23 @@ export const FRAME_HEAD_CLASS =
             </figure>
           </ethlete-canvas-frames>
         </ng-content>
+        @if (foldedStates() > 0) {
+          <div
+            class="absolute bottom-space-3 left-1/2 flex -translate-x-1/2 items-center gap-space-3 rounded-control-md border border-et-surface-border bg-et-surface-bg px-space-3 py-space-2 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
+            data-folded-states
+          >
+            @if (!allStatesShown()) {
+              <span class="text-ui-sm text-et-surface-muted">{{ LABELS.foldedStates(foldedStates()) }}</span>
+            }
+            <ethlete-disclosure
+              [open]="allStatesShown()"
+              [label]="LABELS.showAllStates"
+              (openChange)="showAllStates.emit($event)"
+              hug
+              size="xs"
+            />
+          </div>
+        }
         <div class="absolute top-space-3 right-space-3 z-1 flex gap-space-2">
           <ng-content select="[systemActions]" />
           <button
@@ -312,6 +300,7 @@ export const FRAME_HEAD_CLASS =
     CommentDraftComponent,
     CommentListComponent,
     CommentPinComponent,
+    DisclosureComponent,
     NgTemplateOutlet,
     OpenPointsChipComponent,
     PartTreeComponent,
@@ -331,7 +320,8 @@ export class SystemPageComponent {
   public empty = input(false);
   public listingError = input<string | null>(null);
   public manyStates = input(false);
-  public stateGroups = input<StateGroup[]>([]);
+  public foldedStates = input(0);
+  public allStatesShown = input(false);
   public nothingOpen = input(false);
   public fit = input(false);
   public closed = model(false);
@@ -371,6 +361,7 @@ export class SystemPageComponent {
   // eslint-disable-next-line ethlete/prefer-present-tense-output -- the design action emit:markTransferred fixes this name
   public markTransferred = output<string>();
   public pickTheme = output<ThemePick>();
+  public showAllStates = output<boolean>();
 
   protected readonly LABELS = STUDIO_LABELS.system;
   protected readonly SHELL_LABELS = STUDIO_LABELS.shell;

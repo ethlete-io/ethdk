@@ -21,11 +21,6 @@ export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'nothingOpen' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'fit' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'manyStatesLayers' },
-  {
-    file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts',
-    input: 'stateGroups',
-    reason: 'the live canvas groups the frames itself',
-  },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'frame' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'shot' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'part' },

@@ -70,8 +70,7 @@ import { commentDraftOf, otherSizeFrameOf, pinsOf, placedCommentsOf } from './co
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
-import { DisclosureComponent } from '../design-parts/disclosure/disclosure.component';
-import { commentedStatesOf, foldedStatesOf } from '../design-parts/system-page/state-groups';
+import { commentedStatesOf, foldedStatesOf } from '../design-parts/system-page/folded-states';
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
 import { inboxCommentOf, inboxPartOf, writerOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
@@ -153,25 +152,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               />
             }
           </ethlete-design-canvas>
-          @if (foldedStates().size > 0) {
-            <div
-              class="absolute bottom-space-3 left-1/2 flex -translate-x-1/2 items-center gap-space-3 rounded-control-md border border-et-surface-border bg-et-surface-bg px-space-3 py-space-2 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
-              data-folded-states
-            >
-              @if (!allStatesShown()) {
-                <span class="text-ui-sm text-et-surface-muted">{{
-                  EMPTY_LABELS.foldedStates(foldedStates().size)
-                }}</span>
-              }
-              <ethlete-disclosure
-                [open]="allStatesShown()"
-                [label]="EMPTY_LABELS.showAllStates"
-                (openChange)="showAllStates($event)"
-                hug
-                size="xs"
-              />
-            </div>
-          }
         }
       </main>
     </ng-template>
@@ -271,6 +251,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [comments]="placedComments()"
         [selectedComment]="pickedCommentId()"
         [writer]="commentWriter()"
+        [foldedStates]="foldedStates().size"
+        [allStatesShown]="allStatesShown()"
         (commentModeChange)="commentStore.toggle()"
         (reload)="reloadListing()"
         (markTransferred)="markTransferred($event)"
@@ -279,6 +261,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         (openEditSketch)="openEditSketch(partShown?.key ?? '')"
         (approveException)="approveException(partShown?.key ?? '', $event)"
         (openPoint)="openPoint(partShown?.key ?? '', $event)"
+        (showAllStates)="showAllStates($event)"
         (shellAction)="runShellAction($event)"
       >
         @if (listingError() === null) {
@@ -349,7 +332,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   encapsulation: ViewEncapsulation.None,
   imports: [
     RememberedTreeScrollDirective,
-    DisclosureComponent,
     BUTTON_IMPORTS,
     NgTemplateOutlet,
     PartTreeComponent,
