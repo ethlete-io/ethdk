@@ -14,7 +14,7 @@
     justify-content: center;
     gap: var(--et-button-gap);
     --_et-button-cap-middle: 0.5cap;
-    background: var(--_et-button-background);
+    background: var(--_et-button-state-background, var(--_et-button-background));
     color: var(--_et-button-color);
     border-radius: var(--_et-button-border-radius);
     padding: var(--_et-button-padding);

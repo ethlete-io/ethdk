@@ -53,6 +53,11 @@
     initial-value: 0.16;
   }
 
+  @property --_et-button-state-background {
+    syntax: '*';
+    inherits: false;
+  }
+
   @property --et-button-gap {
     syntax: '<length>';
     inherits: false;
@@ -92,6 +97,44 @@
 
     &:not([disabled], [aria-disabled='true']):active {
       --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
+    }
+  }
+
+  :is(.et-button, .et-fab, .et-icon-button):where(
+      [data-variant='outline']:not([data-pressed='true']),
+      [data-pressed='true'][data-pressed-variant='outline']
+    ):not([disabled], [aria-disabled='true']) {
+    @media (hover: hover) {
+      &:hover {
+        --_et-button-state-background: var(--et-button-outline-hover-background);
+      }
+    }
+
+    &:focus-visible {
+      --_et-button-state-background: var(--et-button-outline-hover-background);
+    }
+
+    &:active {
+      --_et-button-state-background: var(--et-button-outline-active-background);
+    }
+  }
+
+  :is(.et-button, .et-fab, .et-icon-button):where([data-variant='transparent']:not([data-pressed='true'])):not(
+      [disabled],
+      [aria-disabled='true']
+    ) {
+    @media (hover: hover) {
+      &:hover {
+        --_et-button-state-background: var(--et-button-transparent-hover-background);
+      }
+    }
+
+    &:focus-visible {
+      --_et-button-state-background: var(--et-button-transparent-hover-background);
+    }
+
+    &:active {
+      --_et-button-state-background: var(--et-button-transparent-active-background);
     }
   }
 

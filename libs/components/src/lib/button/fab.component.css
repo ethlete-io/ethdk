@@ -166,7 +166,10 @@
 
     &:where([data-variant='outline'], [data-variant='tonal'], [data-variant='transparent']) {
       --et-button-shadow: none;
-      background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
+      background: var(
+        --_et-button-state-background,
+        rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))
+      );
       color: var(--et-theme-color-ink-solid);
 
       @media (hover: hover) {

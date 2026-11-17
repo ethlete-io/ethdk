@@ -239,6 +239,15 @@ Base override tokens, all read by the surface button (`et-button`); the other fl
 
 Surface, FAB and icon button also share one opacity-ramp recipe for their outline/tonal/transparent variants: `--et-button-variant-opacity-hover-delta` (default `0.08`), `--et-button-variant-opacity-focus-delta` (default `0.12`) and `--et-button-variant-opacity-active-delta` (default `0.16`) are added to each variant's resting `--et-theme-color-primary-opacity` to get its hover/focus/active tint. The filled icon button subtracts the focus delta for its focus tint.
 
+The ramp tints the theme's accent, so it cannot reach an arbitrary color. To give the outline or transparent variant an exact state color, set its background tokens on the surface button, icon button or FAB: `--et-button-outline-hover-background` and `--et-button-outline-active-background`, `--et-button-transparent-hover-background` and `--et-button-transparent-active-background`. Each takes any CSS color and replaces the background outright. Keyboard focus (`:focus-visible`) shows the hover color; while pressed (`:active`) the active color wins over both. A token left unset keeps the opacity ramp for that state, so setting only the hover token leaves the active state at the ramp's tint. A surface button that is `pressed` from `filled` (it then looks like outline) reads the outline tokens; a pressed button in a tonal or filled look reads none of them.
+
+```css
+.my-toolbar .et-icon-button {
+  --et-button-transparent-hover-background: rgb(40 49 64);
+  --et-button-transparent-active-background: rgb(25 34 45);
+}
+```
+
 An icon button sizes its projected `etIcon` content with `--et-icon-button-icon-size`, including icon-font glyphs that are not an `et-icon` (the token becomes their `font-size`, `width` and `height`). Keep the `etIcon` attribute on the element:
 
 ```html
