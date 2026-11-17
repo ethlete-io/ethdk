@@ -108,9 +108,6 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   states: {
     ...states,
-    'disabled-hover': 'The disabled option under the pointer; check that it gives no highlight.',
-    'disabled-active': 'The disabled option pressed; check that it gives no press look.',
-    'disabled-focus-visible': 'The disabled option reached by keyboard; check that it shows no focus look.',
     'panel-grouped': { panel: true },
     'panel-all-selected': { panel: true, allSelected: true },
   },
@@ -123,6 +120,9 @@ export default definePart({
     'selected-hover': 'The selected option hovered; check that the highlight shows and the check stays visible.',
     'selected-active': 'The selected option pressed; check that the press look keeps the check readable.',
     'selected-focus-visible': 'The selected option active by keyboard; check that focus shows with the check mark.',
+    'disabled-hover': 'The disabled option under the pointer; check that it gives no highlight.',
+    'disabled-active': 'The disabled option pressed; check that it gives no press look.',
+    'disabled-focus-visible': 'The disabled option reached by keyboard; check that it shows no focus look.',
     disabled: 'One disabled In review option; check that the label fades and no highlight shows.',
     'panel-grouped':
       'A multi-select panel with Select all and two groups; check the group labels, the mixed Select all and Merged active.',
