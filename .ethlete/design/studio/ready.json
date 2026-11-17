@@ -748,9 +748,9 @@
       "selected"
     ],
     "at": "2026-11-17T19:22:59.167Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 1945271
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1348616
   },
   "elements/part-tree": {
     "hash": "229a31a8858ffdee",
