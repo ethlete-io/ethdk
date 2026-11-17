@@ -23,7 +23,15 @@ export default definePart<SelectProps>({
     'open-option-hover':
       'The open select with Drafts under the pointer; check that the pointer highlight shows on Drafts.',
     'size-sm': 'The filled select at size sm; check that field and text shrink together.',
+    'size-sm-hover': 'The size sm select hovered; check that the border darkens at the smaller field height.',
+    'size-sm-active': 'The size sm select pressed; check the press look on the smaller field frame.',
+    'size-sm-focus-visible':
+      'The size sm select focused by keyboard; check that the focus ring wraps the smaller field.',
     'size-lg': 'The filled select at size lg; check that field and text grow together.',
+    'size-lg-hover': 'The size lg select hovered; check that the border darkens at the larger field height.',
+    'size-lg-active': 'The size lg select pressed; check the press look on the larger field frame.',
+    'size-lg-focus-visible':
+      'The size lg select focused by keyboard; check that the focus ring wraps the larger field.',
   },
   grid,
   widths: [320],
