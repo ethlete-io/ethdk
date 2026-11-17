@@ -66,6 +66,7 @@
       "noteLanguage": "de",
       "schemes": ["dark"],
       "commandText": "deny",
+      "canvas": { "part": "components/canvas-viewport", "zoom": "components/zoom-chip" },
       "styles": [".ethlete/design/studio/styles.css"],
       "generated": [
         {

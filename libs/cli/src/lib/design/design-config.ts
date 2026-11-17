@@ -86,7 +86,12 @@ export type DesignProduct = DesignProject & {
   nativeTitle?: 'deny';
   /** `'deny'` makes `et design check` fail on command text in a drawing or an app template; off when left out. */
   commandText?: 'deny';
+  /** The product's one canvas: a part that draws `zoom` must reach `part` too, or `et design check` fails with `OWN-CANVAS`. */
+  canvas?: DesignCanvas;
 };
+
+/** The canvas part (`<layer>/<name>`) every pannable canvas is drawn with, and the zoom control that marks one. */
+export type DesignCanvas = { part: string; zoom: string };
 
 /** A regular expression a class or a `var(--name)` reference is tested against, and the fix for a match. */
 export type DesignDeniedClass = { pattern: string; fix: string };
