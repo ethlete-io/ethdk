@@ -23,7 +23,8 @@ const aim = (root: HTMLElement, pane: HTMLElement) => {
     : (anchorRect.top + anchorRect.height / 2 - paneRect.top) / scale - pane.clientTop;
   const size = vertical ? arrow.offsetWidth : arrow.offsetHeight;
   const room = (vertical ? pane.clientWidth : pane.clientHeight) - size - ARROW_PADDING;
-  const offset = Math.min(Math.max(centre - size / 2, ARROW_PADDING), room);
+  const ratio = window.devicePixelRatio || 1;
+  const offset = Math.round(Math.min(Math.max(centre - size / 2, ARROW_PADDING), room) * ratio) / ratio;
 
   arrow.style.setProperty(vertical ? 'left' : 'top', '0');
   arrow.style.setProperty(
@@ -36,7 +37,8 @@ const aim = (root: HTMLElement, pane: HTMLElement) => {
 
 /**
  * Aims the arrow of every drawn pane with `data-et-arrow-anchor` (from `anchoredDialog({ anchor })`) at the centre of
- * the element that selector names, kept `16px` off the pane corners like the strategy's `arrowPadding`, and again
+ * the element that selector names, kept `16px` off the pane corners like the strategy's `arrowPadding` and rounded to
+ * a device pixel like the strategy's offset, and again
  * whenever the pane or the anchor resizes.
  */
 export const aimAnchoredArrows = (root: HTMLElement) => {

@@ -3627,3 +3627,9 @@ frame's inner box clips the magnified shot itself, so its `scrollWidth` counts t
 design's `UNCHANGED_COUNT` is 16: the screen sample gains the unchanged state `picked`. Verified: compare change-crop
 and change-crop-whole ok (from 261/275 px), full pages/sketches compare without new diffs, `vitest related` 193/193,
 lint. Not verified: a live Studio shot.
+
+As built (B539 arrow rounding, 2026-11-17): sketch-only-points-open and merge-confirm had a 20 px diff. Cause
+(pixel dump): core `arrowOffset` rounds the arrow to a device pixel (tip at x 410.0), the design mock
+`libs/cli/design/arrow-anchor.ts` aimed at the exact centre 409.5. The mock now rounds its offset the same way (ADR
+0311, no core change). Verified: compare of both states ok, design check over the four parts that draw an anchored
+dialog. Not verified: a live Studio shot.
