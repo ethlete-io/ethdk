@@ -1029,3 +1029,8 @@ ng-content, and the harness cannot project (measured: reverting f05409524 kept c
 state). Added `disclosure.component.spec.ts`: the open panel carries no padding, the body wrapper carries it. Verified:
 the spec fails with the template of f05409524^ and passes on HEAD. No harness change, no input change. Not verified: a
 live shot (no visual change).
+
+As built (B162, 2026-11-17): already built in 4373e3a4c (2026-11-07); the STATUS row was stale. `sketch ready` stores
+`readyContent` (hash per variant, its folder plus `shared/`), and `sketch check`/`sketch ready` reopen an undecided
+ready sketch whose hash changed. It removes the hand edit of `sketch.json` (finding 239). This slice only deletes the
+row. Verified: the commit and `readyContent` in `libs/cli/src/lib/design/system/sketch/sketch.ts`. Not re-run: its specs.
