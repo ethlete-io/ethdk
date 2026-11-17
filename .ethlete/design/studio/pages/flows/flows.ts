@@ -2,6 +2,7 @@ import { definePart, drawing, html } from '@design-system';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
+import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import {
   FLOW_NAME,
   type FlowProps,
@@ -19,7 +20,7 @@ const contentOf = (presetPicker: string, chip: string) =>
   html`<div class="relative h-full overflow-hidden">
     <div class="h-full box-border flex flex-col gap-space-4 ${pagePadding}">
       ${pageHeader(FLOW_NAME, `<div class="w-60">${presetPicker}</div>`)}
-      <div class="flex-1 min-h-0">${flowGraph(0.18, 140)}</div>
+      ${canvasViewport({ class: 'flex-1 min-h-0', body: flowGraph(0.18, 140) })}
     </div>
     ${chip}
   </div>`;
@@ -29,6 +30,7 @@ export default definePart<FlowProps>({
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/flows-page/flows-page.component.ts' },
   states: { flow: { flow: 'open' }, empty: { flow: 'none' } },
+  controls: { canvas: { kind: 'field', part: 'components/canvas-viewport' } },
   render: async ({ flow }) => {
     const picker = await presetPickerOf();
     const copy = await copyButton();
@@ -46,7 +48,7 @@ export default definePart<FlowProps>({
     return drawing({
       body: shell.body,
       setup: menu.setup,
-      styles: shell.styles + menu.styles + list.styles + picker.styles + copy.styles + chip.styles,
+      styles: shell.styles + menu.styles + list.styles + picker.styles + copy.styles + chip.styles + canvasViewportStyles,
     });
   },
 });

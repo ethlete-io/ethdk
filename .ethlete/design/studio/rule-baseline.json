@@ -48,11 +48,5 @@
       "finding": "484",
       "sketch": "pages/system@canvas-note (B502a, waits for the pick; state canvas-note, variant a the built look)"
     }
-  },
-  "OWN-CANVAS": {
-    "pages/flows: draws components/zoom-chip on a canvas box of its own - draw the canvas with components/canvas-viewport, the product's one canvas": {
-      "finding": "228",
-      "sketch": "pages/flows@edit: draw the graph in components/canvas-viewport - waits for the human old/new pick (B142)"
-    }
   }
 }
