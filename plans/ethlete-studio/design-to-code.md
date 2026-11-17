@@ -3676,5 +3676,5 @@ In progress (B233 half 2b, 2026-11-17): Cause of the stuck load-failed frame: an
 before `frameLoad$` subscribed (spec in canvas-frame.component.spec.ts); the frame now remembers that load. The harness
 mounts with `CANVAS_LIVE_REST_MS` 0, so frames go live before the shot, and the loading page posts only `loading`.
 default/reset/fit/selected/active/load-failed/loading compare ok. Open: out/in (the design scales the frame head and edge
-with the zoom, the app keeps them at screen size), the load-failed action (Neu laden emits no `reload` and its click
-selects the frame), rounds/round-folded, the edit sketch.
+with the zoom, the app keeps them at screen size), rounds/round-folded, the edit sketch. Neu laden now emits `reload`
+with the frame id and no longer selects the frame; every declared action works.

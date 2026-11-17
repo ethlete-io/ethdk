@@ -197,6 +197,24 @@ describe('CanvasFrameComponent failed page load', () => {
     expect(iframes()).toHaveLength(2);
     expect(host().querySelector('[data-frame-failed]')?.textContent).toContain('Laden fehlgeschlagen.');
   });
+
+  it('reports a reload of the failed page without the click reaching the frame', async () => {
+    fixture.componentRef.setInput('frame', frameAt('http://localhost:4402/frame.html?revision=2'));
+    await flush();
+    iframes().at(-1)!.dispatchEvent(new Event('load'));
+    await flush(1000);
+    await flush();
+
+    const reloads: unknown[] = [];
+    const clicks: Event[] = [];
+
+    fixture.componentInstance.pageReload.subscribe(() => reloads.push(true));
+    host().addEventListener('click', (event) => clicks.push(event));
+    host().querySelector<HTMLButtonElement>('[data-frame-reload]')!.click();
+
+    expect(reloads).toEqual([true]);
+    expect(clicks).toEqual([]);
+  });
 });
 
 describe('CanvasFrameComponent shot states', () => {

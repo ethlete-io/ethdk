@@ -326,6 +326,9 @@ export class DesignCanvasComponent {
   /** The key of a column group whose switch the user clicked. */
   public groupSwitch = output<string>();
 
+  /** The id of a frame whose failed page the user reloads. */
+  public reload = output<string>();
+
   private frameViews = viewChildren(CanvasFrameComponent);
 
   /** Frames the page projects into the world instead of `frames`, each marked with `ethleteCanvasFrame`. */

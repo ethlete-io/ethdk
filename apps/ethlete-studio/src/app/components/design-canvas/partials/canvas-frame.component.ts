@@ -305,7 +305,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         data-frame-failed
       >
         <span class="min-w-0 flex-1">{{ LABELS.loadFailed }} {{ reason }}</span>
-        <button (click)="reloadPage()" et-button type="button" variant="outline" size="xs" data-frame-reload>
+        <button (click)="reloadPage($event)" et-button type="button" variant="outline" size="xs" data-frame-reload>
           {{ LABELS.reload }}
         </button>
       </div>
@@ -374,6 +374,7 @@ export class CanvasFrameComponent {
   public widthChange = output<number>();
   public escapeKeydown = output();
   public cellsChange = output<Record<string, Rect>>();
+  public pageReload = output();
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
 
@@ -610,7 +611,10 @@ export class CanvasFrameComponent {
     this.heightChange.emit(height);
   }
 
-  protected reloadPage() {
+  protected reloadPage(event: Event) {
+    event.stopPropagation();
+    this.pageReload.emit();
+
     const iframe = this.newest();
     const src = this.sources().at(-1)?.src;
 

@@ -164,6 +164,7 @@
       (widthChange)="storeWidth(placed.frame.id, $event)"
       (escapeKeydown)="leaveActiveFrame()"
       (cellsChange)="storeCells(placed.frame.id, $event)"
+      (pageReload)="reload.emit(placed.frame.id)"
     />
   }
 
