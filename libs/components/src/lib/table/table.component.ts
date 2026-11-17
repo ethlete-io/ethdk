@@ -1,5 +1,6 @@
 import { DOCUMENT, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
+  afterEveryRender,
   afterNextRender,
   booleanAttribute,
   Component,
@@ -132,8 +133,8 @@ type TableHeaderCellVm<T> = TableCellPinning & {
 type TableBodyCellVm<T> = TableCellPinning & {
   key: string;
   align: string;
-  /** Whether this is the cell that names the row's link - at most one per row, and only when it has one. */
-  linkHost: boolean;
+  /** Id a row link's `aria-labelledby` can point at, on a cell that may name it; else `null`. */
+  labelId: string | null;
   /** Whether the column says it holds its own controls, which a row link's hit area then stays out of. */
   interactive: boolean;
   state: TableCellState | null;
@@ -532,6 +533,8 @@ export class TableComponent<T> implements TableFeatureHost {
   // Every rendered body cell (tagged with `data-col-key`); the first drives virtual-window
   // measurement, and they're grouped by column to animate a column shift on reorder drop.
   private bodyCells = viewChildren<ElementRef<HTMLElement>>('bodyCell');
+
+  private rowLinks = viewChildren<ElementRef<HTMLAnchorElement>>('rowLinkAnchor');
 
   private gridCells = viewChildren<ElementRef<HTMLElement>>('gridCell');
 
@@ -1106,8 +1109,13 @@ export class TableComponent<T> implements TableFeatureHost {
 
     const columns = this.visibleColumns();
 
-    return (columns.find((column) => !column.interactive) ?? columns[0])?.key ?? null;
+    return (
+      (columns.find((column) => column.rowLinkLabel) ?? columns.find((column) => !column.interactive) ?? columns[0])
+        ?.key ?? null
+    );
   });
+
+  private rowLinkLabelPinned = computed(() => this.visibleColumns().some((column) => column.rowLinkLabel));
 
   /** The leading utility cells, with the pinning every row kind applies to them. */
   protected leadCells = computed<TableLeadCellVm[]>(() => {
@@ -1279,7 +1287,7 @@ export class TableComponent<T> implements TableFeatureHost {
         link,
         href,
         title,
-        linkLabelId: `${this.LINK_ID_PREFIX}-${indexOffset + index}`,
+        linkLabelId: `${this.LINK_ID_PREFIX}-${indexOffset + index}-${linkColumn}`,
         classes: [...leads, ...trails]
           .map((utility) => utility.lead.rowClass?.(row))
           .filter((className): className is string => !!className)
@@ -1305,7 +1313,10 @@ export class TableComponent<T> implements TableFeatureHost {
             ...(pinning?.cellPinning(column.key) ?? NO_PIN),
             key: column.key,
             align: column.align ?? 'start',
-            linkHost: href !== null && column.key === linkColumn,
+            labelId:
+              href !== null && !column.interactive
+                ? `${this.LINK_ID_PREFIX}-${indexOffset + index}-${column.key}`
+                : null,
             interactive: !!column.interactive,
             state,
             message: typeof answer === 'string' ? null : (answer?.message ?? null),
@@ -1472,6 +1483,8 @@ export class TableComponent<T> implements TableFeatureHost {
       this.pageStickyHeader();
       afterNextRender({ read: () => this.syncScrollState() }, { injector: this.injector });
     });
+
+    afterEveryRender({ write: () => this.nameRowLinks() });
   }
 
   /** The `aria-rowindex` of an open row's detail row, or `null` while every row is in the DOM. Part of the feature contract. */
@@ -2284,6 +2297,21 @@ export class TableComponent<T> implements TableFeatureHost {
 
       return next;
     });
+  }
+
+  private nameRowLinks() {
+    if (this.rowLinkLabelPinned()) return;
+
+    const cells = this.bodyCells().map((ref) => ref.nativeElement);
+
+    for (const { nativeElement: anchor } of this.rowLinks()) {
+      const candidates = cells.filter((cell) => cell.parentElement === anchor.parentElement && !!cell.id);
+      const label = candidates.find((cell) => !!cell.textContent?.trim()) ?? candidates[0];
+
+      if (label && anchor.getAttribute('aria-labelledby') !== label.id) {
+        this.renderer.setAttribute(anchor, 'aria-labelledby', label.id);
+      }
+    }
   }
 
   private ariaRowIndexOf(index: number) {

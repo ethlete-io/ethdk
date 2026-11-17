@@ -1,4 +1,7 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { TABLE_IMPORTS } from '../table.imports';
+import { TableColumns } from '../table.types';
+import { PEOPLE, Person } from './table-storybook.data';
 import { TableStorybookComponent } from './table-storybook.component';
 
 export default {
@@ -510,6 +513,45 @@ export const RowLinks: Story = {
       },
     },
   },
+};
+
+const avatarOf = (name: string) =>
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="#888"/><text x="16" y="21" font-size="14" text-anchor="middle" fill="#fff">${name[0]}</text></svg>`,
+  );
+
+export const RowLinkLabelColumn: Story = {
+  decorators: [moduleMetadata({ imports: [TABLE_IMPORTS] })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The first column holds only an avatar. A linked row skips an image-only cell when it picks its accessible ' +
+          'name, so the link reads the name rather than "Image of ...". `rowLinkLabel: true` on the Name column ' +
+          'names it explicitly.',
+      },
+    },
+  },
+  render: () => ({
+    props: {
+      data: PEOPLE,
+      avatar: avatarOf,
+      link: (person: Person) => `#/people/${person.id}`,
+      columns: {
+        avatar: { header: '', value: (person: Person) => person.name, width: '56px' },
+        name: { header: 'Name', value: (person: Person) => person.name, rowLinkLabel: true },
+        email: { header: 'Email', value: (person: Person) => person.email },
+      } satisfies TableColumns<Person>,
+    },
+    template: `
+      <et-table [columns]="columns" [data]="data" [rowLink]="link">
+        <ng-template [etTableCell]="columns.avatar" let-person>
+          <img [src]="avatar(person.name)" [alt]="'Avatar of ' + person.name" width="32" height="32" />
+        </ng-template>
+      </et-table>
+    `,
+  }),
 };
 
 export const CardRows: Story = {

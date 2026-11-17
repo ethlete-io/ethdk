@@ -213,7 +213,7 @@
             [attr.data-col-key]="cell.key"
             [attr.tabindex]="cellNavigation() ? -1 : null"
             [attr.data-state]="cell.state"
-            [attr.id]="cell.linkHost ? rowVm.linkLabelId : null"
+            [attr.id]="cell.labelId"
             [class.et-table-cell--interactive]="cell.interactive"
             [class.et-table-cell--editing]="cell.edit"
             [class.et-skeleton--animated]="cell.state === 'loading'"
@@ -291,6 +291,7 @@
                therefore be the anchor's containing block, shrinking the row's hit area to that one
                column. The row box is the containing block that spans every cell. -->
           <a
+            #rowLinkAnchor
             [attr.href]="rowVm.href"
             [attr.title]="rowVm.title"
             [attr.aria-labelledby]="rowVm.linkLabelId"

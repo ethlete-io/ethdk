@@ -1707,6 +1707,59 @@ describe('TableComponent', () => {
       expect(cell.textContent).toContain('Ada');
     });
 
+    describe('naming the link', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data" [rowLink]="link">
+            <ng-template [etTableCell]="cols.pic" let-person
+              ><img [alt]="'Image of ' + person.name" src="x.png"
+            /></ng-template>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class LabelHostComponent {
+        data = PEOPLE;
+        link = (person: Person) => `/people/${person.id}`;
+        cols: ReturnType<typeof labelColumns> = labelColumns(null);
+      }
+
+      const labelColumns = (labelKey: 'role' | null) =>
+        ({
+          pic: { header: '', value: (person: Person) => person.name },
+          name: { header: 'Name', value: (person: Person) => person.name },
+          role: { header: 'Email', value: (person: Person) => person.role, rowLinkLabel: labelKey === 'role' },
+        }) satisfies TableColumns<Person>;
+
+      const buildLabel = (labelKey: 'role' | null) => {
+        const fixture = TestBed.createComponent(LabelHostComponent);
+        fixture.componentInstance.cols = labelColumns(labelKey);
+        fixture.detectChanges();
+
+        return fixture;
+      };
+
+      const labelKeyOf = (fixture: ComponentFixture<unknown>, row: number) => {
+        const anchor = links(fixture)[row] as HTMLAnchorElement;
+        const cell = anchor.parentElement?.querySelector(`[id="${anchor.getAttribute('aria-labelledby')}"]`);
+
+        return (cell as HTMLElement).dataset['colKey'];
+      };
+
+      it('skips an image-only first column', () => {
+        const fixture = buildLabel(null);
+
+        expect(labelKeyOf(fixture, 0)).toBe('name');
+        expect(labelKeyOf(fixture, PEOPLE.length - 1)).toBe('name');
+      });
+
+      it('names the link from the column marked rowLinkLabel', () => {
+        const fixture = buildLabel('role');
+
+        expect(labelKeyOf(fixture, 0)).toBe('role');
+      });
+    });
+
     it('gives the linked row a box, and leaves the row itself out of the tab order', () => {
       const fixture = build();
       const [linked, unlinked] = queryAll(fixture, '.et-table-row');

@@ -238,6 +238,7 @@ Each value of the `TableColumns<T>` record:
 | `group`            | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers).     |
 | `sticky`           | -                     | `'start' \| 'end'` - pin the column while scrolling, with `etTableStickyColumns`. See [Sticky columns](#sticky-columns-footer).    |
 | `interactive`      | `false`               | This column's cells hold their own controls: a [row link](#row-links) never covers them, nor is it hosted here.                    |
+| `rowLinkLabel`     | `false`               | A [row link](#row-links) takes its accessible name from this column's cell.                                                        |
 | `align`            | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                    |
 | `width`            | `'minmax(96px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                               |
 | `minWidth`         | `96`                  | The column's floor in px, for squeezing and resizing alike. See the notes below.                                                   |
@@ -1033,6 +1034,19 @@ be had from a click handler:
 - middle click, and Ctrl/Cmd-click, to open the row in a new tab,
 - "Open in new tab" and "Copy link address" from the context menu,
 - a crawlable `href`, and a status-bar preview on hover.
+
+**The link's name.** The link is named by one cell of its row. `rowLinkLabel: true` on a column picks
+that column; without it, the link is named by the first cell with text, so an image-only cell (an avatar
+or a logo) is skipped instead of being announced as "Image of ...":
+
+```ts
+const COLUMNS = {
+  avatar: { header: '', value: (user) => user.avatarUrl },
+  name: { header: 'Name', value: (user) => user.name, rowLinkLabel: true },
+} satisfies TableColumns<User>;
+```
+
+A column marked `interactive` never names the link.
 
 The callback answers with one of four things:
 
@@ -2239,7 +2253,7 @@ between them are `role="presentation"`, so the rows are owned by the table in ei
 Cell-by-cell keyboard navigation is [opt-in](#keyboard-navigation): without it Tab
 skips past the body, which is what a read-only display table usually wants.
 
-A [row link](#row-links) is one `<a href>` inside the row's identity cell, named by that cell -
+A [row link](#row-links) is one `<a href>` in the row, named by one cell (see [the link's name](#row-links)) -
 so a linked row reads as one link, in one tab stop, and the grid roles stay as they are.
 
 ## Theming

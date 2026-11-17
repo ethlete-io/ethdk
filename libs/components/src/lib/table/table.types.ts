@@ -276,6 +276,13 @@ export type TableColumn<T, TValue = unknown> = {
    */
   interactive?: boolean;
 
+  /**
+   * A [row link](/components/table#row-links) takes its accessible name from this column's cell. Without
+   * a marked column, the link is named by the first cell with text, so an image-only cell is skipped.
+   * @default false
+   */
+  rowLinkLabel?: boolean;
+
   /** Header/cell alignment. @default 'start' */
   align?: TableColumnAlign;
 
