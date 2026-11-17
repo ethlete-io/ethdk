@@ -497,6 +497,8 @@ export class CanvasFrameComponent {
 
   private contentLoad$ = new Subject<HTMLIFrameElement>();
 
+  private loadedIframes = new WeakSet<HTMLIFrameElement>();
+
   private focusedIframe: HTMLIFrameElement | null = null;
 
   constructor() {
@@ -536,7 +538,10 @@ export class CanvasFrameComponent {
 
           let retried = false;
 
-          return frameLoad$(iframe, this.unreportedPaintMs).pipe(
+          return frameLoad$(iframe, {
+            unreportedMs: this.unreportedPaintMs,
+            loaded: this.loadedIframes.has(iframe),
+          }).pipe(
             switchMap((load) => {
               const retry = load === 'failed' && !retried;
 
@@ -613,6 +618,8 @@ export class CanvasFrameComponent {
   }
 
   protected loadContent(iframe: HTMLIFrameElement) {
+    // An iframe is inserted before its src binding is set, and Chromium fires a load for that empty document; only a load of the bound src counts.
+    if (iframe.src) this.loadedIframes.add(iframe);
     this.contentLoad$.next(iframe);
   }
 

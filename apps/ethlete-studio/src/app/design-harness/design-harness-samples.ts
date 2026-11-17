@@ -1,4 +1,5 @@
 import { StaticProvider, Type } from '@angular/core';
+import { CANVAS_LIVE_REST_MS } from '../components/design-canvas/design-canvas.component';
 import { FRAME_UNREPORTED_PAINT_MS } from '../components/design-canvas/frame-paint';
 import {
   AGENT_ON_READY_PART_SAMPLE,
@@ -96,8 +97,10 @@ const SKETCH_PART_SAMPLES: Record<string, { rows: SketchRow[]; looks: Record<str
 
 type FrameSize = { width: number; height: number };
 
-const framePageOf = (message: 'painted' | 'loading', { width, height }: FrameSize) =>
-  `data:text/html,<script>parent.postMessage({ type: 'design-explore:height', height: ${height}, width: ${width} }, '*');parent.postMessage({ type: 'design-explore:${message}' }, '*')</script>`;
+const paintedPageOf = ({ width, height }: FrameSize) =>
+  `data:text/html,<script>parent.postMessage({ type: 'design-explore:height', height: ${height}, width: ${width} }, '*');parent.postMessage({ type: 'design-explore:painted' }, '*')</script>`;
+
+const LOADING_PAGE = `data:text/html,<script>parent.postMessage({ type: 'design-explore:loading' }, '*')</script>`;
 
 const frameShotOf = ({ width, height }: FrameSize) =>
   `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"/>`;
@@ -109,10 +112,10 @@ const LOADING_FRAME_SIZE = { width: 560, height: 288 };
 const REFUSED_PAGE = 'http://127.0.0.1:9/';
 
 const CANVAS_FRAME_SOURCES = {
-  rest: { src: framePageOf('painted', GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
-  selected: { src: framePageOf('painted', GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
-  active: { src: framePageOf('painted', GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
-  loading: { src: framePageOf('loading', LOADING_FRAME_SIZE), screenshot: frameShotOf(LOADING_FRAME_SIZE) },
+  rest: { src: paintedPageOf(GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
+  selected: { src: paintedPageOf(GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
+  active: { src: paintedPageOf(GRID_FRAME_SIZE), screenshot: frameShotOf(GRID_FRAME_SIZE) },
+  loading: { src: LOADING_PAGE, screenshot: frameShotOf(LOADING_FRAME_SIZE) },
   failed: { src: REFUSED_PAGE, screenshot: frameShotOf(GRID_FRAME_SIZE) },
 };
 
@@ -239,5 +242,8 @@ export const DESIGN_HARNESS_TEMPLATES: Record<string, Type<{ templates: () => Re
 
 /** Providers the harness mounts a part with, beside its own. */
 export const DESIGN_HARNESS_PROVIDERS: Record<string, StaticProvider[]> = {
-  'elements/canvas-frames': [{ provide: FRAME_UNREPORTED_PAINT_MS, useValue: 0 }],
+  'elements/canvas-frames': [
+    { provide: FRAME_UNREPORTED_PAINT_MS, useValue: 0 },
+    { provide: CANVAS_LIVE_REST_MS, useValue: 0 },
+  ],
 };

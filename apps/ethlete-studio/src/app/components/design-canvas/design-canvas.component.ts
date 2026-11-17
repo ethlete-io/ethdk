@@ -4,6 +4,7 @@ import {
   Component,
   contentChildren,
   ElementRef,
+  InjectionToken,
   ViewEncapsulation,
   computed,
   effect,
@@ -104,7 +105,8 @@ const ROW_HEAD_MAX_SCALE = 2;
 const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
-const LIVE_REST_MS = 250;
+/** How long the camera rests before the frames in view load their live pages. */
+export const CANVAS_LIVE_REST_MS = new InjectionToken<number>('CANVAS_LIVE_REST_MS', { factory: () => 250 });
 const WHEEL_GESTURE_GAP_MS = 200;
 const LIVE_GRACE_MS = 5000;
 const MAX_LIVE_FRAMES = 6;
@@ -577,7 +579,9 @@ export class DesignCanvasComponent {
     );
   });
 
-  private restedCamera = toSignal(toObservable(this.camera).pipe(debounceTime(LIVE_REST_MS)), { initialValue: null });
+  private restedCamera = toSignal(toObservable(this.camera).pipe(debounceTime(inject(CANVAS_LIVE_REST_MS))), {
+    initialValue: null,
+  });
 
   private liveIds = signal<ReadonlySet<string>>(new Set(), { equal: sameIds });
 

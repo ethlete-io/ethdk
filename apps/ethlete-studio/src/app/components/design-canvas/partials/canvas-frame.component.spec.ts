@@ -182,6 +182,21 @@ describe('CanvasFrameComponent failed page load', () => {
     expect(host().querySelector('[data-frame-failed]')).toBeNull();
     expect(visible()).toEqual([failing]);
   });
+
+  it('names a failed load whose load event fires before the frame listens', async () => {
+    const src = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src')!;
+
+    vi.spyOn(HTMLIFrameElement.prototype, 'src', 'set').mockImplementation(function (this: HTMLIFrameElement, value) {
+      src.set!.call(this, value);
+      this.dispatchEvent(new Event('load'));
+    });
+    fixture.componentRef.setInput('frame', frameAt('http://localhost:4402/frame.html?revision=2'));
+    await flush(1000);
+    await flush();
+
+    expect(iframes()).toHaveLength(2);
+    expect(host().querySelector('[data-frame-failed]')?.textContent).toContain('Laden fehlgeschlagen.');
+  });
 });
 
 describe('CanvasFrameComponent shot states', () => {

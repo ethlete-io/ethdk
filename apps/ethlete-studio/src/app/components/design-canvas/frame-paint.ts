@@ -63,7 +63,11 @@ const nextPaint$ = (view: Window) =>
     return () => view.cancelAnimationFrame(frame);
   });
 
-export const frameLoad$ = (iframe: HTMLIFrameElement, unreportedMs = UNREPORTED_PAINT_MS): Observable<FrameLoad> => {
+/** Pass `loaded` when the iframe's load event already fired before the call, since a refused page can fire it before anyone listens. */
+export const frameLoad$ = (
+  iframe: HTMLIFrameElement,
+  { unreportedMs = UNREPORTED_PAINT_MS, loaded = false } = {},
+): Observable<FrameLoad> => {
   const host = iframe.ownerDocument.defaultView;
 
   if (!host) return of('painted');
@@ -76,7 +80,8 @@ export const frameLoad$ = (iframe: HTMLIFrameElement, unreportedMs = UNREPORTED_
         message?.type === 'height' || message?.type === 'loading' || message?.type === 'painted',
     ),
   );
-  const fallback$ = fromEvent(iframe, 'load').pipe(
+  const load$ = fromEvent(iframe, 'load');
+  const fallback$ = (loaded ? load$.pipe(startWith(null)) : load$).pipe(
     switchMap(() => timer(unreportedMs)),
     map((): PaintEvent => ({ type: 'fallback' })),
   );

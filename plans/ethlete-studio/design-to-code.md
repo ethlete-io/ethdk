@@ -3671,3 +3671,10 @@ design draws it on fitted frames too); the unanswered reason is `STUDIO_LABELS.c
 still shows Lädt in the shot (Suspect: the refused page fires `load` within ~3 ms, before `frameLoad$` subscribes);
 rounds/round-folded (round bodies need a sized `slot('frame')`, the app heads laid out like the design); the open edit
 sketch `elements/canvas-frames@edit`.
+
+In progress (B233 half 2b, 2026-11-17): Cause of the stuck load-failed frame: an early `load` of the bound src fired
+before `frameLoad$` subscribed (spec in canvas-frame.component.spec.ts); the frame now remembers that load. The harness
+mounts with `CANVAS_LIVE_REST_MS` 0, so frames go live before the shot, and the loading page posts only `loading`.
+default/reset/fit/selected/active/load-failed/loading compare ok. Open: out/in (the design scales the frame head and edge
+with the zoom, the app keeps them at screen size), the load-failed action (Neu laden emits no `reload` and its click
+selects the frame), rounds/round-folded, the edit sketch.
