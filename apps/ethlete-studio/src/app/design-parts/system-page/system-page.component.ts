@@ -154,8 +154,34 @@ export const FRAME_HEAD_CLASS =
           }
         </header>
       } @else if (noted()) {
-        <div class="grid h-full ps-(--st-shell-inset-left)">
-          <ng-content select="[systemNote]" />
+        <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
+          <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
+            <svg
+              class="text-et-surface-muted"
+              width="24"
+              height="24"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M8 2.5 14 13H2z" />
+              <path d="M8 6.5v3" />
+              <path d="M8 11.25v.01" />
+            </svg>
+            <p
+              [attr.data-sketch-missing]="sketchMissing() ? '' : null"
+              class="m-0 text-ui-md font-ui-strong text-et-surface"
+            >
+              {{ noteTitle() }}
+            </p>
+            @if (noteHint()) {
+              <p class="m-0 text-et-surface-muted">{{ noteHint() }}</p>
+            }
+          </div>
         </div>
       } @else if (empty()) {
         <ethlete-system-empty [product]="shell().product" (copyPrompt)="copyPrompt.emit()" />
@@ -329,6 +355,9 @@ export class SystemPageComponent {
   public shell = input<ShellState>(SHELL_SAMPLE);
   public section = input<ShellSection>('System');
   public noted = input(false);
+  public noteTitle = input('');
+  public noteHint = input('');
+  public sketchMissing = input(false);
   public missingShots = input(0);
   public empty = input(false);
   public listingError = input<string | null>(null);

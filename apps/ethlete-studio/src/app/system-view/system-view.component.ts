@@ -115,8 +115,6 @@ const NO_OPEN_POINTS: { groups: OpenPointGroup[]; buildReady: BuildReadyStatus |
 
 const PART_ZOOM_CHIP_CLASS = 'absolute right-space-3 bottom-space-3';
 
-const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
-
 const PALETTE_SERVER_ACTIONS: readonly DesignServerAction[] = ['restart', 'stop'];
 
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
@@ -241,6 +239,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [call]="callPage()"
         [themeSwitches]="themeSwitches()"
         [noted]="canvasNote() !== null"
+        [noteTitle]="noteTitle()"
+        [noteHint]="sketchMissing() ? '' : (canvasNote() ?? '')"
+        [sketchMissing]="sketchMissing()"
         [empty]="canvasNote() === null && !partShown"
         [part]="partShown?.key ?? ''"
         [openPoints]="openPointGroups()"
@@ -298,7 +299,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             </p>
           }
         </div>
-        <p [class]="NOTE" [attr.data-sketch-missing]="sketchMissing() ? '' : null" systemNote>{{ canvasNote() }}</p>
         <div class="contents" systemCanvas>
           <ng-container [ngTemplateOutlet]="shellCanvas" />
         </div>
@@ -385,7 +385,6 @@ export class SystemViewComponent {
   private flowsRevision = computed(() => this.lists().flows);
   public allRevision = computed(() => this.lists().all);
 
-  protected readonly NOTE = NOTE;
   protected readonly PART_ZOOM_CHIP_CLASS = PART_ZOOM_CHIP_CLASS;
 
   protected readonly LABELS = STUDIO_LABELS.shell;
@@ -767,6 +766,17 @@ export class SystemViewComponent {
     if (this.sketchMissing()) return this.EMPTY_LABELS.sketchMissing;
 
     return null;
+  });
+
+  protected noteTitle = computed(() => {
+    if (!this.port()) return this.EMPTY_LABELS.serverDown;
+    if (this.sketchMissing()) return this.EMPTY_LABELS.sketchMissing;
+
+    const call = this.call();
+
+    if (call) return call.slug;
+
+    return this.EMPTY_LABELS.readFailed;
   });
 
   protected pointsClosed = signal(true);

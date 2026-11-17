@@ -1,4 +1,5 @@
 import { StaticProvider, Type } from '@angular/core';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { CANVAS_LIVE_REST_MS } from '../components/design-canvas/design-canvas.component';
 import { FRAME_UNREPORTED_PAINT_MS } from '../components/design-canvas/frame-paint';
 import {
@@ -346,7 +347,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       call: call ? { ...LEGACY_CALL_SAMPLE, transferred: call === 'transferred' } : null,
       themeSwitches: call ? THEME_SWITCHES_SAMPLE : [],
       foldedStates: folded ? FOLDED_STATES_SAMPLE : 0,
-      ...(props['noted'] ? { tree: { layers: [] } } : {}),
+      ...(props['noted']
+        ? {
+            tree: { layers: [] },
+            noteTitle: STUDIO_LABELS.system.serverDown,
+            noteHint: STUDIO_LABELS.shell.startServer,
+          }
+        : {}),
       ...(comments
         ? {
             comments: SYSTEM_COMMENTS_SAMPLE,

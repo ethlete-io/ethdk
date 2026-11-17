@@ -1752,3 +1752,13 @@ components/title-bar (37 states) lists 10 problem states from STATE-NO-SOURCE (`
 linux/windows update hover/active/focus-visible states), the fold keeps them open and folds 27
 (`.claude/handoffs/agent-results/problem-states-shot.png`). `design check` studio and sdk rule hit counts unchanged.
 Not: a stale slow-cache entry still marks its states until the slow runner refreshes it.
+
+## As built (B420, 2026-11-17)
+
+Built: the System page part owns the canvas note card (warning icon, title, hint; inputs `noteTitle`, `noteHint`,
+`sketchMissing`); system-view passes a title per kind (Design-Server läuft nicht, Lesefehler, call slug, Sketch nicht
+gefunden with `data-sketch-missing`) and the hint; the harness `noted` sample gives the design's title and hint; the
+bare `<p systemNote>` is gone. Verified: `compare pages/system --state canvas-note` ok (was DIFF 2312 px); the full
+compare before and after differs only in that state (many-states 910 px and fit 2270 px fail both times, not B420);
+`design check --part pages/system` shows only the existing UNUSED-EXPORT warnings; vitest related, typecheck, lint,
+e2e canvas ("every declared action works"). Not verified: the call/read-error titles in a live app.
