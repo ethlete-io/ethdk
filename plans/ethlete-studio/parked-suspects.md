@@ -38,7 +38,7 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - slice:paths per checkout (machinery, 15.11.): `yarn slice:paths` writes one file per checkout, so parallel subagents overwrite each other and the pre-commit warning is unreliable during parallel runs. Built only on red CI.
 - keyring after D-Bus crash (machinery, 15.11.): gh and glab lost their login when the keyring collection stayed locked after the 03:25 user D-Bus crash. Cause (relogin fixed it ~11:40). Parked (ADR 0276).
 - undefined-class.spec under load (Linux, 15.11.): 2 tests red under load in `vitest related`, 7/7 green alone. Suspect, first time. Parked (ADR 0276). Second time (sweep 43727061520): joined B505, timeout 120 s in abbbb6906.
-- spec:stress skips dist/proof specs (machinery, 15.11.): only `*.perf` switches the vitest config, so a proof spec reports 0/4 in 0.3 s. Pre-existing. Parked (ADR 0276).
+- spec:stress skips dist/proof specs (machinery, 15.11.): only `*.perf` switches the vitest config, so a proof spec reports 0/4 in 0.3 s. Pre-existing. Parked (ADR 0276). 17.11.: it also cannot repeat a Playwright file (builder, B565).
 - serve.perf two-hundred-sketches block over budget (CI, 15.11.): 236.8 > 199.9 s, red already on green push 2c9e6dbf6; job non-blocking. Suspect, first time. Parked (ADR 0276).
 - shot --at copy (Linux, 15.11.): `shot --variants --at HEAD` breaks a relative import in its `--at` copy, so the B502 port had no before/after compare. Suspect, first time. Parked (ADR 0276).
 - Unit tests red without a log (CI, 15.11.): run 43753975170 on d4a9931 failed Unit tests + Verified, job log "not found"; HEAD bc2b953 green, not reproduced. Suspect, first time. Parked (ADR 0276).
@@ -74,7 +74,7 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - shell-main action probe (2026-11-16, B523): server-stopped "Flows" pointer focus showed no ring within 1000 ms; the run exited 0, not repeated. Suspect: load. First time.
 - Mac release smoke (2026-11-16, 70df2bb6e): FAIL. Suspect: stale dist/libs/cli on the Mac + locked screen, not the new tsconfig; retry queued with the builder. First time.
 - CLASS-UNDEFINED ternary (Linux, 17.11.): design check reads a ternary string literal (`merge ? 'bottom-start' : 'bottom-end'`) as a class name. Pre-existing, no hunt.
-- serve.perf red (CI, 17.11.): the non-blocking Perf job is red twice (serve.perf 325 > 224 ms). Parked until it blocks.
+- serve.perf red (CI, 17.11.): the non-blocking Perf job is red twice (serve.perf 325 > 224 ms). Parked until it blocks. Later 17.11.: "two hundred sketches, no block over 8 calibration units" red on every run back to 4365c1e71 (12 runs), 3/3 green locally. Suspect: CI runner speed against the calibration, not B554.
 - nav-tabs behavior flake (Linux, 17.11.): 3 of 60 local runs red with repeat-each 3, also before babbe94e0. No hunt until red CI.
 - chart tooltip shift (17.11.): after 43721532c (whole-pixel panes) the chart tooltip sits 8 px further in from the viewport edge; the spec was re-asserted, not checked as intended.
 - carousel slide growth (SDK, 17.11.): a headless carousel that grows from fewer than two slides is never checked for its pause control (the check runs once, 9d846a8a6).
@@ -91,3 +91,5 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - Sidebar header text off-centre (Linux, 17.11., after B506): "studio ⌃" and the panel icon - the text sits off the icons' vertical centre (human screenshot). Suspect: font line box vs icon box; impossible if text+icon rows centre on the font's cap height by construction.
 - SDK CSS growth (17.11.): ~20 kB since next.66 in the form-field/select/menu sheets (`et-form-field` selector count 387 -> 595 in the fut build). Suspect: selector repetition from :where()/state modifiers, not new looks. Not probed.
 - Repeated grill question (17.11.): doc-agent asked whether page state that only changes an inner part belongs to that part; the human: already decided long ago. No Studio ADR found (0128 covers controls only). Suspect: the decision lives only in an archived plan block; an ADR naming it would let `design check` enforce it.
+- mailbox send without --to (machinery, 17.11.): `agent-sessions send` without `--to` prints "Sent as" and wakes nobody; one fifa answer was lost that way. Built only on red CI.
+- pages/system task --verify (Linux, 17.11.): refuses 3 states (canvas-note: the harness never projects the note; fit: button x; many-states: labels at 75%), seen after 74940e199. Suspect: older than that slice, not checked against its parent. Parked (ADR 0276).
