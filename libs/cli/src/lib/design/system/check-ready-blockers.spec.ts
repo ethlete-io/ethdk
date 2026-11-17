@@ -136,6 +136,7 @@ describe('design check shows what design ready refuses', () => {
       state: 'empty',
       path: '#root',
       detail: 'design-explore: state "empty" of "pages/home" failed - films is undefined',
+      undrawn: 'state' as const,
     };
 
     vi.mocked(renderIssuesOf).mockResolvedValue({
@@ -148,7 +149,13 @@ describe('design check shows what design ready refuses', () => {
       drawnFindingsFrom({
         product,
         issues: [
-          { ...undrawn, rule: 'RENDER-TIMEOUT', state: '-', detail: 'drawing the part did not finish within 120s' },
+          {
+            ...undrawn,
+            rule: 'RENDER-TIMEOUT',
+            state: '-',
+            detail: 'drawing the part did not finish within 120s',
+            undrawn: 'part',
+          },
         ],
         gaps: null,
         stateful: [],

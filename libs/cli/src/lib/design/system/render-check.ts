@@ -58,6 +58,8 @@ export type RenderIssue = {
   path: string;
   detail: string;
   sketch: SketchVariant | null;
+  /** Set when the issue says a whole part (`part`) or one state of it (`state`) did not draw. */
+  undrawn?: 'part' | 'state';
 };
 
 /** One state of a part that was drawn, at the size it was drawn in. */
@@ -92,7 +94,7 @@ export type RenderJob = {
   unchanged?: Record<string, string[]>;
 };
 
-type Found = { rule: string; path: string; detail: string };
+type Found = { rule: string; path: string; detail: string; undrawn?: true };
 
 type Frame = {
   address: PartAddress;
@@ -189,7 +191,7 @@ const inspectFrame = (options: {
 }) => `((options) => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
-  if (refused.startsWith('design-explore:')) return options.sdkStylesOnly ? [] : [{ rule: 'RENDER', path: '#root', detail: refused.split('\\n').map((line) => line.trim()).filter(Boolean).join(' - ') }];
+  if (refused.startsWith('design-explore:')) return options.sdkStylesOnly ? [] : [{ rule: 'RENDER', path: '#root', undrawn: true, detail: refused.split('\\n').map((line) => line.trim()).filter(Boolean).join(' - ') }];
 
   const found = [];
   const seen = new Set();
@@ -739,8 +741,9 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
   return frames.map((frame, at) => {
     const { product, part, state, sketch } = frame.address;
 
-    return [...(inFrame[at] ?? []), ...unstyled, ...fontFaces].map((issue) => ({
+    return [...(inFrame[at] ?? []), ...unstyled, ...fontFaces].map(({ undrawn, ...issue }) => ({
       ...issue,
+      ...(undrawn ? { undrawn: state === '-' ? ('part' as const) : ('state' as const) } : {}),
       product,
       part,
       state,
@@ -846,6 +849,7 @@ const inspect = async (options: {
             path: '-',
             detail: `drawing the part did not finish within ${Math.round(timeoutMs / 1000)}s`,
             sketch: first.sketch,
+            undrawn: 'part',
           });
       } else {
         const groupIssues = found.flat();
@@ -999,6 +1003,7 @@ export const renderIssuesOf = async (options: {
               path: '-',
               detail: loaded.error.split('\n')[0] ?? '',
               sketch,
+              undrawn: 'part',
             });
 
           continue;

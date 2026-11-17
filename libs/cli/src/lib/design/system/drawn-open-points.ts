@@ -2,19 +2,16 @@ import { DesignConfig } from '../design-config';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { OpenPointsInput } from './open-points';
 import { missingStatesOf } from './read-open-points';
-import { BusyState, RENDER_TIMEOUT, RenderIssue, renderIssuesOf } from './render-check';
+import { BusyState, RenderIssue, renderIssuesOf } from './render-check';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 
 export type DrawnFindings = Required<Pick<OpenPointsInput, 'missingStates' | 'busyStates'>>;
 
 /** Whether a render issue says a whole part did not draw. */
-export const isPartUndrawn = (issue: RenderIssue) =>
-  issue.rule === RENDER_TIMEOUT ||
-  (issue.rule === 'RENDER' && issue.state === '-' && !issue.detail.startsWith('logged SDK error'));
+export const isPartUndrawn = (issue: RenderIssue) => issue.undrawn === 'part';
 
 /** Whether a render issue says one state of a part did not draw. */
-export const isStateUndrawn = (issue: RenderIssue) =>
-  issue.rule === 'RENDER' && issue.state !== '-' && issue.detail.startsWith('design-explore:');
+export const isStateUndrawn = (issue: RenderIssue) => issue.undrawn === 'state';
 
 const undrawnLinesOf = (issues: RenderIssue[]) => [
   ...new Set(
