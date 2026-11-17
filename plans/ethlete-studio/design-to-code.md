@@ -3651,49 +3651,22 @@ STATE-NO-SOURCE 0; the three comments* DROPPED-PROP stay (from before). The `com
 points at components/comment-draft, since fdd635b40 took the draft out of pages/inbox (capability-place spec
 was red). Verified: cli vitest related 1594 tests, capability-place 11/11.
 
-In progress (B233 half 1, 2026-11-17): the canvas-frames design no longer wraps the frames in `slot('frames')`; only the
-frame body is a slot (`slot('frame')`, 942 x 221 px for the grid, `h-72 w-4xl` while loading), so the head, the
-marks, the failure banner and the Lädt badge are compared. The design canvas gets `max-h-120` so it clips at 250 %
-like the app (the `in` state was SIZE). Edit sketch `elements/canvas-frames@edit` is open: `sketch rebase` refuses ("old: the variant and the product both changed it"), so it is not picked or merged. App `canvas-frame`: the body
-sits in `data-et-projected="frame"`; head `text-et-surface`, 1.6rem line height, `pb-space-2`; banner "Laden
-fehlgeschlagen. … Neu laden" with the design classes; a Lädt spinner badge while the frame loads (`loading`: a
-render slot pending, or a live page not painted yet); `canvas-frame-border` draws the 1 px edge as a box shadow,
-selected and active as the 2 px primary outline. Labels in `STUDIO_LABELS.canvas`. Verified: vitest related (517),
-lint, typecheck; `design check` keeps 1 finding, UNRECORDED (the open edit sketch). Not verified: compare - the harness still gives the design canvas
-no frames, so default/out/reset/in/fit DIFF (design frame vs empty app canvas), the four marks fail "prop mark has no
-input", rounds/round-folded have no button to hover. Half 2: harness samples with real frames and marks, round heads.
-
-In progress (B233 half 2a, 2026-11-17): the harness gives the design canvas one real frame per state (a data page that
-reports 942 x 221 and paints, or posts `loading`; a refused page for the failure; a transparent SVG shot of the size),
-`selectedId`/`activeId` of the design canvas are models the harness sets from `mark`, and the harness mounts the part
-with `FRAME_UNREPORTED_PAINT_MS` 0 (`DESIGN_HARNESS_PROVIDERS`). Every non-empty frame now draws its hairline edge (the
-design draws it on fitted frames too); the unanswered reason is `STUDIO_LABELS.canvas.unanswered`. Open: load-failed
-still shows Lädt in the shot (Suspect: the refused page fires `load` within ~3 ms, before `frameLoad$` subscribes);
-rounds/round-folded (round bodies need a sized `slot('frame')`, the app heads laid out like the design); the open edit
-sketch `elements/canvas-frames@edit`.
-
-In progress (B233 half 2b, 2026-11-17): Cause of the stuck load-failed frame: an early `load` of the bound src fired
-before `frameLoad$` subscribed (spec in canvas-frame.component.spec.ts); the frame now remembers that load. The harness
-mounts with `CANVAS_LIVE_REST_MS` 0, so frames go live before the shot, and the loading page posts only `loading`.
-default/reset/fit/selected/active/load-failed/loading compare ok. Open: out/in (the design scales the frame head and edge
-with the zoom, the app keeps them at screen size), rounds/round-folded, the edit sketch. Neu laden now emits `reload`
-with the frame id and no longer selects the frame; every declared action works.
-
-In progress (B233 half 2c, 2026-11-17): out/in follow the human's decision "Sketches zoom label decisions" (2026-11-02:
-a constant-size tag above each frame): `canvasView` scales its world with `transform` (like the app camera) and sets
-`--st-canvas-label-scale`, so the frame head, the edge and the round heads keep screen size; the edge and the mark
-outlines are drawn on a `::after` layer over the body, like the app's frame border. Round bodies are a 555 x 131
-`slot('frame')`; the harness gives `heads` a matrix with the rounds' columns and a folded round 1. The app's matrix
-columns are 80 apart and its round heads sit at the design's gaps. Compare: default/out/reset/in/fit/selected/active/
-load-failed/loading ok (fit flaked once on the Fit tooltip); rounds DIFF 6094, round-folded DIFF 6655. Open: the app
-column head wraps its note and sits ~1 line too high, the group head buttons differ by a few px from the design's.
-
-In progress (B233 half 2d, 2026-11-17): Cause of the wrapped column note: the absolute head shrank to its min-content
-width; it is now `w-max` up to the column width. Cause of the wider design buttons: the design zooms its heads (CSS
-`zoom`), the app scaled them with a transform, and Noto Sans lays out wider at the zoomed size (174.8 vs 169 px); the
-group and folded heads now zoom an inner box. A round head no longer truncates its note to its columns. The harness
-offset is the heads' screen height (27.5 + 1.4 x 28.8) with the frame body snapped to a whole canvas pixel, as the
-design's flow paints it. rounds DIFF 2104, round-folded DIFF 2272 (from 6094/6655). Cause of the rest: that snap moves
-the design's body 0.43 canvas px up against its heads, the app anchors the heads to the body, so every head paints
-0.3 px higher; ok needs the design to anchor its heads to the body like the app (open edit sketch on this part).
-fit was ok in 4 of 4 runs; the tooltip Cause is not found (Suspect: the 300 ms tooltip delay against a slow settle).
+As built (B233, 2026-11-17): canvas-frames is comparable. The design slots only the frame body (`slot('frame')`,
+942 x 221 px; round bodies 555 x 131), so head, marks, failure banner and Lädt badge are compared. The app frame draws
+the design's head, banner ("Laden fehlgeschlagen. … Neu laden"), Lädt badge and edge layer; the edge is drawn with
+`after:` utilities under the page (63775f0fb). `DesignCanvasComponent`: `selectedId`/`activeId` are models, and the new
+`reload` output carries the frame id (Neu laden no longer selects). The harness gives every state real frames and marks.
+Cause of the stuck load-failed frame: an early `load` fired before `frameLoad$` subscribed; the frame now remembers it.
+Cause of the section-head overflow on CI: the head leading (241866d95). Cause of the wrapped column note: the absolute
+head shrank to min-content (now `w-max`). Out/in follow the human's "Sketches zoom label decisions" (2026-11-02): head
+and edge keep screen size; round heads zoom an inner box and hang from the frame bodies. Commits: 88481f942,
+a7c44bdfa, 1a4cc4fbc, 442efbccd, 2f68a599b, 241866d95, f8ab0dae6, 2c63a96d2, d61128fc0, 9dd839310, 824a486d2,
+3d7e03793, 63775f0fb, c0f1802b4 (commit-hunks spec reads only tracked design files; a gitignored
+`rebase-uncommitted.json` failed it), 96bba1299. Verified: `compare elements/canvas-frames` all 11 states ok and every
+action works (before 63775f0fb); pages/system, pages/sketches, pages/inbox no state moved; `design check
+elements/canvas-frames` 1 finding (UNRECORDED). Not verified: the joint `task --verify`. It needs elements/canvas-frames
+ready, and the edit sketch `elements/canvas-frames@edit` blocks that in a gate loop: `design ready` "pick old or new"
+(new is picked), `sketch merge` "mark it ready", `sketch ready` "variants draw the same pixels - withdraw old",
+`sketch withdraw --variant old` "only the agent that drew it withdraws it" (author: `design check`), `sketch discard`
+refuses an edit sketch. The verify also asks for pages/system in the set. Fit tooltip flake (Suspect: compare hovers Fit
+and the 300 ms showDelay runs out on a slow run).
