@@ -197,8 +197,8 @@ export default definePart({
   states: {
     ...menuRows.states,
     'studio-menu.stopped': { open: true, server: 'stopped' },
-    'studio-menu.appearance': { open: true, appearance: true },
-    'studio-menu.help': { open: true, help: true },
+    'studio-menu.appearance': { open: true, appearance: true, help: false },
+    'studio-menu.help': { open: true, help: true, appearance: false },
     'studio-menu.option-hover': { open: true, option: 'hover' },
     'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
     'studio-menu.option-active': { open: true, option: 'active' },
