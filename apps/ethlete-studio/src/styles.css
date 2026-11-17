@@ -67,6 +67,7 @@
 @theme inline {
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
   --color-focus-ring: var(--focus-ring);
 
   --text-ui-xs: var(--text-xs);

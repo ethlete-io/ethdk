@@ -1727,6 +1727,10 @@ data path, so the component needs no `diff` input; `styles.css` sources the stat
 - Closed: the `diff-mark` cells are framed stills of `components/hold-trigger` (its part render inside a
   `slot('frame')` region), so compare no longer forces hover on "Pausiert"; `design check --part
 elements/canvas-frames` now ends with only UNRECORDED (no compare stop).
+- diff-mark cells now mirror the app: the hold-trigger still sits in a sized `slot('frame')` (the app's iframe), the
+  mark is a sibling overlay. Compare DIFF 340978 -> 407 px; the rest was app side and fixed here: a grid frame showed
+  "Lädt" forever (`loading` ignored that a grid frame wants no page), and the group head lacked the subtle text colour.
+  Not verified: `task --verify` record; it waits for the pick of `elements/canvas-frames@edit` (refused to the builder).
 - Glyph touch fixed: the outline sits one stroke outside the changed box, clamped one stroke inside the cell; a cell
   only as tall as its text still meets the outline at the cell edge (`b558-100b.png`, `b558-fitb.png`).
 

@@ -273,7 +273,7 @@ export class CanvasFrameCellComponent {
       >
         @if (sheet.interactive.length > 0) {
           <span
-            class="col-span-full mb-2 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em]"
+            class="col-span-full mb-2 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em] text-text-subtle"
             data-grid-group
             >States by interaction</span
           >

@@ -501,7 +501,8 @@ export class CanvasFrameComponent {
   });
 
   protected loading = computed(
-    () => this.reload() !== null || (this.drawn() && !this.painted() && this.failure() === null),
+    () =>
+      this.reload() !== null || (this.wanted() !== null && this.drawn() && !this.painted() && this.failure() === null),
   );
 
   /** The window of the live page once it painted, to post messages to; `null` while the frame shows a shot. */

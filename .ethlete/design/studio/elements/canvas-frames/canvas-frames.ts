@@ -234,14 +234,7 @@ const gridOf = async (part: string, heads: GridHeads) =>
 
 const ZOOM = { kind: 'button', part: 'components/zoom-chip' } as const;
 
-const DIFF_LOOK =
-  '**:data-diff-region:relative **:data-diff-region:z-1 **:data-diff-region:after:pointer-events-none **:data-diff-region:after:absolute **:data-diff-region:after:-inset-0.75 **:data-diff-region:after:rounded-control-sm **:data-diff-region:after:outline-2 **:data-diff-region:after:outline-solid **:data-diff-region:after:outline-(--et-theme-color-primary-solid) **:data-diff-region:after:shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_78%,transparent)]';
-
-const diffFrame = async () =>
-  canvasFrame(
-    'hold-trigger',
-    `<div ${slot('frame')}>${stateGrid(await diffGrid(DIFF_LOOK), { cellWidth: '220px' })}</div>`,
-  );
+const diffFrame = async () => canvasFrame('hold-trigger', stateGrid(await diffGrid(), { cellWidth: '220px' }));
 
 const defaultFrames: Props = {
   part: 'button',
