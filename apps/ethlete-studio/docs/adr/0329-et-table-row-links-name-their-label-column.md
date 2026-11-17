@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B555
+built: 76b68b2b1
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 morning round, fifa report on et-table row link names
 ---
