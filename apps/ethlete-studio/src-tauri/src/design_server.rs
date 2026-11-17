@@ -1041,7 +1041,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_restart_whose_build_fails_keeps_the_running_server() {
-        const PORT: u16 = 45874;
+        const PORT: u16 = 45880;
 
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
