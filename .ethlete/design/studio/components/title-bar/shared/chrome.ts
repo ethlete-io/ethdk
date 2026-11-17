@@ -32,7 +32,7 @@ const uncommittedItems = (uncommitted: string[]) =>
 
 export const withUncommittedHint = (markup: string, { uncommitted, force }: Props) =>
   uncommitted?.length && force?.control === 'uncommitted'
-    ? `<span class="relative inline-flex">${markup}<span class="st-notice-hint absolute top-full right-0 left-0 z-10 mt-2 flex justify-end">${tooltip(
+    ? `<span class="relative inline-flex">${markup.replace('<span ', '<span data-et-opened-by="hover" ')}<span class="st-notice-hint absolute top-full right-0 left-0 z-10 mt-2 flex justify-end">${tooltip(
         {
           content: `<span class="flex flex-col gap-1.5">${uncommittedItems(uncommitted).join('')}</span>`,
           placement: 'bottom-end',

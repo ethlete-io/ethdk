@@ -1,11 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, effect, input, output, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   BADGE_IMPORTS,
   BUTTON_IMPORTS,
   TOOLTIP_IMPORTS,
-  TooltipDirective,
   WINDOW_CONTROL_BUTTON_KINDS,
   WINDOW_CONTROL_BUTTON_SHAPES,
   WINDOW_CONTROL_BUTTON_SIZES,
@@ -18,11 +17,6 @@ import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.
 import { TitleSearchComponent } from '../title-search/title-search.component';
 
 export type TitleBarPush = { unpushed: number; age: string };
-
-export type TitleBarForce = {
-  control: 'update' | 'notice' | 'uncommitted' | WindowButton;
-  interaction: 'hover' | 'active' | 'focus-visible';
-};
 
 const UNCOMMITTED_LINE = /^(\S+ \S+) \S+ ([^:]+):/;
 
@@ -62,7 +56,6 @@ const uncommittedEntryOf = (line: string) => {
         }
         @if (uncommittedEntries().length) {
           <span
-            #uncommittedHint
             [etTooltip]="uncommittedList"
             [etTooltipAriaDescription]="uncommittedDescription()"
             class="inline-flex items-center gap-1 whitespace-nowrap text-et-surface-muted"
@@ -356,7 +349,6 @@ export class TitleBarComponent {
   public product = input('');
 
   public part = input('');
-  public force = input<TitleBarForce | null>(null);
   // eslint-disable-next-line @angular-eslint/no-output-rename -- the design's update output shares its name with the update input
   public updatePress = output<MouseEvent>({ alias: 'update' });
   // eslint-disable-next-line @angular-eslint/no-output-rename -- the design's restart output shares its name with the restart input
@@ -367,7 +359,6 @@ export class TitleBarComponent {
 
   // eslint-disable-next-line @angular-eslint/no-output-native -- the design declares emit:close
   public close = output();
-  private uncommittedHint = viewChild('uncommittedHint', { read: TooltipDirective });
   protected readonly LABELS = STUDIO_LABELS.titleBar;
   protected readonly CODE_LABELS = STUDIO_LABELS.code;
   protected readonly CAPTION_SHAPE = WINDOW_CONTROL_BUTTON_SHAPES.CAPTION;
@@ -400,10 +391,4 @@ export class TitleBarComponent {
     ),
     { initialValue: false },
   );
-
-  constructor() {
-    effect(() => {
-      if (this.force()?.control === 'uncommitted') this.uncommittedHint()?.show();
-    });
-  }
 }
