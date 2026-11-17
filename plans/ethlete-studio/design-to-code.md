@@ -1834,6 +1834,11 @@ early on a disabled day) and the natively disabled previous/next buttons in `lim
 `design check --part` (HELD, 0 findings). Not verified: press checks (calendar is not ready-marked); a press on the
 selected day fires nothing new.
 
+As built (B135 slice 7): chart bars, line slices and pie slices `emit:markActivate` (`activate()` emits it on click,
+Enter and Space), added to the drawn markup in the design part, no mock changed. ACTION-UNDECLARED 36 -> 0, no other
+count changed. Verified: `design complete` and `design check --part` (HELD, 0 findings). Not verified: press checks
+(chart is not ready-marked).
+
 ### B574 in progress 2026-11-17: studio-menu harness data (builder)
 
 As built: the harness sample `elements/studio-menu` hands the component `SHELL_SAMPLE.project/projects`, and the

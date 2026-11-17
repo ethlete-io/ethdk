@@ -36,7 +36,13 @@ const LONG_SOURCES = [
 
 const PLOT_WIDTH = 410;
 
-const render = (props: Props) => {
+const declareMarks = (html: string) =>
+  html.replace(
+    /<g class="et-(bar-chart-bar|line-chart-slice|pie-chart-slice)\b/g,
+    (mark) => `${mark.slice(0, 2)} data-et-action="emit:markActivate"${mark.slice(2)}`,
+  );
+
+const marks = (props: Props) => {
   if (props.kind === 'bar') {
     return barChart({
       plotWidth: PLOT_WIDTH,
@@ -116,7 +122,7 @@ export default definePart({
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: render(props),
+      body: declareMarks(marks(props)),
       styles: [chartStyles, frame].join('\n'),
     }),
 });
