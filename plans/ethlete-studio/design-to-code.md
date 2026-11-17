@@ -1737,3 +1737,13 @@ Studio's fold keeps those states open next to the commented ones. No static rule
 with an edited `components/disclosure` (4 open-row states changed, 8 folded; `.claude/handoffs/agent-results/b561-shot.png`).
 Not: a live problem state; a changed state whose current pictures no check has drawn stays folded; a grid part still
 draws every cell in its grid frame.
+
+As built (problemStates live, rest of B561): a `Problem` carries an optional `states` list; the rule baseline keys
+on `at ?? message` and ignores it. STATE-SENTENCE (the missing states), DROPPED-PROP, STATE-NO-SOURCE,
+PAGE-STATE-INNER and render issues (not `-`) fill it. `problemStatesOf` reads only `states` (the `at`/message
+heuristic is gone), and the listing also reads the part's cached slow-check problems, so draw-rule hits count; the
+slow input hash gained a format token, so every cache entry re-runs once. Live on a scratch copy: studio
+components/title-bar (37 states) lists 10 problem states from STATE-NO-SOURCE (`uncommitted-push-hint`, the
+linux/windows update hover/active/focus-visible states), the fold keeps them open and folds 27
+(`.claude/handoffs/agent-results/problem-states-shot.png`). `design check` studio and sdk rule hit counts unchanged.
+Not: a stale slow-cache entry still marks its states until the slow runner refreshes it.

@@ -75,6 +75,7 @@ export const renderProblemOf = (product: ResolvedProduct, issue: RenderIssue): P
   file: product.parts.find((part) => partKeyOf(part) === issue.part)?.file ?? product.dir,
   message: issue.detail,
   at: `${issue.state} at ${issue.size}: ${issue.path}`,
+  ...(issue.state !== '-' && { states: [issue.state] }),
 });
 
 const partOfHit = (hit: string) => hit.slice(0, hit.indexOf(': '));

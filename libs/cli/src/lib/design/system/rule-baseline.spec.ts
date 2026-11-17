@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
 import { Problem } from './problem';
 import { resolveProduct } from './resolve-product';
-import { RULE_BASELINE_FILE, ruleBaselineOf, writeRuleBaseline } from './rule-baseline';
+import { RULE_BASELINE_FILE, renderProblemOf, ruleBaselineOf, writeRuleBaseline } from './rule-baseline';
 import { gitExec } from '../../git-test-env.fixtures';
 
 const checkout = () => {
@@ -62,6 +62,37 @@ describe('rule baseline (ADR 0201)', () => {
       'baselined (ADR 0201): CONTROL-STATE components/rail: section - finding 489, sketch components/rail-bubble',
     ]);
     expect(found.problems).toEqual([hitOn('rail', 'product')]);
+  });
+
+  it('keys a hit by its place, not by the states it is about', () => {
+    const { product, hitOn, commit, writeBaseline } = checkout();
+
+    writeBaseline({ 'CONTROL-STATE': { 'components/rail: section': entry } });
+    commit();
+
+    const found = ruleBaselineOf({
+      product: product(),
+      problems: [{ ...hitOn('rail', 'section'), states: ['open'] }],
+      checked: everywhere,
+    });
+
+    expect(found.problems).toEqual([]);
+  });
+
+  it('places a render issue at its state, and a product-wide one at none', () => {
+    const { product } = checkout();
+    const issue = {
+      rule: 'CONTRAST',
+      product: 'app-a',
+      part: 'components/rail',
+      size: '320',
+      path: '.a',
+      detail: 'd',
+      sketch: null,
+    };
+
+    expect(renderProblemOf(product(), { ...issue, state: 'open' }).states).toEqual(['open']);
+    expect(renderProblemOf(product(), { ...issue, state: '-' }).states).toBeUndefined();
   });
 
   it('fails an entry that no longer hits where its rule ran, and keeps one its rule did not check', () => {

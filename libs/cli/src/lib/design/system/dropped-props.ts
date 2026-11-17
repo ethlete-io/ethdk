@@ -476,6 +476,7 @@ export const droppedPropProblemsOf = async (options: {
           file: part.file,
           message: `${state}: ${droppedPropsMessageOf(dropped)}`,
           at: state,
+          states: [state],
         });
 
       if (compiler !== null && template !== null)
@@ -503,6 +504,7 @@ export const droppedPropProblemsOf = async (options: {
           file: part.file,
           message: `${state}: ${stateNoSourceMessageOf(props, selector)}`,
           at: state,
+          states: [state],
         });
     }
 

@@ -7,20 +7,9 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { readMerged } from './sketch/merged-parts';
 
-/** The states of `states` a problem is placed at: its `at` names the state, alone or ahead of a space or colon, or its message names `state "<state>"`. */
-export const problemStatesOf = (
-  states: readonly string[],
-  problems: readonly Pick<Problem, 'at' | 'message'>[],
-): string[] =>
-  states.filter((state) =>
-    problems.some(
-      ({ at, message }) =>
-        at === state ||
-        at?.startsWith(`${state} `) ||
-        at?.startsWith(`${state}:`) ||
-        message.includes(`state "${state}"`),
-    ),
-  );
+/** The states of `states` a problem names in its `states`. */
+export const problemStatesOf = (states: readonly string[], problems: readonly Pick<Problem, 'states'>[]): string[] =>
+  states.filter((state) => problems.some((problem) => problem.states?.includes(state)));
 
 /**
  * The states of each part whose picture differs from the one its last sketch merge accepted, under the part key. Only

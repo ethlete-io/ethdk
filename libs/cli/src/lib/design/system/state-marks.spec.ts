@@ -49,19 +49,10 @@ const cacheOf = (pictures: Record<string, Record<string, string>>): PartPictureC
 });
 
 describe('problemStatesOf', () => {
-  it('places a problem at the state its at or its message names', () => {
+  it('places a problem at the states it names, and not by its place or message', () => {
     expect(
-      problemStatesOf(
-        ['default', 'hover', 'busy', 'busy-long', 'error'],
-        [
-          { at: 'hover', message: 'm' },
-          { at: 'busy at 320: .label', message: 'm' },
-          { at: 'save-button', message: 'm' },
-          { message: 'state "error" sets kind' },
-          { message: 'no state named' },
-        ],
-      ),
-    ).toEqual(['hover', 'busy', 'error']);
+      problemStatesOf(['default', 'hover', 'busy', 'error'], [{ states: ['hover', 'busy'] }, { states: ['gone'] }, {}]),
+    ).toEqual(['hover', 'busy']);
   });
 });
 

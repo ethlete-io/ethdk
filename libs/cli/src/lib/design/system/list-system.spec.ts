@@ -8,6 +8,7 @@ import { warningProblemsOf } from './check-system';
 import { gridReportOf } from './grid-report';
 import { listSystem } from './list-system';
 import { resolveProduct } from './resolve-product';
+import { slowCacheFileOf } from './slow-checks';
 import { createSketch, variantDirOf } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
@@ -203,12 +204,36 @@ describe('listSystem', () => {
       problemsOf: (_name, resolved) =>
         resolved.parts
           .filter((part) => part.name === 'home')
-          .map((part) => ({ rule: 'R', file: part.file, message: 'm', at: 'empty at 390: .title' })),
+          .map((part) => ({ rule: 'R', file: part.file, message: 'm', states: ['empty'] })),
     });
     const partOf = (name: string) => product?.parts.find((part) => part.name === name);
 
     expect(partOf('home')?.problemStates).toEqual(['empty']);
     expect(partOf('hero')).not.toHaveProperty('problemStates');
+  });
+
+  it('lists the states a cached slow-check problem of the part is placed at', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const resolved = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+    const home = resolved.parts.find((part) => part.name === 'home');
+    const cache = slowCacheFileOf(resolved);
+
+    mkdirSync(dirname(cache), { recursive: true });
+    writeFileSync(
+      cache,
+      JSON.stringify({
+        [`${home?.layer}/home`]: {
+          hash: 'h',
+          at: 'now',
+          problems: [{ rule: 'R', file: home?.file, message: 'm', states: ['empty'] }],
+        },
+      }),
+    );
+
+    const [product] = await list(target, ['acme']);
+
+    expect(product?.parts.find((part) => part.name === 'home')?.problemStates).toEqual(['empty']);
   });
 
   it('keeps a warning-rule problem out of the problems of every part and product', async () => {

@@ -24,10 +24,13 @@ export const missingStateSentencesOf = (product: ResolvedProduct): Problem[] =>
 
       if (missing === null || (missing !== 'all' && missing.length === 0)) return [];
 
+      const states = missing === 'all' ? (stateNamesOf(part.source) ?? []) : missing;
+
       return [
         {
           rule: RULE,
           file: part.file,
+          ...(states.length > 0 && { states }),
           message:
             missing === 'all'
               ? 'no state has a sentence: add describe: { <state>: "<what it shows and what to check>" } for every state (ADR 0330)'

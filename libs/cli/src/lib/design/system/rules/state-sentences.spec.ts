@@ -42,6 +42,13 @@ describe('missingStateSentencesOf', () => {
     ]);
   });
 
+  it('places a hit at the states it names', () => {
+    const statesOf = (source: string) => missingStateSentencesOf(productOf({ source }))[0]?.states;
+
+    expect(statesOf(partWith("describe: { rest: 'Closed; check the label.' },"))).toEqual(['open']);
+    expect(statesOf(partWith(''))).toEqual(['rest', 'open']);
+  });
+
   it('leaves base parts and sentences it cannot read without running the part to their own check', () => {
     expect(
       messagesOf(productOf({ source: partWith(''), origin: 'base' }, { source: partWith('describe: sentences,') })),

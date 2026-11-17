@@ -58,6 +58,8 @@ export type SlowEntry = { hash: string; problems: Problem[]; at: string; unjudge
 
 export type SlowCache = Record<string, SlowEntry>;
 
+const SLOW_RESULT_FORMAT = 'states';
+
 const SPEC_SIBLING = /\.(?:ts|html|css)$/u;
 
 /** The gitignored file that holds a product's slow results, under the checkout's `node_modules/.cache`. */
@@ -217,6 +219,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     rules,
     hash: sha16(
       [
+        SLOW_RESULT_FORMAT,
         rules.join(','),
         design.withLinks,
         hashOfFiles(app),

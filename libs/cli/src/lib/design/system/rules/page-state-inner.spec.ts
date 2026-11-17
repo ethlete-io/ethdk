@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { innerOnlyPartOf, innerOnlyStatesOf } from './page-state-inner';
+import { ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { innerOnlyPartOf, innerOnlyStatesOf, pageStateInnerOf } from './page-state-inner';
 
 const OWN = 'pages/home';
 
@@ -75,6 +76,18 @@ describe('innerOnlyStatesOf', () => {
   it('compares a state with the default and with each state whose props it repeats', async () => {
     expect(await innerOnlyStatesOf({ own: OWN, definition })).toEqual([
       { state: 'paused-open', base: 'paused', part: 'components/hold' },
+    ]);
+  });
+
+  it('places each hit at its state', async () => {
+    const problems = await pageStateInnerOf({
+      load: async () => ({ default: definition }),
+      product: { name: 'app-a' } as ResolvedProduct,
+      parts: [{ file: '/p/home.ts', layer: 'pages', name: 'home', origin: 'product' } as ResolvedPart],
+    });
+
+    expect(problems.map(({ at, states }) => ({ at, states }))).toEqual([
+      { at: 'paused-open', states: ['paused-open'] },
     ]);
   });
 });

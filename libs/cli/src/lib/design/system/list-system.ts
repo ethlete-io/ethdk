@@ -7,6 +7,7 @@ import { kitUsesOf } from './kit';
 import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { openDirectEditPartsOf } from './sketch/merged-parts';
+import { readSlowCache } from './slow-checks';
 import { changedStatesSinceMergeOf, problemStatesOf } from './state-marks';
 import { partLinkOf } from './sketch/part-definition';
 import { SystemModules } from './system-modules';
@@ -268,6 +269,7 @@ export const listSystem = async (options: {
       const changedStates = changedStatesSinceMergeOf({ target, product });
       const unused = unusedBasePartsOf(product);
       const users = partUsersOf(product);
+      const slow = readSlowCache(product);
 
       return [
         (async (): Promise<ListedProduct> => {
@@ -287,7 +289,7 @@ export const listSystem = async (options: {
                   load,
                 });
                 const own = problems.filter((found) => belongsTo(part, found));
-                const problemStates = problemStatesOf(states, own);
+                const problemStates = problemStatesOf(states, [...own, ...(slow[partKeyOf(part)]?.problems ?? [])]);
                 const changed = changedStates.get(partKeyOf(part));
 
                 return {
