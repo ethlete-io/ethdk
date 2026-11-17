@@ -1,12 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SWITCH_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
-import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
-import { CommentDraftComponent } from '../system-page/comment-draft.component';
 import { FRAME_CLASS, FRAME_HEAD_CLASS } from '../system-page/system-page.component';
 import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
 import { CommentRowComponent } from '../comment-flow/comment-row.component';
@@ -23,13 +21,11 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
     BUTTON_IMPORTS,
     SWITCH_IMPORTS,
     TOOLTIP_IMPORTS,
-    AutoSurfaceDirective,
     ProvideColorDirective,
     NgTemplateOutlet,
     ShellPageComponent,
     CanvasFramesComponent,
     AgentLogoComponent,
-    CommentDraftComponent,
     CommentRowComponent,
   ],
   host: { class: 'block h-screen w-full' },
@@ -42,20 +38,13 @@ export class InboxComponent {
   public selectedId = input<string | null>('c1');
   public showResolved = model(false);
   public openOn = input<InboxOpenOn>('all');
-  public draft = input(false);
-  public draftText = input<string>();
-  public entry = input(false);
   public load = input<InboxLoad>('loaded');
   public canvas = input<TemplateRef<unknown> | null>(null);
 
   public shellAction = output<ShellAction>();
-  public send = output<string>();
-  public draftTextChange = output<string>();
-  public discard = output();
   public pick = output<string>();
   public retry = output();
 
-  protected readonly LABELS = STUDIO_LABELS.commentDraft;
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
 
@@ -75,6 +64,4 @@ export class InboxComponent {
   protected openCount = computed(() => this.inScope().filter((c) => !c.resolved).length);
   protected onActivePart = computed(() => this.visible().filter((c) => c.part === this.activePart()));
   protected onOtherParts = computed(() => this.visible().filter((c) => c.part !== this.activePart()));
-  protected shownDraftText = computed(() => this.draftText() ?? '');
-  protected editorOpen = computed(() => this.draft() || this.entry());
 }

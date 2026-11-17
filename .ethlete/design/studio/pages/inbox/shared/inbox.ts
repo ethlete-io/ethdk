@@ -14,15 +14,11 @@ import styles from './inbox.css?inline';
 type Props = {
   showResolved: boolean;
   openOn: 'all' | 'active' | 'others' | 'none';
-  draft?: boolean;
-  entry?: boolean;
   load?: 'loading' | 'error';
   comments?: Comment[];
 };
 
 type Comment = Thread & { id: string; cell?: number };
-
-type CommentEditor = (text: string) => Promise<{ body: string; styles: string }>;
 
 const COMMENTS: Comment[] = [
   {
@@ -233,160 +229,117 @@ const activeOnly: Props = { showResolved: false, openOn: 'active' };
 const activeClear: Props = { showResolved: false, openOn: 'others' };
 const allClear: Props = { showResolved: false, openOn: 'none' };
 
-export const inbox = (commentEditor: CommentEditor) =>
-  definePart<Props>({
-    note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. A click on a row, or Enter or Space on the focused row, selects its comment and opens its place on the canvas; for a comment on another part the canvas switches to that part first. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls. The comment editor is open only while focus is within it; moving focus between its controls keeps it open, and leaving the editor closes it.',
-    madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
-    states: {
-      open,
-      'with-resolved': withResolved,
-      'active-only': activeOnly,
-      'active-clear': activeClear,
-      'all-clear': allClear,
-      'comment-draft': { ...open, draft: true },
-      'comment-entry': { ...open, entry: true },
-      loading: { ...open, load: 'loading' },
-      'load-error': { ...open, load: 'error' },
-      'long-list': { ...open, comments: LONG },
-    },
-    controls: {
-      pin: { kind: 'button' as const, part: 'components/comment-pin' },
-      'comment-cancel': { kind: 'button' as const, part: 'components/button' },
-      'comment-send': { kind: 'button' as const, part: 'components/button' },
-      resolved: { kind: 'button' as const, part: 'components/switch' },
-      row: { kind: 'row' as const, part: 'components/comment-row' as const },
-      retry: { kind: 'button' as const, part: 'components/button' },
-    },
-    render: async ({ showResolved, openOn, draft, entry, load, comments: list = COMMENTS }) => {
-      const resolved = await switchPart.render({
-        checked: showResolved,
-        attributes: 'aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange"',
-      });
-      const controls = html`<span class="ib-control inline-flex">${control(resolved.body, 'resolved')}</span>`;
-      const dialog =
-        draft || entry
-          ? await commentEditor(
-              draft ? 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.' : '',
-            )
-          : null;
-      const editor = dialog
-        ? html`<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
-            ${commentPinMark({ author: 'human', initials: 'H', selected: true })}
-            <div class="mt-1.25">${dialog.body}</div>
-          </div>`
-        : '';
-      const retryButton = await button.render({
-        label: 'Erneut laden',
-        variant: 'outline',
-        color: 'surface',
-        size: 'sm',
-      });
-      const retry = control(withAction(retryButton.body, 'emit:retry'), 'retry');
-      const comments = (load ? [] : list).filter(
-        (c) =>
-          c.resolved ||
-          openOn === 'all' ||
-          (openOn === 'active' && c.part === ACTIVE_PART) ||
-          (openOn === 'others' && c.part !== ACTIVE_PART),
-      );
-      const visible = comments.filter((c) => showResolved || !c.resolved);
-      const unresolved = comments.filter((c) => !c.resolved).length;
-      const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
-      const gridRows = await Promise.all(
-        (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
-          label: variant,
-          cells: await Promise.all(
-            interactions.map(
-              async (interaction) =>
-                (
-                  await button.render(
-                    { label: 'Save', variant, pressed: interaction === 'pressed' },
-                    interaction === 'rest' || interaction === 'pressed' ? {} : { interaction },
-                  )
-                ).body,
-            ),
+export const inbox = definePart<Props>({
+  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. A click on a row, or Enter or Space on the focused row, selects its comment and opens its place on the canvas; for a comment on another part the canvas switches to that part first. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls.',
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  states: {
+    open,
+    'with-resolved': withResolved,
+    'active-only': activeOnly,
+    'active-clear': activeClear,
+    'all-clear': allClear,
+    loading: { ...open, load: 'loading' },
+    'load-error': { ...open, load: 'error' },
+    'long-list': { ...open, comments: LONG },
+  },
+  controls: {
+    pin: { kind: 'button' as const, part: 'components/comment-pin' },
+    resolved: { kind: 'button' as const, part: 'components/switch' },
+    row: { kind: 'row' as const, part: 'components/comment-row' as const },
+    retry: { kind: 'button' as const, part: 'components/button' },
+  },
+  render: async ({ showResolved, openOn, load, comments: list = COMMENTS }) => {
+    const resolved = await switchPart.render({
+      checked: showResolved,
+      attributes: 'aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange"',
+    });
+    const controls = html`<span class="ib-control inline-flex">${control(resolved.body, 'resolved')}</span>`;
+    const retryButton = await button.render({
+      label: 'Erneut laden',
+      variant: 'outline',
+      color: 'surface',
+      size: 'sm',
+    });
+    const retry = control(withAction(retryButton.body, 'emit:retry'), 'retry');
+    const comments = (load ? [] : list).filter(
+      (c) =>
+        c.resolved ||
+        openOn === 'all' ||
+        (openOn === 'active' && c.part === ACTIVE_PART) ||
+        (openOn === 'others' && c.part !== ACTIVE_PART),
+    );
+    const visible = comments.filter((c) => showResolved || !c.resolved);
+    const unresolved = comments.filter((c) => !c.resolved).length;
+    const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
+    const gridRows = await Promise.all(
+      (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
+        label: variant,
+        cells: await Promise.all(
+          interactions.map(
+            async (interaction) =>
+              (
+                await button.render(
+                  { label: 'Save', variant, pressed: interaction === 'pressed' },
+                  interaction === 'rest' || interaction === 'pressed' ? {} : { interaction },
+                )
+              ).body,
           ),
-        })),
-      );
-      const grid = stateGrid({ columns: [...interactions], rows: gridRows }, { cellWidth: '120px', place: 'center' });
-      const pins = new Map(
-        visible.map((c) => [
-          c.id,
-          commentPinMark({
-            author: c.author,
-            initials: c.initials,
-            ...(c.agent ? { agent: c.agent } : {}),
-            selected: c.id === SELECTED,
-          }),
-        ]),
-      );
-      const side = html`<div class="ib flex flex-col -m-space-2">
-        <div
-          class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
-        >
-          <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
-          <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}${editor}</div>
-        </div>
-        <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">
-          ${load === 'loading' ? loadingNote : load === 'error' ? loadError(retry) : visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
-            'Andere',
-            visible.filter((c) => c.part !== ACTIVE_PART),
-          )}
-        </div>
-      </div>`;
-      const canvas = await canvasView(
-        [
-          canvasFrame(
-            'button',
-            html`<div ${slot('canvas')}>
-              ${pinned(
-                grid,
-                draft || entry
-                  ? visible
-                      .filter((c) => c.cell !== 12)
-                      .concat({
-                        id: 'draft',
-                        author: 'human',
-                        initials: 'H',
-                        when: '',
-                        part: 'button',
-                        state: 'tonal · rest',
-                        text: '',
-                        replies: 0,
-                        cell: 12,
-                      })
-                  : visible,
-                (c) => (c.id === 'draft' ? '' : (pins.get(c.id) ?? '')),
-              )}
-            </div>`,
-          ),
-        ],
-        '100%',
-        {},
-        'w-full',
-        true,
-      );
-      const menu = await studioMenu({ open: false });
-      const shell = await shellMain.render({
-        studio: menu.body,
-        section: 'Inbox',
-        product: 'studio',
-        side,
-        content: canvas,
-      });
+        ),
+      })),
+    );
+    const grid = stateGrid({ columns: [...interactions], rows: gridRows }, { cellWidth: '120px', place: 'center' });
+    const pins = new Map(
+      visible.map((c) => [
+        c.id,
+        commentPinMark({
+          author: c.author,
+          initials: c.initials,
+          ...(c.agent ? { agent: c.agent } : {}),
+          selected: c.id === SELECTED,
+        }),
+      ]),
+    );
+    const side = html`<div class="ib flex flex-col -m-space-2">
+      <div
+        class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
+      >
+        <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
+        <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}</div>
+      </div>
+      <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">
+        ${load === 'loading' ? loadingNote : load === 'error' ? loadError(retry) : visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
+          'Andere',
+          visible.filter((c) => c.part !== ACTIVE_PART),
+        )}
+      </div>
+    </div>`;
+    const canvas = await canvasView(
+      [canvasFrame('button', html`<div ${slot('canvas')}>${pinned(grid, visible, (c) => pins.get(c.id) ?? '')}</div>`)],
+      '100%',
+      {},
+      'w-full',
+      true,
+    );
+    const menu = await studioMenu({ open: false });
+    const shell = await shellMain.render({
+      studio: menu.body,
+      section: 'Inbox',
+      product: 'studio',
+      side,
+      content: canvas,
+    });
 
-      return drawing({
-        body: shell.body,
-        setup: menu.setup,
-        styles:
-          retryButton.styles +
-          shell.styles +
-          menu.styles +
-          canvasFrameStyles +
-          (dialog?.styles ?? '') +
-          commentRowStyles +
-          resolved.styles +
-          styles,
-      });
-    },
-  });
+    return drawing({
+      body: shell.body,
+      setup: menu.setup,
+      styles:
+        retryButton.styles +
+        shell.styles +
+        menu.styles +
+        canvasFrameStyles +
+        commentRowStyles +
+        resolved.styles +
+        styles,
+    });
+  },
+});

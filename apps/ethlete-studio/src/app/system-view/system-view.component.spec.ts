@@ -583,17 +583,10 @@ describe('SystemViewComponent on a reload', () => {
     expect(aside()).toContain('Too light');
   });
 
-  it('sends the pending comment draft from the Inbox editor with the text of the store', async () => {
-    const written: unknown[] = [];
-
-    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+  it('renders no comment draft editor in the open Inbox while the store holds a draft', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
       if (url.includes('/__design/system')) return json([PRODUCT]);
       if (url.includes('/__design/calls')) return json([]);
-      if (url.includes('/__design/comment') && init?.method === 'POST') {
-        written.push(JSON.parse(String(init.body)));
-
-        return json({ ...HOVER_COMMENT, id: '2', text: 'Zu eng' });
-      }
       if (url.includes('/__design/comments')) return json({ comments: [HOVER_COMMENT], unreadable: [] });
 
       return new Promise(() => undefined);
@@ -612,12 +605,10 @@ describe('SystemViewComponent on a reload', () => {
     store.draftText.set('Zu eng');
     await settle(fixture);
 
-    [...element.querySelectorAll<HTMLButtonElement>('ethlete-inbox button')]
-      .find((button) => button.textContent?.trim() === 'Senden')
-      ?.click();
-    await settle(fixture);
-
-    expect(written).toEqual([expect.objectContaining({ text: 'Zu eng' })]);
+    expect(store.draft()).not.toBeNull();
+    expect(element.querySelector('ethlete-inbox aside')?.textContent).toContain('1 offen');
+    expect(element.querySelector('ethlete-inbox aside ethlete-comment-draft')).toBeNull();
+    expect(element.querySelector('ethlete-inbox aside [role="dialog"]')).toBeNull();
   });
 });
 

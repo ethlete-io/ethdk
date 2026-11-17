@@ -11,28 +11,6 @@
         >
           <et-switch [(checked)]="showResolved" aria-label="Erledigte zeigen" />
         </span>
-        @if (editorOpen()) {
-          <div class="fixed top-46.75 left-152.25 z-10 w-80 text-ui-sm">
-            <button
-              class="relative inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[50%_50%_50%_0] border-0 bg-et-theme p-0 font-ui-strong text-ui-xs leading-none text-et-on-theme shadow-[0_0_0_4px_rgb(var(--et-theme-color-primary-rgb)/0.2)] ring-2 ring-et-surface-bg hover:bg-et-theme-hover focus-visible:outline-2 focus-visible:outline-offset-[5px] focus-visible:outline-focus-ring active:bg-et-theme-active"
-              type="button"
-              aria-label="Comment by human"
-              aria-pressed="true"
-            >
-              <span class="flex size-full items-center justify-center rounded-[50%_50%_50%_0]">H</span>
-            </button>
-            <div class="mt-1.25">
-              <div [attr.aria-label]="LABELS.comment" etAutoSurface role="dialog">
-                <ethlete-comment-draft
-                  [text]="draft() ? shownDraftText() : ''"
-                  (textChange)="draftTextChange.emit($event)"
-                  (send)="send.emit($event)"
-                  (discard)="discard.emit()"
-                />
-              </div>
-            </div>
-          </div>
-        }
       </div>
     </div>
     <div class="flex min-h-0 flex-col gap-px overflow-auto p-space-2">
