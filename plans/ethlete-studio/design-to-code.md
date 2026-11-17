@@ -2046,3 +2046,12 @@ LEFTOVER with the check that clears it. Verified: accepted-pictures.spec (picked
 restored, a `writesTracked: false` run) and status-uncommitted.spec, red with the fix reverted. Live: status
 printed one line for studio-menu@edit, and `design check --product studio --part elements/studio-menu` deleted it
 (STALE EDIT SKETCH ... discarded). Not verified: a picked `old` whose HEAD holds the `new` edit also closes silently.
+
+As built (B577 slice 2, ADR 0336): cause (by spec bite) - `portBaseChanges` (rebase-port.ts) ported every variant
+from the baseline to the working part, `old` of an `@edit` too; its baseline is the working tree at open, so a later
+working-tree change was taken or 3-way merged into `old` (the part at HEAD), and a change on the edited line was an
+`old` conflict that only `--ported old` passed. Now the port skips `old` of an `@edit` sketch: it stays the part at
+HEAD, `new` takes the change. Verified: edit-sketch.spec (a change in another file leaves `old` at HEAD and the pick
+of old works; a change on the edited line rebases without a conflict), both red with the skip removed. Not verified:
+a live rebase on an `@edit` (no live sketch touched); `old` does not follow a HEAD that moved since open - the
+check's `refreshEditOld` covers that.

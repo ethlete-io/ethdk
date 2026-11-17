@@ -19,6 +19,8 @@ import {
   variantSharedDirOf,
   withSharedImports,
 } from './sketch';
+import { EDIT_OLD } from './edit-sketch';
+import { isEditSketch } from './merged-parts';
 import { gitTopOf } from '../../git-top';
 import { writeChangedFile } from '../../../json-file';
 import { withProductLock } from '../product-lock';
@@ -211,7 +213,8 @@ export const keptByPortedOf = (sketch: Sketch, named: string[]) => (variant: str
  * variants: a 3-way merge per file of the variant, the part as the baseline held it (found in git history by its
  * hash, or in the tree the baseline was recorded from) and the part now. Writes nothing when any file conflicts or a baseline state is not in history, and then
  * answers with the conflicts; when `keepConflicts` holds for the variant of each conflict, it keeps the variant's version of
- * those and ports the rest. A file that changes while the port runs is a conflict.
+ * those and ports the rest. A file that changes while the port runs is a conflict. The `old` variant of an `@edit`
+ * sketch is the part at HEAD, not a change on the working part, so it is never ported.
  */
 export const portBaseChanges = (options: {
   target: string;
@@ -229,6 +232,8 @@ export const portBaseChanges = (options: {
 
   try {
     for (const variant of sketch.variants) {
+      if (isEditSketch(sketch) && variant === EDIT_OLD) continue;
+
       const variantDir = variantDirOf(sketch, variant);
 
       if (

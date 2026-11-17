@@ -10,6 +10,7 @@ import { resolveProduct } from '../resolve-product';
 import { variantProblemsOf } from './check-sketches';
 import { openEditSketch } from './edit-sketch';
 import { mergeSketch } from './merge';
+import { journaledRebaseOf } from './rebase-port';
 import { changedOutsideSketchOf, readMerged, recordMerged } from './merged-parts';
 import { decideSketch, Sketch } from './sketch';
 
@@ -257,5 +258,49 @@ describe('openEditSketch', () => {
       message: expect.stringContaining(`${HERO} gets a sketch with only the variant new`),
       sketch: expect.objectContaining({ target: `${HERO}@edit`, status: 'ready', variants: ['new'] }),
     });
+  });
+
+  it('rebases only new on a later working-tree change, so old stays the part at HEAD and the pick has two different variants', async () => {
+    const { target, css, head } = acme();
+    const ts = join(resolveAcme(target).dir, HERO, 'hero.ts');
+    const headTs = readFileSync(ts, 'utf8');
+
+    writeFileSync(css, head.replace('background', 'background-color'));
+
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
+
+    writeFileSync(ts, headTs.replace('One featured film', 'A featured film'));
+
+    const { conflicts, rebased } = journaledRebaseOf({ target, product: resolveAcme(target), sketch });
+    const variantFile = (variant: string, file: string) => readFileSync(join(sketch.dir, variant, HERO, file), 'utf8');
+
+    expect(conflicts).toEqual([]);
+    expect(rebased).toBeDefined();
+    expect(variantFile('old', 'hero.css')).toBe(head);
+    expect(variantFile('old', 'hero.ts')).toBe(headTs);
+    expect(variantFile('new', 'hero.css')).toBe(head.replace('background', 'background-color'));
+    expect(variantFile('new', 'hero.ts')).toContain('A featured film');
+
+    expect(
+      decideSketch({ sketch: rebased as Sketch, decision: { kind: 'pick', variant: 'old', ...originOf('spec') } }),
+    ).toMatchObject({ status: 'ready', decision: { kind: 'pick', variant: 'old' } });
+  });
+
+  it('rebases without a conflict on old when the working tree changes the line the edit changed', async () => {
+    const { target, css, head } = acme();
+
+    writeFileSync(css, head.replace('background', 'background-color'));
+
+    const sketch = (await openEditSketch({ target, product: resolveAcme(target), part: HERO })) as Sketch;
+
+    writeFileSync(css, head.replace('background', 'background-image'));
+
+    const { conflicts } = journaledRebaseOf({ target, product: resolveAcme(target), sketch });
+
+    expect(conflicts).toEqual([]);
+    expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.css'), 'utf8')).toBe(head);
+    expect(readFileSync(join(sketch.dir, 'new', HERO, 'hero.css'), 'utf8')).toBe(
+      head.replace('background', 'background-image'),
+    );
   });
 });
