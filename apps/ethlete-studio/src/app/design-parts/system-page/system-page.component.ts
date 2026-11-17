@@ -1,7 +1,17 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  input,
+  model,
+  output,
+  TemplateRef,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
-import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { injectSemanticColorTheme, ProvideColorDirective, signalElementDimensions } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
@@ -256,7 +266,7 @@ export const FRAME_HEAD_CLASS =
             />
           </div>
         }
-        <div class="absolute top-space-3 right-space-3 z-1 flex gap-space-2">
+        <div #actions class="absolute top-space-3 right-space-3 z-1 flex gap-space-2" data-canvas-actions>
           <ng-content select="[systemActions]" />
           <button
             [pressed]="commentMode()"
@@ -308,7 +318,11 @@ export const FRAME_HEAD_CLASS =
     ShellPageComponent,
     SystemEmptyComponent,
   ],
-  host: { class: 'block h-screen w-full' },
+  host: {
+    class: 'block h-screen w-full',
+    '[style.--st-canvas-actions-reach]': 'actionsReach()?.reach',
+    '[style.--st-canvas-actions-bottom]': 'actionsReach()?.bottom',
+  },
 })
 export class SystemPageComponent {
   protected errorTheme = injectSemanticColorTheme('error');
@@ -316,10 +330,10 @@ export class SystemPageComponent {
   public section = input<ShellSection>('System');
   public noted = input(false);
   public missingShots = input(0);
-
   public empty = input(false);
   public listingError = input<string | null>(null);
   public manyStates = input(false);
+
   public foldedStates = input(0);
   public allStatesShown = input(false);
   public nothingOpen = input(false);
@@ -345,10 +359,10 @@ export class SystemPageComponent {
   public themeSwitches = input<ThemeSwitch[]>([]);
   public blockersOpen = model(false);
   public shellAction = output<ShellAction>();
-
   public activate = output<string>();
   public expandedChange = output<readonly string[]>();
   public copyPrompt = output();
+
   public reload = output();
   public zoomOut = output();
   public zoomReset = output();
@@ -362,6 +376,18 @@ export class SystemPageComponent {
   public markTransferred = output<string>();
   public pickTheme = output<ThemePick>();
   public showAllStates = output<boolean>();
+  private actions = viewChild<ElementRef<HTMLElement>>('actions');
+  private actionsSize = signalElementDimensions(this.actions);
+  protected actionsReach = computed(() => {
+    const size = this.actionsSize().offset;
+
+    return size && size.width > 0
+      ? {
+          reach: `calc(${size.width}px + var(--space-3) * 2)`,
+          bottom: `calc(${size.height}px + var(--space-3))`,
+        }
+      : null;
+  });
 
   protected readonly LABELS = STUDIO_LABELS.system;
   protected readonly SHELL_LABELS = STUDIO_LABELS.shell;

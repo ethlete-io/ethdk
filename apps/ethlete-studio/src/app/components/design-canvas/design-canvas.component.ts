@@ -94,6 +94,7 @@ const FALLBACK_HEIGHT = 600;
 const FIT_PADDING = 64;
 const START_PADDING = { x: 40, y: 48 };
 const ROW_HEAD_GUTTER = 160;
+const CAPTION_ROOM = 40;
 const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
 const ROW_HEAD_HEIGHT = 48;
@@ -332,6 +333,7 @@ export class DesignCanvasComponent {
   /** Frames the page projects into the world instead of `frames`, each marked with `ethleteCanvasFrame`. */
   private projected = contentChildren(CanvasFrameDirective, { descendants: true });
   private shellInsetProbe = viewChild.required<ElementRef<HTMLElement>>('shellInsetProbe');
+  private actionsProbe = viewChild.required<ElementRef<HTMLElement>>('actionsProbe');
   private world = viewChild.required<ElementRef<HTMLElement>>('world');
 
   private keyShown = linkedSignal<string | null, { seen: boolean; switched: boolean }>({
@@ -397,6 +399,7 @@ export class DesignCanvasComponent {
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
   private shellInset = signalElementDimensions(this.shellInsetProbe);
   private covered = computed(() => (this.coveredByShell() ? (this.shellInset().offset?.width ?? 0) : 0));
+  private actionsCover = signalElementDimensions(this.actionsProbe);
 
   /** By grid frame id, the box of each of its cells from the frame's top left corner. */
   private cellRects = signal<Record<string, Record<string, Rect>>>({});
@@ -583,6 +586,24 @@ export class DesignCanvasComponent {
       live: frame.id === activeId || liveIds.has(frame.id) || !!frame.grid?.cells.some((cell) => liveIds.has(cell.id)),
       liveCells: frame.id === activeId ? null : liveIds,
     }));
+  });
+
+  protected captionLimits = computed(() => {
+    const limits = new Map<string, number>();
+    const cover = this.actionsCover().offset;
+
+    if (!cover || cover.width === 0 || this.arrangement() === 'grid') return limits;
+
+    const { x, y, zoom } = this.camera();
+    const coverLeft = this.viewport().width - cover.width;
+
+    for (const placed of this.placedFrames()) {
+      if (y + placed.y * zoom - CAPTION_ROOM >= cover.height) continue;
+
+      limits.set(placed.frame.id, Math.max(0, (coverLeft - (x + placed.x * zoom)) / zoom));
+    }
+
+    return limits;
   });
 
   /** The placed frames that take comments: each measured cell of a grid in place of its frame, owned by it. */

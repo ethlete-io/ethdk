@@ -117,7 +117,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       class="absolute left-0 flex flex-col overflow-hidden whitespace-nowrap text-et-surface text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
       ><span class="flex gap-[0.6em]"><ng-container [ngTemplateOutlet]="caption" /></span>
       @if (frame().description; as description) {
-        <span [style.max-width.px]="width()" class="truncate text-text-muted" data-frame-description>{{
+        <span [style.max-width.px]="descriptionMaxWidth()" class="truncate text-text-muted" data-frame-description>{{
           description
         }}</span>
       }
@@ -374,6 +374,7 @@ export class CanvasFrameComponent {
   public active = input(false);
   public selected = input(false);
   public captionBelow = input(false);
+  public captionLimit = input<number | null>(null);
 
   public heightChange = output<number>();
   public widthChange = output<number>();
@@ -395,7 +396,13 @@ export class CanvasFrameComponent {
 
   protected labelsSchemes = computed(() => this.copies().length > 1);
 
-  protected captionMaxWidth = computed(() => ((this.copies()[1]?.x ?? 0) > 0 ? this.width() : null));
+  protected captionMaxWidth = computed(() => {
+    const limit = this.captionLimit();
+    const copiesWidth = (this.copies()[1]?.x ?? 0) > 0 ? this.width() : null;
+
+    return limit === null ? copiesWidth : Math.min(limit, copiesWidth ?? limit);
+  });
+  protected descriptionMaxWidth = computed(() => Math.min(this.width(), this.captionLimit() ?? Infinity));
 
   private firstScheme = computed(() => this.copies()[0]?.scheme ?? null);
 

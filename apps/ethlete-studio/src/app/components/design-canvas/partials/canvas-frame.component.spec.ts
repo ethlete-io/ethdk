@@ -340,6 +340,39 @@ describe('CanvasFrameComponent caption', () => {
     );
   });
 
+  it('stops the caption and its sentence at the caption limit the canvas gives it', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(CanvasFrameComponent);
+
+    fixture.componentRef.setInput('frame', {
+      id: 'desktop',
+      src: 'about:blank',
+      label: 'part · desktop',
+      screenshot: 'desktop.png',
+      width: 1440,
+      description: 'The part; check the title.',
+    });
+    fixture.componentRef.setInput('width', 1440);
+    fixture.componentRef.setInput('captionLimit', 333);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const description = host.querySelector<HTMLElement>('[data-frame-description]');
+
+    expect(description?.style.maxWidth).toBe('333px');
+    expect(description?.classList).toContain('truncate');
+    expect(description?.parentElement?.style.maxWidth).toBe('333px');
+
+    fixture.componentRef.setInput('captionLimit', null);
+    await fixture.whenStable();
+
+    expect(description?.style.maxWidth).toBe('1440px');
+    expect(description?.parentElement?.style.maxWidth).toBe('');
+  });
+
   it('shows the sentence of a frame on its own line under the label', async () => {
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
