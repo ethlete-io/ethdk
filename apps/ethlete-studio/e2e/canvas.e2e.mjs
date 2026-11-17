@@ -831,16 +831,49 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
   };
 };
 
-const openDiscardConfirm = async (page) => {
-  await page.locator('ethlete-sketches button', { hasText: 'Verwerfen' }).first().click();
+const discardScene = (page) =>
+  page
+    .evaluate(() => {
+      const buttons = [...document.querySelectorAll('ethlete-sketches button')].filter((button) =>
+        button.textContent.includes('Verwerfen'),
+      );
+      const box = buttons[0]?.getBoundingClientRect();
+      const hit = box && document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
 
-  return page
+      return JSON.stringify({
+        buttons: buttons.length,
+        box: box && [box.left, box.top, box.width, box.height].map(Math.round),
+        hit: hit && hit.outerHTML.slice(0, 120),
+        sketchView: !!document.querySelector('ethlete-sketch-view'),
+        dialogs: document.querySelectorAll('[role="alertdialog"]').length,
+        active: document.activeElement?.outerHTML.slice(0, 120) ?? 'none',
+      });
+    })
+    .catch((error) => `scene unread: ${error.message}`);
+
+const openDiscardConfirm = async (page) => {
+  const clicked = await page
+    .locator('ethlete-sketches button', { hasText: 'Verwerfen' })
+    .first()
+    .click()
+    .then(
+      () => null,
+      (error) => error.message.split('\n').slice(0, 6).join(' '),
+    );
+
+  if (clicked) return { ok: false, detail: `Verwerfen not clicked: ${clicked}, scene ${await discardScene(page)}` };
+
+  const opened = await page
     .locator('[role="alertdialog"]')
     .waitFor({ timeout: 5000 })
     .then(
       () => true,
       () => false,
     );
+
+  return opened
+    ? { ok: true }
+    : { ok: false, detail: `Verwerfen discarded without a confirm, scene ${await discardScene(page)}` };
 };
 
 const discardAsksFirst = async (page) => {
@@ -850,7 +883,9 @@ const discardAsksFirst = async (page) => {
   ];
 
   for (const [how, dismiss] of dismissals) {
-    if (!(await openDiscardConfirm(page))) return { ok: false, detail: 'Verwerfen discarded without a confirm' };
+    const opened = await openDiscardConfirm(page);
+
+    if (!opened.ok) return { ok: false, detail: `${how}: ${opened.detail}` };
 
     const focused = await page
       .waitForFunction(() => document.activeElement?.hasAttribute('data-sk-confirm-cancel'), null, { timeout: 3000 })
@@ -1124,7 +1159,9 @@ const CASES = [
       if (!kept.ok) return kept;
 
       return goneSketchLeavesToThePart(page, context, target, async () => {
-        await openDiscardConfirm(page);
+        const opened = await openDiscardConfirm(page);
+
+        if (!opened.ok) throw new Error(opened.detail);
         await page.locator('[role="alertdialog"] [data-sk-confirm]').click();
 
         return { ok: true };
