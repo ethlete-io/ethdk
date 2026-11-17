@@ -62,6 +62,18 @@ export class StudioMenuComponent {
     this.helpOpen.set(false);
   }
 
+  protected setAppearanceOpen(open: boolean) {
+    this.appearanceOpen.set(open);
+
+    if (open) this.helpOpen.set(false);
+  }
+
+  protected setHelpOpen(open: boolean) {
+    this.helpOpen.set(open);
+
+    if (open) this.appearanceOpen.set(false);
+  }
+
   protected selectProject(value: unknown) {
     if (typeof value === 'string' && value !== this.project()) this.projectChange.emit(value);
   }

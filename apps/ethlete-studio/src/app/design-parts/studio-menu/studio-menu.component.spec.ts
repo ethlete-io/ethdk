@@ -151,5 +151,7 @@ describe('StudioMenuComponent', () => {
     await openSubmenu('Erscheinungsbild');
 
     expect(fixture.componentInstance.appearanceOpen()).toBe(true);
+    expect(fixture.componentInstance.helpOpen()).toBe(false);
+    expect(row('Über Studio…')).toBeUndefined();
   });
 });

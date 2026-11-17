@@ -50,7 +50,7 @@
         <button (click)="serverAction.emit(item.action)" et-menu-item type="button">{{ item.label }}</button>
       }
       <et-menu-separator />
-      <div [(open)]="appearanceOpen" [offset]="SUBMENU_OFFSET" etMenu>
+      <div [open]="appearanceOpen()" [offset]="SUBMENU_OFFSET" (openChange)="setAppearanceOpen($event)" etMenu>
         <button et-menu-item etMenuTrigger type="button">{{ LABELS.appearance }}</button>
         <ng-template etMenuSurface>
           <et-menu class="box-border w-44 min-w-0 text-ui-md">
@@ -64,7 +64,7 @@
           </et-menu>
         </ng-template>
       </div>
-      <div [(open)]="helpOpen" [offset]="SUBMENU_OFFSET" etMenu>
+      <div [open]="helpOpen()" [offset]="SUBMENU_OFFSET" (openChange)="setHelpOpen($event)" etMenu>
         <button et-menu-item etMenuTrigger type="button">{{ LABELS.help }}</button>
         <ng-template etMenuSurface>
           <et-menu class="box-border w-56 text-ui-md">
