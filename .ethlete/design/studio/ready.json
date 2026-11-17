@@ -245,9 +245,9 @@
     },
     "actions": ["emit:openChange"],
     "at": "2026-11-17T15:14:37.108Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3754562
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 203219
   },
   "components/list-row": {
     "actions": ["emit:pick"],
