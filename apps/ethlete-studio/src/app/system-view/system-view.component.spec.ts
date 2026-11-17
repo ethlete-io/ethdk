@@ -1039,6 +1039,39 @@ describe('SystemViewComponent on a merge', () => {
     expect(view.shownPart()).toBe('components/title-search');
   });
 
+  it('nests a part under its one page user with its layer tag and picks it from there', async () => {
+    const product: ListedProduct = {
+      ...PRODUCT,
+      parts: [
+        { ...part('pages', 'sketches'), usedBy: [] },
+        { ...part('components', 'hold-trigger'), usedBy: ['pages/sketches'] },
+      ],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([product]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const view = fixture.componentInstance;
+
+    expect(view['partTree']().layers.find((layer) => layer.key === 'components')).toBeUndefined();
+    expect(view['partTree']().layers.find((layer) => layer.key === 'pages')?.parts).toMatchObject([
+      { name: 'sketches', open: true, nested: [{ name: 'hold-trigger', layer: 'Components' }] },
+    ]);
+
+    view['activate']('components/hold-trigger');
+    fixture.detectChanges();
+
+    expect(view.shownPart()).toBe('components/hold-trigger');
+  });
+
   it('shows the part a merged sketch targeted, once the sketches list no longer has the sketch', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',

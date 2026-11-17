@@ -9,6 +9,7 @@ type TreePart = {
   warns?: boolean;
   leaf?: boolean;
   selected?: boolean;
+  layer?: string;
   open?: boolean;
   nested?: TreePart[];
 };
@@ -52,6 +53,7 @@ export const partRows = (part: TreePart, depth: number): Row[] => {
       selected: part.selected === true,
       ...(part.interaction ? { interaction: part.interaction } : {}),
       ...(part.warns ? { warning: ['Render check: 1 warning'] } : {}),
+      ...(part.layer ? { layer: part.layer } : {}),
     },
     ...(open ? (part.nested ?? []).flatMap((child) => partRows(child, depth + 1)) : []),
   ];
@@ -116,6 +118,7 @@ const componentParts = (interaction?: RowInteraction, hostOpen = true): TreePart
 const layers = (
   open: Partial<Record<'Foundations' | 'Elements' | 'Components' | 'Pages', boolean>>,
   parts: TreePart[],
+  pages: TreePart[] = [{ name: 'inventory' }, { name: 'system' }],
 ) => [
   { title: 'Foundations', open: open.Foundations === true, parts: [{ name: 'colors' }, { name: 'tokens' }] },
   {
@@ -124,7 +127,7 @@ const layers = (
     parts: [{ name: 'part-tree' }, { name: 'shell-main' }, { name: 'studio-menu' }],
   },
   { title: 'Components', open: open.Components === true, parts },
-  { title: 'Pages', open: open.Pages === true, parts: [{ name: 'inventory' }, { name: 'system' }] },
+  { title: 'Pages', open: open.Pages === true, parts: pages },
 ];
 
 const atRest = (interaction?: RowInteraction): Props => ({
@@ -152,6 +155,15 @@ export const treeStates = {
       open: true,
       projects: legacyProjects.map((project) => (project.name === 'studio' ? { ...project, open: true } : project)),
     },
+  },
+  'cross-layer': {
+    sketches: { open: false, items: openSketches },
+    layers: layers({ Pages: true }, componentParts(), [
+      { name: 'inventory' },
+      { name: 'sketches', nested: [{ name: 'hold-trigger', layer: 'Components' }] },
+      { name: 'system' },
+    ]),
+    legacy: { open: false, projects: legacyProjects },
   },
   ...rows.states,
 } satisfies Record<string, Props>;

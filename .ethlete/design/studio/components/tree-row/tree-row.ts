@@ -98,6 +98,10 @@ export default definePart({
     'selected-marks-active': 'The selected leaf with marks pressed; check the stronger press fill under the row.',
     'selected-marks-focus-visible':
       'The selected leaf with marks focused by keyboard; check the focus ring around the row and that its marks stay inside it.',
+    'mark-layer':
+      'A leaf nested under a host of another layer; check the small muted Components tag right after the label, before the end marks.',
+    'selected-layer':
+      'The nested leaf of another layer selected; check that the layer tag takes the accent text on the accent tint.',
     inert: 'An inert leaf whose dot is hollow; check the outlined dot and that the label keeps its colour.',
     'inert-hover':
       'The inert leaf hovered; check the faint raised fill under the whole row and that the label keeps its colour.',

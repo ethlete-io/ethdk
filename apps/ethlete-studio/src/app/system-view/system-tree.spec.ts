@@ -324,39 +324,74 @@ describe('a part nested under its one user', () => {
     entries.map((entry) => (entry.nested ? [entry.key, keysOf(entry.nested)] : entry.key));
   const components = (parts: ListedPart[]) => treeOf(parts).find((group) => group.key === 'components')!;
 
-  it('nests only components/title-search, under components/title-bar, in a captured studio listing', () => {
+  it('nests each part with one user under that user in any layer, in a captured studio listing', () => {
     const own = studio.filter((listed) => listed.origin !== 'base');
     const single = own.filter((listed) => listed.usedBy?.length === 1);
 
     expect(own).toHaveLength(38);
     expect(single).toHaveLength(11);
-    expect(studio.filter((listed) => nestingHostOf(listed) !== null).map(partKeyOf)).toEqual([
-      'components/title-search',
-    ]);
+    expect(studio.filter((listed) => nestingHostOf(listed) !== null).map(partKeyOf)).toEqual(single.map(partKeyOf));
 
     const tree = treeOf(studio);
     const nested = tree.flatMap((group) => group.entries).filter((entry) => entry.nested);
 
     expect(nested.map((entry) => [entry.key, keysOf(entry.nested!)])).toEqual([
+      ['elements/canvas-frames', ['components/canvas-viewport']],
+      [
+        'elements/shell-main',
+        ['components/shell-collapse', 'components/shell-resize-handle', 'components/shell-system-picker'],
+      ],
       ['components/title-bar', ['components/title-search']],
+      ['pages/inbox', ['components/comment-row']],
+      ['pages/merge', ['components/list-row']],
+      ['pages/sketches', ['components/hold-trigger', 'components/sketch-status-badge', 'elements/variant-cell']],
+      ['pages/system', ['components/comment-target']],
     ]);
-    expect(components(studio).entries.map((entry) => entry.key)).not.toContain('components/title-search');
-    expect(holdersOf(tree, 'components/title-search')).toEqual(['components', 'components/title-bar']);
+    expect(components(studio).entries.map((entry) => entry.key)).not.toContain('components/hold-trigger');
+    expect(holdersOf(tree, 'components/hold-trigger')).toEqual(['pages', 'pages/sketches']);
   });
 
-  it('keeps a part whose one user is in another layer in its own layer', () => {
+  it('tags a part nested under a host of another layer with its own layer', () => {
+    const tree = treeOf([
+      part({ name: 'hold-trigger', usedBy: ['pages/sketches'] }),
+      part({ layer: 'elements', name: 'variant-cell', usedBy: ['pages/sketches'] }),
+      part({ name: 'title-search', usedBy: ['components/title-bar'] }),
+      part({ name: 'title-bar', usedBy: [] }),
+      part({ layer: 'pages', name: 'sketches', usedBy: [] }),
+    ]);
+    const entries = tree.flatMap((group) => group.entries);
+    const nestedOf = (key: string) => entries.find((entry) => entry.key === key)?.nested;
+
+    expect(tree.map((group) => [group.key, keysOf(group.entries)])).toEqual([
+      ['components', [['components/title-bar', ['components/title-search']]]],
+      ['pages', [['pages/sketches', ['components/hold-trigger', 'elements/variant-cell']]]],
+    ]);
+    expect(nestedOf('pages/sketches')?.map((entry) => entry.layer)).toEqual(['Components', 'Elements']);
+    expect(nestedOf('components/title-bar')?.[0]?.layer).toBeUndefined();
+  });
+
+  it('keeps a part whose one user is not in the tree in its own layer, and nests a part under it', () => {
     const tree = treeOf([
       part({ name: 'badge', usedBy: ['elements/card'] }),
-      part({ layer: 'elements', name: 'card', usedBy: [] }),
+      part({ name: 'dot', usedBy: ['components/badge'] }),
     ]);
 
     expect(tree.map((group) => [group.key, keysOf(group.entries)])).toEqual([
-      ['elements', ['elements/card']],
-      ['components', ['components/badge']],
+      ['components', [['components/badge', ['components/dot']]]],
     ]);
   });
 
   it('moves a part back to its layer once a second part uses it', () => {
+    const page = part({ layer: 'pages', name: 'sketches', usedBy: [] });
+    const trigger = part({ name: 'hold-trigger', usedBy: ['pages/sketches'] });
+
+    expect(treeOf([page, trigger]).map((group) => [group.key, keysOf(group.entries)])).toEqual([
+      ['pages', [['pages/sketches', ['components/hold-trigger']]]],
+    ]);
+    expect(
+      keysOf(components([page, { ...trigger, usedBy: ['pages/sketches', 'components/title-bar'] }]).entries),
+    ).toEqual(['components/hold-trigger']);
+
     const host = part({ name: 'title-bar', usedBy: [] });
     const nested = part({ name: 'title-search', usedBy: ['components/title-bar'] });
 
@@ -374,9 +409,22 @@ describe('a part nested under its one user', () => {
           part({ name: 'textarea', origin: 'base', usedBy: ['components/comment-draft'] }),
           part({ name: 'a', usedBy: ['components/b'] }),
           part({ name: 'b', usedBy: ['components/a'] }),
+          part({ name: 'c', usedBy: ['components/a'] }),
         ]).entries,
       ),
-    ).toEqual(['components/comment-draft', 'components/textarea', 'components/a', 'components/b']);
+    ).toEqual(['components/comment-draft', 'components/textarea', ['components/a', ['components/c']], 'components/b']);
+  });
+
+  it('keeps a base part used by one page in its layer', () => {
+    const tree = treeOf([
+      part({ name: 'textarea', origin: 'base', usedBy: ['pages/inbox'] }),
+      part({ layer: 'pages', name: 'inbox', usedBy: [] }),
+    ]);
+
+    expect(tree.map((group) => [group.key, keysOf(group.entries)])).toEqual([
+      ['components', ['components/textarea']],
+      ['pages', ['pages/inbox']],
+    ]);
   });
 });
 

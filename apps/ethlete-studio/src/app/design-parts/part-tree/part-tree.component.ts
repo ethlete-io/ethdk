@@ -11,7 +11,7 @@ type Marks = {
 };
 
 /** A part; one with `nested` parts is their host and opens unless `open` is false. */
-export type PartTreePart = Marks & { name: string; open?: boolean; nested?: PartTreePart[] };
+export type PartTreePart = Marks & { name: string; layer?: string; open?: boolean; nested?: PartTreePart[] };
 
 export type PartTreeLayer = { title: string; key?: string; open: boolean; parts: PartTreePart[] };
 
@@ -29,7 +29,7 @@ export type PartTreeLegacy = { key?: string; open: boolean; projects: PartTreeLe
 
 export type PartTree = { layers: PartTreeLayer[]; sketches?: PartTreeSketches; legacy?: PartTreeLegacy };
 
-type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'warning' | 'status'>;
+type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'warning' | 'status' | 'layer'>;
 
 const keyOf = (...names: string[]) => names.join('/');
 
@@ -60,6 +60,7 @@ const keyOf = (...names: string[]) => names.join('/');
             selected: marks?.selected,
             warning: marks?.warning,
             status: marks?.status,
+            layer: marks?.layer,
           }"
           etTreeNode
           ethlete-tree-row-item
@@ -119,7 +120,7 @@ export class PartTreeComponent {
       return add({
         value,
         label: part.name,
-        mark: markOf(host ? 'part' : 'leaf', part),
+        mark: { ...markOf(host ? 'part' : 'leaf', part), layer: part.layer },
         open: part.open !== false,
         nodes: host ? part.nested?.map((child) => partNode(value, child)) : undefined,
       });

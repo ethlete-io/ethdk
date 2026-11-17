@@ -34,6 +34,8 @@ export default definePart({
       'Sketches closed, Components and Elements open, title-bar folded; check that the remembered groups stay open and title-search is hidden.',
     'legacy-open':
       'Every layer closed and Legacy open with the studio project and its calls; check the deeper indent of the calls, with timetrack still closed.',
+    'cross-layer':
+      'Pages open with hold-trigger nested under the sketches page; check the small muted Components tag after hold-trigger and its indent one level under sketches.',
     row: 'The nested title-search row at rest in the open tree; check that it sits one level under title-bar without a fill.',
     'row-hover': 'The nested title-search row hovered; check the faint raised fill on that row only.',
     'row-active': 'The nested title-search row pressed; check the stronger press fill on that row only.',

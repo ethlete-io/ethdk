@@ -15,6 +15,7 @@ export type TreeRow = {
   warning?: string[];
   status?: TreeRowStatus;
   comments?: number;
+  layer?: string;
 };
 
 const STATUS_TITLE: Record<TreeRowStatus, string> = {
@@ -57,6 +58,9 @@ const SELECTED_CLASS =
       }
     </span>
     <span class="min-w-0 flex-1 overflow-hidden text-ellipsis">{{ row.label }}</span>
+    @if (row.layer) {
+      <span [class]="'flex-none text-ui-xs ' + accentClass()">{{ row.layer }}</span>
+    }
     @if (row.warning) {
       <ng-template #warningLines>
         <ul class="m-0 flex list-none flex-col gap-space-1 p-0" data-warning-lines>

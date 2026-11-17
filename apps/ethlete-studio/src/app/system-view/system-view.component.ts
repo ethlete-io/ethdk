@@ -985,6 +985,7 @@ export class SystemViewComponent {
     const partOf = (entry: TreeEntry): PartTreePart => ({
       name: entry.name,
       ...marksOf(entry),
+      ...(entry.layer ? { layer: entry.layer } : {}),
       ...(entry.nested ? { open: open.has(entry.key), nested: entry.nested.map(partOf) } : {}),
     });
     const sectionOf = (section: TreeSection): PartTreePart => ({

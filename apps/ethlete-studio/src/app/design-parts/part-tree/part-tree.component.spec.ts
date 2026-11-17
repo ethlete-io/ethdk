@@ -75,6 +75,25 @@ describe('PartTreeComponent', () => {
     expect(withTooltip(select, 'Render-Check: 1 Warnung')).not.toBeNull();
   });
 
+  it('tags a nested part of another layer with its layer after the label', async () => {
+    const element = (
+      await render([
+        {
+          title: 'Pages',
+          open: true,
+          parts: [{ name: 'sketches', nested: [{ name: 'hold-trigger', layer: 'Components' }, { name: 'cell' }] }],
+        },
+      ])
+    ).nativeElement as HTMLElement;
+    const [, host, tagged, plain] = rowsOf(element);
+
+    expect([host, tagged, plain].map((row) => row?.querySelector('.text-ui-xs')?.textContent?.trim() ?? null)).toEqual([
+      null,
+      'Components',
+      null,
+    ]);
+  });
+
   it('puts the open sketches on top as part@name and the Legacy projects at the bottom', async () => {
     const fixture = await render([{ title: 'Pages', open: false, parts: [] }], {
       sketches: {

@@ -1693,3 +1693,13 @@ As built (canvas-frames fixes): the `st-sgrid-description` width, min-width and 
 As built (B462 stale picture): the e2e case „a sketch cell edited on disk while scrolled away shows its new picture on return“ read the first `img` of the cell, which is the old picture the sketch view keeps on top until the new one loads; under load the new shot drew in over 10 s (CI 44095404324). The census now also reports `wantedPictureSrc` (`img[data-shot-picture]`), and the case waits on it. Measured: the `parts` event names elements/shell-main 26-70 ms after the edit. Bite: shot responses delayed 12 s after the edit, old read 0/2, new read 2/2.
 
 As built (B559, ADR 0331): PAGE-STATE-INNER draws each state of an own page outside a browser and splits the markup by owner: the page's own markup (including markup it passes into a part, `data-et-slot`) and each embedded part instance (`data-et-part`, the marked named exports included). A state fails when its page markup equals that of the default state, or of a state whose props it all repeats, and the differences sit in one part instance; the message names the innermost part holding them all. Two changed sibling parts, or any change to the page's own markup, pass. It is a draw rule in the `--slow` set (ADR 0201). Findings: studio pages/system `send-busy` (only components/comment-draft, which already has `busy`) dropped; pages/sketches `paused-reason` changed the page's own reason span, so the rule did not see it: the reason moved into components/hold-trigger (`reason` prop, its `open` state shows it), the page passes it and drops the state, and the capability `sketch-paused-reason` now sits on hold-trigger `emit:openChange`. sdk and studio-lab: no hits.
+
+### B560 as built (ADR 0332)
+
+`nestingHostOf` drops the same-layer limit; `treeOf` works hosts out once over every placed part, so a part with one
+user nests under it in any group, with `TreeEntry.layer` (its layer label) when the host's layer differs. A host outside
+the tree or in `unused` leaves the part in its layer; `unused` sections nest within their layer only; base parts and
+parts with 2+ users never nest. tree-row draws the tag (`mark-layer`, `selected-layer`), part-tree shows it
+(`cross-layer`: hold-trigger under pages/sketches); app tree-row/part-tree mirror it. Verified: vitest related 368 pass,
+app tsc, check --part tree-row/part-tree 0 findings. Not verified: live Studio shot; `design task --verify` runs after
+the commit (DIRECT EDIT open point blocks the check record before it).
