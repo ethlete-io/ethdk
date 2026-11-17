@@ -1860,3 +1860,16 @@ uncommitted hint. The input is gone; the design marks the hint trigger `data-et-
 state draws as before). pages/system ready f5d42a622. Gotcha: after each ready, studio merged.json hash drift makes the
 next embedded marks read stale; commit it between parts. Verified: design check title-bar 0 findings, studio app lint,
 typecheck, 11 related spec files. Not verified: a live Studio shot of the hint on hover.
+
+### B574 as built 2026-11-17: pages/flows, pages/inbox, pages/inventory build-ready (builder)
+
+The stale-mark blockers of the handoff were gone; two embedded sdk parts were real. `components/select` (flows):
+CONTROL-GRID-MISSING, the size sm/lg rows drew no hover/active/focus-visible; they now go through `interactionRows`
+with a sentence per new state (79412ea21, HELD: every state draws as before; ready 0d77420db). `components/switch`
+(inbox): CONTROL-UNCLASSIFIED on the et-choice-field, its control and the label area; a labelled switch now carries
+`data-et-control="switch"` on the et-choice-field instead of the inner et-switch, since the whole field toggles it
+(210d19028, HELD; ready cd995cd26, sdk merged.json drift committed as a chore). Ready: flows 3d37f7f5c, inbox
+1c018a5a5, inventory 934271613. Dead end: a type fix made after `design check` opened the select @edit sketch left the
+sketch stale for ready and merge; deleting the untracked sketch and re-running the check gave a clean HELD. Verified:
+design check select and switch 0 findings, shots of every select state viewed. Not verified: a live Studio shot of
+the three pages; the switch OPTION-VALUE-MISSING hints (size, variant, controlPosition) stay open as hints.
