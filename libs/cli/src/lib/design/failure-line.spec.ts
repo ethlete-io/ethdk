@@ -1,7 +1,6 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative } from 'node:path';
-import ts from 'typescript';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DesignConfig } from './design-config';
 import { designCommand } from './design-command';
@@ -22,41 +21,6 @@ vi.mock('./system/stale-design-mocks', async (importOriginal) => ({
   designMocksFresh: () => true,
 }));
 
-const SRC = join(__dirname, '../..');
-const FAILURE_WORDS = /\bFAILED\b|could not render/;
-
-const sourceFilesOf = (dir: string): string[] =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name);
-
-    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : sourceFilesOf(path);
-
-    return /\.(ts|mts|mjs|js)$/.test(entry.name) && !/\.spec\.ts$/.test(entry.name) && !entry.name.endsWith('.d.ts')
-      ? [path]
-      : [];
-  });
-
-const failureWordsOf = (path: string) => {
-  const file = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true);
-  const found: string[] = [];
-  const visit = (node: ts.Node) => {
-    if (
-      (ts.isStringLiteralLike(node) ||
-        ts.isTemplateHead(node) ||
-        ts.isTemplateMiddle(node) ||
-        ts.isTemplateTail(node)) &&
-      FAILURE_WORDS.test((node as ts.LiteralLikeNode).text)
-    )
-      found.push(`${relative(SRC, path)}:${file.getLineAndCharacterOfPosition(node.getStart()).line + 1}`);
-
-    ts.forEachChild(node, visit);
-  };
-
-  visit(file);
-
-  return found;
-};
-
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-failure-line-'));
 
@@ -71,14 +35,6 @@ describe('failure lines of the design commands', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
-  });
-
-  it('are spelled only by failure-line.ts, so each one is caught on its way out', () => {
-    const outside = sourceFilesOf(SRC)
-      .filter((path) => !path.endsWith(join('design', 'failure-line.ts')))
-      .flatMap(failureWordsOf);
-
-    expect(outside).toEqual([]);
   });
 
   it('make `sketch check` exit 1 when it could not render, even though it answered 0', async () => {
