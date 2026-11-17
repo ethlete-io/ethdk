@@ -3703,3 +3703,12 @@ B127 CLI half as built (2026-11-17): `sketch ready` prints `NOTE <sketch> <varia
 (`addedSkipMarksOf` in `system/rules/skips.ts`, counted per marker). Verified: skips.spec + a sketch-command.spec case,
 bite (helper broken -> 3 red). Not built: the Studio round head showing the same list (a pages/sketches design change,
 ADR 0010 sketch first).
+
+B127 Studio half as built (2026-11-17): the round head of a sketch variant shows `[data-sk-added-skip]` - "Neuer Skip
+<classes> in <part> - stellt eine Prüfung stumm" - for each `data-et-skip` marker the variant's part holds beyond the
+merged part. Commits 5ba313d03 (CLI listing `addedSkips`), 4d94a4bc3 (design), d8862cf84 (app port). Verified: the
+listing API answers `addedSkips` for a scratch sketch (zoom-chip, variant a adds `WRAP CLIPPED`), and a live Studio shot
+of that sketch shows the line in variant a's head (finding 792); shot
+`/home/tom/.cache/claude-tmp/claude-1000/-home-tom-dev-ethlete-sdk/8c7e0f84-833d-4ae5-a4e9-2a60b8e3e11e/scratchpad/b127-live.png`.
+Not verified: several skips in one head, and several variants with different skips. A variant that renders identical to
+the current part gets no head (only the collapsed "Unverändert" row), so no skip line shows there.
