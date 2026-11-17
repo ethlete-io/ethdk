@@ -1,3 +1,4 @@
+import { withFailureExit } from './failure-line';
 import { existsSync, realpathSync } from 'fs';
 import { repairEditorTsconfigs } from './system/system-tsconfig';
 import { resolve } from 'path';
@@ -397,7 +398,10 @@ const subcommandHelpOf = (invocation: string, argv: string[]) => {
  * a call does not render. Both work on any checkout that keeps a `.ethlete/design` folder, so a
  * repository needs no design tooling of its own.
  */
-export const designCommand = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
+export const designCommand = (options: { root: string; argv: string[]; invocation: string }): Promise<number> =>
+  withFailureExit(() => runDesignCommand(options));
+
+const runDesignCommand = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
   const { root, argv, invocation } = options;
 
   if (argv[0] === '--help' || argv[0] === '-h' || argv[0] === 'help') {

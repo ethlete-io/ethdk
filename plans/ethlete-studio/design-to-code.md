@@ -3714,3 +3714,9 @@ comment list stay: they render only when no `systemCanvas`/`systemSide` is proje
 Inbox stand-in does. Verified: new system-view spec (red on the old view: the page got no comments) and a
 `placedCommentsOf` spec; related vitest, typecheck, lint; e2e case "the comment button: ..." plain and with
 `--hold-listings 14000`; `design check --part pages/system` before and after. Not verified: a live Studio shot, Tauri.
+
+As built (B553, 2026-11-17): `failure-line.ts` (libs/cli design) spells every failure line (`failedText`,
+`couldNotRenderText`); `withFailureExit` wraps `designCommand` and each resident run and turns exit 0 into 1 when a
+printed line holds one. A spec scans libs/cli sources for the words outside it. Verified: `failure-line.spec.ts` (red
+on the old code: compare, sketch check, guard), related vitest, typecheck, lint. Not verified: a live run, the
+resident path, the cause of the 16 compare lines at exit 0 (Suspect: not found in source).

@@ -1,3 +1,4 @@
+import { failedText } from '../failure-line';
 import { createHash } from 'crypto';
 import { NoVerdict, noVerdictOf } from './no-verdict';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
@@ -875,7 +876,7 @@ export const checkActions = async (options: {
 
 /** The line `design actions` prints for one checked element and input. */
 export const actionLineOf = ({ state, element, input, failure, warning }: Line) =>
-  `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : `FAILED ${failure}`}`;
+  `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : failedText(failure)}`;
 
 /** The line the action check prints once per run for a declared host component it skipped in a state. */
 export const hostLineOf = (host: string) =>

@@ -1,3 +1,4 @@
+import { failedText } from '../failure-line';
 import { existsSync, readFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { resolve } from 'path';
@@ -312,7 +313,7 @@ export const toggleSyncFailureOf = (steps: ToggleStep[]) => {
 
 /** The line `design actions --live` prints for one checked control and input. */
 export const liveLineOf = ({ page, element, input, failure, warning }: LiveLine) =>
-  `${page} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : `FAILED ${failure}`}`;
+  `${page} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : failedText(failure)}`;
 
 const LOCATE_TIMEOUT_MS = 5000;
 

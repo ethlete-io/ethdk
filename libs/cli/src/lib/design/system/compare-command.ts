@@ -1,3 +1,4 @@
+import { failedText } from '../failure-line';
 import { createHash } from 'crypto';
 import { noVerdictLineOf } from './no-verdict';
 import { mkdtempSync, realpathSync, writeFileSync } from 'fs';
@@ -479,7 +480,7 @@ export const comparePart = async (
       const { state } = stateShot;
 
       if ('problem' in stateShot) {
-        log(`${state} FAILED ${stateShot.problem}`);
+        log(`${state} ${failedText(stateShot.problem)}`);
         failing.push(state);
         continue;
       }
@@ -645,7 +646,7 @@ export const baseChangeLinesOf = (options: {
   return [`vs ${options.short}: ${fresh.length} new failure(s), ${fixed.length} fixed`, ...fresh, ...fixed];
 };
 
-export const ACTIONS_NOT_CHECKED = 'FAILED actions: not checked, so no action counts as working';
+export const ACTIONS_NOT_CHECKED = failedText('actions: not checked, so no action counts as working');
 
 const statesAskedOf = (values: string[] | undefined) =>
   values === undefined

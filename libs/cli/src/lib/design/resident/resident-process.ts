@@ -1,3 +1,4 @@
+import { withFailureExit } from '../failure-line';
 import { randomUUID } from 'crypto';
 import { chromiumOf } from '../browser';
 import { checkDesign } from '../check';
@@ -170,9 +171,9 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
     recordRun({ file: timingsFileOf(target), argv, resident: true }, () => {
       if (waitedMs !== undefined) recordPhase('resident-queue-wait', waitedMs);
 
-      return withRunSignal(signal, () => withRunYield(yieldTurn, () => runIn({ argv, invocation }))).then((code) =>
-        signal?.aborted ? ABORTED_EXIT : code,
-      );
+      return withRunSignal(signal, () =>
+        withRunYield(yieldTurn, () => withFailureExit(() => runIn({ argv, invocation }))),
+      ).then((code) => (signal?.aborted ? ABORTED_EXIT : code));
     });
 
   const warmUp = async () => {

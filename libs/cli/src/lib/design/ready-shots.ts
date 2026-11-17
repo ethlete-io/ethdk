@@ -1,3 +1,4 @@
+import { couldNotRenderText } from './failure-line';
 import { createPartShooter } from './shot';
 import { DesignConfig } from './design-config';
 import { ResolvedProduct } from './system/resolve-product';
@@ -43,7 +44,7 @@ const shooterOf = (options: SketchShots, { base, queue }: Drawing) => {
 };
 
 const couldNotRender = (sketch: Sketch, error: unknown) =>
-  `could not render ${sketch.target}: ${error instanceof Error ? error.message : String(error)}`;
+  couldNotRenderText(sketch.target, error instanceof Error ? error.message : String(error));
 
 /** Loads each target of each live variant of the sketch on a render server; why each one fails to load. */
 export const variantsThatDoNotLoad = async (options: SketchShots): Promise<string[]> => {

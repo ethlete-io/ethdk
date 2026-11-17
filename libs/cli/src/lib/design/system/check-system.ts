@@ -1,3 +1,4 @@
+import { failedText } from '../failure-line';
 import { dirname, relative, resolve, sep } from 'path';
 import { baseIssuesFileOf, oldRenderIssuesOf } from './base-issues';
 import { designHashOf } from './design-hash';
@@ -967,7 +968,7 @@ const renderSystem = async (
     const ci = Boolean(process.env['CI']);
 
     if (ci) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
-    else console.log(`RENDER CHECK FAILED - no usable browser: ${rendered.unavailable}`);
+    else console.log(`RENDER CHECK ${failedText(`- no usable browser: ${rendered.unavailable}`)}`);
 
     for (const product of resolved) {
       const parts = product.parts

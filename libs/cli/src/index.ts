@@ -146,7 +146,7 @@ export * from './lib';
 if (require.main === module) {
   cli(process.argv.slice(2))
     .then((code) => {
-      process.exitCode = code;
+      process.exitCode = Math.max(code, Number(process.exitCode ?? 0) || 0);
     })
     .catch((error: unknown) => {
       console.error(error instanceof Error ? error.message : error);
