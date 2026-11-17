@@ -16,7 +16,7 @@ import {
 } from './build-ready-contract';
 import { DesignHash, designHashOf, designHolds, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
-import { READY_FILE, readRecordedActions } from './part-ready';
+import { readRecordedActions } from './part-ready';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -232,12 +232,10 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   };
 };
 
-const actionsRecordedIn = (product: ResolvedProduct) =>
-  Object.values(readRecordedActions(product.dir)).some((record) => record.actions.length > 0);
-
 const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>): SlowInputs => {
   const { product, root, harness } = context;
-  const actions = actionsRecordedIn(product);
+  const recorded = Object.entries(readRecordedActions(product.dir));
+  const actions = recorded.some(([, record]) => record.actions.length > 0);
   const rules = [
     ...(harness?.specs ? [APP_SPEC_RULE] : []),
     ...(harness?.live ? [UNCOVERED_REGION_RULE] : []),
@@ -250,7 +248,6 @@ const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>
     ...(harness ? [harness.map, harness.live, harness.specs] : []).flatMap((file) =>
       file ? [resolve(root, file)] : [],
     ),
-    ...(actions ? [join(product.dir, READY_FILE)] : []),
   ]);
   const designs = actions
     ? product.parts.filter((part) => part.origin !== 'base').map((part) => designOf(context, part).withLinks)
@@ -262,6 +259,7 @@ const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>
       [
         rules.join(','),
         hashOfFiles(files),
+        ...(actions ? recorded.map(([part, record]) => `${part}=${record.actions.join(',')}`) : []),
         ...Object.entries(parts).map(([part, { hash }]) => `${part}=${hash}`),
         ...designs,
       ].join('\0'),

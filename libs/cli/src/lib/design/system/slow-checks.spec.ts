@@ -121,6 +121,28 @@ describe('the draw rules in the slow set', { timeout: 30_000 }, () => {
     expect(inputs['components/button']).toBeUndefined();
   });
 
+  it('keys the product inputs on the recorded actions, not on the rest of ready.json', () => {
+    const { dir, product } = drawable();
+    const productHash = () => slowInputsOf({ product: product() })['(product)']?.hash;
+    const writeReady = (chip: object) =>
+      writeFileSync(
+        join(dir, 'ready.json'),
+        JSON.stringify({
+          'components/chip': { hash: 'h', at: '2026-11-06T00:00:00Z', actions: ['open'] },
+          'components/button': { hash: 'b', at: '2026-11-06T00:00:00Z', actions: ['press'], ...chip },
+        }),
+      );
+
+    writeReady({});
+    const before = productHash();
+
+    writeReady({ hash: 'other', at: '2026-11-18T09:00:00Z', by: 'et design check', cmd: 'check', pid: 42 });
+    expect(productHash()).toBe(before);
+
+    writeReady({ actions: ['press', 'release'] });
+    expect(productHash()).not.toBe(before);
+  });
+
   it('runs the draw rules without a harness, stores them per part, and build-ready skips a baselined hit', async () => {
     const { target, dir, product, chipFile } = drawable();
     const hit = (at: string) => ({ rule: 'CONTROL-STATE', file: chipFile, message: `control "${at}" is drawn`, at });

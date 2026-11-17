@@ -2011,3 +2011,16 @@ asked part's mark (ADR 0335 asks for "only", not "none"). Verified: stamp-files.
 part-ready.spec (ready commits only its own mark), each red with its fix reverted. Live, from the same clean ready.json
 and stamp cache: the published cli (c510481c6) dropped part-tree and wrote 14 foreign marks; `--working-tree` dropped
 part-tree only. Not verified: a live `design ready` commit (no ready-clean part to spend on it).
+
+As built (B576 slice 2, ADR 0335): probe first, on the live studio product (37 holding marks). (1) Another part's
+`merged.json` entry changed: no mark stale, no slow input pending - a ready mark does not cover merged.json, ready.json
+or harness.shared; it covers the files of the part's import graph (`designHashOf`), each whole. Suspect not reproduced.
+(2) An export nobody imports appended to `title-bar/shared/chrome.ts`: 9 marks stale (whole-file grain); export-level
+hashing is not built (large, and a missed dependency would let a mark hold on a changed design). (3) Only `pid`/`at` of
+another `ready.json` entry changed: the `(product)` slow hash flipped (cause, by probe) - `productInputsOf` hashed the
+whole ready.json, so every mark write made `(product)` pending, and its settle makes serve rerun the product's slow
+checks and re-decide every own part (`recordedPartsOf`). The `(product)` inputs now key on each part's recorded
+`actions`, which is what ACTION-LOST reads. The stale page marks seen on 17.11. are real dependency drops (studio-menu,
+B578; canvas-viewport/canvas-frames in d7d017cc2). Existing marks: the ready mark format is unchanged, so no mark goes
+stale; the `(product)` slow result reruns once on the new key. Verified: slow-checks.spec, both directions red with
+its half of the fix reverted. Not verified live: serve's re-decision of every part after a `(product)` settle.
