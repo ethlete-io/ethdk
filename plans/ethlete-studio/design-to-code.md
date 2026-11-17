@@ -1772,3 +1772,13 @@ e2e canvas ("every declared action works"). Not verified: the call/read-error ti
   badge, comment-draft, comment-row, comment-target, textarea (missing states/motions/controls), comment-flow,
   title-bar (19 parked STATE-NO-SOURCE), canvas-frames (load-failed action), shell-main, studio-menu (2 compares).
   The other 13 embedded parts were only stale and are ready again.
+
+### B135 in progress 2026-11-17: `consumerAction` (builder)
+
+- Slice 1: `definePart({ consumerAction: '<reason>' })` declares that the part is a control whose action its consumer
+  decides; `design complete` (ACTION-UNDECLARED) and `design actions` then ask no `data-et-action` of its elements.
+  Never inferred. Verified: complete/actions specs, vitest related (1680), typecheck, lint.
+- Baseline before any declaration: `design complete` over the 58 sdk parts gives 361 ACTION-UNDECLARED in 37 parts
+  (calendar 71, chart 36, scheduler 31, pagination 26, menu 14, ...). `design check --product sdk` reports none.
+- Next: declare `consumerAction` on the parts whose controls the consumer wires; parts with own behaviour
+  (calendar, carousel, pagination, tree, ...) declare real `data-et-action` keys instead.

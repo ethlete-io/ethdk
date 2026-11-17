@@ -43,6 +43,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `motions` names each motion between two of its states, see `Motion`; a rule in `rules` can name one.
  * `unreachable` lists the state pairs no user can move between, each with its `reason`; they need no motion.
  * `instant` is the reason every switch between two states happens at once; no pair then needs a motion.
+ * `consumerAction` is the reason the part is a control whose action its consumer declares; `design complete` then
+ * asks no `data-et-action` of its elements.
  * `omits` records mock option values deliberately left off the grid, each with a reason.
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
@@ -66,6 +68,7 @@ export type Part<TProps, TState extends string = string> = {
   motions?: Record<string, Motion<TState>>;
   unreachable?: { from: TState; to: TState; reason: string }[];
   instant?: string;
+  consumerAction?: string;
   omits?: { option: keyof TProps & string; value: string; reason: string }[];
   rules?: PartRule<TState>[];
   implements?: PartLink;

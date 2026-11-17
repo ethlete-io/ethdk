@@ -17,7 +17,7 @@ import {
 } from '../thumb';
 import { yieldRun } from '../run-yield';
 import { WarmDraw } from '../warm-draw';
-import { INTERACTIVE_SELECTOR } from './actions';
+import { declaresConsumerActionOf, INTERACTIVE_SELECTOR } from './actions';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { changedSharesOf } from '../contact-sheet';
 import { partHashOf } from './sketch/baseline';
@@ -394,8 +394,12 @@ const actionGapsOf = (options: {
   part: string;
   declared: Record<string, DeclaredControl>;
   frames: SeenFrame[];
+  consumerAction?: unknown;
 }): CompletenessGap[] => {
   const { part, declared, frames } = options;
+
+  if (declaresConsumerActionOf(options.consumerAction)) return [];
+
   const groups = new Map<string, { found: FoundControl; states: string[] }>();
 
   for (const frame of frames.filter((seen) => seen.interaction === null))
@@ -761,6 +765,7 @@ export const completenessGapsOf = (options: {
   grid?: unknown;
   referenced?: ReferencedParts;
   inventory?: InventoryState;
+  consumerAction?: unknown;
 }): CompletenessGap[] => {
   const { part, states, frames, reviewed, grid, referenced = {}, inventory } = options;
   const declared = declaredControlsOf(options.controls) ?? {};
@@ -853,7 +858,7 @@ export const completenessGapsOf = (options: {
   return [
     ...gaps,
     ...discoveryGapsOf({ part, declared, frames }).filter((gap) => !isUndeclaredControlGap(gap)),
-    ...actionGapsOf({ part, declared, frames }),
+    ...actionGapsOf({ part, declared, frames, consumerAction: options.consumerAction }),
     ...ownerGapsOf({ part, declared, frames, referenced }),
     ...overrideGapsOf({ part, frames }),
     ...inventoryGapsOf({ part, inventory }),
@@ -1619,7 +1624,14 @@ const completenessCacheOf = (options: {
 });
 
 type PartModule = {
-  default?: { states?: unknown; interactions?: unknown; widths?: unknown; controls?: unknown; grid?: unknown };
+  default?: {
+    states?: unknown;
+    interactions?: unknown;
+    widths?: unknown;
+    controls?: unknown;
+    grid?: unknown;
+    consumerAction?: unknown;
+  };
 };
 
 /** Where a rest frame of a part is drawn: its state at a preset, or at a width, as `/__design/shot` takes it. */
@@ -1954,6 +1966,7 @@ export const partsCompletenessOf = async (options: {
             frames: seen,
             reviewed,
             grid: definition?.grid,
+            consumerAction: definition?.consumerAction,
             referenced,
             inventory:
               resolved.layer === 'pages'

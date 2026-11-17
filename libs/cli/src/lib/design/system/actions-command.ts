@@ -296,7 +296,7 @@ export const checkActions = async (options: {
 
     const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
     const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
-      default?: { states?: unknown; controls?: unknown };
+      default?: { states?: unknown; controls?: unknown; consumerAction?: unknown };
     };
     const loaded = module.default?.states;
     const states =
@@ -649,7 +649,12 @@ export const checkActions = async (options: {
             if (
               drawn !== null &&
               action === null &&
-              exemptFromDeclaringOf({ owners: drawn.owners, within: drawn.within, controls: module.default?.controls })
+              exemptFromDeclaringOf({
+                owners: drawn.owners,
+                within: drawn.within,
+                controls: module.default?.controls,
+                consumerAction: module.default?.consumerAction,
+              })
             )
               return finish();
 

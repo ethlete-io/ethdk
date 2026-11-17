@@ -358,16 +358,19 @@ export const enclosingControlsScriptOf = () => `(() => {
 
 /**
  * Whether a design element without a `data-et-action` is exempt from declaring one, as `design complete` exempts it from
- * ACTION-UNDECLARED: an embedded part draws it, or it sits in a control the part declares with a `part`.
+ * ACTION-UNDECLARED: the part declares a `consumerAction`, an embedded part draws it, or it sits in a control the part
+ * declares with a `part`.
  */
 export const exemptFromDeclaringOf = (options: {
   owners: readonly string[];
   within: readonly string[];
   controls: unknown;
+  consumerAction?: unknown;
 }) => {
   const controls = typeof options.controls === 'object' && options.controls !== null ? options.controls : {};
 
   return (
+    declaresConsumerActionOf(options.consumerAction) ||
     options.owners.length > 0 ||
     options.within.some((name) => {
       const declared = (controls as Record<string, unknown>)[name];
@@ -378,6 +381,9 @@ export const exemptFromDeclaringOf = (options: {
     })
   );
 };
+
+/** Whether a part's `consumerAction` names a reason, so its consumer declares the action of each of its elements. */
+export const declaresConsumerActionOf = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
 
 /** Whether an element of `key` is one of the product's declared host components, by its accessible name. */
 export const isHostElementOf = (options: { key: string; hosts: readonly string[] }) =>

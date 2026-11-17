@@ -485,13 +485,14 @@ describe('completenessGapsOf', () => {
       within: ['hide'],
       ...found,
     });
-    const gapsOf = (found: FoundControl[]) =>
+    const gapsOf = (found: FoundControl[], consumerAction?: string) =>
       completenessGapsOf({
         part: 'components/a',
         controls: { hide: { kind: 'button' }, picker: { kind: 'button', part: 'components/picker' } },
         states: ['rest'],
         frames: [frame('rest', { controls: [], found })],
         reviewed: true,
+        consumerAction,
       })
         .filter((gap) => gap.code === 'ACTION-UNDECLARED')
         .map(completenessGapLineOf);
@@ -503,6 +504,7 @@ describe('completenessGapsOf', () => {
     expect(gapsOf([control({})])).toEqual([]);
     expect(gapsOf([control({ action: null, within: ['picker'] })])).toEqual([]);
     expect(gapsOf([control({ action: null, owner: 'components/picker' })])).toEqual([]);
+    expect(gapsOf([control({ action: null })], 'a button whose click its host wires')).toEqual([]);
   });
 
   it('passes a disclosure drawn hovered, pressed, focused, collapsed and open in a reviewed part', () => {

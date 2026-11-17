@@ -593,7 +593,9 @@ emits it; the harness records outputs on `window.__etDesignEmits`. It fails on a
 declares nothing, on a declared design element the app lacks, and names a key whose keydown default the app prevented.
 The harness draws a part alone, so an `opens:` action prints `ok (warning: …)` there and is pressed only by `--live`.
 States run in batches of a few with a fresh browser each, so a part with many states does not exhaust memory.
-`et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
+`et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`. A part that is a control whose
+action its consumer decides, such as a button of a component library, declares `consumerAction: 'reason'` in
+`definePart`; neither command then asks a `data-et-action` of its elements. It is never inferred.
 
 It also checks the pointer focus of every focusable element (`tabindex` other than -1, button, `a[href]`, field,
 select, `contenteditable`) in two fresh pages: a real mouse click at its centre, after Tab presses that leave focus elsewhere (a script focus rings only when the last input was a key), must leave no focus ring (a visible

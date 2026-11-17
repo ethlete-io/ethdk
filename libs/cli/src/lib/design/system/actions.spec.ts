@@ -174,6 +174,10 @@ describe('actions', () => {
     expect(exemptFromDeclaringOf({ owners: ['components/select'], within: [], controls })).toBe(true);
     expect(exemptFromDeclaringOf({ owners: [], within: ['close'], controls })).toBe(false);
     expect(exemptFromDeclaringOf({ owners: [], within: [], controls: undefined })).toBe(false);
+    expect(exemptFromDeclaringOf({ owners: [], within: [], controls, consumerAction: 'a button its host wires' })).toBe(
+      true,
+    );
+    expect(exemptFromDeclaringOf({ owners: [], within: [], controls, consumerAction: '  ' })).toBe(false);
   });
 
   it('names the parts that declare a control drawn by the part, never the part itself', () => {
