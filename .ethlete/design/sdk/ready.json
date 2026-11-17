@@ -34,18 +34,18 @@
     "pid": 1898251
   },
   "components/button": {
-    "hash": "3ec00c9b35cf949b",
+    "hash": "ea718605b639cbaf",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
-      ".ethlete/design/sdk/components/button/button.ts": "3504c9e630a84f12",
+      ".ethlete/design/sdk/components/button/button.ts": "b44ab5f783d8b758",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
-      "libs/components/src/lib/button/button-properties-styles.component.css": "39a20bd59ff9864e",
-      "libs/components/src/lib/button/button.component.css": "1b93c651ccdb363a",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
+      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
-      "libs/components/src/lib/button/icon-button.component.css": "ff7eeb0527c6ebd7",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
@@ -56,10 +56,10 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-17T04:43:44.232Z",
+    "at": "2026-11-17T18:23:32.636Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1691809
+    "pid": 111211
   },
   "components/checkbox": {
     "actions": [],
