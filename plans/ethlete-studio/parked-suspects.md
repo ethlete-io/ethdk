@@ -112,3 +112,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - title-search embedders red (Linux, 18.11., probe 551c18a29): `components/title-search` EMBEDDERS FAIL 5/9; `design ready` refuses via foundations/icons not build-ready. Suspect, pre-existing, first time.
 - task --verify in a scratch copy (Linux, 18.11., B250c): `design task --verify` cannot run in a `yarn scratch:checkout` copy (no git: "git diff HEAD^..HEAD failed"). Suspect, first time.
 - Studio footer vs CLI ready (Linux, 18.11., B250c): Studio footer shows "Nicht baubereit (1)" (one open point "Bild…") while the CLI says READY. Suspect, pre-existing, first time.
+- edit merge leaves the part file (Linux, 18.11., B189 625425c03): `sketch merge X@edit` committed only merged.json and left the part file uncommitted; the builder reverted it by mistake (re-committed c6030005a). Suspect (code read), first time.
