@@ -331,7 +331,8 @@ inherits the parent's model.
 
 A subagent starts cold: it loads the full start context (about 50k tokens) before its first step,
 and measured subagents cost as much as the sessions that spawn them. A lookup or job of under about 10 tool
-calls stays in the session. Give each subagent one large slice, not several small ones.
+calls stays in the session. Give each subagent one large slice, not several small ones. Stop each
+background subagent with `TaskStop` once its result is in, so finished ones do not pile up.
 
 A subagent has the same context budget as the session, measured on its own transcript, and the
 context-warning hook tells it to hand back at the critical tier. Size each prompt to fit: one
