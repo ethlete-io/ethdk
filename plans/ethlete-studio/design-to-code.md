@@ -2631,3 +2631,22 @@ hits on disabled SDK buttons and on canvas content panned under the floating she
 of that check on the pages/sketches Übernehmen/Verwerfen actions, which no longer exists. B181 still keeps
 `emit:discard` in all 21 pages/sketches states and `emit:merge` wherever a take is offered. Not built: a reach check
 without the two false-hit sources; it would reopen a B500 removal and needs a decision first.
+
+## As built (B168 platform measures)
+
+Findings 243 and 247. A part declares the native measures it imitates in `definePart({ platformMeasures })`: platform,
+states, target selector, `width`/`height`, `inset` against an `edge` selector, and `ink` (glyph ink box), with a
+`tolerance` of 0.5 px by default. The render check (`system/platform-measures.ts`, wired into `render-check.ts`) measures
+them in Chromium per declared state: boxes via `getBoundingClientRect`, ink as the bounding box of the pixels in a shot of
+the target that differ from its most frequent colour by at least half of the strongest difference. A miss is a
+`PLATFORM-MEASURE` problem naming declared and measured values. The studio title bar declares the Windows 11 caption
+buttons for `windows` and `windows-update`: 46 x 32 px tiles, top inset 0, close right inset 0, glyph ink 10 x 10 px
+(minimize 10 x 1 px).
+
+Verified: `platform-measures.spec.ts` in real Chromium goes red for a 10 px icon box with a padded viewBox (ink 6-7 px)
+and for a 40 px tile, green for 10 px ink in a 46 px flush tile. `et design check --product studio --part
+components/title-bar --working-tree` passes; with every declared value set wrong it fails with 6 `PLATFORM-MEASURE`
+lines measuring 46 x 32 px tiles, insets 0 (close right 0), ink 10 x 10 px (minimize 10 x 1 px). Measured ink is whole
+pixels at device scale 1, so the default 0.5 px tolerance holds. Not verified: the native Windows 11 original itself (the
+declared numbers come from the finding, not from a shot of Windows); measures at a device scale other than 1. No
+existing part declares measures, so the rule needs no ADR 0201 baseline.

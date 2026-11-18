@@ -70,6 +70,7 @@ export type Part<TProps, TState extends string = string> = {
   motions?: Record<string, Motion<TState>>;
   unreachable?: { from: TState; to: TState; reason: string }[];
   instant?: string;
+  platformMeasures?: PlatformMeasure<TState>[];
   consumerAction?: string;
   omits?: { option: keyof TProps & string; value: string; reason: string }[];
   rules?: PartRule<TState>[];
@@ -194,6 +195,22 @@ export type Control<TState extends string = string> = (
     { part: ControlPart; bespoke?: string; input?: never } | { input: ControlInput[]; part?: never; bespoke?: never }
   );
 
+/**
+ * A measure of a native platform control that a part imitates, which `et design check` measures in each of `states`
+ * on every element `target` matches: its box in CSS px, its gap to the box of `inset.edge`, and the ink of its
+ * content (the pixels that differ from its background), each within `tolerance` px (0.5 by default).
+ */
+export type PlatformMeasure<TState extends string = string> = {
+  platform: string;
+  states: readonly TState[];
+  target: string;
+  width?: number;
+  height?: number;
+  inset?: { edge: string; top?: number; right?: number; bottom?: number; left?: number };
+  ink?: { width?: number; height?: number };
+  tolerance?: number;
+};
+
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
 
@@ -215,6 +232,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   | 'coverage'
   | 'data'
   | 'dataStates'
+  | 'platformMeasures'
 > &
   PartData & {
     coverage?: PartCoverage<NoInfer<TState>>;
@@ -223,6 +241,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
     motions?: Record<string, Motion<NoInfer<TState>>>;
     unreachable?: { from: NoInfer<TState>; to: NoInfer<TState>; reason: string }[];
     rules?: PartRule<NoInfer<TState>>[];
+    platformMeasures?: PlatformMeasure<NoInfer<TState>>[];
     states: Record<TState, NoInfer<TProps>>;
     describe: Record<NoInfer<TState>, string>;
     controls?: Record<string, Control<NoInfer<TState>>>;

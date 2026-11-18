@@ -157,6 +157,15 @@ marks a pair no user reaches; `et design check` fails with `MOTION-UNREACHABLE-S
 `MOTION-UNREACHABLE-LITERAL` for an unknown state, an empty reason or a value that is no literal, and with `MOTION-UNREACHABLE-REACHABLE` when a pair marked unreachable also has a motion.
 A part whose states all switch without motion declares `instant: 'reason'` instead of listing every pair: it covers every pair of different states (a loop in an ongoing-work state is still asked for), `et design check` fails with `MOTION-INSTANT` when the value is no non-empty string literal, and `design sketch ready` prints `NOTE <sketch> <variant>: <part> declares instant state switches` for each variant that declares it. Keep `unreachable` for pairs no user reaches.
 
+A part that imitates a native platform control declares the platform's measures in `platformMeasures`:
+`[{ platform: 'Windows 11', states: ['windows'], target: '[aria-label="Schließen"]', width: 46, height: 32, inset: { edge: '.st-title-bar', top: 0, right: 0 }, ink: { width: 10, height: 10 } }]`.
+In each named state, `et design check` measures every element `target` matches in Chromium: its box, its gap to the box of
+`inset.edge` (the nearest ancestor that matches, else the first match), and its ink, the bounding box of the pixels that
+differ from the element's most frequent colour by at least half of the strongest difference. A glyph's ink is what you
+see, not its icon box: a 10 px icon whose viewBox has padding draws less ink. A value off by more than `tolerance`
+(0.5 px by default) fails with `PLATFORM-MEASURE`, naming the declared and the measured value; so does a `target` that
+matches nothing.
+
 In a frame, a rule switches the part by a morph: the tool draws the new state and changes only what differs in the existing DOM,
 so CSS transitions and `@starting-style` run. The named motion then runs `play(ctx)`, inside a View Transition with
 `viewTransition: true`. `ctx.at(ms, fn)` runs on the tool's clock, `ctx.random()` is seeded and `ctx.rect(selector)` measures in

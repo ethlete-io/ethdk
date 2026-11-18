@@ -49,6 +49,7 @@ import {
   writeServed,
 } from './served-cache';
 import { renderInspectCodeOf } from '../code-hash';
+import { PlatformMeasure, platformMeasureIssuesOf, platformMeasuresOf } from './platform-measures';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -110,6 +111,7 @@ type Frame = {
   scheme: ColorScheme | null;
   controlInputs: boolean;
   embedControls: string[];
+  measures: PlatformMeasure[];
 };
 
 type PartModule = {
@@ -772,6 +774,8 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
     const before = at > 0 ? FINISHED_TRANSITIONS : undefined;
 
     inFrame.push((await awaitSettled(page, { before, after: inspectFrame(inspectedOptionsOf(frame)) })) as Found[]);
+
+    if (frame.measures.length > 0) inFrame[at]?.push(...(await platformMeasureIssuesOf(page, frame.measures)));
   }
 
   // One pass covers every frame of the load: UNSTYLED-SDK reads the SDK visually-hidden rule, which no colour scheme changes.
@@ -1178,6 +1182,7 @@ export const renderIssuesOf = async (options: {
                       scheme,
                       controlInputs,
                       embedControls,
+                      measures: platformMeasuresOf(mergedDefinition, state),
                     },
                   ];
                 }),
@@ -1206,6 +1211,7 @@ export const renderIssuesOf = async (options: {
                 controlInputs,
                 embedControls,
                 scheme,
+                measures: platformMeasuresOf(definition, state),
               });
             }
           }

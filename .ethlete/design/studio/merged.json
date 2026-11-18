@@ -53,7 +53,7 @@
     "at": "2026-11-15T21:29:49.115Z"
   },
   "components/title-bar": {
-    "hash": "217849816694ff7b",
+    "hash": "fa1e41f845cce4b7",
     "variant": "a",
     "decidedBy": "plan: finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves",
     "at": "2026-11-16T02:27:51.159Z",
