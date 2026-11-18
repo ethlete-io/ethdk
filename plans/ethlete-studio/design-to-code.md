@@ -2099,6 +2099,19 @@ build-ready), so `--verify` and compare did not run. The check record is still r
 card's buttons and field in the app but not in the design, because the design draws the card inside `slot('canvas')`
 (the same reason the four thread states "cannot be judged"); moving the card out of the slot is a design change.
 
+As built (B189 slice 3, pages/system thread card sketch): sketch `pages/system` round r1 (3d8513c86), ready
+6e3be4441, picked a c252841b8 (builder, ADR 0259; b withdrawn: it drew the same pixels as a on pages/inbox and
+comment-flow), merged 625425c03 into components/comment-flow, pages/inbox and pages/system. The card moved from
+pages/inbox `shared/thread-card.ts` into `components/comment-flow` (`threadCard`, `threadCardAt`, `commentModeHint`),
+because no part may import another part's `shared/`. pages/system gains `thread`, `thread-own`, `thread-busy`,
+`thread-error`; comment mode without a draft shows "Esc oder C beendet" beside the Kommentar toggle (not during a draft,
+where Esc first discards it, ADR 0321). pages/inbox draws the card in a layer beside `slot('canvas')`, anchored to the
+selected pin. Cause (proven by the check before and after): the card inside the slot made `design check --part
+pages/inbox` report the card's buttons and field as NO RECORD; after the merge it reports only the known UNRECORDED.
+Verified: `sketch check`, the thread shots of pages/system and pages/inbox viewed, `sketch ready`, `design check` of
+the three parts. Open: pages/system DROPPED-PROP for `thread`/`reply`/`replyPhase` (the app port, slice 4) and one new
+PAGE-STATE-INNER (`thread-busy` differs from `thread` only inside comment-flow, ADR 0331), fixed next.
+
 ## As built (B236)
 
 Cause (finding 289): a part-scoped check drew and checked only the asked part, so `check --part
