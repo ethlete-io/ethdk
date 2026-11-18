@@ -2,7 +2,6 @@ import { originOf } from '../write-origin';
 import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { transformWithOxc } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
 import { initGitRepo } from '../git-repo.fixtures';
@@ -93,6 +92,7 @@ describe('openUndesignedSketch (B251b)', () => {
     }) as Sketch;
     const file = join(sketch.dir, BUILT_VARIANT, HERO, 'hero.ts');
 
+    const { transformWithOxc } = await import('vite');
     await expect(transformWithOxc(readFileSync(file, 'utf8'), file)).resolves.toBeDefined();
   });
 
