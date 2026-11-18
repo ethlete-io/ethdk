@@ -85,6 +85,7 @@ export default definePart({
     confirm: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
   frame: (body) => `<div class="dialog-frame">${body}</div>`,
+  scrolls: ['long-body'],
   render: (props: Props) =>
     drawing({
       body: overlayBackdrop(render(props)),

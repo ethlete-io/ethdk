@@ -157,6 +157,12 @@ marks a pair no user reaches; `et design check` fails with `MOTION-UNREACHABLE-S
 `MOTION-UNREACHABLE-LITERAL` for an unknown state, an empty reason or a value that is no literal, and with `MOTION-UNREACHABLE-REACHABLE` when a pair marked unreachable also has a motion.
 A part whose states all switch without motion declares `instant: 'reason'` instead of listing every pair: it covers every pair of different states (a loop in an ongoing-work state is still asked for), `et design check` fails with `MOTION-INSTANT` when the value is no non-empty string literal, and `design sketch ready` prints `NOTE <sketch> <variant>: <part> declares instant state switches` for each variant that declares it. Keep `unreachable` for pairs no user reaches.
 
+A part that can hold a scroll container draws both cases on purpose: a state where the content fits and a state where it
+scrolls. `scrolls: ['open-scrolls']` names the states that draw a box with more content than it shows. `et design check`
+fails with `SCROLLS` when a box with `overflow: auto` or `scroll` scrolls in a state the list does not name, and when a
+listed state draws no scrolling box. A scroll box of an embedded part counts for the state of its host;
+`checks: { skip: ['SCROLLS'] }` exempts a part on purpose.
+
 A part that imitates a native platform control declares the platform's measures in `platformMeasures`:
 `[{ platform: 'Windows 11', states: ['windows'], target: '[aria-label="Schließen"]', width: 46, height: 32, inset: { edge: '.st-title-bar', top: 0, right: 0 }, ink: { width: 10, height: 10 } }]`.
 In each named state, `et design check` measures every element `target` matches in Chromium: its box, its gap to the box of

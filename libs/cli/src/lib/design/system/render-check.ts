@@ -106,6 +106,7 @@ type Frame = {
   viewport: { width: number; height: number };
   fixed: boolean;
   fit: boolean;
+  scrolls: boolean;
   skips: Record<string, string[]>;
   namespaces: string[];
   scheme: ColorScheme | null;
@@ -121,6 +122,7 @@ type PartModule = {
     widths?: unknown;
     grid?: unknown;
     checks?: { skip?: unknown };
+    scrolls?: unknown;
     frame?: unknown;
   };
 };
@@ -187,7 +189,7 @@ export const renderErrorDetailOf = (error: string) =>
 export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
 /** The render rules whose hits on merged parts the rule baseline of their product lists (ADR 0201). */
-export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([CONTROL_HEIGHT_RULE, 'HIDDEN-CONTENT']);
+export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([CONTROL_HEIGHT_RULE, 'HIDDEN-CONTENT', 'SCROLLS']);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
 
@@ -195,6 +197,7 @@ const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
 const inspectFrame = (options: {
   fixed: boolean;
   fit: boolean;
+  scrolls: boolean;
   skips: Record<string, string[]>;
   namespaces: string[];
   part: string | null;
@@ -373,17 +376,25 @@ ${VISUALLY_HIDDEN_STATEMENTS}
       return rect.width > 0 && rect.height > 0 && rect.bottom - bottom > 1 && showsIn(control, clipper);
     });
   };
+  let scrolling = null;
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
     const drawn = drawnSizeOf(element);
     const cutX = clips(style.overflowX) && drawn.width > element.clientWidth + clipMarginOf(style, 'overflowX');
     const cutY = clips(style.overflowY) && drawn.height > element.clientHeight + clipMarginOf(style, 'overflowY');
     if (clippedAway(element)) continue;
+    const scrollsY = /auto|scroll/.test(style.overflowY) && element.scrollHeight > element.clientHeight + 1;
+    const scrollsX = /auto|scroll/.test(style.overflowX) && element.scrollWidth > element.clientWidth + 1;
+    if ((scrollsX || scrollsY) && element.clientWidth > 0 && element.clientHeight > 0 && style.visibility !== 'hidden') {
+      scrolling = scrolling ?? element;
+      if (!options.scrolls) report('SCROLLS', element, 'content ' + sizeOf(element) + ' scrolls in a state that does not ask for it - let the content fit, or list the state in definePart({ scrolls })');
+    }
     const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style) || drawsByClipping(element);
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
     const hidden = cutY && !cutsOnPurpose && element.clientHeight > 0 && style.visibility !== 'hidden' && hiddenContentOf(element, style);
     if (hidden) report('HIDDEN-CONTENT', element, (hidden.matches(FOCUSABLE) ? 'the control ' + nameOf(hidden) : '"' + hidden.textContent.trim().slice(0, 32) + '"') + ' runs past the bottom edge of a ' + element.clientWidth + 'x' + element.clientHeight + ' box that clips it (overflow-y: ' + style.overflowY + ') without a scroll bar - let the box grow, scroll it with overflow-y: auto, or shorten the content');
   }
+  if (options.scrolls && !scrolling) report('SCROLLS', partRoot, 'no box scrolls in a state that definePart({ scrolls }) lists - give a box more content than it shows, or drop the state from scrolls');
   const floating = [...root.querySelectorAll('*')].filter((element) => {
     const style = getComputedStyle(element);
     const rect = element.getBoundingClientRect();
@@ -727,9 +738,13 @@ const unstyledPassOf = (frame: Frame, emptySlots: string) => `(async () => {
   return [unstyled, await ${FONT_FACES_SCRIPT}];
 })()`;
 
+const scrollsOf = (definition: PartModule['default'] | null | undefined, state: string) =>
+  Array.isArray(definition?.scrolls) && definition.scrolls.includes(state);
+
 const inspectedOptionsOf = (frame: Frame) => ({
   fixed: frame.fixed,
   fit: frame.fit,
+  scrolls: frame.scrolls,
   skips: frame.skips,
   namespaces: frame.namespaces,
   part: frame.controlInputs ? frame.address.part : null,
@@ -1177,6 +1192,7 @@ export const renderIssuesOf = async (options: {
                       viewport: viewportOf(frame.size),
                       fixed: frame.size?.height !== undefined,
                       fit: frame.size === null,
+                      scrolls: scrollsOf(mergedDefinition, state),
                       skips,
                       namespaces,
                       scheme,
@@ -1206,6 +1222,7 @@ export const renderIssuesOf = async (options: {
                 viewport: viewportOf(frame.size),
                 fixed: frame.size?.height !== undefined,
                 fit: frame.size === null,
+                scrolls: scrollsOf(definition, state),
                 skips,
                 namespaces,
                 controlInputs,

@@ -31,4 +31,5 @@ export default definePart({
   },
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6.1-terra', 'gpt-6', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts' },
+  scrolls: ['long-list'],
 });

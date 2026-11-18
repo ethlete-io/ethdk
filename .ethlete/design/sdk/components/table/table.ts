@@ -268,6 +268,7 @@ export default definePart({
     },
   ],
   frame: (body) => `<div class="t-frame">${body}</div>`,
+  scrolls: ['wide-scroll', 'sticky-column'],
   render: (props: Props) =>
     drawing({
       body: render(props),

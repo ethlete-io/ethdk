@@ -37,7 +37,7 @@
   },
   "components/calendar": "daa79be9b799f897",
   "components/card": "28f80ac47c55426e",
-  "components/carousel": "d9885acd13dbbe58",
+  "components/carousel": "1706f12ac6905d60",
   "components/chart": "7484c4d80d418295",
   "components/checkbox": "7f176773e02868b1",
   "components/chip": {
@@ -48,7 +48,7 @@
   },
   "components/copy-button": "fdc91e5c36d6d68e",
   "components/description-list": "2f40dd62ec286cb9",
-  "components/dialog": "2fe0eeb2789ba60f",
+  "components/dialog": "d7f6bf0a7ded1f4e",
   "components/divider": "71b52e568e69dfed",
   "components/empty-state": {
     "hash": "3a1430a2ae82821c",
@@ -83,8 +83,8 @@
   "components/query-error": "6229941c4f9f6dfa",
   "components/radio-group": "570be5d0ff8a5f90",
   "components/scheduler": "3d1257dd07ba3a00",
-  "components/scrollable": "647c7e2099f87cf3",
-  "components/scrollbar": "5c3a783e85ce62ca",
+  "components/scrollable": "3f9c533ef44c330f",
+  "components/scrollbar": "1017dae9034d429a",
   "components/select": "1a96ea5db00e7c22",
   "components/select-panel": "e553115da7b919df",
   "components/skeleton": "b547ec192cd09ba0",
@@ -103,10 +103,10 @@
     "decidedBy": "plan: finding 325",
     "at": "2026-11-03T16:27:49.935Z"
   },
-  "components/table": "9da265d34b0023c8",
+  "components/table": "785b34208ceb65a4",
   "components/tabs": "1c8589a9ab2fdea8",
   "components/textarea": {
-    "hash": "1ca0244180a9719a",
+    "hash": "a2477b9464d5b2a4",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-16T09:07:29.901Z"

@@ -29,6 +29,21 @@ const MENU_ITEM = 'data-et-slot="components/menu"';
 
 const PRODUCTS = ['studio', 'timetrack', 'docs'];
 
+const MANY_PRODUCTS = [
+  ...PRODUCTS,
+  'shop',
+  'admin',
+  'portal',
+  'tournaments',
+  'scores',
+  'tickets',
+  'media',
+  'partners',
+  'academy',
+  'newsroom',
+  'fan-app',
+];
+
 const systemRows = (product: string, products: string[], option?: Props['option'], keyboard = false): MenuMockRow[] => {
   const hovered = option && option !== 'selected' ? option : undefined;
 
@@ -104,6 +119,7 @@ export default definePart({
     'system.option-hover': { open: true, option: 'hover' },
     'system.option-focus-visible': { open: true, option: 'focus-visible' },
     'system.option-selected': { open: true, option: 'selected' },
+    'open-scrolls': { open: true, products: MANY_PRODUCTS },
   },
   describe: {
     closed:
@@ -122,7 +138,10 @@ export default definePart({
       'The menu with timetrack focused by keyboard; check its keyboard highlight and that studio keeps its check mark.',
     'system.option-selected':
       'The menu with no row highlighted; check that only the check mark on studio marks the open design system.',
+    'open-scrolls':
+      'The open menu with more design systems than fit under its height cap; check that the menu scrolls inside its own border with studio checked at the top.',
   },
+  scrolls: ['open-scrolls'],
   grid: { columns: closedRows.grid.columns, rows: { ...closedRows.grid.rows, ...openRows.grid.rows } },
   controls: { system: { kind: 'select', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: shellSystemPickerStyles,

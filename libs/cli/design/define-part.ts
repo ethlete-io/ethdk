@@ -49,6 +49,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
+ * `scrolls` names the states that draw a box with more content than it shows, so it scrolls; `design check` flags a
+ * scrolling box in any other state, and a listed state without one.
  * `implements` links the part to the code that builds it, see `PartLink`.
  * `data: 'list'` says the part shows a loaded list it gets through its inputs; it then must draw loading, error and
  * empty like a part that loads data, and `dataStates` names the state that draws each, see `PartDataStates`.
@@ -67,6 +69,7 @@ export type Part<TProps, TState extends string = string> = {
   grid?: StateGrid<TState>;
   controls?: Record<string, Control<TState>>;
   checks?: { skip?: RenderCheck[] };
+  scrolls?: TState[];
   motions?: Record<string, Motion<TState>>;
   unreachable?: { from: TState; to: TState; reason: string }[];
   instant?: string;
@@ -212,7 +215,7 @@ export type PlatformMeasure<TState extends string = string> = {
 };
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
-export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
+export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE' | 'SCROLLS';
 
 /** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
 export type RenderOptions = { interaction?: Interaction };
@@ -233,6 +236,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   | 'data'
   | 'dataStates'
   | 'platformMeasures'
+  | 'scrolls'
 > &
   PartData & {
     coverage?: PartCoverage<NoInfer<TState>>;
@@ -241,6 +245,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
     motions?: Record<string, Motion<NoInfer<TState>>>;
     unreachable?: { from: NoInfer<TState>; to: NoInfer<TState>; reason: string }[];
     rules?: PartRule<NoInfer<TState>>[];
+    scrolls?: NoInfer<TState>[];
     platformMeasures?: PlatformMeasure<NoInfer<TState>>[];
     states: Record<TState, NoInfer<TProps>>;
     describe: Record<NoInfer<TState>, string>;

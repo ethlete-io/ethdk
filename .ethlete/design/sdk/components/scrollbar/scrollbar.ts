@@ -131,6 +131,19 @@ export default definePart({
   },
   widths: [480],
   frame: (body, props) => `<div class="scrollbar-frame"${props.layout === 'rtl' ? ' dir="rtl"' : ''}>${body}</div>`,
+  scrolls: [
+    'vertical',
+    'vertical-scrolled',
+    'horizontal',
+    'horizontal-scrolled',
+    'both-axes',
+    'rtl',
+    'short-content',
+    'long-content',
+    'thumb-hover',
+    'dragging',
+    'auto-hidden',
+  ],
   render: (props: Props) =>
     drawing({
       body: `<div class="scrollbar-wrapper">${render(props)}</div>`,

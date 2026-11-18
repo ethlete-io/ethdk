@@ -8,5 +8,19 @@
       "finding": "489",
       "sketch": "components/rail-bubble (queued for c8)"
     }
+  },
+  "SCROLLS": {
+    "pages/system: blockers-open at desktop: div.absolute > div.absolute > et-overlay-container[data-et-part=components/anchored-dialog] > div:nth-of-type(1)": {
+      "finding": "343",
+      "sketch": "pages/system: not opened yet - the anchored dialog content fits its 718px height at desktop instead of overflowing it by a few pixels"
+    },
+    "pages/system: developer-part-blocked at desktop: div.absolute > div.absolute > et-overlay-container[data-et-part=components/anchored-dialog] > div:nth-of-type(1)": {
+      "finding": "343",
+      "sketch": "pages/system: not opened yet - the anchored dialog content fits its 718px height at desktop instead of overflowing it by a few pixels"
+    },
+    "pages/system: direct-edit at desktop: div.absolute > div.absolute > et-overlay-container[data-et-part=components/anchored-dialog] > div:nth-of-type(1)": {
+      "finding": "343",
+      "sketch": "pages/system: not opened yet - the anchored dialog content fits its 718px height at desktop instead of overflowing it by a few pixels"
+    }
   }
 }

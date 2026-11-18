@@ -753,6 +753,47 @@ export default definePart({
     );
   }, 120_000);
 
+  it('flags a box that scrolls in a state not listed in scrolls, and a listed state where nothing scrolls', async (context) => {
+    const lines = '<p style="margin: 0">One</p><p style="margin: 0">Two</p><p style="margin: 0">Three</p>';
+    const scrolling = `<div style="width: 200px; height: 30px; overflow-y: auto">${lines}</div>`;
+    const fitting = `<div style="width: 200px; height: 90px; overflow-y: auto"><p style="margin: 0">One</p></div>`;
+    const target = checkout({
+      'components/scrolls-unasked': { body: scrolling },
+      'components/scrolls-asked': {
+        body: scrolling,
+        states: 'default: {}, other: {}',
+        extra: "scrolls: ['default', 'other'],",
+      },
+      'components/scrolls-wide': {
+        body: '<div style="width: 100px; overflow-x: scroll"><p style="margin: 0; width: 300px">Wide</p></div>',
+      },
+      'components/scrolls-missing': { body: fitting, extra: "scrolls: ['default']," },
+      'components/scrolls-fits': { body: fitting },
+      'components/scrolls-skipped': { body: scrolling, extra: "checks: { skip: ['SCROLLS'] }," },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'SCROLLS')
+        .map((issue) => `${issue.part} ${issue.state}: ${issue.detail}`)
+        .sort(),
+    ).toEqual([
+      'components/scrolls-missing default: no box scrolls in a state that definePart({ scrolls }) lists - give a box more content than it shows, or drop the state from scrolls',
+      expect.stringMatching(
+        /^components\/scrolls-unasked default: content 200x\d+ in 200x30 scrolls in a state that does not ask for it/,
+      ),
+      expect.stringMatching(/^components\/scrolls-wide default: content 300x\d+ in 100x\d+ scrolls/),
+    ]);
+  }, 120_000);
+
   it('does not flag a ring cut at the edge of a pan or scroll container, but one cut by a box its content fits', async (context) => {
     const ring = '<figure style="margin: 0; width: 100px; height: 40px; box-shadow: 0 0 0 2px currentColor"></figure>';
     const target = checkout({

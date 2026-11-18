@@ -112,6 +112,7 @@ export default definePart({
     'enable-hovered-filled': { from: 'disabled-filled', to: 'hover-filled' },
   },
   frame: (body, props) => `<div class="t-frame ${props.scrolled ? 't-scrolled' : ''}">${body}</div>`,
+  scrolls: ['long-max-rows', 'manual-resize-overflow'],
   render: (props: Props) =>
     drawing({
       body: props.scrolled
