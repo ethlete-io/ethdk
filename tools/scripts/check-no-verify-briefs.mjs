@@ -1,36 +1,52 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const NO_VERIFY = /--no-verify/;
-const NEGATED = /\b(?:never|not|don't|dont|forbid|forbidden|refuse|refuses|without)\b/i;
+const NEGATED = /\b(?:never|no|not|don't|dont|forbid|forbidden|refuse|refuses|without)\b/i;
+const BLOCK_START = /^\s*(?:[-*+]\s|\d+[.)]\s|#|>|\||```|$)/;
 
-export const noVerifyFindings = (text) =>
-  text
-    .split('\n')
-    .flatMap((line, i) => (NO_VERIFY.test(line) && !NEGATED.test(line) ? [{ line: i + 1, text: line.trim() }] : []));
+const logicalLines = (text) =>
+  text.split('\n').reduce((acc, line, i) => {
+    const last = acc[acc.length - 1];
+    if (last && last.text.trim() && !BLOCK_START.test(line)) {
+      last.text += ` ${line.trim()}`;
+      last.lines.push(i + 1);
+    } else {
+      acc.push({ text: line, lines: [i + 1] });
+    }
+    return acc;
+  }, []);
 
-const markdownUnder = (dir, only) =>
-  !existsSync(dir)
-    ? []
-    : readdirSync(dir).flatMap((name) => {
-        const path = join(dir, name);
-        if (name === 'node_modules') return [];
-        if (statSync(path).isDirectory()) return markdownUnder(path, only);
-        return name.endsWith('.md') && (!only || only.test(name)) ? [path] : [];
-      });
-
-export const noVerifyProblems = (root) =>
-  [
-    ...markdownUnder(join(root, '.claude', 'handoffs')),
-    ...markdownUnder(join(root, '.agents', 'skills'), /^SKILL\.md$/),
-    ...markdownUnder(join(root, 'libs', 'agent-rules', 'content')),
-  ].flatMap((file) =>
-    noVerifyFindings(readFileSync(file, 'utf8')).map(
-      (f) =>
-        `${relative(root, file)}:${f.line}: an agent brief must not tell agents to skip hooks with --no-verify: ${f.text}`,
-    ),
+export const noVerifyFindings = (text) => {
+  const raw = text.split('\n');
+  return logicalLines(text).flatMap((logical) =>
+    NO_VERIFY.test(logical.text) && !NEGATED.test(logical.text.replace(/--no-verify/g, ''))
+      ? logical.lines.filter((n) => NO_VERIFY.test(raw[n - 1])).map((n) => ({ line: n, text: raw[n - 1].trim() }))
+      : [],
   );
+};
+
+export const isBriefPath = (path) =>
+  path.endsWith('.md') &&
+  (path.startsWith('.claude/handoffs/') ||
+    (path.startsWith('.agents/skills/') && path.endsWith('/SKILL.md')) ||
+    path.startsWith('libs/agent-rules/content/'));
+
+const trackedFiles = (root) =>
+  execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    .split('\0')
+    .filter(Boolean);
+
+export const noVerifyProblems = (root, files = trackedFiles(root)) =>
+  files
+    .filter(isBriefPath)
+    .flatMap((file) =>
+      noVerifyFindings(readFileSync(join(root, file), 'utf8')).map(
+        (f) => `${file}:${f.line}: an agent brief must not tell agents to skip hooks with --no-verify: ${f.text}`,
+      ),
+    );
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const problems = noVerifyProblems(resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'));
