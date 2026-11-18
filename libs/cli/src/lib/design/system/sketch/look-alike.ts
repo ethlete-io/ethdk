@@ -274,7 +274,8 @@ export const askedStatesOf = async (options: {
 /**
  * One refusal per pair of variants of a round whose shots differ, in one of the states the round asks its question in
  * (`askedStatesOf`), by fewer visibly different pixels at 100 % than `ALIKE_SHARE` of the union box of every live
- * variant's change against `current` in that state, or of the frame where nothing changed; it names the
+ * variant's change against `current` in that state (of the pairwise variant diffs where `current` has no shot of
+ * it), or of the frame where nothing differs; it names the
  * state in which they differ least. A pair `twins` answers true for is left out.
  */
 export const alikePairLinesOf = async (options: {
@@ -302,17 +303,15 @@ export const alikePairLinesOf = async (options: {
   const changedAreaOf = async (state: string) => {
     if (!areas.has(state)) {
       const now = current?.states.get(state)?.shot;
-      const boxes = now
-        ? (
-            await Promise.all(
-              live.map((variant) => {
-                const shot = variant.states.get(state)?.shot;
+      const shots = live.flatMap((variant) => {
+        const shot = variant.states.get(state)?.shot;
 
-                return shot ? boxOf(now, shot) : [];
-              }),
-            )
-          ).flat()
-        : [];
+        return shot ? [shot] : [];
+      });
+      const pairs = now
+        ? shots.map((shot) => [now, shot] as const)
+        : shots.flatMap((shot, index) => shots.slice(index + 1).map((other) => [shot, other] as const));
+      const boxes = (await Promise.all(pairs.map(([one, other]) => boxOf(one, other)))).flat();
       const union = boxes.length > 0 ? unionOf(boxes) : null;
 
       areas.set(state, union ? Math.max(1, union.width * union.height) : null);

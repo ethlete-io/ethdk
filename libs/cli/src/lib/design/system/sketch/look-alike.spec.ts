@@ -191,12 +191,17 @@ describe('sketchRendersOf alike pairs', () => {
   });
 
   it('asks in the states the variants add by default, and in the states the round names', async () => {
-    const { product, sketch } = acme(['a', 'b']);
-    const pictureOf = byState({ 'a:default': largeLeft, 'a:zoom-7': block });
+    const { product, sketch } = acme(['a', 'b', 'c']);
+    const pictureOf = byState({
+      'a:default': largeLeft,
+      'c:default': largeRight,
+      'a:zoom-7': pngOf((x, y) => x < 600 && y >= 20 && y < 100),
+      'b:zoom-7': pngOf((x, y) => x < 610 && y >= 20 && y < 100),
+    });
     const loaded = twoStates(['default', 'zoom-7']);
 
     expect((await sketchRendersOf({ product, sketch, load: loaded, pictureOf, boxOf })).alike).toEqual([
-      'elements/hero: variants a and b look alike in zoom-7 (1600 px, 0.9 % of the frame, under 2 %) - draw the difference larger or name other --asks states',
+      'elements/hero: variants a and b look alike in zoom-7 (800 px, 1.6 % of the region the round changes, under 2 %) - draw the difference larger or name other --asks states',
     ]);
 
     const asked = editRound({ sketch, round: 'r1', asks: ['default'] }) as Sketch;
