@@ -7,8 +7,8 @@ import { CheckoutKeys } from '../model/peer-path';
 import { StandIn } from '../model/stand-in';
 import { TimeWindow } from '../model/time-window';
 import { WorkFacts, contextWorkFacts, standInWorkFacts } from '../ticket/work-facts';
-import { autoModeSubjectKey, autoModeTargetOf, leavesUnnamed } from './auto-mode';
-import { AutoModeOutcome } from './model';
+import { autoModeCreateStillShared, autoModeSubjectKey, autoModeTargetOf, leavesUnnamed } from './auto-mode';
+import { AutoModeAnswer, AutoModeOutcome, AutoModeSubject } from './model';
 
 /**
  * What the day's events say about each subject auto mode may ask about, by `autoModeSubjectKey`: every
@@ -68,9 +68,11 @@ export const autoModeMergeRequestOutcome = (facts: WorkFacts | undefined): AutoM
  */
 export const withUnnamedSubjectItemsExpired = (
   queue: readonly AgentApproval[],
-  options: { day: string; workFacts: ReadonlyMap<string, WorkFacts> },
-): AgentApproval[] =>
-  queue.map((item) => {
+  options: { day: string; workFacts: ReadonlyMap<string, WorkFacts>; answers?: readonly AutoModeAnswer[] },
+): AgentApproval[] => {
+  const closed = (subject: AutoModeSubject) => leavesUnnamed(options.workFacts.get(autoModeSubjectKey(subject)));
+
+  return queue.map((item) => {
     if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.day !== options.day) return item;
     if (item.request.op !== 'jira.create' && item.request.op !== 'autoMode.apply') return item;
 
@@ -78,7 +80,8 @@ export const withUnnamedSubjectItemsExpired = (
 
     if (!target || target.day !== options.day) return item;
 
-    return leavesUnnamed(options.workFacts.get(autoModeSubjectKey(target.subject)))
+    return closed(target.subject) && !autoModeCreateStillShared(item, { answers: options.answers, closed })
       ? { ...item, state: 'expired' }
       : item;
   });
+};

@@ -8,6 +8,7 @@ import {
   AgentApiWaitingApproval,
   AgentApproval,
   AgentApprovalRequest,
+  AutoModeAnswer,
   approvableByAll,
   approvalStatusOf,
   dayBoundaryOf,
@@ -62,6 +63,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const queued$ = new Subject<AgentApproval>();
 
   const today = () => localDayKey(new Date(), dayBoundaryOf(settings.settings()));
+  const sharingAnswers = signal<readonly AutoModeAnswer[] | undefined>(undefined);
 
   // A change before the read landed would save over the stored queue with a partial one.
   const change = (next: AgentApproval[]) => {
@@ -80,7 +82,10 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const settle = () =>
     revise((current) =>
-      withStaleStandInCreatesExpired(settleApprovalQueue(current, today()), settings.settings().standIns),
+      withStaleStandInCreatesExpired(settleApprovalQueue(current, today()), {
+        standIns: settings.settings().standIns,
+        answers: sharingAnswers(),
+      }),
     );
 
   toObservable(windowLock.isLocked)
@@ -170,6 +175,9 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Replaces the stored queue with what `next` makes of it. Nothing changes before the queue is read. */
     revise,
+
+    /** Today's auto mode answers, so settling keeps a create that another subject's draft still shares. */
+    shareAnswers: (answers: readonly AutoModeAnswer[]) => sharingAnswers.set(answers),
 
     /** A `target` an item from the same client still waits for answers that item and queues nothing. */
     enqueue$: (options: {

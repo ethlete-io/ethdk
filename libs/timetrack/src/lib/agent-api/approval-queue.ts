@@ -196,9 +196,12 @@ export const settleApprovalQueue = (queue: readonly AgentApproval[], today: stri
     .map((item) => (item.state === 'queued' && item.day < today ? { ...item, state: 'expired' } : item));
 };
 
-/** The items "Approve all" carries out: every waiting one that is not `human-only` now. */
+/** The items "Approve all" carries out: every waiting one that is not `human-only` now and files no Jira ticket. */
 export const approvableByAll = (queue: readonly AgentApproval[], classes: ActionClasses = {}) =>
-  queue.filter((item) => item.state === 'queued' && approvalClassOf(item, classes) !== 'human-only');
+  queue.filter(
+    (item) =>
+      item.state === 'queued' && item.request.op !== 'jira.create' && approvalClassOf(item, classes) !== 'human-only',
+  );
 
 export const markApproval = (
   queue: readonly AgentApproval[],

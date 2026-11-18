@@ -20,6 +20,8 @@ export type TicketWritingIssue = {
   parent?: string;
   /** An open issue under an epic the checkout works in. */
   inEpic?: true;
+  /** An issue auto mode already named or filed for other work of the same day. */
+  sameDay?: true;
 };
 
 /** What the agent answers. Every field lands in the form, and every field stays the user's. */
@@ -76,6 +78,8 @@ export type TicketWritingRequest = {
   parents: TicketWritingIssue[];
   /** The project's open issues and the ones the user logged on, so tracked work is not filed twice. */
   issues: TicketWritingIssue[];
+  /** The summaries of the new tickets already waiting to be filed for other work of the same day. */
+  drafts?: string[];
   /** The agent sessions behind the work. */
   sessions?: TicketWritingSession[];
   /** Never sent: auto mode names a stretch that carries it without asking the model. */
@@ -99,6 +103,8 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '`parents` is the issues a new ticket could roll up to. `issues` is open issues in the project, the',
   'ones closest to the work first, those under the epics this checkout works in marked `inEpic`, then the',
   "issues the user recently logged time on, done ones included. `parent` is the summary of an issue's parent.",
+  'An issue marked `sameDay` was already chosen for other work of the same day. `drafts`, where present, is',
+  'the summaries of new tickets already drafted for other work of the same day and waiting to be filed.',
   '`minutes` is absent when nothing measured how long the work took.',
   '',
   '`spec` is present when the work sits in a repository that holds a written specification: its',
@@ -156,6 +162,9 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '  a nuisance, and time logged on the wrong existing issue is worse. Choose only from `issues`. A',
   '  done issue the user logs time on is still a valid `existingKey`. Prefer an `inEpic` issue: those',
   '  are the open issues under the epics this checkout works in.',
+  '- One piece of work often runs through several stretches of a day. Where an issue marked `sameDay`',
+  '  is the same work, answer it as `existingKey` rather than drafting a new ticket. Where a summary in',
+  '  `drafts` names the same work, copy that summary word for word as `summary`, so one ticket covers both.',
   '- `existingReason` is one sentence that quotes the words of the branch, a note, the `call` or the',
   '  `standIn` name that match the summary of `existingKey`. Empty otherwise. Where no such words exist,',
   '  answer `existingKey` null: the ticket you write is then the answer.',
@@ -259,7 +268,11 @@ const asIssues = (options: { issues: readonly TicketCandidate[]; map: PseudonymM
     summary: maskNames({ text: issue.summary, map: options.map }),
     ...(issue.parentSummary ? { parent: maskNames({ text: issue.parentSummary, map: options.map }) } : {}),
     ...(issue.inEpic ? { inEpic: true as const } : {}),
+    ...(issue.sameDay ? { sameDay: true as const } : {}),
   }));
+
+const maskedDrafts = (options: { drafts: readonly string[] | undefined; map: PseudonymMap }) =>
+  options.drafts?.length ? { drafts: options.drafts.map((text) => maskNames({ text, map: options.map })) } : {};
 
 const masked = (options: { text: string | undefined; map: PseudonymMap }) =>
   options.text ? maskNames({ text: options.text, map: options.map }) : options.text;
@@ -328,6 +341,8 @@ export const ticketWritingRequest = (options: {
   maskedNames?: readonly string[];
   /** What the day's events say about the context beyond its notes, from `contextWorkFacts`. */
   facts?: WorkFacts;
+  /** The summaries of the creates already waiting for other work of the same day. */
+  drafts?: readonly string[];
 }): TicketWritingRequest => {
   const { repoPath, branch, appId } = options.context.context;
   const map = pseudonymMap(options.maskedNames ?? []);
@@ -342,6 +357,7 @@ export const ticketWritingRequest = (options: {
     ...(spec ? { spec } : {}),
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),
+    ...maskedDrafts({ drafts: options.drafts, map }),
     ...factsPayload({ facts: options.facts, map }),
   };
 };
@@ -370,6 +386,8 @@ export const standInWritingRequest = (options: {
   bookedDays?: ReadonlySet<string>;
   /** What the day's events say about the stand-in's bands beyond their notes, from `standInWorkFacts`. */
   facts?: WorkFacts;
+  /** The summaries of the creates already waiting for other work of the same day. */
+  drafts?: readonly string[];
 }): TicketWritingRequest => {
   const { standIn } = options;
   const map = pseudonymMap(options.maskedNames ?? []);
@@ -396,6 +414,7 @@ export const standInWritingRequest = (options: {
     ...(spec ? { spec } : {}),
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),
+    ...maskedDrafts({ drafts: options.drafts, map }),
     ...factsPayload({ facts: options.facts, map }),
   };
 };

@@ -8,6 +8,7 @@ import { strongMirrorMatchOf } from '../ticket/mirror-rank';
 import { maskIssueKey, pseudonymMap } from '../reason/pseudonym';
 import { StandInBand, contextHasTicketText, draftTicket, standInHasTicketText } from '../ticket/draft';
 import { WorkFacts } from '../ticket/work-facts';
+import { TicketCandidate } from '../ticket/match-candidates';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
 import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
@@ -152,21 +153,48 @@ export const approvalRowIdsOf = (options: {
 };
 
 /**
+ * Whether a create stays queued for the drafts that share it: a stored answer of a subject other than the
+ * one that queued it still points at it, and `closed` does not say that subject is done with.
+ */
+export const autoModeCreateStillShared = (
+  item: Pick<AgentApproval, 'id' | 'request' | 'target'>,
+  options: { answers?: readonly AutoModeAnswer[]; closed: (subject: AutoModeSubject) => boolean },
+) => {
+  if (item.request.op !== 'jira.create' || !options.answers) return false;
+
+  const owner = autoModeTargetOf(item.target);
+  const ownerKey = owner ? autoModeSubjectKey(owner.subject) : undefined;
+
+  return options.answers.some(
+    ({ subject, outcome }) =>
+      outcome.kind === 'draft' &&
+      outcome.approvalId === item.id &&
+      !outcome.createdKey &&
+      autoModeSubjectKey(subject) !== ownerKey &&
+      !options.closed(subject),
+  );
+};
+
+/**
  * Expires each waiting auto mode create for a stand-in that no longer waits: once it resolved, or was
  * removed, the drafted ticket would file work that already has an answer.
  */
 export const withStaleStandInCreatesExpired = (
   queue: readonly AgentApproval[],
-  standIns: readonly Pick<StandIn, 'id' | 'state'>[],
+  options: { standIns: readonly Pick<StandIn, 'id' | 'state'>[]; answers?: readonly AutoModeAnswer[] },
 ): AgentApproval[] => {
+  const { standIns, answers } = options;
   const open = new Set(standIns.filter((standIn) => standIn.state === 'open').map((standIn) => standIn.id));
+  const closed = (subject: AutoModeSubject) => subject.kind === 'stand-in' && !open.has(subject.standInId);
 
   return queue.map((item) => {
     if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.request.op !== 'jira.create') return item;
 
     const subject = subjectOfTarget(item.target, item.day);
 
-    return subject?.kind === 'stand-in' && !open.has(subject.standInId) ? { ...item, state: 'expired' } : item;
+    return subject && closed(subject) && !autoModeCreateStillShared(item, { answers, closed })
+      ? { ...item, state: 'expired' }
+      : item;
   });
 };
 
@@ -186,15 +214,21 @@ const applyApprovalOf = (options: { approvals: readonly ApprovalView[]; day: str
  */
 export const withAutoModeSubjectItemsExpired = (
   queue: readonly AgentApproval[],
-  options: { day: string; subject: AutoModeSubject },
+  options: { day: string; subject: AutoModeSubject; answers?: readonly AutoModeAnswer[] },
 ): AgentApproval[] => {
   const targets = new Set([
     autoModeApprovalTarget(options.day, options.subject),
     autoModeApplyTarget(options.day, options.subject),
   ]);
+  const askedKey = autoModeSubjectKey(options.subject);
+  const closed = (subject: AutoModeSubject) => autoModeSubjectKey(subject) === askedKey;
 
   return queue.map((item) =>
-    item.state === 'queued' && item.client === AUTO_MODE_CLIENT && item.target && targets.has(item.target)
+    item.state === 'queued' &&
+    item.client === AUTO_MODE_CLIENT &&
+    item.target &&
+    targets.has(item.target) &&
+    !autoModeCreateStillShared(item, { answers: options.answers, closed })
       ? { ...item, state: 'expired' }
       : item,
   );
@@ -206,18 +240,22 @@ export const withAutoModeSubjectItemsExpired = (
  */
 export const withNamedContextItemsExpired = (
   queue: readonly AgentApproval[],
-  options: { day: string; openContextIds: ReadonlySet<string> },
-): AgentApproval[] =>
-  queue.map((item) => {
+  options: { day: string; openContextIds: ReadonlySet<string>; answers?: readonly AutoModeAnswer[] },
+): AgentApproval[] => {
+  const closed = (subject: AutoModeSubject) =>
+    subject.kind === 'context' && !options.openContextIds.has(subject.contextId);
+
+  return queue.map((item) => {
     if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.day !== options.day) return item;
     if (item.request.op !== 'jira.create' && item.request.op !== 'autoMode.apply') return item;
 
     const subject = subjectOfTarget(item.target?.replace(/\|apply$/, ''), options.day);
 
-    return subject?.kind === 'context' && !options.openContextIds.has(subject.contextId)
+    return subject && closed(subject) && !autoModeCreateStillShared(item, { answers: options.answers, closed })
       ? { ...item, state: 'expired' }
       : item;
   });
+};
 
 type TextlessOptions = {
   day: string;
@@ -226,6 +264,7 @@ type TextlessOptions = {
   bands: readonly StandInBand[];
   unattributed: readonly WorkGroup[];
   config: GitFlowConfig;
+  answers?: readonly AutoModeAnswer[];
 };
 
 const isTextless = (subject: AutoModeSubject | null, options: TextlessOptions) => {
@@ -258,7 +297,11 @@ export const withTextlessSubjectItemsExpired = (
 
     const subject = subjectOfTarget(item.target?.replace(/\|apply$/, ''), options.day);
 
-    return isTextless(subject, options) ? { ...item, state: 'expired' } : item;
+    const closed = (entry: AutoModeSubject) => isTextless(entry, options);
+
+    return subject && closed(subject) && !autoModeCreateStillShared(item, { answers: options.answers, closed })
+      ? { ...item, state: 'expired' }
+      : item;
   });
 
 /** The payload an ask about a subject sends. `null` for a context or stand-in the day no longer holds. */
@@ -275,13 +318,15 @@ export const autoModeSubjectRequest = (options: {
   config: GitFlowConfig;
   maskedNames: readonly string[];
   parents?: readonly JiraIssue[];
-  issues?: readonly JiraIssue[];
+  issues?: readonly TicketCandidate[];
   /** The days Tempo already holds, which a stand-in's request does not count. */
   bookedDays?: ReadonlySet<string>;
   /** What the day's events say about each subject beyond its notes, by `autoModeSubjectKey`. */
   workFacts?: ReadonlyMap<string, WorkFacts>;
   /** The call a `call` subject asks about, with the excerpt of its transcript where one may be sent. */
   call?: { label: string; observedMs: number; transcript?: string };
+  /** The summaries of the creates already waiting for other subjects of the day, from `autoModeSameDayChoices`. */
+  drafts?: readonly string[];
 }): TicketWritingRequest | null => {
   const { subject, maskedNames } = options;
   const jira = { parents: options.parents ?? [], issues: options.issues ?? [] };
@@ -301,6 +346,7 @@ export const autoModeSubjectRequest = (options: {
           maskedNames,
           bookedDays: options.bookedDays,
           facts,
+          ...(options.drafts ? { drafts: options.drafts } : {}),
           ...jira,
         })
       : null;
@@ -312,7 +358,14 @@ export const autoModeSubjectRequest = (options: {
 
   const { notes } = draftTicket({ context, unattributed: options.unattributed, config: options.config });
 
-  return ticketWritingRequest({ context, notes, maskedNames, facts, ...jira });
+  return ticketWritingRequest({
+    context,
+    notes,
+    maskedNames,
+    facts,
+    ...(options.drafts ? { drafts: options.drafts } : {}),
+    ...jira,
+  });
 };
 
 /**
@@ -820,6 +873,128 @@ export const autoModeQueuedAnswer = (
       approvalId: approval.id,
     },
   };
+};
+
+/** How alike two draft summaries must be to file one ticket: the Jaccard index of their words of three letters or more. */
+export const AUTO_MODE_SAME_SUMMARY_JACCARD = 0.6;
+
+const summaryText = (summary: string) =>
+  summary
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+
+const summaryWords = (summary: string) =>
+  new Set(
+    summaryText(summary)
+      .split(' ')
+      .filter((word) => [...word].length >= 3),
+  );
+
+/** Whether two draft summaries name the same ticket: equal but for case, spacing and punctuation, or nearly equal. */
+export const sameDraftSummary = (left: string, right: string) => {
+  const text = summaryText(left);
+
+  if (text && text === summaryText(right)) return true;
+
+  const leftWords = summaryWords(left);
+  const rightWords = summaryWords(right);
+  const shared = [...leftWords].filter((word) => rightWords.has(word)).length;
+  const union = leftWords.size + rightWords.size - shared;
+
+  return union > 0 && shared / union >= AUTO_MODE_SAME_SUMMARY_JACCARD;
+};
+
+type DayCreateView = Pick<AgentApproval, 'id' | 'state' | 'day' | 'target' | 'request' | 'result'>;
+
+const dayCreatesOf = <T extends DayCreateView>(
+  approvals: readonly T[],
+  options: { day: string; subject: AutoModeSubject },
+) => {
+  const own = autoModeApprovalTarget(options.day, options.subject);
+
+  return approvals.filter(
+    (item) =>
+      item.request.op === 'jira.create' &&
+      (item.state === 'queued' || item.state === 'running' || item.state === 'approved') &&
+      (autoModeTargetOf(item.target)?.day ?? item.day) === options.day &&
+      item.target !== own,
+  );
+};
+
+/**
+ * The create of `day` a draft points at instead of queuing its own: one of another subject, waiting or
+ * approved, in the same project, whose summary is the same or nearly. One approval then files one ticket
+ * for every draft that points at it. `undefined` where none fits or the answer queues no create.
+ */
+export const autoModeSharedCreate = <T extends DayCreateView>(options: {
+  day: string;
+  answer: AutoModeAnswer;
+  approvals: readonly T[];
+}): T | undefined => {
+  const create = autoModeCreateRequest(options.answer);
+
+  if (!create) return undefined;
+
+  return dayCreatesOf(options.approvals, { day: options.day, subject: options.answer.subject }).find(
+    ({ request }) =>
+      request.op === 'jira.create' &&
+      request.projectKey === create.projectKey &&
+      sameDraftSummary(request.summary, create.summary),
+  );
+};
+
+/**
+ * What auto mode already chose for the other subjects of `day`, offered to the next ask so it picks one
+ * rather than drafting the same work again: the issues it matched or filed, marked `sameDay`, and the
+ * summaries of the creates still waiting.
+ */
+export const autoModeSameDayChoices = (options: {
+  day: string;
+  subject: AutoModeSubject;
+  answers: readonly AutoModeAnswer[];
+  approvals: readonly DayCreateView[];
+}): { issues: TicketCandidate[]; drafts: string[] } => {
+  const ownKey = autoModeSubjectKey(options.subject);
+  const creates = dayCreatesOf(options.approvals, options);
+  const named = options.answers.flatMap(({ subject, outcome }) => {
+    if (autoModeSubjectKey(subject) === ownKey) return [];
+    if (outcome.kind === 'match' && !outcome.gone && outcome.summary) {
+      return [{ key: outcome.issueKey, summary: outcome.summary }];
+    }
+
+    return outcome.kind === 'draft' && outcome.createdKey
+      ? [{ key: outcome.createdKey, summary: outcome.summary }]
+      : [];
+  });
+  const filed = creates.flatMap(({ state, request, result }) => {
+    const key = state === 'approved' ? createdIssueKeyOf(result) : undefined;
+
+    return key && request.op === 'jira.create' ? [{ key, summary: request.summary }] : [];
+  });
+  const issues = [...new Map([...filed, ...named].map((issue) => [issue.key, issue])).values()].map(
+    (issue): TicketCandidate => ({ ...issue, id: '', issueType: '', sameDay: true }),
+  );
+  const drafts = creates.flatMap(({ state, request }) =>
+    state !== 'approved' && request.op === 'jira.create' ? [request.summary] : [],
+  );
+
+  return { issues, drafts: [...new Set(drafts)] };
+};
+
+/** The issues an ask may name, with the day's own choices marked `sameDay` and put first. */
+export const withSameDayCandidates = (
+  candidates: readonly TicketCandidate[],
+  sameDay: readonly TicketCandidate[],
+): TicketCandidate[] => {
+  const keyOf = (issue: TicketCandidate) => issue.key.toUpperCase();
+  const keys = new Set(sameDay.map(keyOf));
+  const marked = sameDay.map((issue): TicketCandidate => ({
+    ...(candidates.find((candidate) => keyOf(candidate) === keyOf(issue)) ?? issue),
+    sameDay: true,
+  }));
+
+  return [...marked, ...candidates.filter((candidate) => !keys.has(keyOf(candidate)))];
 };
 
 /**

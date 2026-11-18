@@ -2,7 +2,7 @@ import { DEFAULT_OPEN_ISSUE_LIMIT } from '../jira/candidates';
 import { JiraIssue } from '../jira/issue';
 
 /** An issue the work could already be. `inEpic` marks an open child of an epic the checkout works in. */
-export type TicketCandidate = JiraIssue & { inEpic?: true };
+export type TicketCandidate = JiraIssue & { inEpic?: true; sameDay?: true };
 
 const keyOf = (issue: JiraIssue) => issue.key.toUpperCase();
 

@@ -39,6 +39,8 @@ import {
   autoModeHideTarget,
   autoModeKeyInEvidence,
   autoModeQueuedAnswer,
+  autoModeSameDayChoices,
+  autoModeSharedCreate,
   autoModeSentTranscript,
   autoModeReadout,
   autoModeReaskSubjectOf,
@@ -93,6 +95,7 @@ import {
   autoModeWorkFacts,
   WorkFacts,
   withAutoModeCreated,
+  withSameDayCandidates,
   withAutoModeDescription,
   writeTicketWithAgent$,
   writeWorklogWithAgent$,
@@ -640,6 +643,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     issues: ProjectIssues | null;
     candidates: readonly TicketCandidate[];
     call?: { label: string; observedMs: number; transcript?: string };
+    drafts?: readonly string[];
   }) => {
     const { subject, evidence, issues, candidates } = options;
     const current = settings.settings();
@@ -659,6 +663,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       bookedDays: standInStore.bookedDays(),
       workFacts: evidence?.workFacts,
       ...(options.call ? { call: options.call } : {}),
+      ...(options.drafts?.length ? { drafts: options.drafts } : {}),
     });
   };
 
@@ -742,7 +747,12 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
-  const prepare$ = (subject: AutoModeSubject, evidence: AskEvidence): Observable<Prepared | null> => {
+  const prepare$ = (
+    subject: AutoModeSubject,
+    options: { evidence: AskEvidence; sameDay: { issues: readonly TicketCandidate[]; drafts: readonly string[] } },
+  ): Observable<Prepared | null> => {
+    const { evidence, sameDay } = options;
+
     if (subject.kind === 'call') return prepareCall$(subject.rowId, evidence);
 
     const bare = requestOf({ subject, evidence, issues: null, candidates: [] });
@@ -758,8 +768,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       text: ticketRequestText(bare),
     }).pipe(
       map((issues) => {
-        const candidates = issues ? matchCandidatesOf(issues) : [];
-        const request = requestOf({ subject, evidence, issues, candidates });
+        const candidates = withSameDayCandidates(issues ? matchCandidatesOf(issues) : [], sameDay.issues);
+        const request = requestOf({ subject, evidence, issues, candidates, drafts: sameDay.drafts });
 
         const facts = evidence?.workFacts?.get(autoModeSubjectKey(subject));
 
@@ -784,6 +794,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const create = autoModeCreateRequest(answer);
 
     if (!create?.projectKey) return of(answer);
+
+    const shared = autoModeSharedCreate({ day, answer, approvals: approvals.items() });
+
+    if (shared) return of(autoModeQueuedAnswer(answer, shared));
 
     return approvals
       .enqueue$({ request: create, client: AUTO_MODE_CLIENT, target: autoModeApprovalTarget(day, answer.subject) })
@@ -887,7 +901,14 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const answer$ = (ask: Ask): Observable<string | void> =>
     ask.evidence$.pipe(
       take(1),
-      switchMap((evidence) => prepare$(ask.subject, evidence)),
+      switchMap((evidence) =>
+        heldAnswers$(ask.day).pipe(
+          map((answers) =>
+            autoModeSameDayChoices({ day: ask.day, subject: ask.subject, answers, approvals: approvals.items() }),
+          ),
+          switchMap((sameDay) => prepare$(ask.subject, { evidence, sameDay })),
+        ),
+      ),
       switchMap((prepared) => {
         if (!prepared) return EMPTY;
 
@@ -924,7 +945,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             const key = autoModeSubjectKey(ask.subject);
 
             if (held.some((entry) => autoModeSubjectKey(entry.subject) === key)) {
-              approvals.revise((queue) => withAutoModeSubjectItemsExpired(queue, ask));
+              approvals.revise((queue) => withAutoModeSubjectItemsExpired(queue, { ...ask, answers: held }));
             }
           }),
           map((held) => {
@@ -1342,9 +1363,16 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .subscribe();
 
   effect(() => {
-    const day = dayReview.dayKey();
+    const answers = dayReview.autoAnswers();
 
-    if (!approvals.isLoaded() || !dayReview.autoAnswers() || dayReview.isLoading()) return;
+    if (answers && dayReview.dayKey() === today()) untracked(() => approvals.shareAnswers(answers));
+  });
+
+  effect(() => {
+    const day = dayReview.dayKey();
+    const answers = dayReview.autoAnswers();
+
+    if (!approvals.isLoaded() || !answers || dayReview.isLoading()) return;
     if (!dayReview.deterministic() || !dayReview.namingSettled()) return;
 
     const ruled = dayReview.rulesByContext();
@@ -1364,13 +1392,17 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       bands: dayReview.rows(),
       unattributed: dayReview.deterministic()?.unattributed ?? [],
       config: gitFlowConfigFor(current),
+      answers,
     };
 
     untracked(() =>
       approvals.revise((queue) =>
         withUnnamedSubjectItemsExpired(
-          withTextlessSubjectItemsExpired(withNamedContextItemsExpired(queue, { day, openContextIds }), textless),
-          { day, workFacts },
+          withTextlessSubjectItemsExpired(
+            withNamedContextItemsExpired(queue, { day, openContextIds, answers }),
+            textless,
+          ),
+          { day, workFacts, answers },
         ),
       ),
     );

@@ -92,25 +92,31 @@ describe('settleApprovalQueue', () => {
 });
 
 describe('approvableByAll', () => {
-  it('skips every human-only item', () => {
-    const queue = queueOf(CREATE, SYNC, { op: 'standIn.rename', id: 's1', name: 'x' });
+  const RENAME: AgentApiRequest = { op: 'standIn.rename', id: 's1', name: 'x' };
 
-    expect(approvableByAll(queue).map((item) => item.request.op)).toEqual(['jira.create', 'standIn.rename']);
+  it('skips every human-only item', () => {
+    const queue = queueOf(RENAME, SYNC, RENAME);
+
+    expect(approvableByAll(queue).map((item) => item.id)).toEqual(['a0', 'a2']);
   });
 
-  it('skips an item the user made human-only, and an auto mode create by its own class', () => {
+  it('never includes a Jira create, from the CLI or from auto mode', () => {
     const queue = [
-      ...queueOf(CREATE, { op: 'standIn.rename', id: 's1', name: 'x' }),
+      ...queueOf(CREATE, RENAME),
       ...enqueueApproval([], { id: 'a9', request: CREATE, client: 'auto mode', at: AT, day: '2026-09-28' }),
     ];
 
-    expect(approvableByAll(queue, { 'standIn.rename': 'human-only' }).map((item) => item.id)).toEqual(['a0', 'a9']);
-    expect(approvableByAll(queue, { 'jira.create': 'human-only' }).map((item) => item.id)).toEqual(['a1', 'a9']);
-    expect(approvableByAll(queue, { 'autoMode.create': 'human-only' }).map((item) => item.id)).toEqual(['a0', 'a1']);
+    expect(approvableByAll(queue).map((item) => item.id)).toEqual(['a1']);
+  });
+
+  it('skips an item the user made human-only', () => {
+    const queue = queueOf(RENAME, { op: 'standIn.remove', id: 's2' }, RENAME);
+
+    expect(approvableByAll(queue, { 'standIn.rename': 'human-only' }).map((item) => item.id)).toEqual([]);
   });
 
   it('skips an item that is no longer waiting', () => {
-    const queue = markApproval(queueOf(CREATE), { id: 'a0', state: 'running' });
+    const queue = markApproval(queueOf(RENAME), { id: 'a0', state: 'running' });
 
     expect(approvableByAll(queue)).toEqual([]);
   });

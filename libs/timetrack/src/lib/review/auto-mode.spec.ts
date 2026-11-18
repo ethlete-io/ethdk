@@ -30,6 +30,10 @@ import {
   autoModeCreatedKeys,
   autoModeQueuedAnswer,
   autoModeReaskSubjectOf,
+  autoModeSameDayChoices,
+  autoModeSharedCreate,
+  sameDraftSummary,
+  withSameDayCandidates,
   withAutoModeAnswer,
   withAutoModeCreated,
   withAutoModeRowNames,
@@ -860,6 +864,182 @@ describe('autoModeCreatedKeys', () => {
   });
 });
 
+describe('sameDraftSummary', () => {
+  it('reads two summaries that differ only in case, spacing and punctuation as one', () => {
+    expect(sameDraftSummary('Angular-22-Update fortsetzen', 'angular 22 update,  fortsetzen!')).toBe(true);
+  });
+
+  it('reads two summaries with most of their words in common as one', () => {
+    expect(
+      sameDraftSummary(
+        'Ethlete-Übergabe nach dem Angular-22-Update fortsetzen',
+        'Ethlete-Übergabe nach dem Angular-22-Update abschließen',
+      ),
+    ).toBe(true);
+    expect(sameDraftSummary('Export the month as PDF', 'Import the week from CSV')).toBe(false);
+  });
+});
+
+describe('autoModeSharedCreate', () => {
+  const other: AutoModeSubject = { kind: 'context', contextId: 'other-context' };
+  const createOf = (options: { id: string; summary: string; projectKey?: string; subject?: AutoModeSubject }) =>
+    enqueueApproval([], {
+      id: options.id,
+      request: {
+        op: 'jira.create',
+        summary: options.summary,
+        description: '',
+        ...(options.projectKey === undefined ? { projectKey: 'ABC' } : { projectKey: options.projectKey }),
+      },
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApprovalTarget(TODAY, options.subject ?? other),
+      at: at('09:00'),
+      day: TODAY,
+    });
+
+  it('points a draft at the waiting create of the day with nearly the same summary', () => {
+    const approvals = [
+      ...createOf({ id: 'a-0', summary: 'Import CSV' }),
+      ...createOf({ id: 'a-1', summary: 'export the month!' }),
+    ];
+
+    expect(autoModeSharedCreate({ day: TODAY, answer: drafted, approvals })?.id).toBe('a-1');
+  });
+
+  it('points a draft at an approved create, so the ticket it filed names the draft too', () => {
+    const approvals = markApproval(createOf({ id: 'a-1', summary: 'Export the month' }), {
+      id: 'a-1',
+      state: 'approved',
+      result: { issue: { key: 'ABC-12', id: '1' } },
+    });
+    const shared = autoModeSharedCreate({ day: TODAY, answer: drafted, approvals });
+    const answer = autoModeQueuedAnswer(drafted, shared!);
+
+    expect(autoModeCreatedKeys({ answers: [answer], approvals })).toEqual([
+      { answer, approvalId: 'a-1', issueKey: 'ABC-12' },
+    ]);
+  });
+
+  it('queues its own create for other work, another project, another day or a rejected create', () => {
+    const approvals = [
+      ...createOf({ id: 'a-1', summary: 'Rework the invoice layout' }),
+      ...createOf({ id: 'a-2', summary: 'Export the month', projectKey: 'XYZ' }),
+      ...markApproval(createOf({ id: 'a-3', summary: 'Export the month' }), { id: 'a-3', state: 'rejected' }),
+      ...enqueueApproval([], {
+        id: 'a-4',
+        request: { op: 'jira.create', summary: 'Export the month', description: '', projectKey: 'ABC' },
+        client: AUTO_MODE_CLIENT,
+        target: autoModeApprovalTarget('2026-08-10', other),
+        at: at('09:00'),
+        day: TODAY,
+      }),
+    ];
+
+    expect(autoModeSharedCreate({ day: TODAY, answer: drafted, approvals })).toBeUndefined();
+  });
+});
+
+describe('a create two subjects share', () => {
+  const second: AutoModeSubject = { kind: 'context', contextId: 'second-context' };
+  const queue = enqueueApproval([], {
+    id: 'a-1',
+    request: { op: 'jira.create', summary: 'Export the month', description: '', projectKey: 'ABC' },
+    client: AUTO_MODE_CLIENT,
+    target: autoModeApprovalTarget(TODAY, drafted.subject),
+    at: at('09:00'),
+    day: TODAY,
+  });
+  const sharer: AutoModeAnswer = {
+    ...drafted,
+    subject: second,
+    outcome: { ...drafted.outcome, approvalId: 'a-1' } as AutoModeAnswer['outcome'],
+  };
+  const answers = [{ ...drafted, outcome: { ...drafted.outcome, approvalId: 'a-1' } } as AutoModeAnswer, sharer];
+
+  it('stays queued when the subject that queued it is asked again', () => {
+    const revised = withAutoModeSubjectItemsExpired(queue, { day: TODAY, subject: drafted.subject, answers });
+
+    expect(revised.map((item) => item.state)).toEqual(['queued']);
+    expect(sharer.outcome.kind === 'draft' && sharer.outcome.approvalId).toBe(revised[0]?.id);
+  });
+
+  it('stays queued while the sharing context is open, and expires once it is named too', () => {
+    const openContextIds = new Set([second.kind === 'context' ? second.contextId : '']);
+
+    expect(withNamedContextItemsExpired(queue, { day: TODAY, openContextIds, answers })[0]?.state).toBe('queued');
+    expect(withNamedContextItemsExpired(queue, { day: TODAY, openContextIds: new Set(), answers })[0]?.state).toBe(
+      'expired',
+    );
+  });
+
+  it('expires once no other answer points at it', () => {
+    expect(
+      withAutoModeSubjectItemsExpired(queue, { day: TODAY, subject: drafted.subject, answers: [answers[0]!] })[0]
+        ?.state,
+    ).toBe('expired');
+  });
+});
+
+describe('autoModeSameDayChoices', () => {
+  const other = (contextId: string, outcome: AutoModeAnswer['outcome']): AutoModeAnswer => ({
+    subject: { kind: 'context', contextId },
+    askedAtMs: 0,
+    request: REQUEST,
+    outcome,
+  });
+
+  it('offers the issues other subjects of the day were named with, and the creates still waiting', () => {
+    const answers = [
+      other('c-1', { kind: 'match', issueKey: 'ABC-7', summary: 'Update Angular' }),
+      other('c-2', { kind: 'draft', summary: 'Month export', description: '', createdKey: 'ABC-12' }),
+      { ...matched('ABC-1'), outcome: { kind: 'match' as const, issueKey: 'ABC-1', summary: 'Own answer' } },
+    ];
+    const approvals = enqueueApproval([], {
+      id: 'a-1',
+      request: { op: 'jira.create', summary: 'Invoice layout', description: '', projectKey: 'ABC' },
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApprovalTarget(TODAY, { kind: 'context', contextId: 'c-3' }),
+      at: at('09:00'),
+      day: TODAY,
+    });
+
+    const choices = autoModeSameDayChoices({ day: TODAY, subject: drafted.subject, answers, approvals });
+
+    expect(choices.issues.map((issue) => [issue.key, issue.sameDay])).toEqual([
+      ['ABC-7', true],
+      ['ABC-12', true],
+    ]);
+    expect(choices.drafts).toEqual(['Invoice layout']);
+  });
+
+  it('marks an offered issue the day already chose and puts it first', () => {
+    const candidates = [
+      { key: 'ABC-1', id: '1', summary: 'One', issueType: 'Task' },
+      { key: 'ABC-7', id: '7', summary: 'Update Angular', issueType: 'Task', inEpic: true as const },
+    ];
+
+    expect(
+      withSameDayCandidates(candidates, [{ key: 'abc-7', id: '', summary: 'Update Angular', issueType: '' }]),
+    ).toEqual([{ ...candidates[1], sameDay: true }, candidates[0]]);
+  });
+
+  it('sends the waiting summaries and the same-day mark with the ask', () => {
+    const request = autoModeSubjectRequest({
+      subject: drafted.subject,
+      contexts: [CONTEXT],
+      unattributed: [GROUP],
+      standIns: [],
+      config: resolveGitFlowConfig({}),
+      maskedNames: [],
+      issues: [{ key: 'ABC-7', id: '', summary: 'Update Angular', issueType: '', sameDay: true }],
+      drafts: ['Invoice layout'],
+    });
+
+    expect(request?.issues).toEqual([{ key: 'ABC-7', summary: 'Update Angular', sameDay: true }]);
+    expect(request?.drafts).toEqual(['Invoice layout']);
+  });
+});
+
 const queuedApply = (answer: AutoModeAnswer, label = 'shop · feature/export'): AgentApproval[] => {
   const request = autoModeApplyRequest({
     day: TODAY,
@@ -1425,7 +1605,7 @@ describe('withStaleStandInCreatesExpired', () => {
   const forStandIn = queued({ id: 'a', target: autoModeApprovalTarget(TODAY, { kind: 'stand-in', standInId: 's1' }) });
 
   it('expires the create waiting for a stand-in that resolved', () => {
-    const [item] = withStaleStandInCreatesExpired([forStandIn], [{ id: 's1', state: 'resolved' }]);
+    const [item] = withStaleStandInCreatesExpired([forStandIn], { standIns: [{ id: 's1', state: 'resolved' }] });
 
     expect(item?.state).toBe('expired');
   });
@@ -1433,12 +1613,12 @@ describe('withStaleStandInCreatesExpired', () => {
   it('leaves one for an open stand-in, a context, or another client alone', () => {
     const forContext = queued({ id: 'b', target: autoModeApprovalTarget(TODAY, { kind: 'context', contextId: 'c' }) });
     const fromCli = queued({ id: 'c', target: forStandIn.target ?? '', client: 'Claude Code' });
-    const states = withStaleStandInCreatesExpired([forStandIn, forContext, fromCli], [{ id: 's1', state: 'open' }]).map(
-      (item) => item.state,
-    );
+    const states = withStaleStandInCreatesExpired([forStandIn, forContext, fromCli], {
+      standIns: [{ id: 's1', state: 'open' }],
+    }).map((item) => item.state);
 
     expect(states).toEqual(['queued', 'queued', 'queued']);
-    expect(withStaleStandInCreatesExpired([fromCli], [])[0]?.state).toBe('queued');
+    expect(withStaleStandInCreatesExpired([fromCli], { standIns: [] })[0]?.state).toBe('queued');
   });
 });
 
