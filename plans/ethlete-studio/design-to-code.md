@@ -2174,7 +2174,8 @@ it is gone once targets arrive. Done before: f1307c562 (2026-11-04) lists the ta
 folding was missing then, not regressed: it landed 2026-11-04 in b9367d285 (b879f640e, cited for finding 77, only names
 the merged states in a new state's Aktuell cell). `sketch round --asks` and the ~2 % pair refusal were decided
 (78681ea6a) but never built: no commit touches it (`git log -S asks` in libs/cli); a8768fc01 (2026-11-12) added a
-look-alike warning at fit zoom instead. (2) Done before: d678615cc and 8157f707a (2026-11-02) refuse ready on a variant
+look-alike warning at fit zoom instead. Now built: commit `feat(cli): Refuse sketch variants that look alike in the states a round asks`, see
+"As built (sketch round --asks)". (2) Done before: d678615cc and 8157f707a (2026-11-02) refuse ready on a variant
 that draws like Aktuell or another variant in every state it declares; identical-renders.spec "names every variant when
 all of them draw like the product". B261's variants differed in `failed`, so it rightly did not fire. (3) Open, now
 built: with the unchanged states folded and only a variant-added state shown, the Aktuell row drew no stage at all
@@ -2238,6 +2239,34 @@ record has no `builder`, and `design check` in the copy drops the mark instead o
 embedders fail. Suspect: the UNRECORDED records in implemented.json (no file lists, untouched by this slice) make
 every embedder of the three developer parts fail, so none of them can hold a fresh record. The sketch variants were
 viewed only on the contact sheet, not in Studio's sketch view.
+
+## As built (sketch round --asks)
+
+Decision 78681ea6a (2026-11-02). Commit `feat(cli): Refuse sketch variants that look alike in the states a round asks`.
+
+- `SketchRound.asks` in `sketch.json`; set by `sketch round <target> <round> --asks <state,state>`, `sketch new --asks`
+  and `sketch variant --round … --asks` (MCP `sketch_round`/`sketch_new`/`sketch_variant` take `asks`). Absent, a round
+  asks in the states its variants draw that Aktuell lacks; when there are none (no notion of "states a round added"
+  exists, so this stands in for it), in the states where one of its variants draws differently from Aktuell.
+- `alikePairLinesOf` in `look-alike.ts`, called from `sketchRendersOf`: per round, every pair of live variants of that
+  round (pairs across rounds are not compared), in each asked state, counts the pixels that differ by `VISIBLE_STEP`
+  at 100 % inside the union of the `boxOf` boxes; under 2 % of the frame area in any asked state refuses, naming the
+  state with the smallest share. A pair the exact-equality refusal already names is left out. `sketch ready` (via
+  `identicalRenderLines`) and `sketch check` (`sketchRenderLines`) both refuse on it; edit sketches and `sketch
+withdraw` do not use it. Exact-equality refusals and the fit-zoom warning stay.
+- Variant-note region: not built. The tool draws no variant note on a shot (notes live in `sketch.json` and Studio's
+  UI); the note text of 78681ea6a was drawn by the variants themselves, so there is no region to ignore.
+
+Rule run (2026-11-18, `yarn et:design --working-tree sketch check` on each open sketch; decided ones not re-gated:
+studio-lab `components/card`, `elements/rating`): studio-lab `components/button` (r1, no `asks`) passes. studio
+`pages/system` (r1, ready, no pick) is now refused: in the added state `developer-part-blocked` a and b differ by 0 px,
+a and c and b and c by 22 px (0.0 %). It is not exempted; the next `sketch ready` of it refuses until the variants
+differ there or the round names other `--asks` states.
+
+Verified: look-alike.spec "sketchRendersOf alike pairs" (under 2 % refused, over 2 % passes, default asks the added
+state, `asks` replaces it, identical pairs left to that refusal; the two refusal cases red with the share set to 0),
+sketch.spec "keeps the states a round asks its question in"; `vitest related` in libs/cli (192 files), lint, typecheck.
+Not verified: a live `sketch ready` refusal (only `sketch check`'s "ready will refuse" lines were run).
 
 ## As built (B251a)
 

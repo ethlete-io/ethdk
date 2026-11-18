@@ -594,6 +594,14 @@ refuse a change that leaves an implemented part uncompared and name the parts.
 `FIXED <part> <state>` line per state that failed at `<rev>` only. The exit code stays that of HEAD. A checkout with a
 missing lib build folder (`dist/libs/<name>`) refuses every compare with one line naming the build command.
 
+A sketch round names the states it asks its question in with `--asks <state,state>` on `sketch round`, `sketch new`
+or `sketch variant --round`; `sketch.json` keeps them on the round. Without it a round asks in the states its variants
+draw and the part lacks, else in the states one of its variants changes. `sketch ready` and `sketch check` compare every
+pair of live variants of a round in each asked state and refuse a pair whose visibly different pixels (a step of 32 in
+one channel) cover less than 2 % of the frame:
+`<target>: variants g and h look alike in zoom-7 (<n> px, <p> % of the frame, under 2 %) - draw the difference larger or name other --asks states`.
+A pair that draws the same pixels in every state gets the identical-variant refusal instead.
+
 `compare`, `shot` (but `--asset`), `check --product`/`--part` (but `--rules`, `--live`, `--slow`
 and the other checks that draw nothing), `sketch check` and `sketch ready` run in a resident design process of the
 checkout. The first such call starts it detached and prints `starting the resident design process (cold start, ~N s)`;

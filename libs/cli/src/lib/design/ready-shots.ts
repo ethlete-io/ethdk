@@ -103,9 +103,29 @@ export const aktuellPlaceholderWarnings = async (options: SketchShots): Promise<
   }
 };
 
-/** Shoots the sketch on a render server; one line per live variant that adds nothing visible, see `identicalRenderLinesOf`. */
-export const identicalRenderLines = async (options: SketchShots): Promise<string[]> =>
-  (await identicalRenders(options)).map((render) => render.line);
+/**
+ * Shoots the sketch on a render server; one line per live variant that adds nothing visible, see
+ * `identicalRenderLinesOf`, and one per pair of variants that look alike in a state their round asks, see `alikePairLinesOf`.
+ */
+export const identicalRenderLines = async (options: SketchShots): Promise<string[]> => {
+  try {
+    const renders = await drawingOn(options, (drawing) => {
+      const shooter = shooterOf(options, drawing);
+
+      return sketchRendersOf({
+        product: options.product,
+        sketch: options.sketch,
+        pictureOf: shooter.pictureOf,
+        boxOf: shooter.changedBoxesOf,
+        load: loaderOf(drawing.server),
+      });
+    });
+
+    return [...renders.identical.map((render) => render.line), ...renders.alike];
+  } catch (error) {
+    return [couldNotRender(options.sketch, error)];
+  }
+};
 
 /** Shoots the sketch like `identicalRenderLines`, and says which sibling each named variant draws like. */
 export const identicalRenders = async (options: SketchShots): Promise<IdenticalRender[]> => {
@@ -143,7 +163,10 @@ export const sketchRenderLines = async (options: SketchShots): Promise<{ refusal
       });
     });
 
-    return { refusals: renders.identical.map((render) => render.line), warnings: renders.lookAlike };
+    return {
+      refusals: [...renders.identical.map((render) => render.line), ...renders.alike],
+      warnings: renders.lookAlike,
+    };
   } catch (error) {
     return { refusals: [couldNotRender(options.sketch, error)], warnings: [] };
   }

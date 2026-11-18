@@ -3,7 +3,7 @@ import { PictureOf } from '../../merge-compare';
 import { DRAWS_AT_ONCE } from '../../thumb';
 import { BoxOf } from '../../variant-diff';
 import { inOrderAtOnce } from '../in-order-at-once';
-import { lookAlikeWarningsOf } from './look-alike';
+import { alikePairLinesOf, lookAlikeWarningsOf } from './look-alike';
 import { readPartModule } from '../list-system';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
@@ -161,8 +161,8 @@ export const identicalRendersOf = async (options: Omit<Parameters<typeof sketchR
   (await sketchRendersOf(options)).identical;
 
 /**
- * The variants `identicalRendersOf` names and, with `lookAlike`, the warnings of `lookAlikeWarningsOf` for each target,
- * from one shot of each state.
+ * The variants `identicalRendersOf` names, the refusals of `alikePairLinesOf` for the pairs not named there and, with
+ * `lookAlike`, the warnings of `lookAlikeWarningsOf` for each target, from one shot of each state.
  */
 export const sketchRendersOf = async (options: {
   product: ResolvedProduct;
@@ -172,9 +172,10 @@ export const sketchRendersOf = async (options: {
   boxOf: BoxOf;
   lookAlike?: boolean;
   listWidth?: number;
-}): Promise<{ identical: IdenticalRender[]; lookAlike: string[] }> => {
+}): Promise<{ identical: IdenticalRender[]; lookAlike: string[]; alike: string[] }> => {
   const { product, sketch, load, pictureOf, boxOf } = options;
   const lookAlike: string[] = [];
+  const alike: string[] = [];
   const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
   const found: IdenticalRender[] = [];
 
@@ -207,9 +208,28 @@ export const sketchRendersOf = async (options: {
         })),
       );
 
-    for (const render of await refusalsOf({ variants, current, of, target: sketch.target, boxOf }))
-      found.push({ ...render, line: `${sketch.target} ${render.line}` });
+    const refusals = await refusalsOf({ variants, current, of, target: sketch.target, boxOf });
+
+    for (const render of refusals) found.push({ ...render, line: `${sketch.target} ${render.line}` });
+
+    alike.push(
+      ...(await alikePairLinesOf({
+        target: `${sketch.target}${of}`,
+        rounds: sketch.rounds.map((round) => ({
+          asks: round.asks,
+          variants: variants.filter((drawn) => sketch.variantInfo[drawn.name]?.round === round.key),
+        })),
+        current,
+        boxOf,
+        twins: (one, other) =>
+          refusals.some(
+            (render) =>
+              (render.variant === one && render.sibling === other) ||
+              (render.variant === other && render.sibling === one),
+          ),
+      })),
+    );
   }
 
-  return { identical: found, lookAlike };
+  return { identical: found, lookAlike, alike };
 };

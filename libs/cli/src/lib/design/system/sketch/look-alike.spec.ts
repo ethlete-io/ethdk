@@ -9,7 +9,7 @@ import { decodePng, encodePng } from '../part-compare';
 import { resolveProduct } from '../resolve-product';
 import { sketchRendersOf } from './identical-renders';
 import { studioFitZoomOf } from './look-alike';
-import { createSketch, Sketch } from './sketch';
+import { createSketch, editRound, Sketch } from './sketch';
 import { SketchPartLoader } from './unchanged-states';
 
 const WIDTH = 1440;
@@ -142,6 +142,65 @@ describe('sketchRendersOf look-alike warnings', () => {
     const pictureOf = drawing({ a: fineEven, b: fineOdd });
 
     expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf })).lookAlike).toEqual([]);
+  });
+});
+
+describe('sketchRendersOf alike pairs', () => {
+  const block = pngOf((x, y) => x < 20 && y >= 20 && y < 100);
+  const wide = pngOf((x, y) => x < 60 && y >= 20 && y < 100);
+  const twoStates =
+    (variantStates: string[]): SketchPartLoader =>
+    async ({ sketch }) => ({
+      default: {
+        note: 'n',
+        states: Object.fromEntries((sketch ? variantStates : ['default']).map((state) => [state, {}])),
+        render: () => ({ body: '', styles: '' }),
+      },
+    });
+  const byState =
+    (shots: Record<string, Buffer>): PictureOf =>
+    async ({ sketch, state }) => ({
+      png: shots[`${sketch?.variant ?? 'now'}:${state}`] ?? blank,
+      marks: [],
+    });
+
+  it('refuses two variants that differ by under 2 % of the frame in a state the round changed', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({ a: block, b: blank });
+
+    expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf })).alike).toEqual([
+      'elements/hero: variants a and b look alike in default (1600 px, 0.9 % of the frame, under 2 %) - draw the difference larger or name other --asks states',
+    ]);
+  });
+
+  it('passes two variants that differ by over 2 % of the frame', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({ a: wide, b: blank });
+
+    expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf })).alike).toEqual([]);
+  });
+
+  it('asks in the states the variants add by default, and in the states the round names', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = byState({ 'a:default': largeLeft, 'a:zoom-7': block });
+    const loaded = twoStates(['default', 'zoom-7']);
+
+    expect((await sketchRendersOf({ product, sketch, load: loaded, pictureOf, boxOf })).alike).toEqual([
+      expect.stringContaining('variants a and b look alike in zoom-7 (1600 px'),
+    ]);
+
+    const asked = editRound({ sketch, round: 'r1', asks: ['default'] }) as Sketch;
+
+    expect((await sketchRendersOf({ product, sketch: asked, load: loaded, pictureOf, boxOf })).alike).toEqual([]);
+  });
+
+  it('leaves a pair the identical refusal names to that refusal', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({ a: block, b: block });
+    const { identical, alike } = await sketchRendersOf({ product, sketch, load, pictureOf, boxOf });
+
+    expect(identical).toHaveLength(1);
+    expect(alike).toEqual([]);
   });
 });
 

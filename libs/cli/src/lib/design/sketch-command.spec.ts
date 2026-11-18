@@ -1308,7 +1308,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
 
     expect(round('r1')).toBe(1);
-    expect(lines.pop()).toBe('pass --title <text>, --note <text> or --drops <state,state>');
+    expect(lines.pop()).toBe('pass --title <text>, --note <text>, --drops <state,state> or --asks <state,state>');
     expect(round('r9', '--title', 'x')).toBe(1);
     expect(lines.pop()).toBe('components/button has no round "r9" - it has r1');
     expect(round('r1', '--title', 'Pill or square', '--note', 'a won')).toBe(0);

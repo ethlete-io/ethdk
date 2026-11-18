@@ -59,8 +59,18 @@ export type SketchRejection = {
   withdrawnBy?: string;
 };
 
-/** One round of variants: its title, the note on what it shows, and why its variants lost once a newer round runs. */
-export type SketchRound = { key: string; title: string; note: string; lost?: string; drops?: string[] };
+/**
+ * One round of variants: its title, the note on what it shows, why its variants lost once a newer round runs, the
+ * states it drops on purpose and the states it asks its question in, which `sketch ready` compares its variants in.
+ */
+export type SketchRound = {
+  key: string;
+  title: string;
+  note: string;
+  lost?: string;
+  drops?: string[];
+  asks?: string[];
+};
 
 /** A change to the sketch that waits on something; while it holds, the sketch stays in progress and cannot be ready. */
 export type SketchHold = {
@@ -437,7 +447,8 @@ const isRounds = (value: unknown): value is SketchRound[] =>
       typeof round.title === 'string' &&
       typeof round.note === 'string' &&
       (round.lost === undefined || typeof round.lost === 'string') &&
-      (round.drops === undefined || (Array.isArray(round.drops) && round.drops.every((d) => typeof d === 'string'))),
+      (round.drops === undefined || (Array.isArray(round.drops) && round.drops.every((d) => typeof d === 'string'))) &&
+      (round.asks === undefined || (Array.isArray(round.asks) && round.asks.every((a) => typeof a === 'string'))),
   ) &&
   new Set(value.map((round: SketchRound) => round.key)).size === value.length;
 
@@ -496,7 +507,23 @@ const isPortMark = (value: unknown): value is SketchPortMark => {
 
 const FIRST_ROUND = 'r1';
 
-const firstRoundOf = (title = '', note = ''): SketchRound => ({ key: FIRST_ROUND, title, note: note.trim() });
+const withStates = (round: SketchRound, states: { drops?: string[]; asks?: string[] }): SketchRound => {
+  const { drops: _drops, asks: _asks, ...rest } = round;
+  const drops = 'drops' in states ? states.drops : round.drops;
+  const asks = 'asks' in states ? states.asks : round.asks;
+
+  return {
+    ...rest,
+    ...(drops && drops.length > 0 ? { drops } : {}),
+    ...(asks && asks.length > 0 ? { asks } : {}),
+  };
+};
+
+const firstRoundOf = (options: { title?: string; note?: string; asks?: string[] }): SketchRound =>
+  withStates(
+    { key: FIRST_ROUND, title: options.title ?? '', note: (options.note ?? '').trim() },
+    { asks: options.asks },
+  );
 
 const nextRoundKeyOf = (rounds: SketchRound[]) =>
   `r${Math.max(0, ...rounds.map((round) => Number(/^r(\d+)$/u.exec(round.key)?.[1] ?? 0))) + 1}`;
@@ -594,7 +621,7 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
   if (parsed.undesigned !== undefined && !isStringList(parsed.undesigned))
     return `${file}: undesigned must be a list of app template branches`;
 
-  const rounds = parsed.rounds ?? [firstRoundOf()];
+  const rounds = parsed.rounds ?? [firstRoundOf({})];
   const running = runningRoundOf({ rounds }).key;
   const variants = options.variants ?? foldersOf(dir).filter((folder) => folder !== SHARED_FOLDER);
   const variantInfo = { ...parsed.variantInfo };
@@ -960,6 +987,7 @@ export const createSketch = (options: {
   variants: string[];
   roundTitle?: string;
   roundNote?: string;
+  roundAsks?: string[];
   author?: string;
   like?: SketchSource;
   variantNotes?: Map<string, string>;
@@ -1016,7 +1044,7 @@ export const createSketch = (options: {
     baseline: baselineOf(product),
     ...baselineTreeFieldOf({ product, sketchDir: dir }),
     ...(Object.keys(sharedBase).length > 0 ? { sharedBase } : {}),
-    rounds: [firstRoundOf(roundTitle, roundNote)],
+    rounds: [firstRoundOf({ title: roundTitle, note: roundNote, asks: options.roundAsks })],
     variantInfo: Object.fromEntries(
       variants.map((variant) => [
         variant,
@@ -1611,7 +1639,7 @@ export const addVariant = (options: {
   sketch: Sketch;
   variant: string;
   from: string;
-  round?: { title: string; lostNote: string; note?: string };
+  round?: { title: string; lostNote: string; note?: string; asks?: string[] };
   author?: string;
 }): Sketch | string => {
   const { sketch, variant, from, round, author } = options;
@@ -1630,7 +1658,10 @@ export const addVariant = (options: {
   const rounds = round
     ? [
         ...sketch.rounds.map((entry) => (entry === running ? { ...entry, lost: round.lostNote.trim() } : entry)),
-        { key: nextRoundKeyOf(sketch.rounds), title: round.title.trim(), note: round.note?.trim() ?? '' },
+        withStates(
+          { key: nextRoundKeyOf(sketch.rounds), title: round.title.trim(), note: round.note?.trim() ?? '' },
+          { asks: round.asks },
+        ),
       ]
     : sketch.rounds;
 
@@ -1651,13 +1682,6 @@ export const addVariant = (options: {
   return added;
 };
 
-const withDrops = (round: SketchRound, drops: string[] | undefined): SketchRound => {
-  const { drops: _previous, ...rest } = round;
-
-  return drops && drops.length > 0 ? { ...rest, drops } : rest;
-};
-
-/** Changes the title, the note and the dropped states of the round with key `round`; a field left out stays as it is. */
 export const editVariantNote = (options: { sketch: Sketch; variant: string; note: string }): Sketch | string => {
   const { sketch, variant, note } = options;
 
@@ -1674,28 +1698,30 @@ export const editVariantNote = (options: { sketch: Sketch; variant: string; note
   return edited;
 };
 
+/** Changes the title, the note, the dropped and the asked states of the round with key `round`; a field left out stays as it is. */
 export const editRound = (options: {
   sketch: Sketch;
   round: string;
   title?: string;
   note?: string;
   drops?: string[];
+  asks?: string[];
 }): Sketch | string => {
-  const { sketch, round, title, note, drops } = options;
+  const { sketch, round, title, note, drops, asks } = options;
 
   if (!sketch.rounds.some((entry) => entry.key === round))
     return `${sketch.target} has no round "${round}" - it has ${sketch.rounds.map((entry) => entry.key).join(', ')}`;
-  if (title === undefined && note === undefined && drops === undefined)
-    return 'pass --title <text>, --note <text> or --drops <state,state>';
+  if (title === undefined && note === undefined && drops === undefined && asks === undefined)
+    return 'pass --title <text>, --note <text>, --drops <state,state> or --asks <state,state>';
   if (title !== undefined && title.trim() === '') return 'a round needs a title';
 
   const edited: Sketch = {
     ...sketch,
     rounds: sketch.rounds.map((entry) =>
       entry.key === round
-        ? withDrops(
+        ? withStates(
             { ...entry, title: title?.trim() ?? entry.title, note: note?.trim() ?? entry.note },
-            drops ?? entry.drops,
+            { drops: drops ?? entry.drops, asks: asks ?? entry.asks },
           )
         : entry,
     ),

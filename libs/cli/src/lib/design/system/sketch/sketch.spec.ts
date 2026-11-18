@@ -846,6 +846,26 @@ describe('addVariant', () => {
     });
   });
 
+  it('keeps the states a round asks its question in, and leaves them out when none are named', () => {
+    const target = acme();
+
+    open(target, 'elements/hero');
+    editRound({ sketch: find(target), round: 'r1', asks: ['zoom-7', 'zoom-200'] });
+    addVariant({ sketch: find(target), variant: 'c', from: 'a', round: { title: 'T', lostNote: 'too close' } });
+    addVariant({
+      sketch: find(target),
+      variant: 'd',
+      from: 'a',
+      round: { title: 'U', lostNote: 'still close', asks: ['zoom-50'] },
+    });
+
+    expect(find(target).rounds).toEqual([
+      { key: 'r1', title: '', note: '', lost: 'too close', asks: ['zoom-7', 'zoom-200'] },
+      { key: 'r2', title: 'T', note: '', lost: 'still close' },
+      { key: 'r3', title: 'U', note: '', asks: ['zoom-50'] },
+    ]);
+  });
+
   it('refuses an unknown source, a taken or bad name, and a new round without a note', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');

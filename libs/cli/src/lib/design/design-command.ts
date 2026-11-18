@@ -145,7 +145,7 @@ const helpOf = (invocation: string) =>
     `  a pixel diff and no shot of it was handed out since its last edit: run \`${invocation} shot <layer>/<name> --states --variants\``,
     '  or GET /__design/shot with sketch= and variant=, and look at it.',
     '',
-    `${invocation} sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> | sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
+    `${invocation} sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] [--asks <state,state>] --by <model id> | sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
     '  List open sketches, check each variant laid over the product, and list the elements and pages a merge changes.',
     '',
     `${invocation} sketch note <layer>/<name> [<variant>] <text> [--round <round>] --by <model id>`,

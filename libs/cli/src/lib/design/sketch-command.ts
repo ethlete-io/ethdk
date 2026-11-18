@@ -118,9 +118,9 @@ import { hasPersonName, PERSON_NAME_REFUSAL } from '../person-names';
 import { lintGateLinesOf, variantLintFilesOf } from './design-lint';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--ready] [--product <name>]',
-  'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
-  'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
+  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--asks <state,state>] [--variant-note <variant>=<text>]… [--override | --into-base] [--ready] [--product <name>]',
+  'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>] [--asks <state,state>]] [--product <name>]',
+  'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] [--asks <state,state>] --by <model id> [--product <name>]',
   'sketch covers <layer>/<name> [[<layer>/<name>:]<state>[@<x>,<y>,<w>,<h>]…] --by <model id> [--product <name>]',
   'sketch note <layer>/<name> [<variant>] <text> [--round <round>] --by <model id> [--product <name>]',
   'sketch target add <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
@@ -163,6 +163,8 @@ const FLAG_HELP: Record<string, string> = {
   '--from': 'the variant to copy',
   '--title': 'the new title of the round',
   '--drops': 'the states the round drops on purpose, a comma list',
+  '--asks':
+    "the states the round asks its question in, a comma list; ready refuses two variants that differ in one by under 2 % of the frame (default: the states the round's variants add, else the states they change)",
   '--variant': 'the variant the command is about; on merge, the only live variant of a sketch with no pick',
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
@@ -330,6 +332,12 @@ const variantLineOf = (options: { root: string; sketch: Sketch; variant: string 
   return `  ${variant}: ${files}  assets: ${relative(root, resolve(sketch.dir, variant, ASSETS_FOLDER))}/`;
 };
 
+const statesOf = (value: string | undefined) =>
+  value
+    ?.split(',')
+    .map((state) => state.trim())
+    .filter((state) => state !== '');
+
 const opened = (context: Context) => {
   const { target, config, args } = context;
   const product = oneProductOf({ target, config, asked: args.values['--product'] });
@@ -384,6 +392,7 @@ const opened = (context: Context) => {
     variants,
     roundTitle: args.values['--round'],
     roundNote: args.values['--note'],
+    roundAsks: statesOf(args.values['--asks']),
     author: authorOf(args) ?? undefined,
     like,
     variantNotes: notes,
@@ -484,7 +493,7 @@ const variantNotesOf = (pairs: string[], variants: string[]): Map<string, string
 };
 
 const VARIANT_USAGE =
-  'usage: sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]]';
+  'usage: sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>] [--asks <state,state>]]';
 
 const varied = (context: Context) =>
   withSketch(
@@ -542,7 +551,7 @@ const varied = (context: Context) =>
           from,
           author: authorOf(context.args) ?? undefined,
           ...(index === 0 && title !== undefined && lostNote !== undefined
-            ? { round: { title, lostNote, note: roundNote } }
+            ? { round: { title, lostNote, note: roundNote, asks: statesOf(values['--asks']) } }
             : {}),
         });
 
@@ -686,7 +695,7 @@ const reported = (context: Context) =>
   });
 
 const ROUND_USAGE =
-  'usage: sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id>';
+  'usage: sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] [--asks <state,state>] --by <model id>';
 
 const roundEdited = (context: Context) =>
   withSketch(context, ({ sketch }) => {
@@ -700,10 +709,8 @@ const roundEdited = (context: Context) =>
       round,
       title: values['--title'],
       note: values['--note'],
-      drops: values['--drops']
-        ?.split(',')
-        .map((state) => state.trim())
-        .filter((state) => state !== ''),
+      drops: statesOf(values['--drops']),
+      asks: statesOf(values['--asks']),
     });
 
     if (typeof edited === 'string') return fail(edited);
@@ -711,7 +718,7 @@ const roundEdited = (context: Context) =>
     const entry = edited.rounds.find((candidate) => candidate.key === round);
 
     console.log(
-      `${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}${entry?.lost ? ` - lost: ${entry.lost}` : ''}${entry?.drops ? ` - drops ${entry.drops.join(', ')}` : ''}`,
+      `${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}${entry?.lost ? ` - lost: ${entry.lost}` : ''}${entry?.drops ? ` - drops ${entry.drops.join(', ')}` : ''}${entry?.asks ? ` - asks ${entry.asks.join(', ')}` : ''}`,
     );
 
     return 0;
