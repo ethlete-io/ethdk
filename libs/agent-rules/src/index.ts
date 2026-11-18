@@ -11,6 +11,7 @@ import { migrate } from './lib/migrate';
 import { outputStyleCommand } from './lib/output-style-command';
 import { detectCommandVars, followPackageManager } from './lib/package-runner';
 import { plain } from './lib/plain-text';
+import { reportCommand } from './lib/report-command';
 import { check, sync } from './lib/sync';
 import { timetrackCommand } from './lib/timetrack-command';
 
@@ -30,6 +31,9 @@ const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into y
   ethlete-agents sessions  Run agents in tmux sessions of one checkout: message them, wake idle
                            ones, restart one with a prompt, claim paths (run, up, down, restart,
                            send, inbox, claim). The old name "mailbox" works too
+  ethlete-agents report    Print a table of what was done in a period: rows with their commits,
+                           parked rows, commit counts, CI and subagent figures
+                           (today, yesterday, week, --since <date> [--until <date>])
   ethlete-agents migrate   Convert the repo to the AGENTS.md + .agents/skills layout:
                            CLAUDE.md content moves into AGENTS.md (CLAUDE.md becomes an
                            @AGENTS.md import), hand-written .claude/skills move to
@@ -130,6 +134,8 @@ const run = (argv: string[]): number | Promise<number> => {
       return sessionsCommand({ argv: argv.slice(1) });
     case 'output-style':
       return outputStyleCommand({ argv: argv.slice(1) });
+    case 'report':
+      return reportCommand({ root, argv: argv.slice(1) });
     case 'timetrack':
       return timetrackCommand({ root, argv: argv.slice(1) });
     default:

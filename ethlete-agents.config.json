@@ -34,5 +34,6 @@
   "claudeMdImportsAgentsMd": true,
   "hooks": ["context-warning", "subagent-model-policy", "background-design-commands", "git-safety", "away-mode"],
   "awayMode": { "skills": ["doc-agent"], "thresholdMinutes": 15 },
+  "report": { "planFiles": ["plans/studio/STATUS.md", "plans/studio/queue.md", "plans/studio/rows.md"] },
   "mods": ["e2e-progress"]
 }

@@ -1,0 +1,26 @@
+---
+name: report
+description: Print a fixed table of what was done in a period: rows with their commits, parked rows, counts, CI and subagents. Use on "report", "Bericht", "was ist heute passiert", "status of the day".
+kind: skill
+scope: both
+---
+
+# Progress report on demand
+
+The report is generated, never written. Run it and paste its output:
+
+```bash
+{%packageRunner%} ethlete-agents report [today|yesterday|week]
+{%packageRunner%} ethlete-agents report --since 2026-11-10 [--until 2026-11-12T18:00]
+```
+
+Text after the skill name picks the period: none means `today`; a day name or date maps to the
+arguments above.
+
+1. Run the command and paste its stdout **unchanged** into the chat: no rewording, no extra
+   columns, no summary of the table.
+2. Below the pasted block, list the open questions for the user, one per line. If there are none,
+   write nothing.
+
+Short names, the parked section and the queue come from the `report.planFiles` list in
+`ethlete-agents.config.json`; without it the table is built from the git log alone.

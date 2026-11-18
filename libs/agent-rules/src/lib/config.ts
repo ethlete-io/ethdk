@@ -54,6 +54,11 @@ export type AwayModeConfig = {
   thresholdMinutes?: number;
 };
 
+/** Opt-in settings of `ethlete-agents report`: repo-relative paths or globs of the markdown files holding row tables and the queue. */
+export type ReportConfig = {
+  planFiles?: string[];
+};
+
 type RawConfig = {
   targets?: AgentTarget[] | 'auto';
   profile?: 'consumer' | 'sdk';
@@ -66,6 +71,7 @@ type RawConfig = {
   gitFlow?: RawGitFlowConfig;
   jira?: JiraSettings;
   awayMode?: AwayModeConfig;
+  report?: ReportConfig;
 };
 
 /** The nearest directory at or above `start` holding an `ethlete-agents.config.json`, else `start`. */
@@ -95,6 +101,7 @@ const RAW_CONFIG_KEYS: (keyof RawConfig)[] = [
   'gitFlow',
   'jira',
   'awayMode',
+  'report',
 ];
 
 const parseJson = (text: string): { value: unknown } | { error: string } => {
@@ -107,7 +114,7 @@ const parseJson = (text: string): { value: unknown } | { error: string } => {
 
 const assertConfigShapes = (value: Record<string, unknown>) => {
   const arrays = ['exclude', 'hooks', 'gitHooks', 'mods'];
-  const objects = ['vars', 'gitFlow', 'jira', 'awayMode'];
+  const objects = ['vars', 'gitFlow', 'jira', 'awayMode', 'report'];
 
   for (const key of arrays) {
     const entry = value[key];
@@ -115,6 +122,12 @@ const assertConfigShapes = (value: Record<string, unknown>) => {
     if (entry !== undefined && (!Array.isArray(entry) || entry.some((item) => typeof item !== 'string'))) {
       throw new Error(`${CONFIG_FILE_NAME}: "${key}" must be an array of strings.`);
     }
+  }
+
+  const planFiles = (value['report'] as ReportConfig | undefined)?.planFiles;
+
+  if (planFiles !== undefined && (!Array.isArray(planFiles) || planFiles.some((item) => typeof item !== 'string'))) {
+    throw new Error(`${CONFIG_FILE_NAME}: "report.planFiles" must be an array of strings.`);
   }
 
   const targets = value['targets'];
@@ -163,6 +176,9 @@ const readRawConfig = (root: string): RawConfig => {
 
   return value as RawConfig;
 };
+
+/** The `report` block of the repo config, or an empty one when the file or the key is missing. */
+export const readReportConfig = (root: string): ReportConfig => readRawConfig(root).report ?? {};
 
 const unknownConfigKeyWarnings = (raw: RawConfig) => {
   const unknown = Object.keys(raw).filter((key) => !RAW_CONFIG_KEYS.includes(key as keyof RawConfig));
