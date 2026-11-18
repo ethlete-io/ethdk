@@ -83,7 +83,13 @@
   "components/query-error": "6229941c4f9f6dfa",
   "components/radio-group": "570be5d0ff8a5f90",
   "components/scheduler": "3d1257dd07ba3a00",
-  "components/scrollable": "3f9c533ef44c330f",
+  "components/scrollable": {
+    "hash": "7357a34aed039703",
+    "variant": "new",
+    "decidedBy": "plan: finding 343: the mock passes the gap the real scrollable measures",
+    "at": "2026-11-18T13:37:19.364Z",
+    "note": "merged without a pick: allowed by finding 343: the mock passes the gap the real scrollable measures"
+  },
   "components/scrollbar": "1017dae9034d429a",
   "components/select": "1a96ea5db00e7c22",
   "components/select-panel": "e553115da7b919df",

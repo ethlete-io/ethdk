@@ -68,7 +68,7 @@ const render = (props: Props) => {
     navigationActive: props.navigation ? active : undefined,
     darken: props.darken,
     itemSize: props.itemSize,
-    itemGap: props.itemSize ? GAP : undefined,
+    itemGap: GAP,
     color: props.color,
     endButtonAttributes: props.endButton ? `data-et-force="${props.endButton}"` : undefined,
     containerAttributes: `data-et-skip="CLIPPED" style="--scrollable-offset: -${offset}px"`,
@@ -95,7 +95,7 @@ const render = (props: Props) => {
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
   consumerAction: 'the buttons inside are content the consumer projects',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   states: {
     'horizontal-start': {},
     'horizontal-middle': { position: 'middle' },
