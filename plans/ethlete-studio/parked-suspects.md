@@ -117,3 +117,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - NG8113 AgentLogoComponent (Linux, 18.11., B189): AgentLogoComponent imported but unused in the Studio InboxComponent. Cleanup, no hunt.
 - CI render-inspect cold cache (CI, 18.11., 76af37cba): render-inspect in `design check --part` 38 s on CI vs 10 s local after the shard split removed contention. Suspect: cold render cache. Not built.
 - dead et-select aria-label (SDK, 18.11., 41e9d5c95): an aria-label on et-select inside et-form-field with an et-label is silently ignored (docs say so, select.md). Suspect (code read): other apps carry such dead labels. First time.
+- verify range with a spec (Linux, 18.11., B233): `task --verify <range>` refuses any range holding a .spec.ts outside the part's allowed files (design-harness.component.spec.ts, commit-hunks.spec.ts), so a harness commit with its spec can never verify. Suspect, first time.
