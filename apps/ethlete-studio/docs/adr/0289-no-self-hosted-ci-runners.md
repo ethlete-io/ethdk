@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0342
 built: ce1eb19f3
 decided: 2026-11-12
 source: decision of the human, about 15:10 local, relayed by the analysis session (claude2); supersedes point 5 of ADR 0286
