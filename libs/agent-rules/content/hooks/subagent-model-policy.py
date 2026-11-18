@@ -20,6 +20,12 @@ Two cases are left alone, because the tool's `model` would change nothing:
   * `subagent_type: fork`, which always inherits the parent model.
   * An agent type whose own definition under `.claude/agents/` sets a model.
 
+Every subagent start, whatever the decision, appends one JSON line to
+`<git common dir>/ethlete/subagent-starts.jsonl`: time, session, HEAD, branch,
+the model it will run on, effort, agent type, description, the prompt's head and
+the file paths the prompt names. It lives inside `.git`, so it is never committed,
+and HEAD plus the paths join it with later commits.
+
 Can be disabled per machine via a gitignored ethlete-agents.config.local.json at
 the repo root: {"disableHooks": true} or {"disableHooks": ["subagent-model-policy"]}.
 
@@ -29,7 +35,10 @@ because it could not read its own input.
 
 import json
 import os
+import re
+import subprocess
 import sys
+from datetime import datetime, timezone
 
 HOOK_NAME = "subagent-model-policy"
 LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
@@ -38,6 +47,11 @@ LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
 SUBAGENT_TOOLS = ("Task", "Agent")
 
 DEFAULT_MODEL = "sonnet"
+
+LOG_FILE = os.path.join("ethlete", "subagent-starts.jsonl")
+PROMPT_HEAD_CHARS = 300
+MAX_LOGGED_FILES = 50
+FILE_PATH = re.compile(r"(?<![\w/.-])(?:\.?[\w@-][\w@.-]*/)+[\w@.-]*\.[A-Za-z0-9]{1,8}(?![\w/])")
 
 POLICY = """This call passed no `model`, so the subagent runs on sonnet, the default. Name a model on the next \
 call when the task fits another one:
@@ -148,6 +162,57 @@ def decision_for(tool_input, root):
     return "allow", POLICY, {**tool_input, "model": DEFAULT_MODEL}
 
 
+def git(root, *args):
+    result = subprocess.run(["git", "-C", root, *args], capture_output=True, text=True, timeout=3)
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def prompt_files(prompt):
+    files = []
+    for match in FILE_PATH.findall(prompt):
+        path = match.split(":")[0]
+        if path not in files:
+            files.append(path)
+    return files[:MAX_LOGGED_FILES]
+
+
+def run_model(tool_input, outcome):
+    """The model the subagent will run on, or how it is chosen when the call does not name one."""
+    if outcome and outcome[2] is not None:
+        return outcome[2].get("model")
+    model = str(tool_input.get("model") or "").strip().lower()
+    if model:
+        return model
+    subagent_type = str(tool_input.get("subagent_type") or "").strip().lower()
+    return "inherit" if subagent_type == "fork" else "definition"
+
+
+def log_start(data, tool_input, root, outcome):
+    common_dir = git(root, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if not common_dir:
+        return
+    prompt = str(tool_input.get("prompt") or "")
+    entry = {
+        "time": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "session": data.get("session_id"),
+        "toolUseId": data.get("tool_use_id"),
+        "head": git(root, "rev-parse", "HEAD"),
+        "branch": git(root, "rev-parse", "--abbrev-ref", "HEAD"),
+        "model": run_model(tool_input, outcome),
+        "decision": outcome[0] if outcome else "untouched",
+        "effort": tool_input.get("effort"),
+        "subagentType": tool_input.get("subagent_type"),
+        "description": tool_input.get("description"),
+        "prompt": prompt[:PROMPT_HEAD_CHARS],
+        "promptChars": len(prompt),
+        "files": prompt_files(prompt),
+    }
+    path = os.path.join(common_dir, LOG_FILE)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
 def main():
     if agent_name(sys.argv[1:]) != "claude":
         return
@@ -168,6 +233,11 @@ def main():
         return
 
     outcome = decision_for(tool_input, root)
+
+    try:
+        log_start(data, tool_input, root, outcome)
+    except Exception:
+        pass
 
     if not outcome:
         return

@@ -368,10 +368,13 @@ Available hooks:
   never tells the user or the main agent to hand off the root session.
 
 - **`subagent-model-policy`** (Claude Code only) - gates every call to the subagent tool.
-  A call that names no `model` is denied and the model table is returned instead: haiku for
-  a lookup, opus for real work, sonnet in between, fable for judgment-heavy work. Without
-  it a subagent inherits the model leading the session, which is how an expensive model
-  ends up doing every grep it delegates; with it, that mistake costs one tool call.
+  A call that names no `model` runs on sonnet, and the model table is returned with it:
+  haiku for a lookup, sonnet for scoped work, opus for hard work, fable for judgment-heavy
+  work. Without it a subagent inherits the model leading the session, which is how an
+  expensive model ends up doing every grep it delegates.
+
+  Each start appends a line to `.git/ethlete/subagent-starts.jsonl` (model, effort, HEAD,
+  description, prompt head, the file paths the prompt names), to join with later commits.
 
   A call that names `fable` asks the user - it is the most expensive option, and only the
   user knows whether the task is judgment-heavy. A fork and an agent type whose own
