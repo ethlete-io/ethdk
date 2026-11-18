@@ -6,6 +6,15 @@ Das SDK sind die veröffentlichten `@ethlete/*`-Bibliotheken unter `libs/`. Die 
 (ADR 0355), die Zeilen stehen in [`plans/ethlete-studio/STATUS.md`](../ethlete-studio/STATUS.md). Hier stehen sie nicht
 doppelt. Es gibt keine eigene SDK-Warteschlange.
 
+## Consumer-Anfragen
+
+Eine Sitzung in einem anderen Repo, das das SDK nutzt (zuerst fifagg), meldet SDK-Wünsche gebündelt in einem festen
+Format: was fehlt, wie man es nachstellt, was sie solange tut, ob sie blockiert ist (ADR 0370). Jede Anfrage wird hier
+eine Zeile `S<n>` und bekommt einen Eintrag in der Builder-Warteschlange (ADR 0355: eine Liste laufender Arbeit). Nur
+eine blockierte Sitzung unterbricht sofort.
+
+Keine offene Anfrage.
+
 ## Offene Plan-Dateien
 
 - [`e2e-failure-triage.md`](./e2e-failure-triage.md): offen ist nur `et e2e slices` (Slice-Runner im `@ethlete/cli`).

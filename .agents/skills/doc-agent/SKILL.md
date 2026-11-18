@@ -58,16 +58,15 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - An open question stays open until the user answers it. Repeat it in full, in its own message, with the round
   format. Never a "Q1 and Q2 are still open" line under a status.
 - A question about how something looks (layout, background, placement, sticking) is never a grill question in
-  chat. Studio exists for it: send it to the builder as a sketch, with variants when there is a choice. The
-  grill round is for tool, process and product decisions only.
+  chat. Send it to the builder as a sketch, with variants when there is a choice.
 - When the user says "as built" (wie umgesetzt), the app is the answer. What the app does there is a fact the
   builder looks up and copies; never turn it into a question.
 
 ## When the user is away
 
 - If the user says they are away ("afk"), collect every design question. Do not send a grill round.
-- Keep chat output to one short line per event. The user does not read it while away.
-- Still record findings and decisions at once, and still answer the builder.
+- Keep chat output to one short line per event.
+- Still record at once and answer the builder.
 - When the user says they are back, send all collected questions in one round.
 - Every night shift counts as away (ADR 0259): nothing waits on the user, the builder applies an ADR or parks the
   item, and you put the collected questions to the user in one morning round.
@@ -81,12 +80,17 @@ CLI gets better because Studio work uses it, not because findings are collected.
   processes (`ps`) before you ask it anything.
 - You may clear its dead background agents and shells, or restart its CLI with the agent-sessions `restart`
   command and a `/handoff resume` prompt. Agree this with the builder first by SendMessage.
-  Restart it with `restart <builder name> <prompt>`; the command accepts the paired session.
+
+## Consumers (ADR 0370)
+
+- A consumer repo keeps its decisions; here only SDK-interface ADRs.
+- Never run its shifts or take its slice reports. Its batched SDK request (missing, repro, meanwhile, blocked?) becomes
+  a row in `plans/sdk/STATUS.md` plus a queue entry; answer at once only a blocked one.
 
 ## Record
 
-- After the user confirms a short summary, write each decision of this repo as an ADR in `apps/ethlete-studio/docs/adr/`; another repo's decision, also a consumer's SDK request, goes only to that session
-  (English, the human's words verbatim and named "the human", never by name; run `yarn lint:person-names` before the commit; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
+- After the user confirms a short summary, write each decision of this repo as an ADR in `apps/ethlete-studio/docs/adr/`; another repo's decision goes only to that session
+  (English, the human's words verbatim and named "the human", never by name; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
 - A Studio ADR needs no changeset (ADR 0265).
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never stash, never amend.
 - Collect notes, new group lines and closed rows in `.claude/handoffs/doc-agent-collect.md` (outside git), never open in `STATUS.md`. Once an hour and at shift end, fold them in (ten notes on one group are
