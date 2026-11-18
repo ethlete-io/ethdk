@@ -2480,3 +2480,17 @@ comment button"` (1 passed), `compare pages/system` (all ok with the icon-button
 - Not verified: canvas-viewport, comment-pin, disclosure, title-search, tree-row, part-tree and studio-menu stay
   unrecorded - `compare --affected` says their design changed since their record and sends them to `task --verify`;
   that drift predates B59 and was left alone.
+
+## As built (etTooltip literal text)
+
+- LITERAL-TEXT in `implemented-proof.ts` also reads `etTooltip`, static (`etTooltip="..."`) and bound (`[etTooltip]`
+  literals), like `title` and `aria-label` (8cc09fb0d). The new spec was red before the rule change (received `[]`),
+  green after.
+- The rule ran over every recorded part of every product (only studio has an `implemented.json`): the only hits were
+  the zoom-chip tooltips "Zoom to 100 % (Shift+0)" and "Zoom to fit (Shift+1)". They moved to `STUDIO_LABELS`
+  `zoom.resetTooltip`/`zoom.fitTooltip` and are bound (c9aeb894f).
+- Verified: `compare --affected --product studio` recorded comment-row, shell-collapse, zoom-chip, canvas-frames,
+  shell-main, flows, inventory, start and system, every state ok (a0415b1c3); `task components/zoom-chip --verify
+c9aeb894f` recorded it with no refusal. `vitest related` in libs/cli and apps/ethlete-studio, lint, typecheck.
+- Not verified: canvas-viewport, comment-pin, disclosure, title-search, tree-row, part-tree and studio-menu stay
+  unrecorded (design drift that predates this change); the rule was run over their app components and found nothing.
