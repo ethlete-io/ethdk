@@ -59,14 +59,13 @@ CLI gets better because Studio work uses it, not because findings are collected.
   format. Never a "Q1 and Q2 are still open" line under a status.
 - A question about how something looks (layout, background, placement, sticking) is never a grill question in
   chat. Send it to the builder as a sketch, with variants when there is a choice.
-- When the user says "as built" (wie umgesetzt), the app is the answer. What the app does there is a fact the
-  builder looks up and copies; never turn it into a question.
+- When the user says "as built" (wie umgesetzt), the app is the answer: the builder looks it up and copies it,
+  never a question.
 
 ## When the user is away
 
 - If the user says they are away ("afk"), collect every design question. Do not send a grill round.
 - Keep chat output to one short line per event.
-- Still record at once and answer the builder.
 - When the user says they are back, send all collected questions in one round.
 - Every night shift counts as away (ADR 0259): nothing waits on the user, the builder applies an ADR or parks the
   item, and you put the collected questions to the user in one morning round.
@@ -79,7 +78,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - If the builder looks stuck, read its pane (`tmux capture-pane -p -t <builder tmux session>`) and the running
   processes (`ps`) before you ask it anything.
 - You may clear its dead background agents and shells, or restart its CLI with the agent-sessions `restart`
-  command and a `/handoff resume` prompt. Agree this with the builder first by SendMessage.
+  command and a `/handoff resume` prompt. Agree it with the builder first.
 
 ## Consumers (ADR 0370)
 
@@ -95,8 +94,10 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never stash, never amend.
 - Collect notes, new group lines and closed rows in `.claude/handoffs/doc-agent-collect.md` (outside git), never open in `STATUS.md`. Once an hour and at shift end, fold them in (ten notes on one group are
   one line), commit, and empty the file (ADR 0284).
-- A decision the builder needs now: commit it at once and send it to the builder with `SendMessage`, in English. So too a row a commit must close: it sets `built: <sha>` on every ADR with
-  `open: B<row>` in that commit (pre-commit hook).
+- A decision the builder needs: commit it at once. A row a commit must close: that commit sets `built: <sha>` on every
+  ADR with `open: B<row>` (pre-commit hook).
+- Collect what the builder needs and send it in one English `SendMessage` about every 15 minutes (ADR 0356). What
+  blocks its current row or shows its work wrong goes at once.
 - An ADR records a decision of the human. That a row was built is in git: no ADR, no note. The "as built" text lives only
   in the builder's commit message; you fold its closed rows in with the hourly commit (ADR 0350).
 
