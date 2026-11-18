@@ -740,7 +740,6 @@ describe('classifyCalls, a room held across a restart of the app', () => {
       focus(12, 'chrome', 'a tab'),
       repairEnd(12, ROOM),
       call(16, 'call-start', ROOM),
-      focus(100, ROOM, 'the room'),
     ]);
 
     expect(windows).toHaveLength(1);
@@ -780,7 +779,6 @@ describe('classifyCalls, a room held across a restart of the app', () => {
       ...events,
       ...closeAbandonedCalls({ events, watchingSince: at(14) }),
       call(15, 'call-start', ROOM),
-      focus(100, ROOM, 'the room'),
     ];
 
     const windows = classify(repaired, {}, 120);
@@ -886,66 +884,6 @@ describe('classifyCalls, why a call is not counted', () => {
 
     expect(window!.countsAsWork).toBe(true);
     expect(window!.excludedBy).toBeUndefined();
-  });
-});
-
-describe('classifyCalls, a call nothing ended', () => {
-  const discord = 'com.hnc.Discord';
-
-  it('ends it where its application last held the focus', () => {
-    const windows = classify([
-      focus(0, discord, 'Meeting #3 | Braune Digital - Discord'),
-      call(0, 'call-start', discord),
-      focus(20, 'code', 'calls.ts'),
-    ]);
-
-    expect(windows.map((window) => [window.from, window.to])).toEqual([[at(0), at(20)]]);
-  });
-
-  it('ends it at the last chunk the transcriber heard in it', () => {
-    const windows = classifyCalls({
-      events: [focus(0, 'code', 'calls.ts'), call(1, 'call-start', discord)],
-      rules: rules(),
-      until: at(120),
-      heard: [5, 30, 45].map((minute) => ({ atMs: +at(minute), appId: discord })),
-    });
-
-    expect(windows.map((window) => window.to)).toEqual([at(45)]);
-  });
-
-  it('ends it with the accepted meeting it ran over', () => {
-    const windows = classify([
-      focus(0, 'code', 'calls.ts'),
-      call(1, 'call-start', discord),
-      {
-        at: at(0),
-        source: 'calendar',
-        kind: 'calendar-event',
-        occurrenceId: 'daily',
-        until: at(30),
-        title: 'Team Daily',
-        accepted: true,
-        conferenceUrl: 'https://call.example.com/qzx-room-71',
-      },
-    ]);
-
-    expect(windows.map((window) => window.to)).toEqual([at(30)]);
-  });
-
-  it('draws no call nothing shows anyone held, however long the microphone stayed open', () => {
-    const windows = classify([focus(0, 'code', 'calls.ts'), call(45, 'call-start', discord)], {}, 6 * 60 + 45);
-
-    expect(windows).toEqual([]);
-  });
-
-  it('keeps the end of a call the microphone closed, whatever held the focus', () => {
-    const windows = classify([
-      focus(0, 'code', 'calls.ts'),
-      call(1, 'call-start', discord),
-      call(50, 'call-end', discord),
-    ]);
-
-    expect(windows.map((window) => window.to)).toEqual([at(50)]);
   });
 });
 

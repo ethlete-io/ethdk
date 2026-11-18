@@ -326,9 +326,7 @@ type GluedCall = { session: PairedCall; rooms: { call: PairedCall; title: string
 /**
  * Every call in the events, paired from its edges, named from the focus history and classified.
  *
- * A call still open at the end runs to the last instant before `until` that its application held the
- * focus, the transcriber heard it, or an accepted meeting ran, and is not drawn when none of them did.
- * A day with no focus history runs it to `until`.
+ * A call still open at the end runs to `until`.
  */
 export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
   const focus = options.events
@@ -402,41 +400,13 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     };
   };
 
-  const lastHeldAt = (call: PairedCall) => {
-    if (!focus.length) return call.to;
-
-    const heard = (options.heard ?? [])
-      .filter(
-        (chunk) =>
-          chunk.atMs >= call.from.getTime() &&
-          chunk.atMs <= call.to.getTime() &&
-          (callHolderBelongsTo(chunk.appId, call.appId) || callHolderBelongsTo(call.appId, chunk.appId)),
-      )
-      .map((chunk) => chunk.atMs);
-    const ends = [
-      ...clipWindows({
-        windows: held.filter((window) => callHolderBelongsTo(call.appId, window.appId)),
-        within: [call],
-      }).map((window) => window.to.getTime()),
-      ...(heard.length >= MIN_HEARD_CHUNKS ? heard : []),
-      ...invited
-        .filter((event) => event.at < call.to && event.until > call.from)
-        .map((event) => Math.min(event.until.getTime(), call.to.getTime())),
-    ];
-    const end = Math.max(...ends);
-
-    return end > call.from.getTime() ? new Date(end) : undefined;
-  };
-
   const paired = [
     ...closed,
-    ...[...open.values()].flatMap((start) => {
-      if (start.at >= options.until) return [];
-
-      const to = lastHeldAt({ appId: start.appId, from: start.at, to: options.until });
-
-      return to ? [{ appId: start.appId, from: start.at, to, ...(start.title ? { title: start.title } : {}) }] : [];
-    }),
+    ...[...open.values()].flatMap((start) =>
+      start.at < options.until
+        ? [{ appId: start.appId, from: start.at, to: options.until, ...(start.title ? { title: start.title } : {}) }]
+        : [],
+    ),
   ];
 
   const glueMs = options.glueMs ?? DEFAULT_CALL_GLUE_MS;
