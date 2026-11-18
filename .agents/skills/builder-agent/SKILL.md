@@ -12,9 +12,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 1. Call `ListAgents`. Find the grill/docs session: an interactive session in the same repo.
 2. Send it a short message: you are the builder, and what you will build first. The grill/docs session can restart you with `restart <your name>`, and you it.
-3. Read the plan in `plans/` that the work belongs to. Its "in progress" notes, "Open
-   points" lists and the latest decision sections give the queue. Check `git log` for
-   what is already done.
+3. The queue is the "Warteschlange" atop `plans/ethlete-studio/STATUS.md` (ADR 0351); `git log` shows what is done.
 4. Run `yarn et:design status`. If it prints `ci: red`, start no feature slice: only fix or revert.
    If you cannot prove the cause in 15 minutes, revert the suspect commit first (check it with
    `yarn revert:check <sha>`).
@@ -34,14 +32,13 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 ## Build
 
-- Build in slices. When a slice starts, write an "in progress" note to the plan; it goes into the slice's commit.
 - Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
 - Lead sonnet subagents, a fresh one per slice; each brief names the files and line ranges.
 - One topic at a time: work the queue in order and start the next topic only when the current one
   is committed. You coordinate, verify, push and report.
-- Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the
-  "as built" note together; the commit that finishes a row also deletes it from `STATUS.md` and sets `built:` on its
-  ADRs (ADR 0284). Fix format, lint and review findings before that commit, not after.
+- Commit each finished slice once, with `git commit -- <paths>`: code, spec and changeset; the message holds the as-built
+  text, verified and not verified. No plan notes, no per-row `STATUS.md` edit (ADR 0350); a follow-up commit sets
+  `built: <sha>` on its ADRs. Fix format, lint and review findings before that commit, not after.
   Tell each subagent the same. Never `git add -A`, never stash, never amend, never rebase.
 - An ADR edit under `apps/ethlete-studio` is a change to ethlete-studio: put an `'ethlete-studio': none` changeset in
   the same commit, or pre-push refuses the range.
@@ -71,8 +68,6 @@ The German grill/docs session talks with the user and records decisions. Talk En
 - A fix for "Studio does not show X" counts as verified only after a live shot of that view; an API answer alone does not (finding 792).
 - A condition check that gates a decision runs a probe (a spec or a live run) before it reports. Report a code read as "Suspect (code read)" (finding 794).
 - Before you write "open for the human" in a handoff or report, grep `apps/ethlete-studio/docs/adr` for the topic. An ADR that decided it closes the point (finding 793).
-- After a slice, write an "as built" section in the plan: what was built, the commits, and
-  what you verified and what you did not verify.
 
 ## Mission
 
