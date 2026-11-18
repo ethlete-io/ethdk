@@ -75,7 +75,7 @@ describe('design status and uncommitted design state', () => {
     writeReady(target, {});
 
     expect(statusLines(target)).toEqual([
-      'READY UNCOMMITTED acme pages/home: the mark HEAD holds is gone - run `design ready pages/home` to commit the removal',
+      'READY UNCOMMITTED acme pages/home: the mark HEAD holds is gone - commit `ready.json` of acme with git to keep the removal',
     ]);
   });
 

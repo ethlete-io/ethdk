@@ -42,7 +42,7 @@ const readyLinesOf = (product: ResolvedProduct) => {
   const prefix = (part: string, what: string) => `READY UNCOMMITTED ${product.name} ${part}: ${what}`;
   const line = (part: string, what: string) => `${prefix(part, what)} - run \`design ready ${part}\` to commit it`;
   const removal = (part: string, what: string) =>
-    `${prefix(part, what)} - run \`design ready ${part}\` to commit the removal`;
+    `${prefix(part, what)} - commit \`ready.json\` of ${product.name} with git to keep the removal`;
 
   return [...new Set([...Object.keys(head), ...Object.keys(now)])].sort().flatMap((part) => {
     const [before, after] = [head[part], now[part]];
