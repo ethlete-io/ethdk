@@ -43,7 +43,13 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped loader/disabled fix"
   },
   "components/calendar": "daa79be9b799f897",
-  "components/card": "28f80ac47c55426e",
+  "components/card": {
+    "hash": "b78ba22292a76eaf",
+    "variant": "new",
+    "decidedBy": "plan: B584: fill the missing control states of components/card",
+    "at": "2026-11-18T14:07:19.533Z",
+    "note": "merged without a pick: allowed by B584: fill the missing control states of components/card"
+  },
   "components/carousel": "1706f12ac6905d60",
   "components/chart": "7484c4d80d418295",
   "components/checkbox": "7f176773e02868b1",
