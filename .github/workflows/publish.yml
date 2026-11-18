@@ -287,12 +287,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           UPDATES_TAG: ${{ matrix.app.project }}-updates
+          MIRROR_BASE: https://elrond.invalid/updates
         run: |
           set -euo pipefail
           jq -s --arg version "${{ matrix.app.version }}" --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{ version: $version, pub_date: $date, platforms: add }' platforms/*/platforms.json > latest.json
+          jq --arg from "https://github.com/$GITHUB_REPOSITORY/releases/download/" \
+            --arg to "$MIRROR_BASE/${{ matrix.app.project }}/" \
+            '.platforms |= map_values(.url |= if startswith($from) then $to + ltrimstr($from) else error("unexpected url \(.)") end)' \
+            latest.json > latest-elrond.json
           if ! gh release view "$UPDATES_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$UPDATES_TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
               --title "${{ matrix.app.project }} updates" --notes "The update manifest the installed app reads. Download a bundle from the release of its version."
           fi
-          gh release upload "$UPDATES_TAG" latest.json --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$UPDATES_TAG" latest.json latest-elrond.json --repo "$GITHUB_REPOSITORY" --clobber

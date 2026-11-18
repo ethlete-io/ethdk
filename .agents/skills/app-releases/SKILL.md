@@ -33,6 +33,9 @@ release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
 `https://elrond.invalid/updates/<app>/latest.json` second (ADR 0342, 0345; `elrond.invalid` stands in for
 elrond's real host): the plugin tries the next endpoint when one fails or answers non-2xx, so the
 self-hosted one takes over once the repo is private. Keep that order until every installed app has it.
+elrond pulls (ADR 0346): `apps-release` uploads `latest-elrond.json` next to `latest.json`, with each url
+rewritten to `$MIRROR_BASE/<app>/<tag>/<file>`; elrond mirrors those files and serves it as `<app>/latest.json`.
+`MIRROR_BASE` in publish.yml and the second endpoint change together.
 
 On Linux both apps, and on macOS Studio, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
 branch (ADR 0249); Timetrack on macOS and both apps on Windows run on wry. The Studio macOS bundle is
