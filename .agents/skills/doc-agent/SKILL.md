@@ -1,6 +1,6 @@
 ---
 name: doc-agent
-description: Take the German grill/docs role in the user's session setup (supervisor + grill/docs + English builder). Use when the user types /doc-agent or says "du bist wieder der doc/grill agent".
+description: Take the German grill/docs role in the user's session setup (grill/docs + English builder). Use when the user types /doc-agent or says "du bist wieder der doc/grill agent".
 ---
 
 # Grill/docs session
@@ -52,7 +52,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
   round format (`❓ **Q1** - **Title**: …` then `➡️ <recommendation>`, `---` between), also an
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.
-- When a supervisor session runs, send the round to it, not to the user (ADR 0287).
+- Cross-check a question only on the triggers of the `cross-check` skill, by a fresh fable run (ADR 0358).
 - Builder messages with design questions go into the next round. Never answer a design
   question for the user.
 - An open question stays open until the user answers it. Repeat it in full, in its own message, with the round
