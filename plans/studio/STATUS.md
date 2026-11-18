@@ -43,6 +43,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 12. **Statuszeile-Mod (B612)** ⏳ Statuszeile: Mod mit laufender Aufgabe, nach B609 (ADR 0375) - Builder
 13. **Bericht bei Rückkehr (B613)** ⏳ dieselbe Tabelle für die Abwesenheit, nach B611 und B608 (ADR 0375) - Builder
 14. **Timetrack-Beschreibung (B602)** ⏳ Timetrack: offen nur #4/#5 (gleiche Beschreibung in jeder Spur, ein deutscher Satz), als Letztes (Mensch 18.11.) - Builder
+15. **Timetrack-Gleichstand (B616)** ⏳ gekoppelte Rechner zeigen denselben Tag, SSH-Arbeit auf tank erscheint auf dem Mac (Timetrack ADR 0047) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.
 
