@@ -26,7 +26,6 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 - [`m7-sync-research.md`](./m7-sync-research.md): Recherche und Entscheidungen zum M7-Sync (ADR 0039).
 - [`lib-scan-integrations.md`](./lib-scan-integrations.md), [`lib-scan-jira-tempo-model.md`](./lib-scan-jira-tempo-model.md):
   offene Befunde des Lib-Scans vom 28.09.
-- [`design-explore/`](./design-explore): Kerbe-Markenblätter (`.dc.html`), von `.ethlete/design/calls/timetrack` genutzt.
 
 ## Verweise
 

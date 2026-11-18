@@ -2,6 +2,8 @@
 
 Status: recorded on 2026-09-27, not started.
 
+parked since 2026-11-18
+
 Tom booked September by hand from a draft that agents built out of the Timetrack evidence. Tom
 corrected the draft many times. Each correction below is a rule that the app does not know yet.
 The rules belong to M2 (attribution) and M6 (the sync).
