@@ -38,6 +38,7 @@
     "lint:migration-entries": "node ./tools/scripts/check-migration-entries.mjs",
     "lint:no-verify-briefs": "node ./tools/scripts/check-no-verify-briefs.mjs",
     "lint:person-names": "node ./tools/scripts/check-person-names.mjs",
+    "lint:plans": "node ./tools/scripts/check-plans.mjs",
     "lint:runner-os": "node ./tools/scripts/check-runner-os-paths.mjs",
     "lint:size": "node ./tools/scripts/check-size-budget.mjs",
     "lint:spec-typecheck": "node ./tools/scripts/check-spec-typecheck.mjs",

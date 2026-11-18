@@ -17,11 +17,13 @@ export const CHECKS = [
   'lint:spec-typecheck',
   'lint:no-verify-briefs',
   'lint:person-names',
+  'lint:plans',
   'docs:error-codes:check',
   'sdk:tokens:check',
 ];
 
 const PERSON_NAMES_SCRIPT = join(import.meta.dirname, 'check-person-names.mjs');
+const PLANS_SCRIPT = join(import.meta.dirname, 'check-plans.mjs');
 
 export const commandsFor = (check, head, base) => {
   if (check === 'lint:changesets')
@@ -30,6 +32,7 @@ export const commandsFor = (check, head, base) => {
       ['yarn', ['lint:changeset-coverage']],
     ];
   if (check === 'lint:person-names') return [['node', [PERSON_NAMES_SCRIPT, '--range', base, head]]];
+  if (check === 'lint:plans') return [['node', [PLANS_SCRIPT, '--rev', head]]];
   return [['yarn', [check]]];
 };
 

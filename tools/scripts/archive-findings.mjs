@@ -295,16 +295,6 @@ export const readAdrText = (root) => {
     .join('\n');
 };
 
-export const orphanFindings = (planText, statusText) => {
-  const cited = new Set(parseStatusRows(statusText).flatMap((row) => [...row.findings]));
-  return splitFindings(planText).flatMap((block) => {
-    const date = DATE.exec(block.lines.join('\n'));
-    if (!date || cited.has(block.number)) return [];
-    const title = block.lines[0].replace(FINDING_START, '').slice(0, 100);
-    return [{ number: block.number, title, date: date[0] }];
-  });
-};
-
 export const writeArchive = (archiveDir, moved) => {
   mkdirSync(archiveDir, { recursive: true });
   const months = [...new Set(moved.map((m) => m.month))].sort();
@@ -371,37 +361,31 @@ export const archiveAsBuilt = (root, file, today = new Date()) => {
   return sections.length;
 };
 
-const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dry-run] [--orphans] [--help]
+const USAGE = `usage: node tools/scripts/archive-findings.mjs [--help]
        node tools/scripts/archive-findings.mjs --whole <plan file>
        node tools/scripts/archive-findings.mjs --as-built <plan file>
   --whole     appends the plan file to archive/findings-<month>.md and deletes it
   --as-built  moves the "## As built" sections of the plan file to archive/findings-<month>.md
   moves done findings and old decision sections of plans/studio/design-to-code.md into archive/
   a finding is done by a done STATUS row, a paragraph "NNN built|closed|withdrawn|as built ...", a line in
-  parked-suspects.md, or a built line; it leaves with every paragraph that starts with its number
-  --days=<n>  age in days an orphan finding (no STATUS row, not named in STATUS) must reach to move, and a
-              decision section to move; the section's remaining findings stay under its heading (default 5)
-  --dry-run   list what would move and why each old finding stays, write nothing
-  --orphans   list old findings with no STATUS row, write nothing`;
+  parked-suspects.md, or a built line; it leaves with every paragraph that starts with its number`;
 
-const planMoves = (root, days) => {
+const planMoves = (root) => {
   const studio = join(root, 'plans/studio');
   const planFile = join(studio, 'design-to-code.md');
   const statusText = studioRowsText(root);
   const today = new Date();
   const parkedFile = join(studio, 'parked-suspects.md');
   const parked = existsSync(parkedFile) ? parkedNumbers(readFileSync(parkedFile, 'utf8')) : new Set();
-  const first = archiveFindings(readFileSync(planFile, 'utf8'), statusText, { today, days, parked });
-  const second = archiveSections(first.plan, statusText, readAdrText(root), { today, days });
+  const first = archiveFindings(readFileSync(planFile, 'utf8'), statusText, { today, parked });
+  const second = archiveSections(first.plan, statusText, readAdrText(root), { today });
 
-  const before = readFileSync(planFile, 'utf8').length;
   return {
     studio,
     planFile,
     plan: second.plan,
     moved: [...first.moved, ...second.moved],
     stays: first.stays,
-    freed: before - second.plan.length,
   };
 };
 
@@ -411,16 +395,15 @@ const logStays = (stays, log) => {
   for (const [reason, list] of counts) log(`${list.length} stay: ${reason}`);
 };
 
-export const run = (root, days = 5, log = console.log) => {
-  const { studio, planFile, plan, moved, stays } = planMoves(root, days);
+export const run = (root, log = console.log) => {
+  const { studio, planFile, plan, moved, stays } = planMoves(root);
   writeArchive(join(studio, 'archive'), moved);
   writeFileSync(planFile, plan);
   logStays(stays, log);
   return moved.length;
 };
 
-const DAYS_ARG = /^--days=(\d+)$/;
-const KNOWN = new Set(['--help', '--dry-run', '--orphans']);
+const KNOWN = new Set(['--help']);
 
 export const main = (argv, { root, log = console.log }) => {
   const modeAt = argv.findIndex((arg) => arg === '--whole' || arg === '--as-built');
@@ -442,29 +425,13 @@ export const main = (argv, { root, log = console.log }) => {
     log('plans/studio/design-to-code.md is archived; nothing to move');
     return 0;
   }
-  const unknown = argv.filter((arg) => !KNOWN.has(arg) && !DAYS_ARG.test(arg));
+  const unknown = argv.filter((arg) => !KNOWN.has(arg));
   if (argv.includes('--help') || unknown.length > 0) {
     if (unknown.length > 0) log(`unknown argument: ${unknown.join(' ')}`);
     log(USAGE);
     return unknown.length > 0 ? 2 : 0;
   }
-  if (argv.includes('--orphans')) {
-    const studio = join(root, 'plans/studio');
-    const orphans = orphanFindings(readFileSync(join(studio, 'design-to-code.md'), 'utf8'), studioRowsText(root));
-    for (const o of orphans) log(`${o.number}\t${o.date}\t${o.title}`);
-    log(`${orphans.length} orphans`);
-    return 0;
-  }
-  const daysArg = argv.find((arg) => DAYS_ARG.test(arg));
-  const days = daysArg ? Number(daysArg.slice(7)) : 5;
-  if (argv.includes('--dry-run')) {
-    const { moved, stays, freed } = planMoves(root, days);
-    for (const m of moved) log(`${m.month}\t${m.text.split('\n')[0].slice(0, 100)}`);
-    logStays(stays, log);
-    log(`would move ${moved.length} findings and sections, freeing ${freed} chars`);
-    return 0;
-  }
-  log(`moved ${run(root, days, log)} findings and sections`);
+  log(`moved ${run(root, log)} findings and sections`);
   return 0;
 };
 

@@ -8,7 +8,6 @@ import {
   archiveSections,
   BACKLOG_WHERE,
   backlogNumbers,
-  orphanFindings,
   parkedNumbers,
   doneFindingNumbers,
   main,
@@ -104,16 +103,6 @@ test('appends to an existing month file', () => {
   writeArchive(dir, [{ number: 1, month: '2026-11', text: '1\\. a' }]);
   writeArchive(dir, [{ number: 2, month: '2026-11', text: '2\\. b' }]);
   assert.equal(readFileSync(join(dir, 'findings-2026-11.md'), 'utf8'), '# Findings 2026-11\n\n1\\. a\n\n2\\. b\n');
-});
-
-test('lists dated findings that no row cites', () => {
-  assert.deepEqual(
-    orphanFindings(plan, status),
-    [
-      { number: 12, title: 'Tom (2026-11-02): shared with an open row.', date: '2026-11-02' },
-      { number: 13, title: 'Tom (2026-11-03): not referenced.', date: '2026-11-03' },
-    ].filter((o) => o.number !== 12),
-  );
 });
 
 const decisionPlan = `# Plan
@@ -229,7 +218,6 @@ const oldDonePlan = () => {
 for (const [argv, code] of [
   [['--help'], 0],
   [['--bogus'], 2],
-  [['--dry-run'], 0],
 ]) {
   test(`${argv.join(' ')} prints and leaves both files byte-identical`, () => {
     const { root, snapshot } = oldDonePlan();
