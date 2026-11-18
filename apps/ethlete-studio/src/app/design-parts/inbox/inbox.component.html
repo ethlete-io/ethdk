@@ -101,7 +101,9 @@
       <figure [class]="FRAME_CLASS">
         <figcaption [class]="FRAME_HEAD_CLASS">button</figcaption>
         @if (thread()) {
-          <ng-container *ngTemplateOutlet="threadCard" />
+          <div class="absolute z-20 ml-space-3">
+            <ng-container *ngTemplateOutlet="threadCard" />
+          </div>
         }
       </figure>
     </ethlete-canvas-frames>

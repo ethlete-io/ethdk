@@ -343,7 +343,9 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
   'pages/inbox': ({ thread, ...props }) => {
     const opened = thread as { id: string; text?: string; phase?: CommentSendPhase; reason?: string } | undefined;
 
-    return opened ? { ...props, thread: inboxThreadSampleOf(opened), replyText: opened.text ?? '' } : props;
+    return opened
+      ? { ...props, selectedId: opened.id, thread: inboxThreadSampleOf(opened), replyText: opened.text ?? '' }
+      : props;
   },
   'pages/system': ({ build, agent, call, listingError, folded, comments, developer, thread, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;

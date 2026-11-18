@@ -67,7 +67,7 @@ export type CommentThread = {
       <button
         [attr.aria-label]="LABELS.close"
         (click)="dismiss.emit()"
-        et-button
+        et-icon-button
         type="button"
         variant="transparent"
         color="surface"
