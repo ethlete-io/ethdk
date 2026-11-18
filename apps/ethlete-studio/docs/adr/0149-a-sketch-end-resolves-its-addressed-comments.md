@@ -2,7 +2,7 @@
 status: accepted
 built: 1f4e8bde5
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/decisions.md, "Comment cleanup decisions", sketch end
+source: the design-system-actions decisions log (deleted in B597), "Comment cleanup decisions", sketch end
 ---
 
 # A sketch end resolves its addressed comments

@@ -2,7 +2,7 @@
 status: accepted
 built: 7eb3cb4fd
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/decisions.md, "Colour foundations and agent logos decisions", one source
+source: the design-system-actions decisions log (deleted in B597), "Colour foundations and agent logos decisions", one source
 ---
 
 # The foundations/colors part is the one colour source

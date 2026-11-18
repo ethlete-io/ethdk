@@ -2,7 +2,7 @@
 status: accepted
 built: 31c882a86
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/decisions.md, "State token values decisions", step A
+source: the design-system-actions decisions log (deleted in B597), "State token values decisions", step A
 ---
 
 # State tokens first land with today's values

@@ -2,7 +2,7 @@
 status: accepted
 built: 61fdde5dd
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/review-canvas.md, 2.2
+source: the design-system-actions review-canvas log (deleted in B597), 2.2
 ---
 
 # Sketches and the app use the app zoom chip

@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/decisions.md, "State token values decisions", step B
+source: the design-system-actions decisions log (deleted in B597), "State token values decisions", step B
 ---
 
 # State token values are tuned in their own sketch

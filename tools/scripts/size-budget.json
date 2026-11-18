@@ -5,10 +5,8 @@
     {
       "name": "plan index",
       "files": [
-        "plans/ethlete-studio/design-system.md",
         "plans/ethlete-studio/backlog-parallel.md",
         "plans/ethlete-studio/design-system-actions.md",
-        "plans/ethlete-studio/design-system-actions-fixed.md",
         "plans/ethlete-studio/studio-wireframes-handoff.md"
       ],
       "budget": 6000

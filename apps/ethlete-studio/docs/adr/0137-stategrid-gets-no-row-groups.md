@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions-fixed.md, 5.34
+source: the fixed-entries log of the self-test (deleted in B597), 5.34
 ---
 
 # StateGrid gets no row groups

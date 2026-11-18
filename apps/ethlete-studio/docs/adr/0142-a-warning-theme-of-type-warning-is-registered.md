@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/decisions.md, "Colour foundations and agent logos decisions", warning
+source: the design-system-actions decisions log (deleted in B597), "Colour foundations and agent logos decisions", warning
 ---
 
 # A warning theme of type warning is registered
