@@ -3,6 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, unlin
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseStatusRows } from './studio-status.mjs';
+import { studioRowsText } from './studio-plan.mjs';
 
 const FINDING_START = /^(\d+)\\\. /;
 const DATE = /\b(\d{4})-(\d{2})-\d{2}\b/;
@@ -386,7 +387,7 @@ const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dr
 const planMoves = (root, days) => {
   const studio = join(root, 'plans/studio');
   const planFile = join(studio, 'design-to-code.md');
-  const statusText = readFileSync(join(studio, 'STATUS.md'), 'utf8');
+  const statusText = studioRowsText(root);
   const today = new Date();
   const parkedFile = join(studio, 'parked-suspects.md');
   const parked = existsSync(parkedFile) ? parkedNumbers(readFileSync(parkedFile, 'utf8')) : new Set();
@@ -449,10 +450,7 @@ export const main = (argv, { root, log = console.log }) => {
   }
   if (argv.includes('--orphans')) {
     const studio = join(root, 'plans/studio');
-    const orphans = orphanFindings(
-      readFileSync(join(studio, 'design-to-code.md'), 'utf8'),
-      readFileSync(join(studio, 'STATUS.md'), 'utf8'),
-    );
+    const orphans = orphanFindings(readFileSync(join(studio, 'design-to-code.md'), 'utf8'), studioRowsText(root));
     for (const o of orphans) log(`${o.number}\t${o.date}\t${o.title}`);
     log(`${orphans.length} orphans`);
     return 0;

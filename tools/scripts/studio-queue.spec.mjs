@@ -33,3 +33,19 @@ test('finds the table row of one id', () => {
   assert.match(rowOf(status, 'B588'), /^\| B588 \| ready und check aus einer Funktion\./);
   assert.equal(rowOf(status, 'B58'), null);
 });
+
+test('appends the rest list of rows.md after the head, in order', () => {
+  const rows = [
+    '# Studio – Zeilen',
+    '',
+    '### Warteschlange, Rest',
+    '',
+    '3. **B160** ⏳ alt - Builder',
+    '',
+    '### Einträge',
+  ];
+  assert.deepEqual(
+    queueLines(`${status}\n${rows.join('\n')}`).map((line) => line.slice(0, 11)),
+    ['1. **B588**', '2. **B597**', '3. **B160**'],
+  );
+});

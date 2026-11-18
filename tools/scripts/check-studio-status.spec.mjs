@@ -36,3 +36,10 @@ test('refuses a Stand older than 3 days, accepts exactly 3', () => {
 test('ignores Stand text outside the header line', () => {
   assert.deepEqual(studioStatusProblems(doc('Stand der aktuellen Welle: 01.01.2020', okRow), today), []);
 });
+
+test('rows mode refuses a done row under its own file name and needs no Stand', () => {
+  const rows = '| ID | Was |\n| B1 | x | ✅ |\n';
+  assert.deepEqual(studioStatusProblems(rows, new Date(), { file: 'rows.md', stand: false }), [
+    'rows.md line 2: row B1 has status ✅. Delete the done row in the commit that finishes it.',
+  ]);
+});

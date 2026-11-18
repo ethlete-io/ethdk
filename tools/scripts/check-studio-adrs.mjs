@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { splitFindings } from './archive-findings.mjs';
 import { parseStatusRows } from './studio-status.mjs';
+import { studioRowsText } from './studio-plan.mjs';
 
 const STATUS_VALUE = /^(accepted|superseded by \d{4})$/;
 const BUILT_VALUE = /^[0-9a-f]{7,40}$/;
@@ -47,8 +48,9 @@ export const checkAdr = (name, text, rows) => {
     warnings.push(`${name}: open: none (decided, no STATUS row yet)`);
   } else {
     const row = rows.find((r) => r.id === meta.open);
-    if (!row) errors.push(`${name}: open row ${meta.open} is not in STATUS.md`);
-    else if (row.done) errors.push(`${name}: open row ${meta.open} is done in STATUS.md; set "built: <sha>"`);
+    if (!row) errors.push(`${name}: open row ${meta.open} is not in STATUS.md or rows.md`);
+    else if (row.done)
+      errors.push(`${name}: open row ${meta.open} is done in STATUS.md or rows.md; set "built: <sha>"`);
   }
   return { errors, warnings };
 };
@@ -114,8 +116,7 @@ const readArchives = (dir) =>
     : [];
 
 export const checkAdrs = (root) => {
-  const statusFile = join(root, 'plans/studio/STATUS.md');
-  const statusText = existsSync(statusFile) ? readFileSync(statusFile, 'utf8') : '';
+  const statusText = studioRowsText(root);
   const archives = readArchives(join(root, 'plans/studio/archive'));
   const findings = [...findingErrors(archives, statusText), ...lostFindingErrors(archives, committedArchiveOf(root))];
   const dir = join(root, 'apps/ethlete-studio/docs/adr');

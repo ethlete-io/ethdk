@@ -1,0 +1,177 @@
+# Studio – Zeilen
+
+Teil der Warteschlange und Zeilen zu [STATUS.md](STATUS.md) (ADR 0351, 0354).
+
+### Warteschlange, Rest
+
+13. **B160** ⏳ Neu gezeichneter vorhandener Interaktionszustand: Vergleich auf Element-Ebene - Builder
+14. **B422** ⏳ `lint:no-verify-briefs` prüft nur getrackte Dateien, NEGATED bekommt „no“, umbrochene ... - Builder
+15. **B424** ⏳ Studio-Prüfungen laufen live in Studio und schnell, nie in Git-Hooks oder CI; Drift wird ... - Builder
+16. **B477** ⏳ UI-Fehler, nur Mac: Text in `button.et-surface-interactive` auf elements/canvas-frames ... - Builder
+17. **B480** ⏳ Tagschicht (ADR 0239): Spike CEF auf Windows wie B469 (Build läuft, Live-Frames, ... - Builder
+18. **B482** ⏳ Release-Smoke: das Release-Bundle von Studio einmal starten, ein Sketch öffnen und bei ... - Builder
+19. **B490** ⏳ Tagschicht: Design-Styles liefern eine Monospace- und die UI-Schrift selbst (ADR 0262, ... - Linux 210235327; Mac offen
+20. **B508** ⏳ SDK (fifagg, ADR 0297), nach B507 + Breadcrumb-Tokens: Menüpunkt-Ladezustand; ... - Builder
+21. **B255** ⏳ Part-Baum: Sketch-Titel nennt Variante, Regel, Meldung; Produkt-Probleme hängen am Part ... - Builder
+22. **B256** ⏳ Veraltetes dist der Design-Mocks ist Problem: check/ready/shot lehnen ab mit ... - Builder
+23. **B257** ⏳ Sketch sdk switch: Rahmen der leeren Spur ja/nein; danach entfällt switchStyles in inbox ... - Builder
+24. **B266** ⏳ Probleme NESTED-SURFACE, LOST-SURFACE, PART-REWRITE; Sketch eines Parts mit Hosts shootet ... - Builder
+25. **B268** ⏳ motion-shot.ts setzt settleFrames ein (Animationen auch in eingebetteten Frames beenden), ... - Builder
+26. **B270** ⏳ e2e-check druckt Last und Kerne; Timing-Fall über Kernzahl rot → NOT MEASURED statt FAIL ... - Builder
+27. **B274** ⏳ sketch rebase trägt reine Deklarations-Änderungen eines Parts (controls, motions, states) ... - Builder
+28. **B275** ⏳ Problem UNSKETCHED-UI: App-Template-Diff fügt sichtbares Element ohne gewählten ... - Builder
+29. **B264b** ⏳ Motions-Hinweis auch in design check/part-check: Text nach open-points.ts verschieben ... - Builder
+30. **B276** ⏳ Part ohne implements, dessen Name eine App-Komponente trifft → Problem mit Pfad; Treffer ... - Builder
+31. **B277** ⏳ sketch check/ready laden Frames über dieselbe Queue (gleiches N) wie Studio; Mutation N ... - Builder
+32. **B278** ⏳ capability-place.spec rot auf echten Daten: comment-write emit:send vs pages/inbox ... - Builder
+33. **B279** ⏳ Regel SKIP-UNUSED: data-et-skip ohne unterdrücktes Problem in jedem Zustand ist Problem; ... - Builder
+34. **B283** ⏳ compare an einer Eltern-Revision: unterstützter Weg über den e2e-check-Baum (eigene ... - Builder
+35. **B284** ⏳ Sketch-Shot zeichnet genau die Frame-Menge der Studio-Ansicht (eine Listenfunktion, Spec ... - Builder
+36. **B289** ⏳ system-page: commentMode, draft, send, reason von KNOWN_UNBOUND_INPUTS nehmen und binden ... - Builder
+37. **B291** ⏳ Push 04.11. ohne Hooks (Tom): Pre-Push-Hook auf 0ddbcc120 nachholen, Funde beheben; ... - Builder
+38. **B295** ⏳ Studio-Prüfungen aus dem Pre-Push in Studios Prüfsystem (Specs, Design-Check, Live-Check, ... - Builder
+39. **B296** ⏳ Jeder vom Server gemeldete Part-Fehler sperrt die Wahl über einen Pfad, nicht je Ansicht ... - Builder
+40. **B299** ⏳ e2e-check.spec bekommt die sha vom Hook (env/arg), läuft im Pre-commit-Index-Checkout ... - Builder
+41. **B300** ⏳ Regel TEXT-TRUNCATED: abgeschnittener Inhaltstext pro State ist ein Befund; Opt-out ... - Builder
+42. **B301** ⏳ Stale-dist-Hash nur über committete Quellen (HEAD-Blobs); Agent-Briefs verbieten Edits an ... - Builder
+43. **B302** ⏳ Ein maschinenweiter Lock für schwere Läufe (Pre-Commit-Specs, nx test, design check); ... - Builder
+44. **B303** ⏳ Studio-Status nennt die Startphase ("CLI wird gebaut") mit Laufzeit (Bef. 355) - Builder
+45. **B304** ⏳ macOS-Ampel vertikal in der Titelleiste zentrieren + Fensterprüfung (Bef. 357) - Builder
+46. **B306** ⏳ Fehlgeschlagener Shot: Fehlerzustand statt kaputtem Bild; kein "Nichts offen" bei ... - Builder
+47. **B307** ⏳ Parser-Specs für Tool-Ausgabe mit echten CI-Logs als Fixture (Bef. 360) - Builder
+48. **B308** ⏳ Prüfung auf Personennamen in libs/, apps/, apps/docs, .ethlete/design; Rolle "human" ... - Builder
+49. **B310** ⏳ Studio-Freeze: WebKit-Bug bei Top-Level-Await + Iframe-Entfernen; TLA raus, TLA-Guard, ... - Builder
+50. **B311** ⏳ Leere Frames: WKWebView schließt SSE nach 60 s ohne Bytes, Reconnect remountet alles, ... - Builder
+51. **B312** ⏳ Overscroll der Shell: overscroll-behavior none überall (de2b83743); Scroll-Kanten-Probe ... - Builder
+52. **B313** ⏳ Frames über dem Explorer unter Last: isolate + contain-paint am Canvas (de2b83743); ... - Builder
+53. **B315** ⏳ Neu-starten-Klick tötet Server bei dirty libs/cli: Neustart nur aus Commit-Kopie ... - Builder
+54. **B317** ⏳ Erstes Listing langsam: Regel-Checks blockieren den Server, Abbruch nur im Client; Worker ... - Builder
+55. **B319** ⏳ Leerer Direct-edit-Sketch: Ziel als Part-Key, old mit neuem shared/, englische Texte; ... - Builder
+56. **B332** ⏳ Design-Check-Regel: löst die Imports jeder Sketch-Variante auf, damit ein veraltetes ... - Builder
+57. **B335** 🔨 CI prüft den gepushten Bereich: commitlint + `yarn test:tools`; Pre-push prüft commitlint ... - Builder
+58. **B337** ⏳ Design-Server meldet fehlendes dist statt zu hängen; verify-webkit-studio prüft ... - Builder
+59. **B340** ⏳ Triage `design check --product studio`: 698 Funde, Exit 1 (DROPPED-PROP 11, LOST-SURFACE ... - Builder
+60. **B342** ⏳ `sketch check`: Variante mit geänderten unberührten Zuständen ist Fehler; `sketch ... - Builder
+61. **B344** ⏳ `sketch rebase` nach einer Wahl portiert nur die gewählte Variante; zwei offene Sketches ... - Builder
+62. **B349** ⏳ Merge startet die e2e-Fälle des gemergten Parts; 3 Fälle rot nach den Merges vom 04.11. ... - Builder
+63. **B350** ⏳ `/__design/system`: kalt ~60 s Wartezeit, warm Stall 1 s (Mac); kalt < 5 s, warm < 200 ... - Builder
+64. **B365** ⏳ Explorer: Mausrad über Tree-Item-Innenfläche scrollt spät; Messung in CEF (Zeile vs. ... - Builder
+65. **B375** ⏳ `design check`: `components/scheduler` braucht 120 s (vermutlich Render-Timeout), 18 % ... - Builder
+66. **B376** ⏳ Commit-Hook braucht ~100 s (`vitest related` + Typecheck): messen, wo die Zeit hingeht, ... - Builder
+67. **B378** ⏳ e2e-Biss: der Harness nimmt für einen Biss-Lauf `STUDIO_CLI_ENTRY` aus einer alten ... - Builder
+68. **B381** ⏳ SDK: native `title` dort, wo ein `aria-label` passt, prüfen (Passwort-Feld, PiP, ... - Builder
+69. **B386** ⏳ pre-commit-Gate: Datendateien (`migrations.json`, `generators.json`) auf die Specs ... - SDK-Session ethlete-sdk-ff
+70. **B388** ⏳ Voller `design check --product studio`: ~800 Render-Probleme sortieren (echte Fehler oder ... - Builder
+71. **B391** ⏳ Zwei Studio-e2e-Fälle flaky nur im vollen Lauf: Live-Frame-Limit nach Abstand zur Ansicht ... - Builder
+72. **B398** 🔨 UI-Builder (zweite Session) baut die UI-Liste: A1 gebaut ff698951f; title-bar@notice-hint ... - Builder (c8)
+73. **B399** 🔨 Performance zuerst: `design compare` (Bef. 477), sketch ready/check, C1 ... - Builder (c0)
+74. **B401** 🔨 Neue Design-Regel läuft im eigenen Commit über alle Produkte; alte Treffer in eine ... - SDK-Builder (cb)
+75. **B403** 🔨 UI-Builder untersucht nur Werkzeuglücken, die ihn blockieren; alle anderen in einem Satz ... - Builder (c8)
+76. **B404** 🔨 Design-Hintergrundprozess (Bef. 492, 493): S1 Lib-Build-Sperre, S2 Prozess + Client + ... - Builder (c0)
+77. **B405** 🔨 Alte Implementierungs-Drift (sketches, system, canvas-frames) in schrumpfende Baseline ... - cb, dann c8
+78. **B406** 📋 Skizzen-Merge prüft in sauberer Kopie von HEAD + nur der Skizze; fremde ungespeicherte ... - cb
+79. **B410** 📋 DROPPED-PROP-Baseline abbauen: je eine Skizze für canvas-frames, pages/sketches, ... - c0
+80. **B412** 📋 Veralteter merged-Hash: Regel DIRECT-EDIT-PENDING für gemergte Teile, deren Hash ohne ... - c0
+81. **B413** 📋 Regel ACCESSIBLE-NAME: zugänglicher Name eines Controls Design vs. App vergleichen; ... - c0
+82. **B414** 📋 Resident-e2e-Spec: echter Hintergrundprozess, compare, Part ändern, compare erneut - ... - c0
+83. **B416** 📋 compare schneller (Bef. 521): App-Shots parallel, S4 Bild-Cache vorziehen, mehrere Parts ... - c0
+84. **B370** ⏳ Studio-Host endet bei Ctrl+C/SIGTERM: erst Beweis an zweiter Debug-Instanz, dann Host-e2e ... - Builder
+85. **B368** ⏳ `et design`: Serve-Zustand zeigt Besitzer des Ports (Studio-App oder Terminal), bedienten ... - Builder
+86. **B356** ⏳ Zoom in WebKit ~20 fps (Chromium 60): WebKit-Budget Frame-Intervall p50 ≤ 20 ms, p95 ≤ 33 ... - Builder
+87. **B100** ⏳ Restliche prüfbare Regeln aus dem Audit - Builder
+
+**Maschinerie-Stapel** (nur bei rotem CI bauen; steuert den Builder nicht): Cause (gemessen: rot mit `node_modules/.vitest-cache`, 7/7 mit `--no-fsModuleCache`): der vitest-fs-Modul-Cache liefert für bearbeitete Dateien veralteten kompilierten Code; Specs nur mit `--no-fsModuleCache` grün, `spec:stress` falsch 0/4 (bb18b9f26-Slice), und das „lastempfindliche“ progress-steps-Szenario (3 rot in großem `vitest related`-Lauf, 7/7 allein, 1053ab687, f9940515d) ist dieselbe Ursache. Nur bei rotem CI bauen. Suspect: `lint:no-verify-briefs` scannt die ignorierten `.claude/handoffs/*.md` und blockierte einen Push wegen eines zitierten Flags in einem Handoff. Agenten können CI-Job-Logs nicht lesen (403, Admin nötig; keine Test-Artefakte), ein roter Unit-Test-Job ist nur lokal nachzustellen (15.11.). Suspect: agent-rules output-style.spec „falls back to the home directory“ liest die Umgebung und fällt lokal rot, sobald `CLAUDE_CONFIG_DIR` gesetzt ist (CI setzt es nicht). Suspect (16.11.): `restart --process claude2` beendete die tmux-Session des Builders statt sie neu zu starten (der Prozess-Exit schließt die Session vor dem Neustart); von Hand mit `run claude2 claude ... --role builder` neu gestartet. Suspect (16.11., fifa): `restart` tippt einen zweiten Resume-Prompt in eine belegte Session, wenn eine Hintergrundaufgabe ihren Turn offen hält (fifa bekam zwei Handoffs); gebaut e8dccb2e3. Suspect (16.11.): `slice-paths` ist eine Datei pro Checkout, parallele Agents überschreiben sich (nur Warnung). Suspect (16.11.): nach einem Rebase verweigert `sketch ready` eine vom Builder gewählte Edit-Skizze, nur `--reopen` hilft und behauptet eine Nutzerbitte. Cause (16.11., gebaut ee74c30a1, d03478c4d, 8b24d45e0): der Dispatcher tippte fremde Mailbox-Nachrichten in die fifa-Session eines anderen Repos. Cause (17.11.): ein veralteter vite/vitest-Transform-Cache (`node_modules/.vite/libs/components`) gibt lokal falsche Rote mit falschen Source-Maps (WHOLE_PIXEL_HEIGHT, rte-tools-Szenario); kein Import-Zyklus. Suspect (17.11.): eine Edit-Skizze, die nur eine von einem ADR verlangte Entfernung zeichnet, braucht trotzdem eine Merge-Wahl; der Agent-Merge wird vom Rechte-Klassifizierer abgelehnt (zweimal, pages/inbox@edit; nur der Mensch kann ihn ausführen). Suspect (17.11.): der Builder vergab schon geschlossene Zeilen-IDs neu (B540/B541); die nächste ID nimmt das Maximum über STATUS und git log. Befund (17.11., zweites Mal, CI auf 4365c1e71): Studio-e2e „[Discard] a sketch discarded while its view is open“ läuft unter Last in den Timeout von `locator.click`; vorher geparkt (babbe94e0). Rot in 4 Läufen (f0b523141..79e7fe93b), lokal nie rot (auch `--load 8`); grün auf bbd783ed6, der Fall druckt beim nächsten Rot, was er sah. Suspect: langsames Mounten auf dem belasteten 4-Kern-Runner (1 statt 7 Baumzeilen-Rahmen). Suspect (17.11.): jeder Push bricht den laufenden vollen Behavior-Lauf ab (cancel-in-progress), so bekommt der Selektor keine grüne Basis; der Builder hält Pushes, bis die Shards fertig sind. Cause (17.11., gefixt 1d3b11fd3): neue Bracket-Exports ohne Szenario-Nutzung und neue et-Klassen ohne cdk-Klassenliste wurden erst in CI rot (9f270e41c, 44f193a00). Suspect: components:export-coverage und die cdk-Klassenlisten-Spec fehlen im pre-push.
+
+### Einträge
+
+<!-- prettier-ignore -->
+| ID | Was | Stand | Was fehlt / wo es hakt | Wer |
+| - | - | - | - | - |
+| B580 | SDK-Repo wird privat: Linux-CI auf `runner-ethlete`, Pakete nur auf Verdaccio (HTTPS), Update-Dateien und Installer auf eigenem Server; danach Repo privat (ADR 0342). | ⏸️ | Vom Menschen geparkt 18.11. Gebaut: Verdaccio-Publish hinter CI_SELF_HOSTED, latest-elrond.json, Spiegel auf elrond live, Token installiert. Offen beim Menschen: Runner-Gruppe für öffentliche Repos, Runner-Instanzen starten, Verdaccio-Proxy für @ethlete prüfen, Testlauf mit CI_SELF_HOSTED=true, danach npmScopes.ethlete in bvb/dfb/dyn/fut/vbl/fifa. | Builder |
+| B148 | Notizen schreiben wieder möglich (Schreibweg seit 8cf715654 weg, wie Kommentare) (Bef. 231). | ⏸️ | Tom: später, nach B145. | Builder |
+| B160 | Neu gezeichneter vorhandener Interaktionszustand: Vergleich auf Element-Ebene. | ⏳ | Backlog, erst bei echtem Fall. | Builder |
+| B422 | `lint:no-verify-briefs` prüft nur getrackte Dateien, NEGATED bekommt „no“, umbrochene Zeilen werden zusammengefügt (Bef. 575). | ⏳ | offen. | Builder |
+| B424 | Studio-Prüfungen laufen live in Studio und schnell, nie in Git-Hooks oder CI; Drift wird beim Schreiben verhindert, nicht danach geprüft (ADR 0226). | ⏳ | CI-Gates entfernt (Job Studio rules, design complete/compare im Build, design-slow.yml); Performance-Jagd: pro Prüfung zuerst fragen, ob Konstruktion sie überflüssig macht. | Builder |
+| B477 | UI-Fehler, nur Mac: Text in `button.et-surface-interactive` auf elements/canvas-frames (rounds, round-folded @1440) 1,0 px zu hoch, OFF-CENTRE 3, auf Linux 0 (Toleranz 1 px); auch title-bar `*-cli-dirty` (1,1 px); Verdacht: macOS-Schriftmetrik (Bef. 691). | offen | - | Builder |
+| B480 | Tagschicht (ADR 0239): Spike CEF auf Windows wie B469 (Build läuft, Live-Frames, Paketgröße, Signatur), dann bestätigt der Mensch den Wechsel auf Windows; läuft auf dem Gast-PC `rack` (echte Hardware), nach der Nachtschicht; `rack` gehört in den nächsten Wochen ganz dem Builder (ADR 0242, ADR 0249, ADR 0250, ADR 0258). | offen | - | Builder |
+| B482 | Release-Smoke: das Release-Bundle von Studio einmal starten, ein Sketch öffnen und bei einer CSP-Ablehnung oder einem Konsolenfehler fehlschlagen; Biss: die CSP vor f08f0a3d1 fällt (Bef. 699). | ⏳ | Werkzeug gebaut (e57c40dd4); Biss lief rot: kein Sperrbildschirm, sondern ein macOS-Schlüsselbund-Dialog (Bef. 746); Fix f10c01295 (Mock-Schlüsselbund, Abbruch nach 30 s), Biss läuft neu (Mac). | Builder |
+| B490 | Tagschicht: Design-Styles liefern eine Monospace- und die UI-Schrift selbst (ADR 0262, Bef. 811); die Schriftwahl ist ein Sketch auf foundations/type mit 2-3 Paaren, Shots auf Mac und Linux. | offen | in Arbeit. | Linux 210235327; Mac offen |
+| B508 | SDK (fifagg, ADR 0297), nach B507 + Breadcrumb-Tokens: Menüpunkt-Ladezustand; Action-Sheet-Strategie (Skizze); Headless progress-steps/timeline; Karussell-Steuerung; Upload (Zuschnitt, Dateidaten, Einzelzeile, Server-Antwort); Match-Card (standings-Zeilen zuerst); Tabellen-Spalte ab Breite; Icon-Namensprüfung; backdropClick; stat-tile, picture; et-collapse; et-input Clear-Aktion. |  | Stand 14.11.: Menü-Ladezustand: Untermenü-Auslöser öffnet nicht mehr (Cause: bite); Match-Card gebaut (Badge-Slot `etMatchCardBadge` f04dc1d0d, Rest b2e6d26a8: Laden, Land + Flagge, abgesagt, Schrift-Tokens), gerenderte Optik nicht geprüft; offen nur die Action-Sheet-Wahl (`components/action-sheet@look`) |  |
+| B255 | Part-Baum: Sketch-Titel nennt Variante, Regel, Meldung; Produkt-Probleme hängen am Part der Datei; Spec: jedes Problem erreicht den Baum (Bef. 309). Maschinerie (nur bei rotem CI). | ⏳ | 117eb20bb; offen: canvas:1295 und rotes sketches-tree-e2e. | Builder |
+| B256 | Veraltetes dist der Design-Mocks ist Problem: check/ready/shot lehnen ab mit Build-Befehl, Studio zeigt Banner (Bef. 307). Maschinerie (nur bei rotem CI). | ⏳ | CLI 30f9c7681, Banner weg 49b8a19b3; offen: Mocks-Rebuild. | Builder |
+| B257 | Sketch sdk switch: Rahmen der leeren Spur ja/nein; danach entfällt switchStyles in inbox (Bef. 307). | ⏳ | switch.css-Override entfernt 7eb66f907, build-ready e7d933889; offen nur compare-before (B283) und choice-inputs-e2e. | Builder |
+| B266 | Probleme NESTED-SURFACE, LOST-SURFACE, PART-REWRITE; Sketch eines Parts mit Hosts shootet die Hostseiten (Bef. 313, 317). Maschinerie (nur bei rotem CI). | ⏳ | 73f7a838d; offen: Echtdaten-Repro, Shots der Host-Seite. | Builder |
+| B268 | motion-shot.ts setzt settleFrames ein (Animationen auch in eingebetteten Frames beenden), wie B258. Maschinerie (nur bei rotem CI). | ⏳ | 72d796997; offen: Spec flackert unter Last (72 statt ≥300), Wanduhr statt Fake-Uhr. | Builder |
+| B270 | e2e-check druckt Last und Kerne; Timing-Fall über Kernzahl rot → NOT MEASURED statt FAIL (Bef. 316). | ⏳ | Nach B259. | Builder |
+| B274 | sketch rebase trägt reine Deklarations-Änderungen eines Parts (controls, motions, states) in offene Varianten (Bef. 321). | ⏳ | Nach B273. | Builder |
+| B275 | Problem UNSKETCHED-UI: App-Template-Diff fügt sichtbares Element ohne gewählten Sketch/implements hinzu (Bef. 322). | ⏳ | Nach B274. | Builder |
+| B264b | Motions-Hinweis auch in design check/part-check: Text nach open-points.ts verschieben (Bef. 309). | ⏳ | 3300e06b0; offen: zwei Echt-Repros, Frage merged-busy. | Builder |
+| B276 | Part ohne implements, dessen Name eine App-Komponente trifft → Problem mit Pfad; Treffer auf studio zählen (Bef. 327). | ⏳ | Nach B264b. | Builder |
+| B277 | sketch check/ready laden Frames über dieselbe Queue (gleiches N) wie Studio; Mutation N unbegrenzt → rot (Bef. 329). | ⏳ | Nach B240 Phase 2 und B264b. | Builder |
+| B278 | capability-place.spec rot auf echten Daten: comment-write emit:send vs pages/inbox emit:sendComment; Ursache + Fix. Maschinerie (nur bei rotem CI). | ⏳ | 3675d9c5f; offen: App-Ausgabe sendComment, CAPABILITY-PLACE pro Part, Aktionen ohne Element, Format commit-hunks. | Builder |
+| B279 | Regel SKIP-UNUSED: data-et-skip ohne unterdrücktes Problem in jedem Zustand ist Problem; Treffer zählen (Bef. 330). | ⏳ | Nach B273. | Builder |
+| B283 | compare an einer Eltern-Revision: unterstützter Weg über den e2e-check-Baum (eigene dist); vite-SSR-Absturz bei verlinkten node_modules. Maschinerie (nur bei rotem CI). | ⏳ | Bereit; blockt B257-Vorher-Zahl. | Builder |
+| B284 | Sketch-Shot zeichnet genau die Frame-Menge der Studio-Ansicht (eine Listenfunktion, Spec gleich) (Bef. 335). | ⏳ | Mit B277. | Builder |
+| B289 | system-page: commentMode, draft, send, reason von KNOWN_UNBOUND_INPUTS nehmen und binden (Bef. 341). | ⏳ | erst wenn eine App-Vorlage die Seite nutzt. | Builder |
+| B291 | Push 04.11. ohne Hooks (Tom): Pre-Push-Hook auf 0ddbcc120 nachholen, Funde beheben; CI-Run 41741888275. Maschinerie (nur bei rotem CI). | ⏳ | 167883be3; offen: Pre-Push-Lauf nach 0ddbcc120, Verhaltenstests. | Builder |
+| B295 | Studio-Prüfungen aus dem Pre-Push in Studios Prüfsystem (Specs, Design-Check, Live-Check, Sichtbar-Gate als Regeln; Funde als Probleme am Part); Pre-Push nur noch Format, Changesets, VitePress; Lint und Typecheck nur in CI; mit B249 bauen (dl 04.11.). | ⏳ | - | Builder |
+| B296 | Jeder vom Server gemeldete Part-Fehler sperrt die Wahl über einen Pfad, nicht je Ansicht (Bef. 347). | ⏳ | mit A10 S6. | Builder |
+| B299 | e2e-check.spec bekommt die sha vom Hook (env/arg), läuft im Pre-commit-Index-Checkout (Bef. 352). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
+| B300 | Regel TEXT-TRUNCATED: abgeschnittener Inhaltstext pro State ist ein Befund; Opt-out data-et-skip=TRUNCATE (Bef. 353). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
+| B301 | Stale-dist-Hash nur über committete Quellen (HEAD-Blobs); Agent-Briefs verbieten Edits an build-info.json (Bef. 354). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
+| B302 | Ein maschinenweiter Lock für schwere Läufe (Pre-Commit-Specs, nx test, design check); Studio-Start zeigt Last (Bef. 354). | ⏳ | - | Builder |
+| B303 | Studio-Status nennt die Startphase ("CLI wird gebaut") mit Laufzeit (Bef. 355). | ⏳ | - | Builder |
+| B304 | macOS-Ampel vertikal in der Titelleiste zentrieren + Fensterprüfung (Bef. 357). | ⏳ | - | Builder |
+| B306 | Fehlgeschlagener Shot: Fehlerzustand statt kaputtem Bild; kein "Nichts offen" bei fehlenden Shots (Bef. 359). | ⏳ | Teil gelandet 07.11. (Aufräumen): Chip und Popover zeigen „N Bilder fehlen“ statt „Nichts offen“. Empfehlung gebaut: kein Retry-Knopf (Fehlertext bleibt, der Shot rendert beim nächsten Listing neu). Rest: crop-thumb- und Inventar-Bild ohne `ethleteShot`. | Builder |
+| B307 | Parser-Specs für Tool-Ausgabe mit echten CI-Logs als Fixture (Bef. 360). | ⏳ | - | Builder |
+| B308 | Prüfung auf Personennamen in libs/, apps/, apps/docs, .ethlete/design; Rolle "human" (Bef. 362). | ⏳ | Prüfung gelandet 07.11. (`yarn lint:person-names`, Ratchet-Baseline, pre-push); offen: `--by tom` → `--by human`, dann Baseline senken. | Builder |
+| B310 | Studio-Freeze: WebKit-Bug bei Top-Level-Await + Iframe-Entfernen; TLA raus, TLA-Guard, Frame-Churn-Soak, Watchdog (Bef. 364). | ⏳ | - | Builder |
+| B311 | Leere Frames: WKWebView schließt SSE nach 60 s ohne Bytes, Reconnect remountet alles, Listing blockiert Server; Heartbeat, Listing async, Soak-Check (Bef. 365). | ⏳ | - | Builder |
+| B312 | Overscroll der Shell: overscroll-behavior none überall (de2b83743); Scroll-Kanten-Probe im macOS-WebKit-Job (Bef. 366). | ⏳ | - | Builder |
+| B313 | Frames über dem Explorer unter Last: isolate + contain-paint am Canvas (de2b83743); Pixel-Check unter Frame-Churn (Bef. 367). | ⏳ | - | Builder |
+| B315 | Neu-starten-Klick tötet Server bei dirty libs/cli: Neustart nur aus Commit-Kopie (dd708ee4a), Szenario, Recovery-Button (Bef. 369). | ⏳ | - | Builder |
+| B317 | Erstes Listing langsam: Regel-Checks blockieren den Server, Abbruch nur im Client; Worker + 50-ms-Budget, Abort, Grid aus schnellem Listing (Bef. 371); kalt ~60 s feste Wartezeit, Stall 35 s Mac/10 s Desk: Listing < 2 s, max. 1 Build (Bef. 408). | ⏳ | Tom (04.11.): nach B345/B346. | Builder |
+| B319 | Leerer Direct-edit-Sketch: Ziel als Part-Key, old mit neuem shared/, englische Texte; targetParts, Hash-Check, Specs (Bef. 373). | ⏳ | - | Builder |
+| B332 | Design-Check-Regel: löst die Imports jeder Sketch-Variante auf, damit ein veraltetes `old/` gegen ein neues `shared/` rot wird (Folge von B325, 296429625; Bef. 380). | ⏳ | - | Builder |
+| B335 | CI prüft den gepushten Bereich: commitlint + `yarn test:tools`; Pre-push prüft commitlint je Commit; Start und `yarn commit` verweigern ohne Hooks; Husky auf dem Mac (Bef. 390). | 🔨 | commitlint über den gepushten Bereich in CI `Checks` und Pre-push gelandet (tank/w3-gates-b); offen: Start und `yarn commit` ohne Hooks verweigern, Husky auf dem Mac. | Builder |
+| B337 | Design-Server meldet fehlendes dist statt zu hängen; verify-webkit-studio prüft Build-Eingaben; Mac-Check für Tom als ein Befehl (Bef. 392). | ⏳ | nach B336. | Builder |
+| B340 | Triage `design check --product studio`: 698 Funde, Exit 1 (DROPPED-PROP 11, LOST-SURFACE + SKIP-SCOPE pages/merge, UNBOUND-INPUT 1, UNREACHABLE 4). | ⏳ | nach der Queue; Lauf vom 04.11. abends. | Builder |
+| B342 | `sketch check`: Variante mit geänderten unberührten Zuständen ist Fehler; `sketch report`-Ablehnung nennt `--reopen`; Report auf gewählter Variante erlaubt (Bef. 398, 399, 415). | ⏳ | - | Builder |
+| B344 | `sketch rebase` nach einer Wahl portiert nur die gewählte Variante; zwei offene Sketches auf einem Part warnen beim ersten Merge; `--ported <variant>` (Bef. 401, 416). | ⏳ | - | Builder |
+| B349 | Merge startet die e2e-Fälle des gemergten Parts; 3 Fälle rot nach den Merges vom 04.11. (Pan unten, Chip-Abbrüche) triagiert: b9367d285, Fix 52d7d2b55 (Bef. 407). | ⏳ | Triage vor B343. | Builder |
+| B350 | `/__design/system`: kalt ~60 s Wartezeit, warm Stall 1 s (Mac); kalt < 5 s, warm < 200 ms, Stall < 50 ms, keine CssSyntaxError; 1 Anfrage bis zur ersten Zelle (Bef. 409, 417). | ⏳ | Tom (04.11.): nach B345/B346. | Builder |
+| B365 | Explorer: Mausrad über Tree-Item-Innenfläche scrollt spät; Messung in CEF (Zeile vs. Lücke, mit/ohne Listing-Refresh), dann Fix + e2e; Frames verlieren beim Scrollen ihr Bild: Bild immer, iframe darüber erst nach fertigem Zeichnen und gleich wie das Bild (Bef. 427, 430, 432, ADR 0185, 0186). | ⏳ | Nichts gebaut; Messplan in agent-results/B365.md (Bef. 427/430/432). | Builder |
+| B375 | `design check`: `components/scheduler` braucht 120 s (vermutlich Render-Timeout), 18 % jedes Checks (Bef. 439). | ⏳ | nach B373. | Builder |
+| B376 | Commit-Hook braucht ~100 s (`vitest related` + Typecheck): messen, wo die Zeit hingeht, und kürzen (Bef. 439). | ⏳ | nach B375. | Builder |
+| B378 | e2e-Biss: der Harness nimmt für einen Biss-Lauf `STUDIO_CLI_ENTRY` aus einer alten CLI-Kopie, damit ein neuer e2e-Fall ohne Fix fehlschlägt (Bef. 441). | ⏳ | B377 gebaut (221073493). | Builder |
+| B381 | SDK: native `title` dort, wo ein `aria-label` passt, prüfen (Passwort-Feld, PiP, Scheduler, Cascader, Tabelle; Tom 05.11.). | ⏳ | nach dem MVP; kein Tooltip-Umbau im SDK (ADR 0194). | Builder |
+| B386 | pre-commit-Gate: Datendateien (`migrations.json`, `generators.json`) auf die Specs abbilden, die sie lesen (Bef. 448). | ⏳ | Backlog, technisch. | SDK-Session ethlete-sdk-ff |
+| B388 | Voller `design check --product studio`: ~800 Render-Probleme sortieren (echte Fehler oder Regel-Rauschen), beheben, dann läuft der volle Check wieder in der CI (Bef. 449). | ⏳ | B377 gebaut (221073493); nach B434 (ADR 0195, ADR 0228). | Builder |
+| B391 | Zwei Studio-e2e-Fälle flaky nur im vollen Lauf: Live-Frame-Limit nach Abstand zur Ansicht statt Zeile zuerst; gespeichertes Bild niedriger als die Live-Seite; Fold-equal unter Last (Bef. 452). | ⏳ | nach B388, Builder-Default. | Builder |
+| B398 | UI-Builder (zweite Session) baut die UI-Liste: A1 gebaut ff698951f; title-bar@notice-hint gebaut (332e49626, cf1441036); offen Ursache shell-main CONTROL-STATE, A3, A36 (ADR 0198). | 🔨 | Empfehlung gebaut: Tooltip am Neu-starten-Button (Variante b, schon gemerged und in Design-Part und App); A3/A36 offen. | Builder (c8) |
+| B399 | Performance zuerst: `design compare` (Bef. 477), sketch ready/check, C1 Cache-Trefferquote, C4 voller design check, Bef. 485, B392 (ADR 0199). | 🔨 | compare-Phasen gebaut, Aktions-Check 27-31 s als nächstes. | Builder (c0) |
+| B401 | Neue Design-Regel läuft im eigenen Commit über alle Produkte; alte Treffer in eine schrumpfende Baseline, jeder Treffer ein Finding mit Skizze; Zeichenregeln (CONTROL-STATE, DROPPED-PROP, ACTION-LOST) in `--slow` mit Cache (Bef. 489, ADR 0201). | 🔨 | läuft (cb), danach Bef. 490 Regel. | SDK-Builder (cb) |
+| B403 | UI-Builder untersucht nur Werkzeuglücken, die ihn blockieren; alle anderen in einem Satz an den doc agent, c0 baut (ADR 0202). | 🔨 | im builder-agent-Skill eintragen. | Builder (c8) |
+| B404 | Design-Hintergrundprozess (Bef. 492, 493): S1 Lib-Build-Sperre, S2 Prozess + Client + Selbststart, S3 Harness-Watch-Build, S4 Bild-Cache nach Input-Hash, S5 B402, S6 sketch, S7 voller check, S8 Action-Check-Seite (ADR 0204). | 🔨 | S1 9823490ef, S2 10fbd3261, S6 14c491450 (check warm 2,7 s, ready 1,6 s); S7 offen. | Builder (c0) |
+| B405 | Alte Implementierungs-Drift (sketches, system, canvas-frames) in schrumpfende Baseline des Compare-Gates; jeder Eintrag Finding + Sketch/UI-Item; Push nach Bef. 494 (c843323c2) + Verify studio-menu, start (ADR 0205). | 🔨 | Baseline gebaut 5ddcdf3f5; Gate zeigt baselined-Zeilen immer 7920af5f4; danach Einträge abbauen (c8). | cb, dann c8 |
+| B406 | Skizzen-Merge prüft in sauberer Kopie von HEAD + nur der Skizze; fremde ungespeicherte Edits blockieren nie mehr; Ergebnis berührt schmutzige Datei → Merge nennt sie (ADR 0206). | 📋 | nach B401, vor S6. | cb |
+| B410 | DROPPED-PROP-Baseline abbauen: je eine Skizze für canvas-frames, pages/sketches, pages/system (Bef. 501, 502, 503, ADR 0201); Baseline-Einträge auf die Findings umstellen; canvas-frames: 13 ungebundene Inputs von ethlete-design-canvas (aus B504). Baseline-Eintrag STATE-UNDESIGNED pages/sketches `@if (listError())` trifft nicht mehr (Bef. 484); ein Eintrag muss mit seinem Treffer gehen. | 📋 | nach den Speed-Slices. | c0 |
+| B412 | Veralteter merged-Hash: Regel DIRECT-EDIT-PENDING für gemergte Teile, deren Hash ohne merged.json-Eintrag wandert (Problem am Teil, `--rules` in pre-push/CI); 5 Teile per `design check --part` schließen; Edit-Skizzen update-dialog, shell-main, inventory, button entschieden (new), pages/start: Edit-Sketch alt/neu, Wahl in `merged.json` (ADR 0211, 0256, Bef. 507, 576). | 📋 | tank/b412 54247e161 + 3931e1bf4 ungelandet: ohne Baseline treffen Studio `pages/start` und SDK `components/select` (EDIT-OLD-NOT-FOUND); offen: beide als Edit-Sketch entscheiden (ADR 0256), dann die zwei Commits ohne Baseline landen. | c0 |
+| B413 | Regel ACCESSIBLE-NAME: zugänglicher Name eines Controls Design vs. App vergleichen; ownScopeOf mit Rollen-Fallback und Beinahe-Treffer in der Fehlerzeile (Bef. 510). | 📋 | Fallback + Fix 3ec42c18d, 5ec60c344; Regel als späterer Slice. | c0 |
+| B414 | Resident-e2e-Spec: echter Hintergrundprozess, compare, Part ändern, compare erneut - schlägt fehl bei altem Bild; jede warme/gecachte Strecke testet eine Änderung zwischen zwei Läufen (Bef. 519). | 📋 | nach dem 515-Slice. | c0 |
+| B416 | compare schneller (Bef. 521): App-Shots parallel, S4 Bild-Cache vorziehen, mehrere Parts teilen einen Harness-Wait; Ziel warmer compare einer Studio-Seite <= 10 s, langsamste Phase am Ende; 18.11.: `compare --affected` über 16 Studio-Parts 81,9 s (compare-actions 19,1 s). | 📋 | direkt nach dem Push, vor allem anderen. | c0 |
+| B370 | Studio-Host endet bei Ctrl+C/SIGTERM: erst Beweis an zweiter Debug-Instanz, dann Host-e2e (SIGINT → Exit + :4402 frei in 5 s), eigener Signal-Handler mit Watchdog (Bef. 437). | ⏳ | Handler in desk/B370 566c19a9f wirkt nicht (Host stirbt am Signal); Schritte: agent-results/B370.md. | Builder |
+| B368 | `et design`: Serve-Zustand zeigt Besitzer des Ports (Studio-App oder Terminal), bedienten CLI-Stand gegen HEAD und wie man neu startet (Bef. 436). | ⏳ | Reihenfolge des Builders. | Builder |
+| B356 | Zoom in WebKit ~20 fps (Chromium 60): WebKit-Budget Frame-Intervall p50 ≤ 20 ms, p95 ≤ 33 ms bei 100 Zellen, CI-Image mit WebKit-Libs (Bef. 418). | ⏳ | Budget-Fall als Vorlage in desk/B356 19598dce9 (engine-Option in withStudio); erst Zoom-Fix, dann Fall + CI-Schritt. | Builder |
+| B595 | Pre-Push-Prüfskript für `plans/` (ADR 0354 Punkt 4, 7-9): Datei ohne Link aus STATUS.md; Plan-Datei über 30000 Zeichen, STATUS.md über 5000; 14 Tage ohne Commit und ohne Park-Vermerk (`parked since <Datum>` parkt die Links einer STATUS.md); Befund ohne Zeile, Verweis auf fehlende Datei. `Fällig: <Datum>` vorbei (erledigen, begründet verschieben, streichen). Jede Meldung nennt ihre Behebung. | ⏳ | Heute einzige Timetrack-Datei über der Grenze: `plans/timetrack/m7-sync-research.md` (31206), wird mit B597 ADRs. | Builder |
+| B596 | Timetrack-Befunde in `plans/timetrack/findings-2026-11-17-demo-prep.md`: zuerst #6-#8, dann #1, #2, #18, #21, dann #15, #24, #25 (Arbeit per SSH auf einer zweiten Maschine unsichtbar); Prüfung: Commit auf zeilenändernden Pfaden braucht `timetrack snapshot` (ADR 0355). | ⏳ | - | Builder |
+| B597 | Einmal-Umzug: plans/studio, plans/timetrack, plans/sdk, plans/repo, je eine kleine STATUS.md; jede der ~95 Plan-Dateien: offen / ADR / löschen (ADR 0354 Punkt 5). Timetrack zuerst: #9/#12 (13c54dad8), #17/#23 (ec696f5e1) erledigt; tote Verweise; roadmap.md nachziehen. | ⏳ | Belege: `.claude/handoffs/process-review/timetrack-review-2026-11-18.md`. | Doc-Agent |
+| B598 | Timetrack-Werkzeug: Ursache des roten CI-Jobs Timetrack e2e (6 von 8 roten Läufen 16.-18.11.); Sammel-Freigabe im Agent-CLI (Befund #14, 143 Schreibaufträge am 17.11.); Aufräumregeln des Menschen (Projekt gewinnt, Woche ~40 h, Tag ~8 h) in ethlete-timetrack-Skill oder Spec. | ⏳ | - | Builder |
+| B599 | Ablauf-ADRs auf Repo-Ebene (ADR 0354 Punkt 6): `adr:governs`, `lint:studio-adrs` und die anderen ADR-Leser lesen zusätzlich `docs/adr/`, eine Nummernfolge über beide Ordner; eine Zeile in der Root-`AGENTS.md` nennt den Ordner. | ⏳ | Danach verschiebt der Doc-Agent mit B597 nur ADRs, die klar alle drei Produkte betreffen (`git mv`, Nummer bleibt). | Builder |
+| B600 | Doc-Agent sammelt Nachrichten an den Builder etwa 15 Minuten und schickt dann eine (ADR 0356); doc-agent-Skill umstellen. Was die laufende Zeile blockiert oder als falsch zeigt, geht sofort. | ⏳ | 2543 Peer-Nachrichten in 8 Tagen, 38% der Builder-Turns. | Builder |
+| B601 | Builder pusht, wenn der laufende CI-Lauf auf `next` fertig ist, nicht nach jeder Zeile (ADR 0357, ersetzt ADR 0286 Punkt 3); builder-agent-Skill und Hooks, die nach jeder Zeile pushen, umstellen. | ⏳ | 200 Läufe in 3 Tagen, 109 abgebrochen. | Builder |
+| B602 | Timetrack-Befunde in `plans/timetrack/findings-2026-11-17-demo-prep.md` ohne Zeile: #3, #4, #5 (Beschreibungen: fremdes Repo, Wiederholung, englische Commit-Listen), dann #19, #20, #22 (abgeschnittenes Stück, Splitter, Anruf ohne Teilnehmer). Nach B596. | ⏳ | #4, #5 macht vielleicht die Session „Timetrack-Plan Korrekturen“, wenn der Mensch zustimmt; vorher fragen. | Builder |
+| B603 | Cross-Check als frischer fable-Lauf je Frage, nur bei den Auslösern (ADR 0358, ersetzt ADR 0287): doc-agent-Skill (Zeile „supervisor session … ADR 0287“ ersetzen, Auslöser und Brief kurz), supervisor-agent-Skill als Brief-Vorlage für den frischen Lauf umbauen oder löschen. | ⏳ | Wörter gehen, wie sie kommen (Skill-Wortbudget). | Builder |
+| B604 | Studio-Plan-Ordner nach `plans/studio` umbenennen (Pfade in tools/, Skills, AGENTS.md, ADRs, `yarn queue`) und `STATUS.md` auf ≤5000 Zeichen bringen: Warteschlange + eine Zeile je Plan-Datei bleiben, die Eintragstabelle und die Listen A-E wandern in eine eigene Plan-Datei, die `yarn queue` und die Checker lesen (ADR 0354 Punkte 1, 2, 7). Die Plan-Dateien sind sortiert (B597, Teile 1-3). | ⏳ | Vor B595, damit das Prüfskript gleich die neuen Pfade und Grenzen prüft. | Builder |
+| B605 | Fällig: 2026-11-25. Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md`: nur lesend, ein bis zwei Subagenten mit gesetztem Modell, kein Transcript direkt lesen. Je Modell: Nacharbeit in 48 h, Eskalation, rote CI-Läufe, Verbrauch (Usage-Limit) je fertiger Aufgabe, Modell und Effort (ADR 0371, Log aus B606). Ergebnis für Tom auf Deutsch mit kleinen Tabellen. | ⏳ | Vorschlag von 3f nach Toms Frage, wie die Nachmessung nicht vergessen wird. | Doc-Agent |
+| B606 | `subagent-model-policy.py` schreibt bei jedem Subagent-Start Modell, Effort, Aufgabe und Dateien in ein lokales Log, das sich mit git verbinden lässt (ADR 0371 Punkt 1). | ⏳ | Grundlage der Zahlen je Modell in B605. | Builder |

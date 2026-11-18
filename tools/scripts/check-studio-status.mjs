@@ -7,7 +7,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const utcDay = (y, m, d) => Date.UTC(y, m - 1, d);
 
-export const studioStatusProblems = (text, today = new Date()) => {
+export const studioStatusProblems = (
+  text,
+  today = new Date(),
+  { file = 'STATUS.md', stand: needsStand = true } = {},
+) => {
   const problems = [];
   const lines = text.split('\n');
   const todayDay = utcDay(today.getFullYear(), today.getMonth() + 1, today.getDate());
@@ -16,15 +20,14 @@ export const studioStatusProblems = (text, today = new Date()) => {
     const n = i + 1;
     if (line.startsWith('|') && line.includes('✅')) {
       const id = line.split('|')[1]?.trim() || '?';
-      problems.push(
-        `STATUS.md line ${n}: row ${id} has status ✅. Delete the done row in the commit that finishes it.`,
-      );
+      problems.push(`${file} line ${n}: row ${id} has status ✅. Delete the done row in the commit that finishes it.`);
     }
     if (/^#{2,}\s+Erledigt/.test(line)) {
-      problems.push(`STATUS.md line ${n}: section "${line.replace(/^#+\s+/, '')}". Delete the Erledigt section.`);
+      problems.push(`${file} line ${n}: section "${line.replace(/^#+\s+/, '')}". Delete the Erledigt section.`);
     }
   });
 
+  if (!needsStand) return problems;
   const stand = lines.findIndex((l) => /^Stand:/.test(l));
   const match = stand === -1 ? null : lines[stand].match(/^Stand:\s*(\d{1,2})\.(\d{1,2})\.(\d{4})/);
   if (!match) {
@@ -41,9 +44,10 @@ export const studioStatusProblems = (text, today = new Date()) => {
 };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const path = process.argv[2];
+  const rows = process.argv.includes('--rows');
+  const path = process.argv.slice(2).find((arg) => arg !== '--rows');
   const text = readFileSync(path === '-' || !path ? 0 : path, 'utf8');
-  const problems = studioStatusProblems(text);
+  const problems = studioStatusProblems(text, new Date(), rows ? { file: 'rows.md', stand: false } : {});
   if (problems.length) {
     console.error(problems.join('\n'));
     process.exit(1);
