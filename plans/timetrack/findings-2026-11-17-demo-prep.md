@@ -94,3 +94,9 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     rows after they were rejected; hiding them takes a second edit (`--hide`) per row.
 24. **A manual row exists on one machine only.** Linux holds `manual:FIFAGG-12769` 13:00-15:15 on
     17.11.; the Mac shows a gap there.
+25. **Work done over SSH on another machine is invisible.** The human, 2026-11-18 (German, verbatim): "ich arbeite
+    am mac aber via wireguard auf tank. timetrack hier auf dem mac sieht das nicht. eventuell läuft timetrack auf tank
+    was die sache nochmal komplexer macht." Measured by the analysis session: no Timetrack process ran on tank; the
+    human was on tank over SSH from the Mac on 4 ptys. Suspect: the work evidence (agent sessions, commits) is on tank,
+    the attendance evidence on the Mac, which sees only a terminal. New against slice 8 / M7 and `m7-sync-research.md`:
+    both machines are used at the same time, one of them headless.
