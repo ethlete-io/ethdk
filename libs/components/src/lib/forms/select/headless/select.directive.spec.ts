@@ -1030,6 +1030,26 @@ describe('SelectDirective (search)', () => {
     expect(driver.select.open()).toBe(false);
   });
 
+  it('closes on Escape after reopening while the picked panel still leaves', async () => {
+    await driver.open();
+    driver.type('ban');
+    driver.pressInSearch('ArrowDown');
+    driver.pressInSearch('Enter');
+
+    expect(driver.select.open()).toBe(false);
+
+    driver.pressInSearch('ArrowDown');
+
+    expect(driver.select.open()).toBe(true);
+
+    driver.pressInSearch('Escape');
+    driver.pressInSearch('Escape');
+    await driver.settle();
+
+    expect(driver.select.open()).toBe(false);
+    expect(driver.host.value()).toBe('banana');
+  });
+
   it('commits a custom value with Enter when no option matches', async () => {
     driver.host.allowCustom.set(true);
     driver.detectChanges();
