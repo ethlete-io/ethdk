@@ -31,4 +31,16 @@ text, approved by the human. They extend ADR 0350-0352 from Studio to all produc
 5. One-time move: sort each of the about 95 plan files once (open / into an ADR / delete), in slices per product.
    Timetrack first.
 
-Open with the human: the size limits, N, and whether the process ADRs move to a repo-level ADR folder.
+The points the human left open were settled without a further question: the doc agent proposed them and the analysis
+session cross-checked them (2026-11-18), under the human's rule to ask them only a question still needed after that.
+
+6. Process ADRs move to a repo-level `docs/adr/`. Only an ADR whose rule plainly governs all three products moves
+   (sessions, queue, plan files, push and CI gates, subagent models); in doubt it stays in Studio. A moved ADR keeps its
+   number, and both folders share one number sequence, so every reference by number stays valid. Root `AGENTS.md`
+   names the folder in one line. The check scripts read both folders.
+7. Limits for the check script: a plan file at most 30000 characters, a product `STATUS.md` at most 5000.
+8. A plan file whose content is unchanged for 14 days needs a parked mark. The date is the last commit that changed the
+   file, not its mtime. One line `parked since <date>` in a product's `STATUS.md` parks every file linked from it, so a
+   paused product needs no mark per file.
+9. Each report of the check script names its fix (link it from STATUS.md, mark it parked, or delete it), so a session
+   does not answer it by touching the file.
