@@ -107,6 +107,7 @@ describe('compare --affected', () => {
         shoot,
         start,
         actions,
+        refusals: async () => [],
       });
 
     expect(await compare()).toBe(0);
@@ -153,6 +154,7 @@ describe('compare --affected', () => {
         invocation: 'et design',
         shoot: shootOf(['components/tag']),
         actions,
+        refusals: async () => [],
       }),
     ).toBe(1);
     expect(lines).toContain('default button "x" click FAILED the state open was not reached');
@@ -176,6 +178,7 @@ describe('compare --affected', () => {
         invocation: 'et design',
         shoot: shootOf(),
         actions: async () => [],
+        refusals: async () => [],
       }),
     ).toBe(1);
     expect(lines).toContain('components/tag: its design changed since it was implemented - run task --verify');
@@ -220,6 +223,7 @@ describe('compare --affected', () => {
         shoot,
         start,
         actions: async () => [],
+        refusals: async () => [],
       }),
     ).toBe(1);
     expect(lines).toEqual([
@@ -269,6 +273,7 @@ describe('compare --affected', () => {
         shoot,
         start,
         actions: async () => [],
+        refusals: async () => [],
       }),
     ).toBe(1);
     expect(start).toHaveBeenCalledTimes(2);

@@ -17,6 +17,7 @@ import { WarmDraw } from '../warm-draw';
 import { createPartShooter } from '../shot';
 import { createDrawQueue } from '../thumb';
 import { partActionFailuresOf } from './actions-command';
+import { ImplementedRefusals, implementedRefusalsOf } from './implemented-proof';
 import {
   AppShotCache,
   browserVersionOf,
@@ -547,11 +548,20 @@ const recordAffected = async (options: {
   harness: string;
   appRoot: string | null;
   actions: typeof partActionFailuresOf;
+  refusals: ImplementedRefusals;
 }): Promise<{ ok: boolean; line: string }> => {
   const { product, task } = options;
 
   if (!implementedHolds(readImplemented(task.dir)[task.part]?.hash, task))
     return { ok: false, line: `${task.part}: its design changed since it was implemented - run task --verify` };
+
+  const refusals = await options.refusals({ root: repoRootOf(product), component: task.component });
+
+  if (refusals.length > 0) {
+    refusals.forEach((line) => console.error(line));
+
+    return { ok: false, line: `${task.part}: ${refusals.length} refusal(s), so nothing was recorded` };
+  }
 
   const missed = await timedPhase('compare-actions', () =>
     options.actions({
@@ -676,6 +686,7 @@ export const designCompare = async (options: {
   shoot?: ShootStates;
   start?: StartHarnessServer;
   actions?: typeof partActionFailuresOf;
+  refusals?: ImplementedRefusals;
 }) => {
   const { target, invocation } = options;
   const args = argsOf(options.argv, {
@@ -904,6 +915,7 @@ export const designCompare = async (options: {
             harness: url,
             appRoot: root,
             actions: options.actions ?? partActionFailuresOf,
+            refusals: options.refusals ?? implementedRefusalsOf,
           });
 
           console[recorded.ok ? 'log' : 'error'](recorded.line);

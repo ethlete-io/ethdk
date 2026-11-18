@@ -61,7 +61,7 @@ describe('driftSinceOf', () => {
 
     return dir;
   };
-  const record = (app?: Record<string, string>) => ({
+  const record = (app: Record<string, string> = {}) => ({
     hash: 'h',
     at: '2026-01-02T12:00:00Z',
     states: {},

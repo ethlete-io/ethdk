@@ -583,7 +583,7 @@ describe('part compare', () => {
     expect(await all(same)).toBe(0);
     expect(lines).toEqual(['app-a: no implemented parts to compare']);
 
-    markImplemented({ product: product(), part: 'components/chip', states: { default: {} } });
+    markImplemented({ product: product(), part: 'components/chip', app: {}, states: { default: {} } });
 
     const found = readyPartOf({ product: product(), part: 'components/chip' });
 
@@ -632,7 +632,7 @@ describe('part compare', () => {
     }));
     const source = join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts');
 
-    markImplemented({ product: product(), part: 'components/chip', states: { default: {} } });
+    markImplemented({ product: product(), part: 'components/chip', app: {}, states: { default: {} } });
     writeFileSync(source, `${readFileSync(source, 'utf8')}// picked\n`);
     await ready();
 

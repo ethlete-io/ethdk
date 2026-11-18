@@ -15,6 +15,7 @@ import {
   IMPLEMENTED_FILE,
   markImplemented,
   readImplemented,
+  readLegacyImplemented,
   stateHashOf,
   themingDirectivesOf,
   taskPartOf,
@@ -26,6 +27,7 @@ import { designTask, PartActionFailures } from './task-command';
 import { THEMING_TEXT } from './theming-text';
 import { ComparePart } from './compare-command';
 import { StartHarnessServer } from './harness-server';
+import { ImplementedRefusals } from './implemented-proof';
 
 const CHIP_STATES = { default: { label: 'Tag' }, removable: { label: 'Tag', removable: true } };
 
@@ -85,6 +87,7 @@ const task = (
   start: StartHarnessServer = vi.fn(async () => 'no server must start'),
   actions: PartActionFailures = vi.fn(async () => []),
   inputs: BuildReadyInputs = GREEN,
+  refusals: ImplementedRefusals = vi.fn(async () => []),
 ) =>
   designTask({
     target,
@@ -96,6 +99,7 @@ const task = (
     start,
     actions,
     inputs: () => inputs,
+    refusals,
   });
 
 describe('part task', () => {
@@ -199,7 +203,7 @@ describe('part task', () => {
       all: false,
     });
 
-    const record = { hash: 'h1', at: 'then', states: { default: stateHashOf({ label: 'a' }) }, files: {} };
+    const record = { hash: 'h1', at: 'then', states: { default: stateHashOf({ label: 'a' }) }, files: {}, app: {} };
 
     expect(taskStatesOf({ states, hash: 'h2', record })).toEqual({ added: ['open'], changed: [], all: false });
     expect(taskStatesOf({ states: { default: { label: 'b' } }, hash: 'h2', record })).toEqual({
@@ -253,9 +257,15 @@ describe('part task', () => {
     const { target, dir } = checkout();
     const product = productOf(target);
 
-    const chip = markImplemented({ product, part: 'components/chip', states: { b: { x: 1 }, a: {} }, at: 'now' });
+    const chip = markImplemented({
+      product,
+      part: 'components/chip',
+      app: {},
+      states: { b: { x: 1 }, a: {} },
+      at: 'now',
+    });
 
-    markImplemented({ product, part: 'components/tag', states: { default: {} }, at: 'now' });
+    markImplemented({ product, part: 'components/tag', app: {}, states: { default: {} }, at: 'now' });
 
     expect(chip).toMatchObject({ at: 'now', states: { a: stateHashOf({}), b: stateHashOf({ x: 1 }) } });
     expect(Object.keys(readImplemented(dir))).toEqual(['components/chip', 'components/tag']);
@@ -263,7 +273,17 @@ describe('part task', () => {
     expect(readFileSync(join(dir, IMPLEMENTED_FILE), 'utf8')).toMatch(
       /"components\/chip"[\s\S]*"components\/tag"[\s\S]*\}\n$/,
     );
-    expect(markImplemented({ product, part: 'components/none', states: {} })).toContain('has no part');
+    expect(markImplemented({ product, part: 'components/none', app: {}, states: {} })).toContain('has no part');
+  });
+
+  it('reads a record without app file hashes as no record, and as a legacy record an upgrade can complete', () => {
+    const { dir } = checkout();
+    const legacy = { hash: 'h1', at: 'then', states: {}, files: {} };
+
+    writeFileSync(join(dir, IMPLEMENTED_FILE), JSON.stringify({ 'components/chip': legacy }));
+
+    expect(readImplemented(dir)).toEqual({});
+    expect(readLegacyImplemented(dir)).toEqual({ 'components/chip': legacy });
   });
 
   it('prints the task with the states since the implemented record', async () => {
@@ -298,7 +318,12 @@ describe('part task', () => {
       THEMING_TEXT,
     ]);
 
-    markImplemented({ product: productOf(target), part: 'components/chip', states: { default: { label: 'Old' } } });
+    markImplemented({
+      product: productOf(target),
+      part: 'components/chip',
+      app: {},
+      states: { default: { label: 'Old' } },
+    });
     expect(readImplemented(dir)['components/chip']).toBeDefined();
     lines.length = 0;
     await task(target, []);
@@ -449,6 +474,35 @@ describe('part task', () => {
     expect(verifyRangeOf('abc')).toBe('abc^..abc');
   });
 
+  it('refuses to verify a part whose component has no spec with own data or literal text, before compare runs', async () => {
+    const { target, dir } = checkout();
+    const lines = output();
+
+    record(target);
+
+    const inside = vi.fn(() => ['libs/chip/chip.component.ts']);
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+    const refusals = vi.fn<ImplementedRefusals>(async () => ['NO-SPEC libs/chip/chip.component.ts: no spec']);
+
+    expect(
+      await task(
+        target,
+        ['--verify', '--url', 'http://localhost:9'],
+        inside,
+        green,
+        undefined,
+        undefined,
+        GREEN,
+        refusals,
+      ),
+    ).toBe(1);
+    expect(refusals).toHaveBeenCalledWith({ root: target, component: 'libs/chip/chip.component.ts' });
+    expect(green).not.toHaveBeenCalled();
+    expect(lines).toContain('NO-SPEC libs/chip/chip.component.ts: no spec');
+    expect(lines).toContain('components/chip: 1 refusal, so nothing was recorded');
+    expect(readImplemented(dir)).toEqual({});
+  });
+
   describe('verify over several parts', () => {
     const OUTBOX_STATES = { default: {} };
     const several = (target: string, argv: string[], diff: () => string[], compare: ComparePart) =>
@@ -461,6 +515,7 @@ describe('part task', () => {
         compare,
         actions: vi.fn(async () => []),
         inputs: () => GREEN,
+        refusals: vi.fn(async () => []),
       });
     const green = () =>
       vi.fn<ComparePart>(async ({ part }) => ({
@@ -623,6 +678,7 @@ describe('part task', () => {
         start: vi.fn(async () => 'no server must start'),
         actions: vi.fn(async () => []),
         inputs: () => GREEN,
+        refusals: vi.fn(async () => []),
       });
 
     it('exits 1 on a refusal and never runs compare', async () => {
@@ -745,9 +801,9 @@ describe('doneParts', () => {
     };
     const tag = join(chip, '../../tag/tag.ts');
 
-    markImplemented({ product: product(), part: 'components/chip', states: CHIP_STATES });
-    markImplemented({ product: product(), part: 'components/tag', states: { default: {} } });
-    markImplemented({ product: product(), part: 'pages/inbox', states: { default: {} } });
+    markImplemented({ product: product(), part: 'components/chip', app: {}, states: CHIP_STATES });
+    markImplemented({ product: product(), part: 'components/tag', app: {}, states: { default: {} } });
+    markImplemented({ product: product(), part: 'pages/inbox', app: {}, states: { default: {} } });
     appendFileSync(tag, '// edited\n');
     await ready('components/chip');
     await ready('components/tag');

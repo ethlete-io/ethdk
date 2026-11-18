@@ -27,7 +27,7 @@ export const driftSinceOf = (options: { root: string; record: PartImplemented | 
 
   if (!sha) return [];
 
-  const files = Object.keys(record.app ?? {});
+  const files = Object.keys(record.app);
   const paths = files.length > 0 ? files : options.files;
   const log =
     paths.length === 0

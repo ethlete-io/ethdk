@@ -2,7 +2,7 @@ import { writeJsonFile } from '../../json-file';
 import { createHash } from 'crypto';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
-import { changedFilesOf, designHolds, FileHashes, isFileHashes, isOptionalFileHashes } from './design-hash';
+import { changedFilesOf, designHolds, FileHashes, isOptionalFileHashes } from './design-hash';
 import { DESIGN_DIR } from '../design-config';
 import { git, showFilesOf } from '../git-reader';
 import { matchesPattern } from './harness-config';
@@ -24,11 +24,11 @@ export type PartImplemented = {
   at: string;
   states: Record<string, string>;
   files: FileHashes;
-  app?: FileHashes;
+  app: FileHashes;
 };
 
-/** An implemented record stored before file lists, which reads as no record until an upgrade adds its files. */
-export type LegacyImplemented = Omit<PartImplemented, 'files'>;
+/** An implemented record stored before file lists or app hashes, which reads as no record until an upgrade adds them. */
+export type LegacyImplemented = Omit<PartImplemented, 'files' | 'app'> & { files?: FileHashes; app?: FileHashes };
 
 /** A part a task can build: its design hash, the component path its `implements` names, and the directory of its records. */
 export type TaskPart = { part: string; hash: string; dir: string; component: string; earlier?: string[] };
@@ -41,17 +41,20 @@ const implementedFileOf = (dir: string) => resolve(dir, IMPLEMENTED_FILE);
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
-const isLegacyImplemented = (value: unknown): value is LegacyImplemented =>
+const isRecordShape = (value: unknown): value is LegacyImplemented =>
   isRecord(value) &&
-  value['files'] === undefined &&
   typeof value['hash'] === 'string' &&
   typeof value['at'] === 'string' &&
   isRecord(value['states']) &&
   Object.values(value['states']).every((hash) => typeof hash === 'string') &&
+  isOptionalFileHashes(value['files']) &&
   isOptionalFileHashes(value['app']);
 
 const isImplemented = (value: unknown): value is PartImplemented =>
-  isRecord(value) && isFileHashes(value['files']) && isLegacyImplemented({ ...value, files: undefined });
+  isRecordShape(value) && value.files !== undefined && value.app !== undefined;
+
+const isLegacyImplemented = (value: unknown): value is LegacyImplemented =>
+  isRecordShape(value) && !isImplemented(value);
 
 const sortedKeys = (_key: string, value: unknown) =>
   isRecord(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value;
@@ -91,7 +94,7 @@ export const markImplemented = (options: {
   product: ResolvedProduct;
   part: string;
   states: Record<string, unknown>;
-  app?: FileHashes;
+  app: FileHashes;
   at?: string;
 }): PartImplemented | string => {
   const found = readyPartOf({ product: options.product, part: options.part });
@@ -107,7 +110,7 @@ export const markImplemented = (options: {
         .map(([state, props]) => [state, stateHashOf(props)]),
     ),
     files: found.design.files,
-    ...(options.app ? { app: options.app } : {}),
+    app: options.app,
   };
   const entries = Object.entries({ ...readImplemented(found.dir), [options.part]: implemented }).sort(([a], [b]) =>
     a.localeCompare(b),
@@ -424,12 +427,12 @@ export const linkedComponentOf = (source: string) => {
   return link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
 };
 
-/** The repository files of a part's app component that changed since its implemented record, `[]` without app hashes. */
+/** The repository files of a part's app component that changed since its implemented record. */
 export const changedAppFilesOf = (options: { product: ResolvedProduct; part: string; record: PartImplemented }) => {
   const { product, part, record } = options;
   const component = linkedComponentOf(product.parts.find((candidate) => partKeyOf(candidate) === part)?.source ?? '');
 
-  if (!record.app || component === null) return [];
+  if (component === null) return [];
 
   return changedFilesOf(record.app, appFilesOf({ root: repoRootOf(product), component }));
 };

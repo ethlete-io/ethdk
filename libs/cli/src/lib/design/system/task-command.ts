@@ -8,6 +8,7 @@ import { buildReadyInputsOf } from './check-system';
 import { componentInputsOf, unportedStatePropsOf } from './dropped-props';
 import { appStylesheetOf } from './harness-config';
 import { harnessStaleOf } from './harness-map';
+import { ImplementedRefusals, implementedRefusalsOf } from './implemented-proof';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { BuildReadyInputs } from './part-build-ready';
 import {
@@ -106,6 +107,7 @@ export const designTask = async (options: {
   start?: StartHarnessServer;
   actions?: PartActionFailures;
   inputs?: (product: ResolvedProduct) => BuildReadyInputs;
+  refusals?: ImplementedRefusals;
 }) => {
   const { target, invocation } = options;
   const { rest, rev } = verifyOf(options.argv);
@@ -292,6 +294,19 @@ export const designTask = async (options: {
     console.log(`${files.length} file${files.length === 1 ? '' : 's'} of ${range} inside the allowed files`);
 
     const prefix = (each: TaskPart) => (tasks.length > 1 ? `${each.part}: ` : '');
+
+    for (const each of tasks) {
+      const refusals = await (options.refusals ?? implementedRefusalsOf)({ root, component: each.component });
+
+      if (refusals.length > 0) {
+        refusals.forEach((line) => console.error(line));
+        console.error(
+          `${each.part}: ${refusals.length} refusal${refusals.length === 1 ? '' : 's'}, so nothing was recorded`,
+        );
+
+        return 1;
+      }
+    }
     const passed: { task: TaskPart; states: Record<string, unknown> }[] = [];
 
     for (const each of tasks) {

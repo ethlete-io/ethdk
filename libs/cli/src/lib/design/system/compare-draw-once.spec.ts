@@ -189,7 +189,7 @@ describe('compare draws each picture at most once per run', () => {
     const product = () => resolveProduct({ target, name: 'app-a', config: {} });
 
     for (const part of PARTS) {
-      markImplemented({ product: product(), part, states: STATES });
+      markImplemented({ product: product(), part, app: {}, states: STATES });
 
       const found = readyPartOf({ product: product(), part });
 

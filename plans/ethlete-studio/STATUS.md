@@ -299,9 +299,12 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   nutzen; der Task darf die Ordner komponierter Parts und `design-parts/shared/` ändern (Befund 151).
 - **B58** Input-Check: Inputs, die keine App bindet (außer `designOnly`), `*_SAMPLE` als Input-Default und
   umgesetzte Parts ohne App-Importeur werden gemeldet; Seiten-Zustände tragen Daten statt Knöpfe (Befund 151).
-- **B59** `implemented` wird streng: keine Einträge ohne `app`-Hashes, ein Spec mit Nicht-Fixture-Daten, Texte nur
-  aus der Label-Map (Befund 151). Der Teil ohne `files` (UNRECORDED) ist gebaut; pages/inbox und pages/sketches haben
-  keinen implemented-Eintrag mehr, bis `task --verify` grün ist.
+- **B59** Rest: die neuen Aufnahme-Regeln treffen 7 bestehende Einträge in studio (Befund 151): kein Spec für
+  components/comment-row, components/shell-collapse, pages/inventory, pages/start; Literal-Text in zoom-chip (5
+  `aria-label`/Text), shell-collapse („Hide panel“), shell-main („Studio“), start („Ethlete Studio“), system-page
+  („grid“, „tree“). Beheben und mit `compare --affected` neu aufnehmen; bis dahin nimmt keine Änderung an
+  `studio-labels.ts` diese Parts neu auf. pages/inbox und pages/sketches haben keinen implemented-Eintrag, bis
+  `task --verify` grün ist.
 - **B60** Lint für App-Templates: kein Überschreiben von `et-button`-Innereien, keine handgemachten Fokusringe
   (stattdessen `etFocusRing`) (Befund 151).
 - **B62** Merge-Ansicht: Ladezustand sofort, Liste füllt sich laufend, jede geänderte Zeile nennt den Grund (Pixel,

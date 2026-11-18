@@ -98,7 +98,12 @@ describe('transitive part hash', () => {
     const { target, dir } = checkout();
 
     expect(writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') })).not.toBeNull();
-    markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
+    markImplemented({
+      product: productOf(target),
+      part: CHIP,
+      states: { default: {} },
+      app: appFilesOf({ root: target, component: 'apps/a/chip/chip.component.ts' }),
+    });
 
     const folder = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
 
@@ -121,7 +126,12 @@ describe('transitive part hash', () => {
     const { target, dir } = checkout();
 
     writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
-    markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
+    markImplemented({
+      product: productOf(target),
+      part: CHIP,
+      states: { default: {} },
+      app: appFilesOf({ root: target, component: 'apps/a/chip/chip.component.ts' }),
+    });
     appendFileSync(join(dir, 'elements/icon/icon.ts'), '// picked\n');
     writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
 

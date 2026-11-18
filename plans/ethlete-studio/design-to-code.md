@@ -2443,3 +2443,28 @@ hits" lines and 0 live hits. The entries are removed; no sketch opens for them.
 comment button"` (1 passed), `compare pages/system` (all ok with the icon-button close),
   `design check --product studio --part pages/inbox` (0 findings).
 - Not verified: `compare --affected`; the switch pixel cause; no implemented.json record for pages/inbox.
+
+## As built (B59 rest)
+
+- `PartImplemented.app` is required; `readImplemented` reads a record without `app` as no record, and
+  `readLegacyImplemented` returns it, so `design check` (`upgradeLegacyMarksOf`) adds `app` while its design hash
+  holds and drops it otherwise. `markImplemented` takes `app` as a required option. Every studio entry already had
+  `app` (16 of 16), so no record changed.
+- `implemented-proof.ts` (`implementedRefusalsOf`) runs in `task --verify` before compare, and in `compare --affected`
+  before it records a part again. It refuses `NO-SPEC` (no `*.spec.ts` in the component folder imports the component
+  class and calls `createComponent(`), `FIXTURE-SPEC` (every test, or a `beforeEach`, uses a value imported from a
+  `sample`/`fixture` module, from `.ethlete/`, or named `*_SAMPLE`/`*_FIXTURE`), and `LITERAL-TEXT` (a text node, a
+  literal part of an interpolation, or a `title`/`alt`/`placeholder`/`aria-*` value with a letter, also a string literal
+  such a binding can show through `?:`, `+`, `??`, `||`). It reads the templates of the component and of the component
+  files in its folder that it reaches.
+- Label map: no product names one, and the rule needs none. Literal text is refused, any binding passes, so each
+  product reads its texts from whatever map it keeps (Studio: `STUDIO_LABELS`). A config key naming the map would only
+  add a check that the binding reads from it.
+- Existing records: the refusals over all 16 studio entries (no other product has an `implemented.json`) hit 7
+  parts, listed in STATUS B59. They keep their records; the hits are fixed in the app, not exempted. `compare
+--affected` cannot record them again until then.
+- Verified: `part-task.spec` red first (record without `app` read as a record; task recorded despite a refusal),
+  green after; `implemented-proof.spec`; `vitest related` (1697 passed); cli typecheck, lint;
+  `check --working-tree --product studio --part pages/system`: 0 findings.
+- Not verified: a real `task --verify` or `compare --affected` run with the refusals; the refusal path of
+  `compare --affected` has no spec of its own.

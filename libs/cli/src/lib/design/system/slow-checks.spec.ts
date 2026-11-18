@@ -176,7 +176,7 @@ describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
   const implemented = (dir: string, hash: string) =>
     writeFileSync(
       join(dir, 'implemented.json'),
-      JSON.stringify({ 'components/chip': { hash, at: '2026-11-06T00:00:00Z', states: {}, files: {} } }),
+      JSON.stringify({ 'components/chip': { hash, at: '2026-11-06T00:00:00Z', states: {}, files: {}, app: {} } }),
     );
 
   const designHash = (product: ReturnType<ReturnType<typeof acme>['product']>) =>
