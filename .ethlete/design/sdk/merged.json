@@ -60,7 +60,7 @@
     "note": "merged without a pick: allowed by B584: fill the missing control states of components/checkbox"
   },
   "components/chip": {
-    "hash": "5490dbb5a7b15d52",
+    "hash": "3402ac1cd8173464",
     "variant": "a",
     "decidedBy": "auto: no visible change",
     "at": "2026-11-13T07:12:09.301Z"

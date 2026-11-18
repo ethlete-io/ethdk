@@ -44,15 +44,7 @@ const disabledRows = {
 } satisfies Record<string, Props>;
 
 export const rows = { ...interactive.states, ...disabledRows };
-export const grid = {
-  columns: interactive.grid.columns,
-  rows: {
-    ...interactive.grid.rows,
-    disabled: { rest: 'disabled' as const },
-    'disabled-selected': { rest: 'disabled-selected' as const },
-    'disabled-removable': { rest: 'disabled-removable' as const },
-  },
-};
+export const grid = interactive.grid;
 
 export default definePart({
   note: 'Decided rules only',

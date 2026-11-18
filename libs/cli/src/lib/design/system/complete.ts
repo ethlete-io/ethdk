@@ -1345,10 +1345,15 @@ export const seeFrame = (options: {
       .filter((style, index) => index === 0 || !['none', 'normal'].includes(style.content))
       .map((style) => LOOK.map((name) => style.getPropertyValue(name)).join(' '))
       .join(' | ');
+  const fadeOf = (element) => {
+    let opacity = 1;
+    for (let parent = element.parentElement; parent; parent = parent.parentElement) opacity *= Number(getComputedStyle(parent).opacity);
+    return opacity;
+  };
   const lookOf = (element) => {
     const own = drawnLookOf(element);
     const inside = [...element.querySelectorAll('*')].map(drawnLookOf);
-    return JSON.stringify([own, [...new Set(inside)].sort()]);
+    return JSON.stringify([own, [...new Set(inside)].sort(), fadeOf(element)]);
   };
   const named = new Set([...root.querySelectorAll('[aria-activedescendant]')].filter((element) => ownerOf(element) === null).map((element) => element.getAttribute('aria-activedescendant')));
   const isSelected = (element) =>

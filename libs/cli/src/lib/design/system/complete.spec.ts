@@ -42,6 +42,7 @@ const STYLES = [
   '.aa-frame { display: block; background: white; transition: background-color var(--aa-fade); }',
   '.aa-frame:hover { background: black; } .aa-frame:active { background: gray; }',
   '.aa-trigger[aria-disabled="true"] { color: gray; }',
+  '.aa-faded { opacity: 0.5; }',
 ].join(' ');
 
 const field = (attributes: string, marker: string, trigger = '') =>
@@ -53,6 +54,9 @@ const fieldStates = (marker: string) => ({
   pressed: `<div>${field(' data-et-force="active"', marker)}</div>`,
   off: `<div>${field('', marker, ' aria-disabled="true"')}</div>`,
 });
+
+const go = (attributes = '') =>
+  `<button data-et-action="emit:press" class="aa-toggle" type="button" data-et-control="go"${attributes}>Go</button>`;
 
 const FIELD =
   "controls: { field: { kind: 'button', input: ['pointer'], disabled: true } }, grid: { columns: ['rest', 'hover', 'active'], rows: { rest: { rest: 'rest', hover: 'hovered', active: 'pressed' } } },";
@@ -101,6 +105,16 @@ type FixturePart = {
 const PARTS: Record<string, FixturePart> = {
   'components/field': { states: fieldStates(' data-et-control-part'), extra: FIELD },
   'components/field-unmarked': { states: fieldStates(''), extra: FIELD },
+  'components/faded': {
+    states: {
+      rest: `<div>${go()}</div>`,
+      hovered: `<div>${go(' data-et-force="hover"')}</div>`,
+      pressed: `<div>${go(' data-et-force="active"')}</div>`,
+      off: `<div class="aa-faded">${go(' aria-disabled="true"')}</div>`,
+    },
+    extra:
+      "controls: { go: { kind: 'button', input: ['pointer'], disabled: true } }, grid: { columns: ['rest', 'hover', 'active'], rows: { rest: { rest: 'rest', hover: 'hovered', active: 'pressed' } } },",
+  },
   'pages/merge': {
     states: { open: `<main>${toggle()}</main>` },
     extra: DISCLOSURE,
@@ -1306,6 +1320,15 @@ export default definePart({
       'REQUIREMENT-MISSING components/field-unmarked.field.active - state pressed forces active on it, but its box draws no different pixel than at rest - if a descendant draws active, mark it with data-et-control-part',
       'REQUIREMENT-MISSING components/field-unmarked.field.disabled - no state draws it disabled - mark it with disabled or aria-disabled="true" on it or a data-et-control-part in it in a state',
     ]);
+  }, 60_000);
+
+  it('counts the opacity a disabled control takes from its parent as its disabled look', async (context) => {
+    const { target, config, product } = checkout();
+    const faded = await completenessOf({ target, config, product, part: 'components/faded' });
+
+    if ('unavailable' in faded) return context.skip(faded.unavailable);
+
+    expect(faded).toEqual({ gaps: [] });
   }, 60_000);
 
   it('forces an option that is also a control in its open surface', async (context) => {
