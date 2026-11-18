@@ -18,8 +18,7 @@ The rules belong to M2 (attribution) and M6 (the sync).
 3. **An accepted calendar event does not prove attendance.** Tom stopped attending a recurring
    meeting after a project change, but the calendar still showed it as accepted. The app needs a
    way to mark a series as "not attended". Alternatively, the app must see a call.
-4. **After 20:00 and at night, only desk input counts.** Remote prompts, laptop commits and
-   prompts of unclear origin do not prove work at these hours.
+4. Dropped by the human on 2026-11-18: no clock rule (Timetrack ADR 0046).
 5. **Commits alone are not work.** Agent loops made hundreds of commits at night and at weekends
    while nobody typed. Typed prompts per hour were the best proof of presence.
 6. **A weekend is one coarse row.** A weekend day gets one row with a share of its evidence

@@ -22,7 +22,7 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 - [`one-session-one-piece.md`](./one-session-one-piece.md): ein Stand-in pro Arbeitsstück, nur offene Reste (ADR 0043).
 - [`ticket-flow.md`](./ticket-flow.md): Ticket anlegen in drei Klicks, nicht begonnen.
 - [`auto-mode.md`](./auto-mode.md): nur offene Reste (ADR 0035, 0044).
-- [`booking-lessons.md`](./booking-lessons.md): Regeln aus einem Monat Handbuchung, Lektionen 4 und 5 offen.
+- [`booking-lessons.md`](./booking-lessons.md): Regeln aus einem Monat Handbuchung, Lektion 5 offen.
 - [`m7-sync-research.md`](./m7-sync-research.md): Recherche und Entscheidungen zum M7-Sync (ADR 0039).
 - [`lib-scan-integrations.md`](./lib-scan-integrations.md), [`lib-scan-jira-tempo-model.md`](./lib-scan-jira-tempo-model.md):
   offene Befunde des Lib-Scans vom 28.09.
