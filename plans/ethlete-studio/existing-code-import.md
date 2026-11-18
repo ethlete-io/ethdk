@@ -1,7 +1,7 @@
 # Import existing frontend code into Studio
 
 Status: planning, 2026-10-29. Records the agreed direction and proposed tooling work.
-No implementation or visual redesign has started. Parent: [Studio design system](design-system.md).
+No implementation or visual redesign has started.
 Related plans: [SDK catalog](sdk-component-catalog.md) and [Designer workflow](designer-workflow.md).
 
 ## Goal and boundary

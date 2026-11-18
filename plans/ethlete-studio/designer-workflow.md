@@ -1,7 +1,6 @@
 # Studio as a complete designer workspace
 
-Status: future work, recorded 2026-10-29. Requirements and planning only; no implementation
-or UI design has started. Parent plan: [Studio design system](design-system.md).
+Status: future work, recorded 2026-10-29. Sections 2 and 3 are requirements only; section 1 is partly built.
 
 ## Product goal
 
@@ -15,21 +14,9 @@ Calls model or the old 1-7 workflow.
 
 ## 1. Agent chat inside Studio
 
-Move the conversation with the agent into Studio. The designer should not need a separate
-CLI session to request changes, discuss a design or continue after reviewing a sketch.
-
-The conversation must have the current repository, product and work context available.
-Define how the user references a selected part, sketch, variant or comment, and how an agent
-reply links back to the affected design. Preserve useful context across navigation and
-application restarts; decide conversation boundaries and persistence during detailed planning.
-
-Expose whether the agent is working, waiting for input, interrupted or failed, and let the
-user stop and resume work. Connection, authentication and missing prerequisites must be
-handled from Studio. Investigate the existing unused chat integration before choosing what
-to reuse; it is not automatically the target implementation.
-
-Acceptance: from inside Studio, the user requests a change, reviews the resulting sketch,
-provides feedback and continues with the agent without switching applications.
+Built: the global chat panel with the view as context, resume of the session and "New chat" (ADR 0369). Open: keep the
+conversation across application restarts, stop and resume a run from Studio, and handle connection, authentication and
+missing prerequisites from Studio. Smart navigation of replies and a list of old chats come after the MVP.
 
 ## 2. Direct design editing with agent awareness
 
