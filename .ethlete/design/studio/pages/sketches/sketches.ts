@@ -837,8 +837,8 @@ export default definePart<Props>({
     'comment-target': { kind: 'button', part: 'components/comment-target' },
   },
   states: {
-    'page-sketch': { camera: 'fit' },
-    'page-100': { camera: '100' },
+    'page-sketch': { camera: 'fit', question: QUESTION },
+    'page-100': { camera: '100', question: QUESTION },
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
     drawing: { camera: 'fit', status: 'drawing' },
     paused: { camera: 'fit', status: 'paused' },
@@ -901,8 +901,9 @@ export default definePart<Props>({
   },
   describe: {
     'page-sketch':
-      'A sketch fitted to the view with Aktuell and the first variant; check each row head with variant, model, note and Übernehmen and the state grid beside it.',
-    'page-100': 'The sketch at 100 %; check the 15px notes and 13px state names and that no cell is cut off.',
+      'A sketch fitted to the view with Aktuell and the first variant; check each row head with variant, model, note and Übernehmen and the state grid beside it, and the open round question as its own line above the round picker, with the canvas 40 px lower.',
+    'page-100':
+      'The sketch at 100 %; check the 15px notes and 13px state names, that no cell is cut off, and the open round question as its own line above the round picker, with the canvas 40 px lower.',
     'zoomed-page':
       'The sketch zoomed to 60 % and panned with variant a selected; check that the row heads stay pinned at the left edge, opaque over the cells.',
     drawing: 'A variant still drawing; check the zeichnet badge in the header and that Übernehmen is missing.',
