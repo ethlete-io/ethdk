@@ -12,7 +12,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 1. Call `ListAgents`. Find the grill/docs session: an interactive session in the same repo.
 2. Send it a short message: you are the builder, and what you will build first. The grill/docs session can restart you with `restart <your name>`, and you it.
-3. The queue is the "Warteschlange" atop `plans/ethlete-studio/STATUS.md` (ADR 0351); `git log` shows what is done.
+3. `yarn queue` prints the queue (ADR 0351), `yarn queue <row>` one full row; do not read `STATUS.md` for it. `git log` shows what is done.
 4. Run `yarn et:design status`. If it prints `ci: red`, start no feature slice: only fix or revert.
    If you cannot prove the cause in 15 minutes, revert the suspect commit first (check it with
    `yarn revert:check <sha>`).

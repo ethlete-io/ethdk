@@ -49,6 +49,7 @@
     "push:slot": "node ./tools/scripts/push-slot.mjs",
     "push:suite": "node ./tools/scripts/push-suite.mjs",
     "query:export-coverage": "node ./tools/export-coverage/check.mjs query",
+    "queue": "node ./tools/scripts/studio-queue.mjs",
     "red-check": "node ./tools/scripts/red-check.mjs",
     "release": "yarn prepare:release && yarn changeset publish",
     "release:smoke": "node ./tools/release-smoke/smoke.mjs",
