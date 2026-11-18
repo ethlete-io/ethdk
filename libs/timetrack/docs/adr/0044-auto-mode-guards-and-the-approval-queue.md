@@ -7,7 +7,8 @@ the guards around it.
 ## Invariants
 
 1. The Tempo sync is a human press. No auto mode action and no CLI call writes to Tempo without it. `tempo.sync` and
-   `tempo.delete` wait in the queue, and "Approve all" never includes them.
+   `tempo.delete` wait in the queue, and "Approve all" never includes them. `jira.create` is the same: each create is approved
+   one by one (applied by the doc agent on 2026-11-18 to stop duplicate drafts, B596 finding #8).
 2. A human edit wins. Every field auto mode can set carries its source: `human`, `auto` or `observed`. Auto mode never
    writes a field whose source is `human`. A UI edit sets `human`. A reset in the UI is the only way back to `auto`. A
    stored value without a source reads `human`.
