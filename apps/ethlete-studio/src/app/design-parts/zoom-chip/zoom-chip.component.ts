@@ -28,13 +28,13 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
       <button
         [attr.data-et-force]="forcedOn('reset')"
         [attr.aria-label]="LABELS.reset"
+        [etTooltip]="LABELS.resetTooltip"
         (click)="zoomReset.emit()"
         et-button
         type="button"
         variant="transparent"
         color="surface"
         size="sm"
-        etTooltip="Zoom to 100 % (Shift+0)"
       >
         {{ percent() }} %
       </button>
@@ -57,13 +57,13 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
       <button
         [attr.data-et-force]="forcedOn('fit')"
         [attr.aria-label]="LABELS.fit"
+        [etTooltip]="LABELS.fitTooltip"
         (click)="fit.emit()"
         et-button
         type="button"
         variant="transparent"
         color="surface"
         size="sm"
-        etTooltip="Zoom to fit (Shift+1)"
         placement="top-end"
       >
         {{ LABELS.fitButton }}

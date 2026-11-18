@@ -62,6 +62,8 @@ export const STUDIO_LABELS = {
     in: 'Vergrößern',
     fit: 'Einpassen',
     fitButton: 'Fit',
+    resetTooltip: 'Zoom to 100 % (Shift+0)',
+    fitTooltip: 'Zoom to fit (Shift+1)',
   },
   titleBar: {
     search: (product: string, part: string) => `Suchen in ${product}, ${part}`,
