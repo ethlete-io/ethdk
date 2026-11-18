@@ -52,7 +52,13 @@
   },
   "components/carousel": "1706f12ac6905d60",
   "components/chart": "7484c4d80d418295",
-  "components/checkbox": "7f176773e02868b1",
+  "components/checkbox": {
+    "hash": "571b0f5c59ee4cda",
+    "variant": "new",
+    "decidedBy": "plan: B584: fill the missing control states of components/checkbox",
+    "at": "2026-11-18T14:07:36.538Z",
+    "note": "merged without a pick: allowed by B584: fill the missing control states of components/checkbox"
+  },
   "components/chip": {
     "hash": "5490dbb5a7b15d52",
     "variant": "a",
