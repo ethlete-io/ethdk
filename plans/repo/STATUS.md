@@ -10,5 +10,6 @@ doppelt. Prozess-ADRs liegen vorerst in `apps/ethlete-studio/docs/adr/` (ein Rep
 
 - [`moon-migration.md`](./moon-migration.md): moon als Nx-Ersatz mit eigenem Remote-Cache (Homelab), Trial auf dem Branch
   `chore/moon-trial`. Nichts davon gebaut; Nx Cloud bleibt aus (`NX_NO_CLOUD`).
+- [`process-baseline-2026-11-18.md`](./process-baseline-2026-11-18.md): Ausgangszahlen der Prozess-Prüfung, Nachmessung B605 am 25.11.
 - [`windows-test-pc.md`](./windows-test-pc.md): Windows-Testrechner `rack` für B480 (ADR 0258). Sondiert, nichts
   eingerichtet: SSH-Eintrag, WSL2, Toolchain offen.
