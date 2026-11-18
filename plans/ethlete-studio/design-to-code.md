@@ -2494,3 +2494,11 @@ comment button"` (1 passed), `compare pages/system` (all ok with the icon-button
 c9aeb894f` recorded it with no refusal. `vitest related` in libs/cli and apps/ethlete-studio, lint, typecheck.
 - Not verified: canvas-viewport, comment-pin, disclosure, title-search, tree-row, part-tree and studio-menu stay
   unrecorded (design drift that predates this change); the rule was run over their app components and found nothing.
+
+## As built (B233 close)
+
+- Closed on the `compare --affected` record of 2026-11-18: elements/canvas-frames, every state ok at its current design
+  (implemented.json). `design ready` marked it build-ready (872a143b8); 71d7885f3 holds the settled merged.json hash.
+- Not recorded: the joint `task elements/canvas-frames pages/system --verify 88481f942^..96bba1299`. It refuses
+  design-harness.component.spec.ts (1a4cc4fbc) and commit-hunks.spec.ts (c0f1802b4) as outside the allowed files; the
+  allowlist stays, the spec-in-range refusal is parked as a suspect. pages/system is not ready (4 embedded parts).
