@@ -1,6 +1,8 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
 import { isAcknowledgement, isQuotableNote } from '../model/acknowledgement';
+import { ActivityBlock, streamKey } from '../model/block';
 import { EvidenceKind } from '../model/evidence';
+import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 
 export type DescribeOptions = {
@@ -33,11 +35,43 @@ const quotable = (summary: string, kind: EvidenceKind) =>
 const truncate = (text: string, maxLength: number) =>
   text.length <= maxLength ? text : `${text.slice(0, maxLength - 1).trimEnd()}…`;
 
-const summariesOf = (group: WorkGroup, kind: EvidenceKind) => {
+const ownCheckoutsOf = (group: WorkGroup, config: GitFlowConfig) => {
+  const named = group.issueKey
+    ? group.blocks.filter(
+        (block) =>
+          !!block.context.repoPath &&
+          !!block.context.branch &&
+          parseBranch({ branch: block.context.branch, config }).issueKey === group.issueKey,
+      )
+    : [];
+
+  if (named.length) return new Set(named.map((block) => streamKey(block.context)));
+
+  const lane = group.laneKey ?? laneKeyOf(group.blocks);
+
+  return lane ? new Set([lane]) : undefined;
+};
+
+const foreignCommitsOf = (group: WorkGroup, config: GitFlowConfig) => {
+  const own = ownCheckoutsOf(group, config);
+
+  if (!own) return new Set<string>();
+
+  const commitsIn = (blocks: readonly ActivityBlock[]) =>
+    blocks.flatMap((block) => block.evidence.filter((entry) => entry.kind === 'commit').map((entry) => entry.detail));
+  const isOwn = (block: ActivityBlock) => !block.context.repoPath || own.has(streamKey(block.context));
+  const ownCommits = new Set(commitsIn(group.blocks.filter(isOwn)));
+
+  return new Set(commitsIn(group.blocks.filter((block) => !isOwn(block))).filter((detail) => !ownCommits.has(detail)));
+};
+
+const summariesOf = (options: { group: WorkGroup; kind: EvidenceKind; foreign: ReadonlySet<string> }) => {
+  const { group, kind } = options;
   const found: string[] = [];
+  const foreign = kind === 'commit' ? options.foreign : new Set<string>();
 
   for (const entry of group.evidence) {
-    const summary = entry.kind === kind ? entry.summary?.trim() : undefined;
+    const summary = entry.kind === kind && !foreign.has(entry.detail) ? entry.summary?.trim() : undefined;
 
     if (summary && quotable(summary, kind) && !found.includes(summary)) found.push(summary);
   }
@@ -147,9 +181,11 @@ export const describeWork = (options: {
 }) => {
   const { maxSummaries, maxLength } = { ...DEFAULT_DESCRIBE_OPTIONS, ...options.options };
   const { group } = options;
+  const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
+  const foreign = foreignCommitsOf(group, config);
 
   for (const kind of SUMMARY_PRIORITY) {
-    const summaries = summariesOf(group, kind);
+    const summaries = summariesOf({ group, kind, foreign });
 
     if (summaries.length === 0) continue;
 
@@ -159,7 +195,7 @@ export const describeWork = (options: {
     return truncate(rest > 0 ? `${quoted} (+${rest} more)` : quoted, maxLength);
   }
 
-  const branch = fromBranch(group, options.config ?? DEFAULT_GIT_FLOW_CONFIG);
+  const branch = fromBranch(group, config);
 
   if (branch) return truncate(branch, maxLength);
 

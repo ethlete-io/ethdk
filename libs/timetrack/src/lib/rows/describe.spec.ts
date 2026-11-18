@@ -180,4 +180,68 @@ describe('describeWork', () => {
     expect(text).toHaveLength(40);
     expect(text.endsWith('…')).toBe(true);
   });
+
+  describe('on a row whose issue another checkout shares in its span', () => {
+    const FIFAGG = resolveGitFlowConfig({ keyPrefixes: ['FIFAGG'] });
+    const CLIENT = '/work/client-app';
+    const STUDIO = '/work/ethlete-sdk';
+    const at = (time: string) => new Date(`2026-11-03T${time}:00Z`);
+    const clientCommit = { ...commit('fix(match): Keep the score when the round ends', 'c111111'), at: at('12:20') };
+    const studioCommits = [
+      { ...commit('feat(repo): Draw the day from what was booked', 's111111'), at: at('12:25') },
+      { ...commit('fix(repo): Leave a day another machine booked', 's222222'), at: at('12:40') },
+    ];
+    const blockIn = (options: {
+      repoPath: string;
+      branch: string;
+      from: string;
+      to: string;
+      evidence: Evidence[];
+    }) => ({
+      from: at(options.from),
+      to: at(options.to),
+      context: { repoPath: options.repoPath, branch: options.branch },
+      evidence: options.evidence,
+    });
+    const shared = (options: { clientBranch: string; issueKey: string; clientUntil: string }): WorkGroup => ({
+      issueKey: options.issueKey,
+      from: at('12:15'),
+      to: at('13:15'),
+      observedMs: 60 * 60_000,
+      confidence: 'certain',
+      evidence: [clientCommit, ...studioCommits],
+      blocks: [
+        blockIn({
+          repoPath: CLIENT,
+          branch: options.clientBranch,
+          from: '12:15',
+          to: options.clientUntil,
+          evidence: [clientCommit],
+        }),
+        blockIn({ repoPath: STUDIO, branch: 'next', from: '12:15', to: '12:45', evidence: studioCommits }),
+      ],
+    });
+
+    it('quotes only the commits of the checkout whose branch names the issue', () => {
+      const text = describeWork({
+        group: shared({
+          clientBranch: 'feat/FIFAGG-12759-match-score',
+          issueKey: 'FIFAGG-12759',
+          clientUntil: '12:30',
+        }),
+        config: FIFAGG,
+      });
+
+      expect(text).toBe('fix(match): Keep the score when the round ends');
+    });
+
+    it('quotes only the commits of its lane when no branch names the issue', () => {
+      const text = describeWork({
+        group: shared({ clientBranch: 'develop', issueKey: 'FIFAGG-12759', clientUntil: '13:15' }),
+        config: FIFAGG,
+      });
+
+      expect(text).toBe('fix(match): Keep the score when the round ends');
+    });
+  });
 });
