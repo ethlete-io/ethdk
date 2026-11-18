@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { ComponentFixture } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { mountControl } from '../../../testing/control-driver';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
@@ -37,7 +38,86 @@ class SwitchInFormFieldTestHost {
   touched = signal(true);
 }
 
+@Component({
+  template: `
+    <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -- et-switch is the control -->
+    <label id="wrapping-label">Wrapped <et-switch id="wrapped" /></label>
+    <label for="linked">Linked</label>
+    <et-switch id="linked" />
+    <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -- et-switch is the control -->
+    <label>Named <et-switch id="input-named" aria-label="From input" /></label>
+    <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -- et-switch is the control -->
+    <label>Static <et-switch id="static-label" aria-label="Static name" /></label>
+    <et-switch [attr.aria-label]="boundName" id="bound-label" />
+    <et-switch [attr.aria-labelledby]="'external-name'" id="bound-labelledby" />
+    <et-switch id="static-labelledby" aria-labelledby="external-name" />
+    <label id="input-label"><input type="checkbox" /> Other <et-switch id="beside-input" /></label>
+    <span id="external-name">External</span>
+  `,
+  imports: [SWITCH_IMPORTS],
+})
+class SwitchNamingTestHost {
+  boundName = 'Bound name';
+}
+
 describe('SwitchDirective', () => {
+  describe('accessible name', () => {
+    let fixture: ComponentFixture<SwitchNamingTestHost>;
+    let host: HTMLElement;
+    const switchEl = (id: string) => host.querySelector<HTMLElement>(`#${id}`)!;
+    const checked = (id: string) => {
+      fixture.detectChanges();
+
+      return switchEl(id).getAttribute('aria-checked');
+    };
+
+    beforeEach(() => {
+      fixture = mountControl(SwitchNamingTestHost);
+      host = fixture.nativeElement as HTMLElement;
+    });
+
+    it('is named by a wrapping native label', () => {
+      expect(switchEl('wrapped').getAttribute('aria-labelledby')).toBe('wrapping-label');
+    });
+
+    it('toggles once from a click on the wrapping label or on itself', () => {
+      host.querySelector<HTMLElement>('#wrapping-label')!.click();
+      expect(checked('wrapped')).toBe('true');
+
+      switchEl('wrapped').click();
+      expect(checked('wrapped')).toBe('false');
+    });
+
+    it('is named by a label pointing at its id, which gets an id of its own', () => {
+      const label = host.querySelector<HTMLLabelElement>('label[for="linked"]')!;
+
+      expect(label.id).toBeTruthy();
+      expect(switchEl('linked').getAttribute('aria-labelledby')).toBe(label.id);
+
+      label.click();
+      expect(checked('linked')).toBe('true');
+    });
+
+    it('lets its aria-label input win over a native label', () => {
+      expect(switchEl('input-named').getAttribute('aria-label')).toBe('From input');
+      expect(switchEl('input-named').getAttribute('aria-labelledby')).toBeNull();
+      expect(switchEl('static-label').getAttribute('aria-label')).toBe('Static name');
+    });
+
+    it('keeps an aria-label or aria-labelledby bound on the host', () => {
+      expect(switchEl('bound-label').getAttribute('aria-label')).toBe('Bound name');
+      expect(switchEl('bound-labelledby').getAttribute('aria-labelledby')).toBe('external-name');
+      expect(switchEl('static-labelledby').getAttribute('aria-labelledby')).toBe('external-name');
+    });
+
+    it('leaves a label that already names a native input alone', () => {
+      host.querySelector<HTMLElement>('#input-label')!.click();
+
+      expect(switchEl('beside-input').getAttribute('aria-labelledby')).toBeNull();
+      expect(checked('beside-input')).toBe('false');
+    });
+  });
+
   describe('standalone', () => {
     let driver: SwitchDriver<StandaloneSwitchTestHost>;
 

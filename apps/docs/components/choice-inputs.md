@@ -51,6 +51,9 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
   `aria-checked="mixed"`, the indeterminate state is presentational only - the
   thumb parks mid-track behind `data-indeterminate` while `aria-checked` stays
   boolean.
+- Outside `et-choice-field`, a native `<label>` that wraps `et-switch` or points
+  at its `id` with `for` names it and toggles it on click, like a native control.
+  An `aria-label` or `aria-labelledby` on `et-switch`, bound or static, wins.
 - Both toggle on click and <kbd>Space</kbd>, and mark themselves touched on blur.
 - Both honor `readonly` (e.g. from a `readonly(...)` schema): the control keeps
   its normal look and stays focusable (`aria-readonly`), it just cannot be
