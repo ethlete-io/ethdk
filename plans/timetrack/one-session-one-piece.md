@@ -83,7 +83,7 @@ covers most.
 
 Open:
 
-- Done b2f55fa44: `packLane` in `apps/timetrack/src/app/day-review/lanes.ts` draws a one-ticket overlap group in fixed columns (Tom picked this over one outer band or a collapsed band). e2e `session-columns.spec.ts`.
+- Done b2f55fa44: `packLane` in `apps/timetrack/src/app/day-review/lanes.ts` draws a one-ticket overlap group in fixed columns (Tom picked this over one outer band or a collapsed band). e2e `session-columns.spec.ts` (deleted; 45403c8ae replaced the columns with turns, spec `session-pieces.spec.ts`).
 - Engine side done (2026-10-03): `BehindStretch` for the stretch an unwatched session lost (slice 5); the drawing is open.
 - Done e0f482bbc: a second unnamed row with the same stream and start gets `+<piece>` on its id.
 - Done 45403c8ae: sibling rows no longer sit in columns. `packLane` in `lanes.ts` draws each one as full-width

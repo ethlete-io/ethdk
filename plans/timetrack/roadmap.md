@@ -188,7 +188,7 @@ identity. The install must make pairing with another person's machine impossible
 ### Collector gaps
 
 - **Windows window source:** `GetForegroundWindow` + `GetWindowText`, and `GetLastInputInfo` for
-  idle. No `window_windows.rs` exists.
+  idle. No Windows window source exists yet (`window_macos.rs`, `window_wayland.rs` and `window.rs` are the others).
 - **Windows call source:** WASAPI `IAudioSessionManager2`, then `IAudioSessionControl2::GetProcessId`,
   named by pid. The portable half (`calls.rs`, `stream/calls.ts`) is done. It cannot be verified
   without a Windows machine or target.
@@ -250,6 +250,14 @@ None of these is recorded as done:
 - M4: the live case end to end (a stand-in on day 1, three days across two checkouts, the epic and
   both tasks filed from the card, no row typed by hand), plus one real week where every band has a
   key or a stand-in.
+
+## Done since the milestones were written
+
+- CEF on Linux: Timetrack runs on the CEF runtime on Linux (ff6bdc636).
+- Tempo 403: the error leads with Tempo's own reason (7d0c8082d).
+- Attribution repoint: a rule can be repointed to another issue (1da063903).
+- Demo build: a Timetrack demo build runs on a scripted demo day (0a298aee4).
+- Elrond updater host: it is the second updater endpoint of both apps (99c9a3bc9, 10dcd493e).
 
 ## Open questions
 

@@ -5,31 +5,11 @@ Tom decided all six on 2026-10-08, each as recommended in the table below, plus 
 identity" bullet below: a peer's events go into their own table, every key keeps its spelling, and
 copies of one fact fold when a day is read. Slices 1 and 2 are done. Slice 3 is in progress (steps under slice 3 below).
 
-## What made 2026-10-08 look wrong on this PC
-
-- The PC was off from 10-07 01:04 to 10-08 19:26. The whole workday ran on the MacBook.
-- The MacBook booked FIFAGG-12657 13:15-15:00 and FIFAGG-12704 15:00-18:00. This PC shows them as
-  logged elsewhere.
-- A 14:45-17:30 "Nobody was here" band on ethlete-sdk (ET-772, held back) is built from 61 laptop
-  commits that this PC only received with the 19:27 fast-forward. A commit is dated by when it was
-  written, so pulled commits read as work on this PC (open point in ADR 0018).
-- That band carries Claude session `14253710`, which started on this PC at 19:28, after the band.
-- The 19:15 increment with real attendance (pull, prompts, focus) is missing from the rows. A
-  19:30-19:45 "Nobody was here" band with no evidence sits in its place.
-- Google refused the stored token, so no meeting could be checked. Reconnect in Settings.
-- Coverage already holds the laptop's worklogs, so the ADR 0038 freeze will fix this PC's cut on its
-  first read after the day. A later merge then never reaches those rows.
-
 ## Bugs that need no sync (slice 0)
 
-- a. Done (08b03c0fd, 4b2267f6e). A commit no reflog entry here wrote is dated by the reflog entry
-  that brought it in, `authoredAt` keeps the author time, and its subject describes no row (ADR 0018).
-- b. Done (5697e49bc). A block that ends before its session started carries no session.
-- c. Done (f2c1e74ca, 44dce2135). A session silent until the prompt that ended a break draws no band
-  inside it, a band in a break ends where its work did, and a single increment before a break no
-  longer folds across it.
+Only d is open; a, b, c and e are done (08b03c0fd, 4b2267f6e, 5697e49bc, f2c1e74ca, 44dce2135, 77ad9adb2).
+
 - d. Open. The day does not say "this machine was off until 19:26" (M5).
-- e. Done (77ad9adb2). Only a day this app booked is frozen (ADR 0038).
 
 ## Decisions, one recommendation each
 

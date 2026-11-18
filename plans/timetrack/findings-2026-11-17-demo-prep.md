@@ -1,6 +1,6 @@
 # Findings from tidying sixteen days through the agent CLI
 
-Status: recorded on 2026-11-17, not started.
+Status: recorded on 2026-11-17. Struck entries are fixed; the others are queued in the builder queue (B596, B598) or have no row yet, see `STATUS.md`.
 
 An agent tidied the days 2026-11-02 to 2026-11-17 on the Linux machine through `timetrack` (the
 agent CLI) before a presentation: it named unnamed rows, wrote German descriptions and read the
@@ -36,16 +36,16 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 
 ## Agent CLI
 
-9. **A waiting write cannot be read.** `timetrack approval <id>` prints the status only, and
+9. ~~**A waiting write cannot be read.**~~ Fixed (13c54dad8). `timetrack approval <id>` prints the status only, and
    `timetrack approvals` prints no day and no row. An agent cannot tell which row a draft is about.
-10. **`ask --context` on a stand-in subject says the context holds no unnamed work.** The rows of
+10. ~~**`ask --context` on a stand-in subject says the context holds no unnamed work.**~~ Fixed (the coordinator named 13c54dad8 and ec696f5e1 for this entry). The rows of
     that day carried `autoModeSubject.kind: "stand-in"`. The error should name the subjects the day
     holds.
-11. **`rows <day>` moves the view of the app.** Reading sixteen days flips the user's screen sixteen
+11. **`rows <day>` moves the view of the app.** Suspect: fixed by 714b49bc9, the Linux machine likely runs an old build. Reading sixteen days flips the user's screen sixteen
     times. A read of a range without that effect is missing.
-12. **`rows --json` into a pipe is cut on a large day.** Redirected to a file the same answer is
+12. ~~**`rows --json` into a pipe is cut on a large day.**~~ Fixed (13c54dad8). Redirected to a file the same answer is
     whole. Suspected: the process exits before stdout drains.
-13. **No answer holds the concurrency of a day.** The app shows "× at once"; `rows` and `day` do
+13. ~~**No answer holds the concurrency of a day.**~~ Fixed (the coordinator named 13c54dad8 and ec696f5e1 for this entry). The app shows "× at once"; `rows` and `day` do
     not. `streamDay` throws in `worked-in.ts` on the events `timetrack day --out` writes, so the
     figure cannot be rebuilt outside the app either.
 14. **One edit is one approval.** The tidy-up queued 135 writes. There is no batch, and the CLI
@@ -65,9 +65,9 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     work Linux had named. The Mac day for the demo was matched to Linux by 19 edits by hand.
     Proposed: a day a paired machine booked counts as booked on every machine - its sent rows are
     drawn, nothing is proposed, auto mode leaves it alone.
-16. **Old stand-ins pile up.** Linux holds 110 open stand-ins, many 50 to 63 days old with 0 days of
+16. ~~**Old stand-ins pile up.**~~ Fixed (the coordinator named 13c54dad8 and ec696f5e1 for this entry). Linux holds 110 open stand-ins, many 50 to 63 days old with 0 days of
     work.
-17. **Rows of zero duration are listed.** The `zero-duration` warning names them, and they still
+17. ~~**Rows of zero duration are listed.**~~ Fixed (ec696f5e1). The `zero-duration` warning names them, and they still
     take a line.
 
 ## Nights and weekends
@@ -90,7 +90,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     said that he is away at night. The flag is not enough to tell his work from the agents' work.
 22. **A six-hour call nobody held.** Both machines draw an unnamed `lane:call` row 17:45-23:45 on
     2026-11-17. Which event opened the call is unknown.
-23. **Rejected rows stay on the page.** The Mac's 17.11. still shows `elrond` and `3d-projekte`
+23. ~~**Rejected rows stay on the page.**~~ Fixed (ec696f5e1). The Mac's 17.11. still shows `elrond` and `3d-projekte`
     rows after they were rejected; hiding them takes a second edit (`--hide`) per row.
 24. **A manual row exists on one machine only.** Linux holds `manual:FIFAGG-12769` 13:00-15:15 on
     17.11.; the Mac shows a gap there.

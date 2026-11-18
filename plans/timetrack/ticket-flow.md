@@ -49,7 +49,7 @@ the way unless the user asks for it.
 ## Screenshot harness
 
 The ticket dialog has no Storybook story, so draw it through `apps/timetrack-e2e`. Write a
-throwaway spec, for example `src/zz-ticket-shot.spec.ts`, and delete it before the commit. It
+throwaway spec, for example `apps/timetrack-e2e/src/zz-ticket-shot.spec.ts`, and delete it before the commit. It
 runs on macOS as it does on Linux: no Tauri, no real window, no network.
 
 - Run it with `NX_NO_CLOUD=true npx playwright test -c apps/timetrack-e2e/playwright.config.ts zz-ticket-shot`.
