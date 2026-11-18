@@ -387,7 +387,9 @@ Available hooks:
   `/my-skill`. When a prompt that is not typed by a human (mailbox, cross-session, task
   notification, restart) arrives after the threshold without typed input, the hook tells the
   agent the user is away; the next typed prompt tells it the user is back. A typed `afk` marks
-  the session away at once. State is kept in `.git/ethlete/away/`.
+  the session away at once. With `"reportCommand": "<cli> report"` inside `awayMode`, the back
+  message also carries that command's table since the last typed input (dropped when it fails or
+  takes over 10 s). State is kept in `.git/ethlete/away/`.
 
 Hooks can be turned off per machine - see the local config below.
 

@@ -48,10 +48,11 @@ export type SyncConfig = {
   configWarnings?: string[];
 };
 
-/** Opt-in settings of the `away-mode` hook: the skills whose sessions it tracks, and the idle threshold. */
+/** Opt-in settings of the `away-mode` hook: the skills whose sessions it tracks, the idle threshold, and the command printing the report table on return. */
 export type AwayModeConfig = {
   skills?: string[];
   thresholdMinutes?: number;
+  reportCommand?: string;
 };
 
 /** Opt-in settings of `ethlete-agents report`: repo-relative paths of the markdown files holding row tables and the queue. */

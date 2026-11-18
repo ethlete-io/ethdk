@@ -118,6 +118,54 @@ describe('away-mode', () => {
     expect(session.state()?.lastHumanInput).toBe(last);
   });
 
+  describe('report on return', () => {
+    const stub = (root: string, body: string) => {
+      const file = join(root, 'report-stub.py');
+      writeFileSync(file, body, 'utf8');
+      return `python3 ${file}`;
+    };
+
+    it('appends the table for the time away', () => {
+      const session = setup({ config });
+      const since = minutesAgo(30);
+      const reportCommand = stub(session.root, 'import sys\nprint("TABLE " + " ".join(sys.argv[1:]))\n');
+      writeFileSync(
+        join(session.root, 'ethlete-agents.config.json'),
+        JSON.stringify({ awayMode: { ...config.awayMode, reportCommand } }),
+        'utf8',
+      );
+      session.writeState({ active: true, lastHumanInput: since, away: true });
+
+      const text = session.send('ok, here');
+
+      expect(text).toContain('The user is back (typed input after 30 min away)');
+      expect(text).toContain(`TABLE --since ${since}`);
+    });
+
+    it('keeps only the back message when the command fails', () => {
+      const session = setup({ config });
+      const reportCommand = stub(session.root, 'import sys\nprint("TABLE")\nsys.exit(1)\n');
+      writeFileSync(
+        join(session.root, 'ethlete-agents.config.json'),
+        JSON.stringify({ awayMode: { ...config.awayMode, reportCommand } }),
+        'utf8',
+      );
+      session.writeState({ active: true, lastHumanInput: minutesAgo(30), away: true });
+
+      const text = session.send('ok, here');
+
+      expect(text).toContain('The user is back');
+      expect(text).not.toContain('TABLE');
+    });
+
+    it('keeps only the back message when the command is missing', () => {
+      const session = setup({ config: { awayMode: { ...config.awayMode, reportCommand: 'no-such-binary-b613' } } });
+      session.writeState({ active: true, lastHumanInput: minutesAgo(30), away: true });
+
+      expect(session.send('ok, here')).not.toContain('report');
+    });
+  });
+
   it('marks the session away at once on afk, and back on the next typed input', () => {
     const session = setup({ config });
     session.writeState({ active: true, lastHumanInput: minutesAgo(1), away: false });

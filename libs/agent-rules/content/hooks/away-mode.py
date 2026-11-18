@@ -10,7 +10,9 @@ Prompts the agent sessions send themselves (mailbox messages, cross-session mess
 notifications, system reminders, the restart prompt) are not human input. The last human-typed
 prompt is stored per session; when a non-human prompt arrives after the threshold, the hook injects
 the away message once and a one-line reminder afterwards. The next human-typed prompt injects the
-back message. A human prompt that is exactly `afk` marks the session away at once.
+back message; with `awayMode.reportCommand` (e.g. `node dist/libs/agent-rules/src/index.js report`)
+it also carries that command's table for the time away (`--since <last typed input>`), left out when the
+command fails or takes over 10 s. A human prompt that is exactly `afk` marks the session away at once.
 
 State lives in `<git common dir>/ethlete/away/<session_id>.json`, so it is never committed.
 
@@ -24,6 +26,7 @@ not read its own input.
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -42,6 +45,10 @@ AWAY_MESSAGE = (
     "The user is away (no typed input for {minutes} min). Work by your skill's away rules: collect "
     "questions, one short line per event, no round. Typed input switches back on its own."
 )
+BACK_REPORT_MESSAGE = (
+    " Paste this report for the time away unchanged, then the collected questions:\n\n{report}"
+)
+REPORT_TIMEOUT_SECONDS = 10
 STILL_AWAY_MESSAGE = "The user is still away (no typed input for {minutes} min)."
 
 
@@ -104,6 +111,33 @@ def away_settings(root, local_config):
     if isinstance(threshold, bool) or not isinstance(threshold, (int, float)) or threshold <= 0:
         threshold = DEFAULT_THRESHOLD_MINUTES
     return skills, threshold
+
+
+def report_command(root, local_config):
+    """The configured report command; the local config's `awayMode` replaces the shared one."""
+    setting = local_config.get("awayMode")
+    if not isinstance(setting, dict):
+        setting = load_config(root, CONFIG_FILE).get("awayMode")
+    command = setting.get("reportCommand") if isinstance(setting, dict) else None
+    return command.strip() if isinstance(command, str) and command.strip() else None
+
+
+def away_report(root, command, since):
+    """The report table since `since`, or None when the command is missing, fails or is too slow."""
+    if not command or not since:
+        return None
+    try:
+        result = subprocess.run(
+            shlex.split(command) + ["--since", since],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=REPORT_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        return None
+    output = result.stdout.strip()
+    return output if result.returncode == 0 and output else None
 
 
 def is_human_typed(prompt):
@@ -216,12 +250,17 @@ def main():
 
     if human:
         was_away = state.get("away") is True
-        minutes = minutes_since(state.get("lastHumanInput"), now)
+        since = state.get("lastHumanInput")
+        minutes = minutes_since(since, now)
         state["lastHumanInput"] = now_iso
         state["away"] = prompt.strip().lower() == "afk"
         write_state(path, state)
         if was_away and not state["away"]:
-            emit(BACK_MESSAGE.format(minutes=minutes if minutes is not None else threshold))
+            message = BACK_MESSAGE.format(minutes=minutes if minutes is not None else threshold)
+            report = away_report(root, report_command(root, local_config), since)
+            if report:
+                message += BACK_REPORT_MESSAGE.format(report=report)
+            emit(message)
         return
 
     minutes = minutes_since(state.get("lastHumanInput"), now)
