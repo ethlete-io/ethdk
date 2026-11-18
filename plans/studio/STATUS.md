@@ -43,6 +43,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 12. **B607** ⏳ Alte Warteschlange (queue.md) einmal sortieren: offen / ADR / löschen, in Scheiben (ADR 0354 Punkt 5) - Doc-Agent
 13. **B608** ⏳ Doc-Agent schaltet von selbst auf „weg“ und zurück (Hook-Zeitstempel, 15 Min.), Wiederholregel angepasst (ADR 0372) - Builder
 14. **B609** ⏳ Kurznamen: Spalte in rows.md, Warteschlangen-Befehl druckt „Kurzname (Bnnn)“, Skills und Commit-Betreff (ADR 0373) - Builder
+15. **B610** ⏳ Consumer-Auslieferung: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules, frühestens eine Woche nach B608/B609 (ADR 0374) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.
 

@@ -21,7 +21,7 @@ approved by the human. A consumer is a session in another repo that uses the SDK
 3. One channel into the SDK, fixed format: what is missing, how to reproduce it, what the consumer does meanwhile, and
    whether it is blocked. Batched; only a blocked consumer interrupts at once. It becomes a row in
    `plans/sdk/STATUS.md` (ADR 0354), not in the Studio row table.
-4. The plan-file system of ADR 0354 applies to the consumer repo too. The consumer builds that part itself.
+4. The plan-file system of ADR 0354 applies to the consumer repo too. Amended by ADR 0374: the consumer gets its tooling from `@ethlete/agent-rules` and fills in only its own content.
 
 The doc agent settled one detail without a further question: each `plans/sdk/STATUS.md` row also gets an entry in the
 one builder queue, so ADR 0355 point 1 (one list of live work) holds.
