@@ -64,7 +64,9 @@
     }
 
     .et-choice-field-control-slot {
+      display: flex;
       flex: 0 0 auto;
+      align-items: center;
     }
 
     &:where([data-size='sm']) {
