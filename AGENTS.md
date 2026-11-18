@@ -98,6 +98,7 @@ run checks on staged files (pre-commit) and on the pushed range (pre-push); fix 
 skipping them.
 
 Before you change a file or ask a question about it, run `yarn adr:governs <files>` (or `--staged`, or `<a>..<b>`) and read the ADRs it lists.
+Repo-level process ADRs live in `docs/adr/`, a product's own in its `docs/adr/` (Studio: `apps/ethlete-studio/docs/adr/`); one number sequence runs across both.
 
 ## Testing beyond unit specs
 

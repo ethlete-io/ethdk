@@ -46,7 +46,7 @@ count: a change to Timetrack or Studio gets a changeset like any lib. If one
 logical change spans several packages (e.g. a cross-cutting cleanup), list them
 all in one changeset.
 
-Docs-only paths need no changeset at all: Studio ADRs (`apps/ethlete-studio/docs/adr/**`) and
+Docs-only paths need no changeset at all: Studio ADRs (`apps/ethlete-studio/docs/adr/**`, `docs/adr/**`) and
 `plans/**` (ADR 0265). Package READMEs and guides still do.
 
 A change that needs no release - a test, a story, a lint fix with no runtime

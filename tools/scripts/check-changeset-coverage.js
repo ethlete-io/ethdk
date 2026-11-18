@@ -21,7 +21,7 @@ const { join, resolve } = require('path');
 
 const ROOT = resolve(__dirname, '../..');
 const RELEASE_BOT = 'github-actions[bot]';
-const DOCS_ONLY = [/^apps\/ethlete-studio\/docs\/adr\//, /^plans\//];
+const DOCS_ONLY = [/^apps\/ethlete-studio\/docs\/adr\//, /^docs\/adr\//, /^plans\//];
 
 const git = (...args) =>
   execFileSync('git', args, {

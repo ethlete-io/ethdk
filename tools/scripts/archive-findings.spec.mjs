@@ -9,6 +9,7 @@ import {
   BACKLOG_WHERE,
   backlogNumbers,
   parkedNumbers,
+  readAdrText,
   doneFindingNumbers,
   main,
   splitFindings,
@@ -484,4 +485,14 @@ test('--as-built moves the as-built sections and --whole moves the file, both in
   assert.equal(main(['--whole', 'plans/studio/ready.md'], { root, log }), 0);
   assert.equal(existsSync(file), false);
   assert.equal(main(['--whole', 'plans/studio/ready.md'], { root, log }), 2);
+});
+
+test('readAdrText reads both ADR folders and tolerates a missing one', () => {
+  const root = tempDir('archive-adr-');
+  assert.equal(readAdrText(root), '');
+  mkdirSync(join(root, 'docs/adr'), { recursive: true });
+  writeFileSync(join(root, 'docs/adr/0300-a.md'), 'root adr');
+  mkdirSync(join(root, 'apps/ethlete-studio/docs/adr'), { recursive: true });
+  writeFileSync(join(root, 'apps/ethlete-studio/docs/adr/0301-b.md'), 'studio adr');
+  assert.equal(readAdrText(root), 'studio adr\nroot adr');
 });

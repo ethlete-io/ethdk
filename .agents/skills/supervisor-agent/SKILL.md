@@ -17,7 +17,7 @@ Check every question for:
 
 - **Facts.** Each claim about code, git, a sketch or a tool is looked up before you judge it: read the file, run the
   read-only command, read the commit. A claim you could not check is named as unchecked.
-- **Already decided.** Search `apps/ethlete-studio/docs/adr/` (title and body) and run `yarn adr:governs <files>`.
+- **Already decided.** Search `apps/ethlete-studio/docs/adr/` and `docs/adr/` (title and body) and run `yarn adr:governs <files>`.
   A question the human already answered is not asked again: name the ADR.
 - **Premise.** Does the question rest on something that is not true, or offer options that do not exist or do not work?
 - **Scope.** Is it one decision, and is it the human's? A look question belongs in a sketch, not in chat. A question
@@ -32,7 +32,7 @@ Everything else stays a question for the human, asked by the doc agent after you
 
 ## Watch the doc agent
 
-- Read its commits (`git log` on `apps/ethlete-studio/docs/adr`, `plans/`, `.agents/skills`) and compare each new ADR
+- Read its commits (`git log` on `apps/ethlete-studio/docs/adr`, `docs/adr`, `plans/`, `.agents/skills`) and compare each new ADR
   with the human's words in its `source`.
 - Compare its work with its own skill (`.agents/skills/doc-agent/SKILL.md`) and the ADRs that skill cites.
 - A breach: one line to the doc agent (fact + rule), and one German line to the human.

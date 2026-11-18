@@ -115,16 +115,32 @@ const readArchives = (dir) =>
         .map((name) => ({ name, text: readFileSync(join(dir, name), 'utf8') }))
     : [];
 
+const ADR_DIRS = ['apps/ethlete-studio/docs/adr', 'docs/adr'];
+
 export const checkAdrs = (root) => {
   const statusText = studioRowsText(root);
   const archives = readArchives(join(root, 'plans/studio/archive'));
   const findings = [...findingErrors(archives, statusText), ...lostFindingErrors(archives, committedArchiveOf(root))];
-  const dir = join(root, 'apps/ethlete-studio/docs/adr');
-  const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')) : [];
+  const files = ADR_DIRS.flatMap((rel) => {
+    const dir = join(root, rel);
+    return existsSync(dir)
+      ? readdirSync(dir)
+          .filter((f) => f.endsWith('.md'))
+          .map((f) => ({ path: `${rel}/${f}`, file: join(dir, f) }))
+      : [];
+  });
   const rows = parseStatusRows(statusText);
-  const results = files.map((f) => checkAdr(f, readFileSync(join(dir, f), 'utf8'), rows));
+  const results = files.map((f) => checkAdr(f.path, readFileSync(f.file, 'utf8'), rows));
+  const seen = new Map();
+  const duplicates = [];
+  for (const { path } of files) {
+    const number = /\/(\d{4})-[^/]*$/.exec(path)?.[1];
+    if (!number) continue;
+    if (seen.has(number)) duplicates.push(`ADR number ${number} is used twice: ${seen.get(number)} and ${path}`);
+    else seen.set(number, path);
+  }
   return {
-    errors: [...findings, ...results.flatMap((r) => r.errors)],
+    errors: [...findings, ...duplicates, ...results.flatMap((r) => r.errors)],
     warnings: results.flatMap((r) => r.warnings),
   };
 };

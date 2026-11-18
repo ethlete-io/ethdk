@@ -59,6 +59,27 @@ test('reads ADR files against STATUS.md from disk', () => {
   assert.equal(checkAdrs(root).errors.length, 1);
 });
 
+const putAdr = (root, rel, text) => {
+  mkdirSync(join(root, rel, '..'), { recursive: true });
+  writeFileSync(join(root, rel), text);
+};
+
+test('an ADR in the repo-level docs/adr is checked', () => {
+  const root = tempDir('adr-');
+  putAdr(root, 'docs/adr/0300-a.md', adr('status: bogus\nopen: none'));
+  assert.match(checkAdrs(root).errors[0], /^docs\/adr\/0300-a\.md: status/);
+});
+
+test('the same number in both folders is an error naming both paths', () => {
+  const root = tempDir('adr-');
+  const ok = adr('status: accepted\nbuilt: 409246e68');
+  putAdr(root, 'docs/adr/0300-a.md', ok);
+  putAdr(root, 'apps/ethlete-studio/docs/adr/0300-b.md', ok);
+  const { errors } = checkAdrs(root);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /0300.*apps\/ethlete-studio\/docs\/adr\/0300-b\.md.*docs\/adr\/0300-a\.md/);
+});
+
 const fixture = (name) => join(import.meta.dirname, 'fixtures/studio-findings', name);
 
 test('passes findings with unique, increasing numbers that every Bef. resolves to', () => {

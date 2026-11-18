@@ -44,7 +44,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 ## Grill
 
-- Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and every
+- Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, `docs/adr/`, title and body) and every
   `plans/studio/**` decision block for the topic. If Tom already decided it,
   do not ask: name the ADR and send it to the builder. A repeated question is a finding.
 - Before you record a decision on files or send work on them, run `yarn adr:governs <files>` and read the ADRs it lists.
@@ -89,7 +89,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 ## Record
 
-- After the user confirms a short summary, write each decision of this repo as an ADR in `apps/ethlete-studio/docs/adr/`; another repo's decision goes only to that session
+- After the user confirms a short summary, write each decision of this repo as an ADR in `apps/ethlete-studio/docs/adr/` (a decision governing all three products: `docs/adr/`; in doubt Studio; next number = highest across both folders + 1); another repo's decision goes only to that session
   (English, the human's words verbatim and named "the human", never by name; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
 - A Studio ADR needs no changeset (ADR 0265).
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never stash, never amend.

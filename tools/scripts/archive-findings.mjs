@@ -287,13 +287,12 @@ const squeezeBlankLines = (lines) => {
   return out;
 };
 
-export const readAdrText = (root) => {
-  const dir = join(root, 'apps/ethlete-studio/docs/adr');
-  if (!existsSync(dir)) return '';
-  return readdirSync(dir)
-    .map((name) => readFileSync(join(dir, name), 'utf8'))
+export const readAdrText = (root) =>
+  ['apps/ethlete-studio/docs/adr', 'docs/adr']
+    .map((rel) => join(root, rel))
+    .filter((dir) => existsSync(dir))
+    .flatMap((dir) => readdirSync(dir).map((name) => readFileSync(join(dir, name), 'utf8')))
     .join('\n');
-};
 
 export const writeArchive = (archiveDir, moved) => {
   mkdirSync(archiveDir, { recursive: true });
