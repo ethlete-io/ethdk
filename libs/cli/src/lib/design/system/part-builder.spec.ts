@@ -3,7 +3,8 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
-import { builderReasonsOf, developerPartLinesOf, partBuilderOf } from './part-builder';
+import { builderReasonsOf, developerPartLinesOf, partBuilderOf, takesDataOf } from './part-builder';
+import { readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct } from './resolve-product';
 
 const PRESENTATIONAL = `import { Component, ElementRef, inject, input, output } from '@angular/core';
@@ -93,5 +94,25 @@ describe('part builder (B250)', () => {
     expect(developerPartLinesOf({ product: checkout(DEVELOPER).product })[0]).toMatch(
       /^DEVELOPER app-a components\/chip: routes: imports Router .* - a developer builds it$/u,
     );
+  });
+
+  it('says a part takes data only when it loads data, and then asks for loading, error and empty (B251a)', () => {
+    const store =
+      "import { Component, inject } from '@angular/core';\nimport { Store } from '../store';\n@Component({})\nexport class C { private store = inject(Store); }\n";
+
+    expect(takesDataOf(checkout(DEVELOPER))).toBe(true);
+    expect(takesDataOf(checkout(PRESENTATIONAL))).toBe(false);
+    expect(takesDataOf(checkout(store))).toBe(false);
+    expect(readOpenPoints(checkout(DEVELOPER).product)).toEqual([
+      {
+        part: 'components/chip',
+        points: [
+          { kind: 'missing-state', control: null },
+          { kind: 'missing-state', control: null, data: 'loading' },
+          { kind: 'missing-state', control: null, data: 'error' },
+          { kind: 'missing-state', control: null, data: 'empty' },
+        ],
+      },
+    ]);
   });
 });

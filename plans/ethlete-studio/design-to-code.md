@@ -2201,3 +2201,25 @@ check` over every product: sdk 0, studio-lab 0, studio 3 (`components/title-sear
 `elements/canvas-frames` injects DesignCanvasComponent and CANVAS_LIVE_REST_MS, `elements/shell-main` injectCodeWatch),
 all real developer parts, none exempted. Not verified: Studio shows nothing of it yet (no ready.json field, no UI);
 transitive helpers of a component are not followed, so an app helper that injects behind a plain function call is missed.
+
+## As built (B251a)
+
+Commit `feat(cli): Require loading, error and empty states on data parts` (sha in the builder's report). The first half
+of B251: a part outside `foundations/` that loads data (`takesDataOf` in `part-builder.ts`: a B250 `loads data` reason,
+an `@angular/common/http` or `@ethlete/query` import or a `fetch`/`resource`/`rxResource`/`httpResource` call, on its
+design file or its `implements` component) gets one `missing-state` open point (`{ control: null, data }`) per
+loading, error and empty state it does not draw, so it is not build-ready. A state counts when a hyphen word of its
+name says it (loading: the ongoing-work words; error: `error`, `errored`, `failed`, `failure`; empty: `empty`, `none`,
+`no`), the vocabulary committed parts already use (`load-failed`, `listing-error`, `table-empty`, `no-results`). The
+subject is `data:<state>`, so a sketch that draws one of them adds no point (ADR 0095). Studio lists it as "Daten-Part
+ohne Zustand Laden/Fehler/Leer". Pages count; a part whose states cannot be read is skipped.
+
+Not covered: a presentational part that gets a list from a loader outside any part (the sketches page of B314: the
+listing loads in `system-view`, the page only takes `rows`). An array input as the signal hit about ten Studio parts
+that only take fixed lists (window buttons, log lines, tree rows); open for the grill.
+
+Verified: open-points.spec "required data states (B251a)" (red first: 4 of 5 failed), part-builder.spec,
+open-points-reparse.spec (it caught the first cut walking every component per read; the reasons are now per source), Studio
+open-points.spec, `vitest related` in libs/cli and apps/ethlete-studio, lint; real-open-points budget unchanged and
+`et:design --working-tree check` over every product: studio-lab 0, sdk 0, studio 0 hits (no committed part loads data
+itself). Not verified: Studio showing the line live (no part hits it).

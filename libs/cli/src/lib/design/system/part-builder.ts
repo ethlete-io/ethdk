@@ -4,7 +4,7 @@ import ts from 'typescript';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
-import { sourceFileOf, textsOf } from './ts-source';
+import { perSource, sourceFileOf, textsOf } from './ts-source';
 
 /**
  * Who builds a part: a designer part is presentational (inputs and outputs, SDK components and parts, no services,
@@ -17,6 +17,7 @@ const DATA_MODULES = /^(?:@angular\/common\/http|@ethlete\/query)(?:\/|$)/u;
 const FRAMEWORK_MODULES = /^(?:@angular\/(?:core|common|cdk)(?:\/|$)|@ethlete\/)/u;
 const DATA_CALLS = new Set(['fetch', 'httpResource', 'resource', 'rxResource']);
 const INJECT_FUNCTION = /^inject[A-Z]/u;
+const LOADS_DATA = 'loads data';
 const ROUTER_LINK = /\brouterLink\b/u;
 
 const importedFromOf = (source: ts.SourceFile) => {
@@ -41,15 +42,16 @@ const isService = (name: string, from: Map<string, string>) => {
   return module === undefined || DATA_MODULES.test(module) || !FRAMEWORK_MODULES.test(module);
 };
 
-/** Why the TS `source` of a part or component (with its `template`, if separate) is not presentational. */
-export const builderReasonsOf = (options: { source: string; template?: string }): string[] => {
-  const file = sourceFileOf(options.source);
+const ROUTER_LINK_REASON = 'routes: uses routerLink';
+
+const sourceReasonsOf = perSource((source): string[] => {
+  const file = sourceFileOf(source);
   const from = importedFromOf(file);
   const reasons = new Set<string>();
 
   for (const [name, module] of from) {
     if (ROUTING_MODULES.test(module)) reasons.add(`routes: imports ${name} from ${module}`);
-    else if (DATA_MODULES.test(module)) reasons.add(`loads data: imports ${name} from ${module}`);
+    else if (DATA_MODULES.test(module)) reasons.add(`${LOADS_DATA}: imports ${name} from ${module}`);
   }
 
   const visit = (node: ts.Node) => {
@@ -61,7 +63,7 @@ export const builderReasonsOf = (options: { source: string; template?: string })
         reasons.add(`injects the service ${token.text}`);
       else if (INJECT_FUNCTION.test(callee) && isService(callee, from)) reasons.add(`injects through ${callee}()`);
       else if (DATA_CALLS.has(callee) && (callee === 'fetch' || from.has(callee)))
-        reasons.add(`loads data: calls ${callee}()`);
+        reasons.add(`${LOADS_DATA}: calls ${callee}()`);
     }
 
     if (ts.isConstructorDeclaration(node))
@@ -77,10 +79,18 @@ export const builderReasonsOf = (options: { source: string; template?: string })
 
   visit(file);
 
-  if ([...textsOf(options.source), options.template ?? ''].some((text) => ROUTER_LINK.test(text)))
-    reasons.add('routes: uses routerLink');
+  if (textsOf(source).some((text) => ROUTER_LINK.test(text))) reasons.add(ROUTER_LINK_REASON);
 
   return [...reasons];
+});
+
+/** Why the TS `source` of a part or component (with its `template`, if separate) is not presentational. */
+export const builderReasonsOf = (options: { source: string; template?: string }): string[] => {
+  const reasons = sourceReasonsOf(options.source);
+
+  return ROUTER_LINK.test(options.template ?? '') && !reasons.includes(ROUTER_LINK_REASON)
+    ? [...reasons, ROUTER_LINK_REASON]
+    : reasons;
 };
 
 const TEMPLATE_URL = /\btemplateUrl\s*:\s*['"`]([^'"`]+)['"`]/u;
@@ -105,20 +115,29 @@ const componentReasonsOf = (root: string, component: string) => {
   return builderReasonsOf({ source, template }).map((reason) => `${reason} (${component})`);
 };
 
-/** Who builds `part`: checked on its design file before the build and on its `implements` component after it. */
-export const partBuilderOf = (options: { product: ResolvedProduct; part: ResolvedPart }): PartBuilder => {
+const builderReasonsOfPart = (options: { product: ResolvedProduct; part: ResolvedPart }) => {
   const root = repoRootOf(options.product);
   const link = partLinkOf(options.part.source);
   const component = link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
-  const reasons = [
+
+  return [
     ...builderReasonsOf({ source: options.part.source }).map(
       (reason) => `${reason} (${relative(root, options.part.file)})`,
     ),
     ...(component ? componentReasonsOf(root, component) : []),
   ];
+};
+
+/** Who builds `part`: checked on its design file before the build and on its `implements` component after it. */
+export const partBuilderOf = (options: { product: ResolvedProduct; part: ResolvedPart }): PartBuilder => {
+  const reasons = builderReasonsOfPart(options);
 
   return reasons.length > 0 ? { builder: 'developer', reasons } : { builder: 'designer' };
 };
+
+/** Whether `part` loads data, on its design file or its `implements` component: it then must draw loading, error and empty. */
+export const takesDataOf = (options: { product: ResolvedProduct; part: ResolvedPart }) =>
+  builderReasonsOfPart(options).some((reason) => reason.startsWith(LOADS_DATA));
 
 /** One line per developer part of `product`, naming why and that a developer builds it. */
 export const developerPartLinesOf = (options: { product: ResolvedProduct; parts?: string[] }) =>

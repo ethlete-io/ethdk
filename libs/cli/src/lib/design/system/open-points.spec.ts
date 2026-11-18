@@ -427,3 +427,101 @@ describe('sketchAddedPointsOf', () => {
     ]);
   });
 });
+
+describe('required data states (B251a)', () => {
+  const part = (key: string, states: string[], takesData?: boolean) => ({
+    key,
+    layer: key.startsWith('pages/') ? ('pages' as const) : ('components' as const),
+    controls: true,
+    takesData,
+    motion: { states, motions: states.map((state) => ({ from: state, to: state })), unreachable: [], instant: true },
+  });
+
+  it('asks a part that takes data for each of loading, error and empty it does not draw, a page too', () => {
+    expect(
+      openPointsOf(
+        input({
+          parts: [part('components/list', ['rest', 'loading'], true), part('pages/feed', ['rest'], true)],
+        }),
+      ),
+    ).toEqual([
+      {
+        part: 'components/list',
+        points: [
+          { kind: 'missing-state', control: null, data: 'error' },
+          { kind: 'missing-state', control: null, data: 'empty' },
+        ],
+      },
+      {
+        part: 'pages/feed',
+        points: [
+          { kind: 'missing-state', control: null, data: 'loading' },
+          { kind: 'missing-state', control: null, data: 'error' },
+          { kind: 'missing-state', control: null, data: 'empty' },
+        ],
+      },
+    ]);
+  });
+
+  it('takes the committed names of each state as words of a state name', () => {
+    expect(
+      openPointsOf(input({ parts: [part('components/a', ['listing-pending', 'load-failed', 'no-results'], true)] })),
+    ).toEqual([]);
+    expect(openPointsOf(input({ parts: [part('components/b', ['busy', 'errored', 'table-empty'], true)] }))).toEqual(
+      [],
+    );
+    expect(openPointsOf(input({ parts: [part('components/c', ['loaded', 'terror', 'emptyish'], true)] }))).toEqual([
+      {
+        part: 'components/c',
+        points: [
+          { kind: 'missing-state', control: null, data: 'loading' },
+          { kind: 'missing-state', control: null, data: 'error' },
+          { kind: 'missing-state', control: null, data: 'empty' },
+        ],
+      },
+    ]);
+  });
+
+  it('leaves a presentational part, a foundation and a part without readable states alone', () => {
+    expect(
+      openPointsOf(
+        input({
+          parts: [
+            part('components/plain', ['rest']),
+            { ...part('foundations/data', ['rest'], true), layer: 'foundations' as const },
+            { key: 'components/unread', layer: 'components', controls: true, takesData: true },
+          ],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it('prints the missing data states apart from the controls, and keeps the no controls line', () => {
+    const list = openPointsOf(
+      input({ parts: [{ ...part('components/a', ['rest', 'empty'], true), controls: false }] }),
+    );
+
+    expect(openPointsText('acme', list)).toEqual([
+      'OPEN POINTS acme: 3 in 1 part',
+      '  components/a: no controls declared; data part without the states loading, error',
+    ]);
+  });
+
+  it('counts a sketch that draws one data state as adding nothing (ADR 0095)', () => {
+    const merged = openPointsOf(input({ parts: [part('components/a', ['rest'], true)] }));
+    const sketched = openPointsOf(input({ parts: [part('components/a', ['rest', 'loading'], true)] }));
+
+    expect(sketchAddedPointsOf(merged, sketched)).toEqual({
+      added: [],
+      inherited: [
+        {
+          part: 'components/a',
+          points: [
+            { kind: 'missing-state', control: null, data: 'error' },
+            { kind: 'missing-state', control: null, data: 'empty' },
+          ],
+        },
+      ],
+    });
+  });
+});

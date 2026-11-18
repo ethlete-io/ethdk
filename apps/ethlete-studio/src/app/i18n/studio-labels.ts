@@ -203,6 +203,8 @@ export const STUDIO_LABELS = {
     allDone: 'Jeder Zustand ist gezeichnet, verknüpft und besprochen.',
     noControls: 'Keine Controls deklariert',
     controlUndrawn: (control: string) => `${control} hat keinen gezeichneten Zustand`,
+    dataStateUndrawn: (state: 'loading' | 'error' | 'empty') =>
+      `Daten-Part ohne Zustand ${{ loading: 'Laden', error: 'Fehler', empty: 'Leer' }[state]}`,
     commentAnswered: 'Beantwortet, wartet auf dich',
     commentWaiting: 'Wartet auf den Agenten',
     sketchPicked: 'Sketch gewählt, noch nicht gemergt',

@@ -3,7 +3,7 @@ import { ProductAddress, designAnswer$ } from './design';
 
 /** One thing that keeps a part from being done, as `design check` and the design server list it. */
 export type OpenPoint =
-  | { kind: 'missing-state'; control: string | null }
+  | { kind: 'missing-state'; control: string | null; data?: 'loading' | 'error' | 'empty' }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | { kind: 'unmerged-sketch'; sketch: string; status: 'in progress' | 'ready'; decision: 'pick' | 'discard' | null }
   | { kind: 'sketch-problem'; sketch: string; variant: string; rule: string; message: string }

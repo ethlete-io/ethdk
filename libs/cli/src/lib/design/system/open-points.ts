@@ -17,16 +17,21 @@ export type OpenPointKind = (typeof OPEN_POINT_KINDS)[number];
 /** The kinds a sketch closes in its own variant; the others exist only after a merge or outside the sketch. */
 export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'missing-motion'];
 
+/** The states a part that takes data must draw. */
+export const DATA_STATES = ['loading', 'error', 'empty'] as const;
+
+export type DataState = (typeof DATA_STATES)[number];
+
 /**
  * Something that keeps a part from being done. `missing-state` is a control without a drawn state (`control` null when
- * the part declares no controls); `open-comment` is a thread the
+ * the part declares no controls), or with `data` a required state a part that takes data does not draw; `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
  * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
  * (`sketch` null until one is open); `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
  * `to`, an ongoing-work state without its looping motion.
  */
 export type OpenPoint =
-  | { kind: 'missing-state'; control: string | null }
+  | { kind: 'missing-state'; control: string | null; data?: DataState }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | {
       kind: 'unmerged-sketch';
@@ -48,7 +53,7 @@ export type PartMotions = {
 };
 
 /**
- * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `motion` is left out when its
+ * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `takesData` that it loads data, `motion` is left out when its
  * states cannot be read; `missingStates` comes
  * from drawing the parts, so a check without a browser leaves them out. `busyStates` are drawn states whose render
  * holds `aria-busy="true"` or a loading button: each is ongoing work whatever its name.
@@ -59,6 +64,7 @@ export type OpenPointsInput = {
     layer: Layer;
     controls: boolean;
     declaredNoControls?: boolean;
+    takesData?: boolean;
     motion?: PartMotions;
   }[];
   comments: { id: string; part: string; state: string; answered: boolean; resolved: boolean }[];
@@ -78,6 +84,22 @@ export type OpenPointsInput = {
 const STATELESS_LAYERS: Layer[] = ['foundations', 'pages'];
 
 const ONGOING_WORK = ['loading', 'pending', 'busy', 'progress', 'indeterminate', 'spinner'];
+
+const DATA_STATE_WORDS: Record<DataState, string[]> = {
+  loading: ONGOING_WORK,
+  error: ['error', 'errored', 'failed', 'failure'],
+  empty: ['empty', 'none', 'no'],
+};
+
+const missingDataStatesOf = (states: string[]) => {
+  const words = new Set(states.flatMap((state) => state.split('-')));
+
+  return DATA_STATES.filter((data) => !DATA_STATE_WORDS[data].some((word) => words.has(word))).map((data) => ({
+    kind: 'missing-state' as const,
+    control: null,
+    data,
+  }));
+};
 
 const isOngoingWork = (state: string, busy: string[]) =>
   busy.includes(state) || ONGOING_WORK.some((word) => state.includes(word));
@@ -197,7 +219,7 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
     ]),
   ].filter((key) => !known.has(key));
   const listed = [
-    ...input.parts.map(({ key, layer, controls, declaredNoControls, motion }) => {
+    ...input.parts.map(({ key, layer, controls, declaredNoControls, takesData, motion }) => {
       const stateful = !STATELESS_LAYERS.includes(layer);
 
       return {
@@ -207,6 +229,7 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
           ...(stateful ? (input.missingStates ?? []) : [])
             .filter((missing) => missing.part === key)
             .map(({ control }) => ({ kind: 'missing-state' as const, control })),
+          ...(takesData && layer !== 'foundations' && motion ? missingDataStatesOf(motion.states) : []),
           ...missingMotionsOf({
             layer,
             motion,
@@ -227,7 +250,7 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
 const subjectOf = (point: OpenPoint) => {
   switch (point.kind) {
     case 'missing-state':
-      return point.control ?? '';
+      return point.data ? `data:${point.data}` : (point.control ?? '');
     case 'missing-motion':
       return `${point.from} -> ${point.to}`;
     case 'open-comment':
@@ -283,11 +306,14 @@ const sketchText = (point: Extract<OpenPoint, { kind: 'unmerged-sketch' }>) => {
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
 const missingStateText = (points: OpenPoint[]) => {
-  const controls = points.flatMap((point) => (point.kind === 'missing-state' && point.control ? [point.control] : []));
+  const states = points.flatMap((point) => (point.kind === 'missing-state' ? [point] : []));
+  const controls = states.flatMap((point) => (point.control ? [point.control] : []));
+  const data = states.flatMap((point) => (point.data ? [point.data] : []));
 
   return [
-    ...(controls.length < points.length ? ['no controls declared'] : []),
+    ...(states.some((point) => !point.control && !point.data) ? ['no controls declared'] : []),
     ...(controls.length > 0 ? [`${plural(controls.length, 'missing state')} (${controls.join(', ')})`] : []),
+    ...(data.length > 0 ? [`data part without the states ${data.join(', ')}`] : []),
   ].join('; ');
 };
 

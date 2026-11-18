@@ -484,6 +484,13 @@ per developer part, and `et design task` prints `designer part: presentational` 
 reasons. The classification is no blocker: a developer part is build-ready by the same rules, its spec is the part
 itself, and it is done at compare green.
 
+A part outside `foundations/` that loads data (one of the `@angular/common/http`, `@ethlete/query` or `fetch`/`resource`
+reasons above, on its design file or its `implements` component) must draw a loading, an error and an empty state.
+Each one it lacks is a `missing-state` open point, printed as `data part without the states loading, error`, so the
+part is not build-ready. A state counts when a word of its name says it: `loading`, `pending`, `busy`, `progress`,
+`indeterminate` or `spinner` for loading; `error`, `errored`, `failed` or `failure` for error; `empty`, `none` or `no`
+for empty. `listing-pending`, `load-failed` and `no-results` cover all three.
+
 A product can list what its users can do in `.ethlete/design/<product>/capabilities.json`: a `capabilities` array of
 `{ "id", "label", "place" }`, where `place` is `{ "part", "action" }`, the part and the `data-et-action` key that draw
 the capability. `et design check` fails `CAPABILITY-PLACE` for a place whose part does not declare that action, and for

@@ -14,6 +14,7 @@ import {
   sketchAddedPointsOf,
   SKETCH_KINDS,
 } from './open-points';
+import { takesDataOf } from './part-builder';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import {
   declaresControlsOf,
@@ -60,6 +61,7 @@ const partInputsOf = (product: ResolvedProduct): OpenPointsInput['parts'] =>
     layer: part.layer,
     controls: declaresControlsOf(part.source),
     declaredNoControls: declaresNoControlsOf(part.source),
+    takesData: takesDataOf({ product, part }),
     ...motionOf(part.source),
   }));
 

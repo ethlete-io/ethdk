@@ -153,6 +153,17 @@ describe('openPointGroupsOf', () => {
     ]);
   });
 
+  it('names a missing data state, not a missing control (B251a)', () => {
+    const lines = openPointGroupsOf({
+      points: [{ kind: 'missing-state', control: null, data: 'empty' }],
+      buildReady: { ready: false, blockers: [] },
+    }).flatMap((group) => group.lines);
+
+    expect(lines.map(({ text, detail }) => ({ text, detail }))).toEqual([
+      { text: 'Daten-Part ohne Zustand Leer', detail: 'empty' },
+    ]);
+  });
+
   it('has no group without a point on a build-ready part', () => {
     expect(openPointGroupsOf({ points: [], buildReady: { ready: true } })).toEqual([]);
   });
