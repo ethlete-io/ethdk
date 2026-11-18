@@ -142,9 +142,25 @@ describe('reviewDay', () => {
 
     const review = reviewDay({ rows: base, edits });
 
-    expect(review.rows[0]!.state).toBe('rejected');
-    expect(review.rows[0]!.edited).toBe(true);
+    expect(review.hidden[0]!.state).toBe('rejected');
+    expect(review.hidden[0]!.edited).toBe(true);
     expect(review.check.proposedMs).toBe(0);
+  });
+
+  it('takes a rejected row off the timeline and puts it back when it is accepted', () => {
+    const base = dayRows({ proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' })] });
+    const row = reviewDay({ rows: base }).rows[0]!;
+    const rejected = setRowState({ edits: EMPTY_DAY_REVIEW_EDITS, row, state: 'rejected' });
+
+    expect(reviewDay({ rows: base, edits: rejected }).rows).toEqual([]);
+
+    const accepted = setRowState({
+      edits: rejected,
+      row: reviewDay({ rows: base, edits: rejected }).hidden[0]!,
+      state: 'accepted',
+    });
+
+    expect(reviewDay({ rows: base, edits: accepted }).rows.map((entry) => entry.issueKey)).toEqual(['ABC-1']);
   });
 
   it('accepts a weak row the reviewer checked, so it starts syncing', () => {
@@ -507,13 +523,13 @@ describe('splitRow', () => {
     const rejected = setRowState({ edits: EMPTY_DAY_REVIEW_EDITS, row, state: 'rejected' });
     const edits = splitRow({
       edits: rejected,
-      row: reviewDay({ rows: base, edits: rejected }).rows[0]!,
+      row: reviewDay({ rows: base, edits: rejected }).hidden[0]!,
       at: at('09:00'),
     });
 
     const review = reviewDay({ rows: base, edits });
 
-    expect(review.rows.map((entry) => entry.state)).toEqual(['rejected', 'rejected']);
+    expect(review.hidden.map((entry) => entry.state)).toEqual(['rejected', 'rejected']);
     expect(review.check.proposedMs).toBe(0);
   });
 
@@ -663,7 +679,10 @@ describe('mergeRows', () => {
   const merge = (edits?: DayReviewEdits) => {
     const review = reviewDay({ rows: base, edits });
 
-    return mergeRows({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, rows: review.rows });
+    return mergeRows({
+      edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
+      rows: [...review.rows, ...review.hidden].sort((a, b) => a.from.getTime() - b.from.getTime()),
+    });
   };
 
   it("replaces both rows with one spanning them, on the first row's issue", () => {
@@ -729,8 +748,9 @@ describe('mergeRows', () => {
       row: first.rows[1]!,
       state: 'rejected',
     });
+    const merged = reviewDay({ rows: base, edits: merge(rejected) });
 
-    expect(reviewDay({ rows: base, edits: merge(rejected) }).rows[0]!.state).toBe('rejected');
+    expect([...merged.rows, ...merged.hidden].map((row) => row.state)).toEqual(['rejected']);
   });
 
   it('leaves a single row alone', () => {
@@ -762,7 +782,8 @@ describe('moveRowBoundary', () => {
   });
 
   const moved = (time: string, edits?: DayReviewEdits) => {
-    const rows = reviewDay({ rows: base, edits }).rows;
+    const review = reviewDay({ rows: base, edits });
+    const rows = [...review.rows, ...review.hidden].sort((a, b) => a.from.getTime() - b.from.getTime());
 
     return moveRowBoundary({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, before: rows[0]!, after: rows[1]!, at: at(time) });
   };
@@ -827,10 +848,10 @@ describe('moveRowBoundary', () => {
       state: 'rejected',
     });
 
-    expect(reviewDay({ rows: base, edits: moved('11:00', rejected) }).rows.map((row) => row.state)).toEqual([
-      'edited',
-      'rejected',
-    ]);
+    const review = reviewDay({ rows: base, edits: moved('11:00', rejected) });
+
+    expect(review.rows.map((row) => row.state)).toEqual(['edited']);
+    expect(review.hidden.map((row) => row.state)).toEqual(['rejected']);
   });
 
   it('places the cut of an earlier split exactly, and each side still replaces the proposal', () => {
