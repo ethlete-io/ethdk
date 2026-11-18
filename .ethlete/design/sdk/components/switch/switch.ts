@@ -1,6 +1,5 @@
 import { switchControl, type SwitchMockOptions, switchStyles } from '@ethlete/components/design/switch';
 import { definePart, drawing } from '@design-system';
-import offTrack from './switch.css?inline';
 
 type Interaction = 'hover' | 'focus-visible' | 'active';
 
@@ -87,6 +86,6 @@ export default definePart({
       })
         .replace('<et-choice-field ', '<et-choice-field data-et-control="switch" ')
         .replace('class="et-choice-field-label-area', 'data-et-skip="CLIPPED" class="et-choice-field-label-area'),
-      styles: [switchStyles, offTrack].join('\n'),
+      styles: switchStyles,
     }),
 });
