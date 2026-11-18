@@ -293,6 +293,7 @@ describe('part task', () => {
       '  .changeset/*.md',
       '  apps/app-a/harness.ts',
       'wiring files: none yet',
+      'designer part: presentational',
       'target: compare green',
       THEMING_TEXT,
     ]);
@@ -336,6 +337,7 @@ describe('part task', () => {
       'theming directives (@ethlete/core):',
       '  data-et-auto-surface -> etAutoSurface',
       `  data-et-semantic-color="warning" -> [etProvideColor] bound to injectSemanticColorTheme('warning')`,
+      'designer part: presentational',
       'target: compare green',
       THEMING_TEXT,
     ]);
@@ -659,7 +661,7 @@ describe('part task', () => {
       withHarness(target);
       lines.length = 0;
       expect(await verify(target, [], compare, [])).toBe(0);
-      expect(lines.slice(lines.indexOf('wiring files:') + 1, lines.indexOf('target: compare green'))).toEqual([
+      expect(lines.slice(lines.indexOf('wiring files:') + 1, lines.indexOf('designer part: presentational'))).toEqual([
         '  apps/studio/src/app/system-view/sketch-view.component.ts',
         '  apps/studio/src/app/system-view/inbox-comments.ts',
         '  apps/studio/src/app/system-view/system-tree.ts',

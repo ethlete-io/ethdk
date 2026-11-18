@@ -35,6 +35,7 @@ import {
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { THEMING_TEXT } from './theming-text';
+import { partBuilderOf } from './part-builder';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { productModuleIdOf } from './system-modules';
@@ -396,6 +397,13 @@ export const designTask = async (options: {
     console.log('theming directives (@ethlete/core):');
     directives.forEach((mapping) => console.log(`  ${mapping}`));
   }
+  const builder = drawn ? partBuilderOf({ product, part: drawn }) : ({ builder: 'designer' } as const);
+
+  console.log(
+    builder.builder === 'developer'
+      ? `developer part - a developer builds it: ${builder.reasons.join('; ')}`
+      : 'designer part: presentational',
+  );
   console.log('target: compare green');
   console.log(THEMING_TEXT);
 

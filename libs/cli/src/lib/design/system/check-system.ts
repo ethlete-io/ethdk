@@ -101,6 +101,7 @@ import { TypecheckResult } from '../typecheck';
 import { leftoverGateFilesWarningOf } from './leftover-gate-files';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
 import { timedPhase } from '../phase-timing';
+import { developerPartLinesOf } from './part-builder';
 import { createRunDraw, WarmDraw } from '../warm-draw';
 
 const RULES = [
@@ -743,6 +744,10 @@ const printProductOpenPoints = async (
   const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);
 
   if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
+
+  developerPartLinesOf({ product, ...(options.part ? { parts: [options.part] } : {}) }).forEach((line) =>
+    console.log(line),
+  );
 
   for (const part of ready) {
     const embedded = actionsRerunOf({ product, part });

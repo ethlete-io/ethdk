@@ -471,6 +471,19 @@ A check record also stores `actions`, the sorted `data-et-action` keys every sta
 `ACTION-LOST` for a key a check record stored that no part of the product draws now: moving an action to another part is fine,
 dropping it is not. A new check record of the part stores its current keys and so confirms the removal.
 
+### Designer part or developer part
+
+Who builds a part is decided by its content. A part is a designer part when it is presentational: inputs and outputs
+only, composed of SDK components and parts, with no services, no data loading and no routing. The check runs on the
+part's design file before the build and on its `implements` component (and that component's `templateUrl` template)
+after it. Any of these makes it a developer part: an `inject()` or constructor parameter of a token outside
+`@angular/core`, `@angular/common`, `@angular/cdk` and `@ethlete/*`; an `inject…()` function from outside them; an import
+from `@angular/router`, `@angular/common/http` or `@ethlete/query`; a call of `fetch`, `resource`, `rxResource` or
+`httpResource`; a `routerLink`. `et design check` prints `DEVELOPER <product> <part>: <reasons> - a developer builds it`
+per developer part, and `et design task` prints `designer part: presentational` or the developer line with its
+reasons. The classification is no blocker: a developer part is build-ready by the same rules, its spec is the part
+itself, and it is done at compare green.
+
 A product can list what its users can do in `.ethlete/design/<product>/capabilities.json`: a `capabilities` array of
 `{ "id", "label", "place" }`, where `place` is `{ "part", "action" }`, the part and the `data-et-action` key that draw
 the capability. `et design check` fails `CAPABILITY-PLACE` for a place whose part does not declare that action, and for

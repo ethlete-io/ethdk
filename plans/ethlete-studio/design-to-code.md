@@ -2180,3 +2180,24 @@ all of them draw like the product". B261's variants differed in `failed`, so it 
 built: with the unchanged states folded and only a variant-added state shown, the Aktuell row drew no stage at all
 instead of the "neu in der Skizze" placeholder. sketches.component.spec "draws a state only the variants declare in
 every variant row, with a placeholder in Aktuell" (red before: Aktuell drew no cell). Live shot (2026-11-18, studio-lab `components/button` with a throwaway `failed` state in both variants, solid and outline folded): the Aktuell row draws one dashed "neu in der Skizze" cell under `failed`.
+
+## As built (B250)
+
+Commit `feat(cli): Tell designer parts from developer parts` (sha in the builder's report). `partBuilderOf` in
+`libs/cli/src/lib/design/system/part-builder.ts` checks a part on its design file (before the build) and on its
+`implements` component plus its `templateUrl` template (after it). Developer part when it injects a token or calls an
+`inject…()` function from outside `@angular/core|common|cdk` and `@ethlete/*`, takes a constructor parameter of such a
+type, imports from `@angular/router`, `@angular/common/http` or `@ethlete/query`, calls `fetch`/`resource`/
+`rxResource`/`httpResource`, or uses `routerLink`. `design check` prints `DEVELOPER <product> <part>: <reasons> - a
+developer builds it`; `design task` prints `designer part: presentational` or the developer line.
+
+Deviation from "Where B250 and B251 plug in": no slow rule and no `Blocker`. A blocker would make every developer part
+not build-ready and so refuse `design task` for it, against decision 4 (a developer part's spec is the build-ready
+part, done is a green compare). The classification is a property printed next to build-ready; open for the grill.
+
+Verified: part-builder.spec (red first: the module did not exist; then a regex bug made an `@ethlete/components`
+`inject…()` count as a service, fixed), part-task.spec and `vitest related` (160 files) green; `et:design --working-tree
+check` over every product: sdk 0, studio-lab 0, studio 3 (`components/title-search` injectCommandPaletteStore,
+`elements/canvas-frames` injects DesignCanvasComponent and CANVAS_LIVE_REST_MS, `elements/shell-main` injectCodeWatch),
+all real developer parts, none exempted. Not verified: Studio shows nothing of it yet (no ready.json field, no UI);
+transitive helpers of a component are not followed, so an app helper that injects behind a plain function call is missed.
