@@ -7,7 +7,7 @@ import { DESIGN_DIR } from '../design-config';
 import { designCompare } from './compare-command';
 import { createDrawCount, drawnMoreThanOnce } from './draw-count.test';
 import { encodePng } from './part-compare';
-import { markPartReady, readyPartOf } from './part-ready';
+import { writePartRecord } from './part-ready';
 import { markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
 import { StartHarnessServer } from './harness-server';
@@ -191,15 +191,10 @@ describe('compare draws each picture at most once per run', () => {
     for (const part of PARTS) {
       markImplemented({ product: product(), part, app: {}, states: STATES });
 
-      const found = readyPartOf({ product: product(), part });
-
-      await markPartReady({
+      await writePartRecord({
         product: product(),
         origin: originOf('spec'),
         part,
-        hash: typeof found === 'string' ? found : found.hash,
-        pointsOf: async () => [],
-        actionsOf: async () => [],
       });
     }
 

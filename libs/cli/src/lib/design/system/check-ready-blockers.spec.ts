@@ -6,7 +6,8 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { drawnFindingsFrom, drawnFindingsOf } from './drawn-open-points';
-import { readyBlockersOf } from './ready-command';
+import { isNoVerdict } from './no-verdict';
+import { readyInputsOf } from './ready-command';
 import { renderIssuesOf } from './render-check';
 import { resolveProduct } from './resolve-product';
 import { createSketch, Sketch } from './sketch/sketch';
@@ -224,9 +225,14 @@ describe('design check shows what design ready refuses', () => {
 
     expect(await checkSystemRendered({ target, config, products: ['acme'], part: 'elements/hero' })).toBe(1);
     expect(lines.some((line) => line.startsWith('CANVAS-UNDER-PANEL acme elements/hero'))).toBe(true);
-    expect(await readyBlockersOf({ target, config, product, part: 'elements/hero', issues: [canvas] })).toContainEqual({
-      kind: 'problem',
-      text: 'CANVAS-UNDER-PANEL: found by design check',
+    const inputs = await readyInputsOf({ target, config, product, part: 'elements/hero' });
+
+    if (isNoVerdict(inputs)) throw new Error(inputs.noVerdict);
+
+    expect(inputs.problemsOf('elements/hero')).toContainEqual({
+      rule: 'CANVAS-UNDER-PANEL',
+      file: '',
+      message: 'found by design check',
     });
   }, 120_000);
 });

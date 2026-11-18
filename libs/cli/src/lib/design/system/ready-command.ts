@@ -4,13 +4,14 @@ import { PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { refreshHarnessMap } from './harness-map';
 import { openPointsText } from './open-points';
 import { DesignConfig } from '../design-config';
-import { buildReadyInputsOf } from './check-system';
+import { buildReadyInputsOf, readyInputPartsOf, ruleProblemsOf } from './check-system';
 import { drawnFindingsOf } from './drawn-open-points';
-import { markPartReady, readyPartOf } from './part-ready';
-import { partPointsOf, readOpenPoints } from './read-open-points';
-import { RenderIssue } from './render-check';
+import { markPartReady } from './mark-part-ready';
+import { NoVerdict, noVerdictOf } from './no-verdict';
+import { BuildReadyInputs } from './part-build-ready';
+import { readyPartOf } from './part-ready';
+import { readOpenPoints } from './read-open-points';
 import { renderFindingsOf, withFoundRules } from './render-findings';
-import { checkBlockersOf } from './part-build-ready';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { runSlowChecks } from './slow-run';
 import { slowProblemsOf } from './slow-checks';
@@ -23,29 +24,33 @@ export const READY_USAGE =
   'ready <layer>/<name> --product <name> [--url <app dev server url>] --by <model id | designer>';
 
 /**
- * The blockers `design ready` refuses `part` for: the ones `design check --part` records from, with the render issues
- * of `issues` decided as check decides them. Runs the slow rules of the part first when their result is pending.
+ * What `design ready` decides `part` from: the open points of a draw of the part, and the static rule problems of the
+ * part and its embedded parts with the render rules the draw fails them by, as `design check --part` decides them.
+ * Runs the slow rules of the part first when their result is pending.
  */
-export const readyBlockersOf = async (options: {
+export const readyInputsOf = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   part: string;
-  issues: RenderIssue[];
-}) => {
+}): Promise<BuildReadyInputs | NoVerdict> => {
   const { target, config, product, part } = options;
 
   if (slowProblemsOf({ product, part }) === 'pending') await runSlowChecks({ target, config, product, parts: [part] });
 
-  const found = renderFindingsOf({ target, resolved: [product], issues: options.issues, part });
+  const findings = await drawnFindingsOf({ target, config, product, parts: [part] });
 
-  return checkBlockersOf({
-    product,
-    part,
-    inputs: withFoundRules({ ...buildReadyInputsOf(product), pointsOf: () => [] }, (at) =>
-      found.rulesOf(product.name, at),
-    ),
-  });
+  if ('unavailable' in findings) return noVerdictOf(findings.unavailable);
+
+  const found = renderFindingsOf({ target, resolved: [product], issues: findings.issues, part });
+
+  return withFoundRules(
+    buildReadyInputsOf(product, {
+      points: readOpenPoints(product, { missingStates: findings.missingStates, busyStates: findings.busyStates }),
+      problems: ruleProblemsOf(product, readyInputPartsOf(product, part)),
+    }),
+    (at) => found.rulesOf(product.name, at),
+  );
 };
 
 /**
@@ -108,33 +113,14 @@ export const designReady = async (options: { target: string; argv: string[]; inv
   settleCommittedEdits({ target, product, parts: [part] });
 
   const located = readyPartOf({ product, part });
-  let drawn: RenderIssue[] = [];
   const marked = await markPartReady({
     product,
     part,
     origin: originOf(author, 'ready'),
     commitIn: target,
     hash: typeof located === 'string' ? '-' : located.hash,
-    pointsOf: async () => {
-      const findings = await drawnFindingsOf({ target, config, product, parts: [part] });
-
-      if ('unavailable' in findings) return { status: 503, error: `cannot draw ${part}: ${findings.unavailable}` };
-
-      drawn = findings.issues;
-
-      return partPointsOf(
-        readOpenPoints(product, { missingStates: findings.missingStates, busyStates: findings.busyStates }),
-        part,
-      );
-    },
-    blockersOf: () => readyBlockersOf({ target, config, product, part, issues: drawn }),
-    actionsOf: async () => {
-      const failures = await partActionFailuresOf({ target, config, product, part, url: args.values['--url'] });
-
-      return Array.isArray(failures)
-        ? failures
-        : { status: 503, error: `cannot check the actions of ${part}: ${failures.noVerdict}` };
-    },
+    inputsOf: () => readyInputsOf({ target, config, product, part }),
+    actionsOf: () => partActionFailuresOf({ target, config, product, part, url: args.values['--url'] }),
     declaredActionsOf: async () => {
       const declared = await declaredPartActionsOf({ target, config, product, part });
 
@@ -155,6 +141,8 @@ export const designReady = async (options: { target: string; argv: string[]; inv
     marked.actions?.forEach((line) => console.error(`  ${line}`));
 
     console.error(marked.error);
+
+    if (marked.record) console.error(`${part} keeps its check record; it is build-ready once its embedded parts are`);
 
     return 1;
   }

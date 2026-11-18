@@ -6,7 +6,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
 import { BuildReadyInputs } from './part-build-ready';
-import { markPartReady, readyPartOf, writePartRecord } from './part-ready';
+import { writePartRecord } from './part-ready';
 import {
   allowedFilesOf,
   doneParts,
@@ -786,19 +786,11 @@ describe('doneParts', () => {
     const { target, chip } = checkout();
     const product = () => productOf(target);
     const ready = (part: string) =>
-      markPartReady({
+      writePartRecord({
         product: product(),
         origin: originOf('spec'),
         part,
-        hash: readyHash(part),
-        pointsOf: async () => [],
-        actionsOf: async () => [],
       });
-    const readyHash = (part: string) => {
-      const found = readyPartOf({ product: product(), part });
-
-      return typeof found === 'string' ? found : found.hash;
-    };
     const tag = join(chip, '../../tag/tag.ts');
 
     markImplemented({ product: product(), part: 'components/chip', app: {}, states: CHIP_STATES });

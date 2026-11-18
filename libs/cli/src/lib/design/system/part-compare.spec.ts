@@ -31,7 +31,7 @@ import {
   pointerOpensOf,
   slotOnlyStatesOf,
 } from './part-compare';
-import { markPartReady, readyPartOf } from './part-ready';
+import { writePartRecord } from './part-ready';
 import { markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
 
@@ -617,15 +617,10 @@ describe('part compare', () => {
 
     markImplemented({ product: product(), part: 'components/chip', app: {}, states: { default: {} } });
 
-    const found = readyPartOf({ product: product(), part: 'components/chip' });
-
-    await markPartReady({
+    await writePartRecord({
       product: product(),
       origin: originOf('spec'),
       part: 'components/chip',
-      hash: typeof found === 'string' ? found : found.hash,
-      pointsOf: async () => [],
-      actionsOf: async () => [],
     });
     lines.length = 0;
     expect(await all(same)).toBe(0);
@@ -647,15 +642,10 @@ describe('part compare', () => {
     const lines = output();
     const product = () => resolveProduct({ target, name: 'app-a', config: {} });
     const ready = async () => {
-      const found = readyPartOf({ product: product(), part: 'components/chip' });
-
-      await markPartReady({
+      await writePartRecord({
         product: product(),
         origin: originOf('spec'),
         part: 'components/chip',
-        hash: typeof found === 'string' ? found : found.hash,
-        pointsOf: async () => [],
-        actionsOf: async () => [],
       });
     };
     const same = vi.fn<ShootStates>(async () => ({

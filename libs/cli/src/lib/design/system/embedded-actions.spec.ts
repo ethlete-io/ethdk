@@ -5,7 +5,9 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
-import { actionsRerunOf, markPartReady, readyPartOf } from './part-ready';
+import { markPartReady } from './mark-part-ready';
+import { recordBuildReady } from './part-build-ready';
+import { actionsRerunOf, readyMarkOf, readyPartOf } from './part-ready';
 import { resolveProduct } from './resolve-product';
 
 vi.mock('./render-check', async (actual) => ({
@@ -57,16 +59,20 @@ const checkout = () => {
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
-const ready = (target: string, failures: string[] = []) => {
-  const product = productOf(target);
-  const found = readyPartOf({ product, part: 'pages/inbox' });
+const ready = async (target: string, failures: string[] = [], part = 'pages/inbox') => {
+  const product = resolveProduct({
+    target,
+    name: 'app-a',
+    config: { harness: { app: 'apps/a', map: 'apps/a/harness.ts' } },
+  });
+  const found = readyPartOf({ product, part });
 
   return markPartReady({
     product,
     origin: originOf('spec'),
-    part: 'pages/inbox',
+    part,
     hash: typeof found === 'string' ? found : found.hash,
-    pointsOf: async () => [],
+    inputsOf: async () => ({ pointsOf: () => [], problemsOf: () => [], slowOf: () => [] }),
     actionsOf: async () => failures,
   });
 };
@@ -77,12 +83,16 @@ describe('an embedded part change asks for the actions of its embedders again', 
   it('reports the record of an embedding part with a rule problem as dropped in check, and clears after a passing ready', async () => {
     const target = checkout();
 
+    expect(await ready(target, [], 'components/canvas')).not.toHaveProperty('status');
     expect(await ready(target)).not.toHaveProperty('status');
     expect(actionsRerunOf({ product: productOf(target), part: 'pages/inbox' })).toEqual([]);
 
     appendFileSync(join(target, 'libs/canvas.component.ts'), 'export const focusable = true;\n');
 
-    expect(actionsRerunOf({ product: productOf(target), part: 'pages/inbox' })).toEqual(['components/canvas']);
+    expect(actionsRerunOf({ product: productOf(target), part: 'pages/inbox' })).toEqual([
+      'pages/inbox',
+      'components/canvas',
+    ]);
 
     const lines: string[] = [];
     const push = (line: unknown) => void lines.push(String(line));
@@ -104,9 +114,46 @@ describe('an embedded part change asks for the actions of its embedders again', 
       status: 422,
       error: 'pages/inbox fails 1 action check - fix them before ready',
       actions: ['default button "x" Enter FAILED'],
+      blockers: [{ kind: 'embedded', text: 'components/canvas is not build-ready', part: 'components/canvas' }],
     });
 
+    expect(await ready(target)).toMatchObject({
+      status: 422,
+      blockers: [{ kind: 'embedded', part: 'components/canvas' }],
+      record: { by: 'spec' },
+    });
+    expect(await ready(target, [], 'components/canvas')).not.toHaveProperty('status');
     expect(await ready(target)).not.toHaveProperty('status');
     expect(actionsRerunOf({ product: productOf(target), part: 'pages/inbox' })).toEqual([]);
+  });
+
+  it('reruns the actions of a part in check once its own app files changed', async () => {
+    const target = checkout();
+    const part = 'components/canvas';
+    const product = () =>
+      resolveProduct({ target, name: 'app-a', config: { harness: { app: 'apps/a', map: 'apps/a/harness.ts' } } });
+    const actionsOf = vi.fn(async () => ['default button "x" Enter FAILED']);
+    const check = () =>
+      recordBuildReady({
+        product: product(),
+        by: 'spec',
+        cmd: 'check',
+        parts: [part],
+        inputs: { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] },
+        actionsOf,
+      });
+
+    expect(await ready(target, [], part)).not.toHaveProperty('status');
+
+    await check();
+
+    expect(actionsOf).not.toHaveBeenCalled();
+
+    appendFileSync(join(target, 'libs/canvas.component.ts'), 'export const focusable = true;\n');
+
+    expect(actionsRerunOf({ product: product(), part })).toEqual([part]);
+    expect((await check()).get(part)).toMatchObject({ ready: false });
+    expect(actionsOf).toHaveBeenCalledOnce();
+    expect(readyMarkOf({ product: product(), part })).toBeNull();
   });
 });

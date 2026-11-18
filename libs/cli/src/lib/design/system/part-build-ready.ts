@@ -15,7 +15,7 @@ import {
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { slowProblemsOf } from './slow-checks';
-import { originOf } from './write-origin';
+import { originOf, WriteOrigin } from './write-origin';
 
 /** What build-ready is computed from: the open points and rule problems of each part, and its slow results. */
 export type BuildReadyInputs = {
@@ -60,7 +60,7 @@ const recordBlockersOf = ({ product, part }: Target): Blocker[] => {
 
   const rerun = actionsRerunOf({ product, part });
 
-  return rerun.length > 0 ? [{ kind: 'action', text: actionsRerunReasonOf(rerun) }] : [];
+  return rerun.length > 0 ? [{ kind: 'action', text: actionsRerunReasonOf(rerun, part) }] : [];
 };
 
 const embeddedBlockersOf = (target: Target, readyOf: (part: string) => boolean): Blocker[] => {
@@ -115,14 +115,91 @@ const noRecordLineOf = (options: { product: string; part: string; blockers: Bloc
   return `NO RECORD ${options.product} ${options.part}: ${reason}`;
 };
 
+/** The verdict of one part, with what `actionsOf` answered when the actions ran. */
+export type PartVerdict = { verdict: BuildReady; actions?: string[] | NoVerdict };
+
 /**
- * Writes the check record of each of `parts` whose own check passes, and drops the record of each part whose own check
- * fails; an embedded part that is not build-ready keeps its host from build-ready, not from its record. A part without
- * a holding record, or whose embedded parts changed since its actions ran, is written only after `actionsOf` passes. A
- * record is dropped only for a blocker that was checked: a pending slow result or actions that did not run (no
- * `actionsOf`) keep it. `by` and `cmd` name the writer on each record. Embedded parts are decided before their hosts. `onNoRecord` gets one line for each part left
- * without a holding record, naming why; `onRecordDropped` gets one for each record dropped. A written record holds the keys `declaredActionsOf` answers, or keeps the ones it
- * held when it answers why not.
+ * Decides one part and writes or drops its check record: the record is written when the own check passes, an embedded
+ * part that is not build-ready keeps the part from build-ready, not from its record. The actions run when the record
+ * does not hold, its own or an embedded part's app files changed since they ran, or `fresh` asks for them. A record is
+ * dropped only for a blocker that was checked: a pending slow result or actions that did not run (no `actionsOf`) keep
+ * it. A written record holds the keys `declaredActionsOf` answers, or keeps the ones it held when it answers why not.
+ */
+export const decidePartBuildReady = async (options: {
+  product: ResolvedProduct;
+  part: string;
+  inputs: BuildReadyInputs;
+  origin: WriteOrigin;
+  readyOf?: (part: string) => boolean;
+  fresh?: boolean;
+  at?: string;
+  actionsOf?: ActionsOf;
+  declaredActionsOf?: DeclaredActionsOf;
+  onNoRecord?: (line: string) => void;
+  onRecordDropped?: (line: string) => void;
+}): Promise<PartVerdict> => {
+  const { product, part, inputs } = options;
+  const target = { product, part, inputs };
+  const own = ownBlockersOf(target);
+  const embedded = embeddedBlockersOf(
+    target,
+    options.readyOf ?? ((embeddedPart) => isPartReady({ ...target, part: embeddedPart })),
+  );
+  let unverified = false;
+  let ran: string[] | NoVerdict | undefined;
+
+  if (own.length === 0 && typeof readyPartOf({ product, part }) !== 'string') {
+    const recorded = recordBlockersOf(target);
+    const rerun = options.fresh === true || recorded.length > 0;
+
+    ran = rerun ? await options.actionsOf?.(part) : undefined;
+
+    const actions = rerun ? ran : [];
+
+    if (Array.isArray(actions) && actions.length === 0) {
+      if (rerun) {
+        const declared = await options.declaredActionsOf?.(part);
+
+        writePartRecord({
+          product,
+          part,
+          origin: options.origin,
+          ...(options.at ? { at: options.at } : {}),
+          ...(Array.isArray(declared) ? { actions: declared } : {}),
+        });
+      } else if (builderChangedOf({ product, part })) writePartBuilder({ product, part });
+
+      return {
+        verdict: embedded.length === 0 ? { ready: true } : { ready: false, blockers: embedded },
+        ...(ran ? { actions: ran } : {}),
+      };
+    }
+
+    unverified = actions === undefined;
+    own.push(
+      ...(actions === undefined
+        ? recorded
+        : Array.isArray(actions)
+          ? actions.map((text) => ({ kind: 'action' as const, text }))
+          : [{ kind: 'action' as const, text: `the actions could not run: ${actions.noVerdict}` }]),
+    );
+  }
+
+  const definite = own.filter((blocker) => isDefinite(blocker, unverified));
+
+  if (definite.length > 0 && dropPartRecord({ product, part }))
+    options.onRecordDropped?.(recordDroppedLineOf({ product: product.name, part, blockers: definite }));
+
+  if (readyMarkOf({ product, part }) === null)
+    options.onNoRecord?.(noRecordLineOf({ product: product.name, part, blockers: own, unverified }));
+
+  return { verdict: { ready: false, blockers: [...own, ...embedded] }, ...(ran ? { actions: ran } : {}) };
+};
+
+/**
+ * Decides each of `parts` with `decidePartBuildReady`, embedded parts before their hosts, after dropping the entries of
+ * parts the product no longer has. `by` and `cmd` name the writer on each record. `onNoRecord` gets one line for each
+ * part left without a holding record, naming why; `onRecordDropped` gets one for each record dropped.
  */
 export const recordBuildReady = async (options: {
   product: ResolvedProduct;
@@ -135,7 +212,7 @@ export const recordBuildReady = async (options: {
   onNoRecord?: (line: string) => void;
   onRecordDropped?: (line: string) => void;
 }): Promise<Map<string, BuildReady>> => {
-  const { product, inputs } = options;
+  const { product, inputs, by, cmd, parts, ...decide } = options;
   const results = new Map<string, BuildReady>();
   const embeddedCountOf = (part: string) => {
     const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
@@ -146,51 +223,17 @@ export const recordBuildReady = async (options: {
 
   dropRemovedPartEntries(product);
 
-  for (const part of [...options.parts].sort((a, b) => embeddedCountOf(a) - embeddedCountOf(b))) {
-    const target = { product, part, inputs };
-    const own = ownBlockersOf(target);
-    const embedded = embeddedBlockersOf(target, readyOf);
-    let unverified = false;
+  for (const part of [...parts].sort((a, b) => embeddedCountOf(a) - embeddedCountOf(b))) {
+    const { verdict } = await decidePartBuildReady({
+      ...decide,
+      product,
+      part,
+      inputs,
+      origin: originOf(by, cmd),
+      readyOf,
+    });
 
-    if (own.length === 0 && typeof readyPartOf({ product, part }) !== 'string') {
-      const recorded = recordBlockersOf(target);
-      const actions = recorded.length === 0 ? [] : await options.actionsOf?.(part);
-
-      if (Array.isArray(actions) && actions.length === 0) {
-        if (recorded.length > 0) {
-          const declared = await options.declaredActionsOf?.(part);
-
-          writePartRecord({
-            product,
-            part,
-            origin: originOf(options.by, options.cmd),
-            ...(Array.isArray(declared) ? { actions: declared } : {}),
-          });
-        } else if (builderChangedOf({ product, part })) writePartBuilder({ product, part });
-
-        results.set(part, embedded.length === 0 ? { ready: true } : { ready: false, blockers: embedded });
-        continue;
-      }
-
-      unverified = actions === undefined;
-      own.push(
-        ...(actions === undefined
-          ? recorded
-          : Array.isArray(actions)
-            ? actions.map((text) => ({ kind: 'action' as const, text }))
-            : [{ kind: 'action' as const, text: `the actions could not run: ${actions.noVerdict}` }]),
-      );
-    }
-
-    const definite = own.filter((blocker) => isDefinite(blocker, unverified));
-
-    if (definite.length > 0 && dropPartRecord({ product, part }))
-      options.onRecordDropped?.(recordDroppedLineOf({ product: product.name, part, blockers: definite }));
-
-    if (readyMarkOf({ product, part }) === null)
-      options.onNoRecord?.(noRecordLineOf({ product: product.name, part, blockers: own, unverified }));
-
-    results.set(part, { ready: false, blockers: [...own, ...embedded] });
+    results.set(part, verdict);
   }
 
   return results;

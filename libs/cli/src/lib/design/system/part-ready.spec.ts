@@ -21,9 +21,9 @@ import { git, gitResult, initGitRepo } from './git-repo.fixtures';
 import { harnessMapOf, writeHarnessMap } from './harness-map';
 import { checkLiveActions } from './live-actions';
 import { drawnFindingsOf } from './drawn-open-points';
+import { markPartReady } from './mark-part-ready';
 import {
   drawnPartPointsOf,
-  markPartReady,
   readReady,
   builderChangedOf,
   readyMarkOf,
@@ -33,6 +33,7 @@ import {
   writePartRecord,
 } from './part-ready';
 import { designReady } from './ready-command';
+import { noVerdictOf } from './no-verdict';
 import { resolveProduct } from './resolve-product';
 import { readMerged, recordMerged } from './sketch/merged-parts';
 
@@ -73,6 +74,11 @@ const checkout = () => {
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
+const harnessed = (target: string) =>
+  resolveProduct({ target, name: 'app-a', config: { harness: { app: 'apps/a', map: 'apps/a/harness.ts' } } });
+
+const green = { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] };
+
 const hashOf = (target: string, part = 'components/chip') => {
   const found = readyPartOf({ product: productOf(target), part });
 
@@ -80,25 +86,21 @@ const hashOf = (target: string, part = 'components/chip') => {
 };
 
 const post = async (target: string, body: { part?: string; hash?: string }) => {
-  const product = productOf(target);
+  const product = harnessed(target);
   const part = body.part ?? '';
   const marked = await markPartReady({
     product,
     origin: originOf('spec'),
     part,
     hash: body.hash,
-    pointsOf: async () => {
+    inputsOf: async () => {
       const points = await drawnPartPointsOf({ target, config: {}, product, part });
 
-      return 'unavailable' in points ? { status: 503, error: `cannot draw ${part}: ${points.unavailable}` } : points;
+      return 'unavailable' in points
+        ? noVerdictOf(points.unavailable)
+        : { ...green, pointsOf: (at: string) => (at === part ? points : []) };
     },
-    actionsOf: async () => {
-      const failures = await partActionFailuresOf({ target, config: {}, product, part });
-
-      return Array.isArray(failures)
-        ? failures
-        : { status: 503, error: `cannot check the actions of ${part}: ${failures.noVerdict}` };
-    },
+    actionsOf: () => partActionFailuresOf({ target, config: {}, product, part }),
     actionsNote: PART_HARNESS_ONLY,
   });
 
@@ -139,6 +141,7 @@ describe('part ready', () => {
       'components/chip': {
         hash,
         files: expect.any(Object),
+        app: expect.any(String),
         builder: 'designer',
         at: expect.any(String),
         by: 'spec',
@@ -306,6 +309,7 @@ describe('part ready', () => {
       ready: {
         hash,
         files: expect.any(Object),
+        app: expect.any(String),
         builder: 'designer',
         at: expect.any(String),
         by: 'spec',
@@ -592,23 +596,23 @@ describe('ready on an unchanged part', () => {
 
   const readyAs = (target: string, at: string) =>
     markPartReady({
-      product: productOf(target),
+      product: harnessed(target),
       origin: originOf('spec'),
       part: 'pages/inbox',
       hash: hashOf(target, 'pages/inbox'),
       at,
-      pointsOf: async () => [],
+      inputsOf: async () => green,
       actionsOf: async () => [],
     });
 
   it('refuses a ready mark without an actor and stamps by, cmd and pid on one with', async () => {
     const { target, dir } = checkout();
-    const product = productOf(target);
+    const product = harnessed(target);
     const base = {
       product,
       part: 'components/tag',
       hash: hashOf(target, 'components/tag'),
-      pointsOf: async () => [],
+      inputsOf: async () => green,
       actionsOf: async () => [],
     };
 
@@ -627,6 +631,9 @@ describe('ready on an unchanged part', () => {
   it('keeps at and refreshes the embedded record, and writes a new mark when the part changed', async () => {
     const target = embeddingCheckout();
     const dir = join(target, DESIGN_DIR, 'app-a');
+
+    writePartRecord({ product: harnessed(target), part: 'components/chip', origin: originOf('spec') });
+
     const first = await readyAs(target, '2026-01-01T00:00:00.000Z');
 
     expect(first).toHaveProperty('by', 'spec');
@@ -656,11 +663,11 @@ describe('a ready mark commits its own ready.json', () => {
 
   const readyIn = (target: string) =>
     markPartReady({
-      product: productOf(target),
+      product: harnessed(target),
       origin: originOf('spec'),
       part: 'components/tag',
       hash: hashOf(target, 'components/tag'),
-      pointsOf: async () => [],
+      inputsOf: async () => green,
       actionsOf: async () => [],
       commitIn: target,
     });
@@ -711,11 +718,11 @@ describe('a ready mark commits its own ready.json', () => {
     const at = '2026-10-01T09:00:00.000Z';
     const refuse = (part: string) =>
       markPartReady({
-        product: productOf(target),
+        product: harnessed(target),
         origin: originOf('spec'),
         part,
         hash: 'stale',
-        pointsOf: async () => [],
+        inputsOf: async () => green,
         actionsOf: async () => [],
         commitIn: target,
       });

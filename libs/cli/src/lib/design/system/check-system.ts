@@ -298,7 +298,7 @@ export const buildReadyInputsOf = (
 };
 
 /** The parts whose rule problems the build-ready record of `part` reads: its own and those of its embedded parts. */
-const readyInputPartsOf = (product: ResolvedProduct, part: string) => {
+export const readyInputPartsOf = (product: ResolvedProduct, part: string) => {
   const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
 
   return [part, ...(resolved ? embeddedPartsOf({ product, part: resolved }).map(partKeyOf) : [])];
