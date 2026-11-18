@@ -58,6 +58,7 @@ class PanelHost {
   overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
   closes: AnchoredPanelCloseInfo[] = [];
   beforeClosedCalls = 0;
+  documentKeys: string[] = [];
   private surfaceTemplate = viewChild.required<TemplateRef<unknown>>('surface');
 
   controller = createAnchoredPanelController({
@@ -78,6 +79,13 @@ class PanelHost {
     }),
     onBeforeClosed: () => this.beforeClosedCalls++,
     onAfterClosed: (info) => this.closes.push(info),
+    onDocumentKeydown: (event) => {
+      this.documentKeys.push(event.key);
+
+      if (event.key === 'Escape') {
+        this.open.set(false);
+      }
+    },
   });
 }
 
@@ -216,6 +224,54 @@ describe('createAnchoredPanelController with a real overlay', () => {
     expect(host.open()).toBe(true);
     expect(host.overlayRef()).not.toBeNull();
     expect(driver.openOverlays()).toHaveLength(1);
+    driver.closeAll();
+  });
+
+  it('hands document keys to the reopened state while the previous pane still leaves, once each', async () => {
+    const { fixture, host, driver, settleClosed } = await setup();
+    const leavingRef = host.overlayRef();
+
+    byId('before').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    fixture.detectChanges();
+    host.open.set(true);
+    fixture.detectChanges();
+
+    expect(host.overlayRef()).toBe(leavingRef);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+
+    expect(host.documentKeys).toEqual(['ArrowDown']);
+
+    await settleClosed();
+    fixture.detectChanges();
+
+    expect(host.overlayRef()).not.toBe(leavingRef);
+    expect(host.overlayRef()).not.toBeNull();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.documentKeys).toEqual(['ArrowDown', 'Escape']);
+    expect(host.open()).toBe(false);
+    driver.closeAll();
+  });
+
+  it('closes on a document Escape pressed while the previous pane still leaves', async () => {
+    const { fixture, host, driver } = await setup();
+    const leavingRef = host.overlayRef();
+
+    byId('before').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    fixture.detectChanges();
+    host.open.set(true);
+    fixture.detectChanges();
+
+    expect(host.overlayRef()).toBe(leavingRef);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.open()).toBe(false);
+    expect(host.documentKeys).toEqual(['Escape']);
     driver.closeAll();
   });
 

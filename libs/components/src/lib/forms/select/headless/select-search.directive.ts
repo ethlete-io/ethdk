@@ -290,7 +290,6 @@ export class SelectSearchDirective {
       event.key === 'ArrowDown' ||
       event.key === 'ArrowUp' ||
       event.key === 'Enter' ||
-      event.key === 'Escape' ||
       event.key === 'Tab' ||
       ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a')
     ) {

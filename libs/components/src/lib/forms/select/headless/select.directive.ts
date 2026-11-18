@@ -1278,10 +1278,7 @@ export class SelectDirective<TValue = unknown>
         return;
       }
       case 'Escape': {
-        // the document-level listener is detached while a reopened panel's previous pane still
-        // leaves, so a field Escape is handled here; it then reaches that listener defaultPrevented
-        this.handlePanelKeydown(event);
-
+        // handled centrally by the document-level escape listener (clear query, then close)
         return;
       }
       default: {

@@ -68,6 +68,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
   const overlayRef = options.overlayRef;
 
   let interactionListenersCleanup: (() => void) | null = null;
+  let documentKeydownSubscription: Subscription | null = null;
   let closedByOutsidePointer = false;
   let closedByFocusLeave = false;
   let closedFromBottomSheet = false;
@@ -76,6 +77,19 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
   const detachInteractionListeners = () => {
     interactionListenersCleanup?.();
     interactionListenersCleanup = null;
+  };
+
+  const syncDocumentKeydownListener = (active: boolean) => {
+    if (!active || !options.onDocumentKeydown) {
+      documentKeydownSubscription?.unsubscribe();
+      documentKeydownSubscription = null;
+
+      return;
+    }
+
+    documentKeydownSubscription ??= fromEvent<KeyboardEvent>(documentRef, 'keydown').subscribe(
+      options.onDocumentKeydown,
+    );
   };
 
   const isOutsideThePanel = (target: Node) => {
@@ -181,10 +195,6 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
       fromEvent<FocusEvent>(documentRef, 'focusin', { capture: true }).subscribe(onFocusIn),
     ];
 
-    if (options.onDocumentKeydown) {
-      subscriptions.push(fromEvent<KeyboardEvent>(documentRef, 'keydown').subscribe(options.onDocumentKeydown));
-    }
-
     const pane = overlayRef()?.elements?.paneElement;
 
     if (pane) {
@@ -244,6 +254,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
           }
 
           detachInteractionListeners();
+          syncDocumentKeydownListener(false);
 
           // read while the pane still exists - afterClosed fires after its removal
           closedFromBottomSheet =
@@ -291,6 +302,10 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
     const shouldBeOpen = options.open();
     const currentRef = overlayRef();
 
+    // keyed to the open model, not the mounted pane: a reopen during the previous pane's leave
+    // animation mounts only after it, and the open state must receive keys in that window
+    untracked(() => syncDocumentKeydownListener(canOpen && shouldBeOpen));
+
     if (!canOpen) {
       if (currentRef) {
         untracked(() => currentRef.close());
@@ -318,6 +333,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
     // the host's models and outputs are already destroyed here, so the close must not write them
     destroyed = true;
     detachInteractionListeners();
+    syncDocumentKeydownListener(false);
     overlayRef()?.close();
   });
 
