@@ -4,7 +4,7 @@ export const MOD_MARKETPLACE = 'ethlete';
  * Claude Code mods a repo can opt into via the config's `mods` array. A mod runs code in every
  * Claude Code session of the repo, so like the hooks it is never enabled by default.
  */
-export const KNOWN_MODS = ['e2e-progress'];
+export const KNOWN_MODS = ['e2e-progress', 'status-line'];
 
 export const assertKnownMods = (mods: string[]) => {
   const unknown = mods.filter((name) => !KNOWN_MODS.includes(name));

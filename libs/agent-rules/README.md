@@ -391,6 +391,30 @@ Available hooks:
 
 Hooks can be turned off per machine - see the local config below.
 
+## Mods (Claude Code)
+
+`"mods": ["status-line"]` in the config enables a Claude Code mod from the `ethlete` marketplace the
+package ships (`yarn agents:sync` writes the marketplace and `enabledPlugins` into
+`.claude/settings.json`). A mod runs code in every session of the repo, so none is on by default.
+
+- **`e2e-progress`** - live Playwright run progress as a status line entry and a pane.
+- **`status-line`** - a band above the prompt, always visible: `▶ <running slice> · 42 min · 14 offen · ❓2`.
+  The slice comes from the git `slice-paths` file (`kein Slice` once it is older than 2 h), the queue
+  count from the `### Warteschlange` list of the `report.planFiles` markdown files, `❓N` from the
+  `-` lines of `<git common dir>/ethlete/open-questions.md`, and `⛔ CI rot` when the latest `gh run`
+  of the branch failed (checked every 2 minutes). A field whose source is missing is left out.
+
+## Progress report
+
+`ethlete-agents report [today|yesterday|week | --since <date> [--until <date>]]` prints a fixed
+markdown table of the period: one line per row with a feature, fix or other non-docs commit (short
+sha, result), the parked rows, and a figures line (commit counts, reverts, red CI runs via `gh`,
+subagent starts per model, the running slice). Without config it works from the git log alone.
+Opt in to short names and the parked section with
+`"report": { "planFiles": ["plans/STATUS.md", "plans/*/rows.md"] }`: repo-relative paths or globs of
+markdown files holding `| <id> | <short name> | <what> | <state> | <what is missing> | <who> |` rows
+and `N. **<name> (<id>)**` queue lines. The `report` skill runs it and pastes the output.
+
 ## Git hooks (opt-in)
 
 Separate from the agent hooks above, and opt-in for the same reason - a generated block

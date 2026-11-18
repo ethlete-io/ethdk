@@ -6,6 +6,11 @@
       "name": "e2e-progress",
       "source": "./plugins/e2e-progress",
       "description": "Live Playwright e2e progress from a run log, as a status line entry and a pane"
+    },
+    {
+      "name": "status-line",
+      "source": "./plugins/status-line",
+      "description": "Always-visible band with the running task, its duration, the open queue, open questions and a CI blocked mark"
     }
   ]
 }
