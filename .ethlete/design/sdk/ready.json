@@ -224,10 +224,10 @@
     "pid": 1956826
   },
   "components/chip": {
-    "hash": "1936b84bd39540c1",
+    "hash": "1a4d90e7c910658f",
     "files": {
       ".ethlete/design/sdk/components/chip/chip.css": "8038b0cc2cad5a22",
-      ".ethlete/design/sdk/components/chip/chip.ts": "2d532c0352607ec5",
+      ".ethlete/design/sdk/components/chip/chip.ts": "fa94dc20f866eb0a",
       "libs/components/design/chip.ts": "f1927049c57f6709",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/src/lib/chip/chip.component.css": "9c025c24d096fc4d",
@@ -237,10 +237,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T11:18:24.540Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2851297
+    "at": "2026-11-18T14:09:21.557Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1959033
   },
   "components/dialog": {
     "hash": "7a3056ba7c7de18f",
