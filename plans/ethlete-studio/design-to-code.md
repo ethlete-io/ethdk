@@ -2468,3 +2468,15 @@ comment button"` (1 passed), `compare pages/system` (all ok with the icon-button
   `check --working-tree --product studio --part pages/system`: 0 findings.
 - Not verified: a real `task --verify` or `compare --affected` run with the refusals; the refusal path of
   `compare --affected` has no spec of its own.
+- Fixed the 7 hits (51fe76c6a): new `STUDIO_LABELS` keys `zoom.*`, `shell.studio`, `shell.hidePanel`,
+  `system.frameGrid`/`frameTree` (one commit), bound in zoom-chip, shell-collapse, shell-main, system-page; start binds
+  `start.title`. Own-data specs for comment-row, shell-collapse, inventory-page and start. The refusal path of
+  `compare --affected` got a spec in `compare-affected.spec.ts` (db0afd6ac): red with the call replaced by `[]` (exit 0
+  instead of 1), green after.
+- Verified: `compare --affected --product studio` recorded comment-row, shell-collapse, zoom-chip, canvas-frames,
+  shell-main, flows, inventory, start, every state ok, no refusal; `task --verify 51fe76c6a` over zoom-chip and the
+  other parts of the commit (the scope check asks to verify them together) recorded them with no refusal, and so did
+  pages/system. `nx typecheck ethlete-studio`, lint, `vitest related`.
+- Not verified: canvas-viewport, comment-pin, disclosure, title-search, tree-row, part-tree and studio-menu stay
+  unrecorded - `compare --affected` says their design changed since their record and sends them to `task --verify`;
+  that drift predates B59 and was left alone.
