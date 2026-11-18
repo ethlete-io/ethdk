@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B577
+built: 3e2247e64
 decided: 2026-11-17
 source: doc-agent session 2026-11-17 (late evening), the human on edit sketches without exit
 ---
