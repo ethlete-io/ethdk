@@ -576,6 +576,18 @@
     "cmd": "serve",
     "pid": 2342738
   },
+  "components/sketch-question": {
+    "hash": "00929200d33aa85b",
+    "files": {
+      ".ethlete/design/studio/components/sketch-question/sketch-question.ts": "b76b4f61ac6237a3"
+    },
+    "actions": [],
+    "builder": "designer",
+    "at": "2026-11-18T10:47:05.049Z",
+    "by": "et design check",
+    "cmd": "check",
+    "pid": 3572771
+  },
   "components/sketch-status-badge": {
     "hash": "8d92cc1b5fcf2eb9",
     "files": {

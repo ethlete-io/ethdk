@@ -25,6 +25,7 @@ import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
+import { sketchQuestion } from '@system/components/sketch-question';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -1135,7 +1136,7 @@ export default definePart<Props>({
             data-w="${screen ? SCREEN_WIDTH : part.width}"
             data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
           >
-            ${question ? html`<p class="m-0 text-ui-md font-ui-medium text-et-surface" style="transform: translateX(var(--sk-pan-x, 0px))" data-sk-question>${question}</p>` : ''}
+            ${question ? sketchQuestion({ question, attrs: 'style="transform: translateX(var(--sk-pan-x, 0px))"' }) : ''}
             ${world}
             ${
               folded > 0

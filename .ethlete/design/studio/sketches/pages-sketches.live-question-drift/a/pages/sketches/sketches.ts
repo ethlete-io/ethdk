@@ -25,6 +25,7 @@ import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
+import { sketchQuestion } from '@system/components/sketch-question';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -1116,13 +1117,11 @@ export default definePart<Props>({
       ${parts.body}
       ${
         question
-          ? html`<p
-              class="absolute z-2 top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] m-0 truncate text-ui-md font-ui-medium text-et-surface"
-              ${lifted(14)}
-              data-sk-question
-            >
-              ${question}
-            </p>`
+          ? sketchQuestion({
+              question,
+              class: 'absolute z-2 top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))]',
+              attrs: lifted(14),
+            })
           : ''
       }
       <div

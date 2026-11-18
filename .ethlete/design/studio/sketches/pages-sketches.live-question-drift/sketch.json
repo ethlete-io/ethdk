@@ -72,6 +72,7 @@
     "components/shell-resize-handle": "1bb1cd3946ba4f8f",
     "components/shell-system-picker": "a09ce61c97e26648",
     "components/skeleton": "b547ec192cd09ba0",
+    "components/sketch-question": "6635cad47e6fc6e6",
     "components/sketch-status-badge": "0d7cbd781152272a",
     "components/slider": "1f4bc49b73de137d",
     "components/standings": "076d20d06cdc9777",
@@ -98,12 +99,12 @@
     "pages/flows": "4950706aa3a64d19",
     "pages/inbox": "f7072cf30ea3c755",
     "pages/inventory": "a5f9ac63fb5969d7",
-    "pages/sketches": "ee25e3cbfdc7172e",
+    "pages/sketches": "bc5b25574ea2d806",
     "pages/start": "9e322eaac6939326",
     "pages/system": "86f9166077c16311",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "f1a6c88ffbc63077df0713cd11e29bf9d383d161",
+  "baselineTree": "7f4ad2f157f98b23ebf5197f8a85904ecdee90a0",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
     "pages/sketches/shared/multi-part.ts": "baa5ef7f1cd1fb1c",

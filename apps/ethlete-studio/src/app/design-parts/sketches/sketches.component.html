@@ -146,12 +146,10 @@
       }
     </header>
     @if (question(); as question) {
-      <p
-        class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface"
-        data-sk-question
-      >
-        {{ question }}
-      </p>
+      <ethlete-sketch-question
+        [question]="question"
+        class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2"
+      />
     }
     <div
       [class.top-14]="!question()"

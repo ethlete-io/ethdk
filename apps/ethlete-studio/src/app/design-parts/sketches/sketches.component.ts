@@ -59,6 +59,7 @@ import { Camera } from '../../components/design-canvas/canvas-math';
 import { FrameZoom, frameZoomCamera } from '../../components/design-canvas/frame-zoom-camera';
 import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
+import { SketchQuestionComponent } from '../sketch-question/sketch-question.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
@@ -223,6 +224,7 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     NgTemplateOutlet,
     AgentLogoComponent,
     CanvasViewportComponent,
+    SketchQuestionComponent,
     CommentPinComponent,
     CommentListComponent,
     CommentDraftComponent,

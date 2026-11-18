@@ -25,6 +25,7 @@ import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
+import { sketchQuestion } from '@system/components/sketch-question';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -1097,8 +1098,7 @@ export default definePart<Props>({
         class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
       >
         <span class="text-ui-lg font-ui-strong">${multi ? MULTI_PART.title : screen ? SCREEN_KEY : part.key}</span>
-        ${fresh ? tags.fresh.body : ''}
-        ${question ? html`<span class="min-w-0 truncate text-ui-md font-ui-medium text-et-surface" data-sk-question>${question}</span>` : ''}
+        ${fresh ? tags.fresh.body : ''} ${question ? sketchQuestion({ question, class: 'min-w-0' }) : ''}
         ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, tags, readyReason)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
