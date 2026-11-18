@@ -29,18 +29,18 @@ origin, Liste in `.claude/handoffs/mac-tank-branches.md`.
 
 Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er ihn gegen git; ist er erledigt, nimmt er den nächsten. Nur der Doc-Agent ordnet die Liste. Ein neuer Befund unterbricht nur bei rotem CI (ADR 0230) oder wenn er den laufenden Eintrag blockiert. Die Zeile „wie gebaut“ steht nur in der Commit-Nachricht (ADR 0350).
 
-1. **B604** ⏳ Studio-Plan-Ordner `plans/ethlete-studio` → `plans/studio`, STATUS.md auf ≤5000 Zeichen (ADR 0354) - Builder
-2. **B595** ⏳ Plan-System: Prüfskript im Pre-Push für plans/ (ADR 0354) - Builder
-3. **B596** ⏳ Timetrack: Befunde #6-#8, dann #1/#2/#18/#21, dann #15/#24; Snapshot-Prüfung bei Commits (ADR 0355) - Builder
-4. **B602** ⏳ Timetrack: Befunde #3/#4/#5, dann #19/#20/#22 (ADR 0355) - Builder
-5. **B597** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, nach B599 (ADR 0354) - Doc-Agent
-6. **B598** ⏳ Timetrack-Werkzeug: rotes CI-Job Timetrack e2e, Sammel-Freigabe im Agent-CLI, Aufräumregeln in Skill oder Spec - Builder
-7. **B599** ⏳ Ablauf-ADRs auf Repo-Ebene: ADR-Skripte lesen auch `docs/adr/`, Zeile in AGENTS.md (ADR 0354) - Builder
-8. **B600** ⏳ Doc-Agent bündelt Nachrichten an den Builder alle ~15 Minuten (ADR 0356) - Builder
-9. **B601** ⏳ Pushen erst, wenn der laufende CI-Lauf fertig ist (ADR 0357) - Builder
-10. **B603** ⏳ Cross-Check als frischer fable-Lauf, nur für manche Fragen; doc-agent- und supervisor-agent-Skill (ADR 0358) - Builder
-11. **B605** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
-12. **B606** ⏳ Hook protokolliert Modell, Effort, Aufgabe und Dateien jedes Subagenten (ADR 0371) - Builder
+1. **B595** ⏳ Plan-System: Prüfskript im Pre-Push für plans/ (ADR 0354) - Builder
+2. **B596** ⏳ Timetrack: Befunde #6-#8, dann #1/#2/#18/#21, dann #15/#24; Snapshot-Prüfung bei Commits (ADR 0355) - Builder
+3. **B602** ⏳ Timetrack: Befunde #3/#4/#5, dann #19/#20/#22 (ADR 0355) - Builder
+4. **B597** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, nach B599 (ADR 0354) - Doc-Agent
+5. **B598** ⏳ Timetrack-Werkzeug: rotes CI-Job Timetrack e2e, Sammel-Freigabe im Agent-CLI, Aufräumregeln in Skill oder Spec - Builder
+6. **B599** ⏳ Ablauf-ADRs auf Repo-Ebene: ADR-Skripte lesen auch `docs/adr/`, Zeile in AGENTS.md (ADR 0354) - Builder
+7. **B600** ⏳ Doc-Agent bündelt Nachrichten an den Builder alle ~15 Minuten (ADR 0356) - Builder
+8. **B601** ⏳ Pushen erst, wenn der laufende CI-Lauf fertig ist (ADR 0357) - Builder
+9. **B603** ⏳ Cross-Check als frischer fable-Lauf, nur für manche Fragen; doc-agent- und supervisor-agent-Skill (ADR 0358) - Builder
+10. **B605** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
+11. **B606** ⏳ Hook protokolliert Modell, Effort, Aufgabe und Dateien jedes Subagenten (ADR 0371) - Builder
+12. **B607** ⏳ Alte Warteschlange (queue.md) einmal sortieren: offen / ADR / löschen, in Scheiben (ADR 0354 Punkt 5) - Doc-Agent
 
 Geparkt: B105, B108, B109, B580, B148.
 
