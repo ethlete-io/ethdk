@@ -1082,10 +1082,16 @@ export const renderIssuesOf = async (options: {
           });
 
         if (grid) {
-          grids.push({ product, part: key, sketch, line: grid.line });
-          grid.problems.forEach((detail) =>
-            issues.push({ rule: 'GRID', product, part: key, state: '-', size: '-', path: '-', detail, sketch }),
+          const mergedGridProblems = new Set(
+            sketch ? (gridReportOf(mergedDefinition?.grid, mergedStates)?.problems ?? []) : [],
           );
+
+          grids.push({ product, part: key, sketch, line: grid.line });
+          grid.problems
+            .filter((detail) => !mergedGridProblems.has(detail))
+            .forEach((detail) =>
+              issues.push({ rule: 'GRID', product, part: key, state: '-', size: '-', path: '-', detail, sketch }),
+            );
           grid.warnings.forEach((detail) =>
             gridWarnings.push({
               rule: 'GRID-COVERAGE',

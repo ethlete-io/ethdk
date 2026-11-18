@@ -866,6 +866,52 @@ export default definePart({
     ).toEqual(['added: extract the collapse as its own control part and draw this state there']);
   }, 120_000);
 
+  it('blocks a sketch only on GRID problems it adds to the merged grid', async (context) => {
+    const target = checkout({
+      'components/gridded': {
+        body: '<p style="margin: 0">Grid</p>',
+        states: 'default: {}, open: {}',
+        extra: "grid: { columns: ['x', 'y'], rows: { r1: { x: 'default', y: 'default' } } },",
+      },
+    });
+    const config = readConfig(target) ?? {};
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const dir = join(shop, 'sketches', 'components-gridded');
+    const source = readFileSync(join(shop, 'components/gridded/gridded.ts'), 'utf8');
+
+    for (const variant of ['same', 'worse']) mkdirSync(join(dir, variant, 'components/gridded'), { recursive: true });
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({ target: 'components/gridded', status: 'ready', createdAt: '2026-01-01T00:00:00.000Z' }),
+    );
+    writeFileSync(join(dir, 'same/components/gridded/gridded.ts'), source);
+    writeFileSync(
+      join(dir, 'worse/components/gridded/gridded.ts'),
+      source.replace("y: 'default' } }", "y: 'default' }, r2: { x: 'open', y: 'gone' } }"),
+    );
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({
+      target,
+      config,
+      jobs: [null, ...['same', 'worse'].map((variant) => ({ target: 'components/gridded', variant }))].map(
+        (sketch) => ({ product: 'shop', sketch, parts: null }),
+      ),
+    });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'GRID')
+        .map((issue) => `${issue.sketch?.variant ?? 'merged'}: ${issue.detail}`),
+    ).toEqual([
+      'merged: grid names the state default twice (r1 x, r1 y)',
+      'worse: grid cell r2 y names gone, which is no state',
+    ]);
+  }, 120_000);
+
   it('hints unmarked controls of merged parts and blocks only those a sketch adds', async (context) => {
     const target = checkout({
       'components/bar': {

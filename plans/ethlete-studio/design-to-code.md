@@ -2110,3 +2110,16 @@ No new code: 491a945e8 (2026-11-05) already moved the canvas-frames CLIPPED skip
 loading badge, and SKIP-SCOPE is no longer a rule (skips.spec flags a skip that names it). Verified on f881f81e7+: the
 only `data-et-skip` in elements/canvas-frames/canvas-frames.ts is on `data-loading-badge`; canvas-viewport.ts carries
 none. Row closed.
+
+## As built (B159)
+
+Probe: CONTRAST has no exceptions left to filter, 0035ddced dropped the rule and `contrast-check.ts`. GRID never had
+exceptions; its problems (a state in two cells, a cell naming no state) came from the variant's own `grid` only, so a
+variant failed GRID for a problem the merged part already had, while the browser render issues already count such
+problems as old (6c5e0c234). Fix (render-check.ts, like B152): a sketch job drops each GRID problem whose detail
+`gridReportOf` also reports for the merged definition (merged `grid` and states); product check is unchanged, so the
+merged part still fails there. Choices: same detail text means same problem; GRID-COVERAGE warnings stay as they were.
+This only loosens sketch-side false positives, so no sweep over committed sketches and parts (finding 789). Verified:
+render-check.spec "blocks a sketch only on GRID problems it adds to the merged grid" (merged keeps its twice problem,
+variant `same` passes, `worse` fails only on its new cell), red before the fix with the inherited problem on both
+variants. Not verified: a live sketch check on the real design.
