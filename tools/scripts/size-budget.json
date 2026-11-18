@@ -13,11 +13,7 @@
       ],
       "budget": 6000
     },
-    {
-      "name": "finding log",
-      "files": ["plans/ethlete-studio/design-to-code.md"],
-      "budget": 440000
-    },
+    { "name": "build ready", "files": ["plans/ethlete-studio/build-ready.md"], "budget": 36000 },
     { "name": "status", "files": ["plans/ethlete-studio/STATUS.md"], "budget": 100000, "cellCap": 400 }
   ],
   "overrides": {

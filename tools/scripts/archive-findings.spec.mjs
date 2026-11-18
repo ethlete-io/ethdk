@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
@@ -72,12 +72,12 @@ test('a finding runs to its blank line, and list items are no findings', () => {
 
 test('reads a prettier-formatted plan', () => {
   const formatted = readFileSync(
-    join(import.meta.dirname, 'fixtures/studio-findings/ok/plans/ethlete-studio/design-to-code.md'),
+    join(import.meta.dirname, 'fixtures/studio-findings/ok/plans/ethlete-studio/archive/findings-2026-11.md'),
     'utf8',
   );
   assert.deepEqual(
     splitFindings(formatted).map((b) => b.number),
-    [157, 159, 160],
+    [158, 157, 159, 160],
   );
 });
 
@@ -473,4 +473,27 @@ test('a run archives old orphans and section prose, and every removed line is in
     if (line.trim() !== '' && !rest.includes(line)) assert.ok(archived.includes(line), line);
   assert.match(rest, /12\\\. Tom/);
   assert.doesNotMatch(rest, /14\\\.|A8 as built|A decision item/);
+});
+
+test('--as-built moves the as-built sections and --whole moves the file, both into the archive', () => {
+  const root = tempDir('archive-whole-');
+  const studio = join(root, 'plans/ethlete-studio');
+  mkdirSync(join(studio, 'archive'), { recursive: true });
+  const file = join(studio, 'ready.md');
+  writeFileSync(
+    file,
+    '# Ready\n\nOpen text.\n\n## As built: S1\n\nDone one.\n\n### Sub\n\nSub text.\n\n## Open\n\nStill open.\n',
+  );
+  const log = () => undefined;
+
+  assert.equal(main(['--as-built', 'plans/ethlete-studio/ready.md'], { root, log }), 0);
+  assert.equal(readFileSync(file, 'utf8'), '# Ready\n\nOpen text.\n\n## Open\n\nStill open.\n');
+  const archive = readdirSync(join(studio, 'archive')).map((name) =>
+    readFileSync(join(studio, 'archive', name), 'utf8'),
+  );
+  assert.match(archive[0], /## As built: S1\n\nDone one\.\n\n### Sub\n\nSub text\./);
+
+  assert.equal(main(['--whole', 'plans/ethlete-studio/ready.md'], { root, log }), 0);
+  assert.equal(existsSync(file), false);
+  assert.equal(main(['--whole', 'plans/ethlete-studio/ready.md'], { root, log }), 2);
 });

@@ -6,7 +6,7 @@ import { unpaddedLength, wideCells } from './plan-size.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-export const PLAN_FILES = ['plans/ethlete-studio/design-to-code.md', 'plans/ethlete-studio/STATUS.md'];
+export const PLAN_FILES = ['plans/ethlete-studio/build-ready.md', 'plans/ethlete-studio/STATUS.md'];
 
 export const budgetFor = (file, config) => {
   if (config.overrides?.[file] !== undefined) return config.overrides[file];
@@ -28,7 +28,7 @@ export const checkStagedPlans = async ({ files, read, config, isFormatted }) => 
 
     if (budget !== undefined && size > budget) {
       problems.push(
-        `${file}: ${size} chars without table padding exceeds the budget of ${budget}. Archive findings with \`node tools/scripts/archive-findings.mjs\` (\`--dry-run\` first) or shrink it.`,
+        `${file}: ${size} chars without table padding exceeds the budget of ${budget}. Shrink it: a closed row's text lives in its commit message, history is git (ADR 0352).`,
       );
     }
 

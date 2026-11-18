@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseStatusRows } from './studio-status.mjs';
 
@@ -321,7 +321,60 @@ export const writeArchive = (archiveDir, moved) => {
   }
 };
 
+const AS_BUILT_HEADING = /^## As built\b/;
+
+/** Splits a plan into the text that stays and its "## As built ..." sections (with their subsections), in file order. */
+export const splitAsBuilt = (planText) => {
+  const lines = planText.split('\n');
+  const kept = [];
+  const sections = [];
+  let current = null;
+  for (const line of lines) {
+    if (/^## /.test(line)) current = AS_BUILT_HEADING.test(line) ? [] : null;
+    if (current) {
+      if (current.length === 0) sections.push(current);
+      current.push(line);
+    } else {
+      kept.push(line);
+    }
+  }
+  return { kept: squeezeBlankLines(kept).join('\n'), sections: sections.map((s) => s.join('\n').trimEnd()) };
+};
+
+const monthOf = (today) => today.toISOString().slice(0, 7);
+
+/** Appends a whole plan file to the month's archive and deletes it. */
+export const archiveWhole = (root, file, today = new Date()) => {
+  const path = resolve(root, file);
+  const text = readFileSync(path, 'utf8').trimEnd();
+  writeArchive(join(root, 'plans/ethlete-studio/archive'), [
+    {
+      number: 0,
+      month: monthOf(today),
+      text: `## Archived plan file ${basename(file)} (${today.toISOString().slice(0, 10)})\n\n${text}`,
+    },
+  ]);
+  unlinkSync(path);
+};
+
+/** Moves the "## As built" sections of a plan file to the month's archive. Returns how many moved. */
+export const archiveAsBuilt = (root, file, today = new Date()) => {
+  const path = resolve(root, file);
+  const { kept, sections } = splitAsBuilt(readFileSync(path, 'utf8'));
+  if (sections.length === 0) return 0;
+  const heading = `## Archived from ${basename(file)} (${today.toISOString().slice(0, 10)})`;
+  writeArchive(join(root, 'plans/ethlete-studio/archive'), [
+    { number: 0, month: monthOf(today), text: [heading, ...sections].join('\n\n') },
+  ]);
+  writeFileSync(path, `${kept.trimEnd()}\n`);
+  return sections.length;
+};
+
 const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dry-run] [--orphans] [--help]
+       node tools/scripts/archive-findings.mjs --whole <plan file>
+       node tools/scripts/archive-findings.mjs --as-built <plan file>
+  --whole     appends the plan file to archive/findings-<month>.md and deletes it
+  --as-built  moves the "## As built" sections of the plan file to archive/findings-<month>.md
   moves done findings and old decision sections of plans/ethlete-studio/design-to-code.md into archive/
   a finding is done by a done STATUS row, a paragraph "NNN built|closed|withdrawn|as built ...", a line in
   parked-suspects.md, or a built line; it leaves with every paragraph that starts with its number
@@ -369,6 +422,25 @@ const DAYS_ARG = /^--days=(\d+)$/;
 const KNOWN = new Set(['--help', '--dry-run', '--orphans']);
 
 export const main = (argv, { root, log = console.log }) => {
+  const modeAt = argv.findIndex((arg) => arg === '--whole' || arg === '--as-built');
+  if (modeAt >= 0) {
+    const file = argv[modeAt + 1];
+    if (!file || !existsSync(resolve(root, file))) {
+      log(`no such plan file: ${file ?? ''}`);
+      return 2;
+    }
+    if (argv[modeAt] === '--whole') {
+      archiveWhole(root, file);
+      log(`archived ${file}`);
+    } else {
+      log(`moved ${archiveAsBuilt(root, file)} as-built sections of ${file}`);
+    }
+    return 0;
+  }
+  if (!argv.includes('--help') && !existsSync(join(root, 'plans/ethlete-studio/design-to-code.md'))) {
+    log('plans/ethlete-studio/design-to-code.md is archived; nothing to move');
+    return 0;
+  }
   const unknown = argv.filter((arg) => !KNOWN.has(arg) && !DAYS_ARG.test(arg));
   if (argv.includes('--help') || unknown.length > 0) {
     if (unknown.length > 0) log(`unknown argument: ${unknown.join(' ')}`);

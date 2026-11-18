@@ -2,8 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { orphanFindings, splitFindings } from './archive-findings.mjs';
-import { findingOrderErrors } from './check-plan-findings.mjs';
+import { splitFindings } from './archive-findings.mjs';
 import { parseStatusRows } from './studio-status.mjs';
 
 const STATUS_VALUE = /^(accepted|superseded by \d{4})$/;
@@ -54,13 +53,6 @@ export const checkAdr = (name, text, rows) => {
   return { errors, warnings };
 };
 
-const ORPHAN_AFTER = '2026-11-04';
-
-export const orphanWarnings = (planText, statusText) =>
-  orphanFindings(planText, statusText)
-    .filter((o) => o.date > ORPHAN_AFTER)
-    .map((o) => `finding ${o.number} (${o.date}) is cited by no STATUS row: ${o.title}`);
-
 const listItemErrors = (name, text) =>
   text.split('\n').flatMap((line, i) => {
     const match = LIST_ITEM.exec(line);
@@ -70,8 +62,8 @@ const listItemErrors = (name, text) =>
     ];
   });
 
-export const findingErrors = (planText, archives, statusText) => {
-  const errors = [...listItemErrors('design-to-code.md', planText)];
+export const findingErrors = (archives, statusText) => {
+  const errors = [];
   const known = new Set();
   for (const { name, text } of archives) {
     errors.push(...listItemErrors(name, text));
@@ -80,11 +72,6 @@ export const findingErrors = (planText, archives, statusText) => {
       known.add(number);
     }
   }
-  for (const { number } of splitFindings(planText)) {
-    if (known.has(number)) errors.push(`finding ${number} exists twice (design-to-code.md)`);
-    known.add(number);
-  }
-  errors.push(...findingOrderErrors(planText));
   for (const row of parseStatusRows(statusText)) {
     for (const number of row.findings) {
       if (!known.has(number)) errors.push(`${row.id} cites Bef. ${number}, but no finding ${number} exists`);
@@ -128,22 +115,16 @@ const readArchives = (dir) =>
 
 export const checkAdrs = (root) => {
   const statusFile = join(root, 'plans/ethlete-studio/STATUS.md');
-  const planFile = join(root, 'plans/ethlete-studio/design-to-code.md');
   const statusText = existsSync(statusFile) ? readFileSync(statusFile, 'utf8') : '';
-  const planText = existsSync(planFile) ? readFileSync(planFile, 'utf8') : null;
-  const warnings = planText === null ? [] : orphanWarnings(planText, statusText);
   const archives = readArchives(join(root, 'plans/ethlete-studio/archive'));
-  const findings =
-    planText === null
-      ? []
-      : [...findingErrors(planText, archives, statusText), ...lostFindingErrors(archives, committedArchiveOf(root))];
+  const findings = [...findingErrors(archives, statusText), ...lostFindingErrors(archives, committedArchiveOf(root))];
   const dir = join(root, 'apps/ethlete-studio/docs/adr');
   const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')) : [];
   const rows = parseStatusRows(statusText);
   const results = files.map((f) => checkAdr(f, readFileSync(join(dir, f), 'utf8'), rows));
   return {
     errors: [...findings, ...results.flatMap((r) => r.errors)],
-    warnings: [...warnings, ...results.flatMap((r) => r.warnings)],
+    warnings: results.flatMap((r) => r.warnings),
   };
 };
 

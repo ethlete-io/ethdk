@@ -4,7 +4,7 @@ import { budgetFor, checkStagedPlans } from './check-staged-plans.mjs';
 
 const config = {
   groups: [
-    { name: 'finding log', files: ['plans/ethlete-studio/design-to-code.md'], budget: 10 },
+    { name: 'build ready', files: ['plans/ethlete-studio/build-ready.md'], budget: 10 },
     { name: 'status', files: ['plans/ethlete-studio/STATUS.md'], budget: 100, cellCap: 10 },
   ],
   overrides: { 'plans/ethlete-studio/STATUS.md': 20 },
@@ -15,17 +15,17 @@ const run = (files, sources, formatted = true) =>
 
 test('budget comes from the override first, then the group', () => {
   assert.equal(budgetFor('plans/ethlete-studio/STATUS.md', config), 20);
-  assert.equal(budgetFor('plans/ethlete-studio/design-to-code.md', config), 10);
+  assert.equal(budgetFor('plans/ethlete-studio/build-ready.md', config), 10);
   assert.equal(budgetFor('other.md', config), undefined);
 });
 
 test('an oversize staged plan file is reported with its size', async () => {
-  const problems = await run(['plans/ethlete-studio/design-to-code.md'], {
-    'plans/ethlete-studio/design-to-code.md': 'x'.repeat(11),
+  const problems = await run(['plans/ethlete-studio/build-ready.md'], {
+    'plans/ethlete-studio/build-ready.md': 'x'.repeat(11),
   });
   assert.equal(problems.length, 1);
   assert.match(problems[0], /11 chars without table padding exceeds the budget of 10/);
-  assert.match(problems[0], /Archive findings with `node tools\/scripts\/archive-findings.mjs`/);
+  assert.match(problems[0], /history is git/);
 });
 
 test('an unformatted staged plan file is reported', async () => {
@@ -48,8 +48,8 @@ test('any unformatted staged Markdown file is reported, without a budget', async
 });
 
 test('the budget counts a table without its padding', async () => {
-  const problems = await run(['plans/ethlete-studio/design-to-code.md'], {
-    'plans/ethlete-studio/design-to-code.md': '| a        |',
+  const problems = await run(['plans/ethlete-studio/build-ready.md'], {
+    'plans/ethlete-studio/build-ready.md': '| a        |',
   });
   assert.deepEqual(problems, []);
 });
