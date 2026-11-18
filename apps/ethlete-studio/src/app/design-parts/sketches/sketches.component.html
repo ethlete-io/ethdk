@@ -427,7 +427,7 @@
       }
       @if (drawn) {
         <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
-      } @else if (row.shots.length > 0) {
+      } @else if (row.shots.length > 0 || (row.key === CURRENT && stageStates().length > 0)) {
         <div
           #stage
           [style.grid-template-columns]="gridOf(row)"

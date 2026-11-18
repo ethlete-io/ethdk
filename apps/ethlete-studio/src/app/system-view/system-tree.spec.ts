@@ -1701,4 +1701,46 @@ describe('sketchRowsOf', () => {
     expect(revisionOf('a')).toEqual(new Set(['5']));
     expect(revisionOf('b')).toEqual(new Set(['7']));
   });
+
+  it('gives each variant row a state only the variants declare, and leaves it out of the Aktuell row', () => {
+    const badge = part({ name: 'button' });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([badge]),
+      part: badge,
+      sketch: sketch({
+        variants: ['a', 'b'],
+        targets: ['a', 'b'].map((variant) => ({
+          part: 'components/button',
+          variant,
+          states: ['default', 'disabled', 'failed'],
+          unchanged: ['default', 'disabled'],
+        })),
+      }),
+      variants: ['a', 'b'],
+      epoch: 1,
+      revision: 1,
+    });
+
+    expect(rows.map((row) => [row.key, row.shots.map((shot) => `${shot.state}:${shot.changed}`)])).toEqual([
+      [CURRENT, ['default:false', 'disabled:false']],
+      ['a', ['default:false', 'disabled:false', 'failed:true']],
+      ['b', ['default:false', 'disabled:false', 'failed:true']],
+    ]);
+  });
+
+  it('draws a variant row in the states of the part now while the listing carries no targets yet', () => {
+    const badge = part({ name: 'button' });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([badge]),
+      part: badge,
+      sketch: sketch({ variants: ['a'] }),
+      variants: ['a'],
+      epoch: 1,
+      revision: 1,
+    });
+
+    expect(rows[1]?.shots.map((shot) => `${shot.state}:${shot.changed}`)).toEqual(['default:null', 'disabled:null']);
+  });
 });

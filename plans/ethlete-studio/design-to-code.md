@@ -2161,3 +2161,22 @@ group on watchdog, timeout, suite exit and e2e-check exit. (d) Built: e2e-check.
 outlives a run that exits" and "... a suite killed for going silent" (both red before). Cause 2 no longer reproduces:
 GET /__design/system on a `yarn scratch:checkout` copy answered at +3.5 s cold and +1.35 s warm, the main tree at
 +1.3 s, far under the 12 s limit. Not verified: a full `yarn studio:e2e` or `yarn e2e-check` run on a held port.
+
+## As built (B281)
+
+Findings 332 and 336(a). (1) Cause (probed): on 2026-11-03 Studio drew the sketch list from the quick listing
+(`?unchanged=no`), which then carried no `targets` (studio-api at 0eb774996), and `sketchRowsOf` gives a variant row
+without a target the states of the part now. All three variants declared `failed` (variant files at 0eb774996), and
+the view took its columns from the union of every row's states, so neither candidate held: the four base states of
+a/b/c drew alike and `failed` had no row. system-tree.spec "draws a variant row in the states of the part now while
+the listing carries no targets yet" pins that fallback; "gives each variant row a state only the variants declare" shows
+it is gone once targets arrive. Done before: f1307c562 (2026-11-04) lists the targets in the quick listing. 336(a):
+folding was missing then, not regressed: it landed 2026-11-04 in b9367d285 (b879f640e, cited for finding 77, only names
+the merged states in a new state's Aktuell cell). `sketch round --asks` and the ~2 % pair refusal were decided
+(78681ea6a) but never built: no commit touches it (`git log -S asks` in libs/cli); a8768fc01 (2026-11-12) added a
+look-alike warning at fit zoom instead. (2) Done before: d678615cc and 8157f707a (2026-11-02) refuse ready on a variant
+that draws like Aktuell or another variant in every state it declares; identical-renders.spec "names every variant when
+all of them draw like the product". B261's variants differed in `failed`, so it rightly did not fire. (3) Open, now
+built: with the unchanged states folded and only a variant-added state shown, the Aktuell row drew no stage at all
+instead of the "neu in der Skizze" placeholder. sketches.component.spec "draws a state only the variants declare in
+every variant row, with a placeholder in Aktuell" (red before: Aktuell drew no cell). Not verified: a live Studio shot.

@@ -223,6 +223,26 @@ describe('SketchesComponent', () => {
     expect(statesOf(same, 'current')).toEqual(['rest', 'open', 'busy']);
   });
 
+  it('draws a state only the variants declare in every variant row, with a placeholder in Aktuell', async () => {
+    const unchanged = ROWS[0]!.shots;
+    const variant = (key: string): SketchRow => ({
+      ...ROWS[1]!,
+      key,
+      shots: [...unchanged, { state: 'failed', changed: true, height: 90 }],
+    });
+    const root: HTMLElement = (await render({ rows: [ROWS[0], variant('a'), variant('b')], camera: '100' }))
+      .nativeElement;
+    const statesOf = (key: string) =>
+      [...root.querySelectorAll(`[data-sk-row="${key}"] [data-sk-state]`)].map((cell) => [
+        cell.getAttribute('data-sk-state'),
+        cell.hasAttribute('data-sk-missing'),
+      ]);
+
+    expect(statesOf('current')).toEqual([['failed', true]]);
+    expect(statesOf('a')).toEqual([['failed', false]]);
+    expect(statesOf('b')).toEqual([['failed', false]]);
+  });
+
   it('folds no state, draws every state of Aktuell and offers no Übernehmen when every state draws like Aktuell', async () => {
     const rows = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
     const fixture = await render({
