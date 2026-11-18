@@ -1,0 +1,21 @@
+@layer components {
+  .st-cprow {
+    transition: var(--transition-state);
+  }
+
+  .st-cprow[aria-selected='true']:hover {
+    background:
+      linear-gradient(rgb(var(--et-theme-color-primary-rgb) / 0.2), rgb(var(--et-theme-color-primary-rgb) / 0.2)),
+      color-mix(in srgb, var(--et-surface-interaction-solid) 9%, transparent);
+  }
+
+  .st-cprow[aria-selected='true']:active {
+    background:
+      linear-gradient(rgb(var(--et-theme-color-primary-rgb) / 0.2), rgb(var(--et-theme-color-primary-rgb) / 0.2)),
+      color-mix(in srgb, var(--et-surface-interaction-solid) 15%, transparent);
+  }
+
+  .st-cprow:focus-visible {
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
+}

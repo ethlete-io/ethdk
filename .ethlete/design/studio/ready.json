@@ -369,8 +369,18 @@
     "pid": 2342738
   },
   "components/list-row": {
+    "hash": "7886422661d37b2f",
+    "files": {
+      ".ethlete/design/studio/components/list-row/list-row.css": "602cd1dc7f0f2fd3",
+      ".ethlete/design/studio/components/list-row/list-row.ts": "c3bf28b7ddd840da",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6"
+    },
     "actions": ["emit:pick"],
-    "at": "2026-11-17T22:54:29.234Z"
+    "builder": "designer",
+    "at": "2026-11-18T08:28:26.220Z",
+    "by": "et design check",
+    "cmd": "check",
+    "pid": 2026945
   },
   "components/shell-collapse": {
     "hash": "af16d9ac0cb56d9e",
