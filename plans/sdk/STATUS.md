@@ -13,6 +13,11 @@ doppelt. Es gibt keine eigene SDK-Warteschlange.
 - [`fifagg-sdk-findings-2026-11-15-seo.md`](./fifagg-sdk-findings-2026-11-15-seo.md): zwei Befunde aus der SEO-Migration
   von fifagg (Titel-Priorität, Head-Store-Schreiben in `effect`), noch nicht gegen `next` geprüft.
 
+## Offene Fragen an den Menschen
+
+- Sollen Stories später die Docs-Beispiele aus `apps/docs-examples` rendern, damit es jede Demo nur einmal gibt? (offen
+  aus dem alten Plan `docs-examples.md`, ADR 0360)
+
 ## Verweise
 
 Entscheidungen: [`apps/ethlete-studio/docs/adr/`](../../apps/ethlete-studio/docs/adr/), zuletzt 0359 (query v3),
