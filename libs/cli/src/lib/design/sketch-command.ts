@@ -16,6 +16,7 @@ import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
 import { frameBudgetWarningsOf } from './system/sketch/frame-budget';
 import { clearReadyRefusal, recordReadyRefusal } from './system/sketch/ready-refusal';
+import { sketchRegionCheckOf } from './system/sketch/region-check';
 import { NOTE_LANGUAGE_NAMES, noteLanguageOf, noteLanguageWarningsOf } from './system/sketch/note-language';
 import {
   openSketchProblemsOf,
@@ -1026,6 +1027,20 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     return readyRefused(
       { product, sketch },
       `${unviewed.join('\n')}\n${sketch.target} draws a pixel diff - view its shot before ready`,
+    );
+
+  const regions = targetsInProduct({ product, sketch })
+    ? await timedPhase('region-check', () =>
+        sketchRegionCheckOf({ target: context.target, config: context.config, product, sketch }),
+      )
+    : null;
+
+  regions?.notes.forEach((note) => console.log(`region check not run: ${note}`));
+
+  if (regions && regions.lines.length > 0)
+    return readyRefused(
+      { product, sketch },
+      `${regions.lines.join('\n')}\n${sketch.target} draws a region it does not claim elsewhere than the app - keep it where the app draws it, or hold its part in the variant, before ready`,
     );
 
   if (!existsSync(resolve(sketch.dir, SKETCH_FILE)))

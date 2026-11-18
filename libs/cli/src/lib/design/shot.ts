@@ -10,6 +10,7 @@ import { DesignPreset } from './design-config';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import { boxedMarkupScriptOf } from './system/dom-boxes';
+import { REGION_OF_SCRIPT } from './system/region-geometry';
 import { sketchIdOfName } from './system/sketch/sketch';
 import { recordShotViewed } from './system/sketch/viewed-shots';
 import {
@@ -163,8 +164,13 @@ type GraphModule = { id: string | null; file?: string | null; importers: Set<Gra
 
 export type ImportingModule = { file?: string | null; importedModules: Set<ImportingModule> };
 
-/** An element a part render marked as its root, in CSS pixels from the top left of the picture. */
-export type PartMark = { parts: string[]; x: number; y: number; width: number; height: number };
+type PixelBox = { x: number; y: number; width: number; height: number };
+
+/**
+ * An element a part render marked as its root, in CSS pixels from the top left of the picture; `clip` is the part of
+ * it its clipping ancestors and the frame leave visible, absent when that is the whole box.
+ */
+export type PartMark = { parts: string[]; x: number; y: number; width: number; height: number; clip?: PixelBox };
 
 /** One drawn PNG, the part roots in it, and the markup of the frame root. */
 /** Where a shot response's picture came from: the disk store, the in-memory cache or a fresh draw. */
@@ -202,18 +208,25 @@ export const pixelBoxOf = (box: { x: number; y: number; width: number; height: n
 });
 
 const marksIn = (clip: boolean) => `(() => {
-  const origin = ${clip} ? document.getElementById('root').getBoundingClientRect() : { left: -scrollX, top: -scrollY };
+  const regionOf = ${REGION_OF_SCRIPT};
+  const frame = ${clip} ? document.getElementById('root').getBoundingClientRect() : null;
+  const same = (a, b) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
   return [...document.querySelectorAll('[data-et-part]')]
-    .map((element) => ({ element, rect: element.getBoundingClientRect() }))
-    .filter(({ rect }) => rect.width > 0 && rect.height > 0)
-    .map(({ element, rect }) => ({
-      parts: element.getAttribute('data-et-part').split(' ').filter(Boolean),
-      x: Math.round(rect.left - origin.left),
-      y: Math.round(rect.top - origin.top),
-      width: Math.round(rect.width),
-      height: Math.round(rect.height),
-    }));
+    .filter((element) => {
+      const rect = element.getBoundingClientRect();
+
+      return rect.width > 0 && rect.height > 0;
+    })
+    .map((element) => {
+      const { box, clip } = regionOf(element, frame);
+
+      return {
+        parts: element.getAttribute('data-et-part').split(' ').filter(Boolean),
+        ...box,
+        ...(same(box, clip) ? {} : { clip }),
+      };
+    });
 })()`;
 
 /** The files each stylesheet inlines through an `@import`, keyed by the stylesheet's file. */

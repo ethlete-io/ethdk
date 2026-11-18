@@ -75,6 +75,7 @@ import { allComparePartsOf } from './stale-parts';
 import { coveredLineOf, coveringSketchOf } from './sketch/covered-diffs';
 import { listSketches, parseTarget, Sketch, SketchTarget } from './sketch/sketch';
 import { cachedComparePngs, COMPARE_PIXELS } from './pixel-cache';
+import { Region, regionDeltaLineOf, regionDeltasOf } from './region-geometry';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 import { drawnStateNamesOf, skippedStatesLineOf } from './unchanged-rows';
 
@@ -82,8 +83,10 @@ export const COMPARE_USAGE =
   'compare <layer>/<name> | --all --product <name> | --affected --product <name> [--url <app dev server url>] [--state <name>[,<name>...]] [--preset <name>] [--live [--sketch <variant>]] [--base <rev>]';
 
 /** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
+/** A drawn state; a live one carries the regions both sides measured. */
 export type StateShot =
-  { state: string; design: Buffer; app: Buffer } | { state: string; problem: string; undrivable?: true };
+  | { state: string; design: Buffer; app: Buffer; regions?: { design: Region[]; app: Region[] } }
+  | { state: string; problem: string; undrivable?: true };
 
 export type ShootStates = (options: {
   target: string;
@@ -504,8 +507,10 @@ export const comparePart = async (
       }
 
       const line = compareLineOf(state, result);
+      const regionLines = stateShot.regions ? regionDeltasOf(stateShot.regions).map(regionDeltaLineOf) : [];
+      const logRegions = () => regionLines.forEach((regionLine) => log(`  ${regionLine}`));
 
-      if (result.kind === 'ok') {
+      if (result.kind === 'ok' && regionLines.length === 0) {
         log(line);
         continue;
       }
@@ -514,10 +519,12 @@ export const comparePart = async (
 
       if (covering !== null) {
         log(coveredLineOf(line, covering));
+        logRegions();
         continue;
       }
 
       log(line);
+      logRegions();
       failing.push(state);
 
       if (options.quiet) continue;
@@ -525,7 +532,7 @@ export const comparePart = async (
       dir ??= mkdtempSync(join(tmpdir(), 'et-design-compare-'));
       writeDesignFile(join(dir, `${fileNameOf(state)}.design.png`), design);
       writeDesignFile(join(dir, `${fileNameOf(state)}.app.png`), app);
-      writeDesignFile(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
+      if (result.kind !== 'ok') writeDesignFile(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
     }
 
     if (dir !== null) log(`pictures: ${dir}`);

@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Browser } from '../thumb';
 import { componentSelectorOf } from './actions';
-import { ResolvedProduct } from './resolve-product';
+import { RegionSelector } from './region-geometry';
+import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
 import { listSketches, parseTarget, variantDirOf } from './sketch/sketch';
 
@@ -144,6 +145,14 @@ const selectorOfLink = (target: string, source: string) => {
 
   return file && existsSync(file) ? componentSelectorOf(readFileSync(file, 'utf8')) : null;
 };
+
+/** The app component selector of each part of `product` that implements one, named by its part key. */
+export const partSelectorsOf = (options: { target: string; product: ResolvedProduct }): RegionSelector[] =>
+  options.product.parts.flatMap((part) => {
+    const selector = selectorOfLink(options.target, part.source);
+
+    return selector ? [{ name: partKeyOf(part), selector }] : [];
+  });
 
 /**
  * What covers the app regions of `product`: the selector of each component a part implements, by route or by

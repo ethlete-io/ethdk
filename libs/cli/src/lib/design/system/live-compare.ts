@@ -15,7 +15,15 @@ import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from '.
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
-import { PartCover, partCoverOf, Partless, uncoveredLineOf, uncoveredRegionsOnPage } from './uncovered-regions';
+import { appRegionsOnPage, designRegionsOf, Region, RegionSelector } from './region-geometry';
+import {
+  PartCover,
+  partCoverOf,
+  Partless,
+  partSelectorsOf,
+  uncoveredLineOf,
+  uncoveredRegionsOnPage,
+} from './uncovered-regions';
 import { STATE_UNDESIGNED_RULE } from './build-ready-contract';
 import { undesignedWaitOf } from './sketch/undesigned-sketch';
 
@@ -394,6 +402,8 @@ export const liveShotOf = async (options: {
   checkout: string;
   frozen?: FrozenAnimation[];
   timeout?: number;
+  regions?: RegionSelector[];
+  onRegions?: (regions: Region[]) => void;
 }) => {
   const { browser, spec, size } = options;
   const timeout = options.timeout ?? DRAW_TIMEOUT_MS;
@@ -450,6 +460,8 @@ export const liveShotOf = async (options: {
         ];
 
         if (findings.length > 0) throw new LiveError(findings.join('\n'));
+        if (options.regions?.length)
+          options.onRegions?.(await appRegionsOnPage({ page, host, selectors: options.regions }));
 
         return shot;
       }
@@ -553,6 +565,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
     const loaded = module.default?.states;
     const states = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? loaded : {};
     const parts = partCoverOf({ target, product });
+    const regions = partSelectorsOf({ target, product }).filter((entry) => entry.name !== part);
     const slotFill = live.spec.frame ? frameContentOf(readFileSync(resolve(live.dir, live.spec.frame))) : null;
     const shots: StateShot[] = [];
     const waiting: string[] = [];
@@ -583,6 +596,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
         compose: state.compose ?? null,
         params: new URLSearchParams(),
       });
+      let appRegions: Region[] = [];
       const app = await queue
         .run((browser) =>
           liveShotOf({
@@ -597,11 +611,28 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
             server: base,
             checkout: target,
             frozen: frozenAnimationsOf(design.markup ?? ''),
+            regions,
+            onRegions: (found) => (appRegions = found),
           }),
         )
         .catch((error: unknown) => (error instanceof LiveError ? error.message : Promise.reject(error)));
 
-      shots.push(typeof app === 'string' ? { state: name, problem: app } : { state: name, design: design.png, app });
+      shots.push(
+        typeof app === 'string'
+          ? { state: name, problem: app }
+          : {
+              state: name,
+              design: design.png,
+              app,
+              regions: {
+                design: designRegionsOf(
+                  design.marks,
+                  regions.map((entry) => entry.name),
+                ),
+                app: appRegions,
+              },
+            },
+      );
     }
 
     return { states: page.states, shots, waiting };
