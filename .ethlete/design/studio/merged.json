@@ -158,9 +158,10 @@
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "86f9166077c16311",
+    "hash": "442fde51b9bd728a",
     "variant": "new",
-    "decidedBy": "builder",
-    "at": "2026-11-18T06:28:40.620Z"
+    "decidedBy": "plan: finding 343: the sample popover fits the 80vh cap of the desktop preset",
+    "at": "2026-11-18T13:42:23.301Z",
+    "note": "merged without a pick: allowed by finding 343: the sample popover fits the 80vh cap of the desktop preset"
   }
 }
