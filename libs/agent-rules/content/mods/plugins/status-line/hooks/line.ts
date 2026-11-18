@@ -13,7 +13,7 @@ export type StatusFields = {
 
 export const lastSlice = (content: string, mtimeMs: number) => {
   const blocks = content.split(/^(?=#\s*slice:)/m).filter((text) => /^#\s*slice:/m.test(text));
-  const block = blocks.at(-1);
+  const block = blocks[blocks.length - 1];
   if (block === undefined) return undefined;
   const name = /^#\s*slice:\s*(.+)$/m.exec(block)?.[1]?.trim();
   const written = /^#\s*written:\s*(\S+)/m.exec(block)?.[1];
