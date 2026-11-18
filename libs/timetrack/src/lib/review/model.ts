@@ -71,6 +71,8 @@ export type PinnedRow = {
    * is handed back by `followCallAgain`, and never shorter than this. A later edit of the row drops it.
    */
   snippedFromMs?: number;
+  /** Stretches a resize took off the row: the day never proposes their part of its band again. */
+  cutAwayMs?: { fromMs: number; toMs: number }[];
   description: string;
   confidence: Confidence;
   evidence: Evidence[];

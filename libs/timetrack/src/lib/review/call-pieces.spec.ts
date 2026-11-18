@@ -7,6 +7,7 @@ import { CalendarOccurrenceEvent } from '../model/event';
 import { DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
 import { reviewDay } from './review-day';
 import { setRowDescription, setRowRange, splitRow } from './edits';
+import { endRowAt } from './end-call';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 24, hour, minute);
 
@@ -95,10 +96,10 @@ describe('reviewDay over a piece of a call', () => {
     expect(descriptions(review(rows, edits))).toEqual([PENTEST, 'Daily', 'Daily']);
   });
 
-  it('drops the meeting from the stretch a shortened call row hands back', () => {
+  it('drops the meeting from the stretch a call row ended early hands back', () => {
     const rows = dayOf([occurrence({})]);
     const [row] = review(rows);
-    const edits = setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row: row as ReviewedRow, from: at(11), to: at(12, 15) });
+    const edits = endRowAt({ edits: EMPTY_DAY_REVIEW_EDITS, row: row as ReviewedRow, at: at(12, 15) });
 
     expect(descriptions(review(rows, edits))).toEqual([PENTEST, 'Discord']);
   });

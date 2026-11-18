@@ -279,7 +279,15 @@ export const endRowAt = (options: {
   if (to.getTime() <= row.from.getTime()) return edits;
 
   const cleared = withoutRestPins(edits, row);
-  const ended = setRowRange({ edits: cleared, row, from: row.from, to, round: options.round, pinsTo: true });
+  const ended = setRowRange({
+    edits: cleared,
+    row,
+    from: row.from,
+    to,
+    round: options.round,
+    pinsTo: true,
+    leavesRest: true,
+  });
   const snippedFromMs = endPinOf(edits, row)?.snippedFromMs ?? row.to.getTime();
 
   if (ended === cleared) return ended;

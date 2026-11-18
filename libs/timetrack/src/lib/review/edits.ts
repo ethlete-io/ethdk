@@ -2,6 +2,7 @@ import { dominantConfidence, mergeEvidence } from '../rows/merge';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from '../rows/round';
 import { storedLaneKey } from '../rows/lane';
 import { Evidence } from '../model/evidence';
+import { TimeWindow } from '../model/time-window';
 import { RowField, RowFieldSources, WriteSource, mayWrite, rowFieldSourceOf } from '../model/field-source';
 import { DayBoundary, ontoDay } from './day';
 import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './model';
@@ -481,6 +482,16 @@ export const addManualRow = (options: {
   };
 };
 
+const cutAwayFrom = (options: { row: TimeWindow; from: Date; to: Date }) => {
+  const rowFrom = options.row.from.getTime();
+  const rowTo = options.row.to.getTime();
+
+  return [
+    { fromMs: rowFrom, toMs: Math.min(options.from.getTime(), rowTo) },
+    { fromMs: Math.max(options.to.getTime(), rowFrom), toMs: rowTo },
+  ].filter((cut) => cut.toMs > cut.fromMs);
+};
+
 /**
  * Moves a row to another time, or drags one of its ends — what a pointer on the timeline does.
  *
@@ -506,6 +517,8 @@ export const setRowRange = (options: {
   pinsBothEnds?: boolean;
   /** Pins the end even where it did not move, the way ending a row where it is drawn to does. */
   pinsTo?: boolean;
+  /** Leaves what the range no longer covers to come back as a band of its own, as ending a call row does. */
+  leavesRest?: boolean;
 }): DayReviewEdits => {
   const { edits, from, to } = options;
   const row = editTarget(options.row);
@@ -519,6 +532,7 @@ export const setRowRange = (options: {
   const kept = edits.pinned.filter((entry) => entry.id !== row.id);
   const heldFrom = from.getTime() !== row.from.getTime();
   const heldTo = !!options.pinsTo || to.getTime() !== row.to.getTime();
+  const cutAwayMs = [...(pinned?.cutAwayMs ?? []), ...(options.leavesRest ? [] : cutAwayFrom({ row, from, to }))];
 
   return {
     ...edits,
@@ -535,6 +549,7 @@ export const setRowRange = (options: {
         durationMs: moved ? row.durationMs : roundedSpan({ from, to, round: options.round }),
         tracksFrom: !options.pinsBothEnds && !heldFrom && (pinned ? !!pinned.tracksFrom : true),
         tracksTo: !options.pinsBothEnds && !heldTo && (pinned ? !!pinned.tracksTo : true),
+        ...(cutAwayMs.length ? { cutAwayMs } : {}),
       },
     ],
   };
@@ -575,7 +590,7 @@ const cutExcludedBands = (options: {
 
       if (kept.to.getTime() <= kept.from.getTime()) return hideRow({ edits, row: band });
 
-      return setRowRange({ edits, row: band, ...kept });
+      return setRowRange({ edits, row: band, ...kept, leavesRest: true });
     }, options.edits);
 };
 

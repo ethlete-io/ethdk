@@ -995,12 +995,12 @@ describe('setRowRange', () => {
     expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('09:30'), to: at('11:00') });
   });
 
-  it('draws what the day grew past a held end as a band nothing names yet', () => {
+  it('draws what the day grew past a held end as a band nothing names yet, and not what the drag cut off', () => {
     const edits = dragged({ day: laned({ from: '09:00', to: '12:00', minutes: 180 }), from: '09:00', to: '11:00' });
     const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
 
     expect(review.rows.filter((row) => !row.issueKey).map((row) => [row.from, row.to])).toEqual([
-      [at('11:00'), at('14:00')],
+      [at('12:00'), at('14:00')],
     ]);
   });
 
@@ -1435,22 +1435,7 @@ describe('reviewDay, a band the reviewer has answered', () => {
     expect(check.warnings.map((warning) => warning.kind)).not.toContain('unattributed-time');
   });
 
-  it('stops counting the part the reviewer cut off once they say not to log it', () => {
-    const rows = day();
-    const shortened = setRowRange({
-      edits: EMPTY_DAY_REVIEW_EDITS,
-      row: rowEndingAt(reviewDay({ rows }), '09:00'),
-      from: at('08:00'),
-      to: at('08:30'),
-    });
-    const pieces = reviewDay({ rows, edits: shortened });
-    const named = setRowIssue({ edits: shortened, row: rowEndingAt(pieces, '08:30'), issueKey: 'ABC-9' });
-    const edits = setRowState({ edits: named, row: rowEndingAt(pieces, '09:00'), state: 'rejected' });
-
-    expect(reviewDay({ rows, edits }).check.unattributedMs).toBe(0);
-  });
-
-  it('still counts the part the reviewer cut off a band they named', () => {
+  it('stops counting the part the reviewer cut off a band they named', () => {
     const rows = day();
     const shortened = setRowRange({
       edits: EMPTY_DAY_REVIEW_EDITS,
@@ -1464,10 +1449,8 @@ describe('reviewDay, a band the reviewer has answered', () => {
 
     expect(review.rows.map((row) => [row.issueKey ?? '', row.to.toISOString()])).toEqual([
       ['ABC-9', at('08:30').toISOString()],
-      ['', at('09:00').toISOString()],
     ]);
-    expect(review.check.unattributedMs).toBe(30 * MINUTE);
-    expect(review.check.warnings.map((warning) => warning.kind)).toContain('unattributed-time');
+    expect(review.check.unattributedMs).toBe(0);
   });
 });
 
@@ -1950,14 +1933,13 @@ describe('reviewDay, a band a rule excluded that the reviewer resized', () => {
     expect(review.rows[0]?.excluded).toBe(true);
   });
 
-  it('still draws the time after the part the reviewer kept', () => {
+  it('draws no time after the part the reviewer kept until the room grows past it', () => {
     const open = room({ from: '08:00', to: '12:00' });
     const edits = shortened({ room: open, to: '10:00' });
     const review = reviewDay({ rows: dayRows({ proposals: [], unnamed: [open] }), edits });
 
     expect(review.rows.map((row) => [row.from.toISOString(), row.to.toISOString()])).toEqual([
       [at('08:00').toISOString(), at('10:00').toISOString()],
-      [at('10:00').toISOString(), at('12:00').toISOString()],
     ]);
   });
 
@@ -2124,5 +2106,77 @@ describe('reviewDay over rows the reviewer pinned before the merge cut the band 
 
     expect(review.rows.map((row) => row.issueKey)).toEqual(['APP-1', 'ABC-3', 'APP-2']);
     expect(warningKinds(review)).toContain('rows-overlap');
+  });
+});
+
+describe('reviewDay, a row the reviewer resized', () => {
+  const laned = (options: { issueKey: string; from: string; to: string; minutes?: number }) => ({
+    ...proposal(options),
+    laneKey: 'lane:a',
+  });
+  const night = laned({ issueKey: 'ABC-1', from: '01:30', to: '10:45', minutes: 9 * 60 + 15 });
+  const spans = (review: DayReview) =>
+    review.rows.map((row) => [row.from.toISOString(), row.to.toISOString(), row.issueKey ?? '']);
+
+  it('does not propose the stretch cut off its start again', () => {
+    const rows = dayRows({ proposals: [night] });
+    const edits = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows }).rows[0]!,
+      from: at('09:30'),
+      to: at('10:45'),
+    });
+
+    expect(spans(reviewDay({ rows, edits }))).toEqual([
+      [at('09:30').toISOString(), at('10:45').toISOString(), 'ABC-1'],
+    ]);
+  });
+
+  it('does not propose the stretch cut off a start dragged before the cut was stored', () => {
+    const rows = dayRows({ proposals: [night] });
+    const edits = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows }).rows[0]!,
+      from: at('09:30'),
+      to: at('10:45'),
+    });
+    const stored = { ...edits, pinned: edits.pinned.map(({ cutAwayMs: _cut, ...pin }) => pin) };
+
+    expect(spans(reviewDay({ rows, edits: stored }))).toEqual([
+      [at('09:30').toISOString(), at('10:45').toISOString(), 'ABC-1'],
+    ]);
+  });
+
+  it('does not propose the stretch cut off its end again but draws what the band grew since', () => {
+    const edits = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: dayRows({ proposals: [night] }) }).rows[0]!,
+      from: at('01:30'),
+      to: at('09:00'),
+    });
+    const grown = dayRows({ proposals: [{ ...night, to: at('12:00') }] });
+
+    expect(spans(reviewDay({ rows: dayRows({ proposals: [night] }), edits }))).toEqual([
+      [at('01:30').toISOString(), at('09:00').toISOString(), 'ABC-1'],
+    ]);
+    expect(spans(reviewDay({ rows: grown, edits }))).toEqual([
+      [at('01:30').toISOString(), at('09:00').toISOString(), 'ABC-1'],
+      [at('10:45').toISOString(), at('12:00').toISOString(), ''],
+    ]);
+  });
+
+  it('books the span it was given, beside a sibling session on the same ticket', () => {
+    const rows = dayRows({
+      proposals: [
+        laned({ issueKey: 'ABC-1', from: '12:45', to: '14:00', minutes: 60 }),
+        laned({ issueKey: 'ABC-1', from: '14:00', to: '15:00', minutes: 15 }),
+      ],
+    });
+    const row = reviewDay({ rows }).rows.find((entry) => entry.from.getTime() === at('12:45').getTime())!;
+    const edits = setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row, from: at('12:45'), to: at('14:45') });
+    const kept = reviewDay({ rows, edits }).rows.find((entry) => entry.from.getTime() === at('12:45').getTime());
+
+    expect(kept?.to.toISOString()).toBe(at('14:45').toISOString());
+    expect(kept?.durationMs).toBe(2 * 60 * MINUTE);
   });
 });

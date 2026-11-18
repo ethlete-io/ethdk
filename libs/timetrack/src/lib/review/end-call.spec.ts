@@ -315,17 +315,22 @@ describe('followCallAgain', () => {
   });
 });
 
+const storedBeforeCuts = (edits: DayReviewEdits): DayReviewEdits => ({
+  ...edits,
+  pinned: edits.pinned.map(({ cutAwayMs: _cutAwayMs, ...pin }) => pin),
+});
+
 describe('a row ended before its end was marked as a cut', () => {
   const resizedTo = (to: string) => {
     const [row] = reviewDay({ rows: day('16:07') }).rows;
 
-    return setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row: row!, from: row!.from, to: at(to) });
+    return storedBeforeCuts(setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row: row!, from: row!.from, to: at(to) }));
   };
 
   const withEndedRest = (edits: DayReviewEdits) => {
     const rest = reviewDay({ rows: day('16:37'), edits }).rows[1]!;
 
-    return setRowRange({ edits, row: rest, from: rest.from, to: at('16:30') });
+    return storedBeforeCuts(setRowRange({ edits, row: rest, from: rest.from, to: at('16:30') }));
   };
 
   it('draws the rest of its call as one band, whatever end an earlier version gave that rest', () => {
@@ -352,14 +357,16 @@ describe('a row ended before its end was marked as a cut', () => {
 
 describe('a rest of the call whose pin does not name the row it was cut from', () => {
   const stored = () => {
-    const ended = setRowRange({
-      edits: EMPTY_DAY_REVIEW_EDITS,
-      row: reviewDay({ rows: day('16:07') }).rows[0]!,
-      from: at('14:00'),
-      to: at('16:00'),
-    });
+    const ended = storedBeforeCuts(
+      setRowRange({
+        edits: EMPTY_DAY_REVIEW_EDITS,
+        row: reviewDay({ rows: day('16:07') }).rows[0]!,
+        from: at('14:00'),
+        to: at('16:00'),
+      }),
+    );
     const rest = reviewDay({ rows: day('16:37'), edits: ended }).rows[1]!;
-    const restEnded = setRowRange({ edits: ended, row: rest, from: rest.from, to: at('16:30') });
+    const restEnded = storedBeforeCuts(setRowRange({ edits: ended, row: rest, from: rest.from, to: at('16:30') }));
 
     return {
       ...restEnded,

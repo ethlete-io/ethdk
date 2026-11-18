@@ -257,7 +257,8 @@ const clipStretches = (stretches: readonly TimeWindow[] | undefined, window: Tim
  * re-claim their band by lane would have one half redraw the other.
  *
  * A stretch comes back unnamed. The reviewer shortened a row to say those minutes were not that work,
- * so handing them back under its issue would book the time they just took off it.
+ * so handing them back under its issue would book the time they just took off it. What a resize cut
+ * off the row does not come back at all (ADR 0044, a human edit wins); only what the band grew since does.
  */
 const leftoverRows = (options: {
   rows: readonly PinnedRow[];
@@ -265,12 +266,25 @@ const leftoverRows = (options: {
   sources: readonly RowSource[];
 }): RowSource[] => {
   const taken = new Set(options.matched.values());
+  const sourceById = new Map(options.sources.map((source) => [source.id, source]));
+  const cutAway = (pin: PinnedRow): TimeWindow[] => {
+    const stored = (pin.cutAwayMs ?? []).map((cut) => ({ from: new Date(cut.fromMs), to: new Date(cut.toMs) }));
+    const source = sourceById.get(options.matched.get(pin.id) ?? '');
+
+    // An edit stored before `cutAwayMs` existed: a start drag still reads off the pin.
+    if (!pin.cutAwayMs && source && pin.tracksTo && !pin.tracksFrom && source.from < pin.from) {
+      return [...stored, { from: source.from, to: pin.from }];
+    }
+
+    return stored;
+  };
 
   return options.sources
     .filter((source) => taken.has(source.id))
     .flatMap((source) => {
       const lane = storedLaneKey(source.laneKey);
-      const covered = options.rows.filter((row) => storedLaneKey(row.laneKey) === lane);
+      const pins = options.rows.filter((row) => storedLaneKey(row.laneKey) === lane);
+      const covered = [...pins, ...pins.flatMap(cutAway)];
 
       return subtractWindows({ windows: [{ from: source.from, to: source.to }], without: covered }).map(
         (window, at): RowSource => ({
@@ -469,7 +483,7 @@ const onEditedIds = (options: {
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
  * The exceptions are remote time a prompt in another lane bought, which ADR 0033 draws and never books
  * on this row, and the rows of two agent sessions on one ticket, which share their observed minutes out (`siblingBookingsOf`);
- * a row the reviewer wrote by hand books its span regardless.
+ * a row the reviewer wrote, resized, split or merged books its span regardless.
  *
  * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.
  */
@@ -477,14 +491,18 @@ const bookTheSpan = (options: {
   rows: ReviewedRow[];
   remote?: RemoteBooking;
   round?: Partial<RoundOptions>;
+  pinnedIds: ReadonlySet<string>;
 }): ReviewedRow[] => {
   const { rows } = options;
   const observed = rows.filter((row) => !isManualRow(row));
   const unbooked = unbookedRemoteByRow({ rows: observed, remote: options.remote });
-  const siblings = siblingBookingsOf(observed, {
-    spanMsOf: (row) => bookedSpanMs(row, unbooked[observed.indexOf(row)] ?? []),
-    round: options.round,
-  });
+  const siblings = siblingBookingsOf(
+    observed.filter((row) => !options.pinnedIds.has(row.id)),
+    {
+      spanMsOf: (row) => bookedSpanMs(row, unbooked[observed.indexOf(row)] ?? []),
+      round: options.round,
+    },
+  );
 
   return rows.map((row) => {
     const windows = unbooked[observed.indexOf(row)] ?? [];
@@ -718,7 +736,12 @@ const reviewRows = (options: ReviewRowsOptions): DayReview => {
     round: options.round,
   });
   const rows = agreeWithTempo({
-    rows: bookTheSpan({ rows: recut.rows, remote: options.rows.remote, round: options.round }),
+    rows: bookTheSpan({
+      rows: recut.rows,
+      remote: options.rows.remote,
+      round: options.round,
+      pinnedIds: new Set(tracked.rows.map((row) => row.id)),
+    }),
     written: options.written ?? [],
     agree: !!options.agree,
     backgroundProjects: options.cut?.backgroundProjects,

@@ -55,6 +55,31 @@ test.describe('a band dragged at both ends in turn', () => {
   });
 });
 
+test.describe('a band shrunk at one end', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: anHour() });
+    await page.goto('/day');
+  });
+
+  test('proposes nothing in the stretch its start was dragged off', async ({ page }) => {
+    const hour = await pxPerHour(page);
+
+    await dragEdge({ page, row: band(page), edge: 'start', by: hour / 2, inset: 8 });
+
+    await expect(band(page)).toHaveAttribute('title', 'ABC-3010 · 30m');
+    await expect(bands(page)).toHaveCount(1);
+  });
+
+  test('proposes nothing in the stretch its end was dragged off', async ({ page }) => {
+    const hour = await pxPerHour(page);
+
+    await dragEdge({ page, row: band(page), edge: 'end', by: -hour / 2 });
+
+    await expect(band(page)).toHaveAttribute('title', 'ABC-3010 · 30m');
+    await expect(bands(page)).toHaveCount(1);
+  });
+});
+
 test.describe('one part of a split band dragged at an end', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: anHour() });
