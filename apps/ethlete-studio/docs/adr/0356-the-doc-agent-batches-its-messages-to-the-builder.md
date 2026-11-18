@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B600
+built: 6e236ec53
 decided: 2026-11-18
 source: process review of the analysis session (ethlete-sdk-3f) 2026-11-18, point C3, approved by the human with "c3ok", relayed by the analysis session
 ---
