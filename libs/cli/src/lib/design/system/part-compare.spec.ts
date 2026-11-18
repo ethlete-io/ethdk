@@ -356,6 +356,38 @@ describe('part compare', () => {
     });
   });
 
+  it('passes the anti-aliased pixel of a round edge and fails a 1 px shift of the same edge', () => {
+    const grey = (v: number) => ((v << 24) | (v << 16) | (v << 8) | 0xff) >>> 0;
+    const switchArc = [
+      [81, 98, 98],
+      [31, 96, 98],
+      [15, 16, 58],
+    ];
+    const arcAt = (centre: number) => (x: number, y: number) => {
+      const value = switchArc[y - 3]?.[x - 3];
+
+      return grey(value === undefined ? 98 : x === 4 && y === 4 ? centre : value);
+    };
+    const design = pngOf(9, 9, arcAt(96));
+
+    expect(comparePngs({ design, app: pngOf(9, 9, arcAt(86)) })).toEqual({ kind: 'ok' });
+    expect(comparePngs({ design, app: pngOf(9, 9, arcAt(200)) })).toMatchObject({ kind: 'diff', pixels: 1 });
+
+    const disc = (cx: number) => (x: number, y: number) => {
+      let inside = 0;
+
+      for (let sy = 0; sy < 4; sy++)
+        for (let sx = 0; sx < 4; sx++)
+          inside += Math.hypot(x + (sx + 0.5) / 4 - cx, y + (sy + 0.5) / 4 - 12) <= 9 ? 1 : 0;
+
+      return grey(Math.round(15 + (174 - 15) * (inside / 16)));
+    };
+
+    expect(comparePngs({ design: pngOf(30, 24, disc(12)), app: pngOf(30, 24, disc(13)) })).toMatchObject({
+      kind: 'diff',
+    });
+  });
+
   it('prints a line per state and keeps the pictures of failing states only', async () => {
     const target = checkout();
     const product = resolveProduct({ target, name: 'app-a', config: {} });

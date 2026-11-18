@@ -1,6 +1,6 @@
 import { crc32, deflateSync, inflateSync } from 'zlib';
 import { OVERLAY_ROOTS } from './action-press';
-import { pixelsDiffer } from './anti-alias';
+import { isolatedAntiAlias, pixelsDiffer } from './anti-alias';
 
 export const HARNESS_PATH = '/__design-harness';
 
@@ -523,6 +523,19 @@ export const comparePngs = (options: { design: Buffer; app: Buffer }): PixelComp
   const shared = { width: Math.min(design.width, app.width), height: Math.min(design.height, app.height) };
   const from = wordsOf(design.data);
   const other = wordsOf(app.data);
+  const sized = design.width === app.width && design.height === app.height;
+  const over = new Uint8Array(width * height);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const inside = x < shared.width && y < shared.height;
+
+      if (!inside || pixelsDiffer(from[y * design.width + x] as number, other[y * app.width + x] as number))
+        over[y * width + x] = 1;
+    }
+  }
+
+  const passed = sized ? isolatedAntiAlias({ design: from, app: other, width, height, over }) : over.map(() => 0);
   const out = new Uint32Array(width * height);
   const data = Buffer.from(out.buffer);
   let pixels = 0;
@@ -531,23 +544,18 @@ export const comparePngs = (options: { design: Buffer; app: Buffer }): PixelComp
     for (let x = 0; x < width; x++) {
       const to = y * width + x;
 
-      if (x < shared.width && y < shared.height) {
+      if (!over[to] || passed[to]) {
         const word = from[y * design.width + x] as number;
-        const near = other[y * app.width + x] as number;
 
-        if (word === near || !pixelsDiffer(word, near)) {
-          out[to] = ((word & 0x00ffffff) | ((word >>> 26) << 24)) >>> 0;
+        out[to] = ((word & 0x00ffffff) | ((word >>> 26) << 24)) >>> 0;
 
-          continue;
-        }
+        continue;
       }
 
       pixels++;
       out[to] = RED;
     }
   }
-
-  const sized = design.width === app.width && design.height === app.height;
 
   if (sized && pixels === 0) return { kind: 'ok' };
 
