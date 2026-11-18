@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B618
+built: 2f93fdf6f
 decided: 2026-11-19
 amends: 0230
 source: doc-agent session 2026-11-18/19; a fresh builder planned to wait for a CI rerun before its next row
