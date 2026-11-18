@@ -35,7 +35,6 @@ Die Eintragstabelle zu [STATUS.md](STATUS.md) (ADR 0354).
 | B299 | e2e-check.spec bekommt die sha vom Hook (env/arg), läuft im Pre-commit-Index-Checkout (Bef. 352). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
 | B300 | Regel TEXT-TRUNCATED: abgeschnittener Inhaltstext pro State ist ein Befund; Opt-out data-et-skip=TRUNCATE (Bef. 353). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
 | B301 | Stale-dist-Hash nur über committete Quellen (HEAD-Blobs); Agent-Briefs verbieten Edits an build-info.json (Bef. 354). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
-| B302 | Ein maschinenweiter Lock für schwere Läufe (Pre-Commit-Specs, nx test, design check); Studio-Start zeigt Last (Bef. 354). | ⏳ | - | Builder |
 | B303 | Studio-Status nennt die Startphase ("CLI wird gebaut") mit Laufzeit (Bef. 355). | ⏳ | - | Builder |
 | B304 | macOS-Ampel vertikal in der Titelleiste zentrieren + Fensterprüfung (Bef. 357). | ⏳ | - | Builder |
 | B306 | Fehlgeschlagener Shot: Fehlerzustand statt kaputtem Bild; kein "Nichts offen" bei fehlenden Shots (Bef. 359). | ⏳ | Teil gelandet 07.11. (Aufräumen): Chip und Popover zeigen „N Bilder fehlen“ statt „Nichts offen“. Empfehlung gebaut: kein Retry-Knopf (Fehlertext bleibt, der Shot rendert beim nächsten Listing neu). Rest: crop-thumb- und Inventar-Bild ohne `ethleteShot`. | Builder |
