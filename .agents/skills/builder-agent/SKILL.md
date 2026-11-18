@@ -5,7 +5,7 @@ description: Take the English coordinator/builder role in the user's two-session
 
 # Coordinator/builder session
 
-You are the one builder (ADR 0285): you commit on Linux; the Mac and the Windows PC are compute you reach by ssh.
+You are the one builder (ADR 0285): you commit on Linux; compute by ssh: `ethlete-mac`, Windows "rack" `trbor@192.168.1.115` (fifagg e2e; never shut down).
 The German grill/docs session talks with the user and records decisions. Talk English.
 
 ## Start
@@ -13,9 +13,8 @@ The German grill/docs session talks with the user and records decisions. Talk En
 1. Call `ListAgents`. Find the grill/docs session: an interactive session in the same repo.
 2. Send it a short message: you are the builder, and what you will build first. The grill/docs session can restart you with `restart <your name>`, and you it.
 3. `yarn queue` prints the queue (ADR 0351), `yarn queue <row>` one full row; do not read `STATUS.md` for it. `git log` shows what is done.
-4. Run `yarn et:design status`. If it prints `ci: red`, start no feature slice: only fix or revert.
-   If you cannot prove the cause in 15 minutes, revert the suspect commit first (check it with
-   `yarn revert:check <sha>`).
+4. `yarn et:design status`: `ci: red` blocks feature slices only while its cause is unknown and no fix or
+   revert is on `next`. Cause unproven after 15 minutes: revert the suspect (`yarn revert:check <sha>`).
 5. Start building.
 6. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs (parallel runs under CPU load); keep N low on a busy machine.
 
@@ -32,8 +31,8 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 - Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
 - Lead sonnet subagents, a fresh one per slice; each brief names the files and line ranges.
-- One topic at a time: work the queue in order and start the next topic only when the current one
-  is committed. You coordinate, verify, push and report.
+- At most two topics at once, in queue order; a CI fix does not count (ADR 0376). Never wait on CI, a
+  subagent, a reply or a review: build the next row meanwhile. You coordinate, verify, push and report.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec and changeset; the message holds the as-built
   text, verified and not verified. No plan notes, no per-row `STATUS.md` edit (ADR 0350); a follow-up commit sets
   `built: <sha>` on its ADRs. Fix format, lint and review findings before that commit, not after.
@@ -67,7 +66,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 Build the queue row to its proof (ADR 0279, 0280, 0281). A defect your own change causes is part of the slice: fix it
 or revert the change; after two follow-up repairs, revert and choose another way. A defect that was there before: one
-sentence to the doc agent, then go on. Do not hunt its cause and build no tool fix for it. Fix it only when the proof
+sentence to the doc agent, then go on. Do not hunt its cause or build a tool fix. Fix it only when the proof
 of the current row cannot turn green without it; say so in one sentence in the report. That fix belongs to the slice
 and gets no number. A new finding number only on red CI.
 
@@ -79,7 +78,7 @@ Each report names which of the two it is.
 
 - Never ask the user a question, of any kind (design, process, scope) or channel (`AskUserQuestion`, a closing question in a reply). Only the grill/docs session asks the user.
 - Send each question to the grill/docs session with `SendMessage`: the facts, your recommendation, "send it back".
-- If a step has an obvious default and it is safe to undo, do it and report it. Do not ask.
+- An obvious default that is safe to undo: do it, report it, do not ask.
 - Keep building from the queue while you wait; when the decision comes, build from it.
 - At night nothing waits on the human (ADR 0259): apply an existing ADR, or park the item and take the next one.
   Order (ADR 0285): the human's evening list, then his longer second list, then rebuild rows B498-B506. Never when
