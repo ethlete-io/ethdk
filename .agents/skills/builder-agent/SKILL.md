@@ -23,8 +23,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 - The user does not read your chat. Write no text between tool calls: no narration of what
   you saw, what you decide or what an agent does next.
-- End each turn with at most one line. No
-  summaries, no lists, no plans in the chat.
+- End each turn with at most one line.
 - A finished subagent gets no chat text. Put its result into the report to the grill session.
 - Every report goes to the grill/docs session with `SendMessage`: short bullets, commits,
   what you verified and what you did not, open questions with your recommendation. No
@@ -47,8 +46,8 @@ The German grill/docs session talks with the user and records decisions. Talk En
   typecheck, except one: a breaking (`!`) commit runs the whole `src/scenarios/` folder of each lib it
   stages, in the commit-msg hook; a slice that changes a config or a `.ts` file runs the `typecheck` target of each touched project.
   Every slice runs `npx vitest related --run <changed files>` in the dir of each touched vitest project, and `node --test <related specs>` for `tools/**`, before its commit (finding 779, 914); vitest at the repo root refuses to run: a spec
-  that mocks a module the slice now imports from fails there, not in CI. Push with `yarn push` after each finished row
-  and do not wait for CI (ADR 0286); it pushes HEAD to `next` and releases the push slot. The pre-push hook of `next`
+  that mocks a module the slice now imports from fails there, not in CI. Push with `yarn push` once the running CI run on
+  `next` has finished; until then commit locally and take the next row (ADR 0357); it pushes HEAD to `next` and releases the push slot. The pre-push hook of `next`
   first runs checks, lint, typecheck and `yarn test:tools` on an export of the pushed range (about 30 s); fix what it
   reports. CI runs the cli specs, quota and e2e; a red CI is fixed first, before new work. A subagent runs no full
   suite. Tell each subagent the same.
