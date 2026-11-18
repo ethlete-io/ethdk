@@ -108,6 +108,15 @@ const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const BUILDER_PROMPT =
   'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';
+const BUILDER_DENIED_TOOLS =
+  'Artifact Workflow ScheduleWakeup SendFeedback ShareOnboardingGuide ReportFindings AskUserQuestion';
+const builderFlags = () => [
+  '--append-system-prompt',
+  BUILDER_PROMPT,
+  '--strict-mcp-config',
+  `--mcp-config=${join(root, '.mcp.json')}`,
+  `--disallowedTools=${BUILDER_DENIED_TOOLS}`,
+];
 const claudeTmpDir = join(homedir(), '.cache', 'claude-tmp');
 const ensuredClaudeTmpDir = () => {
   mkdirSync(claudeTmpDir, { recursive: true });
@@ -116,7 +125,7 @@ const ensuredClaudeTmpDir = () => {
 const tempDirEnv = () => `CLAUDE_CODE_TMPDIR=${quote(ensuredClaudeTmpDir())} `;
 const withTempDir = (command) => (/(^|\s)CLAUDE_CODE_TMPDIR=/.test(command) ? command : `${tempDirEnv()}${command}`);
 const withRole = (words) =>
-  role === 'builder' && basename(words[0]) === 'claude' ? [...words, '--append-system-prompt', BUILDER_PROMPT] : words;
+  role === 'builder' && basename(words[0]) === 'claude' ? [...words, ...builderFlags()] : words;
 const roleEnvOf = (agentRole) =>
   agentRole
     ? { ETHLETE_AGENT_ROLE: agentRole, ...(agentRole === 'builder' ? { CLAUDE_CODE_SILENT_TURN_REMINDER: '0' } : {}) }
@@ -286,10 +295,10 @@ const commandWithRole = (command, agentRole) => {
   const kept = words.filter(
     (word, index) =>
       !(word === '--append-system-prompt' && words[index + 1] === BUILDER_PROMPT) &&
-      !(word === BUILDER_PROMPT && words[index - 1] === '--append-system-prompt'),
+      !(word === BUILDER_PROMPT && words[index - 1] === '--append-system-prompt') &&
+      !/^(--strict-mcp-config|--mcp-config=.*|--disallowedTools=.*)$/.test(word),
   );
-  const rule =
-    agentRole === 'builder' && basename(kept[0] ?? '') === 'claude' ? ['--append-system-prompt', BUILDER_PROMPT] : [];
+  const rule = agentRole === 'builder' && basename(kept[0] ?? '') === 'claude' ? builderFlags() : [];
   return [
     ...env.filter((word) => !/^(ETHLETE_AGENT_ROLE|CLAUDE_CODE_SILENT_TURN_REMINDER)=/.test(word)),
     ...roleEnvWords(agentRole),
