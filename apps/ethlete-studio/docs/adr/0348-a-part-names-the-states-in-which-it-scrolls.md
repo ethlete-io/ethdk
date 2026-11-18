@@ -1,7 +1,7 @@
 ---
 status: accepted
 governs: ['libs/cli/design/define-part.ts']
-open: B290
+built: 23289285f
 decided: 2026-11-18
 source: finding 343, the human on the shell-project-switch grid; builder slice B290
 ---

@@ -1089,3 +1089,21 @@ first build pinned the finals title to its box's far end (found in the Storybook
 scroll in Storybook keeps upper/lower titles at the scroll start and the finals title at its own start; spec:stress 4/4
 for both specs; vitest related, lint, typecheck for bracket, components, docs-examples, storybook-e2e; `nx build docs`. Not verified: RTL
 documents, the docs example rendered in the built site, real touch devices.
+
+## As built: B290 (a part draws the state in which it scrolls, finding 343, 2026-11-18, Linux)
+
+- Slice 1, ce2254b02: a live grid cell now draws in the 1280x800 viewport of its shot, so an iframe cell and a picture
+  cell size the same content the same. Cause (proven live): the SDK menu caps its height with `vh`, and the iframe
+  resolved `vh` against the small cell height.
+- Slice 2, 23289285f: `definePart({ scrolls })` names the states that scroll on purpose (ADR 0348). The render rule
+  SCROLLS fails a box with `overflow: auto`/`scroll` whose content is larger than the box in a state the list does not
+  name, and a listed state where no box scrolls. Listed: sdk carousel (21), dialog (1), scrollable (23), scrollbar (11),
+  table (2), textarea (2); studio pages/inbox (1). Proof part: studio components/shell-system-picker gets
+  `open-scrolls` (14 systems, past the menu cap) next to the fitting `open`.
+- Rule baseline (ADR 0201, finding 343) for the fitting states that overflow by accident: sdk scrollable
+  short-content and short-content-navigation (4 px), stream consent, consent-hover, consent-active,
+  consent-focus-visible and error at 320px (card 186 in 162), table empty and error at 480px (24 px sideways);
+  studio pages/system direct-edit, blockers-open, developer-part-blocked (anchored dialog 3 to 53 px over 718).
+- Verified: new spec, both halves bite (unlisted scroll box, listed state without one); `vitest related` 1754 tests;
+  `design check --product sdk` and `--product studio` with the working tree: 0 findings, the new picker state draws
+  a scrolling menu and `open` does not. Not verified: a live Studio shot of the picker's `open-scrolls` cell.
