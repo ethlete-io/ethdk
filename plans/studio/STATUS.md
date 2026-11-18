@@ -29,21 +29,14 @@ origin, Liste in `.claude/handoffs/mac-tank-branches.md`.
 
 Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er ihn gegen git; ist er erledigt, nimmt er den nächsten. Nur der Doc-Agent ordnet die Liste. Ein neuer Befund unterbricht nur bei rotem CI (ADR 0230) oder wenn er den laufenden Eintrag blockiert. Die Zeile „wie gebaut“ steht nur in der Commit-Nachricht (ADR 0350).
 
-1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, nach B599 (ADR 0354) - Doc-Agent
-2. **Repo-Ablauf-ADRs (B599)** ⏳ Ablauf-ADRs auf Repo-Ebene: ADR-Skripte lesen auch `docs/adr/`, Zeile in AGENTS.md (ADR 0354) - Builder
-3. **Nachrichten-Bündelung (B600)** ⏳ Doc-Agent bündelt Nachrichten an den Builder alle ~15 Minuten (ADR 0356) - Builder
-4. **Push nach CI (B601)** ⏳ Pushen erst, wenn der laufende CI-Lauf fertig ist (ADR 0357) - Builder
-5. **Cross-Check-Lauf (B603)** ⏳ Cross-Check als frischer fable-Lauf, nur für manche Fragen; doc-agent- und supervisor-agent-Skill (ADR 0358) - Builder
-6. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
-7. **Subagent-Protokoll (B606)** ⏳ Hook protokolliert Modell, Effort, Aufgabe und Dateien jedes Subagenten (ADR 0371) - Builder
-8. **Auto-Weg-Modus (B608)** ⏳ Doc-Agent schaltet von selbst auf „weg“ und zurück (Hook-Zeitstempel, 15 Min.), Wiederholregel angepasst (ADR 0372) - Builder
-9. **Kurznamen (B609)** ⏳ Spalte in rows.md, Warteschlangen-Befehl druckt „Kurzname (Bnnn)“, Skills und Commit-Betreff (ADR 0373) - Builder
-10. **Consumer-Auslieferung (B610)** ⏳ Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules, frühestens eine Woche nach B608/B609 (ADR 0374) - Builder
-11. **Bericht auf Abruf (B611)** ⏳ Slash-Befehl druckt eine feste Tabelle im Chat für einen Zeitraum, kein Vorgänger (ADR 0375) - Builder
-12. **Statuszeile-Mod (B612)** ⏳ Statuszeile: Mod mit laufender Aufgabe, nach B609 (ADR 0375) - Builder
-13. **Bericht bei Rückkehr (B613)** ⏳ dieselbe Tabelle für die Abwesenheit, nach B611 und B608 (ADR 0375) - Builder
-14. **Timetrack-Beschreibung (B602)** ⏳ Timetrack: offen nur #4/#5 (gleiche Beschreibung in jeder Spur, ein deutscher Satz), als Letztes (Mensch 18.11.) - Builder
-15. **Timetrack-Gleichstand (B616)** ⏳ gekoppelte Rechner zeigen denselben Tag, SSH-Arbeit auf tank erscheint auf dem Mac (Timetrack ADR 0047) - Builder
+1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
+2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
+3. **Consumer-Auslieferung (B610)** ⏳ Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules, frühestens eine Woche nach B608/B609 (ADR 0374) - Builder
+4. **Bericht auf Abruf (B611)** ⏳ Slash-Befehl druckt eine feste Tabelle im Chat für einen Zeitraum, kein Vorgänger (ADR 0375) - Builder
+5. **Statuszeile-Mod (B612)** ⏳ Statuszeile: Mod mit laufender Aufgabe, nach B609 (ADR 0375) - Builder
+6. **Bericht bei Rückkehr (B613)** ⏳ dieselbe Tabelle für die Abwesenheit, nach B611 und B608 (ADR 0375) - Builder
+7. **Timetrack-Beschreibung (B602)** ⏳ Timetrack: offen #4/#5 (gleiche Beschreibung in jeder Spur, ein deutscher Satz) und #22 neu (Revert a825cba41: brach e2e call-end-here), als Letztes (Mensch 18.11.) - Builder
+8. **Timetrack-Gleichstand (B616)** ⏳ gekoppelte Rechner zeigen denselben Tag, SSH-Arbeit auf tank erscheint auf dem Mac (Timetrack ADR 0047) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.
 
