@@ -1943,8 +1943,8 @@
     }
   },
   "elements/studio-menu": {
-    "hash": "4471f527daa255de",
-    "at": "2026-11-17T20:06:11.138Z",
+    "hash": "3ccac60c4cb4f777",
+    "at": "2026-11-18T08:23:30.394Z",
     "states": {
       "closed": "5cbc2772c1f9aa12",
       "closed-active": "f0330652bc0e1d79",
@@ -1954,8 +1954,6 @@
       "open-active": "aeef13d59bf609a7",
       "open-focus-visible": "cc0720d9b509fd57",
       "open-hover": "0a3667d972683d58",
-      "studio-menu.appearance": "e1412ceffcd9880d",
-      "studio-menu.help": "899c2981512d5d1f",
       "studio-menu.option-active": "ee59e03c075bcb81",
       "studio-menu.option-focus-visible": "b640ed890ce7d9d8",
       "studio-menu.option-hover": "acf23cdfa12e41be",
@@ -1969,8 +1967,8 @@
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "178aac4a1cdb5a5c",
       ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "f051e37e924db498",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "2f2ac5442826027b",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "05691eb54f7b33b8",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "8bf6af80ec5cb668",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "a4484847351bf2b6",
       ".ethlete/design/studio/foundations/logo/logo.ts": "7b41928bfc64e439",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -1998,9 +1996,9 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "app": {
-      "apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.html": "ce42b29db5ea073d",
-      "apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts": "0447b21f2ad917db",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "4d7b816277f8f735",
+      "apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.html": "c959903e526683fd",
+      "apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts": "cbd23b607a5f4450",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "240d52aa52b663ed",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
