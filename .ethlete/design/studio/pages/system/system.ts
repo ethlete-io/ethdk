@@ -43,7 +43,6 @@ import {
   commentPins,
   draftPin,
   type PlacedThread,
-  type ReplyPhase,
   threadCardAt,
   type ThreadMessage,
   withCommentList,
@@ -155,8 +154,6 @@ const CARD_AT = [
   'left-[calc(22%+var(--space-6))] top-[calc(30%-var(--space-6))]',
   'left-[calc(58%+var(--space-6))] top-[calc(52%-var(--space-6))]',
 ];
-
-const REPLY = 'Ja, der Abstand reicht. Lass es so.';
 
 const DRAFT_AT = 'left-[38%] top-[42%]';
 
@@ -309,8 +306,6 @@ export default definePart<{
   send?: SendPhase;
   reason?: string;
   thread?: number;
-  reply?: string;
-  replyPhase?: ReplyPhase;
   build?: 'one-blocker' | 'checking' | 'blocked-checking' | 'direct-edit';
   blockersOpen?: boolean;
   agent?: AgentState;
@@ -359,8 +354,6 @@ export default definePart<{
     'comments-draft': { closed: true, comments: true, commentMode: true, draft: TYPED },
     thread: { closed: true, comments: true, thread: 1 },
     'thread-own': { closed: true, comments: true, thread: 0 },
-    'thread-busy': { closed: true, comments: true, thread: 1, reply: REPLY, replyPhase: 'busy' },
-    'thread-error': { closed: true, comments: true, thread: 1, reply: REPLY, replyPhase: 'error' },
     'one-blocker': { nothingOpen: true, build: 'one-blocker' },
     checking: { nothingOpen: true, build: 'checking' },
     'blocked-checking': { nothingOpen: true, build: 'blocked-checking' },
@@ -407,10 +400,6 @@ export default definePart<{
       'The second pin opened as its thread card beside its pin on the frame; check the four messages, Zurückziehen under each own message, Erledigen, the focused empty reply field and the disabled Antworten.',
     'thread-own':
       'A thread the user started, with their own reply last; check Zurückziehen under the root and under the own reply, the selected first pin and the focused reply field.',
-    'thread-busy':
-      'A reply being sent; check that the field is disabled with the reply kept and Antworten shows its spinner.',
-    'thread-error':
-      'A reply that failed on the network or server; check Kommentar nicht gesendet. Erneut versuchen. under the field, the kept reply and Erneut senden.',
     'one-blocker': 'One definite blocker; check that the badge reads Nicht baubereit (1) in the warning colour.',
     checking: 'Slow rules still running with no definite blocker; check that the badge reads Wird geprüft.',
     'blocked-checking':
@@ -466,8 +455,6 @@ export default definePart<{
     send,
     reason,
     thread,
-    reply,
-    replyPhase,
     build,
     blockersOpen = false,
     agent,
@@ -571,8 +558,6 @@ export default definePart<{
             place: `${PART_THREADS[thread]?.part ?? ''} › ${PART_THREADS[thread]?.state ?? ''}`,
             messages: PART_MESSAGES[thread] ?? [],
             closeTo: 'comments',
-            ...(reply ? { text: reply } : {}),
-            ...(replyPhase ? { phase: replyPhase } : {}),
           });
     const hint = commentMode && draft === undefined ? commentModeHint() : undefined;
     const body =
