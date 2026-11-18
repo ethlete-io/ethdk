@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B492
+built: caece815f
 decided: 2026-11-11
 source: chat with the doc agent 2026-11-11 (late morning), from a fifagg report
 ---
