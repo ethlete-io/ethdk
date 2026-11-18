@@ -278,6 +278,18 @@ export const STUDIO_LABELS = {
     open: (count: number) => `${count} offen`,
     unread: 'Ungelesen',
   },
+  inbox: {
+    open: (count: number) => `${count} offen`,
+    showResolved: 'Erledigte zeigen',
+    loading: 'Kommentare werden geladen…',
+    errorTitle: 'Kommentare nicht geladen',
+    errorText: 'Die Liste kam nicht vom Design-Server an.',
+    retry: 'Erneut laden',
+    emptyTitle: 'Keine offenen Kommentare',
+    emptyText: 'Kommentare von dir, deinem Agenten und dem Team erscheinen hier.',
+    noneOnPart: (part: string) => `Keine offenen Kommentare zu ${part}.`,
+    others: 'Andere',
+  },
   commentPin: {
     label: ({ author, count, resolved }: { author: string; count: number; resolved: boolean }) =>
       `Comment by ${author}${count > 1 ? `, ${count} messages` : ''}${resolved ? ', resolved' : ''}`,

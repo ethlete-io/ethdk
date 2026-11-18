@@ -18,6 +18,8 @@ export type InboxComment = {
   resolved?: boolean;
 };
 
+export const INBOX_SAMPLE_PART = 'button';
+
 export const INBOX_SAMPLE: InboxComment[] = [
   {
     id: 'c1',

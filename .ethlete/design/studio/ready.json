@@ -1442,19 +1442,29 @@
   },
   "pages/inbox": {
     "actions": [
+      "emit:close",
       "emit:collapse",
+      "emit:fit",
+      "emit:maximize",
+      "emit:minimize",
       "emit:pick",
       "emit:pinToggle",
       "emit:productChange",
+      "emit:replyComment",
+      "emit:resolveThread",
       "emit:retry",
       "emit:sectionChange",
       "emit:showResolvedChange",
       "emit:sideWidthChange",
+      "emit:withdrawComment",
+      "emit:zoomIn",
+      "emit:zoomOut",
+      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "system-picker"
     ],
-    "at": "2026-11-18T05:27:46.295Z"
+    "at": "2026-11-18T08:32:02.684Z"
   },
   "pages/inventory": {
     "hash": "6100c867e85ab291",

@@ -2,11 +2,11 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SWITCH_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { AgentLogoComponent } from '../../icons/agent-logo.component';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { FRAME_CLASS, FRAME_HEAD_CLASS } from '../system-page/system-page.component';
-import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
+import { INBOX_SAMPLE, INBOX_SAMPLE_PART, InboxComment } from './inbox-sample';
 import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
 import { CommentRowComponent } from '../comment-flow/comment-row.component';
 
@@ -26,7 +26,6 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
     NgTemplateOutlet,
     ShellPageComponent,
     CanvasFramesComponent,
-    AgentLogoComponent,
     CommentRowComponent,
     ThreadCardComponent,
   ],
@@ -36,7 +35,7 @@ export class InboxComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   public shell = input<ShellState>(SHELL_SAMPLE);
   public comments = input<InboxComment[]>(INBOX_SAMPLE);
-  public activePart = input('button');
+  public activePart = input(INBOX_SAMPLE_PART);
   public selectedId = input<string | null>('c1');
   public showResolved = model(false);
   public openOn = input<InboxOpenOn>('all');
@@ -44,14 +43,15 @@ export class InboxComponent {
   public canvas = input<TemplateRef<unknown> | null>(null);
   public thread = input<CommentThread | null>(null);
   public replyText = model('');
-
   public shellAction = output<ShellAction>();
+
   public pick = output<string>();
   public retry = output();
   public replyComment = output<string>();
   public resolveThread = output();
   public withdrawComment = output<number>();
   public closeThread = output();
+  protected readonly LABELS = STUDIO_LABELS.inbox;
 
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;

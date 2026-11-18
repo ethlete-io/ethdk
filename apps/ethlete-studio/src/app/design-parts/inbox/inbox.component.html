@@ -3,20 +3,20 @@
     <div
       class="flex h-9 flex-none items-center justify-between gap-space-2 border-b border-et-surface-border px-space-3 text-ui-sm"
     >
-      <span class="text-et-surface-muted">{{ load() === 'loaded' ? openCount() + ' offen' : '' }}</span>
+      <span class="text-et-surface-muted">{{ load() === 'loaded' ? LABELS.open(openCount()) : '' }}</span>
       <div class="flex items-center gap-space-2 text-et-surface">
-        Erledigte zeigen
+        {{ LABELS.showResolved }}
         <span
           class="inline-flex [--et-surface-color-muted-solid:var(--text-muted)] [--et-surface-color-solid:var(--text)] [--et-surface-interaction-solid:var(--text)] [--et-switch-thumb-offset:2px] [--et-switch-thumb-size:14px] [--et-switch-track-height:18px] [--et-switch-track-width:32px]"
         >
-          <et-switch [(checked)]="showResolved" aria-label="Erledigte zeigen" />
+          <et-switch [(checked)]="showResolved" [attr.aria-label]="LABELS.showResolved" />
         </span>
       </div>
     </div>
     <div class="flex min-h-0 flex-col gap-px overflow-auto p-space-2">
       @if (load() === 'loading') {
         <p class="m-0 px-space-2 pt-space-1 text-(length:--text-sm) text-et-surface-muted">
-          Kommentare werden geladen…
+          {{ LABELS.loading }}
         </p>
       } @else if (load() === 'error') {
         <div class="flex flex-col items-center gap-space-1 px-space-4 py-space-7 text-center">
@@ -37,11 +37,11 @@
               <path d="m6 6 4 4m0-4-4 4" />
             </svg>
           </span>
-          <p class="m-0 text-(length:--text-sm) text-et-surface">Kommentare nicht geladen</p>
-          <p class="m-0 text-(length:--text-xs) text-et-surface-muted">Die Liste kam nicht vom Design-Server an.</p>
+          <p class="m-0 text-(length:--text-sm) text-et-surface">{{ LABELS.errorTitle }}</p>
+          <p class="m-0 text-(length:--text-xs) text-et-surface-muted">{{ LABELS.errorText }}</p>
           <div class="mt-space-3">
             <button (click)="retry.emit()" et-button type="button" variant="outline" color="surface" size="sm">
-              Erneut laden
+              {{ LABELS.retry }}
             </button>
           </div>
         </div>
@@ -61,9 +61,9 @@
           >
             <path d="m3.5 8.5 3 3 6-7" />
           </svg>
-          <p class="m-0 text-(length:--text-sm) text-et-surface">Keine offenen Kommentare</p>
+          <p class="m-0 text-(length:--text-sm) text-et-surface">{{ LABELS.emptyTitle }}</p>
           <p class="m-0 text-(length:--text-xs) text-et-surface-muted">
-            Kommentare von dir, deinem Agenten und dem Team erscheinen hier.
+            {{ LABELS.emptyText }}
           </p>
         </div>
       } @else {
@@ -78,12 +78,14 @@
           />
         } @empty {
           <p class="m-0 px-space-2 pt-space-1 pb-space-2 text-(length:--text-sm) text-et-surface-muted">
-            Keine offenen Kommentare zu {{ activePart() }}.
+            {{ LABELS.noneOnPart(activePart()) }}
           </p>
         }
       }
       @if (load() === 'loaded' && onOtherParts().length) {
-        <ng-container *ngTemplateOutlet="groupHead; context: { $implicit: 'Andere', count: onOtherParts().length }" />
+        <ng-container
+          *ngTemplateOutlet="groupHead; context: { $implicit: LABELS.others, count: onOtherParts().length }"
+        />
         @for (comment of onOtherParts(); track comment.id) {
           <ethlete-comment-row
             [thread]="comment"
