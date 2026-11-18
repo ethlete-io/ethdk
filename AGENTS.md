@@ -113,6 +113,8 @@ jsdom specs catch value logic, not behavior regressions. Further layers:
   `node dist/libs/agent-rules/src/index.js timetrack snapshot` (build agent-rules first if `dist` is stale);
   after it, run `... snapshot --compare <file>` and explain every changed row in the report. An unexplained
   change is a regression. The file holds client names, so it stays outside the repo.
+  The commit-msg hook asks for a `Snapshot:` line (the `--compare` result, or `Snapshot: not run (<reason>)`) on
+  commits that touch row-changing paths.
 - `apps/storybook-e2e` - Playwright against real stories (**`component-behavior-tests`**).
 - `nx run storybook:test-storybook` - renders every story in Chromium, fails on a thrown or logged error, and
   reports axe violations without failing: check the a11y panel after a UI change.
