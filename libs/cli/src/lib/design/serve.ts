@@ -1450,7 +1450,13 @@ export const serveDesign = async (options: {
     chromiumOf,
   });
 
-  await server.listen();
+  try {
+    await server.listen();
+  } catch (error) {
+    await server.close();
+
+    throw error;
+  }
 
   const stopHosting =
     hostResident && chromiumOf

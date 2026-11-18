@@ -103,8 +103,18 @@ export const runSuite = (
     const child = spawn(
       'node',
       [script ?? invocation.script, ...(script ? [] : invocation.args), ...(built ? ['--built', built] : [])],
-      { cwd: repo },
+      { cwd: repo, detached: true },
     );
+    const stopGroup = () => {
+      try {
+        process.kill(-child.pid, 'SIGKILL');
+      } catch {
+        return;
+      }
+    };
+
+    process.on('exit', stopGroup);
+    child.on('exit', stopGroup);
     let output = '';
     let pending = '';
     let cases = 0;
@@ -137,16 +147,17 @@ export const runSuite = (
       () => {
         if (Date.now() - lastOutputAt < idleMs) return;
         idle = Date.now() - lastOutputAt;
-        child.kill('SIGKILL');
+        stopGroup();
       },
       Math.max(10, Math.min(idleMs / 4, 5000)),
     );
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill('SIGKILL');
+      stopGroup();
     }, SUITE_TIMEOUT_MS);
 
     child.on('close', (status) => {
+      process.off('exit', stopGroup);
       clearInterval(beat);
       clearInterval(watchdog);
       clearTimeout(timer);

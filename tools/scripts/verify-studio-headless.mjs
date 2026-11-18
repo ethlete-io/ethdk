@@ -33,10 +33,10 @@ export const serveStatic = (dir, answer) =>
     response.end(readFileSync(path));
   });
 
-export const startDesignServer = (checkout, stamp, echo = false) =>
+const spawnDesignServer = (checkout, stamp, echo, entry) =>
   new Promise((resolvePort, reject) => {
     stamp(`design server starting in ${checkout}`);
-    const child = spawn(process.execPath, [cliEntry, 'design', checkout], {
+    const child = spawn(process.execPath, [entry, 'design', checkout], {
       cwd: checkout,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -57,6 +57,20 @@ export const startDesignServer = (checkout, stamp, echo = false) =>
     child.stdout.on('data', onData);
     child.stderr.on('data', onData);
     child.on('exit', (code) => reject(new Error(`design server exited with ${code}\n${output}`)));
+  });
+
+export const startDesignServer = (checkout, stamp, echo = false, entry = cliEntry) =>
+  spawnDesignServer(checkout, stamp, echo, entry).catch(async (error) => {
+    const taken = /Port (\d+) is already in use/.exec(stripVTControlCharacters(String(error?.message)))?.[1];
+
+    if (!taken) throw error;
+    const probe = createServer();
+
+    process.env['DE_PORT'] = String(await listen(probe));
+    probe.close();
+    stamp(`design port ${taken} is taken, moving to ${process.env['DE_PORT']}`);
+
+    return spawnDesignServer(checkout, stamp, echo, entry);
   });
 
 export const missingBuildInputs = (checkout, entry = cliEntry) =>

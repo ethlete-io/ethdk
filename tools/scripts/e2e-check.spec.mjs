@@ -159,6 +159,33 @@ test('a suite that goes silent is killed after the idle limit and names the last
   assert.equal(result.lastCase, 'PASS  first case');
 });
 
+const SERVER_CHILD = `const { spawn } = await import('node:child_process');
+const server = spawn(process.execPath, ['-e', 'setInterval(() => undefined, 1000)'], { stdio: 'ignore' });
+server.unref();
+console.log('server ' + server.pid);`;
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const serverPidOf = (result) => Number(/server (\d+)/.exec(result.tail)?.[1]);
+
+test('no server a suite started outlives a run that exits', async () => {
+  const result = await run(`${SERVER_CHILD}\nconsole.log('PASS  a'); console.log('\\n1/1 passed');`);
+  await new Promise((done) => setTimeout(done, 100));
+  assert.equal(alive(serverPidOf(result)), false);
+});
+
+test('no server a suite started outlives a suite killed for going silent', async () => {
+  const result = await run(`${SERVER_CHILD}\nawait new Promise((r) => setTimeout(r, 6000));`, { idleMs: 300 });
+  await new Promise((done) => setTimeout(done, 100));
+  assert.match(result.reason, /^no output/);
+  assert.equal(alive(serverPidOf(result)), false);
+});
+
 const TIMING_FAIL = `console.log('PASS  a'); console.log('FAIL  [timing] b (budget 2000 ms)'); process.exit(1);`;
 
 test('every run reports the load and core count sampled at the end', async () => {

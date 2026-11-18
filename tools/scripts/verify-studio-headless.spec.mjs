@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
@@ -7,6 +8,7 @@ import { tempDir } from './temp-dir.mjs';
 import {
   designProject,
   missingBuildInputs,
+  startDesignServer,
   studioHostAnswer,
   WEBKIT_BLIND_EXIT,
   webkitVerdict,
@@ -90,4 +92,32 @@ test('gives a product view the themes the app gives it', () => {
   assert.ok(project.calls.length > 0, 'the project has no calls');
   assert.deepEqual(Object.keys(project.themes).sort(), themed.map(([name]) => name).sort());
   for (const [name, { themes }] of themed) assert.deepEqual(project.themes[name], themes);
+});
+
+test('moves a taken pinned DE_PORT to a free port instead of failing the run', async () => {
+  const dir = tempDir('design-port-');
+  const entry = join(dir, 'fake-cli.cjs');
+  const held = createServer();
+  const heldPort = await new Promise((done) => held.listen(0, () => done(held.address().port)));
+  const pinned = process.env['DE_PORT'];
+
+  writeFileSync(
+    entry,
+    `const port = process.env.DE_PORT;
+if (port === '${heldPort}') { console.log('Port ' + port + ' is already in use'); process.exitCode = 1; }
+else { console.log('  Local:   http://localhost:' + port + '/'); setInterval(() => undefined, 1000); }`,
+  );
+  process.env['DE_PORT'] = String(heldPort);
+
+  try {
+    const { child, port } = await startDesignServer(dir, () => undefined, false, entry);
+
+    child.kill('SIGTERM');
+    assert.notEqual(port, heldPort);
+    assert.equal(process.env['DE_PORT'], String(port));
+  } finally {
+    held.close();
+    if (pinned === undefined) delete process.env['DE_PORT'];
+    else process.env['DE_PORT'] = pinned;
+  }
 });

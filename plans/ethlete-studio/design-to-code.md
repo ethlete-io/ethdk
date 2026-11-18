@@ -2145,3 +2145,19 @@ product has it; system-view passes `variantRevisions` (one per `sketch.variants`
 Verified: frame-revisions.spec "keeps the revision of a variant when only another variant of the sketch redraws" (red
 before: 1 became 2) and system-tree.spec "renews a variant row only with the revision of that variant". Not verified:
 a live redraw in the app; the builder takes the shot.
+
+## As built (B282)
+
+Probes on 2026-11-18 (finding 334). (a) Open, now built: with a port held and `DE_PORT` pinned to it, the built cli
+printed "Port 4491 is already in use" and was still running after 90 s (Vite threw, `index.ts` set exit code 1, but the
+open Vite server kept the process alive). `serveDesign` now closes the server when `listen` fails and rethrows; live it
+exits 1 after 2 s. serve.spec "closes the server and fails when the pinned DE_PORT is taken" (red before: 0 closes).
+(b) Partly done before: `startDesignServer` already rejected on cli exit (6c33ed118), so with (a) the harness fails
+fast. Built: it reads "Port N is already in use" from that exit, moves `DE_PORT` to a free port and starts once more, so
+`restartDesign` keeps the new port. Live with the real cli: taken 4491 moved to a free port, ready at +1.9 s.
+verify-studio-headless.spec "moves a taken pinned DE_PORT to a free port" (red before). (c) Open, now built: e2e-check
+spawned the suite in its own group and killed only the suite pid. `runSuite` spawns it detached and SIGKILLs the whole
+group on watchdog, timeout, suite exit and e2e-check exit. (d) Built: e2e-check.spec "no server a suite started
+outlives a run that exits" and "... a suite killed for going silent" (both red before). Cause 2 no longer reproduces:
+GET /__design/system on a `yarn scratch:checkout` copy answered at +3.5 s cold and +1.35 s warm, the main tree at
++1.3 s, far under the 12 s limit. Not verified: a full `yarn studio:e2e` or `yarn e2e-check` run on a held port.

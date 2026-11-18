@@ -50,6 +50,7 @@ type ServerOptions = {
 const created: ServerOptions[] = [];
 const targets: string[] = [];
 let listenFailure: Error | null = null;
+let closes = 0;
 
 vi.mock('vite', () => ({
   createLogger: () => ({
@@ -69,7 +70,9 @@ vi.mock('vite', () => ({
         if (listenFailure) throw listenFailure;
       },
       printUrls: () => undefined,
-      close: async () => undefined,
+      close: async () => {
+        closes += 1;
+      },
     };
   },
 }));
@@ -84,6 +87,7 @@ afterEach(async () => {
   process.chdir(cwd);
   created.length = 0;
   listenFailure = null;
+  closes = 0;
   vi.restoreAllMocks();
   await Promise.all(targets.splice(0).map((target) => rm(target, { recursive: true, force: true, maxRetries: 5 })));
 });
@@ -179,6 +183,18 @@ describe('serveDesign', () => {
 
     expect(await serveDesign({ target })).toBe(0);
     expect(created[0]?.server).toMatchObject({ port: 4498, strictPort: true });
+    vi.unstubAllEnvs();
+  });
+
+  it('closes the server and fails when the pinned DE_PORT is taken, so no process holds on', async () => {
+    vi.stubEnv('DE_PORT', '4498');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '');
+    listenFailure = Object.assign(new Error('Port 4498 is already in use'), { code: 'EADDRINUSE' });
+
+    await expect(serveDesign({ target: makeTarget({ port: 4999, defaultCall: 'app/one' }) })).rejects.toThrow(
+      'already in use',
+    );
+    expect(closes).toBe(1);
     vi.unstubAllEnvs();
   });
 
