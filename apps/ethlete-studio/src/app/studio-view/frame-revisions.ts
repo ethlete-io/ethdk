@@ -105,17 +105,21 @@ export const revisionOf = (
   return Math.max(revisions.all, revisions.parts[drawnKeyOf(drawn)] ?? 0, fails ? revisions.errored : 0);
 };
 
-/** The revision of a sketch's frames: its target as the product has it, and every part any of its variants draws. */
+/**
+ * The revision of a sketch's frames: its target as the product has it, and every part its variants draw. With
+ * `variant`, only the parts that variant draws count.
+ */
 export const sketchRevisionOf = (
   revisions: FrameRevisions,
-  sketch: { product: string; target: string; part?: string; errored?: boolean },
+  sketch: { product: string; target: string; part?: string; variant?: string; errored?: boolean },
 ) => {
   const shown = (key: string) => {
-    const [product, part, target] = JSON.parse(key) as [string, string, string | null];
+    const [product, part, target, variant] = JSON.parse(key) as [string, string, string | null, string | null];
 
     return (
       product === sketch.product &&
-      (target === sketch.target || (target === null && part === (sketch.part ?? sketch.target)))
+      ((target === sketch.target && (sketch.variant === undefined || variant === sketch.variant)) ||
+        (target === null && part === (sketch.part ?? sketch.target)))
     );
   };
   const fails = sketch.errored || failsSince(revisions, shown);

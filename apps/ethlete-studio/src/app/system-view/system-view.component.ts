@@ -199,6 +199,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [part]="shown.part"
         [epoch]="epoch()"
         [revision]="sketchRevision()"
+        [variantRevisions]="sketchVariantRevisions()"
         [currentRevision]="sketchCurrentRevision()"
         [changes]="frameRevisions().seq"
         [surface]="surface()"
@@ -614,23 +615,46 @@ export class SystemViewComponent {
     };
   });
 
-  protected sketchRevision = computed(() => {
+  private sketchRevisionSource = computed(() => {
     const shown = this.sketchShown();
 
-    if (!shown) return 0;
+    if (!shown) return null;
 
     const { product, sketch, part } = shown;
 
-    return sketchRevisionOf(this.frameRevisions(), {
-      product: product.name,
-      target: sketch.target,
-      part: sketchPartOf(sketch),
-      errored:
-        failsToLoad(part?.problems ?? []) ||
-        (sketch.targets ?? []).some((target) => !!target.error) ||
-        sketch.problems?.some((entry) => failsToLoad(entry.problems)),
-    });
+    return {
+      variants: sketch.variants,
+      source: {
+        product: product.name,
+        target: sketch.target,
+        part: sketchPartOf(sketch),
+        errored:
+          failsToLoad(part?.problems ?? []) ||
+          (sketch.targets ?? []).some((target) => !!target.error) ||
+          sketch.problems?.some((entry) => failsToLoad(entry.problems)),
+      },
+    };
   });
+
+  protected sketchRevision = computed(() => {
+    const shown = this.sketchRevisionSource();
+
+    return shown ? sketchRevisionOf(this.frameRevisions(), shown.source) : 0;
+  });
+
+  protected sketchVariantRevisions = computed(
+    () => {
+      const shown = this.sketchRevisionSource();
+      const revisions = this.frameRevisions();
+
+      if (!shown) return {};
+
+      return Object.fromEntries(
+        shown.variants.map((variant) => [variant, sketchRevisionOf(revisions, { ...shown.source, variant })]),
+      );
+    },
+    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
 
   protected sketchCurrentRevision = computed(() => {
     const shown = this.sketchShown();

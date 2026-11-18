@@ -1682,4 +1682,23 @@ describe('sketchRowsOf', () => {
     expect(revisionsOf(CURRENT)).toEqual(['3', '3', '3', '3']);
     expect(revisionsOf('a')).toEqual(['7', '7', '7', '7']);
   });
+
+  it('renews a variant row only with the revision of that variant', () => {
+    const button = part({ name: 'button' });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([button]),
+      part: button,
+      sketch: sketch(),
+      variants: ['a', 'b'],
+      epoch: 1,
+      revision: 7,
+      variantRevisions: { a: 5 },
+    });
+    const revisionOf = (key: string) =>
+      new Set(rows.find((row) => row.key === key)?.shots.map((shot) => new URL(shot.src).searchParams.get('revision')));
+
+    expect(revisionOf('a')).toEqual(new Set(['5']));
+    expect(revisionOf('b')).toEqual(new Set(['7']));
+  });
 });

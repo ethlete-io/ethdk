@@ -107,4 +107,20 @@ describe('frame revisions', () => {
     expect(sketchRevisionOf(frameRevisionsWith(once, { all: false, parts: [variantCard] }), sketch)).toBe(2);
     expect(sketchRevisionOf(frameRevisionsWith(once, { all: false, parts: [button] }), sketch)).toBe(2);
   });
+
+  it('keeps the revision of a variant when only another variant of the sketch redraws', () => {
+    const variantA = { ...variantB, sketch: { target: 'components/button', variant: 'a' } };
+    const sketch = { product: 'web', target: 'components/button' };
+    const once = frameRevisionsWith(NO_FRAME_REVISIONS, { all: false, parts: [variantB] });
+
+    const twice = frameRevisionsWith(once, { all: false, parts: [variantA] });
+
+    expect(sketchRevisionOf(twice, { ...sketch, variant: 'b' })).toBe(
+      sketchRevisionOf(once, { ...sketch, variant: 'b' }),
+    );
+    expect(sketchRevisionOf(twice, { ...sketch, variant: 'a' })).toBe(2);
+    expect(
+      sketchRevisionOf(frameRevisionsWith(twice, { all: false, parts: [button] }), { ...sketch, variant: 'b' }),
+    ).toBe(3);
+  });
 });

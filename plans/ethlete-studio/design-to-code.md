@@ -2133,3 +2133,15 @@ prints the 5 CONTROL-UNDECLARED hints, holds the part as "every state draws as b
 changed: the pre-existing UNRECORDED on elements/canvas-frames and on its embedder pages/inbox. One check run ended with
 `runners.droppedProps is not a function` while a resident `design serve` of another CLI build ran; the rerun did not
 repeat it, and a probe showed the import resolves to a function at load (no import-cycle cause). Cause not found.
+
+## As built (B260)
+
+Probe confirmed the suspect: `sketchRevisionOf` took the newest revision over every variant key of the target, and the
+sketch view gave that one `revision` to every variant row, so a redraw of variant `a` changed the src and picture of
+variant `b` and reloaded it. Fix (fix(repo): Reload only the frames of the redrawn sketch variant):
+`sketchRevisionOf` takes an optional `variant` and then counts only the keys of that variant plus the target as the
+product has it; system-view passes `variantRevisions` (one per `sketch.variants` entry) to sketch-view, and
+`sketchRowsOf` uses it per variant row, falling back to the sketch-wide revision. The errored flag stays sketch-wide.
+Verified: frame-revisions.spec "keeps the revision of a variant when only another variant of the sketch redraws" (red
+before: 1 became 2) and system-tree.spec "renews a variant row only with the revision of that variant". Not verified:
+a live redraw in the app; the builder takes the shot.

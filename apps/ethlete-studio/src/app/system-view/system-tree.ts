@@ -1441,11 +1441,13 @@ export const sketchRowsOf = ({
   epoch,
   revision,
   currentRevision = revision,
+  variantRevisions = {},
   surface,
   color,
 }: Omit<SketchFramesSource, 'size' | 'interaction' | 'openRounds' | 'openStates' | 'hideWithdrawn' | 'now'> & {
   variants: string[];
   currentRevision?: number;
+  variantRevisions?: Record<string, number>;
 }): SketchRowOf[] => {
   const size = sketchSizesOf({ product, sketch, part })[0] ?? null;
   const cell = cellSizeOf(product, size);
@@ -1467,7 +1469,7 @@ export const sketchRowsOf = ({
           part: partKey,
           state,
           epoch,
-          revision: key === CURRENT ? currentRevision : revision,
+          revision: key === CURRENT ? currentRevision : (variantRevisions[key] ?? revision),
           surface,
           color,
           ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),
