@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B611
+open: B614
 decided: 2026-11-18
 source: proposal of the analysis session (ethlete-sdk-3f) 2026-11-18, approved by the human with "das klingt top", relayed through the doc agent
 ---
@@ -30,7 +30,7 @@ later the model log (B606).
    pane with the live state (queue head, running slice, last finished rows) hangs on the same command.
 5. The same for all sessions: doc agent, builder and consumers use the same script and mod, shipped through the package
    as in ADR 0374. Built package-ready.
-6. Order: report on demand first (needs only git log and rows), then the status line after B609, then the report on
+6. Order (rows B611-B614): report on demand first (needs only git log and rows), then the status line after B609, then the report on
    return after B608, the pane last.
 7. Look of page and status line: the builder builds its recommendation and shows it finished; no picks for the human.
 
