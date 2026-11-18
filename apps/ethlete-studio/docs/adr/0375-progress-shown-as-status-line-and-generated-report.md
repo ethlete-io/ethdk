@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B613
+built: ecc45f8c2
 decided: 2026-11-18
 source: proposal of the analysis session (ethlete-sdk-3f) 2026-11-18, approved by the human with "das klingt top", relayed through the doc agent
 ---
