@@ -2254,6 +2254,8 @@ embedders fail. Suspect: the UNRECORDED records in implemented.json (no file lis
 every embedder of the three developer parts fail, so none of them can hold a fresh record. The sketch variants were
 viewed only on the contact sheet, not in Studio's sketch view.
 
+Pick and merge (2026-11-18): the builder picked variant a of the pages/system sketch (agent output; grill agreed) and merged it (3ba77fcf0). The merge named one PORT item, the `developer` state prop; the design harness now maps it onto `buildReady.developer` with `DEVELOPER_REASONS_SAMPLE` (system-page-sample.ts). Verified: `design check --product studio --part pages/system` 0 findings, studio vitest related green. Not verified: a live shot of the developer-part state in Studio.
+
 ## As built (sketch round --asks)
 
 Decision 78681ea6a (2026-11-02). Commit `feat(cli): Refuse sketch variants that look alike in the states a round asks`.

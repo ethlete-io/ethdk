@@ -137,6 +137,11 @@ export const buildReadySampleOf = (sample: BuildReadySample, openCount: number):
   }
 };
 
+export const DEVELOPER_REASONS_SAMPLE = [
+  'injiziert den Service CommandPaletteStore (title-search.component.ts)',
+  'routet: nutzt routerLink (title-search.component.html)',
+];
+
 export const AGENT_SAMPLES: Record<AgentProgress['state'], AgentProgress> = {
   working: { state: 'working', doing: 'behebt', detail: 'APP-SPEC in button.component.spec.ts' },
   waiting: { state: 'waiting', detail: 'auf deine Antwort im Kommentar zu outline' },

@@ -6,6 +6,7 @@ import {
   AGENT_ON_READY_PART_SAMPLE,
   AGENT_SAMPLES,
   buildReadySampleOf,
+  DEVELOPER_REASONS_SAMPLE,
   BuildReadySample,
   LEGACY_CALL_SAMPLE,
   LISTING_ERROR_SAMPLE,
@@ -336,7 +337,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(confirm === 'merge' || confirm === 'discard' ? { confirm } : {}),
     };
   },
-  'pages/system': ({ build, agent, call, listingError, folded, comments, ...props }) => {
+  'pages/system': ({ build, agent, call, listingError, folded, comments, developer, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;
     const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptions.length);
     const agentState = agent as keyof typeof AGENT_SAMPLES | undefined;
@@ -367,10 +368,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
             writer: SYSTEM_COMMENT_WRITER_SAMPLE,
           }
         : {}),
-      buildReady: buildReadySampleOf(
-        (build as BuildReadySample | undefined) ?? (props['nothingOpen'] ? 'ready' : 'blocked'),
-        openCount,
-      ),
+      buildReady: {
+        ...buildReadySampleOf(
+          (build as BuildReadySample | undefined) ?? (props['nothingOpen'] ? 'ready' : 'blocked'),
+          openCount,
+        ),
+        ...(developer ? { developer: DEVELOPER_REASONS_SAMPLE } : {}),
+      },
     };
   },
 };
