@@ -92,8 +92,8 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/title-bar": "cb34ec0214032a31",
-      "components/title-search": "90334d0f13467116"
+      "components/title-bar": "8fb1387dfeb20706",
+      "components/title-search": "2effb68f7c50724e"
     },
     "actions": ["emit:close", "emit:maximize", "emit:minimize", "opens:command-palette"],
     "builder": "designer",
@@ -245,8 +245,8 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/comment-pin": "5fee53884eddcc46",
-      "components/comment-row": "7a1119d42d32457b"
+      "components/comment-pin": "e34c2bca2b1a01f3",
+      "components/comment-row": "a5c76250c7a60d67"
     },
     "actions": ["comment-mode", "draft", "emit:pick", "emit:pinToggle", "emit:sendComment", "mode", "rest"],
     "builder": "designer",
@@ -657,7 +657,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/title-search": "90334d0f13467116"
+      "components/title-search": "2effb68f7c50724e"
     },
     "actions": [
       "emit:close",
@@ -672,7 +672,7 @@
     "at": "2026-11-17T20:37:08.650Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "components/title-search": {
     "hash": "6e39a84f7026860a",
@@ -830,8 +830,8 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/title-bar": "cb34ec0214032a31",
-      "components/title-search": "90334d0f13467116"
+      "components/title-bar": "8fb1387dfeb20706",
+      "components/title-search": "2effb68f7c50724e"
     },
     "actions": [
       "emit:close",
@@ -846,7 +846,7 @@
     "at": "2026-11-18T05:27:44.213Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "components/zoom-chip": {
     "hash": "28ff90f714918132",
@@ -918,7 +918,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "5ba17153a6ca3b14",
+      "components/canvas-viewport": "c69500bbf80b3500",
       "components/zoom-chip": "9104b0cf558fc787"
     },
     "actions": [
@@ -941,7 +941,7 @@
     "at": "2026-11-18T04:29:07.225Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "elements/part-tree": {
     "hash": "229a31a8858ffdee",
@@ -974,14 +974,14 @@
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "embedded": {
-      "components/tree-row": "e5850e1a13fd0ab8"
+      "components/tree-row": "e42bafba65c15bc6"
     },
     "actions": ["emit:activate", "emit:expandedChange"],
     "builder": "designer",
     "at": "2026-11-17T15:25:19.301Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "elements/shell-main": {
     "hash": "b34270c2e581a2f9",
@@ -1070,8 +1070,8 @@
     },
     "embedded": {
       "components/shell-collapse": "5cf8204e82a19f30",
-      "components/title-bar": "cb34ec0214032a31",
-      "components/title-search": "90334d0f13467116"
+      "components/title-bar": "8fb1387dfeb20706",
+      "components/title-search": "2effb68f7c50724e"
     },
     "actions": [
       "closed",
@@ -1093,7 +1093,7 @@
     "at": "2026-11-17T20:45:59.921Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "elements/studio-menu": {
     "hash": "3ccac60c4cb4f777",
@@ -1404,14 +1404,14 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "5ba17153a6ca3b14",
+      "components/canvas-viewport": "c69500bbf80b3500",
       "components/shell-collapse": "5cf8204e82a19f30",
-      "components/title-bar": "cb34ec0214032a31",
-      "components/title-search": "90334d0f13467116",
-      "components/tree-row": "e5850e1a13fd0ab8",
+      "components/title-bar": "8fb1387dfeb20706",
+      "components/title-search": "2effb68f7c50724e",
+      "components/tree-row": "e42bafba65c15bc6",
       "components/zoom-chip": "9104b0cf558fc787",
-      "elements/shell-main": "aa402453f47b5f22",
-      "elements/studio-menu": "a075fe2a6ed2735f"
+      "elements/shell-main": "38f68e1c2cfa3985",
+      "elements/studio-menu": "84d4dd9a7291379b"
     },
     "actions": [
       "emit:close",
@@ -1436,7 +1436,7 @@
     "at": "2026-11-17T22:55:33.603Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "pages/inbox": {
     "actions": [
@@ -1554,12 +1554,12 @@
     },
     "embedded": {
       "components/shell-collapse": "5cf8204e82a19f30",
-      "components/title-bar": "cb34ec0214032a31",
-      "components/title-search": "90334d0f13467116",
-      "components/tree-row": "e5850e1a13fd0ab8",
-      "elements/part-tree": "8499bdb4c468b3be",
-      "elements/shell-main": "aa402453f47b5f22",
-      "elements/studio-menu": "a075fe2a6ed2735f"
+      "components/title-bar": "8fb1387dfeb20706",
+      "components/title-search": "2effb68f7c50724e",
+      "components/tree-row": "e42bafba65c15bc6",
+      "elements/part-tree": "f4880f4e00a80d81",
+      "elements/shell-main": "38f68e1c2cfa3985",
+      "elements/studio-menu": "84d4dd9a7291379b"
     },
     "actions": [
       "emit:activate",
@@ -1582,7 +1582,7 @@
     "at": "2026-11-17T22:55:32.586Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "pages/sketches": {
     "hash": "75f165d822612b1f",
@@ -1767,18 +1767,18 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "5ba17153a6ca3b14",
-      "components/comment-pin": "5fee53884eddcc46",
-      "components/comment-row": "7a1119d42d32457b",
+      "components/canvas-viewport": "c69500bbf80b3500",
+      "components/comment-pin": "e34c2bca2b1a01f3",
+      "components/comment-row": "a5c76250c7a60d67",
       "components/disclosure": "359435e35ab6e798",
       "components/shell-collapse": "5cf8204e82a19f30",
-      "components/title-bar": "cb34ec0214032a31",
-      "components/title-search": "90334d0f13467116",
-      "components/tree-row": "e5850e1a13fd0ab8",
+      "components/title-bar": "8fb1387dfeb20706",
+      "components/title-search": "2effb68f7c50724e",
+      "components/tree-row": "e42bafba65c15bc6",
       "components/zoom-chip": "9104b0cf558fc787",
-      "elements/part-tree": "8499bdb4c468b3be",
-      "elements/shell-main": "aa402453f47b5f22",
-      "elements/studio-menu": "a075fe2a6ed2735f"
+      "elements/part-tree": "f4880f4e00a80d81",
+      "elements/shell-main": "38f68e1c2cfa3985",
+      "elements/studio-menu": "84d4dd9a7291379b"
     },
     "actions": [
       "comment-mode",
@@ -1821,7 +1821,7 @@
     "at": "2026-11-18T05:27:52.643Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   },
   "pages/start": {
     "hash": "276908046b2b6799",
@@ -2023,19 +2023,19 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "5ba17153a6ca3b14",
-      "components/comment-pin": "5fee53884eddcc46",
-      "components/comment-row": "7a1119d42d32457b",
+      "components/canvas-viewport": "c69500bbf80b3500",
+      "components/comment-pin": "e34c2bca2b1a01f3",
+      "components/comment-row": "a5c76250c7a60d67",
       "components/disclosure": "359435e35ab6e798",
       "components/shell-collapse": "5cf8204e82a19f30",
-      "components/title-bar": "cb34ec0214032a31",
-      "components/title-search": "90334d0f13467116",
-      "components/tree-row": "e5850e1a13fd0ab8",
+      "components/title-bar": "8fb1387dfeb20706",
+      "components/title-search": "2effb68f7c50724e",
+      "components/tree-row": "e42bafba65c15bc6",
       "components/zoom-chip": "9104b0cf558fc787",
-      "elements/canvas-frames": "d42339ed861c87ce",
-      "elements/part-tree": "8499bdb4c468b3be",
-      "elements/shell-main": "aa402453f47b5f22",
-      "elements/studio-menu": "a075fe2a6ed2735f"
+      "elements/canvas-frames": "97001b3fb22b00c5",
+      "elements/part-tree": "f4880f4e00a80d81",
+      "elements/shell-main": "38f68e1c2cfa3985",
+      "elements/studio-menu": "84d4dd9a7291379b"
     },
     "actions": [
       "blockers-open",
@@ -2043,14 +2043,10 @@
       "comment-mode",
       "emit:activate",
       "emit:approveException",
-      "emit:close",
       "emit:collapse",
       "emit:copyPrompt",
       "emit:expandedChange",
-      "emit:fit",
       "emit:markTransferred",
-      "emit:maximize",
-      "emit:minimize",
       "emit:openEditSketch",
       "emit:pick",
       "emit:pickTheme",
@@ -2062,9 +2058,6 @@
       "emit:sendComment",
       "emit:showAllStates",
       "emit:sideWidthChange",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "part",
@@ -2075,6 +2068,6 @@
     "at": "2026-11-18T05:56:48.361Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2342738
+    "pid": 3795310
   }
 }

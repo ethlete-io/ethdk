@@ -39,9 +39,13 @@ import {
   commentDraftAt,
   commentLayer,
   commentList,
+  commentModeHint,
   commentPins,
   draftPin,
   type PlacedThread,
+  type ReplyPhase,
+  threadCardAt,
+  type ThreadMessage,
   withCommentList,
 } from '@system/components/comment-flow';
 
@@ -108,6 +112,51 @@ const PART_THREADS: PlacedThread[] = [
     unread: true,
   },
 ];
+
+const PART_MESSAGES: ThreadMessage[][] = [
+  [
+    { author: 'human', initials: 'H', own: true, when: 'vor 3 Std', text: 'Die Tonal-Fläche ist zu blass.' },
+    { author: 'Claude', initials: 'C', agent: 'claude', when: 'vor 2 Std', text: 'Ich hebe sie um eine Stufe an.' },
+    {
+      author: 'human',
+      initials: 'H',
+      own: true,
+      when: 'vor 1 Std',
+      text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    },
+  ],
+  [
+    {
+      author: 'human',
+      initials: 'H',
+      own: true,
+      when: 'vor 2 Std',
+      text: 'Hover und active liegen zu nah beieinander. Mach hover heller.',
+    },
+    {
+      author: 'Claude',
+      initials: 'C',
+      agent: 'claude',
+      when: 'vor 1 Std',
+      text: 'Ich mische accent mit 12 % Weiß. Passt das so?',
+    },
+    { author: 'human', initials: 'H', own: true, when: 'vor 40 Min', text: 'Noch zu dunkel. Nimm lieber den Token.' },
+    {
+      author: 'Claude',
+      initials: 'C',
+      agent: 'claude',
+      when: 'vor 3 Min',
+      text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+    },
+  ],
+];
+
+const CARD_AT = [
+  'left-[calc(22%+var(--space-6))] top-[calc(30%-var(--space-6))]',
+  'left-[calc(58%+var(--space-6))] top-[calc(52%-var(--space-6))]',
+];
+
+const REPLY = 'Ja, der Abstand reicht. Lass es so.';
 
 const DRAFT_AT = 'left-[38%] top-[42%]';
 
@@ -259,6 +308,9 @@ export default definePart<{
   draft?: string;
   send?: SendPhase;
   reason?: string;
+  thread?: number;
+  reply?: string;
+  replyPhase?: ReplyPhase;
   build?: 'one-blocker' | 'checking' | 'blocked-checking' | 'direct-edit';
   blockersOpen?: boolean;
   agent?: AgentState;
@@ -305,6 +357,10 @@ export default definePart<{
     comments: { closed: true, comments: true },
     'comments-mode': { closed: true, comments: true, commentMode: true },
     'comments-draft': { closed: true, comments: true, commentMode: true, draft: TYPED },
+    thread: { closed: true, comments: true, thread: 1 },
+    'thread-own': { closed: true, comments: true, thread: 0 },
+    'thread-busy': { closed: true, comments: true, thread: 1, reply: REPLY, replyPhase: 'busy' },
+    'thread-error': { closed: true, comments: true, thread: 1, reply: REPLY, replyPhase: 'error' },
     'one-blocker': { nothingOpen: true, build: 'one-blocker' },
     checking: { nothingOpen: true, build: 'checking' },
     'blocked-checking': { nothingOpen: true, build: 'blocked-checking' },
@@ -337,7 +393,8 @@ export default definePart<{
     fit: 'The canvas fitted to its frame; check that the frame sits centred with room at the top.',
     'points-closed': 'The open-points chip closed; check its count beside the Kommentar toggle.',
     'nothing-open': 'A part with no open points; check that the chip reads Nichts offen.',
-    'comment-mode': 'Comment mode on; check the pressed Kommentar toggle and the crosshair over the frame.',
+    'comment-mode':
+      'Comment mode on; check the pressed Kommentar toggle with Esc oder C beendet beside it and the crosshair over the frame.',
     'comment-draft': 'An empty comment draft; check the text field, Abbrechen and Senden at the clicked point.',
     'comment-draft-typed': 'A typed comment draft; check that the text wraps inside the field and Senden is enabled.',
     'send-error': 'A failed send; check the retry line under the field, the kept text and Erneut senden.',
@@ -346,6 +403,14 @@ export default definePart<{
     comments: 'The comment pins of the part; check their numbers and where they sit on the frame.',
     'comments-mode': 'Comment pins in comment mode; check that the pins stay visible over the crosshair.',
     'comments-draft': 'A draft beside existing pins; check that the draft pin does not cover a numbered pin.',
+    thread:
+      'The second pin opened as its thread card beside its pin on the frame; check the four messages, Zurückziehen under each own message, Erledigen, the focused empty reply field and the disabled Antworten.',
+    'thread-own':
+      'A thread the user started, with their own reply last; check Zurückziehen under the root and under the own reply, the selected first pin and the focused reply field.',
+    'thread-busy':
+      'A reply being sent; check that the field is disabled with the reply kept and Antworten shows its spinner.',
+    'thread-error':
+      'A reply that failed on the network or server; check Kommentar nicht gesendet. Erneut versuchen. under the field, the kept reply and Erneut senden.',
     'one-blocker': 'One definite blocker; check that the badge reads Nicht baubereit (1) in the warning colour.',
     checking: 'Slow rules still running with no definite blocker; check that the badge reads Wird geprüft.',
     'blocked-checking':
@@ -371,6 +436,10 @@ export default definePart<{
     'comment-cancel': { kind: 'button', part: 'components/button' },
     'comment-send': { kind: 'button', part: 'components/button' },
     'comment-target': { kind: 'button', part: 'components/comment-target' },
+    'thread-close': { kind: 'button', part: 'components/button' },
+    'thread-resolve': { kind: 'button', part: 'components/button' },
+    'thread-withdraw': { kind: 'button', part: 'components/button' },
+    'thread-send': { kind: 'button', part: 'components/button', disabled: true },
     'open-points': { kind: 'button', part: 'components/button' },
     reload: { kind: 'button', part: 'components/button' },
     'open-edit-sketch': { kind: 'button', part: 'components/button' },
@@ -396,6 +465,9 @@ export default definePart<{
     draft,
     send,
     reason,
+    thread,
+    reply,
+    replyPhase,
     build,
     blockersOpen = false,
     agent,
@@ -490,10 +562,24 @@ export default definePart<{
     const at = comments ? 'left-[calc(38%+var(--space-6))] top-[42%]' : DRAFT_AT;
     const writing = draft === undefined ? undefined : await commentDraftAt(at, { text: draft, phase: send, reason });
     const target = commentLayer('button', 'comment-draft');
-    const pins = comments ? commentPins(PART_THREADS, writing ? -1 : 0) + (writing ? draftPin(DRAFT_AT) : '') : '';
+    const selected = writing ? -1 : (thread ?? 0);
+    const pins = comments ? commentPins(PART_THREADS, selected) + (writing ? draftPin(DRAFT_AT) : '') : '';
+    const opened =
+      thread === undefined
+        ? undefined
+        : await threadCardAt(CARD_AT[thread] ?? '', {
+            place: `${PART_THREADS[thread]?.part ?? ''} › ${PART_THREADS[thread]?.state ?? ''}`,
+            messages: PART_MESSAGES[thread] ?? [],
+            closeTo: 'comments',
+            ...(reply ? { text: reply } : {}),
+            ...(replyPhase ? { phase: replyPhase } : {}),
+          });
+    const hint = commentMode && draft === undefined ? commentModeHint() : undefined;
     const body =
       commentMode || comments
-        ? html`<div class="relative">${shot}${pins}${commentMode ? target : ''}${writing?.body ?? ''}</div>`
+        ? html`<div class="relative">
+            ${shot}${pins}${commentMode ? target : ''}${writing?.body ?? ''}${opened?.body ?? ''}
+          </div>`
         : shot;
     const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
@@ -529,7 +615,7 @@ export default definePart<{
           blockersOpen,
           developer,
         );
-    const list = comments ? commentList(PART_THREADS, writing ? -1 : 0) : undefined;
+    const list = comments ? commentList(PART_THREADS, selected) : undefined;
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
       studio: menu.body,
@@ -538,7 +624,7 @@ export default definePart<{
       side: list ? withCommentList(tree.body, list.body) : tree.body,
       content: html`${frames}
         <div class="absolute top-space-3 right-space-3 flex gap-space-2">
-          ${comment.body}${toggle.body}${dialog?.body ?? ''}
+          ${hint?.body ?? ''}${comment.body}${toggle.body}${dialog?.body ?? ''}
         </div>
         ${folded ? foldedStatesPill(FOLDED_SAMPLE) : ''}`,
     });
@@ -554,6 +640,8 @@ export default definePart<{
         comment.styles +
         (list?.styles ?? '') +
         (writing?.styles ?? '') +
+        (hint?.styles ?? '') +
+        (opened?.styles ?? '') +
         toggle.styles +
         (dialog?.styles ?? '') +
         (folded ? disclosureStyles : ''),

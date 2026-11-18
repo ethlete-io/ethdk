@@ -19,11 +19,10 @@
     "at": "2026-11-05T15:36:53.628Z"
   },
   "components/comment-flow": {
-    "hash": "8d457e1c80746ffd",
+    "hash": "3aa415f273544726",
     "variant": "a",
-    "decidedBy": "plan: ADR 0322 and B539: one comment flow, the layout of pages/system variant b the human picked; pages/system draws no pixel change",
-    "at": "2026-11-16T16:00:57.085Z",
-    "note": "merged without a pick: allowed by ADR 0322 and B539: one comment flow, the layout of pages/system variant b the human picked; pages/system draws no pixel change"
+    "decidedBy": "builder",
+    "at": "2026-11-18T06:23:52.170Z"
   },
   "components/comment-pin": {
     "hash": "e5cb923fb2497b47",
@@ -134,10 +133,10 @@
   },
   "pages/flows": "4950706aa3a64d19",
   "pages/inbox": {
-    "hash": "10ea4f2180238920",
+    "hash": "f7072cf30ea3c755",
     "variant": "a",
     "decidedBy": "builder",
-    "at": "2026-11-18T05:59:12.048Z"
+    "at": "2026-11-18T06:23:52.170Z"
   },
   "pages/inventory": {
     "hash": "a5f9ac63fb5969d7",
@@ -159,9 +158,9 @@
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "263d9d12dc359a46",
+    "hash": "c53a4fd091c02d00",
     "variant": "a",
     "decidedBy": "builder",
-    "at": "2026-11-18T05:53:01.295Z"
+    "at": "2026-11-18T06:23:52.170Z"
   }
 }

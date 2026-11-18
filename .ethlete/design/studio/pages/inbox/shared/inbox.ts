@@ -10,14 +10,14 @@ import { studioMenu } from '@system/elements/studio-menu';
 import type { Agent } from '@system/foundations/agent-logos';
 import { icon } from '@system/foundations/icons';
 import styles from './inbox.css?inline';
-import { type Dock, type Message, type SendPhase, threadCard } from './thread-card';
+import { type ReplyPhase, threadCard, type ThreadMessage } from '@system/components/comment-flow';
 
 type Props = {
   showResolved: boolean;
   openOn: 'all' | 'active' | 'others' | 'none';
   load?: 'loading' | 'error';
   comments?: Comment[];
-  thread?: { id: string; text?: string; phase?: SendPhase; reason?: string };
+  thread?: { id: string; text?: string; phase?: ReplyPhase; reason?: string };
 };
 
 type Comment = Thread & { id: string; cell?: number };
@@ -192,7 +192,7 @@ const LONG: Comment[] = [
   })),
 ];
 
-const THREADS: Record<string, Message[]> = {
+const THREADS: Record<string, ThreadMessage[]> = {
   c1: [
     {
       author: 'human',
@@ -259,19 +259,14 @@ const loadingNote = `<p class="m-0 px-space-2 pt-space-1 text-et-surface-muted t
 const loadError = (retry: string) =>
   `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-theme' })}</span><p class="m-0 text-et-surface text-(length:--text-sm)">Kommentare nicht geladen</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">Die Liste kam nicht vom Design-Server an.</p><div class="mt-space-3">${retry}</div></div>`;
 
-const pinned = (
-  body: string,
-  comments: Comment[],
-  pin: (c: Comment) => string,
-  card?: { id: string; body: string },
-) => {
+const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string, anchored?: string) => {
   let index = -1;
   return body.replace(/<div class="(st-sgrid-cell[^"]*)">/gu, (match, cls: string) => {
     index += 1;
     const c = comments.find((comment) => comment.cell === index);
     if (!c) return match;
-    const opened = card && card.id === c.id ? card.body : '';
-    return `<div class="${cls} relative"><span class="absolute -top-3.5 right-1.5 z-11 flex">${pin(c)}</span>${opened}`;
+    const anchor = c.id === anchored ? '[anchor-name:--thread-pin]' : '';
+    return `<div class="${cls} relative"><span class="absolute -top-3.5 right-1.5 z-11 flex ${anchor}">${pin(c)}</span>`;
   });
 };
 
@@ -286,192 +281,195 @@ const thread = (id: string, extra: Omit<NonNullable<Props['thread']>, 'id'> = {}
   thread: { id, ...extra },
 });
 
-export const inboxFor = (dock: Dock) =>
-  definePart<Props>({
-    note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. A click on a row, or Enter or Space on the focused row, selects its comment and opens its place on the canvas; for a comment on another part the canvas switches to that part first. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls.',
-    madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
-    states: {
-      open,
-      'with-resolved': withResolved,
-      'active-only': activeOnly,
-      'active-clear': activeClear,
-      'all-clear': allClear,
-      loading: { ...open, load: 'loading' },
-      'load-error': { ...open, load: 'error' },
-      'long-list': { ...open, comments: LONG },
-      thread: thread('c1'),
-      'thread-own': thread('c3'),
-      'thread-busy': thread('c1', { text: REPLY, phase: 'busy' }),
-      'thread-error': thread('c1', { text: REPLY, phase: 'error' }),
-      'thread-rejected': thread('c1', {
-        text: REPLY,
-        phase: 'rejected',
-        reason: 'Der Teil components/button existiert nicht mehr.',
-      }),
-    },
-    describe: {
-      open: 'Open threads on the active part and on others; check the two groups, the selected row and its pin on the canvas frame.',
-      'with-resolved':
-        'The list with resolved threads shown; check Erledigte zeigen turned on and the resolved rows muted with their check mark.',
-      'active-only':
-        'Open threads only on the part on the canvas; check that the lower group is gone and the top group keeps its rows.',
-      'active-clear':
-        'No open thread on the active part but some on others; check the Keine offenen Kommentare line under the top group head, above the other threads.',
-      'all-clear':
-        'No open threads at all; check the centred check icon with the empty message in the panel and that the canvas shows no pins.',
-      loading:
-        'The thread list while it loads; check the loading placeholder in the panel and that no stale rows show.',
-      'load-error': 'A failed load; check the error line and Erneut laden in the panel, and that no rows show.',
-      'long-list':
-        'A list longer than the panel; check that the list scrolls inside the panel and the last row is not cut by the panel foot.',
-      thread: `The selected pin opened as its thread card ${dock === 'canvas' ? 'beside the pin on the canvas' : 'docked in the panel in place of the list'}; check the four messages, Zurückziehen under each own message, Erledigen, the focused empty reply field and the disabled Antworten.`,
-      'thread-own':
-        'The card of an own comment without replies; check the single message with Zurückziehen, Erledigen and the focused reply field.',
-      'thread-busy':
-        'A reply being sent; check that the field is disabled with the reply kept and Antworten shows its spinner.',
-      'thread-error':
-        'A reply that failed on the network or server; check Kommentar nicht gesendet. Erneut versuchen. under the field, the kept reply and Erneut senden.',
-      'thread-rejected':
-        'A reply the server refused with a 4xx; check its reason under the field and that Antworten offers no retry.',
-    },
-    controls: {
-      pin: { kind: 'button' as const, part: 'components/comment-pin' },
-      resolved: { kind: 'button' as const, part: 'components/switch' },
-      row: { kind: 'row' as const, part: 'components/comment-row' as const },
-      retry: { kind: 'button' as const, part: 'components/button' },
-      'thread-close': { kind: 'button' as const, part: 'components/button' },
-      'thread-resolve': { kind: 'button' as const, part: 'components/button' },
-      'thread-withdraw': { kind: 'button' as const, part: 'components/button' },
-      'thread-send': { kind: 'button' as const, part: 'components/button', disabled: true },
-    },
-    render: async ({ showResolved, openOn, load, comments: list = COMMENTS, thread: opened }) => {
-      const selected = opened?.id ?? SELECTED;
-      const openComment = opened ? list.find((c) => c.id === opened.id) : undefined;
-      const card =
-        opened && openComment
-          ? await threadCard({
-              dock,
-              place: `${openComment.part} › ${openComment.state}`,
-              messages: THREADS[opened.id] ?? [],
-              ...(opened.text ? { text: opened.text } : {}),
-              ...(opened.phase ? { phase: opened.phase } : {}),
-              ...(opened.reason ? { reason: opened.reason } : {}),
-            })
-          : undefined;
-      const resolved = await switchPart.render({
-        checked: showResolved,
-        attributes: 'aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange"',
-      });
-      const controls = html`<span class="ib-control inline-flex">${control(resolved.body, 'resolved')}</span>`;
-      const retryButton = await button.render({
-        label: 'Erneut laden',
-        variant: 'outline',
-        color: 'surface',
-        size: 'sm',
-      });
-      const retry = control(withAction(retryButton.body, 'emit:retry'), 'retry');
-      const comments = (load ? [] : list).filter(
-        (c) =>
-          c.resolved ||
-          openOn === 'all' ||
-          (openOn === 'active' && c.part === ACTIVE_PART) ||
-          (openOn === 'others' && c.part !== ACTIVE_PART),
-      );
-      const visible = comments.filter((c) => showResolved || !c.resolved);
-      const unresolved = comments.filter((c) => !c.resolved).length;
-      const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
-      const gridRows = await Promise.all(
-        (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
-          label: variant,
-          cells: await Promise.all(
-            interactions.map(
-              async (interaction) =>
-                (
-                  await button.render(
-                    { label: 'Save', variant, pressed: interaction === 'pressed' },
-                    interaction === 'rest' || interaction === 'pressed' ? {} : { interaction },
+export const inbox = definePart<Props>({
+  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. A click on a row, or Enter or Space on the focused row, selects its comment and opens its place on the canvas; for a comment on another part the canvas switches to that part first. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls.',
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  states: {
+    open,
+    'with-resolved': withResolved,
+    'active-only': activeOnly,
+    'active-clear': activeClear,
+    'all-clear': allClear,
+    loading: { ...open, load: 'loading' },
+    'load-error': { ...open, load: 'error' },
+    'long-list': { ...open, comments: LONG },
+    thread: thread('c1'),
+    'thread-own': thread('c3'),
+    'thread-busy': thread('c1', { text: REPLY, phase: 'busy' }),
+    'thread-error': thread('c1', { text: REPLY, phase: 'error' }),
+    'thread-rejected': thread('c1', {
+      text: REPLY,
+      phase: 'rejected',
+      reason: 'Der Teil components/button existiert nicht mehr.',
+    }),
+  },
+  describe: {
+    open: 'Open threads on the active part and on others; check the two groups, the selected row and its pin on the canvas frame.',
+    'with-resolved':
+      'The list with resolved threads shown; check Erledigte zeigen turned on and the resolved rows muted with their check mark.',
+    'active-only':
+      'Open threads only on the part on the canvas; check that the lower group is gone and the top group keeps its rows.',
+    'active-clear':
+      'No open thread on the active part but some on others; check the Keine offenen Kommentare line under the top group head, above the other threads.',
+    'all-clear':
+      'No open threads at all; check the centred check icon with the empty message in the panel and that the canvas shows no pins.',
+    loading: 'The thread list while it loads; check the loading placeholder in the panel and that no stale rows show.',
+    'load-error': 'A failed load; check the error line and Erneut laden in the panel, and that no rows show.',
+    'long-list':
+      'A list longer than the panel; check that the list scrolls inside the panel and the last row is not cut by the panel foot.',
+    thread: `The selected pin opened as its thread card beside the pin on the canvas; check the four messages, Zurückziehen under each own message, Erledigen, the focused empty reply field and the disabled Antworten.`,
+    'thread-own':
+      'The card of an own comment without replies; check the single message with Zurückziehen, Erledigen and the focused reply field.',
+    'thread-busy':
+      'A reply being sent; check that the field is disabled with the reply kept and Antworten shows its spinner.',
+    'thread-error':
+      'A reply that failed on the network or server; check Kommentar nicht gesendet. Erneut versuchen. under the field, the kept reply and Erneut senden.',
+    'thread-rejected':
+      'A reply the server refused with a 4xx; check its reason under the field and that Antworten offers no retry.',
+  },
+  controls: {
+    pin: { kind: 'button' as const, part: 'components/comment-pin' },
+    resolved: { kind: 'button' as const, part: 'components/switch' },
+    row: { kind: 'row' as const, part: 'components/comment-row' as const },
+    retry: { kind: 'button' as const, part: 'components/button' },
+    'thread-close': { kind: 'button' as const, part: 'components/button' },
+    'thread-resolve': { kind: 'button' as const, part: 'components/button' },
+    'thread-withdraw': { kind: 'button' as const, part: 'components/button' },
+    'thread-send': { kind: 'button' as const, part: 'components/button', disabled: true },
+  },
+  render: async ({ showResolved, openOn, load, comments: list = COMMENTS, thread: opened }) => {
+    const selected = opened?.id ?? SELECTED;
+    const openComment = opened ? list.find((c) => c.id === opened.id) : undefined;
+    const card =
+      opened && openComment
+        ? await threadCard({
+            closeTo: 'open',
+            place: `${openComment.part} › ${openComment.state}`,
+            messages: THREADS[opened.id] ?? [],
+            ...(opened.text ? { text: opened.text } : {}),
+            ...(opened.phase ? { phase: opened.phase } : {}),
+            ...(opened.reason ? { reason: opened.reason } : {}),
+          })
+        : undefined;
+    const resolved = await switchPart.render({
+      checked: showResolved,
+      attributes: 'aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange"',
+    });
+    const controls = html`<span class="ib-control inline-flex">${control(resolved.body, 'resolved')}</span>`;
+    const retryButton = await button.render({
+      label: 'Erneut laden',
+      variant: 'outline',
+      color: 'surface',
+      size: 'sm',
+    });
+    const retry = control(withAction(retryButton.body, 'emit:retry'), 'retry');
+    const comments = (load ? [] : list).filter(
+      (c) =>
+        c.resolved ||
+        openOn === 'all' ||
+        (openOn === 'active' && c.part === ACTIVE_PART) ||
+        (openOn === 'others' && c.part !== ACTIVE_PART),
+    );
+    const visible = comments.filter((c) => showResolved || !c.resolved);
+    const unresolved = comments.filter((c) => !c.resolved).length;
+    const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
+    const gridRows = await Promise.all(
+      (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
+        label: variant,
+        cells: await Promise.all(
+          interactions.map(
+            async (interaction) =>
+              (
+                await button.render(
+                  { label: 'Save', variant, pressed: interaction === 'pressed' },
+                  interaction === 'rest' || interaction === 'pressed' ? {} : { interaction },
+                )
+              ).body,
+          ),
+        ),
+      })),
+    );
+    const grid = stateGrid({ columns: [...interactions], rows: gridRows }, { cellWidth: '120px', place: 'center' });
+    const pins = new Map(
+      visible.map((c) => [
+        c.id,
+        commentPinMark({
+          author: c.author,
+          initials: c.initials,
+          ...(c.agent ? { agent: c.agent } : {}),
+          selected: c.id === selected,
+        }),
+      ]),
+    );
+    const side = html`<div class="ib flex flex-col -m-space-2">
+      <div
+        class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
+      >
+        <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
+        <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}</div>
+      </div>
+      <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">
+        ${
+          load === 'loading'
+            ? loadingNote
+            : load === 'error'
+              ? loadError(retry)
+              : visible.length === 0
+                ? empty
+                : activeGroup(
+                    visible.filter((c) => c.part === ACTIVE_PART),
+                    selected,
                   )
-                ).body,
-            ),
-          ),
-        })),
-      );
-      const grid = stateGrid({ columns: [...interactions], rows: gridRows }, { cellWidth: '120px', place: 'center' });
-      const pins = new Map(
-        visible.map((c) => [
-          c.id,
-          commentPinMark({
-            author: c.author,
-            initials: c.initials,
-            ...(c.agent ? { agent: c.agent } : {}),
-            selected: c.id === selected,
-          }),
-        ]),
-      );
-      const side = html`<div class="ib flex flex-col -m-space-2">
-        <div
-          class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
+        }${group(
+          'Andere',
+          visible.filter((c) => c.part !== ACTIVE_PART),
+          selected,
+        )}
+      </div>
+    </div>`;
+    const overlay = card
+      ? html`<div
+          class="absolute z-20 [position-anchor:--thread-pin] top-[anchor(top)] left-[anchor(right)] ml-space-3"
         >
-          <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
-          <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}</div>
-        </div>
-        <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">
-          ${
-            load === 'loading'
-              ? loadingNote
-              : load === 'error'
-                ? loadError(retry)
-                : visible.length === 0
-                  ? empty
-                  : activeGroup(
-                      visible.filter((c) => c.part === ACTIVE_PART),
-                      selected,
-                    )
-          }${group(
-            'Andere',
-            visible.filter((c) => c.part !== ACTIVE_PART),
-            selected,
-          )}
-        </div>
-      </div>`;
-      const docked = html`<div class="ib flex flex-col -m-space-2">${card?.body ?? ''}</div>`;
-      const floating =
-        card && dock === 'canvas'
-          ? { id: selected, body: html`<div class="absolute top-0 left-full ml-space-3">${card.body}</div>` }
-          : undefined;
-      const canvas = await canvasView(
-        [
-          canvasFrame(
-            'button',
-            html`<div ${slot('canvas')}>${pinned(grid, visible, (c) => pins.get(c.id) ?? '', floating)}</div>`,
-          ),
-        ],
-        '100%',
-        {},
-        'w-full',
-        true,
-      );
-      const menu = await studioMenu({ open: false });
-      const shell = await shellMain.render({
-        studio: menu.body,
-        section: 'Inbox',
-        product: 'studio',
-        side: card && dock === 'panel' ? docked : side,
-        content: canvas,
-      });
+          ${card.body}
+        </div>`
+      : '';
+    const canvas = await canvasView(
+      [
+        canvasFrame(
+          'button',
+          html`<div ${slot('canvas')}>
+              ${pinned(grid, visible, (c) => pins.get(c.id) ?? '', card ? selected : undefined)}
+            </div>
+            ${overlay}`,
+        ),
+      ],
+      '100%',
+      {},
+      'w-full',
+      true,
+    );
+    const menu = await studioMenu({ open: false });
+    const shell = await shellMain.render({
+      studio: menu.body,
+      section: 'Inbox',
+      product: 'studio',
+      side,
+      content: canvas,
+    });
 
-      return drawing({
-        body: shell.body,
-        setup: menu.setup,
-        styles:
-          retryButton.styles +
-          shell.styles +
-          menu.styles +
-          canvasFrameStyles +
-          commentRowStyles +
-          resolved.styles +
-          (card?.styles ?? '') +
-          styles,
-      });
-    },
-  });
+    return drawing({
+      body: shell.body,
+      setup: menu.setup,
+      styles:
+        retryButton.styles +
+        shell.styles +
+        menu.styles +
+        canvasFrameStyles +
+        commentRowStyles +
+        resolved.styles +
+        (card?.styles ?? '') +
+        styles,
+    });
+  },
+});

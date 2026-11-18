@@ -1,7 +1,5 @@
 import { definePart } from '@design-system';
-import { inboxFor } from './shared/inbox';
-
-const inbox = inboxFor('canvas');
+import { inbox } from './shared/inbox';
 
 export default definePart({
   ...inbox,
