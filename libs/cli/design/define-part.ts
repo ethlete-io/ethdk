@@ -50,6 +50,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
  * `implements` links the part to the code that builds it, see `PartLink`.
+ * `data: 'list'` says the part shows a loaded list it gets through its inputs; it then must draw loading, error and
+ * empty like a part that loads data.
  * `sample` makes an embedded instance of the part comparable across the states of its host, see `PartSample`.
  * `coverage` names the real input range and the view states the design must draw, see `PartCoverage`.
  */
@@ -72,6 +74,7 @@ export type Part<TProps, TState extends string = string> = {
   omits?: { option: keyof TProps & string; value: string; reason: string }[];
   rules?: PartRule<TState>[];
   implements?: PartLink;
+  data?: 'list';
   sample?: PartSample<TProps>;
   coverage?: PartCoverage<TState>;
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;

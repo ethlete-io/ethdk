@@ -3,7 +3,7 @@ import { dirname, relative, resolve } from 'path';
 import ts from 'typescript';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
-import { partLinkOf } from './sketch/part-definition';
+import { partLinkOf, showsDataListOf } from './sketch/part-definition';
 import { perSource, sourceFileOf, textsOf } from './ts-source';
 
 /**
@@ -217,9 +217,12 @@ export const partBuilderOf = (options: { product: ResolvedProduct; part: Resolve
   return reasons.length > 0 ? { builder: 'developer', reasons } : { builder: 'designer' };
 };
 
-/** Whether `part` loads data, on its design file or its `implements` component: it then must draw loading, error and empty. */
+/**
+ * Whether `part` loads data, on its design file or its `implements` component, or declares `data: 'list'`: it then
+ * must draw loading, error and empty.
+ */
 export const takesDataOf = (options: { product: ResolvedProduct; part: ResolvedPart }) =>
-  builderReasonsOfPart(options).some((reason) => reason.startsWith(LOADS_DATA));
+  showsDataListOf(options.part.source) || builderReasonsOfPart(options).some((reason) => reason.startsWith(LOADS_DATA));
 
 /** One line per developer part of `product`, naming why and that a developer builds it. */
 export const developerPartLinesOf = (options: { product: ResolvedProduct; parts?: string[] }) =>

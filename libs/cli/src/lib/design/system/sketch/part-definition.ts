@@ -44,6 +44,7 @@ export const PARSED_PART_FIELDS = [
   'unreachable',
   'instant',
   'implements',
+  'data',
 ] as const;
 
 type ParsedPartField = (typeof PARSED_PART_FIELDS)[number];
@@ -278,6 +279,14 @@ export const declaresNoControlsOf = (source: string) => {
     ts.isObjectLiteralExpression(property.initializer) &&
     property.initializer.properties.length === 0
   );
+};
+
+/** Whether a part file writes `data: 'list'`, the part showing a loaded list it gets through its inputs. */
+export const showsDataListOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const data = definition ? fieldOf(definition, 'data')?.initializer : undefined;
+
+  return !!data && (ts.isStringLiteral(data) || ts.isNoSubstitutionTemplateLiteral(data)) && data.text === 'list';
 };
 
 const literalOf = (node: ts.Expression | undefined) =>

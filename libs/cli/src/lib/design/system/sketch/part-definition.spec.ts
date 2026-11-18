@@ -134,6 +134,7 @@ describe('PARSED_PART_FIELDS', () => {
       unreachable: [{ from: 'open', to: 'rest', reason: 'Closes by reload.' }],
       instant: 'The app swaps the state.',
       implements: 'apps/x/every.component.ts',
+      data: 'list',
       render: () => ({ body: '<div></div>', styles: '' }),
     });
 

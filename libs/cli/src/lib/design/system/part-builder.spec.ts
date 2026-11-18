@@ -32,14 +32,14 @@ export class InboxComponent {
 }
 `;
 
-const checkout = (component: string, template = '<et-button>{{ label() }}</et-button>') => {
+const checkout = (component: string, template = '<et-button>{{ label() }}</et-button>', fields = '') => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-part-builder-'));
   const design = join(target, DESIGN_DIR);
 
   mkdirSync(join(design, 'app-a', 'components/chip'), { recursive: true });
   writeFileSync(
     join(design, 'app-a', 'components/chip/chip.ts'),
-    "export default definePart({ implements: 'src/chip/chip.component.ts', states: { default: {} } });\n",
+    `export default definePart({ implements: 'src/chip/chip.component.ts',${fields} states: { default: {} } });\n`,
   );
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
   mkdirSync(join(target, 'src/chip'), { recursive: true });
@@ -152,5 +152,22 @@ export function formatLabel(text: string) {
         ],
       },
     ]);
+  });
+
+  it('asks a part that declares data list for loading, error and empty, and not one that only takes a list input (B251)', () => {
+    const rows = `import { Component, input } from '@angular/core';
+@Component({ selector: 'app-rows', template: '' })
+export class RowsComponent {
+  rows = input.required<string[]>();
+}
+`;
+    const listed = checkout(rows, '', " data: 'list',");
+
+    expect(takesDataOf(listed)).toBe(true);
+    expect(takesDataOf(checkout(rows, ''))).toBe(false);
+    expect(readOpenPoints(checkout(rows, '').product)).toEqual([
+      { part: 'components/chip', points: [{ kind: 'missing-state', control: null }] },
+    ]);
+    expect(readOpenPoints(listed.product)).toEqual(readOpenPoints(checkout(DEVELOPER).product));
   });
 });

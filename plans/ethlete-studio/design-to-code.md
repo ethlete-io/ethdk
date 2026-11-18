@@ -2418,6 +2418,23 @@ hits" lines and 0 live hits. The entries are removed; no sketch opens for them.
 - Not verified: a Studio shot of the sketch view, and the live compare wait against a real live spec.
 - Fixed (finding 792): Cause: the `built` wrapper re-declared `type Props` and `const states` beside the part's own, so zoom-chip's variant failed the transform and drew nothing in Studio; it now calls an arrow on the default export and adds only an unused picture import name at top level (spec red first).
 
+## As built (B251 data list)
+
+Decision (grill, ADR 0048): an explicit part field instead of reading array inputs. `definePart` takes `data: 'list'`
+(the only value; the `Part` type refuses any other, so `design check` reports it as `TYPE-ERROR`). `showsDataListOf` in
+`sketch/part-definition.ts` reads it, and `takesDataOf` is true for it, so such a part gets the same loading, error and
+empty `missing-state` open points as a part that loads data. Set on studio `pages/sketches`.
+
+- Verified: part-builder.spec "asks a part that declares data list ..." (red with `takesDataOf` reverted: 1 failed),
+  part-definition.spec, `vitest related`, typecheck, lint. `design check --product studio --part pages/sketches`:
+  0 findings, `OPEN POINTS studio: 1 in 1 part - pages/sketches: data part without the states empty`; the part lost
+  its ready mark (`ready.json`), `merged.json` took the new hash (`HELD`: every state draws as before).
+- Sweep: the `real-open-points` budget over every product grew by exactly one entry, studio
+  `pages/sketches missing-state` (budget raised); no other part writes `data`.
+- Not covered: B314's listing failure still does not show as an open point. The page has a state `failed` (the render
+  failure of a variant), whose name satisfies the error word, so only `empty` is asked. Loading is likewise satisfied
+  by `drawing`. The word rule cannot tell a listing failure from another failure of the part.
+
 ## As built (B59 UNRECORDED)
 
 - `PartImplemented.files` is required; `readImplemented` reads a record without `files` as no record. `design check`
