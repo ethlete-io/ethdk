@@ -462,7 +462,7 @@ jobs:
   webkit-design-events:
     name: WebKit design event stream
     needs: design-changes
-    if: needs.design-changes.outputs.changed == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/next' && needs.design-changes.outputs.changed == 'true'
     runs-on: macos-latest
     timeout-minutes: 15
     permissions:
