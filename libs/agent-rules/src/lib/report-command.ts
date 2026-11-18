@@ -4,7 +4,7 @@ import { join, resolve } from 'path';
 import { readReportConfig } from './config';
 
 const ID = '[A-Z]\\d+b?';
-const REFS = `${ID}(?:\\s*[,-]\\s*${ID})*`;
+const ID_TOKEN = new RegExp(`\\b${ID}\\b`, 'g');
 const WORK_TYPES = ['feat', 'fix', 'perf', 'refactor', 'revert', 'test', 'build', 'ci'];
 const TYPE_ORDER = [...WORK_TYPES, 'docs', 'chore', 'style'];
 const CI_TIMEOUT_MS = 15_000;
@@ -107,7 +107,7 @@ const readCommits = (root: string, { from, to }: Period): Commit[] => {
 
   if (!output) return [];
 
-  const refPattern = new RegExp(`\\((${REFS})\\)`, 'g');
+  const refPattern = /\(([^()]*)\)/g;
   const commits: Commit[] = [];
 
   for (const record of output.split('\x1e')) {
@@ -122,8 +122,8 @@ const readCommits = (root: string, { from, to }: Period): Commit[] => {
     const type = /^(\w+)(?:\([^)]*\))?!?: /.exec(subject)?.[1] ?? 'other';
     const refs = new Set<string>();
 
-    for (const match of subject.matchAll(refPattern)) {
-      for (const id of (match[1] ?? '').match(new RegExp(ID, 'g')) ?? []) refs.add(id);
+    for (const match of subject.replace(/^\w+(?:\([^)]*\))?!?: /, '').matchAll(refPattern)) {
+      for (const id of (match[1] ?? '').match(ID_TOKEN) ?? []) refs.add(id);
     }
 
     commits.push({ sha, time, type, subject, refs: [...refs] });
@@ -204,7 +204,7 @@ const firstSentence = (text: string) => {
 const stripSubject = (subject: string) =>
   subject
     .replace(/^\w+(?:\([^)]*\))?!?: /, '')
-    .replace(new RegExp(`\\s*\\(${REFS}\\)(?=["']?$)`), '')
+    .replace(new RegExp(`\\s*\\((?:[^()]*[,\\s])?${ID}\\)(?=["']?$)`), '')
     .trim();
 
 const resultOf = (commit: Commit) =>
@@ -292,22 +292,18 @@ export const buildReport = (options: ReportOptions) => {
   };
   const lines = [`## Bericht ${formatMoment(from)} – ${formatMoment(to)}`, ''];
   const work = commits.filter((commit) => WORK_TYPES.includes(commit.type));
+  const loose = work.filter((commit) => commit.refs.length === 0).length;
 
   if (commits.length === 0) {
     lines.push('Keine Commits im Zeitraum.');
   } else {
     const byRow = new Map<string, Commit[]>();
-    const loose: Commit[] = [];
-
     for (const commit of work) {
-      if (commit.refs.length === 0) loose.push(commit);
-
       for (const id of commit.refs) byRow.set(id, [...(byRow.get(id) ?? []), commit]);
     }
 
     const entries = [...byRow]
       .map(([id, list]) => ({ zeile: label(id), list, id }))
-      .concat(loose.length ? [{ zeile: '—', list: loose, id: '' }] : [])
       .sort(
         (a, b) =>
           (a.list[a.list.length - 1] as Commit).time.getTime() - (b.list[b.list.length - 1] as Commit).time.getTime() ||
@@ -352,6 +348,7 @@ export const buildReport = (options: ReportOptions) => {
   const figures = [
     `${commits.length} Commits${types.length ? ` (${types.join(', ')})` : ''}`,
     ...(reverts ? [`${reverts} ${reverts === 1 ? 'Revert' : 'Reverts'}`] : []),
+    ...(loose ? [`${loose} ohne Zeile`] : []),
     ci && ci.total > 0 ? `CI ${ci.failed}/${ci.total} rot` : 'CI: n/a',
     ...(starts?.length ? [`Subagenten: ${starts.map(([model, count]) => `${model} ${count}`).join(', ')}`] : []),
     ...(slice ? [`Slice läuft: ${slice.name}${slice.since ? ` seit ${formatClock(slice.since, to)}` : ''}`] : []),

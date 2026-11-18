@@ -70,6 +70,7 @@ describe('buildReport', () => {
     commit(dir, 'fix(x): Loose fix', '2026-11-18T12:00:00');
     commit(dir, 'docs(repo): Queue beta (B2)', '2026-11-18T12:30:00');
     commit(dir, 'feat(x): Build unknown (B7, B3)', '2026-11-18T13:00:00');
+    commit(dir, 'feat(x): Name every row (Kurznamen, B5)', '2026-11-18T14:00:00');
   };
 
   const sha = (subject: string) => git(dir, 'log', '--format=%h', `--grep=${subject}`, '-1');
@@ -86,16 +87,16 @@ describe('buildReport', () => {
         '| - | - | - |',
         `| Alpha (B1) | ${sha('Fix alpha')} +1 | Fix alpha edge |`,
         `| Gamma (B4) | ${sha('Undo gamma')} +1 | Zurückgenommen: Undo gamma |`,
-        `| — | ${sha('Loose fix')} | Loose fix |`,
         `| B3 | ${sha('Build unknown')} | Build unknown |`,
         `| B7 | ${sha('Build unknown')} | Build unknown |`,
+        `| B5 | ${sha('Name every row')} | Name every row |`,
         '',
         '**Geparkt**',
         '| Zeile | Grund |',
         '| - | - |',
         '| Beta (B2) | Wartet auf den Menschen \\| mit Pipe. |',
         '',
-        '**Kennzahlen:** 8 Commits (3 feat, 2 fix, 1 revert, 2 docs) · 1 Revert · CI 2/5 rot',
+        '**Kennzahlen:** 9 Commits (4 feat, 2 fix, 1 revert, 2 docs) · 1 Revert · 1 ohne Zeile · CI 2/5 rot',
       ].join('\n'),
     );
   });
