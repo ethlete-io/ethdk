@@ -14,6 +14,7 @@ import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from './system/sketch/sketch';
 import { noteStep } from './run-deadline';
 import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
+import { defaultFrameOf } from './system/sketch/unchanged-states';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { partsReachedFrom } from './system/imports';
 import { gridOf, ListedGrid } from './system/list-system';
@@ -124,6 +125,23 @@ export const withDiffRows = (options: {
   });
 
   return mergedIndex === -1 ? [[{ label: 'merged', note: 'new part, nothing to compare with' }], ...laidOut] : laidOut;
+};
+
+/** The frame a shot draws: an asked preset, width or interaction wins, the rest is the ready rules' `defaultFrameOf`. */
+export const shotFrameOf = (options: {
+  asked: { preset: string | null; width: number | null; interaction: string | null };
+  widths: unknown;
+  presets: string[] | null;
+}) => {
+  const { asked, widths, presets } = options;
+  const frame = defaultFrameOf({ widths, interactions: undefined }, presets);
+  const preset = asked.preset ?? (asked.width === null ? frame.preset : null);
+
+  return {
+    preset,
+    width: asked.width ?? (preset ? null : frame.width),
+    interaction: asked.interaction ?? frame.interaction,
+  };
 };
 
 /**
@@ -622,7 +640,7 @@ export const designShot = async (options: {
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const loaded = new Map<Axis, string[]>();
-    const widths = new Map<Axis, number>();
+    const widths = new Map<Axis, unknown>();
     const grids = new Map<Axis, ListedGrid | undefined>();
 
     for (const axis of rows) {
@@ -635,10 +653,8 @@ export const designShot = async (options: {
       )) as { default?: { states?: unknown; grid?: unknown; widths?: unknown } };
       const names = await shotStateNamesOf(module.default);
 
-      const first = Array.isArray(module.default?.widths) ? (module.default.widths[0] as unknown) : undefined;
-
       loaded.set(axis, names);
-      if (typeof first === 'number' && Number.isInteger(first) && first > 0) widths.set(axis, first);
+      widths.set(axis, module.default?.widths);
       grids.set(axis, gridOf(module.default?.grid, names).grid);
     }
 
@@ -651,18 +667,18 @@ export const designShot = async (options: {
       return 1;
     }
 
-    const isPage = part.startsWith('pages/');
-    const presets = system.productOf(product)?.presets ?? {};
-    const chosenPreset = preset ?? (isPage ? (Object.keys(presets)[0] ?? null) : null);
+    const presets = part.startsWith('pages/') ? Object.keys(system.productOf(product)?.presets ?? {}) : null;
+    const frameOf = (axis?: Axis) =>
+      shotFrameOf({ asked: { preset, width, interaction }, widths: axis && widths.get(axis), presets });
     const params = drawParamsOf(args.values);
 
     if (args.values['--crop'] && !cropChanged) params.set('clip', args.values['--crop']);
 
     const plan = planOf({
-      base: { product, part, preset: chosenPreset, width, interaction },
+      base: { product, part, ...frameOf() },
       rows,
       statesOf: (axis) => loaded.get(axis) ?? [],
-      widthOf: (axis) => (isPage ? null : (widths.get(axis) ?? null)),
+      widthOf: (axis) => frameOf(axis).width,
       states,
       state: asked[0] ?? null,
       only: states && asked.length > 0 ? asked : undefined,

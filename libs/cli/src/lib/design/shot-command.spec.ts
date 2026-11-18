@@ -13,12 +13,14 @@ import {
   rowsOf,
   sketchHoldingOf,
   shotProductOf,
+  shotFrameOf,
   shotReportOf,
   shownVariantsOf,
   withDiffRows,
 } from './shot-command';
 import { drawParamsOf } from './shot';
 import { createSketch, parseTarget } from './system/sketch/sketch';
+import { framesOf } from './system/sketch/unchanged-states';
 import { createSystemModules } from './system/system-modules';
 
 const base = { product: 'app', part: 'components/button', preset: null, width: null, interaction: null };
@@ -100,6 +102,52 @@ describe('planOf widths', () => {
     expect(fitted.map((row) => row[0]?.address.width)).toEqual([280, 320]);
     expect(asked.map((row) => row[0]?.address.width)).toEqual([500, 500]);
     expect(preset.map((row) => row[0]?.address.width)).toEqual([null, null]);
+  });
+});
+
+describe('shotFrameOf', () => {
+  const none = { preset: null, width: null, interaction: null };
+
+  it('draws the first frame the ready rules compare when nothing is asked', () => {
+    const cases = [
+      { widths: undefined, presets: ['desktop', 'phone'] },
+      { widths: [320, 1024], presets: null },
+      { widths: undefined, presets: null },
+    ];
+
+    for (const { widths, presets } of cases)
+      expect(shotFrameOf({ asked: none, widths, presets })).toEqual(
+        framesOf({ widths, interactions: ['hover'] }, presets)[0],
+      );
+
+    expect(shotFrameOf({ asked: none, widths: [320], presets: ['desktop'] })).toEqual({
+      preset: 'desktop',
+      width: null,
+      interaction: null,
+    });
+    expect(shotFrameOf({ asked: none, widths: [320], presets: null }).width).toBe(320);
+    expect(shotFrameOf({ asked: none, widths: [], presets: [] })).toEqual(none);
+  });
+
+  it('lets an asked preset, width or interaction win', () => {
+    const widths = [320];
+    const presets = ['desktop', 'phone'];
+
+    expect(shotFrameOf({ asked: { ...none, preset: 'phone' }, widths, presets: null })).toEqual({
+      preset: 'phone',
+      width: null,
+      interaction: null,
+    });
+    expect(shotFrameOf({ asked: { ...none, width: 500 }, widths, presets })).toEqual({
+      preset: null,
+      width: 500,
+      interaction: null,
+    });
+    expect(shotFrameOf({ asked: { ...none, interaction: 'hover' }, widths, presets: null })).toEqual({
+      preset: null,
+      width: 320,
+      interaction: 'hover',
+    });
   });
 });
 

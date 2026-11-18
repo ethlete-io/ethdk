@@ -106,6 +106,10 @@ export const framesOf = (part: Pick<LoadedPart, 'widths' | 'interactions'>, pres
   return sizes.flatMap((size) => interactions.map((interaction) => ({ ...size, interaction })));
 };
 
+/** The frame `design shot` draws when no preset, width or interaction is asked: the first of `framesOf`. */
+export const defaultFrameOf = (part: Pick<LoadedPart, 'widths' | 'interactions'>, presets: string[] | null) =>
+  framesOf(part, presets)[0] ?? { preset: null, width: null, interaction: null };
+
 const drawsTheSame = async (options: {
   pictureOf: PictureOf;
   product: string;
