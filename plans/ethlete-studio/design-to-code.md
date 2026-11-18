@@ -2623,3 +2623,11 @@ live spec's design states against the keys of both loaded `states` objects (`unk
 is gone. Verified: a `render-check.spec.ts` case with a literal and a spread variant reports the dropped state in both
 (red before). Not verified: the gates that run only `variantProblemsOf` without a render (open-points listing,
 after-merge recheck) no longer report LIVE; `sketch ready` and `design check` do, through the render check.
+
+## As built (B158, B201)
+
+Closed as overtaken: cc3b26d5f (B500, ADR 0280) dropped the UNREACHABLE and COVERED rules (`reach.ts`) after false
+hits on disabled SDK buttons and on canvas content panned under the floating shell panel. Both rows asked for a proof
+of that check on the pages/sketches Übernehmen/Verwerfen actions, which no longer exists. B181 still keeps
+`emit:discard` in all 21 pages/sketches states and `emit:merge` wherever a take is offered. Not built: a reach check
+without the two false-hit sources; it would reopen a B500 removal and needs a decision first.
