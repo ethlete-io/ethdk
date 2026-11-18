@@ -1,5 +1,5 @@
 import { ESCAPE } from '@angular/cdk/keycodes';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -30,7 +30,7 @@ type Option = { label: string; value: string };
   template: `
     <et-select-field [formControl]="control">
       <et-combobox
-        [options]="options"
+        [options]="options()"
         [multiple]="false"
         (filterChange)="filters.push($event)"
         bindLabel="label"
@@ -42,7 +42,7 @@ type Option = { label: string; value: string };
 })
 class LazyOptionsComboboxHostComponent {
   control = new FormControl<string | null>(null);
-  options: Option[] = [];
+  options = signal<Option[]>([]);
   filters: string[] = [];
 }
 
@@ -64,8 +64,7 @@ const setupLazyOptions = async (initialValue: string | null = null) => {
   };
 
   const setOptions = (options: Option[]) => {
-    fixture.componentInstance.options = options;
-    fixture.changeDetectorRef.markForCheck();
+    fixture.componentInstance.options.set(options);
     fixture.detectChanges();
   };
 
@@ -207,5 +206,46 @@ describe('ComboboxDirective first options after typing', () => {
     await settle();
 
     expect(input.value).toBe('');
+  });
+});
+
+describe('ComboboxDirective initial filter change', () => {
+  const options: Option[] = [
+    { label: 'Apple', value: 'a' },
+    { label: 'Banana', value: 'b' },
+  ];
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    Element.prototype.scrollTo = vi.fn();
+  });
+
+  afterEach(async () => {
+    await settle();
+    vi.useRealTimers();
+    delete (Element.prototype as Partial<Element>).scrollTo;
+  });
+
+  const loadOptionsAfter = async (initialValue: string | null, delay: number) => {
+    const { fixture } = await setupLazyOptions(initialValue);
+    const combobox = fixture.debugElement.query(By.directive(ComboboxDirective)).injector.get(ComboboxDirective);
+
+    await vi.advanceTimersByTimeAsync(delay);
+    combobox.options = options;
+    await settle();
+
+    return fixture.componentInstance.filters;
+  };
+
+  it('emits only the label of the value when the options load after the filter debounce', async () => {
+    expect(await loadOptionsAfter('b', 500)).toEqual(['Banana']);
+  });
+
+  it('emits only the label of the value when the options load within the filter debounce', async () => {
+    expect(await loadOptionsAfter('b', 0)).toEqual(['Banana']);
+  });
+
+  it('emits an empty filter once for an empty control', async () => {
+    expect(await loadOptionsAfter(null, 500)).toEqual(['']);
   });
 });

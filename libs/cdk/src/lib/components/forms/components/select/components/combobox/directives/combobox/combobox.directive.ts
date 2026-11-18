@@ -875,10 +875,23 @@ export class ComboboxDirective implements OnInit {
     this._selectionModel.setSelectionFromValue$(this._input.value);
   }
 
+  private _awaitsLabelOfValue() {
+    const value = this._input.value;
+
+    return (
+      !this._selectionModel.allowMultiple &&
+      value !== null &&
+      value !== undefined &&
+      value !== '' &&
+      !Array.isArray(value)
+    );
+  }
+
   private _initDispatchFilterChanges() {
     this._currentFilter$
       .pipe(
         skipWhile(() => this.filterInternal),
+        skipWhile((filter) => filter === '' && this._awaitsLabelOfValue()),
         debounceTime(300),
         distinctUntilChanged(),
         takeUntil(this._destroy$),
