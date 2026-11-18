@@ -48,6 +48,12 @@ export type SyncConfig = {
   configWarnings?: string[];
 };
 
+/** Opt-in settings of the `away-mode` hook: the skills whose sessions it tracks, and the idle threshold. */
+export type AwayModeConfig = {
+  skills?: string[];
+  thresholdMinutes?: number;
+};
+
 type RawConfig = {
   targets?: AgentTarget[] | 'auto';
   profile?: 'consumer' | 'sdk';
@@ -59,6 +65,7 @@ type RawConfig = {
   mods?: string[];
   gitFlow?: RawGitFlowConfig;
   jira?: JiraSettings;
+  awayMode?: AwayModeConfig;
 };
 
 /** The nearest directory at or above `start` holding an `ethlete-agents.config.json`, else `start`. */
@@ -87,6 +94,7 @@ const RAW_CONFIG_KEYS: (keyof RawConfig)[] = [
   'mods',
   'gitFlow',
   'jira',
+  'awayMode',
 ];
 
 const parseJson = (text: string): { value: unknown } | { error: string } => {
@@ -99,7 +107,7 @@ const parseJson = (text: string): { value: unknown } | { error: string } => {
 
 const assertConfigShapes = (value: Record<string, unknown>) => {
   const arrays = ['exclude', 'hooks', 'gitHooks', 'mods'];
-  const objects = ['vars', 'gitFlow', 'jira'];
+  const objects = ['vars', 'gitFlow', 'jira', 'awayMode'];
 
   for (const key of arrays) {
     const entry = value[key];
@@ -186,6 +194,7 @@ const unknownConfigKeyWarnings = (raw: RawConfig) => {
 export type LocalConfig = {
   disableHooks?: boolean | string[];
   disableAutoHandoffSave?: boolean;
+  awayMode?: AwayModeConfig;
 };
 
 export type LocalConfigState =
@@ -193,7 +202,7 @@ export type LocalConfigState =
   | { exists: true; valid: false }
   | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[]; movedKeys: string[] };
 
-export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave'];
+export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave', 'awayMode'];
 
 /**
  * Repo topology moved to `@ethlete/cli`'s `ethlete.config.local.json`, because `et` needs it too.
