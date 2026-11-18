@@ -2512,3 +2512,14 @@ c9aeb894f` recorded it with no refusal. `vitest related` in libs/cli and apps/et
 - Not recorded: the joint `task elements/canvas-frames pages/system --verify 88481f942^..96bba1299`. It refuses
   design-harness.component.spec.ts (1a4cc4fbc) and commit-hunks.spec.ts (c0f1802b4) as outside the allowed files; the
   allowlist stays, the spec-in-range refusal is parked as a suspect. pages/system is not ready (4 embedded parts).
+
+## As built (B424 region check shares the app shot)
+
+`sketch ready` ran the region check of a page sketch with one live app shot per state for the merged design and one
+more per variant. It now passes one `appShots` map to every `shootLiveStates` call, so the app is shot once per live
+state: `region-check.spec.ts` counts 4 app shots before and 1 after for the merged design and three variants. The same
+run found that `liveSketchOf` never found a named sketch (`pages/sketches@live-question-drift`): every variant ended
+as `no open sketch targets pages/sketches` and no region was compared. It now takes the one open sketch that targets
+the part, and names them all when there are several. Live, on that sketch (2 live states, 3 variants): region check
+20.1 s before, when it compared no variant, and 29.4 s after with every variant compared; a run with the fix but
+without the shared shot was not measured.

@@ -13,7 +13,7 @@ import { watchSdkErrors } from './sdk-errors';
 import { settledPanesOf } from './settled-panes';
 import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { overlaySketch } from './sketch/overlay';
-import { findSketch, parseTarget } from './sketch/sketch';
+import { findSketch, listSketches, parseTarget, Sketch } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { appRegionsOnPage, designRegionsOf, Region, RegionSelector } from './region-geometry';
 import {
@@ -486,9 +486,21 @@ export const liveSketchOf = (options: {
 
   if (typeof target === 'string') return target;
 
-  const sketch = findSketch({ productDir: product.dir, product: product.name, sketch: target });
+  const found = findSketch({ productDir: product.dir, product: product.name, sketch: target });
 
-  if (typeof sketch === 'string') return sketch;
+  if (typeof found === 'string') return found;
+
+  const named = found
+    ? []
+    : listSketches({ productDir: product.dir, product: product.name }).filter(
+        (entry): entry is Sketch => typeof entry !== 'string' && entry.targets.includes(part),
+      );
+
+  if (named.length > 1)
+    return `${named.length} open sketches target ${part}: ${named.map((entry) => entry.target).join(', ')}`;
+
+  const sketch = found ?? named[0];
+
   if (!sketch) return `no open sketch targets ${part}`;
   if (!sketch.variants.includes(variant))
     return `sketch ${sketch.target} has no variant "${variant}" - its variants: ${sketch.variants.join(', ')}`;
@@ -517,7 +529,17 @@ export const undesignedLiveProblemOf = (options: {
     : `${STATE_UNDESIGNED_RULE}: the app state "${state}" of ${part} has no design state "${design}" - draw it: the missing-state sketch with the built look as variant a (ADR 0010); its states: ${Object.keys(states).join(', ')}`;
 };
 
-export const shootLiveStates: ShootStates = async ({ target, config, product, part, url, only, preset, sketch }) => {
+export const shootLiveStates: ShootStates = async ({
+  target,
+  config,
+  product,
+  part,
+  url,
+  only,
+  preset,
+  sketch,
+  appShots,
+}) => {
   if (!part.startsWith('pages/')) return `--live compares a pages part only, not ${part}`;
 
   const live = liveSpecOf({ target, product });
@@ -596,26 +618,33 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
         compose: state.compose ?? null,
         params: new URLSearchParams(),
       });
-      let appRegions: Region[] = [];
-      const app = await queue
-        .run((browser) =>
-          liveShotOf({
-            browser,
-            parts,
-            url,
-            size,
-            spec: live.spec,
-            dir: live.dir,
-            page,
-            state,
-            server: base,
-            checkout: target,
-            frozen: frozenAnimationsOf(design.markup ?? ''),
-            regions,
-            onRegions: (found) => (appRegions = found),
-          }),
-        )
-        .catch((error: unknown) => (error instanceof LiveError ? error.message : Promise.reject(error)));
+      const cached = appShots?.get(name);
+      let appRegions: Region[] = typeof cached === 'object' ? cached.regions : [];
+      const app = cached
+        ? typeof cached === 'string'
+          ? cached
+          : cached.app
+        : await queue
+            .run((browser) =>
+              liveShotOf({
+                browser,
+                parts,
+                url,
+                size,
+                spec: live.spec,
+                dir: live.dir,
+                page,
+                state,
+                server: base,
+                checkout: target,
+                frozen: frozenAnimationsOf(design.markup ?? ''),
+                regions,
+                onRegions: (found) => (appRegions = found),
+              }),
+            )
+            .catch((error: unknown) => (error instanceof LiveError ? error.message : Promise.reject(error)));
+
+      if (!cached) appShots?.set(name, typeof app === 'string' ? app : { app, regions: appRegions });
 
       shots.push(
         typeof app === 'string'

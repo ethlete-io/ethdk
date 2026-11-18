@@ -1,5 +1,5 @@
 import { DesignConfig } from '../../design-config';
-import { ShootStates } from '../compare-command';
+import { AppShots, ShootStates } from '../compare-command';
 import { StartHarnessServer, withHarnessUrl } from '../harness-server';
 import { liveSpecOf, shootLiveStates } from '../live-compare';
 import { partFilesOf } from '../product';
@@ -29,7 +29,8 @@ export type RegionCheck = { lines: string[]; notes: string[] };
 /**
  * Compares, for each live variant of a page sketch whose page implements an app component and has live states, the
  * regions of every embedded part the variant does not claim against the live app: one `REGION` line per box or clip
- * the variant draws elsewhere than the app and than the merged design. `notes` says why a variant or state could not be checked.
+ * the variant draws elsewhere than the app and than the merged design. The app is shot once per state and shared by
+ * the merged design and every variant. `notes` says why a variant or state could not be checked.
  */
 export const sketchRegionCheckOf = async (options: {
   target: string;
@@ -58,8 +59,18 @@ export const sketchRegionCheckOf = async (options: {
     start: options.start,
     run: async (url) => {
       const found: RegionCheck = { lines: [], notes: [] };
+      const appShots: AppShots = new Map();
       const shootOf = (sketched: string | null) =>
-        (options.shoot ?? shootLiveStates)({ target, config, product, part, url, only: null, sketch: sketched });
+        (options.shoot ?? shootLiveStates)({
+          target,
+          config,
+          product,
+          part,
+          url,
+          only: null,
+          sketch: sketched,
+          appShots,
+        });
       const merged = await shootOf(null);
       const mergedRegionsOf = (state: string) => {
         const shot = typeof merged === 'string' ? undefined : merged.shots.find((entry) => entry.state === state);

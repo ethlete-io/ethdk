@@ -141,6 +141,38 @@ describe('sketchRegionCheckOf', () => {
     ).toEqual([]);
   });
 
+  it('shoots the app once per state for the merged design and three variants', async () => {
+    const { target, product, sketch, config } = liveAcme();
+    const three = { ...sketch, variants: ['a', 'b', 'c'] };
+    let appShotsTaken = 0;
+    const shoot: ShootStates = async ({ sketch: variant, appShots }) => {
+      const cached = appShots?.get('default');
+      const app = typeof cached === 'object' ? cached : { app: Buffer.from(''), regions: [heroOf(760)] };
+
+      if (!cached) {
+        appShotsTaken += 1;
+        appShots?.set('default', app);
+      }
+
+      return {
+        states: {},
+        shots: [
+          {
+            state: 'default',
+            design: Buffer.from(''),
+            app: app.app,
+            regions: { design: [heroOf(variant ? 740 : 760)], app: app.regions },
+          },
+        ],
+      };
+    };
+
+    const check = await sketchRegionCheckOf({ target, config, product, sketch: three, shoot, start });
+
+    expect(appShotsTaken).toBe(1);
+    expect(check.lines).toHaveLength(6);
+  });
+
   it('checks nothing for a page the live spec has no states of', async () => {
     const { target, product, sketch, config } = liveAcme();
     const shoot = vi.fn(shootWith(heroOf(740)));

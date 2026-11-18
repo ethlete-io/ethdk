@@ -40,6 +40,31 @@ describe('liveSketchOf', () => {
     expect(liveSketchOf({ product, part: 'elements/hero', variant: 'z' })).toContain('has no variant "z"');
     expect(liveSketchOf({ product, part: 'elements/nope', variant: 'a' })).toBe('no open sketch targets elements/nope');
   });
+
+  it('finds a named sketch by its part alone, and refuses when two open sketches target it', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const named = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero', sketch: 'drift' },
+      variants: ['a'],
+    }) as Sketch;
+    const file = join(named.dir, 'a/elements/hero/hero.ts');
+
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, 'export default {};');
+
+    expect(liveSketchOf({ product, part: 'elements/hero', variant: 'a' })).toEqual({
+      file,
+      drawn: { target: named.target, variant: 'a' },
+    });
+
+    createSketch({ product, sketch: { layer: 'elements', name: 'hero', sketch: 'other' }, variants: ['a'] });
+
+    expect(liveSketchOf({ product, part: 'elements/hero', variant: 'a' })).toBe(
+      '2 open sketches target elements/hero: elements/hero@drift, elements/hero@other',
+    );
+  });
 });
 
 describe('design compare --sketch', () => {

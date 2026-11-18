@@ -88,6 +88,9 @@ export type StateShot =
   | { state: string; design: Buffer; app: Buffer; regions?: { design: Region[]; app: Region[] } }
   | { state: string; problem: string; undrivable?: true };
 
+/** A live app shot of one state with its measured regions, or the reason it failed. */
+export type AppShots = Map<string, { app: Buffer; regions: Region[] } | string>;
+
 export type ShootStates = (options: {
   target: string;
   config: DesignConfig;
@@ -103,6 +106,8 @@ export type ShootStates = (options: {
   appRoot?: string | null;
   /** Called once the design pictures are drawn and kept, before the app pictures. */
   onDesignShots?: () => void;
+  /** Live app shots by state, shared between calls: a state found here is not shot again, a new one is added. */
+  appShots?: AppShots;
 }) => Promise<{ states: Record<string, unknown>; shots: StateShot[]; skipped?: string[]; waiting?: string[] } | string>;
 
 export type ComparePart = (options: {
