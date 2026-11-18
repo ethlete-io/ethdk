@@ -2,10 +2,11 @@
   "components/accent-on-light": "48fcec0ffc85396b",
   "components/accordion": "bff6f619befe97ec",
   "components/action-sheet": {
-    "hash": "c68c9435e1e47b0a",
-    "variant": "b",
-    "decidedBy": "user",
-    "at": "2026-11-15T21:49:47.204Z"
+    "hash": "9500dc2b24ae5906",
+    "variant": "new",
+    "decidedBy": "plan: B584: fill the missing control states of components/action-sheet",
+    "at": "2026-11-18T14:06:45.790Z",
+    "note": "merged without a pick: allowed by B584: fill the missing control states of components/action-sheet"
   },
   "components/anchored-dialog": {
     "hash": "3f2c8b995e5d8510",

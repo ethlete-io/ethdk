@@ -65,13 +65,16 @@ const sheet = ({ header: withHeader = true, action, cancel }: Props) =>
 export default definePart({
   note: 'Full-width sheet flush to the bottom edge, Cancel as the last row',
   consumerAction: 'its actions are the items the consumer passes in',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'design check'],
   states: {
     default: {},
     'without-header': { header: false },
+    cancel: {},
     'action-hover': { action: 'hover' },
     'action-active': { action: 'active' },
     'action-focus-visible': { action: 'focus-visible' },
+    'cancel-hover': { cancel: 'hover' },
+    'cancel-active': { cancel: 'active' },
     'cancel-focus-visible': { cancel: 'focus-visible' },
   },
   describe: {
@@ -79,12 +82,32 @@ export default definePart({
       'The sheet over a dimmed page with title, message, four actions and Cancel; check that it sits flush at the bottom and Delete match is red.',
     'without-header':
       'The sheet with only its actions and Cancel; check that the list starts at the top edge without a gap.',
+    cancel: 'The sheet at rest as the Cancel row of the grid; check that Cancel reads as the last row.',
     'action-hover': 'Edit match hovered; check that the row takes the hover tint across the full width.',
     'action-active': 'Edit match pressed; check that the tint goes a step past hover.',
     'action-focus-visible':
       'Edit match with keyboard focus; check that the focus ring shows inside the sheet and is not cut.',
+    'cancel-hover': 'Cancel hovered; check that the last row takes the hover tint across the full width.',
+    'cancel-active': 'Cancel pressed; check that the tint goes a step past hover.',
     'cancel-focus-visible':
       'Cancel with keyboard focus; check that the focus ring shows around the last row and is not cut at the bottom.',
+  },
+  grid: {
+    columns: ['rest', 'hover', 'active', 'focus-visible'] as const,
+    rows: {
+      action: {
+        rest: 'default',
+        hover: 'action-hover',
+        active: 'action-active',
+        'focus-visible': 'action-focus-visible',
+      },
+      cancel: {
+        rest: 'cancel',
+        hover: 'cancel-hover',
+        active: 'cancel-active',
+        'focus-visible': 'cancel-focus-visible',
+      },
+    },
   },
   widths: [390],
   instant:
