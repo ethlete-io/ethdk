@@ -39,7 +39,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 8. **B589** ⏳ Falsche Skill-Zeilen: builder-agent verlangt Changeset für ADR-Edit (ADR 0265 sagt ... - Builder
 9. **B590** ⏳ Alte Handoffs `plans/ethlete-studio/handoff-{builder,builder-mac,c8,cb,doc-agent}.md` ... - Builder
 10. **B591** ⏳ ethlete-design-exploration („der Nutzer wählt“) an ADR 0305 angleichen; ... - Builder
-11. **B592** ⏳ Plan-Dateien nur mit Offenem: design-to-code.md ganz ins Archiv, Budgets senken (ADR 0352) - Doc-Agent
+11. **B592** ⏳ Plan-Dateien nur mit Offenem: design-to-code.md ganz ins Archiv, Budgets senken (ADR 0352) - Builder
 12. **B593** ⏳ Ein Befehl gibt nur die Warteschlange aus (ADR 0352) - Builder
 13. **B160** ⏳ Neu gezeichneter vorhandener Interaktionszustand: Vergleich auf Element-Ebene - Builder
 14. **B422** ⏳ `lint:no-verify-briefs` prüft nur getrackte Dateien, NEGATED bekommt „no“, umbrochene ... - Builder
@@ -214,7 +214,7 @@ Geparkt: B105, B108, B109, B580, B148.
 | B589 | Falsche Skill-Zeilen: builder-agent verlangt Changeset für ADR-Edit (ADR 0265 sagt keins); falsche Beschreibung des pre-commit-Hooks in git-commit, ethlete-agent-sessions (Quelle libs/agent-rules/content), AGENTS.md, builder-agent; git-commit „nicht pushen“ widerspricht ADR 0286. | ⏳ | - | Builder |
 | B590 | Alte Handoffs `plans/ethlete-studio/handoff-{builder,builder-mac,c8,cb,doc-agent}.md` löschen und `check-handoff-shrink.mjs` aus `.husky/commit-msg` nehmen. | ⏳ | Vorher prüfen, was noch in handoff-doc-agent.md schreibt. | Builder |
 | B591 | ethlete-design-exploration („der Nutzer wählt“) an ADR 0305 angleichen; studio-design-part ruft nicht mehr das volle `nx test ethlete-studio`; Builder-Skill-Zeilen streichen, die ein Hook schon erzwingt oder die Einzelfall-Flicken sind. | ⏳ | - | Builder |
-| B592 | Plan-Dateien halten nur Offenes (ADR 0352): design-to-code.md ganz ins Archiv, „Wie gebaut“-Abschnitte aus build-ready.md ins Archiv, danach Budgets in size-budget.json knapp auf die neuen Größen senken (STATUS.md etwa 30000). | ⏳ | - | Doc-Agent |
+| B592 | Plan-Dateien halten nur Offenes (ADR 0352): `archive-findings.mjs` schiebt design-to-code.md ganz und die „Wie gebaut“-Abschnitte von build-ready.md ins Archiv; Checker lesen design-to-code.md danach nicht mehr. | ⏳ | Danach Budgets in size-budget.json knapp auf die neuen Größen (STATUS.md jetzt etwa 59000, Ziel 30000 nach Zeilen-Aufräumen durch den Doc-Agent). | Builder |
 | B593 | Ein Befehl gibt nur die Warteschlange oben in STATUS.md aus, damit keine Session STATUS.md danach durchsucht (ADR 0352). | ⏳ | - | Builder |
 
 ## A. Studio: was man sieht

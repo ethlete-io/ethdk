@@ -1312,122 +1312,9 @@ its ADR. No check reads the plan rows against the ADRs. Tool fix (technical): `y
 lint flags a STATUS row that asks Tom for "Go", `design accept` or `go` once B249 has landed; B249 itself removes the
 last hint text in the CLI that tells a human to run `design accept`.
 
-583\. Builder (2026-11-07, finding 580 built as IMPLEMENTS-UNRENDERED, 6c611c1a9): the new rule hits five studio
-parts. `pages/system` links `design-parts/system-page`, which the app never renders (system-view → shell-main →
-design-canvas); `components/canvas-viewport` is drawn by design-canvas itself; `components/disclosure` and
-`components/tree-row` have no rendered host (no app template uses `<ethlete-tree-row>`); `components/comment-pin` sits
-off-screen in the panned sample. Decision by the doc agent (ADR 0201, 0105, 0113): the rule lands with these five in
-its baseline, then each link fix shrinks it. A link to the real host is technical; a part drawn as inline markup links
-the file that holds it; a part with no app code loses its link; comment-pin gets an on-screen sample.
-As built (583, B502 links, Linux builder, 2026-11-14): `components/tree-row` keeps `tree-row.component`, and the Flows
-list now draws its rows through that component instead of its own `[ethlete-tree-row-item]` loop, so a page renders the
-linked file (the stack marks a selected row `aria-selected`, as the Flows loop did). The part tree keeps its own rows: it
-draws a nested tree with `etTreeNode`, not the flat stack. `pages/system` stays on `system-page` (open). A derivation of
-a page's link from the innermost app component at or around the live host (shared host and shell skipped) was built and
-measured: it linked `system-view`, the real host, and the part check then failed with 19 DROPPED-PROP, because the
-harness draws the linked component with the design props and `system-view` takes none. Cause (measured): the app draws
-the part state of the System page inline in `system-view`, and `system-page` is a second drawing of the same states
-that only the listing-error and legacy-call states and the harness use. Not committed. Next step: `system-view` renders
-`system-page` for every state with its canvas projected, as the call state already does; then the link is right as it
-stands, and the page derivation can land with a guard that a candidate takes the design props.
-Verified on a scratch copy: `design check --part` on tree-row, part-tree, flows, inventory, sketches and system has no
-findings (only the copy's own "changed outside a sketch" points, as it has no git), and the live run prints no LINKED or
-UNDERIVED. Not verified: the Studio e2e suite on the Flows list.
-As built (583, B502 system page, Linux builder, 2026-11-14): `system-view` draws every System state through
-`system-page` (listing error, call, the notes start-server, read error and sketch missing, empty, part); its inline
-shell, toolbar and canvas states are deleted. The app projects what the design does not draw: the side tree with its
-remembered scroll (`systemSide`), the live canvas (`systemCanvas`, `systemCallCanvas`), the note (`systemNote`) and the
-inventory toggle and exception error (`systemActions`). `system-page` gained `section`, `noted`, `missingShots` and
-`openPoint`. So `pages/system` → `system-page` is now true. The Inbox canvas keeps the part canvas only, without the
-System toolbar (the Inbox design draws none). Verified: typecheck, lint, related specs, `design check --part
-pages/system` (0 findings, no part rewrite), live shots of part, page part, sketch missing, inbox, listing error, empty
-and call, `studio:e2e --view system --hold-listings 14000` (41/41) and `page-switch.e2e` (4/4). Not verified: the
-start-server and call-error notes live; the empty state keeps the app's tree in the side panel, not the design's
-"none" line.
-
-584\. Builder (2026-11-07, 994dd8bea): `addedBaselineNamesOf` flagged every entry that some older version of
-`rule-baseline.json` did not hold, so only the first commit of the file could baseline anything and a second new rule
-could never baseline its old hits (against ADR 0201). No spec covered a second rule. Fixed in 994dd8bea: an entry
-counts as added only if an older version already held the same rule without it, with a spec for a second new rule.
-Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its second use, not only its first. Built in 994dd8bea.
-
-592\. Builder (2026-11-08, B434): 33 of the 35 hidden Studio e2e failures (Sketches, Large: "0 iframes / no frame
-point") came from the fixture, not the app. `prepareCheckout` in `apps/ethlete-studio/e2e/canvas.e2e.mjs` made sketch
-variant `a` of pages/system and elements/shell-main an exact copy of the current part. Since b9367d285 the sketch view
-folds every state equal to Aktuell and drops a row when all states fold, as designed; 7bb4abf8a and 8bc90241c made the
-copies pixel-identical, so the frames went from 30 to 0 once the full compare answered. The view was correct, so check,
-compare and verify had nothing to report, and nothing checks that a fixture still has a difference to show. Fixed in
-1b0e18653. Tool fix (technical): after setup the harness asserts that each sketch fixture variant has at least one
-changed state and fails with "fixture folds every state"; `design sketch check` warns on a sketch whose variants equal
-Aktuell in every state. The System case "Neu starten … 100 ms" could never pass, because the e2e started Studio without
-window chrome (fixed in ffe60ce8b); finding 588 covers the job that never ran green.
-
 593\. Correction to finding 591: parallel cases (B377) are built. The worker default is cores/4, so the 4-core CI
 runner gets 1 worker. The doc agent read the parked STATUS row and did not check the code. Tool fix (technical): the
 suite takes all runner cores in CI, and the B377 row and the rows that wait on it (B378, B388) name it as done.
-
-612\. Builder (2026-11-09, eeaca8e0c): Large "a sketch scroll never empties a cell that had a picture" was red in 3
-sharded runs. Cause 1 (app bug): `liveShotsOf` gave the 6 live slots in row order, so variant-a cells lost their iframe
-before their picture loaded; now painted-without-picture > without-picture > pictured. A later blank iframe at
-`down2+30` recovered by +300 ms, cause not proven. The tool did not stop it because the e2e job had
-`continue-on-error`. Tool fix (technical): the job blocks (c99006d83), and the probe names its outcome (786f7adb0), so
-the next red says which cause. Open: a harsher held-picture repro still empties cells when more than 6 near cells have
-no picture; CI never showed it.
-
-639\. Doc agent (2026-11-09, ADR 0236): measured loop time of the builder on 2026-11-08 (4 builder sessions, 16
-subagents, 8 push-suite logs in `/tmp/push-suite*.log`). Studio e2e dominates: 26 min of direct runs, most of the 25 min
-of wait loops, and 23.4 of the 29.5 min of push-suite time (165-197 s per run, 80 %). The cli step costs 85-104 s only
-when cli changed; commit hook, lint and prettier together about 3.5 min. Polling (`tail -f`, `until grep`, `sleep`)
-on e2e logs ate a large part of the "other" 24.6 min. Fix (item 0 of the binding order): the e2e step in push:suite
-under 60 s over 3 measured runs, and the builder waits on e2e by notification, not by polling.
-
-647\. Builder (2026-11-09, item 0): the Large case "a sketch scroll never empties a cell" fails under 8-worker load in
-about 3 of 10 full runs, and blocked the push-suite on 99dda96f7 (e2e 132/133). Alone it passes 4 of 4. A cell loses
-its iframe for 30-300 ms after a scroll under CPU load, so this is probably a Studio defect under load, not a test
-defect (not proven). Why no tool caught it: the repeat gate runs the suite three times on one load level, so a fault
-that needs CPU pressure passes until the load is high by chance. Tool fix (part of item 0, decided by the doc agent
-under the anti-stall rule because it blocks the push): fix the empty cell at its cause in Studio; then the e2e runner
-gets a load mode (CPU pressure on purpose) that the repeat gate runs, so a load fault fails every time and not one
-push in three.
-
-665\. Builder (2026-11-09, Mac night): two push:suite runs in a row failed e2e 132/133, each in another case (B462
-Sketches first load, B463 System page switch timing); each passes alone. The red-CI fix 2bc4d42f2 waits behind
-them, so the Rust audit stays red for hours because of two e2e flakes on another machine. Why no tool caught it: the
-push gate has no record of which cases are known flaky on which machine, and B463 is a timing case that ADR 0230 moves to a non-blocking perf job, but B441 moved only four `libs/cli`
-specs, not the e2e timing cases. Tool fix (tonight, bug queue): the e2e timing cases move into the perf job too (B441
-applied to e2e), and the gate prints the B row of a known flaky case next to its fail. Cause the builder fixes next: `canvas.e2e.mjs:3020` gives
-`min(8, floor(cores/4))`, 3 workers on the 12-core Mac.
-
-681\. Builder (2026-11-10, Mac night, B466-only push:suite in a worktree at 11de10881 = origin/next f6a97186f + c11cc03ac,
-B471): the e2e step failed on `[System] page switch time is logged to the design timings` (`icons->shell-main first:
-mount 37, first 4730, all NOT (5 painted; 17 marked img/iframe, 8 canvas frames ...)`, 33.1 s): under load not every
-shell-main frame painted inside the case's window. This is origin/next's own e2e, without tonight's local fixes. Four
-push:suites tonight were red, each on a different load-sensitive case (B464, B468, B470, B471); cli and studio were
-green each time. Nothing is pushed, so the B466 CI proof waits for the human. Why no tool caught it: the Mac push:suite
-runs every e2e case at 3 workers under full load, and a case that waits for "every frame painted" in a fixed window
-fails on load, not on a defect; one red case blocks a push that cannot touch e2e behaviour. Tool fix (bug queue, after
-680): the runner runs the cases that wait for paint in a quiet tail (one worker, after the parallel cases), and a case
-that hits its window prints the load next to the fail; a change set that touches no e2e input (here two vitest worker
-caps and a changeset) is a candidate for a gate the human decides on.
-
-683\. Builder (2026-11-10, Mac night, full `yarn studio:e2e` after 1cc2d2ee8, B472): `[Sketches] Fit is stable` hit
-the 10 s `page.goto` timeout in setup while the Studio build ran, `load 46.3 on 3 worker(s)`. The fifth load-sensitive
-case tonight (B464, B468, B470, B471, B472). Not caused by the 681 quiet tail. Why no tool caught it: e2e cases start
-while a build of the same run still takes the CPU, and setup timeouts are fixed, so a case fails on the build, not on
-Studio. Tool fix (bug queue, before the 679 backlog item): the e2e runner starts no case before every build step of the
-run has ended; no load-scaled timeouts, because those hide a slow Studio. As built (681, 1cc2d2ee8): `quiet: true` cases
-run last on worker 0 alone, every failed row prints `load <1-min> on <n> worker(s)`; the full run took 533.6 s against
-503.6 s (+30 s, about 6 %, tail 62 s). Per ADR 0240 the tail cost is measured again after the build-order fix.
-
-Reverted (grill decision, 540dc26db): 995491fb1 fixed no reproduced fail and cost a net 10 to 16 s per worker (ADR
-0230, ADR 0240). It had no diagnostics that stand alone: the `warmUp` phase timing was there before it. The measurement
-stays: each worker draws the same ~52 shots cold, which is 667 (c), one shot store for all workers.
-
-Builder (2026-11-10, Mac day, B472 / 683 follow-up): no run after the 540dc26db revert has a `Fit is stable` fail.
-Targeted runs of the three Fit cases (Sketches, Large, Chip) on 3 cold workers, `--cold-shots`, 12 busy-loop hogs,
-1-min load 38 to 45: 6 runs, 18/18 pass; Sketches 42.6 to 45.2 s, Large 31.8 to 32.6 s, Chip 26.1 to 26.6 s, `warmUp`
-20.0 to 21.0 s, first case at 75.3 to 76.3 s. The 10 s `page.goto` fail did not come back. No new suspect beyond the
-683 one (the page `load` waits for cold shot draws); still not proven.
 
 691\. Builder (2026-11-10, day shift, base comparison for B471): the 3 OFF-CENTRE lines on `elements/canvas-frames`
 (rounds@1440, round-folded@1440 x2: the `button.et-surface-interactive` text sits 1.0 px high, 7.1 px above the capitals,
@@ -1538,12 +1425,6 @@ against origin; the Mac must pull before its next push.
 
 811 on the Mac (Mac builder subagent, 2026-11-11, measured in a worktree with a patched copy of the rule). Cause (measured): the flagged text is set in `10px ui-monospace, "SF Mono", Menlo, Consolas, monospace` (`--font-code` in `.ethlete/design/studio/foundations/type/type.css`); the design frame loads no web font (`document.fonts.size` 0, status `loaded`), so the Mac draws SF Mono and Linux the generic `monospace`. SF Mono at 10px: ascent 9, descent 2, cap 7.29, an 11px line box. In the 22px content box of `co-ratio` and `sp-height` the 11px slack splits 5/6, so above 7.71 and below 9.0 (1.29 > the 1px tolerance); in the 16px `pages/inventory` box the slack splits 0/1 (3.71 / 5.0). The same font makes most `pages/sketches` `sk-gutter` gaps 0.65-0.95px, so their baseline entries no longer hit on the Mac. Not the cause: font load timing (no web fonts). Not measured: the Linux fallback numbers. Recommendation: self-host one monospace font and the UI font in the design styles, so both OSes measure the same font; a per-OS baseline entry (ADR 0201) keeps two truths and still drops records on the other OS; a tool fix in the rule removes only the 0.29px font share, not the 1px layout split. Side result: the main checkout's `dist/libs/cli` was stale against HEAD and the CLI gate refused it.
 
-827\. Linux builder (2026-11-11, push:suite at c373dcfd0): "Not formatted in c373dcfd0: package.json"; the 820 subagent
-added a script out of key order and reported prettier clean without running it on `package.json`. Cause (read,
-`.husky/pre-commit:43`): pre-commit runs prettier only on staged Markdown blobs, so an unformatted `.json` or `.ts` file is
-caught one round later by pre-push or push:suite. Tool fix (doc agent, tool internal): pre-commit runs `prettier --check`
-on every staged Prettier-supported blob. Bite: a staged unformatted `package.json` fails the commit.
-
 832\. Doc agent (2026-11-11, from 830): the cold open-points answer (about 8 s on studio) and the first answer after a
 part edit stay far over the 1 s target. Tool fix (doc agent, tool internal, no change in what the human sees): the
 server computes the sketch problems in the background at start and again after each file change it watches, so the
@@ -1568,19 +1449,6 @@ only chip, popup and footer status, never the listing. A `listingAnswered` wait 
 --hold-listings 14000 --delay-pictures 60000` red before, green after; hold alone passed in 5 idle runs. push-suite ok
 (repeat 3/3 of 26 System cases).
 
-833\. Linux builder (2026-11-11, from 829b): `listingAnswered` returns at once on a page with no `data-sk-changed="pending"`
-element for the held request, so a wait on it passes silently. Suspect (code read). Tool fix (doc agent, tool internal):
-the helper fails when a hold is active and neither a pending marker nor an answered listing exists. Bite: the System page
-chip case with `listingAnswered` and a hold fails with a clear message instead of passing.
-833 as built (Linux builder, 2026-11-11, this commit: fix(repo): Wait for held listings in listingAnswered): the e2e route
-counts listing requests per job and those still held; `listingAnswered` polls `listingWait` (`probe-helpers.mjs`) until no
-pending marker exists and, with a hold active, a listing was requested and none is still held; otherwise it throws
-"listingAnswered timed out: <reason>" after 60 s. Bite: the System chip case with `holdListings` on and
-`listingAnswered` added, `--hold-listings 14000 --delay-pictures 60000`: the old helper ended with "ended while a held
-listing was pending" (829b); the new one waits out the hold and the case passes (55.3 s). `listing-wait.spec.mjs` 5/5.
-Verified: callers run alone, plain and held (see the commit message list in the result file). Not verified: the thrown
-timeout message live (only the pure `listingWait` reasons are specced).
-
 832 as built (Linux builder, 2026-11-11, 32330be11): `open-points-warmer.ts` computes the open points of every product
 in the existing worker at `et design serve` start and 300 ms after each watched change; an ask waits for the run in
 progress and never starts a second. Bite: `open-points-warmer.spec.ts` counts rule runs inside an ask (first after start,
@@ -1596,60 +1464,12 @@ product (7 s each before 835) take the CPU from the server, so the first sketch 
 suite e2e on efe3e7832 passed, so the load did not show locally. Re-land the warm-up only with a bite that runs the e2e
 fixture check under CI-like CPU limits.
 
-834\. Linux builder (2026-11-11, 832 push-suite): the e2e build failed with TS2688 "Cannot find type definition file for
-'@types'". Cause (seen): 93 self-links `node_modules/@x/@x -> node_modules/@x`, made at 12:01:55 while the 832 subagent
-built a scratch copy in /tmp by linking scope folders into a `node_modules` that pointed to the repo. Tool fix (doc
-agent, tool internal): one script makes the scratch checkout copy for live measurements (reuse the safe `node_modules`
-link of `commit-export.mjs`), and subagent briefs name it; push-suite checks `node_modules` for scope self-links before
-the build and names them. Bite: a planted self-link fails the check with its path.
-
-834 as built (Linux builder, 2026-11-11, this commit: fix(repo): Add a scratch checkout script and a node_modules self-link check): `yarn scratch:checkout <dir>` (`tools/scripts/scratch-checkout.mjs`) copies the working tree (tracked files with uncommitted edits plus untracked unignored files) and links dependencies through `linkInstalledDependencies` of `commit-export.mjs`; it never writes in the repo `node_modules`. `preChecksStep` of push-suite now fails with `node_modules-self-links`, naming each `node_modules/@scope/<name>` symlink that resolves to its own scope folder or an ancestor (depth 2 only). The builder-agent skill has the brief line. Verified: `scratch-checkout.spec.mjs` 4 of 4 green; red (2 of 4 fail) with the check stubbed out; the real repo `node_modules` has 0 self-links. Not verified: a full `yarn push:suite` run.
-
-835\. Doc agent (2026-11-11, from 832): one open-points run still takes 5-6 s on studio, so the first Studio ask after
-start or a part edit waits that long. Tool fix (doc agent, tool internal): make the run itself faster first; one variant
-run reads all 91 studio part sources (830), so find what the rule check needs per variant and profile the run before a
-change. Target: a run under 1 s on studio. If that fails, sending the sketch problems later (830 option b) changes what
-the human sees and goes to the human as a question.
-835 as built (Linux builder, 2026-11-11, this commit: perf(cli) "Parse and scan each source once per text"): profile
-first, on a scratch checkout of studio (91 parts, 2 ready sketches, 6 variants, 3 with `shared/`): one run is 10 full
-rule runs (product 1, variants 6, merged layout 3) of 35 rules, about 600 ms each; cold 7.0-7.6 s, after a part edit
-5.7-6.9 s. Cause (profiled): every rule run re-walks the syntax tree and re-scans the text of every source (definitionOf
-1.0-1.5 s, Tailwind class texts 1.4-2.4 s, part rewrites 0.6-1.0 s with a fresh parse each call, command text 0.6-1.0 s,
-reachable files 0.5-0.8 s, orphan endpoints 0.4-0.7 s over the 600 KB app source); plus, cold only, the Tailwind
-class-facts subprocess 1.35-1.45 s. Why a variant reads all 91 sources: the rules are product-wide (imports, reachable
-files, orphan endpoints, shared files) and the variant answer is the difference of two whole-product runs, so narrowing
-the read set stays unsound. Built: `perSource` in `ts-source.ts`, a 512-text memo of a pure function of a source text,
-on `sourceFileOf`, the node list, `textsOf`, `importsOf`, `calledNamesOf`, `definitionOf`, the Tailwind class texts, part
-rewrites, command text, top-level awaits, stylesheet imports, inline UI, glued interpolations, phase unions and
-hard-coded colours; the orphan-endpoint verdict is held per app while its sources read the same. Files are still read
-each run, so the tracked inputs do not change. Measured (script over `readOpenPoints`, scratch, idle): after a part edit
-5.7-6.9 s to 650 ms; cold 7.0-7.6 s to 2.6 s; repeat 35 ms. Not met: cold stays at 2.6 s, of it the Tailwind subprocess
-1.4 s and the first parse 0.5 s (suspect: a disk cache of the class facts keyed by their read prints would fix it).
-Output byte-equal to HEAD for studio, sdk and studio-lab. Bite: `open-points-reparse.spec.ts` records each syntax-tree
-walk after a part edit; red on HEAD source (3 unchanged sources walked again), green after; spec:stress 4/4. Not
-verified: a live `/__design/open-points` ask on a server, Studio e2e.
-
 879\. Linux builder (2026-11-11, B480): `serverAnswers$` uses `fromFetch` with no timeout, so any hung request keeps
 "Design-Server startet" forever (874 showed it). Lesson: a start screen that waits on a request with no timeout hides
 every server fault. Tool fix: timeout plus retry, and after the timeout Studio says the server does not answer, with the
 URL. Side: user-facing, after B249 (ADR 0269).
 
 879 as built (2026-11-14): `serverAnswers$` emits `waiting | answers | silent`; after 30 s without an answer (the wait the doc agent set) the start screen shows the elements/shell-main `server-unanswered` state with `http://localhost:<port>` and a restart button, and keeps retrying; the design state now takes `serverUrl` as a prop. Verified: studio-view and shell-main specs (bite: the new studio-view spec fails without the fix), lint, typecheck, design check. Not verified: a real hung server in the running app, design compare (`design task` refuses: shell-main not build-ready).
-
-899\. Linux builder (2026-11-11 night, B249 e2e 4c under `--hold-listings 14000`): the merged part's frame stayed empty.
-Cause (probe + spec bite `canvas-frame-grid.component.spec.ts`): the `settledCells` linkedSignal of a state grid took an
-inline source that read `grid()`; an equal re-read of the frames (held listing) reset the loaded count 7 -> 0, and loaded
-imgs never fire `load` again, so the grid never revealed. Pre-existing, not from 487e24844. Built 57bac0dc0: the source is
-a computed `shotsKey`. Suspect "aborted shot requests" refuted. Bite 883: with `leaveGone` reverted, 4c times out at the
-open-part wait. Lesson: no spec set an equal grid input again while pictures load, and nothing flags a linkedSignal source
-written as an inline function over an input (one more site: `loadedShot` in `canvas-frame.component.ts`, harmless). Tool
-fix: a lint rule that asks for a computed source there. Open for the human (morning round): the rule would go into the
-published `@ethlete/eslint-plugin`, so it changes lint for every consumer. Queue: tool backlog until decided.
-
-7f built (Linux, 6700dfd3d components + core, 00abccaea cli): a loading button keeps its normal colours; the
-`aria-disabled` look skips `[data-loading='true']`. Bite: new e2e `button / loading look` failed 4/4 without the fix,
-passed 4/4 with it. A disabled `<a>` that loads now looks normal (clicks stay blocked); decided by the doc agent: accept,
-it applies the human's 7f decision (loading keeps normal colours) to a rare case.
 
 879 update (Linux, 405ad80ee): `serverAnswers$` has a 5 s `timeout` per stamp request before `retry`; bite: the new spec
 failed without the fix. The visible half (a "server does not answer, URL" screen) is new UI in elements/shell-main, so
