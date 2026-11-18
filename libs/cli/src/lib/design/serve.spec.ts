@@ -1522,6 +1522,21 @@ describe('the design server for sketches and comments', () => {
     const withdrawn = (await ask('/__design/comment', '?product=acme', 'POST', on)).body as { id: string };
 
     expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', {})).status).toBe(400);
+    expect(
+      await ask('/__design/comment-reply', '?product=acme', 'POST', { id: withdrawn.id, text: 'Gone.' }),
+    ).toMatchObject({ status: 200 });
+    expect(
+      (await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id, reply: -1 })).status,
+    ).toBe(400);
+    expect(
+      (await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id, reply: 1 })).status,
+    ).toBe(422);
+    expect(
+      (await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id, reply: 0 })).status,
+    ).toBe(200);
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({
+      comments: [{ id }, { id: withdrawn.id, replies: [] }],
+    });
     expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id })).status).toBe(200);
     expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id })).status).toBe(404);
     expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({ comments: [{ id }] });

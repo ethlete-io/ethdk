@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -173,7 +172,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [shell]="pageShell()"
         [load]="inboxLoad()"
         [canvas]="shellCanvas"
-        [thread]="inboxThread()"
+        [thread]="openThread()"
         (showResolvedChange)="commentStore.showResolved($event)"
         (replyComment)="replyToThread($event)"
         (resolveThread)="resolveThread()"
@@ -242,6 +241,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       @let partShown = part();
       <ethlete-system-page
         [(closed)]="pointsClosed"
+        [(replyText)]="commentStore.replyText"
         [shell]="pageShell()"
         [section]="section()"
         [listingError]="listingError()"
@@ -260,10 +260,17 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [commentMode]="commentStore.active()"
         [comments]="placedComments()"
         [selectedComment]="pickedCommentId()"
+        [thread]="openThread()"
+        [draft]="commentStore.draft() ? commentStore.draftText() : null"
+        [canvas]="shellCanvas"
         [writer]="commentWriter()"
         [foldedStates]="foldedStates().size"
         [allStatesShown]="allStatesShown()"
         (commentModeChange)="commentStore.toggle()"
+        (replyComment)="replyToThread($event)"
+        (resolveThread)="resolveThread()"
+        (withdrawComment)="withdrawFromThread($event)"
+        (closeThread)="closeThread()"
         (reload)="reloadListing()"
         (markTransferred)="markTransferred($event)"
         (pickTheme)="pickTheme($event.kind, $event.name)"
@@ -308,9 +315,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             </p>
           }
         </div>
-        <div class="contents" systemCanvas>
-          <ng-container [ngTemplateOutlet]="shellCanvas" />
-        </div>
         <div class="contents" systemActions>
           @if (exceptions.error(); as message) {
             <span
@@ -342,7 +346,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   imports: [
     RememberedTreeScrollDirective,
     BUTTON_IMPORTS,
-    NgTemplateOutlet,
     PartTreeComponent,
     DesignCanvasComponent,
     ProvideColorDirective,
@@ -356,7 +359,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   ],
   providers: [provideCommentStore(), provideCommandPaletteStore()],
   // On body, not document: a hover tooltip's Escape dismissal prevents the event on <html>, before document.
-  host: { class: 'block size-full min-h-0', '(body:keydown.escape)': 'leaveCommentStep($event)' },
+  host: {
+    class: 'block size-full min-h-0',
+    '(body:keydown.escape)': 'leaveCommentStep($event)',
+    '(body:keydown.c)': 'leaveCommentMode($event)',
+  },
 })
 export class SystemViewComponent {
   protected errorTheme = injectSemanticColorTheme('error');
@@ -919,7 +926,7 @@ export class SystemViewComponent {
 
   private threadOpen = signal(false);
 
-  protected inboxThread = computed(() => {
+  protected openThread = computed(() => {
     const id = this.pickedCommentId();
     const comment = this.threadOpen()
       ? [...this.commentStore.comments(), ...this.commentStore.resolved()].find((listed) => listed.id === id)
@@ -1276,13 +1283,20 @@ export class SystemViewComponent {
   }
 
   protected leaveCommentStep(event: Event) {
-    const target = event.target;
-    const onPage =
-      target === this.host.nativeElement.ownerDocument.body ||
-      (target instanceof Node && this.host.nativeElement.contains(target));
-
-    if (event.defaultPrevented || !onPage) return;
+    if (event.defaultPrevented || !this.isOnPage(event.target)) return;
     if (this.commentStore.escape()) event.preventDefault();
+  }
+
+  protected leaveCommentMode(event: Event) {
+    const target = event.target;
+    const editable =
+      target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+
+    if (event.defaultPrevented || editable || !this.isOnPage(target)) return;
+    if (!this.commentStore.active() || this.commentStore.draft()) return;
+
+    event.preventDefault();
+    this.commentStore.end();
   }
 
   protected startComment(pick: FramePoint) {
@@ -1304,8 +1318,6 @@ export class SystemViewComponent {
   }
 
   protected pickPin(id: string | null) {
-    if (this.section() !== 'Inbox') return;
-
     const toggled = id !== null && id === this.pickedCommentId() && this.threadOpen();
 
     if (id !== this.pickedCommentId()) this.commentStore.clearReply();
@@ -1319,13 +1331,13 @@ export class SystemViewComponent {
   }
 
   protected replyToThread(text: string) {
-    const id = this.inboxThread()?.id;
+    const id = this.openThread()?.id;
 
     if (id) this.commentStore.reply(id, text);
   }
 
   protected resolveThread() {
-    const id = this.inboxThread()?.id;
+    const id = this.openThread()?.id;
 
     if (!id) return;
 
@@ -1334,9 +1346,15 @@ export class SystemViewComponent {
   }
 
   protected withdrawFromThread(index: number) {
-    const id = this.inboxThread()?.id;
+    const id = this.openThread()?.id;
 
-    if (!id || index !== 0) return;
+    if (!id) return;
+
+    if (index > 0) {
+      this.commentStore.withdraw(id, index - 1);
+
+      return;
+    }
 
     this.commentStore.withdraw(id);
     this.closeThread();
@@ -1583,5 +1601,12 @@ export class SystemViewComponent {
     const frame = otherSizeFrameOf(this.placeableFrames(), comment);
 
     if (frame) canvas.focusFrame(frame);
+  }
+
+  private isOnPage(target: EventTarget | null) {
+    return (
+      target === this.host.nativeElement.ownerDocument.body ||
+      (target instanceof Node && this.host.nativeElement.contains(target))
+    );
   }
 }

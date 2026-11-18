@@ -3,10 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { CommentSendPhase } from '../system-page/comment-draft.component';
-import { InboxMessage } from './inbox-sample';
-import { ThreadCardComponent } from './thread-card.component';
+import { ThreadCardComponent, ThreadMessage } from './thread-card.component';
 
-const MESSAGES: InboxMessage[] = [
+const MESSAGES: ThreadMessage[] = [
   { author: 'Kim Lange', initials: 'KL', own: true, when: 'gestern', text: 'Die Kachel ist zu schmal.' },
   { author: 'Gemini', initials: 'G', agent: 'gemini', when: 'vor 5 Min', text: 'Ich nehme 18 statt 16.' },
 ];

@@ -1,5 +1,6 @@
 import { ListedComment } from '../../host/design';
-import { InboxAgent, InboxComment, InboxMessage, InboxThread } from '../design-parts/inbox/inbox-sample';
+import { CommentThread, ThreadMessage } from '../design-parts/comment-flow/thread-card.component';
+import { InboxAgent, InboxComment } from '../design-parts/inbox/inbox-sample';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -109,10 +110,10 @@ export const modelNameOf = (id: string) => {
 export const inboxThreadOf = (
   comment: ListedComment,
   { now, userName }: { now: number; userName?: string | null },
-): Omit<InboxThread, 'phase' | 'reason'> => {
+): Omit<CommentThread, 'phase' | 'reason'> => {
   const { part, state } = inboxCommentOf(comment, { now, userName });
   const first = { by: 'user' as const, author: undefined, text: comment.text, createdAt: comment.createdAt };
-  const messages = [first, ...comment.replies].map((message): InboxMessage => ({
+  const messages = [first, ...comment.replies].map((message): ThreadMessage => ({
     ...(message.by === 'user' ? writerOf(userName) : senderOf(message.by, message.author)),
     when: inboxAgeOf(message.createdAt, now),
     text: message.text,

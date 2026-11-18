@@ -10,7 +10,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { BADGE_IMPORTS, BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
+import { BADGE_IMPORTS, BUTTON_IMPORTS, KBD_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective, signalElementDimensions } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
@@ -22,6 +22,7 @@ import { SystemEmptyComponent } from './system-empty.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { CommentListComponent } from '../comment-flow/comment-list.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
 import {
@@ -210,7 +211,9 @@ export const FRAME_HEAD_CLASS =
           </figure>
         </ethlete-canvas-frames>
       } @else {
-        <ng-content select="[systemCanvas]">
+        @if (canvas(); as canvas) {
+          <ng-container *ngTemplateOutlet="canvas; context: { $implicit: thread() ? threadCard : null }" />
+        } @else {
           <ethlete-canvas-frames
             [fitted]="fit()"
             (zoomOut)="zoomOut.emit()"
@@ -239,6 +242,15 @@ export const FRAME_HEAD_CLASS =
                       [selected]="comment.id === selectedComment()"
                     />
                   </span>
+                }
+                @if (threadAt(); as at) {
+                  <div
+                    [style.left]="'calc(' + at.x + '% + var(--space-6))'"
+                    [style.top]="'calc(' + at.y + '% - var(--space-6))'"
+                    class="absolute"
+                  >
+                    <ng-container *ngTemplateOutlet="threadCard" />
+                  </div>
                 }
                 @if (commentMode()) {
                   <div
@@ -275,7 +287,7 @@ export const FRAME_HEAD_CLASS =
               </div>
             </figure>
           </ethlete-canvas-frames>
-        </ng-content>
+        }
         @if (foldedStates() > 0) {
           <div
             class="absolute bottom-space-3 left-1/2 flex -translate-x-1/2 items-center gap-space-3 rounded-control-md border border-et-surface-border bg-et-surface-bg px-space-3 py-space-2 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
@@ -295,6 +307,11 @@ export const FRAME_HEAD_CLASS =
         }
         <div #actions class="absolute top-space-3 right-space-3 z-1 flex gap-space-2" data-canvas-actions>
           <ng-content select="[systemActions]" />
+          @if (commentMode() && draft() === null) {
+            <span class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-muted"
+              ><et-kbd keys="esc" /> {{ LABELS.commentModeOr }} <et-kbd keys="c" /> {{ LABELS.commentModeEnds }}</span
+            >
+          }
           <button
             [pressed]="commentMode()"
             (click)="toggleComments()"
@@ -322,6 +339,22 @@ export const FRAME_HEAD_CLASS =
       }
     </ethlete-shell-page>
 
+    <ng-template #threadCard>
+      @if (thread(); as opened) {
+        <ethlete-thread-card
+          [(text)]="replyText"
+          [place]="opened.place"
+          [messages]="opened.messages"
+          [phase]="opened.phase ?? null"
+          [reason]="opened.reason ?? ''"
+          (replyComment)="replyComment.emit($event)"
+          (resolveThread)="resolveThread.emit()"
+          (withdrawComment)="withdrawComment.emit($event)"
+          (dismiss)="closeThread.emit()"
+        />
+      }
+    </ng-template>
+
     <ng-template #frameShot let-frame>
       @if (shot(); as shot) {
         <ng-container *ngTemplateOutlet="shot; context: { $implicit: frame }" />
@@ -332,6 +365,7 @@ export const FRAME_HEAD_CLASS =
   imports: [
     BADGE_IMPORTS,
     BUTTON_IMPORTS,
+    KBD_IMPORTS,
     TOOLTIP_IMPORTS,
     CanvasFramesComponent,
     CommentDraftComponent,
@@ -344,6 +378,7 @@ export const FRAME_HEAD_CLASS =
     ProvideColorDirective,
     ShellPageComponent,
     SystemEmptyComponent,
+    ThreadCardComponent,
   ],
   host: {
     class: 'block h-screen w-full',
@@ -375,6 +410,9 @@ export class SystemPageComponent {
   public reason = input('');
   public comments = input<PlacedComment[] | null>(null);
   public selectedComment = input<string | null>(null);
+  public thread = input<CommentThread | null>(null);
+  public replyText = model('');
+  public canvas = input<TemplateRef<unknown> | null>(null);
   public writer = input<CommentWriter>({ author: '', initials: '' });
   public tree = input(SYSTEM_TREE);
   public manyStatesLayers = input(MANY_STATES_LAYERS);
@@ -406,6 +444,10 @@ export class SystemPageComponent {
   public markTransferred = output<string>();
   public pickTheme = output<ThemePick>();
   public showAllStates = output<boolean>();
+  public replyComment = output<string>();
+  public resolveThread = output();
+  public withdrawComment = output<number>();
+  public closeThread = output();
   private actions = viewChild<ElementRef<HTMLElement>>('actions');
   private actionsSize = signalElementDimensions(this.actions);
   protected actionsReach = computed(() => {
@@ -426,6 +468,11 @@ export class SystemPageComponent {
 
   public groups = computed(() => (this.nothingOpen() ? [] : this.openPoints()));
   public openExceptions = computed(() => (this.nothingOpen() ? [] : this.exceptions()));
+  protected threadAt = computed(() => {
+    const id = this.thread()?.id;
+
+    return this.comments()?.find((comment) => comment.id === id)?.at ?? null;
+  });
   protected callFrame = computed(() => this.call()?.slug.split('/').pop() ?? '');
 
   protected toggleComments() {

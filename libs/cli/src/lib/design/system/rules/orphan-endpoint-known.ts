@@ -5,9 +5,6 @@ export type KnownOrphan = { path: string; backlog: string; state: KnownOrphanSta
 const NEVER: KnownOrphanState = { kind: 'never-written' };
 
 export const KNOWN_ORPHAN_ENDPOINTS: KnownOrphan[] = [
-  { path: '/__design/comment-done', backlog: 'B189', state: NEVER },
-  { path: '/__design/comment-withdraw', backlog: 'B189', state: NEVER },
-  { path: '/__design/comment-reply', backlog: 'B189', state: NEVER },
   { path: '/__design/notes', backlog: 'B148', state: NEVER },
   { path: '/__design/note', backlog: 'B148', state: NEVER },
   { path: '/__design/note-change', backlog: 'B148', state: NEVER },

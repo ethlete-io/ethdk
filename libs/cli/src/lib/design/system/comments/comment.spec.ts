@@ -16,6 +16,7 @@ import {
   replyToComment,
   resolveComment,
   threadStateOf,
+  withdrawReply,
 } from './comment';
 
 const acme = () => {
@@ -269,6 +270,33 @@ describe('addressComment and resolveComment', () => {
 
     expect(stored.resolved).toBeUndefined();
     expect(stored.addressed).toMatchObject({ reason: 'round', round: 'r2' });
+  });
+});
+
+describe('withdrawReply', () => {
+  it('deletes one reply of the user and refuses an agent reply or a missing index', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const comment = createComment({ product, comment: on }) as DesignComment;
+    const products = [{ name: 'acme', dir: product.dir }];
+
+    replyToComment({ products, id: comment.id, by: 'user', text: 'First.' });
+    replyToComment({ products, id: comment.id, by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?' });
+    replyToComment({ products, id: comment.id, by: 'user', text: 'The title.' });
+
+    expect(withdrawReply({ products, id: comment.id, reply: 1 })).toBe('only a reply by the user can be withdrawn');
+    expect(withdrawReply({ products, id: comment.id, reply: 3 })).toBe(`comment "${comment.id}" has no reply 3`);
+    expect(withdrawReply({ products, id: 'nope', reply: 0 })).toBe('no open comment "nope"');
+    expect(withdrawReply({ products, id: comment.id, reply: 0 })).toEqual(
+      expect.objectContaining({
+        id: comment.id,
+        replies: [expect.objectContaining({ text: 'Which part?' }), expect.objectContaining({ text: 'The title.' })],
+      }),
+    );
+    expect(listComments({ productDir: product.dir, product: 'acme' }).comments[0]?.replies.map((r) => r.text)).toEqual([
+      'Which part?',
+      'The title.',
+    ]);
   });
 });
 

@@ -184,12 +184,8 @@ describe('a bare segment passed to a url helper', () => {
     ).toContain('/__design/comment');
   });
 
-  it('keeps the three unwritten comment endpoints on the known list under B189', () => {
-    expect(KNOWN_ORPHAN_ENDPOINTS.filter(({ backlog }) => backlog === 'B189').map(({ path }) => path)).toEqual([
-      '/__design/comment-done',
-      '/__design/comment-withdraw',
-      '/__design/comment-reply',
-    ]);
+  it('keeps no comment endpoint on the known list once the Studio calls all of them', () => {
+    expect(KNOWN_ORPHAN_ENDPOINTS.filter(({ path }) => path.startsWith('/__design/comment'))).toEqual([]);
   });
 });
 

@@ -21,6 +21,62 @@ const render = async (inputs: Record<string, unknown>) => {
 };
 
 describe('SystemPageComponent', () => {
+  it('shows the Esc oder C hint in comment mode only without a draft', async () => {
+    const fixture = await render({ commentMode: true });
+    const actions = () =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-canvas-actions]')?.textContent ?? '';
+
+    expect(actions()).toContain(LABELS.commentModeEnds);
+
+    fixture.componentRef.setInput('draft', 'Zu blass.');
+    await fixture.whenStable();
+
+    expect(actions()).not.toContain(LABELS.commentModeEnds);
+  });
+
+  it('opens a thread beside its pin and emits the withdrawn message index and the close', async () => {
+    const fixture = await render({
+      comments: [
+        {
+          id: 'p1',
+          at: { x: 10, y: 20 },
+          author: 'Ada Long',
+          initials: 'AL',
+          when: 'jetzt',
+          part: 'card',
+          state: 'rest',
+          text: 'Eins',
+          replies: 1,
+        },
+      ],
+      thread: {
+        id: 'p1',
+        place: 'card › rest',
+        messages: [
+          { author: 'Ada Long', initials: 'AL', when: 'jetzt', text: 'Eins' },
+          { author: 'Ada Long', initials: 'AL', own: true, when: 'jetzt', text: 'Zwei' },
+        ],
+      },
+    });
+    const root: HTMLElement = fixture.nativeElement;
+    const withdrawn: number[] = [];
+    const closed: unknown[] = [];
+
+    fixture.componentInstance.withdrawComment.subscribe((index) => withdrawn.push(index));
+    fixture.componentInstance.closeThread.subscribe(() => closed.push(true));
+    const card = root.querySelector('ethlete-thread-card');
+
+    expect(card?.textContent).toContain('card › rest');
+    expect((card?.parentElement as HTMLElement).style.left).toBe('calc(10% + var(--space-6))');
+    [...(card?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
+      .find((button) => button.textContent?.trim() === STUDIO_LABELS.commentThread.withdraw)
+      ?.click();
+    card?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(withdrawn).toEqual([1]);
+    expect(closed).toEqual([true]);
+  });
+
   it('shows a failed listing as an error card with the reason, an empty tree and no frames', async () => {
     const fixture = await render({ listingError: 'listing timed out after 30 s for product app-b' });
     const root: HTMLElement = fixture.nativeElement;

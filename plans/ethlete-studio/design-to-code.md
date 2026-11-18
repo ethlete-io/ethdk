@@ -2112,6 +2112,22 @@ Verified: `sketch check`, the thread shots of pages/system and pages/inbox viewe
 the three parts. Open: pages/system DROPPED-PROP for `thread`/`reply`/`replyPhase` (the app port, slice 4) and one new
 PAGE-STATE-INNER (`thread-busy` differs from `thread` only inside comment-flow, ADR 0331), fixed next.
 
+As built (B189 slice 4, System thread card in the app): the card moved to
+`design-parts/comment-flow/thread-card.component.ts` (types `ThreadMessage`, `CommentThread`), shared by the Inbox and
+the System page. `SystemPageComponent` takes `thread`, `replyText` and a `canvas` template that gets the card (as the
+Inbox does) and emits `replyComment`, `resolveThread`, `withdrawComment`, `closeThread`; the harness maps the design
+prop `thread` (`systemThreadSampleOf`). `system-view` opens a pin on every section (`pickPin` no longer needs the
+Inbox). Comment mode without a draft shows "Esc oder C beendet" beside the Kommentar toggle, and `C` leaves it (not in
+an editable field, not during a draft). Single-reply withdraw: `/__design/comment-withdraw` takes `{ id, reply? }`
+(`withdrawReply` in comments/comment.ts; 400 bad index, 422 agent reply, 404 no open comment), host
+`withdrawComment$(address, { id, reply })`, store `withdraw(id, reply)`; index 0 withdraws the thread, i > 0 reply
+i-1. `comment-done|withdraw|reply` left `KNOWN_ORPHAN_ENDPOINTS`. Verified: typecheck and lint of ethlete-studio and
+cli, `vitest related` (studio 635, cli 1715 tests), studio e2e "comment mode: the crosshair ..." (new: crosshair,
+hint, C and Esc each leave) and "the comment button", `design check --part pages/system` 0 findings (the
+DROPPED-PROP is gone), `--part pages/inbox` only the known UNRECORDED, and a live shot of the System card beside its
+pin with two Zurückziehen; withdrawing the second removed only that reply. Not verified: a long thread past the card's
+scroll height in the app.
+
 ## As built (B236)
 
 Cause (finding 289): a part-scoped check drew and checked only the asked part, so `check --part

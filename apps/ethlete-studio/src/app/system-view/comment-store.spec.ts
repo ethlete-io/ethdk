@@ -11,7 +11,7 @@ const host = vi.hoisted(() => ({
   write: vi.fn<(address: ProductAddress, comment: unknown) => Observable<ListedComment>>(),
   reply: vi.fn<(address: ProductAddress, reply: unknown) => Observable<ListedComment>>(),
   resolve: vi.fn<(address: ProductAddress, id: string) => Observable<{ id: string }>>(),
-  withdraw: vi.fn<(address: ProductAddress, id: string) => Observable<{ id: string }>>(),
+  withdraw: vi.fn<(address: ProductAddress, withdrawn: { id: string; reply?: number }) => Observable<{ id: string }>>(),
 }));
 
 vi.mock('../../host/design', async (importOriginal) => ({
@@ -222,10 +222,12 @@ describe('CommentStore', () => {
       host.withdraw.mockReset().mockReturnValue(of({ id: 'b' }));
       store.resolve('a');
       store.withdraw('b');
+      store.withdraw('b', 1);
       TestBed.tick();
 
       expect(host.resolve).toHaveBeenCalledWith(ADDRESS, 'a');
-      expect(host.withdraw).toHaveBeenCalledWith(ADDRESS, 'b');
+      expect(host.withdraw).toHaveBeenCalledWith(ADDRESS, { id: 'b' });
+      expect(host.withdraw).toHaveBeenCalledWith(ADDRESS, { id: 'b', reply: 1 });
       expect(host.list.mock.calls.length).toBe(loads + 1);
     });
   });

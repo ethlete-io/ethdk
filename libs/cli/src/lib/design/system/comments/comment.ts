@@ -455,6 +455,29 @@ export const deleteComment = (options: {
   return found;
 };
 
+/** Deletes the user's reply at `reply` (0-based) from the thread `id`, searching the named products. Answers with the updated comment. */
+export const withdrawReply = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+  reply: number;
+}): DesignComment | string => {
+  const { reply } = options;
+  const found = findComment(options);
+
+  if (typeof found === 'string') return found;
+
+  const withdrawn = found.replies[reply];
+
+  if (!withdrawn) return `comment "${found.id}" has no reply ${reply}`;
+  if (withdrawn.by !== 'user') return 'only a reply by the user can be withdrawn';
+
+  const replies = found.replies.filter((_, index) => index !== reply);
+
+  rewrite(found.file, (stored) => ({ ...stored, replies }));
+
+  return { ...found, replies };
+};
+
 const addressedOf = (options: {
   reason: CommentAddressReason;
   author?: string;

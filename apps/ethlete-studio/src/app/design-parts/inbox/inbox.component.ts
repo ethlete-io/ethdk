@@ -6,8 +6,8 @@ import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { FRAME_CLASS, FRAME_HEAD_CLASS } from '../system-page/system-page.component';
-import { INBOX_SAMPLE, InboxComment, InboxThread } from './inbox-sample';
-import { ThreadCardComponent } from './thread-card.component';
+import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
+import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
 import { CommentRowComponent } from '../comment-flow/comment-row.component';
 
 export type InboxOpenOn = 'all' | 'active' | 'others' | 'none';
@@ -42,7 +42,7 @@ export class InboxComponent {
   public openOn = input<InboxOpenOn>('all');
   public load = input<InboxLoad>('loaded');
   public canvas = input<TemplateRef<unknown> | null>(null);
-  public thread = input<InboxThread | null>(null);
+  public thread = input<CommentThread | null>(null);
   public replyText = model('');
 
   public shellAction = output<ShellAction>();

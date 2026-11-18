@@ -19,6 +19,7 @@ import {
   resolveComment,
   threadStateOf,
   staleReasonOf,
+  withdrawReply,
 } from './system/comments/comment';
 import { addFlowNote, changeFlowNote, deleteFlowNote, FlowNote, FlowNoteChange, listFlows } from './system/flows/flow';
 import {
@@ -826,14 +827,28 @@ export const commentDoneAnswer = withProduct('POST', async ({ asked, product }) 
     : { status: 200, body: { id: done.id } };
 });
 
-/** POST `?product=`, body `{ id }`: deletes a comment without a note, as the user withdraws it in Studio. */
+/**
+ * POST `?product=`, body `{ id, reply? }`: the user withdraws a comment in Studio. Without `reply` it deletes the
+ * comment with its thread; with `reply` (0-based) it deletes only that reply of the user.
+ */
 export const commentWithdrawAnswer = withProduct('POST', async ({ asked, product }) => {
   const body = await bodyOf(asked.request);
   const id = textOf(body?.['id']);
+  const reply = body?.['reply'];
+  const products = [{ name: product.name, dir: product.dir }];
+  const replyIndex = typeof reply === 'number' && Number.isInteger(reply) && reply >= 0 ? reply : null;
 
-  if (!id) return failure(400, 'the body must be { id }');
+  if (!id || (reply !== undefined && replyIndex === null)) return failure(400, 'the body must be { id, reply? }');
 
-  const deleted = deleteComment({ products: [{ name: product.name, dir: product.dir }], id });
+  if (replyIndex !== null) {
+    const withdrawn = withdrawReply({ products, id, reply: replyIndex });
+
+    return typeof withdrawn === 'string'
+      ? failure(withdrawn.startsWith('no open comment') ? 404 : 422, withdrawn)
+      : { status: 200, body: { id: withdrawn.id } };
+  }
+
+  const deleted = deleteComment({ products, id });
 
   return typeof deleted === 'string' ? failure(404, deleted) : { status: 200, body: { id: deleted.id } };
 });

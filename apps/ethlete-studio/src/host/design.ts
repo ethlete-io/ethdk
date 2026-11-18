@@ -793,9 +793,12 @@ export const replyToComment$ = (
 export const resolveComment$ = (address: ProductAddress, id: string): Observable<{ id: string }> =>
   designAnswer$<{ id: string }>(productUrl(address, 'comment-done'), postJson({ id }));
 
-/** Deletes the comment `id` with its thread, as the user withdraws it. */
-export const withdrawComment$ = (address: ProductAddress, id: string): Observable<{ id: string }> =>
-  designAnswer$<{ id: string }>(productUrl(address, 'comment-withdraw'), postJson({ id }));
+/** Deletes the comment `id` with its thread, as the user withdraws it; with `reply` (0-based) only that reply of the user. */
+export const withdrawComment$ = (
+  address: ProductAddress,
+  withdrawn: { id: string; reply?: number },
+): Observable<{ id: string }> =>
+  designAnswer$<{ id: string }>(productUrl(address, 'comment-withdraw'), postJson(withdrawn));
 
 /** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
 export type CommentEvent = 'connected' | 'changed';

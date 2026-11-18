@@ -445,6 +445,58 @@ describe('SystemViewComponent on a reload', () => {
     expect(store.active()).toBe(false);
   });
 
+  it('leaves comment mode on C, opens a picked pin as its thread card on System and withdraws one own reply', async () => {
+    const withdrawn: unknown[] = [];
+    const replied = {
+      ...HOVER_COMMENT,
+      replies: [
+        { by: 'agent' as const, author: 'claude-opus-5-5', text: 'Darker?', createdAt: '2026-10-27T11:00:00Z' },
+        { by: 'user' as const, text: 'Yes.', createdAt: '2026-10-27T12:00:00Z' },
+      ],
+    };
+
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [replied], unreadable: [] });
+      if (url.includes('/__design/comment-withdraw')) {
+        withdrawn.push(JSON.parse(String(init?.body)));
+
+        return json({ id: '1' });
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const view = fixture.componentInstance;
+    const store = view['commentStore'];
+    const page = () =>
+      fixture.debugElement.query(By.directive(SystemPageComponent)).componentInstance as SystemPageComponent;
+
+    await settle(fixture);
+    store.toggle();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true }));
+    await settle(fixture);
+
+    expect(store.active()).toBe(false);
+
+    view['pickPin']('1');
+    await settle(fixture);
+
+    expect(
+      page()
+        .thread()
+        ?.messages.map((message) => message.text),
+    ).toEqual(['Too light', 'Darker?', 'Yes.']);
+
+    view['withdrawFromThread'](2);
+    await settle(fixture);
+
+    expect(withdrawn).toEqual([{ id: '1', reply: 1 }]);
+    expect(page().thread()?.id).toBe('1');
+  });
+
   it('hands the system page the comments its canvas pins, the picked one and the writer', async () => {
     const resolvedComment: ListedComment = {
       ...HOVER_COMMENT,

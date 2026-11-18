@@ -1,5 +1,6 @@
 import { AgentLogoName } from '../../icons/agent-logos';
 import { CommentSendPhase } from '../system-page/comment-draft.component';
+import { CommentThread, ThreadMessage } from '../comment-flow/thread-card.component';
 
 export type InboxAgent = AgentLogoName;
 
@@ -15,24 +16,6 @@ export type InboxComment = {
   replies: number;
   unread?: boolean;
   resolved?: boolean;
-};
-
-export type InboxMessage = {
-  author: string;
-  initials: string;
-  agent?: InboxAgent;
-  when: string;
-  text: string;
-  own?: boolean;
-};
-
-/** The opened thread of the selected comment, with the send phase of the reply being written. */
-export type InboxThread = {
-  id: string;
-  place: string;
-  messages: InboxMessage[];
-  phase?: CommentSendPhase | null;
-  reason?: string;
 };
 
 export const INBOX_SAMPLE: InboxComment[] = [
@@ -129,7 +112,7 @@ export const INBOX_SAMPLE: InboxComment[] = [
 const HUMAN = { author: 'human', initials: 'H', own: true };
 const CLAUDE = { author: 'Claude', initials: 'C', agent: 'claude' as const };
 
-export const INBOX_THREAD_SAMPLE: Record<string, InboxMessage[]> = {
+export const INBOX_THREAD_SAMPLE: Record<string, ThreadMessage[]> = {
   c1: [
     { ...HUMAN, when: 'vor 2 Std', text: 'Hover und active liegen zu nah beieinander. Mach hover heller.' },
     { ...CLAUDE, when: 'vor 1 Std', text: 'Ich mische accent mit 12 % Weiß. Passt das so?' },
@@ -158,7 +141,7 @@ export const inboxThreadSampleOf = ({
   id: string;
   phase?: CommentSendPhase;
   reason?: string;
-}): InboxThread | null => {
+}): CommentThread | null => {
   const comment = INBOX_SAMPLE.find((candidate) => candidate.id === id);
 
   if (!comment) return null;

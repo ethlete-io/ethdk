@@ -15,6 +15,7 @@ import {
   PART_EXCEPTIONS_SAMPLE,
   SYSTEM_COMMENT_WRITER_SAMPLE,
   SYSTEM_COMMENTS_SAMPLE,
+  systemThreadSampleOf,
   THEME_SWITCHES_SAMPLE,
 } from '../design-parts/system-page/system-page-sample';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
@@ -344,7 +345,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
 
     return opened ? { ...props, thread: inboxThreadSampleOf(opened), replyText: opened.text ?? '' } : props;
   },
-  'pages/system': ({ build, agent, call, listingError, folded, comments, developer, ...props }) => {
+  'pages/system': ({ build, agent, call, listingError, folded, comments, developer, thread, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;
     const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptions.length);
     const agentState = agent as keyof typeof AGENT_SAMPLES | undefined;
@@ -371,8 +372,12 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(comments
         ? {
             comments: SYSTEM_COMMENTS_SAMPLE,
-            selectedComment: props['draft'] === undefined ? (SYSTEM_COMMENTS_SAMPLE[0]?.id ?? null) : null,
+            selectedComment:
+              props['draft'] === undefined
+                ? (SYSTEM_COMMENTS_SAMPLE[(thread as number | undefined) ?? 0]?.id ?? null)
+                : null,
             writer: SYSTEM_COMMENT_WRITER_SAMPLE,
+            thread: thread === undefined ? null : systemThreadSampleOf(thread as number),
           }
         : {}),
       buildReady: {

@@ -18,8 +18,26 @@ import {
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
+import { AgentLogoName } from '../../icons/agent-logos';
 import { CommentSendPhase } from '../system-page/comment-draft.component';
-import { InboxMessage } from './inbox-sample';
+
+export type ThreadMessage = {
+  author: string;
+  initials: string;
+  agent?: AgentLogoName;
+  when: string;
+  text: string;
+  own?: boolean;
+};
+
+/** The opened thread of a comment, with the send phase of the reply being written. */
+export type CommentThread = {
+  id: string;
+  place: string;
+  messages: ThreadMessage[];
+  phase?: CommentSendPhase | null;
+  reason?: string;
+};
 
 @Component({
   selector: 'ethlete-thread-card',
@@ -183,7 +201,7 @@ export class ThreadCardComponent {
   protected errorTheme = injectSemanticColorTheme('error');
 
   public place = input('');
-  public messages = input<InboxMessage[]>([]);
+  public messages = input<ThreadMessage[]>([]);
   public text = model('');
   public phase = input<CommentSendPhase | null>(null);
   public reason = input('');

@@ -275,9 +275,13 @@ export class CommentStore {
     this.change(id, { call: resolveComment$, failure: 'Resolving the comment failed:' });
   }
 
-  /** Deletes the comment `id` with its thread. */
-  public withdraw(id: string) {
-    this.change(id, { call: withdrawComment$, failure: 'Withdrawing the comment failed:' });
+  /** Deletes the comment `id` with its thread, or only its reply at `reply` (0-based). */
+  public withdraw(id: string, reply?: number) {
+    this.change(id, {
+      call: (address, comment) =>
+        withdrawComment$(address, reply === undefined ? { id: comment } : { id: comment, reply }),
+      failure: 'Withdrawing the comment failed:',
+    });
   }
 
   /** Shows or hides the comment sidebar, and remembers it for the next start. */

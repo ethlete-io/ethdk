@@ -1,3 +1,4 @@
+import { CommentThread, ThreadMessage } from '../comment-flow/thread-card.component';
 import { InboxComment } from '../inbox/inbox-sample';
 import { PartTree, PartTreeLayer, PartTreeSketch } from '../part-tree/part-tree.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
@@ -192,6 +193,57 @@ export const SYSTEM_COMMENTS_SAMPLE: PlacedComment[] = [
     unread: true,
   },
 ];
+
+const SYSTEM_THREAD_MESSAGES_SAMPLE: ThreadMessage[][] = [
+  [
+    { author: 'human', initials: 'H', own: true, when: 'vor 3 Std', text: 'Die Tonal-Fläche ist zu blass.' },
+    { author: 'Claude', initials: 'C', agent: 'claude', when: 'vor 2 Std', text: 'Ich hebe sie um eine Stufe an.' },
+    {
+      author: 'human',
+      initials: 'H',
+      own: true,
+      when: 'vor 1 Std',
+      text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    },
+  ],
+  [
+    {
+      author: 'human',
+      initials: 'H',
+      own: true,
+      when: 'vor 2 Std',
+      text: 'Hover und active liegen zu nah beieinander. Mach hover heller.',
+    },
+    {
+      author: 'Claude',
+      initials: 'C',
+      agent: 'claude',
+      when: 'vor 1 Std',
+      text: 'Ich mische accent mit 12 % Weiß. Passt das so?',
+    },
+    { author: 'human', initials: 'H', own: true, when: 'vor 40 Min', text: 'Noch zu dunkel. Nimm lieber den Token.' },
+    {
+      author: 'Claude',
+      initials: 'C',
+      agent: 'claude',
+      when: 'vor 3 Min',
+      text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+    },
+  ],
+];
+
+/** The opened thread of the sample comment at `index`. */
+export const systemThreadSampleOf = (index: number): CommentThread | null => {
+  const comment = SYSTEM_COMMENTS_SAMPLE[index];
+
+  return comment
+    ? {
+        id: comment.id,
+        place: `${comment.part} › ${comment.state}`,
+        messages: SYSTEM_THREAD_MESSAGES_SAMPLE[index] ?? [],
+      }
+    : null;
+};
 
 export const SYSTEM_COMMENT_WRITER_SAMPLE: CommentWriter = { author: 'human', initials: 'H' };
 

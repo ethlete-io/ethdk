@@ -217,6 +217,8 @@ export const STUDIO_LABELS = {
     directEdit: 'Bild ohne Sketch geändert',
     comment: 'Kommentar',
     commentOn: (frame: string) => `Kommentar zu ${frame}`,
+    commentModeOr: 'oder',
+    commentModeEnds: 'beendet',
   },
   buildReady: {
     ready: 'Baubereit',

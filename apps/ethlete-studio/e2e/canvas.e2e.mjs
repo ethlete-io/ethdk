@@ -1935,6 +1935,41 @@ const CASES = [
     },
   },
   {
+    name: 'comment mode: the crosshair with the Esc oder C hint, and C or Esc each leave it',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const toggle = page.locator('ethlete-system-page button[et-button]', { hasText: /^\s*Kommentar\s*$/ }).first();
+      const target = page.locator('[data-comment-target]').first();
+      const hint = page.locator('[data-canvas-actions]', { hasText: /oder.*beendet/ });
+      const seen = [];
+
+      for (const key of ['c', 'Escape']) {
+        await toggle.click({ timeout: WAIT_MS });
+        await target.waitFor({ timeout: WAIT_MS });
+
+        const cursor = await target.evaluate((element) => getComputedStyle(element).cursor);
+        const hinted = (await hint.count()) > 0;
+
+        await page.keyboard.press(key);
+
+        const left = await target.waitFor({ state: 'detached', timeout: WAIT_MS }).then(
+          () => true,
+          () => false,
+        );
+
+        seen.push({ key, cursor, hinted, left });
+      }
+
+      return {
+        ok: seen.every(({ cursor, hinted, left }) => cursor === 'crosshair' && hinted && left),
+        detail: seen
+          .map(({ key, cursor, hinted, left }) => `${key}: cursor ${cursor}, hint ${hinted}, left ${left}`)
+          .join('; '),
+      };
+    },
+  },
+  {
     name: 'a refused check record still offers the direct edit sketch',
     listingMayPend:
       'the evidence is the footer popover, read from a faked open-points response that the listing does not gate',
