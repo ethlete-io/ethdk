@@ -87,8 +87,8 @@ reactive `FormGroup` keeps its cdk controls until that form moves to `form(model
 screen-by-screen job.
 
 Both libraries match the selectors `et-label`, `et-segmented-button` and `et-segmented-button-group`. One
-component's `imports` can hold only one of them, or Angular fails with NG8023, so move a component and the
-templates it imports together, not control by control.
+component's `imports` can hold only one of them, or Angular fails with NG8023, so move each component's
+whole template at once, not control by control.
 
 ## 5. Theming {#theming}
 
