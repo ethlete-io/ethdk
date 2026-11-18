@@ -2435,6 +2435,25 @@ empty `missing-state` open points as a part that loads data. Set on studio `page
   failure of a variant), whose name satisfies the error word, so only `empty` is asked. Loading is likewise satisfied
   by `drawing`. The word rule cannot tell a listing failure from another failure of the part.
 
+## As built (B251 built placeholder)
+
+Decision (grill, applies B251, ADR 0048 and ADR 0011): the pick of the `built` variant merges, but the app picture
+stands only as a placeholder for its state. Merge already took it (`undesigned-sketch.spec` "declares the state ...");
+nothing refused it.
+
+- The marker is the part file itself: the merged wrapper imports `./<state>.built` (`builtPictureModuleOf` in
+  `sketch/part-definition.ts`, used by the wrapper). `builtPlaceholdersOf` reads those imports, `read-open-points.ts`
+  passes them as `placeholders`, and `openPointsOf` adds one open point `redraw` per state:
+  `<part>: ...; state <state> shows the app picture as a placeholder - redraw it in a sketch`. Any open point blocks
+  build-ready, so the part stays not ready for it. A merged sketch whose part file no longer imports the picture clears
+  it; the orphaned `<state>.built.ts` stays and counts for nothing.
+- `redraw` is not in `SKETCH_KINDS`: the `built` variant itself would add it and `sketch ready` would refuse it.
+- Studio lists it in the grid group as "Bild der App als Platzhalter - im Sketch neu zeichnen" with the state.
+- Verified: `undesigned-sketch.spec` "built placeholder (B251)": merge of a `built` pick yields the redraw point and its
+  line; a later merged real drawing of the state clears it (both red with `placeholders` removed from
+  `read-open-points.ts`). `vitest related` (cli 215 files, Studio 46), cli and ethlete-studio typecheck, lint; `real-open-points` budget unchanged (no committed part imports a built picture).
+- Not verified: a live merge of a `built` pick in a real product (none is open), the Studio popover line on screen.
+
 ## As built (B59 UNRECORDED)
 
 - `PartImplemented.files` is required; `readImplemented` reads a record without `files` as no record. `design check`

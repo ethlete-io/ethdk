@@ -182,7 +182,7 @@ pages/sketches, auf B34 aufgesetzt); Berichte unter `.claude/handoffs/agent-resu
 elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
 - **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
-- **A10** Baubereit (ADR 0048): der Kern, B250 und B251 sind gebaut; offen ist nur der Live-Nachweis der B251b-Skizze (Bild der App in `design serve`).
+- **A10** Baubereit (ADR 0048): der Kern, B250 und B251 sind gebaut; offen ist nur der Live-Nachweis der B251b-Skizze (Bild der App in `design serve`); die Wahl von `built` merget als Platzhalter mit offenem Punkt `redraw` (Commit "Keep a merged built pick as a placeholder with a redraw open point").
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
 - **A16** Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
 - **A18** Kommentar-Pins auch für gemergte Sketches und erledigte Kommentare in Sketches (Befund 122).

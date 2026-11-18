@@ -16,6 +16,7 @@ type ListedPoint = Exclude<OpenPoint, { kind: 'direct-edit' }>;
 const iconOf = (point: ListedPoint): OpenPointIcon => {
   switch (point.kind) {
     case 'missing-state':
+    case 'redraw':
     case 'unmerged-sketch':
       return 'grid';
     case 'sketch-problem':
@@ -35,6 +36,8 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
       return point.control
         ? { text: LABELS.controlUndrawn(point.control), detail: point.control }
         : { text: LABELS.noControls, detail: 'controls' };
+    case 'redraw':
+      return { text: LABELS.builtPlaceholder, detail: point.state, target: { kind: 'state', state: point.state } };
     case 'open-comment':
       return {
         text: point.answered ? LABELS.commentAnswered : LABELS.commentWaiting,

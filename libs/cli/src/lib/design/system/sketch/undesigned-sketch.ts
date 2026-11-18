@@ -8,6 +8,7 @@ import { compareFrameOf, harnessShotOf } from '../harness-shot';
 import { harnessUrlOf } from '../part-compare';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { builtPictureModuleOf } from './part-definition';
 import { createSketch, listSketches, markSketchReady, Sketch, variantDirOf, writeSketchFile } from './sketch';
 
 export const BUILT_VARIANT = 'built';
@@ -80,7 +81,7 @@ const wrappedPartOf = (source: string, missing: Missing) => {
   const key = JSON.stringify(missing.state).replace(/^"|"$/gu, "'");
   const picture = unusedNameOf(source, 'builtPicture');
 
-  return `import ${picture} from './${missing.state}.built';
+  return `import ${picture} from '${builtPictureModuleOf(missing.state)}';
 ${source.slice(0, exported.start)}((drawn) => {
   type Props = Parameters<typeof drawn.render>[0];
 

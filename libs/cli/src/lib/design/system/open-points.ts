@@ -4,6 +4,7 @@ import { SketchDecision, SketchStatus } from './sketch/sketch';
 /** Every kind of open point, in the order a part lists them. */
 export const OPEN_POINT_KINDS = [
   'missing-state',
+  'redraw',
   'open-comment',
   'unmerged-sketch',
   'sketch-problem',
@@ -24,7 +25,8 @@ export type DataState = (typeof DATA_STATES)[number];
 
 /**
  * Something that keeps a part from being done. `missing-state` is a control without a drawn state (`control` null when
- * the part declares no controls), or with `data` a required state a part that takes data does not draw; `open-comment` is a thread the
+ * the part declares no controls), or with `data` a required state a part that takes data does not draw; `redraw` is a
+ * state the part draws as the app picture a merged `built` pick left, a placeholder until a sketch draws it; `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
  * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
  * (`sketch` null until one is open); `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
@@ -32,6 +34,7 @@ export type DataState = (typeof DATA_STATES)[number];
  */
 export type OpenPoint =
   | { kind: 'missing-state'; control: string | null; data?: DataState }
+  | { kind: 'redraw'; state: string }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | {
       kind: 'unmerged-sketch';
@@ -66,6 +69,7 @@ export type OpenPointsInput = {
     declaredNoControls?: boolean;
     takesData?: boolean;
     motion?: PartMotions;
+    placeholders?: string[];
   }[];
   comments: { id: string; part: string; state: string; answered: boolean; resolved: boolean }[];
   sketches: {
@@ -219,7 +223,7 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
     ]),
   ].filter((key) => !known.has(key));
   const listed = [
-    ...input.parts.map(({ key, layer, controls, declaredNoControls, takesData, motion }) => {
+    ...input.parts.map(({ key, layer, controls, declaredNoControls, takesData, motion, placeholders = [] }) => {
       const stateful = !STATELESS_LAYERS.includes(layer);
 
       return {
@@ -230,6 +234,7 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
             .filter((missing) => missing.part === key)
             .map(({ control }) => ({ kind: 'missing-state' as const, control })),
           ...(takesData && layer !== 'foundations' && motion ? missingDataStatesOf(motion.states) : []),
+          ...placeholders.map((state) => ({ kind: 'redraw' as const, state })),
           ...missingMotionsOf({
             layer,
             motion,
@@ -251,6 +256,8 @@ const subjectOf = (point: OpenPoint) => {
   switch (point.kind) {
     case 'missing-state':
       return point.data ? `data:${point.data}` : (point.control ?? '');
+    case 'redraw':
+      return point.state;
     case 'missing-motion':
       return `${point.from} -> ${point.to}`;
     case 'open-comment':
@@ -340,6 +347,15 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
   if (kind === 'missing-state') return missingStateText(points);
 
   if (kind === 'missing-motion') return missingMotionText(points);
+
+  if (kind === 'redraw')
+    return points
+      .map((point) =>
+        point.kind === 'redraw'
+          ? `state ${point.state} shows the app picture as a placeholder - redraw it in a sketch`
+          : '',
+      )
+      .join('; ');
 
   if (kind === 'open-comment') {
     const ids = points.map((point) =>

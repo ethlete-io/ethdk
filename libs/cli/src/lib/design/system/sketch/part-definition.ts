@@ -289,6 +289,15 @@ export const showsDataListOf = (source: string) => {
   return !!data && (ts.isStringLiteral(data) || ts.isNoSubstitutionTemplateLiteral(data)) && data.text === 'list';
 };
 
+/** The module a part imports the app picture of `state` from, the placeholder look a merged `built` pick draws. */
+export const builtPictureModuleOf = (state: string) => `./${state}.built`;
+
+const BUILT_PICTURE_IMPORT = /^import\s+\w+\s+from\s+['"]\.\/(.+)\.built['"];?\s*$/gmu;
+
+/** The states a part file draws as the app picture of a merged `built` pick: placeholders until a sketch redraws them. */
+export const builtPlaceholdersOf = (source: string): string[] =>
+  [...source.matchAll(BUILT_PICTURE_IMPORT)].map((match) => match[1] ?? '');
+
 const literalOf = (node: ts.Expression | undefined) =>
   node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : null;
 

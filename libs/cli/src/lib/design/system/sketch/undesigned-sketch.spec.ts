@@ -4,12 +4,14 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
-import { initGitRepo } from '../git-repo.fixtures';
+import { commitAll, initGitRepo } from '../git-repo.fixtures';
 import { Problem } from '../problem';
 import { resolveProduct } from '../resolve-product';
 import { mergeSketch } from './merge';
 import { recordMerged } from './merged-parts';
-import { createSketch, decideSketch, listSketches, Sketch } from './sketch';
+import { createSketch, decideSketch, listSketches, markSketchReady, Sketch, variantDirOf } from './sketch';
+import { openPointsText } from '../open-points';
+import { partPointsOf, readOpenPoints } from '../read-open-points';
 import { undesignedLiveProblemOf } from '../live-compare';
 import {
   BUILT_VARIANT,
@@ -137,6 +139,72 @@ describe('openUndesignedSketch (B251b)', () => {
 
     expect(readFileSync(join(heroDir, 'hero.ts'), 'utf8')).toMatch(/untitled'?: \{ film: \{ title: '' \} \}/u);
     expect(existsSync(join(heroDir, 'untitled.built.ts'))).toBe(true);
+  });
+});
+
+describe('built placeholder (B251)', () => {
+  const mergedBuilt = () => {
+    const target = acme();
+    const sketch = openUndesignedSketch({
+      target,
+      product: resolveAcme(target),
+      part: HERO,
+      branch: BRANCH,
+      missing: MISSING,
+      picture: PICTURE,
+    }) as Sketch;
+    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: BUILT_VARIANT, ...originOf('spec') } });
+
+    mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked as Sketch });
+
+    return target;
+  };
+
+  it('leaves the merged state of a built pick as one redraw open point', () => {
+    const target = mergedBuilt();
+    const points = partPointsOf(readOpenPoints(resolveAcme(target)), HERO);
+
+    expect(points).toContainEqual({ kind: 'redraw', state: MISSING.state });
+    expect(openPointsText('acme', readOpenPoints(resolveAcme(target))).join('\n')).toMatch(
+      new RegExp(`${HERO}: .*state untitled shows the app picture as a placeholder - redraw it in a sketch`, 'u'),
+    );
+  });
+
+  it('clears the redraw point once a merged sketch draws the state for real', () => {
+    const target = mergedBuilt();
+
+    commitAll(target, 'built placeholder');
+    expect(partPointsOf(readOpenPoints(resolveAcme(target)), HERO)).toContainEqual({
+      kind: 'redraw',
+      state: MISSING.state,
+    });
+
+    const redrawn = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'hero', sketch: 'untitled-drawn' },
+      variants: ['a'],
+    }) as Sketch;
+    const drawn = join(variantDirOf(redrawn, 'a'), HERO, 'hero.ts');
+
+    const fixture = join(__dirname, '..', '__fixtures__', '.ethlete', 'design', 'acme', HERO, 'hero.ts');
+
+    writeFileSync(
+      drawn,
+      readFileSync(fixture, 'utf8')
+        .replace("default: { film: films[0] ?? { title: '' } }", `$&, untitled: ${JSON.stringify(MISSING.props)}`)
+        .replace("check its title.' },", "check its title.', untitled: 'A film without a title.' },"),
+    );
+    const ready = markSketchReady({ checkout: target, sketch: redrawn }) as Sketch;
+    const picked = decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'a', ...originOf('spec') } });
+
+    expect(
+      mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked as Sketch }),
+    ).toEqual(expect.any(Array));
+
+    expect(readFileSync(join(resolveAcme(target).dir, HERO, 'hero.ts'), 'utf8')).toContain('untitled:');
+    expect(partPointsOf(readOpenPoints(resolveAcme(target)), HERO)).not.toContainEqual(
+      expect.objectContaining({ kind: 'redraw' }),
+    );
   });
 });
 

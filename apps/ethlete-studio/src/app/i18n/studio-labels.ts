@@ -214,6 +214,7 @@ export const STUDIO_LABELS = {
     controlUndrawn: (control: string) => `${control} hat keinen gezeichneten Zustand`,
     dataStateUndrawn: (state: 'loading' | 'error' | 'empty') =>
       `Daten-Part ohne Zustand ${{ loading: 'Laden', error: 'Fehler', empty: 'Leer' }[state]}`,
+    builtPlaceholder: 'Bild der App als Platzhalter - im Sketch neu zeichnen',
     commentAnswered: 'Beantwortet, wartet auf dich',
     commentWaiting: 'Wartet auf den Agenten',
     sketchPicked: 'Sketch gewählt, noch nicht gemergt',

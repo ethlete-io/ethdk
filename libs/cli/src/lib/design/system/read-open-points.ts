@@ -17,6 +17,7 @@ import {
 import { takesDataOf } from './part-builder';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import {
+  builtPlaceholdersOf,
   declaresControlsOf,
   declaresNoControlsOf,
   instantOf,
@@ -62,6 +63,7 @@ const partInputsOf = (product: ResolvedProduct): OpenPointsInput['parts'] =>
     controls: declaresControlsOf(part.source),
     declaredNoControls: declaresNoControlsOf(part.source),
     takesData: takesDataOf({ product, part }),
+    placeholders: builtPlaceholdersOf(part.source),
     ...motionOf(part.source),
   }));
 
