@@ -28,7 +28,7 @@
     "pid": 2342738
   },
   "components/command-palette": {
-    "hash": "d25ecc3f939316f6",
+    "hash": "2a42782d1be3a1b5",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/caption-close.svg": "e3fa41c27351ba40",
@@ -56,7 +56,7 @@
       ".ethlete/design/studio/components/command-palette/command-palette.ts": "ea2e99c3a7e4db71",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "e0cb15c1df51c53f",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
       ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
       ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
@@ -92,15 +92,15 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/title-bar": "8441af4f586c500e",
-      "components/title-search": "1d93ad50c7527b4d"
+      "components/title-bar": "7eee4d67c345d4de",
+      "components/title-search": "9bfb8bb747932e89"
     },
     "actions": ["emit:close", "emit:maximize", "emit:minimize", "opens:command-palette"],
     "builder": "designer",
-    "at": "2026-11-18T08:30:57.943Z",
+    "at": "2026-11-18T12:32:55.237Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "components/comment-draft": {
     "hash": "d9b7ea77d3ba668e",
@@ -247,8 +247,8 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/comment-pin": "aa71ae37b750b4f4",
-      "components/comment-row": "71e90dada42488b8"
+      "components/comment-pin": "5e1ddbb47cb1ee93",
+      "components/comment-row": "7981ca5ae7989588"
     },
     "actions": [
       "comment-mode",
@@ -267,7 +267,7 @@
     "at": "2026-11-18T10:47:54.103Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "components/comment-pin": {
     "hash": "ec112f98e471974c",
@@ -774,7 +774,7 @@
     "pid": 2342738
   },
   "components/update-dialog": {
-    "hash": "0baf4e97f7b1ed6b",
+    "hash": "ed0f51662fb1a3b7",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "abec18bb97a9c4d8",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "456e7980a756435f",
@@ -804,7 +804,7 @@
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "e0cb15c1df51c53f",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
       ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
       ".ethlete/design/studio/components/update-dialog/shared/window.ts": "3f416304eaa1e9fa",
       ".ethlete/design/studio/components/update-dialog/update-dialog.css": "f6bbb8eb9c0bd8ed",
@@ -858,8 +858,8 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/title-bar": "8441af4f586c500e",
-      "components/title-search": "1d93ad50c7527b4d"
+      "components/title-bar": "7eee4d67c345d4de",
+      "components/title-search": "9bfb8bb747932e89"
     },
     "actions": [
       "emit:close",
@@ -871,10 +871,10 @@
       "opens:command-palette"
     ],
     "builder": "designer",
-    "at": "2026-11-18T10:50:15.304Z",
+    "at": "2026-11-18T12:33:01.061Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "components/zoom-chip": {
     "hash": "28ff90f714918132",
@@ -946,8 +946,8 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "391c486b981ba316",
-      "components/zoom-chip": "941cc2ad31496794"
+      "components/canvas-viewport": "fa62c5aa4c8682ab",
+      "components/zoom-chip": "af8ba90d2e25e525"
     },
     "actions": [
       "active",
@@ -969,7 +969,7 @@
     "at": "2026-11-18T04:29:07.225Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "elements/part-tree": {
     "hash": "229a31a8858ffdee",
@@ -1002,17 +1002,17 @@
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "embedded": {
-      "components/tree-row": "93dd821849ebb557"
+      "components/tree-row": "96eacce2fe66ded0"
     },
     "actions": ["emit:activate", "emit:expandedChange"],
     "builder": "designer",
     "at": "2026-11-17T15:25:19.301Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "elements/shell-main": {
-    "hash": "b34270c2e581a2f9",
+    "hash": "d8f3e2753852d80e",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "63756c3ecafc67df",
@@ -1048,7 +1048,7 @@
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "8947eb1def205b09",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "e0cb15c1df51c53f",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
       ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
       ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "60ab8a8e3ff76e83",
       ".ethlete/design/studio/elements/shell-main/shell-main.css": "aae7d3a0d66518cd",
@@ -1097,9 +1097,9 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/shell-collapse": "1dea308f913f56f6",
-      "components/title-bar": "8441af4f586c500e",
-      "components/title-search": "1d93ad50c7527b4d"
+      "components/shell-collapse": "4b982d63d6eca7c8",
+      "components/title-bar": "7eee4d67c345d4de",
+      "components/title-search": "9bfb8bb747932e89"
     },
     "actions": [
       "closed",
@@ -1118,10 +1118,10 @@
     "builderReasons": [
       "injects through injectCodeWatch() (apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts)"
     ],
-    "at": "2026-11-17T20:45:59.921Z",
+    "at": "2026-11-18T12:33:25.467Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "elements/studio-menu": {
     "hash": "3ccac60c4cb4f777",
@@ -1311,7 +1311,7 @@
     "pid": 2342738
   },
   "pages/flows": {
-    "hash": "e3f146582f77a9ac",
+    "hash": "89a0f45ea3ca099a",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
@@ -1354,7 +1354,7 @@
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "8947eb1def205b09",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "e0cb15c1df51c53f",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
       ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
       ".ethlete/design/studio/components/tree-row/shared/tree-row.ts": "dc2d8ce0b66fe0c2",
       ".ethlete/design/studio/components/tree-row/tree-row.css": "799459ba9916614e",
@@ -1432,14 +1432,14 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "391c486b981ba316",
-      "components/shell-collapse": "1dea308f913f56f6",
-      "components/title-bar": "8441af4f586c500e",
-      "components/title-search": "1d93ad50c7527b4d",
-      "components/tree-row": "93dd821849ebb557",
-      "components/zoom-chip": "941cc2ad31496794",
-      "elements/shell-main": "a666175b759ab3ed",
-      "elements/studio-menu": "800f3925b461db4a"
+      "components/canvas-viewport": "fa62c5aa4c8682ab",
+      "components/shell-collapse": "4b982d63d6eca7c8",
+      "components/title-bar": "7eee4d67c345d4de",
+      "components/title-search": "9bfb8bb747932e89",
+      "components/tree-row": "96eacce2fe66ded0",
+      "components/zoom-chip": "af8ba90d2e25e525",
+      "elements/shell-main": "432551b1faffbc1d",
+      "elements/studio-menu": "73a25ecccc0a0362"
     },
     "actions": [
       "emit:close",
@@ -1461,13 +1461,13 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-18T10:50:49.763Z",
+    "at": "2026-11-18T12:33:27.308Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "pages/inbox": {
-    "hash": "726a5f6ed6d6651e",
+    "hash": "a60f26e4957010c9",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
@@ -1529,7 +1529,7 @@
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "8947eb1def205b09",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "e0cb15c1df51c53f",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
       ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "dcd2824a9eac701c",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "bb250924422734e1",
@@ -1614,16 +1614,16 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "391c486b981ba316",
-      "components/comment-pin": "aa71ae37b750b4f4",
-      "components/comment-row": "71e90dada42488b8",
-      "components/shell-collapse": "1dea308f913f56f6",
-      "components/title-bar": "8441af4f586c500e",
-      "components/title-search": "1d93ad50c7527b4d",
-      "components/zoom-chip": "941cc2ad31496794",
-      "elements/canvas-frames": "d4fb410239921d85",
-      "elements/shell-main": "a666175b759ab3ed",
-      "elements/studio-menu": "800f3925b461db4a"
+      "components/canvas-viewport": "fa62c5aa4c8682ab",
+      "components/comment-pin": "5e1ddbb47cb1ee93",
+      "components/comment-row": "7981ca5ae7989588",
+      "components/shell-collapse": "4b982d63d6eca7c8",
+      "components/title-bar": "7eee4d67c345d4de",
+      "components/title-search": "9bfb8bb747932e89",
+      "components/zoom-chip": "af8ba90d2e25e525",
+      "elements/canvas-frames": "6d30fcee0c4ed106",
+      "elements/shell-main": "432551b1faffbc1d",
+      "elements/studio-menu": "73a25ecccc0a0362"
     },
     "actions": [
       "emit:close",
@@ -1649,13 +1649,13 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-18T10:50:52.375Z",
+    "at": "2026-11-18T12:33:29.404Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "pages/inventory": {
-    "hash": "6100c867e85ab291",
+    "hash": "5233152065c56c3e",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
@@ -1693,7 +1693,7 @@
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "8947eb1def205b09",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "e0cb15c1df51c53f",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
       ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
       ".ethlete/design/studio/components/tree-row/shared/tree-row.ts": "dc2d8ce0b66fe0c2",
       ".ethlete/design/studio/components/tree-row/tree-row.css": "799459ba9916614e",
@@ -1753,13 +1753,13 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/shell-collapse": "1dea308f913f56f6",
-      "components/title-bar": "8441af4f586c500e",
-      "components/title-search": "1d93ad50c7527b4d",
-      "components/tree-row": "93dd821849ebb557",
-      "elements/part-tree": "3e932224b5ae7904",
-      "elements/shell-main": "a666175b759ab3ed",
-      "elements/studio-menu": "800f3925b461db4a"
+      "components/shell-collapse": "4b982d63d6eca7c8",
+      "components/title-bar": "7eee4d67c345d4de",
+      "components/title-search": "9bfb8bb747932e89",
+      "components/tree-row": "96eacce2fe66ded0",
+      "elements/part-tree": "0758bde193f10ace",
+      "elements/shell-main": "432551b1faffbc1d",
+      "elements/studio-menu": "73a25ecccc0a0362"
     },
     "actions": [
       "emit:activate",
@@ -1779,10 +1779,10 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-17T22:55:32.586Z",
+    "at": "2026-11-18T12:33:26.415Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   },
   "pages/sketches": {
     "actions": [
@@ -1859,7 +1859,7 @@
     "pid": 2342738
   },
   "pages/system": {
-    "hash": "7c7467c16d464778",
+    "hash": "91c119a10f74798a",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "abec18bb97a9c4d8",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "456e7980a756435f",
@@ -1925,7 +1925,7 @@
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "8947eb1def205b09",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "e0cb15c1df51c53f",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
       ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
       ".ethlete/design/studio/components/tree-row/shared/tree-row.ts": "dc2d8ce0b66fe0c2",
       ".ethlete/design/studio/components/tree-row/tree-row.css": "799459ba9916614e",
@@ -2026,19 +2026,19 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "391c486b981ba316",
-      "components/comment-pin": "aa71ae37b750b4f4",
-      "components/comment-row": "71e90dada42488b8",
+      "components/canvas-viewport": "fa62c5aa4c8682ab",
+      "components/comment-pin": "5e1ddbb47cb1ee93",
+      "components/comment-row": "7981ca5ae7989588",
       "components/disclosure": "359435e35ab6e798",
-      "components/shell-collapse": "1dea308f913f56f6",
-      "components/title-bar": "8441af4f586c500e",
-      "components/title-search": "1d93ad50c7527b4d",
-      "components/tree-row": "93dd821849ebb557",
-      "components/zoom-chip": "941cc2ad31496794",
-      "elements/canvas-frames": "d4fb410239921d85",
-      "elements/part-tree": "3e932224b5ae7904",
-      "elements/shell-main": "a666175b759ab3ed",
-      "elements/studio-menu": "800f3925b461db4a"
+      "components/shell-collapse": "4b982d63d6eca7c8",
+      "components/title-bar": "7eee4d67c345d4de",
+      "components/title-search": "9bfb8bb747932e89",
+      "components/tree-row": "96eacce2fe66ded0",
+      "components/zoom-chip": "af8ba90d2e25e525",
+      "elements/canvas-frames": "6d30fcee0c4ed106",
+      "elements/part-tree": "0758bde193f10ace",
+      "elements/shell-main": "432551b1faffbc1d",
+      "elements/studio-menu": "73a25ecccc0a0362"
     },
     "actions": [
       "blockers-open",
@@ -2078,9 +2078,9 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-18T10:50:57.172Z",
+    "at": "2026-11-18T12:33:33.826Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 2851297
+    "pid": 678978
   }
 }
