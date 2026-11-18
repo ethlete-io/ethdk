@@ -164,6 +164,37 @@ describe('compare --affected', () => {
     expect(affectedPartsOf(product()).map(({ part }) => part)).toEqual(['components/chip', 'components/tag']);
   }, 30_000);
 
+  it('prints the refusals of a green part, records nothing for it and exits 1', async () => {
+    const { target, product } = checkout();
+    const lines = output();
+    const refusal = 'NO-SPEC apps/a/chip/chip.component.ts: no spec in its folder renders Component';
+    const refusals = vi.fn(async ({ component }: { root: string; component: string }) =>
+      component === 'apps/a/chip/chip.component.ts' ? [refusal] : [],
+    );
+    const actions = vi.fn<typeof partActionFailuresOf>(async () => []);
+
+    appendFileSync(join(target, 'apps/a/shared/bar.ts'), '// moved\n');
+
+    expect(
+      await designCompare({
+        target,
+        argv: ['--affected', '--product', 'app-a', '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        shoot: shootOf(),
+        actions,
+        refusals,
+      }),
+    ).toBe(1);
+    expect(refusals.mock.calls.map(([options]) => options.component)).toEqual([
+      'apps/a/chip/chip.component.ts',
+      'apps/a/tag/tag.component.ts',
+    ]);
+    expect(lines).toContain(refusal);
+    expect(lines).toContain('components/chip: 1 refusal(s), so nothing was recorded');
+    expect(actions.mock.calls.map(([options]) => options.part)).toEqual(['components/tag']);
+    expect(affectedPartsOf(product()).map(({ part }) => part)).toEqual(['components/chip']);
+  }, 30_000);
+
   it('leaves a part whose design changed since its record to task --verify', async () => {
     const { target, product } = checkout();
     const lines = output();
