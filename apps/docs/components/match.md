@@ -525,12 +525,17 @@ are unregistered and fall back to `inherit`; weights take a number:
 
 The participant primitive has its own tokens, which apply wherever it is used standalone:
 
-| Token                                | Default | What it sets                   |
-| ------------------------------------ | ------- | ------------------------------ |
-| `--et-match-participant-emblem-size` | `28px`  | The emblem frame               |
-| `--et-match-participant-gap`         | `10px`  | Emblem-to-name gap             |
-| `--et-match-participant-font-size`   | `14px`  | The name                       |
-| `--et-match-participant-flag-size`   | `16px`  | The country flag's width (4:3) |
+| Token                                            | Default             | What it sets                                         |
+| ------------------------------------------------ | ------------------- | ---------------------------------------------------- |
+| `--et-match-participant-emblem-size`             | `28px`              | The emblem frame                                     |
+| `--et-match-participant-emblem-radius`           | `50%`               | The emblem frame's corner radius                     |
+| `--et-match-participant-emblem-border-width`     | `0px`               | The emblem frame's border                            |
+| `--et-match-participant-emblem-border-color`     | surface border      | The emblem frame's border color                      |
+| `--et-match-participant-tbd-emblem-border-width` | emblem border width | The empty frame of a participant still to be decided |
+| `--et-match-participant-tbd-emblem-border-style` | `solid`             | Its border style, e.g. `dashed`                      |
+| `--et-match-participant-gap`                     | `10px`              | Emblem-to-name gap                                   |
+| `--et-match-participant-font-size`               | `14px`              | The name                                             |
+| `--et-match-participant-flag-size`               | `16px`              | The country flag's width (4:3)                       |
 
 Inside a card the first three are driven by the card's own density tokens, so set the card's when theming a card.
 

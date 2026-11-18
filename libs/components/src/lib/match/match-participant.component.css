@@ -5,6 +5,18 @@
     initial-value: 28px;
   }
 
+  @property --et-match-participant-emblem-radius {
+    syntax: '<length-percentage>';
+    inherits: true;
+    initial-value: 50%;
+  }
+
+  @property --et-match-participant-emblem-border-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
   @property --et-match-participant-gap {
     syntax: '<length>';
     inherits: true;
@@ -58,8 +70,16 @@
     inline-size: var(--et-match-participant-emblem-size);
     block-size: var(--et-match-participant-emblem-size);
     overflow: hidden;
-    border-radius: 50%;
+    box-sizing: border-box;
+    border: var(--et-match-participant-emblem-border-width) solid
+      var(--et-match-participant-emblem-border-color, var(--et-surface-border-solid, currentColor));
+    border-radius: var(--et-match-participant-emblem-radius);
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
+  }
+
+  .et-match-participant:where([data-tbd]) .et-match-participant-emblem {
+    border-width: var(--et-match-participant-tbd-emblem-border-width, var(--et-match-participant-emblem-border-width));
+    border-style: var(--et-match-participant-tbd-emblem-border-style, solid);
   }
 
   .et-match-participant-picture,
