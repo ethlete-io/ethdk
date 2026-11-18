@@ -29,6 +29,10 @@ key in the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PA
 `plugins.updater.pubkey` in `tauri.conf.json`. `tools/scripts/tauri-updater-key.sh` makes the key pair.
 Do not run it again: an installed app accepts only its own key, so a new key stops every update. Only a
 release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
+`plugins.updater.endpoints` lists the GitHub release first and
+`https://elrond.invalid/updates/<app>/latest.json` second (ADR 0342, 0345; `elrond.invalid` stands in for
+elrond's real host): the plugin tries the next endpoint when one fails or answers non-2xx, so the
+self-hosted one takes over once the repo is private. Keep that order until every installed app has it.
 
 On Linux both apps, and on macOS Studio, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
 branch (ADR 0249); Timetrack on macOS and both apps on Windows run on wry. The Studio macOS bundle is
