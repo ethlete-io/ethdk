@@ -2067,3 +2067,20 @@ picked new edited after open + committed: settled)
 and status-uncommitted.spec (picked old: the merge line), red with the fix reverted; the slice 1 status spec decided a
 stale sketch object, so its pick was refused and it ran undecided - fixed. Not verified: a live picked `old` with `new`
 committed (no live sketch touched); `sketch discard` still accepts a contradicted stale sketch, unnamed.
+
+## As built (B236)
+
+Cause (finding 289): a part-scoped check drew and checked only the asked part, so `check --part
+elements/canvas-frames` passed while pages/system broke. Fix (check-system.ts `checkEmbedders`): after `check --part X`
+(single part, not `--base`), each part that embeds X is checked on the same warm draw, browser and typecheck: render
+rules, its static rules and the draw-rule tail, without auto-accept, open points, slow settle or ready marks, and
+without the product-level TYPE-ERROR and warnings X's own run already printed. A failing embedder prints its `PART`
+line; the run ends with `EMBEDDERS PASS X: n parts` or `EMBEDDERS FAIL X: k of n - ...; X is not ready until they
+pass`, exits 1, and drops X's ready mark. Choices: embedders are transitive by the import graph (`embeddedPartsOf`, the
+graph ready marks key on, ADR 0340), base parts skipped. Embedders are not asked parts (ADR 0335): their marks are
+neither written nor dropped; only X's mark is dropped. X's own output is unchanged; clean embedders add a progress line
+each and the PASS line after `check complete`. Verified: check-embedders.spec (transitive embedders; a COVERED
+embedder fails X and drops its mark, an unrelated part checks no embedders, passing embedders keep X's exit), red with
+the call or the drop reverted. Live: `check --part elements/canvas-frames` checked pages/inbox (UNRECORDED, fails) and
+pages/system (2 warnings, passes); 19 s before, 24 s after; ready.json changed only the asked part's mark. Not verified:
+a product with many embedders (pages each run their own render job in turn, not one batched job).

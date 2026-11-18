@@ -20,7 +20,7 @@ import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText, PartOpenPoints } from './open-points';
 import { doneParts, gitDiffFilesOf } from './part-task';
-import { actionsRerunOf, READY_FILE, readyPartsOf } from './part-ready';
+import { actionsRerunOf, dropPartRecord, READY_FILE, readyPartsOf } from './part-ready';
 import { BuildReadyInputs } from './part-build-ready';
 import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
@@ -451,7 +451,9 @@ const printBaseFindings = (product: ResolvedProduct, rules: string[]) => {
   );
 };
 
-const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: number; fatal: boolean } => {
+const reportSystem = (
+  options: CheckOptions & { warn?: boolean; embedder?: boolean },
+): { code: number; fatal: boolean } => {
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
@@ -532,7 +534,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: numbe
       return { code: 1, fatal: true };
     }
 
-    if (result.kind === 'failed')
+    if (result.kind === 'failed' && !options.embedder)
       report({ rule: 'TYPE-ERROR', file: product.dir, message: `\n${result.output}` }, product);
 
     if (options.warn && !options.part)
@@ -883,7 +885,7 @@ const prefetchPartChecks = (options: CheckOptions & { part: string; typechecks: 
   );
 
 const renderSystem = async (
-  options: CheckOptions,
+  options: CheckOptions & { embedder?: boolean },
 ): Promise<{
   code: number;
   rendered: RenderIssue[] | null;
@@ -903,7 +905,7 @@ const renderSystem = async (
   }
 
   const { code, fatal } = timedPhase('static', () =>
-    reportSystem({ ...options, typechecks, warn: true, sketchTypechecks }),
+    reportSystem({ ...options, typechecks, warn: !options.embedder, sketchTypechecks }),
   );
 
   if (fatal) return { code, rendered: null };
@@ -912,7 +914,7 @@ const renderSystem = async (
     options.products.flatMap((name) => {
       const entry = options.config.products?.[name];
 
-      if (!entry) return [];
+      if (!entry || options.embedder) return [];
 
       const started = completenessOf({
         ...options,
@@ -1103,6 +1105,9 @@ export const checkSystemRendered = async (
         code = Math.max(code, options.afterPart ? await options.afterPart(part, checked) : checked);
       }
 
+      if (options.part && !options.parts)
+        code = Math.max(code, await checkEmbedders({ ...options, part: options.part, typechecks, warm: run.warm }));
+
       keepHeldStampsInFiles(READY_FILE, options.parts ?? (options.part ? [options.part] : 'all'));
 
       for (const name of options.products) {
@@ -1121,16 +1126,112 @@ export const checkSystemRendered = async (
   }
 };
 
+/**
+ * Each part that embeds `part`, directly or through another part, with the products of `products` that hold it,
+ * sorted by part key.
+ */
+export const embeddersOfPart = (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  part: string;
+}) => {
+  const found = new Map<string, string[]>();
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+    const product = entry ? resolveProduct({ target: options.target, name, config: entry }) : null;
+    const embedded = product?.parts.find((candidate) => partKeyOf(candidate) === options.part);
+
+    if (!product || !embedded) continue;
+
+    for (const candidate of product.parts) {
+      if (candidate === embedded || candidate.origin === 'base') continue;
+      if (!embeddedPartsOf({ product, part: candidate }).includes(embedded)) continue;
+
+      const key = partKeyOf(candidate);
+
+      found.set(key, [...(found.get(key) ?? []), name]);
+    }
+  }
+
+  return [...found].sort(([a], [b]) => a.localeCompare(b)).map(([part, products]) => ({ part, products }));
+};
+
+/**
+ * Checks each embedder of `part` as `check --part` would, without its edits, open points or ready marks, and answers 1
+ * when one fails; then the ready mark of `part` does not hold either, so this run drops it.
+ */
+const checkEmbedders = async (
+  options: CheckOptions & { part: string; warm: WarmDraw; typechecks: Map<string, TypecheckResult> },
+) => {
+  const embedders = timedPhase('embedders', () => embeddersOfPart(options));
+
+  if (embedders.length === 0) return 0;
+
+  const failed: string[] = [];
+
+  for (const { part, products } of embedders) {
+    const checked = await checkSystemRenderedOn({ ...options, products, part, embedder: true });
+
+    if (checked !== 0) failed.push(part);
+  }
+
+  if (failed.length === 0) {
+    console.log(`EMBEDDERS PASS ${options.part}: ${countText(embedders.length, 'part')}`);
+
+    return 0;
+  }
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (entry)
+      dropPartRecord({ product: resolveProduct({ target: options.target, name, config: entry }), part: options.part });
+  }
+
+  console.error(
+    `EMBEDDERS FAIL ${options.part}: ${failed.length} of ${embedders.length} - ${failed.join(', ')}; ${options.part} is not ready until they pass`,
+  );
+
+  return 1;
+};
+
+const checkEmbedderOn = async (options: CheckOptions & { warm: WarmDraw; tally: Tally; part?: string }) => {
+  const { code } = await renderSystem({ ...options, embedder: true });
+  let failed = 0;
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (entry)
+      failed += await timedPhase('tail', () => checkProductTail({ ...options, name, entry, problemsOfEdits: [] }));
+  }
+
+  const denied = [...new Set(options.warm.takeDeniedIds?.() ?? [])];
+
+  denied.forEach((id) => console.error(deniedLineOf(id)));
+
+  for (const name of options.products)
+    summaryText({ product: name, parts: [], tally: options.tally, only: options.part })
+      .filter((line) => !line.endsWith(': clean'))
+      .forEach((line) => console.log(line));
+
+  return code !== 0 || failed + denied.length > 0 ? 1 : 0;
+};
+
 export const deniedLineOf = (id: string) =>
   `SERVE-DENIED ${id}: the design server answered 403, the file is outside its allow list, so a drawing got other content`;
 
 const checkSystemRenderedOn = async (
-  options: CheckOptions & { warm: WarmDraw; afterEdits?: (part: string | undefined) => void },
+  options: CheckOptions & { warm: WarmDraw; afterEdits?: (part: string | undefined) => void; embedder?: boolean },
 ) => {
   const tally: Tally = new Map();
 
   options.warm.takeDeniedIds?.();
   const counted = { ...options, tally };
+
+  if (options.embedder) return checkEmbedderOn(counted);
 
   for (const line of timedPhase('stale-dist', () => staleDistWarningsOf(options))) console.warn(line);
 

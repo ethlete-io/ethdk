@@ -154,8 +154,9 @@ describe('checkDesign', () => {
 
     await checkDesign({ target, argv: ['components/button', '--product', 'acme'], invocation: 'et design' });
 
-    expect(lines.filter((line) => line.includes('elements/hero'))).toEqual([]);
-    expect(lines.at(-1)).toMatch(/^check complete: 1 part, /);
+    expect(lines.filter((line) => line.includes('elements/hero') && !/^\[\d+\/\d+\] /u.test(line))).toEqual([]);
+    expect(lines).toContainEqual(expect.stringMatching(/^check complete: 1 part, /u));
+    expect(lines.at(-1)).toBe('EMBEDDERS PASS components/button: 2 parts');
   });
 
   it('rejects an argument the check does not read', async () => {

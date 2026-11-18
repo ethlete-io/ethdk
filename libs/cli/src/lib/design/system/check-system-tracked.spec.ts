@@ -131,6 +131,7 @@ describe('a design check and the tracked stamp files', () => {
     expect(tail.filter((line) => !line.startsWith('READY UNCOMMITTED '))).toEqual([
       'OPENED acme elements/hero@edit: direct edit of elements/hero - pick old or new',
       expect.stringMatching(/^check complete: /u),
+      'EMBEDDERS PASS elements/hero: 1 part',
     ]);
   }, 120_000);
 });
