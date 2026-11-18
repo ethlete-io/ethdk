@@ -101,7 +101,7 @@
   } @else {
     <ethlete-canvas-frames class="w-full">
       <figure [class]="FRAME_CLASS">
-        <figcaption [class]="FRAME_HEAD_CLASS">button</figcaption>
+        <figcaption [class]="FRAME_HEAD_CLASS">{{ activePart() }}</figcaption>
         @if (thread()) {
           <div class="absolute z-20 ml-space-3">
             <ng-container *ngTemplateOutlet="threadCard" />
