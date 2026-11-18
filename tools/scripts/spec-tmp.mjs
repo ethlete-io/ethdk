@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { KEPT_TMP_NAMES } from './tmp-sweep.mjs';
@@ -35,8 +35,10 @@ export const openSpecTmp = (parent = tmpdir()) => {
   };
 };
 
+const realOrSame = (path) => (existsSync(path) ? realpathSync(path) : path);
+
 export const leakMessageOf = (who, left, cwd = process.cwd()) => {
-  const name = who.startsWith('/') ? relative(cwd, who) : who;
+  const name = who.startsWith('/') ? relative(realOrSame(cwd), realOrSame(who)) : who;
   const shown = left.slice(0, 5).join(', ') + (left.length > 5 ? `, and ${left.length - 5} more` : '');
 
   return `tmp leak: ${name} left ${left.length} folder${left.length === 1 ? '' : 's'} in /tmp (${shown}). Remove each temp folder it creates when it is done (ADR 0275).`;
