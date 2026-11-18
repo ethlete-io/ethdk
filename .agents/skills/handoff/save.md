@@ -1,0 +1,192 @@
+# Save and handoff mode
+
+## Handoff mode
+
+The `context-warning` hook names the budget at session start, turns handoff mode on at 70%
+of it, and repeats a short note with the remaining budget on every prompt after that. It
+reaches you at three points, not only when the user types: at the start of the session,
+after a batch of your own tool calls, and as a turn ends. So a long autonomous run learns
+its token count while it works.
+
+Handoff mode is not an order to stop. It is the signal to change how you work, so that
+either ending - you finish, or a fresh session takes over - stays cheap:
+
+- Work in slices that each end in a committable state. Never leave two half-finished edits
+  in the tree.
+- Send bulky reads, searches and test runs to a sub-agent. Its output stays out of your
+  context; its answer does not.
+- Write down each decision and dead end as you reach it, in the commit message or in the
+  handoff file. Do not save them for a final summary you may have no room for.
+- Start nothing you cannot finish or hand off inside the remaining budget.
+- Spawn no new sub-agent. Sub-agents that already run finish their work.
+
+At the critical tier (85%), stop a sub-agent only if it surely hangs: it made no new step
+for more than 30 minutes. Write its remaining work into the handoff file. Never stop a
+sub-agent that still works.
+
+At the critical tier the hook also asks you to choose one of two, and to tell the user
+which you chose:
+
+1. **Finish the task.** Only when you can name every step that is left, and they plainly
+   fit the remaining budget. Finish it, commit, then apply the save test below - the answer
+   is then usually that no file is needed at all.
+2. **Hand off.** Everything else. Finish the in-flight atomic edit, nothing new, then save.
+
+"Nearly done" means you can name the last steps now. It does not mean the end feels close.
+At the last tier (95%) the hook takes option 1 away, because a budget that small covers no
+task.
+
+### Ending a turn over the budget
+
+From 85% on, the hook also fires as you try to end the turn, and the turn then continues so
+you can act. It adds a third option to the two above:
+
+3. **Cross the boundary on purpose.** Some sessions are worth the premium rate: the task is
+   one step from done, or this session holds reasoning that no handoff file survives. Take
+   it only for a reason you can name in one sentence right now. Say the reason, say what it
+   costs, and keep working.
+
+Option 3 is a judgment call, not a way out of the other two. Naming a reason you cannot
+state plainly is the same as taking option 2 late and expensively. The hook asks once per
+tier, so it will not block the end of a turn twice for the same budget. It stays quiet while a
+handoff is being saved, until the user's next prompt.
+
+## Save mode
+
+**Decide first whether a handoff is needed at all.** One exists so work can resume, so
+write one only when at least one of these holds:
+
+- Uncommitted work from this session sits in the tree.
+- A step the user asked for is unfinished, blocked, or waiting on a result.
+- A decision, dead end, or user constraint from this session is written down nowhere else -
+  not in a commit message, a changeset, a docs page, or a plan file.
+
+Check it, never assume it: `git status`, `git log`, and the task as the user stated it. A
+context warning is a token count, not evidence that work is left.
+
+If none of them holds, write no file. Tell the user in two or three lines what landed, name
+the commits, and say a fresh session needs nothing from this one. A handoff nobody resumes is
+noise, and it costs the next session the tokens to read it.
+
+Then give a prompt the user can copy into the fresh session, in a code block: the next task, the
+plan file or finding it lives in, and any rule of this session that the repo does not record. Keep
+it to a few lines.
+
+An open item counts as the next task: a known gap, an open finding, or an unbuilt step in the plan,
+in the task, or in your own report of this session. "Everything waits for the user" is true only
+when every open item needs a decision of the user. Then name each decision; do not stop silently.
+In a `tmux` session, restart yourself with the next task as the prompt (see the next section) instead
+of handing the prompt to the user.
+
+Write `.claude/handoffs/<slug>.md` where `<slug>` is a short kebab-case name for
+the task (use the user-provided slug if they gave one, e.g.
+`handoff menu-focus-trap`). If the file exists, overwrite it - a handoff always
+describes the *current* state.
+
+**Write for a reader with zero context.** The next session sees none of this
+conversation. No "as discussed above", no shorthand invented mid-session. Every
+claim must be verifiable from the repo: exact file paths, exact commands.
+
+Template:
+
+```markdown
+# Handoff: <task title>
+
+Branch: <git branch> · Last commit: <short sha> <subject>
+Working tree: <clean | summary of uncommitted changes>
+
+## Goal
+
+What the overall task is and why. One paragraph max.
+
+## State
+
+- Done: <what is finished and verified, with file paths>
+- In progress: <what is half-done, and exactly where it stands>
+- Not started: <known remaining work>
+
+## Key files
+
+- `path/to/file.ts` - why it matters here
+
+## Decisions & constraints
+
+Choices already made (and why) that the next session must not re-litigate.
+User-stated constraints verbatim.
+
+## Gotchas / dead ends
+
+Things that looked right but weren't. Approaches already tried and rejected,
+and why - this is the most valuable section, don't skip it.
+
+## Next steps
+
+1. Concrete, ordered, actionable steps. Each should name files/commands.
+
+## Verify
+
+Commands to check the work (lint, storybook story ids, test commands).
+
+## Follow-ups owed
+
+Changeset written? Docs page updated? (Per CLAUDE.md these are part of any
+lib change, not optional.)
+```
+
+Before writing, actually check `git status`, `git log -1`, and the branch - do
+not describe state from memory. Keep the file under ~150 lines; a handoff is a
+map, not a transcript.
+
+Name a scope or a rule that an ADR decided by its number, and copy its items word for word. After you
+save, run `node tools/scripts/adr-governs.mjs <handoff file>`: it lists each ADR the file cites. Reread
+them and fix any line that says less or more than the ADR.
+
+After writing, tell the user:
+
+> Handoff saved to `.claude/handoffs/<slug>.md`. Start a fresh session (`/clear`
+> or a new terminal), then run `/handoff resume <slug>`.
+
+In a `tmux` session you can clear and resume yourself: see the next section.
+
+## Clear and resume on your own
+
+Run inside a `tmux` session started with the agent-sessions `run` command or the shell functions from `shell-install` (`echo $TMUX` is not empty and
+the agent-sessions script `restart` finds the session)? Then you may clear and
+resume yourself after the save, instead of asking the user to. You decide. Do it only if every line
+is true:
+
+- No sub-agent whose answer you need still runs, and no workflow or background command. A
+  background command from the old session reports back into the new one.
+- Each self-reporting sub-agent that still runs is named in the handoff file, with its result
+  file.
+- No answer you wait for is open: a peer session, a mailbox reply, a CI run.
+- The tree is committed, or the handoff file names every uncommitted change.
+- The handoff file is saved and its Next steps are concrete.
+
+When you spawn a sub-agent, decide which kind it is:
+
+- **Answer needed.** You act on its answer. A restart waits for it.
+- **Self-reporting.** It commits its own slice and writes its result to
+  `.claude/handoffs/agent-results/<name>.md`. Tell it so in its prompt. A restart does not wait
+  for it: the resumed session reads the result file.
+
+If one line is false, finish or collect that first. If you cannot, hand the prompt to the user as
+before. Then run, with the slug of the file you saved:
+
+```bash
+node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart <name> '/handoff resume <slug> [<text after the slug>]'
+```
+
+Add `--process` after `restart` when the session changed a plugin, a settings file, an MCP server or `PATH`.
+A plain restart keeps the old process, so the change reaches only a new one.
+Before `--process`, write the command line of each background job of the session into the handoff file. The exit stops these jobs, so the new process starts them again.
+
+If the user wrote text after the slug of the save command, append it to the prompt word for word.
+Escape each `'` in it as `'\''`. The restart drops anything you leave out, and the fresh session has
+no other way to see it.
+
+`<name>` is the sender name of your own session. Read it first with `tmux display-message -p -t "$TMUX_PANE" '#{session_name}'` and drop the `@<repo>` part: `claude-2@ethlete-sdk` gives `claude-2`. Never take the name from an example: a second Claude session is `claude-2`, not `claude`. The command refuses a session you do not run in. It returns at once. It
+types `/clear` (`/new` for a `codex` name) and the prompt into your pane a few seconds later, so
+end your turn after you run it and do not start another tool call. The `/clear` wipes the pane, so
+the user never sees text you write after the command. Before you run it, put the reason as the
+first line of the handoff file: `Restarted because: <one line>`. End the turn with no text.
