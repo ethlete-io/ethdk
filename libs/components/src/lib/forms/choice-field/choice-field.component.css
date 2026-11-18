@@ -101,9 +101,9 @@
       display: flex;
       align-items: baseline;
       font-size: var(--et-choice-field-label-font-size);
-      font-weight: 500;
+      font-weight: var(--et-choice-field-label-font-weight, 500);
       line-height: 1.2;
-      letter-spacing: -0.01em;
+      letter-spacing: var(--et-choice-field-label-letter-spacing, -0.01em);
       color: var(--et-surface-color-muted-solid, currentColor);
       cursor: pointer;
       -webkit-user-select: none;

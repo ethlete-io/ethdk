@@ -490,17 +490,18 @@ The panel scrolls under the library [scrollbar](/components/scrollbar) instead o
 
 Public design tokens:
 
-| Token                                      | Default | Purpose                                                                   |
-| ------------------------------------------ | ------- | ------------------------------------------------------------------------- |
-| `--et-select-panel-max-height`             | `40vh`  | Panel max height (scrolls); capped further by the space next to the field |
-| `--et-select-panel-padding`                | `6px`   | Panel inner padding                                                       |
-| `--et-select-option-height`                | `36px`  | Option row min height                                                     |
-| `--et-select-option-padding-inline`        | `10px`  | Option horizontal padding                                                 |
-| `--et-select-option-gap`                   | `8px`   | Gap between check icon and label                                          |
-| `--et-select-option-border-radius`         | `6px`   | Option row corner radius                                                  |
-| `--et-select-option-font-size`             | `14px`  | Option font size                                                          |
-| `--et-select-option-check-size`            | `16px`  | Selected check icon size                                                  |
-| `--et-select-option-group-label-font-size` | `12px`  | [Option group](#option-groups) header font size                           |
+| Token                                      | Default   | Purpose                                                                   |
+| ------------------------------------------ | --------- | ------------------------------------------------------------------------- |
+| `--et-select-panel-max-height`             | `40vh`    | Panel max height (scrolls); capped further by the space next to the field |
+| `--et-select-panel-padding`                | `6px`     | Panel inner padding                                                       |
+| `--et-select-option-height`                | `36px`    | Option row min height                                                     |
+| `--et-select-option-padding-inline`        | `10px`    | Option horizontal padding                                                 |
+| `--et-select-option-gap`                   | `8px`     | Gap between check icon and label                                          |
+| `--et-select-option-border-radius`         | `6px`     | Option row corner radius                                                  |
+| `--et-select-option-font-size`             | `14px`    | Option font size                                                          |
+| `--et-select-option-letter-spacing`        | inherited | Option letter spacing                                                     |
+| `--et-select-option-check-size`            | `16px`    | Selected check icon size                                                  |
+| `--et-select-option-group-label-font-size` | `12px`    | [Option group](#option-groups) header font size                           |
 
 The panel and option group tokens inherit, so setting one on `et-select-panel`, `et-select-option-group` or any ancestor reaches the parts that read it.
 

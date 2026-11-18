@@ -53,6 +53,7 @@
     padding-inline: var(--et-select-option-padding-inline);
     border-radius: var(--et-select-option-border-radius);
     font-size: var(--et-select-option-font-size);
+    letter-spacing: var(--et-select-option-letter-spacing);
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
