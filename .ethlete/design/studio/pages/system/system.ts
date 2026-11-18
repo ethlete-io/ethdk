@@ -585,7 +585,10 @@ export default definePart<{
             : build === 'direct-edit'
               ? {
                   state: 'blocked',
-                  blockers: [directEditBlocker, ...manyBlockers(points.points.length + exceptionCount)],
+                  blockers: [
+                    directEditBlocker,
+                    ...manyBlockers(points.points.length + exceptionCount).filter(({ kind }) => kind !== 'compare'),
+                  ],
                 }
               : clear
                 ? { state: 'ready' }

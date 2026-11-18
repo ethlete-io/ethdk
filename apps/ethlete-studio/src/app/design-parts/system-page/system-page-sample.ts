@@ -19,10 +19,10 @@ export type OpenPointGroup = { icon: OpenPointIcon; lines: OpenPointLine[] };
 export type PartException = { rule: string; reason: string; reopened: boolean };
 
 export const PART_EXCEPTIONS_SAMPLE: PartException[] = [
-  { rule: 'filled/UNBOUND-INPUT', reason: 'Das Label kommt im Harness aus einem Beispieltext.', reopened: false },
+  { rule: 'filled/UNBOUND-INPUT', reason: 'Das Label kommt aus einem Beispieltext.', reopened: false },
   {
     rule: 'outline/CONTRAST',
-    reason: 'Die Kontur liegt bewusst unter 3:1, der Text trägt den Kontrast.',
+    reason: 'Die Kontur liegt bewusst unter 3:1.',
     reopened: true,
   },
 ];
@@ -131,7 +131,10 @@ export const buildReadySampleOf = (sample: BuildReadySample, openCount: number):
     case 'direct-edit':
       return {
         state: 'blocked',
-        blockers: [{ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' }, ...manyBlockers(openCount)],
+        blockers: [
+          { kind: 'direct-edit', text: 'Bild ohne Sketch geändert' },
+          ...manyBlockers(openCount).filter(({ kind }) => kind !== 'compare'),
+        ],
       };
     case 'blocked':
       return { state: 'blocked', blockers: manyBlockers(openCount) };

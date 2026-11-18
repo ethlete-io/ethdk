@@ -1119,3 +1119,7 @@ documents, the docs example rendered in the built site, real touch devices.
 - Empfehlung gebaut: scrollable short-content and short-content-navigation, d1e807cb1. Cause (measured 436 in 432):
   the part passed `itemGap` only with `itemSize`; it now always passes the 12 px gap the real scrollable measures.
   The direct-edit sketch merged variant new under finding 343; both baseline entries are gone.
+- Empfehlung gebaut: studio pages/system direct-edit, blockers-open and developer-part-blocked. Cause (shot): the
+  two exception reasons wrapped to two lines each and the direct-edit sample listed five blocker groups. The reasons
+  are one line now (mock and app sample), and the direct-edit sample drops the compare blocker. pages/system@edit
+  merged variant new under finding 343; the three baseline entries are gone.
