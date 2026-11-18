@@ -66,7 +66,7 @@ test.describe('a stand-in that took no band for weeks', () => {
     const title = await page.locator(`[data-kind="row"][title^="${CURRENT.name}"]`).getAttribute('title');
 
     await openBand(page, title as string);
-    await editSurface(page).getByLabel('A name you gave this work').click();
+    await editSurface(page).getByLabel('Or a name without a ticket').click();
 
     await expect(page.getByRole('option', { name: CURRENT.name })).toBeVisible();
     await expect(page.getByRole('option', { name: STALE.name })).toHaveCount(0);

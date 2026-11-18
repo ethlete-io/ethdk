@@ -15,12 +15,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
   template: `
     <et-form-field>
       <et-label>Or a name without a ticket</et-label>
-      <et-select
-        [value]="standInId() || null"
-        (valueChange)="pick($event)"
-        aria-label="A name you gave this work"
-        placeholder="Pick a name"
-      >
+      <et-select [value]="standInId() || null" (valueChange)="pick($event)" placeholder="Pick a name">
         @for (standIn of offers(); track standIn.id) {
           <et-select-option [value]="standIn.id" [label]="standIn.name">{{ standIn.name }}</et-select-option>
         }
