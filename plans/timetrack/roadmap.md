@@ -63,7 +63,7 @@ contradicts it. Settle that too.
 
 ## One session, one piece
 
-Slices 4 and 5 are open. See [`one-session-one-piece.md`](./one-session-one-piece.md).
+The open rest is in [`one-session-one-piece.md`](./one-session-one-piece.md).
 
 ## M5: No day is lost
 
