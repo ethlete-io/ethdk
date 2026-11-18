@@ -13,6 +13,14 @@ import {
 } from './support';
 
 const CREATE = { op: 'jira.create', summary: 'Pdf export', projectKey: 'ABC', client: 'Claude Code' };
+const YESTERDAY_WORKLOG = {
+  op: 'worklog.add',
+  issueKey: 'ABC-1',
+  description: 'Yesterday',
+  fromMs: new Date(E2E_NOW).getTime() - 24 * 3_600_000,
+  durationMs: 900_000,
+  client: 'Claude Code',
+};
 
 test.describe('a write an agent asks for', () => {
   test.beforeEach(async ({ page }) => {
@@ -117,16 +125,18 @@ test.describe('a write an agent asks for', () => {
     });
   });
 
-  test('approve all skips the tempo sync', async ({ page }) => {
+  test('approve all skips the tempo sync and the jira create', async ({ page }) => {
     const created = queuedId(await askAgent(page, CREATE));
     const synced = queuedId(await askAgent(page, { op: 'tempo.sync', day: E2E_DAY_KEY, planHash: 'confirmed' }));
+    const added = queuedId(await askAgent(page, YESTERDAY_WORKLOG));
     const dialog = await openApprovals(page);
 
     await dialog.getByRole('button', { name: 'Approve all (1)' }).click();
 
-    await expect(dialog.locator(`[data-approval="${created}"]`)).toBeHidden();
+    await expect(dialog.locator(`[data-approval="${added}"]`)).toBeHidden();
+    await expect(dialog.locator(`[data-approval="${created}"]`)).toContainText('Only approved one by one');
     await expect(dialog.locator(`[data-approval="${synced}"]`)).toContainText('Only approved one by one');
-    expect((await readBackend(page)).jira.created).toHaveLength(1);
+    expect((await readBackend(page)).jira.created).toEqual([]);
     expect((await readBackend(page)).tempo.writes).toEqual([]);
     expect(await askAgent(page, { op: 'approval.status', id: synced })).toEqual({
       ok: true,

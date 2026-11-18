@@ -191,7 +191,7 @@ test.describe('a write with no band on the day in view', () => {
     );
   });
 
-  test('keeps a tempo sync out of approve all', async ({ page }) => {
+  test('keeps a tempo sync and a jira create out of approve all', async ({ page }) => {
     const created = queuedId(
       await askAgent(page, { op: 'jira.create', summary: 'Pdf export', projectKey: 'ABC', client: 'Claude Code' }),
     );
@@ -202,9 +202,8 @@ test.describe('a write with no band on the day in view', () => {
 
     const dialog = page.locator('ethlete-approval-queue');
 
-    await dialog.getByRole('button', { name: 'Approve all (1)' }).click();
-
-    await expect(dialog.locator(`[data-approval="${created}"]`)).toBeHidden();
+    await expect(dialog.getByRole('button', { name: /^Approve all/ })).toHaveCount(0);
+    await expect(dialog.locator(`[data-approval="${created}"]`)).toContainText('Only approved one by one');
     await expect(dialog.locator(`[data-approval="${synced}"]`)).toContainText('Only approved one by one');
     expect((await readBackend(page)).tempo.writes).toEqual([]);
   });

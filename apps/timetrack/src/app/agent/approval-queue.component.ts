@@ -46,7 +46,7 @@ import { injectApprovalQueue } from './approval-queue';
               <div class="flex flex-wrap items-center gap-2 text-small text-et-surface-muted">
                 <span>{{ item.client ?? 'CLI' }} · asked at {{ askedAt(item) }}</span>
 
-                @if (classOf(item) === 'human-only') {
+                @if (item.state === 'queued' && !queue.approvableByAll().includes(item)) {
                   <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink">Only approved one by one</span>
                 }
               </div>
