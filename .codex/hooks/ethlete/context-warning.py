@@ -12,8 +12,7 @@ is not a warning:
 
   * SessionStart - states the budget and how to scope work to it, before the
     first request. Nothing else tells the model what its budget is.
-  * UserPromptSubmit - the tiered warning, plus a short reminder on every later
-    prompt.
+  * UserPromptSubmit - the tiered warning, once per tier.
   * PostToolBatch - the same tiered warning, delivered mid-run. This is the only
     event that fires between an agent's own model requests, so without it a long
     autonomous run never learns its token count until the user types something.
@@ -75,10 +74,7 @@ choose between finishing and handing off again never ends. `resume` is not a sav
 Warns once per tier per session (state kept in a temp file); re-arms itself
 if the context shrinks again (e.g. after a compaction). The Stop event keeps its
 own per-tier counter, so crossing a tier mid-run costs at most one notice while
-working and one demand at the end of the turn. Every prompt after the first
-warning carries a short reminder instead: how much budget is left, and how to
-work so that either ending stays cheap. One warning at 70% is stale by the time
-it matters, and the agent cannot see its own token count.
+working and one demand at the end of the turn. Prompts between tiers get nothing.
 
 Can be disabled per machine via a gitignored ethlete-agents.config.local.json
 at the repo root: {"disableHooks": true} or {"disableHooks": ["context-warning"]}.
@@ -105,8 +101,6 @@ WARN_FRACTION = 0.70
 CRITICAL_FRACTION = 0.85
 FINAL_FRACTION = 0.95
 
-# How to work once the budget is tight - repeated on every prompt from the first
-# warning on, so it stays in view as the budget shrinks.
 HANDOFF_MODE = (
     "Work in slices that each end in a committable state. Send bulky reads, searches and "
     "test runs to a sub-agent so their output stays out of this context. Write down each "
@@ -758,23 +752,6 @@ def stop_messages(profile, tier, tokens, budget, priced):
     )
 
 
-def reminder(tier, tokens, budget, priced):
-    """The short note repeated on every prompt after a tier was already warned about.
-
-    A single warning at 70% is stale by the time the budget is actually tight, and the
-    agent has no way to read its own token count between prompts.
-    """
-    stop = (
-        " You were already told to hand off. Do not take on new work."
-        if tier >= 2
-        else ""
-    )
-    return (
-        f"[context-warning hook] Handoff mode is active: {headroom(tokens, budget)} left of "
-        f"the {budget // 1000}k {limit_name(priced)}. {HANDOFF_MODE}{stop}"
-    )
-
-
 SUBAGENT_HAND_BACK = (
     "Finish only the atomic edit in flight - start nothing new. Commit what is committable, "
     "then end your run with the hand-back report to the parent agent: what is done (with the "
@@ -809,15 +786,6 @@ def subagent_stop_message(tier, tokens, budget, priced):
         f"{round(tokens / budget * 100)}% of its {budget // 1000}k {limit_name(priced)}. "
         f"Take on no further task work. {SUBAGENT_HAND_BACK} If your last message already is that "
         f"report, repeat it unchanged and end."
-    )
-
-
-def subagent_reminder(tokens, budget, priced):
-    return (
-        f"[context-warning hook] Handoff mode is active for this sub-agent thread, not the "
-        f"parent/main agent: {headroom(tokens, budget)} left of its {budget // 1000}k "
-        f"{limit_name(priced)}. Keep findings compact and send them to the parent agent "
-        f"before the budget runs out. Do not create a user-facing session handoff."
     )
 
 
@@ -972,16 +940,6 @@ def main():
         # Below the first threshold, or the context shrank - the state was re-armed above.
         if tier == 0:
             return
-        # Only a prompt repeats the reminder. On a tool batch it would be re-injected before
-        # every model request, which costs more context than it saves.
-        if event != "UserPromptSubmit":
-            return
-        emit(
-            event,
-            subagent_reminder(tokens, budget, priced)
-            if is_subagent
-            else reminder(tier, tokens, budget, priced),
-        )
         return
 
     if is_subagent:

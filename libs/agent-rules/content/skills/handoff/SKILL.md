@@ -31,8 +31,7 @@ ephemeral working state, not team docs).
 ## Handoff mode
 
 Where this repo installs the `context-warning` hook, it names the budget at session start,
-turns handoff mode on at 70% of it, and repeats a short note with the remaining budget on
-every prompt after that. It reaches you at three points, not only when the user types: at
+turns handoff mode on at 70% of it, and warns once more at each later tier. It reaches you at three points, not only when the user types: at
 the start of the session, after a batch of your own tool calls, and as a turn ends. So a
 long autonomous run learns its token count while it works.
 

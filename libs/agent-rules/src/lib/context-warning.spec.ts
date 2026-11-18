@@ -276,40 +276,26 @@ describe('context-warning handoff mode', () => {
     expect(context).not.toContain('Choose one of two');
   });
 
-  it('repeats a short reminder on every later prompt, without warning the user again', () => {
+  it('warns once per tier and stays silent on later prompts of the same tier', () => {
     const sessionId = randomUUID();
 
     runClaudeHook({ sessionId, tokens: 150_000 });
-    const held = runClaudeHook({ sessionId, tokens: 155_000 });
 
-    expect(held?.systemMessage).toBeUndefined();
-    expect(held?.hookSpecificOutput.additionalContext).toContain('Handoff mode is active: ~45k tokens left');
-    expect(held?.hookSpecificOutput.additionalContext).not.toContain('You were already told to hand off');
-  });
-
-  it('adds a stop instruction to the reminder once a handoff was already asked for', () => {
-    const sessionId = randomUUID();
-
-    runClaudeHook({ sessionId, tokens: 175_000 });
-    const held = runClaudeHook({ sessionId, tokens: 176_000 });
-
-    expect(held?.hookSpecificOutput.additionalContext).toContain('You were already told to hand off');
+    expect(runClaudeHook({ sessionId, tokens: 155_000 })).toBeNull();
   });
 
   it('stays silent below the warn tier', () => {
     expect(runClaudeHook({ tokens: 100_000 })).toBeNull();
   });
 
-  it('reminds a sub-agent about its own budget, not a session handoff', () => {
+  it('warns a sub-agent once per tier', () => {
     const sessionId = randomUUID();
     const threadId = randomUUID();
     const options = { model: 'gpt-5.6-sol', sessionId, threadId, threadSource: 'subagent', window: 1_050_000 } as const;
 
     runHook({ ...options, tokens: 200_000 });
-    const held = runHook({ ...options, tokens: 205_000 });
 
-    expect(held).toContain('Handoff mode is active for this sub-agent thread, not the parent/main agent');
-    expect(held).toContain('Do not create a user-facing session handoff.');
+    expect(runHook({ ...options, tokens: 205_000 })).toBe('');
   });
 });
 

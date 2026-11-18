@@ -117,6 +117,11 @@ const tempDirEnv = () => `CLAUDE_CODE_TMPDIR=${quote(ensuredClaudeTmpDir())} `;
 const withTempDir = (command) => (/(^|\s)CLAUDE_CODE_TMPDIR=/.test(command) ? command : `${tempDirEnv()}${command}`);
 const withRole = (words) =>
   role === 'builder' && basename(words[0]) === 'claude' ? [...words, '--append-system-prompt', BUILDER_PROMPT] : words;
+const roleEnvOf = (agentRole) =>
+  agentRole
+    ? { ETHLETE_AGENT_ROLE: agentRole, ...(agentRole === 'builder' ? { CLAUDE_CODE_SILENT_TURN_REMINDER: '0' } : {}) }
+    : {};
+const roleEnvWords = (agentRole) => Object.entries(roleEnvOf(agentRole)).map(([key, value]) => `${key}=${value}`);
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
 const ROLE_OPTION = '@ethlete_role';
 const COMMAND_OPTION = '@ethlete_command';
@@ -286,8 +291,8 @@ const commandWithRole = (command, agentRole) => {
   const rule =
     agentRole === 'builder' && basename(kept[0] ?? '') === 'claude' ? ['--append-system-prompt', BUILDER_PROMPT] : [];
   return [
-    ...env.filter((word) => !word.startsWith('ETHLETE_AGENT_ROLE=')),
-    `ETHLETE_AGENT_ROLE=${agentRole}`,
+    ...env.filter((word) => !/^(ETHLETE_AGENT_ROLE|CLAUDE_CODE_SILENT_TURN_REMINDER)=/.test(word)),
+    ...roleEnvWords(agentRole),
     ...[...kept, ...rule].map(quote),
   ].join(' ');
 };
@@ -570,9 +575,7 @@ if (command === 'send' && sender) {
   process.stderr.write(`Unknown role ${role}. Only builder exists.\n`);
   process.exitCode = 1;
 } else if (command === 'run' && sender && words.length && dryRun) {
-  process.stdout.write(
-    `${withTempDir(`${role ? `ETHLETE_AGENT_ROLE=${role} ` : ''}${withRole(words).map(quote).join(' ')}`)}\n`,
-  );
+  process.stdout.write(`${withTempDir([...roleEnvWords(role), ...withRole(words).map(quote)].join(' '))}\n`);
 } else if (command === 'run' && sender && words.length && !runsInSession(words.slice(1))) {
   const [program, ...programArgs] = withRole(words);
   process.exitCode =
@@ -581,7 +584,7 @@ if (command === 'send' && sender) {
       env: {
         ...process.env,
         CLAUDE_CODE_TMPDIR: ensuredClaudeTmpDir(),
-        ...(role ? { ETHLETE_AGENT_ROLE: role } : {}),
+        ...roleEnvOf(role),
       },
     }).status ?? 1;
 } else if (command === 'run' && sender && words.length) {
@@ -589,7 +592,9 @@ if (command === 'send' && sender) {
   if (!sessionExists(DISPATCH_SESSION))
     startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`, true);
   const session = freeSessionFor(sender);
-  const roleEnv = role ? `ETHLETE_AGENT_ROLE=${role} ` : '';
+  const roleEnv = roleEnvWords(role)
+    .map((word) => `${word} `)
+    .join('');
   const shellCommand = withTempDir(`${roleEnv}${withRole(words).map(quote).join(' ')}`);
   const baseCommand = withTempDir(`${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`);
   if (!hasTerminal) {

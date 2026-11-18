@@ -405,7 +405,7 @@ describe('agent-sessions', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toBe(
-      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.'\n`,
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.'\n`,
     );
     expect(existsSync(join(dir, '.cache/claude-tmp'))).toBe(true);
   });
@@ -446,7 +446,7 @@ describe('agent-sessions', () => {
 
   it('adds no system prompt for another program and rejects an unknown role', () => {
     expect(run(['run', 'codex', 'codex', '--role', 'builder', '--dry-run'], undefined, { HOME: dir }).stdout).toBe(
-      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder 'codex'\n`,
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'codex'\n`,
     );
     expect(run(['run', 'claude', 'claude', '--role', 'x', '--dry-run']).status).toBe(1);
   });
@@ -883,7 +883,7 @@ describe('agent-sessions', () => {
         '-t',
         `=${scoped}:`,
         '@ethlete_command',
-        `ETHLETE_AGENT_ROLE=builder '${claude}' '--append-system-prompt' '${BUILDER_RULE}'`,
+        `ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 '${claude}' '--append-system-prompt' '${BUILDER_RULE}'`,
       ]);
 
       try {
