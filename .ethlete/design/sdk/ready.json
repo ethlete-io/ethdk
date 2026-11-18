@@ -1,37 +1,7 @@
 {
   "components/action-sheet": {
-    "hash": "f1a2139233462858",
-    "files": {
-      ".ethlete/design/sdk/components/action-sheet/action-sheet.css": "5995078f6fd832f4",
-      ".ethlete/design/sdk/components/action-sheet/action-sheet.ts": "b6fd6607d103d9fb",
-      "libs/components/design/button.ts": "48f441533cf5bb8f",
-      "libs/components/design/dialog.ts": "424aeadd7dbf0dad",
-      "libs/components/design/icon.ts": "829a95253b948ba9",
-      "libs/components/design/loader.ts": "e05586c3d6f1de74",
-      "libs/components/src/lib/button/button-properties-styles.component.css": "39a20bd59ff9864e",
-      "libs/components/src/lib/button/button.component.css": "1b93c651ccdb363a",
-      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
-      "libs/components/src/lib/button/icon-button.component.css": "ff7eeb0527c6ebd7",
-      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
-      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
-      "libs/components/src/lib/icon/headless/icon-styles.component.css": "ff8f5b368903719a",
-      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
-      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
-      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
-      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
-      "libs/components/src/lib/overlay/alert-dialog/alert-dialog.component.css": "634bf293291cc8a7",
-      "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
-      "libs/components/src/lib/overlay/overlay-main-styles.component.css": "a141c3135515466d",
-      "libs/components/src/lib/overlay/strategies/dialog-styles.component.css": "19d93f189828f7d2",
-      "libs/core/design/interactive-styles.ts": "781528322bd34499",
-      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
-      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
-    },
     "actions": [],
-    "at": "2026-11-16T09:22:52.907Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 1898251
+    "at": "2026-11-18T08:45:27.800Z"
   },
   "components/anchored-dialog": {
     "hash": "0b98e2e2dc7cb956",
@@ -98,6 +68,10 @@
     "cmd": "ready",
     "pid": 1300751
   },
+  "components/banner": {
+    "actions": [],
+    "at": "2026-11-18T08:45:27.911Z"
+  },
   "components/button": {
     "hash": "fdcd94fedd3764cf",
     "files": {
@@ -126,13 +100,21 @@
     "cmd": "ready",
     "pid": 954605
   },
+  "components/card": {
+    "actions": [],
+    "at": "2026-11-18T08:45:28.078Z"
+  },
   "components/checkbox": {
     "actions": [],
-    "at": "2026-11-14T17:21:52.883Z"
+    "at": "2026-11-18T08:45:28.168Z"
   },
   "components/chip": {
     "actions": [],
-    "at": "2026-11-14T17:25:45.226Z"
+    "at": "2026-11-18T08:45:28.233Z"
+  },
+  "components/dialog": {
+    "actions": [],
+    "at": "2026-11-18T08:45:28.320Z"
   },
   "components/form-field": {
     "hash": "7b747365ed314b1d",
