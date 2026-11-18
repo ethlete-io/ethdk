@@ -947,6 +947,14 @@ const namedWait = async (page, label, predicate, arg) => {
   }
 };
 
+const slowestPhasesOf = (stderr) =>
+  [...stderr.matchAll(/^PHASE (.+) ([\d.]+)s$/gmu)]
+    .map(([, name, seconds]) => ({ name, seconds: Number(seconds) }))
+    .sort((a, b) => b.seconds - a.seconds)
+    .slice(0, 4)
+    .map(({ name, seconds }) => `${name} ${seconds}s`)
+    .join(', ');
+
 const withEditSketch = async (page, designPort, run) => {
   const studio = join(checkout, '.ethlete/design/studio');
   const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
@@ -996,9 +1004,9 @@ const withEditSketch = async (page, designPort, run) => {
     const check = spawnSync(
       process.execPath,
       [cliEntry, 'design', 'check', '--product', 'studio', '--part', EDIT_PART],
-      { cwd: checkout, stdio: 'pipe', encoding: 'utf8' },
+      { cwd: checkout, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, ETHLETE_DESIGN_PHASES: '1' } },
     );
-    phase('check');
+    phase(`check (slowest: ${slowestPhasesOf(check.stderr ?? '')})`);
     await page.evaluate(
       ({ checkout, part }) =>
         localStorage.setItem(
