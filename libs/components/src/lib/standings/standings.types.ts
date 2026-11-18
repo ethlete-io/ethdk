@@ -4,6 +4,12 @@ import { NormalizedMatchParticipant } from '../match';
 /** One result in a participant's recent form. */
 export type StandingsFormResult = 'win' | 'loss' | 'tie';
 
+/** A recent-form result with a label, shown as its tooltip and read as part of its name - the opponent and score, say. */
+export type StandingsFormEntry = {
+  result: StandingsFormResult;
+  label?: string | null;
+};
+
 /**
  * One row of a table, in the shape `et-standings` draws. Same philosophy as the match domain: **every
  * backend maps into it** with a plain adapter, and the components never learn one API's field names.
@@ -27,8 +33,25 @@ export type NormalizedStandingRow = {
   /** Goal or game difference, when the competition tracks one. */
   difference: number | null;
   /** Recent results, **oldest first**. `null` when the competition doesn't report form. */
-  form: StandingsFormResult[] | null;
+  form: (StandingsFormResult | StandingsFormEntry)[] | null;
+  /** Values for the consumer's `extraColumns`, keyed by each column's `key`. A missing key renders an empty cell. */
+  extraStats?: Readonly<Record<string, string | number | null>>;
 };
+
+/** A stat column the consumer adds after the built-in ones. Its values come from each row's `extraStats[key]`. */
+export type StandingsExtraColumn = {
+  key: string;
+  /** The header text - an abbreviation is fine when `labelFull` spells it out. */
+  label: string;
+  /** The unabbreviated header, for screen readers (the header's `abbr`). */
+  labelFull?: string;
+};
+
+/**
+ * Where a participant links to - what a `participantLink` callback answers with. A **string** is an `href`; an
+ * **array** is router commands, rendered through `routerLink`.
+ */
+export type StandingsParticipantLink = string | readonly unknown[];
 
 /**
  * A band of positions that means something: promotion, playoffs, relegation, advancing out of a group.

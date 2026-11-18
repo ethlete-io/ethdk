@@ -1,8 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, ViewEncapsulation } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
 import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { injectMatchLabels, MATCH_PARTICIPANT_IMPORTS, matchParticipantDisplayName } from '../match';
+import { TOOLTIP_IMPORTS } from '../tooltip';
 import { StandingsDirective } from './headless';
 import { NormalizedStandingRow } from './standings.types';
 
@@ -25,12 +27,29 @@ import { NormalizedStandingRow } from './standings.types';
   templateUrl: './standings.component.html',
   styleUrl: './standings.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [MATCH_PARTICIPANT_IMPORTS, ProvideColorDirective, NgTemplateOutlet, IconDirective],
+  imports: [
+    MATCH_PARTICIPANT_IMPORTS,
+    ProvideColorDirective,
+    NgTemplateOutlet,
+    IconDirective,
+    RouterLink,
+    TOOLTIP_IMPORTS,
+  ],
   providers: [provideIcons(CHEVRON_ICON)],
   hostDirectives: [
     {
       directive: StandingsDirective,
-      inputs: ['rows', 'zones', 'highlightedRowId', 'showLegend', 'labels', 'expandedRows', 'expandMode'],
+      inputs: [
+        'rows',
+        'zones',
+        'highlightedRowId',
+        'showLegend',
+        'labels',
+        'expandedRows',
+        'expandMode',
+        'extraColumns',
+        'participantLink',
+      ],
       outputs: ['expandedRowsChange'],
     },
   ],
@@ -45,7 +64,13 @@ export class StandingsComponent {
 
   protected labels = computed(() => this.standings.resolvedLabels());
 
-  protected columnCount = computed(() => 8 + Number(this.standings.hasDifference()) + Number(this.standings.hasForm()));
+  protected columnCount = computed(
+    () =>
+      8 +
+      Number(this.standings.hasDifference()) +
+      Number(this.standings.hasForm()) +
+      this.standings.extraColumns().length,
+  );
 
   constructor() {
     mountVisuallyHidden();

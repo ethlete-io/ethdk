@@ -31,6 +31,17 @@
             {{ labels().difference }}
           </th>
         }
+        @for (column of standings.extraColumns(); track column.key) {
+          <th
+            [attr.abbr]="column.labelFull ?? null"
+            [attr.data-extra-column]="column.key"
+            class="et-standings-cell"
+            data-column="detail"
+            scope="col"
+          >
+            {{ column.label }}
+          </th>
+        }
         <th [attr.abbr]="labels().pointsFull" class="et-standings-cell" data-column="points" scope="col">
           {{ labels().points }}
         </th>
@@ -113,7 +124,23 @@
     </th>
 
     <td class="et-standings-cell" data-column="participant">
-      <et-match-participant [participant]="renderRow.row.participant" class="et-standings-participant" />
+      @if (renderRow.participantCommands; as commands) {
+        <a
+          [participant]="renderRow.row.participant"
+          [routerLink]="commands"
+          class="et-standings-participant"
+          et-match-participant
+        ></a>
+      } @else if (renderRow.participantHref; as href) {
+        <a
+          [participant]="renderRow.row.participant"
+          [href]="href"
+          class="et-standings-participant"
+          et-match-participant
+        ></a>
+      } @else {
+        <et-match-participant [participant]="renderRow.row.participant" class="et-standings-participant" />
+      }
     </td>
 
     <td class="et-standings-cell" data-column="detail">{{ renderRow.row.played }}</td>
@@ -125,17 +152,34 @@
       <td class="et-standings-cell" data-column="detail">{{ differenceText(renderRow.row.difference) }}</td>
     }
 
+    @for (column of standings.extraColumns(); track column.key) {
+      <td [attr.data-extra-column]="column.key" class="et-standings-cell" data-column="detail">
+        {{ renderRow.row.extraStats?.[column.key] ?? '' }}
+      </td>
+    }
+
     <td class="et-standings-cell" data-column="points">{{ renderRow.row.points }}</td>
 
     @if (standings.hasForm()) {
       <td class="et-standings-cell" data-column="form">
-        @if (renderRow.row.form; as form) {
+        @if (renderRow.formEntries; as form) {
           <span class="et-standings-form">
-            @for (result of form; track $index) {
-              <span [attr.data-result]="result" class="et-standings-form-result" aria-hidden="true">{{
-                labels().formResultShort(result)
-              }}</span>
-              <span class="et-visually-hidden et-standings-form-note"> {{ labels().formResult(result) }}</span>
+            @for (entry of form; track $index) {
+              @if (entry.label; as entryLabel) {
+                <span
+                  [attr.data-result]="entry.result"
+                  [attr.aria-label]="labels().formEntry(labels().formResult(entry.result), entryLabel)"
+                  [etTooltip]="entryLabel"
+                  class="et-standings-form-result"
+                  role="img"
+                  >{{ labels().formResultShort(entry.result) }}</span
+                >
+              } @else {
+                <span [attr.data-result]="entry.result" class="et-standings-form-result" aria-hidden="true">{{
+                  labels().formResultShort(entry.result)
+                }}</span>
+                <span class="et-visually-hidden et-standings-form-note"> {{ labels().formResult(entry.result) }}</span>
+              }
             }
           </span>
         }

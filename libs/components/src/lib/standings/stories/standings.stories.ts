@@ -15,6 +15,7 @@ export default {
     direction: 'ltr',
     expandable: false,
     expandMode: 'multiple',
+    withExtras: false,
   },
   argTypes: {
     surface: { control: 'text' },
@@ -26,6 +27,7 @@ export default {
     direction: { control: 'inline-radio', options: ['ltr', 'rtl'] },
     expandable: { control: 'boolean' },
     expandMode: { control: 'inline-radio', options: ['single', 'multiple'] },
+    withExtras: { control: 'boolean' },
   },
 } as Meta<StandingsStorybookComponent>;
 
@@ -79,6 +81,19 @@ export const ExpandableRows: Story = {
           'An `ng-template[etStandingsRowDetail]` adds a toggle per row. The template renders real rows into the ' +
           'table, so each season lines up with the team columns, and its buttons work. Switch `expandMode` to ' +
           '`single` to keep one row open.',
+      },
+    },
+  },
+};
+
+export const ExtraColumnsAndLinks: Story = {
+  args: { withExtras: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`extraColumns` adds stat columns after the built-in ones, filled from each row's `extraStats`. A form " +
+          'entry with a `label` shows it as a tooltip, and `participantLink` turns each participant into a link.',
       },
     },
   },

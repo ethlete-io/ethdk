@@ -1,4 +1,4 @@
-import { Provider, Type } from '@angular/core';
+import { EnvironmentProviders, Provider, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import { TEST_COLOR_THEMES } from './color-themes';
@@ -12,7 +12,7 @@ export { createControlDriver, type ControlDriverOptions } from '../../../testing
  */
 export const mountControl = <T>(
   component: Type<T>,
-  providers: Provider[] = [],
+  providers: (Provider | EnvironmentProviders)[] = [],
   beforeCreate?: () => void,
   beforeDetect?: (fixture: ComponentFixture<T>) => void,
 ) => {

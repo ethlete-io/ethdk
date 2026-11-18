@@ -48,7 +48,8 @@ type NormalizedStandingRow = {
   losses: number;
   points: number; // what the table ranks by
   difference: number | null; // goal/game difference, when the competition tracks one
-  form: ('win' | 'loss' | 'tie')[] | null; // recent results, oldest first
+  form: (StandingsFormResult | StandingsFormEntry)[] | null; // recent results, oldest first
+  extraStats?: Record<string, string | number | null>; // values for `extraColumns`, by key
 };
 ```
 
@@ -127,17 +128,46 @@ full-width cell (`<td [attr.colspan]="columnCount">`).
 
 Without the template nothing changes: no toggle column, one `<tbody>`, no extra attributes.
 
+## Extra columns, form labels and links
+
+Three optional additions; without them the table renders exactly as before.
+
+```html
+<et-standings [rows]="rows()" [extraColumns]="extraColumns" [participantLink]="teamLink" />
+```
+
+```ts
+protected extraColumns: StandingsExtraColumn[] = [
+  { key: 'scored', label: 'S', labelFull: 'Scored' },
+  { key: 'conceded', label: 'C', labelFull: 'Conceded' },
+];
+
+protected teamLink = (row: NormalizedStandingRow) => ['/teams', row.participant?.id];
+```
+
+- **`extraColumns`** adds stat columns after the built-in ones (before points). Each cell shows the row's
+  `extraStats[key]`; a missing key leaves the cell empty. They are detail columns, so they drop below 560px
+  with played, won, drawn and lost. `labelFull` becomes the header's `abbr`.
+- **A form entry** is a result (`'win'`) or `{ result, label }`. A label shows as a tooltip on the square and
+  is part of its accessible name (`formEntry`: "Loss: vs Harbor City 1:2").
+- **`participantLink`** is called per row and answers with an `href` string, router commands (rendered
+  through `routerLink`, so router commands need `provideRouter`), or `null` for no link. The participant is
+  then an `<a et-match-participant>`, like a [linked match participant](/components/match). A TBD slot never
+  links.
+
 ## Options
 
-| Input              | Type                               | Default      | What it does                                                     |
-| ------------------ | ---------------------------------- | ------------ | ---------------------------------------------------------------- |
-| `rows`             | `readonly NormalizedStandingRow[]` | -            | Required. Drawn in the order given.                              |
-| `zones`            | `readonly StandingsZone[]`         | `[]`         | Position bands (see [Zones](#zones)).                            |
-| `highlightedRowId` | `string \| null`                   | `null`       | The `id` of the row to single out - "your team".                 |
-| `showLegend`       | `boolean`                          | `true`       | Draw the legend under the table. No zones, no legend either way. |
-| `labels`           | `Partial<StandingsLabels> \| null` | `null`       | Per-instance string overrides.                                   |
-| `expandedRows`     | `readonly string[]`                | `[]`         | The `id`s of the open rows. Two-way bindable.                    |
-| `expandMode`       | `'single' \| 'multiple'`           | `'multiple'` | Whether opening a row closes the open one.                       |
+| Input              | Type                                                  | Default      | What it does                                                        |
+| ------------------ | ----------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
+| `rows`             | `readonly NormalizedStandingRow[]`                    | -            | Required. Drawn in the order given.                                 |
+| `zones`            | `readonly StandingsZone[]`                            | `[]`         | Position bands (see [Zones](#zones)).                               |
+| `highlightedRowId` | `string \| null`                                      | `null`       | The `id` of the row to single out - "your team".                    |
+| `showLegend`       | `boolean`                                             | `true`       | Draw the legend under the table. No zones, no legend either way.    |
+| `labels`           | `Partial<StandingsLabels> \| null`                    | `null`       | Per-instance string overrides.                                      |
+| `expandedRows`     | `readonly string[]`                                   | `[]`         | The `id`s of the open rows. Two-way bindable.                       |
+| `expandMode`       | `'single' \| 'multiple'`                              | `'multiple'` | Whether opening a row closes the open one.                          |
+| `extraColumns`     | `readonly StandingsExtraColumn[]`                     | `[]`         | Stat columns after the built-in ones, from each row's `extraStats`. |
+| `participantLink`  | `((row) => StandingsParticipantLink \| null) \| null` | `null`       | Makes each participant a link: an `href` or router commands.        |
 
 ## Localization
 
@@ -170,7 +200,7 @@ provideStandingsLabels({
 - **The highlighted row** is `aria-current="true"` and carries the `highlightedRow` label the same way.
 - **Form is never opacity-only.** Each square carries a letter (`formResultShort`: "W", "D", "L") and a
   visually hidden word (`formResult`: "Win", "Draw", "Loss"); the letter is `aria-hidden`, so it is not read
-  twice.
+  twice. A square with a `label` is instead a `role="img"` named by `formEntry`, with the label as its tooltip.
 - **The row toggle** is a real `<button>` named by `rowDetailToggle` ("Details for FC Berlin"), with
   `aria-expanded` and `aria-controls` pointing at the detail's `<tbody>`. Its column header carries the
   visually hidden `rowDetailColumn` label.

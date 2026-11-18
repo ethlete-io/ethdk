@@ -1,4 +1,4 @@
-import { Provider, Type } from '@angular/core';
+import { EnvironmentProviders, Provider, Type } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { createControlDriver, mountControl } from '../../testing/control-driver';
@@ -27,5 +27,5 @@ export const createStandingsDriver = <T>(fixture: ComponentFixture<T>) => {
 
 export type StandingsDriver<T> = ReturnType<typeof createStandingsDriver<T>>;
 
-export const mountStandings = <T>(component: Type<T>, providers: Provider[] = []) =>
+export const mountStandings = <T>(component: Type<T>, providers: (Provider | EnvironmentProviders)[] = []) =>
   createStandingsDriver(mountControl(component, [...STANDINGS_TEST_THEME, ...providers]));

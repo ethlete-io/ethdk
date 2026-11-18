@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { STANDINGS_IMPORTS } from '../standings.imports';
-import { NormalizedStandingRow, StandingsExpandMode, StandingsZone } from '../standings.types';
+import { NormalizedStandingRow, StandingsExpandMode, StandingsExtraColumn, StandingsZone } from '../standings.types';
 
 @Component({
   selector: 'et-sb-standings',
@@ -22,6 +22,8 @@ import { NormalizedStandingRow, StandingsExpandMode, StandingsZone } from '../st
             [highlightedRowId]="highlight() ? 'neo' : null"
             [showLegend]="showLegend()"
             [expandMode]="expandMode()"
+            [extraColumns]="extraColumns()"
+            [participantLink]="withExtras() ? PARTICIPANT_LINK : null"
           >
             @if (expandable()) {
               <ng-template let-row etStandingsRowDetail>
@@ -74,6 +76,7 @@ export class StandingsStorybookComponent {
   public direction = input<'ltr' | 'rtl'>('ltr');
   public expandable = input(false);
   public expandMode = input<StandingsExpandMode>('multiple');
+  public withExtras = input(false);
 
   protected expandedRows = signal<readonly string[]>([]);
   protected openedSeason = signal<string | null>(null);
@@ -90,9 +93,33 @@ export class StandingsStorybookComponent {
       : [],
   );
 
-  protected rows = computed<NormalizedStandingRow[]>(() =>
-    STANDINGS_ROWS.map((row) => ({ ...row, form: this.withForm() ? row.form : null })),
+  protected extraColumns = computed<StandingsExtraColumn[]>(() =>
+    this.withExtras()
+      ? [
+          { key: 'scored', label: 'S', labelFull: 'Scored' },
+          { key: 'conceded', label: 'C', labelFull: 'Conceded' },
+        ]
+      : [],
   );
+
+  protected rows = computed<NormalizedStandingRow[]>(() =>
+    STANDINGS_ROWS.map((row) => {
+      if (!this.withExtras()) return { ...row, form: this.withForm() ? row.form : null };
+
+      return {
+        ...row,
+        form: this.withForm()
+          ? (row.form?.map((entry, index) => ({
+              result: typeof entry === 'string' ? entry : entry.result,
+              label: `Round ${index + 6}`,
+            })) ?? null)
+          : null,
+        extraStats: { scored: row.wins * 2 + row.ties, conceded: row.losses * 2 + row.ties },
+      };
+    }),
+  );
+
+  protected readonly PARTICIPANT_LINK = linkToRowAnchor;
 
   protected seasonsOf(row: NormalizedStandingRow) {
     return ['2024', '2025'].map((name, index) => {
@@ -124,6 +151,8 @@ const participant = (config: { id: string; name: string; code: string; fill: str
   emblem: { defaultSrc: crest({ label: config.code, fill: config.fill }) },
   seed: null,
 });
+
+const linkToRowAnchor = (row: NormalizedStandingRow) => `#${row.id}`;
 
 const STANDINGS_ROWS: NormalizedStandingRow[] = [
   {

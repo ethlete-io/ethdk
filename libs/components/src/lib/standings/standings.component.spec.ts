@@ -1,8 +1,16 @@
 import { Component, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import '../../test-helpers';
 import { provideStandingsLabels } from './standings-labels';
 import { STANDINGS_IMPORTS } from './standings.imports';
-import { NormalizedStandingRow, StandingsZone } from './standings.types';
+import { TooltipDirective } from '../tooltip';
+import {
+  NormalizedStandingRow,
+  StandingsExtraColumn,
+  StandingsParticipantLink,
+  StandingsZone,
+} from './standings.types';
 import { mountStandings } from './testing/standings-driver';
 
 const row = (overrides: Partial<NormalizedStandingRow> = {}): NormalizedStandingRow => ({
@@ -410,5 +418,115 @@ describe('StandingsComponent row detail', () => {
 
     expect(toggles(driver).map((toggle) => toggle.getAttribute('aria-expanded'))).toEqual(['false', 'false', 'true']);
     expect(driver.text('.season-button')).toBe('Rote Löwen 2025');
+  });
+});
+
+@Component({
+  template: `<et-standings [rows]="rows" [zones]="zones" highlightedRowId="neo" />`,
+  imports: [STANDINGS_IMPORTS],
+})
+class DefaultsHostComponent {
+  public rows = [row({ form: ['win', 'tie', 'loss'] }), ...ROWS.slice(1)];
+  public zones: StandingsZone[] = [{ from: 1, to: 1, color: 'brand', label: 'Advances' }];
+}
+
+describe('StandingsComponent without the optional extras', () => {
+  it('renders the same DOM as before the extras existed', () => {
+    const driver = mountStandings(DefaultsHostComponent);
+
+    expect(driver.fixture.nativeElement.innerHTML.replace(/<!--[\s\S]*?-->/g, '')).toMatchSnapshot();
+  });
+});
+
+@Component({
+  template: ` <et-standings [rows]="rows()" [extraColumns]="extraColumns()" [participantLink]="participantLink()" /> `,
+  imports: [STANDINGS_IMPORTS],
+})
+class ExtrasHostComponent {
+  public rows = signal<NormalizedStandingRow[]>(ROWS);
+  public extraColumns = signal<StandingsExtraColumn[]>([]);
+  public participantLink = signal<((row: NormalizedStandingRow) => StandingsParticipantLink | null) | null>(null);
+}
+
+describe('StandingsComponent extras', () => {
+  it('adds the extra columns after the built-in stats, with headers and values', () => {
+    const driver = mountStandings(ExtrasHostComponent);
+
+    driver.host.extraColumns.set([
+      { key: 'for', label: 'F', labelFull: 'Scored' },
+      { key: 'against', label: 'A' },
+    ]);
+    driver.host.rows.set([
+      row({ extraStats: { for: 24, against: 6 } }),
+      row({ id: 'neo', position: 2, extraStats: { for: 0 } }),
+    ]);
+    driver.detectChanges();
+
+    const headers = driver.queryAll('thead th');
+    const forHeader = driver.query('thead th[data-extra-column="for"]');
+
+    expect(forHeader?.textContent?.trim()).toBe('F');
+    expect(forHeader?.getAttribute('abbr')).toBe('Scored');
+    expect(driver.query('thead th[data-extra-column="against"]')?.hasAttribute('abbr')).toBe(false);
+    expect(headers.indexOf(forHeader as HTMLElement)).toBe(
+      headers.findIndex((header) => header.getAttribute('data-column') === 'points') - 2,
+    );
+    expect(forHeader?.getAttribute('data-column')).toBe('detail');
+    expect(driver.queryAll('tbody td[data-extra-column]').map((cell) => cell.textContent?.trim())).toEqual([
+      '24',
+      '6',
+      '0',
+      '',
+    ]);
+  });
+
+  it('shows a form label as a tooltip and reads it as the result name', () => {
+    const driver = mountStandings(ExtrasHostComponent);
+
+    driver.host.rows.set([row({ form: ['win', { result: 'loss', label: 'vs Neon Esports 1:2' }] })]);
+    driver.detectChanges();
+
+    const [plain, labelled] = driver.queryAll('.et-standings-form-result');
+
+    expect(plain?.getAttribute('aria-hidden')).toBe('true');
+    expect(labelled?.getAttribute('role')).toBe('img');
+    expect(labelled?.getAttribute('aria-label')).toBe('Loss: vs Neon Esports 1:2');
+    expect(labelled?.hasAttribute('aria-hidden')).toBe(false);
+    expect(labelled?.textContent?.trim()).toBe('L');
+    expect(driver.queryAll('.et-standings-form-note').map((note) => note.textContent?.trim())).toEqual(['Win']);
+    expect(driver.fixture.debugElement.query(By.directive(TooltipDirective))?.nativeElement).toBe(labelled);
+  });
+
+  it('links the participant to an href', () => {
+    const driver = mountStandings(ExtrasHostComponent);
+
+    driver.host.participantLink.set((standingRow) => (standingRow.id === 'neo' ? null : `/teams/${standingRow.id}`));
+    driver.detectChanges();
+
+    const links = driver.queryAll<HTMLAnchorElement>('a.et-standings-participant');
+
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/teams/fcb', '/teams/rlp']);
+    expect(driver.queryAll('et-match-participant.et-standings-participant').length).toBe(1);
+  });
+
+  it('links the participant through routerLink for router commands', () => {
+    const driver = mountStandings(ExtrasHostComponent, [provideRouter([])]);
+
+    driver.host.participantLink.set((standingRow) => ['/teams', standingRow.id]);
+    driver.detectChanges();
+
+    expect(
+      driver.queryAll<HTMLAnchorElement>('a.et-standings-participant').map((link) => link.getAttribute('href')),
+    ).toEqual(['/teams/fcb', '/teams/neo', '/teams/rlp']);
+  });
+
+  it('never links a TBD slot', () => {
+    const driver = mountStandings(ExtrasHostComponent);
+
+    driver.host.rows.set([row({ participant: null })]);
+    driver.host.participantLink.set(() => '/teams/x');
+    driver.detectChanges();
+
+    expect(driver.query('a.et-standings-participant')).toBeNull();
   });
 });

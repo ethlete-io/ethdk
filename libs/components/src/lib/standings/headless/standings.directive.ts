@@ -2,7 +2,14 @@ import { booleanAttribute, computed, Directive, effect, input, model, signal } f
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { injectStandingsLabels, StandingsLabels } from '../standings-labels';
 import { STANDINGS_ERROR_CODES } from '../standings-errors';
-import { NormalizedStandingRow, StandingsExpandMode, StandingsZone } from '../standings.types';
+import {
+  NormalizedStandingRow,
+  StandingsExpandMode,
+  StandingsExtraColumn,
+  StandingsFormEntry,
+  StandingsParticipantLink,
+  StandingsZone,
+} from '../standings.types';
 import { StandingsRowDetailDirective } from './standings-row-detail.directive';
 
 let uniqueId = 0;
@@ -18,6 +25,12 @@ export type StandingsRenderRow = {
   isExpanded: boolean;
   /** The id for the element holding the row's detail, for the toggle's `aria-controls`. */
   detailId: string;
+  /** The row's form with every result as an entry, or `null` when it reports none. */
+  formEntries: StandingsFormEntry[] | null;
+  /** The participant's `href` when `participantLink` answered with a string, else `null`. */
+  participantHref: string | null;
+  /** The participant's router commands when `participantLink` answered with an array, else `null`. */
+  participantCommands: readonly unknown[] | null;
 };
 
 /**
@@ -63,6 +76,12 @@ export class StandingsDirective {
   /** `'single'` closes the open row when another one opens; `'multiple'` lets rows open independently. @default 'multiple' */
   public expandMode = input<StandingsExpandMode>('multiple');
 
+  /** Stat columns added after the built-in ones, filled from each row's `extraStats`. @default [] */
+  public extraColumns = input<readonly StandingsExtraColumn[]>([]);
+
+  /** Makes each participant a link: answer with an `href` string, router commands, or `null` for no link. @default null */
+  public participantLink = input<((row: NormalizedStandingRow) => StandingsParticipantLink | null) | null>(null);
+
   /** The `ng-template[etStandingsRowDetail]` registered here, or `null` when the rows do not expand. */
   public registeredRowDetailTemplate = signal<StandingsRowDetailDirective | null>(null);
 
@@ -79,14 +98,22 @@ export class StandingsDirective {
     const zones = this.zones();
     const highlightedRowId = this.highlightedRowId();
     const expandedRows = this.isExpandable() ? this.expandedRows() : [];
+    const participantLink = this.participantLink();
 
-    return this.rows().map((row) => ({
-      row,
-      zone: zones.find((zone) => row.position >= zone.from && row.position <= zone.to) ?? null,
-      isHighlighted: !!highlightedRowId && row.id === highlightedRowId,
-      isExpanded: expandedRows.includes(row.id),
-      detailId: this.DETAIL_ID_PREFIX + row.id,
-    }));
+    return this.rows().map((row) => {
+      const link: StandingsParticipantLink | null = participantLink && row.participant ? participantLink(row) : null;
+
+      return {
+        row,
+        zone: zones.find((zone) => row.position >= zone.from && row.position <= zone.to) ?? null,
+        isHighlighted: !!highlightedRowId && row.id === highlightedRowId,
+        isExpanded: expandedRows.includes(row.id),
+        detailId: this.DETAIL_ID_PREFIX + row.id,
+        formEntries: row.form?.map((entry) => (typeof entry === 'string' ? { result: entry } : entry)) ?? null,
+        participantHref: typeof link === 'string' ? link : null,
+        participantCommands: Array.isArray(link) ? link : null,
+      };
+    });
   });
 
   /** The zones the legend lists - none of them when the legend is off. */

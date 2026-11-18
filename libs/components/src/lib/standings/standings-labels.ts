@@ -32,6 +32,8 @@ export type StandingsLabels = {
   formResult: (result: StandingsFormResult) => string;
   /** The letter drawn inside one entry of the form column, e.g. `'W'`. */
   formResultShort: (result: StandingsFormResult) => string;
+  /** The accessible name of a form result that has a label. Gets the `formResult` text and the label. */
+  formEntry: (result: string, label: string) => string;
   /** Names the zone legend for assistive tech. */
   legend: string;
   /** Announced on the highlighted row, so it is findable without seeing the highlight. */
@@ -76,6 +78,7 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
   formFull: 'Recent form, oldest first',
   formResult: (result) => (result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : 'Draw'),
   formResultShort: (result) => (result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D'),
+  formEntry: (result, label) => `${result}: ${label}`,
   legend: 'What the highlighted positions mean',
   highlightedRow: 'Your team',
   rowDetailColumn: 'Details',
@@ -110,6 +113,7 @@ export const GERMAN_STANDINGS_LABELS: StandingsLabels = {
   formFull: 'Letzte Spiele, ältestes zuerst',
   formResult: (result) => (result === 'win' ? 'Sieg' : result === 'loss' ? 'Niederlage' : 'Unentschieden'),
   formResultShort: (result) => (result === 'win' ? 'S' : result === 'loss' ? 'N' : 'U'),
+  formEntry: (result, label) => `${result}: ${label}`,
   legend: 'Bedeutung der hervorgehobenen Plätze',
   highlightedRow: 'Eigenes Team',
   rowDetailColumn: 'Details',
