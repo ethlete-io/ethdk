@@ -22,10 +22,5 @@ reasoning does not reach them.
   without the same change in `claude-code.ts` brings the phantom presence back.
 - **A person who types the same words is still a person**, unless they write the marker or a mailbox
   prefix at the start of a prompt. A slash command typed by hand carries neither.
-- **A restart from before the marker is read by its shape.** An `agent-sessions` copy synced before the marker,
-  and every log written before it, types `/clear` and then a handoff resume (`/handoff resume <name>`,
-  `/ethlete-handoff resume <name>`) with no marker. A handoff resume that follows a `/clear` in the same log
-  within 15 seconds is `machine`. Measured on 2026-11-18: twelve such resumes held a 13h30 night block open.
-  The parser version rose with this, so stored logs are read again.
 - **The resumed session sees the marker.** The handoff skill tells it the marker is not an instruction.
 - **Spend is untouched**, as in ADR 0018.
