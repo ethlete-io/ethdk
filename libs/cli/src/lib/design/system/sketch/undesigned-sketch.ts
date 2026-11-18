@@ -34,10 +34,23 @@ const openSketchesOf = (product: ResolvedProduct) =>
     (sketch): sketch is Sketch => typeof sketch !== 'string' && sketch.decision === undefined,
   );
 
-const waitingSketchOf = (options: { sketches: readonly Sketch[]; part: string; branch: string }) =>
-  options.sketches.find(
-    (sketch) => sketch.targets.includes(options.part) && (sketch.undesigned ?? []).includes(options.branch),
-  );
+/** A `STATE-UNDESIGNED` hit on `part`: the app template branch no design state draws, or the design state it lacks. */
+export type UndesignedHit = { part: string; branch?: string; state?: string };
+
+const holdsUndesigned = (sketch: Sketch, hit: UndesignedHit) =>
+  sketch.targets.includes(hit.part) &&
+  ((hit.branch !== undefined && (sketch.undesigned ?? []).includes(hit.branch)) ||
+    (hit.state !== undefined && sketch.target === `${hit.part}@${hit.state}`));
+
+/**
+ * Whether an open sketch holds the hit: one of its part that lists the branch in `undesigned`, or `<part>@<state>`
+ * that draws the missing state. The hit waits for its pick (B251b).
+ */
+export const undesignedWaitOf = (product: ResolvedProduct) => {
+  const sketches = openSketchesOf(product);
+
+  return (hit: UndesignedHit) => sketches.some((sketch) => holdsUndesigned(sketch, hit));
+};
 
 const builtModuleOf = (picture: Buffer) => `export default 'data:image/png;base64,${picture.toString('base64')}';\n`;
 
@@ -120,12 +133,12 @@ export const openUndesignedSketch = (options: {
 export const withoutWaitingUndesigned = (product: ResolvedProduct, problems: Problem[]) => {
   if (!problems.some((problem) => problem.rule === STATE_UNDESIGNED_RULE)) return problems;
 
-  const sketches = openSketchesOf(product);
+  const waits = undesignedWaitOf(product);
 
   return problems.filter((problem) => {
     const part = problem.rule === STATE_UNDESIGNED_RULE ? partOfProblem(product, problem) : undefined;
 
-    return !part || !waitingSketchOf({ sketches, part: partKeyOf(part), branch: problem.at ?? '' });
+    return !part || !waits({ part: partKeyOf(part), branch: problem.at ?? '' });
   });
 };
 
@@ -149,7 +162,7 @@ export const openUndesignedSketches = async (options: {
 
     const part = partKeyOf(resolved);
 
-    if (waitingSketchOf({ sketches: openSketchesOf(product), part, branch })) continue;
+    if (undesignedWaitOf(product)({ part, branch })) continue;
     if (!problem.missing) {
       log(`undesigned state: ${part} ${branch} - no input props take it, draw its sketch by hand`);
       continue;

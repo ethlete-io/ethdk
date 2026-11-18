@@ -9,7 +9,8 @@ import { Problem } from '../problem';
 import { resolveProduct } from '../resolve-product';
 import { mergeSketch } from './merge';
 import { recordMerged } from './merged-parts';
-import { decideSketch, listSketches, Sketch } from './sketch';
+import { createSketch, decideSketch, listSketches, Sketch } from './sketch';
+import { undesignedLiveProblemOf } from '../live-compare';
 import {
   BUILT_VARIANT,
   openUndesignedSketch,
@@ -138,5 +139,48 @@ describe('openUndesignedSketches (B251b)', () => {
     );
     expect(sketchesOf(target).map((sketch) => sketch.target)).toEqual([`${HERO}@untitled`]);
     expect(log).toHaveBeenCalledWith(expect.stringContaining('@if (other())'));
+  });
+});
+
+describe('undesignedLiveProblemOf (B251b)', () => {
+  const live = (target: string) =>
+    undesignedLiveProblemOf({
+      product: resolveAcme(target),
+      part: HERO,
+      state: 'no-title',
+      design: MISSING.state,
+      states: { default: {} },
+    });
+
+  it('fails a live state naming a missing design state, and waits while <part>@<state> is open', () => {
+    const target = acme();
+
+    expect(live(target)).toContain('STATE-UNDESIGNED: the app state "no-title"');
+
+    createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'hero', sketch: MISSING.state },
+      variants: ['a'],
+    });
+
+    expect(live(target)).toBeNull();
+  });
+
+  it('waits on the sketch the slow runner opened for the branch, until its pick', () => {
+    const target = acme();
+    const sketch = openUndesignedSketch({
+      target,
+      product: resolveAcme(target),
+      part: HERO,
+      branch: BRANCH,
+      missing: MISSING,
+      picture: PICTURE,
+    }) as Sketch;
+
+    expect(live(target)).toBeNull();
+
+    decideSketch({ sketch, decision: { kind: 'pick', variant: BUILT_VARIANT, ...originOf('spec') } });
+
+    expect(live(target)).toContain('STATE-UNDESIGNED');
   });
 });

@@ -147,13 +147,14 @@ const isRendererOption = (node: ts.Node, renderers: Set<string>) => {
   const property = node.parent;
   const options = property?.parent;
   const call = options?.parent;
-  const callee = ts.isCallExpression(call) ? calleeNameOf(call.expression) : null;
+  const callee = call && ts.isCallExpression(call) ? calleeNameOf(call.expression) : null;
 
   return (
     ts.isPropertyAssignment(property) &&
     property.initializer === node &&
     !(ts.isIdentifier(property.name) && property.name.text === 'class') &&
     ts.isObjectLiteralExpression(options) &&
+    call !== undefined &&
     ts.isCallExpression(call) &&
     call.arguments.includes(options) &&
     callee !== null &&

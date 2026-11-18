@@ -17,6 +17,7 @@ import { findSketch, parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { PartCover, partCoverOf, Partless, uncoveredLineOf, uncoveredRegionsOnPage } from './uncovered-regions';
 import { STATE_UNDESIGNED_RULE } from './build-ready-contract';
+import { undesignedWaitOf } from './sketch/undesigned-sketch';
 
 type Storage = Record<string, unknown>;
 
@@ -486,6 +487,24 @@ export const liveSketchOf = (options: {
 };
 
 /** Draws each live state of a page part, or the `only` ones: its design state, and the app's real page on the sample. */
+/**
+ * The `STATE-UNDESIGNED` failure of the live state `state` whose design state `design` the part lacks, or `null`
+ * while an open sketch draws it: the hit waits for its pick like the template branch hit of the slow checks.
+ */
+export const undesignedLiveProblemOf = (options: {
+  product: ResolvedProduct;
+  part: string;
+  state: string;
+  design: string;
+  states: object;
+}) => {
+  const { product, part, state, design, states } = options;
+
+  return undesignedWaitOf(product)({ part, state: design })
+    ? null
+    : `${STATE_UNDESIGNED_RULE}: the app state "${state}" of ${part} has no design state "${design}" - draw it: the missing-state sketch with the built look as variant a (ADR 0010); its states: ${Object.keys(states).join(', ')}`;
+};
+
 export const shootLiveStates: ShootStates = async ({ target, config, product, part, url, only, preset, sketch }) => {
   if (!part.startsWith('pages/')) return `--live compares a pages part only, not ${part}`;
 
@@ -536,15 +555,17 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
     const parts = partCoverOf({ target, product });
     const slotFill = live.spec.frame ? frameContentOf(readFileSync(resolve(live.dir, live.spec.frame))) : null;
     const shots: StateShot[] = [];
+    const waiting: string[] = [];
 
     for (const [name, state] of Object.entries(page.states)) {
       if (only !== null && !only.includes(name)) continue;
 
       if (!(state.design in states)) {
-        shots.push({
-          state: name,
-          problem: `${STATE_UNDESIGNED_RULE}: the app state "${name}" of ${part} has no design state "${state.design}" - draw it: the missing-state sketch with the built look as variant a (ADR 0010); its states: ${Object.keys(states).join(', ')}`,
-        });
+        const problem = undesignedLiveProblemOf({ product, part, state: name, design: state.design, states });
+
+        if (problem === null) waiting.push(name);
+        else shots.push({ state: name, problem });
+
         continue;
       }
 
@@ -583,7 +604,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
       shots.push(typeof app === 'string' ? { state: name, problem: app } : { state: name, design: design.png, app });
     }
 
-    return { states: page.states, shots };
+    return { states: page.states, shots, waiting };
   } catch (error) {
     return error instanceof Error ? error.message : String(error);
   } finally {

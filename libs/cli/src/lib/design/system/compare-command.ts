@@ -99,7 +99,7 @@ export type ShootStates = (options: {
   appRoot?: string | null;
   /** Called once the design pictures are drawn and kept, before the app pictures. */
   onDesignShots?: () => void;
-}) => Promise<{ states: Record<string, unknown>; shots: StateShot[]; skipped?: string[] } | string>;
+}) => Promise<{ states: Record<string, unknown>; shots: StateShot[]; skipped?: string[]; waiting?: string[] } | string>;
 
 export type ComparePart = (options: {
   target: string;
@@ -457,13 +457,17 @@ export const comparePart = async (
   const shot = await timedPhase('compare-states', () => (options.shoot ?? shootStates)(options));
 
   if (typeof shot === 'string') return shot;
-  if (shot.shots.length === 0) return `${options.part} has no states to compare`;
+  if (shot.shots.length === 0 && !shot.waiting?.length) return `${options.part} has no states to compare`;
 
   const { states, shots } = shot;
   const log = options.quiet ? () => undefined : (line: string) => console.log(line);
   const skippedLine = skippedStatesLineOf(shot.skipped ?? []);
 
   if (skippedLine !== null) log(skippedLine);
+  if (shot.waiting?.length)
+    log(
+      `${shot.waiting.join(', ')} wait${shot.waiting.length === 1 ? 's' : ''} for the open sketch of the missing design state`,
+    );
 
   const sketches =
     options.sketches ??

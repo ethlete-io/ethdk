@@ -27,6 +27,7 @@ import { partActionFailuresOf } from './actions-command';
 import { APP_CODE, renderFindingsOf, tallyKeyOf, withFoundRules } from './render-findings';
 import { ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
 import { isDrawRule, isSlowRule, unjudgedStateWarningsOf } from './slow-checks';
+import { withoutWaitingUndesigned } from './sketch/undesigned-sketch';
 import {
   staleLineOf,
   stalePartsOf,
@@ -1056,7 +1057,11 @@ const checkProductTail = async (
 
   drawn.lines.forEach((line) => console.log(line));
 
-  const problems = [...drawn.problems, ...capabilities.errors, ...options.problemsOfEdits].filter(isWanted);
+  const problems = [
+    ...withoutWaitingUndesigned(resolved, drawn.problems),
+    ...capabilities.errors,
+    ...options.problemsOfEdits,
+  ].filter(isWanted);
 
   for (const problem of problems) {
     console.error(lineOf(options.target, problem));

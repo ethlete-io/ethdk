@@ -79,8 +79,9 @@ const defaultRunners: SlowRunners = {
   },
   controlState: bespokeControlProblemsOf,
   contrastPairs: contrastPairProblemsOf,
-  droppedProps: droppedPropProblemsOf,
-  pageProps: pagePropTakerOf,
+  // Called through arrows: the CLI loads dropped-props first, and it reaches this module before its exports exist.
+  droppedProps: (options) => droppedPropProblemsOf(options),
+  pageProps: (options) => pagePropTakerOf(options),
   actionLost: actionLostProblemsOf,
   pageStateInner: pageStateInnerProblemsOf,
 };

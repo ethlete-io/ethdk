@@ -2251,3 +2251,16 @@ hits" lines and 0 live hits. The entries are removed; no sketch opens for them.
 - Not verified: a live `design serve` run with a real undesigned branch (no live hit exists today), the app picture
   of `shootBuiltState`, the sketch drawn in Studio, `sketch ready` on the wrapped variant (the spec does not assert
   ready). The live-compare `STATE-UNDESIGNED` (a live state naming a missing design state) does not wait yet.
+- Live proof (scratch copy, throwaway `@if (percent() === 400)` branch in `zoom-chip.component.ts`): `design serve`
+  opened `components/zoom-chip@percent`, status ready (`sketch ready` ran in `openUndesignedSketch`), variant `built`
+  with `percent: 400`; its PNG shows the app's `MAX` branch (`.claude/handoffs/agent-results/b251b-built-picture.png`).
+  After the fixes `design check --product studio --part components/zoom-chip`: `STATE-UNDESIGNED 0`, 1 open point.
+- Fixed on the way: Cause: the CLI loads `dropped-props` before `slow-run` (status → … → merge-step → dropped-props →
+  … → check-record → slow-run), so the default runners `droppedProps`/`pageProps` were `undefined` and every serve or
+  check slow run with DROPPED-PROP pending threw; they now call through arrows (`slow-run-load-order.spec`, red first).
+  Cause: `design check` printed the draw-rule hits without `withoutWaitingUndesigned`; it now filters them (no spec,
+  verified live). Cause: `isRendererOption` called `ts.isCallExpression(undefined)` on the `export default '<png>'`
+  of `<state>.built.ts`, so the open points worker threw in serve (verified live, the acme fixture does not reach it).
+- B fix: `undesignedWaitOf` is the one predicate; the live compare's `STATE-UNDESIGNED` (`undesignedLiveProblemOf`)
+  waits while `<part>@<design state>` is open, and compare logs the waiting states (spec red first).
+- Not verified: a Studio shot of the sketch view, and the live compare wait against a real live spec.
