@@ -507,6 +507,36 @@ describe('required data states (B251a)', () => {
     ]);
   });
 
+  it('takes a part with a dataStates map by the states it names, not by the words of its state names (B251)', () => {
+    const dataStates = { loading: 'comparing', error: 'listing-failed', empty: 'no-sketches' };
+    const list = openPointsOf(
+      input({
+        parts: [{ ...part('pages/sketches', ['comparing', 'failed', 'list-error', 'none'], true), dataStates }],
+      }),
+    );
+
+    expect(list).toEqual([
+      {
+        part: 'pages/sketches',
+        points: [
+          { kind: 'missing-state', control: null, data: 'error', state: 'listing-failed' },
+          { kind: 'missing-state', control: null, data: 'empty', state: 'no-sketches' },
+        ],
+      },
+    ]);
+    expect(openPointsText('studio', list)).toEqual([
+      'OPEN POINTS studio: 2 in 1 part',
+      '  pages/sketches: data part without the states error (listing-failed), empty (no-sketches)',
+    ]);
+    expect(
+      openPointsOf(
+        input({
+          parts: [{ ...part('pages/sketches', ['comparing', 'listing-failed', 'no-sketches'], true), dataStates }],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
   it('counts a sketch that draws one data state as adding nothing (ADR 0095)', () => {
     const merged = openPointsOf(input({ parts: [part('components/a', ['rest'], true)] }));
     const sketched = openPointsOf(input({ parts: [part('components/a', ['rest', 'loading'], true)] }));

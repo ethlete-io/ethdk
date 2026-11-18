@@ -25,7 +25,8 @@ export type DataState = (typeof DATA_STATES)[number];
 
 /**
  * Something that keeps a part from being done. `missing-state` is a control without a drawn state (`control` null when
- * the part declares no controls), or with `data` a required state a part that takes data does not draw; `redraw` is a
+ * the part declares no controls), or with `data` a required state a part that takes data does not draw, `state` the
+ * name its `dataStates` gives it; `redraw` is a
  * state the part draws as the app picture a merged `built` pick left, a placeholder until a sketch draws it; `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
  * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
@@ -33,7 +34,7 @@ export type DataState = (typeof DATA_STATES)[number];
  * `to`, an ongoing-work state without its looping motion.
  */
 export type OpenPoint =
-  | { kind: 'missing-state'; control: string | null; data?: DataState }
+  | { kind: 'missing-state'; control: string | null; data?: DataState; state?: string }
   | { kind: 'redraw'; state: string }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | {
@@ -56,7 +57,8 @@ export type PartMotions = {
 };
 
 /**
- * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `takesData` that it loads data, `motion` is left out when its
+ * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `takesData` that it loads data, `dataStates` the state it names for each data state (the
+ * state names are then not read as words), `motion` is left out when its
  * states cannot be read; `missingStates` comes
  * from drawing the parts, so a check without a browser leaves them out. `busyStates` are drawn states whose render
  * holds `aria-busy="true"` or a loading button: each is ongoing work whatever its name.
@@ -68,6 +70,7 @@ export type OpenPointsInput = {
     controls: boolean;
     declaredNoControls?: boolean;
     takesData?: boolean;
+    dataStates?: Record<DataState, string>;
     motion?: PartMotions;
     placeholders?: string[];
   }[];
@@ -95,7 +98,16 @@ const DATA_STATE_WORDS: Record<DataState, string[]> = {
   empty: ['empty', 'none', 'no'],
 };
 
-const missingDataStatesOf = (states: string[]) => {
+const missingDataStatesOf = (states: string[], named?: Record<DataState, string>) => {
+  if (named) {
+    return DATA_STATES.filter((data) => !states.includes(named[data])).map((data) => ({
+      kind: 'missing-state' as const,
+      control: null,
+      data,
+      state: named[data],
+    }));
+  }
+
   const words = new Set(states.flatMap((state) => state.split('-')));
 
   return DATA_STATES.filter((data) => !DATA_STATE_WORDS[data].some((word) => words.has(word))).map((data) => ({
@@ -223,27 +235,31 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
     ]),
   ].filter((key) => !known.has(key));
   const listed = [
-    ...input.parts.map(({ key, layer, controls, declaredNoControls, takesData, motion, placeholders = [] }) => {
-      const stateful = !STATELESS_LAYERS.includes(layer);
+    ...input.parts.map(
+      ({ key, layer, controls, declaredNoControls, takesData, dataStates, motion, placeholders = [] }) => {
+        const stateful = !STATELESS_LAYERS.includes(layer);
 
-      return {
-        key,
-        points: [
-          ...(stateful && !controls && !declaredNoControls ? [{ kind: 'missing-state' as const, control: null }] : []),
-          ...(stateful ? (input.missingStates ?? []) : [])
-            .filter((missing) => missing.part === key)
-            .map(({ control }) => ({ kind: 'missing-state' as const, control })),
-          ...(takesData && layer !== 'foundations' && motion ? missingDataStatesOf(motion.states) : []),
-          ...placeholders.map((state) => ({ kind: 'redraw' as const, state })),
-          ...missingMotionsOf({
-            layer,
-            motion,
-            busy: (input.busyStates ?? []).filter((busy) => busy.part === key).map(({ state }) => state),
-          }),
-          ...keyedPointsOf(input, key),
-        ],
-      };
-    }),
+        return {
+          key,
+          points: [
+            ...(stateful && !controls && !declaredNoControls
+              ? [{ kind: 'missing-state' as const, control: null }]
+              : []),
+            ...(stateful ? (input.missingStates ?? []) : [])
+              .filter((missing) => missing.part === key)
+              .map(({ control }) => ({ kind: 'missing-state' as const, control })),
+            ...(takesData && layer !== 'foundations' && motion ? missingDataStatesOf(motion.states, dataStates) : []),
+            ...placeholders.map((state) => ({ kind: 'redraw' as const, state })),
+            ...missingMotionsOf({
+              layer,
+              motion,
+              busy: (input.busyStates ?? []).filter((busy) => busy.part === key).map(({ state }) => state),
+            }),
+            ...keyedPointsOf(input, key),
+          ],
+        };
+      },
+    ),
     ...sketchOnly.map((key) => ({ key, points: keyedPointsOf(input, key) })),
   ];
 
@@ -315,7 +331,9 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 const missingStateText = (points: OpenPoint[]) => {
   const states = points.flatMap((point) => (point.kind === 'missing-state' ? [point] : []));
   const controls = states.flatMap((point) => (point.control ? [point.control] : []));
-  const data = states.flatMap((point) => (point.data ? [point.data] : []));
+  const data = states.flatMap((point) =>
+    point.data ? [point.state ? `${point.data} (${point.state})` : point.data] : [],
+  );
 
   return [
     ...(states.some((point) => !point.control && !point.data) ? ['no controls declared'] : []),

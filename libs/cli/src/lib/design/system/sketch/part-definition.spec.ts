@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { definePart, type Part } from '../../../../../design/define-part';
 import {
   PARSED_PART_FIELDS,
+  dataStatesOf,
   declaresControlsOf,
   declaresNoControlsOf,
   instantOf,
@@ -135,10 +136,41 @@ describe('PARSED_PART_FIELDS', () => {
       instant: 'The app swaps the state.',
       implements: 'apps/x/every.component.ts',
       data: 'list',
+      dataStates: { loading: 'rest', error: 'rest', empty: 'rest' },
       render: () => ({ body: '<div></div>', styles: '' }),
     });
 
     expect(PARSED_PART_FIELDS.filter((field) => !(field in written))).toEqual([]);
+  });
+});
+
+describe('dataStatesOf (B251)', () => {
+  const listPart = (fields: string) =>
+    `import { definePart } from '@design-system';\nexport default definePart({ note: '', data: 'list',${fields} states: { rest: {} }, render: () => null });\n`;
+
+  it('reads the state each of loading, error and empty names', () => {
+    expect(
+      dataStatesOf(listPart(" dataStates: { loading: 'comparing', error: 'listing-failed', 'empty': `no-sketches` },")),
+    ).toEqual({ loading: 'comparing', error: 'listing-failed', empty: 'no-sketches' });
+  });
+
+  it('reads no map when it is missing, partial or not literal', () => {
+    expect(dataStatesOf(listPart(''))).toBeNull();
+    expect(dataStatesOf(listPart(" dataStates: { loading: 'a', error: 'b' },"))).toBeNull();
+    expect(dataStatesOf(listPart(' dataStates: STATES,'))).toBeNull();
+    expect(dataStatesOf(listPart(" dataStates: { loading: 'a', error: 'b', empty: NAME },"))).toBeNull();
+  });
+
+  it('does not type a list part without the map', () => {
+    // @ts-expect-error data: 'list' requires dataStates
+    definePart({ note: '', data: 'list', states: { rest: {} }, describe: { rest: '' }, render: () => ({ body: '' }) });
+    definePart({
+      note: '',
+      dataStates: { loading: 'rest', error: 'rest', empty: 'rest' },
+      states: { rest: {} },
+      describe: { rest: '' },
+      render: () => ({ body: '' }),
+    });
   });
 });
 

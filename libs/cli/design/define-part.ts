@@ -51,7 +51,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
  * `implements` links the part to the code that builds it, see `PartLink`.
  * `data: 'list'` says the part shows a loaded list it gets through its inputs; it then must draw loading, error and
- * empty like a part that loads data.
+ * empty like a part that loads data, and `dataStates` names the state that draws each, see `PartDataStates`.
  * `sample` makes an embedded instance of the part comparable across the states of its host, see `PartSample`.
  * `coverage` names the real input range and the view states the design must draw, see `PartCoverage`.
  */
@@ -74,11 +74,18 @@ export type Part<TProps, TState extends string = string> = {
   omits?: { option: keyof TProps & string; value: string; reason: string }[];
   rules?: PartRule<TState>[];
   implements?: PartLink;
-  data?: 'list';
   sample?: PartSample<TProps>;
   coverage?: PartCoverage<TState>;
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
-};
+} & PartData;
+
+/**
+ * The state of a part that draws its loading, its error and its empty data, required with `data: 'list'`. A name the
+ * part does not draw yet stays an open point until a state of that name is drawn.
+ */
+export type PartDataStates = { loading: string; error: string; empty: string };
+
+type PartData = { data?: undefined; dataStates?: PartDataStates } | { data: 'list'; dataStates: PartDataStates };
 
 /** A width and height in CSS px. */
 export type CoverageSize = { width: number; height: number };
@@ -206,19 +213,22 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   | 'frame'
   | 'sample'
   | 'coverage'
-> & {
-  coverage?: PartCoverage<NoInfer<TState>>;
-  sample?: PartSample<NoInfer<TProps>>;
-  frame?: (body: string, props: NoInfer<TProps>) => string;
-  motions?: Record<string, Motion<NoInfer<TState>>>;
-  unreachable?: { from: NoInfer<TState>; to: NoInfer<TState>; reason: string }[];
-  rules?: PartRule<NoInfer<TState>>[];
-  states: Record<TState, NoInfer<TProps>>;
-  describe: Record<NoInfer<TState>, string>;
-  controls?: Record<string, Control<NoInfer<TState>>>;
-  grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
-  render: (props: TProps) => Drawing | Promise<Drawing>;
-};
+  | 'data'
+  | 'dataStates'
+> &
+  PartData & {
+    coverage?: PartCoverage<NoInfer<TState>>;
+    sample?: PartSample<NoInfer<TProps>>;
+    frame?: (body: string, props: NoInfer<TProps>) => string;
+    motions?: Record<string, Motion<NoInfer<TState>>>;
+    unreachable?: { from: NoInfer<TState>; to: NoInfer<TState>; reason: string }[];
+    rules?: PartRule<NoInfer<TState>>[];
+    states: Record<TState, NoInfer<TProps>>;
+    describe: Record<NoInfer<TState>, string>;
+    controls?: Record<string, Control<NoInfer<TState>>>;
+    grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
+    render: (props: TProps) => Drawing | Promise<Drawing>;
+  };
 
 /**
  * Forces `interaction` on the first element of `markup`, as a frame forces it on a part's root: for a state that

@@ -45,6 +45,7 @@ export const PARSED_PART_FIELDS = [
   'instant',
   'implements',
   'data',
+  'dataStates',
 ] as const;
 
 type ParsedPartField = (typeof PARSED_PART_FIELDS)[number];
@@ -287,6 +288,20 @@ export const showsDataListOf = (source: string) => {
   const data = definition ? fieldOf(definition, 'data')?.initializer : undefined;
 
   return !!data && (ts.isStringLiteral(data) || ts.isNoSubstitutionTemplateLiteral(data)) && data.text === 'list';
+};
+
+/** The state names a part file writes in `dataStates`, or null without a literal map that names all three. */
+export const dataStatesOf = (source: string): { loading: string; error: string; empty: string } | null => {
+  const { definition } = definitionOf(source);
+  const map = definition ? fieldOf(definition, 'dataStates')?.initializer : undefined;
+
+  if (!map || !ts.isObjectLiteralExpression(map)) return null;
+
+  const [loading, error, empty] = ['loading', 'error', 'empty'].map((key) =>
+    literalOf(propertyOf(map, key)?.initializer),
+  );
+
+  return loading && error && empty ? { loading, error, empty } : null;
 };
 
 /** The module a part imports the app picture of `state` from, the placeholder look a merged `built` pick draws. */

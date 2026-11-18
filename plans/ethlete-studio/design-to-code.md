@@ -2454,6 +2454,23 @@ nothing refused it.
   `read-open-points.ts`). `vitest related` (cli 215 files, Studio 46), cli and ethlete-studio typecheck, lint; `real-open-points` budget unchanged (no committed part imports a built picture).
 - Not verified: a live merge of a `built` pick in a real product (none is open), the Studio popover line on screen.
 
+## As built (B251 data states)
+
+Decision (grill, applies B251, ADR 0048): a part with `data: 'list'` names its data states in an explicit map; the word
+match on state names no longer applies to a part with the map.
+
+- `Part` takes `dataStates: { loading, error, empty }` (`PartDataStates`), each the name of the state that draws it;
+  the type makes it required with `data: 'list'` (union `PartData`). The `DATA-STATES` rule rejects a part file with
+  `data: 'list'` and no literal map of all three (`dataStatesOf` in `sketch/part-definition.ts`).
+- `read-open-points.ts` passes the map; `openPointsOf` then asks for each mapped name the part does not draw, with the
+  name in the line: `data part without the states error (listing-failed), empty (no-sketches)`. Without a map the word
+  match stays (parts that load data).
+- pages/sketches maps loading `comparing`, error `listing-failed`, empty `no-sketches`; the last two are not drawn, so
+  B314 shows as an open point until they are. `real-open-points` budget: pages/sketches missing-state 1 -> 2.
+- Verified: specs red first (open-points, part-definition, part-builder, rules/data-states); `vitest related` (cli 220
+  files), cli typecheck and lint, `design check --part pages/sketches` on the working tree (0 findings, the two points).
+- Not verified: Studio shows the mapped state name (it labels by `data` only and ignores `state`).
+
 ## As built (B59 UNRECORDED)
 
 - `PartImplemented.files` is required; `readImplemented` reads a record without `files` as no record. `design check`

@@ -88,6 +88,7 @@ import { missingStateSentencesOf } from './rules/state-sentences';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
+import { listPartsWithoutDataStatesOf } from './rules/data-states';
 import { startVariantTypechecks, typecheckVariant, typecheckVariantAsync, variantKeyOf } from './sketch/check-sketches';
 import { changedOutsideSketchOf, MERGED_FILE } from './sketch/merged-parts';
 import { keepHeldStampsInFiles, withStampsInMemory } from './stamp-files';
@@ -117,6 +118,7 @@ const RULES = [
   staleCommentsOf,
   staleNotesOf,
   badWidthsOf,
+  listPartsWithoutDataStatesOf,
   badLinksOf,
   statesNotInComponentOf,
   partRewritesOf,

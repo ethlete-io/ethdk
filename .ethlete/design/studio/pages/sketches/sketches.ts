@@ -828,6 +828,7 @@ export default definePart<Props>({
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   data: 'list',
+  dataStates: { loading: 'comparing', error: 'listing-failed', empty: 'no-sketches' },
   controls: {
     canvas: { kind: 'field', part: 'components/canvas-viewport' },
     hold: { kind: 'button', part: 'components/hold-trigger' },

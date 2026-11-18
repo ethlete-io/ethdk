@@ -170,4 +170,22 @@ export class RowsComponent {
     ]);
     expect(readOpenPoints(listed.product)).toEqual(readOpenPoints(checkout(DEVELOPER).product));
   });
+
+  it('asks a list part with a dataStates map only for the mapped states it does not draw (B251)', () => {
+    const mapped = checkout(
+      PRESENTATIONAL,
+      '',
+      " data: 'list', dataStates: { loading: 'default', error: 'listing-failed', empty: 'default' },",
+    );
+
+    expect(readOpenPoints(mapped.product)).toEqual([
+      {
+        part: 'components/chip',
+        points: [
+          { kind: 'missing-state', control: null },
+          { kind: 'missing-state', control: null, data: 'error', state: 'listing-failed' },
+        ],
+      },
+    ]);
+  });
 });
