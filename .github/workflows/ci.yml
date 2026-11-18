@@ -35,7 +35,7 @@ jobs:
   checks:
     name: Checks
     # Every Linux job repeats this: a fork pull request must never reach the self-hosted runner while the repo is public.
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     steps:
@@ -105,7 +105,7 @@ jobs:
 
   test:
     name: Unit tests
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     steps:
@@ -154,7 +154,7 @@ jobs:
 
   query-clock-edges:
     name: Query scenarios at clock edge .${{ matrix.fraction }}
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     strategy:
@@ -173,7 +173,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     steps:
@@ -204,7 +204,7 @@ jobs:
   storybook:
     name: Storybook
     if: inputs.run_storybook
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
       actions: read
@@ -250,7 +250,7 @@ jobs:
   storybook-test:
     name: Storybook story tests
     if: inputs.run_storybook
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     steps:
@@ -272,7 +272,7 @@ jobs:
     name: Component behavior tests (${{ matrix.shard }}/3)
     if: inputs.run_storybook
     needs: storybook
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     strategy:
@@ -306,7 +306,7 @@ jobs:
 
   timetrack-e2e:
     name: Timetrack e2e
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     steps:
@@ -328,7 +328,7 @@ jobs:
 
   csp-e2e:
     name: Strict CSP e2e
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     steps:
@@ -344,7 +344,7 @@ jobs:
 
   studio-e2e:
     name: Studio e2e (${{ matrix.shard }}/8)
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -393,7 +393,7 @@ jobs:
 
   rust:
     name: Rust host
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     env:
@@ -438,7 +438,7 @@ jobs:
 
   design-changes:
     name: Design server changes
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     outputs:
@@ -486,7 +486,7 @@ jobs:
   # never Verified or Deploy. Keep it out of both `needs` lists.
   perf:
     name: Perf (non-blocking)
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     continue-on-error: true
     timeout-minutes: 20
     permissions:
@@ -535,7 +535,7 @@ jobs:
         rust,
         webkit-design-events,
       ]
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
@@ -544,7 +544,7 @@ jobs:
     name: Deploy
     if: ${{ !cancelled() && inputs.deploy && !contains(needs.*.result, 'failure') }}
     needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, studio-e2e, rust]
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
       pull-requests: write

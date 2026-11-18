@@ -49,7 +49,14 @@ directory (`~/Library/Logs/io.ethlete.studio/` on macOS; `ETHLETE_STUDIO_CONSOLE
 ## Private switch
 
 The repository variable `CI_SELF_HOSTED` (ADR 0342, 0344) is unset, so CI runs on `ubuntu-latest`. Set to `true`, every
-Linux job runs on `[self-hosted, linux, x64]` (the org runner `runner-ethlete`). A pull request from a fork stays on
-`ubuntu-latest`. Not switched: the Tauri bundles, the macOS WebKit job, and the npm publish jobs in `publish.yml` and
-`api-models.yml` (npm trusted publishing needs a GitHub-hosted runner; Verdaccio replaces them). Leave it off until
-the runner group admits this repo.
+Linux job runs on `[self-hosted, linux, x64, ethdk]` (the org runner `runner-ethlete`). A pull request from a fork stays on
+`ubuntu-latest`. Not switched: the Tauri bundles and the macOS WebKit job. Leave it off until the runner group admits
+this repo.
+
+The switch also moves publishing (ADR 0345, 0346): off, `publish.yml` and `api-models.yml` publish to npmjs through
+trusted publishing (OIDC); on, they publish to the Verdaccio in the repository variable `VERDACCIO_URL`
+(`http://78.46.42.73:54873`) with the repository secret `VERDACCIO_TOKEN`, no provenance (`publish.yml` through
+`tools/scripts/release-verdaccio.mjs`). Verdaccio needs a token to read `@ethlete/*` too, so each consumer (bvb-, dfb-,
+dyn-, fut-, vbl-frontend, fifa) maps the scope in its `.yarnrc.yml` before the npmjs packages are deleted:
+`npmScopes: ethlete: { npmRegistryServer: "http://78.46.42.73:54873/", npmAuthToken: "${VERDACCIO_TOKEN}" }` and
+`unsafeHttpWhitelist: ["78.46.42.73"]`.

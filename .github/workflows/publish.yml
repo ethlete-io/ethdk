@@ -23,7 +23,7 @@ env:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: write
       pull-requests: write
@@ -42,28 +42,31 @@ jobs:
       # Also builds tools/changesets-action, which the publish step below runs from dist.
       - run: yarn nx run-many -t build
 
-      # `yarn npm publish` authenticates through npm trusted publishing (OIDC), which Yarn uses
-      # only while YARN_NPM_AUTH_TOKEN is unset.
+      # Switch off: `yarn npm publish` authenticates through npm trusted publishing (OIDC), which
+      # Yarn uses only while YARN_NPM_AUTH_TOKEN is unset. Switch on: release-verdaccio.mjs sets
+      # it, so no OIDC exchange reaches npmjs.
       - name: Publish packages
         id: changesets
         uses: ./tools/changesets-action
         with:
           version-script: ${{ inputs.version_command }}
           commit-message: ${{ inputs.commit_message }}
-          publish-script: yarn release
+          publish-script: ${{ vars.CI_SELF_HOSTED == 'true' && 'node ./tools/scripts/release-verdaccio.mjs' || 'yarn release' }}
           pr-title: ${{ inputs.title }}
           slack-title: ${{ inputs.slack_title }}
           slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
           slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
         env:
           HUSKY: 0
+          VERDACCIO_URL: ${{ vars.CI_SELF_HOSTED == 'true' && vars.VERDACCIO_URL || '' }}
+          VERDACCIO_TOKEN: ${{ vars.CI_SELF_HOSTED == 'true' && secrets.VERDACCIO_TOKEN || '' }}
 
   # The private apps are versioned by changesets but never published, so `changeset publish`
   # makes no release for them. A version without a GitHub release gets a draft here, the bundles
   # below, and is published once every bundle is attached.
   apps-plan:
     needs: publish
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: write
     outputs:
@@ -265,7 +268,7 @@ jobs:
     strategy:
       matrix:
         app: ${{ fromJSON(needs.apps-plan.outputs.apps) }}
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: write
     steps:

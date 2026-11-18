@@ -35,7 +35,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event.pull_request.user.login == 'nziermann' &&
       github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 5
     permissions:
       pull-requests: read
@@ -104,7 +104,7 @@ jobs:
   verify:
     name: Verify
     needs: resolve
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 60
     permissions:
       contents: read
@@ -189,7 +189,7 @@ jobs:
     name: Push to next
     needs: [resolve, verify]
     if: needs.verify.outputs.action == 'push'
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 15
     permissions:
       contents: write
@@ -247,7 +247,7 @@ jobs:
     name: Hand over the publish
     needs: [resolve, verify]
     if: needs.verify.outputs.action == 'publish' && github.event_name == 'pull_request_target'
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 5
     permissions:
       actions: write
@@ -261,7 +261,7 @@ jobs:
     name: Package variant
     needs: [resolve, verify]
     if: needs.verify.outputs.action == 'publish' && github.event_name == 'workflow_dispatch'
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -325,7 +325,7 @@ jobs:
   publish:
     name: Publish variant
     needs: [resolve, package]
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 10
     permissions:
       id-token: write
@@ -345,7 +345,18 @@ jobs:
         with:
           node-version: '24.11.0'
           package-manager-cache: false
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: ${{ vars.CI_SELF_HOSTED == 'true' && vars.VERDACCIO_URL || 'https://registry.npmjs.org' }}
+
+      - if: vars.CI_SELF_HOSTED == 'true'
+        name: Authenticate with Verdaccio
+        env:
+          VERDACCIO_URL: ${{ vars.VERDACCIO_URL }}
+          VERDACCIO_TOKEN: ${{ secrets.VERDACCIO_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ -n "$VERDACCIO_URL" ] || { echo "::error::The repository variable VERDACCIO_URL is empty"; exit 1; }
+          [ -n "$VERDACCIO_TOKEN" ] || { echo "::error::The repository secret VERDACCIO_TOKEN is empty"; exit 1; }
+          echo "NODE_AUTH_TOKEN=$VERDACCIO_TOKEN" >> "$GITHUB_ENV"
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -379,7 +390,7 @@ jobs:
     name: Post to Slack
     needs: [resolve, publish]
     if: needs.resolve.outputs.dry_run != 'true' && needs.publish.result == 'success'
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 5
     permissions: {}
     steps:
@@ -398,7 +409,7 @@ jobs:
       always() && needs.resolve.outputs.dry_run != 'true' && needs.verify.result == 'success' &&
       !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') &&
       !(needs.verify.outputs.action == 'publish' && github.event_name == 'pull_request_target')
-    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     timeout-minutes: 10
     permissions:
       contents: write
