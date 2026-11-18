@@ -11,6 +11,9 @@ vars: [storybookUrl]
 A design exploration is a dialog. **The user is the designer. You find and frame. The user
 chooses.** A finding is not a licence to pick the fix.
 
+One exception: where the rules of the project give your role its own picks, build your recommendation, record the
+pick with `--by <model id>` and report it. Do not stop for a choice then.
+
 The unit of work is one open question, with every answer drawn side by side at the same
 geometry: a **sketch** on a product, or a **call** in a repository with the old setup. A variant wins
 or loses only against the other variants of its question.
@@ -87,7 +90,7 @@ product. They take no picks and no new variants.
 - A change to a merged part, also a small one, is a **sketch**; never edit a merged part directly. When
   nothing is to choose, the sketch has one variant (`--variants a`). Variants are alternatives, never a state
   of another variant. Two to four variants, each with its cost; run `sketch check` before `sketch ready`.
-- **Never run `sketch merge` or `sketch discard`, and never pick a variant.** Studio merges on the user's
+- **Never run `sketch merge` or `sketch discard`, and never pick a variant, unless your role has its own picks.** Studio merges on the user's
   click. After a pick or discard, do not merge. Run `sketch reject` or `reopen` only when the user did.
 - Mark a sketch `ready` only when no change to it waits on anything; otherwise `sketch hold`.
 - Every write command takes `--by <model id>`. **Never guess your id**: use the one your prompt names, or ask

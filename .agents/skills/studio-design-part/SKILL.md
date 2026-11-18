@@ -68,7 +68,7 @@ the fixture and sample defaults, so the spec is the only place other data is tri
 Run in this order and fix before moving on:
 
 1. `et design check --product <name> --part <layer>/<name>` - static rules, copied components, tsc, open points.
-2. `npx nx lint ethlete-studio --fix` and `npx nx test ethlete-studio`.
+2. `npx nx lint ethlete-studio --fix`, and in `apps/ethlete-studio` `npx vitest related --run <changed files>`.
 3. `et design task <layer>/<name> --product <name> --verify` - checks the changed files against the allowed ones, runs
    compare and records `implemented.json`.
 4. `et design compare <layer>/<name> --product <name>` - every state `ok` at tolerance 0 (`--url` for a running app).

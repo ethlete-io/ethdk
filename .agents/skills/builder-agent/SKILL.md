@@ -39,7 +39,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec and changeset; the message holds the as-built
   text, verified and not verified. No plan notes, no per-row `STATUS.md` edit (ADR 0350); a follow-up commit sets
   `built: <sha>` on its ADRs. Fix format, lint and review findings before that commit, not after.
-  Tell each subagent the same. Never `git add -A`, never stash, never amend, never rebase.
+  Tell each subagent the same. Never rebase.
 - A slice runs only the spec files it touched, and only its own e2e cases (`yarn studio:e2e --case <name>`).
   `--hold-listings <ms>` delays the sketch listings that carry frame targets, so a case that reads frames once
   before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. The bite proof runs only the new specs. `yarn commit`
@@ -59,14 +59,11 @@ The German grill/docs session talks with the user and records decisions. Talk En
   before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
   nothing runs it in pre-push or CI (ADR 0226).
 - A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
-- Before an LSP bite, run `command -v typescript-language-server`. If it prints nothing, report the missing binary; a session restart does not help. The bite counts only when the deliberate type error shows as a diagnostic.
 - Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
   `cd` lands the commit on `next` in the main checkout. Put the same line in every bite brief.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
 - Every subagent brief includes the lines of `subagent-brief.md` next to this skill.
-- A fix for "Studio does not show X" counts as verified only after a live shot of that view; an API answer alone does not (finding 792).
-- A condition check that gates a decision runs a probe (a spec or a live run) before it reports. Report a code read as "Suspect (code read)" (finding 794).
-- Before you write "open for the human" in a handoff or report, grep `apps/ethlete-studio/docs/adr` for the topic. An ADR that decided it closes the point (finding 793).
+- You record the pick of your recommended sketch variant yourself (ADR 0305).
 
 ## Mission
 
