@@ -698,6 +698,9 @@ export default definePart({
     reset: ZOOM,
     in: ZOOM,
     fit: ZOOM,
+    reload: { kind: 'button', part: 'components/button' },
+    column: { kind: 'button', part: 'components/button' },
+    group: { kind: 'button', part: 'components/button' },
   },
   render: async ({ class: extra, part, states, zoom, target, interaction, mark, heads, diff }: Props) => {
     const frames = diff

@@ -2123,3 +2123,13 @@ This only loosens sketch-side false positives, so no sweep over committed sketch
 render-check.spec "blocks a sketch only on GRID problems it adds to the merged grid" (merged keeps its twice problem,
 variant `same` passes, `worse` fails only on its new cell), red before the fix with the inherited problem on both
 variants. Not verified: a live sketch check on the real design.
+
+## As built (B216)
+
+elements/canvas-frames marks its three plain buttons with `data-et-control` (`reload` in load-failed, `column` for the
+round head and folded column, `group` for the unchanged-states switch, in shared/canvas-marks.ts) and declares them in
+`controls` as `components/button`. Verified: `design check --product studio --part elements/canvas-frames` no longer
+prints the 5 CONTROL-UNDECLARED hints, holds the part as "every state draws as before" and reports it READY. Not
+changed: the pre-existing UNRECORDED on elements/canvas-frames and on its embedder pages/inbox. One check run ended with
+`runners.droppedProps is not a function` while a resident `design serve` of another CLI build ran; the rerun did not
+repeat it, and a probe showed the import resolves to a function at load (no import-cycle cause). Cause not found.

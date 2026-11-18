@@ -31,7 +31,7 @@ export const failureBanner = async (reason: string) =>
   >
     <span class="min-w-0 flex-1">Laden fehlgeschlagen. ${reason}</span>
     ${await ng(
-      '<button et-button type="button" variant="outline" size="xs" data-et-action="emit:reload">Neu laden</button>',
+      '<button et-button type="button" variant="outline" size="xs" data-et-control="reload" data-et-action="emit:reload">Neu laden</button>',
       BUTTON_IMPORTS,
     )}
   </div>`;
@@ -48,7 +48,7 @@ const columnHead = ({ label, note }: Column) =>
 const groupHead = async (round: RoundSample) =>
   html`<div class="flex items-center gap-space-2 text-(length:--text-sm) whitespace-nowrap" style="${LABEL_ZOOM}">
     ${await ng(
-      `<button et-button type="button" variant="transparent" color="surface" size="sm" aria-expanded="true" data-et-action="emit:columnToggle">${round.title}</button><button et-button type="button" variant="outline" color="surface" size="sm" [pressed]="false" data-et-action="emit:groupSwitch">Unveränderte Zustände zeigen</button>`,
+      `<button et-button type="button" variant="transparent" color="surface" size="sm" aria-expanded="true" data-et-control="column" data-et-action="emit:columnToggle">${round.title}</button><button et-button type="button" variant="outline" color="surface" size="sm" [pressed]="false" data-et-control="group" data-et-action="emit:groupSwitch">Unveränderte Zustände zeigen</button>`,
       BUTTON_IMPORTS,
     )}
     <span class="min-w-0 truncate text-et-surface-muted">${round.note}</span>
@@ -83,7 +83,7 @@ export const foldedRound = async (round: RoundSample) =>
       >
         <div class="flex h-0 flex-col justify-end">
           ${await ng(
-            `<button et-button type="button" variant="outline" color="surface" size="sm" class="w-full whitespace-normal" aria-expanded="false" data-et-action="emit:columnToggle">${round.title}</button>`,
+            `<button et-button type="button" variant="outline" color="surface" size="sm" class="w-full whitespace-normal" aria-expanded="false" data-et-control="column" data-et-action="emit:columnToggle">${round.title}</button>`,
             BUTTON_IMPORTS,
           )}
         </div>
