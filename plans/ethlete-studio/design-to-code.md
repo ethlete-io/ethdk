@@ -2068,6 +2068,12 @@ and status-uncommitted.spec (picked old: the merge line), red with the fix rever
 stale sketch object, so its pick was refused and it ran undecided - fixed. Not verified: a live picked `old` with `new`
 committed (no live sketch touched); `sketch discard` still accepts a contradicted stale sketch, unnamed.
 
+As built (B577 slice 4, ADR 0336): `editDiscardRefusalOf` (edit-sketch.ts) refuses a stale `@edit` whose pick contradicts
+its part (`pickContradictsPart`) with EDIT-DISCARD-REFUSED and names `sketch merge <target>`, its one way out; CLI
+discard and the design server's discard share it. The READY UNCOMMITTED hint now names `design ready <part> --product
+<p>` and that it takes minutes. Verified: accepted-pictures.spec (picked old + new committed: discard refused with the
+merge line), red with the refusal removed; status-uncommitted.spec. Not verified: a live discard of a contradicted sketch.
+
 As built (B189 slice 1, pages/inbox thread card sketch): sketch `pages/inbox` (`sketches/pages-inbox`, round r1
 "Kommentar-Faden als Karte", variants a and b, marked ready, not picked). An opened pin shows its thread as a card
 (`shared/thread-card.ts`): the place, Erledigen and close or back, every message with Zurückziehen under the user's own

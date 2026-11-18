@@ -17,6 +17,7 @@ import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { editDiscardRefusalOf } from './sketch/edit-sketch';
+import { Sketch, readSketch } from './sketch/sketch';
 import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { gitExec } from '../../git-test-env.fixtures';
 
@@ -52,6 +53,13 @@ const commitChip = (target: string, chip: string) => {
 const cacheOf = (target: string) => join(target, '.ethlete/cache/app-a/pictures.json');
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
+const editSketchIn = (dir: string) => {
+  const sketch = readSketch({ product: 'app-a', dir: join(dir, 'sketches', 'components-chip.edit') });
+
+  if (typeof sketch === 'string') throw new Error(sketch);
+
+  return sketch as Sketch;
+};
 
 const designHashOfChip = (target: string) => {
   const product = productOf(target);
@@ -490,14 +498,24 @@ describe('autoAcceptOf', () => {
     });
 
     it('may be discarded only once its part matches HEAD', async () => {
-      const { target, chip } = await openSketch();
-      const sketch = { target: `${CHIP}@edit`, layer: 'components', name: 'chip' } as const;
+      const { target, dir, chip } = await openSketch();
 
-      expect(editDiscardRefusalOf(productOf(target), sketch)).toMatch(/^EDIT-DISCARD-REFUSED: /u);
+      expect(editDiscardRefusalOf(productOf(target), editSketchIn(dir))).toMatch(/^EDIT-DISCARD-REFUSED: /u);
 
       gitExec(['checkout', '--', chip], { cwd: target });
 
-      expect(editDiscardRefusalOf(productOf(target), sketch)).toBeNull();
+      expect(editDiscardRefusalOf(productOf(target), editSketchIn(dir))).toBeNull();
+    });
+
+    it('refuses a discard and names the merge once the user picked old and HEAD holds the edit', async () => {
+      const { target, dir, chip } = await openSketch();
+
+      decide(dir, 'old');
+      commitChip(target, chip);
+
+      expect(editDiscardRefusalOf(productOf(target), editSketchIn(dir))).toBe(
+        `EDIT-DISCARD-REFUSED: ${CHIP}@edit cannot be discarded - the pick of old contradicts the part at HEAD - merge it to restore the part to old: sketch merge ${CHIP}@edit --product app-a --by <model id>`,
+      );
     });
 
     it('stays open while a state draws differently from HEAD', async () => {

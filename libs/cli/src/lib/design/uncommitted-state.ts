@@ -40,7 +40,8 @@ const readyLinesOf = (product: ResolvedProduct) => {
   const now = entriesOf(existsSync(file) ? readFileSync(file, 'utf8') : null);
   const head = entriesOf(gitIn(product.dir, ['show', `HEAD:./${READY_FILE}`]));
   const prefix = (part: string, what: string) => `READY UNCOMMITTED ${product.name} ${part}: ${what}`;
-  const line = (part: string, what: string) => `${prefix(part, what)} - run \`design ready ${part}\` to commit it`;
+  const line = (part: string, what: string) =>
+    `${prefix(part, what)} - run \`design ready ${part} --product ${product.name}\` to commit it (takes minutes)`;
   const removal = (part: string, what: string) =>
     `${prefix(part, what)} - commit \`ready.json\` of ${product.name} with git to keep the removal`;
 

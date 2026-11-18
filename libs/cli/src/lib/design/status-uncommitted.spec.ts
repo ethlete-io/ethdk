@@ -68,8 +68,8 @@ describe('design status and uncommitted design state', () => {
     });
 
     expect(statusLines(target)).toEqual([
-      'READY UNCOMMITTED acme components/button: marked ready, HEAD has no mark - run `design ready components/button` to commit it',
-      'READY UNCOMMITTED acme pages/home: the mark differs from HEAD - run `design ready pages/home` to commit it',
+      'READY UNCOMMITTED acme components/button: marked ready, HEAD has no mark - run `design ready components/button --product acme` to commit it (takes minutes)',
+      'READY UNCOMMITTED acme pages/home: the mark differs from HEAD - run `design ready pages/home --product acme` to commit it (takes minutes)',
     ]);
 
     writeReady(target, {});
