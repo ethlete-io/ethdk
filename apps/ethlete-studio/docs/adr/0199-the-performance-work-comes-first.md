@@ -1,6 +1,6 @@
 ---
-status: accepted
-open: B399
+status: superseded by 0213
+built: c32d82b03
 decided: 2026-11-06
 source: grill session 2026-11-06
 ---
