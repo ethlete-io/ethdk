@@ -167,10 +167,10 @@
     "pid": 954605
   },
   "components/card": {
-    "hash": "4d912de141547a06",
+    "hash": "e3627a1890dfbd1f",
     "files": {
       ".ethlete/design/sdk/components/card/card.css": "996bdd933fc14e95",
-      ".ethlete/design/sdk/components/card/card.ts": "688e72e59af79899",
+      ".ethlete/design/sdk/components/card/card.ts": "2f4644c1d19700fb",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/card.ts": "328baccb80f6f9ae",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -189,10 +189,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T11:18:24.378Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2851297
+    "at": "2026-11-18T14:09:01.385Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1954846
   },
   "components/checkbox": {
     "hash": "4b66558fb55f4b6e",
