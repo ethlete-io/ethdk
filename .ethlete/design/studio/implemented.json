@@ -448,8 +448,8 @@
     }
   },
   "components/disclosure": {
-    "hash": "fc34c6fd308ff2eb",
-    "at": "2026-11-16T01:11:10.558Z",
+    "hash": "17f459ae69df97ec",
+    "at": "2026-11-18T08:21:28.875Z",
     "states": {
       "open": "bd8ca6820a762e24",
       "open-active": "388b366347ab38e2",
@@ -485,20 +485,20 @@
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/disclosure/disclosure.css": "e8694c045bf818de",
-      ".ethlete/design/studio/components/disclosure/disclosure.ts": "215a03cd75d355de",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464"
+      ".ethlete/design/studio/components/disclosure/disclosure.ts": "1e62834b19c423b4",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0"
     },
     "app": {
       "apps/ethlete-studio/src/app/design-parts/disclosure/disclosure.component.html": "e656bfd25947cbf0",
       "apps/ethlete-studio/src/app/design-parts/disclosure/disclosure.component.ts": "5d93762d6fca63d7",
-      "libs/components/src/lib/button/button-properties-styles.component.css": "39a20bd59ff9864e",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
-      "libs/components/src/lib/button/button.component.css": "1b93c651ccdb363a",
+      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
       "libs/components/src/lib/button/button.component.ts": "13b60f537f489968",
       "libs/components/src/lib/button/button.imports.ts": "a332aa92f4996d86",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
-      "libs/components/src/lib/button/fab.component.css": "8f73cdaefb738a9e",
+      "libs/components/src/lib/button/fab.component.css": "aeef6f813521203e",
       "libs/components/src/lib/button/fab.component.ts": "fe93c57314c1f686",
       "libs/components/src/lib/button/headless/button-color.directive.ts": "183f26951455204b",
       "libs/components/src/lib/button/headless/button.directive.ts": "1ae32c89a17efd56",
@@ -506,7 +506,7 @@
       "libs/components/src/lib/button/headless/split-button-errors.ts": "1bcafbb77c58ae5c",
       "libs/components/src/lib/button/headless/split-button-trigger.directive.ts": "2d748e64b6aa2210",
       "libs/components/src/lib/button/headless/split-button.directive.ts": "b40aaba4d86542c0",
-      "libs/components/src/lib/button/icon-button.component.css": "ff7eeb0527c6ebd7",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/button/icon-button.component.ts": "9a28f462f16845da",
       "libs/components/src/lib/button/split-button.component.css": "df353076be2f4352",
       "libs/components/src/lib/button/split-button.component.ts": "e65a17e4dc5da896",
