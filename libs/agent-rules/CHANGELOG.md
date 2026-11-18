@@ -1,5 +1,41 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.38
+
+### Minor Changes
+
+- Add the opt-in `away-mode` hook, which switches a tracked agent session to away mode after `awayMode.thresholdMinutes` without typed input and back on the next typed prompt.
+- The away-mode hook appends the report table for the time away to its "user is back" message when `awayMode.reportCommand` is set.
+- The `subagent-model-policy` hook no longer denies a subagent call that names no model: it runs it on `sonnet` and
+  returns the model table as a note. The delegating rule now says sonnet is the default.
+- The `background-design-commands` hook no longer denies a long design command run in the foreground: it starts it with
+  `run_in_background: true` and says so in a note.
+- The `context-warning` hook warns once per tier and no longer repeats a reminder on every later prompt. A session
+  started with the builder role gets `CLAUDE_CODE_SILENT_TURN_REMINDER=0`, so Claude Code's silent-turn reminder stays off
+  for it and its subagents.
+- The `background-design-commands` hook also starts a wait loop in the background: a Bash call with an `until` or
+  `while` loop that sleeps runs with `run_in_background: true`, and the completion notice ends the wait.
+- `timetrack edit --day <D> --edits <file.json>` queues many row edits of one day as one approval. The timetrack skill names the user's rules for tidying a day.
+- Add `ethlete-agents report`, which prints a fixed progress table for a period, and a `report` skill that pastes it.
+- Add the `status-line` Claude Code mod: a band above the prompt with the running slice and its duration, the open queue, open questions and a blocked mark when the branch's CI is red.
+- The `subagent-model-policy` hook logs each subagent start to `.git/ethlete/subagent-starts.jsonl`: model, effort, HEAD, branch, description, prompt head and the file paths the prompt names.
+- Add `timetrack rules --repoint --from <KEY> --to <KEY>`, which queues pointing every attribution rule that names one issue at another.
+
+### Patch Changes
+
+- List the `prefer-computed-linked-signal-source` rule in the styleguide lint rule lookup.
+- The subagent rule tells the session to stop each background subagent once its result is in.
+- The `agent-sessions` skill no longer says that lint runs only in CI: the pre-commit hook lints the staged files.
+- The `design-exploration` skill names one exception to "the user chooses": a role that the project gives its own picks
+  builds its recommendation and records the pick.
+- An accepted or edited row between midnight and 6 am now carries a `night-row` day warning, and `timetrack rows` shows each row's desk events and human prompts.
+- The builder claude launch starts with a smaller fixed context: only the repo MCP config and seven unused tools denied.
+- A repo can set the `designMcpCommand` var to start the `ethlete-design` MCP server with its own command.
+- Split the handoff skill: `SKILL.md` keeps the resume mode, and save mode, handoff mode and clearing on your own move to a sibling `save.md` that is read only when saving.
+- Shorten the frontmatter descriptions of the bundled skills so they load less context into every session.
+- `timetrack` output into a pipe is no longer cut off, `timetrack approvals` and `approval <id>` print the day, rows and issue of a waiting write, and `timetrack standins --stale [days]` lists old placeholders with no work.
+- A prompt another program typed into a pane (mailbox wake, restart resume prompt, `/clear`) no longer counts as a person being there. The restart now ends its prompts in `[typed by agent-sessions]`.
+
 ## 0.1.0-next.37
 
 ### Patch Changes

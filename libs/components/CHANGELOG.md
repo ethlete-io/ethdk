@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.0.0-next.90
+
+### Minor Changes
+
+- Add the `--et-bracket-journey-endpoint-outline` token to `et-bracket`, so the dashed outline around the match a highlighted journey ends in can be restyled, or hidden with `none`.
+- Add `--et-choice-field-label-font-weight`, `--et-choice-field-label-letter-spacing` and `--et-select-option-letter-spacing`, mirroring the form-field label tokens. Defaults are unchanged.
+- Dropzone: free and round crop frames, a minimum image size that rejects small images as `imageTooSmall`, and the drop area hides while a crop is pending.
+- A single `et-select` with an option whose value is `null` now shows that option's label in the trigger for a `null` value instead of the placeholder. Without such an option, a `null` value still shows the placeholder.
+- `et-standings` takes optional `extraColumns` filled from each row's `extraStats`, form entries with a `label` shown as a tooltip, and a `participantLink` that renders each participant as an `href` or `routerLink`.
+- `et-switch` takes its name from a native `<label>` that wraps it or points at its `id`, and keeps an `aria-label` or `aria-labelledby` bound on its host.
+
+### Patch Changes
+
+- The table design mock takes `selectAllAttributes` and a row's `selectAttributes`, extra attributes on its selection checkboxes.
+- `et-choice-field`: the control slot is a flex container, so a checkbox or switch no longer sits in a text line box that
+  made the row taller than the control (in both the inline and the subgrid layout).
+- `et-match-card`: the participant country line keeps its flag beside the name and stays start-aligned on both rows, even
+  inside a centered container.
+- `et-match-participant`: new tokens for the emblem frame - `--et-match-participant-emblem-radius`,
+  `--et-match-participant-emblem-border-width`, `--et-match-participant-emblem-border-color`, and for the empty frame of a
+  participant still to be decided `--et-match-participant-tbd-emblem-border-width` and
+  `--et-match-participant-tbd-emblem-border-style` (e.g. `dashed`). The defaults keep today's look.
+- `et-select` and `et-cascader` handle panel keys such as Escape as soon as the panel reopens, also while the previous panel is still animating out. Before, keys pressed in that window were lost.
+- `et-select` closes on Escape again when the panel was reopened while the previous panel was still animating out (for example ArrowDown right after picking an option in an inline search). Before, the Escape was swallowed and the list stayed expanded.
+- `et-select` no longer keeps a static `aria-label` or `aria-labelledby` on its host element, so only the combobox (trigger or search input) carries the accessible name.
+- The stream consent gate and error overlay now fit a player under 200px tall: tighter spacing, and the icon reliably hides.
+- The table's empty and error message no longer widens a table without a global `box-sizing: border-box` reset past its viewport, so it no longer scrolls sideways.
+- Add `anchor` to the `tooltip()` design mock; the design frame now places anchored mock panes and arrows on whole pixels like the overlay runtime.
+
 ## 1.0.0-next.89
 
 ### Minor Changes

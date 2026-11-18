@@ -1,6 +1,6 @@
 {
   "name": "status-line",
-  "version": "0.1.0-next.37",
+  "version": "0.1.0-next.38",
   "description": "Always-visible band with the running task, its duration, the open queue, open questions and a CI blocked mark",
   "types": "./types/index.d.ts"
 }

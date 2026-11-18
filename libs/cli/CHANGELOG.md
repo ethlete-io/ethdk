@@ -1,5 +1,75 @@
 # @ethlete/cli
 
+## 3.0.0-next.36
+
+### Major Changes
+
+- Breaking: `definePart` requires `describe`, one sentence for each state, and `et design check` refuses a part or sketch variant that leaves a state without one (STATE-SENTENCE). `et design sketch new` scaffolds an empty sentence for each state it writes.
+
+### Minor Changes
+
+- `ready.json` records say who builds a part, and Studio marks a developer part as Entwickler-Part.
+- `design serve` opens a missing-state sketch with the app's build as its variant for each undesigned app branch, and the hit waits for the pick
+- `definePart({ scrolls })` names the states that scroll; the new SCROLLS render rule fails a scroll box in any other state.
+- `et design check` refuses a page state that changes only one embedded part (PAGE-STATE-INNER): draw that state in the part instead.
+- `definePart` takes `consumerAction: 'reason'` for a part that is a control whose action its consumer decides; `design complete` and `design actions` then ask no `data-et-action` of its elements.
+- `design compare --live` measures the box and visible clip of each embedded part on both sides and reports their deltas apart from the pixels, and `sketch ready` refuses a page sketch variant that moves a region it does not hold.
+- A design part declares the measures of a native platform control it imitates in `platformMeasures`, and `et design check` measures each element's box, inset and glyph ink in Chromium (`PLATFORM-MEASURE`).
+- Design rule findings carry an optional `states` list that the rule baseline ignores. STATE-SENTENCE, DROPPED-PROP, STATE-NO-SOURCE, PAGE-STATE-INNER and render issues fill it; the system listing's `problemStates` reads it, slow-check results included.
+- `sketch round --asks <states>` names the states a round asks its question in, and `sketch ready` refuses two variants that differ there by under 2 % of the frame.
+- Studio's part canvas outlines the region each fitted state cell changes against the part's base state and dims the rest, at a zoom-independent stroke; the design server answers the region at `/__design/state-diff`.
+
+### Patch Changes
+
+- A new render rule HIDDEN-CONTENT fails a box that cuts text or a control off at its bottom edge without a scroll bar; a `CLIPPED` skip does not silence it.
+- In a state Aktuell does not draw, the `--asks` pair refusal measures its 2 % against the union box of the pairwise variant diffs.
+- The `--asks` pair refusal measures its 2 % against the region the round changes against Aktuell, and against the whole frame only where nothing changed.
+- `definePart` takes its state names from `states` only, so an `unreachable` list no longer narrows them and fails the type check.
+- `design sketch ready` no longer refuses the `old` variant of an edit sketch for lacking the states the edit adds.
+- A RENDER issue keeps the whole error of a part that fails to load, not only its first line, so a transform error names its file, line and cause
+- Part compare passes a lone pixel over the tolerance on a round edge as anti-alias: none of its 8 neighbours differs, and each picture's value lies inside the other picture's 3x3 range on every channel. A shifted edge still fails.
+- `/__design/comment-withdraw` takes an optional `reply` index and then withdraws only that reply of the user.
+- `design sketch merge` names the parts that embed what it merged, checks them before and after the merge, and reports only the problem codes the merge brought them
+- `et design check` and `et design task` name the parts a developer builds: those that inject services, load data or route.
+- `design check` adds the builder to a ready mark without replacing who marked the part ready.
+- A merged pick of the `built` variant keeps its state as a placeholder: the part gets a `redraw` open point until a sketch draws that state.
+- A part that loads data is build-ready only once it draws a loading, an error and an empty state
+- Open the missing-state sketch of a part that declares `Props` or `states` without a transform error
+- Run the dropped-prop slow checks again, let `design check` and the live compare wait for an open missing-state sketch, and stop the open points from failing on its built picture.
+- The system listing names each part's states with a problem and those whose picture changed since the last sketch merge. Studio's folded part view keeps them open.
+- `design check --part` writes only the ready marks of the asked parts into `ready.json`, and never the design server's cached marks; `design ready` commits only its own mark and leaves every other entry uncommitted in the working file.
+- The product slow checks no longer go stale when a ready mark is written: their inputs key on each part's recorded actions, not on the whole ready.json.
+- `design ready` now refuses a part for the render rules `design check --part` fails it by (CANVAS-UNDER-PANEL, ARROW-ANCHOR and the others), decided from the same render findings, so a ready mark no longer passes where check drops it.
+- `sketch discard` refuses an edit sketch whose pick contradicts the part at HEAD and names its merge, and the READY UNCOMMITTED hint names `--product` for `design ready`.
+- Resolve an arrow anchor to the nearest match around its pane in both the design check and the frame's arrow aimer, and stop reading a sub-pixel translate as a panned world
+- `et design ready` and `et design check` now decide build-ready through one step, so both agree on the verdict and the ready.json entry; check also reruns the actions when a part's own app files change.
+- `design ready` on one part no longer makes the check records the design server holds for other parts read stale.
+- An implemented record without design file hashes now reads as no record: `design check` adds the file hashes while its design hash holds and drops it otherwise, so `UNRECORDED` is gone.
+- A part is recorded as implemented only with app file hashes, a spec that renders it with non-fixture data, and no literal text in its templates.
+- `design check --part X` also checks every part that embeds X, directly or through another part. X fails, and its ready mark is dropped, when one of them fails.
+- `design check` writes the hash of each direct edit it settles or holds into `merged.json` uncommitted, as it does for the marks in `ready.json`, instead of dropping it when the run ends.
+- The CONTROL-STATE message now says to use an SDK component only when its props reach the drawn look, and a control part's declared `bespoke` reason prints as a HINT in `design check`.
+- `et design` now exits with code 1 when its pinned port (`DE_PORT`) is already in use, instead of printing the error and staying alive
+- The implemented proof refuses user-visible literal text in an `etTooltip` binding, static or bound, like `title` and `aria-label`.
+- The completeness check counts the opacity a control takes from its parents in its look, so a control that fades with its disabled parent no longer reports "looks the same disabled as without".
+- The LIVE check reads a sketched part's state names from its loaded module in the render check, so a part that spreads its states is checked too instead of being skipped with a note.
+- `design check` asks a missing motion only for state pairs an interaction connects (names that differ only in interaction words such as `hover`, `open` or `loading`), not between showcase variants like `filled` and `tonal`.
+- Fail a sketch variant on GRID only for a problem its grid adds to the merged part's grid.
+- Compare a picked edit sketch with the picked variant's own files, so a variant edited after open still settles once committed
+- Keep a picked edit sketch whose part at HEAD is not the picked variant, and name its merge as the way out
+- `design check` now closes a picked `@edit` sketch once HEAD holds its part.
+- `sketch rebase` on an `@edit` sketch keeps `old` at the part as HEAD holds it instead of porting the working-tree change into it.
+- Fix a write-journal recovery that threw `ENOENT` when another thread of the same process closed its journal while the recovery read it
+- Add `data: 'list'` to `definePart` for a part that shows a loaded list through its inputs; its open points then ask for loading, error and empty states like a part that loads data.
+- `definePart` with `data: 'list'` now requires a `dataStates: { loading, error, empty }` map naming the state that draws each.
+- `design check` no longer rewrites a `ready.json` entry whose only change is its `at` time, so an unchanged action baseline stays byte-identical and no "action baseline HEAD holds changed" line appears.
+- `READY UNCOMMITTED` names the real step for a dropped mark: commit `ready.json` with git. `design ready` sets marks and cannot commit a removal.
+- `sketch ready` shoots the live app once per state for its region check and shares that shot across the merged design and every variant, and finds a named page sketch (`<part>@<name>`), which it skipped before.
+- `design shot` picks its default preset, width and interaction through the same helper the ready rules use, so a shot draws the frame the ready rules compare first. An asked `--width` on a page now wins over the first preset.
+- `design check` no longer reads the state names in a part's `dataStates` map as Tailwind classes (CLASS-UNDEFINED). The Studio open-points line of a missing data state names the state the map gives, e.g. `empty (no-sketches)`.
+- Raise the Studio API level to 10 for the new state-diff route of the design server.
+- Add `anchor` to the `tooltip()` design mock; the design frame now places anchored mock panes and arrows on whole pixels like the overlay runtime.
+
 ## 3.0.0-next.35
 
 ### Minor Changes
