@@ -31,6 +31,8 @@ const ENTER_DELAY_MS = 400;
 const WAKE_GRACE_MS = 1500;
 const DRAFT_RETRY_MS = 2000;
 const RESTART_AFTER_SECONDS = 5;
+const RESTART_MARKER = ' [typed by agent-sessions]';
+const restartPrompt = (words) => `${words.join(' ')}${RESTART_MARKER}`;
 const RESTART_CLEAR_MS = 2500;
 const RESTART_POLL_MS = 2000;
 const RESTART_WAIT_MS = Number(process.env.AGENT_RESTART_WAIT_MS ?? 30 * 60 * 1000);
@@ -797,7 +799,7 @@ if (command === 'send' && sender) {
         root,
         shell,
         '-lic',
-        `${bypassingShellFunction(base)} ${quote(words.join(' '))}`,
+        `${bypassingShellFunction(base)} ${quote(restartPrompt(words))}`,
       );
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'off');
       tmux('set-option', '-t', pane, COMMAND_OPTION, base);
@@ -809,13 +811,13 @@ if (command === 'send' && sender) {
       type('Enter');
       sleep(RESTART_CLEAR_MS);
       if (waitForQuiet(session, RESTART_CLEAR_WAIT_MS, true) && leavePanel(session)) {
-        type('-l', words.join(' '));
+        type('-l', restartPrompt(words));
         sleep(ENTER_DELAY_MS);
         type('Enter');
         waitForFirstTurn(session);
       } else {
         const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);
-        writeFileSync(saved, `${words.join(' ')}\n`);
+        writeFileSync(saved, `${restartPrompt(words)}\n`);
         restartNotice(
           `restart of ${session} gave up: prompt not empty ${RESTART_CLEAR_WAIT_MS / 1000}s after the clear, prompt not typed, saved to ${saved}`,
         );

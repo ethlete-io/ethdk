@@ -562,6 +562,44 @@ describe('parseClaudeCodeSessionLog prompts', () => {
     );
   });
 
+  it('says the machine asked, for a mailbox wake a tmux pane typed as a person', () => {
+    const human = { origin: { kind: 'human' }, promptSource: 'typed' };
+
+    expect(
+      parse([prompt({ minute: 5, content: 'Mailbox message from ethlete-sdk-37: run the spec', extra: human })])
+        .prompts[0]?.askedBy,
+    ).toBe('machine');
+    expect(
+      parse([prompt({ minute: 7, content: 'New mailbox message for doc-agent. Run: node read', extra: human })])
+        .prompts[0]?.askedBy,
+    ).toBe('machine');
+  });
+
+  it('says the machine asked, for a restart prompt carrying the marker', () => {
+    const human = { origin: { kind: 'human' }, promptSource: 'typed' };
+    const content =
+      '<command-message>handoff</command-message>\n<command-name>/handoff</command-name>\n<command-args>resume doc-agent [typed by agent-sessions]</command-args>';
+
+    expect(parse([prompt({ minute: 5, content, extra: human })]).prompts[0]?.askedBy).toBe('machine');
+    expect(
+      parse([prompt({ minute: 7, content: '/handoff resume x [typed by agent-sessions]', extra: human })]).prompts[0]
+        ?.askedBy,
+    ).toBe('machine');
+  });
+
+  it('says the machine asked, for a local command that records no origin', () => {
+    const content = '<command-name>/clear</command-name>\n<command-message>clear</command-message>';
+
+    expect(parse([prompt({ minute: 5, content })]).prompts[0]?.askedBy).toBe('machine');
+  });
+
+  it('still says a human asked, for a slash command typed by hand', () => {
+    const content = '<command-name>/handoff</command-name>\n<command-args>resume doc-agent</command-args>';
+    const human = { origin: { kind: 'human' }, promptSource: 'typed' };
+
+    expect(parse([prompt({ minute: 5, content, extra: human })]).prompts[0]?.askedBy).toBe('human');
+  });
+
   it('counts a queued prompt at the time it was typed, not delivered', () => {
     const enqueue = JSON.stringify({
       type: 'queue-operation',

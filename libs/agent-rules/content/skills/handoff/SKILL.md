@@ -17,7 +17,7 @@ continue in a fresh session. Two modes:
 
 Text after the slug or the name is an instruction from the user, in both modes. In save mode it is
 for the session that resumes, so it must reach that session word for word. In resume mode it wins
-over the Next steps of the file where the two conflict.
+over the Next steps of the file where the two conflict. A trailing `[typed by agent-sessions]` is the restart's marker, not an instruction.
 
 Name one invocation form to the user - your own - and never both. The skill is
 installed as `ethlete-handoff`, so under Claude Code the commands are

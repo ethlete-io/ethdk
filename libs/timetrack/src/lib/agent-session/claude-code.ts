@@ -467,6 +467,16 @@ const usageOf = (record: Record<string, unknown>, workedIn: string | undefined):
   };
 };
 
+const MAILBOX_PROMPT_PREFIXES = ['Mailbox message from ', 'New mailbox message for '];
+const RESTART_MARKER = '[typed by agent-sessions]';
+const LOCAL_COMMAND_PREFIX = '<command-name>/';
+
+const isTypedByProgram = (text: string) => {
+  const args = /<command-args>([\s\S]*?)<\/command-args>/.exec(text)?.[1] ?? text;
+
+  return MAILBOX_PROMPT_PREFIXES.some((prefix) => args.startsWith(prefix)) || args.includes(RESTART_MARKER);
+};
+
 /** The `promptSource` values a person is behind. Anything else the agent wrote for itself. */
 const HUMAN_PROMPT_SOURCES = ['typed', 'queued', 'suggestion_accepted'];
 
@@ -477,9 +487,11 @@ const HUMAN_PROMPT_SOURCES = ['typed', 'queued', 'suggestion_accepted'];
  * that means a person. `promptSource` is the older field and is read only as a fallback, where
  * `system` is the agent writing to itself — a scheduled run, a task notification, a message from
  * another session. A record carrying neither is from a version that recorded neither, so it stays
- * unanswered rather than guessed at.
+ * unanswered rather than guessed at, unless it is a local command or text another program typed.
  */
-const askedByOf = (record: Record<string, unknown>): PromptAskedBy | undefined => {
+const askedByOf = (record: Record<string, unknown>, text: string): PromptAskedBy | undefined => {
+  if (isTypedByProgram(text)) return 'machine';
+
   const origin = objectAt(record, 'origin');
   const kind = origin ? stringAt(origin, 'kind') : undefined;
 
@@ -487,7 +499,7 @@ const askedByOf = (record: Record<string, unknown>): PromptAskedBy | undefined =
 
   const source = stringAt(record, 'promptSource');
 
-  if (!source) return undefined;
+  if (!source) return text.startsWith(LOCAL_COMMAND_PREFIX) ? 'machine' : undefined;
 
   return HUMAN_PROMPT_SOURCES.includes(source) ? 'human' : 'machine';
 };
@@ -524,7 +536,7 @@ const promptOf = (
 
   const isQueued = stringAt(record, 'promptSource') === 'queued';
   const typedAt = isQueued ? enqueued.get(message['content'])?.shift() : undefined;
-  const askedBy = isQueued && !typedAt ? 'machine' : askedByOf(record);
+  const askedBy = isQueued && !typedAt ? 'machine' : askedByOf(record, message['content']);
 
   return {
     at: typedAt ?? activity.at,

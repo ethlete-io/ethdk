@@ -706,7 +706,7 @@ describe('agent-sessions', () => {
         expect(readFileSync(exited, 'utf8')).toBe('/exit\n');
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
-          .toBe('/handoff resume slug\n');
+          .toBe('/handoff resume slug [typed by agent-sessions]\n');
         expect(
           spawnSync('tmux', ['display-message', '-p', '-t', `=${scoped}:`, '#{pane_dead}'], { encoding: 'utf8' })
             .stdout,
@@ -776,7 +776,7 @@ describe('agent-sessions', () => {
 
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
-          .toBe('resume\n');
+          .toBe('resume [typed by agent-sessions]\n');
         expect(
           spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
             .stdout,
@@ -818,7 +818,7 @@ describe('agent-sessions', () => {
 
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
-          .toBe('resume\n');
+          .toBe('resume [typed by agent-sessions]\n');
         expect(existsSync(viaFunction)).toBe(false);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
@@ -866,7 +866,7 @@ describe('agent-sessions', () => {
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
           .toBe(
-            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\n/handoff resume builder-x\n`,
+            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\n/handoff resume builder-x [typed by agent-sessions]\n`,
           );
         expect(
           spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_role'], { encoding: 'utf8' }).stdout,
@@ -906,7 +906,7 @@ describe('agent-sessions', () => {
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
           .toBe(
-            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\nresume\n`,
+            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\nresume [typed by agent-sessions]\n`,
           );
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
@@ -1067,7 +1067,9 @@ describe('agent-sessions', () => {
         });
 
         expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, draft: half a sentence/);
-        expect(readFileSync(join(dir, `restart.prompt.${scoped}.txt`), 'utf8')).toBe('resume slug\n');
+        expect(readFileSync(join(dir, `restart.prompt.${scoped}.txt`), 'utf8')).toBe(
+          'resume slug [typed by agent-sessions]\n',
+        );
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
@@ -1119,7 +1121,7 @@ process.stdin.on('data', (data) => {
 
         const typed = readFileSync(log, 'utf8');
         expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
-        expect(typed.endsWith('resume slug\r')).toBe(true);
+        expect(typed.endsWith('resume slug [typed by agent-sessions]\r')).toBe(true);
         expect(existsSync(join(dir, 'restart.log'))).toBe(false);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
@@ -1156,7 +1158,7 @@ process.stdin.on('data', (data) => {
 
         const typed = readFileSync(log, 'utf8');
         expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
-        expect(typed.endsWith('resume slug\r')).toBe(true);
+        expect(typed.endsWith('resume slug [typed by agent-sessions]\r')).toBe(true);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
