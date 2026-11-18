@@ -195,10 +195,10 @@
     "pid": 1954846
   },
   "components/checkbox": {
-    "hash": "4b66558fb55f4b6e",
+    "hash": "9742cba358b835be",
     "files": {
       ".ethlete/design/sdk/components/checkbox/checkbox.css": "253ffe23f4cbbde8",
-      ".ethlete/design/sdk/components/checkbox/checkbox.ts": "499bf69efd15a21f",
+      ".ethlete/design/sdk/components/checkbox/checkbox.ts": "9e51c30d3b087477",
       "libs/components/design/checkbox.ts": "e3471aa943b7b829",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
@@ -218,10 +218,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T11:18:24.470Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2851297
+    "at": "2026-11-18T14:09:13.893Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1956826
   },
   "components/chip": {
     "hash": "1936b84bd39540c1",
