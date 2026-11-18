@@ -78,12 +78,6 @@ Slice 7. Nothing is built: no autostart plugin in `Cargo.toml`, no crash restart
 Exit test: three interruptions on one real day. Reboot, kill the process, and quit for two hours.
 The day screen reconciles all three and names each stretch it did not watch.
 
-Decided on 2026-10-08, each as recommended in [`m7-sync-research.md`](./m7-sync-research.md):
-
-- Is autostart on by default, or offered on first run?
-- Does the tray say the app is collecting, or only that it runs?
-- What does a day hold for the time before the first login of the morning?
-
 The updater belongs to M10.
 
 ## M6: Book it
@@ -105,50 +99,16 @@ Every day syncs twice, and the second sync writes nothing.
 
 ## M7: One day, every machine
 
-Slice 8. Nothing is built. Tom works on a second machine during meetings, and this machine reports
-those hours as unattended. Until M7 ships, that row is typed by hand.
-
-Scope: the whole day merges (events, streams, spend), for any number of the user's own machines. A
-colleague's machine never pairs. The privacy ruling is ADR 0013. Record the merge and the
-event-identity change in an ADR before code.
-
-- Discovery on the local network and pairing by hand. No port anything can simply join.
-- A per-pair secret in each keychain, and an encrypted transport.
-- The merge: presence unions with overlaps counted once, engaged time sums per stream, spend stays
-  with the machine that spent it.
-- Attendance travels, not only presence (ADR 0018). A minute is attended if any machine saw
-  attendance in it.
-- Exactly one machine books a day.
-- A machine that is off is named, and the day reads as incomplete, not short.
-- Schema: `collected_event.id` is a local `AUTOINCREMENT`. Add an origin and a stable id per event
-  in a new migration past version 13. Never edit a migration that has run.
-
-Exit test: one real workday on both machines, with a meeting on the second. Both show the same
-presence, engaged time, spend and concurrency, and no hour counts twice. One machine books the day,
-and the other refuses to book it again. Switch the second off for an hour: both screens say the day
-is incomplete and name the missing machine.
-
-Decided on 2026-10-08, each as recommended in [`m7-sync-research.md`](./m7-sync-research.md):
-
-1. Which machine owns a day: a fixed one, or the one the user books from.
-2. Clock skew: the tolerance, and what happens past it.
-3. The stream key: two machines with a checkout of the same name are one stream or two.
-4. Continuous or on-demand merge, and what happens when a merged day changes later.
-5. What a paired machine needs: only collectors, or the whole Jira, Tempo and Google stack.
-6. Retention and redaction over what arrives, including the private-project link.
+Discovery, pairing, the pull, received events and peer rows are built; the six decisions are in ADR 0041. The open
+steps and the exit test are in [`m7-sync-research.md`](./m7-sync-research.md) (slice 8). Exit test: one real workday
+on both machines, with a meeting on the second. Both show the same presence, engaged time, spend and concurrency, no
+hour counts twice, and one machine books the day. Switch the second off for an hour: both screens say the day is
+incomplete and name the missing machine.
 
 ## M8: What a day cost
 
-Slices 5 and 9. `unattributedSpend` is built and shown in `day-notes`.
+Slices 5 and 9. The price table, the cost on the day and the share of spend no stream took are built.
 
-- The price table (slice 5). Engine done (2026-10-03): `ModelPrice`, `PriceTable`, `priceAt` and
-  `costOfTurns` in `model/price.ts` price each turn at the price dated last at or before it, and a day
-  with an unpriced model gets no cost. App side done: the table is `priceTable` in the settings
-  document, edited under Settings > The day (currency USD by default, no prices). `StreamDay.spendTurns`
-  holds the turns `spend` sums, and the day notes show their cost once the table holds a price.
-- A cost on the day, with the share of spend no stream took stated, not folded in. Done (2026-10-03):
-  `StreamDay.unattributedTurns` holds the turns `unattributedSpend` sums, and the day notes' cost line
-  states their cost under the total as "Of that, no checkout carries".
 - A second, per-plan price mode, if subscription days are used for pricing.
 - Whether a model-call press refreshes the day. `probe` in `day-review.ts` tracks collector
   `lastRun()`, so the own-spend line appears only on the next collector pass.
@@ -251,14 +211,6 @@ None of these is recorded as done:
   both tasks filed from the card, no row typed by hand), plus one real week where every band has a
   key or a stand-in.
 
-## Done since the milestones were written
-
-- CEF on Linux: Timetrack runs on the CEF runtime on Linux (ff6bdc636).
-- Tempo 403: the error leads with Tempo's own reason (7d0c8082d).
-- Attribution repoint: a rule can be repointed to another issue (1da063903).
-- Demo build: a Timetrack demo build runs on a scripted demo day (0a298aee4).
-- Elrond updater host: it is the second updater endpoint of both apps (99c9a3bc9, 10dcd493e).
-
 ## Open questions
 
 - Is Kerbe still headed into the app? Then its palette becomes an app theme and its fonts are
@@ -275,45 +227,6 @@ None of these is recorded as done:
   platform never had. Pick a better word.
 - Optional: Playwright screenshot comparisons for the day timeline.
 
-## Settled - do not re-open
+## Settled
 
-- No hosted backend, cloud or relay. No view over other people's time. No Jira Data Center, no
-  worklog target but Tempo. Only one person's own paired machines may sync (ADR 0013).
-- A model runs only on an explicit press, with the prompt shown first and names pseudonymised
-  (ADR 0013, 0023). With auto mode on, it runs without a press on the current day and its match is
-  not capped at `weak` (ADR 0035). Its answer never becomes a rule without a click and never writes
-  the naming store. The Tempo sync is always a human press, and every agent endpoint write waits in
-  the approval queue.
-- No vendor call APIs (Slack huddle state, a Discord bot). The microphone holder is the signal.
-- No Gmail source. The forge sources shell out to `glab` and `gh` and hold no token. A forge event is
-  evidence, never time. Commit subjects never carry the issue key.
-- Concurrent streams each book their full time, and a day may exceed its wall clock. No gate, no
-  scaling. Sessions of one checkout, and a checkout with its worktrees, book once to the watched band
-  (ADR 0034). `scaleToPresence` only if an invoice needs it.
-- The price table ships empty. No price is hardcoded.
-- No git flow is assumed. Never push subtasks or a branch per issue (ADR 0001, 0009).
-- One app, one store, one day screen on `streamDay` (ADR 0004, 0011, 0014).
-- A parent issue is pre-selected only when the ranking clearly leads. Once the app files an epic,
-  Jira owns the hierarchy (ADR 0022). No invitation attendees for naming.
-- Only evidence names a checkout: no guessed session sticky, no `app_id`-to-process match, no
-  `path-prefix` exclusion, no widened `title-pattern`. The private project link is the privacy
-  control. Never change `repoStickinessMs` in the same change as a mechanism.
-- A break is corrected by `present`/`away` statements over a stretch, never by break id. A statement
-  outranks every derived rule.
-- A band that is not work takes nothing from a background band (ADR 0024).
-- The timeline axis is a fixed 24 hours and is never cropped or rescaled.
-- Auto-pause and auto-resume on standby stay deferred, and never share a control with the hard pause.
-- No global hotkey on Wayland: `timetrack open` plus a compositor binding. The window lock uses the OS
-  account credential, not TOTP, a passkey or a passphrase.
-- No retention pass without compaction (ADR 0002).
-- A rejected Google refresh token is not deleted automatically, and a refused revocation keeps it.
-  "Remove on this machine only" is a separate action.
-- The agent proof is answered before the token and lock checks. An unlinked checkout's cursor keeps
-  its `cwd`; a private one loses it. `cargo-audit` is pinned from crates.io, its CI target is not
-  cached, `unmaintained` is not denied, and glib RUSTSEC-2024-0429 is accepted.
-- Heartbeats are reported per reporter, not per editor. Other agent CLIs (Cursor, Copilot, Gemini)
-  are out of scope. No `tauri-driver` run for now. No client titles or keys in `libs/timetrack`
-  fixtures.
-- Band design: the metal says what a band asks of the reader, not how sure the matcher was. No
-  ornament on anything that repeats about 20 times on a screen. Ornament marks a threshold, never a
-  workspace.
+The settled rulings are in `libs/timetrack/docs/adr/` (0042 for the ones that stood here).
