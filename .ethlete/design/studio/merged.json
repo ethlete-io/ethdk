@@ -134,10 +134,10 @@
   },
   "pages/flows": "4950706aa3a64d19",
   "pages/inbox": {
-    "hash": "52d929aef4bea96c",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-17T09:53:14.945Z"
+    "hash": "10ea4f2180238920",
+    "variant": "a",
+    "decidedBy": "builder",
+    "at": "2026-11-18T05:59:12.048Z"
   },
   "pages/inventory": {
     "hash": "a5f9ac63fb5969d7",
