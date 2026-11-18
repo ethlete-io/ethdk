@@ -378,9 +378,9 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   Kommentare im Diff gegen die Allowlist (#93).
 - **B102** Rest: Builder mit `--role builder` starten; prüfen, dass `yarn agents:sync` den Stop-Hook-Eintrag in
   settings.json behält (Befund 175).
-- **B105** Harness misst ohne eigene Größe: Host ohne Zeilenbox, App und Design an der Komponenten-Wurzel
-  beschnitten; Spec, dass ein Element fester Größe im Harness seine Größe behält; danach alle vier Compares neu
-  (Befund 178).
+- **B105** ⏸️ Harness misst ohne eigene Größe (Befund 178). Der Host-Fix ist zurückgenommen (7a9071c3f). Wenn
+  entparkt: in `part-compare.ts` `hostBoxScriptOf` an `host.firstElementChild` beschneiden, plus Spec, dass ein
+  Element fester Größe im Harness seine Pixelgröße behält; danach alle vier Compares neu.
 - **B106** „States by interaction“: Zustandszeile für ein markiertes Element nur, wenn der Part es selbst stylt;
   ein unveränderter eingebetteter Part behält seine Aktion ohne Zeile (Entscheidung 10, z. B. Buttons im
   update-dialog).
