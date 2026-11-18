@@ -11,6 +11,7 @@ import { MountedDropzoneDriver, mountDropzone } from '../testing/dropzone-driver
 import { provideDropzoneLabels } from './dropzone-labels';
 import { DropzoneCropStepDirective } from './dropzone-crop-step.directive';
 import { DropzoneComponent, DropzoneLayout } from './dropzone.component';
+import { DropzoneCropConfig } from './headless/dropzone-crop.directive';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './headless/dropzone-upload';
 import { DropzoneFileConstraints, dropzoneFiles } from './headless/dropzone-validation';
 
@@ -529,7 +530,7 @@ describe('DropzoneComponent with instance labels', () => {
 
 @Component({
   template: `
-    <et-dropzone [(value)]="value" [upload]="upload()!" [crop]="crop">
+    <et-dropzone [(value)]="value" [upload]="upload()!" [crop]="crop()">
       <et-label>Avatar</et-label>
     </et-dropzone>
   `,
@@ -537,7 +538,7 @@ describe('DropzoneComponent with instance labels', () => {
 })
 class DropzoneCropComponentTestHost {
   upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
-  crop = { aspectRatio: 1, maxWidth: 50 };
+  crop = signal<DropzoneCropConfig>({ aspectRatio: 1, maxWidth: 50 });
   value = signal<string | null>('uuid-old');
 }
 
@@ -679,6 +680,62 @@ describe('DropzoneComponent crop step', () => {
     driver.tick();
 
     expect(stage.style.getPropertyValue('--_et-dropzone-crop-left')).toBe('26%');
+  });
+
+  it('should resize a free round crop in both axes and mark the frame round', async () => {
+    driver.host.crop.set({ shape: 'round' });
+    driver.tick();
+    driver.pickFiles([createFile('photo.png')]);
+    await waitForCropReady();
+
+    const stage = driver.fixture.nativeElement.querySelector('.et-dropzone-crop-stage') as HTMLElement;
+    const handle = stage.querySelector('[data-corner="se"]') as HTMLElement;
+
+    expect(stage.getAttribute('data-shape')).toBe('round');
+    expect(stage.style.getPropertyValue('--_et-dropzone-crop-right')).toBe('100%');
+    expect(stage.style.getPropertyValue('--_et-dropzone-crop-bottom')).toBe('100%');
+
+    handle.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1, clientX: 0, clientY: 0 }),
+    );
+    stage.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: -50, clientY: -20 }));
+    stage.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+    driver.tick();
+
+    expect(stage.style.getPropertyValue('--_et-dropzone-crop-right')).toBe('75%');
+    expect(stage.style.getPropertyValue('--_et-dropzone-crop-bottom')).toBe('80%');
+  });
+
+  it('should default to a rect frame', async () => {
+    driver.pickFiles([createFile('photo.png')]);
+    await waitForCropReady();
+
+    expect(driver.fixture.nativeElement.querySelector('.et-dropzone-crop-stage').getAttribute('data-shape')).toBe(
+      'rect',
+    );
+  });
+
+  it('should hide the drop area while a crop is pending and focus the crop frame, then restore both', async () => {
+    const area = () => driver.fixture.nativeElement.querySelector('.et-dropzone-area') as HTMLElement | null;
+
+    expect(area()).toBeTruthy();
+
+    driver.pickFiles([createFile('photo.png')]);
+
+    expect(area()).toBeNull();
+
+    await waitForCropReady();
+
+    expect(document.activeElement).toBe(driver.fixture.nativeElement.querySelector('.et-dropzone-crop-rect'));
+
+    cropButton('cancel').click();
+    driver.tick();
+    await vi.waitFor(() => {
+      driver.tick();
+      expect(document.activeElement).toBe(driver.fixture.nativeElement.querySelector('.et-dropzone-trigger'));
+    });
+
+    expect(area()).toBeTruthy();
   });
 });
 

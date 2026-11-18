@@ -1,5 +1,5 @@
 import { createQueryErrorResponse } from '@ethlete/query';
-import { catchError, defer, of, tap } from 'rxjs';
+import { catchError, defer, forkJoin, of, Subscription, tap } from 'rxjs';
 import {
   afterNextRender,
   booleanAttribute,
@@ -34,6 +34,7 @@ import {
 } from './dropzone-entry';
 import { DROPZONE_ERROR_CODES } from './dropzone-errors';
 import { DropzoneCropConfig, isDropzoneCroppableFile } from './internals/dropzone-crop-math';
+import { readDropzoneImageSize } from './internals/dropzone-image-size';
 import { AnyDropzoneUploadConfig, DropzoneUploadError } from './dropzone-upload';
 import {
   DROPZONE_FILE_CONSTRAINTS,
@@ -118,6 +119,15 @@ export class DropzoneDirective<TValue = unknown>
   /** Minimum size of a single file in bytes. A bound field's `dropzoneFiles()` rule overrides it. */
   public minFileSize = input(undefined, { transform: optionalNumberAttribute });
 
+  /**
+   * Minimum width of a picked raster image in pixels; smaller images are rejected as `imageTooSmall` before the crop
+   * step and the upload. A bound field's `dropzoneFiles()` rule overrides it.
+   */
+  public minImageWidth = input(undefined, { transform: optionalNumberAttribute });
+
+  /** Minimum height of a picked raster image in pixels, like {@link minImageWidth}. */
+  public minImageHeight = input(undefined, { transform: optionalNumberAttribute });
+
   /** Whether multiple files can be uploaded. The control value becomes an array. */
   public multiple = input(false, { transform: booleanAttribute });
 
@@ -153,6 +163,7 @@ export class DropzoneDirective<TValue = unknown>
   private entryWatchers = new Map<string, EffectRef>();
   private lastSyncedValue: TValue | TValue[] | null = null;
   private hasSyncedValue = false;
+  private imageMeasurement: Subscription | null = null;
 
   /** Whether files can still be added, replaced or removed. */
   public interactive = computed(() => !this.disabled() && !this.readonly());
@@ -183,6 +194,8 @@ export class DropzoneDirective<TValue = unknown>
       accept: schema?.accept ?? this.accept(),
       maxFileSize: schema?.maxFileSize ?? this.maxFileSize(),
       minFileSize: schema?.minFileSize ?? this.minFileSize(),
+      minImageWidth: schema?.minImageWidth ?? this.minImageWidth(),
+      minImageHeight: schema?.minImageHeight ?? this.minImageHeight(),
     };
   });
 
@@ -213,6 +226,7 @@ export class DropzoneDirective<TValue = unknown>
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => {
+      this.imageMeasurement?.unsubscribe();
       this.formField?.unregisterControl(this);
 
       for (const entry of this.internalEntries()) {
@@ -261,7 +275,10 @@ export class DropzoneDirective<TValue = unknown>
     this.uploadSource.set(source);
   }
 
-  /** Validates the given files and uploads all accepted ones. */
+  /**
+   * Validates the given files and uploads all accepted ones. With a minimum image size, the images are decoded first,
+   * so the rejections and uploads of that selection follow asynchronously.
+   */
   public selectFiles(files: FileList | readonly File[]) {
     if (!this.interactive()) {
       return;
@@ -277,8 +294,11 @@ export class DropzoneDirective<TValue = unknown>
 
     const rejections: DropzoneFileRejection[] = [];
     const accepted: File[] = [];
-    const { accept, maxFileSize, minFileSize } = this.fileConstraints();
+    const { accept, maxFileSize, minFileSize, minImageWidth, minImageHeight } = this.fileConstraints();
     const multiple = this.multiple();
+
+    this.imageMeasurement?.unsubscribe();
+    this.imageMeasurement = null;
 
     const candidates = multiple ? list : list.slice(0, 1);
 
@@ -298,23 +318,42 @@ export class DropzoneDirective<TValue = unknown>
       }
     }
 
-    this.setRejections(rejections);
+    const toMeasure =
+      minImageWidth !== undefined || minImageHeight !== undefined ? accepted.filter(isDropzoneCroppableFile) : [];
 
-    if (rejections.length) {
-      this.filesReject.emit(rejections);
+    if (!toMeasure.length) {
+      this.finishSelection(accepted, rejections);
+
+      return;
     }
 
-    const crop = this.crop();
-    const toCrop = crop ? accepted.filter(isDropzoneCroppableFile) : [];
-    const direct = accepted.filter((file) => !toCrop.includes(file));
+    this.imageMeasurement = forkJoin(toMeasure.map(readDropzoneImageSize))
+      .pipe(
+        tap((sizes) => {
+          if (!this.interactive()) {
+            return;
+          }
 
-    if (toCrop.length || (!multiple && direct.length)) {
-      const pending = toCrop.map((file) => ({ id: randomId(), file }));
+          const tooSmall = toMeasure.filter((_file, index) => {
+            const size = sizes[index];
 
-      this.internalPendingCrops.update((list) => (multiple ? [...list, ...pending] : pending));
-    }
+            return (
+              !!size &&
+              ((minImageWidth !== undefined && size.width < minImageWidth) ||
+                (minImageHeight !== undefined && size.height < minImageHeight))
+            );
+          });
 
-    this.addFiles(direct);
+          this.finishSelection(
+            accepted.filter((file) => !tooSmall.includes(file)),
+            [
+              ...rejections,
+              ...tooSmall.map((file) => ({ file, reason: DROPZONE_FILE_REJECTION_REASONS.IMAGE_TOO_SMALL })),
+            ],
+          );
+        }),
+      )
+      .subscribe();
   }
 
   /** Replaces a pending crop with the cropped file, which then uploads like a picked one. */
@@ -411,6 +450,8 @@ export class DropzoneDirective<TValue = unknown>
       return;
     }
 
+    this.imageMeasurement?.unsubscribe();
+    this.imageMeasurement = null;
     this.internalPendingCrops.set([]);
 
     if (!this.internalEntries().length) {
@@ -480,6 +521,28 @@ export class DropzoneDirective<TValue = unknown>
     if (files?.length) {
       this.selectFiles(files);
     }
+  }
+
+  private finishSelection(accepted: File[], rejections: DropzoneFileRejection[]) {
+    const multiple = this.multiple();
+
+    this.setRejections(rejections);
+
+    if (rejections.length) {
+      this.filesReject.emit(rejections);
+    }
+
+    const crop = this.crop();
+    const toCrop = crop ? accepted.filter(isDropzoneCroppableFile) : [];
+    const direct = accepted.filter((file) => !toCrop.includes(file));
+
+    if (toCrop.length || (!multiple && direct.length)) {
+      const pending = toCrop.map((file) => ({ id: randomId(), file }));
+
+      this.internalPendingCrops.update((list) => (multiple ? [...list, ...pending] : pending));
+    }
+
+    this.addFiles(direct);
   }
 
   private addFiles(files: File[]) {

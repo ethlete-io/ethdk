@@ -13,141 +13,141 @@
   aria-hidden="true"
 />
 
-<div [attr.data-has-preview]="singleEntry() ? true : null" class="et-dropzone-area">
-  <button
-    #browseButton
-    [disabled]="dropzoneDir.disabled()"
-    [attr.aria-disabled]="dropzoneDir.readonly() || null"
-    [attr.tabindex]="singleEntry() && !dropzoneDir.readonly() ? '-1' : null"
-    [attr.aria-invalid]="dropzoneDir.shouldDisplayError() || null"
-    [attr.aria-describedby]="dropzoneDir.describedBy() || null"
-    [attr.aria-label]="dropzoneDir.ariaLabel() || null"
-    [attr.aria-labelledby]="dropzoneDir.labelId() || null"
-    (click)="openFilePicker()"
-    (focus)="resetFilePickerState()"
-    (blur)="markTriggerTouched()"
-    class="et-dropzone-trigger"
-    type="button"
-    etFocusRing
-  >
-    <span class="et-dropzone-prompt">
-      <ng-content>
-        <i class="et-dropzone-prompt-icon" etIcon="et-upload"></i>
-        <span class="et-dropzone-prompt-text">{{ resolvedLabels().prompt }}</span>
-      </ng-content>
-    </span>
-
-    @if (dropzoneDir.readonly()) {
-      <span class="et-dropzone-empty">
-        <i class="et-dropzone-prompt-icon" etIcon="et-file"></i>
-        <span class="et-dropzone-prompt-text">{{ resolvedLabels().empty }}</span>
+@if (cropOpen()) {
+  <ng-container *ngComponentOutlet="cropStep" />
+} @else {
+  <div [attr.data-has-preview]="singleEntry() ? true : null" class="et-dropzone-area">
+    <button
+      #browseButton
+      [disabled]="dropzoneDir.disabled()"
+      [attr.aria-disabled]="dropzoneDir.readonly() || null"
+      [attr.tabindex]="singleEntry() && !dropzoneDir.readonly() ? '-1' : null"
+      [attr.aria-invalid]="dropzoneDir.shouldDisplayError() || null"
+      [attr.aria-describedby]="dropzoneDir.describedBy() || null"
+      [attr.aria-label]="dropzoneDir.ariaLabel() || null"
+      [attr.aria-labelledby]="dropzoneDir.labelId() || null"
+      (click)="openFilePicker()"
+      (focus)="resetFilePickerState()"
+      (blur)="markTriggerTouched()"
+      class="et-dropzone-trigger"
+      type="button"
+      etFocusRing
+    >
+      <span class="et-dropzone-prompt">
+        <ng-content>
+          <i class="et-dropzone-prompt-icon" etIcon="et-upload"></i>
+          <span class="et-dropzone-prompt-text">{{ resolvedLabels().prompt }}</span>
+        </ng-content>
       </span>
-    }
-  </button>
 
-  @if (singleEntry(); as entry) {
-    @if (layout() === 'row') {
-      <et-dropzone-item
-        #entryEl
-        [entry]="entry"
-        [listItem]="false"
-        [readonly]="dropzoneDir.readonly()"
-        [interactive]="dropzoneDir.interactive()"
-        [retryLabel]="resolvedLabels().retry"
-        [removeLabel]="resolvedLabels().remove"
-        [replaceLabel]="resolvedLabels().replaceFile"
-        [errorMessage]="entry.errorMessage() ?? resolvedLabels().entryUploadFailed"
-        (retry)="dropzoneDir.retryEntry(entry.id)"
-        (replace)="openFilePicker()"
-        (remove)="removeEntryAnimated(entry, entryEl.elementRef.nativeElement)"
-      />
-    } @else {
-      <div #entryEl [attr.data-status]="entry.status()" class="et-dropzone-preview">
-        @if (entry.previewUrl(); as previewUrl) {
-          <img [src]="previewUrl" class="et-dropzone-preview-image" alt="" />
-        } @else {
-          <i class="et-dropzone-file-icon" etIcon="et-file"></i>
-        }
+      @if (dropzoneDir.readonly()) {
+        <span class="et-dropzone-empty">
+          <i class="et-dropzone-prompt-icon" etIcon="et-file"></i>
+          <span class="et-dropzone-prompt-text">{{ resolvedLabels().empty }}</span>
+        </span>
+      }
+    </button>
 
-        <div class="et-dropzone-preview-info">
-          <span class="et-dropzone-entry-name">{{ entry.name() }}</span>
-
-          @if (entry.size() || singleEntryUploadedAt()) {
-            <span class="et-dropzone-entry-meta">
-              @if (entry.size(); as size) {
-                <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
-              }
-              @if (singleEntryUploadedAt(); as uploadedAt) {
-                <time [attr.datetime]="uploadedAt.iso" class="et-dropzone-entry-date">{{ uploadedAt.label }}</time>
-              }
-            </span>
+    @if (singleEntry(); as entry) {
+      @if (layout() === 'row') {
+        <et-dropzone-item
+          #entryEl
+          [entry]="entry"
+          [listItem]="false"
+          [readonly]="dropzoneDir.readonly()"
+          [interactive]="dropzoneDir.interactive()"
+          [retryLabel]="resolvedLabels().retry"
+          [removeLabel]="resolvedLabels().remove"
+          [replaceLabel]="resolvedLabels().replaceFile"
+          [errorMessage]="entry.errorMessage() ?? resolvedLabels().entryUploadFailed"
+          (retry)="dropzoneDir.retryEntry(entry.id)"
+          (replace)="openFilePicker()"
+          (remove)="removeEntryAnimated(entry, entryEl.elementRef.nativeElement)"
+        />
+      } @else {
+        <div #entryEl [attr.data-status]="entry.status()" class="et-dropzone-preview">
+          @if (entry.previewUrl(); as previewUrl) {
+            <img [src]="previewUrl" class="et-dropzone-preview-image" alt="" />
+          } @else {
+            <i class="et-dropzone-file-icon" etIcon="et-file"></i>
           }
 
-          @if (entry.status() === 'error') {
-            <span class="et-dropzone-entry-error" aria-hidden="true">{{
-              entry.errorMessage() ?? resolvedLabels().entryUploadFailed
-            }}</span>
-          }
+          <div class="et-dropzone-preview-info">
+            <span class="et-dropzone-entry-name">{{ entry.name() }}</span>
 
-          @if (entry.source.type === 'file') {
-            <div [attr.data-active]="entry.status() === 'uploading' || null" class="et-dropzone-entry-progress">
-              <div class="et-dropzone-entry-progress-inner">
-                <et-progress-bar [value]="entry.progress()" />
+            @if (entry.size() || singleEntryUploadedAt()) {
+              <span class="et-dropzone-entry-meta">
+                @if (entry.size(); as size) {
+                  <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
+                }
+                @if (singleEntryUploadedAt(); as uploadedAt) {
+                  <time [attr.datetime]="uploadedAt.iso" class="et-dropzone-entry-date">{{ uploadedAt.label }}</time>
+                }
+              </span>
+            }
+
+            @if (entry.status() === 'error') {
+              <span class="et-dropzone-entry-error" aria-hidden="true">{{
+                entry.errorMessage() ?? resolvedLabels().entryUploadFailed
+              }}</span>
+            }
+
+            @if (entry.source.type === 'file') {
+              <div [attr.data-active]="entry.status() === 'uploading' || null" class="et-dropzone-entry-progress">
+                <div class="et-dropzone-entry-progress-inner">
+                  <et-progress-bar [value]="entry.progress()" />
+                </div>
               </div>
+            }
+          </div>
+
+          @if (!dropzoneDir.readonly()) {
+            <div class="et-dropzone-preview-actions">
+              @if (entry.status() === 'error') {
+                <button
+                  [disabled]="!dropzoneDir.interactive()"
+                  [attr.aria-label]="resolvedLabels().retry + ' ' + entry.name()"
+                  (click)="dropzoneDir.retryEntry(entry.id)"
+                  class="et-dropzone-retry-button"
+                  type="button"
+                  et-icon-button
+                  variant="filled"
+                  size="sm"
+                >
+                  <i etIcon="et-rotate-right"></i>
+                </button>
+              } @else {
+                <button
+                  [disabled]="!dropzoneDir.interactive()"
+                  [attr.aria-label]="resolvedLabels().replaceFile"
+                  (click)="openFilePicker()"
+                  class="et-dropzone-replace-button"
+                  type="button"
+                  et-icon-button
+                  variant="filled"
+                  size="sm"
+                >
+                  <i etIcon="et-rotate-right"></i>
+                </button>
+              }
+              <button
+                [disabled]="!dropzoneDir.interactive()"
+                [attr.aria-label]="resolvedLabels().remove + ' ' + entry.name()"
+                (click)="removeEntryAnimated(entry, entryEl)"
+                class="et-dropzone-remove-button"
+                type="button"
+                et-icon-button
+                variant="filled"
+                size="sm"
+              >
+                <i etIcon="et-times"></i>
+              </button>
             </div>
           }
         </div>
-
-        @if (!dropzoneDir.readonly()) {
-          <div class="et-dropzone-preview-actions">
-            @if (entry.status() === 'error') {
-              <button
-                [disabled]="!dropzoneDir.interactive()"
-                [attr.aria-label]="resolvedLabels().retry + ' ' + entry.name()"
-                (click)="dropzoneDir.retryEntry(entry.id)"
-                class="et-dropzone-retry-button"
-                type="button"
-                et-icon-button
-                variant="filled"
-                size="sm"
-              >
-                <i etIcon="et-rotate-right"></i>
-              </button>
-            } @else {
-              <button
-                [disabled]="!dropzoneDir.interactive()"
-                [attr.aria-label]="resolvedLabels().replaceFile"
-                (click)="openFilePicker()"
-                class="et-dropzone-replace-button"
-                type="button"
-                et-icon-button
-                variant="filled"
-                size="sm"
-              >
-                <i etIcon="et-rotate-right"></i>
-              </button>
-            }
-            <button
-              [disabled]="!dropzoneDir.interactive()"
-              [attr.aria-label]="resolvedLabels().remove + ' ' + entry.name()"
-              (click)="removeEntryAnimated(entry, entryEl)"
-              class="et-dropzone-remove-button"
-              type="button"
-              et-icon-button
-              variant="filled"
-              size="sm"
-            >
-              <i etIcon="et-times"></i>
-            </button>
-          </div>
-        }
-      </div>
+      }
     }
-  }
-</div>
-
-@if (cropStep && pendingCrop()) {
-  <ng-container *ngComponentOutlet="cropStep" />
+  </div>
 }
 
 @if (dropzoneDir.multiple() && dropzoneDir.entries().length) {

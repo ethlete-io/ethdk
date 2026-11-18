@@ -7,6 +7,7 @@ import { HintComponent } from '../../form-field/hint.component';
 import { LabelDirective } from '../../form-field/headless';
 import { DropzoneLayout } from '../dropzone.component';
 import { DROPZONE_CROP_IMPORTS, DROPZONE_IMPORTS } from '../dropzone.imports';
+import { DropzoneCropShape } from '../headless/dropzone-crop.directive';
 import { createDropzoneUpload, createV2DropzoneUpload } from '../headless/dropzone-upload';
 import { dropzoneFiles } from '../headless/dropzone-validation';
 import { MOCK_UPLOAD_BASE_URL } from './upload-mock';
@@ -75,11 +76,13 @@ export class DropzoneStorybookComponent {
   public v2 = input(false);
   public initialValue = input<string | string[] | null>(null);
   public cropAspectRatio = input<number | null>(null);
+  public cropShape = input<DropzoneCropShape | null>(null);
 
   protected crop = computed(() => {
-    const aspectRatio = this.cropAspectRatio();
+    const aspectRatio = this.cropAspectRatio() ?? undefined;
+    const shape = this.cropShape() ?? undefined;
 
-    return aspectRatio ? { aspectRatio, maxWidth: 512 } : null;
+    return aspectRatio || shape ? { aspectRatio, shape, maxWidth: 512 } : null;
   });
 
   protected upload = computed(() => {

@@ -40,6 +40,8 @@ export type DropzoneLabels = {
   fileTooLarge: (fileName: string, maxFileSize: number | undefined) => string;
   /** A file rejected by `minFileSize`. */
   fileTooSmall: (fileName: string, minFileSize: number | undefined) => string;
+  /** An image rejected by `minImageWidth` or `minImageHeight`. */
+  imageTooSmall: (fileName: string, minSize: { width: number | undefined; height: number | undefined }) => string;
   /** An extra file dropped onto a single-file dropzone. */
   tooManyFiles: (fileName: string) => string;
   /** Announced while uploads are in flight. */
@@ -50,6 +52,16 @@ export type DropzoneLabels = {
   cropConfirm: string;
   /** Leaves the crop step without uploading the image. */
   cropCancel: string;
+};
+
+type MinImageSizeWords = { min: string; wide: string; high: string };
+
+const minImageSizeHint = ({ width, height }: { width?: number; height?: number }, words: MinImageSizeWords) => {
+  if (width !== undefined && height !== undefined) return ` (${words.min} ${width} × ${height} px)`;
+  if (width !== undefined) return ` (${words.min} ${width} px ${words.wide})`;
+  if (height !== undefined) return ` (${words.min} ${height} px ${words.high})`;
+
+  return '';
 };
 
 /** The built-in English labels. */
@@ -68,6 +80,8 @@ export const DEFAULT_DROPZONE_LABELS: DropzoneLabels = {
     `"${fileName}" is too large${maxFileSize !== undefined ? ` (max ${formatFileSize(maxFileSize)})` : ''}.`,
   fileTooSmall: (fileName, minFileSize) =>
     `"${fileName}" is too small${minFileSize !== undefined ? ` (min ${formatFileSize(minFileSize)})` : ''}.`,
+  imageTooSmall: (fileName, { width, height }) =>
+    `"${fileName}" is too small${minImageSizeHint({ width, height }, { min: 'min', wide: 'wide', high: 'high' })}.`,
   tooManyFiles: (fileName) => `"${fileName}" was not added (only one file is allowed).`,
   uploading: (count) => (count === 1 ? 'Uploading 1 file' : `Uploading ${count} files`),
   cropArea: 'Crop area. Arrow keys move it, Shift and arrow keys resize it.',
@@ -91,6 +105,8 @@ export const GERMAN_DROPZONE_LABELS: DropzoneLabels = {
     `"${fileName}" ist zu groß${maxFileSize !== undefined ? ` (max. ${formatFileSize(maxFileSize)})` : ''}.`,
   fileTooSmall: (fileName, minFileSize) =>
     `"${fileName}" ist zu klein${minFileSize !== undefined ? ` (min. ${formatFileSize(minFileSize)})` : ''}.`,
+  imageTooSmall: (fileName, { width, height }) =>
+    `"${fileName}" ist zu klein${minImageSizeHint({ width, height }, { min: 'min.', wide: 'breit', high: 'hoch' })}.`,
   tooManyFiles: (fileName) => `"${fileName}" wurde nicht hinzugefügt (nur eine Datei erlaubt).`,
   uploading: (count) => (count === 1 ? '1 Datei wird hochgeladen' : `${count} Dateien werden hochgeladen`),
   cropArea: 'Zuschnitt. Pfeiltasten verschieben ihn, Umschalt und Pfeiltasten ändern die Größe.',

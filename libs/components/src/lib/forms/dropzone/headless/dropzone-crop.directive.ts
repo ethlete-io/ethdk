@@ -2,19 +2,25 @@ import { computed, Directive, effect, inject, input, signal } from '@angular/cor
 import { injectHostElement, injectRenderer, RuntimeError } from '@ethlete/core';
 import { DROPZONE_ERROR_CODES } from './dropzone-errors';
 import {
-  cornerDragDelta,
   createInitialCropRect,
   cropRectForKey,
+  dragCropCorner,
+  DROPZONE_CROP_SHAPES,
   DropzoneCropConfig,
   DropzoneCropCorner,
   DropzoneCropRect,
   DropzoneCropSize,
   exportCroppedImage,
   moveCropRect,
-  resizeCropRect,
 } from './internals/dropzone-crop-math';
 
-export type { DropzoneCropConfig, DropzoneCropCorner, DropzoneCropRect } from './internals/dropzone-crop-math';
+export { DROPZONE_CROP_SHAPES } from './internals/dropzone-crop-math';
+export type {
+  DropzoneCropConfig,
+  DropzoneCropCorner,
+  DropzoneCropRect,
+  DropzoneCropShape,
+} from './internals/dropzone-crop-math';
 
 type CropDrag = {
   pointerId: number;
@@ -25,9 +31,9 @@ type CropDrag = {
 };
 
 /**
- * Crop state for one image file: an aspect-locked rect in image pixels, moved by `etDropzoneCropRect`, resized by
- * `etDropzoneCropHandle` and by keyboard (arrows move, shift + arrows resize). The host must have exactly the size
- * of the rendered image.
+ * Crop state for one image file: a rect in image pixels, aspect-locked when the config has an `aspectRatio` and free
+ * otherwise, moved by `etDropzoneCropRect`, resized by `etDropzoneCropHandle` and by keyboard (arrows move, shift +
+ * arrows resize). The host must have exactly the size of the rendered image and carries `data-shape`.
  */
 @Directive({
   selector: '[etDropzoneCrop]',
@@ -38,6 +44,7 @@ type CropDrag = {
     '(pointercancel)': 'endDrag($event)',
     '(keydown)': 'handleKeydown($event)',
     '[style]': 'rectVars()',
+    '[attr.data-shape]': 'shape()',
   },
 })
 export class DropzoneCropDirective {
@@ -77,6 +84,8 @@ export class DropzoneCropDirective {
   });
 
   public ready = computed(() => this.rect() !== null);
+
+  public shape = computed(() => this.config().shape ?? DROPZONE_CROP_SHAPES.RECT);
 
   protected rectVars = computed(() => {
     const rect = this.rectPercent();
@@ -172,15 +181,14 @@ export class DropzoneCropDirective {
     const scale = size.width / (this.hostElement.getBoundingClientRect().width || size.width);
     const dx = (event.clientX - state.startX) * scale;
     const dy = (event.clientY - state.startY) * scale;
-    const aspectRatio = this.config().aspectRatio;
-
     this.rect.set(
       state.corner
-        ? resizeCropRect({
+        ? dragCropCorner({
             rect: state.startRect,
             corner: state.corner,
-            delta: cornerDragDelta({ corner: state.corner, dx, dy, aspectRatio }),
-            aspectRatio,
+            dx,
+            dy,
+            aspectRatio: this.config().aspectRatio,
             image: size,
           })
         : moveCropRect({ rect: state.startRect, delta: { x: dx, y: dy }, image: size }),

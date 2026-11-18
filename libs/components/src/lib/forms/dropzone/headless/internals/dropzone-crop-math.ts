@@ -1,9 +1,21 @@
 import { RuntimeError } from '@ethlete/core';
 import { DROPZONE_ERROR_CODES } from '../dropzone-errors';
 
+export const DROPZONE_CROP_SHAPES = {
+  RECT: 'rect',
+  ROUND: 'round',
+} as const;
+
+export type DropzoneCropShape = (typeof DROPZONE_CROP_SHAPES)[keyof typeof DROPZONE_CROP_SHAPES];
+
 export type DropzoneCropConfig = {
-  /** Width divided by height of the crop, e.g. `1` for a square or `16 / 9`. */
-  aspectRatio: number;
+  /** Width divided by height of the crop, e.g. `1` for a square or `16 / 9`. Leave it out for a free crop. */
+  aspectRatio?: number;
+  /**
+   * Shape of the crop frame. `'round'` shows a circle, or an ellipse without a square aspect ratio. The cropped
+   * file is always the rectangle around it. @default 'rect'
+   */
+  shape?: DropzoneCropShape;
   /** Scales the cropped image down to at most this many pixels wide. */
   maxWidth?: number;
   /** Scales the cropped image down to at most this many pixels high. */
@@ -28,7 +40,9 @@ const clamp = (value: number, [min, max]: [number, number]) => Math.min(Math.max
 
 export const isDropzoneCroppableFile = (file: File) => file.type.startsWith('image/') && file.type !== 'image/svg+xml';
 
-export const createInitialCropRect = (image: DropzoneCropSize, aspectRatio: number): DropzoneCropRect => {
+export const createInitialCropRect = (image: DropzoneCropSize, aspectRatio?: number): DropzoneCropRect => {
+  if (aspectRatio === undefined) return { x: 0, y: 0, width: image.width, height: image.height };
+
   const width = Math.min(image.width, image.height * aspectRatio);
   const height = width / aspectRatio;
 
@@ -73,6 +87,42 @@ export const resizeCropRect = (options: ResizeCropRectOptions): DropzoneCropRect
   return { x: west ? anchorX - width : anchorX, y: north ? anchorY - height : anchorY, width, height };
 };
 
+export type ResizeFreeCropRectOptions = {
+  rect: DropzoneCropRect;
+  corner: DropzoneCropCorner;
+  delta: { x: number; y: number };
+  image: DropzoneCropSize;
+  minSize?: number;
+};
+
+export const resizeFreeCropRect = (options: ResizeFreeCropRectOptions): DropzoneCropRect => {
+  const { rect, corner, delta, image, minSize = DROPZONE_CROP_MIN_SIZE } = options;
+  const west = corner === 'nw' || corner === 'sw';
+  const north = corner === 'nw' || corner === 'ne';
+  const anchorX = west ? rect.x + rect.width : rect.x;
+  const anchorY = north ? rect.y + rect.height : rect.y;
+  const maxWidth = west ? anchorX : image.width - anchorX;
+  const maxHeight = north ? anchorY : image.height - anchorY;
+  const width = clamp(rect.width + (west ? -delta.x : delta.x), [Math.min(minSize, maxWidth), maxWidth]);
+  const height = clamp(rect.height + (north ? -delta.y : delta.y), [Math.min(minSize, maxHeight), maxHeight]);
+
+  return { x: west ? anchorX - width : anchorX, y: north ? anchorY - height : anchorY, width, height };
+};
+
+export type DragCropCornerOptions = {
+  rect: DropzoneCropRect;
+  corner: DropzoneCropCorner;
+  dx: number;
+  dy: number;
+  aspectRatio: number | undefined;
+  image: DropzoneCropSize;
+};
+
+export const dragCropCorner = ({ rect, corner, dx, dy, aspectRatio, image }: DragCropCornerOptions) =>
+  aspectRatio === undefined
+    ? resizeFreeCropRect({ rect, corner, delta: { x: dx, y: dy }, image })
+    : resizeCropRect({ rect, corner, delta: cornerDragDelta({ corner, dx, dy, aspectRatio }), aspectRatio, image });
+
 export type CornerDragDeltaOptions = { corner: DropzoneCropCorner; dx: number; dy: number; aspectRatio: number };
 
 export const cornerDragDelta = ({ corner, dx, dy, aspectRatio }: CornerDragDeltaOptions) => {
@@ -86,7 +136,7 @@ export type CropRectForKeyOptions = {
   rect: DropzoneCropRect;
   key: string;
   shiftKey: boolean;
-  aspectRatio: number;
+  aspectRatio: number | undefined;
   image: DropzoneCropSize;
 };
 
@@ -106,7 +156,9 @@ export const cropRectForKey = (options: CropRectForKeyOptions): DropzoneCropRect
   const [x, y] = direction;
 
   if (shiftKey) {
-    return resizeCropRect({ rect, corner: 'se', delta: (x + y) * step, aspectRatio, image });
+    return aspectRatio === undefined
+      ? resizeFreeCropRect({ rect, corner: 'se', delta: { x: x * step, y: y * step }, image })
+      : resizeCropRect({ rect, corner: 'se', delta: (x + y) * step, aspectRatio, image });
   }
 
   return moveCropRect({ rect, delta: { x: x * step, y: y * step }, image });

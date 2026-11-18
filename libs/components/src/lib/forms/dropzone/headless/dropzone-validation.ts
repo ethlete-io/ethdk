@@ -15,6 +15,7 @@ export const DROPZONE_FILE_REJECTION_REASONS = {
   MAX_FILE_SIZE: 'maxFileSize',
   MIN_FILE_SIZE: 'minFileSize',
   MAX_FILES: 'maxFiles',
+  IMAGE_TOO_SMALL: 'imageTooSmall',
 } as const;
 
 export type DropzoneFileRejectionReason =
@@ -40,6 +41,12 @@ export type DropzoneFileConstraints = {
 
   /** Minimum size of a single file in bytes. */
   minFileSize?: number;
+
+  /** Minimum width of a picked raster image in pixels. Checked before the crop step and the upload. */
+  minImageWidth?: number;
+
+  /** Minimum height of a picked raster image in pixels. Checked before the crop step and the upload. */
+  minImageHeight?: number;
 
   /** Overrides the built-in per-rejection error message (e.g. for i18n). */
   message?: (rejection: DropzoneFileRejection) => string;
@@ -84,6 +91,8 @@ export const rejectionMessage = (
       return labels.fileTooLarge(name, constraints?.maxFileSize);
     case DROPZONE_FILE_REJECTION_REASONS.MIN_FILE_SIZE:
       return labels.fileTooSmall(name, constraints?.minFileSize);
+    case DROPZONE_FILE_REJECTION_REASONS.IMAGE_TOO_SMALL:
+      return labels.imageTooSmall(name, { width: constraints?.minImageWidth, height: constraints?.minImageHeight });
     default:
       return labels.tooManyFiles(name);
   }

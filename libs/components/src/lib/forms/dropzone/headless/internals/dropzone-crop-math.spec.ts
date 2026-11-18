@@ -5,10 +5,12 @@ import {
   cropOutputSize,
   cropOutputType,
   cropRectForKey,
+  dragCropCorner,
   exportCroppedImage,
   isDropzoneCroppableFile,
   moveCropRect,
   resizeCropRect,
+  resizeFreeCropRect,
 } from './dropzone-crop-math';
 
 const IMAGE = { width: 400, height: 200 };
@@ -17,6 +19,58 @@ describe('dropzone crop math', () => {
   it('should start with the largest centered rect of the aspect ratio', () => {
     expect(createInitialCropRect(IMAGE, 1)).toEqual({ x: 100, y: 0, width: 200, height: 200 });
     expect(createInitialCropRect(IMAGE, 4)).toEqual({ x: 0, y: 50, width: 400, height: 100 });
+  });
+
+  it('should start a free crop with the whole image', () => {
+    expect(createInitialCropRect(IMAGE)).toEqual({ x: 0, y: 0, width: 400, height: 200 });
+  });
+
+  it('should resize width and height independently on a free corner drag', () => {
+    const rect = { x: 100, y: 50, width: 100, height: 50 };
+
+    expect(dragCropCorner({ rect, corner: 'se', dx: 40, dy: -10, aspectRatio: undefined, image: IMAGE })).toEqual({
+      x: 100,
+      y: 50,
+      width: 140,
+      height: 40,
+    });
+    expect(dragCropCorner({ rect, corner: 'nw', dx: -20, dy: 30, aspectRatio: undefined, image: IMAGE })).toEqual({
+      x: 80,
+      y: 80,
+      width: 120,
+      height: 20,
+    });
+    expect(dragCropCorner({ rect, corner: 'se', dx: 40, dy: -10, aspectRatio: 2, image: IMAGE })).toEqual({
+      x: 100,
+      y: 50,
+      width: 110,
+      height: 55,
+    });
+  });
+
+  it('should clamp a free resize to the image and to the minimum size per axis', () => {
+    const rect = { x: 100, y: 50, width: 100, height: 50 };
+
+    expect(resizeFreeCropRect({ rect, corner: 'se', delta: { x: 1000, y: -1000 }, image: IMAGE })).toEqual({
+      x: 100,
+      y: 50,
+      width: 300,
+      height: 16,
+    });
+    expect(resizeFreeCropRect({ rect, corner: 'nw', delta: { x: -1000, y: -1000 }, image: IMAGE })).toEqual({
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 100,
+    });
+  });
+
+  it('should resize a free crop per axis with shift + arrows', () => {
+    const rect = { x: 100, y: 0, width: 100, height: 100 };
+    const options = { rect, aspectRatio: undefined, image: IMAGE, shiftKey: true };
+
+    expect(cropRectForKey({ ...options, key: 'ArrowRight' })).toEqual({ ...rect, width: 104 });
+    expect(cropRectForKey({ ...options, key: 'ArrowUp' })).toEqual({ ...rect, height: 96 });
   });
 
   it('should clamp a move to the image', () => {

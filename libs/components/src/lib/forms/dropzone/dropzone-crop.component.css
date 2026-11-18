@@ -62,6 +62,27 @@
     pointer-events: none;
   }
 
+  .et-dropzone-crop-stage[data-shape='round'] {
+    .et-dropzone-crop-shade {
+      overflow: hidden;
+      background-color: transparent;
+      clip-path: none;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: var(--_et-dropzone-crop-top) calc(100% - var(--_et-dropzone-crop-right))
+          calc(100% - var(--_et-dropzone-crop-bottom)) var(--_et-dropzone-crop-left);
+        border-radius: 50%;
+        box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--et-surface-background-solid, transparent) 65%, transparent);
+      }
+    }
+
+    .et-dropzone-crop-rect {
+      border-radius: 50%;
+    }
+  }
+
   .et-dropzone-crop-rect {
     position: absolute;
     inset: var(--_et-dropzone-crop-top) calc(100% - var(--_et-dropzone-crop-right))

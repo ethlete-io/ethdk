@@ -97,6 +97,8 @@ export type DropzoneLayout = (typeof DROPZONE_LAYOUTS)[keyof typeof DROPZONE_LAY
         'accept',
         'maxFileSize',
         'minFileSize',
+        'minImageWidth',
+        'minImageHeight',
         'crop',
         ...ACCESSIBLE_NAME_INPUTS,
         ...FIELD_STATE_INPUTS,
@@ -173,7 +175,9 @@ export class DropzoneComponent<TValue = unknown> {
 
   protected singleEntryUploadedAt = computed(() => this.formatUploadedAt(this.singleEntry()?.uploadedAt() ?? null));
 
-  protected pendingCrop = computed(() => this.dropzoneDir.pendingCrops()[0] ?? null);
+  public pendingCrop = computed(() => this.dropzoneDir.pendingCrops()[0] ?? null);
+
+  protected cropOpen = computed(() => !!this.cropStep && !!this.pendingCrop());
 
   protected readonlyList = computed(
     () => this.dropzoneDir.readonly() && this.dropzoneDir.multiple() && this.dropzoneDir.entries().length > 0,
@@ -238,6 +242,21 @@ export class DropzoneComponent<TValue = unknown> {
 
     effect(() => {
       if (this.layout() === DROPZONE_LAYOUTS.ROW) styleManager.mount(DropzoneRowStylesComponent);
+    });
+
+    let wasCropOpen = false;
+
+    effect(() => {
+      if (this.cropOpen()) {
+        wasCropOpen = true;
+
+        return;
+      }
+
+      if (!wasCropOpen) return;
+
+      wasCropOpen = false;
+      afterNextRender(() => this.restoreFocusAfterCrop(), { injector: this.injector });
     });
 
     effect(() => {
@@ -340,6 +359,14 @@ export class DropzoneComponent<TValue = unknown> {
 
   public focus(options?: FocusOptions) {
     this.dropzoneDir.focus(options);
+  }
+
+  private restoreFocusAfterCrop() {
+    const active = this.hostElement.ownerDocument.activeElement;
+
+    if (!active || active === this.hostElement.ownerDocument.body || this.hostElement.contains(active)) {
+      this.dropzoneDir.focus();
+    }
   }
 
   private defaultUploadErrorMessage(entry: DropzoneEntry) {

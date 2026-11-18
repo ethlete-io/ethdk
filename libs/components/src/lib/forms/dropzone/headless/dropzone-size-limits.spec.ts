@@ -8,6 +8,16 @@ import { AnyDropzoneUploadConfig, createDropzoneUpload } from './dropzone-upload
 import { DropzoneFileRejection } from './dropzone-validation';
 import { DropzoneDirective } from './dropzone.directive';
 
+const imageSizes = vi.hoisted(() => new Map<string, { width: number; height: number }>());
+
+vi.mock('./internals/dropzone-image-size', async () => {
+  const { from } = await import('rxjs');
+
+  return {
+    readDropzoneImageSize: (file: File) => from(Promise.resolve(imageSizes.get(file.name) ?? null)),
+  };
+});
+
 type UploadArgs = { response: { uuid: string }; body: FormData };
 
 const UPLOAD_URL = 'https://api.test.com/upload';
@@ -30,6 +40,8 @@ const createUploadConfig = (setup: QueryTestSetup) =>
       [accept]="accept()"
       [maxFileSize]="maxFileSize()"
       [minFileSize]="minFileSize()"
+      [minImageWidth]="minImageWidth()"
+      [minImageHeight]="minImageHeight()"
       (filesReject)="rejections.push($event)"
       etDropzone
     ></div>
@@ -43,6 +55,8 @@ class DropzoneLimitsHost {
   accept = signal('');
   maxFileSize = signal<number | string | undefined>(undefined);
   minFileSize = signal<number | string | undefined>(undefined);
+  minImageWidth = signal<number | undefined>(undefined);
+  minImageHeight = signal<number | undefined>(undefined);
 
   rejections: DropzoneFileRejection[][] = [];
 }
@@ -136,6 +150,79 @@ describe('DropzoneDirective size limits', () => {
     select(createFile('doc.pdf', 100, 'application/pdf'));
 
     expect(reasons()).toEqual(['accept']);
+  });
+
+  describe('minimum image size', () => {
+    beforeEach(() => {
+      imageSizes.set('small.png', { width: 99, height: 400 });
+      imageSizes.set('exact.png', { width: 100, height: 50 });
+      imageSizes.set('flat.png', { width: 400, height: 49 });
+      driver.host.minImageWidth.set(100);
+      driver.host.minImageHeight.set(50);
+      driver.tick();
+    });
+
+    afterEach(() => imageSizes.clear());
+
+    const settle = () =>
+      vi.waitFor(() => {
+        driver.tick();
+        expect(driver.dropzone.touched()).toBe(true);
+        expect(driver.host.rejections.length + driver.dropzone.entries().length).toBeGreaterThan(0);
+      });
+
+    it('rejects an image below the minimum width or height in one batch, before any upload', async () => {
+      select(createFile('small.png', 4), createFile('exact.png', 4), createFile('flat.png', 4));
+
+      expect(uploads()).toBe(0);
+
+      await settle();
+
+      expect(driver.host.rejections).toHaveLength(1);
+      expect(driver.host.rejections[0]!.map(({ file, reason }) => [file.name, reason])).toEqual([
+        ['small.png', 'imageTooSmall'],
+        ['flat.png', 'imageTooSmall'],
+      ]);
+      expect(driver.query.httpTesting.match(UPLOAD_URL)).toHaveLength(1);
+    });
+
+    it('keeps the sync rejections in the same batch as the too-small images', async () => {
+      driver.host.maxFileSize.set(10);
+      driver.tick();
+
+      select(createFile('small.png', 4), createFile('big.png', 11));
+      await settle();
+
+      expect(driver.host.rejections).toEqual([
+        [expect.objectContaining({ reason: 'maxFileSize' }), expect.objectContaining({ reason: 'imageTooSmall' })],
+      ]);
+      expect(uploads()).toBe(0);
+    });
+
+    it('skips the check for files that are not raster images', () => {
+      select(createFile('doc.pdf', 4, 'application/pdf'));
+
+      expect(reasons()).toEqual([]);
+      expect(uploads()).toBe(1);
+    });
+
+    it('drops the result of a selection that a newer one replaced', async () => {
+      driver.dropzone.selectFiles([createFile('small.png', 4)]);
+      driver.dropzone.selectFiles([createFile('exact.png', 4)]);
+      await settle();
+
+      expect(reasons()).toEqual([]);
+      expect(uploads()).toBe(1);
+    });
+
+    it('names the minimum in the rejection label', () => {
+      expect(DEFAULT_DROPZONE_LABELS.imageTooSmall('a.png', { width: 100, height: 50 })).toBe(
+        '"a.png" is too small (min 100 × 50 px).',
+      );
+      expect(DEFAULT_DROPZONE_LABELS.imageTooSmall('a.png', { width: 100, height: undefined })).toBe(
+        '"a.png" is too small (min 100 px wide).',
+      );
+    });
   });
 
   it('ignores an empty selection without touching the control', () => {

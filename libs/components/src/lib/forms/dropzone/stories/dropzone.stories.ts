@@ -27,6 +27,7 @@ export default {
     v2: { table: { disable: true } },
     initialValue: { table: { disable: true } },
     cropAspectRatio: { control: 'number' },
+    cropShape: { control: 'inline-radio', options: [null, 'rect', 'round'] },
   },
   args: {
     color: 'brand',
@@ -43,6 +44,7 @@ export default {
     v2: false,
     initialValue: null,
     cropAspectRatio: null,
+    cropShape: null,
   },
 } as Meta<DropzoneStorybookComponent>;
 
@@ -96,6 +98,13 @@ export const Crop: Story = {
   args: {
     cropAspectRatio: 16 / 9,
     hint: 'Images open a 16:9 crop step before they upload, scaled to at most 512px wide.',
+  },
+};
+
+export const RoundFreeCrop: Story = {
+  args: {
+    cropShape: 'round',
+    hint: 'Images open a free crop step with a round frame; the uploaded file is the rectangle around it.',
   },
 };
 

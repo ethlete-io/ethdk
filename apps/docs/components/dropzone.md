@@ -165,6 +165,8 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 | `accept`             | `string`                                     | `''`               | Accepted file types, native `accept` semantics. Also filters the native picker.                                          |
 | `maxFileSize`        | `number \| undefined`                        | `undefined`        | Largest accepted file in bytes.                                                                                          |
 | `minFileSize`        | `number \| undefined`                        | `undefined`        | Smallest accepted file in bytes.                                                                                         |
+| `minImageWidth`      | `number \| undefined`                        | `undefined`        | Smallest accepted raster image width in pixels - see [minimum image size](#minimum-image-size).                          |
+| `minImageHeight`     | `number \| undefined`                        | `undefined`        | Smallest accepted raster image height in pixels.                                                                         |
 | `crop`               | `DropzoneCropConfig \| null`                 | `null`             | Sends picked images through a [crop step](#crop) before they upload. Needs `DROPZONE_CROP_IMPORTS`.                      |
 | `layout`             | `'area' \| 'row'`                            | `'area'`           | `'row'` shrinks the drop area to one input-height row that holds a single file - see [compact row](#compact-row).        |
 | `readonly`           | `boolean`                                    | `false`            | View-only: the entries stay visible, nothing can change.                                                                 |
@@ -212,15 +214,15 @@ gesture it will refuse:
 - With no file at all the box shrinks to `--et-dropzone-readonly-min-height` and reads
   the `empty` label ("No files") in place of the prompt.
 
-The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the `entryUploadFailed` text on a failed entry without a server message, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, `cropArea` / `cropConfirm` / `cropCancel` for the crop step, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall` and `tooManyFiles` (each called with the file name, the size ones also with the limit in bytes). Per instance, the `labels` input overrides any of them, except that the four rejection messages of a `dropzoneFiles()` field error come from the token only, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
+The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the `entryUploadFailed` text on a failed entry without a server message, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, `cropArea` / `cropConfirm` / `cropCancel` for the crop step, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall`, `imageTooSmall` and `tooManyFiles` (each called with the file name, the byte-size ones also with the limit in bytes, `imageTooSmall` with `{ width, height }` of the minimum in pixels). Per instance, the `labels` input overrides any of them, except that the five rejection messages of a `dropzoneFiles()` field error come from the token only, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
 
 ## Validation
 
 All constraints live in the form schema, next to the rest of your validation:
 
 - **Emptiness and count** are plain value validation - `required()` for "must upload something", `minLength()` / `maxLength()` for the number of files in multiple mode (type the model as `string[]` for that).
-- **File constraints** use the `dropzoneFiles()` schema rule: `accept` (native semantics - `.png`, `image/png`, `image/*`, `*/*`; also filters the native picker), `maxFileSize` and `minFileSize` (bytes).
-- **Without a form binding** (`[(value)]`, a custom composite control), set the same three as inputs: `<et-dropzone accept="image/*" [maxFileSize]="5 * 1024 * 1024" …>`. A rejected file is never uploaded and comes back through `filesReject`. With no `dropzoneFiles()` rule to turn it into a field error, `et-dropzone` shows the rejection itself below the drop area, worded by the same `DROPZONE_LABELS` messages, until the next selection, removal or `clear()`. This holds for a field bound with `[formField]` but no `dropzoneFiles()` rule too. A headless dropzone reads these from `unhandledRejections()`. When a `dropzoneFiles()` rule is bound too, each constraint it sets overrides the matching input.
+- **File constraints** use the `dropzoneFiles()` schema rule: `accept` (native semantics - `.png`, `image/png`, `image/*`, `*/*`; also filters the native picker), `maxFileSize` and `minFileSize` (bytes), `minImageWidth` and `minImageHeight` (pixels, see [minimum image size](#minimum-image-size)).
+- **Without a form binding** (`[(value)]`, a custom composite control), set the same constraints as inputs: `<et-dropzone accept="image/*" [maxFileSize]="5 * 1024 * 1024" …>`. A rejected file is never uploaded and comes back through `filesReject`. With no `dropzoneFiles()` rule to turn it into a field error, `et-dropzone` shows the rejection itself below the drop area, worded by the same `DROPZONE_LABELS` messages, until the next selection, removal or `clear()`. This holds for a field bound with `[formField]` but no `dropzoneFiles()` rule too. A headless dropzone reads these from `unhandledRejections()`. When a `dropzoneFiles()` rule is bound too, each constraint it sets overrides the matching input.
 
 ```ts
 form(model, (s) => {
@@ -230,7 +232,20 @@ form(model, (s) => {
 });
 ```
 
-Files violating `dropzoneFiles()` constraints never start an upload. Each violation becomes a regular validation error on the field (`kind: 'dropzoneFiles'`, rendered like any other error below the field) until the next selection, removal or `clear()`. Override the built-in messages via the rule's `message` function, or localize them through `DROPZONE_LABELS`. Rejections are also emitted in one batch via the `filesReject` output (`{ file, reason }[]`, `reason` being `'accept' | 'maxFileSize' | 'minFileSize' | 'maxFiles'`); `uploadSucceed` and `uploadFail` fire per entry.
+Files violating `dropzoneFiles()` constraints never start an upload. Each violation becomes a regular validation error on the field (`kind: 'dropzoneFiles'`, rendered like any other error below the field) until the next selection, removal or `clear()`. Override the built-in messages via the rule's `message` function, or localize them through `DROPZONE_LABELS`. Rejections are also emitted in one batch via the `filesReject` output (`{ file, reason }[]`, `reason` being `'accept' | 'maxFileSize' | 'minFileSize' | 'maxFiles' | 'imageTooSmall'`); `uploadSucceed` and `uploadFail` fire per entry.
+
+### Minimum image size
+
+`minImageWidth` and `minImageHeight` (inputs, or the same keys in `dropzoneFiles()`) reject a raster image whose
+pixel size is below either one with the reason `'imageTooSmall'`, before the crop step and before any upload.
+Files that are not raster images (a PDF, an SVG) and images the browser cannot decode skip the check. Reading the
+size means decoding the image, so with either set, a selection that holds an image settles asynchronously: its
+uploads, crop step and `filesReject` batch follow once all its images are decoded - still one batch per
+selection. A newer selection, `clear()` or disabling the dropzone in the meantime drops the pending result.
+
+```html
+<et-dropzone [upload]="upload" [minImageWidth]="400" [minImageHeight]="400" accept="image/*" />
+```
 
 Dropping several files on a single-mode dropzone is the one count the control itself rejects: the first file is taken, the rest come back as `maxFiles` rejections.
 
@@ -321,17 +336,27 @@ imports: [DROPZONE_IMPORTS, DROPZONE_CROP_IMPORTS],
 protected crop: DropzoneCropConfig = { aspectRatio: 1, maxWidth: 256, type: 'image/webp', quality: 0.85 };
 ```
 
-| Option        | Type     | Default                                       | Description                                         |
-| ------------- | -------- | --------------------------------------------- | --------------------------------------------------- |
-| `aspectRatio` | `number` | -                                             | Width divided by height, e.g. `1` or `16 / 9`.      |
-| `maxWidth`    | `number` | -                                             | Scales the cropped image down to at most this wide. |
-| `maxHeight`   | `number` | -                                             | Scales the cropped image down to at most this high. |
-| `type`        | `string` | the file's type, `image/png` if not encodable | MIME type of the cropped file.                      |
-| `quality`     | `number` | `0.92`                                        | Encoder quality from 0 to 1 for lossy types.        |
+| Option        | Type                | Default                                       | Description                                                               |
+| ------------- | ------------------- | --------------------------------------------- | ------------------------------------------------------------------------- |
+| `aspectRatio` | `number`            | -                                             | Width divided by height, e.g. `1` or `16 / 9`. Leave out for a free crop. |
+| `shape`       | `'rect' \| 'round'` | `'rect'`                                      | Shape of the crop frame and its shade. `DROPZONE_CROP_SHAPES`.            |
+| `maxWidth`    | `number`            | -                                             | Scales the cropped image down to at most this wide.                       |
+| `maxHeight`   | `number`            | -                                             | Scales the cropped image down to at most this high.                       |
+| `type`        | `string`            | the file's type, `image/png` if not encodable | MIME type of the cropped file.                                            |
+| `quality`     | `number`            | `0.92`                                        | Encoder quality from 0 to 1 for lossy types.                              |
 
 The crop frame starts as the largest centered rect of the aspect ratio. Drag it to move it, drag a
-corner to resize it; the ratio stays locked. With the frame focused, the arrow keys move it and
-<kbd>Shift</kbd> + arrow keys resize it. **Crop** renders the frame into a new `File` (same name,
+corner to resize it; the ratio stays locked. Without an `aspectRatio` the crop is free: the frame starts
+as the whole image, and a corner drag resizes width and height independently. With the frame focused,
+the arrow keys move it and <kbd>Shift</kbd> + arrow keys resize it (free crop: left/right change the
+width, up/down the height).
+
+`shape: 'round'` draws the frame and the shade around it as a circle - an ellipse when the frame is not
+square, so pair it with `aspectRatio: 1` for a circular avatar. The cropped file is still the rectangle
+around the frame, with no transparent corners; round it where you display it (`border-radius: 50%`).
+
+While a crop is pending, `et-dropzone` hides its drop area and shows the crop step in its place; focus
+moves to the crop frame once the image is ready, and back to the drop area after **Crop** or **Cancel**. **Crop** renders the frame into a new `File` (same name,
 the extension follows `type`) and uploads that. **Cancel** drops the picked image: nothing
 uploads, and in single mode the current value stays. Several images picked at once in multiple
 mode are cropped one after another.
@@ -350,7 +375,7 @@ Per-file progress requires `reportProgress: true` on the query creator **and** t
 
 ## Headless usage
 
-All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `mimeType`, `uploadedAt`, `previewUrl`, `status`, `progress`, `error`, `errorMessage`, `value` and `response` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive`, `lastRejections` and `unhandledRejections` (the rejections no `dropzoneFiles()` rule reports as field errors). Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `resolvedAccept()` gives you the `accept` string in effect (the schema's, else the `accept` input) for it. With `crop` set, picked images wait in `pendingCrops()` (`{ id, file }`) until you call `confirmCrop(id, croppedFile)` or `cancelCrop(id)`. The `etDropzoneCrop` directive holds the crop state for one file (`file` and `config` inputs; `imageSrc()`, `rect()` in image pixels, `ready()`, and `export()` to render the crop into a `File`); put `etDropzoneCropRect` on the frame and `etDropzoneCropHandle="nw|ne|sw|se"` on its corners, and position them with the `--_et-dropzone-crop-{left,top,right,bottom}` percentages the directive sets on its host. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `mimeType`, `uploadedAt`, `previewUrl`, `status`, `progress`, `error`, `errorMessage`, `value` and `response` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive`, `lastRejections` and `unhandledRejections` (the rejections no `dropzoneFiles()` rule reports as field errors). Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `resolvedAccept()` gives you the `accept` string in effect (the schema's, else the `accept` input) for it. With `crop` set, picked images wait in `pendingCrops()` (`{ id, file }`) until you call `confirmCrop(id, croppedFile)` or `cancelCrop(id)`. The `etDropzoneCrop` directive holds the crop state for one file (`file` and `config` inputs; `imageSrc()`, `rect()` in image pixels, `ready()`, `shape()`, and `export()` to render the crop into a `File`; its host carries `data-shape`); put `etDropzoneCropRect` on the frame and `etDropzoneCropHandle="nw|ne|sw|se"` on its corners, and position them with the `--_et-dropzone-crop-{left,top,right,bottom}` percentages the directive sets on its host. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
 
 To build an entry outside the directive - an upload history, a paste target - create a handle from the
 upload config and turn it into an entry with `createFileDropzoneEntry`. The handle uploads on
@@ -370,7 +395,7 @@ handle.execute();
 - A polite live region announces upload activity ("Uploading 2 files"); rejected files surface as regular validation errors, upload failures render in a `role="alert"` region below the field.
 - Remove, replace and retry buttons are regular [icon buttons](/components/button) carrying per-entry `aria-label`s including the file name; previews and thumbnails are `aria-hidden`/empty-`alt`.
 - In single mode with a preview or a compact row shown, the (visually replaced) trigger is removed from the tab order in favor of the replace/remove actions.
-- The crop frame is a focusable `role="group"` named by the `cropArea` label, which also tells how the arrow keys work.
+- The crop frame is a focusable `role="group"` named by the `cropArea` label, which also tells how the arrow keys work. It takes focus when the crop step opens; the drop area, hidden meanwhile, gets it back when the step closes.
 - Entry enter/leave animations (scale/fade plus a FLIP shift of the remaining list items on delete) are disabled under `prefers-reduced-motion`.
 
 ## Theming

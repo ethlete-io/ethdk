@@ -1,4 +1,15 @@
-import { Component, DestroyRef, inject, input, output, signal, ViewEncapsulation } from '@angular/core';
+import {
+  afterRenderEffect,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defer, finalize, tap } from 'rxjs';
 import { ButtonComponent } from '../../button/button.component';
@@ -10,7 +21,7 @@ import {
   DropzoneCropRectDirective,
 } from './headless/dropzone-crop.directive';
 
-/** The default crop step of `et-dropzone`: the image with an aspect-locked crop frame, cancel and confirm. */
+/** The default crop step of `et-dropzone`: the image with a crop frame, cancel and confirm. Takes focus once the image is ready. */
 @Component({
   selector: 'et-dropzone-crop',
   templateUrl: './dropzone-crop.component.html',
@@ -41,7 +52,16 @@ export class DropzoneCropComponent {
   public cropConfirm = output<File>();
   public cropCancel = output<void>();
 
+  public crop = viewChild.required(DropzoneCropDirective);
+
+  private cropRect = viewChild.required(DropzoneCropRectDirective, { read: ElementRef<HTMLElement> });
   protected exporting = signal(false);
+
+  constructor() {
+    afterRenderEffect(() => {
+      if (this.crop().ready()) this.cropRect().nativeElement.focus();
+    });
+  }
 
   protected confirmCrop(crop: DropzoneCropDirective) {
     if (this.exporting()) return;
