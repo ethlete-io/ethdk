@@ -89,7 +89,8 @@ export type AgentApproval = {
 export type AgentApiQueued = { status: 'queued'; approvalId: string };
 
 export type AgentApiApprovalStatus =
-  | { status: 'queued' | 'rejected' | 'expired'; approvalId: string }
+  | { status: 'queued'; approvalId: string; request: AgentApiWaitingApproval }
+  | { status: 'rejected' | 'expired'; approvalId: string }
   | { status: 'approved'; approvalId: string; result?: unknown; error?: string };
 
 /** How many days a decided item is kept, so a caller that polls late still reads its outcome. */
@@ -205,7 +206,9 @@ export const markApproval = (
 ): AgentApproval[] => queue.map((item) => (item.id === change.id ? { ...item, ...change } : item));
 
 export const approvalStatusOf = (item: AgentApproval): AgentApiApprovalStatus => {
-  if (item.state === 'running' || item.state === 'queued') return { status: 'queued', approvalId: item.id };
+  if (item.state === 'running' || item.state === 'queued') {
+    return { status: 'queued', approvalId: item.id, request: waitingApprovalOf(item) };
+  }
   if (item.state !== 'approved') return { status: item.state, approvalId: item.id };
 
   return {
@@ -412,22 +415,53 @@ export type AgentApiWaitingApproval = {
   op: AgentApprovalRequest['op'];
   client?: string;
   askedAtMs: number;
+  /** The day the request is about, or the day it was asked on when it names none. */
+  day: string;
+  /** The rows it names, where the op names any. */
+  rowIds?: string[];
+  /** The issue it books or creates under, where the op names one. */
+  issueKey?: string;
   /** What it writes once approved, in the words of the queue panel. */
   summary: string;
 };
 
+const rowIdsOf = (request: AgentApprovalRequest): string[] => {
+  switch (request.op) {
+    case 'autoMode.hide':
+    case 'autoMode.resolve':
+      return [request.rowId];
+    case 'autoMode.apply':
+      return request.subject.kind === 'call' ? [request.subject.rowId] : [];
+    case 'day.edits':
+      return [...new Set(request.edits.map((edit) => edit.rowId))];
+    default:
+      return [];
+  }
+};
+
+const issueKeyOf = (request: AgentApprovalRequest) =>
+  'issueKey' in request && typeof request.issueKey === 'string' ? request.issueKey : undefined;
+
+const waitingApprovalOf = (item: AgentApproval): AgentApiWaitingApproval => {
+  const rowIds = rowIdsOf(item.request);
+  const issueKey = issueKeyOf(item.request);
+
+  return {
+    approvalId: item.id,
+    state: item.state === 'running' ? 'running' : 'queued',
+    op: item.request.op,
+    ...(item.client ? { client: item.client } : {}),
+    askedAtMs: item.askedAtMs,
+    day: 'day' in item.request && typeof item.request.day === 'string' ? item.request.day : item.day,
+    ...(rowIds.length ? { rowIds } : {}),
+    ...(issueKey ? { issueKey } : {}),
+    summary: describeApproval(item.request),
+  };
+};
+
 /** The items that still wait, in the order the queue panel lists them. */
 export const waitingApprovalsOf = (queue: readonly AgentApproval[]): AgentApiWaitingApproval[] =>
-  queue
-    .filter((item) => item.state === 'queued' || item.state === 'running')
-    .map((item) => ({
-      approvalId: item.id,
-      state: item.state === 'running' ? 'running' : 'queued',
-      op: item.request.op,
-      ...(item.client ? { client: item.client } : {}),
-      askedAtMs: item.askedAtMs,
-      summary: describeApproval(item.request),
-    }));
+  queue.filter((item) => item.state === 'queued' || item.state === 'running').map(waitingApprovalOf);
 
 export type AgentApprovalRejection = { ok: true; queue: AgentApproval[] } | { ok: false; message: string };
 

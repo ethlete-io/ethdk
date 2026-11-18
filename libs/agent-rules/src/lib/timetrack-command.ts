@@ -262,6 +262,18 @@ const describeStandIn = (options: { standIn: TimetrackStandIn; rules: readonly T
   return `${standIn.name}${project}  ${days}d old, ${standIn.days.length} day(s) of work${lines.join('')}`;
 };
 
+const DEFAULT_STALE_DAYS = 30;
+
+const staleDaysOf = (argv: readonly string[]) => {
+  const at = argv.indexOf('--stale');
+
+  if (at === -1) return undefined;
+
+  const next = Number(argv[at + 1]);
+
+  return Number.isFinite(next) && next >= 0 && argv[at + 1] !== '' ? next : DEFAULT_STALE_DAYS;
+};
+
 const HOUR_MS = 60 * 60_000;
 
 const hours = (ms: number) => `${(ms / HOUR_MS).toFixed(1)}h`;
@@ -529,7 +541,18 @@ const UNDECIDED = {
   expired: 'expired at the end of the day it was asked on. Nothing was written. Ask again.',
 };
 
+const waitingDetailLines = (item: TimetrackWaitingApproval) => [
+  `  ${item.op}  ${item.summary}`,
+  ...(item.day ? [`  day: ${item.day}`] : []),
+  ...(item.rowIds?.length ? [`  rows: ${item.rowIds.join(', ')}`] : []),
+  ...(item.issueKey ? [`  issue: ${item.issueKey}`] : []),
+];
+
 const approvalLines = (found: TimetrackApprovalStatus) => {
+  if (found.status === 'queued' && found.request) {
+    return [`${found.approvalId}  ${UNDECIDED.queued}`, ...waitingDetailLines(found.request)];
+  }
+
   if (found.status !== 'approved') return [`${found.approvalId}  ${UNDECIDED[found.status]}`];
   if (found.error !== undefined) return [`${found.approvalId}  approved, but it failed: ${found.error}`];
 
@@ -557,7 +580,9 @@ const waitingLines = (waiting: readonly TimetrackWaitingApproval[]) => {
     `${waiting.length} wait(s) for the user's approval in Timetrack. Only the user approves one, in the app.`,
     ...waiting.map(
       (item) =>
-        `  ${item.approvalId}  ${item.client ?? 'CLI'}  ${item.op}  asked ${askedAtOf(item.askedAtMs)}  ${item.summary}${
+        `  ${item.approvalId}  ${item.client ?? 'CLI'}  ${item.op}  asked ${askedAtOf(item.askedAtMs)}${
+          item.day ? `  day ${item.day}` : ''
+        }${item.rowIds?.length ? `  rows ${item.rowIds.join(',')}` : ''}  ${item.summary}${
           item.state === 'running' ? '  (approved, carrying it out)' : ''
         }`,
     ),
@@ -768,6 +793,7 @@ A waiting write can be rejected from here; only the user approves one, in the ap
                                 List the attribution rules naming one issue; --force queues pointing
                                 them at another
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
+  timetrack standins --stale [days]  Only open ones with no days of work, older than days (default 30)
   timetrack standins --remove <id>
                                 Delete one placeholder, and the rule that named it
   timetrack standins --rename <id> --name <text>
@@ -1346,12 +1372,22 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
     const standIns = await timetrackStandIns();
     const rules = json ? [] : (await timetrackRules()).attributionRules;
+    const staleDays = staleDaysOf(argv);
     const open = standIns
       .filter((standIn) => standIn.state === 'open')
+      .filter(
+        (standIn) =>
+          staleDays === undefined ||
+          (standIn.days.length === 0 && Date.now() - standIn.createdAtMs > staleDays * DAY_MS),
+      )
       .sort((left, right) => left.createdAtMs - right.createdAtMs);
 
     if (!json) {
-      say(`${open.length} open, ${standIns.length - open.length} resolved`);
+      say(
+        staleDays === undefined
+          ? `${open.length} open, ${standIns.length - open.length} resolved`
+          : `${open.length} stale (no days of work, older than ${staleDays} days)`,
+      );
       open.forEach((standIn) => say(`  ${describeStandIn({ standIn, rules })}`));
       if (open.length) say('Only the app opens or resolves one — you may delete one, not write one.');
     }
