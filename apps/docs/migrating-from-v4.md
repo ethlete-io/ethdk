@@ -86,6 +86,10 @@ reactive `FormGroup` keeps its cdk controls until that form moves to `form(model
 [Forms](/components/forms). cdk and components controls can live side by side in one app, so this is a
 screen-by-screen job.
 
+Both libraries match the selectors `et-label`, `et-segmented-button` and `et-segmented-button-group`. One
+component's `imports` can hold only one of them, or Angular fails with NG8023, so move a component and the
+templates it imports together, not control by control.
+
 ## 5. Theming {#theming}
 
 The runtime theming (`provideColorThemes`, `createTailwindColorThemes`) is deprecated. The components
