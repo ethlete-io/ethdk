@@ -6,7 +6,7 @@ import { unpaddedLength, wideCells } from './plan-size.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-export const PLAN_FILES = ['plans/ethlete-studio/build-ready.md', 'plans/ethlete-studio/STATUS.md'];
+export const PLAN_FILES = ['plans/studio/build-ready.md', 'plans/studio/STATUS.md'];
 
 export const budgetFor = (file, config) => {
   if (config.overrides?.[file] !== undefined) return config.overrides[file];

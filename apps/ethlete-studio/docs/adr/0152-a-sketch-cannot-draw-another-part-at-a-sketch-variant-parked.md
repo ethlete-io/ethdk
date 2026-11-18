@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/drawing-parts.md, 5.21
+source: plans/studio/design-system-actions/drawing-parts.md, 5.21
 ---
 
 # A sketch cannot draw another part at a sketch variant, parked

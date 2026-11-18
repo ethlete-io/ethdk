@@ -2,7 +2,7 @@
 status: superseded by 0156
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/drawing-parts.md, 5.31, first decision
+source: plans/studio/design-system-actions/drawing-parts.md, 5.31, first decision
 ---
 
 # A pressed surface token with the tree-row value

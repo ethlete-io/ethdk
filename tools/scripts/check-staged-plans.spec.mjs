@@ -4,24 +4,24 @@ import { budgetFor, checkStagedPlans } from './check-staged-plans.mjs';
 
 const config = {
   groups: [
-    { name: 'build ready', files: ['plans/ethlete-studio/build-ready.md'], budget: 10 },
-    { name: 'status', files: ['plans/ethlete-studio/STATUS.md'], budget: 100, cellCap: 10 },
+    { name: 'build ready', files: ['plans/studio/build-ready.md'], budget: 10 },
+    { name: 'status', files: ['plans/studio/STATUS.md'], budget: 100, cellCap: 10 },
   ],
-  overrides: { 'plans/ethlete-studio/STATUS.md': 20 },
+  overrides: { 'plans/studio/STATUS.md': 20 },
 };
 
 const run = (files, sources, formatted = true) =>
   checkStagedPlans({ files, config, read: (f) => sources[f] ?? '', isFormatted: async () => formatted });
 
 test('budget comes from the override first, then the group', () => {
-  assert.equal(budgetFor('plans/ethlete-studio/STATUS.md', config), 20);
-  assert.equal(budgetFor('plans/ethlete-studio/build-ready.md', config), 10);
+  assert.equal(budgetFor('plans/studio/STATUS.md', config), 20);
+  assert.equal(budgetFor('plans/studio/build-ready.md', config), 10);
   assert.equal(budgetFor('other.md', config), undefined);
 });
 
 test('an oversize staged plan file is reported with its size', async () => {
-  const problems = await run(['plans/ethlete-studio/build-ready.md'], {
-    'plans/ethlete-studio/build-ready.md': 'x'.repeat(11),
+  const problems = await run(['plans/studio/build-ready.md'], {
+    'plans/studio/build-ready.md': 'x'.repeat(11),
   });
   assert.equal(problems.length, 1);
   assert.match(problems[0], /11 chars without table padding exceeds the budget of 10/);
@@ -29,7 +29,7 @@ test('an oversize staged plan file is reported with its size', async () => {
 });
 
 test('an unformatted staged plan file is reported', async () => {
-  const problems = await run(['plans/ethlete-studio/STATUS.md'], { 'plans/ethlete-studio/STATUS.md': 'x' }, false);
+  const problems = await run(['plans/studio/STATUS.md'], { 'plans/studio/STATUS.md': 'x' }, false);
   assert.match(problems[0], /not formatted/);
 });
 
@@ -39,8 +39,8 @@ test('other staged files are ignored', async () => {
 
 test('any unformatted staged Markdown file is reported, without a budget', async () => {
   const problems = await run(
-    ['plans/ethlete-studio/handoff-doc-agent.md'],
-    { 'plans/ethlete-studio/handoff-doc-agent.md': 'x'.repeat(500) },
+    ['plans/studio/handoff-doc-agent.md'],
+    { 'plans/studio/handoff-doc-agent.md': 'x'.repeat(500) },
     false,
   );
   assert.equal(problems.length, 1);
@@ -48,18 +48,18 @@ test('any unformatted staged Markdown file is reported, without a budget', async
 });
 
 test('the budget counts a table without its padding', async () => {
-  const problems = await run(['plans/ethlete-studio/build-ready.md'], {
-    'plans/ethlete-studio/build-ready.md': '| a        |',
+  const problems = await run(['plans/studio/build-ready.md'], {
+    'plans/studio/build-ready.md': '| a        |',
   });
   assert.deepEqual(problems, []);
 });
 
 test('a cell over the cap names its row', async () => {
-  const problems = await run(['plans/ethlete-studio/STATUS.md'], {
-    'plans/ethlete-studio/STATUS.md': '| B1 | short |\n| B2 | far too long a cell |',
+  const problems = await run(['plans/studio/STATUS.md'], {
+    'plans/studio/STATUS.md': '| B1 | short |\n| B2 | far too long a cell |',
   });
   assert.deepEqual(
     problems.filter((problem) => problem.includes('row ')),
-    ['plans/ethlete-studio/STATUS.md: row B2 has a 19-char cell, over the cap of 10. Shorten it.'],
+    ['plans/studio/STATUS.md: row B2 has a 19-char cell, over the cap of 10. Shorten it.'],
   );
 });

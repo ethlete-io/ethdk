@@ -6,7 +6,7 @@ description: How to implement a Studio design part as an Angular app component w
 # Implement a design part as an app component
 
 A part implemented in isolation passes `design check`, `design task` and `design compare` and still
-duplicates, fakes and drifts (finding 151, `plans/ethlete-studio/archive/findings-2026-11.md`). Those checks judge the
+duplicates, fakes and drifts (finding 151, `plans/studio/archive/findings-2026-11.md`). Those checks judge the
 component against its own design only. These rules cover what they do not.
 
 ## Start

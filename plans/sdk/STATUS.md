@@ -3,7 +3,7 @@
 Stand: 18.11.2026
 
 Das SDK sind die veröffentlichten `@ethlete/*`-Bibliotheken unter `libs/`. Die Arbeit läuft in der Builder-Warteschlange
-(ADR 0355), die Zeilen stehen in [`plans/ethlete-studio/STATUS.md`](../ethlete-studio/STATUS.md). Hier stehen sie nicht
+(ADR 0355), die Zeilen stehen in [`plans/studio/STATUS.md`](../studio/STATUS.md). Hier stehen sie nicht
 doppelt. Es gibt keine eigene SDK-Warteschlange.
 
 ## Consumer-Anfragen

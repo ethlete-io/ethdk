@@ -17,7 +17,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - A defect that the user or a builder meets in Studio or in a CLI command gets one question: which rebuild group owns
   it, and what would make it impossible (ADR 0235)? Add one line to that group. No number and no cause hunt, except on
   red CI.
-- A defect that fits no group: one line in `plans/ethlete-studio/parked-suspects.md`. At its second time it joins a
+- A defect that fits no group: one line in `plans/studio/parked-suspects.md`. At its second time it joins a
   group; a new group is a decision of the human.
 - A defect of the agent machinery: one line in the machinery pile. It is built only on red CI.
 - A new check rule, cache, lock, hook or gate is never the default fix. A fix that adds one names what it removes.
@@ -45,7 +45,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## Grill
 
 - Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and every
-  `plans/ethlete-studio/**` decision block for the topic. If Tom already decided it,
+  `plans/studio/**` decision block for the topic. If Tom already decided it,
   do not ask: name the ADR and send it to the builder. A repeated question is a finding.
 - Before you record a decision on files or send work on them, run `yarn adr:governs <files>` and read the ADRs it lists.
 - A question that applies an existing Tom decision to a new case is yours to decide; report it in one line.
@@ -102,7 +102,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 - No agent memory: a lesson becomes a line in its group or a skill. A skill gains words
   only when as many go (counted in words: builder-agent, doc-agent, ethlete-agent-sessions, AGENTS.md).
-- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/ethlete-studio/archive/`; never rewrite an archive file by hand.
+- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/studio/archive/`; never rewrite an archive file by hand.
 
 ## Never
 

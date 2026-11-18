@@ -2,7 +2,7 @@
 status: accepted
 built: cc89e18d5
 decided: 2026-10-28
-source: plans/ethlete-studio/design-system/decisions-comments.md (deleted in B597), rulings of the human in the slice 5, 6 and 10 rounds
+source: plans/studio/design-system/decisions-comments.md (deleted in B597), rulings of the human in the slice 5, 6 and 10 rounds
 ---
 
 # Comment, note and author rulings of 2026-10-27

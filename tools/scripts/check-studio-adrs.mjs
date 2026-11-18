@@ -95,7 +95,7 @@ export const lostFindingErrors = (archives, committedTextOf) =>
 
 const committedArchiveOf = (root) => (name) => {
   try {
-    return execFileSync('git', ['show', `HEAD:./plans/ethlete-studio/archive/${name}`], {
+    return execFileSync('git', ['show', `HEAD:./plans/studio/archive/${name}`], {
       cwd: root,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
@@ -114,9 +114,9 @@ const readArchives = (dir) =>
     : [];
 
 export const checkAdrs = (root) => {
-  const statusFile = join(root, 'plans/ethlete-studio/STATUS.md');
+  const statusFile = join(root, 'plans/studio/STATUS.md');
   const statusText = existsSync(statusFile) ? readFileSync(statusFile, 'utf8') : '';
-  const archives = readArchives(join(root, 'plans/ethlete-studio/archive'));
+  const archives = readArchives(join(root, 'plans/studio/archive'));
   const findings = [...findingErrors(archives, statusText), ...lostFindingErrors(archives, committedArchiveOf(root))];
   const dir = join(root, 'apps/ethlete-studio/docs/adr');
   const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')) : [];

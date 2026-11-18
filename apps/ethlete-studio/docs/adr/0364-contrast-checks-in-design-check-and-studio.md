@@ -2,13 +2,13 @@
 status: accepted
 built: 15e2dc85c
 decided: 2026-10-30
-source: plans/ethlete-studio/contrast.md (trimmed in B597), section "Decisions (2026-10-30)" and "Findings decisions", rulings of the human
+source: plans/studio/contrast.md (trimmed in B597), section "Decisions (2026-10-30)" and "Findings decisions", rulings of the human
 ---
 
 # Contrast checks in design check and Studio
 
 A contrast rule in `design check` and a contrast view in Studio. The rule (`CONTRAST`, slice 1) and the non-text check
-at 3:1 (slice 3, 8b5b314d3) are built. The Studio marks (slice 2) are open in `plans/ethlete-studio/contrast.md`.
+at 3:1 (slice 3, 8b5b314d3) are built. The Studio marks (slice 2) are open in `plans/studio/contrast.md`.
 
 ## Measure
 

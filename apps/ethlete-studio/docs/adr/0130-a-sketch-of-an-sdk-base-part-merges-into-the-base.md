@@ -2,7 +2,7 @@
 status: accepted
 built: 0c307a0c3
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.47, base part sketches
+source: plans/studio/design-system-actions/render-checks.md, 4.47, base part sketches
 ---
 
 # A sketch of an SDK base part merges into the base

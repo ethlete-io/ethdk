@@ -4,11 +4,11 @@
     { "name": "skill", "glob": ".agents/skills/*/SKILL.md", "budget": 15000 },
     {
       "name": "plan index",
-      "files": ["plans/ethlete-studio/design-system-actions.md"],
+      "files": ["plans/studio/design-system-actions.md"],
       "budget": 6000
     },
-    { "name": "build ready", "files": ["plans/ethlete-studio/build-ready.md"], "budget": 36000 },
-    { "name": "status", "files": ["plans/ethlete-studio/STATUS.md"], "budget": 100000, "cellCap": 400 }
+    { "name": "build ready", "files": ["plans/studio/build-ready.md"], "budget": 36000 },
+    { "name": "status", "files": ["plans/studio/STATUS.md"], "budget": 100000, "cellCap": 400 }
   ],
   "overrides": {
     ".agents/skills/ethlete-timetrack/SKILL.md": 25000,

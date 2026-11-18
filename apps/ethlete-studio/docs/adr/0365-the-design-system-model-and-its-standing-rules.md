@@ -71,4 +71,4 @@ or the Web Animations API (no `requestAnimationFrame` loops, so a timeline can s
 - The status files of `et design` live in the temp dir `ethlete-studio-checks/`, one per checkout.
 - The old call UI, the Legacy tab and the host commands only it used are removed. Legacy calls stay readable as files in
   git. `design_status_watch` stays: the sketch view needs it for live report lines.
-- The agent chat moves into Studio (2026-10-29 direction, `plans/ethlete-studio/designer-workflow.md`).
+- The agent chat moves into Studio (2026-10-29 direction, `plans/studio/designer-workflow.md`).

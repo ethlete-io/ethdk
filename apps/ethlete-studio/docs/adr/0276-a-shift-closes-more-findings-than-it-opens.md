@@ -15,7 +15,7 @@ passiert eben gensu sowss wie das der canvas wieder clipping hst was ja 4(!) msl
 sm laufenden band. ein schritt nsch vorn und 10 zurück".
 
 - A new finding gets a number only when its cause is proven ("Cause:") or when it blocks the current work.
-- A Suspect without proof goes as one line, without a number, into `plans/ethlete-studio/parked-suspects.md`. It becomes a
+- A Suspect without proof goes as one line, without a number, into `plans/studio/parked-suspects.md`. It becomes a
   finding only when it happens a second time.
 - A shift may not open more findings than it closes. When the balance of a shift is positive, the builders work only the
   open list, oldest finding first, until the balance is even again.

@@ -534,7 +534,7 @@ describe('part task', () => {
       const diff = () => [
         'libs/chip/chip.component.ts',
         'src/outbox/outbox.component.ts',
-        'plans/ethlete-studio/design-to-code.md',
+        'plans/studio/design-to-code.md',
         'apps/ethlete-studio/docs/notes.md',
         '.changeset/chip.md',
         'apps/docs/components/chip.md',

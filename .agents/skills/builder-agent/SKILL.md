@@ -94,4 +94,4 @@ Each report names which of the two it is.
 - When your context runs high, write a handoff. Big new work goes to a fresh builder session.
 - No agent memory: a lesson becomes a line in its group or a skill. A skill gains words
   only when as many go (counted in words: builder-agent, doc-agent, ethlete-agent-sessions, AGENTS.md).
-- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/ethlete-studio/archive/`; never rewrite an archive file by hand.
+- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/studio/archive/`; never rewrite an archive file by hand.

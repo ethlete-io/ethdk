@@ -2,7 +2,7 @@
 status: accepted
 built: 59054b4fd
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.43
+source: plans/studio/design-system-actions/render-checks.md, 4.43
 ---
 
 # A sketch round has a Changed area toggle

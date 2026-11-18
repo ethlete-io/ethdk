@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.47, inventory approval view
+source: plans/studio/design-system-actions/render-checks.md, 4.47, inventory approval view
 ---
 
 # The inventory approval view

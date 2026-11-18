@@ -53,8 +53,8 @@ test('a missing or empty adr folder passes', () => {
 test('reads ADR files against STATUS.md from disk', () => {
   const root = tempDir('adr-');
   mkdirSync(join(root, 'apps/ethlete-studio/docs/adr'), { recursive: true });
-  mkdirSync(join(root, 'plans/ethlete-studio'), { recursive: true });
-  writeFileSync(join(root, 'plans/ethlete-studio/STATUS.md'), '| B1 | x | ✅ |\n');
+  mkdirSync(join(root, 'plans/studio'), { recursive: true });
+  writeFileSync(join(root, 'plans/studio/STATUS.md'), '| B1 | x | ✅ |\n');
   writeFileSync(join(root, 'apps/ethlete-studio/docs/adr/0001-a.md'), adr('status: accepted\nopen: B1'));
   assert.equal(checkAdrs(root).errors.length, 1);
 });
@@ -84,7 +84,7 @@ test('fails a duplicate and a dangling Bef.', () => {
 
 test('the pre-commit hook runs the check when STATUS.md or an ADR is staged', () => {
   const hook = readFileSync(new URL('../../.husky/pre-commit', import.meta.url), 'utf8');
-  assert.match(hook, /plans\/ethlete-studio\/STATUS\.md/);
+  assert.match(hook, /plans\/studio\/STATUS\.md/);
   assert.match(hook, /apps\/ethlete-studio\/docs\/adr\/\*\.md/);
   assert.match(hook, /node \.\/tools\/scripts\/check-studio-adrs\.mjs --summary/);
   assert.match(hook, /^set -e$/m);

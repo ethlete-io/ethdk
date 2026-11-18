@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/drawing-parts.md, 5.31, comment-pin
+source: plans/studio/design-system-actions/drawing-parts.md, 5.31, comment-pin
 ---
 
 # The comment pin uses the pressed token over its face

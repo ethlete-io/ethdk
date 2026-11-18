@@ -2,7 +2,7 @@
 status: accepted
 built: fb5a17d72
 decided: 2026-10-27
-source: plans/ethlete-studio/tomflix-inventory.md, section "Decided (2026-10-27)", decisions of the human recorded in fb5a17d72
+source: plans/studio/tomflix-inventory.md, section "Decided (2026-10-27)", decisions of the human recorded in fb5a17d72
 ---
 
 # The tomflix inventory decisions of 2026-10-27

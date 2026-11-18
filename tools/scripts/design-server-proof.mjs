@@ -16,7 +16,7 @@ export const P1_TARGETS = { coldMs: 10_000, warmMs: 5_000, warmRuns: 3 };
 export const P5_TARGETS = { runs: 5 };
 export const P5_CASE = 'B498 R3';
 
-/** The proofs of B499 (archived in `plans/ethlete-studio/archive/findings-2026-11.md`, "B499 proof"). */
+/** The proofs of B499 (archived in `plans/studio/archive/findings-2026-11.md`, "B499 proof"). */
 export const PROOFS = [
   { id: 'P1', title: 'sketch check cold <= 10 s, warm <= 5 s (3 runs), also with CI=1' },
   { id: 'P2', title: 'shot 5 runs: from run 2 no server or browser start, each <= 2 s' },

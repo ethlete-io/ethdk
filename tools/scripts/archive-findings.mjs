@@ -347,7 +347,7 @@ const monthOf = (today) => today.toISOString().slice(0, 7);
 export const archiveWhole = (root, file, today = new Date()) => {
   const path = resolve(root, file);
   const text = readFileSync(path, 'utf8').trimEnd();
-  writeArchive(join(root, 'plans/ethlete-studio/archive'), [
+  writeArchive(join(root, 'plans/studio/archive'), [
     {
       number: 0,
       month: monthOf(today),
@@ -363,7 +363,7 @@ export const archiveAsBuilt = (root, file, today = new Date()) => {
   const { kept, sections } = splitAsBuilt(readFileSync(path, 'utf8'));
   if (sections.length === 0) return 0;
   const heading = `## Archived from ${basename(file)} (${today.toISOString().slice(0, 10)})`;
-  writeArchive(join(root, 'plans/ethlete-studio/archive'), [
+  writeArchive(join(root, 'plans/studio/archive'), [
     { number: 0, month: monthOf(today), text: [heading, ...sections].join('\n\n') },
   ]);
   writeFileSync(path, `${kept.trimEnd()}\n`);
@@ -375,7 +375,7 @@ const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dr
        node tools/scripts/archive-findings.mjs --as-built <plan file>
   --whole     appends the plan file to archive/findings-<month>.md and deletes it
   --as-built  moves the "## As built" sections of the plan file to archive/findings-<month>.md
-  moves done findings and old decision sections of plans/ethlete-studio/design-to-code.md into archive/
+  moves done findings and old decision sections of plans/studio/design-to-code.md into archive/
   a finding is done by a done STATUS row, a paragraph "NNN built|closed|withdrawn|as built ...", a line in
   parked-suspects.md, or a built line; it leaves with every paragraph that starts with its number
   --days=<n>  age in days an orphan finding (no STATUS row, not named in STATUS) must reach to move, and a
@@ -384,7 +384,7 @@ const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dr
   --orphans   list old findings with no STATUS row, write nothing`;
 
 const planMoves = (root, days) => {
-  const studio = join(root, 'plans/ethlete-studio');
+  const studio = join(root, 'plans/studio');
   const planFile = join(studio, 'design-to-code.md');
   const statusText = readFileSync(join(studio, 'STATUS.md'), 'utf8');
   const today = new Date();
@@ -437,8 +437,8 @@ export const main = (argv, { root, log = console.log }) => {
     }
     return 0;
   }
-  if (!argv.includes('--help') && !existsSync(join(root, 'plans/ethlete-studio/design-to-code.md'))) {
-    log('plans/ethlete-studio/design-to-code.md is archived; nothing to move');
+  if (!argv.includes('--help') && !existsSync(join(root, 'plans/studio/design-to-code.md'))) {
+    log('plans/studio/design-to-code.md is archived; nothing to move');
     return 0;
   }
   const unknown = argv.filter((arg) => !KNOWN.has(arg) && !DAYS_ARG.test(arg));
@@ -448,7 +448,7 @@ export const main = (argv, { root, log = console.log }) => {
     return unknown.length > 0 ? 2 : 0;
   }
   if (argv.includes('--orphans')) {
-    const studio = join(root, 'plans/ethlete-studio');
+    const studio = join(root, 'plans/studio');
     const orphans = orphanFindings(
       readFileSync(join(studio, 'design-to-code.md'), 'utf8'),
       readFileSync(join(studio, 'STATUS.md'), 'utf8'),

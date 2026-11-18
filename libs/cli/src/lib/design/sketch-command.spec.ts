@@ -2798,7 +2798,7 @@ export default definePart({
   }, 120_000);
 
   describe('merge --variant --allowed-by', { timeout: 120_000 }, () => {
-    const PLAN = 'plans/ethlete-studio/contrast.md Findings decisions';
+    const PLAN = 'plans/studio/contrast.md Findings decisions';
 
     const readied = async (variants: string) => {
       const target = acme();

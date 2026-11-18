@@ -2,7 +2,7 @@
 status: superseded by 0134
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.54
+source: plans/studio/design-system-actions/render-checks.md, 4.54
 ---
 
 # A still pair of states plus a transitions declaration is enough motion evidence

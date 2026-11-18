@@ -28,7 +28,7 @@ The human answered (German, verbatim):
 
 - A defect that a fix causes: the builder fixes it in the same slice, or reverts the fix. No new number.
 - A defect that existed before and a fix only reveals: not fixed along. One line in the matching group row or in
-  `plans/ethlete-studio/parked-suspects.md`, no number, no cause hunt.
+  `plans/studio/parked-suspects.md`, no number, no cause hunt.
 - A new finding number only when CI is red. "It blocks something else" is no longer a reason.
 - A fix that needs more than two follow-up fixes is reverted, and the approach is chosen again.
 - Each group row (B498-B504) gets a measurable proof for the whole defect class before it starts.

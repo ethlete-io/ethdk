@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.47
+source: plans/studio/design-system-actions/render-checks.md, 4.47
 ---
 
 # Controls are declared, discovered and gated by design complete

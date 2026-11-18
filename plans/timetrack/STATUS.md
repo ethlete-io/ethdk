@@ -3,7 +3,7 @@
 Stand: 18.11.2026
 
 Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), die Zeilen stehen in
-[`plans/ethlete-studio/STATUS.md`](../ethlete-studio/STATUS.md). Hier stehen sie nicht doppelt.
+[`plans/studio/STATUS.md`](../studio/STATUS.md). Hier stehen sie nicht doppelt.
 
 ## Warteschlange (nächstes oben)
 

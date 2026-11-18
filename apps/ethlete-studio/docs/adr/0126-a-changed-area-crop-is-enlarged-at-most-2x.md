@@ -2,7 +2,7 @@
 status: accepted
 built: cbba0051d
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.43, crop size
+source: plans/studio/design-system-actions/render-checks.md, 4.43, crop size
 ---
 
 # A changed-area crop is enlarged at most 2x

@@ -18,13 +18,13 @@ export const queueLines = (statusText) => {
 export const rowOf = (statusText, id) => statusText.split('\n').find((line) => line.startsWith(`| ${id} |`)) ?? null;
 
 const main = (argv) => {
-  const statusPath = resolve(fileURLToPath(new URL('../../plans/ethlete-studio/STATUS.md', import.meta.url)));
+  const statusPath = resolve(fileURLToPath(new URL('../../plans/studio/STATUS.md', import.meta.url)));
   const statusText = readFileSync(statusPath, 'utf8');
   const id = argv[0];
   if (id) {
     const row = rowOf(statusText, id);
     if (!row) {
-      process.stderr.write(`No row ${id} in plans/ethlete-studio/STATUS.md.\n`);
+      process.stderr.write(`No row ${id} in plans/studio/STATUS.md.\n`);
       return 1;
     }
     process.stdout.write(`${row.replace(/\s{2,}/g, ' ')}\n`);
@@ -32,7 +32,7 @@ const main = (argv) => {
   }
   const queue = queueLines(statusText);
   if (queue.length === 0) {
-    process.stderr.write('No queue found: plans/ethlete-studio/STATUS.md has no "### Warteschlange" list.\n');
+    process.stderr.write('No queue found: plans/studio/STATUS.md has no "### Warteschlange" list.\n');
     return 1;
   }
   process.stdout.write(`${queue.join('\n')}\n`);

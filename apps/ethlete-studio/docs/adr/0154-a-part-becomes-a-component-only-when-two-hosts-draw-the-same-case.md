@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-29
-source: plans/ethlete-studio/design-system-actions/drawing-parts.md, 5.24, rule
+source: plans/studio/design-system-actions/drawing-parts.md, 5.24, rule
 ---
 
 # A part becomes a component only when two hosts draw the same case

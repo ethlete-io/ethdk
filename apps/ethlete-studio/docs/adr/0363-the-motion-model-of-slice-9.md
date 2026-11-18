@@ -2,7 +2,7 @@
 status: accepted
 built: 4b57f37af
 decided: 2026-10-27
-source: plans/ethlete-studio/motion.md (deleted in B597), section "Decisions (2026-10-27)" and "Slice 5 decision", rulings of the human
+source: plans/studio/motion.md (deleted in B597), section "Decisions (2026-10-27)" and "Slice 5 decision", rulings of the human
 ---
 
 # The motion model of slice 9

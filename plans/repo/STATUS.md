@@ -3,7 +3,7 @@
 Stand: 18.11.2026
 
 Repo ist Werkzeug, CI, Agent-Maschinerie und Monorepo-Infrastruktur. Die Arbeit läuft in der Builder-Warteschlange
-(ADR 0355), die Zeilen stehen in [`plans/ethlete-studio/STATUS.md`](../ethlete-studio/STATUS.md). Hier stehen sie nicht
+(ADR 0355), die Zeilen stehen in [`plans/studio/STATUS.md`](../studio/STATUS.md). Hier stehen sie nicht
 doppelt. Prozess-ADRs liegen vorerst in `apps/ethlete-studio/docs/adr/` (ein Repo-Ordner folgt mit B599).
 
 ## Offene Plan-Dateien

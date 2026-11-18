@@ -2,7 +2,7 @@
 status: accepted
 built: 493d1f6f9
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/agent-process.md, reference-led round decision
+source: plans/studio/design-system-actions/agent-process.md, reference-led round decision
 ---
 
 # A reference informs a design round, it is not a template

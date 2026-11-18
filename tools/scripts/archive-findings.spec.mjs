@@ -72,7 +72,7 @@ test('a finding runs to its blank line, and list items are no findings', () => {
 
 test('reads a prettier-formatted plan', () => {
   const formatted = readFileSync(
-    join(import.meta.dirname, 'fixtures/studio-findings/ok/plans/ethlete-studio/archive/findings-2026-11.md'),
+    join(import.meta.dirname, 'fixtures/studio-findings/ok/plans/studio/archive/findings-2026-11.md'),
     'utf8',
   );
   assert.deepEqual(
@@ -213,7 +213,7 @@ As built (Linux builder, 32): done.
 
 const oldDonePlan = () => {
   const root = tempDir('archive-cli-');
-  const studio = join(root, 'plans/ethlete-studio');
+  const studio = join(root, 'plans/studio');
   mkdirSync(join(studio, 'archive'), { recursive: true });
   writeFileSync(
     join(studio, 'design-to-code.md'),
@@ -457,7 +457,7 @@ Its second line.
 
 test('a run archives old orphans and section prose, and every removed line is in the archive', () => {
   const root = tempDir('archive-sections-');
-  const studio = join(root, 'plans/ethlete-studio');
+  const studio = join(root, 'plans/studio');
   mkdirSync(join(studio, 'archive'), { recursive: true });
   const planFile = join(studio, 'design-to-code.md');
   writeFileSync(planFile, mixedSectionPlan.replaceAll('2026-11-0', '2020-01-0'));
@@ -477,7 +477,7 @@ test('a run archives old orphans and section prose, and every removed line is in
 
 test('--as-built moves the as-built sections and --whole moves the file, both into the archive', () => {
   const root = tempDir('archive-whole-');
-  const studio = join(root, 'plans/ethlete-studio');
+  const studio = join(root, 'plans/studio');
   mkdirSync(join(studio, 'archive'), { recursive: true });
   const file = join(studio, 'ready.md');
   writeFileSync(
@@ -486,14 +486,14 @@ test('--as-built moves the as-built sections and --whole moves the file, both in
   );
   const log = () => undefined;
 
-  assert.equal(main(['--as-built', 'plans/ethlete-studio/ready.md'], { root, log }), 0);
+  assert.equal(main(['--as-built', 'plans/studio/ready.md'], { root, log }), 0);
   assert.equal(readFileSync(file, 'utf8'), '# Ready\n\nOpen text.\n\n## Open\n\nStill open.\n');
   const archive = readdirSync(join(studio, 'archive')).map((name) =>
     readFileSync(join(studio, 'archive', name), 'utf8'),
   );
   assert.match(archive[0], /## As built: S1\n\nDone one\.\n\n### Sub\n\nSub text\./);
 
-  assert.equal(main(['--whole', 'plans/ethlete-studio/ready.md'], { root, log }), 0);
+  assert.equal(main(['--whole', 'plans/studio/ready.md'], { root, log }), 0);
   assert.equal(existsSync(file), false);
-  assert.equal(main(['--whole', 'plans/ethlete-studio/ready.md'], { root, log }), 2);
+  assert.equal(main(['--whole', 'plans/studio/ready.md'], { root, log }), 2);
 });

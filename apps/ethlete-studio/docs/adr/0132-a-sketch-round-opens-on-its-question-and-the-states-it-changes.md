@@ -2,7 +2,7 @@
 status: accepted
 built: b78bff197
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.48
+source: plans/studio/design-system-actions/render-checks.md, 4.48
 ---
 
 # A sketch round opens on its question and the states it changes

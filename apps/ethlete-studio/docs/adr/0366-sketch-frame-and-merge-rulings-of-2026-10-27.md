@@ -2,7 +2,7 @@
 status: accepted
 built: cc89e18d5
 decided: 2026-10-27
-source: plans/ethlete-studio/design-system/decisions-sketches.md and decisions-frames.md (deleted in B597), rulings of the human in the slice 2, 4, 5 and 10 rounds
+source: plans/studio/design-system/decisions-sketches.md and decisions-frames.md (deleted in B597), rulings of the human in the slice 2, 4, 5 and 10 rounds
 ---
 
 # Sketch, frame and merge rulings of 2026-10-27

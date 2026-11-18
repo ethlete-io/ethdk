@@ -28,7 +28,7 @@ fi
 node ./tools/scripts/check-slice-paths.mjs
 
 # A closed STATUS row whose ADR still says `open:` fails here instead of at push (about 0.7 s).
-adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' 'apps/ethlete-studio/docs/adr/*.md')
+adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/studio/STATUS.md' 'apps/ethlete-studio/docs/adr/*.md')
 
 if [ -n "$adr_files" ]; then
   node ./tools/scripts/check-studio-adrs.mjs --summary >/dev/null
@@ -66,8 +66,8 @@ if [ -n "$design_files" ]; then
 fi
 
 # Refuses a ✅ row, an Erledigt section and a Stand older than 3 days in the staged STATUS.md blob (about 0.05 s).
-if git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' | grep -q .; then
-  git show :plans/ethlete-studio/STATUS.md | node ./tools/scripts/check-studio-status.mjs -
+if git diff --cached --name-only --diff-filter=ACM -- 'plans/studio/STATUS.md' | grep -q .; then
+  git show :plans/studio/STATUS.md | node ./tools/scripts/check-studio-status.mjs -
 fi
 
 # A staged path under a data glob of tools/scripts/data-spec-map.json runs the specs that read that data (finding 799);

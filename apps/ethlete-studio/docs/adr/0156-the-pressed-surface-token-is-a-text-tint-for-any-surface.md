@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/drawing-parts.md, 5.31, replaces the first decision
+source: plans/studio/design-system-actions/drawing-parts.md, 5.31, replaces the first decision
 ---
 
 # The pressed surface token is a text tint for any surface

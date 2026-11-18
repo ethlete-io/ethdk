@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/drawing-parts.md, 5.23
+source: plans/studio/design-system-actions/drawing-parts.md, 5.23
 ---
 
 # A light SDK hover token on dark frames is an SDK design issue

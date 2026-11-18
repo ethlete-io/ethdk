@@ -2,7 +2,7 @@
 status: accepted
 built: 0788954d7
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.47
+source: plans/studio/design-system-actions/render-checks.md, 4.47
 ---
 
 # Interactions belong to the component that draws the control

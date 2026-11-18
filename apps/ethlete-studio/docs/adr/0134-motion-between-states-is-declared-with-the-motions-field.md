@@ -2,7 +2,7 @@
 status: accepted
 built: 9c328f48a
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/render-checks.md, 4.54, amended
+source: plans/studio/design-system-actions/render-checks.md, 4.54, amended
 ---
 
 # Motion between states is declared with the motions field

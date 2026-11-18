@@ -2,7 +2,7 @@
 status: accepted
 built: cc89e18d5
 decided: 2026-10-27
-source: plans/ethlete-studio/design-system/decisions-core.md and decisions-wireframes.md (deleted in B597), rulings of the human in the slice 2 to 10 rounds; the rejection ruling of 2026-10-30 from design-system-actions/feedback-merge.md, 3.45
+source: plans/studio/design-system/decisions-core.md and decisions-wireframes.md (deleted in B597), rulings of the human in the slice 2 to 10 rounds; the rejection ruling of 2026-10-30 from design-system-actions/feedback-merge.md, 3.45
 ---
 
 # Studio slice rulings: parts, pages, flows, MCP and theming

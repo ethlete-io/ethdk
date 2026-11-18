@@ -115,7 +115,7 @@ describe('a named sketch', { timeout: 120_000 }, () => {
       '--variant',
       'a',
       '--allowed-by',
-      'plans/ethlete-studio/contrast.md Findings decisions',
+      'plans/studio/contrast.md Findings decisions',
       '--product',
       'acme',
     );

@@ -2,7 +2,7 @@
 status: accepted
 built: de7098e65
 decided: 2026-11-04
-source: plans/ethlete-studio/build-ready.md, "Edit sketch decisions (2026-11-04)"
+source: plans/studio/build-ready.md, "Edit sketch decisions (2026-11-04)"
 ---
 
 # Picking old is the discard of an edit sketch
