@@ -2068,6 +2068,20 @@ and status-uncommitted.spec (picked old: the merge line), red with the fix rever
 stale sketch object, so its pick was refused and it ran undecided - fixed. Not verified: a live picked `old` with `new`
 committed (no live sketch touched); `sketch discard` still accepts a contradicted stale sketch, unnamed.
 
+As built (B189 slice 1, pages/inbox thread card sketch): sketch `pages/inbox` (`sketches/pages-inbox`, round r1
+"Kommentar-Faden als Karte", variants a and b, marked ready, not picked). An opened pin shows its thread as a card
+(`shared/thread-card.ts`): the place, Erledigen and close or back, every message with Zurückziehen under the user's own
+ones, a focused reply field (textarea forced `focus-visible`) with Antworten, and an `Esc schließt` hint. a floats the
+card beside the selected pin on the canvas, b docks it in the side panel in place of the list; a is recommended (the
+thread stays at the place it comments on, and pages/system has no free panel). New states `thread`, `thread-own`,
+`thread-busy`, `thread-error` and `thread-rejected`; the send errors reuse the human's texts from acd6ce0bf and 5c650021a
+(network/server: "Kommentar nicht gesendet. Erneut versuchen." with Erneut senden; 4xx: the server's reason, no retry).
+The Inbox has no comment button (ADR 0321), so comment mode with Esc and `C` waits for the pages/system half. Verified:
+`sketch check pages/inbox` (5 changed states per variant, the 8 existing ones unchanged in pixels), the state shots
+viewed, `sketch ready`, `design check --part pages/inbox`. Not verified: the card for a long thread past the
+`max-h-96` scroll, pages/system and the app (row B189 stays open); the sheet passes the 24-frame budget (26) with a
+warning.
+
 ## As built (B236)
 
 Cause (finding 289): a part-scoped check drew and checked only the asked part, so `check --part
