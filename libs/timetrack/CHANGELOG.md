@@ -1,5 +1,27 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.16
+
+### Minor Changes
+
+- Add `timetrack rules --repoint --from <KEY> --to <KEY>`, which queues pointing every attribution rule that names one issue at another.
+
+### Patch Changes
+
+- "Approve all" no longer files Jira tickets, and auto mode drafts one ticket for the same work across a day instead of one per context.
+- An accepted or edited row between midnight and 6 am now carries a `night-row` day warning, and `timetrack rows` shows each row's desk events and human prompts.
+- A day only a paired machine booked is owned by that machine here too: its booked rows are drawn, and this machine proposes, syncs and auto-names nothing for it.
+- A call nothing closed ends at the last sign it was held again, and is not drawn when nothing shows it was held.
+- Undo the open-call end at the last evidence it was held: a call nothing closed runs to the day's seen-through time again.
+- End a call nothing closed at the last evidence it was held (its window in focus, the transcriber, an accepted meeting), and draw none when nothing shows it was held.
+- Time a reviewer cut off a row by resizing it is no longer proposed again as an unnamed row, and a resized, split or merged row books its span beside a sibling session on the same ticket.
+- A row's automatic description quotes only the commits of its own checkout, never those another checkout made under the same issue in its span.
+- Fold a parallel session row that books a single increment into the widest row of its ticket it overlaps, so a day of parallel agent sessions shows no run of fifteen-minute slivers.
+- A Tempo 403 that carries a reason, such as a closed account, now shows that reason instead of claiming the token was rejected
+- A rejected row now leaves the day page, and accepting it brings it back. The agent API no longer lists rows of zero duration, and `ask --context` with a stand-in id names the contexts and stand-ins the day holds.
+- Added `reviveCollectedEvents` to turn events read back from `timetrack day --out` JSON into Dates, and waiting approvals now carry their day, row ids and issue key.
+- A prompt another program typed into a pane (mailbox wake, restart resume prompt, `/clear`) no longer counts as a person being there. The restart now ends its prompts in `[typed by agent-sessions]`.
+
 ## 0.1.0-next.15
 
 ### Minor Changes

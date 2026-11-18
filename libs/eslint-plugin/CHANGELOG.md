@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.32
+
+### Minor Changes
+
+- Add the `prefer-computed-linked-signal-source` rule to the recommended config as a warning. It asks for a `computed()` as the source of a `linkedSignal()` instead of an inline function over an input or model.
+
 ## 1.0.0-next.31
 
 ### Patch Changes

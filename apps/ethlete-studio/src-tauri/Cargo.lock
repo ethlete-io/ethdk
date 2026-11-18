@@ -1277,7 +1277,7 @@ dependencies = [
 
 [[package]]
 name = "ethlete-studio"
-version = "0.2.0-next.24"
+version = "0.2.0-next.25"
 dependencies = [
  "ethlete-studio-design",
  "fix-path-env",

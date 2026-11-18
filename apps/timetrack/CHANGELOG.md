@@ -1,5 +1,23 @@
 # timetrack-app
 
+## 0.2.0-next.20
+
+### Minor Changes
+
+- Add `timetrack rules --repoint --from <KEY> --to <KEY>`, which queues pointing every attribution rule that names one issue at another.
+
+### Patch Changes
+
+- Check the self-hosted update host for updates when the GitHub release cannot be reached
+- A Jira create in the approval queue says it is only approved one by one, as a tempo sync does.
+- "Approve all" no longer files Jira tickets, and auto mode drafts one ticket for the same work across a day instead of one per context.
+- An accepted or edited row between midnight and 6 am now carries a `night-row` day warning, and `timetrack rows` shows each row's desk events and human prompts.
+- A day only a paired machine booked is owned by that machine here too: its booked rows are drawn, and this machine proposes, syncs and auto-names nothing for it.
+- A call nothing closed ends at the last sign it was held again, and is not drawn when nothing shows it was held.
+- The second update endpoint now points at the live elrond mirror, https://updates.local.elros.cc:12345.
+- The stand-in select in the band editor drops its unused `aria-label`; its visible label names it.
+- A rejected row now leaves the day page, and accepting it brings it back. The agent API no longer lists rows of zero duration, and `ask --context` with a stand-in id names the contexts and stand-ins the day holds.
+
 ## 0.2.0-next.19
 
 ### Patch Changes
