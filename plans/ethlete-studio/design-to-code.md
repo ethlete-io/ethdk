@@ -2103,3 +2103,10 @@ stay fast; the Studio merge (worker) does not run it. Verified: sketch-command.s
 merged one ..." (merging components/button names elements/hero and pages/home, hero's COVERED before and after is not
 reported, a CLIPPED in pages/home after the merge is), red with the after-merge call removed; the other merge specs pass
 unchanged. Not verified: a live merge on the real design (cost estimated from B236: two embedder checks, about 2-3 s per embedder each).
+
+## As built (B187)
+
+No new code: 491a945e8 (2026-11-05) already moved the canvas-frames CLIPPED skip off the canvas-viewport root onto the
+loading badge, and SKIP-SCOPE is no longer a rule (skips.spec flags a skip that names it). Verified on f881f81e7+: the
+only `data-et-skip` in elements/canvas-frames/canvas-frames.ts is on `data-loading-badge`; canvas-viewport.ts carries
+none. Row closed.
