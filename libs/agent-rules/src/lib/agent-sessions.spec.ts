@@ -411,7 +411,7 @@ describe('agent-sessions', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toBe(
-      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.' '--strict-mcp-config' '--mcp-config=${dir}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'\n`,
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.' '--strict-mcp-config' '--mcp-config=${realpathSync(dir)}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'\n`,
     );
     expect(existsSync(join(dir, '.cache/claude-tmp'))).toBe(true);
   });
@@ -866,7 +866,7 @@ describe('agent-sessions', () => {
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
           .toBe(
-            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${dir}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\n/handoff resume builder-x\n`,
+            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\n/handoff resume builder-x\n`,
           );
         expect(
           spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_role'], { encoding: 'utf8' }).stdout,
@@ -894,7 +894,7 @@ describe('agent-sessions', () => {
         '-t',
         `=${scoped}:`,
         '@ethlete_command',
-        `ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 '${claude}' '--append-system-prompt' '${BUILDER_RULE}' '--strict-mcp-config' '--mcp-config=${dir}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'`,
+        `ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 '${claude}' '--append-system-prompt' '${BUILDER_RULE}' '--strict-mcp-config' '--mcp-config=${realpathSync(dir)}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'`,
       ]);
 
       try {
@@ -906,7 +906,7 @@ describe('agent-sessions', () => {
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
           .toBe(
-            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${dir}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\nresume\n`,
+            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\nresume\n`,
           );
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
