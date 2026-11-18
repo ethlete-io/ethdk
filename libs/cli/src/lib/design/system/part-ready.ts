@@ -224,6 +224,15 @@ export const writePartRecord = (options: {
   return withProductLock(found.dir, () => writeRecordOf({ ...options, found }));
 };
 
+/** Rewrites the builder of the current ready mark of `part` and keeps who wrote the mark; `null` without a mark that has a writer. */
+export const writePartBuilder = (options: { product: ResolvedProduct; part: string }): PartReady | null => {
+  const mark = readyMarkOf(options);
+
+  if (mark?.by === undefined || mark.cmd === undefined) return null;
+
+  return writePartRecord({ ...options, origin: { by: mark.by, cmd: mark.cmd, pid: mark.pid ?? 0 } });
+};
+
 const writeRecordOf = (options: {
   product: ResolvedProduct;
   part: string;

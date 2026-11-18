@@ -9,6 +9,7 @@ import {
   builderChangedOf,
   readyMarkOf,
   readyPartOf,
+  writePartBuilder,
   writePartRecord,
 } from './part-ready';
 import { Problem } from './problem';
@@ -156,7 +157,7 @@ export const recordBuildReady = async (options: {
       const actions = recorded.length === 0 ? [] : await options.actionsOf?.(part);
 
       if (Array.isArray(actions) && actions.length === 0) {
-        if (recorded.length > 0 || builderChangedOf({ product, part })) {
+        if (recorded.length > 0) {
           const declared = await options.declaredActionsOf?.(part);
 
           writePartRecord({
@@ -165,7 +166,7 @@ export const recordBuildReady = async (options: {
             origin: originOf(options.by, options.cmd),
             ...(Array.isArray(declared) ? { actions: declared } : {}),
           });
-        }
+        } else if (builderChangedOf({ product, part })) writePartBuilder({ product, part });
 
         results.set(part, embedded.length === 0 ? { ready: true } : { ready: false, blockers: embedded });
         continue;

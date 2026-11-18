@@ -29,6 +29,7 @@ import {
   readyMarkOf,
   readyPartOf,
   readyPartsOf,
+  writePartBuilder,
   writePartRecord,
 } from './part-ready';
 import { designReady } from './ready-command';
@@ -206,6 +207,32 @@ describe('part ready', () => {
     writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
 
     expect(builderChangedOf({ product: productOf(target), part: 'components/chip' })).toBe(true);
+  });
+
+  it('adds the builder to a mark and keeps who wrote it', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+
+    writePartRecord({
+      product: productOf(target),
+      part: 'components/tag',
+      origin: originOf('claude-opus-5-5', 'design ready'),
+      at: '2026-11-17T00:00:00.000Z',
+    });
+
+    const records = JSON.parse(readFileSync(file, 'utf8'));
+    const legacy = { ...records['components/tag'] };
+
+    delete legacy.builder;
+    writeFileSync(file, JSON.stringify({ ...records, 'components/tag': legacy }));
+
+    expect(writePartBuilder({ product: productOf(target), part: 'components/tag' })).toMatchObject({
+      builder: 'designer',
+      by: 'claude-opus-5-5',
+      cmd: 'design ready',
+      at: '2026-11-17T00:00:00.000Z',
+    });
+    expect(builderChangedOf({ product: productOf(target), part: 'components/tag' })).toBe(false);
   });
 
   it('keeps the record byte-equal when the same writer rewrites it at the same hash from another process', () => {
