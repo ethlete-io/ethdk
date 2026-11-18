@@ -4,13 +4,13 @@ import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { Worker } from 'worker_threads';
 import { describe, expect, it } from 'vitest';
-import { journaledAsync, openJournal } from './write-journal';
+import { journaledAsync, openJournal, recoverJournal } from './write-journal';
 
 const JITI = pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href;
 
-const holdInThread = (productDir: string, root: string, holdMs: number) => {
+const holdInThread = (productDir: string, root: string, holdMs: number, cycleMs?: number) => {
   const worker = new Worker(resolve(__dirname, 'write-journal.hold.worker.ts'), {
-    workerData: { productDir, root, holdMs },
+    workerData: { productDir, root, holdMs, cycleMs },
     execArgv: ['--import', JITI],
   });
   const message = (expected: string) =>
@@ -39,6 +39,20 @@ describe('openJournal', () => {
     journal.close();
 
     expect(opened).toBeGreaterThanOrEqual(await held.closed);
+  }, 30_000);
+
+  it('leaves alone a journal another thread of this process closes during the recovery', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'cli-write-journal-'));
+    const productDir = join(root, '.ethlete', 'design', 'acme');
+
+    mkdirSync(productDir, { recursive: true });
+
+    const held = holdInThread(productDir, root, 0, 1500);
+    const until = Date.now() + 1500;
+
+    while (Date.now() < until) expect(recoverJournal(productDir)).toBeNull();
+
+    await held.closed;
   }, 30_000);
 
   it('throws naming the open journal once its wait runs out', async () => {

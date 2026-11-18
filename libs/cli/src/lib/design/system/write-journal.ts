@@ -84,11 +84,13 @@ const writeManifest = (dir: string, manifest: Manifest) => {
   renameSync(tmp, file);
 };
 
-const readManifest = (dir: string): Manifest | null => {
+const MISSING = 'missing';
+
+const readManifest = (dir: string): Manifest | null | typeof MISSING => {
   try {
     return JSON.parse(readFileSync(resolve(dir, MANIFEST), 'utf8')) as Manifest;
-  } catch {
-    return null;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'ENOENT' ? MISSING : null;
   }
 };
 
@@ -156,7 +158,8 @@ export const recoverJournal = (productDir: string): string | null => {
 
   const manifest = readManifest(dir);
 
-  if (manifest && isAlive(manifest.pid)) return null;
+  // `created` moves a journal into place with its manifest, so a missing one means another thread just dropped it.
+  if (manifest === MISSING || (manifest && isAlive(manifest.pid))) return null;
 
   const how = manifest ? restore(dir, manifest) : 'dropped';
 
@@ -240,7 +243,9 @@ const attemptOf = (options: JournalOptions): Attempt | WriteJournal => {
   const opened = () => {
     recoverJournal(productDir);
 
-    left = existsSync(dir) ? readManifest(dir) : null;
+    const seen = existsSync(dir) ? readManifest(dir) : null;
+
+    left = seen === MISSING ? null : seen;
 
     if (left || !created({ fresh, dir, manifest })) return null;
 
