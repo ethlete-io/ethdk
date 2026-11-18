@@ -29,9 +29,9 @@
     <div class="relative flex min-h-10 w-full justify-center">
       <ng-content select="[shellMainStudio]">
         <span
+          [attr.aria-label]="SHELL_LABELS.studio"
           class="inline-flex size-10 items-center justify-center rounded-control-lg bg-et-surface-bg text-et-surface"
           etAutoSurface
-          aria-label="Studio"
         >
           <svg width="28.8" height="28.8" viewBox="0 0 32 32" aria-hidden="true">
             <path

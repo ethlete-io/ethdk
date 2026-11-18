@@ -6,7 +6,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
   selector: 'ethlete-start',
   template: `
     <header class="flex items-center gap-space-3 p-space-4">
-      <svg width="24" height="24" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio">
+      <svg [attr.aria-label]="LABELS.title" width="24" height="24" viewBox="0 0 32 32" role="img">
         <g color="#051211">
           <rect width="32" height="32" rx="8" fill="#25aea7" />
           <path

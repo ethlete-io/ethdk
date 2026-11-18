@@ -1,10 +1,13 @@
 import { Component, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 @Component({
   selector: 'ethlete-shell-collapse',
   template: `
     <button
+      [etTooltip]="LABELS.hidePanel"
+      [attr.aria-label]="LABELS.hidePanel"
       (click)="collapse.emit()"
       class="size-control-sm p-0"
       et-button
@@ -12,8 +15,6 @@ import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
       variant="transparent"
       color="surface"
       size="sm"
-      etTooltip="Hide panel"
-      aria-label="Hide panel"
     >
       <svg
         width="18"
@@ -37,4 +38,6 @@ import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 })
 export class ShellCollapseComponent {
   public collapse = output();
+
+  protected readonly LABELS = STUDIO_LABELS.shell;
 }

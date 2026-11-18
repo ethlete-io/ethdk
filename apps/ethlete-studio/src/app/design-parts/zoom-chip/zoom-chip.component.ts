@@ -1,6 +1,7 @@
 import { Component, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 export type ZoomControl = 'out' | 'reset' | 'in' | 'fit';
 
@@ -12,13 +13,13 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
     <span class="contents" data-camera-out>
       <button
         [attr.data-et-force]="forcedOn('out')"
+        [attr.aria-label]="LABELS.out"
         (click)="zoomOut.emit()"
         et-button
         type="button"
         variant="transparent"
         color="surface"
         size="sm"
-        aria-label="Verkleinern"
       >
         −
       </button>
@@ -26,6 +27,7 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
     <span class="contents" data-camera-reset>
       <button
         [attr.data-et-force]="forcedOn('reset')"
+        [attr.aria-label]="LABELS.reset"
         (click)="zoomReset.emit()"
         et-button
         type="button"
@@ -33,7 +35,6 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
         color="surface"
         size="sm"
         etTooltip="Zoom to 100 % (Shift+0)"
-        aria-label="Auf 100 % zoomen"
       >
         {{ percent() }} %
       </button>
@@ -41,13 +42,13 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
     <span class="contents" data-camera-in>
       <button
         [attr.data-et-force]="forcedOn('in')"
+        [attr.aria-label]="LABELS.in"
         (click)="zoomIn.emit()"
         et-button
         type="button"
         variant="transparent"
         color="surface"
         size="sm"
-        aria-label="Vergrößern"
       >
         +
       </button>
@@ -55,6 +56,7 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
     <span class="contents" data-camera-fit>
       <button
         [attr.data-et-force]="forcedOn('fit')"
+        [attr.aria-label]="LABELS.fit"
         (click)="fit.emit()"
         et-button
         type="button"
@@ -63,9 +65,8 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
         size="sm"
         etTooltip="Zoom to fit (Shift+1)"
         placement="top-end"
-        aria-label="Einpassen"
       >
-        Fit
+        {{ LABELS.fitButton }}
       </button>
     </span>
   `,
@@ -80,13 +81,15 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
 })
 export class ZoomChipComponent {
   public percent = input(100);
+
   public target = input<ZoomControl | null>(null);
   public interaction = input<ZoomInteraction | null>(null);
-
   public zoomOut = output();
+
   public zoomReset = output();
   public zoomIn = output();
   public fit = output();
+  protected readonly LABELS = STUDIO_LABELS.zoom;
 
   protected forcedOn(control: ZoomControl) {
     return this.target() === control ? this.interaction() : null;

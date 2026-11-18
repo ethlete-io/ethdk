@@ -196,14 +196,14 @@ export const FRAME_HEAD_CLASS =
           zoom="75%"
         >
           <figure [class]="FRAME_CLASS">
-            <figcaption [class]="FRAME_HEAD_CLASS">grid</figcaption>
+            <figcaption [class]="FRAME_HEAD_CLASS">{{ LABELS.frameGrid }}</figcaption>
             <div>
               <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'grid' }" />
             </div>
           </figure>
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">
-              tree<span class="text-et-surface-muted tabular-nums">280</span>
+              {{ LABELS.frameTree }}<span class="text-et-surface-muted tabular-nums">280</span>
             </figcaption>
             <div class="w-md">
               <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'tree' }" />

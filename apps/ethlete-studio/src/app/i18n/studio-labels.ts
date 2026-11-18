@@ -56,6 +56,13 @@ export const STUDIO_LABELS = {
     unanswered: 'Der Design-Server antwortet nicht.',
     reload: 'Neu laden',
   },
+  zoom: {
+    out: 'Verkleinern',
+    reset: 'Auf 100 % zoomen',
+    in: 'Vergrößern',
+    fit: 'Einpassen',
+    fitButton: 'Fit',
+  },
   titleBar: {
     search: (product: string, part: string) => `Suchen in ${product}, ${part}`,
     update: 'Update',
@@ -219,6 +226,8 @@ export const STUDIO_LABELS = {
     commentOn: (frame: string) => `Kommentar zu ${frame}`,
     commentModeOr: 'oder',
     commentModeEnds: 'beendet',
+    frameGrid: 'grid',
+    frameTree: 'tree',
   },
   buildReady: {
     ready: 'Baubereit',
@@ -281,6 +290,8 @@ export const STUDIO_LABELS = {
     surfaceTheme: 'Oberflächen-Theme',
     colorTheme: 'Farb-Theme',
     sideWidth: 'Breite der Seitenleiste',
+    studio: 'Studio',
+    hidePanel: 'Hide panel',
   },
   exceptions: {
     toggle: 'Ausnahmen',
