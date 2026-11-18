@@ -67,7 +67,13 @@
   },
   "components/copy-button": "fdc91e5c36d6d68e",
   "components/description-list": "2f40dd62ec286cb9",
-  "components/dialog": "d7f6bf0a7ded1f4e",
+  "components/dialog": {
+    "hash": "ab609978e9a6fba4",
+    "variant": "new",
+    "decidedBy": "plan: B584: fill the missing control states of components/dialog",
+    "at": "2026-11-18T14:07:53.418Z",
+    "note": "merged without a pick: allowed by B584: fill the missing control states of components/dialog"
+  },
   "components/divider": "71b52e568e69dfed",
   "components/empty-state": {
     "hash": "3a1430a2ae82821c",
