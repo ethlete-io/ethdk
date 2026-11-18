@@ -116,6 +116,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 85. **B356** ⏳ Zoom in WebKit ~20 fps (Chromium 60): WebKit-Budget Frame-Intervall p50 ≤ 20 ms, p95 ≤ 33 ... - Builder
 86. **B100** ⏳ Restliche prüfbare Regeln aus dem Audit - Builder
 87. **B605** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
+88. **B606** ⏳ Hook protokolliert Modell, Aufgabe und Dateien jedes Subagenten (ADR 0371) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.
 
@@ -213,7 +214,8 @@ Geparkt: B105, B108, B109, B580, B148.
 | B602 | Timetrack-Befunde in `plans/timetrack/findings-2026-11-17-demo-prep.md` ohne Zeile: #3, #4, #5 (Beschreibungen: fremdes Repo, Wiederholung, englische Commit-Listen), dann #19, #20, #22 (abgeschnittenes Stück, Splitter, Anruf ohne Teilnehmer). Nach B596. | ⏳ | #4, #5 macht vielleicht die Session „Timetrack-Plan Korrekturen“, wenn der Mensch zustimmt; vorher fragen. | Builder |
 | B603 | Cross-Check als frischer fable-Lauf je Frage, nur bei den Auslösern (ADR 0358, ersetzt ADR 0287): doc-agent-Skill (Zeile „supervisor session … ADR 0287“ ersetzen, Auslöser und Brief kurz), supervisor-agent-Skill als Brief-Vorlage für den frischen Lauf umbauen oder löschen. | ⏳ | Wörter gehen, wie sie kommen (Skill-Wortbudget). | Builder |
 | B604 | Studio-Plan-Ordner nach `plans/studio` umbenennen (Pfade in tools/, Skills, AGENTS.md, ADRs, `yarn queue`) und `STATUS.md` auf ≤5000 Zeichen bringen: Warteschlange + eine Zeile je Plan-Datei bleiben, die Eintragstabelle und die Listen A-E wandern in eine eigene Plan-Datei, die `yarn queue` und die Checker lesen (ADR 0354 Punkte 1, 2, 7). Die Plan-Dateien sind sortiert (B597, Teile 1-3). | ⏳ | Vor B595, damit das Prüfskript gleich die neuen Pfade und Grenzen prüft. | Builder |
-| B605 | Fällig: 2026-11-25. Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md`: nur lesend, ein bis zwei Subagenten mit gesetztem Modell, kein Transcript direkt lesen. Ergebnis für Tom auf Deutsch mit kleinen Tabellen. | ⏳ | Vorschlag von 3f nach Toms Frage, wie die Nachmessung nicht vergessen wird. | Doc-Agent |
+| B605 | Fällig: 2026-11-25. Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md`: nur lesend, ein bis zwei Subagenten mit gesetztem Modell, kein Transcript direkt lesen. Je Modell: Nacharbeit in 48 h, Eskalation, rote CI-Läufe, Kosten je fertiger Aufgabe (ADR 0371, Log aus B606). Ergebnis für Tom auf Deutsch mit kleinen Tabellen. | ⏳ | Vorschlag von 3f nach Toms Frage, wie die Nachmessung nicht vergessen wird. | Doc-Agent |
+| B606 | `subagent-model-policy.py` schreibt bei jedem Subagent-Start Modell, Aufgabe und Dateien in ein lokales Log, das sich mit git verbinden lässt (ADR 0371 Punkt 1). | ⏳ | Grundlage der Zahlen je Modell in B605. | Builder |
 
 ## A. Studio: was man sieht
 
