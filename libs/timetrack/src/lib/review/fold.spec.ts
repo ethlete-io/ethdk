@@ -125,7 +125,41 @@ describe('foldCrowdedSiblings', () => {
   });
 
   it('keeps three parallel sessions of one ticket', () => {
-    expect(foldCrowded(four.slice(0, 3)).map((entry) => entry.id)).toEqual(['a', 'b', 'c']);
+    const rows = foldCrowded([...four.slice(0, 2), sibling({ id: 'c', from: '09:30', to: '10:15', observed: 20 })]);
+
+    expect(rows.map((entry) => entry.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('folds a parallel session that books one increment into the widest session it overlaps', () => {
+    const rows = foldCrowded(four.slice(0, 3));
+
+    expect(rows.map(window)).toEqual(['a 09:00-11:00 75m', 'b 09:15-10:30 30m']);
+    expect(rows[0]?.folded).toEqual(['c']);
+  });
+
+  it('joins a day of three parallel sessions cut into short bands', () => {
+    const day = ['09', '10', '11', '13', '14', '15'].flatMap((hour) => [
+      sibling({ id: `one-${hour}`, from: `${hour}:00`, to: `${hour}:30`, observed: 10 }),
+      sibling({ id: `two-${hour}`, from: `${hour}:15`, to: `${hour}:45`, observed: 10 }),
+      sibling({ id: `three-${hour}`, from: `${hour}:20`, to: `${hour}:35`, observed: 5 }),
+    ]);
+
+    const rows = foldCrowded(day);
+
+    expect(rows.map(window)).toEqual(
+      ['09', '10', '11', '13', '14', '15'].map((hour) => `two-${hour} ${hour}:00-${hour}:45 25m`),
+    );
+    expect(rows.every((entry) => entry.durationMs === 30 * MINUTE)).toBe(true);
+  });
+
+  it('keeps a session that books one increment when no session of its ticket overlaps it', () => {
+    const rows = foldCrowded([
+      sibling({ id: 'a', from: '09:00', to: '10:00', observed: 40 }),
+      sibling({ id: 'b', from: '09:30', to: '10:30', observed: 30 }),
+      sibling({ id: 'c', from: '11:00', to: '11:15', observed: 10 }),
+    ]);
+
+    expect(rows.map((entry) => entry.id)).toEqual(['a', 'b', 'c']);
   });
 
   it('folds five parallel sessions down to three', () => {
@@ -135,20 +169,29 @@ describe('foldCrowdedSiblings', () => {
     expect(rows.reduce((sum, entry) => sum + entry.observedMs, 0)).toBe(150 * MINUTE);
   });
 
+  const wider = [
+    ...four.slice(0, 2),
+    sibling({ id: 'c', from: '09:30', to: '10:15', observed: 20 }),
+    sibling({ id: 'd', from: '09:45', to: '11:15', observed: 30 }),
+  ];
+
   it('keeps four sessions that never run at one instant', () => {
-    const rows = foldCrowded([...four.slice(0, 3), sibling({ id: 'd', from: '10:30', to: '11:30', observed: 30 })]);
+    const rows = foldCrowded([...wider.slice(0, 3), sibling({ id: 'd', from: '10:30', to: '11:30', observed: 30 })]);
 
     expect(rows).toHaveLength(4);
   });
 
   it('never folds the sessions of two tickets into each other', () => {
-    const rows = foldCrowded([...four.slice(0, 2), ...four.slice(2).map((entry) => ({ ...entry, issueKey: 'ABC-2' }))]);
+    const rows = foldCrowded([
+      ...wider.slice(0, 2),
+      ...wider.slice(2).map((entry) => ({ ...entry, issueKey: 'ABC-2' })),
+    ]);
 
     expect(rows).toHaveLength(4);
   });
 
   it('never folds a session in another lane', () => {
-    expect(foldCrowded([...four.slice(0, 3), { ...four[3]!, laneKey: 'repo:/dev/b' }])).toHaveLength(4);
+    expect(foldCrowded([...wider.slice(0, 3), { ...wider[3]!, laneKey: 'repo:/dev/b' }])).toHaveLength(4);
   });
 
   it('folds the next shortest session when the shortest may not fold', () => {

@@ -158,9 +158,34 @@ const crowdedInstants = <T extends FoldRow>(rows: readonly T[], most: number) =>
     }))
     .filter((crowd) => crowd.rows.length > most);
 
+const singleIncrementSibling = <T extends FoldRow>(options: {
+  lanes: readonly T[][];
+  incrementMs: number;
+  takesPart: (row: T) => boolean;
+  canFold: (row: T) => boolean;
+}) =>
+  options.lanes
+    .flatMap((siblings) =>
+      siblings
+        .filter(
+          (row) =>
+            options.takesPart(row) &&
+            options.canFold(row) &&
+            roundDurationUp(row.observedMs, { incrementMs: options.incrementMs }) <= options.incrementMs,
+        )
+        .map((short) => ({
+          short,
+          wide: siblings
+            .filter((row) => row !== short && options.takesPart(row) && overlaps(row, short))
+            .sort((a, b) => spanOf(b) - spanOf(a))[0],
+        })),
+    )
+    .find((pair): pair is { short: T; wide: T } => !!pair.wide);
+
 /**
  * Folds the shortest of the rows of parallel sessions on one ticket in one lane (`sharingTicket`) into
  * the one with the longest span, wherever more than `most` of them run at one instant, until none does.
+ * A sibling that books a single increment folds into the widest sibling it overlaps however few run.
  * The grown row keeps its id and description, spans both rows and books both rows' observed minutes.
  *
  * `fixed` rows count toward `most` but neither fold nor absorb; a row `canFold` refuses can still absorb.
@@ -187,7 +212,7 @@ export const foldCrowdedSiblings = <T extends FoldRow>(options: {
       lanes.set(key, [...(lanes.get(key) ?? []), row]);
     }
 
-    const fold = [...lanes.values()]
+    const crowded = [...lanes.values()]
       .flatMap((siblings) => crowdedInstants(siblings, options.most))
       .map((crowd) => {
         const bySpan = crowd.rows.filter(takesPart).sort((a, b) => spanOf(a) - spanOf(b));
@@ -197,6 +222,7 @@ export const foldCrowdedSiblings = <T extends FoldRow>(options: {
         return short && wide ? { short, wide } : undefined;
       })
       .find((pair) => !!pair);
+    const fold = crowded ?? singleIncrementSibling({ lanes: [...lanes.values()], takesPart, ...options });
 
     if (!fold) return rows;
 
