@@ -7,7 +7,11 @@ import { describe, expect, it } from 'vitest';
 const hookPath = resolve(__dirname, '../../content/hooks/background-design-commands.py');
 
 type HookOutput = {
-  hookSpecificOutput: { permissionDecision: string; permissionDecisionReason: string };
+  hookSpecificOutput: {
+    permissionDecision: string;
+    permissionDecisionReason: string;
+    updatedInput?: Record<string, unknown>;
+  };
 };
 
 const runHook = (options: {
@@ -48,10 +52,12 @@ describe('background-design-commands', () => {
     ['design sketch ready', 'yarn design sketch ready studio components-card'],
     ['design harness', 'yarn design harness studio'],
     ['studio:e2e', 'npx nx run ethlete-studio:studio:e2e'],
-  ])('denies %s in the foreground and names the background form', (name, command) => {
+  ])('moves %s from the foreground into the background', (name, command) => {
     const result = runHook({ command });
 
-    expect(result?.hookSpecificOutput.permissionDecision).toBe('deny');
+    expect(result?.hookSpecificOutput.permissionDecision).toBe('allow');
+    expect(result?.hookSpecificOutput.updatedInput?.['run_in_background']).toBe(true);
+    expect(result?.hookSpecificOutput.updatedInput?.['command']).toBe(command);
     expect(result?.hookSpecificOutput.permissionDecisionReason).toContain(name);
     expect(result?.hookSpecificOutput.permissionDecisionReason).toContain('run_in_background: true');
   });
@@ -61,8 +67,8 @@ describe('background-design-commands', () => {
     'node dist/libs/cli/src/index.js design sketch ready studio foo',
     'cd apps && node dist/libs/cli/src/index.js design compare studio',
     'npx nx studio:e2e ethlete-studio',
-  ])('denies the %s form', (command) => {
-    expect(decisionOf({ command })).toBe('deny');
+  ])('moves the %s form into the background', (command) => {
+    expect(decisionOf({ command })).toBe('allow');
   });
 
   it.each([
@@ -112,8 +118,8 @@ describe('background-design-commands', () => {
     'cat <<EOF\nhello\nEOF\nyarn design harness studio',
     'timeout 600 yarn design check',
     'yarn studio:e2e --help',
-  ])('still denies the command-position form %s', (command) => {
-    expect(decisionOf({ command })).toBe('deny');
+  ])('still moves the command-position form %s', (command) => {
+    expect(decisionOf({ command })).toBe('allow');
   });
 
   it('ignores tools other than Bash', () => {
