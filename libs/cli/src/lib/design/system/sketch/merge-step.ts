@@ -7,6 +7,7 @@ import { partKeyOf, resolveProduct, ResolvedProduct } from '../resolve-product';
 import { configOf, isModelId, oneProductOf } from './cli-args';
 import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
 import { mergeSketch, MergeRefusal, rebaseOthersAfterMerge } from './merge';
+import { embedderCheckAroundMerge } from './merge-embedders';
 import { SketchRebases } from './after-merge';
 import { openJournal } from '../write-journal';
 import { appGatedMergeOf } from './merge-app-gate';
@@ -221,6 +222,13 @@ export const mergeStepOf = (options: {
   return {
     line: `merge ${product.name} ${part}${variant ? ` variant ${variant}` : ''} - ${note}`,
     run: async () => {
+      const afterMerge = await embedderCheckAroundMerge({
+        target,
+        config,
+        product,
+        sketch,
+        variant: allowed?.variant ?? picked,
+      });
       const merged = mergeAndRecord({ target, config, product, sketch, note, by, allowed });
 
       if (typeof merged === 'string') {
@@ -229,6 +237,7 @@ export const mergeStepOf = (options: {
         return 1;
       }
 
+      await afterMerge();
       console.log(`merged ${sketch.target} variant ${merged.variant} into ${product.name}: ${merged.parts.join(', ')}`);
       await printPortItems({ target, config, product, parts: merged.parts });
 

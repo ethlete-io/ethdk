@@ -49,6 +49,7 @@ import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { embedderCheckAroundMerge } from './system/sketch/merge-embedders';
 import {
   editRefOf,
   humanPickOf,
@@ -2108,27 +2109,38 @@ const merged = (context: Context) =>
         `REUSED the pick of variant ${sketch.decision.variant} by ${sketch.decision.by} from ${sketch.decision.decidedAt}, recorded before this merge`,
       );
 
-    const result = timedPhase('merge', () =>
-      mergeAndRecord({
+    const mergeNow = async () => {
+      const afterMerge = await embedderCheckAroundMerge({
         target: context.target,
         config: context.config,
         product,
         sketch,
-        note,
-        replaceNote,
-        by,
-        decidedBy: decidedBy?.trim(),
-        allowed,
-      }),
-    );
+        variant: allowed?.variant ?? humanPickOf(sketch),
+      });
+      const result = timedPhase('merge', () =>
+        mergeAndRecord({
+          target: context.target,
+          config: context.config,
+          product,
+          sketch,
+          note,
+          replaceNote,
+          by,
+          decidedBy: decidedBy?.trim(),
+          allowed,
+        }),
+      );
 
-    if (typeof result === 'string') return fail(result);
+      if (typeof result === 'string') return fail(result);
 
-    console.log(`merged ${sketch.target} variant ${result.variant} into ${product.name}: ${result.parts.join(', ')}`);
+      await afterMerge();
+      console.log(`merged ${sketch.target} variant ${result.variant} into ${product.name}: ${result.parts.join(', ')}`);
+      await printPortItems({ target: context.target, config: context.config, product, parts: result.parts });
 
-    return printPortItems({ target: context.target, config: context.config, product, parts: result.parts }).then(
-      () => 0,
-    );
+      return 0;
+    };
+
+    return mergeNow();
   });
 
 const discarded = (context: Context) =>

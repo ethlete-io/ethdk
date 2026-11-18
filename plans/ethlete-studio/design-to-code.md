@@ -2084,3 +2084,22 @@ embedder fails X and drops its mark, an unrelated part checks no embedders, pass
 the call or the drop reverted. Live: `check --part elements/canvas-frames` checked pages/inbox (UNRECORDED, fails) and
 pages/system (2 warnings, passes); 19 s before, 24 s after; ready.json changed only the asked part's mark. Not verified:
 a product with many embedders (pages each run their own render job in turn, not one batched job).
+
+## As built (B243)
+
+Cause (finding 295): a merge made 20 embedding parts stale and neither named nor checked them, so "no new problem from
+the merge" had no baseline. Fix (`sketch/merge-embedders.ts` `embedderCheckAroundMerge`, called by `design sketch
+merge` and the plan-run merge step): before the merge, the parts that embed a merged part (the sketch's targets plus
+the picked variant's parts; `embeddersOfPart`, transitive, base parts skipped, merged parts themselves left out) are
+checked silently with B236's embedder check (`embedderProblemCodesOf` in check-system.ts: render, static and tail
+rules, no ready marks, stamps in memory) and their problem codes kept per part. Once the merge landed, it prints
+`STALE EMBEDDERS <product>: ...`, checks them again and prints one `NEW PROBLEM <part>: <codes>` per part with a code
+it did not show before, or `EMBEDDERS NO NEW PROBLEM: n parts`; a part that did not draw before or after gets
+`EMBEDDER NOT CHECKED`. Choices: compared by code set per part, so a code already present (any count) is not new; the
+baseline is the checkout before the merge (the drawn embedders do not change in a merge, only what they embed); no ADR
+decides refusal, so it only reports and the exit code is unchanged; the lines come before the `merged ...` line, which
+stays last; the before check is skipped when the sketch is not ready or the variant is unknown, so the cheap refusals
+stay fast; the Studio merge (worker) does not run it. Verified: sketch-command.spec "names the parts that embed the
+merged one ..." (merging components/button names elements/hero and pages/home, hero's COVERED before and after is not
+reported, a CLIPPED in pages/home after the merge is), red with the after-merge call removed; the other merge specs pass
+unchanged. Not verified: a live merge on the real design (cost estimated from B236: two embedder checks, about 2-3 s per embedder each).

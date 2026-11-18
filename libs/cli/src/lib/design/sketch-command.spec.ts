@@ -2839,6 +2839,60 @@ export default definePart({
       });
     });
 
+    it('names the parts that embed the merged one and reports only the problem codes the merge brought them', async () => {
+      const { target, lines } = await readied('a');
+      const issue = (part: string, rule: string) => ({
+        rule,
+        product: 'acme',
+        part,
+        state: 'default',
+        size: 'm',
+        path: 'div',
+        detail: 'found',
+        sketch: null,
+      });
+
+      vi.mocked(renderIssuesOf).mockImplementation(async ({ jobs }) => {
+        const parts = jobs.flatMap((job) => job.parts ?? []);
+        const merged = !existsSync(sketchDir(target));
+
+        return {
+          issues: [
+            ...(parts.includes('elements/hero') ? [issue('elements/hero', 'COVERED')] : []),
+            ...(merged && parts.includes('pages/home') ? [issue('pages/home', 'CLIPPED')] : []),
+          ],
+          warnings: [],
+          grids: [],
+          drawn: [],
+        };
+      });
+
+      try {
+        expect(
+          await write(
+            target,
+            'merge',
+            'components/button',
+            '--variant',
+            'a',
+            '--allowed-by',
+            PLAN,
+            '--product',
+            'acme',
+          ),
+        ).toBe(0);
+      } finally {
+        vi.mocked(renderIssuesOf).mockImplementation(async () => ({ issues: [], warnings: [], grids: [], drawn: [] }));
+      }
+
+      expect(lines).toContain(
+        'STALE EMBEDDERS acme: elements/hero, pages/home - they embed a part the merge of components/button changed',
+      );
+      expect(lines.filter((line) => /^(NEW PROBLEM|EMBEDDER)/u.test(line))).toEqual([
+        'NEW PROBLEM pages/home: CLIPPED - since the merge of components/button; design check --part pages/home --product acme shows it',
+      ]);
+    });
+
     it("notes the --note reason in merged.json and keeps the part's note", async () => {
       const { target } = await readied('a');
       const buttonFile = join(target, DESIGN_DIR, 'acme/components/button/button.ts');

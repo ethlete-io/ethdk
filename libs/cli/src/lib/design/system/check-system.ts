@@ -1197,8 +1197,11 @@ const checkEmbedders = async (
   return 1;
 };
 
-const checkEmbedderOn = async (options: CheckOptions & { warm: WarmDraw; tally: Tally; part?: string }) => {
-  const { code } = await renderSystem({ ...options, embedder: true });
+const checkEmbedderOn = async (options: CheckOptions & { warm: WarmDraw; tally: Tally; part?: string }) =>
+  (await embedderRunOf(options)).exit;
+
+const embedderRunOf = async (options: CheckOptions & { warm: WarmDraw; tally: Tally; part?: string }) => {
+  const { code, notDrawn } = await renderSystem({ ...options, embedder: true });
   let failed = 0;
 
   for (const name of options.products) {
@@ -1217,7 +1220,52 @@ const checkEmbedderOn = async (options: CheckOptions & { warm: WarmDraw; tally: 
       .filter((line) => !line.endsWith(': clean'))
       .forEach((line) => console.log(line));
 
-  return code !== 0 || failed + denied.length > 0 ? 1 : 0;
+  return { exit: code !== 0 || failed + denied.length > 0 ? 1 : 0, notDrawn };
+};
+
+const silently = async <T>(run: () => Promise<T>) => {
+  const { log, warn, error } = console;
+  const mute = () => undefined;
+
+  console.log = mute;
+  console.warn = mute;
+  console.error = mute;
+
+  try {
+    return await run();
+  } finally {
+    Object.assign(console, { log, warn, error });
+  }
+};
+
+/**
+ * The problem codes each of `embedders` shows when checked as `check --part` checks an embedder, sorted, by part key;
+ * `null` for a part that did not draw. Prints nothing and writes no ready mark.
+ */
+export const embedderProblemCodesOf = async (
+  options: CheckOptions & { embedders: { part: string; products: string[] }[] },
+) => {
+  const run = createRunDraw(options.target, { chromiumOf: options.chromiumOf });
+  const typechecks = new Map<string, TypecheckResult>();
+  const codes = new Map<string, string[] | null>();
+
+  try {
+    await withStampsInMemory(() =>
+      silently(async () => {
+        for (const { part, products } of options.embedders) {
+          const tally: Tally = new Map();
+          const { notDrawn } = await embedderRunOf({ ...options, products, part, tally, typechecks, warm: run.warm });
+          const found = products.flatMap((name) => tally.get(name)?.get(part)?.problems ?? []);
+
+          codes.set(part, notDrawn === undefined ? [...new Set(found)].sort() : null);
+        }
+      }),
+    );
+  } finally {
+    await run.close();
+  }
+
+  return codes;
 };
 
 export const deniedLineOf = (id: string) =>
