@@ -240,6 +240,30 @@ Public design tokens: `--et-progress-steps-gap`, `--et-progress-step-marker-size
 `--et-progress-step-label-font-size`, `--et-progress-step-description-font-size`. All of them inherit, so
 setting one on `et-progress-steps` or any ancestor configures every step inside it.
 
+| Token                                           | Default                                                         | Controls                                                                             |
+| ----------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `--et-progress-step-connector-width`            | `2px`                                                           | Thickness of the line between markers (both orientations).                           |
+| `--et-progress-step-connector-color`            | surface border                                                  | Line colour before a resolved step. Set it when the line vanishes on a card surface. |
+| `--et-progress-step-connector-complete-color`   | theme ink                                                       | Line colour after a resolved step.                                                   |
+| `--et-progress-step-current-marker-background`  | surface background                                              | Fill of the `current` marker.                                                        |
+| `--et-progress-step-current-dot-size`           | `0px`                                                           | Diameter of a dot centred in the `current` marker. `0px` draws none.                 |
+| `--et-progress-step-current-dot-color`          | theme ink                                                       | Colour of that dot.                                                                  |
+| `--et-progress-step-current-marker-content`     | step number                                                     | Set to `''` to hide the number so the dot stands alone.                              |
+| `--et-progress-step-label-upcoming-font-weight` | inherited                                                       | Label weight of `upcoming` steps.                                                    |
+| `--et-progress-step-label-done-font-weight`     | `600` for `success`/`warning`/`error`, inherited for `complete` | Label weight of resolved steps.                                                      |
+| `--et-progress-step-description-line-height`    | inherited                                                       | Line height of `[etProgressStepDescription]`.                                        |
+
+A filled marker with a dot for the current step:
+
+```css
+et-progress-steps {
+  --et-progress-step-current-marker-background: var(--et-theme-color-primary-solid);
+  --et-progress-step-current-dot-size: 8px;
+  --et-progress-step-current-dot-color: var(--et-theme-color-on-primary-solid);
+  --et-progress-step-current-marker-content: '';
+}
+```
+
 `--et-progress-step-marker-ring-color` has no default: unset, each marker's ring keeps its state colour
 (surface border when `upcoming`, the theme ink otherwise). Set it on one step, or scope it with
 `.et-progress-step[data-state='upcoming']`, to colour only some rings.

@@ -23,4 +23,22 @@ describe('progress-step.component.css tokens', () => {
     expect(css).toContain('border: var(--et-progress-step-marker-ring-width) solid');
     expect(css.match(/border-color: var\(--et-progress-step-marker-ring-color,/g)).toHaveLength(2);
   });
+
+  it('reads the connector thickness and colours from tokens', () => {
+    expect(css).toContain('block-size: var(--et-progress-step-connector-width)');
+    expect(css).toContain('var(--et-progress-step-connector-color,');
+    expect(css).toContain('var(--et-progress-step-connector-complete-color,');
+  });
+
+  it('keeps the current-marker dot and fill opt-in', () => {
+    expect(css).toMatch(/--et-progress-step-current-dot-size[^}]*initial-value:\s*0px/);
+    expect(css).toContain('var(--et-progress-step-current-marker-background,');
+    expect(css).toContain('var(--et-progress-step-current-dot-color,');
+  });
+
+  it('exposes the done and upcoming label weights and the description line-height', () => {
+    expect(css).toContain('var(--et-progress-step-label-done-font-weight, 600)');
+    expect(css).toContain('var(--et-progress-step-label-upcoming-font-weight,');
+    expect(css).toContain('var(--et-progress-step-description-line-height,');
+  });
 });
