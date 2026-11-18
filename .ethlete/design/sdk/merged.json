@@ -21,7 +21,13 @@
     "decidedBy": "builder",
     "at": "2026-11-17T20:31:21.565Z"
   },
-  "components/banner": "4d56169019b53f63",
+  "components/banner": {
+    "hash": "2898c2b68e70c1b2",
+    "variant": "new",
+    "decidedBy": "plan: B584: fill the missing control states of components/banner",
+    "at": "2026-11-18T14:07:02.575Z",
+    "note": "merged without a pick: allowed by B584: fill the missing control states of components/banner"
+  },
   "components/bracket": {
     "hash": "cd61e8b68d169acb",
     "variant": "a",
