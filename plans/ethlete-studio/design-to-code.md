@@ -2523,3 +2523,11 @@ as `no open sketch targets pages/sketches` and no region was compared. It now ta
 the part, and names them all when there are several. Live, on that sketch (2 live states, 3 variants): region check
 20.1 s before, when it compared no variant, and 29.4 s after with every variant compared; a run with the fix but
 without the shared shot was not measured.
+
+## As built (pages/sketches@live-question-drift closed on variant a)
+
+Recommendation built, no pick from the human: variant a (the built look, question line on its own line) is merged
+(f47779266) and `pages/sketches` is marked build-ready (d8f38d562). `sketch ready` passed with variant-local copies of
+`components/sketch-question` in b and c, so their deliberate move of the question line no longer refused with REGION;
+its region check shot the live app once per state. Verified: variant shots viewed, `design check --part pages/sketches`
+0 findings. Not verified: a separate live shot of the Sketches page after the merge.
