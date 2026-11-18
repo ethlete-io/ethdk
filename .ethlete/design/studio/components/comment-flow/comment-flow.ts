@@ -238,6 +238,8 @@ const SAMPLE_THREADS: PlacedThread[] = [
   },
 ];
 
+const SAMPLE_REPLY = 'Ja, der Abstand reicht. Lass es so.';
+
 const SAMPLE_DRAFT_AT = 'left-[38%] top-[42%]';
 
 const SAMPLE_MESSAGES: ThreadMessage[] = [
@@ -252,14 +254,15 @@ const SAMPLE_MESSAGES: ThreadMessage[] = [
   },
 ];
 
-type Props = { phase?: CommentPhase; threads?: PlacedThread[] };
+type Props = { phase?: CommentPhase; threads?: PlacedThread[]; reply?: string; replyPhase?: ReplyPhase };
 
 export default definePart({
   note: 'The one comment flow of every view that shows a design (ADR 0322), after pages/system variant b: the Kommentar toggle at the top right of the canvas, numbered pins on the frame, the crosshair layer in comment mode, the draft card beside its pin, and the open comments listed in the side panel under the tree. The view passes its own threads with their pin positions as data. listed shows the list with the first thread selected, mode turns the toggle on with the hint that Esc or C leaves comment mode and lays the crosshair over the frame, draft adds the new pin and the draft card, thread opens a pin as its thread card beside it: the place, Erledigen and close, the messages with Zurückziehen under each own one, and a focused reply field with Antworten; Esc or close shuts it.',
   madeBy: ['claude-opus-5-5'],
   widths: [720],
+  motions: { 'thread-busy': { from: 'thread-busy', to: 'thread-busy' } },
   instant:
-    'Comment mode, the pins, the draft card and the list appear and go at once; nothing moves between the phases.',
+    'Comment mode, the pins, the draft card and the list appear and go at once; only the Antworten spinner loops while a reply is sent.',
   controls: {
     comment: { kind: 'button', part: 'components/button' },
     'comment-target': { kind: 'button', part: 'components/comment-target' },
@@ -276,6 +279,8 @@ export default definePart({
     mode: { phase: 'mode' },
     draft: { phase: 'draft' },
     thread: { phase: 'thread' },
+    'thread-busy': { phase: 'thread', reply: SAMPLE_REPLY, replyPhase: 'busy' },
+    'thread-error': { phase: 'thread', reply: SAMPLE_REPLY, replyPhase: 'error' },
   },
   describe: {
     rest: 'The frame before any comment; check that only the Kommentar toggle shows above it, with no pins and no list.',
@@ -286,8 +291,12 @@ export default definePart({
       'A draft at a clicked point in comment mode; check the draft pin and the card beside it, clear of the numbered pins.',
     thread:
       'A clicked pin opened as its thread card beside it; check the place, Erledigen and close, Zurückziehen under both own messages, the focused reply field and Esc schließt.',
+    'thread-busy':
+      'A reply being sent; check that the field is disabled with the reply kept and Antworten shows its spinner.',
+    'thread-error':
+      'A reply that failed on the network or server; check Kommentar nicht gesendet. Erneut versuchen. under the field, the kept reply and Erneut senden.',
   },
-  render: async ({ phase, threads = SAMPLE_THREADS }: Props) => {
+  render: async ({ phase, threads = SAMPLE_THREADS, reply, replyPhase }: Props) => {
     const toggle = await commentButton({ on: phase === 'mode' || phase === 'draft', action: phase ? 'rest' : 'mode' });
     const hint = phase === 'mode' ? commentModeHint() : undefined;
     const opened =
@@ -296,6 +305,8 @@ export default definePart({
             place: 'button › tonal · rest',
             messages: SAMPLE_MESSAGES,
             closeTo: 'listed',
+            text: reply,
+            phase: replyPhase,
           })
         : undefined;
     const writing =
