@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { BespokeControl, BESPOKE_CONTROLS_IN, composedControlsOf } from './bespoke-controls';
+import { BespokeControl, bespokeControlMessageOf, BESPOKE_CONTROLS_IN, composedControlsOf } from './bespoke-controls';
 
 const bespokeControlsIn = (root: ParentNode, part: string, ids: string[]) =>
   (new Function(`return ${BESPOKE_CONTROLS_IN}`)() as (options: unknown) => BespokeControl[])({ root, part, ids });
@@ -79,5 +79,16 @@ describe('bespoke controls', () => {
     expect(bespokeControlsIn(root, 'components/zoom-chip', ids)).toEqual([
       { id: 'reset', why: 'is an SDK component with the custom class tabular-nums' },
     ]);
+  });
+
+  it('tells the author to use the SDK component only when its props reach the look, else to extract it with a reason', () => {
+    const message = bespokeControlMessageOf('elements/shell-main', {
+      id: 'section',
+      why: 'is drawn markup (button.st-rail-bubble), no SDK component',
+    });
+
+    expect(message).toContain('use the SDK component through its props only if they reach the drawn look');
+    expect(message).toContain('otherwise extract section as its own control part (no sketch needed)');
+    expect(message).toContain("give section in controls bespoke: '<why no SDK component reaches the look>'");
   });
 });

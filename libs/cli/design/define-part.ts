@@ -172,14 +172,17 @@ export type ControlPart = `components/${string}` | `elements/${string}`;
  * `disabled: true` also requires a state that draws it disabled with a look of its own. With `part`, the
  * interactions, selected and disabled looks and option states come from that part, which must be design complete
  * itself; the surfaces stay with this part. A page control needs `part`. With `input`, a state of this part draws
- * each requirement, e.g. with `forceInteraction`.
+ * each requirement, e.g. with `forceInteraction`. `bespoke` on a control with `part` says why no SDK component reaches
+ * its drawn look through its props; `design check` prints it as a hint.
  */
 export type Control<TState extends string = string> = (
   | { kind: 'disclosure'; surfaces: { body: TState } }
   | { kind: 'button' | 'row' | 'field'; surfaces?: never }
   | { kind: 'select' | 'menu'; surfaces: { open: TState } }
   | { kind: 'tooltip'; surfaces: { tooltip: TState } }
-) & { disabled?: boolean } & ({ part: ControlPart; input?: never } | { input: ControlInput[]; part?: never });
+) & { disabled?: boolean } & (
+    { part: ControlPart; bespoke?: string; input?: never } | { input: ControlInput[]; part?: never; bespoke?: never }
+  );
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';

@@ -54,7 +54,7 @@ export const composedControlsOf = (options: { part: string; controls: unknown; s
 };
 
 export const bespokeControlMessageOf = (part: string, { id, why }: BespokeControl) =>
-  `control "${id}" ${why} - ${part} declares several controls, and a declared control counts for its interaction states only as an embedded part or an SDK component used through its props - extract ${id} as its own control part and draw its states there`;
+  `control "${id}" ${why} - ${part} declares several controls, and a declared control counts for its interaction states only as an embedded part or an SDK component used through its props - use the SDK component through its props only if they reach the drawn look; otherwise extract ${id} as its own control part (no sketch needed), draw its states there, and give ${id} in controls bespoke: '<why no SDK component reaches the look>', which design check prints as a HINT`;
 
 /**
  * `CONTROL-STATE` for each control a part with several controls and interaction states draws as its own markup, read

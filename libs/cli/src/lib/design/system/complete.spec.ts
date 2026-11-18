@@ -8,6 +8,7 @@ import {
   completenessGapLineOf,
   completenessGapsOf,
   addedUndeclaredControlsOf,
+  bespokeReasonHintsOf,
   completenessOf,
   controlStateGapsOf,
   FoundControl,
@@ -430,6 +431,22 @@ describe('controlStateGapsOf', () => {
         reviewed: true,
       }).map((gap) => gap.code),
     ).toEqual([]);
+  });
+});
+
+describe('bespokeReasonHintsOf', () => {
+  it('prints the declared reason of a control drawn in its own control part, and nothing without part or reason', () => {
+    const controls = {
+      section: { kind: 'button', part: 'components/rail-bubble', bespoke: ' et-button has no round bubble size ' },
+      product: { kind: 'button', part: 'components/rail-bubble' },
+      close: { kind: 'button', input: ['pointer'], bespoke: 'ignored without part' },
+      blank: { kind: 'button', part: 'components/rail-bubble', bespoke: '  ' },
+    };
+
+    expect(bespokeReasonHintsOf({ part: 'elements/shell-main', controls })).toEqual([
+      'HINT elements/shell-main control "section" is drawn in components/rail-bubble, no SDK component - et-button has no round bubble size',
+    ]);
+    expect(bespokeReasonHintsOf({ part: 'elements/shell-main', controls: undefined })).toEqual([]);
   });
 });
 

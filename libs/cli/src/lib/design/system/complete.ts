@@ -114,6 +114,7 @@ export type DeclaredControl = {
   part: string | null;
   surfaces: Record<string, string>;
   disabled: boolean;
+  bespoke: string | null;
 };
 
 /** The gaps of each part a control names in `part`, or why it could not be checked. */
@@ -216,6 +217,10 @@ export const declaredControlsOf = (value: unknown): Record<string, DeclaredContr
                   )
                 : {},
               disabled: declared['disabled'] === true,
+              bespoke:
+                typeof declared['bespoke'] === 'string' && declared['bespoke'].trim() !== ''
+                  ? declared['bespoke'].trim()
+                  : null,
             },
           ];
         }),
@@ -322,6 +327,14 @@ const SMALL_CHANGE = 0.1;
  * One hint per state of an element or component that is no control part whose pixels differ from its first state in
  * under a tenth of the frame. Pages compose parts, so they get none; interaction states are left to `CONTROL-STATE`.
  */
+/** One hint per control drawn in its own control part with a declared reason why no SDK component reaches its look. */
+export const bespokeReasonHintsOf = (options: { part: string; controls: unknown }): string[] =>
+  Object.entries(declaredControlsOf(options.controls) ?? {}).flatMap(([id, control]) =>
+    control.part !== null && control.bespoke !== null
+      ? [`HINT ${options.part} control "${id}" is drawn in ${control.part}, no SDK component - ${control.bespoke}`]
+      : [],
+  );
+
 export const smallChangeHintsOf = (options: { part: string; controls: unknown; changes: StateChange[] }): string[] =>
   options.part.startsWith('pages/') || isControlPart(options)
     ? []
@@ -1921,6 +1934,7 @@ export const partsCompletenessOf = async (options: {
 
       hints.set(key, [
         ...smallChangeHintsOf({ part: key, controls: definition?.controls, changes }),
+        ...bespokeReasonHintsOf({ part: key, controls: definition?.controls }),
         ...[
           ...controlStateGapsOf({ part: key, controls: definition?.controls, states }),
           ...discoveryGapsOf({

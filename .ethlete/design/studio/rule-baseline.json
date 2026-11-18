@@ -8,15 +8,5 @@
       "finding": "489",
       "sketch": "components/rail-bubble (queued for c8)"
     }
-  },
-  "DROPPED-PROP": {
-    "pages/sketches: folded": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/sketches: question-only": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    }
   }
 }

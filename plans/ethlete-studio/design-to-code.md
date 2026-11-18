@@ -2531,3 +2531,17 @@ Recommendation built, no pick from the human: variant a (the built look, questio
 `components/sketch-question` in b and c, so their deliberate move of the question line no longer refused with REGION;
 its region check shot the live app once per state. Verified: variant shots viewed, `design check --part pages/sketches`
 0 findings. Not verified: a separate live shot of the Sketches page after the merge.
+
+## As built (B119)
+
+CONTROL-STATE (`bespokeControlMessageOf`, bespoke-controls.ts) now tells the author to use the SDK component through
+its props only if they reach the drawn look, and otherwise to extract the control as its own control part (no sketch
+needed) with a reason. The reason is a new `bespoke: string` on a control that has `part` (`Control` in
+define-part.ts; the type rejects it next to `input`, smallest fit with the existing declaration). `design check` and
+`design complete` print it as `HINT <part> control "<id>" is drawn in <control part>, no SDK component - <reason>`
+(`bespokeReasonHintsOf`, complete.ts); the finding itself is already gone once `part` is set. The same change drops the
+two DROPPED-PROP entries of `pages/sketches` from studio's rule-baseline.json that the check reported as no longer
+hitting. Verified: specs for the message and the hint, `vitest related` (1699 tests), lint, typecheck,
+`design check --product` sdk / studio / studio-lab: CONTROL-STATE blocking 0 / 0 (2 baselined) / 0, HINT 41 / 41 / 1.
+Not verified: a live product with a declared `bespoke` reason (none declares one yet), and a run of the old code for a
+before count (detection is unchanged).
