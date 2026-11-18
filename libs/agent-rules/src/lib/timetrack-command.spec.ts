@@ -120,6 +120,95 @@ describe('timetrack edit', () => {
   });
 });
 
+describe('timetrack edit --edits', () => {
+  const editsFile = (content: unknown) => {
+    const path = join(mkdtempSync(join(tmpdir(), 'agent-rules-edits-')), 'edits.json');
+
+    writeFileSync(path, typeof content === 'string' ? content : JSON.stringify(content));
+
+    return path;
+  };
+
+  const endpoint = async () => {
+    const bodies: { op?: string; day?: string; edits?: unknown[] }[] = [];
+
+    await withEndpoint((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body || '{}'));
+        answered({ day: '2026-09-16', applied: 1, rows: [], warnings: [] })(request, response);
+      });
+    });
+
+    return bodies;
+  };
+
+  it('queues every edit of the file in one call', async () => {
+    const bodies = await endpoint();
+    const lines = printedLines();
+    const path = editsFile([
+      { row: 'row-1', issue: 'demo-2' },
+      { row: 'row-2', from: '2026-09-16T09:00:00Z', to: '2026-09-16T10:00:00Z' },
+      { row: 'row-3', hide: true },
+    ]);
+
+    await expect(run(['edit', '--day', '2026-09-16', '--edits', path])).resolves.toBe(0);
+
+    const asked = bodies.filter((body) => body.op === 'day.edits');
+
+    expect(asked).toHaveLength(1);
+    expect(asked[0]?.day).toBe('2026-09-16');
+    expect(asked[0]?.edits).toEqual([
+      { kind: 'issue', rowId: 'row-1', issueKey: 'DEMO-2' },
+      {
+        kind: 'range',
+        rowId: 'row-2',
+        fromMs: Date.parse('2026-09-16T09:00:00Z'),
+        toMs: Date.parse('2026-09-16T10:00:00Z'),
+      },
+      { kind: 'hidden', rowId: 'row-3', hidden: true },
+    ]);
+    expect(lines.join('\n')).toContain('3 edits of rows on 2026-09-16');
+  });
+
+  it.each([
+    ['an empty array', [], /holds no edits/],
+    ['a file that is not an array', { row: 'row-1', hide: true }, /holds a JSON array/],
+    ['an entry that is not an object', [{ row: 'row-1', hide: true }, 'row-2'], /Edit 1 .*not an object/],
+    ['an entry without a row', [{ hide: true }], /Edit 0 .*"row"/],
+    ['an entry without a change', [{ row: 'row-1' }], /Edit 0 .*Pass one of/],
+    ['two changes in one entry', [{ row: 'row-1', hide: true, issue: 'A-1' }], /Edit 0 .*one change per edit/],
+    [
+      'a from without a to',
+      [
+        { row: 'row-1', hide: true },
+        { row: 'row-2', from: '2026-09-16T09:00:00Z' },
+      ],
+      /Edit 1 .*both from and to/,
+    ],
+    ['a bad state', [{ row: 'row-1', state: 'maybe' }], /Edit 0 .*state takes accepted or rejected/],
+    ['an unknown key', [{ row: 'row-1', colour: 'red' }], /Edit 0 .*unknown key colour/],
+    ['a hide that is not true', [{ row: 'row-1', hide: false }], /Edit 0 .*hide takes true/],
+    ['a bad date', [{ row: 'row-1', from: 'soon', to: 'later' }], /Edit 0 .*from takes a date/],
+  ])('refuses the whole file for %s and queues nothing', async (_, content, message) => {
+    const bodies = await endpoint();
+
+    await expect(run(['edit', '--edits', editsFile(content)])).rejects.toThrow(message);
+    expect(bodies.filter((body) => body.op === 'day.edits')).toHaveLength(0);
+  });
+
+  it('refuses a row id or a change flag next to --edits', async () => {
+    const bodies = await endpoint();
+    const path = editsFile([{ row: 'row-1', hide: true }]);
+
+    await expect(run(['edit', 'row-1', '--edits', path])).rejects.toThrow(/no row id/);
+    await expect(run(['edit', '--edits', path, '--hide'])).rejects.toThrow(/not from --hide/);
+    expect(bodies.filter((body) => body.op === 'day.edits')).toHaveLength(0);
+  });
+});
+
 describe('timetrack output', () => {
   it('prints a terminal control sequence in an issue summary as text', async () => {
     await withEndpoint(answered({ issue: { key: 'FIP-1', id: '1', issueType: 'Task', summary: '[2JGone' } }));

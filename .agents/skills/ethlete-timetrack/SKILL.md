@@ -149,6 +149,23 @@ npx ethlete-agents timetrack edit '<row-id>' --issue ABC-2
 npx ethlete-agents timetrack edit '<row-id>' --state rejected
 ```
 
+A tidy-up of a day goes into one `--edits` file, so the user approves it once, never one `edit` call
+per row. Each entry is `row` plus exactly one change,
+named like the flags without the dashes (`from` with `to`, `issue`, `description`, `state`, `hide`,
+`show`, `reset`); `hide`, `show` and `reset` take `true`. One invalid entry refuses the whole file.
+Pass no row id and no change flag with `--edits`:
+
+```bash
+npx ethlete-agents timetrack edit --day 2026-09-10 --edits tidy.json
+```
+
+```json
+[
+  { "row": "ABC-1@2026-09-10T11:00:00.000Z", "issue": "ABC-2" },
+  { "row": "<row-id>", "from": "2026-09-10T13:15:00Z", "to": "2026-09-10T17:00:00Z" }
+]
+```
+
 `rows` moves the app's own review to that day, so the user sees what you read. An edit is queued
 like every write; once approved, its result's `applied` says how many edits found their row. A
 running day is re-cut on every collector tick, so read `rows` again rather than reusing an id from
@@ -159,6 +176,19 @@ row). Name (book) a row between 00:00 and 06:00 only when it has desk events; pr
 
 An edit may correct a row's times, its name, its note and whether it syncs. It may not split, merge
 or delete one - restructuring a day is the user's own decision, made on the screen.
+
+### Tidying a day
+
+The user's own rules for a tidy-up:
+
+- **Project work wins.** On a day with project work, background time (the SDK ticket) between 08:00
+  and 20:00 goes to the nearest project block. The background ticket takes only time with no project
+  signal.
+- **A day books about 8 h, a week about 40 h.** More means agent time got booked: cut it back to the
+  rows with desk evidence. Ask the user before you go past either.
+- The ethlete-sdk repo's `plans/timetrack/booking-lessons.md` holds the rest: lessons 2 (a meeting
+  ticket is never a filler), 5 (commits alone are not work), 6 (a weekend is one coarse row), 7 (the
+  lunch gap) and 8 (an even split is marked as an estimate). Read it before a tidy-up.
 
 ## Work with no ticket yet
 

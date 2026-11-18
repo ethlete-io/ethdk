@@ -65,6 +65,7 @@ const FLAGS_WITH_VALUE = [
   '--at',
   '--out',
   '--day',
+  '--edits',
   '--from',
   '--to',
   '--state',
@@ -445,19 +446,59 @@ const namedEdits = (argv: string[]) => {
   ];
 };
 
+type RowChange = {
+  from?: string;
+  to?: string;
+  issue?: string;
+  description?: string;
+  state?: string;
+  hide?: boolean;
+  show?: boolean;
+  reset?: boolean;
+};
+
 /**
- * The one edit the flags state, or a refusal naming what they said instead.
+ * The one edit a change record states, or a refusal naming what it said instead. `prefix` is how the
+ * caller spells a name: `--` for flags, empty for a key of an edits file.
  *
- * One edit per call, deliberately. A caller that means two changes to one row says so twice, and a
- * flag combination nobody meant can then never be read as a third thing.
+ * One change per row edit, deliberately. A caller that means two changes to one row says so twice, and
+ * a combination nobody meant can then never be read as a third thing.
  */
+const rowEditOf = (options: { change: RowChange; rowId: string; prefix: string }): TimetrackRowEdit => {
+  const { change, rowId, prefix } = options;
+  const { from, to, issue, description, state } = change;
+
+  if (from && to)
+    return {
+      kind: 'range',
+      rowId,
+      fromMs: instantOf(`${prefix}from`, from),
+      toMs: instantOf(`${prefix}to`, to),
+    };
+
+  if (from || to) throw new Error(`Moving a row takes both ${prefix}from and ${prefix}to.`);
+  if (issue) return { kind: 'issue', rowId, issueKey: issue.toUpperCase() };
+  if (description !== undefined) return { kind: 'description', rowId, description };
+
+  if (state) {
+    if (state !== 'accepted' && state !== 'rejected')
+      throw new Error(`${prefix}state takes accepted or rejected, not ${state}.`);
+
+    return { kind: 'state', rowId, state };
+  }
+
+  if (change.hide) return { kind: 'hidden', rowId, hidden: true };
+  if (change.show) return { kind: 'hidden', rowId, hidden: false };
+  if (change.reset) return { kind: 'reset', rowId };
+
+  throw new Error(
+    `Pass one of ${prefix}from with ${prefix}to, ${prefix}issue, ${prefix}description, ${prefix}state, ${prefix}hide, ${prefix}show or ${prefix}reset.`,
+  );
+};
+
+/** The one edit the flags state, or a refusal naming what they said instead. */
 const editOf = (options: { argv: string[]; rowId: string }): TimetrackRowEdit => {
   const { argv, rowId } = options;
-  const from = flagValue(argv, '--from');
-  const to = flagValue(argv, '--to');
-  const issueKey = flagValue(argv, '--issue');
-  const description = flagValue(argv, '--description');
-  const state = flagValue(argv, '--state');
   const named = namedEdits(argv);
 
   if (named.length > 1) {
@@ -466,23 +507,75 @@ const editOf = (options: { argv: string[]; rowId: string }): TimetrackRowEdit =>
     );
   }
 
-  if (from && to) return { kind: 'range', rowId, fromMs: instantOf('--from', from), toMs: instantOf('--to', to) };
-  if (from || to) throw new Error('Moving a row takes both --from and --to.');
-  if (issueKey) return { kind: 'issue', rowId, issueKey: issueKey.toUpperCase() };
-  if (description !== undefined) return { kind: 'description', rowId, description };
+  return rowEditOf({
+    rowId,
+    prefix: '--',
+    change: {
+      from: flagValue(argv, '--from'),
+      to: flagValue(argv, '--to'),
+      issue: flagValue(argv, '--issue'),
+      description: flagValue(argv, '--description'),
+      state: flagValue(argv, '--state'),
+      hide: argv.includes('--hide'),
+      show: argv.includes('--show'),
+      reset: argv.includes('--reset'),
+    },
+  });
+};
 
-  if (state) {
-    if (state !== 'accepted' && state !== 'rejected')
-      throw new Error(`--state takes accepted or rejected, not ${state}.`);
+const CHANGE_KEYS = ['from', 'to', 'issue', 'description', 'state', 'hide', 'show', 'reset'];
+const FLAG_ONLY_VALUE_KEYS = ['hide', 'show', 'reset'];
 
-    return { kind: 'state', rowId, state };
+/** The row edits of an `--edits` file, or a refusal naming the first entry that is not one. Nothing is queued on a refusal. */
+const editsOfFile = (options: { root: string; path: string }): TimetrackRowEdit[] => {
+  const { root, path } = options;
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(readFileSync(resolve(root, path), 'utf8'));
+  } catch (error) {
+    throw Object.assign(
+      new Error(`--edits ${path} is not a readable JSON file: ${error instanceof Error ? error.message : error}`),
+      { cause: error },
+    );
   }
 
-  if (argv.includes('--hide')) return { kind: 'hidden', rowId, hidden: true };
-  if (argv.includes('--show')) return { kind: 'hidden', rowId, hidden: false };
-  if (argv.includes('--reset')) return { kind: 'reset', rowId };
+  if (!Array.isArray(parsed)) throw new Error(`--edits ${path} holds a JSON array of edits.`);
+  if (parsed.length === 0) throw new Error(`--edits ${path} holds no edits.`);
 
-  throw new Error('Pass one of --from with --to, --issue, --description, --state, --hide, --show or --reset.');
+  return parsed.map((entry: unknown, index) => {
+    const fail = (problem: string): never => {
+      throw new Error(`Edit ${index} in ${path}: ${problem}`);
+    };
+
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return fail('not an object.');
+
+    const record = entry as Record<string, unknown>;
+    const { row } = record;
+    const unknown = Object.keys(record).filter((key) => key !== 'row' && !CHANGE_KEYS.includes(key));
+
+    if (typeof row !== 'string' || !row) return fail('"row" must be the row id as `timetrack rows` prints it.');
+    if (unknown.length) return fail(`unknown key ${unknown.join(', ')}.`);
+
+    const present = Object.keys(record).filter((key) => key !== 'row');
+    const named = present.includes('from') || present.includes('to') ? ['from/to'] : [];
+    const all = [...named, ...present.filter((key) => key !== 'from' && key !== 'to')];
+
+    if (all.length > 1) return fail(`one change per edit, and this names ${all.length}: ${all.join(', ')}.`);
+
+    for (const key of present) {
+      const value = record[key];
+
+      if (FLAG_ONLY_VALUE_KEYS.includes(key) ? value !== true : typeof value !== 'string')
+        return fail(`${key} takes ${FLAG_ONLY_VALUE_KEYS.includes(key) ? 'true' : 'a string'}.`);
+    }
+
+    try {
+      return rowEditOf({ rowId: row, prefix: '', change: record as RowChange });
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : String(error));
+    }
+  });
 };
 
 /**
@@ -789,6 +882,8 @@ A waiting write can be rejected from here; only the user approves one, in the ap
   timetrack snapshot --compare <file>
                                 Print every row the change altered since; exit 1 when any did
   timetrack edit <row-id> …     Change one row of a day: its times, its name, its note or its state
+  timetrack edit --day <D> --edits <file.json>
+                                Many row edits of one day as one approval
   timetrack rules               The rules that name a day's work: attribution, project links, apps
   timetrack rules --repoint --from <KEY> --to <KEY> [--repo <dir>] [--force]
                                 List the attribution rules naming one issue; --force queues pointing
@@ -857,8 +952,10 @@ Options for sync
                       approval when the plan changed since
   --plan <hash>       The plan hash the read printed, for the rows the user confirmed
 
-Options for edit — pass exactly one change
+Options for edit — pass exactly one change, or --edits
   --day <YYYY-MM-DD>  The day the row is on (default: today)
+  --edits <file.json> A JSON array of { "row": <id>, <one change> }, the changes named as below
+                      without the dashes ("hide": true). Takes no row id and no change flag
   --from <date> --to <date>
                       Move the row, or drag one of its ends
   --issue <KEY>       Name the row
@@ -1090,9 +1187,24 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
   if (subcommand === 'edit') {
     const day = flagValue(argv, '--day') ?? today();
+    const editsPath = flagValue(argv, '--edits');
 
-    if (!value) throw new Error('Pass the row id to edit, as `timetrack rows` prints it.');
     if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
+
+    if (editsPath !== undefined) {
+      if (value) throw new Error('--edits names the rows itself: pass no row id with it.');
+
+      const named = namedEdits(argv);
+
+      if (named.length) throw new Error(`--edits takes the changes from its file, not from ${named.join(', ')}.`);
+
+      const edits = editsOfFile({ root, path: editsPath });
+      const queued = await timetrackEditDay({ day, edits });
+
+      return printedQueued({ queued, what: `${edits.length} edits of rows on ${day}`, json });
+    }
+
+    if (!value) throw new Error('Pass the row id to edit, as `timetrack rows` prints it, or --edits <file.json>.');
 
     const queued = await timetrackEditDay({ day, edits: [editOf({ argv, rowId: value })] });
 
