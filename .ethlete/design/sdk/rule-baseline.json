@@ -44,27 +44,5 @@
       "finding": "181",
       "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
     }
-  },
-  "SCROLLS": {
-    "components/stream: consent at 320px: div.t-frame > div[data-et-part=components/stream] > et-stream-consent.et-stream-consent > div.et-stream-consent-card": {
-      "finding": "343",
-      "sketch": "components/stream: not opened yet - the consent and error cards fit the slot at 320px instead of scrolling"
-    },
-    "components/stream: consent-active at 320px: div.t-frame > div[data-et-part=components/stream] > et-stream-consent.et-stream-consent > div.et-stream-consent-card": {
-      "finding": "343",
-      "sketch": "components/stream: not opened yet - the consent and error cards fit the slot at 320px instead of scrolling"
-    },
-    "components/stream: consent-focus-visible at 320px: div.t-frame > div[data-et-part=components/stream] > et-stream-consent.et-stream-consent > div.et-stream-consent-card": {
-      "finding": "343",
-      "sketch": "components/stream: not opened yet - the consent and error cards fit the slot at 320px instead of scrolling"
-    },
-    "components/stream: consent-hover at 320px: div.t-frame > div[data-et-part=components/stream] > et-stream-consent.et-stream-consent > div.et-stream-consent-card": {
-      "finding": "343",
-      "sketch": "components/stream: not opened yet - the consent and error cards fit the slot at 320px instead of scrolling"
-    },
-    "components/stream: error at 320px: div.t-frame > div[data-et-part=components/stream] > et-stream-player-error.et-stream-player-error > div.et-stream-player-error-card": {
-      "finding": "343",
-      "sketch": "components/stream: not opened yet - the consent and error cards fit the slot at 320px instead of scrolling"
-    }
   }
 }

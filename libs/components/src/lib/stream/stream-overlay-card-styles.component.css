@@ -26,9 +26,15 @@
   }
 
   @container (max-height: 200px) {
-    .et-stream-consent-icon,
-    .et-stream-player-error-icon,
-    .et-pip-slot-placeholder-icon {
+    .et-stream-consent-card,
+    .et-stream-player-error-card {
+      padding: calc(var(--et-stream-overlay-card-padding, 16px) / 2);
+      gap: calc(var(--et-stream-overlay-card-gap, 12px) / 2);
+    }
+
+    .et-stream-consent-card > .et-stream-consent-icon,
+    .et-stream-player-error-card > .et-stream-player-error-icon,
+    .et-pip-slot-placeholder-card > .et-pip-slot-placeholder-icon {
       display: none;
     }
   }

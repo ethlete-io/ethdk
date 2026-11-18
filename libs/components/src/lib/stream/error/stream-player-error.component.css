@@ -74,6 +74,7 @@
     background: var(--et-surface-background-solid, inherit);
     color: var(--et-surface-color-solid, inherit);
     z-index: 1;
+    container-type: size;
   }
 
   .et-stream-player-error-card {

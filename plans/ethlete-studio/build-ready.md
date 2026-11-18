@@ -1123,3 +1123,8 @@ documents, the docs example rendered in the built site, real touch devices.
   two exception reasons wrapped to two lines each and the direct-edit sample listed five blocker groups. The reasons
   are one line now (mock and app sample), and the direct-edit sample drops the compare blocker. pages/system@edit
   merged variant new under finding 343; the three baseline entries are gone.
+- Empfehlung gebaut: stream consent and error at 320px. Cause (measured live in Storybook): under 200px of player
+  height the card kept its 16 px padding and 12 px gaps, and in the real component the icon stayed visible too,
+  as `.et-icon` loaded after the hide rule with the same weight. The consent and error hosts are now size containers;
+  under 200px the card halves padding and gap, and the hide rule is `card > icon`. Story slot 288x162: content 162,
+  icon hidden. Both baseline groups are gone.
