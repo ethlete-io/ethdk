@@ -164,13 +164,23 @@ describe('sketchRendersOf alike pairs', () => {
       marks: [],
     });
 
-  it('refuses two variants that differ by under 2 % of the frame in a state the round changed', async () => {
+  it('refuses two variants that differ by under 2 % of the region the round changed', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({
+      a: pngOf((x, y) => x < 600 && y >= 20 && y < 100),
+      b: pngOf((x, y) => x < 610 && y >= 20 && y < 100),
+    });
+
+    expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf })).alike).toEqual([
+      'elements/hero: variants a and b look alike in default (800 px, 1.6 % of the region the round changes, under 2 %) - draw the difference larger or name other --asks states',
+    ]);
+  });
+
+  it('passes a small change that is most of the region the round changed', async () => {
     const { product, sketch } = acme(['a', 'b']);
     const pictureOf = drawing({ a: block, b: blank });
 
-    expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf })).alike).toEqual([
-      'elements/hero: variants a and b look alike in default (1600 px, 0.9 % of the frame, under 2 %) - draw the difference larger or name other --asks states',
-    ]);
+    expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf })).alike).toEqual([]);
   });
 
   it('passes two variants that differ by over 2 % of the frame', async () => {
@@ -186,7 +196,7 @@ describe('sketchRendersOf alike pairs', () => {
     const loaded = twoStates(['default', 'zoom-7']);
 
     expect((await sketchRendersOf({ product, sketch, load: loaded, pictureOf, boxOf })).alike).toEqual([
-      expect.stringContaining('variants a and b look alike in zoom-7 (1600 px'),
+      'elements/hero: variants a and b look alike in zoom-7 (1600 px, 0.9 % of the frame, under 2 %) - draw the difference larger or name other --asks states',
     ]);
 
     const asked = editRound({ sketch, round: 'r1', asks: ['default'] }) as Sketch;

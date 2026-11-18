@@ -230,7 +230,7 @@ export const lookAlikeWarningsOf = async (options: {
   return warnings;
 };
 
-/** The share of the frame area below which two variants count as alike in a state their round asks its question in. */
+/** The share of the changed region (else the frame) below which two variants count as alike in a state their round asks its question in. */
 export const ALIKE_SHARE = 0.02;
 
 export type AskingRound = { variants: readonly LookAlikeVariant[]; asks?: readonly string[] };
@@ -273,7 +273,8 @@ export const askedStatesOf = async (options: {
 
 /**
  * One refusal per pair of variants of a round whose shots differ, in one of the states the round asks its question in
- * (`askedStatesOf`), by fewer visibly different pixels at 100 % than `ALIKE_SHARE` of the frame area; it names the
+ * (`askedStatesOf`), by fewer visibly different pixels at 100 % than `ALIKE_SHARE` of the union box of every live
+ * variant's change against `current` in that state, or of the frame where nothing changed; it names the
  * state in which they differ least. A pair `twins` answers true for is left out.
  */
 export const alikePairLinesOf = async (options: {
@@ -296,6 +297,29 @@ export const alikePairLinesOf = async (options: {
     return decoded.get(shot) ?? null;
   };
   const lines: string[] = [];
+  const live = rounds.flatMap((round) => round.variants);
+  const areas = new Map<string, number | null>();
+  const changedAreaOf = async (state: string) => {
+    if (!areas.has(state)) {
+      const now = current?.states.get(state)?.shot;
+      const boxes = now
+        ? (
+            await Promise.all(
+              live.map((variant) => {
+                const shot = variant.states.get(state)?.shot;
+
+                return shot ? boxOf(now, shot) : [];
+              }),
+            )
+          ).flat()
+        : [];
+      const union = boxes.length > 0 ? unionOf(boxes) : null;
+
+      areas.set(state, union ? Math.max(1, union.width * union.height) : null);
+    }
+
+    return areas.get(state) ?? null;
+  };
 
   for (const round of rounds) {
     if (round.variants.length < 2) continue;
@@ -306,7 +330,7 @@ export const alikePairLinesOf = async (options: {
       for (const other of round.variants.slice(index + 1)) {
         if (twins?.(one.name, other.name)) continue;
 
-        let least: { state: string; visible: number; share: number } | null = null;
+        let least: { state: string; visible: number; share: number; base: 'region' | 'frame' } | null = null;
 
         for (const state of asked) {
           const shot = one.states.get(state)?.shot;
@@ -318,16 +342,18 @@ export const alikePairLinesOf = async (options: {
 
           const boxes = await boxOf(shot, otherShot);
           const visible = boxes.length === 0 ? 0 : visiblePixelsAt({ before, after, region: unionOf(boxes), scale: 1 });
+          const changed = await changedAreaOf(state);
           const share =
-            visible / Math.max(1, Math.max(before.width, after.width) * Math.max(before.height, after.height));
+            visible /
+            (changed ?? Math.max(1, Math.max(before.width, after.width) * Math.max(before.height, after.height)));
 
-          if (!least || share < least.share) least = { state, visible, share };
+          if (!least || share < least.share) least = { state, visible, share, base: changed ? 'region' : 'frame' };
         }
 
         if (least && least.share < ALIKE_SHARE)
           lines.push(
             `${target}: variants ${one.name} and ${other.name} look alike in ${least.state} ` +
-              `(${least.visible} px, ${(least.share * 100).toFixed(1)} % of the frame, under ${ALIKE_SHARE * 100} %) - ` +
+              `(${least.visible} px, ${(least.share * 100).toFixed(1)} % of the ${least.base === 'region' ? 'region the round changes' : 'frame'}, under ${ALIKE_SHARE * 100} %) - ` +
               `draw the difference larger or name other --asks states`,
           );
       }
