@@ -25,7 +25,11 @@ test.describe('a write an agent asks for', () => {
     expect((await readBackend(page)).jira.created).toEqual([]);
     expect(await askAgent(page, { op: 'approval.status', id })).toEqual({
       ok: true,
-      value: { status: 'queued', approvalId: id },
+      value: {
+        status: 'queued',
+        approvalId: id,
+        request: expect.objectContaining({ approvalId: id, state: 'queued' }),
+      },
     });
 
     const dialog = await openApprovals(page);
@@ -89,6 +93,7 @@ test.describe('a write an agent asks for', () => {
           op: 'jira.create',
           client: 'Claude Code',
           askedAtMs: expect.any(Number),
+          day: E2E_DAY_KEY,
           summary: 'Pdf export → new issue in ABC',
         },
       ],
@@ -125,7 +130,7 @@ test.describe('a write an agent asks for', () => {
     expect((await readBackend(page)).tempo.writes).toEqual([]);
     expect(await askAgent(page, { op: 'approval.status', id: synced })).toEqual({
       ok: true,
-      value: { status: 'queued', approvalId: synced },
+      value: { status: 'queued', approvalId: synced, request: expect.objectContaining({ approvalId: synced }) },
     });
   });
 
