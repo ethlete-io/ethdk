@@ -44,3 +44,10 @@ session cross-checked them (2026-11-18), under the human's rule to ask them only
    paused product needs no mark per file.
 9. Each report of the check script names its fix (link it from STATUS.md, mark it parked, or delete it), so a session
    does not answer it by touching the file.
+
+Addendum 2026-11-18 (B604, approved by the human with "okay approved"): the Studio queue keeps its head in
+`plans/studio/STATUS.md` and the rest, numbered on, at the top of a second plan file; `yarn queue` prints one numbered
+list, so it stays one queue (ADR 0351). The head holds B605 (re-measurement, due 2026-11-25) and B606 (log model and
+effort per subagent) ahead of about 75 older rows on purpose: the log must run early, or the 2026-11-25 measurement has
+no data. Every file of the rest stays within the 30000-char cap; there is no exception in the check script. Moving rows
+does not sort them: point 5 still applies to each old row (B607).
