@@ -31,8 +31,6 @@ import { withoutWaitingUndesigned } from './sketch/undesigned-sketch';
 import {
   staleLineOf,
   stalePartsOf,
-  unrecordedLineOf,
-  unrecordedPartsOf,
   UNCOMPARED_RULE,
   uncomparedAppProblemsOf,
   upgradeLegacyMarksOf,
@@ -693,8 +691,20 @@ const printProductOpenPoints = async (
 
   const upgraded = upgradeLegacyMarksOf({ product, only: options.part });
 
-  if (upgraded.length > 0)
-    console.log(`REHASHED ${name}: ${upgraded.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
+  const rehashed = upgraded
+    .map(({ part, marks }) => ({ part, marks: marks.filter((mark) => mark !== 'dropped') }))
+    .filter(({ marks }) => marks.length > 0);
+
+  if (rehashed.length > 0)
+    console.log(`REHASHED ${name}: ${rehashed.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
+
+  upgraded
+    .filter(({ marks }) => marks.includes('dropped'))
+    .forEach(({ part }) =>
+      console.log(
+        `DROPPED ${name} ${part}: implemented record from before file lists at a design that moved since - run ${repoInvocation({ root: target, subcommand: 'design' })} task ${part} --product ${name} --verify to record it`,
+      ),
+    );
 
   const recorded = await recordCheckedBuildReady({
     target,
@@ -1071,15 +1081,7 @@ const checkProductTail = async (
     })?.problems.push(problem.rule);
   }
 
-  const unrecorded = unrecordedPartsOf({ product: resolved, only: options.part });
-  const invocation = options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' });
-
-  for (const part of unrecorded) {
-    console.error(unrecordedLineOf({ product: name, part, invocation }));
-    tallyOf(tally, { product: name, part })?.problems.push('UNRECORDED');
-  }
-
-  return problems.length + unrecorded.length;
+  return problems.length;
 };
 
 /**

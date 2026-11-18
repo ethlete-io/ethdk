@@ -17,6 +17,7 @@ import {
 import { DesignHash, designHashOf, designHolds, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
 import { readRecordedActions } from './part-ready';
+import { readImplemented } from './part-task';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -117,19 +118,6 @@ const livePagesOf = (root: string, live: string | undefined) => {
   }
 };
 
-const implementedHashOf = (product: ResolvedProduct, part: string) => {
-  try {
-    const records = JSON.parse(readFileSync(join(product.dir, 'implemented.json'), 'utf8')) as Record<
-      string,
-      { hash?: unknown }
-    >;
-
-    return records[part]?.hash;
-  } catch {
-    return undefined;
-  }
-};
-
 /** What a part's slow result depends on, and the rules that check it; no rules means it has no slow result. */
 export type SlowInputs = { rules: string[]; hash: string; designOnly?: true };
 
@@ -187,7 +175,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const linked = linkedComponentOf(part);
   const component = harness ? linked : null;
   const design = designOf(context, part);
-  const implemented = implementedHashOf(product, key);
+  const implemented = readImplemented(product.dir)[key]?.hash;
   const current = typeof implemented === 'string' && designHolds(implemented, design);
   const designOnly = component !== null && implemented !== undefined && !current;
   const app = linked === null ? {} : appFilesOf({ root, component: linked });

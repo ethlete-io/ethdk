@@ -61,7 +61,13 @@ describe('driftSinceOf', () => {
 
     return dir;
   };
-  const record = (app?: Record<string, string>) => ({ hash: 'h', at: '2026-01-02T12:00:00Z', states: {}, app });
+  const record = (app?: Record<string, string>) => ({
+    hash: 'h',
+    at: '2026-01-02T12:00:00Z',
+    states: {},
+    files: {},
+    app,
+  });
 
   it('names the commits since the record that touched its app files', () => {
     const lines = driftSinceOf({ root: repo(), record: record({ 'src/hero.ts': 'x' }), files: [] });

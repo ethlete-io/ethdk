@@ -9,17 +9,10 @@ import { appFilesOf } from './app-files';
 import { checkRules } from './check-system';
 import { designHashOf, designHolds, fileHashesOf, hashOfFiles, recordHolds } from './design-hash';
 import { readyMarkOf, writePartRecord } from './part-ready';
-import { doneParts, markImplemented } from './part-task';
+import { doneParts, markImplemented, readImplemented } from './part-task';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashesHold, partHashHolds, partHashOf } from './sketch/baseline';
-import {
-  staleLineOf,
-  stalePartsOf,
-  UNLISTED_FILES,
-  unrecordedLineOf,
-  unrecordedPartsOf,
-  upgradeLegacyMarksOf,
-} from './stale-parts';
+import { staleLineOf, stalePartsOf, UNLISTED_FILES, upgradeLegacyMarksOf } from './stale-parts';
 import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
@@ -202,18 +195,41 @@ describe('transitive part hash', () => {
 
     expect(ready[CHIP]).toEqual({ hash: now.hash, files: now.files, at });
     expect(ready['elements/icon']).toEqual({ hash: 'old', by: 'tom', at });
-    expect(implemented[CHIP]).toEqual({ hash: now.hash, at, states: {}, app: expect.any(Object) });
+    expect(implemented[CHIP]).toEqual({ hash: now.hash, at, states: {}, files: now.files, app: expect.any(Object) });
     expect(readyMarkOf({ product: productOf(target), part: CHIP })).not.toBeNull();
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
       { part: 'elements/icon', design: [UNLISTED_FILES], app: [], port: [] },
     ]);
   });
 
-  it('counts an implemented record without a file list as unrecorded, not as stale', () => {
+  it('reads an implemented record without a file list as no record', () => {
+    const { target, dir } = checkout();
+    const now = designHashOf(chipOf(target));
+
+    writeFileSync(
+      join(dir, 'implemented.json'),
+      JSON.stringify({ [CHIP]: { hash: now.hash, at: '2026-10-01T00:00:00.000Z', states: {} } }),
+    );
+
+    expect(readImplemented(dir)).toEqual({});
+  });
+
+  it('adds the file list to an implemented record without one while its design hash holds', () => {
+    const { target, dir } = checkout();
+    const now = designHashOf(chipOf(target));
+    const app = appFilesOf({ root: target, component: 'apps/a/chip/chip.component.ts' });
+    const record = { hash: now.hash, at: '2026-10-01T00:00:00.000Z', states: {}, app };
+
+    writeFileSync(join(dir, 'implemented.json'), JSON.stringify({ [CHIP]: record }));
+
+    expect(upgradeLegacyMarksOf({ product: productOf(target) })).toEqual([{ part: CHIP, marks: ['implemented'] }]);
+    expect(readImplemented(dir)).toEqual({ [CHIP]: { ...record, files: now.files } });
+  });
+
+  it('drops an implemented record without a file list whose design moved since', () => {
     const { target, dir } = checkout();
     const at = '2026-10-01T00:00:00.000Z';
 
-    writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
     writeFileSync(
       join(dir, 'implemented.json'),
       JSON.stringify({
@@ -225,17 +241,10 @@ describe('transitive part hash', () => {
         },
       }),
     );
-    appendFileSync(join(target, 'apps/a/chip/chip.component.html'), '<b></b>\n');
 
-    expect(unrecordedPartsOf({ product: productOf(target) })).toEqual([CHIP]);
+    expect(upgradeLegacyMarksOf({ product: productOf(target) })).toEqual([{ part: CHIP, marks: ['dropped'] }]);
+    expect(JSON.parse(readFileSync(join(dir, 'implemented.json'), 'utf8'))).toEqual({});
     expect(stalePartsOf({ product: productOf(target) })).toEqual([]);
-    expect(unrecordedLineOf({ product: 'app-a', part: CHIP, invocation: 'yarn et:design' })).toBe(
-      `UNRECORDED app-a ${CHIP}: implemented before file lists - run yarn et:design task ${CHIP} --product app-a --verify to record it`,
-    );
-
-    markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
-
-    expect(unrecordedPartsOf({ product: productOf(target) })).toEqual([]);
   });
 
   it('lists a legacy record stale when a file it reaches outside its folder was committed after the record', () => {

@@ -13,7 +13,14 @@ import {
 import { partOwnerOf } from './inventory-approval';
 import { READY_FILE, readReady, readReadyEntries } from './part-ready';
 import { withProductLock } from './product-lock';
-import { changedAppFilesOf, doneParts, IMPLEMENTED_FILE, linkedComponentOf, readImplemented } from './part-task';
+import {
+  changedAppFilesOf,
+  doneParts,
+  IMPLEMENTED_FILE,
+  linkedComponentOf,
+  readImplemented,
+  readLegacyImplemented,
+} from './part-task';
 import {
   addedBaselineEntriesOf,
   baselineLineOf,
@@ -58,21 +65,6 @@ const partsOf = (product: ResolvedProduct, only?: string) =>
   product.parts.filter((part) => !only || partKeyOf(part) === only);
 
 /**
- * The parts whose implemented record predates file lists, so no design drift since it can be told: they count as
- * unrecorded, not as stale.
- */
-export const unrecordedPartsOf = (options: { product: ResolvedProduct; only?: string }): string[] =>
-  partsOf(options.product, options.only).flatMap((resolved) => {
-    const part = partKeyOf(resolved);
-    const implemented = readImplemented(partOwnerOf({ product: options.product, part: resolved }).dir)[part];
-
-    return resolved.origin !== 'base' && implemented && !implemented.files ? [part] : [];
-  });
-
-export const unrecordedLineOf = (options: { product: string; part: string; invocation: string }) =>
-  `UNRECORDED ${options.product} ${options.part}: implemented before file lists - run ${options.invocation} task ${options.part} --product ${options.product} --verify to record it`;
-
-/**
  * The parts with a check record or an implemented record whose design hash moved since the check record or the
  * implemented record, or whose app component files moved since the implemented record.
  */
@@ -82,8 +74,7 @@ export const stalePartsOf = (options: { product: ResolvedProduct; only?: string 
     const part = partKeyOf(resolved);
     const { dir } = partOwnerOf({ product, part: resolved });
     const ready = readReady(dir)[part];
-    const record = readImplemented(dir)[part];
-    const implemented = record?.files ? record : undefined;
+    const implemented = readImplemented(dir)[part];
 
     if (!ready && !implemented) return [];
 
@@ -244,10 +235,10 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
   const part = partKeyOf(resolved);
   const { dir } = partOwnerOf({ product, part: resolved });
   const ready = readReady(dir);
-  const implemented = readImplemented(dir);
+  const legacyImplemented = readLegacyImplemented(dir)[part];
   const legacy = (record: HashRecord | undefined) => !!record && !record.files;
 
-  if (!legacy(ready[part]) && !(implemented[part] && !implemented[part]?.app)) return [];
+  if (!legacy(ready[part]) && !legacyImplemented) return [];
 
   const now = designHashOf({ product, part: resolved });
   const root = repoRootOf(product);
@@ -260,7 +251,6 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
     !newerThanOf({ root, paths: outside, at: record.at });
   const upgraded: string[] = [];
   const readyEntry = ready[part];
-  const implementedEntry = implemented[part];
 
   if (holds(readyEntry)) {
     withProductLock(dir, () =>
@@ -272,20 +262,28 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
     upgraded.push('ready');
   }
 
-  const component = linkedComponentOf(resolved.source);
+  if (legacyImplemented) {
+    const component = linkedComponentOf(resolved.source);
+    const backfilled =
+      component !== null && (designHolds(legacyImplemented.hash, now) || holds(legacyImplemented))
+        ? {
+            [part]: {
+              ...legacyImplemented,
+              hash: now.hash,
+              files: now.files,
+              app: legacyImplemented.app ?? appFilesOf({ root, component }),
+            },
+          }
+        : {};
 
-  if (
-    implementedEntry &&
-    legacyHolds(implementedEntry.hash, now) &&
-    !implementedEntry.app &&
-    component !== null &&
-    !newerThanOf({ root, paths: outside, at: implementedEntry.at })
-  ) {
+    const otherLegacy = Object.entries(readLegacyImplemented(dir)).filter(([key]) => key !== part);
+
     rewrite(resolve(dir, IMPLEMENTED_FILE), {
-      ...implemented,
-      [part]: { ...implementedEntry, hash: now.hash, app: appFilesOf({ root: repoRootOf(product), component }) },
+      ...Object.fromEntries(otherLegacy),
+      ...readImplemented(dir),
+      ...backfilled,
     });
-    upgraded.push('implemented');
+    upgraded.push(part in backfilled ? 'implemented' : 'dropped');
   }
 
   return upgraded.length > 0 ? [{ part, marks: upgraded }] : [];
@@ -294,8 +292,8 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
 /**
  * Moves each check record and implemented record stored before file lists to the design hash, with the hash of each
  * file it covers, while its folder-only hash still holds; an implemented record also gets its app file hashes. A
- * record whose folder changed since, or a file it reaches outside its folder that was committed or edited after the
- * record's time, stays as it is and reads as stale.
+ * check record whose folder changed since, or a file it reaches outside its folder that was committed or edited after
+ * the record's time, stays as it is and reads as stale; such an implemented record is dropped.
  */
 export const upgradeLegacyMarksOf = (options: { product: ResolvedProduct; only?: string }) =>
   partsOf(options.product, options.only).flatMap((part) => upgradeOf(options.product, part));

@@ -199,7 +199,7 @@ describe('part task', () => {
       all: false,
     });
 
-    const record = { hash: 'h1', at: 'then', states: { default: stateHashOf({ label: 'a' }) } };
+    const record = { hash: 'h1', at: 'then', states: { default: stateHashOf({ label: 'a' }) }, files: {} };
 
     expect(taskStatesOf({ states, hash: 'h2', record })).toEqual({ added: ['open'], changed: [], all: false });
     expect(taskStatesOf({ states: { default: { label: 'b' } }, hash: 'h2', record })).toEqual({

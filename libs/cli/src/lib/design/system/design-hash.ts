@@ -31,7 +31,7 @@ export type HashRecord = { hash: string; files?: FileHashes };
 
 export const sha16 = (data: string | Buffer) => createHash('sha256').update(data).digest('hex').slice(0, 16);
 
-const isFileHashes = (value: unknown): value is FileHashes =>
+export const isFileHashes = (value: unknown): value is FileHashes =>
   !!value &&
   typeof value === 'object' &&
   !Array.isArray(value) &&

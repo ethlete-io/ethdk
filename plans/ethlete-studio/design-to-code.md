@@ -2401,3 +2401,25 @@ hits" lines and 0 live hits. The entries are removed; no sketch opens for them.
   waits while `<part>@<design state>` is open, and compare logs the waiting states (spec red first).
 - Not verified: a Studio shot of the sketch view, and the live compare wait against a real live spec.
 - Fixed (finding 792): Cause: the `built` wrapper re-declared `type Props` and `const states` beside the part's own, so zoom-chip's variant failed the transform and drew nothing in Studio; it now calls an arrow on the default export and adds only an unused picture import name at top level (spec red first).
+
+## As built (B59 UNRECORDED)
+
+- `PartImplemented.files` is required; `readImplemented` reads a record without `files` as no record. `design check`
+  (`upgradeLegacyMarksOf`) adds `files` (and `app`) to such a record while its design hash still holds, and otherwise
+  drops it and prints `DROPPED <product> <part>: ... run task <part> --verify`. `unrecordedPartsOf`,
+  `unrecordedLineOf` and the `UNRECORDED` problem are gone; `slow-checks` reads implemented hashes through
+  `readImplemented`.
+- Cause: `upgradeLegacyMarksOf` moved a legacy implemented record to the design hash and added `app`, but never
+  `files` (its spec asserted that), so the record read as UNRECORDED and, having `app`, was never upgraded again. The
+  three records without `app` predate app hashes.
+- Studio data: pages/flows, elements/canvas-frames, elements/shell-main, pages/inventory and pages/start recorded with
+  `task <part> --product studio --verify HEAD..HEAD` (compare green). pages/inbox: compare red (thread states
+  30-50k px, the thread card port in progress), so `design check --part pages/inbox` dropped its record.
+  pages/sketches: compare red (sketch-only-points-open 708 px, merge-confirm 230 px, old drift on the ADR 0205
+  baseline), dropped the same way. components/shell-project-switch is no part any more; the re-record of pages/start
+  with the new reader removed it. Every product's implemented.json (only studio has one) now has `files` on every
+  entry.
+- Verified: stale-parts spec red first (4 tests), green after; `vitest related` (1760 passed), cli typecheck and lint;
+  `et:design check --working-tree --product studio --part pages/inbox` and `--part pages/sketches`: 0 findings each.
+- Not verified: a full `design check --product studio`; the implementation baseline entry of pages/sketches now has
+  no implemented record behind it (no check reported it).

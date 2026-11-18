@@ -2,7 +2,7 @@ import { writeJsonFile } from '../../json-file';
 import { createHash } from 'crypto';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
-import { changedFilesOf, designHolds, FileHashes, isOptionalFileHashes } from './design-hash';
+import { changedFilesOf, designHolds, FileHashes, isFileHashes, isOptionalFileHashes } from './design-hash';
 import { DESIGN_DIR } from '../design-config';
 import { git, showFilesOf } from '../git-reader';
 import { matchesPattern } from './harness-config';
@@ -23,9 +23,12 @@ export type PartImplemented = {
   hash: string;
   at: string;
   states: Record<string, string>;
-  files?: FileHashes;
+  files: FileHashes;
   app?: FileHashes;
 };
+
+/** An implemented record stored before file lists, which reads as no record until an upgrade adds its files. */
+export type LegacyImplemented = Omit<PartImplemented, 'files'>;
 
 /** A part a task can build: its design hash, the component path its `implements` names, and the directory of its records. */
 export type TaskPart = { part: string; hash: string; dir: string; component: string; earlier?: string[] };
@@ -38,14 +41,17 @@ const implementedFileOf = (dir: string) => resolve(dir, IMPLEMENTED_FILE);
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
-const isImplemented = (value: unknown): value is PartImplemented =>
+const isLegacyImplemented = (value: unknown): value is LegacyImplemented =>
   isRecord(value) &&
+  value['files'] === undefined &&
   typeof value['hash'] === 'string' &&
   typeof value['at'] === 'string' &&
   isRecord(value['states']) &&
   Object.values(value['states']).every((hash) => typeof hash === 'string') &&
-  isOptionalFileHashes(value['files']) &&
   isOptionalFileHashes(value['app']);
+
+const isImplemented = (value: unknown): value is PartImplemented =>
+  isRecord(value) && isFileHashes(value['files']) && isLegacyImplemented({ ...value, files: undefined });
 
 const sortedKeys = (_key: string, value: unknown) =>
   isRecord(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value;
@@ -57,7 +63,7 @@ export const stateHashOf = (props: unknown) =>
     .digest('hex')
     .slice(0, 16);
 
-export const readImplemented = (dir: string): Record<string, PartImplemented> => {
+const implementedEntriesOf = <T>(dir: string, keep: (value: unknown) => value is T): Record<string, T> => {
   const text = readStampText(implementedFileOf(dir));
 
   if (text === null) return {};
@@ -66,14 +72,16 @@ export const readImplemented = (dir: string): Record<string, PartImplemented> =>
     const parsed: unknown = JSON.parse(text);
 
     return isRecord(parsed)
-      ? Object.fromEntries(
-          Object.entries(parsed).filter((entry): entry is [string, PartImplemented] => isImplemented(entry[1])),
-        )
+      ? Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, T] => keep(entry[1])))
       : {};
   } catch {
     return {};
   }
 };
+
+export const readImplemented = (dir: string) => implementedEntriesOf(dir, isImplemented);
+
+export const readLegacyImplemented = (dir: string) => implementedEntriesOf(dir, isLegacyImplemented);
 
 /**
  * Records a part as implemented at its current hash with the props hash of each of its `states` and the `app` file

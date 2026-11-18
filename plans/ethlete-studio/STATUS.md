@@ -300,8 +300,8 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **B58** Input-Check: Inputs, die keine App bindet (außer `designOnly`), `*_SAMPLE` als Input-Default und
   umgesetzte Parts ohne App-Importeur werden gemeldet; Seiten-Zustände tragen Daten statt Knöpfe (Befund 151).
 - **B59** `implemented` wird streng: keine Einträge ohne `app`-Hashes, ein Spec mit Nicht-Fixture-Daten, Texte nur
-  aus der Label-Map (Befund 151). Zweiter Fund 18.11.: UNRECORDED "implemented before file lists" (7 studio-Parts
-  unter components/title-search, pages/inbox); Suspect: Einträge von vor den Dateilisten.
+  aus der Label-Map (Befund 151). Der Teil ohne `files` (UNRECORDED) ist gebaut; pages/inbox und pages/sketches haben
+  keinen implemented-Eintrag mehr, bis `task --verify` grün ist.
 - **B60** Lint für App-Templates: kein Überschreiben von `et-button`-Innereien, keine handgemachten Fokusringe
   (stattdessen `etFocusRing`) (Befund 151).
 - **B62** Merge-Ansicht: Ladezustand sofort, Liste füllt sich laufend, jede geänderte Zeile nennt den Grund (Pixel,
