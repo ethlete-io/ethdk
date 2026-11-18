@@ -1,10 +1,9 @@
 {
   "mcpServers": {
     "ethlete-design": {
-      "command": "npx",
+      "command": "node",
       "args": [
-        "et",
-        "design",
+        "tools/scripts/et-design.mjs",
         "mcp"
       ]
     }

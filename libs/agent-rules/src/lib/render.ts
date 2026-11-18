@@ -34,6 +34,9 @@ export const shellBanner = (runner = 'npx') =>
 export const packageRunnerVar = (vars: Record<string, string | string[]>) =>
   typeof vars['packageRunner'] === 'string' ? vars['packageRunner'] : undefined;
 
+export const designMcpCommandVar = (vars: Record<string, string | string[]>) =>
+  typeof vars['designMcpCommand'] === 'string' ? vars['designMcpCommand'] : undefined;
+
 const renderValue = (value: string | string[]) =>
   Array.isArray(value) ? value.map((entry) => `\`${entry}\``).join(', ') : value;
 

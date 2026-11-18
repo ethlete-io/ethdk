@@ -6,7 +6,15 @@ export const CODEX_CONFIG_FILE = '.codex/config.toml';
 
 export const DESIGN_MCP_SERVER = 'ethlete-design';
 
-const serverCommand = (runner = 'npx') => {
+type McpOptions = { existing: string; runner: string | undefined; command?: string };
+
+const serverCommand = (runner = 'npx', override?: string) => {
+  if (override) {
+    const [command = 'node', ...args] = override.split(' ').filter(Boolean);
+
+    return { command, args };
+  }
+
   const [command = 'npx', ...prefix] = runner.split(' ').filter(Boolean);
 
   return { command, args: [...prefix, 'et', 'design', 'mcp'] };
@@ -34,16 +42,19 @@ const parseObject = (existing: string, file: string): Record<string, unknown> =>
   return parsed as Record<string, unknown>;
 };
 
-export const emitClaudeMcp = (options: { existing: string; runner: string | undefined }): EmittedFile => {
+export const emitClaudeMcp = (options: McpOptions): EmittedFile => {
   const settings = parseObject(options.existing, CLAUDE_MCP_FILE);
   const servers = (settings['mcpServers'] ?? {}) as Record<string, unknown>;
-  const merged = { ...settings, mcpServers: { ...servers, [DESIGN_MCP_SERVER]: serverCommand(options.runner) } };
+  const merged = {
+    ...settings,
+    mcpServers: { ...servers, [DESIGN_MCP_SERVER]: serverCommand(options.runner, options.command) },
+  };
 
   return { path: CLAUDE_MCP_FILE, contents: `${JSON.stringify(merged, null, 2)}\n` };
 };
 
-const tomlSection = (runner: string | undefined) => {
-  const { command, args } = serverCommand(runner);
+const tomlSection = (runner: string | undefined, override: string | undefined) => {
+  const { command, args } = serverCommand(runner, override);
 
   return [
     `[mcp_servers.${DESIGN_MCP_SERVER}]`,
@@ -56,12 +67,12 @@ const tomlSection = (runner: string | undefined) => {
  * Replaces only the `[mcp_servers.ethlete-design]` table (up to the next table header) and appends it
  * when absent, so every other table in the project's Codex config stays as written.
  */
-export const emitCodexMcp = (options: { existing: string; runner: string | undefined }): EmittedFile => {
+export const emitCodexMcp = (options: McpOptions): EmittedFile => {
   const { existing, runner } = options;
   const header = `[mcp_servers.${DESIGN_MCP_SERVER}]`;
   const lines = existing.split('\n');
   const start = lines.findIndex((line) => line.trim() === header);
-  const section = tomlSection(runner);
+  const section = tomlSection(runner, options.command);
 
   if (start === -1) {
     const base = existing.trimEnd();

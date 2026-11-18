@@ -3,6 +3,7 @@
   "targets": ["claude", "codex"],
   "vars": {
     "packageRunner": "npx",
+    "designMcpCommand": "node tools/scripts/et-design.mjs mcp",
     "lintCommand": "npx nx lint <project>",
     "lintFixCommand": "npx nx lint <project> --fix",
     "formatCommand": "npx prettier --write <files>",

@@ -6,12 +6,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CONFIG_FILE_NAME } from './config';
 import { check, sync } from './sync';
 
-const repo = (options: { cli: boolean; targets?: string[]; packageManager?: string }) => {
+const repo = (options: {
+  cli: boolean;
+  targets?: string[];
+  packageManager?: string;
+  vars?: Record<string, string>;
+}) => {
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-mcp-'));
 
   writeFileSync(
     join(root, CONFIG_FILE_NAME),
-    JSON.stringify({ targets: options.targets ?? ['claude', 'codex'] }),
+    JSON.stringify({ targets: options.targets ?? ['claude', 'codex'], vars: options.vars }),
     'utf8',
   );
   writeFileSync(
@@ -80,6 +85,20 @@ describe('et design mcp registration', () => {
     });
     expect(readFileSync(join(root, '.codex/config.toml'), 'utf8')).toContain(
       'command = "pnpm"\nargs = ["exec", "et", "design", "mcp"]',
+    );
+  });
+
+  it('starts the server with the designMcpCommand var when the repo sets one', () => {
+    const root = repo({ cli: true, vars: { designMcpCommand: 'node tools/scripts/et-design.mjs mcp' } });
+
+    run(root);
+
+    expect(JSON.parse(readFileSync(join(root, '.mcp.json'), 'utf8')).mcpServers['ethlete-design']).toEqual({
+      command: 'node',
+      args: ['tools/scripts/et-design.mjs', 'mcp'],
+    });
+    expect(readFileSync(join(root, '.codex/config.toml'), 'utf8')).toContain(
+      'command = "node"\nargs = ["tools/scripts/et-design.mjs", "mcp"]',
     );
   });
 

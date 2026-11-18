@@ -8,7 +8,7 @@ import {
   SyncConfig,
   TOPOLOGY_CONFIG_FILE_NAME,
 } from './config';
-import { packageRunnerVar } from './render';
+import { designMcpCommandVar, packageRunnerVar } from './render';
 import { filterContent, isPackageInstalled, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { readScripts } from './package-runner';
@@ -317,13 +317,21 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
   if (isPackageInstalled(config.root, '@ethlete/cli')) {
     if (config.targets.includes('claude')) {
       files.push(
-        emitClaudeMcp({ existing: readExisting(config.root, CLAUDE_MCP_FILE), runner: packageRunnerVar(config.vars) }),
+        emitClaudeMcp({
+          existing: readExisting(config.root, CLAUDE_MCP_FILE),
+          runner: packageRunnerVar(config.vars),
+          command: designMcpCommandVar(config.vars),
+        }),
       );
     }
 
     if (config.targets.includes('codex')) {
       files.push(
-        emitCodexMcp({ existing: readExisting(config.root, CODEX_CONFIG_FILE), runner: packageRunnerVar(config.vars) }),
+        emitCodexMcp({
+          existing: readExisting(config.root, CODEX_CONFIG_FILE),
+          runner: packageRunnerVar(config.vars),
+          command: designMcpCommandVar(config.vars),
+        }),
       );
     }
   }
