@@ -15,7 +15,7 @@ Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: 
   about 1 GB; sample in /tmp/studio-freeze-webcontent.txt), probably a retry or poll loop after the design server
   restart. Find the loop and fix it. Tool fix: a scenario that restarts and slows the design server under a running
   Studio and fails on a busy main thread. The render-bug tool fixes are finding 363 / B309. Then the person-name check
-  B308 (finding 362, ADR 0369 "Person names in the product"), and the edit-sketch decision below (S6b).
+  B308 (finding 362, ADR 0018/0019 (person names in the product)), and the edit-sketch decision below (S6b).
 
 - Done, not pushed (17 commits on `next`): S1 8675cccbb, S2 5fd088c7c, S5 598e0b2bd, S7 rest dbd6de8e6; CI fixes
   45f505995 (contentful), 62c79da3b (ANSI in precommit-specs), 99905988b (shell-logo timeout; ET1234 absent in a
