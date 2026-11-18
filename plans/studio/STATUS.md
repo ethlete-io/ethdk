@@ -41,6 +41,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 10. **B605** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 11. **B606** ⏳ Hook protokolliert Modell, Effort, Aufgabe und Dateien jedes Subagenten (ADR 0371) - Builder
 12. **B607** ⏳ Alte Warteschlange (queue.md) einmal sortieren: offen / ADR / löschen, in Scheiben (ADR 0354 Punkt 5) - Doc-Agent
+13. **B608** ⏳ Doc-Agent schaltet von selbst auf „weg“ und zurück (Hook-Zeitstempel, 15 Min.), Wiederholregel angepasst (ADR 0372) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.
 
