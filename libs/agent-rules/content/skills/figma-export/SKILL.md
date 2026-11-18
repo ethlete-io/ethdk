@@ -1,6 +1,6 @@
 ---
 name: figma-export
-description: Reconcile a component against a Figma export - which exports to ask the designer for (an .svg frame and its "copy as CSS" dump), how to dump the geometry out of each, which of their numbers are authoritative, and how to measure the real rendered result against them headlessly. Use whenever a design export is dropped next to a component and the component has to be matched to it.
+description: Reconcile a component against a Figma export (.svg frame, "copy as CSS" dump) and measure the render against it. Use whenever a design export is dropped next to a component to be matched.
 kind: skill
 scope: both
 ---

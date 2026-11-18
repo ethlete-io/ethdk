@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Save the current work state to a handoff file so a fresh session can continue seamlessly, or resume from one. Use when context is getting large, when a work chunk is done and the next one starts, or when the user says "handoff", "wrap up", or "continue in a new session".
+description: Save the current work state to a handoff file so a fresh session can continue, or resume from one. Use when context is large, a work chunk is done, or on "handoff", "wrap up", "continue in a new session".
 kind: skill
 scope: both
 vars: [handoffDir]

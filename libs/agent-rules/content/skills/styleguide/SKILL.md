@@ -1,6 +1,6 @@
 ---
 name: styleguide
-description: Entry point for the Ethlete coding styleguide. Read when writing or reviewing TypeScript/Angular code. The mechanical rules are enforced by `@ethlete/eslint-plugin` (run lint with `--fix`); this covers the cross-cutting judgment calls (accessibility modifiers, `@internal`, naming intent, file/folder structure).
+description: 'Entry point for the Ethlete coding styleguide. Read when writing or reviewing TypeScript/Angular code: the judgment calls lint cannot enforce (accessibility modifiers, `@internal`, naming, file structure).'
 kind: skill
 scope: consumer
 requires: ['@ethlete/eslint-plugin']

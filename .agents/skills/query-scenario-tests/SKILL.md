@@ -1,6 +1,6 @@
 ---
 name: query-scenario-tests
-description: Write or run the scenario tests in libs/query/src/scenarios - consumer-level tests that boot the real query client against a stateful fake API with a deterministic clock and leak invariants. Use after any change in libs/query, when fixing a query bug (every fix gets a scenario), when a unit spec would need to mock internals, or when the user says "scenario test", "regression test for the query system", "leak", "race".
+description: Write or run the scenario tests in libs/query/src/scenarios (real client, fake API, leak invariants). Use after a change in libs/query, when fixing a query bug (every fix gets one), or on "leak", "race".
 ---
 
 # Query scenario tests

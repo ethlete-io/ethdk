@@ -1,6 +1,6 @@
 ---
 name: storybook-styling
-description: How to style Storybook story files in this repo - where Tailwind is (and isn't) allowed, and which utilities actually exist in Storybook's trimmed Tailwind theme (most of the default palette and text scale do not). Read BEFORE writing or editing any `*.stories.ts` / `stories/` component, or when a class in a story renders with no visible effect.
+description: "How to style `*.stories.ts` / `stories/` files: where Tailwind is allowed and which utilities exist in Storybook's trimmed theme. Read BEFORE editing a story, or when a story class has no effect."
 ---
 
 # Styling story files

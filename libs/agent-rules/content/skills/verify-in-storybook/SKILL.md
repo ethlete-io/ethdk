@@ -1,6 +1,6 @@
 ---
 name: verify-in-storybook
-description: Visually/behaviorally verify a component change by driving its Storybook story headlessly with Playwright. Use whenever you change a UI component and need to confirm the rendered DOM, computed styles, animations, or interactions actually work - not just that it compiles.
+description: Verify a component change by driving its Storybook story headlessly with Playwright. Use whenever you change a UI component and must confirm rendered DOM, computed styles, animations or interactions.
 kind: skill
 scope: consumer
 vars: [storybookUrl, storybookStartCommand]

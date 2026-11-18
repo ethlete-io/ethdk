@@ -1,6 +1,6 @@
 ---
 name: changeset
-description: Create a changeset for a change to any workspace package (release notes + version bump) - every @ethlete/* lib, and the private timetrack-app, ethlete-studio and @ethlete/timetrack too. Use whenever you commit a change under libs/*, apps/timetrack or apps/ethlete-studio, even a test or a story - `yarn lint:changesets` fails the push without one - or when the user says "add a changeset".
+description: Create a changeset for a change to any workspace package. Use whenever you commit a change under libs/*, apps/timetrack or apps/ethlete-studio, even a test or story, or on "add a changeset".
 ---
 
 # Add a changeset

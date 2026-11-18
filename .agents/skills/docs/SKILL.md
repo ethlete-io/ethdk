@@ -1,6 +1,6 @@
 ---
 name: docs
-description: Update or add pages on the VitePress documentation site (apps/docs) when library code changes. Use whenever a public API, component behavior, option, or default in libs/components (or another documented lib) is added, changed, or removed - and when shipping a new component domain that needs a new guide page.
+description: Update or add pages on the VitePress site (apps/docs) when library code changes. Use whenever a public API, behavior, option or default in libs/components is added, changed or removed, or a new domain needs a guide.
 ---
 
 # Documentation site (`apps/docs`)

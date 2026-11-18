@@ -1,6 +1,6 @@
 ---
 name: codex-subagent
-description: Delegate a task to a Codex agent (gpt-6-luna, gpt-6.1-terra, gpt-6.1-sol, gpt-6-astra) instead of a Claude subagent - a second opinion from another model family, a review, or a cheap parallel lookup. Read before spawning a subagent when another model would answer better, and whenever the user says codex, GPT, or "second opinion".
+description: 'Delegate a task to a Codex agent instead of a Claude subagent: second opinion, review, cheap parallel lookup. Read before spawning a subagent when another model fits, or on "codex", "GPT", "second opinion".'
 kind: skill
 scope: both
 ---

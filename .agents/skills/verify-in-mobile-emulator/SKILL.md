@@ -1,6 +1,6 @@
 ---
 name: verify-in-mobile-emulator
-description: Open a Storybook story on an Android emulator to check a component on a real mobile browser engine (touch, viewport, Chrome quirks; iOS goes through verify-on-apple-devices). Use when a change is touch- or mobile-viewport-specific and headless Chromium via verify-in-storybook isn't enough. Emulators are optional - this skill first detects whether the tooling exists and, if not, documents how to set it up.
+description: "Check a Storybook story on an Android emulator (real mobile engine; iOS: verify-on-apple-devices). Use when a touch- or mobile-viewport change needs more than headless Chromium. Emulators are optional."
 ---
 
 # Verify a story on the Android emulator

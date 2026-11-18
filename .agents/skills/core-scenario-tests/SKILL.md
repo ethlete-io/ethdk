@@ -1,6 +1,6 @@
 ---
 name: core-scenario-tests
-description: Write or run the scenario tests in libs/core/src/scenarios - behavior tests that boot a real Angular app through the @ethlete/core public API on a deterministic clock and frame loop, with leak invariants (timers, frames, observers, listeners, overlay roots, body/head nodes). Use after a change in libs/core, when fixing a core bug (every fix gets a scenario), or when a unit spec would need to mock internals.
+description: Write or run the scenario tests in libs/core/src/scenarios (real app, fake clock, leak invariants). Use after a change in libs/core, when fixing a core bug (every fix gets one), or instead of mocking internals.
 ---
 
 # Core scenario tests

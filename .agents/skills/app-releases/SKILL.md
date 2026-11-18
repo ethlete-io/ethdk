@@ -1,6 +1,6 @@
 ---
 name: app-releases
-description: How the Tauri apps (timetrack-app, ethlete-studio) and the SDK are released - publish.yml, the vendored Changesets action, versions:sync, the per-OS bundles, signing, the auto-updater key, and the CEF runtime on Linux. Read before touching publish.yml, tools/changesets-action, tauri.conf.json, Cargo files, the release scripts, or the app updater.
+description: "How the Tauri apps and the SDK are released: publish.yml, signing, updater key, CEF runtime. Read before touching publish.yml, tools/changesets-action, tauri.conf.json, Cargo files, release scripts or the updater."
 ---
 
 # App and SDK releases

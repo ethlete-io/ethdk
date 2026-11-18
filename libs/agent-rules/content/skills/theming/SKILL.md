@@ -1,6 +1,6 @@
 ---
 name: theming
-description: The two runtime theming systems in @ethlete/core - surface theming (elevation-aware neutrals) and color theming (semantic accent palettes). Read BEFORE writing or reviewing CSS involving color, background, border, or interaction state, and when wiring theme context across overlay/portal boundaries.
+description: The surface and color theming systems in @ethlete/core. Read BEFORE writing or reviewing CSS involving color, background, border or interaction state, or wiring theme context across overlays/portals.
 kind: skill
 scope: consumer
 requires: ['@ethlete/core']

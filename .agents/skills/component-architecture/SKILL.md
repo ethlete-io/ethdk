@@ -1,6 +1,6 @@
 ---
 name: component-architecture
-description: The three-tier component design system (primitives / headless / default components) used across the @ethlete SDK. Read BEFORE creating or restructuring any component or directive in libs/components - new component, headless directive, sub-directive, design tokens, folder layout, error codes, or self-registration. Ensures new code matches the established architecture.
+description: "The three-tier component design (primitives / headless / default) in the SDK. Read BEFORE creating or restructuring a component or directive in libs/components: tokens, folder layout, error codes."
 ---
 
 # Component architecture

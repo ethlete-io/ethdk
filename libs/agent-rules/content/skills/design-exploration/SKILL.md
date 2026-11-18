@@ -1,6 +1,6 @@
 ---
 name: design-exploration
-description: How a visual design exploration runs - the step size, what to put in front of the user at each stop, and when you may commit. Read BEFORE any visual design work on a sketch, a prototype, a theme, a palette, or the look of a component. The user is the designer; you find and frame, and you never pick the fix alone.
+description: 'How a visual design exploration runs: step size, what to show the user at each stop, when you may commit. Read BEFORE any visual design work on a sketch, prototype, theme, palette or component look.'
 kind: skill
 scope: both
 vars: [storybookUrl]

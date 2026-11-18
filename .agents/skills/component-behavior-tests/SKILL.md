@@ -1,6 +1,6 @@
 ---
 name: component-behavior-tests
-description: Add or run the permanent Playwright suites in apps/storybook-e2e that drive real Storybook stories in Chromium - focus visibility, keyboard navigation, and touch mode. Use after changing a component's focus, keyboard, pointer, overlay or touch behavior, when a refactor touches libs/components broadly, or when the user says "behavior test", "e2e for the component", "focus ring", "keyboard nav", "touch mode".
+description: Add or run the Playwright suites in apps/storybook-e2e (focus, keyboard, touch). Use after changing a component's focus, keyboard, pointer, overlay or touch behavior, or on "behavior test", "focus ring".
 ---
 
 # Component behavior tests (Playwright against Storybook)

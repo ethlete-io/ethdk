@@ -1,6 +1,6 @@
 ---
 name: verify-on-apple-devices
-description: Drive the team Mac's iOS Simulator and the real iPad over LAN (SSH + safaridriver + idb) to verify a story on real Apple engines - touch media queries, soft keyboard, browser bar, vh/dvh, safe-area. Use when a change needs real iOS Safari behavior that headless Chromium or the local Android emulator can't provide.
+description: Drive the team Mac's iOS Simulator and the real iPad over LAN to verify a story on real Apple engines. Use when a change needs real iOS Safari behavior (touch, soft keyboard, vh/dvh, safe-area).
 ---
 
 # Verify a story on Apple devices over the local network

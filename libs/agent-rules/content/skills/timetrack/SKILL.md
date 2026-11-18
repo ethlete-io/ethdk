@@ -1,6 +1,6 @@
 ---
 name: timetrack
-description: How to reach Jira from any repo through the running Timetrack app - look up an issue, search for one, ask which project a repo logs into, file a ticket, add a worklog row, read the user's own Tempo worklogs, read their Google Calendar, read the evidence a day holds, or list the work that still waits for a ticket. Read whenever a task needs Jira data, a Jira write, or the day's own events, and never put a Jira token in a repo.
+description: 'Reach Jira from any repo through the running Timetrack app: look up or file issues, add worklogs, read Tempo worklogs, Google Calendar, day evidence. Read whenever a task needs Jira data or a Jira write.'
 kind: skill
 scope: both
 ---

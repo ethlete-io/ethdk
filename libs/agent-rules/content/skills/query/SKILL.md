@@ -1,6 +1,6 @@
 ---
 name: query
-description: The signals-first @ethlete/query data-fetching system - the query client, typed query creators, reactive args, and reading results as signals or observables. Read BEFORE writing or reviewing code that fetches data, builds a list with filters/search/sort/paging bound to URL query params (defineQueryForm), wires search/autocomplete to an API, adds auth, route guards or polling, or bridges a query into UI or RxJS.
+description: 'The signals-first @ethlete/query data-fetching system. Read BEFORE writing or reviewing code that fetches data: query forms, search/autocomplete, auth, polling, pagination, bridging a query into UI or RxJS.'
 kind: skill
 scope: consumer
 requires: ['@ethlete/query']

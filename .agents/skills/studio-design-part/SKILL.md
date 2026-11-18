@@ -1,6 +1,6 @@
 ---
 name: studio-design-part
-description: How to implement a Studio design part as an Angular app component without duplicating, faking or drifting from the design. Read before implementing or changing an app component for a Studio design part (a part with an `implements` link, `et design task`, apps/ethlete-studio/src/app/components and design-parts).
+description: How to implement a Studio design part as an Angular app component without drifting from the design. Read before implementing or changing an app component for a design part (`implements` link, `et design task`).
 ---
 
 # Implement a design part as an app component

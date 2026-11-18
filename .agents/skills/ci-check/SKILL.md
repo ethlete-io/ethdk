@@ -1,6 +1,6 @@
 ---
 name: ci-check
-description: Run the same checks CI runs, locally, before pushing - format, agent-rules sync, changesets, lint, test, build, bundle-size goldens, the Storybook build, the component behavior tests, the timetrack e2e suite and the Rust host. Use when the user says "run CI", "ci check", "lint format test build", or before pushing a change to a published lib.
+description: Run the checks CI runs, locally, before pushing (format, sync, changesets, lint, test, build, goldens, Storybook, e2e). Use on "run CI", "ci check", or before pushing a change to a published lib.
 ---
 
 # Local CI check
