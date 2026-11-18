@@ -47,5 +47,8 @@
   "src/lib/design/system/sketch/merge-journal.spec.ts": [
     "libs/cli/src/lib/design/system/sketch/merge-journal.child.ts",
     "libs/cli/src/lib/design/system/sketch/merge-journal.kill.ts"
+  ],
+  "src/lib/design/system/sketch/undesigned-sketch.spec.ts": [
+    "libs/cli/src/lib/design/system/__fixtures__/.ethlete/design/acme/**"
   ]
 }
