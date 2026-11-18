@@ -1,10 +1,41 @@
 {
   "components/action-sheet": {
+    "hash": "e2a3d5995c4a905a",
+    "files": {
+      ".ethlete/design/sdk/components/action-sheet/action-sheet.css": "5995078f6fd832f4",
+      ".ethlete/design/sdk/components/action-sheet/action-sheet.ts": "19da56f6537e123e",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/dialog.ts": "424aeadd7dbf0dad",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
+      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/components/src/lib/overlay/alert-dialog/alert-dialog.component.css": "634bf293291cc8a7",
+      "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
+      "libs/components/src/lib/overlay/overlay-main-styles.component.css": "a141c3135515466d",
+      "libs/components/src/lib/overlay/strategies/dialog-styles.component.css": "19d93f189828f7d2",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
     "actions": [],
-    "at": "2026-11-18T08:45:27.800Z"
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.187Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/anchored-dialog": {
-    "hash": "0b98e2e2dc7cb956",
+    "hash": "dd1474e5b6ecc616",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "abec18bb97a9c4d8",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "456e7980a756435f",
@@ -24,7 +55,7 @@
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/forms/checkbox/checkbox.component.css": "1a70555c97fc391f",
       "libs/components/src/lib/forms/choice-field/choice-field-card-styles.component.css": "4c3b18fe180cb96b",
-      "libs/components/src/lib/forms/choice-field/choice-field.component.css": "67ab9180abe95afb",
+      "libs/components/src/lib/forms/choice-field/choice-field.component.css": "7c64ce9249466135",
       "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
       "libs/components/src/lib/forms/form-field/form-support-styles.component.css": "0f81cadca44d8370",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
@@ -45,10 +76,11 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-17T20:24:14.766Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 975979
+    "builder": "designer",
+    "at": "2026-11-18T11:18:25.245Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/badge": {
     "hash": "8ff3db9e1d266277",
@@ -63,14 +95,47 @@
       "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b"
     },
     "actions": [],
+    "builder": "designer",
     "at": "2026-11-17T20:31:37.256Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
     "pid": 1300751
   },
   "components/banner": {
+    "hash": "6f443b1a7c49d6c9",
+    "files": {
+      ".ethlete/design/sdk/components/banner/banner.css": "93cb61340055e35b",
+      ".ethlete/design/sdk/components/banner/banner.ts": "bd6dd3f9b6eeab84",
+      "libs/components/design/banner.ts": "2dfbc36e8bda2ae6",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/src/lib/banner/banner.component.css": "83c26248a5f6fb27",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
+      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
+      "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/icon/headless/circle-check-icon.ts": "a120b0cfbd95a3dc",
+      "libs/components/src/lib/icon/headless/circle-info-icon.ts": "b1958f06984def38",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
+      "libs/components/src/lib/icon/headless/triangle-exclamation-icon.ts": "2ddf3400138f653a",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
     "actions": [],
-    "at": "2026-11-18T08:45:27.911Z"
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.281Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/button": {
     "hash": "fdcd94fedd3764cf",
@@ -95,50 +160,147 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
+    "builder": "designer",
     "at": "2026-11-17T20:23:44.313Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
     "pid": 954605
   },
   "components/card": {
+    "hash": "4d912de141547a06",
+    "files": {
+      ".ethlete/design/sdk/components/card/card.css": "996bdd933fc14e95",
+      ".ethlete/design/sdk/components/card/card.ts": "688e72e59af79899",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/card.ts": "328baccb80f6f9ae",
+      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
+      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
+      "libs/components/src/lib/card/card.component.css": "297b7054877280ab",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
     "actions": [],
-    "at": "2026-11-18T08:45:28.078Z"
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.378Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/checkbox": {
+    "hash": "4b66558fb55f4b6e",
+    "files": {
+      ".ethlete/design/sdk/components/checkbox/checkbox.css": "253ffe23f4cbbde8",
+      ".ethlete/design/sdk/components/checkbox/checkbox.ts": "499bf69efd15a21f",
+      "libs/components/design/checkbox.ts": "e3471aa943b7b829",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/forms/checkbox/checkbox.component.css": "1a70555c97fc391f",
+      "libs/components/src/lib/forms/choice-field/choice-field-card-styles.component.css": "4c3b18fe180cb96b",
+      "libs/components/src/lib/forms/choice-field/choice-field.component.css": "7c64ce9249466135",
+      "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
+      "libs/components/src/lib/forms/form-field/form-support-styles.component.css": "0f81cadca44d8370",
+      "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
+      "libs/components/src/lib/forms/selection-card-styles.component.css": "190d2cb203d8058f",
+      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-group-select-all.component.css": "4f4f5c7a5bdeea91",
+      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-group.component.css": "598181b0bea3821a",
+      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-option.component.css": "65cb9b4f17584782",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
     "actions": [],
-    "at": "2026-11-18T08:45:28.168Z"
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.470Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/chip": {
+    "hash": "1936b84bd39540c1",
+    "files": {
+      ".ethlete/design/sdk/components/chip/chip.css": "8038b0cc2cad5a22",
+      ".ethlete/design/sdk/components/chip/chip.ts": "2d532c0352607ec5",
+      "libs/components/design/chip.ts": "f1927049c57f6709",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/src/lib/chip/chip.component.css": "9c025c24d096fc4d",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d"
+    },
     "actions": [],
-    "at": "2026-11-18T08:45:28.233Z"
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.540Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/dialog": {
+    "hash": "7a3056ba7c7de18f",
+    "files": {
+      ".ethlete/design/sdk/components/dialog/dialog.css": "2a7bb49e85b6ef5d",
+      ".ethlete/design/sdk/components/dialog/dialog.ts": "2065f4d93ad47654",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/dialog.ts": "424aeadd7dbf0dad",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
+      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/components/src/lib/overlay/alert-dialog/alert-dialog.component.css": "634bf293291cc8a7",
+      "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
+      "libs/components/src/lib/overlay/overlay-main-styles.component.css": "a141c3135515466d",
+      "libs/components/src/lib/overlay/strategies/dialog-styles.component.css": "19d93f189828f7d2",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
     "actions": [],
-    "at": "2026-11-18T08:45:28.320Z"
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.632Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/form-field": {
-    "hash": "7b747365ed314b1d",
+    "hash": "61b6966b6745c572",
     "files": {
-      ".ethlete/design/sdk/components/form-field/form-field.ts": "13a44e01339148a8",
+      ".ethlete/design/sdk/components/form-field/form-field.ts": "28a000d8abcf025d",
       "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
-      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "2c333e4263e78c0e",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "e4f70765b72267ab",
       "libs/components/src/lib/forms/form-field/form-field.component.css": "934d0fc0e7a53ff4",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
       "libs/components/src/lib/forms/form-field/hint.component.css": "b1531941f843c188",
       "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
       "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "5b69cdc878fe83fc",
       "libs/components/src/lib/forms/textarea/textarea.component.css": "0983f19962cc1c64",
-      "libs/components/src/lib/icon/headless/icon-styles.component.css": "ff8f5b368903719a",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-16T09:16:28.691Z",
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.715Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 2851297
   },
   "components/menu": {
     "hash": "e94f060c24778253",
@@ -158,6 +320,7 @@
       "libs/components/src/lib/menu/menu.component.css": "892ce1929a53330f"
     },
     "actions": [],
+    "builder": "designer",
     "at": "2026-11-17T19:09:53.680Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
@@ -185,16 +348,17 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": ["emit:pageChange"],
+    "builder": "designer",
     "at": "2026-11-17T21:13:44.652Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
     "pid": 3081054
   },
   "components/radio-group": {
-    "hash": "6c4b9fd45c5ad5c6",
+    "hash": "673d568f7be3bc80",
     "files": {
       ".ethlete/design/sdk/components/radio-group/radio-group.css": "2ea32ac6ad497550",
-      ".ethlete/design/sdk/components/radio-group/radio-group.ts": "feee231722221b6f",
+      ".ethlete/design/sdk/components/radio-group/radio-group.ts": "64d35c070c2ab307",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/radio-group.ts": "cc349f11ce8a4455",
       "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
@@ -208,13 +372,14 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-13T14:25:10.096Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3727010
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.819Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/select": {
-    "hash": "85ead7ae483a2c1d",
+    "hash": "2d25e079089eaa58",
     "files": {
       ".ethlete/design/sdk/components/select/select.css": "f0b7d98fc106a3d8",
       ".ethlete/design/sdk/components/select/select.ts": "4569c1a6a4a61160",
@@ -231,7 +396,7 @@
       "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
       "libs/components/src/lib/forms/select/select-all-option.component.css": "04b669797ac4e5e1",
       "libs/components/src/lib/forms/select/select-option-group.component.css": "b7acd6c2e423929c",
-      "libs/components/src/lib/forms/select/select-option-styles.component.css": "5f868d2fbab71698",
+      "libs/components/src/lib/forms/select/select-option-styles.component.css": "b9a577d5608b2a3a",
       "libs/components/src/lib/forms/select/select-panel.component.css": "b0413b687ba5612c",
       "libs/components/src/lib/forms/select/select.component.css": "5f0c0249084d3635",
       "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "5b69cdc878fe83fc",
@@ -246,29 +411,30 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-17T20:52:27.308Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 2167439
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.919Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "components/select-panel": {
-    "hash": "a5b112ed398caa46",
+    "hash": "6048a2282eaa4525",
     "files": {
       ".ethlete/design/sdk/components/select-panel/select-panel.css": "297257798bb74b2a",
-      ".ethlete/design/sdk/components/select-panel/select-panel.ts": "c87fd08eb83f398a",
+      ".ethlete/design/sdk/components/select-panel/select-panel.ts": "d786b9b98cf00475",
       "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/select.ts": "d9dba51f6cbeb2df",
       "libs/components/src/lib/forms/form-field/form-field-control-suffix-styles.component.css": "c92cd543be49692a",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
-      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "2c333e4263e78c0e",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "e4f70765b72267ab",
       "libs/components/src/lib/forms/form-field/form-field.component.css": "934d0fc0e7a53ff4",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
       "libs/components/src/lib/forms/form-field/hint.component.css": "b1531941f843c188",
       "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
       "libs/components/src/lib/forms/select/select-all-option.component.css": "04b669797ac4e5e1",
       "libs/components/src/lib/forms/select/select-option-group.component.css": "b7acd6c2e423929c",
-      "libs/components/src/lib/forms/select/select-option-styles.component.css": "5f868d2fbab71698",
+      "libs/components/src/lib/forms/select/select-option-styles.component.css": "b9a577d5608b2a3a",
       "libs/components/src/lib/forms/select/select-panel.component.css": "b0413b687ba5612c",
       "libs/components/src/lib/forms/select/select.component.css": "5f0c0249084d3635",
       "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "5b69cdc878fe83fc",
@@ -276,17 +442,18 @@
       "libs/components/src/lib/icon/headless/check-icon.ts": "6a14df4cc853b42d",
       "libs/components/src/lib/icon/headless/chevron-icon.ts": "d2c88d30d687a8bf",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
-      "libs/components/src/lib/icon/headless/icon-styles.component.css": "ff8f5b368903719a",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
       "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-16T09:16:28.831Z",
+    "builder": "designer",
+    "at": "2026-11-18T11:18:25.007Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 1898251
+    "pid": 2851297
   },
   "components/switch": {
     "hash": "8aed70e2054a5b0c",
@@ -332,30 +499,32 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
+    "builder": "designer",
     "at": "2026-11-17T20:18:45.858Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
     "pid": 804051
   },
   "foundations/colors": {
-    "hash": "614b1b030fd5f8a7",
+    "hash": "5dce981a59c816ce",
     "files": {
-      ".ethlete/design/sdk/foundations/colors/colors.ts": "528f2f9b0cf853b1",
+      ".ethlete/design/sdk/foundations/colors/colors.ts": "21372329860a89e0",
       ".ethlete/design/sdk/foundations/colors/overrides.json": "37529d9089744c64",
       ".ethlete/design/sdk/foundations/colors/shared/contrast.ts": "e1effb47f4efbd16",
       ".ethlete/design/studio/foundations/type/faces.css": "f3b800586a8fa354"
     },
     "actions": [],
-    "at": "2026-11-14T17:25:45.154Z",
+    "builder": "designer",
+    "at": "2026-11-18T11:18:23.903Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 3380508
+    "pid": 2851297
   },
   "foundations/elevation": {
-    "hash": "c729e42388958c68",
+    "hash": "cebe920329fff663",
     "files": {
       ".ethlete/design/sdk/foundations/elevation/elevation.css": "f2f220dfb86a39c2",
-      ".ethlete/design/sdk/foundations/elevation/elevation.ts": "db933f910ada1a89",
+      ".ethlete/design/sdk/foundations/elevation/elevation.ts": "a1239c00d13005c7",
       ".ethlete/design/sdk/foundations/elevation/shared/elevation/scene.css": "1f8f38c213e70f13",
       ".ethlete/design/sdk/foundations/elevation/shared/elevation/scene.ts": "936205798eb8c95c",
       "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
@@ -363,14 +532,14 @@
       "libs/components/design/select.ts": "d9dba51f6cbeb2df",
       "libs/components/src/lib/forms/form-field/form-field-control-suffix-styles.component.css": "c92cd543be49692a",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
-      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "ab5b53bc5a5b521f",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "e4f70765b72267ab",
       "libs/components/src/lib/forms/form-field/form-field.component.css": "934d0fc0e7a53ff4",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
       "libs/components/src/lib/forms/form-field/hint.component.css": "b1531941f843c188",
       "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
       "libs/components/src/lib/forms/select/select-all-option.component.css": "04b669797ac4e5e1",
       "libs/components/src/lib/forms/select/select-option-group.component.css": "b7acd6c2e423929c",
-      "libs/components/src/lib/forms/select/select-option-styles.component.css": "5f868d2fbab71698",
+      "libs/components/src/lib/forms/select/select-option-styles.component.css": "b9a577d5608b2a3a",
       "libs/components/src/lib/forms/select/select-panel.component.css": "b0413b687ba5612c",
       "libs/components/src/lib/forms/select/select.component.css": "5f0c0249084d3635",
       "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "5b69cdc878fe83fc",
@@ -378,28 +547,31 @@
       "libs/components/src/lib/icon/headless/check-icon.ts": "6a14df4cc853b42d",
       "libs/components/src/lib/icon/headless/chevron-icon.ts": "d2c88d30d687a8bf",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
-      "libs/components/src/lib/icon/headless/icon-styles.component.css": "ff8f5b368903719a",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
       "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
-    "at": "2026-11-15T03:31:05.507Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 1377742
+    "builder": "designer",
+    "at": "2026-11-18T11:18:23.994Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   },
   "foundations/icons": {
-    "hash": "8f54284f202642c8",
+    "hash": "536a2bae57a77592",
     "files": {
-      ".ethlete/design/sdk/foundations/icons/icons.ts": "92fe04df2b6735e5",
+      ".ethlete/design/sdk/foundations/icons/icons.ts": "35a0bbebc5a50a5e",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404"
     },
-    "at": "2026-11-08T14:57:09.936Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 1454598
+    "actions": [],
+    "builder": "designer",
+    "at": "2026-11-18T11:18:24.093Z",
+    "by": "et design serve",
+    "cmd": "serve",
+    "pid": 2851297
   }
 }
