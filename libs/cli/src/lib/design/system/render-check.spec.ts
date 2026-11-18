@@ -907,6 +907,77 @@ export default definePart({
     ).toEqual(['added: extract the collapse as its own control part and draw this state there']);
   }, 120_000);
 
+  it('reports a live state mapped to a design state neither the loaded sketch nor the merged part has, also when its states are spread', async (context) => {
+    const target = checkout({ 'elements/hero': { body: '<p style="margin: 0">Hero</p>', states: 'rest: {}' } });
+    const design = join(target, DESIGN_DIR);
+    const config = {
+      products: {
+        shop: {
+          presets: { desktop: { width: 400, height: 300 } },
+          harness: { app: 'apps/a', map: 'apps/a/map.ts', live: 'apps/a/design-live.json' },
+        },
+      },
+    };
+    const shop = join(design, 'shop');
+    const dir = join(shop, 'sketches', 'elements-hero');
+    const source = readFileSync(join(shop, 'elements/hero/hero.ts'), 'utf8');
+
+    writeFileSync(join(design, 'config.json'), JSON.stringify(config));
+    for (const variant of ['literal', 'spread']) mkdirSync(join(dir, variant, 'elements/hero'), { recursive: true });
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({ target: 'elements/hero', status: 'ready', createdAt: '2026-01-01T00:00:00.000Z' }),
+    );
+    writeFileSync(
+      join(dir, 'literal/elements/hero/hero.ts'),
+      source
+        .replace('states: { rest: {} }', 'states: { rest: {}, fit: {} }')
+        .replace("rest: 'a state'", "rest: 'a state', fit: 'a state'"),
+    );
+    writeFileSync(join(dir, 'spread/elements/hero/shared.ts'), 'export const shared = { fit: {} };\n');
+    writeFileSync(
+      join(dir, 'spread/elements/hero/hero.ts'),
+      `import { shared } from './shared';\n${source
+        .replace('states: { rest: {} }', 'states: { rest: {}, ...shared }')
+        .replace("rest: 'a state'", "rest: 'a state', fit: 'a state'")}`,
+    );
+    mkdirSync(join(target, 'apps/a'), { recursive: true });
+    writeFileSync(
+      join(target, 'apps/a/design-live.json'),
+      JSON.stringify({
+        host: 'app-shell',
+        pages: {
+          'elements/hero': {
+            states: { one: { design: 'fit' }, two: { design: 'rest' }, three: { design: 'gone' } },
+          },
+        },
+      }),
+    );
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: ['literal', 'spread'].map((variant) => ({
+        product: 'shop',
+        sketch: { target: 'elements/hero', variant },
+        parts: null,
+      })),
+    });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'LIVE')
+        .map((issue) => `${issue.sketch?.variant}: ${issue.detail}`),
+    ).toEqual([
+      'literal: the live spec maps elements/hero live state three to design state "gone", which neither the sketch nor the merged design has',
+      'spread: the live spec maps elements/hero live state three to design state "gone", which neither the sketch nor the merged design has',
+    ]);
+  }, 120_000);
+
   it('blocks a sketch only on GRID problems it adds to the merged grid', async (context) => {
     const target = checkout({
       'components/gridded': {

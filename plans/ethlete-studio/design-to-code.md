@@ -2615,3 +2615,11 @@ CUT-CONTROL and the CLIPPED skip scope were built in c5d3271a1. The open check (
 slice): `pages/sketches` carries no root skip any more; its only `data-et-skip="CLIPPED"` sits on the change crop
 (`shared/change-crop.ts`), and `design check --product studio --part pages/sketches` on f47779266 reported 0 findings
 with both rules active. Verified by that check run; no new code.
+
+As built (B183): the LIVE check moved from the static sketch gate (`check-sketches.ts`, `stateNamesOf` on the source)
+into the render check, which already loads the sketch part and the merged part with `ssrLoadModule`; it compares the
+live spec's design states against the keys of both loaded `states` objects (`unknownLiveStatesOf` in
+`live-compare.ts`). A spread `states: { ...shared }` is checked now; the `live states not checked: spread states` note
+is gone. Verified: a `render-check.spec.ts` case with a literal and a spread variant reports the dropped state in both
+(red before). Not verified: the gates that run only `variantProblemsOf` without a render (open-points listing,
+after-merge recheck) no longer report LIVE; `sketch ready` and `design check` do, through the render check.

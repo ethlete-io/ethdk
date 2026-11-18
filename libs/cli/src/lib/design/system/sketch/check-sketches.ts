@@ -6,9 +6,7 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
 import { typecheckProduct, typecheckProductAsync } from '../system-tsconfig';
 import { duplicateClassWarningsOf } from './duplicate-class';
-import { liveSpecOf } from '../live-compare';
 import { mergedLayoutProblemsOf } from './merged-layout';
-import { repoRootOf } from '../reachable-files';
 import { overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
@@ -47,39 +45,6 @@ const droppedStatesOf = (options: {
               message: `drops the state${dropped.length === 1 ? '' : 's'} ${dropped.join(', ')} that ${partKeyOf(part)} has in ${product.name} - a variant keeps every state of the part`,
             },
           ];
-    });
-};
-
-const liveStateProblemsOf = (options: { product: ResolvedProduct; overlaid: SketchedProduct }): Problem[] => {
-  const { product, overlaid } = options;
-  const live = liveSpecOf({ target: repoRootOf(product), product });
-
-  if (typeof live === 'string') return [];
-
-  return overlaid.parts
-    .filter((part) => overlaid.sketched.includes(partKeyOf(part)))
-    .flatMap((part) => {
-      const key = partKeyOf(part);
-      const page = live.spec.pages[key];
-      const merged = product.parts.find((candidate) => partKeyOf(candidate) === key);
-      const own = stateNamesOf(part.source);
-      const mergedNames = merged ? stateNamesOf(merged.source) : [];
-
-      if (own === null || mergedNames === null) {
-        console.warn(`NOTE ${key}: live states not checked: spread states`);
-
-        return [];
-      }
-
-      const known = new Set([...own, ...mergedNames]);
-
-      return Object.entries(page?.states ?? {})
-        .filter(([, state]) => !known.has(state.design))
-        .map(([name, state]) => ({
-          rule: 'LIVE',
-          file: part.file,
-          message: `the live spec maps ${key} live state ${name} to design state "${state.design}", which neither the sketch nor the merged design has`,
-        }));
     });
 };
 
@@ -133,7 +98,6 @@ export const variantProblemsOf = (options: {
         ...(isEditSketch(options.sketch) && variant === EDIT_OLD
           ? []
           : droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] })),
-        ...liveStateProblemsOf({ product: options.product, overlaid }),
       ],
       before: found.filter(wasThere),
     };

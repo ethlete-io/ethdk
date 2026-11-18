@@ -27,6 +27,7 @@ import {
 import { gridReportOf } from './grid-report';
 import { watchSdkErrorLines } from './sdk-errors';
 import { partKeyOf, ResolvedPart } from './resolve-product';
+import { unknownLiveStatesOf } from './live-compare';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
@@ -1087,6 +1088,10 @@ export const renderIssuesOf = async (options: {
             ? Object.keys(mergedDefinition.states)
             : [];
         const base = mergedPart ? { controls: mergedDefinition?.controls, states: mergedStates } : null;
+
+        if (merged && 'sketched' in drawn && Array.isArray(drawn.sketched) && drawn.sketched.includes(key))
+          for (const detail of unknownLiveStatesOf({ product: merged, part: key, known: [...states, ...mergedStates] }))
+            issues.push({ rule: 'LIVE', product, part: key, state: '-', size: '-', path: '-', detail, sketch });
 
         for (const gap of introducedControlStateGapsOf({
           part: key,

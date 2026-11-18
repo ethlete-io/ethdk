@@ -9,6 +9,7 @@ import { ShootStates, StateShot } from './compare-command';
 import { harnessOf } from './harness-map';
 import { occludedFramesOf } from './occluded';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { repoRootOf } from './reachable-files';
 import { watchSdkErrors } from './sdk-errors';
 import { settledPanesOf } from './settled-panes';
 import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
@@ -185,6 +186,20 @@ export const liveSpecOf = (options: { target: string; product: ResolvedProduct }
   const problem = liveSpecProblemOf(spec);
 
   return problem === null ? { spec: spec as LiveSpec, dir: dirname(file) } : `${harness.live}: ${problem}`;
+};
+
+/** One line per live state of `part` the live spec maps to a design state outside `known`. */
+export const unknownLiveStatesOf = (options: { product: ResolvedProduct; part: string; known: string[] }) => {
+  const live = liveSpecOf({ target: repoRootOf(options.product), product: options.product });
+
+  if (typeof live === 'string') return [];
+
+  return Object.entries(live.spec.pages[options.part]?.states ?? {})
+    .filter(([, state]) => !options.known.includes(state.design))
+    .map(
+      ([name, state]) =>
+        `the live spec maps ${options.part} live state ${name} to design state "${state.design}", which neither the sketch nor the merged design has`,
+    );
 };
 
 /** Merges storage entries: an object value merges into the earlier one, anything else replaces it. */
