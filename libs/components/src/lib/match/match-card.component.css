@@ -216,6 +216,7 @@
       --_et-match-card-score-font-size: var(--et-match-card-expanded-score-font-size);
       --_et-match-card-games-display: flex;
       --_et-match-card-subtitle-display: block;
+      --_et-match-card-country-display: flex;
       --_et-match-card-label-display: block;
       --_et-match-card-meta-display: flex;
       --_et-match-card-time-display: block;
@@ -245,6 +246,7 @@
     --_et-match-card-score-font-size: var(--et-match-card-expanded-score-font-size);
     --_et-match-card-games-display: flex;
     --_et-match-card-subtitle-display: block;
+    --_et-match-card-country-display: flex;
     --_et-match-card-label-display: block;
     --_et-match-card-meta-display: flex;
     --_et-match-card-time-display: block;
@@ -375,6 +377,7 @@
     align-items: center;
     gap: 8px;
     min-inline-size: 0;
+    text-align: start;
   }
 
   /* Mirrored in the wide arrangement, and mirrored properly: the away side's row reverses so its value
@@ -444,9 +447,12 @@
   /* A participant's second line is the first thing a dense row has no space for — it would make every row
      two lines tall, which is the whole point of the dense row gone. Off by default here, back on in the
      roomier layouts. The primitive keeps showing it when used standalone. */
-  .et-match-card-content .et-match-participant-subtitle,
-  .et-match-card-content .et-match-participant-country {
+  .et-match-card-content .et-match-participant-subtitle {
     display: var(--_et-match-card-subtitle-display, none);
+  }
+
+  .et-match-card-content .et-match-participant-country {
+    display: var(--_et-match-card-country-display, none);
   }
 
   .et-match-card-content .et-match-participant-name {

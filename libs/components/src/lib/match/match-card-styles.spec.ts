@@ -33,3 +33,16 @@ describe('match-card.component.css font tokens', () => {
     expect(css).toContain(`var(--et-match-card-${token}, inherit)`);
   });
 });
+
+describe('match-card.component.css participant country line', () => {
+  it('lays the country line out as a flex row of its own, not as the subtitle block', () => {
+    expect(css).toContain('display: var(--_et-match-card-country-display, none);');
+    expect(css.match(/--_et-match-card-country-display: flex;/g)).toHaveLength(2);
+  });
+
+  it('pins each side to start alignment, so a centered page cannot center the loser row', () => {
+    const side = css.match(/\.et-match-card-side \{([^}]*)\}/)?.[1] ?? '';
+
+    expect(side).toContain('text-align: start;');
+  });
+});
