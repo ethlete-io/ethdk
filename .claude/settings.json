@@ -144,6 +144,7 @@
     }
   },
   "enabledPlugins": {
-    "e2e-progress@ethlete": true
+    "e2e-progress@ethlete": true,
+    "status-line@ethlete": true
   }
 }
