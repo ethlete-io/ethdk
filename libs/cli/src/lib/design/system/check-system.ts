@@ -89,7 +89,7 @@ import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { startVariantTypechecks, typecheckVariant, typecheckVariantAsync, variantKeyOf } from './sketch/check-sketches';
-import { changedOutsideSketchOf } from './sketch/merged-parts';
+import { changedOutsideSketchOf, MERGED_FILE } from './sketch/merged-parts';
 import { keepHeldStampsInFiles, withStampsInMemory } from './stamp-files';
 import { readyUncommittedLinesOf } from '../uncommitted-state';
 import { staleSketchBasesOf } from './sketch/stale-base';
@@ -1120,7 +1120,10 @@ export const checkSystemRendered = async (
       if (options.part && !options.parts)
         code = Math.max(code, await checkEmbedders({ ...options, part: options.part, typechecks, warm: run.warm }));
 
-      keepHeldStampsInFiles(READY_FILE, options.parts ?? (options.part ? [options.part] : 'all'));
+      const checked = options.parts ?? (options.part ? [options.part] : 'all');
+
+      keepHeldStampsInFiles(READY_FILE, checked);
+      keepHeldStampsInFiles(MERGED_FILE, checked);
 
       for (const name of options.products) {
         const entry = options.config.products?.[name];

@@ -1,12 +1,14 @@
 import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { git } from '../../git-test-env.fixtures';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { renderIssuesOf } from './render-check';
+import { partKeyOf, resolveProduct } from './resolve-product';
+import { partHashOf } from './sketch/baseline';
 
 vi.mock('./render-check', async (actual) => ({
   ...(await actual<typeof import('./render-check')>()),
@@ -67,16 +69,13 @@ describe('a design check and the tracked stamp files', () => {
   });
 
   it.each([undefined, 'elements/hero'])(
-    'leaves merged.json byte-identical, drops the record in ready.json uncommitted and reports it (part %s)',
+    'drops the record in ready.json uncommitted and reports it (part %s)',
     async (part) => {
       const { target, dir } = committedAcme();
 
       targets.push(target);
 
       const config = readConfig(target) ?? {};
-      const merged = join(dir, 'merged.json');
-      const before = readFileSync(merged, 'utf8');
-
       vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [], warnings: [] } as never);
       vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
       const lines: string[] = [];
@@ -93,13 +92,44 @@ describe('a design check and the tracked stamp files', () => {
         drawPictures: async ({ parts }) => new Map(parts.map((name) => [name, 'not drawn in this spec'])),
       });
 
-      expect(readFileSync(merged, 'utf8')).toEqual(before);
       expect(lines).toContainEqual(expect.stringMatching(/^RECORD DROPPED acme elements\/hero: open-point/));
       expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))).not.toHaveProperty(['elements/hero', 'hash']);
       expect(git(target, 'rev-list', '--count', 'HEAD')).toBe('1');
       expect(lines.slice(lines.findIndex((line) => line.startsWith('check complete')) + 1)).toContainEqual(
         expect.stringMatching(/^READY UNCOMMITTED acme elements\/hero: the mark HEAD holds is gone/u),
       );
+    },
+    120_000,
+  );
+
+  it.each([undefined, 'elements/hero'])(
+    'writes the hash of a direct edit HEAD holds into merged.json uncommitted (part %s)',
+    async (part) => {
+      const { target, dir } = committedAcme();
+
+      targets.push(target);
+      vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [], warnings: [] } as never);
+      vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
+      vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      const config = readConfig(target) ?? {};
+      const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+      const hero = product.parts.find((resolved) => partKeyOf(resolved) === 'elements/hero');
+
+      await checkSystemRendered({
+        target,
+        config,
+        products: ['acme'],
+        ...(part ? { part } : {}),
+        drawPictures: async ({ parts }) => new Map(parts.map((name) => [name, 'not drawn in this spec'])),
+      });
+
+      expect(JSON.parse(readFileSync(join(dir, 'merged.json'), 'utf8'))).toEqual({
+        'elements/hero': partHashOf({ product, dir: dirname(hero?.file ?? '') }),
+      });
+      expect(git(target, 'rev-list', '--count', 'HEAD')).toBe('1');
     },
     120_000,
   );
