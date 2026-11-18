@@ -302,17 +302,18 @@ export class SelectDirective<TValue = unknown>
   public hasValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
 
   public describedBy = signal<string | null>(null);
-  public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECT);
 
+  public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECT);
   /** @internal */
   public triggerFocused = signal(false);
-  public focused = computed(() => this.triggerFocused() || this.open());
 
+  public focused = computed(() => this.triggerFocused() || this.open());
   /** @internal */
   public expanded = computed(() => this.open());
 
   /** @internal */
   public registeredTrigger = signal<SelectTriggerDirective | null>(null);
+
   /** @internal */
   public registeredSurface = signal<SelectSurfaceDirective | null>(null);
   /** @internal */
@@ -337,7 +338,6 @@ export class SelectDirective<TValue = unknown>
   public activeItem = signal<SelectItem | null>(null);
   /** @internal How the current active item was set. */
   public activeItemSource = signal<'keyboard' | 'pointer'>('keyboard');
-
   public selection = createSelectionState<unknown, SelectItem>({
     value: this.value,
     multiple: this.multiple,
@@ -346,12 +346,12 @@ export class SelectDirective<TValue = unknown>
   });
 
   public activeId = computed(() => this.activeItem()?.id() ?? null);
-  public listboxId = computed(() => this.registeredListbox()?.id ?? null);
 
+  public listboxId = computed(() => this.registeredListbox()?.id ?? null);
   /** @internal */
   public overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
-  public isMounted = computed(() => this.overlayRef() !== null);
 
+  public isMounted = computed(() => this.overlayRef() !== null);
   private panel = createAnchoredPanelController({
     canOpen: computed(() => !this.disabled()),
     open: this.open,
@@ -424,9 +424,9 @@ export class SelectDirective<TValue = unknown>
   });
 
   private dataItems = signal<SelectItem[]>([]);
+
   private dataItemRegistry = new Map<unknown, SelectDataItemEntry>();
   private dataItemRegistryIdentity: ((value: unknown) => unknown) | null = null;
-
   public sortedItems = computed(() => {
     const dataItems = this.dataItems();
     const projectedItems = this.selection.items().filter((item) => !item.data);
@@ -442,6 +442,15 @@ export class SelectDirective<TValue = unknown>
 
     return dataItems.length ? [...dataItems, ...sortedProjected] : sortedProjected;
   });
+
+  private selectsNullOption = computed(
+    () =>
+      !this.multiple() &&
+      !this.mixed() &&
+      !this.pickOnly() &&
+      this.value() === null &&
+      this.sortedItems().some((item) => item.value() === null),
+  );
   /** The current search query (empty string when no search is registered). */
   public query = computed(() => this.registeredSearch()?.query() ?? '');
 
@@ -625,7 +634,7 @@ export class SelectDirective<TValue = unknown>
       return [];
     }
 
-    const values = this.effectiveValues();
+    const values = this.selectsNullOption() ? [null] : this.effectiveValues();
     const items = this.sortedItems();
     const cache = this.labelCache();
     const valuesMatch = this.valuesMatch();

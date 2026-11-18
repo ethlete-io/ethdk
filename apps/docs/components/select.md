@@ -91,6 +91,8 @@ On `et-select-option`:
 
 The trigger resolves the selected value's label from the options - including a preselected value that was set programmatically before the panel ever opened. Values are compared with reference equality unless you set [`compareWith`](#object-values).
 
+In single mode, an option with `[value]="null"` labels a `null` value: the trigger shows its label and the panel marks it selected, like an empty option in a native `<select>`. Without such an option, a `null` value shows the placeholder.
+
 ## Object values
 
 @example select/select-object-values
