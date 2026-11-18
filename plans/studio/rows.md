@@ -30,7 +30,6 @@ Die Eintragstabelle zu [STATUS.md](STATUS.md) (ADR 0354).
 | B283 | compare an einer Eltern-Revision: unterstützter Weg über den e2e-check-Baum (eigene dist); vite-SSR-Absturz bei verlinkten node_modules. Maschinerie (nur bei rotem CI). | ⏳ | Bereit; blockt B257-Vorher-Zahl. | Builder |
 | B284 | Sketch-Shot zeichnet genau die Frame-Menge der Studio-Ansicht (eine Listenfunktion, Spec gleich) (Bef. 335). | ⏳ | Mit B277. | Builder |
 | B289 | system-page: commentMode, draft, send, reason von KNOWN_UNBOUND_INPUTS nehmen und binden (Bef. 341). | ⏳ | erst wenn eine App-Vorlage die Seite nutzt. | Builder |
-| B291 | Push 04.11. ohne Hooks (Tom): Pre-Push-Hook auf 0ddbcc120 nachholen, Funde beheben; CI-Run 41741888275. Maschinerie (nur bei rotem CI). | ⏳ | 167883be3; offen: Pre-Push-Lauf nach 0ddbcc120, Verhaltenstests. | Builder |
 | B295 | Studio-Prüfungen aus dem Pre-Push in Studios Prüfsystem (Specs, Design-Check, Live-Check, Sichtbar-Gate als Regeln; Funde als Probleme am Part); Pre-Push nur noch Format, Changesets, VitePress; Lint und Typecheck nur in CI; mit B249 bauen (dl 04.11.). | ⏳ | - | Builder |
 | B296 | Jeder vom Server gemeldete Part-Fehler sperrt die Wahl über einen Pfad, nicht je Ansicht (Bef. 347). | ⏳ | mit A10 S6. | Builder |
 | B299 | e2e-check.spec bekommt die sha vom Hook (env/arg), läuft im Pre-commit-Index-Checkout (Bef. 352). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
