@@ -1,6 +1,6 @@
 ---
-status: accepted
-open: B418
+status: superseded by 0285
+built: 91fc4fb8e
 decided: 2026-11-07
 source: doc-agent session, grill round after Tom's "das ist echt extrem lahm"
 ---

@@ -1,6 +1,6 @@
 # Parked suspects
 
-One line per Suspect without proof (ADR 0276). A second time makes it a finding with a number; then delete the line here.
+One line per Suspect without proof (ADR 0276). At its second time the line joins its rebuild group; a new group is a decision of the human (ADR 0280).
 
 - eslint-plugin checkJs (Mac, 989): allowJs+checkJs gives 271 errors; its new typecheck target checks no file. Measured, not blocking. Parked (ADR 0276).
 - slice typecheck gap (Mac, 920): a slice check ran tsc with the app tsconfig only, so a spec type error reached push:suite. Parked (ADR 0276).
@@ -121,3 +121,4 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - serve.perf always red on CI (CI, 18.11., all 11 next runs 06:06-11:07): 158/136 up to 375/224 ms on CI, locally ~6 of 8 units. Suspect: the measured block is wall clock, the calibration thread CPU, so a descheduled runner fails it; impossible if both use one clock. A non-blocking job that is always red carries no signal. First time.
 - CLASS-UNDEFINED reads every string literal (Linux, 18.11., 3dc68eeda): `classTextsOf` took `'list-error'` inside `dataStates` as a Tailwind `list-*` class; the fix skips `dataStates` only. Impossible if the rule reads class contexts alone (class attribute, `[class]`/ngClass bindings, class-list helpers). First time.
 - open-points popover cuts its line (Linux, 18.11., ee2f0b3ff shot): the "redraw" open point is cut by an ellipsis, the state name is hidden. Impossible if a cut text in a popover row is a CLIPPED finding. First time.
+- 18.11. pages/system: `design ready pages/system --product studio` verweigert mit 16× „embedded X is not build-ready“ für Teile mit Records an HEAD und nennt eine veraltete Port-Liste; Ready-Marke nach Merge verloren. Suspect: ready liest eingebettete Records aus Arbeitsbaum/Merge-Zustand statt HEAD.
