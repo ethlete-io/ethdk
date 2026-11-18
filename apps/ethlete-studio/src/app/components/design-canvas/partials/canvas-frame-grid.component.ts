@@ -32,6 +32,8 @@ import {
 } from 'rxjs';
 import {
   ColorScheme,
+  FITTED_VIEWPORT_WIDTH,
+  FOLLOWED_VIEWPORT_HEIGHT,
   FrameCell,
   FrameGrid,
   FrameMessage,
@@ -80,6 +82,8 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
         [src]="url()"
         [title]="cell().label"
         [class.opacity-0]="!painted()"
+        [style.min-width.px]="cell().width === undefined ? FITTED_VIEWPORT_WIDTH : null"
+        [style.min-height.px]="FOLLOWED_VIEWPORT_HEIGHT"
         class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
       ></iframe>
     }
@@ -101,7 +105,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
   encapsulation: ViewEncapsulation.None,
   imports: [ShotStateDirective, ShotStateComponent, ShotRankDirective],
   host: {
-    class: 'relative block',
+    class: 'relative block overflow-clip',
     '[style.width.px]': 'cell().width ?? size()?.width ?? 0',
     '[style.height.px]': 'size()?.height ?? 0',
     '[attr.data-cell-id]': 'cell().id',
@@ -113,19 +117,22 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
 })
 export class CanvasFrameCellComponent {
   private sanitizer = inject(DomSanitizer);
-
   public cell = input.required<FrameCell>();
+
   public live = input(false);
+
   public scheme = input<ColorScheme | null>(null);
   public revealLive = input(true);
   public loadEnd = output<void>();
   public pageReadyChange = output<boolean>();
-
   private iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
-
   private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
 
   public shotState = viewChild(ShotStateDirective);
+
+  protected readonly FITTED_VIEWPORT_WIDTH = FITTED_VIEWPORT_WIDTH;
+
+  protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
 
   private pageRevealed$ = toObservable(computed(() => this.live() && this.revealLive()));
 

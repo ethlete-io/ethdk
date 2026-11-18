@@ -10,6 +10,9 @@ export const REST = 'rest';
  */
 export const FOLLOWED_VIEWPORT_HEIGHT = 800;
 
+/** The viewport width a fitted part is shot in, so `vw` sizes in a live fitted cell resolve as in its shot. Must match `FIT_VIEWPORT_WIDTH` in `@ethlete/cli`'s shot. */
+export const FITTED_VIEWPORT_WIDTH = 1280;
+
 export type FramePlace = {
   part: string;
   state: string;

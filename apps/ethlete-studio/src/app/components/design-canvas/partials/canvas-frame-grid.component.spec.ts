@@ -37,6 +37,36 @@ describe('CanvasFrameCellComponent', () => {
     expect(host.style.width).toBe('0px');
   });
 
+  it('draws a live page in the viewport of its shot, clipped to the cell, so viewport sizes match the picture', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(CanvasFrameCellComponent);
+    const iframeOf = () => (fixture.nativeElement as HTMLElement).querySelector('iframe');
+
+    fixture.componentRef.setInput('cell', { id: 'open', row: 'open', column: 'rest', label: 'open', src: '' });
+    fixture.componentRef.setInput('live', true);
+    await fixture.whenStable();
+
+    expect(iframeOf()?.style.minWidth).toBe('1280px');
+    expect(iframeOf()?.style.minHeight).toBe('800px');
+    expect((fixture.nativeElement as HTMLElement).classList).toContain('overflow-clip');
+
+    fixture.componentRef.setInput('cell', {
+      id: 'open 280',
+      row: 'open',
+      column: 'rest',
+      label: 'open',
+      src: '',
+      width: 280,
+    });
+    await fixture.whenStable();
+
+    expect(iframeOf()?.style.minWidth).toBe('');
+    expect(iframeOf()?.style.minHeight).toBe('800px');
+  });
+
   describe('swap between shot and page', () => {
     let decoded: () => void;
     let fixture: ComponentFixture<CanvasFrameCellComponent>;
