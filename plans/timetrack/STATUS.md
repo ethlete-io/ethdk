@@ -7,9 +7,11 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 
 ## Warteschlange (nächstes oben)
 
-1. B602: offen nur #4, #5 (Beschreibungen; wer sie baut, entscheidet der Mensch). #11 ist
+1. B602: offen nur #4, #5 (Beschreibungen), der Builder als Letztes. #11 ist
    wahrscheinlich durch 714b49bc9 behoben, die Linux-Maschine läuft vermutlich auf einem alten Build.
-2. Roadmap-Meilensteine M5 bis M11: [`roadmap.md`](./roadmap.md). Ein Meilenstein wird erst nach Plan
+2. B616: gekoppelte Rechner zeigen denselben Tag, auch Handzeilen, Änderungen, Regeln und Vertretungen; SSH-Arbeit auf
+   tank erscheint auf dem Mac (ADR 0047, Befunde #15, #24, #25).
+3. Roadmap-Meilensteine M5 bis M11: [`roadmap.md`](./roadmap.md). Ein Meilenstein wird erst nach Plan
    mit dem Menschen gebaut.
 
 ## Offene Plan-Dateien
@@ -21,8 +23,6 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 - [`ticket-flow.md`](./ticket-flow.md): Ticket anlegen in drei Klicks, nicht begonnen.
 - [`auto-mode.md`](./auto-mode.md): nur offene Reste (ADR 0035, 0044).
 - [`booking-lessons.md`](./booking-lessons.md): Regeln aus einem Monat Handbuchung, Lektion 5 offen.
-- M7 offen aus Befunden #24/#25 (und Rest #15): zeigt ein vom anderen Rechner gebuchter Tag dessen Zeilen; synchronisieren
-  Handzeilen und Änderungen (ADR 0039: nein); wie kommen Belege von SSH-Arbeit auf tank zum Mac. Grill-Runde mit dem Menschen.
 - [`m7-sync-research.md`](./m7-sync-research.md): Recherche und Entscheidungen zum M7-Sync (ADR 0039).
 - [`lib-scan-integrations.md`](./lib-scan-integrations.md), [`lib-scan-jira-tempo-model.md`](./lib-scan-jira-tempo-model.md):
   offene Befunde des Lib-Scans vom 28.09.
