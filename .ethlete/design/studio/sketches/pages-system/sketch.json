@@ -154,5 +154,14 @@
   "mergeHold": {
     "reason": "variant a changes pages/system comment-mode, comments-mode, thread, thread-own, thread-busy, thread-error; variant a changes pages/inbox thread, thread-own, thread-busy, thread-error, thread-rejected; variant a changes components/comment-flow mode, thread",
     "at": "2026-11-18T06:23:29.625Z"
+  },
+  "decision": {
+    "kind": "pick",
+    "variant": "a",
+    "comment": "builder (night shift ADR 0259: only live variant, same placement as merged Inbox)",
+    "by": "designer",
+    "cmd": "design sketch pick pages/system --variant a --decided-by builder (night shift ADR 0259: only live variant, same placement as merged Inbox) --by claude-opus-5-5 --product studio",
+    "pid": 3965718,
+    "decidedAt": "2026-11-18T06:23:52.170Z"
   }
 }
