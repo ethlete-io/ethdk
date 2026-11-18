@@ -102,10 +102,10 @@
     "pid": 1300751
   },
   "components/banner": {
-    "hash": "6f443b1a7c49d6c9",
+    "hash": "a08542204763a5d7",
     "files": {
       ".ethlete/design/sdk/components/banner/banner.css": "93cb61340055e35b",
-      ".ethlete/design/sdk/components/banner/banner.ts": "bd6dd3f9b6eeab84",
+      ".ethlete/design/sdk/components/banner/banner.ts": "7f60cf0da3208b68",
       "libs/components/design/banner.ts": "2dfbc36e8bda2ae6",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -132,10 +132,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T11:18:24.281Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2851297
+    "at": "2026-11-18T14:08:54.270Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1952942
   },
   "components/button": {
     "hash": "fdcd94fedd3764cf",
