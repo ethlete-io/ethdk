@@ -387,7 +387,11 @@ on the same product or parts, so it writes the same check record, and exits 1 on
 - `STATE-UNDESIGNED` reports each `@if`, `@else if` and `@else` branch of a linked component's template that no
   design state takes: with each state's props as the inputs and every other input at its literal default, no state
   makes the branch's conditions true. A condition on a computed, a loop variable, a required, sampled or `TemplateRef`
-  input counts as taken. Draw a state for the branch: the missing-state sketch with the built look as variant a.
+  input counts as taken. When the branch's conditions are input reads, negations, `&&`/`||` or comparisons with a
+  literal, `design serve` opens the missing-state sketch `<part>@<state>` on its own: its one variant `built` declares
+  the state (the first state's props, set so the branch is taken) and draws it as a picture of the app harness. While
+  that sketch is open the hit waits for the pick; a pick of `built` merges the state, so the hit clears, and a pick of
+  a redrawn variant leaves the app to match it. Any other branch: draw its sketch by hand.
 - `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
   the harness page logs.
 

@@ -16,6 +16,7 @@ import { sourceFileOf } from './ts-source';
 import {
   angularCompilerOf,
   componentTemplateOf,
+  missingStateOf,
   undesignedBranchesOf,
   undesignedBranchMessageOf,
 } from './undesigned-branches';
@@ -480,13 +481,17 @@ export const droppedPropProblemsOf = async (options: {
         });
 
       if (compiler !== null && template !== null)
-        for (const branch of undesignedBranchesOf({ compiler, template, inputs: initials, states, sampled }))
+        for (const branch of undesignedBranchesOf({ compiler, template, inputs: initials, states, sampled })) {
+          const missing = missingStateOf({ compiler, template, inputs: initials, states, branch });
+
           problems.push({
             rule: STATE_UNDESIGNED_RULE,
             file: part.file,
             message: undesignedBranchMessageOf(branch, path ?? ''),
             at: branch,
+            ...(missing ? { missing } : {}),
           });
+        }
 
       if (selector === null || appDir === null || !existsSync(appDir)) continue;
 

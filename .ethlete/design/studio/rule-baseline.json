@@ -18,19 +18,5 @@
       "finding": "489",
       "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
     }
-  },
-  "STATE-UNDESIGNED": {
-    "pages/sketches: @if (error())": {
-      "finding": "484",
-      "sketch": "pages/sketches@merge-error (B502a, waits for the pick; state merge-error, variant a the built look)"
-    },
-    "pages/sketches: @if (listError())": {
-      "finding": "484",
-      "sketch": "pages/sketches@failed-listing (B502a, waits for the pick; state list-error, variant a the built look, ADR 0010)"
-    },
-    "pages/system: @if (listingError()) @else if (noted())": {
-      "finding": "484",
-      "sketch": "pages/system@canvas-note (B502a, waits for the pick; state canvas-note, variant a the built look)"
-    }
   }
 }

@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B251
+open: none
 decided: 2026-11-04
 source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "UI without a design" (finding 368) item 2
 ---

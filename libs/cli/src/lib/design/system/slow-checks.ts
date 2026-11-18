@@ -23,6 +23,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { APP_SPEC_RULE } from './rules/app-spec';
 import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
 import { unbaselinedProblemsOf } from './rule-baseline';
+import { withoutWaitingUndesigned } from './sketch/undesigned-sketch';
 import { appSourcesOf } from './rules/implemented-components';
 import { checksPageStates } from './rules/page-state-inner';
 import { partLinkOf } from './sketch/part-definition';
@@ -316,7 +317,7 @@ export const slowProblemsOf: SlowProblemsOf = ({ product, part }) => {
   if (entry === null) return [];
   if (entry === 'pending') return 'pending';
 
-  return unbaselinedProblemsOf(product, entry.problems);
+  return withoutWaitingUndesigned(product, unbaselinedProblemsOf(product, entry.problems));
 };
 
 /** One warning line per state of `parts` whose current slow result could not judge it, naming the product, part, state and why. */

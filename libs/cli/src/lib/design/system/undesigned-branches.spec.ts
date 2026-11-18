@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inputInitialsOf } from './dropped-props';
-import { angularCompilerOf, componentTemplateOf, undesignedBranchesOf } from './undesigned-branches';
+import { angularCompilerOf, componentTemplateOf, missingStateOf, undesignedBranchesOf } from './undesigned-branches';
 
 const titleBar = (template: string) => `
 import { Component, computed, input } from '@angular/core';
@@ -114,6 +114,52 @@ describe('undesignedBranchesOf', () => {
     `;
 
     expect(of(template, { rest: { notice: false } })).toEqual([]);
+  });
+});
+
+describe('missingStateOf (B251b)', () => {
+  let compiler: NonNullable<Awaited<ReturnType<typeof angularCompilerOf>>>;
+
+  beforeAll(async () => {
+    const loaded = await angularCompilerOf();
+
+    if (!loaded) throw new Error('@angular/compiler is not installed');
+    compiler = loaded;
+  });
+
+  const of = (template: string, states: Record<string, unknown>, branch: string) =>
+    missingStateOf({ compiler, template, inputs: inputInitialsOf(titleBar(template)), states, branch });
+
+  it('derives the props that take the undesigned branch from the first state', () => {
+    expect(of(NOTICE, { rest: { os: 'linux', notice: true } }, '@if (!notice() && noticeText())')).toEqual({
+      state: 'notice-text',
+      props: { os: 'linux', notice: false, noticeText: 'noticeText' },
+    });
+  });
+
+  it('turns the earlier branches of an else-if chain off', () => {
+    const template = `@if (notice()) { <b>a</b> } @else if (update()) { <b>b</b> }`;
+
+    expect(of(template, { rest: { os: 'linux', notice: true } }, '@if (notice()) @else if (update())')).toEqual({
+      state: 'update',
+      props: { os: 'linux', notice: false, update: true },
+    });
+  });
+
+  it('sets an input compared with a literal, and names a clash with a design state apart', () => {
+    expect(of(NOTICE, { restart: { os: 'linux' } }, "@if (restart() === 'failed')")).toEqual({
+      state: 'restart-built',
+      props: { os: 'linux', restart: 'failed' },
+    });
+  });
+
+  it('answers null for a branch it cannot take by inputs alone', () => {
+    const template = `@if (notice() && update()) { <b>a</b> } @else { <b>b</b> }`;
+
+    expect(
+      of(template, { rest: { os: 'linux', notice: true, update: true } }, '@if (notice() && update()) @else'),
+    ).toBeNull();
+    expect(of(template, { rest: { os: 'linux', notice: true } }, '@if (nothing())')).toBeNull();
   });
 });
 

@@ -203,8 +203,83 @@ export const undesignedBranchesOf = (options: {
   ];
 };
 
+const kebabOf = (name: string) => name.replace(/([a-z0-9])([A-Z])/gu, '$1-$2').toLowerCase();
+
+/** A state that takes `branch`: the first design state's props with the inputs its conditions read set to take it. */
+export type MissingState = { state: string; props: Record<string, unknown> };
+
+/**
+ * The state the developer's build of an undesigned `branch` is drawn in (B251b): the first design state's props with
+ * each input its conditions read set so the branch is taken, named after the last input set. `null` when a condition
+ * is not an input read, a negation, an `&&` / `||` it can split, or a comparison with a literal.
+ */
+export const missingStateOf = (options: {
+  compiler: Compiler;
+  template: string;
+  inputs: ReadonlyMap<string, InputInitial>;
+  states: Record<string, unknown>;
+  branch: string;
+}): MissingState | null => {
+  const { compiler, template, inputs, states, branch } = options;
+  const parsed = compiler.parseTemplate(template, 'template.html', {});
+  const found = parsed.errors?.length
+    ? undefined
+    : branchesOf(compiler, { nodes: parsed.nodes, path: [] }).find(({ label }) => label === branch);
+  const base = Object.values(states).find(isRecord);
+
+  if (!found || !base) return null;
+
+  const props: Record<string, unknown> = { ...base };
+  let named: string | null = null;
+  const inputOf = (node: unknown) => {
+    const callee = node instanceof compiler.Call && node.args.length === 0 ? node.receiver : null;
+
+    return callee instanceof compiler.PropertyRead &&
+      (callee.receiver instanceof compiler.ImplicitReceiver || callee.receiver instanceof compiler.ThisReceiver)
+      ? inputs.get(callee.name)
+      : undefined;
+  };
+  const solve = (node: unknown, want: boolean): boolean => {
+    if (node instanceof compiler.ASTWithSource || node instanceof compiler.ParenthesizedExpression)
+      return solve(node instanceof compiler.ASTWithSource ? node.ast : node.expression, want);
+    if (node instanceof compiler.PrefixNot) return solve(node.expression, !want);
+    if (node instanceof compiler.Binary && (node.operation === '&&' || node.operation === '||'))
+      return (node.operation === '&&') === want && solve(node.left, want) && solve(node.right, want);
+    if (node instanceof compiler.Binary && want && (node.operation === '===' || node.operation === '==')) {
+      const input = inputOf(node.left);
+
+      if (!input || !(node.right instanceof compiler.LiteralPrimitive)) return false;
+
+      props[input.input] = node.right.value;
+      named = input.input;
+
+      return true;
+    }
+
+    const input = inputOf(node);
+
+    if (!input || TEMPLATE_TYPE.test(input.type ?? '')) return false;
+
+    if (want) {
+      const initial = literalValueOf(input.initial);
+
+      props[input.input] = typeof initial === 'string' || /\bstring\b/u.test(input.type ?? '') ? input.input : true;
+      named = input.input;
+    } else props[input.input] = false;
+
+    return true;
+  };
+
+  if (!found.path.every(({ ast, negate }) => solve(ast, !negate)) || named === null) return null;
+  if (undesignedBranchesOf({ compiler, template, inputs, states: { built: props } }).includes(branch)) return null;
+
+  const name = kebabOf(named);
+
+  return { state: name in states ? `${name}-built` : name, props };
+};
+
 export const undesignedBranchMessageOf = (branch: string, component: string) =>
-  `${branch} in ${component} renders something no design state draws - draw a state for it: this opens the missing-state sketch of ADR 0048 with the built look as variant a (ADR 0010)`;
+  `${branch} in ${component} renders something no design state draws - draw a state for it: design serve opens the missing-state sketch of ADR 0048 with the built look as its variant, and the hit waits for the pick while it is open (ADR 0010)`;
 
 /** Loads `@angular/compiler` from the checkout, or answers `null` when it is not installed. */
 export const angularCompilerOf = async (): Promise<Compiler | null> => import('@angular/compiler').catch(() => null);

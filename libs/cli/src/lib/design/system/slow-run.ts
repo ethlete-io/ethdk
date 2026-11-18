@@ -1,4 +1,5 @@
 import { exhaustMap, from, interval } from 'rxjs';
+import { openUndesignedSketches, ShootBuilt, shootBuiltState } from './sketch/undesigned-sketch';
 import { relative, resolve } from 'path';
 import { DesignConfig } from '../design-config';
 import { actionLostProblemsOf } from './action-lost';
@@ -409,6 +410,7 @@ export const startSlowRunner = (options: {
   runners?: Partial<SlowRunners>;
   record?: (request: RecordSettledRequest) => Promise<void>;
   onHeld?: (held: HeldEdits) => void;
+  shootBuilt?: ShootBuilt;
 }) => {
   const record = options.record ?? recordSettledBuildReady;
   const seen = new Map<string, string>();
@@ -478,6 +480,13 @@ export const startSlowRunner = (options: {
         const count = [...results.values()].reduce((sum, problems) => sum + problems.length, 0);
 
         options.log(`slow checks: ${name} done, ${count} problem(s)`);
+        await openUndesignedSketches({
+          target: options.target,
+          product,
+          problems: [...results.values()].flat(),
+          shoot: options.shootBuilt ?? shootBuiltState,
+          log: options.log,
+        });
         await withStampsInCache(() => record({ target: options.target, config, product, settled }));
       }
     } catch (error) {

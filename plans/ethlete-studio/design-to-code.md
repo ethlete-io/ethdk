@@ -2223,3 +2223,31 @@ open-points-reparse.spec (it caught the first cut walking every component per re
 open-points.spec, `vitest related` in libs/cli and apps/ethlete-studio, lint; real-open-points budget unchanged and
 `et:design --working-tree check` over every product: studio-lab 0, sdk 0, studio 0 hits (no committed part loads data
 itself). Not verified: Studio showing the line live (no part hits it).
+
+## As built (B251b)
+
+Decision: findings-2026-11 "Build-ready decisions" items 6 and 8 (ADR 0048, ADR 0010, ADR 0222). Probe on 7236f85fe:
+nothing of it was built - the B502a sketches were opened and drawn by hand, and the three `STATE-UNDESIGNED` hits of
+studio were stale baseline entries (their sketches merged on 2026-11-15/16), so `design check` reported 3 "no longer
+hits" lines and 0 live hits. The entries are removed; no sketch opens for them.
+
+- `undesigned-branches.ts` `missingStateOf`: the state that takes an undesigned branch - the first design state's props
+  with each input the branch's conditions read set (input reads, `!`, `&&`/`||` split by the wanted value, `===` with
+  a literal), checked with the branch evaluator, named after the last input set (kebab case, `-built` on a clash).
+  `null` otherwise. The DROPPED-PROP runner stores it on the hit as `Problem.missing`.
+- `sketch/undesigned-sketch.ts` `openUndesignedSketch`: the ready sketch `<part>@<state>`, one variant `built`: the
+  part with `export default definePart` turned into `const drawn` and a default export that adds the state and draws
+  it as `<state>.built.ts` (the app picture as a PNG data URL); `sketch.json` takes `undesigned: [<branch>]`.
+  The picture form is the closest working one: the design server draws markup, so the developer's build enters as
+  an image, not as redrawn markup.
+- The hit waits: `slowProblemsOf` drops a `STATE-UNDESIGNED` hit an open sketch of its part lists in `undesigned`
+  (`withoutWaitingUndesigned`); a pick ends the wait. A pick of `built` merges the state, so the branch is taken and
+  the hit clears; a pick of a redrawn variant without that state brings the hit back until the app matches.
+- Serve hook: `slow-run.ts` `startSlowRunner` runs `openUndesignedSketches` after each product's slow checks: per hit
+  without an open sketch it shoots the app harness at the missing props (`shootBuiltState`) and opens the sketch; a hit
+  without `missing` logs that its sketch is drawn by hand.
+- Verified: specs `undesigned-branches.spec` "missingStateOf (B251b)" and `sketch/undesigned-sketch.spec` (red first:
+  missing export/module), lint, `vitest related`.
+- Not verified: a live `design serve` run with a real undesigned branch (no live hit exists today), the app picture
+  of `shootBuiltState`, the sketch drawn in Studio, `sketch ready` on the wrapped variant (the spec does not assert
+  ready). The live-compare `STATE-UNDESIGNED` (a live state naming a missing design state) does not wait yet.

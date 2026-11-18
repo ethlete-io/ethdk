@@ -106,6 +106,8 @@ export type SketchFile = {
   merge?: SketchMerge;
   /** The compare DIFFs this sketch covers while it is open (ADR 0222): `<state>`, or `<state>@<x>,<y>,<w>,<h>` for one region of its picture. */
   covers?: string[];
+  /** The `STATE-UNDESIGNED` branches of the app whose built look this sketch holds; each waits for the pick while it is open (B251b). */
+  undesigned?: string[];
   hold?: SketchHold;
   /** The content hash of each variant when `sketch ready` judged it; a change drops a ready sketch back to in progress. */
   readyContent?: Record<string, string>;
@@ -589,6 +591,8 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: sharedBase must be { <layer>/<name>/shared/<path>: <content hash> }`;
   if (parsed.covers !== undefined && !isStringList(parsed.covers))
     return `${file}: covers must be a list of <state> or <state>@<x>,<y>,<w>,<h>`;
+  if (parsed.undesigned !== undefined && !isStringList(parsed.undesigned))
+    return `${file}: undesigned must be a list of app template branches`;
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
@@ -698,6 +702,7 @@ const sketchFileOf = (sketch: Sketch): SketchFile => ({
   ...(sketch.hold ? { hold: sketch.hold } : {}),
   ...(sketch.readyContent && sketch.status === 'ready' ? { readyContent: sketch.readyContent } : {}),
   ...(sketch.covers && sketch.covers.length > 0 ? { covers: sketch.covers } : {}),
+  ...(sketch.undesigned && sketch.undesigned.length > 0 ? { undesigned: sketch.undesigned } : {}),
   ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
   ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
 });
