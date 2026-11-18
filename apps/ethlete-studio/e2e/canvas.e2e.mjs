@@ -981,6 +981,15 @@ const withEditSketch = async (page, designPort, run) => {
   git('commit', '-qm', 'canvas e2e base', '--', '.ethlete');
 
   const base = git('rev-parse', 'HEAD').toString().trim();
+  const phases = [];
+  let phaseStart = performance.now();
+  const phase = (name) => {
+    const now = performance.now();
+
+    phases.push(`${name} ${Math.round(now - phaseStart)} ms`);
+    phaseStart = now;
+  };
+  const phaseLine = () => `phases: ${phases.join(', ')}`;
 
   const edit = async () => {
     writeFileSync(file, replaceOnce(before, EDIT_LABEL.before, EDIT_LABEL.after));
@@ -989,6 +998,7 @@ const withEditSketch = async (page, designPort, run) => {
       [cliEntry, 'design', 'check', '--product', 'studio', '--part', EDIT_PART],
       { cwd: checkout, stdio: 'pipe', encoding: 'utf8' },
     );
+    phase('check');
     await page.evaluate(
       ({ checkout, part }) =>
         localStorage.setItem(
@@ -1020,6 +1030,7 @@ const withEditSketch = async (page, designPort, run) => {
       () => document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]').length > 0,
       null,
     );
+    phase('sketch shown');
     await page.waitForTimeout(SETTLE_MS);
 
     return page.evaluate(() => ({
@@ -1031,7 +1042,9 @@ const withEditSketch = async (page, designPort, run) => {
     }));
   };
   const pick = async (variant) => {
+    phaseStart = performance.now();
     await listingAnswered(page);
+    phase('listing');
     await page.locator(`[data-sk-row="${variant}"] [data-sk-merge]`).first().click();
     await page.locator('[role="alertdialog"] [data-sk-confirm]').click({ timeout: EDIT_WAIT_MS });
     await namedWait(
@@ -1040,6 +1053,7 @@ const withEditSketch = async (page, designPort, run) => {
       () => !document.querySelector('ethlete-sketch-view'),
       null,
     );
+    phase('merge');
     await namedWait(
       page,
       `pick ${variant}: part frame without sketch`,
@@ -1051,6 +1065,7 @@ const withEditSketch = async (page, designPort, run) => {
         }),
       EDIT_PART,
     );
+    phase('part frame');
 
     const entry = await page.evaluate(
       () => JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry,
@@ -1060,7 +1075,7 @@ const withEditSketch = async (page, designPort, run) => {
   };
 
   try {
-    return await run({ edit, pick, file, studio, git, base });
+    return await run({ edit, pick, file, studio, git, base, phaseLine });
   } finally {
     rmSync(join(checkout, '.git'), { recursive: true, force: true });
     rmSync(studio, { recursive: true, force: true });
@@ -1081,7 +1096,7 @@ const CASES = [
     ownShard: true,
     pages: ['System'],
     run: (page, _state, _target, { designPort }) =>
-      withEditSketch(page, designPort, async ({ edit, pick, file, studio, git, base }) => {
+      withEditSketch(page, designPort, async ({ edit, pick, file, studio, git, base, phaseLine }) => {
         const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
         const shown = await edit();
         const opened =
@@ -1102,7 +1117,7 @@ const CASES = [
 
         return {
           ok: restored && oldPick.opened === EDIT_PART,
-          detail: `${shownDetail}, old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, part opened after the merge: ${oldPick.opened}`,
+          detail: `${shownDetail}, old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, part opened after the merge: ${oldPick.opened}, ${phaseLine()}`,
         };
       }),
   },
@@ -1112,7 +1127,7 @@ const CASES = [
     ownShard: true,
     pages: ['System'],
     run: (page, _state, _target, { designPort }) =>
-      withEditSketch(page, designPort, async ({ edit, pick, file, studio }) => {
+      withEditSketch(page, designPort, async ({ edit, pick, file, studio, phaseLine }) => {
         const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
         const shown = await edit();
 
@@ -1126,7 +1141,7 @@ const CASES = [
 
         return {
           ok: kept && recorded?.variant === 'new' && !existsSync(sketchDir) && newPick.opened === EDIT_PART,
-          detail: `new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}, sketch folder gone: ${!existsSync(sketchDir)}, part opened after the merge: ${newPick.opened}`,
+          detail: `new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}, sketch folder gone: ${!existsSync(sketchDir)}, part opened after the merge: ${newPick.opened}, ${phaseLine()}`,
         };
       }),
   },
