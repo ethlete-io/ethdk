@@ -4,11 +4,10 @@ Nx monorepo of publishable `@ethlete/*` libraries under `libs/`.
 
 ## Agent file layout
 
-`AGENTS.md` is canonical; `CLAUDE.md` is just an `@AGENTS.md` import. Skills live in
-`.agents/skills/<name>/`; the entries in `.claude/skills/` are symlinks to them (Claude
-Code only scans there) - same file, not a duplicate. Edit and create skills under
-`.agents/skills/`, plus a symlink for new ones. The `ethlete:agent-rules` marker block
-at the end of this file is generated - never edit it by hand.
+`AGENTS.md` is canonical; `CLAUDE.md` only imports it. Edit and create skills under `.agents/skills/<name>/`
+(`.claude/skills/` holds symlinks to them; add one for a new skill). The marker block at the end of this file
+is generated - never edit it by hand. Rules and skills for other repos live in `libs/agent-rules/content/`:
+format, then `yarn agents:sync` (`libs/agent-rules/AGENTS.md` has the pitfalls).
 
 ## Libraries
 
@@ -28,155 +27,104 @@ All under `libs/<name>`, published as `@ethlete/<name>`:
 | `eslint-plugin`  | Custom ESLint rules + shareable flat configs for the styleguide.                                                                           | -                                   |
 | `agent-rules`    | Portable agent rules + skills, compiled for Claude Code / Codex / Cursor / Copilot. See below.                                             | -                                   |
 
-Rough layering: `types` → `core` → `query` → `components` → `contentful` /
-`query-devtools`. Nothing depends on `cdk` any more - it is a leaf in the lib graph,
-reachable only through its own stories.
-
-`bracket` is a framework-free sibling of `core`; `components` adds the Angular renderer on top.
+Layering: `types` → `core` → `query` → `components` → `contentful` / `query-devtools`; `bracket` is a
+framework-free sibling of `core`. Nothing depends on `cdk` any more.
 
 ### query-devtools: why three entry points
 
-The panel is split so that the `@defer` in `/lazy` emits a real `import(...)`. `/toggle` must
-**never** import the other two entry points. `libs/query-devtools/AGENTS.md` has the reason and the
-bundle-size goldens.
+`/toggle` must **never** import the other two entry points, so the `@defer` in `/lazy` emits a real
+`import(...)`. `libs/query-devtools/AGENTS.md` has the reason and the bundle-size goldens.
 
 ### UI work: components vs cdk
 
 - **`components` is the active UI library.** All new UI features go here.
-- **`cdk` is in maintenance mode.** Bug fixes are fine, but do **not** add new
-  features there. When a fix also applies to `components`, apply it there too; the
-  equivalent code almost always lives there (often more evolved).
-- Many things exist in both libs with near-identical paths (e.g.
-  `libs/cdk/.../overlay` vs `libs/components/src/lib/overlay`). Confirm which lib
-  you're in before editing - new feature work goes in `libs/components`.
+- **`cdk` is in maintenance mode.** Bug fixes only, no new features. When a fix also applies to
+  `components`, apply it there too (the code almost always lives there, often more evolved).
+- Both libs have near-identical paths (`libs/cdk/.../overlay` vs `libs/components/src/lib/overlay`):
+  confirm which lib you are in before editing.
 
 ### Styling
 
-This section is about the published libs under `libs/`. **The apps are different:**
-`apps/ethlete-studio` and `apps/timetrack` style with Tailwind utilities in their
-templates, add no per-component `.css` files, and use SDK components for controls
-(every button is an `et-button`).
+The generated **Component styling** block below has the lib CSS rules. Repo specifics:
 
-Lib component styles are plain CSS (global `et-`-prefixed classes,
-`ViewEncapsulation.None`) - see the `.css` files next to each component. **Do not
-use Tailwind in lib component source.** In the libs, Tailwind utility classes are allowed **only in
-story files** (`*.stories.ts` and `stories/`), for demo layout - and Storybook's
-Tailwind theme is trimmed (no default color palette, no `text-sm`-style scale), so
-read the **`storybook-styling`** skill (`.agents/skills/storybook-styling/`) before
-styling a story. An unknown utility emits nothing and fails silently.
-
-The `@layer components.sdk` wrap and the `:where()` modifiers are in **Component styling** in the
-generated block. The canonical pattern is `libs/components/src/lib/button/*.component.css`.
-
-A sheet past a few hundred lines can be split into styles-only components:
-`libs/components/AGENTS.md` says how.
-
-Read the **`theming`** skill (`.agents/skills/theming/`) before touching any color,
-background, border, or interaction-state styling - the token systems, the DI-based
-semantic colors, and the "theme names are app-registered" rule are all there.
+- **The apps differ:** `apps/ethlete-studio` and `apps/timetrack` style with Tailwind utilities in their
+  templates, add no per-component `.css` files, and use SDK components for controls (every button is an `et-button`).
+- Tailwind in the libs is allowed **only in story files** (`*.stories.ts`, `stories/`). Storybook's Tailwind theme
+  is trimmed and an unknown utility fails silently: read the **`storybook-styling`** skill before styling a story.
+- The canonical CSS pattern is `libs/components/src/lib/button/*.component.css`. A sheet past a few hundred
+  lines can be split into styles-only components (`libs/components/AGENTS.md`).
+- Read the **`theming`** skill before touching any color, background, border, or interaction-state styling.
 
 ## Dependencies
 
-This is a **Yarn 4 workspaces** monorepo (`packageManager: yarn@4.17.1`). After
-any dependency change - adding/removing a package, or when an `nx` task
-auto-syncs a lib's `package.json` `dependencies` (it prunes deps you stop
-importing) - you **must**:
+This is a **Yarn 4 workspaces** monorepo. After any dependency change - adding/removing a package, or an `nx`
+task auto-syncing a lib's `package.json` `dependencies` (it prunes deps you stop importing) - you **must**:
 
-1. Run `yarn install` to update `yarn.lock`, then commit the lockfile alongside
-   the `package.json` change. A stale lockfile breaks CI.
-2. Re-run lint on the affected libs. The `@nx/dependency-checks` ESLint rule
-   (in each lib's `eslint.config.mjs`) validates that a lib's declared
-   `dependencies` match what its source actually imports - a mismatch is a lint
-   error, not just a warning.
+1. Run `yarn install` and commit `yarn.lock` with the `package.json` change. A stale lockfile breaks CI.
+2. Re-run lint on the affected libs: the `@nx/dependency-checks` rule fails when declared `dependencies`
+   differ from what the source imports.
 
 ### Nx Cloud is temporarily off
 
-The self-hosted instance is unstable, so every workflow sets `NX_NO_CLOUD: 'true'`. Run
-`export NX_NO_CLOUD=true` locally too. To re-enable, delete the `env:` block from
-`.github/workflows/*.yml`. (`neverConnectToCloud` does **not** work: this workspace is already connected.)
+Every workflow sets `NX_NO_CLOUD: 'true'`; run `export NX_NO_CLOUD=true` locally too. To re-enable, delete
+the `env:` block from `.github/workflows/*.yml` (`neverConnectToCloud` does **not** work here).
 
 ## Releasing
 
 Every change to a workspace package needs a changeset: every `@ethlete/*` lib, and the private
-`timetrack-app`, `ethlete-studio` and `@ethlete/timetrack` too. A test or story change names the package with the
-level `none`. `yarn lint:changesets` fails the push when a changed package has none. Studio ADRs
-(`apps/ethlete-studio/docs/adr/**`) and `plans/**` are docs-only and need none (ADR 0265). Use the **`changeset`**
-skill (`.agents/skills/changeset/`) - write the file directly; don't run the
-interactive `npx changeset` CLI.
+`timetrack-app`, `ethlete-studio` and `@ethlete/timetrack`. A test or story change names the package with level
+`none`; `yarn lint:changesets` fails the push otherwise. Studio ADRs and `plans/**` need none (ADR 0265). Use
+the **`changeset`** skill and write the file directly, not via the interactive CLI.
 
-Before a publish, run `yarn release:smoke`: it builds the SDK into fut-frontend and boots the app.
-
-The `publish.yml` workflow, the Tauri app bundles, signing, the updater key and the CEF runtime
-are in the **`app-releases`** skill. Read it before you touch any of them.
+Before a publish, run `yarn release:smoke`. `publish.yml`, the Tauri bundles, signing, the updater key and the
+CEF runtime are in the **`app-releases`** skill: read it before touching any of them.
 
 ## Documentation
 
-Written docs live in the VitePress site at `apps/docs` (deployed per branch),
-with one guide per component domain under `apps/docs/components/`. Any change to
-a public API, behavior, or default in `libs/components` must update the matching
-guide (or add a new page for a new domain) - treat it like the changeset: part
-of the change, not a follow-up. Use the **`docs`** skill
-(`.agents/skills/docs/`) for structure, examples, and verification.
+Written docs live in the VitePress site at `apps/docs`, one guide per component domain under
+`apps/docs/components/`. Any change to a public API, behavior, or default in `libs/components` must update
+the matching guide (or add a page for a new domain) - part of the change, like the changeset. Use the
+**`docs`** skill for structure, examples, and verification.
 
-Live demos in a guide are `@example <domain>/<name>` lines: each renders a copyable component
-from `apps/docs-examples` (an Angular app, served on `:4403`, built into the docs site under
-`/examples/`) next to its source. New guides use `@example`; the remaining `<StoryEmbed>` pages
-reference Storybook story ids - when renaming a story title, grep `apps/docs` for the old id.
+Live demos are `@example <domain>/<name>` lines, each rendering a component from `apps/docs-examples`
+(served on `:4403`). Remaining `<StoryEmbed>` pages reference Storybook story ids: when renaming a story title,
+grep `apps/docs` for the old id.
 
-## Linting & style
+## Linting & CI
 
-Lint (`npx nx lint <project> --fix` first), Prettier, and the comment rules live in
-the generated block at the end of this file (from `@ethlete/agent-rules`). For the
-judgment calls lint can't enforce (signals vs RxJS, templates, lifecycle/DI
-patterns), see the **`styleguide`** skill.
-
-To run what CI runs before pushing - format, changesets, lint, test, build, bundle-size
-goldens, Storybook build - use the **`ci-check`** skill (`.agents/skills/ci-check/`). The
-`.husky/pre-push` hook runs format (committed files only), changesets, the sub-second "Checks" scripts, on `next`
-lint, typecheck and tools specs, and, when `apps/docs` changes, the VitePress build; other specs and the Studio gates
-run in CI. Fix what the hook reports rather than skipping it.
+Lint, Prettier and comment rules are in the generated block below; for judgment calls lint cannot enforce
+see the **`styleguide`** skill. To run what CI runs before pushing, use the **`ci-check`** skill. The hooks
+run checks on staged files (pre-commit) and on the pushed range (pre-push); fix what they report rather than
+skipping them.
 
 Before you change a file or ask a question about it, run `yarn adr:governs <files>` (or `--staged`, or `<a>..<b>`) and read the ADRs it lists.
 
-## Agent rules & skills for other repos
-
-Edit the content in `libs/agent-rules/content/`, format it, then run `yarn agents:sync`.
-`libs/agent-rules/AGENTS.md` has the details and the pitfalls.
-
-## Verifying UI changes
-
-Storybook is the ground truth and usually runs on `:4400`. Use the
-**`verify-in-storybook`** skill to drive real stories headlessly before
-considering a component change done. Focus, keyboard and touch behavior has a permanent
-Playwright layer in `apps/storybook-e2e` - the **`component-behavior-tests`** skill
-(`.agents/skills/component-behavior-tests/`) says how to add a suite and how CI runs it.
-
 ## Testing beyond unit specs
 
-jsdom unit specs catch value logic, not regressions in behavior. Five layers cover the rest:
+jsdom specs catch value logic, not behavior regressions. Further layers:
 
-- `libs/query/src/scenarios` - consumer-level scenarios against a fake API with leak
-  invariants; the **`query-scenario-tests`** skill. Every bug fix in `libs/query` adds one.
-- `libs/core/src/scenarios` - the same for core: a real app on fake time and frames, with leak
-  invariants; the **`core-scenario-tests`** skill. Every bug fix in `libs/core` adds one.
+- Storybook (usually `:4400`) is the ground truth: drive real stories headlessly with the
+  **`verify-in-storybook`** skill before calling a component change done.
+
+- `libs/query/src/scenarios` (**`query-scenario-tests`**) and `libs/core/src/scenarios`
+  (**`core-scenario-tests`**): real app/client against fakes with leak invariants. Every bug fix in
+  `libs/query` or `libs/core` adds one.
 - `timetrack snapshot` - before a change in `libs/timetrack` or `apps/timetrack` that can change rows, run
   `node dist/libs/agent-rules/src/index.js timetrack snapshot` (build agent-rules first if `dist` is stale);
   after it, run `... snapshot --compare <file>` and explain every changed row in the report. An unexplained
   change is a regression. The file holds client names, so it stays outside the repo.
-- `apps/storybook-e2e` - Playwright against real stories, desktop and touch; the
-  **`component-behavior-tests`** skill.
-- `nx run storybook:test-storybook` - `@storybook/addon-vitest` renders every story in
-  Chromium and fails on a thrown or logged error. It also runs axe on each story, but only
-  reports violations, so check the a11y panel after a UI change.
+- `apps/storybook-e2e` - Playwright against real stories (**`component-behavior-tests`**).
+- `nx run storybook:test-storybook` - renders every story in Chromium, fails on a thrown or logged error, and
+  reports axe violations without failing: check the a11y panel after a UI change.
 
 A spec for a parser of tool output takes its fixture from a captured real run, not hand-written input.
 
 ## Slice paths
 
-A slice brief names its allowed paths: at each slice start run `yarn slice:paths "<slice name>" <path>...` (directories
-or globs; it writes `$(git rev-parse --git-path slice-paths)` with the name and time; an exported `ETHLETE_SLICE_PATHS`
-does not reach a later `git commit` call, and a file older than 2 h is reported stale). The pre-commit hook then warns, without
-blocking, about staged paths outside them; `.changeset/` and `plans/` are always allowed.
+A slice brief names its allowed paths: at each slice start run `yarn slice:paths "<slice name>" <path>...`
+(directories or globs; an exported `ETHLETE_SLICE_PATHS` does not reach a later `git commit` call, and a file
+older than 2 h is reported stale). The pre-commit hook then warns, without blocking, about staged paths outside
+them; `.changeset/` and `plans/` are always allowed.
 
 <!-- ethlete:agent-rules:start -->
 <!-- Generated by @ethlete/agent-rules — DO NOT EDIT. Run `npx ethlete-agents sync`. -->
