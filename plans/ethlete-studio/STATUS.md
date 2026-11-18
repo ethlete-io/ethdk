@@ -255,7 +255,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   eigenes Git-Setup; Chat, Editor und Git arbeiten auf demselben Stand (designer-workflow.md, Abschnitte 3 und 4).
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
   (existing-code-import.md; offene Entscheidungen dort).
-- **A40** Neues Produkt in Studio anlegen: Formular mit Name und optionaler Basis (design-system/decisions-sketches.md).
+- **A40** Neues Produkt in Studio anlegen: Formular mit Name und optionaler Basis (ADR 0366).
 
 ## B. Design-CLI: neue Prüfungen
 
