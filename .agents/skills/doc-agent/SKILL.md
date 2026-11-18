@@ -1,6 +1,6 @@
 ---
 name: doc-agent
-description: Take the German grill/docs role in the user's two-session setup (grill/docs + English builder). Use when the user types /doc-agent or says "du bist wieder der doc/grill agent".
+description: Take the German grill/docs role in the user's session setup (supervisor + grill/docs + English builder). Use when the user types /doc-agent or says "du bist wieder der doc/grill agent".
 ---
 
 # Grill/docs session
@@ -29,7 +29,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 - Every text for the user is German. This overrides an English
   output style (for example ste-clarity): keep its clarity rules, but write them in German.
-- English only for the builder messages and the plan files.
+- English only for the builder messages, the ADRs and the English plan files; STATUS.md stays German.
 - Text to Tom says what a thing is in plain words: no flags, no plan refs (Impl Q), no part paths unless
   needed; an ADR number only in brackets after the plain statement.
 
@@ -38,21 +38,21 @@ CLI gets better because Studio work uses it, not because findings are collected.
 1. Call `ListAgents`. Find the builder: an interactive session in the same repo.
 2. Send it a short English message: you are the grill/docs session, and it should send
    you its open design questions (facts + its recommendation).
-3. Find the open points in `plans/` (look for "Open points" lists and "in progress"
-   notes). Check the facts in code and git log first. Mark a point done in the plan when
-   a commit already solved it.
+3. Read the written queue at the top of `STATUS.md`; you alone keep it (ADR 0351). Drop an entry a commit
+   already solved.
 4. Tell the user in 2-4 German lines what is open, then start grilling.
 
 ## Grill
 
-- Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and, until
-  the migration is done, every `plans/ethlete-studio/**` decision block for the topic. If Tom already decided it,
+- Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and every
+  `plans/ethlete-studio/**` decision block for the topic. If Tom already decided it,
   do not ask: name the ADR and send it to the builder. A repeated question is a finding.
 - Before you record a decision on files or send work on them, run `yarn adr:governs <files>` and read the ADRs it lists.
 - A question that applies an existing Tom decision to a new case is yours to decide; report it in one line.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
   round format (`❓ **Q1** - **Title**: …` then `➡️ <recommendation>`, `---` between), also an
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.
+- When a supervisor session runs, send the round to it, not to the user (ADR 0287).
 - Builder messages with design questions go into the next round. Never answer a design
   question for the user.
 - An open question stays open until the user answers it. Repeat it in full, in its own message, with the round
@@ -93,8 +93,8 @@ CLI gets better because Studio work uses it, not because findings are collected.
   one line), commit, and empty the file (ADR 0284).
 - A decision the builder needs now: commit it at once and send it to the builder with `SendMessage`, in English. So too a row a commit must close: it sets `built: <sha>` on every ADR with
   `open: B<row>` in that commit (pre-commit hook).
-- An ADR records a decision of the human. That a row was built is in git: no ADR, no note. The builder closes its row
-  and writes the "as built" note in its slice commit; until both builders run on that text, close rows yourself.
+- An ADR records a decision of the human. That a row was built is in git: no ADR, no note. The "as built" text lives only
+  in the builder's commit message; you fold its closed rows in with the hourly commit (ADR 0350).
 
 - No agent memory: a lesson becomes a line in its group or a skill. A skill gains words
   only when as many go (counted in words: builder-agent, doc-agent, ethlete-agent-sessions, AGENTS.md).
