@@ -2,7 +2,7 @@
 status: accepted
 built: c348db743
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Pixel check and blocker wording" (findings 374, 375) item 1
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Pixel check and blocker wording" (findings 374, 375) item 1
 ---
 
 # The B313/B321 WebKit pixel check runs locally first

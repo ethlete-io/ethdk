@@ -2,7 +2,7 @@
 status: accepted
 built: 412ee0209
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Silent catchError decisions" (finding 370) item 1
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Silent catchError decisions" (finding 370) item 1
 ---
 
 # no-silent-catch-error is an error in Studio

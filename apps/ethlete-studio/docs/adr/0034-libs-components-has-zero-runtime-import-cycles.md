@@ -2,7 +2,7 @@
 status: accepted
 built: c63a0f089
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Solo focus, sketch view, behavior tests and pre-push decisions", import cycles (refines Impl Q116)
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Solo focus, sketch view, behavior tests and pre-push decisions", import cycles (refines Impl Q116)
 ---
 
 # libs/components has zero runtime import cycles

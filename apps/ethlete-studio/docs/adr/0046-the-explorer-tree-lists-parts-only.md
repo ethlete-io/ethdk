@@ -2,7 +2,7 @@
 status: accepted
 built: 3a89a94d5
 decided: 2026-11-02
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Studio order, explorer, merge canvas and build-ready decisions" item 3 (A36)
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Studio order, explorer, merge canvas and build-ready decisions" item 3 (A36)
 ---
 
 # The explorer tree lists parts only

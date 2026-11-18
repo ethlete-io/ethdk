@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Commit volume decisions" item 4
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Commit volume decisions" item 4
 ---
 
 # The commit rules live in the skills; a hook only if needed

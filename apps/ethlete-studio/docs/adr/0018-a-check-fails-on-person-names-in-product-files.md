@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Person names in the product" (finding 362) item 1
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Person names in the product" (finding 362) item 1
 ---
 
 # A check fails on person names in product files

@@ -2,7 +2,7 @@
 status: accepted
 built: a1698f47a
 decided: 2026-11-02
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Title bar window controls decisions" item 1
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Title bar window controls decisions" item 1
 ---
 
 # Studio keeps its own title bar; macOS keeps the native traffic lights

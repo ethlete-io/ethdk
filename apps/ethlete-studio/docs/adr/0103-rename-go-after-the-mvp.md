@@ -2,7 +2,7 @@
 status: superseded by 0048
 open: none
 decided: 2026-11-01
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces follow the elevation system, not picked names" (Q203-Q206), the word go
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Surfaces follow the elevation system, not picked names" (Q203-Q206), the word go
 ---
 
 # Rename "go" after the MVP

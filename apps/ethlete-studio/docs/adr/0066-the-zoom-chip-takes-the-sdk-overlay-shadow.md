@@ -2,7 +2,7 @@
 status: accepted
 built: 94af43368
 decided: 2026-10-31
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces follow the elevation system, not picked names" (Q203-Q206), Q217
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Surfaces follow the elevation system, not picked names" (Q203-Q206), Q217
 ---
 
 # The zoom chip takes the SDK overlay shadow

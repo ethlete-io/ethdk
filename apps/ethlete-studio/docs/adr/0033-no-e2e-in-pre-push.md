@@ -3,7 +3,7 @@ status: accepted
 open: none
 governs: ['.husky/pre-push']
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Solo focus, sketch view, behavior tests and pre-push decisions", pre-push
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Solo focus, sketch view, behavior tests and pre-push decisions", pre-push
 ---
 
 # No e2e in pre-push

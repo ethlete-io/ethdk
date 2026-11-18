@@ -4,11 +4,7 @@
     { "name": "skill", "glob": ".agents/skills/*/SKILL.md", "budget": 15000 },
     {
       "name": "plan index",
-      "files": [
-        "plans/ethlete-studio/backlog-parallel.md",
-        "plans/ethlete-studio/design-system-actions.md",
-        "plans/ethlete-studio/studio-wireframes-handoff.md"
-      ],
+      "files": ["plans/ethlete-studio/design-system-actions.md"],
       "budget": 6000
     },
     { "name": "build ready", "files": ["plans/ethlete-studio/build-ready.md"], "budget": 36000 },

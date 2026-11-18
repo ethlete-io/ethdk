@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "UI without a design" (finding 368) item 2
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "UI without a design" (finding 368) item 2
 ---
 
 # A Studio UI commit needs a green design compare

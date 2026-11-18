@@ -17158,3 +17158,441 @@ current SDK mocks do not establish the final catalog approach.
 Implementation planning, scope, phases and acceptance criteria:
 [SDK component catalog](sdk-component-catalog.md). This supersedes the earlier mock-based
 catalog direction; implementation and component design work have not started.
+
+## Archived plan file builder-status.md (2026-11-18)
+
+# Parallel backlog - builder status since the usage-limit pause
+
+- Paused for the usage limit (2026-10-31). Pushed up to `de9070776`. Landed: MCP registration (`0d81f2066`,
+  `2c0d2ad4c`), MCP sketch and `comment reply` tools (`1d05b8789`), `kind: 'field'` (`855f4c06e`, Q61), sketch spec
+  timeout (`ab444e8c6`), `.mcp.json` in `.prettierignore` (`de9070776`). Next, in order:
+  1. Wait for CI on `de9070776`. CI on `0b239880c` failed in two places: the sketch spec timeout (now fixed) and a
+     Timetrack Rust test, `peer.rs:2146` (`last_seen_ms >= started_ms`). Nobody changed `peer.rs` for 3 weeks, so
+     the Rust failure is probably flaky; if it fails again, fix it. Then merge version PR #3162 (base `next`), wait for
+     the publish, and send `fifagg-frontend-a5` the new `@ethlete/cdk` version (backdrop click during enter closes; the
+     second click of a double-click does not).
+  2. Viewport per state: built (`e9a7ba58c`). `fitOutOfFlow` in `define-call.ts` grows `#root` to cover absolute and
+     fixed descendants after `placeOverlays`. Real sdk select open shot at 320 px checked; live Studio canvas not seen.
+     Open for Tom: a frame with a declared width does not grow sideways; content above the root is not added; a
+     `fixed; inset: 0` backdrop stretches the frame to the 800 px viewport.
+  - Done (2026-10-31): Q66 live canvas frame height in `9e41365d3`; Q69 grid shots follow the Studio colour mode in
+    `395fd54b4`.
+  - In progress (2026-10-31, opus subagent): sdk `components/form-field` live canvas draws empty cells (CLI shots
+    fine); then 1e: the :4402 server survives a `dist/libs/components` rebuild, a 500 shot shows an error state, a
+    loading state until the products are indexed, and the ~15 s cold start.
+  3. Q60 (Tom): MCP `check` gets `call`/`variant` args; `et design check --receipt <path>`; new MCP tool `call`
+     (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
+     `design_server.rs`. One MCP server.
+  4. Q64 done (`c70713442`): `fitOutOfFlow` skips a fixed element on all four edges. Q90 done (`9d8ae9723`).
+  - Done (2026-10-31, night): 2c grid speed - one reveal per grid (`5970825b3`), page clip + 8 draws at once
+    (`0e5f9e106`); 40-cell grid 1.4 s -> 0.75-0.9 s, PNG bytes identical; Rust not needed (Q94). `STALE-REPLACE` on a
+    parameter (`c8f060913`). Gone-sketch shots are 404 and leave the footer (`52e3c1812`, `7bd2e50e9`). Q60 one MCP
+    server (`932d95e07`, `ca45612b1`, `30bf2e496`, `26090ed81`); Studio chat sends call + variant as tools
+    (`8454ff6e0`, one real `claude` turn called `call`; Tauri window and `check` receipt not verified). Flaky timetrack
+    peer test was a listener race (`9bb3572a1`). Release published (cdk next.46, core next.71, components next.78).
+  - Done: Q92 for part grids (`03a2369fb`, Light/Dark column groups, `frame.html?scheme=` pins the scheme); contrast
+    against `z-index: -1` fills (`c1a9ea834`, sdk-33 confirmed on accent-on-light); swap between shot and live page
+    without a blank frame (`c96564d46`; blank frames grid live -> shot 5/6 -> 0/6 in Chromium, WebKit 1/6 -> 0/6;
+    Tauri WebKitGTK not seen; grid cells still go live one by one, each without a blank).
+  - Done: `design complete` knows a composite widget focus container (`5e71b7526`; sdk-33 dropped its menu
+    workaround in `b072b382a`, menu a/b design complete).
+  - Done (2026-10-31): a grid goes live in one step (`2c7ae20d3`). Every cell keeps its shot until all live cells
+    painted, then all switch in one frame; a 3 s timeout switches the painted cells and leaves a stuck one on its shot.
+    Headless studio-lab `components/button` (20 cells): going live 2 switch steps -> 1, 0 blank frames before and
+    after; back to shots unchanged. Headless run was on the version just before a lint-only reorder; the timeout path
+    is covered only by a fake-timer spec.
+  - Done (2026-10-31): Q92 for non-grid frames (`aa6165ad5`). Pages, declared-width parts, "used in" pages and flow
+    frames draw a Light and a Dark copy; up to 1024 px wide side by side (48 px gap), wider stacked, never shrunk.
+    Legacy call shots, cropped, error and empty frames stay single; sketch matrix and merge-preview frames stay
+    single (asked the grill). Pins, outlines, comments and picking use the Light copy. Headless studio-lab `library`
+    and `add-a-film`: layout, labels, pins and outlines checked; the page renders failed on the scratch server, so real
+    light/dark content and a declared-width part on screen are not seen.
+  - Done (2026-10-31): 1e CLI side. HEAD renders on a fresh scratch server (studio 254/254, sdk 134/134 shots); the
+    earlier failed renders came from a scratch copy without `dist/libs` (inferred). The server watches the
+    `render.packages` dirs and redraws after a dist rebuild with no restart (`ec5b5316d`, simulated rebuild only).
+    `claimViteCache`: the first command server keeps the shared `vite-check` cache via a pid lock, an overlapping one
+    gets its own dir, removed on close (`4fb728034`). Cold start: the tool's own modules leave `optimizeDeps`, so no
+    late full reload (`489d2ad17`); first shot 2.4 -> 1.8 s, studio grid 9.5 -> 7.9 s. The bulk of the ~15 s is likely
+    Studio's debug `npx nx cli-runtime` (nx + a full `npm install` of a runtime the dev server does not use) before each
+    server start (`design_server.rs` `build_cli`) - next slice.
+  - Done (2026-10-31): 1e Studio states (`b27437525`). `img[ethleteShot]` tracks loading / slow (> 2 s) / loaded /
+    failed per shot copy and per grid cell; failed shows "Render failed" in the error theme, slow a "Rendering" pill;
+    a failed cell still settles the grid. Footer says "starting" and the body waits until `/__design/system` answers
+    below 500. Headless against a stub server (500 for 8 s, then failing shots): starting -> running, grid cells show
+    "Render failed" in Light and Dark. Limits: no HTTP status in the error (img hides it); a restart on the same port
+    does not show "starting" again; per-cell slow marker hidden until the grid reveals (as before).
+  - Done (2026-10-31): debug Studio runs `npx nx build cli` before a server start, not `nx cli-runtime` (`ca4227c0b`);
+    the dev spawn uses `dist/libs/cli`, the runtime copy is only the release fallback. The stale-server check now
+    compares against `dist/libs/cli`. Warm: build cli 0.55 s, the skipped runtime install 1.1 s; the uncached numbers
+    and a real debug start are not measured. `beforeDevCommand` still runs `cli-runtime` once per `yarn studio`. Closed (2026-10-31, grill decision): measured, ~1.1 s (`nx cli-runtime` 1.6 s warm vs `nx build cli` 0.5 s), not worth a stale fallback CLI for checkouts without their own CLI in dev; no change.
+  - Done (2026-10-31): merge-preview frames draw Light + Dark (`075e48532`, `mergePreviewOf` sets `schemes`); the
+    sketch matrix cells stay single (its "in context" page frames draw both since `aa6165ad5`). Data spec only, no
+    render check.
+  - Checked (2026-10-31): real Studio render of Q92 on own servers (scratch HEAD 2066f33b4 with `dist/libs`).
+    studio-lab `pages/library` and flow `add-a-film` side by side, studio 1440 px `used in` frames stacked; real
+    content in both copies, pins on the Light copy. Light and Dark copies are pixel-identical for studio and
+    studio-lab pages: their CSS has no `prefers-color-scheme`, so both draw dark (sdk part shots do differ). No
+    declared-width part exists to check. Defect: in narrow phone frames the frame label is clipped with no ellipsis
+    ("LIGHT pages/film-deta") - open, small.
+  5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
+  - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
+    first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
+    sdk `colors.css` paints `body` with `--et-surface-background-solid`, and the live frame paints the same, so shot and
+    live frame match. Not seen in Studio; motion and asset shots unchanged. `et design` honours `DE_PORT` outside
+    Studio (`67f8d7924`).
+  - Done (2026-10-31): `fitOutOfFlow` counts an absolute element only up to the overflow ancestors in its
+    containing block chain (`a516c4c48`; jsdom spec on the real overlay structure, 444 -> 244 px). Real check on a
+    fresh own server with the sentinels back in a scratch copy: dialog long-body b, 480 light shot 480x440 (stale
+    :4402 gave 480x656). sdk-33 can drop the sentinel workaround from `libs/components/design/dialog.ts` (83e428e99).
+  6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
+  7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo. As built (2026-10-31): colors, type, spacing and motion already used `tokenSheet`; `logoSheet({ marks })` added in db8121f27 (spec, docs, cli minor changeset); studio `foundations/logo` `sizes` moved onto it through a sketch, auto-merged with "No visible change in any state" (3a7fc6aa0). The `sidebar` view stays a product drawing; agent-logos unchanged (lead decision).
+  8. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice. As built: "The `ethlete-design` MCP server" section in `design-exploration/SKILL.md` (tools by job, `sketch_report` before each edit, `sketch_ready` render check).
+
+## Parallel builder slices (builder 57, 2026-10-31)
+
+- As built: Q227.4 size budget guard `yarn lint:size` (tools/scripts/size-budget.json) in pre-push and ci.yml
+  (cb29b8928); Q227.5 `yarn tokens:report [--days N]` (37a129a3a). Specs pass and bite; pre-push passed.
+- As built: pages/merge "Changed" rows declared as `row` control (c3d2c6d73). Inventory findings 2 -> 0; sketch
+  auto-merged. Compare image not seen.
+- As built: Q228 SDK part `components/anchored-dialog` (0cf269106). Shots open-points and filter seen on :4402. Open:
+  Q-a content slot, Q-b SDK button/checkbox in the filter state (with Tom).
+- Item 7 became Q235 (single-round canvas + header et-select in sketch-view): in progress.
+- In progress: shell-main b round + Q234; Q224 pages/inventory + view coverage + `design check --part`; Q236 covered
+  controls.
+
+## Builder ethlete-sdk-4b (replaces 57, 2026-10-31)
+
+- As built: Q237 `content` + `label` slot and Q238 SDK Apply button on `components/anchored-dialog` (4e94dfc61).
+  Shots filter and open-points seen on :4402; sdk tsc and eslint clean.
+- In progress (parallel subagents): pages/system and pages/inbox rounds embedding anchored-dialog; Q218 unused SDK
+  parts subtree; Q220 canonical Tailwind pass (without system/inbox); headless check of Q235.
+- As built (builder 4b): pages/system and pages/inbox embed the SDK anchored-dialog part (1de1bafc1, 13bd46415);
+  CLASS-UNDEFINED skips `X.render({...})` option values (d90139f01); inventory: disabled controls are not covered
+  (59cefde7c); Q221 glued classes in 9 parts (76043b858); STALE-REPLACE follows conditionals (f75a91d6f); Q218
+  "Not used in <Product>" subtree (9a7c40c56) + control `part:` refs and `ng` imports count as use (38359b7fe,
+  spec bites); Q220 needed no edit. CI fixes: covered.spec skips without a browser (0dd0a0307), frame-bootstrap
+  fixture stubs `../define-part` (dec0fd622).
+- Open (handoff):
+  - Q241 (partly built): definePart `frame` + `drawState` landed (c7f01abde, spec bites, docs, cli minor). 44 SDK
+    parts carry a demo frame; only anchored-dialog (pages/system, pages/inbox) and menu (studio shell-main,
+    `[&>.menu-frame]:contents!`) are embedded. Open uncommitted sketch `.ethlete/design/sdk/sketches/components-accordion`
+    (42 targets, variant a, round "Demo frame out of render"): 29 converted; 13 copied back. `sketch ready` refuses:
+    (1) chart, menu, notification have CONTRAST problems already in the merged part, but render-check
+    (`libs/cli/src/lib/design/system/render-check.ts` ~724-740) compares sketch issues with the merged part only for
+    CONTROL-PART-INPUT; (2) 10 parts' old CONTROL-PART-INPUT warnings change element path once the mark moves off
+    the frame div. Next: fix render-check so an issue the merged part already shows (same rule and detail; path
+    normalised for the frame move) does not block, with a spec (tool gap, recommended to the grill); re-run
+    `/tmp/q241/conv.py` + `conv2.py` on the restored parts; `sketch ready`; after-shots
+    (`/tmp/q241/shoot.sh /tmp/q241/after $(cat /tmp/q241/parts.txt)`) vs `/tmp/q241/before`; convert scrollable and
+    timeline. Then no-visible-change rounds: pages/system and pages/inbox drop the `!` overrides (frame font-size 1.4rem
+    and colour may need to move to the host), inbox drops `bottom-${'start'}` and fixes the glued
+    `rounded-control-md${...}` (line ~140, Q221; if the look changes stop at ready); shell-main drops the menu override.
+    Tell the grill if the inbox merge makes its go stale. Tom's :4402 runs an old CLI until he restarts it.
+  - Q242: sdk `components/button` sketch round r1 "Filled active contrast" (456dae1c3), variants a/b/c, waits for
+    Tom's merge. Then port the pick to `libs/components/src/lib/button/button.component.css` (filled `:active`,
+    about line 149; danger Delete fails the same way), with a changeset and docs. Then bring the open glued-class
+    sketches `studio/sketches/elements-canvas-frames` and `components-zoom-chip` to ready.
+  - CI: the covered.spec skip means the Q236 check never runs in CI (frame-fill and other browser specs skip
+    there too). Move the browser specs into a job with Chromium (storybook-e2e or test-storybook) or install the
+    browser in the unit job.
+  - Q235 headless check: done, all four checks pass (one round, select lists rounds, opens newest, switches);
+    `q235-verify.mjs` deleted.
+  - Watch CI for 456dae1c3 or later: `gh run list --branch next --limit 5`.
+
+## Builder ethlete-sdk-4b (fresh context, 2026-10-31)
+
+- As built: CI browser specs (165155b6f). The `test` job in ci.yml installs Chromium. frame-fill, covered and
+  render-check specs throw under `CI` when no browser starts; locally they still skip. Local `CI=true nx test cli`:
+  1823 pass; `nx lint cli` clean. The GitHub run of the new step is not seen yet.
+- Waiting: Q243 (render-check rule for issues the merged part already shows) and Q242 pick, both with Tom.
+- As built: Q243 render-check passes issues the merged part already shows (6c5e0c234, spec bites); disabled rows stay at
+  rest in the design tool (b0a422041, specs bite). Q241 accordion round merged: 41 SDK parts use definePart `frame`
+  (2db7db916; pixel compare 37/42 at 0 px, rest animation noise or the button change). floating-action parked after MVP.
+- As built: Q242 variant b merged (6d4c70a85) and ported to button.component.css (7385e470f); Q245 icon-button
+  (f94364cc3; split-button needed no edit). Storybook pressed colours checked; touch not checked.
+- As built: no-visible-change rounds pages/system (c7d3b0d31), pages/inbox (acd224ce0, new hash 7f377531e580c026),
+  sdk textarea glued class (6d9a00a81), shell-main menu override (this commit), studio canvas-frames + zoom-chip
+  (4861c0165). Checked only by the tool's state pixel compare.
+- Parked after MVP: Q244 sketch head (partial diff in /tmp/q244-partial.patch), floating-action frame normalisation.
+- As built: Q246 inbox rows as `row` control (c29548924, hash ee3d99940358a87d); Tom's inventory approval + go for
+  pages/inbox and pages/inventory (9a9111c41, fb69fba06); inventory.json written Prettier-clean (3dd71ffb3, spec
+  bites); implements links pages/system, flows, sketches (b2c680b4c) and shell-main controls (b5e8692b8).
+- Gap after the links (`design check --product studio`, /tmp/studio-check2.txt): 15 own parts with 1 open point each.
+  "no go" for pages/system, flows, sketches (Tom runs `design go`; agents must not set a go `--by tom`, the
+  permission check blocks it). "no implements" for 14 parts + view studio-view: design call sent to the grill
+  (recommendation: extract inline pieces into components, then link and go; canvas-frames -> canvas-frame-grid;
+  studio-view -> shell-main; pages/start build or drop).
+- Open (handoff to the next builder):
+  - Wait for the grill's decision on the 14 unlinked parts; build it in parallel subagents.
+  - Commit go.json after Tom's gos; then `design check --product studio` and report the gap.
+  - CI: last runs were cancelled by newer pushes; c29548924 watch was running. Check
+    `gh run list --branch next --limit 5` and fix any red job.
+  - Parked after MVP: Q244 (/tmp/q244-partial.patch), floating-action frame normalisation.
+
+## Builder ethlete-sdk-4b (second fresh context, 2026-11-01)
+
+- As built: Tom's go for pages/system, flows, sketches pushed (a8635dead).
+- As built (Q247): implements links for tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport, pages/merge
+  (0d006948d). An unlinked part is no longer an open point; `design check` prints `UNLINKED <product>: …` with own
+  parts only (fee19ffbf, 12c80d992; spec bites, both tsc and lint clean). 10 parts ready (b284ca96e).
+- Gap: `design ready` also counts missing states, plain `design check` does not. Still open after Tom's go for the
+  six linked parts: tree-row (3 states), part-tree (1), shell-project-option (1), shell-main (12), canvas-frames
+  (4 states + 1 contrast). Sent to the grill with the go command for Tom and a recommendation.
+- In progress (Q249): one sketch round per part for the missing states, parallel subagents: tree-row, part-tree,
+  shell-project-option, shell-main, canvas-frames (+ default contrast "Save" 3.81:1). Not merged; Tom picks.
+- As built (Q249): sketches for tree-row (b31384d3e), part-tree (a892f9b26), shell-project-option (9fa91c096),
+  shell-main (2c77beeab), canvas-frames (7a1875736); Tom merged all five (00be48487, d4c238ec0, 6fe725202); tree-row
+  aria-current auto-merge (cb89a56cf). Gos renewed by the grill (part-tree, tree-row, shell-main).
+- Canvas-frames "Save" contrast: cause was a stale dist/libs/components (built before 7385e470f). Rebuilt; filled
+  active now 4.63:1, no CONTRAST finding. Stale-dist warning parked after MVP.
+- Rule (grill, 2026-11-01): each turn run `design sketch list --product studio` and merge every "picked X" sketch with
+  `design sketch merge`; Studio "Pick" does not merge.
+- Open (handoff):
+  - `design check --product studio --complete` crashes: "page.screenshot: Clipped area is either empty or outside
+    the resulting image". A subagent fixes it (libs/cli; finding per frame instead of a crash). Then send the gap
+    (Studio's own parts) to the grill.
+  - sdk sketches components/checkbox + components/radio-group variant d: ready is blocked in all variants by the
+    newer control rules (no controls declared, CONTROL-PART-INPUT on et-checkbox/-option/-group-select-all/et-radio,
+    OPTION-VALUE-MISSING size/orientation/variant/controlPosition). Decision (grill, Tom): one subagent brings d of
+    both up to the current rules with no visual change (control() marks, controls declaration, omits with reasons),
+    then `sketch ready`, then `design sketch merge <part> --variant d --allowed-by "decisions-overnight.md Q102/Q113,
+Tom 2026-11-01 in chat" --by <model> --product sdk`. Stop and report if a fix changes a pixel or an omit needs a
+    design call. Do not widen to other SDK parts. No lib port before the MVP. NOT started yet.
+  - The crash-fix subagent was still running at the restart; check `git log` for a `fix(cli)` commit and
+    /tmp/studio-check8.txt before starting it again.
+  - Push next after these commits.
+
+## Builder ethlete-sdk-4b (third fresh context, 2026-11-01)
+
+- As built: checkbox + radio-group variant d declare controls and omits, no pixel change (contact sheets
+  byte-identical, light and dark) (3a8bfb612, d4d8ee5cd). Variants a, b, c rejected as lost to r2 (d00c0540c).
+  `sketch ready` counted render issues of rejected variants; fixed, spec bites (d46b8035a). Both parts ready and
+  merged with --allowed-by Q102/Q113 (e855918d4).
+- As built: `design check --complete` crash fixed (b8f798e65): a control clipped outside the page is skipped, a frame
+  that throws becomes a RENDER finding. Spec bites. Full Studio run: 24 of 26 parts clean; open: canvas-frames
+  (out, reset, in, fit are control ids no state draws), part-tree (state row).
+- Pushed next (96a2406d0).
+- As built: the checker counted a declared part control only on the root of the embedded part; zoom-chip (out,
+  reset, in, fit) and tree-row (row) draw them inside a wrapper. Fixed, spec bites, docs updated (e0bf58dca). No
+  design file changed. `design check --product studio --complete`: 26 of 26 Studio parts clean; the 48 parts with
+  open points are SDK parts. Full cli suite passes. Pushed e0bf58dca.
+
+## Archived plan file cleanup-landing.md (2026-11-18)
+
+# Aufräumen: alles Angefangene zu Ende bringen (07.11.)
+
+Tom (07.11.): "Alles angefangene bitte sinnvoll zuende bringen." Gilt für jeden lokalen `desk/*`- und jeden
+`origin/tank/*`-Branch. Keine neuen Themen. Eine Gruppe nach der anderen, keine parallelen Agents, alles landet auf
+`next` im Haupt-Checkout.
+
+Je Branch: prüfen, ob die Änderung schon in `next` ist (andere SHA). Sonst auf `next` bringen, WIP fertig bauen, Specs
+und Lint grün, Changeset, Commit mit Pfaden. Hält etwas nicht oder ist überholt: verwerfen, mit einem Satz Grund
+hier. Design-Fragen gehen nicht an Tom: die Empfehlung bauen.
+
+## Schon in `next` (nur Branch löschen)
+
+desk: B120, B212, B338, B354, B362, B369, B419, B353 (kein Gewinn, entschieden). tank: b112, b339-needs, b402,
+b417-rest, hooks-worktree, studio-theme-switch-type, worktree-agent-aeabaa9c9dee47bbf, worktree-agent-afba22bc5202ed617,
+webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen, a4d2db7d6).
+
+## Gruppen
+
+1. **cli klein:** desk B234, B285, B359, B364, B390 + tank/b390, B417 + tank/b417-target, B305, B308, B341 + tank/b341,
+   B358, tank/b114.
+2. **Gates und Tools:** tank/b380, b382, b393, b394, b396, ci-gates-on-next, w3-gates-a, w3-gates-b, w3-b379-b364,
+   w3-cli-a, tree.
+3. **cli groß:** tank/conflicts-land (= f557-hub-split + b412), b392, b397, b407, worktree-agent-a66238bcffb60bf03,
+   b416-next, worktree-agent-a13203d886f4f7c9c, b217 (WIP 494af9c34).
+4. **Studio-App:** desk B306, B355, B356, B346, B345, B365, B370, B415 + tank/b415-sketch-final, clifix; tank/webkit-tla-wt.
+5. **Tom von Hand:** tank/design-data (seine Studio-Daten).
+
+## Ergebnis je Branch
+
+(Die Gruppen tragen hier ein: Branch, gelandet als SHA oder verworfen mit Grund.)
+
+- desk/B234 → gelandet in diesem Commit (Leerraum-Zweige im glued-interpolation-Check, Spec + Beißprobe grün).
+- desk/B285 → gelandet in diesem Commit (Regel COMMAND-TEXT, für studio an; Tag-Erkennung zitatfest gemacht, 0 Treffer im echten Repo).
+- desk/B359 → gelandet in diesem Commit (Probe-Ordner in serve.spec.ts anlegen; Stress 4/4).
+- desk/B364 → gelandet in diesem Commit (Spec-Fälle covers, list/check mit unbekanntem Flag, unbekannter Unterbefehl; Exit 2 bleibt).
+- desk/B390 + origin/tank/b390 → gelandet in diesem Commit (desk/B390 als Basis, Signatur argv-Array wie tank/b390, dessen prettier-Aufrufe in check-format/merge übernommen; leere prettier-Ausgabe gilt als Fehler).
+- desk/B417 + origin/tank/b417-target → gelandet in diesem Commit (desk/B417 ist tank/b417-target ohne die fremde vitest-Abhängigkeit; Specs, Lint grün).
+- desk/B305 → gelandet in diesem Commit (Hook prüft lange Design-Befehle nur an Befehlsposition; schließt B126; Hook-Spec 38/38).
+- desk/B308 → gelandet in diesem Commit (Ratchet-Prüfung auf Personennamen; Baseline auf den Stand von heute neu geschrieben, da next schon neue Treffer hatte; Umbenennung --by tom → human bleibt offen in B308).
+- desk/B341 → Zeilen-Schluss gelandet in diesem Commit; origin/tank/b341 → verworfen: schon in next als b20f3d5b7 (gleiche Dateien, gleiche Änderung).
+- desk/B358 → gelandet in diesem Commit (nur Doku: B358 und B334 geschlossen, Spec-Typecheck bleibt in CI nach ADR 0225).
+- origin/tank/b114 → gelandet in diesem Commit (Notizsprache, NOTE-LANGUAGE, `sketch note --round`; Konflikte in Usage-Zeilen und Spec gelöst, Hilfe angepasst).
+- origin/tank/w3-gates-b → gelandet in diesem Commit (984042b90: commitlint über den gepushten Bereich in CI und Pre-push; dc7a9a06d und f8cd875e0 waren schon in next als 7e3685dcf und 94606402c).
+- origin/tank/b380 → verworfen: Feature schon in next als 377879f5a; der WIP-Commit setzt nur STATUS-Zeilen (B318–B336) auf einen älteren Stand zurück.
+- origin/tank/b382 → verworfen: schon in next als 2e23578d1; WIP-Commit ist dieselbe veraltete STATUS-Rücksetzung.
+- origin/tank/b393 → verworfen: schon in next als fd611c3ac (gleicher Code, andere design-to-code-Notiz); WIP-Commit ist die veraltete STATUS-Rücksetzung.
+- origin/tank/b394 → verworfen: schon in next als f77a48873; WIP-Commit ist die veraltete STATUS-Rücksetzung.
+- origin/tank/b396 → verworfen: schon in next als 3182bd02f; WIP-Commit ist die veraltete STATUS-Rücksetzung; ADR 0197 auf built: 3182bd02f gesetzt.
+- origin/tank/ci-gates-on-next → verworfen: beide Commits schon in next (3ba0a690b, 96639086f); der WIP-Commit ist ein alter Baumstand, der die System-Seite und neuere cli-Arbeit zurückdrehen würde.
+- origin/tank/w3-gates-a → verworfen: beide Commits schon in next (7d8e0ae63, 1d2cbaa77); der WIP-Commit macht nur eine Prettier-Umbrechung in cli-related-map.mjs rückgängig.
+- origin/tank/w3-b379-b364 → verworfen: beide Commits schon in next (ec09123c5, a3b204c2d); die WIP-Notiz zu B364 ist durch die As-built-Notiz von desk/B364 ersetzt.
+- origin/tank/w3-cli-a → verworfen: schon in next als 4373e3a4c; die WIP-Datei check-staged-plans.mjs liegt identisch in next.
+- origin/tank/tree → verworfen: der einzige WIP-Commit löscht 4664 Dateien (kaputter Baumstand).
+- origin/tank/conflicts-land, Teil f557-hub-split → gelandet in diesem Commit (Aufteilung von `design/paths.ts`; 13 seither in next neu dazugekommene `paths`-Importe umgehängt; der commitlint-Commit e6b6e12a3 war schon in next als 984042b90).
+- origin/tank/b407 → gelandet in diesem Commit (WIP fertig: Signatur `by`/`cmd`/`pid` für Ready-Markierung und Skizzen-Wahl; Konflikt mit `--decided-by` gelöst, Aufrufe in den seither aufgeteilten Specs nachgezogen; 20 Specs, Lint grün).
+- origin/tank/conflicts-land, Teil b412 → nicht gelandet: die neuen DIRECT-EDIT-PENDING-Einträge in `studio/rule-baseline.json` verstoßen gegen ADR 0201 (Baseline darf nur schrumpfen), und die vier Studio-Treffer schließen nur Toms Skizzen-Entscheidungen; Folgeschritt in B412.
+- origin/tank/b412 (54247e161 + 3931e1bf4), 2026-11-07 → weiter nicht gelandet: ohne Baseline treffen `pages/start` (studio) und `components/select` (sdk); beide brauchen `design accept` mit dem Go eines Menschen (kein alter Stand im Verlauf), Folgeschritt in B412.
+- origin/tank/b392 → verworfen: Spec-Aufteilung schon in next als 58a94e357; der WIP-Commit setzt nur STATUS-Zeilen auf einen älteren Stand zurück.
+- origin/tank/b397 → verworfen: schon in next als d0122053a; der WIP-Commit fügt nur zwei Leerzeilen in `sdk-selectors.ts` ein und setzt STATUS zurück.
+- origin/tank/worktree-agent-a66238bcffb60bf03 → verworfen: b5c266bfc schon in next als eb0546d31, der WIP (Zoom-Chip-Zustände) als c82aa7d4f.
+- origin/tank/b416-next → verworfen: der WIP (Theme-Schalter ohne `current`) ist schon in next als 947865686.
+- origin/tank/worktree-agent-a13203d886f4f7c9c → verworfen: überholt durch 9bc56da98 (System-Seite portiert, `exception-list` durch `exception-store` ersetzt).
+- origin/tank/b217 → verworfen: bf6fcd97e schon in next als 074e32805; der WIP 494af9c34 ist ein älterer Entwurf, den 074e32805 in `complete.ts` ersetzt hat.
+- desk/B306 → gelandet in diesem Commit (FailedShots als `defineRootProvider`, Chip und Popover „N Bilder fehlen“; Specs, Lint, Typecheck grün; Retry-Knopf bleibt offen in B306).
+- desk/B355 → gelandet in diesem Commit (async-Fehler außerhalb des Falls → FAIL und neuer Worker; zwischen den Fällen endet der Worker mit 1 statt den Fehler zu schlucken; mit zwei Wegwerf-Fällen geprüft).
+- desk/B356 → verworfen: der WIP ist nur der WebKit-Budget-Fall samt CI-Schritt; der Zoom-Fix fehlt, der Fall wäre in CI rot (gemessen p50 45–49 ms), und er kollidiert mit next; Übernahme des Falls nach dem Zoom-Fix steht auf B356.
+- desk/B346 → 975505b03 gelandet in diesem Commit (`sketch new` rebast Importe eines gehobenen `shared/`-Ordners richtig; Sketch-Specs grün); 4f56e7893 (Kopf-Tag) zurückgehalten: Skizze `pages/sketches@head-zoom` ist noch in Arbeit ohne Wahl, e2e 0/4; der WIP-Commit ist nur Toms Skizzendaten.
+- desk/B345 → verworfen: 0de880f4d ist schon in next als e7a9900d8 (gleicher Inhalt); der WIP-Commit ist nur Toms Skizzendaten (u. a. `pages/sketches@head-zoom`), die Tom selbst übernimmt.
+- desk/B365 → verworfen: nichts gebaut, der WIP-Commit ist nur Toms Skizzendaten und `merged.json`/`pictures.json`; Messplan bleibt auf B365.
+- desk/B370 → verworfen: der Signal-Handler wirkt nicht (alle vier Host-Fälle rot), fertig bauen braucht CEF-Debugging am Display; Schritte auf B370.
+- desk/B415 → nur der et-chip-Fix (`SDK_CONTROLS`) gelandet in diesem Commit; der Chip (db778132b) zurückgehalten, bis Tom in `components/title-bar@push-state` wählt; der WIP-Commit ist nur Skizzendaten.
+- origin/tank/b415-sketch-final → zurückgehalten: Skizze `components/title-bar@push-state` (ready, a/b/c) ist Toms Wahl, Design-Daten für Gruppe 5.
+- desk/clifix → verworfen: render.spec, `.gitignore` im sketch-command-Spec und CHECK_RULES schon in next; der Rest (Timeout, `created` ohne async) ohne Grund, die Skizze `components-update-dialog.edit` liegt schon in Toms Arbeitsbaum.
+- origin/tank/webkit-tla-wt → verworfen: der einzige WIP-Commit löscht 579 Dateien (kaputter Baumstand).
+- Arbeitsbaum-Designdaten (Gruppe 5) → gelandet als 3d0d136c5, 185fc7857, b3cfc7d6c, 70d530a83 und diesem Commit: die Edit-Skizzen auf Stand gebracht (`sketch rebase`); `pages/system` und `pages/sketches` ohne sichtbare Änderung automatisch übernommen; `components/update-dialog`, `elements/shell-main`, `pages/inventory` (studio) und `components/button` (sdk) zeigen alt/neu sichtbar verschieden, Empfehlung gebaut: `new` (die schon ausgelieferte Änderung: Aktions-Attribute, Titelleiste über volle Breite, deutsche Texte, Lade-/Disabled-Zustand); cli-Fix: `old` einer Edit-Skizze rebast Importe aus `shared/`, sonst zeichnete `pages/sketches@edit` alt nicht. `pages/start` offen: `design accept` verlangt das Go eines Menschen (kein alter Stand im Verlauf), Folgeschritt in B412.
+- origin/tank/design-data → verworfen: alles darin ist durch den Arbeitsbaum ersetzt (gleiche oder ältere Edit-Skizzen, `merged.json`/`pictures.json` älter) und mit dem Punkt darüber entschieden.
+- origin/tank/b415-sketch-final + desk/B415 db778132b → gelandet als 4a1b88b7f und diesem Commit: Skizze `components/title-bar@push-state` auf 181b604bf rebast (Konflikte von Hand portiert), `sketch ready` grün (a/b/c sichtbar verschieden); Empfehlung gebaut: a (Badge vor Update), b (Banner) und c (Inline-Text) abgelehnt; aus db778132b der Datenweg (`studio-code.mjs` → Host → `injectCodeWatch().push`), der Chip links durch ein `et-badge` rechts wie Variante a ersetzt. Skizze `components/title-bar@restart-pending` verworfen: Variante a steckt schon seit 181b604bf im Teil, b/c ohne Wahl.
+- desk/B346 4f56e7893 + desk/B345 WIP 18892a2ea (Skizze `pages/sketches@head-zoom`) → gelandet als 34bc2d4ac und diesem Commit: Skizze aus dem WIP geholt und rebast; `sketch ready` verlangte zwei Fixe, die auch das Produkt brauchte (versteckter Kopf bekommt `hidden`, `unchanged-matrix-open` auf 20 %, sonst Übernehmen am Pan-Rand abgeschnitten); Empfehlung gebaut: c (Pille Aktuell/a/b in fester Größe), a (Kopf ganz weg, Raster springt) und b (Kopf skaliert zu Strichen) abgelehnt; App-Teil aus 4f56e7893 ohne die Teil-Änderung, e2e-Fall 4/4 (Tag nur Pflicht, wenn Köpfe eingeklappt sind; Schwelle 9 px wie MIN_LABEL).
+
+## Archived plan file ui-builder.md (2026-11-18)
+
+# Second builder (UI): slices
+
+The second builder session (ADR 0198) records its slices here, so its notes do not collide with the first builder's
+uncommitted edits in `design-to-code.md`. Order: A1, A2, A3, then A36 as a sketch with variants.
+
+## A1 title bar to the merged design (as built)
+
+`design compare components/title-bar` on 2026-11-06: `windows` and `windows-update` differ (variant f's 46 px caption
+tiles, the red close and the left-only padding on Windows are not in the app); `linux-full-notice` and
+`windows-notice` cannot be compared (the design's `notice` prop has no app input, the app draws no "Neu starten"
+button with `emit:restart`). The twelve forced interaction states of the rows other than `linux-full-update` printed
+no line at all.
+
+Slice: a `caption` shape on the SDK window control button, the Windows caption tiles and the error close in the app
+title bar, and a `notice` input with a `restart` output that the shell binds.
+
+As built: `caption` shape on the SDK window control button (46 px full-height tile, 10 px glyph, the hover, focus and
+press tints of the design); the app title bar draws the Windows caption tiles with the error-theme close, pads only the
+left on Windows, and takes `notice` and a `restart` output that shell-main binds to the code watch. `code-notice` is
+folded into the title bar. Per finding 484 (ADR 0010) the cause text stays as the built look through an app-only
+`noticeText` input (the restart cases and the CLI-dirty hint), marked as needing approval: the sketch
+`components/title-bar` with a = built text, b = cause as SDK tooltip, c = no hint opens next.
+
+Verified: `design compare components/title-bar` all 14 states ok and every declared action works (before the
+`noticeText` input; the harness never sets it); title-bar and shell-main specs 22/22; lint clean. Not verified: the
+twelve skipped interaction states (finding 483), the real Windows window, the text against a design (none exists).
+
+## B403 rules for the UI builder (2cef20507)
+
+- ADR 0202: investigate a tool gap only when it blocks the current UI item; every other gap goes to c4 in one
+  sentence, and c0 takes it. The shell-main "changed outside a sketch" investigation is dropped (to c0).
+- ADR 0203: a UI item is done only when it shows in the app and every part it affects is compared and verified.
+- A1 left 8 parts with IMPLEMENTATION-UNCOMPARED (canvas-frames, studio-menu, flows, inventory, merge, sketches, start,
+  system): no compare of the parts that embed the title bar ran before the commit.
+
+## As built: finding 500 - pages/sketches Fit shows every column
+
+Cause: `FIT_COLUMNS = 2` in `sketches.component.ts` capped Fit of a wide part's transposed matrix at two columns
+(Aktuell and a), so b was cut and c off screen. The design drew the same cap (`pages/sketches/shared/sketch-rows.ts`,
+`Math.min(2, columns)`), so compare saw app and design agree. Fit now counts every matrix column, in app and design.
+The design rule change (2 columns -> all) needs Tom's confirmation.
+
+Verified: new e2e case "Fit shows every column of a wide sketch, heads at the top" (page Wide, 2000x1100,
+`canvas.e2e.mjs`) failed before ("b spans 1988..2656 outside 344..1980") and passes after; new unit test in
+`sketches.component.spec.ts` fails before, file 31/31 after; lint clean. Not verified: `design check --part
+pages/sketches` (stopped), compare of pages/sketches. Not reproduced: the ~550 px top gap and the cropped Aktuell
+column; hypothesis (unverified): the view reopened with a restored camera (`move()` stores {x, y, zoom} after a wheel
+pan at Fit), so pan.y gives the gap and a negative pan.x puts the sticky label gutter over Aktuell; that fix belongs in
+camera restore in `system-view/sketch-view.component.ts`. Tool fix proposed: a check geometry rule for camera-fit
+parts (every frame inside the viewport horizontally, first head near the top) and a 3-variant wide-part fixture.
+
+## As built: title-bar notice hint b in the app
+
+Tom merged variant b of components/title-bar@notice-hint (332e49626). The app's "Neu starten" button carries
+`[etTooltip]="noticeText()"` (bottom-end); the inline `data-code-notice` text shows only without a restart
+(cli-dirty). Verified: title-bar spec 12/12 (two new tests: notice state has no inline text and the button's
+aria-describedby holds the cause; cli-dirty on macOS shows the text inline without a restart); lint clean. Not verified:
+no compare ran (components/title-bar and every part that embeds it), no part check. Expected gap: the design draws
+the tooltip always open, the real etTooltip opens only on hover/focus, so compare of the notice states will likely
+differ unless it hovers the button.
+
+## As built: A1 rest (title-bar states)
+
+`design compare components/title-bar` on 2026-11-10, nothing changed in the app:
+
+- Interaction states: `linux-full-update` and `windows-update` hover, active and focus-visible ok (6). The other
+  9 (`linux-left`, `linux-close`, `windows` x 3) are skipped by B397 as rows of unchanged SDK controls: the forced
+  control is a plain `et-window-control-button`, whose states the SDK part compares. Finding 483 is closed: every
+  state now prints a line.
+- Rest states: 19 ok, including push, cli-dirty, update and `linux-full-notice-failed`.
+- `linux-full-notice`, `linux-left-notice`, `linux-close-notice`, `windows-notice`, `macos-notice` FAILED: the
+  design draws 1 overlay pane (the notice tooltip always open), the app opens 0 because `etTooltip` opens on hover or
+  focus. This is the expected gap. The design forces no interaction on the restart button, so compare has no way to
+  open it.
+- `linux-full-notice-pending` DIFF 115 px, the same in two runs, only on the spinner inside Neu starten. The design
+  mock draws a static half arc and the app's indeterminate `et-spinner` is caught at another frame. The button mock
+  sets no `data-et-frozen-at`, so compare cannot hold the app spinner at the mock's frame.
+
+Embedding parts, compared: `elements/shell-main` 15/15 ok, `pages/flows`, `pages/inventory` ok. Diffs in
+`pages/merge` (merge-error 2 px), `pages/start` (no-products), `pages/system` (12 states) and `pages/sketches` (20
+states) have 0 diff pixels in the title-bar rows (y < 33) of every diff picture, so none of them comes from the
+title bar. `elements/canvas-frames` cannot judge 6 states (slot-only, `heads` prop). The `elements/studio-menu`
+action "Design-Server neu starten" times out in two runs; the menu sits in the rail, not the title bar.
+
+`design check --part components/title-bar`: 5 OFF-CENTRE, all OLD (the cli-dirty text); open points: notice
+hover/active/focus-visible are not drawn, and the design changed outside a sketch (the open
+`components/title-bar@edit` sketch, not this slice). No new problem.
+
+Not verified: a real Windows window, the notice tooltip against the design (compare cannot open it), the spinner
+frame. The embedding compares were not recorded in `implemented.json` (`compare --affected` would also record
+parts other slices changed), so their IMPLEMENTATION-UNCOMPARED stays.
+
+## As built: finding 512 and 898 (a)
+
+- 512: the title-bar sketch for the notice restart interaction states (07acb199a), variant a merged by an agent
+  accept under ADR 0106 + 0210 (dea25f747). `design check --part components/title-bar` at 448c47f: the
+  visible-change gate fails on 7 unjudged notice states (5 rest + hover, active): the design draws the tooltip pane
+  open, the app opens none. Known gap, reported as a tool gap (forced-open overlay pane). OFF-CENTRE 5, all OLD.
+- 898 (a): a merge commits only its own entries of a `merged.json` that was dirty before the merge (448c47f16).
+  Verified: new merge-commit spec case fails on the old code; vitest related 1361 passed; cli typecheck. Not
+  verified: a real Studio merge with a dirty `merged.json`.
+- 898 (b): no tool bug; only 14 ADRs had a `governs` field. The doc agent added globs for the design tree.
+
+## B345 change-crop b (built, live shot done)
+
+App side of the merged `pages/sketches` change-crop b (2f83c46da). Slice 1: the server measures where a changed
+state differs (box, pixel count, regions) while it compares the pictures and lists it per target as `crops`.
+Slice 2: the matrix shows each changed state as an enlarged crop with its reason, a locator and the
+"Ganzer Screen"/"Ausschnitt" toggle. Slice 3: states with the same crop show once with a count.
+
+As built: the server compares the two pictures of each changed state (`change-box.ts`: box around every pixel past
+the `looksTheSame` tolerance, pixel count, regions of pixels closer than 8 px) and keeps it with the unchanged
+states; the listing names it per target as `crops` (full and quick listing). The app passes it through
+`sketchRowsOf` and the sketch view into `SketchShot.change`. In the matrix (wide part) `cropGroupsOf` groups states
+whose every variant changed the same pixels in the same place; a group shows once in the gutter with its count, the
+reason ("1358 px in 3 Stellen · 4,6× vergrößert"), a locator and the "Ganzer Screen"/"Ausschnitt" toggle; its cells
+show the crop (24 px margin, enlarged to the column width), the variant cell a frame around its change and the two
+stack edges. The list layout (narrow parts) is unchanged.
+
+Verified: specs (change-box, unchanged-states, listing, sketches component), each new case bitten on the old code;
+`vitest related` in libs/cli (1347 passed) and ethlete-studio; spec:stress 4/4 per spec alone. Not verified: a live
+shot of the crop in a running Studio, `design compare` of `change-crop`/`change-crop-whole` (the harness supplies no
+crop data for them), the unit word ("Stellen" for regions, the design mock says "Zellen").
+
+Built in 82c6e3025.
+
+Gutter fix (as built): at min zoom the hidden head kept the crop block at `noteSize() * 15` px, so the reason and
+state name left their box (e2e "no text leaves its box", pages Sketches and Large). The gutter now drops the crop
+block while the head is hidden. Verified: the e2e case 6/6, sketches spec 35/35, `vitest related` 125 passed,
+`design check --part pages/sketches` (4 DROPPED-PROP, all present before the fix). Not verified: a live shot.
+
+Live shot (finding 792; Chromium 1440x900, design server on the new CLI, studio-lab `pages/film-detail` round 1 variant
+a, shots in `.claude/handoffs/agent-results/b345/`): crop frames, reason ("687 px in 1 Stelle · 2,3× vergrößert"),
+locator and one toggle click ("Ausschnitt" shows the full frames, the reason drops the zoom) all pass. Suspect
+(cosmetic): the crop top cuts the "Your review" label in half; the locator draws no page content. Not verified: N > 1
+places, several variants (ADR 0272), the toggle back, other zoom levels, WebKit and the Tauri shell.

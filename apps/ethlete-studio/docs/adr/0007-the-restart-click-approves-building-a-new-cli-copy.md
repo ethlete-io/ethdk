@@ -2,7 +2,7 @@
 status: accepted
 built: 4c1667672
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "CLI copy build at restart" (finding 372)
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "CLI copy build at restart" (finding 372)
 ---
 
 # The restart click approves building a new CLI copy

@@ -2,7 +2,7 @@
 status: accepted
 built: 0fd557da5
 decided: 2026-10-31
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces follow the elevation system, not picked names" (Q203-Q206) item 1
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Surfaces follow the elevation system, not picked names" (Q203-Q206) item 1
 ---
 
 # Parts take their surface from kit attributes, not surface classes

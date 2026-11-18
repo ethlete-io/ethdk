@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Decision records and plan size" (finding 385) item 3
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Decision records and plan size" (finding 385) item 3
 ---
 
 # The push check fails on a missing or stale ADR build state

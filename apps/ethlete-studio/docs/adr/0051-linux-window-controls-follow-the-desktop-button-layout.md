@@ -2,7 +2,7 @@
 status: accepted
 built: a1698f47a
 decided: 2026-11-02
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Title bar window controls decisions" items 2, 4, 5
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Title bar window controls decisions" items 2, 4, 5
 ---
 
 # Linux window controls follow the desktop button layout

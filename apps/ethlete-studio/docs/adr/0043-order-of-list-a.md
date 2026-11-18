@@ -2,7 +2,7 @@
 status: superseded by 0040
 open: none
 decided: 2026-11-02
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Studio order, explorer, merge canvas and build-ready decisions" item 1
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Studio order, explorer, merge canvas and build-ready decisions" item 1
 ---
 
 # Order of list A

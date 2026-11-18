@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Commit volume decisions" item 3
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Commit volume decisions" item 3
 ---
 
 # One commit per sketch round and one per merge

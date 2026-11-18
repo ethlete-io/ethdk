@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "UI without a design" (finding 368) item 1
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "UI without a design" (finding 368) item 1
 ---
 
 # UI built without a design stays, marked, with a sketch opened at once

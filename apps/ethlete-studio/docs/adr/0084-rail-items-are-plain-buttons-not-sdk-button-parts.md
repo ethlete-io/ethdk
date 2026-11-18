@@ -2,7 +2,7 @@
 status: accepted
 built: 78f1cd587
 decided: 2026-10-31
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces follow the elevation system, not picked names" (Q203-Q206), Q234
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Surfaces follow the elevation system, not picked names" (Q203-Q206), Q234
 ---
 
 # Rail items are plain buttons, not SDK button parts

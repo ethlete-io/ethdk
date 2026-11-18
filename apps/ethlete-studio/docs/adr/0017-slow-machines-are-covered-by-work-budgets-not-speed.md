@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "WebKit soak check decisions" (finding 365) item 2
+source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "WebKit soak check decisions" (finding 365) item 2
 ---
 
 # Slow machines are covered by work budgets, not speed
