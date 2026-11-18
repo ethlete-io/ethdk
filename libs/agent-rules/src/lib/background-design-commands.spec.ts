@@ -122,6 +122,34 @@ describe('background-design-commands', () => {
     expect(decisionOf({ command })).toBe('allow');
   });
 
+  it.each([
+    ['an until loop', 'until grep -q "Ready in" dev.log; do sleep 0.5; done'],
+    [
+      'a multi-line until loop',
+      'until [ "$(gh run view 1 --json status -q .status)" = "completed" ]\ndo\n  sleep 60\ndone; echo ok',
+    ],
+    ['a while loop', 'while ! curl -sf localhost:4400 >/dev/null; do sleep 1; done'],
+    ['a while true loop', 'cd /repo && while true; do gh run list --limit 1; /usr/bin/sleep 30; done'],
+  ])('moves %s that sleeps into the background', (_name, command) => {
+    const result = runHook({ command });
+
+    expect(result?.hookSpecificOutput.permissionDecision).toBe('allow');
+    expect(result?.hookSpecificOutput.updatedInput?.['run_in_background']).toBe(true);
+    expect(result?.hookSpecificOutput.updatedInput?.['command']).toBe(command);
+    expect(result?.hookSpecificOutput.permissionDecisionReason).toContain('completion notice');
+  });
+
+  it.each([
+    ['a loop already in the background', { command: 'until test -f x; do sleep 1; done', background: true }],
+    ['a loop without sleep', { command: 'while read -r line; do echo "$line"; done < file.txt' }],
+    ['a for loop that sleeps', { command: 'for i in 1 2 3; do curl -s localhost; sleep 1; done' }],
+    ['a sleep after a finished loop', { command: 'while read -r l; do echo "$l"; done < f; sleep 1' }],
+    ['a loop inside quoted text', { command: 'git commit -m "until x; do sleep 1; done"' }],
+    ['a plain sleep', { command: 'sleep 2 && echo done' }],
+  ])('leaves %s alone', (_name, options) => {
+    expect(decisionOf(options)).toBeNull();
+  });
+
   it('ignores tools other than Bash', () => {
     expect(decisionOf({ command: 'yarn design check', toolName: 'Write' })).toBeNull();
   });
