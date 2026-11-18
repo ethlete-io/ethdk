@@ -30,8 +30,8 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - Every text for the user is German. This overrides an English
   output style (for example ste-clarity): keep its clarity rules, but write them in German.
 - English only for the builder messages, the ADRs and the English plan files; STATUS.md stays German.
-- Text to Tom says what a thing is in plain words: no flags, no plan refs (Impl Q), no part paths unless
-  needed; an ADR number only in brackets after the plain statement.
+- Text to Tom says what a thing is in plain words: no flags, no plan refs, no part paths. A row is named
+  "Auto-Weg-Modus (B608)", never a bare number; an ADR at first mention carries a short content: "ADR 0354 (Plan-Ordnung)".
 
 ## Start
 
@@ -65,21 +65,20 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## When the user is away
 
 - If the user says they are away ("afk"), collect every design question. Do not send a grill round.
-- Keep chat output to one short line per event.
+- Chat output: one short line per event.
 - The away-mode hook switches away/back after 15 min without typed input.
 - When the user says they are back, send all collected questions in one round.
 - Every night shift counts as away (ADR 0259): nothing waits on the user, the builder applies an ADR or parks the
   item, and you ask the collected questions in one morning round.
 - If a collected question blocks the builder (no other work left), play a system sound once:
-  Linux `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga`; Windows (also from WSL)
+  Linux `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga`; Windows/WSL
   `powershell.exe -c "[System.Media.SystemSounds]::Exclamation.Play()"`. Then write one short line on what blocks.
 
 ## Authority over the builder
 
 - If the builder looks stuck, read its pane (`tmux capture-pane -p -t <builder tmux session>`) and the running
   processes (`ps`) before you ask it anything.
-- You may clear its dead background agents and shells, or restart its CLI with the agent-sessions `restart`
-  command and a `/handoff resume` prompt. Agree it with the builder first.
+- You may clear its dead background agents and shells, or restart its CLI (agent-sessions `restart`, `/handoff resume` prompt), after agreeing with the builder.
 
 ## Consumers (ADR 0370)
 
@@ -102,7 +101,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - An ADR records a decision of the human. That a row was built is in git: no ADR, no note. The "as built" text lives only
   in the builder's commit message; you fold its closed rows in with the hourly commit (ADR 0350).
 
-- No agent memory: a lesson becomes a line in its group or a skill. A skill gains words
+- No agent memory: a lesson becomes a group line or a skill. A skill gains words
   only when as many go (counted in words: builder-agent, doc-agent, ethlete-agent-sessions, AGENTS.md).
 - Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/studio/archive/`; never rewrite an archive file by hand.
 

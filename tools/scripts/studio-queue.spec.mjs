@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { queueLines, rowOf } from './studio-queue.mjs';
+import { bareQueueLines, queueLines, rowOf, rowWithName } from './studio-queue.mjs';
 
 const status = [
   '## Gerade in Arbeit',
@@ -9,8 +9,9 @@ const status = [
   '',
   'Der Builder nimmt den ersten offenen Eintrag.',
   '',
-  '1. **B588** ⏳ ready und check - Builder',
-  '2. **B597** ⏳ Plan-Dateien - Doc-Agent',
+  '1. **ready und check (B588)** ⏳ eine Funktion - Builder',
+  '2. **Plan-Dateien (B597)** ⏳ vier Produkte - Doc-Agent',
+  '3. **B598** ⏳ ohne Namen - Builder',
   '',
   '### Einträge',
   '',
@@ -20,8 +21,9 @@ const status = [
 
 test('prints only the numbered rows of the queue section', () => {
   assert.deepEqual(queueLines(status), [
-    '1. **B588** ⏳ ready und check - Builder',
-    '2. **B597** ⏳ Plan-Dateien - Doc-Agent',
+    '1. **ready und check (B588)** ⏳ eine Funktion - Builder',
+    '2. **Plan-Dateien (B597)** ⏳ vier Produkte - Doc-Agent',
+    '3. **B598** ⏳ ohne Namen - Builder',
   ]);
 });
 
@@ -40,12 +42,24 @@ test('appends the rest list of rows.md after the head, in order', () => {
     '',
     '### Warteschlange, Rest',
     '',
-    '3. **B160** ⏳ alt - Builder',
+    '4. **B160** ⏳ alt - Builder',
     '',
     '### Einträge',
   ];
   assert.deepEqual(
-    queueLines(`${status}\n${rows.join('\n')}`).map((line) => line.slice(0, 11)),
-    ['1. **B588**', '2. **B597**', '3. **B160**'],
+    queueLines(`${status}\n${rows.join('\n')}`).map((line) => line.match(/B\d+/)[0]),
+    ['B588', 'B597', 'B598', 'B160'],
   );
+});
+
+test('lists queue lines that lack a short name', () => {
+  assert.deepEqual(bareQueueLines(queueLines(status)), ['3. **B598** ⏳ ohne Namen - Builder']);
+});
+
+test('puts the short name of a row before its number', () => {
+  assert.equal(
+    rowWithName('| B588 | Auto-Weg-Modus | text | ⏳ |'),
+    'Auto-Weg-Modus (B588): | B588 | Auto-Weg-Modus | text | ⏳ |',
+  );
+  assert.equal(rowWithName('| B588 | | text | ⏳ |'), '| B588 | | text | ⏳ |');
 });

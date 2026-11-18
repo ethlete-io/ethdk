@@ -4,7 +4,8 @@ import { studioRowsText } from './studio-plan.mjs';
 
 const QUEUE_HEADING = /^### Warteschlange(, Rest)?\s*$/;
 const HEADING = /^#{1,6} /;
-const QUEUE_ITEM = /^\d+\. \*\*([A-Z]\d+)\*\*/;
+const QUEUE_ITEM = /^\d+\. \*\*(?:.+ \()?[A-Z]\d+b?\)?\*\*/;
+const BARE_ITEM = /^\d+\. \*\*[A-Z]\d+b?\*\*/;
 
 export const queueLines = (statusText) => {
   const queue = [];
@@ -16,7 +17,17 @@ export const queueLines = (statusText) => {
   return queue;
 };
 
+export const bareQueueLines = (queue) => queue.filter((line) => BARE_ITEM.test(line));
+
 export const rowOf = (statusText, id) => statusText.split('\n').find((line) => line.startsWith(`| ${id} |`)) ?? null;
+
+export const rowWithName = (row) => {
+  const [id, name] = row
+    .split('|')
+    .slice(1, 3)
+    .map((cell) => cell.trim());
+  return name ? `${name} (${id}): ${row}` : row;
+};
 
 const main = (argv) => {
   const statusText = studioRowsText(resolve(dirname(fileURLToPath(import.meta.url)), '../..'));
@@ -27,7 +38,7 @@ const main = (argv) => {
       process.stderr.write(`No row ${id} in plans/studio/STATUS.md, queue.md or rows.md.\n`);
       return 1;
     }
-    process.stdout.write(`${row.replace(/\s{2,}/g, ' ')}\n`);
+    process.stdout.write(`${rowWithName(row.replace(/\s{2,}/g, ' '))}\n`);
     return 0;
   }
   const queue = queueLines(statusText);
@@ -35,6 +46,11 @@ const main = (argv) => {
     process.stderr.write('No queue found: plans/studio/STATUS.md has no "### Warteschlange" list.\n');
     return 1;
   }
+  const bare = bareQueueLines(queue);
+  if (bare.length)
+    process.stderr.write(
+      `${bare.length} queue lines have no short name: ${bare.map((line) => line.match(/B\d+b?/)[0]).join(' ')}\n`,
+    );
   process.stdout.write(`${queue.join('\n')}\n`);
   return 0;
 };

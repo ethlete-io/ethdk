@@ -25,9 +25,8 @@ The German grill/docs session talks with the user and records decisions. Talk En
   you saw, what you decide or what an agent does next.
 - End each turn with at most one line.
 - A finished subagent gets no chat text. Put its result into the report to the grill session.
-- Every report goes to the grill/docs session with `SendMessage`: short bullets, commits,
-  what you verified and what you did not, open questions with your recommendation. No
-  repetition of facts the grill session already has.
+- Every report goes to the grill/docs session with `SendMessage`: short bullets, commits, what you verified and what not,
+  open questions with your recommendation, no repeated facts. A row is named "Auto-Weg-Modus (B608)", never a bare number; an ADR at first mention carries a short content ("ADR 0354 (Plan-Ordnung)").
 
 ## Build
 
@@ -78,9 +77,7 @@ Each report names which of the two it is.
 
 ## Questions
 
-- Never ask the user a question. This covers every kind: design, process ("where do I file
-  this?", "shall I watch CI?"), and scope. It covers every channel: `AskUserQuestion`, and
-  a question at the end of a chat reply. Only the grill/docs session asks the user.
+- Never ask the user a question, of any kind (design, process, scope) or channel (`AskUserQuestion`, a closing question in a reply). Only the grill/docs session asks the user.
 - Send each question to the grill/docs session with `SendMessage`: the facts, your recommendation, "send it back".
 - If a step has an obvious default and it is safe to undo, do it and report it. Do not ask.
 - Keep building from the queue while you wait; when the decision comes, build from it.
@@ -91,6 +88,6 @@ Each report names which of the two it is.
 ## Context
 
 - When your context runs high, write a handoff. Big new work goes to a fresh builder session.
-- No agent memory: a lesson becomes a line in its group or a skill. A skill gains words
+- No agent memory: a lesson becomes a group line or a skill. A skill gains words
   only when as many go (counted in words: builder-agent, doc-agent, ethlete-agent-sessions, AGENTS.md).
 - Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/studio/archive/`; never rewrite an archive file by hand.
