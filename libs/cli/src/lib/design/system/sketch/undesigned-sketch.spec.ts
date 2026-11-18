@@ -2,6 +2,7 @@ import { originOf } from '../write-origin';
 import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { transformWithOxc } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
 import { initGitRepo } from '../git-repo.fixtures';
@@ -23,10 +24,15 @@ const BRANCH = '@if (!film().title)';
 const MISSING = { state: 'untitled', props: { film: { title: '' } } };
 const PICTURE = Buffer.from('built look');
 
-const acme = () => {
+const acme = (heroEdit?: (source: string) => string) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-undesigned-sketch-'));
 
   cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+  if (heroEdit) {
+    const hero = join(resolveAcme(target).dir, HERO, 'hero.ts');
+
+    writeFileSync(hero, heroEdit(readFileSync(hero, 'utf8')));
+  }
   writeFileSync(join(target, '.prettierrc'), '{ "singleQuote": true }');
   recordMerged({ product: resolveAcme(target), parts: [HERO] });
   initGitRepo(target, 'base');
@@ -70,6 +76,24 @@ describe('openUndesignedSketch (B251b)', () => {
     expect(readFileSync(join(built, 'untitled.built.ts'), 'utf8')).toContain(
       `data:image/png;base64,${PICTURE.toString('base64')}`,
     );
+  });
+
+  it('wraps a part that already declares Props and states into a variant the design server can transform', async () => {
+    const target = acme(
+      (source) =>
+        `${source.replace('export type HeroProps', 'type Props = { film: Film };\nexport type HeroProps')}\nexport const states = {};\n`,
+    );
+    const sketch = openUndesignedSketch({
+      target,
+      product: resolveAcme(target),
+      part: HERO,
+      branch: BRANCH,
+      missing: MISSING,
+      picture: PICTURE,
+    }) as Sketch;
+    const file = join(sketch.dir, BUILT_VARIANT, HERO, 'hero.ts');
+
+    await expect(transformWithOxc(readFileSync(file, 'utf8'), file)).resolves.toBeDefined();
   });
 
   it('lets the hit wait while the sketch is open, and fails it again once the sketch has a pick', () => {

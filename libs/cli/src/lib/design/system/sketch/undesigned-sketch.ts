@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { basename, resolve } from 'path';
+import ts from 'typescript';
 import { chromiumOf } from '../../browser';
 import { STATE_UNDESIGNED_RULE } from '../build-ready-contract';
 import { withHarnessUrl } from '../harness-server';
@@ -54,28 +55,50 @@ export const undesignedWaitOf = (product: ResolvedProduct) => {
 
 const builtModuleOf = (picture: Buffer) => `export default 'data:image/png;base64,${picture.toString('base64')}';\n`;
 
-const wrappedPartOf = (source: string, missing: Missing) => {
-  const key = JSON.stringify(missing.state).replace(/^"|"$/gu, "'");
+const defaultExportOf = (source: string) => {
+  const file = ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
+  const exported = file.statements.find(
+    (statement): statement is ts.ExportAssignment => ts.isExportAssignment(statement) && !statement.isExportEquals,
+  );
 
-  return `import builtPicture from './${missing.state}.built';
-${source.replace(DEFAULT_EXPORT, 'const drawn = definePart')}
-type Props = Parameters<typeof drawn.render>[0];
-
-const states = { ...drawn.states, ${key}: ${JSON.stringify(missing.props)} as unknown as Props };
-
-export default {
-  ...drawn,
-  states,
-  describe: {
-    ...(drawn as { describe?: Record<string, string> }).describe,
-    ${key}: 'The look the developer built for a state the design lacked; check it against the app.',
-  },
-  render: (props: Props, options?: Parameters<typeof drawn.render>[1]) =>
-    JSON.stringify(props) === JSON.stringify(states[${key}])
-      ? { body: \`<img class="et-built-look" src="\${builtPicture}" alt="" />\`, styles: '.et-built-look { display: block; }' }
-      : drawn.render(props, options),
+  return exported && { start: exported.expression.getStart(file), end: exported.expression.end };
 };
-`;
+
+const unusedNameOf = (source: string, name: string) => {
+  let candidate = name;
+
+  for (let index = 2; new RegExp(`\\b${candidate}\\b`, 'u').test(source); index++) candidate = `${name}${index}`;
+
+  return candidate;
+};
+
+const wrappedPartOf = (source: string, missing: Missing) => {
+  const exported = defaultExportOf(source);
+
+  if (!exported) return source;
+
+  const key = JSON.stringify(missing.state).replace(/^"|"$/gu, "'");
+  const picture = unusedNameOf(source, 'builtPicture');
+
+  return `import ${picture} from './${missing.state}.built';
+${source.slice(0, exported.start)}((drawn) => {
+  type Props = Parameters<typeof drawn.render>[0];
+
+  const states = { ...drawn.states, ${key}: ${JSON.stringify(missing.props)} as unknown as Props };
+
+  return {
+    ...drawn,
+    states,
+    describe: {
+      ...(drawn as { describe?: Record<string, string> }).describe,
+      ${key}: 'The look the developer built for a state the design lacked; check it against the app.',
+    },
+    render: (props: Props, options?: Parameters<typeof drawn.render>[1]) =>
+      JSON.stringify(props) === JSON.stringify(states[${key}])
+        ? { body: \`<img class="et-built-look" src="\${${picture}}" alt="" />\`, styles: '.et-built-look { display: block; }' }
+        : drawn.render(props, options),
+  };
+})(${source.slice(exported.start, exported.end)})${source.slice(exported.end)}`;
 };
 
 /**

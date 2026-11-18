@@ -2264,3 +2264,4 @@ hits" lines and 0 live hits. The entries are removed; no sketch opens for them.
 - B fix: `undesignedWaitOf` is the one predicate; the live compare's `STATE-UNDESIGNED` (`undesignedLiveProblemOf`)
   waits while `<part>@<design state>` is open, and compare logs the waiting states (spec red first).
 - Not verified: a Studio shot of the sketch view, and the live compare wait against a real live spec.
+- Fixed (finding 792): Cause: the `built` wrapper re-declared `type Props` and `const states` beside the part's own, so zoom-chip's variant failed the transform and drew nothing in Studio; it now calls an arrow on the default export and adds only an unused picture import name at top level (spec red first).
