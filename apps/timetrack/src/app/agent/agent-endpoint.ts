@@ -366,7 +366,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     return {
       day,
-      rows: current.rows.map((row) => toApiRow(row, askSubjectOf)),
+      rows: current.rows.filter((row) => row.durationMs !== 0).map((row) => toApiRow(row, askSubjectOf)),
       hidden: current.hidden.map((row) => toApiRow(row, askSubjectOf)),
       proposedMs: current.check.proposedMs,
       loggedMs: current.check.loggedMs,

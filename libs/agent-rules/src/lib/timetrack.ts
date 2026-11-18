@@ -25,7 +25,8 @@ export type TimetrackQueued = { status: 'queued'; approvalId: string };
 
 /** Where a queued write stands. `result` is what the op answered once approved and carried out. */
 export type TimetrackApprovalStatus =
-  | { status: 'queued' | 'rejected' | 'expired'; approvalId: string }
+  | { status: 'queued'; approvalId: string; request?: TimetrackWaitingApproval }
+  | { status: 'rejected' | 'expired'; approvalId: string }
   | { status: 'approved'; approvalId: string; result?: unknown; error?: string };
 
 export type TimetrackIssue = {
@@ -674,6 +675,9 @@ export type TimetrackWaitingApproval = {
   op: string;
   client?: string;
   askedAtMs: number;
+  day?: string;
+  rowIds?: string[];
+  issueKey?: string;
   summary: string;
 };
 

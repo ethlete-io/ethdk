@@ -120,7 +120,11 @@ describe('approvalStatusOf', () => {
   it('reads a running item as still queued', () => {
     const [item] = markApproval(queueOf(CREATE), { id: 'a0', state: 'running' });
 
-    expect(item && approvalStatusOf(item)).toEqual({ status: 'queued', approvalId: 'a0' });
+    expect(item && approvalStatusOf(item)).toMatchObject({
+      status: 'queued',
+      approvalId: 'a0',
+      request: { day: expect.any(String), op: 'jira.create' },
+    });
   });
 
   it('answers the result of an approved item', () => {
@@ -355,6 +359,7 @@ describe('waitingApprovalsOf', () => {
         state: 'queued',
         op: 'jira.create',
         askedAtMs: AT.getTime(),
+        day: expect.any(String),
         summary: 'Pdf export → new issue in ABC',
       },
       {
@@ -362,6 +367,7 @@ describe('waitingApprovalsOf', () => {
         state: 'running',
         op: 'tempo.sync',
         askedAtMs: AT.getTime(),
+        day: '2026-09-28',
         summary: 'Writes the plan of 2026-09-28 to Tempo',
       },
       {
@@ -370,6 +376,8 @@ describe('waitingApprovalsOf', () => {
         op: 'worklog.add',
         client: 'Claude Code',
         askedAtMs: AT.getTime(),
+        day: '2026-09-28',
+        issueKey: 'ABC-1',
         summary: 'Adds a 15m row for ABC-1 to the day',
       },
     ]);

@@ -1485,8 +1485,9 @@ describe('autoModeAskRefusal', () => {
     const named = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row, issueKey: 'ABC-7', source: 'human' });
 
     expect(refusalOf({ kind: 'context', contextId: 'repo:/elsewhere' })).toBe(
-      `${TODAY} holds no unnamed work of context repo:/elsewhere.`,
+      `${TODAY} holds no unnamed work of context repo:/elsewhere. It holds contexts ${CONTEXT.id} and stand-ins ${standIn.id}.`,
     );
+    expect(refusalOf({ kind: 'context', contextId: standIn.id })).toContain(`stand-ins ${standIn.id}`);
     expect(refusalOf(CONTEXT_SUBJECT, { ruled: true })).toBe(
       `A standing rule names context ${CONTEXT.id}, so auto mode is not asked.`,
     );

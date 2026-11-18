@@ -141,13 +141,19 @@ const run = (argv: string[]): number | Promise<number> => {
 
 export * from './lib';
 
+const exitAfterDrain = (code: number) => {
+  process.exitCode = code;
+  // A piped stdout is written asynchronously, and exit() would cut off what is still buffered.
+  process.stdout.write('', () => process.exit(code));
+};
+
 // Guarded so the package can also be imported as a library without running the CLI.
 if (require.main === module) {
   Promise.resolve()
     .then(() => run(process.argv.slice(2)))
-    .then((code) => process.exit(code))
+    .then((code) => exitAfterDrain(code))
     .catch((error: unknown) => {
       console.error(plain(error instanceof Error ? error.message : String(error)));
-      process.exit(1);
+      exitAfterDrain(1);
     });
 }

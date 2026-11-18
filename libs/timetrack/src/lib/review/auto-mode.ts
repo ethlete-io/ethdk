@@ -566,7 +566,16 @@ export const autoModeAskRefusal = (options: {
 
   const id = subject.contextId;
 
-  if (!options.contexts.some((context) => context.id === id)) return `${day} holds no unnamed work of context ${id}.`;
+  if (!options.contexts.some((context) => context.id === id)) {
+    const contextIds = options.contexts.map((context) => context.id);
+    const standInIds = options.standIns.filter((entry) => entry.days.includes(day)).map((entry) => entry.id);
+    const held = [
+      contextIds.length ? `contexts ${contextIds.join(', ')}` : '',
+      standInIds.length ? `stand-ins ${standInIds.join(', ')}` : '',
+    ].filter(Boolean);
+
+    return `${day} holds no unnamed work of context ${id}.${held.length ? ` It holds ${held.join(' and ')}.` : ''}`;
+  }
   if (options.ruledContextIds?.has(id)) return `A standing rule names context ${id}, so auto mode is not asked.`;
   if (handNamedContextIds({ rows: options.rows, unattributed: options.unattributed }).has(id)) {
     return `The user named context ${id} by hand on ${day}, so auto mode leaves it to them.`;

@@ -76,6 +76,7 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
   withheldIssueKey: row.withheldIssueKey,
   sources: sourcesOf(row),
   state: row.state === 'rejected' ? 'rejected' : undefined,
+  hidden: row.state === 'rejected' ? true : undefined,
 });
 
 const overrideOn = (options: { edits: DayReviewEdits; row: ReviewedRow; change: ProposalOverride }): DayReviewEdits => {
@@ -190,8 +191,17 @@ export const setRowDuration = (options: {
   });
 };
 
-export const setRowState = (options: { edits: DayReviewEdits; row: ReviewedRow; state: 'accepted' | 'rejected' }) =>
-  overrideOn({ edits: options.edits, row: options.row, change: { state: options.state } });
+/**
+ * Accepts or rejects a row. A rejected row leaves the timeline like a hidden one, and accepting it
+ * puts it back.
+ */
+export const setRowState = (options: { edits: DayReviewEdits; row: ReviewedRow; state: 'accepted' | 'rejected' }) => {
+  const { edits, row, state } = options;
+
+  if (state === 'rejected') return overrideOn({ edits, row, change: { state, hidden: true } });
+
+  return showRow({ edits: overrideOn({ edits, row, change: { state } }), row });
+};
 
 /**
  * Takes a row off the timeline. It is neither written nor counted as unattributed — `DayReview.hidden`
@@ -621,6 +631,7 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     evidence: mergeEvidence(rows.map((row) => row.evidence)),
     sources: sourcesOf(first),
     state: rows.every((row) => row.state === 'rejected') ? 'rejected' : undefined,
+    hidden: rows.every((row) => row.state === 'rejected') ? true : undefined,
   };
 
   return { ...edits, overrides: withoutOverrides(edits.overrides, [...ids, ...replaces]), pinned: [...kept, merged] };
