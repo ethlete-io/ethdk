@@ -159,6 +159,24 @@ describe('autoModeAsks', () => {
     expect(asks({ day: '2026-08-10' })).toEqual([]);
   });
 
+  it('asks nothing about a day whose rows are frozen, as one a paired machine booked', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+
+    expect(
+      autoModeAsks({
+        enabled: true,
+        day: TODAY,
+        today: TODAY,
+        frozen: true,
+        nowMs: NOW,
+        contexts: [CONTEXT],
+        standIns: [standIn],
+        rows: [],
+        answers: [],
+      }),
+    ).toEqual([]);
+  });
+
   it('asks nothing while auto mode is off', () => {
     expect(
       autoModeAsks({

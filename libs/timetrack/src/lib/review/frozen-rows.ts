@@ -24,21 +24,67 @@ export const isDayHeldByTempo = (options: {
   coverage: Pick<TempoDayCoverage, 'issues'> | null;
 }) => options.ledger.length > 0 || !!options.coverage?.issues.length;
 
+/** The machine a day belongs to (Timetrack ADR 0041): this one, or the paired machine that booked it. */
+export type DayOwner = { kind: 'self' } | { kind: 'peer'; machineId: string };
+
 /**
- * The edits with the day's rows frozen into them, or `null` when nothing is to be frozen: the day is
- * still running, this app booked none of it, or its rows are frozen already. A day only another
- * machine booked stays open, so a later merge still reaches its rows.
+ * Who owns a day: this machine once it wrote to Tempo on it, else a paired machine whose sent rows of
+ * the day hold a booked one, else nobody.
+ */
+export const dayOwnerOf = (options: {
+  /** What this app wrote to Tempo on the day. */
+  ledger: readonly SyncedWorklog[];
+  /** The rows each paired machine sent for the day, by machine id. */
+  peerRows: Readonly<Record<string, PeerDayRows>>;
+}): DayOwner | null => {
+  if (options.ledger.length > 0) return { kind: 'self' };
+
+  const machineId = Object.keys(options.peerRows)
+    .sort()
+    .find((id) => options.peerRows[id]?.rows.some((row) => row.state === 'booked'));
+
+  return machineId ? { kind: 'peer', machineId } : null;
+};
+
+const withoutWork = (rows: DayRows): DayRows => {
+  const { handedOver: _handedOver, remote: _remote, ...kept } = rows;
+
+  return {
+    ...kept,
+    proposals: [],
+    unattributed: [],
+    unnamed: [],
+    unobserved: [],
+    calls: [],
+    timers: [],
+    filledMs: 0,
+    behind: [],
+  };
+};
+
+/**
+ * The edits with the day's rows frozen into them, or `null` when nothing is to be frozen: no machine
+ * owns the day ({@link dayOwnerOf}), this machine does and the day is still running, or its rows are
+ * frozen already. A day a paired machine owns is frozen with none of this machine's work in it, so
+ * nothing here proposes, syncs or auto-names it; the rows that machine sent are drawn over it instead.
  */
 export const withFrozenRows = (options: {
   edits: DayReviewEdits;
   rows: DayRows;
   /** What this app wrote to Tempo on the day. */
   ledger: readonly SyncedWorklog[];
+  /** The rows each paired machine sent for the day, by machine id. */
+  peerRows: Readonly<Record<string, PeerDayRows>>;
   finished: boolean;
-}): DayReviewEdits | null =>
-  options.ledger.length > 0 && options.finished && !options.edits.frozenRows
-    ? { ...options.edits, frozenRows: options.rows }
-    : null;
+}): DayReviewEdits | null => {
+  if (options.edits.frozenRows) return null;
+
+  const owner = dayOwnerOf(options);
+
+  if (owner?.kind === 'peer') return { ...options.edits, frozenRows: withoutWork(options.rows) };
+
+  return owner && options.finished ? { ...options.edits, frozenRows: options.rows } : null;
+};
 
 /** A paired machine's work on a frozen day that the frozen rows do not hold. Drawn, never booked here. */
 export type PeerBand = TimeWindow & {
@@ -94,8 +140,8 @@ const rawPeerBands = (options: {
     );
 
 /**
- * Each paired machine's work on a frozen day, in repository lanes only. A machine that sent its rows
- * of the day (`peerRows`, by machine id, lanes already mapped onto this machine's checkouts) is drawn
+ * Each paired machine's work on a frozen day, in repository lanes only. A machine that sent rows of
+ * the day (`peerRows`, by machine id, lanes already mapped onto this machine's checkouts) is drawn
  * row by row as it sent them. For any other, its raw blocks from the merged read are drawn where the
  * frozen rows hold none of them, `booked` when the merged read names an issue for them that
  * `foreignIssues` (Tempo's work on the day that this app did not write) holds.
@@ -117,7 +163,7 @@ export const frozenDayPeerBands = (options: {
       const machineName = options.machineNames[machineId] ?? machineId;
       const sent = peerRows[machineId];
 
-      if (!sent) {
+      if (!sent?.rows.length) {
         return rawPeerBands({
           machineId,
           machineName,

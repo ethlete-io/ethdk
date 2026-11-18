@@ -385,6 +385,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       enabled: enabled(),
       day,
       today: today(),
+      frozen: !!dayReview.storedEdits()?.frozenRows,
       nowMs: Date.now(),
       contexts: dayReview.unnamed(),
       ruledContextIds: new Set(dayReview.rulesByContext().keys()),
@@ -1309,6 +1310,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           enabled: enabled(),
           day,
           today: today(),
+          frozen: evidence.frozen,
           nowMs: Date.now(),
           contexts: evidence.contexts,
           ruledContextIds: new Set(

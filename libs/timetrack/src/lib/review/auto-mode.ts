@@ -648,7 +648,7 @@ export const leavesUnnamed = (facts: WorkFacts | undefined) => !!facts?.mergeReq
  * holds that holds no answer yet, or whose answer is still auto mode's and was built from evidence the
  * day no longer holds. A context or stand-in is asked only once its work settled, {@link AUTO_MODE_SETTLE_MS}
  * after its last activity, and an answer asked before that counts as outdated once it has. Nothing on any day
- * but today, and nothing while auto mode is off. A stand-in the user reopened is theirs, so it is left
+ * but today, nothing on a day whose rows are frozen, and nothing while auto mode is off. A stand-in the user reopened is theirs, so it is left
  * alone until a reset hands it back, and so is one whose row the user gave a ticket by hand today. A
  * context with a row the user named by hand is never asked again.
  */
@@ -656,6 +656,8 @@ export const autoModeAsks = (options: {
   enabled: boolean;
   day: string;
   today: string;
+  /** Whether the day's rows are frozen, as on a day a paired machine booked (`withFrozenRows`). */
+  frozen?: boolean;
   nowMs: number;
   contexts: readonly UnnamedContext[];
   /** The contexts a standing rule already answers, which the day still lists but never asks about. */
@@ -678,7 +680,7 @@ export const autoModeAsks = (options: {
   /** The stand-ins {@link mirrorMatchedStandInIds} names, asked a first time before their work settles. */
   mirrorMatchedStandInIds?: ReadonlySet<string>;
 }): AutoModeSubject[] => {
-  if (!options.enabled || options.day !== options.today) return [];
+  if (!options.enabled || options.day !== options.today || options.frozen) return [];
 
   const { evidence, approvals } = options;
   const answers = new Map(options.answers.map((answer) => [autoModeSubjectKey(answer.subject), answer]));

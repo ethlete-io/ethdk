@@ -1,4 +1,4 @@
-import { AgentApiDayRows, CollectedEvent, DayReviewEdits } from '@ethlete/timetrack';
+import { AgentApiDayRows, AgentApiTempoSyncPlan, CollectedEvent, DayReviewEdits } from '@ethlete/timetrack';
 import {
   E2E_ISSUE_BRANCH,
   E2E_ISSUE_KEY,
@@ -307,5 +307,66 @@ test.describe('a booked day nothing opened since this app could send rows', () =
     await page.getByRole('button', { name: 'Previous day' }).click();
 
     await expect(page.locator('[data-peer-band]')).toHaveText([`Booked on PC · ${E2E_ISSUE_KEY}`]);
+  });
+});
+
+test.describe('a day only a paired machine booked', () => {
+  const MACBOOK: FakePairedMachine = {
+    machineId: 'mac-1',
+    label: 'MacBook',
+    certFingerprint: 'fp-mac',
+    lastAddr: '192.168.1.20:52741',
+    lastSeenMs: new Date(E2E_NOW).getTime(),
+    clockOffsetMs: 0,
+    pairedAtMs: new Date(E2E_NOW).getTime(),
+    lastPullMs: null,
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: hourOn(BOOKED_DAY),
+      tempo: { worklogs: [tempoWorklogOn({ day: BOOKED_DAY, minutes: 60, startTime: '11:00:00', id: 'w-mac' })] },
+      peers: {
+        paired: [MACBOOK],
+        dayRows: [
+          {
+            machineId: MACBOOK.machineId,
+            rows: {
+              day: BOOKED_DAY,
+              frozen: true,
+              rows: [
+                {
+                  laneKey: `repo:${E2E_REPO}`,
+                  from: new Date(`${BOOKED_DAY}T11:00:00.000Z`),
+                  to: new Date(`${BOOKED_DAY}T12:00:00.000Z`),
+                  issueKey: 'ABC-3020',
+                  description: '',
+                  state: 'booked',
+                  worklogId: 'w-mac',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    await page.goto('/day');
+    await page.getByRole('button', { name: 'Previous day' }).click();
+  });
+
+  test('draws the MacBook’s booked rows and proposes none of its own', async ({ page }) => {
+    await expect.poll(async () => !!(await inputsOf(page, BOOKED_DAY))?.frozenRows).toBe(true);
+    await expect(page.locator('[data-peer-band]')).toHaveText(['Booked on MacBook · ABC-3020']);
+
+    expect(drawnIds(await askAgent<AgentApiDayRows>(page, { op: 'day.rows', day: BOOKED_DAY }))).toEqual([]);
+  });
+
+  test('plans no write to Tempo for it', async ({ page }) => {
+    await expect.poll(async () => !!(await inputsOf(page, BOOKED_DAY))?.frozenRows).toBe(true);
+
+    const plan = await askAgent<AgentApiTempoSyncPlan>(page, { op: 'tempo.sync', day: BOOKED_DAY });
+
+    expect(plan.ok && plan.value.writes).toEqual([]);
   });
 });

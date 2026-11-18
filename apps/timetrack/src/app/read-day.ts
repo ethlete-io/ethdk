@@ -7,6 +7,7 @@ import {
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   EpicOptions,
+  PeerDayRows,
   RecurringPattern,
   StreamDay,
   TimetrackProjectLink,
@@ -30,6 +31,7 @@ import {
 import { Observable, catchError, combineLatest, concatMap, defer, map, of } from 'rxjs';
 import { HostPorts, NOTHING_RECEIVED } from '../host';
 import { streamDayOptionsOf } from './stream-day-options';
+import { receivedDayRowsOn } from './peers/day-rows';
 import { heardChunksOf, transcriptBetween$ } from './transcript-chunks';
 
 export type DayRead = {
@@ -42,6 +44,8 @@ export type DayRead = {
   cut?: CutOptions;
   review: DayReview;
   reviewWith: (edits: DayReviewEdits) => DayReview;
+  /** The rows each paired machine last sent for the day, by machine id, in this machine's lanes. */
+  peerRows: Readonly<Record<string, PeerDayRows>>;
 };
 
 export type DayReadOptions = {
@@ -145,6 +149,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             cut: dayOptions.rows?.cut,
             review: reviewWith(stored),
             reviewWith,
+            peerRows: receivedDayRowsOn({ received, day: key }),
           };
         };
         const first = read();

@@ -211,7 +211,13 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
         ledgerOf$(day).pipe(
           switchMap((ledger) => {
             const freeze = (edits: DayReviewEdits) =>
-              withFrozenRows({ edits, rows: read.day.rows, ledger, finished: finishedDay(day) });
+              withFrozenRows({
+                edits,
+                rows: read.day.rows,
+                ledger,
+                peerRows: read.peerRows,
+                finished: finishedDay(day),
+              });
 
             if (!freeze(editsOf(read))) return of({ read, ledger, froze: false });
 
@@ -303,12 +309,13 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const read$ = (day: string): Observable<DayRead> => bookedRead$(day);
 
   const askEvidenceOf = (read: DayRead) => {
-    const { unattributed } = read.day.rows;
+    const dayRows = editsOf(read).frozenRows ?? read.day.rows;
+    const { unattributed } = dayRows;
     const contexts = unnamedContexts({ unattributed });
     const rules = settings.settings().attributionRules;
 
     return {
-      dayRows: read.day.rows,
+      dayRows,
       contexts,
       unattributed,
       ruledContextIds: new Set(
@@ -398,6 +405,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
     read$(day).pipe(
       map((read) => ({
         ...askEvidenceOf(read),
+        frozen: !!editsOf(read).frozenRows,
         rows: read.reviewWith(editsOf(read)).rows,
         events: read.events,
         streams: read.day.streams,
