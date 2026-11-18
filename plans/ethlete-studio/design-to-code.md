@@ -2268,6 +2268,11 @@ state, `asks` replaces it, identical pairs left to that refusal; the two refusal
 sketch.spec "keeps the states a round asks its question in"; `vitest related` in libs/cli (192 files), lint, typecheck.
 Not verified: a live `sketch ready` refusal (only `sketch check`'s "ready will refuse" lines were run).
 
+Decided (doc agent, technical, refines 78681ea6a, 2026-11-18): the 2 % is measured against the region the round
+changes, not the whole frame: the union box of every live variant's diff against Aktuell in that asked state. A
+whole-frame base cannot be met by a small-region round on a page-sized part (a footer badge on `pages/system` needs
+~37k px). A state with no diff against Aktuell keeps the whole frame as its base.
+
 ## As built (B251a)
 
 Commit df852b421 `feat(cli): Require loading, error and empty states on data parts`. The first half
