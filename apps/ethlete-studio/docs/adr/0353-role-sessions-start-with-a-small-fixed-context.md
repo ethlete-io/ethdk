@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B594
+built: d2d8aeb7a
 decided: 2026-11-18
 source: process review of the analysis session (ethlete-sdk-3f) 2026-11-18, Package E, its proposal approved by the human with "ja wir machen alles was sinn gerbt", relayed through the doc agent
 ---
