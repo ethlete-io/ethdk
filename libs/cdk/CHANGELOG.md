@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.53
+
+### Patch Changes
+
+- Stop the single combobox from emitting an empty `filterChange` before the label of a set value when its options load after the filter debounce.
+
 ## 5.0.0-next.52
 
 ### Patch Changes

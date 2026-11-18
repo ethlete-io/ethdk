@@ -1,5 +1,41 @@
 # ethlete-studio
 
+## 0.2.0-next.25
+
+### Minor Changes
+
+- Studio's part canvas outlines the region each fitted state cell changes against the part's base state and dims the rest, at a zoom-independent stroke; the design server answers the region at `/__design/state-diff`.
+
+### Patch Changes
+
+- `ready.json` records say who builds a part, and Studio marks a developer part as Entwickler-Part.
+- A merged pick of the `built` variant keeps its state as a placeholder: the part gets a `redraw` open point until a sketch draws that state.
+- A part that loads data is build-ready only once it draws a loading, an error and an empty state
+- The System page draws a note on the canvas (Design-Server not running, read error, sketch not found) as a centred card with a warning icon, a title and the hint, matching the design.
+- Nest a part with one user under that user in the part tree across layers, tagged with its own layer
+- The system listing names each part's states with a problem and those whose picture changed since the last sketch merge. Studio's folded part view keeps them open.
+- The headless Studio harness answers `design_project` with the app's own project reader, a `design-host` binary, so a product view gets the same themes and calls there as in the app.
+- Hide the studio menu's Erscheinungsbild and Hilfe & Einstellungen rows until their targets exist.
+- Check the self-hosted update host for updates when the GitHub release cannot be reached
+- Read the zoom chip, panel collapse, rail logo, start logo and system frame captions from the Studio labels, and give comment-row, shell-collapse, inventory-page and start a spec with their own data
+- Stop the canvas frame label and its sentence from clipping their glyphs at any zoom, and show each finding in a part-tree warning tooltip on its own line
+- The second update endpoint now points at the live elrond mirror, https://updates.local.elros.cc:12345.
+- Show a hover, press and focus ring on the paused badge of a sketch
+- The sketch view draws the Aktuell row with its "new in this sketch" placeholder when every shown state is one only the variants declare.
+- Reload only the frames of the redrawn sketch variant, not every variant of the sketch
+- `design check` no longer reads the state names in a part's `dataStates` map as Tailwind classes (CLASS-UNDEFINED). The Studio open-points line of a missing data state names the state the map gives, e.g. `empty (no-sketches)`.
+- Move the inline `linkedSignal` sources in the canvas frame, sketches and sketch view into `computed` sources.
+- The part canvas draws the state difference outline one stroke outside the changed region, kept inside the cell, so it no longer covers glyphs at 100 %; the design harness feeds the `diff-mark` state.
+- A live cell of a part's state grid now draws the same as its picture: an open menu no longer shrinks to a scrolling list there.
+- A grid frame on the part canvas no longer shows "Lädt" forever, and its "States by interaction" head takes the subtle text colour of the design.
+- A click on a comment pin in the Inbox opens its thread as a card beside the pin, with every message, a reply field, Erledigen and Zurückziehen for an own comment; Esc closes it.
+- Close the other studio menu submenu when one opens, also when the open one came from its model.
+- Enable the Erscheinungsbild and Hilfe & Einstellungen rows of the studio menu: they now emit `appearanceChange`, `openSettings`, `openShortcuts`, `openHelp` and `openAbout`, the submenus sit where the design places them, and closing the menu closes them too
+- The zoom chip reads its tooltip texts from the label map.
+- Keep the frame heads of the System page canvas at screen size at any zoom, and fit its frame with the same formula the design draws
+- The system page sample keeps its open-points popover inside the desktop height: shorter exception reasons and no compare blocker beside a direct edit.
+- The title bar drops its `force` input; design compare opens the uncommitted-entries hint by hovering it.
+
 ## 0.2.0-next.24
 
 ### Patch Changes
