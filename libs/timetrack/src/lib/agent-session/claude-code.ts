@@ -471,11 +471,34 @@ const MAILBOX_PROMPT_PREFIXES = ['Mailbox message from ', 'New mailbox message f
 const RESTART_MARKER = '[typed by agent-sessions]';
 const LOCAL_COMMAND_PREFIX = '<command-name>/';
 
+const commandArgsOf = (text: string) => /<command-args>([\s\S]*?)<\/command-args>/.exec(text)?.[1] ?? text;
+
 const isTypedByProgram = (text: string) => {
-  const args = /<command-args>([\s\S]*?)<\/command-args>/.exec(text)?.[1] ?? text;
+  const args = commandArgsOf(text);
 
   return MAILBOX_PROMPT_PREFIXES.some((prefix) => args.startsWith(prefix)) || args.includes(RESTART_MARKER);
 };
+
+const CLEAR_COMMAND = /^<command-name>\/clear<\/command-name>/;
+const HANDOFF_COMMAND = /<command-name>\/(?:[\w-]+-)?handoff<\/command-name>/;
+
+/**
+ * How soon after a `/clear` the restart of an `agent-sessions` copy older than its marker types the
+ * resume prompt: `RESTART_CLEAR_MS` and two `ENTER_DELAY_MS` in `agent-sessions.mjs`, with room for a busy pane.
+ */
+const RESUME_AFTER_CLEAR_MS = 15_000;
+
+const isClearCommand = (record: Record<string, unknown>) => {
+  const content = objectAt(record, 'message')?.['content'];
+
+  return stringAt(record, 'type') === 'user' && typeof content === 'string' && CLEAR_COMMAND.test(content);
+};
+
+const isUnmarkedRestartResume = (text: string, sinceClearMs: number | undefined) =>
+  sinceClearMs !== undefined &&
+  sinceClearMs <= RESUME_AFTER_CLEAR_MS &&
+  HANDOFF_COMMAND.test(text) &&
+  /^resume\b/.test(commandArgsOf(text).trim());
 
 /** The `promptSource` values a person is behind. Anything else the agent wrote for itself. */
 const HUMAN_PROMPT_SOURCES = ['typed', 'queued', 'suggestion_accepted'];
@@ -520,9 +543,9 @@ const askedByOf = (record: Record<string, unknown>, text: string): PromptAskedBy
  */
 const promptOf = (
   record: Record<string, unknown>,
-  context: { workedIn: string | undefined; enqueued: Map<string, Date[]> },
+  context: { workedIn: string | undefined; enqueued: Map<string, Date[]>; clearedAt: Date | undefined },
 ): AgentPromptEvent | null => {
-  const { workedIn, enqueued } = context;
+  const { workedIn, enqueued, clearedAt } = context;
 
   if (stringAt(record, 'type') !== 'user') return null;
   if (record['toolUseResult'] !== undefined && record['toolUseResult'] !== null) return null;
@@ -536,7 +559,11 @@ const promptOf = (
 
   const isQueued = stringAt(record, 'promptSource') === 'queued';
   const typedAt = isQueued ? enqueued.get(message['content'])?.shift() : undefined;
-  const askedBy = isQueued && !typedAt ? 'machine' : askedByOf(record, message['content']);
+  const askedBy =
+    (isQueued && !typedAt) ||
+    isUnmarkedRestartResume(message['content'], clearedAt && activity.at.getTime() - clearedAt.getTime())
+      ? 'machine'
+      : askedByOf(record, message['content']);
 
   return {
     at: typedAt ?? activity.at,
@@ -618,7 +645,7 @@ const leftCwdFor = (record: WorkedRecord) => {
  * The version of the parse rules below. Raise it with every change that alters what a log already read
  * would store: the collector then reads each stored log again from its top, without anyone asking.
  */
-export const CLAUDE_CODE_PARSER_VERSION = 3;
+export const CLAUDE_CODE_PARSER_VERSION = 4;
 
 /** The log group of a Claude Code log id: a subagent's log sits under its parent session's id. */
 export const claudeCodeLogGroupOf = (logId: string) => logId.split('/')[0] ?? logId;
@@ -650,6 +677,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const usageByTurnId = new Map<string, AgentUsageEvent>();
   const promptById = new Map<string, AgentPromptEvent>();
   const enqueued = new Map<string, Date[]>();
+  let clearedAt: Date | undefined;
   let unparsedLines = 0;
   let workedIn = options.resume?.session?.workedIn;
 
@@ -678,7 +706,9 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
     // Kept behind `after` for the same reason spend is: the record's own id is what the store
     // deduplicates a prompt on, so a re-read appends nothing.
-    const prompt = promptOf(parsed, { workedIn, enqueued });
+    const prompt = promptOf(parsed, { workedIn, enqueued, clearedAt });
+
+    if (prompt && isClearCommand(parsed)) clearedAt = prompt.at;
 
     if (prompt && !promptById.has(prompt.promptId)) promptById.set(prompt.promptId, prompt);
 

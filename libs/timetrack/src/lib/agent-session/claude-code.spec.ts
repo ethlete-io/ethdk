@@ -600,6 +600,27 @@ describe('parseClaudeCodeSessionLog prompts', () => {
     expect(parse([prompt({ minute: 5, content, extra: human })]).prompts[0]?.askedBy).toBe('human');
   });
 
+  describe('a restart of an agent-sessions copy older than its marker', () => {
+    const clear =
+      '{"parentUuid":"c6904bdd-75e9-4329-88d5-66cb587f5264","isSidechain":false,"type":"user","message":{"role":"user","content":"<command-name>/clear</command-name>\\n            <command-message>clear</command-message>\\n            <command-args></command-args>"},"uuid":"68327b70-ad79-483f-8673-ef879a01de6f","timestamp":"2026-11-18T00:21:12.485Z","userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}';
+    const resumeAt = (timestamp: string) =>
+      `{"parentUuid":"14d6ab9c-e13a-47c6-949c-43739e724308","isSidechain":false,"promptId":"8054b9c2-b052-4086-aab8-10b39a8bc710","type":"user","message":{"role":"user","content":"<command-message>ethlete-handoff</command-message>\\n<command-name>/ethlete-handoff</command-name>\\n<command-args>resume post-upgrade</command-args>"},"uuid":"fc3df37c-c554-4dab-9ace-4c64a6072230","timestamp":"${timestamp}","origin":{"kind":"human"},"turnOrigin":"human","turnPosition":{"promptIndex":1,"turnIndex":1},"userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}`;
+    const askedBy = (lines: string[]) =>
+      parse(lines).prompts.find((event) => event.promptId === 'fc3df37c-c554-4dab-9ace-4c64a6072230')?.askedBy;
+
+    it('says the machine asked, for the handoff resume it typed seconds after its /clear', () => {
+      expect(askedBy([clear, resumeAt('2026-11-18T00:21:17.445Z')])).toBe('machine');
+    });
+
+    it('still says a human asked, for a handoff resume long after a /clear', () => {
+      expect(askedBy([clear, resumeAt('2026-11-18T00:23:17.445Z')])).toBe('human');
+    });
+
+    it('still says a human asked, for a handoff resume no /clear came before', () => {
+      expect(askedBy([resumeAt('2026-11-18T00:21:17.445Z')])).toBe('human');
+    });
+  });
+
   it('counts a queued prompt at the time it was typed, not delivered', () => {
     const enqueue = JSON.stringify({
       type: 'queue-operation',
