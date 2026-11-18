@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B606
+built: 977f1313e
 decided: 2026-11-18
 source: proposal of the analysis session (ethlete-sdk-3f) 2026-11-18, approved by the human, relayed through the doc agent
 ---
