@@ -2660,3 +2660,12 @@ per step, more than the 6 live slots, and counted 0 empty cells at +30 and +300 
 probe. With pictures held for 60 s no picture loads during the 49 s case, so every near cell is without a picture: the
 finding 612 setting. `liveShotsOf` keeps every painted cell without a picture live outside the cap, which covers it.
 Not verified: the CI runner; a cell whose picture loads and then expires mid-scroll.
+
+## As built (B497)
+
+Landed on 3f67e3277 as the `prefer-computed-linked-signal-source` rule in `@ethlete/eslint-plugin`: a warning in the
+recommended config, no fixer, listed in `apps/docs/eslint/rules.md`. Its rule spec and the recommended-config specs
+pass. The 4 hits in ethlete-studio (canvas frame, sketches twice, sketch view) moved to `computed` sources, and
+`nx lint ethlete-studio` (`--max-warnings=0`) passes; lint of components, core, query, cdk, timetrack, contentful,
+query-devtools, docs-examples and storybook gives no hit. `et:design check` of canvas-frames and sketches shows no
+finding. Not verified: story files outside those lint configs.

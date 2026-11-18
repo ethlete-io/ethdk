@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B497
+built: 3f67e3277
 decided: 2026-11-12
 source: chat with the doc agent 2026-11-12 (morning round)
 ---
