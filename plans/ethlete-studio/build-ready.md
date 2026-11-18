@@ -261,8 +261,9 @@ On the `studio-serve` tmux server (:4402), after S6b:
 
 ## Where B250 and B251 plug in
 
-- **B250** (presentational check before and after the build): one more rule in S3's slow set, its problem a `Blocker`
-  of kind `problem`; no change to `buildReadyOf`.
+- **B250** (presentational check before and after the build): a classification printed next to build-ready, not a
+  `Blocker`: a blocker would refuse `design task` for every developer part, against decision 4. No change to
+  `buildReadyOf`. As built: `design-to-code.md` "As built (B250)".
 - **B251** (dev-built missing state becomes a sketch variant; loading/error/empty mandatory for data parts): the
   mandatory states are `missing-state` open points (S1 path); the dev-built state reuses S5's edit-sketch builder.
 
