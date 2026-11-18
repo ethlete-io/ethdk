@@ -734,6 +734,7 @@
     grid-column: 1 / -1;
     position: sticky;
     inset-inline-start: 0;
+    box-sizing: border-box;
     inline-size: var(--_et-table-viewport-inline-size, 100%);
     padding: 32px var(--et-table-cell-padding-inline);
     color: var(--et-surface-color-muted-solid, CanvasText);

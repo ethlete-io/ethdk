@@ -1107,3 +1107,12 @@ documents, the docs example rendered in the built site, real touch devices.
 - Verified: new spec, both halves bite (unlisted scroll box, listed state without one); `vitest related` 1754 tests;
   `design check --product sdk` and `--product studio` with the working tree: 0 findings, the new picker state draws
   a scrolling menu and `open` does not. Not verified: a live Studio shot of the picker's `open-scrolls` cell.
+- Overflow fixes (finding 343): table empty and error fixed in the component. Cause (measured: content 470 in 446,
+  24 px = the two inline paddings): the message cell sizes to the viewport width with `content-box`, so its padding
+  overflows the table wherever no global `border-box` reset applies; the cell now sets `box-sizing: border-box` and
+  its two baseline entries are gone. Held with their entries: scrollable short-content (suspect, matches the measured 436 = 0 +
+  12 + 200 + 12 + 200 + 12 + 0: the part passes `itemGap` only with `itemSize`, so the observers' compensating
+  margin misses the 12 px gap the real component measures; the one-line fix moves every horizontal item 12 px and
+  opens a direct-edit sketch, which only a pick closes), stream consent and error at 320px (content 186 in a 162
+  slot with the icon already hidden; fitting needs a smaller spacing or less text, a visible choice) and studio
+  pages/system (content 771 and 721 in the 80vh cap of 718; fitting needs a shorter sample or another layout).
