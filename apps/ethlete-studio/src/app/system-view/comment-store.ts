@@ -8,6 +8,9 @@ import {
   ProductAddress,
   commentChanges$,
   listedComments$,
+  replyToComment$,
+  resolveComment$,
+  withdrawComment$,
   writeComment$,
 } from '../../host/design';
 import { CommentSendPhase } from '../design-parts/system-page/comment-draft.component';
@@ -140,6 +143,13 @@ export class CommentStore {
   /** The design server's reason for refusing the last send, empty unless the phase is `rejected`. */
   public sendReason = signal('');
 
+  public replyText = signal('');
+
+  public replyPhase = signal<CommentSendPhase | null>(null);
+
+  /** The design server's reason for refusing the last reply, empty unless the reply phase is `rejected`. */
+  public replyReason = signal('');
+
   /** Reads the comments of the product `source` names, again whenever its revision changes. */
   public connect(source: Signal<CommentSource>) {
     this.source.set(source);
@@ -223,6 +233,53 @@ export class CommentStore {
       .subscribe();
   }
 
+  /** Adds `text` as the user's reply to the thread `id`; a failed send keeps the reply text. */
+  public reply(id: string, text: string) {
+    const address = this.address();
+    const trimmed = text.trim();
+
+    if (!address || !trimmed || this.replyPhase() === 'busy') return;
+
+    this.settleReply('busy');
+    replyToComment$(address, { id, text: trimmed })
+      .pipe(
+        tap(() => {
+          this.settleReply(null);
+          this.replyText.set('');
+          this.reloads.update((count) => count + 1);
+        }),
+        catchError((error: unknown) => {
+          const refusal = refusalOf(error);
+
+          console.error('Replying to the comment failed:', messageOf(error));
+          if (refusal === null) this.settleReply('error');
+          else this.settleReply('rejected', refusal);
+
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  /** Drops the reply text and its send phase, as the thread card closes or shows another thread. */
+  public clearReply() {
+    if (this.replyPhase() === 'busy') return;
+
+    this.replyText.set('');
+    this.settleReply(null);
+  }
+
+  /** Closes the thread `id` as done. */
+  public resolve(id: string) {
+    this.change(id, { call: resolveComment$, failure: 'Resolving the comment failed:' });
+  }
+
+  /** Deletes the comment `id` with its thread. */
+  public withdraw(id: string) {
+    this.change(id, { call: withdrawComment$, failure: 'Withdrawing the comment failed:' });
+  }
+
   /** Shows or hides the comment sidebar, and remembers it for the next start. */
   public showPanel(open: boolean) {
     this.panelOpen.set(open);
@@ -233,6 +290,32 @@ export class CommentStore {
   public showResolved(shown: boolean) {
     this.resolvedShown.set(shown);
     rememberView({ resolvedShown: shown });
+  }
+
+  private change(
+    id: string,
+    { call, failure }: { call: (address: ProductAddress, id: string) => Observable<unknown>; failure: string },
+  ) {
+    const address = this.address();
+
+    if (!address) return;
+
+    call(address, id)
+      .pipe(
+        tap(() => this.reloads.update((count) => count + 1)),
+        catchError((error: unknown) => {
+          console.error(failure, messageOf(error));
+
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private settleReply(phase: CommentSendPhase | null, reason = '') {
+    this.replyPhase.set(phase);
+    this.replyReason.set(reason);
   }
 
   private settle(phase: CommentSendPhase | null, reason = '') {

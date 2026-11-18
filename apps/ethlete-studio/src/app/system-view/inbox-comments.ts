@@ -1,5 +1,5 @@
 import { ListedComment } from '../../host/design';
-import { InboxAgent, InboxComment } from '../design-parts/inbox/inbox-sample';
+import { InboxAgent, InboxComment, InboxMessage, InboxThread } from '../design-parts/inbox/inbox-sample';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -103,4 +103,21 @@ export const modelNameOf = (id: string) => {
   }
 
   return id;
+};
+
+/** The opened thread of `comment`: its first text and every reply, oldest first; the user's own ones are `own`. */
+export const inboxThreadOf = (
+  comment: ListedComment,
+  { now, userName }: { now: number; userName?: string | null },
+): Omit<InboxThread, 'phase' | 'reason'> => {
+  const { part, state } = inboxCommentOf(comment, { now, userName });
+  const first = { by: 'user' as const, author: undefined, text: comment.text, createdAt: comment.createdAt };
+  const messages = [first, ...comment.replies].map((message): InboxMessage => ({
+    ...(message.by === 'user' ? writerOf(userName) : senderOf(message.by, message.author)),
+    when: inboxAgeOf(message.createdAt, now),
+    text: message.text,
+    ...(message.by === 'user' ? { own: true } : {}),
+  }));
+
+  return { id: comment.id, place: `${part} › ${state}`, messages };
 };

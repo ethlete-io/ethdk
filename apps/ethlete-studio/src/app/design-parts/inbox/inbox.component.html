@@ -95,15 +95,34 @@
     </div>
   </div>
   @if (canvas(); as canvas) {
-    <ng-container *ngTemplateOutlet="canvas" />
+    <ng-container *ngTemplateOutlet="canvas; context: { $implicit: thread() ? threadCard : null }" />
   } @else {
     <ethlete-canvas-frames class="w-full">
       <figure [class]="FRAME_CLASS">
         <figcaption [class]="FRAME_HEAD_CLASS">button</figcaption>
+        @if (thread()) {
+          <ng-container *ngTemplateOutlet="threadCard" />
+        }
       </figure>
     </ethlete-canvas-frames>
   }
 </ethlete-shell-page>
+
+<ng-template #threadCard>
+  @if (thread(); as opened) {
+    <ethlete-thread-card
+      [(text)]="replyText"
+      [place]="opened.place"
+      [messages]="opened.messages"
+      [phase]="opened.phase ?? null"
+      [reason]="opened.reason ?? ''"
+      (replyComment)="replyComment.emit($event)"
+      (resolveThread)="resolveThread.emit()"
+      (withdrawComment)="withdrawComment.emit($event)"
+      (dismiss)="closeThread.emit()"
+    />
+  }
+</ng-template>
 
 <ng-template #groupHead let-title let-count="count">
   <div

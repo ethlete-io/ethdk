@@ -6,7 +6,8 @@ import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { FRAME_CLASS, FRAME_HEAD_CLASS } from '../system-page/system-page.component';
-import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
+import { INBOX_SAMPLE, InboxComment, InboxThread } from './inbox-sample';
+import { ThreadCardComponent } from './thread-card.component';
 import { CommentRowComponent } from '../comment-flow/comment-row.component';
 
 export type InboxOpenOn = 'all' | 'active' | 'others' | 'none';
@@ -27,6 +28,7 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
     CanvasFramesComponent,
     AgentLogoComponent,
     CommentRowComponent,
+    ThreadCardComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
@@ -40,10 +42,16 @@ export class InboxComponent {
   public openOn = input<InboxOpenOn>('all');
   public load = input<InboxLoad>('loaded');
   public canvas = input<TemplateRef<unknown> | null>(null);
+  public thread = input<InboxThread | null>(null);
+  public replyText = model('');
 
   public shellAction = output<ShellAction>();
   public pick = output<string>();
   public retry = output();
+  public replyComment = output<string>();
+  public resolveThread = output();
+  public withdrawComment = output<number>();
+  public closeThread = output();
 
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;

@@ -9,6 +9,9 @@ const host = vi.hoisted(() => ({
   list: vi.fn<(address: ProductAddress) => Observable<ListedComments>>(),
   changes: vi.fn<(port: number) => Observable<CommentEvent>>(),
   write: vi.fn<(address: ProductAddress, comment: unknown) => Observable<ListedComment>>(),
+  reply: vi.fn<(address: ProductAddress, reply: unknown) => Observable<ListedComment>>(),
+  resolve: vi.fn<(address: ProductAddress, id: string) => Observable<{ id: string }>>(),
+  withdraw: vi.fn<(address: ProductAddress, id: string) => Observable<{ id: string }>>(),
 }));
 
 vi.mock('../../host/design', async (importOriginal) => ({
@@ -16,6 +19,9 @@ vi.mock('../../host/design', async (importOriginal) => ({
   listedComments$: host.list,
   commentChanges$: host.changes,
   writeComment$: host.write,
+  replyToComment$: host.reply,
+  resolveComment$: host.resolve,
+  withdrawComment$: host.withdraw,
 }));
 
 const listed = (id: string, createdAt: string): ListedComment => ({
@@ -173,6 +179,55 @@ describe('CommentStore', () => {
     expect(host.list.mock.calls.length).toBe(loads + 1);
 
     vi.useRealTimers();
+  });
+
+  describe('working on a thread', () => {
+    it('sends the trimmed reply, clears it and reloads; a failed one keeps it with the error phase', () => {
+      const { store } = setup();
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const loads = host.list.mock.calls.length;
+
+      host.reply.mockReset().mockReturnValue(of(listed('a', '2026-10-27T10:00:01Z')));
+      store.replyText.set('  Passt  ');
+      store.reply('a', store.replyText());
+
+      expect(host.reply).toHaveBeenCalledWith(ADDRESS, { id: 'a', text: 'Passt' });
+      TestBed.tick();
+      expect(store.replyText()).toBe('');
+      expect(store.replyPhase()).toBeNull();
+      expect(host.list.mock.calls.length).toBe(loads + 1);
+
+      host.reply.mockReset().mockReturnValue(throwError(() => new DesignAnswerError('kaputt', 500)));
+      store.replyText.set('Passt');
+      store.reply('a', 'Passt');
+      expect(store.replyPhase()).toBe('error');
+      expect(store.replyText()).toBe('Passt');
+
+      host.reply.mockReset().mockReturnValue(throwError(() => new DesignAnswerError('no open comment a', 404)));
+      store.reply('a', 'Passt');
+      expect(store.replyPhase()).toBe('rejected');
+      expect(store.replyReason()).toBe('no open comment a');
+
+      store.clearReply();
+      expect(store.replyText()).toBe('');
+      expect(store.replyPhase()).toBeNull();
+      logged.mockRestore();
+    });
+
+    it('resolves and withdraws a thread, then reloads the list', () => {
+      const { store } = setup();
+      const loads = host.list.mock.calls.length;
+
+      host.resolve.mockReset().mockReturnValue(of({ id: 'a' }));
+      host.withdraw.mockReset().mockReturnValue(of({ id: 'b' }));
+      store.resolve('a');
+      store.withdraw('b');
+      TestBed.tick();
+
+      expect(host.resolve).toHaveBeenCalledWith(ADDRESS, 'a');
+      expect(host.withdraw).toHaveBeenCalledWith(ADDRESS, 'b');
+      expect(host.list.mock.calls.length).toBe(loads + 1);
+    });
   });
 
   describe('writing a comment', () => {

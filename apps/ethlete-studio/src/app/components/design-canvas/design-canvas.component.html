@@ -217,7 +217,11 @@
         (click)="$event.stopPropagation()"
         data-comment-pin
       />
-      @if (placed.open) {
+      @if (placed.open && pinCard(); as card) {
+        <div (click)="$event.stopPropagation()" class="absolute top-0 left-full ml-space-3" role="presentation">
+          <ng-container [ngTemplateOutlet]="card" />
+        </div>
+      } @else if (placed.open && pinCard() === undefined) {
         <div
           class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 text-[1.3rem] text-text shadow-lg"
           data-comment-text

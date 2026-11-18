@@ -1,5 +1,5 @@
 import { ListedComment } from '../../host/design';
-import { inboxAgeOf, inboxCommentOf } from './inbox-comments';
+import { inboxAgeOf, inboxCommentOf, inboxThreadOf } from './inbox-comments';
 
 const NOW = Date.parse('2026-11-04T15:00:00');
 
@@ -75,5 +75,30 @@ describe('inboxCommentOf', () => {
 
     expect(row).toMatchObject({ author: 'mistral-large', initials: 'A', resolved: true, unread: false });
     expect(row.agent).toBeUndefined();
+  });
+});
+
+describe('inboxThreadOf', () => {
+  it('lists the first text and every reply oldest first, the own ones marked, at the place of the comment', () => {
+    const thread = inboxThreadOf(
+      comment({
+        interaction: 'hover',
+        replies: [
+          { by: 'agent', author: 'gpt-6', text: 'Darker now.', createdAt: '2026-11-04T14:30:00' },
+          { by: 'user', text: 'Good.', createdAt: '2026-11-04T14:58:00' },
+        ],
+      }),
+      { now: NOW, userName: 'human' },
+    );
+
+    expect(thread).toEqual({
+      id: 'a',
+      place: 'button › filled · hover',
+      messages: [
+        { author: 'human', initials: 'H', when: 'vor 1 Std', text: 'Too pale', own: true },
+        { author: 'Codex', initials: 'C', agent: 'codex', when: 'vor 30 Min', text: 'Darker now.' },
+        { author: 'human', initials: 'H', when: 'vor 2 Min', text: 'Good.', own: true },
+      ],
+    });
   });
 });

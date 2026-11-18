@@ -1,4 +1,5 @@
 import { AgentLogoName } from '../../icons/agent-logos';
+import { CommentSendPhase } from '../system-page/comment-draft.component';
 
 export type InboxAgent = AgentLogoName;
 
@@ -14,6 +15,24 @@ export type InboxComment = {
   replies: number;
   unread?: boolean;
   resolved?: boolean;
+};
+
+export type InboxMessage = {
+  author: string;
+  initials: string;
+  agent?: InboxAgent;
+  when: string;
+  text: string;
+  own?: boolean;
+};
+
+/** The opened thread of the selected comment, with the send phase of the reply being written. */
+export type InboxThread = {
+  id: string;
+  place: string;
+  messages: InboxMessage[];
+  phase?: CommentSendPhase | null;
+  reason?: string;
 };
 
 export const INBOX_SAMPLE: InboxComment[] = [
@@ -106,3 +125,49 @@ export const INBOX_SAMPLE: InboxComment[] = [
     resolved: true,
   },
 ];
+
+const HUMAN = { author: 'human', initials: 'H', own: true };
+const CLAUDE = { author: 'Claude', initials: 'C', agent: 'claude' as const };
+
+export const INBOX_THREAD_SAMPLE: Record<string, InboxMessage[]> = {
+  c1: [
+    { ...HUMAN, when: 'vor 2 Std', text: 'Hover und active liegen zu nah beieinander. Mach hover heller.' },
+    { ...CLAUDE, when: 'vor 1 Std', text: 'Ich mische accent mit 12 % Weiß. Passt das so?' },
+    { ...HUMAN, when: 'vor 40 Min', text: 'Noch zu dunkel. Nimm lieber den Token statt der Mischung.' },
+    {
+      ...CLAUDE,
+      when: 'vor 3 Min',
+      text: 'Hover ist jetzt eine Stufe heller, ich nehme accent-hover statt der Mischung. Reicht dir der Abstand zu active noch?',
+    },
+  ],
+  c3: [
+    {
+      ...HUMAN,
+      when: 'vor 1 Std',
+      text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    },
+  ],
+};
+
+/** The app thread of the design's `thread` prop: the sample messages of `id` at the place of its sample comment. */
+export const inboxThreadSampleOf = ({
+  id,
+  phase,
+  reason,
+}: {
+  id: string;
+  phase?: CommentSendPhase;
+  reason?: string;
+}): InboxThread | null => {
+  const comment = INBOX_SAMPLE.find((candidate) => candidate.id === id);
+
+  if (!comment) return null;
+
+  return {
+    id,
+    place: `${comment.part} › ${comment.state}`,
+    messages: INBOX_THREAD_SAMPLE[id] ?? [],
+    ...(phase ? { phase } : {}),
+    ...(reason ? { reason } : {}),
+  };
+};

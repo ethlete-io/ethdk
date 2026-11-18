@@ -72,7 +72,7 @@ import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component
 import { StartComponent } from '../design-parts/start/start.component';
 import { foldedStatesOf, lookStatesOf } from '../design-parts/system-page/folded-states';
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
-import { inboxCommentOf, inboxPartOf, writerOf } from './inbox-comments';
+import { inboxCommentOf, inboxPartOf, inboxThreadOf, writerOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 import { FlowRead, flowRead$, keepLastFlows } from './flow-read';
@@ -122,11 +122,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
 @Component({
   selector: 'ethlete-system-view',
   template: `
-    <ng-template #shellCanvas>
+    <ng-template #shellCanvas let-threadCard>
       <main class="relative grid size-full min-h-0 min-w-0">
         @if (part()) {
           <ethlete-design-canvas
             #partCanvas
+            [pinCard]="threadCard"
             [frames]="frames()"
             [pins]="partPins()"
             [cameraKey]="cameraKey()"
@@ -135,6 +136,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [pointing]="commentStore.active()"
             [pointingTitle]="EMPTY_LABELS.commentOn"
             [draft]="commentStore.draft()"
+            (pinPick)="pickPin($event)"
             (pointPick)="startComment($event)"
             (cameraChange)="rememberCamera($event)"
             class="min-h-0"
@@ -163,6 +165,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       />
     } @else if (section() === 'Inbox') {
       <ethlete-inbox
+        [(replyText)]="commentStore.replyText"
         [comments]="inboxComments()"
         [activePart]="activePart()"
         [selectedId]="pickedCommentId()"
@@ -170,7 +173,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [shell]="pageShell()"
         [load]="inboxLoad()"
         [canvas]="shellCanvas"
+        [thread]="inboxThread()"
         (showResolvedChange)="commentStore.showResolved($event)"
+        (replyComment)="replyToThread($event)"
+        (resolveThread)="resolveThread()"
+        (withdrawComment)="withdrawFromThread($event)"
+        (closeThread)="closeThread()"
         (retry)="commentStore.retry()"
         (pick)="jumpToComment($event)"
         (shellAction)="runShellAction($event)"
@@ -909,6 +917,23 @@ export class SystemViewComponent {
 
   protected pickedCommentId = signal<string | null>(null);
 
+  private threadOpen = signal(false);
+
+  protected inboxThread = computed(() => {
+    const id = this.pickedCommentId();
+    const comment = this.threadOpen()
+      ? [...this.commentStore.comments(), ...this.commentStore.resolved()].find((listed) => listed.id === id)
+      : undefined;
+
+    if (!comment) return null;
+
+    return {
+      ...inboxThreadOf(comment, { now: Date.now(), userName: this.commentStore.userName() }),
+      phase: this.commentStore.replyPhase(),
+      reason: this.commentStore.replyReason(),
+    };
+  });
+
   private pickedResolved = computed(() =>
     this.commentStore.resolved().filter((comment) => comment.id === this.pickedCommentId()),
   );
@@ -1273,8 +1298,48 @@ export class SystemViewComponent {
 
     if (!comment) return;
 
+    if (id !== this.pickedCommentId()) this.closeThread();
     this.pickedCommentId.set(id);
     this.jumpTo(comment);
+  }
+
+  protected pickPin(id: string | null) {
+    if (this.section() !== 'Inbox') return;
+
+    const toggled = id !== null && id === this.pickedCommentId() && this.threadOpen();
+
+    if (id !== this.pickedCommentId()) this.commentStore.clearReply();
+    if (id !== null) this.pickedCommentId.set(id);
+    this.threadOpen.set(id !== null && !toggled);
+  }
+
+  protected closeThread() {
+    this.threadOpen.set(false);
+    this.commentStore.clearReply();
+  }
+
+  protected replyToThread(text: string) {
+    const id = this.inboxThread()?.id;
+
+    if (id) this.commentStore.reply(id, text);
+  }
+
+  protected resolveThread() {
+    const id = this.inboxThread()?.id;
+
+    if (!id) return;
+
+    this.commentStore.resolve(id);
+    this.closeThread();
+  }
+
+  protected withdrawFromThread(index: number) {
+    const id = this.inboxThread()?.id;
+
+    if (!id || index !== 0) return;
+
+    this.commentStore.withdraw(id);
+    this.closeThread();
   }
 
   protected rememberOpen(expanded: readonly string[]) {

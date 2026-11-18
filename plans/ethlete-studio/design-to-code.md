@@ -2082,6 +2082,23 @@ viewed, `sketch ready`, `design check --part pages/inbox`. Not verified: the car
 `max-h-96` scroll, pages/system and the app (row B189 stays open); the sheet passes the 24-frame budget (26) with a
 warning.
 
+As built (B189 slice 2, Inbox thread card in the app): `InboxComponent` takes `thread` (place, messages, send phase and
+reason) and `replyText`, and emits `replyComment`, `resolveThread`, `withdrawComment` (message index) and `closeThread`.
+The card is `design-parts/inbox/thread-card.component.ts`, a port of `shared/thread-card.ts` (canvas dock): SDK
+`et-button`, `et-textarea`, `et-kbd`, labels in `STUDIO_LABELS.commentThread`, the send-error texts reused from
+`commentDraft`. The Inbox hands the card to the shared canvas template; `design-canvas` got `pinCard` (a template shown
+beside the open pin in place of its text; `null` shows nothing, so a closed card keeps the pin selected) and `pinPick`.
+Real behavior: reply posts to `/__design/comment-reply`, Erledigen to `/__design/comment-done`, Zurückziehen under the
+first (own) message to `/__design/comment-withdraw` (new host calls `replyToComment$`, `resolveComment$`,
+`withdrawComment$`, store `reply`/`resolve`/`withdraw`). Zurückziehen under an own reply only emits: the server has no
+call to withdraw a single reply. The harness maps the design prop `thread` onto `thread` and `replyText`
+(`inboxThreadSampleOf`). Verified: `design check --part pages/inbox` (6 findings before, 1 after: the known UNRECORDED;
+the DROPPED-PROP problems are gone), `vitest related` (385 tests), typecheck, lint, studio e2e case "the comment button".
+Not verified: no live shot of the thread state; `design task` refuses the part (stale record, embedded parts not
+build-ready), so `--verify` and compare did not run. The check record is still refused: its action check finds the
+card's buttons and field in the app but not in the design, because the design draws the card inside `slot('canvas')`
+(the same reason the four thread states "cannot be judged"); moving the card out of the slot is a design change.
+
 ## As built (B236)
 
 Cause (finding 289): a part-scoped check drew and checked only the asked part, so `check --part

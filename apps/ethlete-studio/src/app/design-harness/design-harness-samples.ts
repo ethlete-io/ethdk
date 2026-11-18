@@ -37,6 +37,8 @@ import {
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
 import { SHELL_SAMPLE } from '../design-parts/shell-main/shell-page.component';
+import { inboxThreadSampleOf } from '../design-parts/inbox/inbox-sample';
+import { CommentSendPhase } from '../design-parts/system-page/comment-draft.component';
 
 type Props = Record<string, unknown>;
 
@@ -336,6 +338,11 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
         : {}),
       ...(confirm === 'merge' || confirm === 'discard' ? { confirm } : {}),
     };
+  },
+  'pages/inbox': ({ thread, ...props }) => {
+    const opened = thread as { id: string; text?: string; phase?: CommentSendPhase; reason?: string } | undefined;
+
+    return opened ? { ...props, thread: inboxThreadSampleOf(opened), replyText: opened.text ?? '' } : props;
   },
   'pages/system': ({ build, agent, call, listingError, folded, comments, developer, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;

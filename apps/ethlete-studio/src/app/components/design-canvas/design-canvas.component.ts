@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   afterRenderEffect,
   booleanAttribute,
@@ -5,6 +6,7 @@ import {
   contentChildren,
   ElementRef,
   InjectionToken,
+  TemplateRef,
   ViewEncapsulation,
   computed,
   effect,
@@ -214,7 +216,14 @@ const isInteractive = (target: EventTarget | null) => {
   selector: 'ethlete-design-canvas',
   templateUrl: './design-canvas.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent, TOOLTIP_IMPORTS],
+  imports: [
+    NgTemplateOutlet,
+    BUTTON_IMPORTS,
+    CanvasFrameComponent,
+    CommentPinComponent,
+    ZoomChipComponent,
+    TOOLTIP_IMPORTS,
+  ],
   providers: [
     {
       provide: SHOT_FETCH_PRIORITY,
@@ -307,11 +316,20 @@ export class DesignCanvasComponent {
   /** Where the projected `[canvasDraft]` content sits, on a frame; `null` hides it. */
   public draft = input<FramePoint | null>(null);
 
+  /**
+   * What the open pin shows beside it: `undefined` its comment text, a template that card in place of the text,
+   * `null` nothing. With a card set, a pin click reports through `pinPick` instead of toggling the pin.
+   */
+  public pinCard = input<TemplateRef<unknown> | null | undefined>(undefined);
+
   public selectedId = model<string | null>(null);
 
   public activeId = model<string | null>(null);
 
   public pointPick = output<FramePoint>();
+
+  /** The pin a click opened, or `null` when a click or Esc closed the open pin. */
+  public pinPick = output<string | null>();
 
   /** The camera after the user moved it and it came to rest; `null` after a fit, so a reload fits again. */
   public cameraChange = output<Camera | null>();
@@ -887,7 +905,10 @@ export class DesignCanvasComponent {
   }
 
   protected togglePin(id: string) {
-    this.openPinId.set(this.openPinId() === id ? null : id);
+    const next = this.pinCard() === undefined && this.openPinId() === id ? null : id;
+
+    this.openPinId.set(next);
+    this.pinPick.emit(next);
   }
 
   /** Opens a pin's text and moves the camera to its frame. */
@@ -1035,8 +1056,10 @@ export class DesignCanvasComponent {
     }
 
     if (event.key === 'Escape') {
-      if (this.openPinId()) this.openPinId.set(null);
-      else if (this.activeId()) this.leaveActiveFrame();
+      if (this.openPinId()) {
+        this.openPinId.set(null);
+        this.pinPick.emit(null);
+      } else if (this.activeId()) this.leaveActiveFrame();
       else {
         this.selectedId.set(null);
         this.selectedProjected.set(null);

@@ -250,6 +250,16 @@ export const STUDIO_LABELS = {
     sendAgain: 'Erneut senden',
     notSent: 'Kommentar nicht gesendet. Erneut versuchen.',
   },
+  commentThread: {
+    dialog: 'Kommentar-Faden',
+    close: 'Faden schließen',
+    resolve: 'Erledigen',
+    withdraw: 'Zurückziehen',
+    reply: 'Antwort',
+    placeholder: 'Antworten…',
+    send: 'Antworten',
+    escCloses: 'schließt',
+  },
   commentList: {
     title: 'Kommentare',
     open: (count: number) => `${count} offen`,
