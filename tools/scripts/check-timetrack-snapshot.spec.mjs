@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { git, gitEnv, tempGitRepo } from './git-test-env.mjs';
+import { tempDir } from './temp-dir.mjs';
 import { hasFreshSnapshot, isRowChangingPath, snapshotCheck } from './check-timetrack-snapshot.mjs';
 
 const ROW = 'libs/timetrack/src/lib/rows/round.ts';
@@ -43,7 +43,7 @@ test('a spec file under rows passes without a line', () => {
 });
 
 test('freshness follows the mtime of a json file', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'snap-'));
+  const dir = tempDir('snap-');
   assert.equal(hasFreshSnapshot(dir), false);
   const file = join(dir, 'a.json');
   writeFileSync(file, '{}');
