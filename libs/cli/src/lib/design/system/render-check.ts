@@ -184,7 +184,7 @@ export const renderErrorDetailOf = (error: string) =>
 export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
 /** The render rules whose hits on merged parts the rule baseline of their product lists (ADR 0201). */
-export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([CONTROL_HEIGHT_RULE]);
+export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([CONTROL_HEIGHT_RULE, 'HIDDEN-CONTENT']);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
 
@@ -232,7 +232,7 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   };
   const report = (rule, element, detail) => {
     const path = pathOf(element);
-    if (skipsOf(element).has(rule) || seen.has(rule + path)) return;
+    if ((rule !== 'HIDDEN-CONTENT' && skipsOf(element).has(rule)) || seen.has(rule + path)) return;
     seen.add(rule + path);
     const escape = '; on purpose: data-et-skip="' + rule + '" on the element, or definePart({ checks: { skip: [\\'' + rule + '\\'] } })';
     found.push({ rule, path, detail: options.escapable.includes(rule) ? detail + escape : detail });
@@ -347,6 +347,29 @@ ${VISUALLY_HIDDEN_STATEMENTS}
     });
   const pansItself = (element, style) => /^grab/.test(style.cursor) || holdsPannedWorld(element);
   const pans = (element, style) => pansItself(element, style) || [...element.children].some((child) => pansItself(child, getComputedStyle(child)));
+  const FOCUSABLE = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable=true]';
+  const escapesClip = (element, clipper) => {
+    for (let at = element; at && at !== clipper; at = at.parentElement) {
+      const position = getComputedStyle(at).position;
+      if (position === 'fixed' || (position === 'absolute' && !clipper.contains(at.offsetParent))) return true;
+    }
+    return false;
+  };
+  const showsIn = (element, clipper) => getComputedStyle(element).visibility !== 'hidden' && !clippedAway(element) && !escapesClip(element, clipper);
+  const hiddenContentOf = (clipper, style) => {
+    const bottom = clipper.getBoundingClientRect().top + clipper.clientTop + clipper.clientHeight + clipMarginOf(style, 'overflowY');
+    const texts = document.createTreeWalker(clipper, NodeFilter.SHOW_TEXT);
+    for (let text = texts.nextNode(); text; text = texts.nextNode()) {
+      if (!text.textContent.trim() || !showsIn(text.parentElement, clipper)) continue;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      if ([...range.getClientRects()].some((line) => line.width > 0 && line.bottom - bottom > Math.max(1, line.height / 4))) return text.parentElement;
+    }
+    return [...clipper.querySelectorAll(FOCUSABLE)].find((control) => {
+      const rect = control.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.bottom - bottom > 1 && showsIn(control, clipper);
+    });
+  };
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
     const drawn = drawnSizeOf(element);
@@ -355,6 +378,8 @@ ${VISUALLY_HIDDEN_STATEMENTS}
     if (clippedAway(element)) continue;
     const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style) || drawsByClipping(element);
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
+    const hidden = cutY && !cutsOnPurpose && element.clientHeight > 0 && style.visibility !== 'hidden' && hiddenContentOf(element, style);
+    if (hidden) report('HIDDEN-CONTENT', element, (hidden.matches(FOCUSABLE) ? 'the control ' + nameOf(hidden) : '"' + hidden.textContent.trim().slice(0, 32) + '"') + ' runs past the bottom edge of a ' + element.clientWidth + 'x' + element.clientHeight + ' box that clips it (overflow-y: ' + style.overflowY + ') without a scroll bar - let the box grow, scroll it with overflow-y: auto, or shorten the content');
   }
   const floating = [...root.querySelectorAll('*')].filter((element) => {
     const style = getComputedStyle(element);

@@ -9,7 +9,7 @@
   }
 
   .scrollbar-viewport {
-    overflow: hidden;
+    overflow: auto;
   }
 
   .scrollbar-viewport[data-layout='vertical'] {

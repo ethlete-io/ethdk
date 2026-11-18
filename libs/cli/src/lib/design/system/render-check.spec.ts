@@ -712,6 +712,47 @@ export default definePart({
     );
   }, 120_000);
 
+  it('flags text cut at the bottom of a box without a scroll bar, also under a CLIPPED skip', async (context) => {
+    const lines = '<p style="margin: 0">One</p><p style="margin: 0">Two</p><p style="margin: 0">Three</p>';
+    const target = checkout({
+      'components/hidden-text': { body: `<div style="width: 200px; height: 30px; overflow: hidden">${lines}</div>` },
+      'components/hidden-skipped': {
+        body: `<div data-et-skip="CLIPPED HIDDEN-CONTENT" style="width: 200px; height: 30px; overflow: hidden">${lines}</div>`,
+        extra: "checks: { skip: ['CLIPPED'] },",
+      },
+      'components/hidden-panned': {
+        body: `<div style="width: 200px; height: 30px; overflow: hidden; cursor: grab">${lines}</div>`,
+      },
+      'components/hidden-scrolled': {
+        body: `<div style="width: 200px; height: 30px; overflow-y: auto">${lines}</div>`,
+      },
+      'components/hidden-wide': { body: CUT_LOW },
+      'components/hidden-avatar': {
+        body: '<div style="width: 40px; height: 40px; overflow: hidden; border-radius: 50%"><svg width="40" height="80" style="display: block"><rect width="40" height="80"></rect></svg></div>',
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'HIDDEN-CONTENT')
+        .map((issue) => `${issue.part}: ${issue.path} - ${issue.detail}`)
+        .sort(),
+    ).toEqual(
+      ['components/hidden-skipped', 'components/hidden-text'].map(
+        (part) =>
+          `${part}: div[data-et-part=${part}] - "Two" runs past the bottom edge of a 200x30 box that clips it (overflow-y: hidden) without a scroll bar - let the box grow, scroll it with overflow-y: auto, or shorten the content`,
+      ),
+    );
+  }, 120_000);
+
   it('does not flag a ring cut at the edge of a pan or scroll container, but one cut by a box its content fits', async (context) => {
     const ring = '<figure style="margin: 0; width: 100px; height: 40px; box-shadow: 0 0 0 2px currentColor"></figure>';
     const target = checkout({
