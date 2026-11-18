@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B189
+built: 808988edf
 decided: 2026-11-18
 source: doc-agent session 2026-11-18 (morning round), the human on compare tolerance for round edges
 ---

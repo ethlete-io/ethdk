@@ -2128,6 +2128,16 @@ DROPPED-PROP is gone), `--part pages/inbox` only the known UNRECORDED, and a liv
 pin with two Zurückziehen; withdrawing the second removed only that reply. Not verified: a long thread past the card's
 scroll height in the app.
 
+As built (B189 slice 5, ADR 0341 and the inbox record): part compare passes a lone over-tolerance pixel when none of its 8
+neighbours is over and both values lie inside the other picture's 3x3 range on every channel (808988edf,
+`isolatedAntiAlias` in anti-alias.ts; merge-compare and change-box unchanged). The bite spec fails without the rule.
+`task pages/inbox --verify` then refused on two older gates: LITERAL-TEXT (texts now in `STUDIO_LABELS.inbox`, the
+frame caption reads `activePart()`) and NO-SPEC (new `inbox.component.spec.ts`, 6 tests) in aa47da094; the switch
+lost its name when bound as `[attr.aria-label]` (host attribute overwritten by the switch's own null binding), fixed
+as the `aria-label` input in dcf55636e; 629d9ceee. Verified: `design check --part pages/inbox` 0 findings, `task
+pages/inbox --verify aa47da094^..629d9ceee` all 13 states ok and recorded. Not verified: a long thread past the card's
+scroll height.
+
 ## As built (B236)
 
 Cause (finding 289): a part-scoped check drew and checked only the asked part, so `check --part
