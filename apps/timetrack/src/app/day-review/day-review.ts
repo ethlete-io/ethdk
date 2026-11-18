@@ -400,6 +400,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ? classifyCalls({
           events: collected.events,
           rules: settings.settings().callRules,
+          heard: heardChunksOf(collected.transcript),
           until: collected.through,
         })
       : [];

@@ -15,6 +15,15 @@ const CALL_THEN_BROWSER: CollectedEvent[] = [
   { at: at(46), source: 'window', kind: 'window-focus', appId: 'org.mozilla.firefox', title: 'Pull requests' },
 ];
 
+const heardAt = (minutes: number) => ({
+  atMs: at(minutes).getTime(),
+  callStartedAtMs: at(1).getTime(),
+  appId: DISCORD,
+  model: 'm',
+  language: 'de',
+  text: 'Wir verschieben den Release.',
+});
+
 const settings = () => {
   const base = defaultSettings();
 
@@ -47,6 +56,7 @@ test.describe('the rest of a call that went off topic', () => {
       now: at(60),
       events: CALL_THEN_BROWSER,
       settings: settings(),
+      transcription: { chunks: [55, 58, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120].map(heardAt) },
       callSource: { kind: 'linux-pipewire', watchingSinceMs: at(-60).getTime() },
     });
     await page.goto('/day');

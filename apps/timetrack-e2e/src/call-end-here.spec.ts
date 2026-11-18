@@ -281,16 +281,17 @@ test('a row an earlier version ended keeps one rest band and its seam', async ({
   await nameTheCall(page);
 
   await dragEnd(page, bands(page).first());
-  await expect(bands(page)).toHaveCount(2);
+  await expect(bands(page)).toHaveCount(1);
   await expect(bands(page).first()).toHaveAttribute('title', /· 45m$/);
   await expect(follow(page)).toHaveCount(0);
 
   await page.clock.runFor(30 * 60_000);
+  await expect(bands(page)).toHaveCount(2);
   await dragEnd(page, bands(page).last());
   await page.clock.runFor(15 * 60_000);
 
   await expect(bands(page)).toHaveCount(2);
-  await expect(bands(page).last()).toHaveAttribute('title', /^Not yet named · 1h 0m$/);
+  await expect(bands(page).last()).toHaveAttribute('title', /^Not yet named · 45m$/);
   await expect(follow(page)).toBeVisible();
 
   await follow(page).click();
@@ -321,7 +322,7 @@ test.describe('a call row a calendar meeting names', () => {
 
     await dragEnd(page, bands(page).first());
 
-    await expect(bands(page)).toHaveCount(2);
+    await expect(bands(page)).toHaveCount(1);
     await expect(bands(page).first()).toHaveAttribute('title', /· 45m$/);
     await expect(follow(page)).toHaveCount(0);
   });

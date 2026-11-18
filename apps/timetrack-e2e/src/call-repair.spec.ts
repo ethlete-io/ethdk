@@ -15,6 +15,15 @@ const OPEN_ROOM: CollectedEvent[] = [
   { at: at(20), source: 'window', kind: 'window-focus', appId: 'code', title: 'calls.ts - ethlete-sdk - Code' },
 ];
 
+const heardAt = (minutes: number) => ({
+  atMs: at(minutes).getTime(),
+  callStartedAtMs: at(1).getTime(),
+  appId: DISCORD,
+  model: 'm',
+  language: 'de',
+  text: 'Wir verschieben den Release.',
+});
+
 const settings = () => ({ ...defaultSettings(), nudge: { ...defaultSettings().nudge, enabled: false } });
 
 const callSpan = (page: import('@playwright/test').Page) => page.locator(`[data-call="${HELPER}"]`);
@@ -25,6 +34,7 @@ test.describe('a call the store holds no end for', () => {
       now: E2E_NOW,
       events: OPEN_ROOM,
       settings: settings(),
+      transcription: { chunks: [heardAt(239), heardAt(240)] },
       callSource: { kind: 'linux-pipewire', watchingSinceMs: at(-60).getTime() },
     });
     await page.goto('/day');
