@@ -109,6 +109,6 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - Studio merge skips the embedder check (Linux, 18.11., B243): the CLI `sketch merge` reports embedders before/after; the Studio merge (worker) does not run that check. Suspect (code read), first time.
 - B243 merge cost (Linux, 18.11.): the embedder before/after check may add about 80-120 s to a merge at 20 embedders. Suspect (estimate); measure on the next real merge.
 - check outside the resident server (Linux, 17.11., B576): a check run outside the resident server dropped elements/part-tree with "dist/libs/components missing" while the folder existed. Suspect, first time.
-- title-search embedders red (Linux, 18.11., probe 551c18a29): `components/title-search` EMBEDDERS FAIL 5/9 and 7 studio parts UNRECORDED ("implemented before file lists"); `design ready` refuses via foundations/icons not build-ready. Suspect, pre-existing, first time.
+- title-search embedders red (Linux, 18.11., probe 551c18a29): `components/title-search` EMBEDDERS FAIL 5/9; `design ready` refuses via foundations/icons not build-ready. Suspect, pre-existing, first time.
 - task --verify in a scratch copy (Linux, 18.11., B250c): `design task --verify` cannot run in a `yarn scratch:checkout` copy (no git: "git diff HEAD^..HEAD failed"). Suspect, first time.
 - Studio footer vs CLI ready (Linux, 18.11., B250c): Studio footer shows "Nicht baubereit (1)" (one open point "Bild…") while the CLI says READY. Suspect, pre-existing, first time.
