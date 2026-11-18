@@ -40,8 +40,8 @@
     }
   },
   "components/comment-pin": {
-    "hash": "ee918ee33c8449b7",
-    "at": "2026-11-16T00:15:41.030Z",
+    "hash": "ec112f98e471974c",
+    "at": "2026-11-18T08:22:29.410Z",
     "states": {
       "count": "30640ee4d78ae17a",
       "count-12": "85c571f0926ed3d0",
@@ -121,19 +121,19 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "fec1e9d22aeedccc",
+      ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "a5ea5121f68a6653",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
-      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "5464238a3b9f2480",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464",
-      "apps/ethlete-studio/src/app/icons/agent-logos.ts": "7141b2172d570bee",
+      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "4777e8b97f76bac0",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "app": {
       "apps/ethlete-studio/src/app/design-parts/comment-pin/comment-pin.component.html": "72f9b86d39d57f90",
-      "apps/ethlete-studio/src/app/design-parts/comment-pin/comment-pin.component.ts": "9096570c4e5487fb",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "c1f03631a202387e",
-      "apps/ethlete-studio/src/app/icons/agent-logo.component.ts": "09af5e219dac3f4a",
-      "apps/ethlete-studio/src/app/icons/agent-logos.ts": "7141b2172d570bee",
+      "apps/ethlete-studio/src/app/design-parts/comment-pin/comment-pin.component.ts": "0867d6c6da1ff79e",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "240d52aa52b663ed",
+      "apps/ethlete-studio/src/app/icons/agent-logo.component.ts": "73d4c83aba0796f4",
+      "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/core/src/lib/providers/breakpoint-observer.ts": "cda08dc65e6f915c",
       "libs/core/src/lib/providers/renderer.ts": "64c840bab8f7d263",
       "libs/core/src/lib/providers/style-manager.ts": "de64a5368aec14d4",
