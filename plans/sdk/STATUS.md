@@ -13,7 +13,7 @@ Format: was fehlt, wie man es nachstellt, was sie solange tut, ob sie blockiert 
 eine Zeile `S<n>` und bekommt einen Eintrag in der Builder-Warteschlange (ADR 0355: eine Liste laufender Arbeit). Nur
 eine blockierte Sitzung unterbricht sofort.
 
-- S1 (fifagg, 18.11.): fünf Tokens/Looks für waagerechtes `et-progress-steps`, nicht blockiert -> Progress-Steps-Tokens (B617).
+- S1 (fifagg, 18.11.): fünf Tokens/Looks für waagerechtes `et-progress-steps`, gebaut (B617, 209d65db7), kommt mit dem nächsten Prerelease (frühestens 20.11.).
 
 ## Offene Plan-Dateien
 

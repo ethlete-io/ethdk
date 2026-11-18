@@ -112,3 +112,9 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     `rows/attended.ts` counts one attended moment as the whole band instead of cutting at the gaps (ADR 0018); the app
     reads only `~/.claude/projects`, never `~/.claude-second` (B616). Parallel subagents stay in their session's row
     (ADR 0043: the session is the finest grain).
+28. **An incremental read keeps extra samples at each batch edge.** Suspect (B602 probes, 19.11.): the `emitted`
+    thinning state is not on the cursor, so a read every 60 s keeps more samples than a read from the top, and the
+    store depends on poll timing. A read from the top is the correct one (ADR 0005).
+29. **17 rows of 18.11. differ from the 00:12 snapshot for no known change** (logged 20 h vs 1 h 15, night rows accepted
+    FIFAGG-12769/12759). Proven not from B602, the #22 call fix or the re-read path forms. Suspect: the 00:12 snapshot
+    ran 4.5 minutes after the app started, before startup loading finished; testing it needs an app restart.
