@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B424
+built: fd85e585b
 decided: 2026-11-07
 source: desk session 2026-11-07, the human on the long design checks
 ---
