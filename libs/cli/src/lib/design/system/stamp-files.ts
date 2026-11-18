@@ -77,6 +77,14 @@ const writeCachedStamp = (file: string, value: unknown) => {
   writeChangedFile(cacheFile, JSON.stringify({ base: tracked, text: `${JSON.stringify(value, null, 2)}\n` }));
 };
 
+const withoutAt = (entry: unknown) => {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return entry;
+
+  const { at: _at, ...rest } = entry as Record<string, unknown>;
+
+  return rest;
+};
+
 const entriesOf = (text: string | null): Record<string, unknown> => {
   try {
     const parsed: unknown = text === null ? {} : JSON.parse(text);
@@ -105,7 +113,7 @@ export const keepHeldStampsInFiles = (name: string, keys: readonly string[] | 'a
       const next = entriesOf(tracked);
 
       for (const key of new Set([...Object.keys(base), ...Object.keys(run)])) {
-        if (!asked(key) || JSON.stringify(base[key]) === JSON.stringify(run[key])) continue;
+        if (!asked(key) || JSON.stringify(withoutAt(base[key])) === JSON.stringify(withoutAt(run[key]))) continue;
         if (run[key] === undefined) delete next[key];
         else next[key] = run[key];
       }

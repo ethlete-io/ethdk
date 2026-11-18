@@ -131,6 +131,20 @@ describe('keepHeldStampsInFiles', () => {
     expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 1, b: 2 });
   });
 
+  it('leaves the tracked file byte-identical when the run changed only the `at` of an entry', async () => {
+    const file = readyFile();
+    const tracked = '{"a":{"actions":[],"at":"2026-11-14T17:21:52.883Z"}}\n';
+
+    writeFileSync(file, tracked);
+
+    await withStampsInMemory(async () => {
+      writeStampFile(file, { a: { actions: [], at: '2026-11-18T08:45:28.168Z' } });
+      keepHeldStampsInFiles('ready.json', 'all');
+    });
+
+    expect(readFileSync(file, 'utf8')).toBe(tracked);
+  });
+
   it('never carries an entry of the stamp cache into the tracked file', async () => {
     const { file } = productReadyFile();
 
