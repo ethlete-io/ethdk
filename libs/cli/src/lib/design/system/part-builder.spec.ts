@@ -51,7 +51,7 @@ const checkout = (component: string, template = '<et-button>{{ label() }}</et-bu
 
   if (!part) throw new Error('fixture part missing');
 
-  return { product, part };
+  return { product, part, target };
 };
 
 describe('part builder (B250)', () => {
@@ -94,6 +94,44 @@ describe('part builder (B250)', () => {
     expect(developerPartLinesOf({ product: checkout(DEVELOPER).product })[0]).toMatch(
       /^DEVELOPER app-a components\/chip: routes: imports Router .* - a developer builds it$/u,
     );
+  });
+
+  it('follows a plain function imported from a relative app file one level and counts what it injects (B250c)', () => {
+    const component = `import { Component } from '@angular/core';
+import { openPalette, formatLabel } from '../palette/open-palette';
+
+@Component({ selector: 'app-chip', template: '' })
+export class ChipComponent {
+  protected open = openPalette();
+  protected label = formatLabel('x');
+}
+`;
+    const { product, part, target } = checkout(component);
+
+    mkdirSync(join(target, 'src/palette'), { recursive: true });
+    writeFileSync(
+      join(target, 'src/palette/open-palette.ts'),
+      `import { ElementRef, inject } from '@angular/core';
+import { PaletteStore } from './palette.store';
+
+export const openPalette = () => {
+  const store = inject(PaletteStore);
+  return () => store.open();
+};
+
+export function formatLabel(text: string) {
+  inject(ElementRef);
+  return text.toUpperCase();
+}
+`,
+    );
+
+    expect(partBuilderOf({ product, part })).toEqual({
+      builder: 'developer',
+      reasons: [
+        'calls openPalette() from ../palette/open-palette, which injects the service PaletteStore (src/chip/chip.component.ts)',
+      ],
+    });
   });
 
   it('says a part takes data only when it loads data, and then asks for loading, error and empty (B251a)', () => {

@@ -6,6 +6,7 @@ import {
   actionsRerunOf,
   dropPartRecord,
   dropRemovedPartEntries,
+  builderChangedOf,
   readyMarkOf,
   readyPartOf,
   writePartRecord,
@@ -155,7 +156,7 @@ export const recordBuildReady = async (options: {
       const actions = recorded.length === 0 ? [] : await options.actionsOf?.(part);
 
       if (Array.isArray(actions) && actions.length === 0) {
-        if (recorded.length > 0) {
+        if (recorded.length > 0 || builderChangedOf({ product, part })) {
           const declared = await options.declaredActionsOf?.(part);
 
           writePartRecord({

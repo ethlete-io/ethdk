@@ -8,6 +8,7 @@ import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './d
 import { drawnFindingsOf } from './drawn-open-points';
 import { actionsRerunReasonOf, changedEmbeddedOf, EmbeddedHashes, embeddedHashesOf } from './embedded-actions';
 import { partOwnerOf } from './inventory-approval';
+import { partBuilderOf, PartBuilder } from './part-builder';
 import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { repoRootOf } from './reachable-files';
@@ -22,13 +23,16 @@ export const READY_FILE = 'ready.json';
 /**
  * The check record of a build-ready part: the design hash it was checked at, with the hash of each file it covers; it
  * holds only while the hash does. `embedded` holds the app hash of each embedded part its actions ran against. `by`,
- * `cmd` and `pid` name the writer; records written before they were required lack them.
+ * `cmd` and `pid` name the writer; records written before they were required lack them. `builder` says who builds the
+ * part, with `builderReasons` for a developer part; records written before B250c lack both.
  */
 export type PartReady = {
   hash: string;
   files?: FileHashes;
   embedded?: EmbeddedHashes;
   actions?: string[];
+  builder?: PartBuilder['builder'];
+  builderReasons?: string[];
   at: string;
   by?: string;
   cmd?: string;
@@ -48,10 +52,16 @@ const readyFileOf = (dir: string) => resolve(dir, READY_FILE);
 const isReady = (value: unknown): value is PartReady => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, by, cmd, pid, at, files, embedded, actions } = value as Record<string, unknown>;
+  const { hash, by, cmd, pid, at, files, embedded, actions, builder, builderReasons } = value as Record<
+    string,
+    unknown
+  >;
 
   return (
     typeof hash === 'string' &&
+    (builder === undefined || builder === 'designer' || builder === 'developer') &&
+    (builderReasons === undefined ||
+      (Array.isArray(builderReasons) && builderReasons.every((reason) => typeof reason === 'string'))) &&
     (by === undefined || typeof by === 'string') &&
     (cmd === undefined || typeof cmd === 'string') &&
     (pid === undefined || typeof pid === 'number') &&
@@ -138,6 +148,22 @@ export const readyMarkOf = (options: { product: ResolvedProduct; part: string })
 };
 
 /**
+ * Whether the ready mark of `part` lacks the builder its design and component answer now, or names another one; a mark
+ * without a writer is left to the legacy upgrade.
+ */
+export const builderChangedOf = (options: { product: ResolvedProduct; part: string }) => {
+  const found = readyPartOf(options);
+  const mark = readyMarkOf(options);
+
+  if (typeof found === 'string' || mark?.by === undefined) return false;
+
+  const builder = partBuilderOf({ product: options.product, part: found.resolved });
+  const reasons = builder.builder === 'developer' ? builder.reasons : undefined;
+
+  return mark.builder !== builder.builder || JSON.stringify(mark.builderReasons) !== JSON.stringify(reasons);
+};
+
+/**
  * The embedded parts whose app files changed since the actions of `part` ran for its ready mark, `[]` while the mark
  * does not hold or predates the embedded record.
  */
@@ -211,11 +237,14 @@ const writeRecordOf = (options: {
   const previous = existing[options.part];
   const embedded = embeddedHashesOf({ product: options.product, part: found.resolved });
   const actions = options.actions ?? previous?.actions;
+  const builder = partBuilderOf({ product: options.product, part: found.resolved });
   const record: PartReady = {
     hash: found.hash,
     files: found.design.files,
     ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
     ...(actions ? { actions } : {}),
+    builder: builder.builder,
+    ...(builder.builder === 'developer' ? { builderReasons: builder.reasons } : {}),
     at:
       (previous && 'hash' in previous && previous.hash === found.hash ? previous.at : undefined) ??
       options.at ??

@@ -16,8 +16,10 @@ export type BuildBlockerKind = keyof typeof STUDIO_LABELS.buildReady.groups;
 
 export type BuildBlocker = { kind: BuildBlockerKind; text: string; part?: string };
 
-export type BuildReadyStatus =
-  { state: 'ready' } | { state: 'blocked'; blockers: BuildBlocker[] } | { state: 'checking' };
+/** `developer` holds why a developer builds the part; absent for a designer part. */
+export type BuildReadyStatus = (
+  { state: 'ready' } | { state: 'blocked'; blockers: BuildBlocker[] } | { state: 'checking' }
+) & { developer?: string[] };
 
 export type AgentProgress =
   { state: 'working'; doing: string; detail: string } | { state: 'waiting' | 'interrupted' | 'failed'; detail: string };
@@ -62,6 +64,13 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
               </div>
             </span>
           }
+        }
+        @if (current.developer; as reasons) {
+          <span [etTooltip]="reasons.join('; ')" class="flex">
+            <div class="flex flex-wrap items-center">
+              <et-badge variant="outline" size="sm">{{ LABELS.developer }}</et-badge>
+            </div>
+          </span>
         }
         @if (agent(); as progress) {
           @if (progress.state === 'failed') {

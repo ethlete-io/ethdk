@@ -43,6 +43,24 @@ describe('BuildReadyFooterComponent', () => {
     expect(toggle()).toBeNull();
   });
 
+  it('marks a developer part as Entwickler-Part with its reasons as the tooltip, and a designer part not (B250c)', async () => {
+    const { element } = await render({
+      state: 'ready',
+      developer: ['injects the service Store (src/x.component.ts)', 'routes: uses routerLink (src/x.component.ts)'],
+    });
+
+    expect(
+      withTooltip(
+        element,
+        'injects the service Store (src/x.component.ts); routes: uses routerLink (src/x.component.ts)',
+      )?.textContent?.trim(),
+    ).toBe('Entwickler-Part');
+
+    TestBed.resetTestingModule();
+
+    expect((await render({ state: 'ready' })).element.textContent).not.toContain('Entwickler-Part');
+  });
+
   it('shows Wird geprüft while checking', async () => {
     const { element, toggle } = await render({ state: 'checking' });
 

@@ -15,7 +15,10 @@ export type BuildReadyBlocker = { kind: string; text: string; part?: string };
 
 export type BuildReady = { ready: true } | { ready: false; blockers: BuildReadyBlocker[] };
 
-export type PartOpenPoints = { points: OpenPoint[]; buildReady: BuildReady };
+/** `developer` holds why a developer builds the part, from its check record; absent for a designer part. */
+export type PartOpenPoints = { points: OpenPoint[]; buildReady: BuildReady; developer?: string[] };
+
+type ReadyRecord = { builder?: 'designer' | 'developer'; builderReasons?: string[] } | null;
 
 const asked = new Map<string, Observable<unknown>>();
 
@@ -39,4 +42,10 @@ export const openPointsAnswer$ = <TAnswer>({ port, product }: ProductAddress, pa
 
 /** The open points of one part of a product and whether it is build-ready. */
 export const partOpenPoints$ = (address: ProductAddress, part: string): Observable<PartOpenPoints> =>
-  openPointsAnswer$<PartOpenPoints>(address, part).pipe(map(({ points, buildReady }) => ({ points, buildReady })));
+  openPointsAnswer$<PartOpenPoints & { ready?: ReadyRecord }>(address, part).pipe(
+    map(({ points, buildReady, ready }) =>
+      ready?.builder === 'developer'
+        ? { points, buildReady, developer: ready.builderReasons ?? [] }
+        : { points, buildReady },
+    ),
+  );

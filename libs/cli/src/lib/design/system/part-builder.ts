@@ -44,6 +44,18 @@ const isService = (name: string, from: Map<string, string>) => {
 
 const ROUTER_LINK_REASON = 'routes: uses routerLink';
 
+const injectionOf = (call: ts.CallExpression, from: Map<string, string>) => {
+  if (!ts.isIdentifier(call.expression)) return null;
+
+  const callee = call.expression.text;
+  const token = call.arguments[0];
+
+  if (callee === 'inject' && token && ts.isIdentifier(token) && isService(token.text, from))
+    return `injects the service ${token.text}`;
+
+  return INJECT_FUNCTION.test(callee) && isService(callee, from) ? `injects through ${callee}()` : null;
+};
+
 const sourceReasonsOf = perSource((source): string[] => {
   const file = sourceFileOf(source);
   const from = importedFromOf(file);
@@ -57,11 +69,9 @@ const sourceReasonsOf = perSource((source): string[] => {
   const visit = (node: ts.Node) => {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
       const callee = node.expression.text;
-      const token = node.arguments[0];
+      const injection = injectionOf(node, from);
 
-      if (callee === 'inject' && token && ts.isIdentifier(token) && isService(token.text, from))
-        reasons.add(`injects the service ${token.text}`);
-      else if (INJECT_FUNCTION.test(callee) && isService(callee, from)) reasons.add(`injects through ${callee}()`);
+      if (injection) reasons.add(injection);
       else if (DATA_CALLS.has(callee) && (callee === 'fetch' || from.has(callee)))
         reasons.add(`${LOADS_DATA}: calls ${callee}()`);
     }
@@ -103,6 +113,76 @@ const read = (file: string) => {
   }
 };
 
+const RELATIVE_MODULE = /^\.\.?\//u;
+
+const readModule = (base: string) =>
+  [`${base}.ts`, `${base}/index.ts`].map((file) => (existsSync(file) ? read(file) : null)).find((found) => found) ??
+  null;
+
+const functionOf = (file: ts.SourceFile, name: string): ts.Node | null => {
+  for (const statement of file.statements) {
+    if (ts.isFunctionDeclaration(statement) && statement.name?.text === name) return statement.body ?? null;
+    if (!ts.isVariableStatement(statement)) continue;
+
+    const declared = statement.declarationList.declarations.find(
+      (declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === name,
+    );
+    const initializer = declared?.initializer;
+
+    if (initializer && (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer))) return initializer;
+  }
+
+  return null;
+};
+
+const injectionsIn = (node: ts.Node, from: Map<string, string>) => {
+  const found = new Set<string>();
+  const visit = (child: ts.Node) => {
+    const injection = ts.isCallExpression(child) ? injectionOf(child, from) : null;
+
+    if (injection) found.add(injection);
+
+    ts.forEachChild(child, visit);
+  };
+
+  visit(node);
+
+  return [...found];
+};
+
+const calledNamesOf = (file: ts.SourceFile) => {
+  const called = new Set<string>();
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) called.add(node.expression.text);
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(file);
+
+  return called;
+};
+
+/** What the plain functions a component imports from a relative app file inject, one level deep. */
+const helperReasonsOf = (file: string, source: string) => {
+  const parsed = sourceFileOf(source);
+  const called = calledNamesOf(parsed);
+
+  return [...importedFromOf(parsed)].flatMap(([name, module]) => {
+    if (!RELATIVE_MODULE.test(module) || INJECT_FUNCTION.test(name) || !called.has(name)) return [];
+
+    const helper = readModule(resolve(dirname(file), module));
+    const helperFile = helper === null ? null : sourceFileOf(helper);
+    const body = helperFile ? functionOf(helperFile, name) : null;
+
+    if (!helperFile || !body) return [];
+
+    return injectionsIn(body, importedFromOf(helperFile)).map(
+      (injection) => `calls ${name}() from ${module}, which ${injection}`,
+    );
+  });
+};
+
 const componentReasonsOf = (root: string, component: string) => {
   const file = resolve(root, component);
   const source = existsSync(file) ? read(file) : null;
@@ -112,7 +192,9 @@ const componentReasonsOf = (root: string, component: string) => {
   const templateUrl = source.match(TEMPLATE_URL)?.[1];
   const template = templateUrl ? (read(resolve(dirname(file), templateUrl)) ?? '') : '';
 
-  return builderReasonsOf({ source, template }).map((reason) => `${reason} (${component})`);
+  return [...builderReasonsOf({ source, template }), ...helperReasonsOf(file, source)].map(
+    (reason) => `${reason} (${component})`,
+  );
 };
 
 const builderReasonsOfPart = (options: { product: ResolvedProduct; part: ResolvedPart }) => {

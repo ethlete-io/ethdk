@@ -221,6 +221,7 @@ export const STUDIO_LABELS = {
   buildReady: {
     ready: 'Baubereit',
     checking: 'Wird geprüft',
+    developer: 'Entwickler-Part',
     blocked: (count: number) => `Nicht baubereit (${count})`,
     reasons: 'Gründe',
     openEditSketch: 'Sketch öffnen',

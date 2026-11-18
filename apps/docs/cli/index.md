@@ -483,10 +483,13 @@ part's design file before the build and on its `implements` component (and that 
 after it. Any of these makes it a developer part: an `inject()` or constructor parameter of a token outside
 `@angular/core`, `@angular/common`, `@angular/cdk` and `@ethlete/*`; an `inject…()` function from outside them; an import
 from `@angular/router`, `@angular/common/http` or `@ethlete/query`; a call of `fetch`, `resource`, `rxResource` or
-`httpResource`; a `routerLink`. `et design check` prints `DEVELOPER <product> <part>: <reasons> - a developer builds it`
+`httpResource`; a `routerLink`; a call of a plain function the component imports from a relative app file when that
+function injects such a token (one level deep). `et design check` prints `DEVELOPER <product> <part>: <reasons> - a developer builds it`
 per developer part, and `et design task` prints `designer part: presentational` or the developer line with its
-reasons. The classification is no blocker: a developer part is build-ready by the same rules, its spec is the part
-itself, and it is done at compare green.
+reasons. The ready record in `ready.json` holds it as `"builder": "designer"` or `"builder": "developer"` with
+`"builderReasons"`, and Studio marks a developer part with an Entwickler-Part badge (its reasons as the tooltip) in the
+build-ready footer of the open-points popover; a record written before that has no `builder`. The classification is no
+blocker: a developer part is build-ready by the same rules, its spec is the part itself, and it is done at compare green.
 
 A part outside `foundations/` that loads data (one of the `@angular/common/http`, `@ethlete/query` or `fetch`/`resource`
 reasons above, on its design file or its `implements` component) must draw a loading, an error and an empty state.

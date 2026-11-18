@@ -193,6 +193,22 @@ describe('openPointGroupsOf blockers', () => {
 });
 
 describe('buildReadyStatusOf', () => {
+  it('carries the reasons of a developer part beside the status (B250c)', () => {
+    const developer = ['injects the service Store (src/x.component.ts)'];
+
+    expect(buildReadyStatusOf({ points: [], buildReady: { ready: true }, developer })).toEqual({
+      state: 'ready',
+      developer,
+    });
+    expect(
+      buildReadyStatusOf({
+        points: [],
+        buildReady: { ready: false, blockers: [{ kind: 'compare', text: 'hover weicht ab' }] },
+        developer,
+      }),
+    ).toMatchObject({ state: 'blocked', developer });
+  });
+
   it('reads a build-ready part as ready', () => {
     expect(buildReadyStatusOf({ points: [], buildReady: { ready: true } })).toEqual({ state: 'ready' });
   });

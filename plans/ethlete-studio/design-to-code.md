@@ -2202,6 +2202,43 @@ check` over every product: sdk 0, studio-lab 0, studio 3 (`components/title-sear
 all real developer parts, none exempted. Not verified: Studio shows nothing of it yet (no ready.json field, no UI);
 transitive helpers of a component are not followed, so an app helper that injects behind a plain function call is missed.
 
+## As built (B250c)
+
+Grill decision 2026-11-18. Commit `feat(cli): Record who builds a part in ready.json` (sha in the builder's report).
+
+- `writeRecordOf` in `part-ready.ts` writes `partBuilderOf` into each check record: `"builder": "designer"`, or
+  `"builder": "developer"` with `"builderReasons"`. A record without `builder` (written before) still reads; the next
+  write at the same hash adds it and keeps `at`.
+- `part-builder.ts` follows one level of app helpers: a plain function the component imports from a relative file and
+  calls (not an `inject…` name, which already counts) is looked up in that file (`.ts` or `/index.ts`, a function
+  declaration or a `const` arrow/function); each `inject(<service>)` or non-framework `inject…()` in its body adds
+  `calls <fn>() from <module>, which injects the service X`. Helpers of helpers, class methods and re-exports are not
+  followed.
+- Studio: `partOpenPoints$` reads `ready.builder` of the open-points answer into `developer` (the reasons);
+  `buildReadyStatusOf` carries it on `BuildReadyStatus`; the build-ready footer shows an outline badge "Entwickler-Part"
+  beside the status badge with the reasons as its tooltip (variant a). Only a part with a check record shows it.
+- Sketch `pages/system` (round r1 "Entwickler-Part im Baubereit-Footer", ready, no pick): a outline badge + tooltip;
+  b badge + the reasons as muted lines under the footer; c badge + the reasons as their own Gründe group (the
+  disclosure then also shows on a ready part). States `developer-part`, `developer-part-blocked`. The app is built as a;
+  a pick of b or c changes the footer component.
+
+- `builderChangedOf` in `part-ready.ts`: the build-ready pass of `design check` and the serve slow run rewrites a
+  current record whose `builder`/`builderReasons` are missing or differ, so existing records gain the field on the next
+  run; a record without `by` stays for the legacy upgrade (slow-run.spec caught that).
+
+Verified: part-builder.spec (helper case), part-ready.spec (record, legacy read, `builderChangedOf`), Studio
+open-points.spec and build-ready-footer.component.spec, each red on the old code; `vitest related` in libs/cli (162
+files) and apps/ethlete-studio (39 files), lint, typecheck of cli and ethlete-studio; `et:design --working-tree check`
+on pages/system (0 findings), components/title-search, elements/canvas-frames, elements/shell-main (DEVELOPER lines as
+in B250; UNRECORDED on canvas-frames and pages/inbox and EMBEDDERS FAIL on the three, which drop their ready marks).
+
+Not verified: Studio showing the badge live. The screenshot `.claude/handoffs/agent-results/b250c-studio.png` (scratch
+copy, components/title-search) shows the popover footer reading "Nicht baubereit (1)" without the badge: the committed
+record has no `builder`, and `design check` in the copy drops the mark instead of rewriting it, because the part's
+embedders fail. Suspect: the UNRECORDED records in implemented.json (no file lists, untouched by this slice) make
+every embedder of the three developer parts fail, so none of them can hold a fresh record. The sketch variants were
+viewed only on the contact sheet, not in Studio's sketch view.
+
 ## As built (B251a)
 
 Commit df852b421 `feat(cli): Require loading, error and empty states on data parts`. The first half

@@ -25,6 +25,7 @@ import {
   drawnPartPointsOf,
   markPartReady,
   readReady,
+  builderChangedOf,
   readyMarkOf,
   readyPartOf,
   readyPartsOf,
@@ -137,6 +138,7 @@ describe('part ready', () => {
       'components/chip': {
         hash,
         files: expect.any(Object),
+        builder: 'designer',
         at: expect.any(String),
         by: 'spec',
         cmd: expect.any(String),
@@ -170,6 +172,40 @@ describe('part ready', () => {
 
     expect(readFileSync(file, 'utf8')).toBe(before);
     expect(statSync(file).mtimeMs).toBe(past.getTime());
+  });
+
+  it('records who builds the part, and still reads a record written without it (B250c)', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const write = (part: string) =>
+      writePartRecord({ product: productOf(target), part, origin: originOf('spec', 'design ready') });
+
+    writeFileSync(
+      join(target, 'libs/chip.component.ts'),
+      "import { inject } from '@angular/core';\nimport { Store } from './store';\nexport class Chip { store = inject(Store); }\n",
+    );
+
+    expect(write('components/chip')).toMatchObject({
+      builder: 'developer',
+      builderReasons: ['injects the service Store (libs/chip.component.ts)'],
+    });
+    expect(write('components/tag')).toMatchObject({ builder: 'designer' });
+    expect(write('components/tag')).not.toHaveProperty('builderReasons');
+
+    const records = JSON.parse(readFileSync(file, 'utf8'));
+    const legacy = { ...records['components/tag'] };
+
+    delete legacy.builder;
+
+    writeFileSync(file, JSON.stringify({ ...records, 'components/tag': legacy }));
+
+    expect(readyMarkOf({ product: productOf(target), part: 'components/tag' })).toEqual(legacy);
+    expect(builderChangedOf({ product: productOf(target), part: 'components/tag' })).toBe(true);
+    expect(builderChangedOf({ product: productOf(target), part: 'components/chip' })).toBe(false);
+
+    writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
+
+    expect(builderChangedOf({ product: productOf(target), part: 'components/chip' })).toBe(true);
   });
 
   it('keeps the record byte-equal when the same writer rewrites it at the same hash from another process', () => {
@@ -243,6 +279,7 @@ describe('part ready', () => {
       ready: {
         hash,
         files: expect.any(Object),
+        builder: 'designer',
         at: expect.any(String),
         by: 'spec',
         cmd: expect.any(String),

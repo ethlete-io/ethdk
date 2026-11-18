@@ -126,7 +126,13 @@ const ruleBlockerOf = (blocker: BuildReadyBlocker): BuildBlocker => ({
  * runs; checking while only a pending check or a missing check record is left. A blocked status lists each definite
  * blocker, with a direct edit as its own kind and the open points in Studio's words.
  */
-export const buildReadyStatusOf = ({ points, buildReady }: PartOpenPoints): BuildReadyStatus => {
+export const buildReadyStatusOf = (answer: PartOpenPoints): BuildReadyStatus => {
+  const status = statusOf(answer);
+
+  return answer.developer ? { ...status, developer: answer.developer } : status;
+};
+
+const statusOf = ({ points, buildReady }: PartOpenPoints): BuildReadyStatus => {
   if (buildReady.ready) return { state: 'ready' };
   const others = buildReady.blockers.filter((blocker) => blocker.kind !== 'stale-record' && blocker.kind !== 'pending');
   if (others.length === 0 && points.length === 0) return { state: 'checking' };
