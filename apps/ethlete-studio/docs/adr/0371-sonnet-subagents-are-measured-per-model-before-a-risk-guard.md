@@ -30,4 +30,8 @@ the top effort: at max effort Sonnet 5.5 wrote about 60 % more output tokens per
 5.5 ($7.60 vs $5.98); at default or medium effort it was clearly cheaper per solved task. So the log in point 1 also
 records the effort level, and B605 compares cost per finished task per model and effort.
 
+The human added: "wir reden hier übrigens nicht von ersparniss in doller da das hier ne claude sub ist. eher in
+usage limits". The dollar figures above only show the ratio; B605 measures usage (tokens per finished task, weighted
+by model) against the subscription limits, not money.
+
 Points 3 and 4 wait for B605; the order "build 1 and 2 now" is the analysis session's proposal, applied by the doc agent.

@@ -22,3 +22,6 @@ points are the analysis session's text, approved by the human.
 5. Split the handoff skill so that a resume loads only the resume part.
 
 Each point is done when the headless measurement is repeated with the new launch and its number is in the commit.
+
+The second half of point 3 (switch off the synced claude.ai skills) is dropped: Claude Code has no switch for it
+(builder, 2026-11-18). A row follows only if one appears.
