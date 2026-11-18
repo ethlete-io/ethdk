@@ -411,8 +411,8 @@ markdown table of the period: one line per row with a feature, fix or other non-
 sha, result), the parked rows, and a figures line (commit counts, reverts, red CI runs via `gh`,
 subagent starts per model, the running slice). Without config it works from the git log alone.
 Opt in to short names and the parked section with
-`"report": { "planFiles": ["plans/STATUS.md", "plans/*/rows.md"] }`: repo-relative paths or globs of
-markdown files holding `| <id> | <short name> | <what> | <state> | <what is missing> | <who> |` rows
+`"report": { "planFiles": ["plans/STATUS.md", "plans/queue.md", "plans/rows.md"] }`: repo-relative paths
+of markdown files holding `| <id> | <short name> | <what> | <state> | <what is missing> | <who> |` rows
 and `N. **<name> (<id>)**` queue lines. The `report` skill runs it and pastes the output.
 
 ## Git hooks (opt-in)

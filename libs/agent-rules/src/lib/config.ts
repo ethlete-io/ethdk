@@ -54,7 +54,7 @@ export type AwayModeConfig = {
   thresholdMinutes?: number;
 };
 
-/** Opt-in settings of `ethlete-agents report`: repo-relative paths or globs of the markdown files holding row tables and the queue. */
+/** Opt-in settings of `ethlete-agents report`: repo-relative paths of the markdown files holding row tables and the queue. */
 export type ReportConfig = {
   planFiles?: string[];
 };
