@@ -45,3 +45,11 @@ headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first bui
 (~1.8 GB unpacked) into `src-tauri/target/cef`. Studio appends every console error of its window to `console.log` in its app log
 directory (`~/Library/Logs/io.ethlete.studio/` on macOS; `ETHLETE_STUDIO_CONSOLE_LOG` overrides the path), and
 `yarn studio:release-smoke` reads that file, so a shipped bundle needs no debug port.
+
+## Private switch
+
+The repository variable `CI_SELF_HOSTED` (ADR 0342, 0344) is unset, so CI runs on `ubuntu-latest`. Set to `true`, every
+Linux job runs on `[self-hosted, linux, x64]` (the org runner `runner-ethlete`). A pull request from a fork stays on
+`ubuntu-latest`. Not switched: the Tauri bundles, the macOS WebKit job, and the npm publish jobs in `publish.yml` and
+`api-models.yml` (npm trusted publishing needs a GitHub-hosted runner; Verdaccio replaces them). Leave it off until
+the runner group admits this repo.
