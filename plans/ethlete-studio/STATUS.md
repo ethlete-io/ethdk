@@ -29,17 +29,17 @@ origin, Liste in `.claude/handoffs/mac-tank-branches.md`.
 
 Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er ihn gegen git; ist er erledigt, nimmt er den nächsten. Nur der Doc-Agent ordnet die Liste. Ein neuer Befund unterbricht nur bei rotem CI (ADR 0230) oder wenn er den laufenden Eintrag blockiert. Die Zeile „wie gebaut“ steht nur in der Commit-Nachricht (ADR 0350).
 
-1. **B586** ⏳ Erinnerung bei stillem Turn aus für Builder und Subagents; Kontextwarnung einmal pro ... - Builder
-2. **B587** ⏳ Ein Warte-Werkzeug statt `until`-Schleifen: Hintergrundlauf mit Benachrichtigung; Monitor ... - Builder
-3. **B588** ⏳ `ready` und `check` aus einer Funktion; gespeicherte Ready-Marken aus Inhalts-Hashes ... - Builder
-4. **B589** ⏳ Falsche Skill-Zeilen: builder-agent verlangt Changeset für ADR-Edit (ADR 0265 sagt ... - Builder
-5. **B590** ⏳ Alte Handoffs `plans/ethlete-studio/handoff-{builder,builder-mac,c8,cb,doc-agent}.md` ... - Builder
-6. **B591** ⏳ ethlete-design-exploration („der Nutzer wählt“) an ADR 0305 angleichen; ... - Builder
-7. **B592** ⏳ Plan-Dateien nur mit Offenem: design-to-code.md ganz ins Archiv, Budgets senken (ADR 0352) - Builder
-8. **B593** ⏳ Ein Befehl gibt nur die Warteschlange aus (ADR 0352) - Builder
-9. **B594** ⏳ Rollen-Sessions starten mit kleinem festem Kontext (ADR 0353) - Builder
-10. **B595** ⏳ Plan-System: Prüfskript im Pre-Push für plans/ (ADR 0354) - Builder
-11. **B596** ⏳ Timetrack: Befunde #6-#8, dann #1/#2/#18/#21, dann #15/#24; Snapshot-Prüfung bei Commits (ADR 0355) - Builder
+1. **B587** ⏳ Ein Warte-Werkzeug statt `until`-Schleifen: Hintergrundlauf mit Benachrichtigung; Monitor ... - Builder
+2. **B588** ⏳ `ready` und `check` aus einer Funktion; gespeicherte Ready-Marken aus Inhalts-Hashes ... - Builder
+3. **B589** ⏳ Falsche Skill-Zeilen: builder-agent verlangt Changeset für ADR-Edit (ADR 0265 sagt ... - Builder
+4. **B590** ⏳ Alte Handoffs `plans/ethlete-studio/handoff-{builder,builder-mac,c8,cb,doc-agent}.md` ... - Builder
+5. **B591** ⏳ ethlete-design-exploration („der Nutzer wählt“) an ADR 0305 angleichen; ... - Builder
+6. **B592** ⏳ Plan-Dateien nur mit Offenem: design-to-code.md ganz ins Archiv, Budgets senken (ADR 0352) - Builder
+7. **B593** ⏳ Ein Befehl gibt nur die Warteschlange aus (ADR 0352) - Builder
+8. **B594** ⏳ Rollen-Sessions starten mit kleinem festem Kontext (ADR 0353) - Builder
+9. **B595** ⏳ Plan-System: Prüfskript im Pre-Push für plans/ (ADR 0354) - Builder
+10. **B596** ⏳ Timetrack: Befunde #6-#8, dann #1/#2/#18/#21, dann #15/#24; Snapshot-Prüfung bei Commits (ADR 0355) - Builder
+11. **B602** ⏳ Timetrack: Befunde #3/#4/#5, dann #19/#20/#22 (ADR 0355) - Builder
 12. **B597** ⏳ Plan-Dateien einmal sortieren, je Produkt, Timetrack zuerst (ADR 0354) - Doc-Agent
 13. **B598** ⏳ Timetrack-Werkzeug: rotes CI-Job Timetrack e2e, Sammel-Freigabe im Agent-CLI, Aufräumregeln in Skill oder Spec - Builder
 14. **B599** ⏳ Ablauf-ADRs auf Repo-Ebene: ADR-Skripte lesen auch `docs/adr/`, Zeile in AGENTS.md (ADR 0354) - Builder
@@ -206,7 +206,6 @@ Geparkt: B105, B108, B109, B580, B148.
 | B370 | Studio-Host endet bei Ctrl+C/SIGTERM: erst Beweis an zweiter Debug-Instanz, dann Host-e2e (SIGINT → Exit + :4402 frei in 5 s), eigener Signal-Handler mit Watchdog (Bef. 437). | ⏳ | Handler in desk/B370 566c19a9f wirkt nicht (Host stirbt am Signal); Schritte: agent-results/B370.md. | Builder |
 | B368 | `et design`: Serve-Zustand zeigt Besitzer des Ports (Studio-App oder Terminal), bedienten CLI-Stand gegen HEAD und wie man neu startet (Bef. 436). | ⏳ | Reihenfolge des Builders. | Builder |
 | B356 | Zoom in WebKit ~20 fps (Chromium 60): WebKit-Budget Frame-Intervall p50 ≤ 20 ms, p95 ≤ 33 ms bei 100 Zellen, CI-Image mit WebKit-Libs (Bef. 418). | ⏳ | Budget-Fall als Vorlage in desk/B356 19598dce9 (engine-Option in withStudio); erst Zoom-Fix, dann Fall + CI-Schritt. | Builder |
-| B586 | Erinnerung bei stillem Turn aus für Builder und Subagents; Kontextwarnung einmal pro Stufe, nicht pro Prompt. | ⏳ | - | Builder |
 | B587 | Ein Warte-Werkzeug statt `until`-Schleifen: Hintergrundlauf mit Benachrichtigung; Monitor immer mit Beschreibung. | ⏳ | 1179 Aufrufe, 8,9 h. | Builder |
 | B588 | `ready` und `check` aus einer Funktion; gespeicherte Ready-Marken aus Inhalts-Hashes ableiten. | ⏳ | 13 von 17 Blockern am 17.11. waren veraltete Marken. | Builder |
 | B589 | Falsche Skill-Zeilen: builder-agent verlangt Changeset für ADR-Edit (ADR 0265 sagt keins); falsche Beschreibung des pre-commit-Hooks in git-commit, ethlete-agent-sessions (Quelle libs/agent-rules/content), AGENTS.md, builder-agent; git-commit „nicht pushen“ widerspricht ADR 0286. | ⏳ | - | Builder |
@@ -222,6 +221,7 @@ Geparkt: B105, B108, B109, B580, B148.
 | B599 | Ablauf-ADRs auf Repo-Ebene (ADR 0354 Punkt 6): `adr:governs`, `lint:studio-adrs` und die anderen ADR-Leser lesen zusätzlich `docs/adr/`, eine Nummernfolge über beide Ordner; eine Zeile in der Root-`AGENTS.md` nennt den Ordner. | ⏳ | Danach verschiebt der Doc-Agent mit B597 nur ADRs, die klar alle drei Produkte betreffen (`git mv`, Nummer bleibt). | Builder |
 | B600 | Doc-Agent sammelt Nachrichten an den Builder etwa 15 Minuten und schickt dann eine (ADR 0356); doc-agent-Skill umstellen. Was die laufende Zeile blockiert oder als falsch zeigt, geht sofort. | ⏳ | 2543 Peer-Nachrichten in 8 Tagen, 38% der Builder-Turns. | Builder |
 | B601 | Builder pusht, wenn der laufende CI-Lauf auf `next` fertig ist, nicht nach jeder Zeile (ADR 0357, ersetzt ADR 0286 Punkt 3); builder-agent-Skill und Hooks, die nach jeder Zeile pushen, umstellen. | ⏳ | 200 Läufe in 3 Tagen, 109 abgebrochen. | Builder |
+| B602 | Timetrack-Befunde in `plans/timetrack/findings-2026-11-17-demo-prep.md` ohne Zeile: #3, #4, #5 (Beschreibungen: fremdes Repo, Wiederholung, englische Commit-Listen), dann #19, #20, #22 (abgeschnittenes Stück, Splitter, Anruf ohne Teilnehmer). Nach B596. | ⏳ | #4, #5 macht vielleicht die Session „Timetrack-Plan Korrekturen“, wenn der Mensch zustimmt; vorher fragen. | Builder |
 
 ## A. Studio: was man sieht
 

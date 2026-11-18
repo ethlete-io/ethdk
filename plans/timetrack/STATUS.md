@@ -9,7 +9,7 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 
 1. B596: Befunde #6-#8, dann #1, #2, #18, #21, dann #15, #24, #25. Snapshot-Prüfung bei Commits (ADR 0355).
 2. B598: Werkzeug: roter CI-Job Timetrack e2e, Sammel-Freigabe im Agent-CLI (#14), Aufräumregeln.
-3. Befunde ohne Zeile: #3, #4, #5, #19, #20, #22 (der Doc-Agent legt Zeilen an oder streicht sie). #11 ist
+3. B602: Befunde #3, #4, #5 (Beschreibungen), dann #19, #20, #22 (Zeilen auf dem Tag). #11 ist
    wahrscheinlich durch 714b49bc9 behoben, die Linux-Maschine läuft vermutlich auf einem alten Build.
 4. Roadmap-Meilensteine M5 bis M11: [`roadmap.md`](./roadmap.md). Ein Meilenstein wird erst nach Plan
    mit dem Menschen gebaut.

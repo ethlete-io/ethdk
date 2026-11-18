@@ -1,7 +1,6 @@
 # M7 sync: research and recommendations (2026-10-08)
 
-Tom decided all six on 2026-10-08, each as recommended in the table below, plus mDNS discovery with
-6-digit code pairing. ADR 0039 records event identity and the merge. It replaces the "Event
+ADR 0041 holds the six decisions of 2026-10-08. ADR 0039 records event identity and the merge. It replaces the "Event
 identity" bullet below: a peer's events go into their own table, every key keeps its spelling, and
 copies of one fact fold when a day is read. Slices 1 and 2 are done. Slice 3 is in progress (steps under slice 3 below).
 
@@ -11,16 +10,10 @@ Only d is open; a, b, c and e are done (08b03c0fd, 4b2267f6e, 5697e49bc, f2c1e74
 
 - d. Open. The day does not say "this machine was off until 19:26" (M5).
 
-## Decisions, one recommendation each
+## Decisions
 
-| Decision     | Recommendation                                                                                                                                                                                                 | Code facts                                                                                                                                            |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 Day owner  | The machine you book from owns the day. The claim travels to the peers; the Tempo marker (description suffix + machine id, open M6 decision) is the lock while a peer is offline.                              | Ledger is local (`db.rs:16`); marker hard-coded `none` (`sync.ts:177`); `subtractForeignTime` matches per issue, not per interval (`subtract.ts:32`). |
-| 2 Clock skew | Measure the offset at each handshake. Under 2 min: merge. 2-10 min: correct and warn. Over 10 min: refuse and name the machine.                                                                                | Rows are 15-minute steps (ADR 0017).                                                                                                                  |
-| 3 Stream key | One stream per checkout, keyed by the normalized `origin` URL, with a path alias per machine (dir name, manual alias as fallback). Rules match through the alias.                                              | `streamKey` is `repo:<abs path>` (`block.ts:91`); rules keyed by path (`settings/parse.ts:112`); commit dedupe key holds the path (`dedupe.ts`).      |
-| 4 Merge mode | Continuous pull with a cursor per origin. No freeze while a peer is behind for that day. A booked day that changes shows "changed after booking" and is not re-cut.                                            | The day is re-cut every tick; the ADR 0038 freeze drops late arrivals.                                                                                |
-| 5 Peer needs | The same full app on every machine, credentials set up per machine; secrets never travel. The merge works with no Jira, Tempo or Google. Settings and stand-ins stay on the booking machine until slice 6.     | Secrets allowlist `secrets.rs:9`.                                                                                                                     |
-| 6 Retention  | Raw events, filtered at the receiver at read time (its own exclusion rules and private links); transcripts never sent. Received events follow the 30-day retention by event time; spend stays with its origin. | Private link per path (`build-rows.ts:55`); ADR 0002 keeps spend.                                                                                     |
+The six decisions and the discovery are in ADR 0041
+(`libs/timetrack/docs/adr/0041-m7-sync-rules-for-several-machines.md`).
 
 - **Discovery and pairing:** mDNS `_timetrack._tcp` (`mdns-sd` crate), manual host:port as fallback.
   A 6-digit code shown on one machine and typed on the other authenticates a key exchange (PAKE or a

@@ -38,14 +38,14 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 
 9. ~~**A waiting write cannot be read.**~~ Fixed (13c54dad8). `timetrack approval <id>` prints the status only, and
    `timetrack approvals` prints no day and no row. An agent cannot tell which row a draft is about.
-10. ~~**`ask --context` on a stand-in subject says the context holds no unnamed work.**~~ Fixed (the coordinator named 13c54dad8 and ec696f5e1 for this entry). The rows of
+10. ~~**`ask --context` on a stand-in subject says the context holds no unnamed work.**~~ Fixed (13c54dad8, ec696f5e1). The rows of
     that day carried `autoModeSubject.kind: "stand-in"`. The error should name the subjects the day
     holds.
 11. **`rows <day>` moves the view of the app.** Suspect: fixed by 714b49bc9, the Linux machine likely runs an old build. Reading sixteen days flips the user's screen sixteen
     times. A read of a range without that effect is missing.
 12. ~~**`rows --json` into a pipe is cut on a large day.**~~ Fixed (13c54dad8). Redirected to a file the same answer is
     whole. Suspected: the process exits before stdout drains.
-13. ~~**No answer holds the concurrency of a day.**~~ Fixed (the coordinator named 13c54dad8 and ec696f5e1 for this entry). The app shows "× at once"; `rows` and `day` do
+13. ~~**No answer holds the concurrency of a day.**~~ Fixed (13c54dad8, ec696f5e1). The app shows "× at once"; `rows` and `day` do
     not. `streamDay` throws in `worked-in.ts` on the events `timetrack day --out` writes, so the
     figure cannot be rebuilt outside the app either.
 14. **One edit is one approval.** The tidy-up queued 135 writes. There is no batch, and the CLI
@@ -65,7 +65,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     work Linux had named. The Mac day for the demo was matched to Linux by 19 edits by hand.
     Proposed: a day a paired machine booked counts as booked on every machine - its sent rows are
     drawn, nothing is proposed, auto mode leaves it alone.
-16. ~~**Old stand-ins pile up.**~~ Fixed (the coordinator named 13c54dad8 and ec696f5e1 for this entry). Linux holds 110 open stand-ins, many 50 to 63 days old with 0 days of
+16. ~~**Old stand-ins pile up.**~~ Fixed (13c54dad8, ec696f5e1). Linux holds 110 open stand-ins, many 50 to 63 days old with 0 days of
     work.
 17. ~~**Rows of zero duration are listed.**~~ Fixed (ec696f5e1). The `zero-duration` warning names them, and they still
     take a line.
