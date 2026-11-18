@@ -114,6 +114,8 @@ const defaultNormalizeValue = (raw: string) => {
   host: {
     '[attr.data-select-open]': 'open() || null',
     '[attr.data-mixed]': 'mixed() || null',
+    '[attr.aria-label]': 'null',
+    '[attr.aria-labelledby]': 'null',
   },
 })
 export class SelectDirective<TValue = unknown>
