@@ -243,10 +243,10 @@
     "pid": 1959033
   },
   "components/dialog": {
-    "hash": "7a3056ba7c7de18f",
+    "hash": "18a9ceb23b86f2c6",
     "files": {
       ".ethlete/design/sdk/components/dialog/dialog.css": "2a7bb49e85b6ef5d",
-      ".ethlete/design/sdk/components/dialog/dialog.ts": "2065f4d93ad47654",
+      ".ethlete/design/sdk/components/dialog/dialog.ts": "58ea946775b15188",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/dialog.ts": "424aeadd7dbf0dad",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -272,10 +272,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T11:18:24.632Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2851297
+    "at": "2026-11-18T14:09:29.268Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1960821
   },
   "components/form-field": {
     "hash": "61b6966b6745c572",
