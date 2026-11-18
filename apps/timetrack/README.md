@@ -172,8 +172,8 @@ Four consequences worth knowing before changing it:
 - **`worklog.add` writes a row onto the day**, not a Tempo worklog. It goes through the same review as
   every other row, which is what keeps it from double-booking against what the evidence proposed.
 - **`day.edits` is the only write into the review store from outside the window.** It names rows by
-  the ids `day.rows` answers, and both move the app's own review to that day, so nothing changes a day
-  the user cannot see. It may correct a row's times, its name, its note and whether it syncs; it may
+  the ids `day.rows` answers. Both are answered without moving the app's own review off the day on
+  screen. It may correct a row's times, its name, its note and whether it syncs; it may
   not split, merge or delete one.
 
 ## Connecting Google Calendar

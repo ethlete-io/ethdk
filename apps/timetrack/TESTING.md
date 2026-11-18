@@ -18,7 +18,7 @@ npx nx run timetrack-app:test-rust
 
 The e2e run starts the app on port 4211 with `main.e2e.ts`, which swaps the desktop host for
 in-memory fakes. There is no Tauri, no network and no keychain in that run. Every answer comes from
-`apps/timetrack/src/e2e/world.ts`, so the suite is safe to run at any time and writes nothing.
+`libs/timetrack/testing/world.ts`, so the suite is safe to run at any time and writes nothing.
 
 To look at the fake app yourself, run `npx nx serve timetrack-app --configuration=e2e` and open
 `http://localhost:4211`.
