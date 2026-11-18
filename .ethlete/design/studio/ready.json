@@ -918,8 +918,8 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/canvas-viewport": "c69500bbf80b3500",
-      "components/zoom-chip": "9104b0cf558fc787"
+      "components/canvas-viewport": "f82646fbc7bf1331",
+      "components/zoom-chip": "7bd3918908a19435"
     },
     "actions": [
       "active",
@@ -939,9 +939,9 @@
       "injects the service CANVAS_LIVE_REST_MS (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)"
     ],
     "at": "2026-11-18T04:29:07.225Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 3795310
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1634615
   },
   "elements/part-tree": {
     "hash": "229a31a8858ffdee",
