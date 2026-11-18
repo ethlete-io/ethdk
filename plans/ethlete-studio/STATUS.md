@@ -41,15 +41,15 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 10. **B591** ⏳ ethlete-design-exploration („der Nutzer wählt“) an ADR 0305 angleichen; ... - Builder
 11. **B592** ⏳ Plan-Dateien nur mit Offenem: design-to-code.md ganz ins Archiv, Budgets senken (ADR 0352) - Builder
 12. **B593** ⏳ Ein Befehl gibt nur die Warteschlange aus (ADR 0352) - Builder
-13. **B160** ⏳ Neu gezeichneter vorhandener Interaktionszustand: Vergleich auf Element-Ebene - Builder
-14. **B422** ⏳ `lint:no-verify-briefs` prüft nur getrackte Dateien, NEGATED bekommt „no“, umbrochene ... - Builder
-15. **B424** ⏳ Studio-Prüfungen laufen live in Studio und schnell, nie in Git-Hooks oder CI; Drift wird ... - Builder
-16. **B477** ⏳ UI-Fehler, nur Mac: Text in `button.et-surface-interactive` auf elements/canvas-frames ... - Builder
-17. **B480** ⏳ Tagschicht (ADR 0239): Spike CEF auf Windows wie B469 (Build läuft, Live-Frames, ... - Builder
-18. **B482** ⏳ Release-Smoke: das Release-Bundle von Studio einmal starten, ein Sketch öffnen und bei ... - Builder
-19. **B490** ⏳ Tagschicht: Design-Styles liefern eine Monospace- und die UI-Schrift selbst (ADR 0262, ... - Linux 210235327; Mac offen
-20. **B508** ⏳ SDK (fifagg, ADR 0297), nach B507 + Breadcrumb-Tokens: Menüpunkt-Ladezustand; ... - Builder
-21. **B532** ⏳ SDK components (fifagg): Readonly-Look der Form-Field-Shell neu ... - Builder
+13. **B594** ⏳ Rollen-Sessions starten mit kleinem festem Kontext (ADR 0353) - Builder
+14. **B160** ⏳ Neu gezeichneter vorhandener Interaktionszustand: Vergleich auf Element-Ebene - Builder
+15. **B422** ⏳ `lint:no-verify-briefs` prüft nur getrackte Dateien, NEGATED bekommt „no“, umbrochene ... - Builder
+16. **B424** ⏳ Studio-Prüfungen laufen live in Studio und schnell, nie in Git-Hooks oder CI; Drift wird ... - Builder
+17. **B477** ⏳ UI-Fehler, nur Mac: Text in `button.et-surface-interactive` auf elements/canvas-frames ... - Builder
+18. **B480** ⏳ Tagschicht (ADR 0239): Spike CEF auf Windows wie B469 (Build läuft, Live-Frames, ... - Builder
+19. **B482** ⏳ Release-Smoke: das Release-Bundle von Studio einmal starten, ein Sketch öffnen und bei ... - Builder
+20. **B490** ⏳ Tagschicht: Design-Styles liefern eine Monospace- und die UI-Schrift selbst (ADR 0262, ... - Linux 210235327; Mac offen
+21. **B508** ⏳ SDK (fifagg, ADR 0297), nach B507 + Breadcrumb-Tokens: Menüpunkt-Ladezustand; ... - Builder
 22. **B255** ⏳ Part-Baum: Sketch-Titel nennt Variante, Regel, Meldung; Produkt-Probleme hängen am Part ... - Builder
 23. **B256** ⏳ Veraltetes dist der Design-Mocks ist Problem: check/ready/shot lehnen ab mit ... - Builder
 24. **B257** ⏳ Sketch sdk switch: Rahmen der leeren Spur ja/nein; danach entfällt switchStyles in inbox ... - Builder
@@ -137,7 +137,6 @@ Geparkt: B105, B108, B109, B580, B148.
 | B482 | Release-Smoke: das Release-Bundle von Studio einmal starten, ein Sketch öffnen und bei einer CSP-Ablehnung oder einem Konsolenfehler fehlschlagen; Biss: die CSP vor f08f0a3d1 fällt (Bef. 699). | ⏳ | Werkzeug gebaut (e57c40dd4); Biss lief rot: kein Sperrbildschirm, sondern ein macOS-Schlüsselbund-Dialog (Bef. 746); Fix f10c01295 (Mock-Schlüsselbund, Abbruch nach 30 s), Biss läuft neu (Mac). | Builder |
 | B490 | Tagschicht: Design-Styles liefern eine Monospace- und die UI-Schrift selbst (ADR 0262, Bef. 811); die Schriftwahl ist ein Sketch auf foundations/type mit 2-3 Paaren, Shots auf Mac und Linux. | offen | in Arbeit. | Linux 210235327; Mac offen |
 | B508 | SDK (fifagg, ADR 0297), nach B507 + Breadcrumb-Tokens: Menüpunkt-Ladezustand; Action-Sheet-Strategie (Skizze); Headless progress-steps/timeline; Karussell-Steuerung; Upload (Zuschnitt, Dateidaten, Einzelzeile, Server-Antwort); Match-Card (standings-Zeilen zuerst); Tabellen-Spalte ab Breite; Icon-Namensprüfung; backdropClick; stat-tile, picture; et-collapse; et-input Clear-Aktion. |  | Stand 14.11.: Menü-Ladezustand: Untermenü-Auslöser öffnet nicht mehr (Cause: bite); Match-Card gebaut (Badge-Slot `etMatchCardBadge` f04dc1d0d, Rest b2e6d26a8: Laden, Land + Flagge, abgesagt, Schrift-Tokens), gerenderte Optik nicht geprüft; offen nur die Action-Sheet-Wahl (`components/action-sheet@look`) |  |
-| B532 | SDK components (fifagg): Readonly-Look der Form-Field-Shell neu (form-field-text-shell-styles.component.css [data-readonly]); Mensch: "sieht whack aus, vor allem mit Fokus" (gestrichelter Rahmen, bei Fokus dicke gestrichelte Outline). Builder baut seine Empfehlung im Studio, Empfehlung gebaut. |  | Empfehlung gebaut (905d22780) |  |
 | B255 | Part-Baum: Sketch-Titel nennt Variante, Regel, Meldung; Produkt-Probleme hängen am Part der Datei; Spec: jedes Problem erreicht den Baum (Bef. 309). Maschinerie (nur bei rotem CI). | ⏳ | 117eb20bb; offen: canvas:1295 und rotes sketches-tree-e2e. | Builder |
 | B256 | Veraltetes dist der Design-Mocks ist Problem: check/ready/shot lehnen ab mit Build-Befehl, Studio zeigt Banner (Bef. 307). Maschinerie (nur bei rotem CI). | ⏳ | CLI 30f9c7681, Banner weg 49b8a19b3; offen: Mocks-Rebuild. | Builder |
 | B257 | Sketch sdk switch: Rahmen der leeren Spur ja/nein; danach entfällt switchStyles in inbox (Bef. 307). | ⏳ | switch.css-Override entfernt 7eb66f907, build-ready e7d933889; offen nur compare-before (B283) und choice-inputs-e2e. | Builder |
@@ -216,6 +215,7 @@ Geparkt: B105, B108, B109, B580, B148.
 | B591 | ethlete-design-exploration („der Nutzer wählt“) an ADR 0305 angleichen; studio-design-part ruft nicht mehr das volle `nx test ethlete-studio`; Builder-Skill-Zeilen streichen, die ein Hook schon erzwingt oder die Einzelfall-Flicken sind. | ⏳ | - | Builder |
 | B592 | Plan-Dateien halten nur Offenes (ADR 0352): `archive-findings.mjs` schiebt design-to-code.md ganz und die „Wie gebaut“-Abschnitte von build-ready.md ins Archiv; Checker lesen design-to-code.md danach nicht mehr. | ⏳ | Danach Budgets in size-budget.json knapp auf die neuen Größen (STATUS.md jetzt etwa 59000, Ziel 30000 nach Zeilen-Aufräumen durch den Doc-Agent). | Builder |
 | B593 | Ein Befehl gibt nur die Warteschlange oben in STATUS.md aus, damit keine Session STATUS.md danach durchsucht (ADR 0352). | ⏳ | - | Builder |
+| B594 | Rollen-Sessions starten mit kleinem festem Kontext (ADR 0353): nur ethlete-design als MCP, ungenutzte Tools je Rolle beim Start sperren, Skill-Beschreibungen kürzen und claude.ai-Skills aus, AGENTS.md kürzen, handoff-Skill teilen. | ⏳ | Je Punkt die Headless-Messung (Basis 40772) wiederholen, Zahl in den Commit. Befehle in `.claude/handoffs/process-review-2026-11-18.md`. | Builder |
 
 ## A. Studio: was man sieht
 
@@ -309,8 +309,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **B41** Studio zeigt `sketch hold` als Badge „Pausiert“, ein Klick zeigt den Grund (`--until`); ein Sketch in Arbeit
   ohne Bericht und ohne Dateiänderung seit N Minuten zeigt „keine Aktivität“ (Tom, 02.11.; Befund 138; Zustände
   gehören in den pages/sketches-Sketch).
-- **B42** Pre-Push-Live-Prüfung liest offene Sketches aus dem Arbeitsbaum (`.ethlete/design`), nicht nur aus dem
-  Klon; Test über den Klon-Pfad (Befund 139; blockiert den Push seit d8a90e8cb).
 - **B43** Der ng()-Harness jedes Produkts registriert die Farb-Themes der App (Provider je Produkt in der Config)
   (Befund 140).
 - **B44** `sketch check` und `design check` melden SDK-Warnungen aus der Konsole als Warnung, nicht nur ET-Fehler
@@ -424,7 +422,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 
 - **C1** Trefferquote des Harness-Build-Cache messen; trifft er selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json) (Q16).
 - **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
-- **C5** Pre-push: Design-Dateien aus libs/components lösen die Design-Prüfung aus; tsc für berührte Produkte (Befund 105).
 
 ## D. SDK und Libs
 
