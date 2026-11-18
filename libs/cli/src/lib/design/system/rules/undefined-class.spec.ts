@@ -112,6 +112,18 @@ describe('undefinedClassesOf', { timeout: 120_000 }, () => {
     expect(messagesOf(target)).toEqual([`dialog.ts: ${report('bottom-start')}`]);
   });
 
+  it('reads the state names of a data-states map as no classes', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/pages/home/home.ts',
+      `import { definePart } from '@design-system';\nexport default definePart({ note: '', data: 'list', dataStates: { loading: 'list-loading', error: 'list-error', empty: 'list-empty' }, states: {}, render: () => ({ body: '<div class="flex"></div>' }) });\n`,
+    );
+
+    expect(messagesOf(target)).toEqual([]);
+  });
+
   it('runs as part of design check', () => {
     const target = acme();
 

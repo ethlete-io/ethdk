@@ -164,6 +164,17 @@ describe('openPointGroupsOf', () => {
     ]);
   });
 
+  it('names the state the data-states map gives a missing data state (B314)', () => {
+    const lines = openPointGroupsOf({
+      points: [{ kind: 'missing-state', control: null, data: 'empty', state: 'no-sketches' }],
+      buildReady: { ready: false, blockers: [] },
+    }).flatMap((group) => group.lines);
+
+    expect(lines.map(({ text, detail }) => ({ text, detail }))).toEqual([
+      { text: 'Daten-Part ohne Zustand Leer', detail: 'empty (no-sketches)' },
+    ]);
+  });
+
   it('has no group without a point on a build-ready part', () => {
     expect(openPointGroupsOf({ points: [], buildReady: { ready: true } })).toEqual([]);
   });

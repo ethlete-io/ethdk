@@ -31,7 +31,12 @@ const iconOf = (point: ListedPoint): OpenPointIcon => {
 const lineOf = (point: ListedPoint): OpenPointLine => {
   switch (point.kind) {
     case 'missing-state':
-      if (point.data) return { text: LABELS.dataStateUndrawn(point.data), detail: point.data };
+      if (point.data) {
+        return {
+          text: LABELS.dataStateUndrawn(point.data),
+          detail: point.state ? `${point.data} (${point.state})` : point.data,
+        };
+      }
 
       return point.control
         ? { text: LABELS.controlUndrawn(point.control), detail: point.control }

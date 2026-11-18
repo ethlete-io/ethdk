@@ -2470,6 +2470,10 @@ match on state names no longer applies to a part with the map.
 - Verified: specs red first (open-points, part-definition, part-builder, rules/data-states); `vitest related` (cli 220
   files), cli typecheck and lint, `design check --part pages/sketches` on the working tree (0 findings, the two points).
 - Not verified: Studio shows the mapped state name (it labels by `data` only and ignores `state`).
+- Follow-up (grill): error maps to the drawn `list-error`, not a new `listing-failed`; a drawn state is not a missing
+  one. B314 closed; its interim half needs no pick, the drawn list-error is the design. Budget pages/sketches
+  missing-state back to 1 (empty `no-sketches`). The Studio line shows the mapped name: `empty (no-sketches)`.
+  CLASS-UNDEFINED read the `dataStates` values as classes (`list-error` parses as a `list-*` utility); it skips them now.
 
 ## As built (B59 UNRECORDED)
 

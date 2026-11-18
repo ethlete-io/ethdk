@@ -162,10 +162,24 @@ const isRendererOption = (node: ts.Node, renderers: Set<string>) => {
   );
 };
 
+const isDataStateName = (node: ts.Node) => {
+  const map = node.parent?.parent;
+
+  return (
+    ts.isPropertyAssignment(node.parent) &&
+    node.parent.initializer === node &&
+    map !== undefined &&
+    ts.isObjectLiteralExpression(map) &&
+    ts.isPropertyAssignment(map.parent) &&
+    ts.isIdentifier(map.parent.name) &&
+    map.parent.name.text === 'dataStates'
+  );
+};
+
 const classTextsOf = (node: ts.Node, renderers: Set<string>): string[] => {
   const literal = literalOf(node);
 
-  if (!literal || isCompared(literal.expression)) return [];
+  if (!literal || isCompared(literal.expression) || isDataStateName(literal.expression)) return [];
   if (!literal.text.includes('<') && isRendererOption(literal.expression, renderers)) return [];
   if (literal.text.includes('<'))
     return [...literal.text.matchAll(/\bclass=["']([^"']*)/gu)].map(([, value]) => value ?? '');
