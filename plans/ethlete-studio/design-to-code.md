@@ -2650,3 +2650,13 @@ lines measuring 46 x 32 px tiles, insets 0 (close right 0), ink 10 x 10 px (mini
 pixels at device scale 1, so the default 0.5 px tolerance holds. Not verified: the native Windows 11 original itself (the
 declared numbers come from the finding, not from a shot of Windows); measures at a device scale other than 1. No
 existing part declares measures, so the rule needs no ADR 0201 baseline.
+
+## As built (B444)
+
+Closed as no longer reproducing on 6866c5584. `yarn studio:e2e --case "a sketch scroll never empties a cell that had a
+picture" --hold-listings 14000 --delay-pictures 60000` (the hold setting of `studio-e2e-repeat.mjs`) passed 3 of 3,
+and the same case without hold passed 2 of 2. Each run scrolled 46 steps (23 down, 23 up) with up to 8 visible cells
+per step, more than the 6 live slots, and counted 0 empty cells at +30 and +300 ms and 0 frames gone before their
+probe. With pictures held for 60 s no picture loads during the 49 s case, so every near cell is without a picture: the
+finding 612 setting. `liveShotsOf` keeps every painted cell without a picture live outside the cap, which covers it.
+Not verified: the CI runner; a cell whose picture loads and then expires mid-scroll.
