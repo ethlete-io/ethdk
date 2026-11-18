@@ -17,6 +17,7 @@ type HookOutput = {
   hookSpecificOutput: {
     permissionDecision: string;
     permissionDecisionReason: string;
+    updatedInput?: Record<string, unknown>;
   };
 };
 
@@ -45,16 +46,21 @@ const runHook = (options: RunHookOptions) => {
 const decisionOf = (options: RunHookOptions) => runHook(options)?.hookSpecificOutput.permissionDecision ?? null;
 
 describe('subagent-model-policy', () => {
-  it('denies a call that names no model, and returns the model table', () => {
-    const result = runHook({ toolInput: { subagent_type: 'general-purpose', prompt: 'Find the overlay tests' } });
+  it('runs a call that names no model on sonnet, and returns the model table', () => {
+    const toolInput = { subagent_type: 'general-purpose', prompt: 'Find the overlay tests' };
+    const result = runHook({ toolInput });
 
-    expect(result?.hookSpecificOutput.permissionDecision).toBe('deny');
+    expect(result?.hookSpecificOutput.permissionDecision).toBe('allow');
+    expect(result?.hookSpecificOutput.updatedInput).toEqual({ ...toolInput, model: 'sonnet' });
     expect(result?.hookSpecificOutput.permissionDecisionReason).toContain('`haiku`');
     expect(result?.hookSpecificOutput.permissionDecisionReason).toContain('`opus`');
   });
 
-  it('asks the user before a subagent runs on fable', () => {
-    expect(decisionOf({ toolInput: { model: 'fable', prompt: 'Review the plan' } })).toBe('ask');
+  it('asks the user before a subagent runs on fable, and leaves its input alone', () => {
+    const result = runHook({ toolInput: { model: 'fable', prompt: 'Review the plan' } });
+
+    expect(result?.hookSpecificOutput.permissionDecision).toBe('ask');
+    expect(result?.hookSpecificOutput.updatedInput).toBeUndefined();
   });
 
   it.each(['opus', 'sonnet', 'haiku'])('allows an explicit %s', (model) => {
@@ -77,10 +83,11 @@ describe('subagent-model-policy', () => {
     expect(decisionOf({ toolInput: { subagent_type: 'Explore' }, agentDefinition })).toBeNull();
   });
 
-  it('still denies an agent definition that declares no model', () => {
+  it('defaults an agent definition that declares no model to sonnet', () => {
     const agentDefinition = { name: 'reviewer', contents: '---\nname: reviewer\n---\n' };
+    const result = runHook({ toolInput: { subagent_type: 'reviewer' }, agentDefinition });
 
-    expect(decisionOf({ toolInput: { subagent_type: 'reviewer' }, agentDefinition })).toBe('deny');
+    expect(result?.hookSpecificOutput.updatedInput?.['model']).toBe('sonnet');
   });
 
   it('ignores every tool but the one that spawns a subagent', () => {

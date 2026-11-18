@@ -18,7 +18,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 4. Run `yarn et:design status`. If it prints `ci: red`, start no feature slice: only fix or revert.
    If you cannot prove the cause in 15 minutes, revert the suspect commit first (check it with
    `yarn revert:check <sha>`).
-5. Start building. Do not tell the user what you build.
+5. Start building.
 6. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs (parallel runs under CPU load); keep N low on a busy machine.
 
 ## Output
@@ -36,7 +36,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 - Build in slices. When a slice starts, write an "in progress" note to the plan; it goes into the slice's commit.
 - Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
-- Lead subagents for scoped work, a fresh one per slice.
+- Lead sonnet subagents, a fresh one per slice; each brief names the files and line ranges.
 - One topic at a time: work the queue in order and start the next topic only when the current one
   is committed. You coordinate, verify, push and report.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the

@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-"""PreToolUse hook: make a subagent's model an explicit choice.
+"""PreToolUse hook: run a subagent on sonnet unless its call names a model.
 
 A `Task` call that passes no `model` runs the subagent on the parent session's
 model. A session led by an expensive model therefore spends that model on every
 grep and every file read it delegates, which burns a usage limit in minutes for
 work a small model does just as well.
 
-So this hook gates the tool call rather than only advising:
+So this hook rewrites or gates the tool call:
 
-  * No `model` at all - denied, with the model table returned to the agent. The
-    agent then repeats the call with a model, so the cost of the mistake is one
-    tool call, not a whole subagent run.
+  * No `model` at all - allowed with `model: sonnet` filled in, and a short note
+    that names the models to pick explicitly instead.
   * `model: fable` - the user is asked. Fable is the right pick for planning,
     design, cross-cutting review and leading other subagents, and the wrong pick
     for the twentieth mechanical lookup; only the user knows which this is.
@@ -38,9 +37,10 @@ LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
 # The tool that spawns a subagent, under both names it has carried.
 SUBAGENT_TOOLS = ("Task", "Agent")
 
-POLICY = """A subagent's model is a choice, not an inheritance. This call passes no `model`, so the subagent \
-would run on the model leading this session - which is how one expensive model ends up doing every small job. \
-Call the tool again with `model` set:
+DEFAULT_MODEL = "sonnet"
+
+POLICY = """This call passed no `model`, so the subagent runs on sonnet, the default. Name a model on the next \
+call when the task fits another one:
 
 - `haiku` - lookups and small, fully specified jobs: grep, find, read and summarize files or a CI log, run a command and report, a mechanical edit in named files.
 - `sonnet` - scoped work with a clear target: a fix in a named file, a spec, a docs page, a lint cleanup, \
@@ -135,17 +135,17 @@ def definition_sets_model(root, subagent_type):
 
 
 def decision_for(tool_input, root):
-    """The (decision, reason) this call needs, or None when it may run untouched."""
+    """The (decision, reason, updated input or None) this call needs, or None when it may run untouched."""
     subagent_type = str(tool_input.get("subagent_type") or "").strip().lower()
     model = str(tool_input.get("model") or "").strip().lower()
 
     if "fable" in model:
-        return "ask", FABLE_REASON
+        return "ask", FABLE_REASON, None
     if model:
         return None
     if subagent_type == "fork" or definition_sets_model(root, subagent_type):
         return None
-    return "deny", POLICY
+    return "allow", POLICY, {**tool_input, "model": DEFAULT_MODEL}
 
 
 def main():
@@ -172,18 +172,15 @@ def main():
     if not outcome:
         return
 
-    decision, reason = outcome
-    print(
-        json.dumps(
-            {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": decision,
-                    "permissionDecisionReason": reason,
-                }
-            }
-        )
-    )
+    decision, reason, updated_input = outcome
+    output = {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": decision,
+        "permissionDecisionReason": reason,
+    }
+    if updated_input is not None:
+        output["updatedInput"] = updated_input
+    print(json.dumps({"hookSpecificOutput": output}))
 
 
 if __name__ == "__main__":

@@ -1,15 +1,16 @@
 ---
 name: subagent-models
-description: A subagent's model is an explicit choice on every call - haiku for lookups and small specified jobs, sonnet for scoped work, opus for hard work, fable for judgment.
+description: A subagent runs on sonnet unless its call names a model - haiku for lookups and small specified jobs, opus for hard work, fable for judgment.
 kind: rule
 scope: both
 ---
 
-## Delegating: name the subagent's model
+## Delegating: sonnet by default
 
-A subagent spawned without a `model` runs on the model leading the session, so an expensive
-model ends up doing every small job it delegates. **Set `model` on every call**, matched to the
-task:
+A subagent spawned without a `model` would run on the model leading the session, so an expensive
+model would do every small job it delegates. The `subagent-model-policy` hook fills in **`sonnet`**
+for such a call. Name another model only when the task matches its row below - `opus` only for the
+work its row lists:
 
 | Model    | The work it fits                                                                                                                                                                  |
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,7 +26,8 @@ inherits the parent's model.
 
 A subagent starts cold: it loads the full start context (about 50k tokens) before its first step,
 and measured subagents cost as much as the sessions that spawn them. A lookup or job of under about 10 tool
-calls stays in the session. Give each subagent one large slice, not several small ones. Stop each
+calls stays in the session. Give each subagent one large slice, not several small ones, and name the files and line ranges
+in its prompt so it does not search for them. Stop each
 background subagent with `TaskStop` once its result is in, so finished ones do not pile up.
 
 A subagent has the same context budget as the session, measured on its own transcript, and the
