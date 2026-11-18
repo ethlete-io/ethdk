@@ -2423,3 +2423,23 @@ hits" lines and 0 live hits. The entries are removed; no sketch opens for them.
   `et:design check --working-tree --product studio --part pages/inbox` and `--part pages/sketches`: 0 findings each.
 - Not verified: a full `design check --product studio`; the implementation baseline entry of pages/sketches now has
   no implemented record behind it (no check reported it).
+
+## As built (B189 inbox compare)
+
+- Cause: three app differences in the thread states, measured on the compare pictures (1440x900). The harness
+  frame put the card in flow at the frame's top left, while the design draws it absolute with `ml-space-3` (its pin
+  anchor is inside the emptied canvas slot, so it falls back to the static position): the card edge sat at x 364
+  instead of 376, and the frame's hairline ring showed around it. The card header drew close as `et-button` (40 px
+  wide) where the design has an icon button (24 px, x 659), which moved Erledigen 12 px left. In thread-own the
+  harness kept c1 selected in the list; the design and the app's consumer select the opened thread (c3).
+- Fix (c977956c3): the inbox harness frame wraps the card in `absolute z-20 ml-space-3`; the thread card's close is
+  `et-icon-button`; the harness passes `selectedId` of the opened thread.
+- Compare before: thread 30234, thread-own 49759, thread-busy 30799, thread-error 33230, thread-rejected 33140 px.
+  After: 1 px in every state of pages/inbox (2 px in with-resolved), which predates this change in every state.
+- Not recorded: `task pages/inbox --verify HEAD` refuses (compare not green). The 1 px is the antialiasing of the
+  lower-left arc of the Erledigte zeigen switch track at (283,116), same boxes in both DOMs (x 280 y 100.5 32x18) and
+  the same switch variables; the second with-resolved pixel is a glyph edge at (104,516). Cause not found.
+- Verified: `vitest related` (105 passed), ethlete-studio typecheck and lint, prettier, `studio:e2e --case "the
+comment button"` (1 passed), `compare pages/system` (all ok with the icon-button close),
+  `design check --product studio --part pages/inbox` (0 findings).
+- Not verified: `compare --affected`; the switch pixel cause; no implemented.json record for pages/inbox.
