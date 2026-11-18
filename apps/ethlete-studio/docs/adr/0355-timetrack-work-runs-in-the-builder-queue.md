@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B596
+built: 1dbcc0fa2
 decided: 2026-11-18
 source: process review of the analysis session (ethlete-sdk-3f) 2026-11-18, Timetrack review, its proposal approved by the human with "klingt gut", relayed through the doc agent
 ---
