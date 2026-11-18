@@ -28,7 +28,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## Language
 
 - Every text for the user is German. This overrides an English
-  output style (for example ste-clarity): keep its clarity rules, but write them in German.
+  output style; keep its clarity rules.
 - English only for the builder messages, the ADRs and the English plan files; STATUS.md stays German.
 - Text to Tom says what a thing is in plain words: no flags, no plan refs, no part paths. A row is named
   "Auto-Weg-Modus (B608)", never a bare number; an ADR at first mention carries a short content: "ADR 0354 (Plan-Ordnung)".
@@ -52,7 +52,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
   round format (`❓ **Q1** - **Title**: …` then `➡️ <recommendation>`, `---` between), also an
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.
-- Cross-check a question only on the triggers of the `cross-check` skill, by a fresh fable run (ADR 0358).
+- Cross-check a question only on the `cross-check` skill triggers (ADR 0358).
 - Builder messages with design questions go into the next round. Never answer a design
   question for the user.
 - An open question stays open until the user answers it. Show it in full, round format, when it comes up
@@ -83,8 +83,9 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## Consumers (ADR 0370)
 
 - A consumer repo keeps its decisions; here only SDK-interface ADRs.
-- Never run its shifts or take its slice reports. Its batched SDK request (missing, repro, meanwhile, blocked?) becomes
+- Never run its shifts. Its batched SDK request (missing, repro, meanwhile, blocked?) becomes
   a row in `plans/sdk/STATUS.md` plus a queue entry; answer at once only a blocked one.
+- Merge the prerelease PR once CI (Next) is green, at most daily; a blocked consumer at once (ADR 0377).
 
 ## Record
 
