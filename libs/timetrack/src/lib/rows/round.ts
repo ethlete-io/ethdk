@@ -1,7 +1,7 @@
 import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { AgedNaming } from '../model/naming-age';
-import { WorklogProposal } from '../model/proposal';
+import { WorklogProposal, syncsInState } from '../model/proposal';
 import { CALL_LANE_KEY, TIMER_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 
@@ -141,6 +141,8 @@ export type DayWarningKind =
   | 'naming-disagreement'
   /** The day books a remembered answer whose ticket nobody has touched in Jira for a long time. */
   | 'aged-naming'
+  /** An accepted or edited row lies, wholly or partly, between 00:00 and 06:00 local time. Visibility only. */
+  | 'night-row'
   /** A timer ran while the machine saw almost nothing, which is what a forgotten timer looks like. */
   | 'timer-unobserved'
   /** The day claims idle gaps that `fillGaps` joined to the work around them. */
@@ -315,6 +317,29 @@ const agedDetail = (options: { aged: readonly AgedNaming[]; proposals: readonly 
     })
     .join(', ');
 
+const NIGHT_END_HOUR = 6;
+
+const touchesNight = (proposal: WorklogProposal) => {
+  const day = new Date(proposal.from);
+  day.setHours(0, 0, 0, 0);
+
+  while (day.getTime() < proposal.to.getTime()) {
+    const nightEnd = new Date(day);
+    nightEnd.setHours(NIGHT_END_HOUR, 0, 0, 0);
+
+    if (proposal.from.getTime() < nightEnd.getTime() && proposal.to.getTime() > day.getTime()) return true;
+
+    day.setDate(day.getDate() + 1);
+  }
+
+  return false;
+};
+
+const nightDetail = (proposals: readonly WorklogProposal[]) =>
+  proposals
+    .map((proposal) => `${proposal.issueKey} ${formatTimeOfDay(proposal.from)}-${formatTimeOfDay(proposal.to)}`)
+    .join(', ');
+
 /**
  * Compares a proposed day against its target and reports what a reviewer should look at. It never
  * changes a duration: a day under target is a day under target, and filling it silently would be
@@ -416,6 +441,12 @@ export const checkDay = (options: {
   const aged = agedDetail({ aged: options.options?.agedNamings ?? [], proposals: options.proposals });
 
   if (aged) warnings.push({ kind: 'aged-naming', detail: aged });
+
+  const night = options.proposals
+    .filter((proposal) => syncsInState(proposal.state) && touchesNight(proposal))
+    .sort((left, right) => left.from.getTime() - right.from.getTime());
+
+  if (night.length > 0) warnings.push({ kind: 'night-row', detail: nightDetail(night) });
 
   const zeroed = options.proposals.filter((proposal) => proposal.durationMs === 0);
 

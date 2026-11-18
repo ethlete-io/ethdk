@@ -274,6 +274,24 @@ describe('checkDay', () => {
     expect(check.warnings.map((warning) => warning.kind)).not.toContain('aged-naming');
   });
 
+  it('flags an accepted row that touches 00:00-06:00 and names its times', () => {
+    const row = (from: string, to: string, state: WorklogProposal['state']): WorklogProposal => ({
+      ...proposal({ issueKey: 'BD-2049', durationMinutes: 60 }),
+      from: new Date(from),
+      to: new Date(to),
+      state,
+    });
+    const kinds = (rows: WorklogProposal[]) => checkDay({ proposals: rows }).warnings.map((warning) => warning.kind);
+
+    expect(checkDay({ proposals: [row('2026-09-14T05:30:00', '2026-09-14T06:30:00', 'accepted')] }).warnings).toEqual([
+      { kind: 'night-row', detail: 'BD-2049 05:30-06:30' },
+    ]);
+    expect(kinds([row('2026-09-14T23:30:00', '2026-09-15T00:30:00', 'edited')])).toContain('night-row');
+    expect(kinds([row('2026-09-14T05:30:00', '2026-09-14T06:30:00', 'suggested')])).not.toContain('night-row');
+    expect(kinds([row('2026-09-14T06:00:00', '2026-09-14T07:00:00', 'accepted')])).not.toContain('night-row');
+    expect(kinds([row('2026-09-14T20:00:00', '2026-09-14T23:59:00', 'accepted')])).not.toContain('night-row');
+  });
+
   it('reports time a call and observed activity both claim, above a minute of noise', () => {
     const proposals = [proposal({ issueKey: 'FIP-2177', durationMinutes: 240 })];
     const overlap = (minutes: number) => [

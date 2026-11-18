@@ -310,6 +310,7 @@ const rowLine = (row: TimetrackRow) =>
     ...(row.edited ? ['edited'] : []),
     ...(row.hidden ? ['hidden'] : []),
     row.laneKey ?? 'no lane',
+    ...(row.presence ? [`desk ${row.presence.deskEvents}`, `prompts ${row.presence.humanPrompts}`] : []),
     ...(row.autoModeSubject?.kind === 'context' ? [`context ${row.autoModeSubject.contextId}`] : []),
   ].join('  ');
 

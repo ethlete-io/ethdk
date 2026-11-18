@@ -154,6 +154,9 @@ like every write; once approved, its result's `applied` says how many edits foun
 running day is re-cut on every collector tick, so read `rows` again rather than reusing an id from
 minutes ago.
 
+Each row line ends with its presence evidence (`desk N  prompts M`: desk events and human prompts inside the
+row). Name (book) a row between 00:00 and 06:00 only when it has desk events; prompts alone do not count.
+
 An edit may correct a row's times, its name, its note and whether it syncs. It may not split, merge
 or delete one - restructuring a day is the user's own decision, made on the screen.
 

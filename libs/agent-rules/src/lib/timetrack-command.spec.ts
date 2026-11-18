@@ -1164,6 +1164,47 @@ describe('timetrack ask', () => {
     expect(lines[1]).toBe('  r1  09:00-09:30  30m  unnamed  suggested  repo:/a  context repo:/a|feature/pdf');
   });
 
+  it('prints the desk events and human prompts behind a row', async () => {
+    const fromMs = new Date(2026, 9, 2, 2, 0).getTime();
+    const { handler } = recordingBodies({
+      ok: true,
+      value: {
+        day: '2026-10-02',
+        rows: [
+          {
+            id: 'r1',
+            description: 'night work',
+            fromMs,
+            toMs: fromMs + 30 * 60_000,
+            durationMs: 30 * 60_000,
+            observedMs: 30 * 60_000,
+            issueKey: 'FIP-1',
+            laneKey: 'repo:/a',
+            state: 'accepted',
+            confidence: 'likely',
+            edited: false,
+            hidden: false,
+            presence: { deskEvents: 0, humanPrompts: 3 },
+          },
+        ],
+        hidden: [],
+        proposedMs: 0,
+        loggedMs: 0,
+        targetMs: 0,
+        unattributedMs: 0,
+        warnings: [],
+        behind: [],
+      },
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['rows', '2026-10-02'])).resolves.toBe(0);
+    expect(lines[1]).toBe('  r1  02:00-02:30  30m  FIP-1  accepted  repo:/a  desk 0  prompts 3');
+  });
+
   it('fails with the app refusal for a subject the day does not hold', async () => {
     const { handler } = recordingBodies({
       ok: false,

@@ -7,6 +7,7 @@ import { StandInState } from '../model/stand-in';
 import { DayWarning } from '../rows/round';
 import { RepoNamingDeclineReason } from '../rows/repo-naming';
 import { AutoModeSubject } from '../review/model';
+import { RowPresence } from './row-presence';
 
 /**
  * The contract between the app and a coding agent's CLI, spoken over the host's loopback endpoint.
@@ -360,6 +361,8 @@ export type AgentApiReviewedRow = {
   sources: { issue: FieldSource; description: FieldSource };
   /** Whether the row is off the timeline. A hidden row is neither written nor waiting for a name. */
   hidden: boolean;
+  /** Desk events and human prompts inside the row's span. Absent on an answer that did not read the day's events. */
+  presence?: RowPresence;
   /**
    * What "Ask auto mode again" on the row asks about, and what `autoMode.ask` takes. Absent where the
    * press is not offered: a row the user named by hand, or one a rule or a resolved stand-in names.

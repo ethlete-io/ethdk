@@ -12,6 +12,7 @@ import {
   AgentApiNaming,
   AgentApiRequest,
   AgentApiReviewedRow,
+  CollectedEvent,
   AgentApiRules,
   AgentApiStandIn,
   AgentApiRulesRepoint,
@@ -64,6 +65,7 @@ import {
   ReviewedRow,
   routesThroughApproval,
   rowFieldSourceOf,
+  rowPresenceOf,
   suggestProjectForRepo,
   workPathDays,
   workPathPieces,
@@ -331,43 +333,50 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * day screen drew has nothing to read but a screenshot of it.
    */
   /** The wire shape of a row. A caller in another repository names this `id` in every edit it sends. */
-  const toApiRow = (
-    row: ReviewedRow,
-    askSubjectOf: (row: ReviewedRow) => AutoModeSubject | undefined,
-  ): AgentApiReviewedRow => ({
-    id: row.id,
-    issueKey: row.issueKey,
-    standInId: row.standInId,
-    description: row.description,
-    fromMs: row.from.getTime(),
-    toMs: row.to.getTime(),
-    durationMs: row.durationMs,
-    observedMs: row.observedMs,
-    laneKey: row.laneKey,
-    state: row.state,
-    confidence: row.confidence,
-    withheldIssueKey: row.withheldIssueKey,
-    disputedIssueKey: row.disputedIssueKey,
-    disputedStandInId: row.disputedStandInId,
-    unattended: row.unattended,
-    workedOn: row.workedOn,
-    edited: row.edited,
-    sources: { issue: rowFieldSourceOf(row, 'issue'), description: rowFieldSourceOf(row, 'description') },
-    hidden: row.hidden,
-    autoModeSubject: askSubjectOf(row),
-  });
+  const toApiRow = (options: {
+    row: ReviewedRow;
+    askSubjectOf: (row: ReviewedRow) => AutoModeSubject | undefined;
+    events: readonly CollectedEvent[];
+  }): AgentApiReviewedRow => {
+    const { row, askSubjectOf, events } = options;
+
+    return {
+      id: row.id,
+      issueKey: row.issueKey,
+      standInId: row.standInId,
+      description: row.description,
+      fromMs: row.from.getTime(),
+      toMs: row.to.getTime(),
+      durationMs: row.durationMs,
+      observedMs: row.observedMs,
+      laneKey: row.laneKey,
+      state: row.state,
+      confidence: row.confidence,
+      withheldIssueKey: row.withheldIssueKey,
+      disputedIssueKey: row.disputedIssueKey,
+      disputedStandInId: row.disputedStandInId,
+      unattended: row.unattended,
+      workedOn: row.workedOn,
+      edited: row.edited,
+      sources: { issue: rowFieldSourceOf(row, 'issue'), description: rowFieldSourceOf(row, 'description') },
+      hidden: row.hidden,
+      presence: rowPresenceOf({ events, from: row.from, to: row.to }),
+      autoModeSubject: askSubjectOf(row),
+    };
+  };
 
   const toApiDay = (options: {
     day: string;
     review: DayReview;
     askSubjectOf: (row: ReviewedRow) => AutoModeSubject | undefined;
+    events: readonly CollectedEvent[];
   }): AgentApiDayRows => {
-    const { day, review: current, askSubjectOf } = options;
+    const { day, review: current, askSubjectOf, events } = options;
 
     return {
       day,
-      rows: current.rows.filter((row) => row.durationMs !== 0).map((row) => toApiRow(row, askSubjectOf)),
-      hidden: current.hidden.map((row) => toApiRow(row, askSubjectOf)),
+      rows: current.rows.filter((row) => row.durationMs !== 0).map((row) => toApiRow({ row, askSubjectOf, events })),
+      hidden: current.hidden.map((row) => toApiRow({ row, askSubjectOf, events })),
       proposedMs: current.check.proposedMs,
       loggedMs: current.check.loggedMs,
       targetMs: current.check.targetMs ?? 0,
@@ -383,8 +392,16 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     };
   };
 
+  const eventsOfDay$ = (day: string) => {
+    const { from, to } = localDayRange(day, dayBoundaryOf(settings.settings()));
+
+    return ports.events.eventsBetween$(from, to);
+  };
+
   const dayRows$ = (day: string): Observable<AgentApiDayRows> =>
-    agentDay.review$(day).pipe(map((read) => toApiDay({ day, ...read })));
+    agentDay
+      .review$(day)
+      .pipe(switchMap((read) => eventsOfDay$(day).pipe(map((events) => toApiDay({ day, ...read, events })))));
 
   /**
    * Makes the edits a caller stated, then answers the day as it reads afterwards.
@@ -395,7 +412,13 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const editDay$ = (request: Extract<AgentApiRequest, { op: 'day.edits' }>): Observable<AgentApiEditedDay> =>
     agentDay
       .editRows$({ day: request.day, edits: request.edits })
-      .pipe(map(({ applied, ...read }) => ({ ...toApiDay({ day: request.day, ...read }), applied })));
+      .pipe(
+        switchMap(({ applied, ...read }) =>
+          eventsOfDay$(request.day).pipe(
+            map((events) => ({ ...toApiDay({ day: request.day, ...read, events }), applied })),
+          ),
+        ),
+      );
 
   const dayEvents$ = (request: Extract<AgentApiRequest, { op: 'day.events' }>) => {
     const { from, to } = localDayRange(request.day, dayBoundaryOf(settings.settings()));
