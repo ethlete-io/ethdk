@@ -28,6 +28,7 @@ const VISIBLE_ATTRIBUTES = new Set([
   'ariaPlaceholder',
   'ariaRoleDescription',
   'ariaValueText',
+  'etTooltip',
 ]);
 
 const hasLetter = (text: string) => /\p{L}/u.test(text);

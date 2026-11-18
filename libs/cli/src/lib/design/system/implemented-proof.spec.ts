@@ -106,4 +106,17 @@ describe('implemented proof', () => {
       `LITERAL-TEXT ${COMPONENT}: "Zoom in", "Close", "Remove", "many", "Search" - read user-visible text from the product's label map`,
     ]);
   });
+
+  it('refuses literal text in an etTooltip, static or bound', async () => {
+    const refusals = await refusalsOf({
+      [COMPONENT]: componentOf(
+        '<button etTooltip="Zoom to fit (Shift+1)" [attr.aria-label]="labels.fit"></button><button [etTooltip]="zoomed ? \'Reset zoom\' : labels.zoom"></button><button [etTooltip]="labels.zoom"></button>',
+      ),
+      'apps/a/src/chip/chip.component.spec.ts': SPEC,
+    });
+
+    expect(refusals).toEqual([
+      `LITERAL-TEXT ${COMPONENT}: "Zoom to fit (Shift+1)", "Reset zoom" - read user-visible text from the product's label map`,
+    ]);
+  });
 });
