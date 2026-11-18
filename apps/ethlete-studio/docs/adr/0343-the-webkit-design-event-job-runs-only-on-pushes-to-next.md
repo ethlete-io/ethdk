@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B580
+built: 8633c9be0
 governs: ['.github/workflows/ci.yml']
 decided: 2026-11-18
 source: doc-agent session 2026-11-18 (day shift), the macOS cost of CI once the SDK repo is private (ADR 0342)
