@@ -1,7 +1,7 @@
 {
   "target": "pages/system",
   "targets": ["pages/system", "pages/inbox", "components/comment-flow"],
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-18T06:14:52.118Z",
   "createdBy": {
     "cmd": "design sketch new pages/system pages/inbox components/comment-flow --variants a,b --by claude-opus-5-5 --product studio --round Kommentar-Faden auf System --note B189: Ein Klick auf einen Pin öffnet seinen Faden als dieselbe Karte wie in der Inbox: Ort, Erledigen, Schließen, die Nachrichten mit Zurückziehen unter jeder eigenen (Wurzel und eigene Antworten), ein fokussiertes Antwortfeld mit Antworten und Esc schließt. Die Karte zieht nach components/comment-flow, damit beide Seiten sie teilen. Im Kommentarmodus zeigt ein Hinweis: Esc oder C beendet den Modus (ADR 0321). Inbox: die Karte liegt nicht mehr in slot('canvas'), sondern in einer Ebene darüber, am Pin. --asks thread,thread-own,thread-busy,thread-error,comment-mode --variant-note a=Karte schwebt neben dem gewählten Pin auf dem Frame, wie in der Inbox. Empfohlen: der Faden bleibt beim Ort, den er kommentiert, und beide Seiten zeigen die Karte gleich. --variant-note b=Karte dockt am rechten Rand der Leinwand unter Kommentar und dem Punkte-Chip, der Pin bleibt gewählt. Sie verdeckt den Frame nie und wandert nicht mit Zoom oder Pan, ist aber vom Pin getrennt und anders als in der Inbox.",
@@ -146,5 +146,13 @@
         "withdrawnBy": "claude-opus-5-5"
       }
     ]
+  },
+  "readyContent": {
+    "a": "c60317fab430eafb",
+    "b": "b084faabafa6d9f4"
+  },
+  "mergeHold": {
+    "reason": "variant a changes pages/system comment-mode, comments-mode, thread, thread-own, thread-busy, thread-error; variant a changes pages/inbox thread, thread-own, thread-busy, thread-error, thread-rejected; variant a changes components/comment-flow mode, thread",
+    "at": "2026-11-18T06:23:29.625Z"
   }
 }
