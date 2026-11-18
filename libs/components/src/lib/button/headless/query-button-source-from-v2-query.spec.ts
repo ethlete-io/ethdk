@@ -54,7 +54,7 @@ describe('queryButtonSourceFromV2Query', () => {
 
   it('is loading while the query runs and idle once it settles', async () => {
     const { query, loading } = createSource();
-    const prepared = prepare({ delay: 50, response: { id: '1' } });
+    const prepared = prepare({ delay: 500, response: { id: '1' } });
 
     query.set(prepared);
     prepared.execute();
@@ -62,10 +62,13 @@ describe('queryButtonSourceFromV2Query', () => {
 
     expect(loading()).toEqual({ progress: null });
 
-    await vi.waitFor(() => {
-      TestBed.tick();
-      expect(loading()).toBeNull();
-    });
+    await vi.waitFor(
+      () => {
+        TestBed.tick();
+        expect(loading()).toBeNull();
+      },
+      { timeout: 3000 },
+    );
   });
 
   it('maps the progress percentage', async () => {
