@@ -2545,3 +2545,10 @@ hitting. Verified: specs for the message and the hint, `vitest related` (1699 te
 `design check --product` sdk / studio / studio-lab: CONTROL-STATE blocking 0 / 0 (2 baselined) / 0, HINT 41 / 41 / 1.
 Not verified: a live product with a declared `bespoke` reason (none declares one yet), and a run of the old code for a
 before count (detection is unchanged).
+
+## As built (B140 closed)
+
+CUT-CONTROL and the CLIPPED skip scope were built in c5d3271a1. The open check (the Sketches root skip after the app
+slice): `pages/sketches` carries no root skip any more; its only `data-et-skip="CLIPPED"` sits on the change crop
+(`shared/change-crop.ts`), and `design check --product studio --part pages/sketches` on f47779266 reported 0 findings
+with both rules active. Verified by that check run; no new code.
