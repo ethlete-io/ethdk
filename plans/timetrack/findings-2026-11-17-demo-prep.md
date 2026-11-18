@@ -88,7 +88,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 21. ~~**An agent that names rows from the `unattended` flag alone books night work.**~~ Fixed (4681e8512: each row names its presence evidence). The tidy-up
     session named rows the app called attended, and eight of them lay in the night, until the user
     said that he is away at night. The flag is not enough to tell his work from the agents' work.
-22. **A six-hour call nobody held.** Both machines draw an unnamed `lane:call` row 17:45-23:45 on
+22. ~~**A six-hour call nobody held.**~~ Fixed (19fa204d6). Both machines draw an unnamed `lane:call` row 17:45-23:45 on
     2026-11-17. Which event opened the call is unknown.
 23. ~~**Rejected rows stay on the page.**~~ Fixed (ec696f5e1). The Mac's 17.11. still shows `elrond` and `3d-projekte`
     rows after they were rejected; hiding them takes a second edit (`--hide`) per row.
@@ -100,3 +100,15 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     human was on tank over SSH from the Mac on 4 ptys. Suspect: the work evidence (agent sessions, commits) is on tank,
     the attendance evidence on the Mac, which sees only a terminal. New against slice 8 / M7 and `m7-sync-research.md`:
     both machines are used at the same time, one of them headless.
+26. **The release locks its window when idle, the dev build does not.** The human, 2026-11-19: the Mac release locks the
+    window after about 5 minutes idle; the serve build on tank never locks. Suspect: the dev/serve host has no window
+    lock or no idle signal.
+27. **Agent work counts as presence.** On 18.11. the fifagg lane holds one 13 h 30 row from 00:00, the ethlete-sdk lane is
+    nearly empty although SDK sessions ran all day, and the agents' night counts as the human's time. The B602
+    presence slice (1c8bb8371, reverted in 363745c after an unexplained snapshot change, 1 h 15 to 20 h logged) proved:
+    Cause: B596 never raised `CLAUDE_CODE_PARSER_VERSION`, so stored logs were not re-read. Cause: fifagg's old
+    `agent-sessions.mjs` types `/clear` and a handoff resume with no marker, so each resume counts as human (12 in the
+    night). Proven not presence: cross-session messages, task notifications, subagent transcripts. Open:
+    `rows/attended.ts` counts one attended moment as the whole band instead of cutting at the gaps (ADR 0018); the app
+    reads only `~/.claude/projects`, never `~/.claude-second` (B616). Parallel subagents stay in their session's row
+    (ADR 0043: the session is the finest grain).

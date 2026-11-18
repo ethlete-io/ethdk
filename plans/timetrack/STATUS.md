@@ -1,13 +1,13 @@
 # Timetrack - Status
 
-Stand: 18.11.2026
+Stand: 19.11.2026
 
 Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), die Zeilen stehen in
 [`plans/studio/STATUS.md`](../studio/STATUS.md). Hier stehen sie nicht doppelt.
 
 ## Warteschlange (nächstes oben)
 
-1. B602: offen #4, #5 (Beschreibungen) und #22 (zurückgenommen a825cba41), der Builder als Letztes. #11 ist
+1. B602: Anwesenheit neu bauen (Befund #27, Revert 363745c), dann #4, #5 (Beschreibungen). #22 gebaut (19fa204d6). #11 ist
    wahrscheinlich durch 714b49bc9 behoben, die Linux-Maschine läuft vermutlich auf einem alten Build.
 2. B616: gekoppelte Rechner zeigen denselben Tag, auch Handzeilen, Änderungen, Regeln und Vertretungen; SSH-Arbeit auf
    tank erscheint auf dem Mac (ADR 0047, Befunde #7, #15, #24, #25).

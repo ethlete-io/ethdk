@@ -32,12 +32,8 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 3. **Consumer-Auslieferung (B610)** ⏳ Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules, frühestens eine Woche nach B608/B609 (ADR 0374) - Builder
-4. **Builder-Takt (B618)** ⏳ parallel höchstens zwei Themen, kein Warten auf CI/Hilfsagent/Antwort; rotes CI hält nur bei unbekannter Ursache ohne Fix; builder-agent Start-Schritt 4 und Takt-Regel angleichen (ADR 0376) - Builder
-5. **Bericht auf Abruf (B611)** ⏳ Slash-Befehl druckt eine feste Tabelle im Chat für einen Zeitraum, kein Vorgänger (ADR 0375) - Builder
-6. **Statuszeile-Mod (B612)** ⏳ Statuszeile: Mod mit laufender Aufgabe, nach B609 (ADR 0375) - Builder
-7. **Bericht bei Rückkehr (B613)** ⏳ dieselbe Tabelle für die Abwesenheit, nach B611 und B608 (ADR 0375) - Builder
-8. **Timetrack-Beschreibung (B602)** ⏳ Timetrack: offen #4/#5 (gleiche Beschreibung in jeder Spur, ein deutscher Satz) und #22 neu (Revert a825cba41: brach e2e call-end-here), als Letztes (Mensch 18.11.) - Builder
-9. **Timetrack-Gleichstand (B616)** ⏳ gekoppelte Rechner zeigen denselben Tag, SSH-Arbeit auf tank erscheint auf dem Mac (Timetrack ADR 0047) - Builder
+4. **Timetrack-Beschreibung (B602)** ⏳ Timetrack: Anwesenheit neu bauen (Befund #27: Agentenarbeit zählt als Anwesenheit, Ursachen in `plans/timetrack/findings-2026-11-17-demo-prep.md`), dann #4/#5 (gleiche Beschreibung in jeder Spur, ein deutscher Satz) - Builder
+5. **Timetrack-Gleichstand (B616)** ⏳ gekoppelte Rechner zeigen denselben Tag, SSH-Arbeit auf tank erscheint auf dem Mac (Timetrack ADR 0047) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.
 
