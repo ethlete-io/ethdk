@@ -341,9 +341,11 @@ export class SketchViewComponent {
     computation: (key) => (key === null ? {} : (rememberedView().sketchViews?.[key] ?? {})),
   });
 
-  private openRounds = linkedSignal(() =>
+  private openRoundsSource = computed(() =>
     this.remembered().roundsFor === this.sketch().createdAt ? (this.remembered().rounds ?? {}) : {},
   );
+
+  private openRounds = linkedSignal(this.openRoundsSource);
 
   private shownRounds = computed(() => sketchRoundsOf(this.sketch(), { openRounds: this.openRounds() }));
 

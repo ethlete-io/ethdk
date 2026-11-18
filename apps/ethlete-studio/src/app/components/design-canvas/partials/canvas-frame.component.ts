@@ -455,8 +455,10 @@ export class CanvasFrameComponent {
 
   protected admittedShot = signal<string | null>(null);
 
+  private shotReset = computed(() => this.live() || !!this.frame().error);
+
   private loadedShot = linkedSignal<boolean, string | null>({
-    source: () => this.live() || !!this.frame().error,
+    source: this.shotReset,
     computation: () => null,
   });
 

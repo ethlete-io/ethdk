@@ -331,7 +331,7 @@ export class SketchesComponent {
 
     return this.restoredCamera() ?? (typeof camera === 'object' ? camera : { x: 0, y: 0, zoom: zoomOf(camera) });
   });
-  protected reasonOpen = linkedSignal(() => this.reason());
+  protected reasonOpen = linkedSignal(this.reason);
   protected selectedFrame = signal<string | null>(null);
   private confirmRow = signal<string | null>(null);
   private confirmRef: { close: () => void } | null = null;
@@ -488,11 +488,17 @@ export class SketchesComponent {
   );
 
   protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
+  private sameRowsSource = computed(() => ({
+    part: this.part(),
+    rows: this.shownRows(),
+    listed: this.listedRows(),
+    drawn: this.drawnKey(),
+  }));
   protected sameRows = linkedSignal<
     { part: string; rows: SketchRow[]; listed: SketchRow[]; drawn: string | null },
     SketchRow[]
   >({
-    source: () => ({ part: this.part(), rows: this.shownRows(), listed: this.listedRows(), drawn: this.drawnKey() }),
+    source: this.sameRowsSource,
     computation: ({ part, rows, listed, drawn }, previous) => {
       const wasSame = new Set(previous?.source.part === part ? previous.value.map((row) => row.key) : []);
       const shotsOf = (key: string) => listed.find((row) => row.key === key)?.shots ?? [];
