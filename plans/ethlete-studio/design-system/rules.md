@@ -117,7 +117,7 @@ flaky, not a regression. Likely cause, not confirmed: its fake tool listens on t
    prototype store, as in "Slice 7 decisions".
 8. **MCP server**: `et design mcp` over the core, as in "Slice 8 decisions". It replaces
    `apps/ethlete-studio/src-tauri/src/tools.rs`.
-9. **Motion**: its own plan, `plans/ethlete-studio/motion.md`. A timeline, controlled time, a
+9. **Motion**: decided in ADR 0363. A timeline, controlled time, a
    screenshot per keyframe. Motion is a tool that extends components and elements.
 10. **Studio designs Studio**: a full redesign of Studio through the whole workflow, as in "Slice
     10 decisions". It runs after slice 6 and before slices 7 to 9; the tomflix rebuild follows it.

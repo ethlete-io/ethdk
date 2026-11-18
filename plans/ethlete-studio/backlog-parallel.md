@@ -1,6 +1,6 @@
 # Studio design tooling backlog - parallel plan (2026-10-30)
 
-Goal (Tom): finish the open items of `design-system-actions.md` and `motion.md` as fast as possible, without
+Goal (Tom): finish the open items of `design-system-actions.md` as fast as possible, without
 Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes onto the merge queue.
 
 Status (2026-10-31): the tooling streams A to G are built; what is left is the merge queue, the checks that wait for

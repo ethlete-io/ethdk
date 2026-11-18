@@ -328,7 +328,7 @@ Play:
 - A switch is a View Transition that fades opacity only. A part can give an element a
   `view-transition-name` so that it stays in place between two states, for example a poster.
   Everything else waits for slice 9.
-- Changed by the motion plan (`plans/ethlete-studio/motion.md`): a rule in a part switches by a
+- Changed by the motion plan (ADR 0363): a rule in a part switches by a
   morph of the existing DOM, not by an opacity fade, and names its motion explicitly.
 - Controls: "back to start" and a reduced-motion switch that emulates `prefers-reduced-motion`.
   A speed control comes with the slice 9 timeline.

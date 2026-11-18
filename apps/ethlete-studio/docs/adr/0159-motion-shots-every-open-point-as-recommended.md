@@ -2,7 +2,7 @@
 status: accepted
 built: dacf9bd64
 decided: 2026-10-30
-source: plans/ethlete-studio/motion.md, slice 2 open points
+source: slice 2 open points of the motion plan (deleted in B597, see ADR 0363)
 ---
 
 # Motion shots: every open point as recommended
