@@ -1,6 +1,6 @@
 ---
-status: accepted
-open: B388
+status: superseded by 0226
+built: fd85e585b
 decided: 2026-11-05
 source: grill session 2026-11-05
 ---
