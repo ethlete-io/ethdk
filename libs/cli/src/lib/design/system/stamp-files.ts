@@ -21,24 +21,15 @@ export const withStampsInMemory = <T>(run: () => Promise<T>): Promise<T> =>
 
 /**
  * Runs `run` with every write to a stamp file kept in the product's gitignored cache folder instead of the tracked
- * file. Every process reads the cached text while the tracked file still holds the text it was derived from; a change
- * to the tracked file, such as `design ready` or a checkout, voids it.
+ * file. Every process reads each cached entry while the tracked file still holds the entry it was derived from; a
+ * change to that entry of the tracked file, such as `design ready` of that part or a checkout, voids it, and a change to
+ * another entry does not.
  */
 export const withStampsInCache = <T>(run: () => Promise<T>): Promise<T> => inCache.run(true, run);
 
 const cachedStampFileOf = (file: string) => resolve(productCacheDirOf(dirname(file)), 'stamps', basename(file));
 
 const trackedTextOf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
-
-const cachedStampOf = (file: string, tracked: string | null): CachedStamp | null => {
-  try {
-    const cached = JSON.parse(readFileSync(cachedStampFileOf(file), 'utf8')) as CachedStamp;
-
-    return cached.base === tracked && typeof cached.text === 'string' ? cached : null;
-  } catch {
-    return null;
-  }
-};
 
 /** The text of a stamp file as the run sees it, or `null` when there is none. */
 export const readStampText = (file: string): string | null => {
@@ -48,10 +39,98 @@ export const readStampText = (file: string): string | null => {
   return held !== undefined ? held.text : diskStampTextOf(key);
 };
 
+const entriesOf = (text: string | null): Record<string, unknown> => {
+  try {
+    const parsed: unknown = text === null ? {} : JSON.parse(text);
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const sameEntry = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+const isEntries = (text: string | null) => {
+  try {
+    const parsed: unknown = text === null ? {} : JSON.parse(text);
+
+    return !!parsed && typeof parsed === 'object' && !Array.isArray(parsed);
+  } catch {
+    return false;
+  }
+};
+
+const sortedTextOf = (entries: Record<string, unknown>) =>
+  `${JSON.stringify(Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b))), null, 2)}\n`;
+
+const changedEntriesOn = (options: { from: string | null; to: string | null; onto: string | null }) => {
+  const [from, to] = [entriesOf(options.from), entriesOf(options.to)];
+  const next = entriesOf(options.onto);
+  let changed = false;
+
+  for (const key of new Set([...Object.keys(from), ...Object.keys(to)])) {
+    if (sameEntry(from[key], to[key])) continue;
+
+    changed = true;
+
+    if (to[key] === undefined) delete next[key];
+    else next[key] = to[key];
+  }
+
+  return changed ? next : null;
+};
+
+const overlaidTextOf = (cached: CachedStamp, tracked: string | null) => {
+  if (!isEntries(cached.base) || !isEntries(cached.text) || !isEntries(tracked)) return tracked;
+
+  const [base, run, now] = [entriesOf(cached.base), entriesOf(cached.text), entriesOf(tracked)];
+  const kept = [...new Set([...Object.keys(base), ...Object.keys(run)])].filter(
+    (key) => !sameEntry(base[key], run[key]) && sameEntry(base[key], now[key]),
+  );
+
+  if (kept.length === 0) return tracked;
+
+  for (const key of kept) {
+    if (run[key] === undefined) delete now[key];
+    else now[key] = run[key];
+  }
+
+  return sortedTextOf(now);
+};
+
+const readCachedStamp = (file: string): CachedStamp | null => {
+  try {
+    const cached = JSON.parse(readFileSync(cachedStampFileOf(file), 'utf8')) as CachedStamp;
+
+    return typeof cached.text === 'string' && (cached.base === null || typeof cached.base === 'string') ? cached : null;
+  } catch {
+    return null;
+  }
+};
+
 const diskStampTextOf = (file: string) => {
   const tracked = trackedTextOf(file);
+  const cached = readCachedStamp(file);
 
-  return cachedStampOf(file, tracked)?.text ?? tracked;
+  if (cached === null) return tracked;
+
+  return cached.base === tracked ? cached.text : overlaidTextOf(cached, tracked);
+};
+
+const writeTrackedStamp = (file: string, value: unknown) => {
+  const tracked = trackedTextOf(file);
+  const seen = diskStampTextOf(file);
+
+  if (seen === tracked || !isEntries(tracked)) {
+    writeJsonFile({ file, value });
+
+    return;
+  }
+
+  const next = changedEntriesOn({ from: seen, to: JSON.stringify(value), onto: tracked });
+
+  if (next !== null) writeChangedFile(file, sortedTextOf(next));
 };
 
 const sameJson = (text: string | null, value: unknown) => {
@@ -66,7 +145,7 @@ const writeCachedStamp = (file: string, value: unknown) => {
   const tracked = trackedTextOf(file);
   const cacheFile = cachedStampFileOf(file);
 
-  if (sameJson(cachedStampOf(file, tracked)?.text ?? tracked, value)) return;
+  if (sameJson(diskStampTextOf(file), value)) return;
 
   if (sameJson(tracked, value)) {
     rmSync(cacheFile, { force: true });
@@ -83,16 +162,6 @@ const withoutAt = (entry: unknown) => {
   const { at: _at, ...rest } = entry as Record<string, unknown>;
 
   return rest;
-};
-
-const entriesOf = (text: string | null): Record<string, unknown> => {
-  try {
-    const parsed: unknown = text === null ? {} : JSON.parse(text);
-
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
-  } catch {
-    return {};
-  }
 };
 
 /**
@@ -138,5 +207,5 @@ export const writeStampFile = (file: string, value: unknown) => {
 
     held.set(key, { base, text: JSON.stringify(value) });
   } else if (inCache.getStore()) withProductLock(dirname(file), () => writeCachedStamp(resolve(file), value));
-  else withProductLock(dirname(file), () => writeJsonFile({ file, value }));
+  else withProductLock(dirname(file), () => writeTrackedStamp(resolve(file), value));
 };

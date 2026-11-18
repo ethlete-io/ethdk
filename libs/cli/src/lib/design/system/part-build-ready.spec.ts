@@ -7,6 +7,7 @@ import { DESIGN_DIR } from '../design-config';
 import { ActionsOf, BuildReadyInputs, buildReadyOf, recordBuildReady } from './part-build-ready';
 import { readReady, READY_FILE, readyMarkOf, readyPartOf, writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';
+import { withStampsInCache } from './stamp-files';
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-build-ready-'));
@@ -364,5 +365,30 @@ describe('recordBuildReady', () => {
 
     expect(lines).toHaveLength(1);
     expect(lines[0]).toMatch(/^RECORD DROPPED app-a components\/chip: no-harness: /u);
+  });
+
+  it('keeps the record the design server holds for one part while design ready marks another', async () => {
+    const { target, dir } = checkout();
+    const product = productOf(target);
+
+    writeFileSync(join(dir, READY_FILE), '{}\n');
+    await withStampsInCache(() =>
+      recordBuildReady({
+        product,
+        by: 'et design serve',
+        cmd: 'serve',
+        parts: ['components/chip'],
+        inputs: green,
+        actionsOf: async () => [],
+      }),
+    );
+
+    expect(readFileSync(join(dir, READY_FILE), 'utf8')).toBe('{}\n');
+    expect(readyMarkOf({ product, part: 'components/chip' })).not.toBeNull();
+
+    writePartRecord({ product, part: 'pages/home', origin: originOf('spec', 'ready') });
+
+    expect(Object.keys(JSON.parse(readFileSync(join(dir, READY_FILE), 'utf8')))).toEqual(['pages/home']);
+    expect(readyMarkOf({ product, part: 'components/chip' })).toMatchObject({ by: 'et design serve' });
   });
 });

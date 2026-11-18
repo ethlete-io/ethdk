@@ -182,4 +182,18 @@ describe('withStampsInCache', () => {
     expect(existsSync(join(root, '.ethlete/cache/acme/stamps/ready.json'))).toBe(false);
     expect(readStampText(file)).toBe('{"a":1}\n');
   });
+
+  it('keeps a cached entry while only another entry of the tracked file changes, and writes none of it there', async () => {
+    const { file } = productReadyFile();
+
+    await withStampsInCache(async () => writeStampFile(file, { a: 1, b: 2 }));
+    writeStampFile(file, { ...JSON.parse(readStampText(file) ?? '{}'), a: 3 });
+
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 3 });
+    expect(JSON.parse(readStampText(file) ?? '')).toEqual({ a: 3, b: 2 });
+
+    writeFileSync(file, '{"a":3,"b":4}\n');
+
+    expect(readStampText(file)).toBe('{"a":3,"b":4}\n');
+  });
 });
