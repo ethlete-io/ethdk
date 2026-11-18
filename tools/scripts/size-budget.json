@@ -9,7 +9,7 @@
     },
     { "name": "build ready", "files": ["plans/studio/build-ready.md"], "budget": 36000 },
     { "name": "status", "files": ["plans/studio/STATUS.md"], "budget": 5000, "cellCap": 400 },
-    { "name": "rows", "files": ["plans/studio/rows.md"], "budget": 36000, "cellCap": 400 }
+    { "name": "rows", "files": ["plans/studio/rows.md"], "budget": 30000, "cellCap": 400 }
   ],
   "overrides": {
     ".agents/skills/ethlete-timetrack/SKILL.md": 25000,

@@ -24,7 +24,7 @@ const main = (argv) => {
   if (id) {
     const row = rowOf(statusText, id);
     if (!row) {
-      process.stderr.write(`No row ${id} in plans/studio/STATUS.md or rows.md.\n`);
+      process.stderr.write(`No row ${id} in plans/studio/STATUS.md, queue.md or rows.md.\n`);
       return 1;
     }
     process.stdout.write(`${row.replace(/\s{2,}/g, ' ')}\n`);
