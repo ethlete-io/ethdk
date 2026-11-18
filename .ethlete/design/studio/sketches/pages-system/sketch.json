@@ -115,7 +115,8 @@
     {
       "key": "r1",
       "title": "Entwickler-Part im Baubereit-Footer",
-      "note": "B250c: Wie der Baubereit-Footer einen Entwickler-Part zeigt (builder aus ready.json). a: ruhiges Outline-Badge neben dem Status, die Gründe als Tooltip; b: Badge und die Gründe als gedämpfte Zeilen unter dem Footer; c: Badge mit Code-Icon und die Gründe als eigene Gruppe Entwickler in der Gründe-Liste."
+      "note": "B250c: Wie der Baubereit-Footer einen Entwickler-Part zeigt (builder aus ready.json). a: ruhiges Outline-Badge neben dem Status, die Gründe als Tooltip; b: Badge und die Gründe als gedämpfte Zeilen unter dem Footer; c: Badge mit Code-Icon und die Gründe als eigene Gruppe Entwickler in der Gründe-Liste.",
+      "asks": ["developer-part"]
     }
   ],
   "variantInfo": {
