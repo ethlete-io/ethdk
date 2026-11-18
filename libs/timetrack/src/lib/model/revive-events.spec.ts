@@ -24,7 +24,7 @@ describe('reviveCollectedEvents', () => {
 
     const events = reviveCollectedEvents(JSON.parse(written).events);
 
-    expect(events[0].at).toEqual(new Date('2026-11-17T08:00:00.000Z'));
+    expect(events[0]).toMatchObject({ at: new Date('2026-11-17T08:00:00.000Z') });
     expect(events[1]).toMatchObject({ authoredAt: new Date('2026-11-17T08:59:00.000Z') });
     expect(events[2]).toMatchObject({ until: new Date('2026-11-17T11:00:00.000Z') });
     expect(events[0]).toMatchObject({ appName: 'Code' });
