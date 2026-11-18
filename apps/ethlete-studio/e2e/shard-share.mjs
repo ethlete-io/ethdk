@@ -3,9 +3,13 @@ export const shardShareOf = (queue, shard, keyOf) => {
   const rest = queue.filter((job) => !job.ownShard);
 
   if (shard.count === 1) return queue;
-  if (own.length && shard.index === shard.count) return own;
 
-  const count = own.length ? shard.count - 1 : shard.count;
+  const ownShards = own.length < shard.count ? own.length : Math.min(own.length, 1);
+  const firstOwn = shard.count - ownShards + 1;
+
+  if (ownShards && shard.index >= firstOwn) return ownShards === own.length ? [own[shard.index - firstOwn]] : own;
+
+  const count = shard.count - ownShards;
   const slot = Object.fromEntries(
     Object.values(Object.groupBy(rest, (job) => job.page)).flatMap((jobs) => jobs.map((job, at) => [keyOf(job), at])),
   );

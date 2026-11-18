@@ -31,6 +31,20 @@ test('without an ownShard job every shard deals the jobs back and forth per page
   ]);
 });
 
+test('each ownShard job runs alone in one of the last shards', () => {
+  const queue = [...jobsOf('System', ['a', 'heavy', 'b']), { page: 'System', name: 'heavy2', ownShard: true }];
+  const shares = sharesOf(queue, 4);
+
+  assert.deepEqual(shares.slice(2), [['System :: heavy'], ['System :: heavy2']]);
+  assert.deepEqual(shares.slice(0, 2).flat().toSorted(), ['System :: a', 'System :: b']);
+});
+
+test('more ownShard jobs than shards share the last shard', () => {
+  const queue = [...jobsOf('System', ['a']), ...['h1', 'h2'].map((name) => ({ page: 'System', name, ownShard: true }))];
+
+  assert.deepEqual(sharesOf(queue, 2), [['System :: a'], ['System :: h1', 'System :: h2']]);
+});
+
 test('a single shard runs every job', () => {
   const queue = jobsOf('System', ['a', 'heavy']);
 

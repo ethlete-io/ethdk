@@ -342,12 +342,12 @@ jobs:
       - run: yarn nx e2e csp-e2e
 
   studio-e2e:
-    name: Studio e2e (${{ matrix.shard }}/7)
+    name: Studio e2e (${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     timeout-minutes: 45
     permissions:
       contents: read
@@ -375,7 +375,7 @@ jobs:
         env:
           STUDIO_E2E_WORKERS: 2
           STUDIO_E2E_BUDGET_ENFORCE: 1
-          STUDIO_E2E_SHARD: ${{ matrix.shard }}/7
+          STUDIO_E2E_SHARD: ${{ matrix.shard }}/8
 
       - name: Name the failing specs
         if: failure()
