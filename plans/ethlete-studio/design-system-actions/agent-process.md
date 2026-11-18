@@ -8,7 +8,7 @@
   sends product creation to the CLI while the app has a form. Missing interaction designs: repo and project picker hover
   and menu, tree-icon tooltips, Inbox and Merge changed-list hover, canvas zoom controls, the preset select's open body,
   the Merge unchanged accordion.
-- **Now:** the coverage inventory is in `studio-wireframes-handoff.md`; `design complete` (ADR 0127) gates controls. A
+- **Now:** the coverage inventory file is deleted (B597); `design complete` (ADR 0127) gates controls. A
   page's presence, a CSS pseudo-state or a native `title` does not count as a reviewed interaction design.
 - **Still open:** the inventory is a source audit, not an exhaustive product review.
 

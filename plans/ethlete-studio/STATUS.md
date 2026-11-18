@@ -6,8 +6,8 @@ Stand: 18.11.2026, nachmittags
 
 Das MVP ist erreicht (02.11.): alle 17 Studio-Teile sehen im Code so aus wie ihr gemergter Entwurf und sind „fertig“.
 Jetzt kommen die Themen für nach dem MVP. Sie stehen unten in fünf Listen (A bis E). Jeder Eintrag hat eine feste ID (zum Beispiel B21);
-erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (Befund oder Q) steht in `archive/findings-2026-11.md`, „dl“ heißt
-`backlog-parallel/decisions-latest.md`.
+erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (Befund oder Q) steht in `archive/findings-2026-11.md`, „dl“ heißt die gelöschte
+Entscheidungsliste, ihre Regeln stehen in ADR 0369.
 
 ## Regeln
 
@@ -189,7 +189,7 @@ Geparkt: B105, B108, B109, B580, B148.
 | B398 | UI-Builder (zweite Session) baut die UI-Liste: A1 gebaut ff698951f; title-bar@notice-hint gebaut (332e49626, cf1441036); offen Ursache shell-main CONTROL-STATE, A3, A36 (ADR 0198). | 🔨 | Empfehlung gebaut: Tooltip am Neu-starten-Button (Variante b, schon gemerged und in Design-Part und App); A3/A36 offen. | Builder (c8) |
 | B399 | Performance zuerst: `design compare` (Bef. 477), sketch ready/check, C1 Cache-Trefferquote, C4 voller design check, Bef. 485, B392 (ADR 0199). | 🔨 | compare-Phasen gebaut, Aktions-Check 27-31 s als nächstes. | Builder (c0) |
 | B401 | Neue Design-Regel läuft im eigenen Commit über alle Produkte; alte Treffer in eine schrumpfende Baseline, jeder Treffer ein Finding mit Skizze; Zeichenregeln (CONTROL-STATE, DROPPED-PROP, ACTION-LOST) in `--slow` mit Cache (Bef. 489, ADR 0201). | 🔨 | läuft (cb), danach Bef. 490 Regel. | SDK-Builder (cb) |
-| B403 | UI-Builder untersucht nur Werkzeuglücken, die ihn blockieren; alle anderen in einem Satz an den doc agent, c0 baut (ADR 0202). | 🔨 | in ui-builder.md und builder-agent-Skill eintragen. | Builder (c8) |
+| B403 | UI-Builder untersucht nur Werkzeuglücken, die ihn blockieren; alle anderen in einem Satz an den doc agent, c0 baut (ADR 0202). | 🔨 | im builder-agent-Skill eintragen. | Builder (c8) |
 | B404 | Design-Hintergrundprozess (Bef. 492, 493): S1 Lib-Build-Sperre, S2 Prozess + Client + Selbststart, S3 Harness-Watch-Build, S4 Bild-Cache nach Input-Hash, S5 B402, S6 sketch, S7 voller check, S8 Action-Check-Seite (ADR 0204). | 🔨 | S1 9823490ef, S2 10fbd3261, S6 14c491450 (check warm 2,7 s, ready 1,6 s); S7 offen. | Builder (c0) |
 | B405 | Alte Implementierungs-Drift (sketches, system, canvas-frames) in schrumpfende Baseline des Compare-Gates; jeder Eintrag Finding + Sketch/UI-Item; Push nach Bef. 494 (c843323c2) + Verify studio-menu, start (ADR 0205). | 🔨 | Baseline gebaut 5ddcdf3f5; Gate zeigt baselined-Zeilen immer 7920af5f4; danach Einträge abbauen (c8). | cb, dann c8 |
 | B406 | Skizzen-Merge prüft in sauberer Kopie von HEAD + nur der Skizze; fremde ungespeicherte Edits blockieren nie mehr; Ergebnis berührt schmutzige Datei → Merge nennt sie (ADR 0206). | 📋 | nach B401, vor S6. | cb |
@@ -445,7 +445,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **E12** canvas-frames umbenennen und mit shell-main verknüpfen (Q248).
 - **E13** Toms gesammelte Runde nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
   deutsche Tooltips am Zoom-Chip (Q41).
-- **E15** Codex-Agenten: über die tmux-Mailbox oder über einen Wrapper? (backlog-parallel/decisions-studio-ui.md)
+- **E15** Codex-Agenten: über die tmux-Mailbox oder über einen Wrapper? (ADR 0369)
 - **E16** Morgenrunde 15.11.: beantwortet (ADR 0300 B501, 0301 B502 `opens:`, 0302 B514 + 986 geparkt; fifa-Session
   neu gestartet). Studio-Wahlen title-bar@uncommitted (B501 P4), pages/system@canvas-note, shell-main@crashed,
   title-bar@notice-arrow, empty-state@row-layout, action-sheet@look (B508): Builder baut seine Empfehlung (Tom stellt

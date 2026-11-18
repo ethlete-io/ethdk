@@ -1,6 +1,6 @@
 # A10: build-ready instead of go (B249 + B295)
 
-Status: built; the open rest is in `STATUS.md` (A10, B295, B388). Sources: `backlog-parallel/decisions-latest.md` ("build-ready" decisions
+Status: built; the open rest is in `STATUS.md` (A10, B295, B388). Sources: ADR 0369 ("build-ready" decisions
 2026-11-02, point 5; "Solo focus" 2026-11-04, Studio checks leave the git hook), `STATUS.md` B249, B295 and A10.
 
 ## In progress
@@ -15,7 +15,7 @@ Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: 
   about 1 GB; sample in /tmp/studio-freeze-webcontent.txt), probably a retry or poll loop after the design server
   restart. Find the loop and fix it. Tool fix: a scenario that restarts and slows the design server under a running
   Studio and fails on a busy main thread. The render-bug tool fixes are finding 363 / B309. Then the person-name check
-  B308 (finding 362, decisions-latest.md "Person names in the product"), and the edit-sketch decision below (S6b).
+  B308 (finding 362, ADR 0369 "Person names in the product"), and the edit-sketch decision below (S6b).
 
 - Done, not pushed (17 commits on `next`): S1 8675cccbb, S2 5fd088c7c, S5 598e0b2bd, S7 rest dbd6de8e6; CI fixes
   45f505995 (contentful), 62c79da3b (ANSI in precommit-specs), 99905988b (shell-logo timeout; ET1234 absent in a
