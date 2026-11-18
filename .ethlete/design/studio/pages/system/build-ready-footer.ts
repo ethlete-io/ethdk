@@ -9,6 +9,7 @@ import {
   agentLabel,
   blockerGroupsOf,
   blockerIcon,
+  developerLabel,
   statusLabel,
   type AgentProgress,
   type BuildReady,
@@ -43,6 +44,14 @@ const agentBadge = async (agent: AgentProgress) => {
   });
   return {
     body: html`<span class="flex" ${failed ? 'data-et-semantic-color="error"' : ''}>${drawn.body}</span>`,
+    styles: drawn.styles,
+  };
+};
+
+const developerBadge = async (reasons: string[], icon?: string) => {
+  const drawn = await badge.render({ badges: [{ label: developerLabel, variant: 'outline', size: 'sm' }] });
+  return {
+    body: html`<span class="flex" title="${reasons.join('; ')}">${icon ?? ''}${drawn.body}</span>`,
     styles: drawn.styles,
   };
 };
@@ -85,11 +94,17 @@ const openEditSketch = async (status: BuildReady) => {
   return { body: control(withAction(open.body, 'emit:openEditSketch'), 'open-edit-sketch'), styles: open.styles };
 };
 
-export const buildReadyView = async (status: BuildReady, agent: AgentProgress | undefined, open: boolean) => {
+export const buildReadyView = async (
+  status: BuildReady,
+  agent: AgentProgress | undefined,
+  open: boolean,
+  developer?: string[],
+) => {
   const state = await statusBadge(status);
   const working = agent ? await agentBadge(agent) : undefined;
   const list = await blockerList(status);
   const edit = await openEditSketch(status);
+  const mark = developer ? await developerBadge(developer) : undefined;
   const reasons =
     status.state === 'blocked'
       ? disclosure({ label: 'Gründe', body: list.body, open, size: 'sm', action: open ? 'part' : 'blockers-open' })
@@ -99,12 +114,13 @@ export const buildReadyView = async (status: BuildReady, agent: AgentProgress | 
     before: '',
     footer: html`<footer class="border-t border-(--et-surface-border-solid) px-space-3 py-space-2">
       <div class="flex items-center gap-space-2">
-        ${state.body}${working?.body ?? ''}
+        ${state.body}${mark?.body ?? ''}${working?.body ?? ''}
         <span class="ms-auto"></span>
         ${edit.body}${status.state === 'blocked' && !open ? reasons : ''}
       </div>
       ${status.state === 'blocked' && open ? html`<div class="-mx-space-2 mt-space-1">${reasons}</div>` : ''}
     </footer>`,
-    styles: state.styles + (working?.styles ?? '') + list.styles + edit.styles + disclosureStyles,
+    styles:
+      state.styles + (mark?.styles ?? '') + (working?.styles ?? '') + list.styles + edit.styles + disclosureStyles,
   };
 };

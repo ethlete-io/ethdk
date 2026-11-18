@@ -159,9 +159,9 @@
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "2da16160e94c57ec",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-17T18:20:43.133Z"
+    "hash": "263d9d12dc359a46",
+    "variant": "a",
+    "decidedBy": "builder",
+    "at": "2026-11-18T05:53:01.295Z"
   }
 }

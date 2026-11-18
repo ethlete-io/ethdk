@@ -75,6 +75,13 @@ export const statusIcon = (status: BuildReady) =>
 export const blockerIcon = (name: IconName) =>
   icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' });
 
+export const developerReasons = [
+  'injiziert den Service CommandPaletteStore (title-search.component.ts)',
+  'routet: nutzt routerLink (title-search.component.html)',
+];
+
+export const developerLabel = 'Entwickler-Part';
+
 export type AgentProgress =
   | { state: 'working'; doing: string; detail: string }
   | { state: 'waiting'; detail: string }
