@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { git, gitEnv, tempGitRepo } from './git-test-env.mjs';
 import { hasFreshSnapshot, isRowChangingPath, snapshotCheck } from './check-timetrack-snapshot.mjs';
 
 const ROW = 'libs/timetrack/src/lib/rows/round.ts';
@@ -53,12 +54,10 @@ test('freshness follows the mtime of a json file', () => {
 });
 
 test('end to end in a temp repo', () => {
-  const repo = mkdtempSync(join(tmpdir(), 'repo-'));
-  const git = (...args) => execFileSync('git', args, { cwd: repo });
-  git('init', '-q');
+  const repo = tempGitRepo('snapshot-repo-');
   mkdirSync(join(repo, 'libs/timetrack/src/lib/rows'), { recursive: true });
   writeFileSync(join(repo, ROW), 'export {};\n');
-  git('add', ROW);
+  git(repo, 'add', ROW);
   const messageFile = join(repo, 'msg');
   const script = fileURLToPath(new URL('./check-timetrack-snapshot.mjs', import.meta.url));
   const run = (message) => {
@@ -66,7 +65,7 @@ test('end to end in a temp repo', () => {
     return spawnSync('node', [script, messageFile], {
       cwd: repo,
       encoding: 'utf8',
-      env: { ...process.env, TIMETRACK_SNAPSHOT_DIR: join(repo, 'none') },
+      env: gitEnv({ TIMETRACK_SNAPSHOT_DIR: join(repo, 'none') }),
     });
   };
   const failed = run('fix: x\n');
