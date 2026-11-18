@@ -1,6 +1,6 @@
 ---
-status: accepted
-open: B416
+status: superseded by 0286
+built: ce1eb19f3
 decided: 2026-11-06
 source: doc-agent session 2026-11-06
 ---

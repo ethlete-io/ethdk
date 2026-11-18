@@ -1,6 +1,6 @@
 ---
-status: accepted
-built: 9a2573e21
+status: superseded by 0286
+built: ce1eb19f3
 governs: ['tools/scripts/push-suite.mjs']
 decided: 2026-11-10
 source: grill session 2026-11-10 (Mac night shift, morning round), findings 687 and 688

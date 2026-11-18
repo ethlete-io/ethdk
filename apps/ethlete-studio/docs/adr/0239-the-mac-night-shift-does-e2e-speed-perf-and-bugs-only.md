@@ -1,6 +1,6 @@
 ---
-status: accepted
-built: 12ff23c55
+status: superseded by 0286
+built: ce1eb19f3
 decided: 2026-11-09
 source: grill session 2026-11-09
 ---

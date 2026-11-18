@@ -1,6 +1,6 @@
 ---
-status: accepted
-open: B416
+status: superseded by 0285
+built: 91fc4fb8e
 decided: 2026-11-06
 source: doc-agent session 2026-11-06, after ADR 0217
 ---
