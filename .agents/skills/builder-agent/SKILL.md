@@ -24,8 +24,8 @@ The German grill/docs session talks with the user and records decisions. Talk En
 ## Output
 
 - The user does not read your chat. Write no text between tool calls: no narration of what
-  you saw, what you decide or what an agent does next. Call the next tool without a preface.
-- End each turn with at most one line, for example "Reported to the grill session." No
+  you saw, what you decide or what an agent does next.
+- End each turn with at most one line. No
   summaries, no lists, no plans in the chat.
 - A finished subagent gets no chat text. Put its result into the report to the grill session.
 - Every report goes to the grill/docs session with `SendMessage`: short bullets, commits,
@@ -36,7 +36,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 - Build in slices. When a slice starts, write an "in progress" note to the plan; it goes into the slice's commit.
 - Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
-- Lead subagents for scoped work, a fresh one per slice.
+- Lead subagents for scoped work, a fresh one per slice. Stop each with `TaskStop` once its result is in.
 - One topic at a time: work the queue in order and start the next topic only when the current one
   is committed. You coordinate, verify, push and report.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the
