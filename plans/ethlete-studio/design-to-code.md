@@ -2204,7 +2204,7 @@ transitive helpers of a component are not followed, so an app helper that inject
 
 ## As built (B251a)
 
-Commit `feat(cli): Require loading, error and empty states on data parts` (sha in the builder's report). The first half
+Commit df852b421 `feat(cli): Require loading, error and empty states on data parts`. The first half
 of B251: a part outside `foundations/` that loads data (`takesDataOf` in `part-builder.ts`: a B250 `loads data` reason,
 an `@angular/common/http` or `@ethlete/query` import or a `fetch`/`resource`/`rxResource`/`httpResource` call, on its
 design file or its `implements` component) gets one `missing-state` open point (`{ control: null, data }`) per
