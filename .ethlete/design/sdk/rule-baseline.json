@@ -46,14 +46,6 @@
     }
   },
   "SCROLLS": {
-    "components/scrollable: short-content at 480px: div[data-et-part=components/scrollable] > et-scrollable.et-scrollable > div.et-scrollable-wrapper > div.et-scrollable-container": {
-      "finding": "343",
-      "sketch": "components/scrollable: not opened yet - the two items of a fitting state fit the viewport, so nothing scrolls"
-    },
-    "components/scrollable: short-content-navigation at 480px: div[data-et-part=components/scrollable] > et-scrollable.et-scrollable > div.et-scrollable-wrapper > div.et-scrollable-container": {
-      "finding": "343",
-      "sketch": "components/scrollable: not opened yet - the two items of a fitting state fit the viewport, so nothing scrolls"
-    },
     "components/stream: consent at 320px: div.t-frame > div[data-et-part=components/stream] > et-stream-consent.et-stream-consent > div.et-stream-consent-card": {
       "finding": "343",
       "sketch": "components/stream: not opened yet - the consent and error cards fit the slot at 320px instead of scrolling"

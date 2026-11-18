@@ -1116,3 +1116,6 @@ documents, the docs example rendered in the built site, real touch devices.
   opens a direct-edit sketch, which only a pick closes), stream consent and error at 320px (content 186 in a 162
   slot with the icon already hidden; fitting needs a smaller spacing or less text, a visible choice) and studio
   pages/system (content 771 and 721 in the 80vh cap of 718; fitting needs a shorter sample or another layout).
+- Empfehlung gebaut: scrollable short-content and short-content-navigation, d1e807cb1. Cause (measured 436 in 432):
+  the part passed `itemGap` only with `itemSize`; it now always passes the 12 px gap the real scrollable measures.
+  The direct-edit sketch merged variant new under finding 343; both baseline entries are gone.
