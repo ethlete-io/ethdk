@@ -2179,4 +2179,4 @@ that draws like Aktuell or another variant in every state it declares; identical
 all of them draw like the product". B261's variants differed in `failed`, so it rightly did not fire. (3) Open, now
 built: with the unchanged states folded and only a variant-added state shown, the Aktuell row drew no stage at all
 instead of the "neu in der Skizze" placeholder. sketches.component.spec "draws a state only the variants declare in
-every variant row, with a placeholder in Aktuell" (red before: Aktuell drew no cell). Not verified: a live Studio shot.
+every variant row, with a placeholder in Aktuell" (red before: Aktuell drew no cell). Live shot (2026-11-18, studio-lab `components/button` with a throwaway `failed` state in both variants, solid and outline folded): the Aktuell row draws one dashed "neu in der Skizze" cell under `failed`.
