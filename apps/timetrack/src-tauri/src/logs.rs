@@ -50,18 +50,68 @@ struct Read {
     complete: usize,
 }
 
+/// The `projects` directory of every Claude Code config dir: each `~/.claude*` and the one
+/// `CLAUDE_CONFIG_DIR` names, `~/.claude` first and each directory once.
+fn claude_log_roots(home: &Path, config_dir: Option<&Path>) -> Vec<PathBuf> {
+    let mut in_home = std::fs::read_dir(home)
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry
+                .file_name()
+                .to_str()
+                .is_some_and(|name| name.starts_with(".claude"))
+        })
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    in_home.sort();
+    in_home.sort_by_key(|dir| dir.file_name().is_none_or(|name| name != ".claude"));
+
+    let mut seen = Vec::new();
+    let mut roots = Vec::new();
+
+    for root in in_home
+        .into_iter()
+        .chain(config_dir.map(Path::to_path_buf))
+        .map(|dir| dir.join("projects"))
+    {
+        let Ok(canonical) = root.canonicalize() else {
+            continue;
+        };
+
+        if canonical.is_dir() && !seen.contains(&canonical) {
+            seen.push(canonical);
+            roots.push(root);
+        }
+    }
+
+    roots
+}
+
 /// Where this provider files its session logs.
 ///
-/// The root is resolved here and never taken from the caller. A caller that names its own root names
-/// the confinement the read is then checked against, so `/` would read any file on the machine — and
-/// that is what this command is confined for.
-fn agent_log_root(app: &tauri::AppHandle, provider: AgentLogProvider) -> TimetrackResult<PathBuf> {
+/// The roots are resolved here and never taken from the caller. A caller that names its own root
+/// names the confinement the read is then checked against, so `/` would read any file on the machine
+/// — and that is what this command is confined for.
+fn agent_log_roots(app: &tauri::AppHandle, provider: AgentLogProvider) -> TimetrackResult<Vec<PathBuf>> {
     let home = app.path().home_dir()?;
 
     Ok(match provider {
-        AgentLogProvider::ClaudeCode => home.join(".claude").join("projects"),
-        AgentLogProvider::Codex => home.join(".codex").join("sessions"),
+        AgentLogProvider::ClaudeCode => claude_log_roots(
+            &home,
+            std::env::var_os("CLAUDE_CONFIG_DIR").map(PathBuf::from).as_deref(),
+        ),
+        AgentLogProvider::Codex => vec![home.join(".codex").join("sessions")],
     })
+}
+
+fn is_log_inside(roots: &[PathBuf], resolved: &Path) -> bool {
+    resolved.extension().is_some_and(|extension| extension == "jsonl")
+        && roots
+            .iter()
+            .filter_map(|root| root.canonicalize().ok())
+            .any(|root| resolved.starts_with(root))
 }
 
 fn modified_at_ms(path: &Path) -> TimetrackResult<i64> {
@@ -147,6 +197,29 @@ fn list_logs(root: &Path, modified_after_ms: Option<i64>) -> TimetrackResult<Vec
         }
     }
 
+    refs.sort_by_key(|log| log.modified_at_ms);
+
+    Ok(refs)
+}
+
+/// The logs of every config dir. A session id names one session wherever its log lies, so a log
+/// found in two dirs is a copy and only the most recently written one is listed: two refs with one
+/// id would share a cursor and count the session twice.
+fn list_claude_logs(roots: &[PathBuf], modified_after_ms: Option<i64>) -> TimetrackResult<Vec<AgentLogRef>> {
+    let mut newest = std::collections::HashMap::<String, AgentLogRef>::new();
+
+    for root in roots {
+        for log in list_logs(root, modified_after_ms)? {
+            if newest
+                .get(&log.id)
+                .is_none_or(|kept| kept.modified_at_ms < log.modified_at_ms)
+            {
+                newest.insert(log.id.clone(), log);
+            }
+        }
+    }
+
+    let mut refs = newest.into_values().collect::<Vec<_>>();
     refs.sort_by_key(|log| log.modified_at_ms);
 
     Ok(refs)
@@ -271,11 +344,11 @@ pub async fn agent_logs(
     provider: Option<AgentLogProvider>,
 ) -> TimetrackResult<Vec<AgentLogRef>> {
     let provider = provider.unwrap_or_default();
-    let root = agent_log_root(&app, provider)?;
+    let roots = agent_log_roots(&app, provider)?;
 
     tauri::async_runtime::spawn_blocking(move || match provider {
-        AgentLogProvider::ClaudeCode => list_logs(&root, modified_after_ms),
-        AgentLogProvider::Codex => list_codex_logs(&root, modified_after_ms),
+        AgentLogProvider::ClaudeCode => list_claude_logs(&roots, modified_after_ms),
+        AgentLogProvider::Codex => list_codex_logs(&roots[0], modified_after_ms),
     })
     .await
     .map_err(|error| TimetrackError::Rejected(error.to_string()))?
@@ -288,13 +361,12 @@ pub async fn agent_logs(
 /// file the user can, which is the same reason `run_process` takes an allowlist.
 #[tauri::command]
 pub async fn agent_log_lines(app: tauri::AppHandle, request: AgentLogLinesRequest) -> TimetrackResult<AgentLogLines> {
-    let root = agent_log_root(&app, request.provider)?;
-    let path = PathBuf::from(&request.path);
-    let (root, resolved) = (root.canonicalize()?, path.canonicalize()?);
+    let roots = agent_log_roots(&app, request.provider)?;
+    let resolved = PathBuf::from(&request.path).canonicalize()?;
 
-    // The canonical path is compared, so a symlink inside the root that points outside it is refused
+    // The canonical path is compared, so a symlink inside a root that points outside it is refused
     // by where it resolves to rather than by where it sits.
-    if !resolved.starts_with(&root) || resolved.extension().is_none_or(|extension| extension != "jsonl") {
+    if !is_log_inside(&roots, &resolved) {
         return Err(TimetrackError::Rejected(format!(
             "{} is not a session log inside the agent log directory",
             request.path
@@ -471,6 +543,77 @@ mod tests {
                 "not JSON: {line}"
             );
         }
+    }
+
+    #[test]
+    fn finds_the_projects_of_every_claude_config_dir_in_home_and_the_configured_one() {
+        let home = temp_root("config-dirs");
+        let elsewhere = temp_root("config-dirs-elsewhere");
+
+        std::fs::create_dir_all(home.join(".claude").join("projects")).unwrap();
+        std::fs::create_dir_all(home.join(".claude-second").join("projects")).unwrap();
+        std::fs::create_dir_all(home.join(".claude-empty")).unwrap();
+        std::fs::create_dir_all(home.join(".codex").join("projects")).unwrap();
+        std::fs::write(home.join(".claude.json"), "{}").unwrap();
+        std::fs::create_dir_all(elsewhere.join("projects")).unwrap();
+
+        let roots = claude_log_roots(&home, Some(&elsewhere));
+
+        assert_eq!(
+            roots,
+            [
+                home.join(".claude").join("projects"),
+                home.join(".claude-second").join("projects"),
+                elsewhere.join("projects"),
+            ]
+        );
+        assert_eq!(claude_log_roots(&home, Some(&home.join(".claude-second"))).len(), 2);
+    }
+
+    #[test]
+    fn lists_the_logs_of_every_config_dir_and_a_copied_log_once() {
+        let home = temp_root("config-dir-logs");
+        let first = home.join(".claude").join("projects");
+        let second = home.join(".claude-second").join("projects");
+
+        write_log(&first, "-home-tom-dev-a", "session-one", "{}\n");
+        write_log(&second, "-home-tom-dev-a", "session-two", "{}\n");
+        write_subagent_log(&second, "-home-tom-dev-a", "session-two", "agent-a1", "{}\n");
+        write_log(&first, "-home-tom-dev-b", "session-copied", "{}\n");
+        let newer = write_log(&second, "-home-tom-dev-b", "session-copied", "{}\n{}\n");
+        std::fs::File::options()
+            .append(true)
+            .open(&newer)
+            .unwrap()
+            .set_modified(std::time::SystemTime::now() + std::time::Duration::from_secs(60))
+            .unwrap();
+
+        let logs = list_claude_logs(&[first, second], None).unwrap();
+        let mut ids = logs.iter().map(|log| log.id.as_str()).collect::<Vec<_>>();
+        ids.sort();
+
+        assert_eq!(
+            ids,
+            ["session-copied", "session-one", "session-two", "session-two/agent-a1"]
+        );
+        assert_eq!(
+            logs.iter().find(|log| log.id == "session-copied").unwrap().path,
+            newer.to_string_lossy()
+        );
+    }
+
+    #[test]
+    fn confines_a_read_to_the_config_dirs_it_lists() {
+        let home = temp_root("config-dir-confine");
+        let first = home.join(".claude").join("projects");
+        let second = home.join(".claude-second").join("projects");
+        let inside = write_log(&second, "-home-tom-dev-a", "session-one", "{}\n");
+        let outside = write_log(&home, "elsewhere", "session-two", "{}\n");
+        std::fs::create_dir_all(&first).unwrap();
+        let roots = [first, second];
+
+        assert!(is_log_inside(&roots, &inside.canonicalize().unwrap()));
+        assert!(!is_log_inside(&roots, &outside.canonicalize().unwrap()));
     }
 
     #[test]

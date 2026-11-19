@@ -20,8 +20,9 @@ export type AgentLogProvider = 'claude-code' | 'codex';
 /**
  * Reads one coding agent's session logs through the host.
  *
- * The root is `~/.claude/projects` or `~/.codex/sessions` by provider, and the host resolves it
- * itself. Naming one here would name the confinement the host then checks a read against.
+ * The roots are the `projects` dir of each `~/.claude…` config dir and of `$CLAUDE_CONFIG_DIR`, or
+ * `~/.codex/sessions`, by provider, and the host resolves them itself. Naming one here would name the
+ * confinement the host then checks a read against.
  */
 export const createTauriAgentSessionLogReader = (options?: { provider?: AgentLogProvider }): AgentSessionLogReader => ({
   logs$: ({ modifiedAfter }) =>
