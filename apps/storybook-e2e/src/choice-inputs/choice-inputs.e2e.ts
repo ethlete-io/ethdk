@@ -19,6 +19,8 @@ const RADIO_GROUP_HORIZONTAL = 'components-forms-selection-list-radio-group--hor
 const RADIO_GROUP_ASYNC_VALIDATION = 'components-forms-selection-list-radio-group--async-validation';
 const CHECKBOX_GROUP_DEFAULT = 'components-forms-selection-list-checkbox-group--default';
 const SEGMENTED_BUTTON_GROUP_DEFAULT = 'components-forms-selection-list-segmented-button-group--default';
+const SEGMENTED_BUTTON_GROUP_OVERFLOW_SCROLL =
+  'components-forms-selection-list-segmented-button-group--overflow-scroll';
 const SEGMENTED_BUTTON_GROUP_TABS = 'components-forms-selection-list-segmented-button-group--tabs';
 
 interface SegmentBackground {
@@ -281,6 +283,50 @@ test.describe('choice-inputs / keyboard', () => {
     await pressKey(page, 'ArrowRight');
     await expect(list).toBeFocused();
     await expect(list).toHaveAttribute('aria-checked', 'true');
+  });
+});
+
+test.describe('choice-inputs / segmented overflow scroll', () => {
+  test.use({ viewport: { width: 390, height: 800 } });
+
+  test('the selected 4th option scrolls into view, a picked option is centered and no label is truncated', async ({
+    page,
+  }) => {
+    const root = await openStory(page, SEGMENTED_BUTTON_GROUP_OVERFLOW_SCROLL);
+    const selected = root.getByRole('radio', { name: 'Finished matches' });
+    await expect(selected).toHaveAttribute('aria-checked', 'true');
+
+    const container = root.locator('.et-scrollable-container');
+    await expect.poll(() => container.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+
+    const measure = () =>
+      container.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const target = el.querySelector('[aria-checked="true"]')!.getBoundingClientRect();
+        const labels = [...el.querySelectorAll('.et-segmented-button-label')];
+        return {
+          containerCenter: box.left + box.width / 2,
+          selectedCenter: target.left + target.width / 2,
+          inView: target.left >= box.left - 1 && target.right <= box.right + 1,
+          atEnd: el.scrollLeft >= el.scrollWidth - el.clientWidth - 1,
+          truncated: labels.filter((l) => l.scrollWidth > l.clientWidth).length,
+        };
+      });
+
+    await expect.poll(async () => (await measure()).atEnd).toBe(true);
+    expect((await measure()).inView).toBe(true);
+
+    await root.getByRole('radio', { name: 'Upcoming matches' }).click();
+    await expect(root.getByRole('radio', { name: 'Upcoming matches' })).toHaveAttribute('aria-checked', 'true');
+    await expect
+      .poll(async () => {
+        const m = await measure();
+        return Math.abs(m.selectedCenter - m.containerCenter);
+      })
+      .toBeLessThanOrEqual(24);
+
+    const metrics = await measure();
+    expect(metrics.truncated).toBe(0);
   });
 });
 

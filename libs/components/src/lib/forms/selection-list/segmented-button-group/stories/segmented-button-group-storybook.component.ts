@@ -4,7 +4,11 @@ import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { ScrollableComponent } from '../../../../scrollable/scrollable.component';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
-import { SegmentedButtonGroupComponent, SegmentedButtonGroupVariant } from '../segmented-button-group.component';
+import {
+  SegmentedButtonGroupComponent,
+  SegmentedButtonGroupOverflow,
+  SegmentedButtonGroupVariant,
+} from '../segmented-button-group.component';
 import { SegmentedButtonComponent } from '../segmented-button.component';
 
 @Component({
@@ -24,6 +28,8 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
             [formField]="demoForm.viewMode"
             [size]="size()"
             [stretch]="stretch()"
+            [overflow]="overflow()"
+            [overflow]="overflow()"
           >
             <et-label>{{ label() }}</et-label>
 
@@ -42,6 +48,7 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
           [formField]="demoForm.viewMode"
           [size]="size()"
           [stretch]="stretch()"
+          [overflow]="overflow()"
         >
           <et-label>{{ label() }}</et-label>
 
@@ -86,6 +93,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public variant = input<SegmentedButtonGroupVariant>('pill');
   public size = input<FormFieldSize>('md');
   public stretch = input(false);
+  public overflow = input<SegmentedButtonGroupOverflow>('truncate');
   public maxWidth = input<string | null>(null);
   public tokens = input<string | null>(null);
   public inScrollable = input(false);

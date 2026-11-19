@@ -463,6 +463,20 @@ segment.
 
 @example choice-inputs/segmented-button-group-stretch 220px
 
+### Segmented button: overflow {#segmented-overflow}
+
+When the segments are wider than the container, `et-segmented-button-group`
+shrinks every segment and truncates its label (`overflow="truncate"`, the
+default). Set `overflow="scroll"` to keep each segment at its full width
+instead: the track scrolls horizontally inside an `et-scrollable` and the
+selected segment is scrolled to the center, the way nav tabs do it. It
+combines with `stretch`, which then fills the container only while the
+segments fit.
+
+```html
+<et-segmented-button-group [formField]="form.competition" overflow="scroll"> ... </et-segmented-button-group>
+```
+
 ### Segmented button: look tokens {#segmented-tokens}
 
 Five tokens restyle the group without a new input. Each default is today's look.

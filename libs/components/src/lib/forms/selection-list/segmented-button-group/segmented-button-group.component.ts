@@ -1,5 +1,18 @@
-import { booleanAttribute, Component, computed, effect, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { createCanAnimateSignal, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
+import { ScrollableDirective } from '../../../scrollable/headless/scrollable.directive';
+import { SCROLLABLE_IMPORTS } from '../../../scrollable/scrollable.imports';
 import { TabScaleStylesComponent } from '../../../tabs/tab-scale-styles.component';
 import { injectFormFieldDefaults } from '../../form-field/form-field-defaults';
 import { FormFieldSize } from '../../form-field/form-field.variants';
@@ -15,6 +28,15 @@ export const SEGMENTED_BUTTON_GROUP_VARIANTS = {
   TABS: 'tabs',
 } as const;
 
+/** How a segmented button group handles segments that do not fit. See {@link SegmentedButtonGroupComponent.overflow}. */
+export const SEGMENTED_BUTTON_GROUP_OVERFLOWS = {
+  TRUNCATE: 'truncate',
+  SCROLL: 'scroll',
+} as const;
+
+export type SegmentedButtonGroupOverflow =
+  (typeof SEGMENTED_BUTTON_GROUP_OVERFLOWS)[keyof typeof SEGMENTED_BUTTON_GROUP_OVERFLOWS];
+
 export type SegmentedButtonGroupVariant =
   (typeof SEGMENTED_BUTTON_GROUP_VARIANTS)[keyof typeof SEGMENTED_BUTTON_GROUP_VARIANTS];
 
@@ -23,7 +45,7 @@ export type SegmentedButtonGroupVariant =
   templateUrl: './segmented-button-group.component.html',
   styleUrl: './segmented-button-group.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [FormSupportComponent],
+  imports: [FormSupportComponent, SCROLLABLE_IMPORTS, NgTemplateOutlet],
   providers: [provideFormSupport()],
   hostDirectives: [
     FormFieldDirective,
@@ -53,6 +75,7 @@ export type SegmentedButtonGroupVariant =
     '[class.et-tab-scale]': 'isTabsVariant()',
     '[attr.data-size]': 'size()',
     '[attr.data-variant]': 'variant()',
+    '[attr.data-overflow]': 'overflow()',
     '[attr.data-stretch]': 'stretch() || null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
@@ -79,6 +102,16 @@ export class SegmentedButtonGroupComponent {
   /** Gives every segment the same width and makes the group fill its container. */
   public stretch = input(false, { transform: booleanAttribute });
 
+  /**
+   * What happens when the segments are wider than the container. `'truncate'` shrinks every segment and cuts its
+   * label with an ellipsis; `'scroll'` keeps each segment at its full width, scrolls the track horizontally and
+   * centers the selected segment. @default 'truncate'
+   */
+  public overflow = input<SegmentedButtonGroupOverflow>(SEGMENTED_BUTTON_GROUP_OVERFLOWS.TRUNCATE);
+
+  private scrollable = viewChild(ScrollableDirective);
+  protected isScrollOverflow = computed(() => this.overflow() === SEGMENTED_BUTTON_GROUP_OVERFLOWS.SCROLL);
+
   protected isTabsVariant = computed(() => this.variant() === SEGMENTED_BUTTON_GROUP_VARIANTS.TABS);
 
   /** @internal The active background element of the currently checked button. Used as the flip animation origin. */
@@ -92,6 +125,17 @@ export class SegmentedButtonGroupComponent {
       if (this.isTabsVariant()) {
         styleManager.mount(TabScaleStylesComponent);
       }
+    });
+
+    effect(() => {
+      const scrollable = this.scrollable();
+      const selected = this.lastActiveBackgroundElement()?.parentElement;
+
+      if (!scrollable || !selected || !scrollable.getScrollContainerRef()()) {
+        return;
+      }
+
+      scrollable.scrollToElement({ element: selected, origin: 'center' });
     });
   }
 

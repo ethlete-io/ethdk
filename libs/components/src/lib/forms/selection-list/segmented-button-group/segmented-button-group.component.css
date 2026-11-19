@@ -154,6 +154,28 @@
       min-width: var(--et-segmented-button-group-segment-min-width);
     }
 
+    &:where([data-overflow='scroll']) .et-segmented-button-group-scrollable {
+      align-self: stretch;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    &:where([data-overflow='scroll']:not([data-stretch])) .et-segmented-button-group-scrollable {
+      align-self: flex-start;
+    }
+
+    &:where([data-overflow='scroll']) .et-segmented-button-group-buttons {
+      flex: 1 0 auto;
+      max-width: none;
+      grid-auto-columns: max-content;
+      grid-template-columns: none;
+      grid-auto-flow: column;
+    }
+
+    &:where([data-overflow='scroll'][data-stretch]) .et-segmented-button-group-buttons {
+      grid-auto-columns: minmax(max-content, var(--et-segmented-button-group-stretch-track, 1fr));
+    }
+
     &[data-error] .et-segmented-button-group-buttons {
       box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
     }

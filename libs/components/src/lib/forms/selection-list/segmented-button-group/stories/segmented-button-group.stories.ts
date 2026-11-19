@@ -12,6 +12,7 @@ export default {
     value: { control: 'select', options: [null, 'list', 'grid', 'table'] },
     mixed: { control: 'boolean' },
     stretch: { control: 'boolean' },
+    overflow: { control: 'radio', options: ['truncate', 'scroll'] },
     showMixedState: { control: false, table: { disable: true } },
     maxWidth: { control: 'text' },
     tokens: { control: 'text' },
@@ -29,6 +30,7 @@ export default {
     value: 'list',
     mixed: false,
     stretch: false,
+    overflow: 'truncate',
     showMixedState: false,
     disabled: false,
     required: false,
@@ -94,6 +96,24 @@ export const Stretch: Story = {
     ],
     hint: 'Every segment gets the same column width and the group fills its container, whatever the label lengths.',
   },
+};
+
+export const OverflowScroll: Story = {
+  args: {
+    overflow: 'scroll',
+    stretch: true,
+    maxWidth: '390px',
+    value: 'done',
+    label: 'Competition',
+    options: [
+      { value: 'all', label: 'All competitions' },
+      { value: 'live', label: 'Live now' },
+      { value: 'upcoming', label: 'Upcoming matches' },
+      { value: 'done', label: 'Finished matches' },
+    ],
+    hint: 'With overflow scroll every segment keeps its full label, the track scrolls and the selected segment is centered.',
+  },
+  parameters: { viewport: { defaultViewport: 'mobile1' } },
 };
 
 export const LabelLook: Story = {

@@ -7,7 +7,12 @@ import { SegmentedButtonGroupComponent } from './segmented-button-group.componen
 
 @Component({
   template: `
-    <et-segmented-button-group [value]="value()" [variant]="variant()" (valueChange)="value.set($event)">
+    <et-segmented-button-group
+      [value]="value()"
+      [variant]="variant()"
+      [overflow]="overflow()"
+      (valueChange)="value.set($event)"
+    >
       <et-segmented-button value="day">Day</et-segmented-button>
       @if (showWeek()) {
         <et-segmented-button value="week">Week</et-segmented-button>
@@ -19,6 +24,7 @@ import { SegmentedButtonGroupComponent } from './segmented-button-group.componen
 class SegmentedButtonGroupTestHost {
   public value = signal<string | null>(null);
   public variant = signal<'pill' | 'tabs'>('pill');
+  public overflow = signal<'truncate' | 'scroll'>('truncate');
   public showWeek = signal(true);
 }
 
@@ -50,6 +56,18 @@ describe('SegmentedButtonGroupComponent', () => {
 
     expect(driver.attr('data-variant')).toBe('tabs');
     expect(driver.listEl().classList).toContain('et-tab-scale');
+  });
+
+  it('wraps the buttons in a scrollable only for overflow scroll', () => {
+    expect(driver.attr('data-overflow')).toBe('truncate');
+    expect(driver.listEl().querySelector('et-scrollable')).toBeNull();
+
+    driver.host.overflow.set('scroll');
+    driver.fixture.detectChanges();
+
+    expect(driver.attr('data-overflow')).toBe('scroll');
+    expect(driver.listEl().querySelectorAll('et-scrollable .et-segmented-button-group-buttons')).toHaveLength(1);
+    expect(driver.optionEls()).toHaveLength(2);
   });
 
   it('drops the active background reference when the checked button is destroyed', () => {
