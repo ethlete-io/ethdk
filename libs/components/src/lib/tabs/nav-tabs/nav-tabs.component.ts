@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, effect, inject, input, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, inject, input, viewChild } from '@angular/core';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { ScrollableButtonsDirective } from '../../scrollable/headless/scrollable-buttons.directive';
 import { ScrollableDirective } from '../../scrollable/headless/scrollable.directive';
@@ -121,7 +121,7 @@ export class NavTabsComponent {
   private scrollable = viewChild(ScrollableDirective);
 
   constructor() {
-    effect(() => this.navTabs.scrollable.set(this.scrollable() ?? null));
+    this.navTabs.connectScrollable(this.scrollable);
     mountTabScaleStyles();
     mountTabBarStyles();
   }
