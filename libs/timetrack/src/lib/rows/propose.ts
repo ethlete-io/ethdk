@@ -288,20 +288,28 @@ const cutAtBreakEnd = <T extends BoundGroup>(options: {
     if (!inside.length || !after.length) return [row];
 
     const afterMs = Math.min(row.group.observedMs, windowsMs(mergeWindows(after)));
+    const before = row.group.evidence.filter((entry) => entry.at < cut);
 
     return [
       {
         ...row,
         to: cut,
         durationMs: cut.getTime() - from,
-        group: { ...row.group, to: cut, blocks: inside, observedMs: row.group.observedMs - afterMs },
+        group: { ...row.group, to: cut, blocks: inside, evidence: before, observedMs: row.group.observedMs - afterMs },
       },
       {
         ...row,
         afterBreak: true as const,
         from: cut,
         durationMs: row.to.getTime() - cut.getTime(),
-        group: { ...row.group, from: cut, blocks: after, observedMs: afterMs, attended: true },
+        group: {
+          ...row.group,
+          from: cut,
+          blocks: after,
+          evidence: row.group.evidence.filter((entry) => !before.includes(entry)),
+          observedMs: afterMs,
+          attended: true,
+        },
       },
     ];
   });
@@ -317,24 +325,30 @@ const cutAtBreakEnd = <T extends BoundGroup>(options: {
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
 /**
- * Hands out the ids `baseOf` builds, and gives a second row with the same id the piece of its agent session
- * as a suffix: two parallel sessions of one checkout can snap to one start.
+ * The id `baseOf` builds for each group, with the piece of its agent session as a suffix on a second
+ * group with the same id: two parallel sessions of one checkout can snap to one start. A group that was
+ * there before a cut takes an id before a `cutPart` does.
  */
-const rowIds = <T extends WorkGroup>(baseOf: (group: T) => string) => {
+const rowIds = <T extends WorkGroup>(groups: readonly T[], baseOf: (group: T) => string): string[] => {
   const used = new Set<string>();
+  const ids: string[] = [];
+  const order = [...groups.keys()].sort((a, b) => Number(!!groups[a]?.cutPart) - Number(!!groups[b]?.cutPart));
 
-  return {
-    next: (group: T) => {
-      const base = baseOf(group);
-      let id = used.has(base) ? `${base}+${dominantContext(group.blocks)?.piece ?? 'row'}` : base;
+  for (const index of order) {
+    const group = groups[index];
 
-      for (let n = 2; used.has(id); n++) id = `${base}+${n}`;
+    if (!group) continue;
 
-      used.add(id);
+    const base = baseOf(group);
+    let id = used.has(base) ? `${base}+${dominantContext(group.blocks)?.piece ?? 'row'}` : base;
 
-      return id;
-    },
-  };
+    for (let n = 2; used.has(id); n++) id = `${base}+${n}`;
+
+    used.add(id);
+    ids[index] = id;
+  }
+
+  return ids;
 };
 
 /**
@@ -471,20 +485,19 @@ export const propose = (options: {
     };
   });
   const attributed = booked.filter(isAttributedRow);
-  const unnamedIds = rowIds(unnamedBaseId);
   const idGroupOf = <T extends WorkGroup>(row: { group: T; idFrom?: Date }): T =>
     row.idFrom ? { ...row.group, from: row.idFrom } : row.group;
-  const unnamed = booked
-    .filter((row) => !isAttributedRow(row))
-    .map((row) => ({ ...row, group: { ...row.group, rowId: unnamedIds.next(idGroupOf(row)) } }));
+  const unnamedRows = booked.filter((row) => !isAttributedRow(row));
+  const unnamedIds = rowIds(unnamedRows.map(idGroupOf), unnamedBaseId);
+  const unnamed = unnamedRows.map((row, index) => ({ ...row, group: { ...row.group, rowId: unnamedIds[index] } }));
   const unattributed = unnamed.filter((row) => !row.group.standInId);
-  const ids = rowIds(proposalId);
+  const ids = rowIds(attributed.map(idGroupOf), proposalId);
   const startsAtBreakEnd = (from: Date) =>
     away.some((window) => window.from < from && floorToGrid(window.to.getTime(), incrementMs) === from.getTime());
 
   return {
-    proposals: attributed.map(({ group, from, to, durationMs, stretches, afterBreak, idFrom }) => ({
-      id: ids.next(idGroupOf({ group, idFrom })),
+    proposals: attributed.map(({ group, from, to, durationMs, stretches, afterBreak, idFrom }, index) => ({
+      id: ids[index] ?? proposalId(idGroupOf({ group, idFrom })),
       unnamedId: unnamedBaseId(idGroupOf({ group, idFrom })),
       issueKey: group.issueKey,
       storyKey: group.storyKey,

@@ -54,6 +54,11 @@ export type WorkGroup = {
    */
   workedOn?: string;
   /**
+   * A later part of a band `markAttendance` cut at a gap in attendance. `propose` gives a row that was
+   * already there the id first, so a part never takes over the id, and the review state, of another row.
+   */
+  cutPart?: true;
+  /**
    * Whether a worklog could hold this band. `false` is a band the day draws and never asks about — a
    * call a rule excluded from work. Absent leaves the answer to the lane, in `isBookable`.
    */
