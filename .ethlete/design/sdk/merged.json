@@ -84,7 +84,13 @@
   "components/floating-action": "c14700618adb796d",
   "components/form-field": "9bd46f7c5e4d0c45",
   "components/grid": "48c234417b7e0697",
-  "components/input": "04790f603b1f5952",
+  "components/input": {
+    "hash": "a7f8eee8758e6dd4",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-19T17:11:05.498Z",
+    "note": "merged: Frame hover in the label colour (ADR 0382, B640)"
+  },
   "components/kbd": "0fef1a9ab569cf21",
   "components/loader": "8f1829f4ffd895cc",
   "components/masonry": "354d8cb24417dfe6",
