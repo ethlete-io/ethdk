@@ -103,10 +103,11 @@
     "at": "2026-11-13T07:12:09.301Z"
   },
   "components/otp-input": {
-    "hash": "445d7a8855c67d0a",
-    "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-13T07:12:09.301Z"
+    "hash": "000b143d7fd3b3c0",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-19T17:11:07.784Z",
+    "note": "merged: Frame hover in the label colour (ADR 0382, B640)"
   },
   "components/pagination": "cfc2751b1701c58d",
   "components/picture": "264a88e52f520c13",
