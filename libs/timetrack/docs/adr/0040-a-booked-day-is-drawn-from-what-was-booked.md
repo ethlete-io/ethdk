@@ -2,7 +2,7 @@
 
 ADR 0038 froze a booked day's engine rows, but `reviewDay` still ran today's fold, override, re-cut and
 booking rules over them. On 2026-10-09 eb7aa91ba changed the fold rule and eight booked days changed;
-81b0fe6dd put them back by special-casing frozen days. Tom: a booked day must never change because of
+81b0fe6dd put them back by special-casing frozen days. The human: a booked day must never change because of
 a code change.
 
 The same gap showed on 2026-10-06. The app read 10h 45m logged, Tempo held 8h 0m:

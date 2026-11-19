@@ -8,5 +8,5 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 # The B313/B321 WebKit pixel check runs locally first
 
 An agent writes the WebKit pixel check (explorer pixels under frame churn plus a 1.5-3 s main-thread busy loop,
-ScreenCaptureKit capture) without running it. Tom names a quiet window and grants Screen Recording; it then runs once
+ScreenCaptureKit capture) without running it. The human names a quiet window and grants Screen Recording; it then runs once
 on HEAD (must fail) and once with the shell-main stacking fix (must pass). A macOS CI job is a follow-up.

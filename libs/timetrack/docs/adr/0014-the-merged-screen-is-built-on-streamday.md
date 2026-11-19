@@ -8,12 +8,12 @@ TimeWindow[]` with no issue key, description or confidence, and no code anywhere
 
 ADR 0011 makes a band a row, so the merged screen needs rows, and today rows exist only in the v1
 pipeline. ADR 0007 says the v1 code is replaced per route as v2 takes each one over, and merging the
-two day screens **is** taking over the day route. Building the screen Tom called the product on top
+two day screens **is** taking over the day route. Building the screen the human called the product on top
 of the pipeline with a delete date would build it twice.
 
 So `streamDay` gains the proposal builder, and `correlate/` goes. ADR 0004 rules out the cheap middle
 path: `stream/` may not import `correlate/`, so there is no version where the new screen quietly
-borrows the old builder. Tom's decision, on 2026-09-10: "v1 can move into the trashcan. we can and
+borrows the old builder. The human's decision, on 2026-09-10: "v1 can move into the trashcan. we can and
 should rebuild it into something that actually works."
 
 ## Consequences

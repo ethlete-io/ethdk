@@ -7,4 +7,4 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # Studio is a solo-user tool first; multi-user is parked
 
-No presence, roles, rights or real-time sync until Tom reopens the topic (E8).
+No presence, roles, rights or real-time sync until the human reopens the topic (E8).

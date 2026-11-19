@@ -7,5 +7,5 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # The computed elevations are accepted; structure changes, not elevations
 
-Tom accepts the elevations the system computes on the 11 visible parts. If a spot looks wrong, the structure changes,
+The human accepts the elevations the system computes on the 11 visible parts. If a spot looks wrong, the structure changes,
 never a hand-picked elevation.

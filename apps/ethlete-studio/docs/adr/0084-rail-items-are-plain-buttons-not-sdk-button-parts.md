@@ -8,5 +8,5 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 # Rail items are plain buttons, not SDK button parts
 
 The rail items of `elements/shell-main` become `<button type="button" aria-label="...">` declared in the shell-main
-`controls`, with their current look. Tom rejected an SDK button variant just for a Studio-only control, and a `title`
+`controls`, with their current look. The human rejected an SDK button variant just for a Studio-only control, and a `title`
 signal in the CLI was rejected (status icons carry `title` too).

@@ -14,4 +14,4 @@ performance block and the UI builder on Studio UI; neither touches `libs/query` 
 A third session builds the SDK fixes, in this order: item 16 (the consumer's steps ported one to one into a scenario on
 both clients, then the fix, plus the rule in the `query-scenario-tests` skill), item 20 (a devtools e2e case: the pill
 does not cover app buttons under Playwright, `showInAutomation: true` keeps the UI), then a replay of the migrator on
-the pre-migration fifagg commit with tsc and lint. No push without Tom. Tom: "q1a".
+the pre-migration fifagg commit with tsc and lint. No push without the human. The human: "q1a".

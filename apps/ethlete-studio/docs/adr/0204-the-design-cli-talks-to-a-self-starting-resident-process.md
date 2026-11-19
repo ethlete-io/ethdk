@@ -12,5 +12,5 @@ Every design CLI call starts its own Vite design server, render worker, Chromium
 picture cache keyed on input hash; the CLI only sends it requests. The first design call starts it detached when none
 is running (about 1-2 GB RAM, printed as a cold start once per session); it exits after 30 min without a request, and
 `et design stop` ends it at once. CI keeps the in-process path. Rejected: running the process only while Studio or
-`et design` is open, because the agents rarely have Studio open and would stay on the slow path. Tom: "q1ok" (option a,
+`et design` is open, because the agents rarely have Studio open and would stay on the slow path. The human: "q1ok" (option a,
 recommended).

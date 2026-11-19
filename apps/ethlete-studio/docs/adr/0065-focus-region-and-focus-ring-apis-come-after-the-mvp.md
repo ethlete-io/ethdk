@@ -9,4 +9,4 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 After the MVP: `control()` on a page for one focusable region and a `region` control kind, a `focusRingStyles`
 export in `@ethlete/components/design`, and public focus-ring tokens for offset, width and colour (an SDK API call for
-Tom).
+The human).

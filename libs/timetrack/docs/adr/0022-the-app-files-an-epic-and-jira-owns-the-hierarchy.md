@@ -1,6 +1,6 @@
 # The app files an epic, and Jira owns the hierarchy after it
 
-M4 said the app never writes an epic, because the project manager owns them. Tom's project manager
+M4 said the app never writes an epic, because the project manager owns them. The human's project manager
 handed epics over for one project on 2026-09-14, and that is a per-project fact rather than a rule.
 Without it a stand-in with no matching epic has no ending the user can reach alone.
 
@@ -17,7 +17,7 @@ stays moved. The band keys on the task, so a moved parent changes no band and no
 re-reads the parent from Jira and never replays the epic the app created. There is no drift warning and
 no repair offer. Without this rule the app would argue with a person who already decided.
 
-**A create cannot be undone.** Tom's account cannot delete an issue, so a ticket can be moved and never
+**A create cannot be undone.** The human's account cannot delete an issue, so a ticket can be moved and never
 removed, and a duplicate is permanent. Nothing retries a create today — the Jira client has no retry,
 only an optional `timeoutMs`. The guard therefore lives under `createJiraIssue$` (`jira/create.ts:78`)
 rather than in the screen that calls it: four call sites exist already, and one is the agent endpoint

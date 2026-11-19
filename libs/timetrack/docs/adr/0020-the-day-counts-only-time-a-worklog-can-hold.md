@@ -1,6 +1,6 @@
 # The day counts only time a worklog can hold
 
-Tom, on 2026-09-14, on the same day screen: "the 2h 57m unattributed is confusing since it lists non
+The human, on 2026-09-14, on the same day screen: "the 2h 57m unattributed is confusing since it lists non
 tracked work", "some time matched no issue also seems to include non tracked work", and "day short of
 target? of cause it is. just had my break. we shouldnt scream that to the user during his active work
 time."

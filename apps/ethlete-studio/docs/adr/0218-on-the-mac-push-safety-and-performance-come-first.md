@@ -7,7 +7,7 @@ source: doc-agent session 2026-11-06, after ADR 0217
 
 # On the Mac, push safety and performance come first
 
-Tom: "die mac session sollte dann auch daran arbeiten dass es nicht mehr zu diesen push issues kommen kann. aber auch
+The human: "die mac session sollte dann auch daran arbeiten dass es nicht mehr zu diesen push issues kommen kann. aber auch
 perf ist weiterhin wichtig. das wird man gerade auf dem mac merken da der nicht so schnell ist wie dieser pc". Order for
 the Mac builder: (1) fix pages/sketches, pages/system and pages/merge, check-record pages/inventory and pages/start, push
 `next` with the hook (ADR 0217); (2) push safety: the design-rules gate and the full CI run per slice on a draft pull

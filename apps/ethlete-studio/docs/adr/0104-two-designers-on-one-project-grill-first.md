@@ -8,4 +8,4 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 # Two designers on one project: grill first
 
 Open topic: how Studio avoids or resolves conflicts when two designers edit the same part, sketch, JSON records or
-comments. Start with a grill; Tom's first thought is a real-time solution like Figma.
+comments. Start with a grill; the human's first thought is a real-time solution like Figma.

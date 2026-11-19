@@ -1,7 +1,7 @@
 # What may leave this machine, and how
 
 The original Timetrack plan locked "strictly local, the data never leaves the machine". Two decisions break
-it, and they break different halves. Syncing a day between Tom's own paired machines on his own
+it, and they break different halves. Syncing a day between the human's own paired machines on his own
 network is one. Asking `claude -p` or `codex` to draft a ticket is the other, and it is the larger
 break, because it sends text to a third party. Both are deliberate. The sentence becomes three:
 

@@ -6,9 +6,9 @@ model re-cuts every day, booked or not.
 
 On 2026-10-05 the phone-time stretch rule (ADR 0033) changed how rows are cut, and two days Tempo
 already held were re-cut in the app. On 2026-09-30 a 45m FIP-3006 band was split by an unnamed 15m
-row. On 2026-10-01 the FIFAGG-12657 row of 18:15-19:45 that Tom had edited and described became an
+row. On 2026-10-01 the FIFAGG-12657 row of 18:15-19:45 that the human had edited and described became an
 unnamed 18:15-19:15 row and a FIFAGG-12657 row of 19:15-19:45, and his edit no longer sat on the row
-he made it on. Tom: freeze booked days.
+he made it on. The human: freeze booked days.
 
 **A finished day Tempo holds keeps its rows.** The first time the app reads such a day, it stores the
 engine's rows into the day's edits as `frozenRows`, and `reviewDay` reviews the day over those rather

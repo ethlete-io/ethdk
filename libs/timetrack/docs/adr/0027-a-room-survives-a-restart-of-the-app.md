@@ -1,6 +1,6 @@
 # A room survives a restart of the app
 
-Tom, on 2026-09-15, on a Discord room torn into fragments by the app restarting under it: "though it
+The human, on 2026-09-15, on a Discord room torn into fragments by the app restarting under it: "though it
 should survive an app restart. otherwise that logic aint solid."
 
 The call source watches the microphone from inside the app's own process. A run that ends while the

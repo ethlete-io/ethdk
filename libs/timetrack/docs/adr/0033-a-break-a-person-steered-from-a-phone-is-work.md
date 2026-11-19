@@ -6,7 +6,7 @@
 > another lane does not book.
 
 On 2026-09-23 the day drew a break from 19:00 to 20:30 with seven prompts in it, and one from 21:45 to
-22:30 with three. Tom: "yes that was all phone work". ADR 0028 let those prompts buy back at most half
+22:30 with three. The human: "yes that was all phone work". ADR 0028 let those prompts buy back at most half
 of each break, because the idle notifier observed nobody at the seat and the allowance was only a guess
 at the attention around an instant.
 
@@ -21,9 +21,9 @@ stretch: a stretch runs on while consecutive remote prompts are at most `promptA
 least `minBreakMs` and is dropped otherwise, so a stretch may split a break in two. Desk and `unknown`
 prompts buy back what ADR 0028 lets them, off the parts that are left.
 
-**The day books all of it.** On 2026-09-24 Tom asked for at most an hour of phone time a day, and the
+**The day books all of it.** On 2026-09-24 the human asked for at most an hour of phone time a day, and the
 day booked each prompt's allowance up to that hour. On 2026-10-05 he prompted from the phone without a
-pause from 08:37 to 10:17, and the hour left 45 minutes of that work out of Tempo. Tom: "this stinks".
+pause from 08:37 to 10:17, and the hour left 45 minutes of that work out of Tempo. The human: "this stinks".
 A continuous phone session is real work, so the cap is gone. What the cap guarded against was idle
 time between prompts far apart, and the gap rule guards that instead: a gap of more than a quarter
 hour is not part of any stretch, and stays a break. `bookedRemoteWindows` splits each stretch by the

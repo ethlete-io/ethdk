@@ -1,6 +1,6 @@
 # An attended call is presence
 
-Tom, on 2026-09-16, reading a day the screen drew a break over a meeting: "breaks should be ediable
+The human, on 2026-09-16, reading a day the screen drew a break over a meeting: "breaks should be ediable
 / remove and restoreable. also they should be a little smarter."
 
 The meeting ran 90 minutes and nobody typed in it. `presenceWindows` reads presence from

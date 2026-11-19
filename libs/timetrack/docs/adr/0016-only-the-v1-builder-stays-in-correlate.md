@@ -13,7 +13,7 @@ from two drifting builders — it is neutral code in the wrong folder, the same 
 reach into `correlate/` to import them.
 
 So the correlate-free stages move to `rows/`, `pauseWindows` moves to `stream/`, and `correlate/`
-keeps the two files that are genuinely the v1 builder. Tom's decision, on 2026-09-10, over the
+keeps the two files that are genuinely the v1 builder. The human's decision, on 2026-09-10, over the
 alternative of about 1400 duplicated lines.
 
 The test for whether a file is v1 code is its dependencies, not its folder: a file that imports from

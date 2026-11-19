@@ -1,6 +1,6 @@
 # A band may be named by something that is not a Jira issue
 
-Work starts before Jira holds a ticket for it. Tom began a feature on 2026-09-14 with no epic and no
+Work starts before Jira holds a ticket for it. The human began a feature on 2026-09-14 with no epic and no
 task under one, and the naming ladder found the project and the branch slug and nothing else. The
 report to the project manager that M4 planned goes to another person, who answers next week, while the
 work continues. Every day of it asks the same question, because nothing in the model can hold a name

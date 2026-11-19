@@ -8,4 +8,4 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # The go.json commit hook stays until go.json goes
 
-Unchanged; it goes away with go.json in B249. Until then Tom commits go.json himself.
+Unchanged; it goes away with go.json in B249. Until then the human commits go.json himself.

@@ -3,7 +3,7 @@
 ADR 0013 decided what leaves this machine and how: names inside free text are replaced by pseudonyms
 derived from the name list by a fixed rule, no map is stored, and the list is the map. It wrote the
 outbound half only. Once the app files the answer as a Jira ticket, the return path has to be decided
-too, and Tom decided it on 2026-09-14: only the agent sees pseudonyms.
+too, and the human decided it on 2026-09-14: only the agent sees pseudonyms.
 
 So the masking is one-way for the agent and invisible to everyone else. The app masks the request, the
 agent answers with placeholders, the app reverses the rule over the answer, and the form shows real

@@ -415,7 +415,7 @@
       "label": "Frame-Größe ändern",
       "place": null,
       "confirmed": true,
-      "why": "automatic: frames fit content (Tom 2026-11-03, B178 a); needs B193 automatic flag",
+      "why": "automatic: frames fit content (the human 2026-11-03, B178 a); needs B193 automatic flag",
       "missing": "B178"
     },
     {

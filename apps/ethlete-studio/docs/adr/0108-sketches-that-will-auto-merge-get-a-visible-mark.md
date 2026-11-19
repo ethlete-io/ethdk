@@ -7,5 +7,5 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # Sketches that will auto-merge get a visible mark
 
-In Studio and in the builder's report, so Tom sees which sketches need his merge. "Very likely" comes from the rules
+In Studio and in the builder's report, so the human sees which sketches need his merge. "Very likely" comes from the rules
 the CLI already uses to skip the auto-merge.

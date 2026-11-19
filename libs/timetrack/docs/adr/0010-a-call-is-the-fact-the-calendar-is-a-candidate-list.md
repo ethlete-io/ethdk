@@ -1,6 +1,6 @@
 # A call is the fact, the calendar is a candidate list
 
-`matchMeetings` builds a row out of every accepted calendar occurrence. Tom holds overlapping
+`matchMeetings` builds a row out of every accepted calendar occurrence. The human holds overlapping
 invitations and attends one of them, so that emits two false rows on a normal morning. The calendar
 records an intention. Only the microphone records that a meeting happened.
 
@@ -28,11 +28,11 @@ honest answer for a meeting held in a room or on a telephone.
   name, not the meeting name.
 - A call with no calendar occurrence at all has no series to be remembered under, so it is keyed on
   the call's own features instead — `CallFeatures` and `matchCallNaming`, written by `callBehindRow`
-  and read by `rememberedCallIssueKey`. Two of Tom's four weekly meetings are of that kind. Tempo
+  and read by `rememberedCallIssueKey`. Two of the human's four weekly meetings are of that kind. Tempo
   history stays the rung below it: it names a time of day rather than a call, so it never returns
   better than `weak`, while a remembered call naming may reach `likely`. Neither reaches `certain`,
   because nothing confirmed which call it was.
 - Only an occurrence somebody else is in, or that carries a conference link, is a candidate at all
   (`isSharedOccurrence`). An entry on the user's own calendar — a commute, a focus block — has
-  neither, and a call over it keeps its own name (2026-09-29, a Discord room renamed after "Tom Tom
+  neither, and a call over it keeps its own name (2026-09-29, a Discord room renamed after "the human the human
   unterwegs").

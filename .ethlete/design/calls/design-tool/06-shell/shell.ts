@@ -8,7 +8,7 @@ export type ShellCall = {
 
 /** The data every option of this call draws. An option may read it and may not change it. */
 export const shell = {
-  checkout: '/home/tom/dev/ethlete-sdk',
+  checkout: '/home/human/dev/ethlete-sdk',
   project: 'fifagg',
   projects: ['fifagg', 'kerbe', 'studio', 'design-tool'],
   server: 'Design server 4402 · running',

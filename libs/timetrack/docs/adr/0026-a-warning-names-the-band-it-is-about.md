@@ -1,6 +1,6 @@
 # A warning names the band it is about
 
-Tom, on 2026-09-14, on the same day screen ADR 0020 came from: "Some time matched no issue is
+The human, on 2026-09-14, on the same day screen ADR 0020 came from: "Some time matched no issue is
 confusing. most of it is non tracked and thus not visible in the scheduler. same for A meeting and
 observed work claim the same time. what meeting? i dont see overlapping meetings in here".
 

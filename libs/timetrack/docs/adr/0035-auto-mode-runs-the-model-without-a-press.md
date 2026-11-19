@@ -3,7 +3,7 @@
 ADR 0013 lets a model call out "on an explicit press, with a prompt the user read first", and the
 roadmap adds that its answer is never above `weak`, never becomes a rule without a click, and never
 writes the naming store. Auto mode breaks the first two on purpose: with it on, Timetrack names the
-day by itself. Tom decided this on 2026-09-28.
+day by itself. The human decided this on 2026-09-28.
 
 **Turning auto mode on is the consent.** While it is on, a model runs without a press and without a
 preview, on each new unnamed band and each open stand-in of the current day. Where the match finds

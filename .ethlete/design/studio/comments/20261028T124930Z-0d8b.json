@@ -22,7 +22,7 @@
     "author": "gpt-6",
     "reason": "round",
     "addressedAt": "2026-10-28T12:52:15.159Z",
-    "note": "Tom markiert die fehlende Ausrichtung der Kopf- und Frame-Spalten, verbleibenden Leerraum und fragt nach direktem Zoom in den Kontext. Kopf und Frames verwenden jetzt dieselbe Kamerageometrie; Kontextseiten werden vollständig statt beschnitten gezeigt.",
+    "note": "the human markiert die fehlende Ausrichtung der Kopf- und Frame-Spalten, verbleibenden Leerraum und fragt nach direktem Zoom in den Kontext. Kopf und Frames verwenden jetzt dieselbe Kamerageometrie; Kontextseiten werden vollständig statt beschnitten gezeigt.",
     "round": "r3"
   }
 }

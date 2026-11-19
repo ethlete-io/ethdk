@@ -12,4 +12,4 @@ than A1 (finding 495): `pages/sketches`, `pages/system` and `elements/canvas-fra
 these old hits go into a baseline list for the implementation compare: the list may only shrink, the gate still fails
 on every new drift and on every part not on the list, and each entry is a finding that opens a sketch or a UI item for
 its fix. The push of next goes once the compare corner anti-alias tolerance (finding 494) is in and studio-menu and
-start are verified. Tom: "q1b" (option b, recommended).
+start are verified. The human: "q1b" (option b, recommended).

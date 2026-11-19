@@ -1,6 +1,6 @@
 # A row rounds twice, and observedMs keeps the truth
 
-Tom, on 2026-09-11: "recording down to the minute feels like surveillance on a next level. the user
+The human, on 2026-09-11: "recording down to the minute feels like surveillance on a next level. the user
 shouldnt feel bad just by looking at the screen. times should be recorded with a human factor in
 mind. plus row items should always start at a minute divided by 15 and end on one."
 
@@ -12,7 +12,7 @@ nothing smaller than an increment and a row rounded down to nothing cannot be wr
 
 `snapRowBounds` answers _when does this say it ran_. The start rounds back to the boundary below it
 and the end to the boundary nearest it, so 09:38 to 10:01 is written 09:30 to 10:00. The end is the
-nearest boundary rather than the ceiling on Tom's own example: 10:01 rounds to 10:00, and giving up
+nearest boundary rather than the ceiling on the human's own example: 10:01 rounds to 10:00, and giving up
 that minute is the point of the exercise. The start is the floor rather than the nearest because a
 row that starts before the work did is honest about where a reviewer should look, and a row that
 starts after it is not.
@@ -31,7 +31,7 @@ increment side by side.
 What the raw clock did hold is kept. `observedMs` carries the evidence-backed duration behind
 `durationMs`, and the day screen shows both, so a reviewer can always see what the rounding did. What
 is not kept is the raw start and end: once `propose` has snapped a row, the seconds are gone from the
-proposal, which is the whole of Tom's point. The evidence chain behind the row still holds them.
+proposal, which is the whole of the human's point. The evidence chain behind the row still holds them.
 
 ## Consequences
 

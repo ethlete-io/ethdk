@@ -12,4 +12,4 @@ fifagg update needs (section 12 of the former `plans/et-update-findings.md`). Th
 `design check --product studio` meets its 60 s target (end of S7), after a local CI run (`ci-check` skill) is green. If
 fifagg needs the fixes before that, the push happens at once, with the same green local CI first. Rejected: pushing now
 (the performance slices still change the CLI daily) and waiting for the end of the whole performance block (the batch
-grows and a CI failure gets harder to tie to a commit). Tom: "q1ok" (option b, recommended).
+grows and a CI failure gets harder to tie to a commit). The human: "q1ok" (option b, recommended).

@@ -2,12 +2,12 @@
 
 ADR 0006 rests on one sentence: "a prompt the user typed is presence... only the first is a person
 pressing keys at a known instant". That was true when every session began because somebody typed into
-it. It stopped being true when Tom started to run agents on a schedule.
+it. It stopped being true when the human started to run agents on a schedule.
 
 Measured on 2026-09-12. This machine held 592 events. Between 01:30 and 22:30 it held 36, and all 36
 were `git-commit` — commits a `git pull` brought in from a second machine an agent had worked on
 overnight. The day drew three bands and two breaks out of them, named one ET-772, and offered 3 h 33 m
-to Tempo. Tom's words: "syncing these times to tempo would be straight up lying about work hours."
+to Tempo. The human's words: "syncing these times to tempo would be straight up lying about work hours."
 
 The second machine was not running Timetrack. Had it been, the day would have been worse rather than
 better: it would have reported those hours with sessions, prompts and turns behind them, and every one
@@ -17,7 +17,7 @@ collectors alone.
 
 **The agent is what knows.** Claude Code records who asked for every prompt: `origin.kind` is `human`,
 `task-notification` or `peer`, and the older `promptSource` is `typed`, `queued`,
-`suggestion_accepted` or `system`. Across Tom's logs on 2026-09-12: 1972 human, 168 task
+`suggestion_accepted` or `system`. Across the human's logs on 2026-09-12: 1972 human, 168 task
 notifications, 175 `system`. Nothing has to be collected, inferred or watched for — the fact is
 already in the file, and reading it is not surveillance in the way "was there a keystroke" would be.
 

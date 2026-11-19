@@ -1,6 +1,6 @@
 # A background band never claims the increment the day is still in
 
-Tom, on 2026-09-21, with the row open on the screen: "this weird timetrack entry just got created".
+The human, on 2026-09-21, with the row open on the screen: "this weird timetrack entry just got created".
 
 The row read `ET-772`, 10:30 to 10:45, logged 00:15, `0m observed`, accepted, and its whole evidence
 was one line: the attribution rule that names the `ethlete-sdk` checkout. Three minutes later the row

@@ -9,6 +9,6 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 # Missing interaction states use the existing styles
 
 The missing states of the declared controls are drawn with the existing row, option and menu styles, no new look,
-one sketch round per part that Tom merges. The MVP measure is `design check --product studio --complete`.
+one sketch round per part that the human merges. The MVP measure is `design check --product studio --complete`.
 
-Amended by ADR 0210: states drawn in the existing styles need no merge by Tom.
+Amended by ADR 0210: states drawn in the existing styles need no merge by the human.

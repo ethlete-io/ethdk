@@ -9,5 +9,5 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 Studio reads `org.gnome.desktop.wm.preferences button-layout` as VS Code does (which buttons, which side) and follows
 changes; unset means minimize, maximize, close on the right. With `prefer-no-csd` (niri) it keeps the title bar but
-drops minimize and maximize. `appmenu` is ignored; the app menu stays behind the sidebar logo. On Tom's machine this
+drops minimize and maximize. `appmenu` is ignored; the app menu stays behind the sidebar logo. On the human's machine this
 shows only close, on the right.

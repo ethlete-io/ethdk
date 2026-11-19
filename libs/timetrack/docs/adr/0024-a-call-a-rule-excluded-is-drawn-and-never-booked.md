@@ -1,6 +1,6 @@
 # A call a rule excluded is drawn and never booked
 
-Tom, on 2026-09-14, on a Discord room his rules deny: "it would be nice to still record it as a
+The human, on 2026-09-14, on a Discord room his rules deny: "it would be nice to still record it as a
 meeting but exclude it. just to have it as a blueprint in case something 'meeting worthy' happened
 during that time."
 

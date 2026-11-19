@@ -8,4 +8,4 @@ source: the design-system-actions decisions log (deleted in B597), "State token 
 # State token values are tuned in their own sketch
 
 For example active darker than base and `--text-subtle` one step below muted, with contrast numbers in the drawing.
-Tom picks in Studio.
+The human picks in Studio.

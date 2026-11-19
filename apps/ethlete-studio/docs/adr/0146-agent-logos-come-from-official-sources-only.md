@@ -9,4 +9,4 @@ source: the design-system-actions decisions log (deleted in B597), "Colour found
 
 Grok has no Simple Icons entry: take the SVG from xAI's official brand or press kit, never drawn from memory, and
 leave it out only if no official source exists. Kimi in white, as Codex; Meta uses the "Meta AI" ring, not the
-infinity mark. Tom picks the generic mark in Studio.
+infinity mark. The human picks the generic mark in Studio.

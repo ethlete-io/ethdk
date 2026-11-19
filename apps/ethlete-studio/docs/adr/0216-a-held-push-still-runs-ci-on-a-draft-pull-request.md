@@ -13,5 +13,5 @@ request, and pre-push leaves typecheck and lint to CI (ADR 0038). A type error f
 until the ci-check before the push (finding 540). From now on, while a push is held, the builder pushes the state to
 its own branch with a draft pull request after every slice, so the full CI runs there and `next` stays untouched. A red
 run is fixed before the next slice starts. Rejected: local typecheck and lint after every slice (one to three minutes
-per slice on Tom's machine) and nothing beyond the ci-check before the push (finds the error hours and many commits
-later). Tom: "ok" (option a, recommended).
+per slice on the human's machine) and nothing beyond the ci-check before the push (finds the error hours and many commits
+later). The human: "ok" (option a, recommended).

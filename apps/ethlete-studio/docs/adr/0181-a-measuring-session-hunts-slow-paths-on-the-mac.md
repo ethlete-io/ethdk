@@ -2,12 +2,12 @@
 status: accepted
 open: none
 decided: 2026-11-04
-source: grill session 2026-11-04, Tom: "mein rechner hier ist ja ziemlich stark, das hat kaum einer. der mac ist eher ein realer testcase"
+source: grill session 2026-11-04, the human: "mein rechner hier ist ja ziemlich stark, das hat kaum einer. der mac ist eher ein realer testcase"
 ---
 
 # A measuring session hunts slow paths on the Mac
 
-Tom: "könnten wir auch ggf noch einen builder darauf anstoßen den mac zu nuzten um perf engpässe zu identifizieren via
+The human: "könnten wir auch ggf noch einen builder darauf anstoßen den mac zu nuzten um perf engpässe zu identifizieren via
 ssh? ... mein rechner hier ist ja ziemlich stark, das hat kaum einer. der mac ist eher ein realer testcase".
 
 A second session runs now, next to the builder. It measures Studio on `ethlete-mac` over SSH and builds nothing: no

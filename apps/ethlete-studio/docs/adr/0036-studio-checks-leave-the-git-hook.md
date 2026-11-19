@@ -8,6 +8,6 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # Studio checks leave the git hook
 
-Tom: "we built a check system in Studio, why rely on git hooks". The four Studio gates in `.husky/pre-push` (studio
+The human: "we built a check system in Studio, why rely on git hooks". The four Studio gates in `.husky/pre-push` (studio
 specs, static design check of reached parts, live check of regions no part covers, visible-change gate) become rules
 of Studio's check system; their hits show as problems on the part.

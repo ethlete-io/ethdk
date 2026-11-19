@@ -7,6 +7,6 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # The changed area keeps its interaction neighbourhood
 
-"Changed area" shows only the active cells, so Tom cannot judge the press in its sequence. After the MVP it keeps,
+"Changed area" shows only the active cells, so the human cannot judge the press in its sequence. After the MVP it keeps,
 for example, the full interaction row (rest, hover, active, focus-visible, pressed) of each changed state, with the
 changed cell marked.

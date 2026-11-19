@@ -100,7 +100,7 @@ each time it is computed, from the evidence that holds at that moment, and nothi
 - **The fake Jira backend had to learn `parent = "…"`.** `libs/timetrack/testing/backend/jql.ts`
   ignored that clause, so every issue in a fixture read as a child of every parent and the rung
   appeared to work for the wrong reason.
-- **On Tom's machine the rung is correct and silent.** `spec/20260819_bracket-challenge` in
+- **On the human's machine the rung is correct and silent.** `spec/20260819_bracket-challenge` in
   `fifagg/specs` and `feature/20260819_bracket-challenge` in `fifagg/fifagg-frontend` share a slug,
   and FIFAGG-12623 and FIFAGG-12624 are both open children of the epic FIFAGG-12605. Both checkouts
   currently carry a repo-scoped stand-in rule, so neither names a real issue, so there is no sibling

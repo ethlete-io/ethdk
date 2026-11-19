@@ -4,8 +4,8 @@
 > kept a break an agent ran through booked and only drew it over the row.
 
 On 2026-10-02 one agent session ran from 09:45 to 15:00, through breaks of 12:00-12:21, 13:10-13:43
-and 13:58-14:45. Tom typed no prompt in any of them, at the desk or from the phone. The day booked one
-row of 5h 15m and drew the three breaks hatched over it. Tom: he did nothing in those breaks, so the
+and 13:58-14:45. The human typed no prompt in any of them, at the desk or from the phone. The day booked one
+row of 5h 15m and drew the three breaks hatched over it. The human: he did nothing in those breaks, so the
 time must not reach Tempo.
 
 ADR 0028 kept that time for phone steering. Since then the break itself became the answer to that

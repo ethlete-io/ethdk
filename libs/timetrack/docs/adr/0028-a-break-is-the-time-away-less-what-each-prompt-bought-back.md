@@ -9,7 +9,7 @@ through no longer closed the stretch, and the resume took the whole wait as pres
 and it was chosen deliberately: 165 m of break became 133 m, and the 81 m lunch survived.
 
 It is still wrong, for a reason that day could not show. An agent that runs for forty minutes makes
-those forty minutes presence, whatever the person did. Tom, away from his desk on 2026-09-15 and
+those forty minutes presence, whatever the person did. The human, away from his desk on 2026-09-15 and
 steering from a phone: "During the break work is still getting done. We can't just ignore that." The
 day drew one unbroken block from 09:58 to 14:12, no break, no unattended time, and would have offered
 every minute of it to Tempo.
@@ -30,13 +30,13 @@ a lock is the user saying they left, and nothing typed afterwards changes where 
 moment apart buy back one and not two. No break gives up more than half of itself, however many
 prompts fall in it: the allowance is a guess at the attention around an instant, and when the guesses
 cover a whole absence the guess is wrong — the notifier observed nobody there. And the allowance never
-takes a break below `minBreakMs`. Tom, on 2026-09-15: "as per definition deduction can't be to the
+takes a break below `minBreakMs`. The human, on 2026-09-15: "as per definition deduction can't be to the
 point at which the break is 0m." A break the notifier observed is an absence, and a guess must not
 delete it; the day's grain is a quarter hour, so a quarter hour is the least it can report.
 
 **What is bought back shortens the break from its end; it never punches a hole in it.** A perforated
 break leaves slivers that `minBreakMs` drops one by one, so a 30-minute break with a prompt at minute
-1 and one at minute 29 used to vanish entirely. Tom, on 2026-09-15: "it also feels wrong to say 30m
+1 and one at minute 29 used to vanish entirely. The human, on 2026-09-15: "it also feels wrong to say 30m
 break but a prompt was made at minute 1 and one at minute 29 so the break gets totally eliminated."
 
 Measured on the real 2026-09-10: 215 m of break with no allowance in 4 breaks, 146 m with it
@@ -46,7 +46,7 @@ had left.
 ## Consequences
 
 - **This needed the idle notifier to work at all.** Not one idle transition had ever been collected on
-  Tom's machine: the app asked for `ext_idle_notifier_v1` version 1, which reports _session_
+  the human's machine: the app asked for `ext_idle_notifier_v1` version 1, which reports _session_
   idleness and which any idle inhibitor — a call, a video, a download — silences. Version 2's
   `get_input_idle_notification` reports input idleness, which no inhibitor can suppress. Proven on
   2026-09-15 with a 10-second threshold: v1 never fired, v2 fired in 10 seconds. Without that fix
@@ -70,7 +70,7 @@ had left.
   break as the gap the rows leave, and such a break leaves none, so it is snapped to the row increment
   and drawn in the break lane instead. Both ends round to the nearest boundary rather than outwards: a
   break is an absence reported back to the person who took it, and rounding it outwards claims more of
-  one than the notifier saw. Tom chose this over cutting the break out of the rows, which would have
+  one than the notifier saw. The human chose this over cutting the break out of the rows, which would have
   changed what the day books. Verified on 2026-09-15: the measured break 14:26-14:43 draws 14:30-14:45. _Amended by [ADR 0037](./0037-a-break-is-cut-out-of-the-rows-it-lies-under.md): the break is now cut out of an attended row._
 - **The allowance is one number for every prompt, and it does not know where the prompt came from.**
   A person waiting at their desk and a person steering from a phone buy back the same 15 minutes.

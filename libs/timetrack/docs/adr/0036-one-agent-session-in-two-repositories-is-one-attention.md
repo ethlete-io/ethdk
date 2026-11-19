@@ -11,7 +11,7 @@ and bridges the gaps between them, so a session that went to the specs and came 
 lanes over the same minutes. ADR 0034 left two repositories that are not worktrees of each other as
 two things at once, and nothing decided the case where one session is both of them.
 
-Tom decided it on 2026-10-01. **An instant that one agent session holds in two repositories goes to
+The human decided it on 2026-10-01. **An instant that one agent session holds in two repositories goes to
 the repository its tool calls touched at that instant.** The other repository records it as
 `behind`, the way ADR 0034 records a worktree's lost minutes.
 
@@ -40,7 +40,7 @@ What stays two things at once:
 - A stretch the lane still books draws no strip: `reviewDay` takes the minutes a row of the same lane
   covers out of each strip, after the rows are snapped.
 - A person who watches the agent's terminal in one repository while it edits the other books that
-  minute in both. Tom kept the focus rule on 2026-10-01 regardless: focus is the only sign of a person
+  minute in both. The human kept the focus rule on 2026-10-01 regardless: focus is the only sign of a person
   the cut has, and dropping it would cut a person's own editor time too.
 - A shorter stretch is still cut from the blocks, so it no longer counts as observed in the repository
   the session left. It does not split that repository's band.

@@ -16,4 +16,4 @@ Timetrack keeps its data in an encrypted database on your machine. Read the [pri
 
 ## Contact
 
-[tr.bornholdt@googlemail.com](mailto:tr.bornholdt@googlemail.com)
+[tr.human@googlemail.com](mailto:tr.human@googlemail.com)

@@ -8,5 +8,5 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 # The restart click approves building a new CLI copy
 
 When a newer `libs/cli` commit has no copy yet, "Neu starten" builds it on its own (`tools/scripts/studio-code.mjs`,
-about 1-2 min in a temp worktree), from committed code only. The rule "Tom approves each CLI build" applies only to
+about 1-2 min in a temp worktree), from committed code only. The rule "the human approves each CLI build" applies only to
 builds an agent starts by hand.

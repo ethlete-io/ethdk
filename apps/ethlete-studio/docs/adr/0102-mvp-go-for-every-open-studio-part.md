@@ -7,5 +7,5 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # MVP go for every open Studio part
 
-Tom gives the go for every open Studio part (`pages/inbox`, `pages/inventory`, each part the `implements` round
+The human gives the go for every open Studio part (`pages/inbox`, `pages/inventory`, each part the `implements` round
 links); the builder sets each go after the part's last edit and commits go.json. Parts that need a design call wait.

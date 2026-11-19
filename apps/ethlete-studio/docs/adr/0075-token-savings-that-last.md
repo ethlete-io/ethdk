@@ -7,7 +7,7 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # Token savings that last
 
-Tom: "alles was sinn macht", and every saving must last. The cost is context size x turns, so: big plans become a
+The human: "alles was sinn macht", and every saving must last. The cost is context size x turns, so: big plans become a
 short index plus topic files (finished sections to `archive/`); the design-exploration skill is cut to a short
 SKILL.md plus a reference; delegation gets a bar (a lookup under about 10 tool calls stays inline); a pre-push size
 budget guards plan index files, SKILL.md files and AGENTS.md; a weekly token report command; `design check --part`

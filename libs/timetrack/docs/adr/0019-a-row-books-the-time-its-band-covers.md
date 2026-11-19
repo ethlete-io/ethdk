@@ -1,6 +1,6 @@
 # A row books the time its band covers
 
-Tom, on 2026-09-14, reading a band drawn from 15 past to 45 past and labelled `15m`: "here the sdk
+The human, on 2026-09-14, reading a band drawn from 15 past to 45 past and labelled `15m`: "here the sdk
 block reads 15m but its 30m", and "15 - 45 means 30 minutes should be booked."
 
 A row therefore books `to - from`. The band on the day screen and the duration on the row are one
@@ -8,7 +8,7 @@ number, and a reviewer can read the booking off the clock.
 
 ADR 0017 kept them apart. `roundDurationUp` answered _how much does this book_ and `snapRowBounds`
 answered _when does this say it ran_, and the two were free to disagree: a band could cover 30
-minutes on the grid and book 15. That is the label Tom read. The rule that produced it was
+minutes on the grid and book 15. That is the label the human read. The rule that produced it was
 `roundDurations`, which held a day's total across its rows and gave a row that observed 13 minutes
 inside a 30-minute window one increment.
 

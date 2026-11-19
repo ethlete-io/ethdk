@@ -45,4 +45,4 @@ Raw collected events are deleted after 30 days, once they have been condensed in
 
 ## Contact
 
-Questions about this policy: [tr.bornholdt@googlemail.com](mailto:tr.bornholdt@googlemail.com)
+Questions about this policy: [tr.human@googlemail.com](mailto:tr.human@googlemail.com)

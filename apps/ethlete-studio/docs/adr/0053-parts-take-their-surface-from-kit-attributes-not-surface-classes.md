@@ -7,7 +7,7 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # Parts take their surface from kit attributes, not surface classes
 
-Tom: an auto surface picks the next higher surface, so everything that floats takes its surface and colours from the
+The human: an auto surface picks the next higher surface, so everything that floats takes its surface and colours from the
 theme; no part names a theme. `data-et-auto-surface` sets the theme of elevation + 1 like `etAutoSurface`, and
 `data-et-surface-interactive` loads the SDK interactive surface CSS like `etSurfaceInteractive`; `et design task`
 maps them 1:1. Only the root surface is fixed, by the frame or the app root.

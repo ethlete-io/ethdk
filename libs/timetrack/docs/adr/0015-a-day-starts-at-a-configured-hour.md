@@ -1,7 +1,7 @@
 # A day starts at a configured hour, not at midnight
 
 `streamDay` builds one local calendar day. Work from 22:00 to 02:00 therefore becomes two days, and
-the second is a two-hour Tuesday that describes nothing a person did. Tom works past midnight often
+the second is a two-hour Tuesday that describes nothing a person did. The human works past midnight often
 enough to raise it unprompted, and his words on the current workaround: "tempo is super tedious to
 use for that."
 

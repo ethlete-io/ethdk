@@ -26,7 +26,7 @@ presence" cost 7 hours on 2026-08-10, and it still holds — from an `idle-start
 input, a turn does nothing at all.
 
 Measured on 2026-09-07, with a 15-minute gap: prompts and commits alone give 4 h 47 m in 9 stretches;
-with turns bridging, 7 h 13 m in 3. Tom chose the second on 2026-09-08.
+with turns bridging, 7 h 13 m in 3. The human chose the second on 2026-09-08.
 
 ## Consequences
 

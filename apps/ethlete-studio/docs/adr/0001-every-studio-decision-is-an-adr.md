@@ -8,7 +8,7 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 # Every Studio decision is an ADR
 
 Studio decisions sat in 25 of 57 plan files (134 decision blocks), and a decided focus view (render-checks.md
-4.48) was asked again and half built. Tom: "daran erkennt man dass unser plan system offensichtlich nicht gut
+4.48) was asked again and half built. The human: "daran erkennt man dass unser plan system offensichtlich nicht gut
 funktioniert ... das doc ist ja auch mittlerweile meterlang". So every Studio decision, small ones too, becomes one
 ADR here with its build state in the frontmatter (`built: <sha>` or `open: B<row>`), deviating on purpose from the
 `ethlete-domain-modeling` rule that only hard-to-reverse decisions get an ADR. New decisions go only here, never

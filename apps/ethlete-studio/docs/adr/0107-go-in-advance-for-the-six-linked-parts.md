@@ -7,4 +7,4 @@ source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0
 
 # Go in advance for the six linked parts
 
-Tom gave the go for tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport and pages/merge in advance in chat.
+The human gave the go for tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport and pages/merge in advance in chat.
