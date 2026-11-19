@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B633
+built: 088ed333a
 decided: 2026-11-19
 amends: 0163
 source: doc-agent session 2026-11-19, screenshot of the Timetrack row editor in dark mode

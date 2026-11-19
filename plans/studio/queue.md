@@ -52,13 +52,5 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 51. **Standings-Zonenstärke (B620)** ⏳ SDK (fifagg S2): `StandingsZone.strength` als CSS-Variable am Band, Tagschicht - Builder
 52. **Standings-Form-Tooltip (B621)** ⏳ SDK (fifagg S3): optionales Template für den Form-Tooltip, Tagschicht - Builder
 53. **Button-Druck-Variante (B625)** ⏳ SDK (fifagg S7): Input `pressedVariant`, Standard = heutige Zuordnung - Builder
-54. **Kalender-Vorschlag (B626)** ⏳ Timetrack: Kalendertermin ohne Anruf als Vorschlag (Timetrack ADR 0048), nach B602 - Builder
-55. **Gebucht = Tempo (B627)** ⏳ Timetrack: „logged“ zählt nur Tempo (Timetrack ADR 0049), nach B602 - Builder
-56. **Segment-Gruppe Überlauf (B628)** ⏳ SDK (fifagg S8): Input `overflow` truncate | scroll, nach dem laufenden B602-Schritt - Builder
-57. **Accordion-Tokens 2 (B629)** ⏳ SDK (fifagg S9): vier Tokens, heutige Werte als Standard - Builder
-58. **Formfeld-Label-Token (B630)** ⏳ SDK (fifagg S11): zwei Label-Farb-Tokens, heutige Werte als Standard - Builder
-59. **Fortschritt-Tokens 2 (B631)** ⏳ SDK (fifagg S12): zwei Tokens für den „upcoming“-Marker, heutige Werte als Standard - Builder
-60. **Accordion-Unterstrich-Hover (B632)** ⏳ SDK (fifagg S13): ein Token für den Unterstrich beim Hover, Standard keiner - Builder
-61. **Leiser Feldrahmen (B633)** ⏳ SDK: Ruhe-Rahmen von Input und Textarea auf etwa 3:1 statt 6,94:1 (ADR 0379), ersetzt den Weiß-Rahmen-Befund aus Timetrack - Builder
-62. **Token-Namen vor Prerelease (B634)** ⏳ SDK: Namen der fifa-Tokens vereinheitlichen, bevor sie veröffentlicht werden; Prerelease wartet darauf - Builder
-63. **Leiser Feldrahmen Hover (B635)** ⏳ SDK: Hover-Rahmen etwa 4,5:1 statt nahezu weiß (ADR 0379) - Builder
+54. **Gebucht = Tempo (B627)** ⏳ Timetrack: „logged“ zählt nur Tempo (Timetrack ADR 0049), nach B602 - Builder
+55. **Segment-Gruppe Überlauf (B628)** ⏳ SDK (fifagg S8): Input `overflow` truncate | scroll, nach dem laufenden B602-Schritt - Builder

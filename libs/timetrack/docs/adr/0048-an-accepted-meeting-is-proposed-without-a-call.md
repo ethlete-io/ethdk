@@ -1,5 +1,5 @@
 ---
-open: B626
+built: 216f35e5d
 decided: 2026-11-19
 amends: 0010
 ---

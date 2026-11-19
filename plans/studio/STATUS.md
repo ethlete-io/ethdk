@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 19.11.2026, abends
+Stand: 19.11.2026, nachmittags
 
 ## Ziel
 
@@ -32,8 +32,8 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 3. **Consumer-Auslieferung (B610)** ⏳ Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules, frühestens eine Woche nach B608/B609 (ADR 0374) - Builder
-4. **Timetrack-Beschreibung (B602)** ⏳ 18.11. buchbar. Auto-Modus-Sperre für unbesetzte Zeilen gebaut (f04d76c11, c0b6e08d7); Tom lehnt am 19.11. die 9 Vorschläge FIFAGG-12769 ab, dann bucht er. Offen: #5, #11, #28, Vertretung 10:26 - Builder
-5. **Timetrack-Gleichstand (B616)** ⏳ gekoppelte Rechner zeigen denselben Tag, SSH-Arbeit auf tank erscheint auf dem Mac (Timetrack ADR 0047) - Builder
+4. **Timetrack-Beschreibung (B602)** ⏳ Mac-Nacht nur am Überlapp benannt (ed3812106), Basis-Branch-Vertretung ab 2 h je Tag (Timetrack ADR 0051), Schnipsel behalten den Sitzungstitel, Sub-Agent-Daten erfasst (Timetrack ADR 0052). Offen: tank-Neustart und Live-Beweis, Skizze Sub-Agent-Streifen (Tom wählt), #5, #11, #28, Vertretung 10:26 - Builder
+5. **Timetrack-Gleichstand (B616)** ⏳ Vergleich ordnet Checkouts zu, Branch-Verlauf und Fenster-Branch reisen mit (lokal). Offen: gebuchter Stand reist mit, Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.
 
