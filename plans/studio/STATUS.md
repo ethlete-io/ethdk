@@ -36,6 +36,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 5. **Timetrack-Beschreibung (B602)** ⏳ Tag-Aufbau linear und im Web Worker, Git-Watch ignoriert Dateizugriffe, MR-Abgleich ein git log pro Repo (5a09de401, a30be57c7). Offen: Rest-Blockaden 65-330 ms im JS-Thread (Git-Ankunft, Tag-Computeds, probeScanOf), namingSettled liest alte Zeilen, Host-Speicherleck, Tom bestätigt Scrollen, Live-Bild; Anruf ohne Vorschlag - Builder
 6. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, 18.11.-Regression behoben (ADR 0038), Warteschlangen-Dedup. Offen: Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047), neue ID bei erneutem Anlegen, Warteschlange über Rechner - Builder
 7. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9); `@ethlete` wird gespeichert wie `@ethlete-producer`, ohne npmjs-Uplink. Offen: Testlauf mit `CI_SELF_HOSTED`, notieren wo er stoppt - Builder
+8. **Worktrees erben das Projekt (B643)** ⏳ offen: Worktree übernimmt Verknüpfung des Haupt-Checkouts, keine eigene Zeile in den Projekt-Pfaden (Timetrack ADR 0034) - Builder
 
 Geparkt: B105, B108, B109, B148.
 
