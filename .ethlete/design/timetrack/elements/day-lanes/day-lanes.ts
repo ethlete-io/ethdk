@@ -81,7 +81,10 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   controls: {},
   states: { default: {} },
-  describe: { default: 'Day of 19.11. shape: two parallel sessions, three subagents under the acme-web session' },
+  describe: {
+    default:
+      'Day of 19.11. shape: two parallel sessions, three subagents under the acme-web session; check that the two sessions sit side by side and the three subagents hang under acme-web.',
+  },
   render: () =>
     drawing({
       body: dayTimeline(
