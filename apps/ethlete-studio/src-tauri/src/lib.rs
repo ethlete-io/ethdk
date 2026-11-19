@@ -7,6 +7,7 @@ mod design_roots;
 mod design_server;
 mod error;
 mod studio_code;
+mod traffic_lights;
 mod update;
 #[cfg(target_os = "macos")]
 mod webview_rebuild;

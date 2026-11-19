@@ -40,6 +40,9 @@ tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b
 wayland-client = "0.31.15"
 wayland-protocols = { version = "0.32.13", features = ["client", "unstable"] }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-app-kit = { version = "0.3", default-features = false, features = ["NSButton", "NSControl", "NSResponder", "NSView", "NSWindow", "objc2-core-foundation"] }
+
 [target.'cfg(target_os = "windows")'.dependencies]
 tauri-runtime-wry = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
 

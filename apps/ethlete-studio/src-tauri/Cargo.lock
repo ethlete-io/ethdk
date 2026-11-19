@@ -1283,6 +1283,7 @@ dependencies = [
  "fix-path-env",
  "libc",
  "notify",
+ "objc2-app-kit",
  "serde",
  "serde_json",
  "sha2",

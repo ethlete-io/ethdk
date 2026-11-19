@@ -46,7 +46,9 @@ pub fn build_window<R: ConsoleRuntime>(app: &AppHandle<R>, config: &WindowConfig
         None => builder,
     };
 
-    with_console_log(builder, path(app)).build().map(|_| ())
+    with_console_log(builder, path(app))
+        .build()
+        .map(|window| crate::traffic_lights::centre(&window))
 }
 
 pub fn start<R: ConsoleRuntime>(app: &AppHandle<R>) -> tauri::Result<()> {
