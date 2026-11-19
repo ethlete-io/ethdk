@@ -483,7 +483,7 @@ const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: r
   );
 };
 
-const unattendedOnlySubjectKeys = (options: { rows: readonly AskRow[]; unattributed: readonly WorkGroup[] }) => {
+const attendedSubjectKeys = (options: { rows: readonly AskRow[]; unattributed: readonly WorkGroup[] }) => {
   const contextOfRow = contextIdsByRowId(options.unattributed);
   const attendedBySubject = new Map<string, boolean>();
 
@@ -502,7 +502,7 @@ const unattendedOnlySubjectKeys = (options: { rows: readonly AskRow[]; unattribu
     attendedBySubject.set(key, !!attendedBySubject.get(key) || !row.unattended);
   }
 
-  return new Set([...attendedBySubject].flatMap(([key, attended]) => (attended ? [] : [key])));
+  return new Set([...attendedBySubject].flatMap(([key, attended]) => (attended ? [key] : [])));
 };
 
 /** When each subject of a day settles, so auto mode may ask about it. A stand-in with no row has settled. */
@@ -610,8 +610,8 @@ export const autoModeReaskSubjectOf = (options: {
  * Why an agent may not ask auto mode about a subject of a day, or `null` where it may. It refuses what
  * "Ask auto mode again" is never offered on: a stand-in Timetrack does not hold, one the day holds no
  * time of, a resolved one or one the user reopened, and a context the day holds no unnamed work of,
- * one a standing rule answers or one the user named by hand, and a context or stand-in whose every row of the
- * day is unattended.
+ * one a standing rule answers or one the user named by hand, and a context or stand-in with no attended row
+ * on the day.
  */
 export const autoModeAskRefusal = (options: {
   subject: AutoModeSubject;
@@ -626,13 +626,10 @@ export const autoModeAskRefusal = (options: {
 
   if (subject.kind === 'call') return 'Auto mode asks about a call by itself only.';
 
-  if (
-    unattendedOnlySubjectKeys({ rows: options.rows, unattributed: options.unattributed }).has(
-      autoModeSubjectKey(subject),
-    )
-  ) {
-    return `Every row of ${autoModeSubjectKey(subject)} on ${day} is one nobody was at the machine for, so auto mode names nothing.`;
-  }
+  const withoutAttendedRow = () =>
+    attendedSubjectKeys({ rows: options.rows, unattributed: options.unattributed }).has(autoModeSubjectKey(subject))
+      ? null
+      : `${autoModeSubjectKey(subject)} has no attended row on ${day}, so auto mode names nothing.`;
 
   if (subject.kind === 'stand-in') {
     const id = subject.standInId;
@@ -645,7 +642,7 @@ export const autoModeAskRefusal = (options: {
       return `The user reopened stand-in ${id}, so auto mode leaves it to them.`;
     }
 
-    return null;
+    return withoutAttendedRow();
   }
 
   const id = subject.contextId;
@@ -665,7 +662,7 @@ export const autoModeAskRefusal = (options: {
     return `The user named context ${id} by hand on ${day}, so auto mode leaves it to them.`;
   }
 
-  return null;
+  return withoutAttendedRow();
 };
 
 /**
@@ -747,7 +744,7 @@ export const autoModeAsks = (options: {
   const calls = [
     ...new Set(options.rows.flatMap((row) => (isAutoModeCallRow(row) ? [callRowIdOf(row) ?? ''] : [])).filter(Boolean)),
   ].map((rowId): AutoModeSubject => ({ kind: 'call', rowId }));
-  const unattendedOnly = unattendedOnlySubjectKeys({
+  const attended = attendedSubjectKeys({
     rows: options.rows,
     unattributed: evidence?.unattributed ?? [],
   });
@@ -777,7 +774,8 @@ export const autoModeAsks = (options: {
   };
 
   return [...contexts, ...standIns, ...calls].filter((subject) => {
-    if (unattendedOnly.has(autoModeSubjectKey(subject))) return false;
+    if (subject.kind === 'stand-in' && !attended.has(autoModeSubjectKey(subject))) return false;
+    if (subject.kind === 'context' && evidence && !attended.has(autoModeSubjectKey(subject))) return false;
 
     const answer = answers.get(autoModeSubjectKey(subject));
     const askedEarly =

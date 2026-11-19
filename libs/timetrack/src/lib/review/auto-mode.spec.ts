@@ -141,7 +141,7 @@ const asks = (options: {
     nowMs: NOW,
     contexts: [CONTEXT],
     standIns: options.standIns ?? [],
-    rows: options.rows ?? [],
+    rows: options.rows ?? [{ id: unnamedRowId(GROUP) }, ...(options.standIns ?? []).map((s) => ({ standInId: s.id }))],
     answers: options.answers ?? [],
   });
 
@@ -292,8 +292,52 @@ describe('autoModeAsks on a night nobody was at the machine for', () => {
         standIns: [standIn],
       });
 
-    expect(refusalOf({ kind: 'context', contextId: CONTEXT.id })).toMatch(/nobody was at the machine/);
-    expect(refusalOf({ kind: 'stand-in', standInId: standIn.id })).toMatch(/nobody was at the machine/);
+    expect(refusalOf({ kind: 'context', contextId: CONTEXT.id })).toMatch(/no attended row/);
+    expect(refusalOf({ kind: 'stand-in', standInId: standIn.id })).toMatch(/no attended row/);
+  });
+});
+
+describe('auto mode asks only about a subject with an attended row today', () => {
+  const standIn = openStandIn({ name: 'E2E findings', day: TODAY, now: at('00:00') });
+  const subject: AutoModeSubject = { kind: 'stand-in', standInId: standIn.id };
+  const asksAbout = (rows: Parameters<typeof autoModeAsks>[0]['rows']) =>
+    autoModeAsks({
+      enabled: true,
+      day: TODAY,
+      today: TODAY,
+      nowMs: NOW,
+      contexts: [],
+      standIns: [standIn],
+      rows,
+      answers: [],
+    });
+  const refusalOf = (rows: Parameters<typeof autoModeAsks>[0]['rows']) =>
+    autoModeAskRefusal({
+      subject,
+      day: TODAY,
+      contexts: [],
+      unattributed: [],
+      rows,
+      standIns: [standIn],
+    });
+
+  it('refuses a stand-in that has no row today', () => {
+    expect(asksAbout([])).toEqual([]);
+    expect(refusalOf([])).toMatch(/attended row/);
+  });
+
+  it('refuses a stand-in whose only rows are unattended', () => {
+    const rows = [{ id: 'stand-in-night', standInId: standIn.id, unattended: true }];
+
+    expect(asksAbout(rows)).toEqual([]);
+    expect(refusalOf(rows)).not.toBeNull();
+  });
+
+  it('allows a stand-in with one attended row', () => {
+    const rows = [{ id: 'stand-in-day', standInId: standIn.id }];
+
+    expect(asksAbout(rows)).toEqual([subject]);
+    expect(refusalOf(rows)).toBeNull();
   });
 });
 
@@ -338,7 +382,7 @@ describe('autoModeAsks while a band still runs', () => {
       nowMs: at(time).getTime(),
       contexts: [CONTEXT],
       standIns: options.standIns ?? [],
-      rows: options.rows ?? [],
+      rows: options.rows ?? [{ id: unnamedRowId(GROUP) }],
       answers: options.answers ?? [],
       evidence: { unattributed: DAY.unattributed, config: CONFIG, maskedNames: [] },
       approvals: options.approvals ?? queue,
@@ -496,7 +540,7 @@ describe('autoModeAsks after new evidence', () => {
       nowMs: NOW,
       contexts: options.contexts ?? [CONTEXT],
       standIns: [],
-      rows: options.rows ?? [],
+      rows: options.rows ?? options.unattributed.map((group) => ({ id: unnamedRowId(group) })),
       answers: [options.answer],
       evidence: { unattributed: options.unattributed, config: CONFIG, maskedNames: [] },
       approvals: options.approvals ?? [],
@@ -531,7 +575,7 @@ describe('autoModeAsks after new evidence', () => {
         nowMs: NOW,
         contexts: [context],
         standIns: [],
-        rows: [],
+        rows: [{ id: unnamedRowId(GROUP) }],
         answers: [],
         evidence: {
           unattributed: [{ ...GROUP, blocks: [{ ...BLOCK, context: onMain, evidence: notes.map(commit) }] }],
@@ -1718,7 +1762,7 @@ describe('autoModeAskRefusal', () => {
       contexts: [CONTEXT],
       ...(options.ruled ? { ruledContextIds: new Set([CONTEXT.id]) } : {}),
       unattributed: DAY.unattributed,
-      rows: rowsOf(options.edits ?? EMPTY_DAY_REVIEW_EDITS),
+      rows: [...rowsOf(options.edits ?? EMPTY_DAY_REVIEW_EDITS), { standInId: standIn.id }],
       standIns: options.standIns ?? [standIn],
     });
   const STAND_IN = { kind: 'stand-in' as const, standInId: standIn.id };

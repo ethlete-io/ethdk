@@ -6,6 +6,7 @@ import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { WorkGroup } from '../rows/merge';
+import { unnamedRowId } from '../rows/propose';
 import { WorkFacts } from '../ticket/work-facts';
 import { ticketWritingSpec } from '../ticket/write';
 import { autoModeMergeRequestOutcome, withUnnamedSubjectItemsExpired } from './auto-merge-request';
@@ -80,7 +81,7 @@ const asks = (options: { workFacts?: ReadonlyMap<string, WorkFacts>; answers?: A
     nowMs: at('12:00').getTime(),
     contexts: [CONTEXT],
     standIns: [],
-    rows: [],
+    rows: [{ id: unnamedRowId(GROUP) }],
     answers: options.answers ?? [],
     evidence: { unattributed: [GROUP], config: CONFIG, maskedNames: [], workFacts: options.workFacts },
     approvals: [],
