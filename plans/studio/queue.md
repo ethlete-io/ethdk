@@ -58,3 +58,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 57. **Accordion-Tokens 2 (B629)** ⏳ SDK (fifagg S9): vier Tokens, heutige Werte als Standard - Builder
 58. **Formfeld-Label-Token (B630)** ⏳ SDK (fifagg S11): zwei Label-Farb-Tokens, heutige Werte als Standard - Builder
 59. **Fortschritt-Tokens 2 (B631)** ⏳ SDK (fifagg S12): zwei Tokens für den „upcoming“-Marker, heutige Werte als Standard - Builder
+60. **Accordion-Unterstrich-Hover (B632)** ⏳ SDK (fifagg S13): ein Token für den Unterstrich beim Hover, Standard keiner - Builder
