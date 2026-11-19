@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, catchError, finalize, map, of, startWith, switchMap, tap } from 'rxjs';
+import { ShotStateComponent, ShotStateDirective } from '../components/design-canvas/partials/shot-state';
 import { Inventory, InventoryFrame, approveInventory$, inventory$ } from '../../host/design-inventory';
 import {
   InventoryPageComponent,
@@ -56,11 +57,19 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
     />
 
     <ng-template #shot let-frame>
-      <img [src]="shotUrl(frame.key)" (load)="measure(frame.key, $event)" class="block max-w-full" alt="" />
+      <img
+        #shotState="ethleteShot"
+        [src]="shotUrl(frame.key)"
+        (load)="measure(frame.key, $event)"
+        class="block h-auto max-w-full data-[shot-state=failed]:h-40 data-[shot-state=failed]:w-80"
+        ethleteShot
+        alt=""
+      />
+      <ethlete-shot-state [state]="shotState.state()" />
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [InventoryPageComponent],
+  imports: [InventoryPageComponent, ShotStateDirective, ShotStateComponent],
   host: { class: 'block size-full' },
 })
 export class InventoryViewComponent {

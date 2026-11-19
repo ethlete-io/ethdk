@@ -102,6 +102,15 @@ describe('InventoryViewComponent', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
+  it('shows a failed inventory shot as an error', async () => {
+    const { fixture, element } = await render(inventoryOf([control(1, 'save', 'declared')]));
+
+    element.querySelector('img')?.dispatchEvent(new Event('error'));
+    await settle(fixture);
+
+    expect(element.querySelector('figure [data-shot-failed]')?.textContent).toContain('Render failed');
+  });
+
   it('lists a covered control, with no outline or badge on the shot', async () => {
     const { element } = await render(
       inventoryOf([control(1, 'save', 'declared'), { ...control(2, 'under', 'declared'), covered: true }]),

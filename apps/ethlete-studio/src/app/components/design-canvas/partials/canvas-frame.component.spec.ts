@@ -439,3 +439,30 @@ describe('CanvasFrameComponent caption', () => {
     },
   );
 });
+
+describe('CanvasFrameComponent failed crop thumb', () => {
+  it('shows a failed crop thumb as an error', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+    const fixture = TestBed.createComponent(CanvasFrameComponent);
+    fixture.componentRef.setInput('frame', {
+      id: 'default',
+      src: 'about:blank',
+      label: 'default',
+      width: 300,
+      height: 200,
+      screenshot: 'http://localhost/__design/shot?call=a',
+      crop: { areas: [{ x: 0, y: 0, width: 100, height: 100 }], frame: { width: 300, height: 200 } },
+    });
+    fixture.componentRef.setInput('width', 300);
+    fixture.componentRef.setInput('height', 200);
+    await fixture.whenStable();
+
+    const thumb = (fixture.nativeElement as HTMLElement).querySelector('[data-crop-thumb]') as HTMLElement;
+    thumb.querySelector('img')?.dispatchEvent(new Event('error'));
+    await fixture.whenStable();
+
+    expect(thumb.querySelector('[data-shot-failed]')?.textContent).toContain('Render failed');
+  });
+});

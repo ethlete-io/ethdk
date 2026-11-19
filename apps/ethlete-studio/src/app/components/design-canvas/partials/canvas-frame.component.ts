@@ -158,12 +158,15 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             data-crop-thumb
           >
             <img
+              #thumbShot="ethleteShot"
               [src]="screenshot"
               [ethleteShotRank]="screenshot"
               [style.transform]="'scale(' + cropped.thumb.scale + ')'"
               class="absolute top-0 left-0 max-w-none origin-top-left"
+              ethleteShot
               alt=""
             />
+            <ethlete-shot-state [state]="thumbShot.state()" />
             @for (outline of cropped.thumb.outlines; track $index) {
               <div
                 [style.left.px]="outline.x"
