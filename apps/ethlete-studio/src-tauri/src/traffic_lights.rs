@@ -3,6 +3,7 @@
 use tauri::{Runtime, WebviewWindow};
 
 /// The height of `.st-title-bar` (`h-8`), the bar the traffic lights sit on.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub const TITLE_BAR_HEIGHT: f64 = 32.0;
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const TRAFFIC_LIGHT_X: f64 = 12.0;
@@ -149,7 +150,7 @@ mod tests {
     #[test]
     fn half_a_pixel_off_still_passes_and_more_fails() {
         assert_eq!(verdict(16.5, TITLE_BAR_HEIGHT), (0.5, true));
-        assert_eq!(verdict(15.4, TITLE_BAR_HEIGHT).1, false);
+        assert!(!verdict(15.4, TITLE_BAR_HEIGHT).1);
         assert_eq!(verdict(18.0, TITLE_BAR_HEIGHT), (2.0, false));
     }
 }
