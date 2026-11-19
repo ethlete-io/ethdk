@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B628
+built: ef69ea7d9
 decided: 2026-11-19
 source: doc-agent session 2026-11-19, evening, on the segmented group overflow (B628)
 ---
