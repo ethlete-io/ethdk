@@ -39,7 +39,7 @@ import { sessionWork } from './session-work';
 import { fileAgentEventsByWork } from './worked-in';
 import { receivedEventsOf } from './merge-day-events';
 import { redactTitleUrls } from '../store/title';
-import { namedWorkFileOf, sessionPieces } from '../model/session-piece';
+import { namedWorkFileOf, SessionPiece, sessionPieces } from '../model/session-piece';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
@@ -301,6 +301,8 @@ export type StreamDay = {
    * through is in `unattendedMs` as well: one number says who was there, the other says what ran.
    */
   breaks: BreakWindow[];
+  /** The agent sessions of each piece, by the piece's id, the piece's own first session included. */
+  pieceSessions: Record<string, string[]>;
   /** How long those breaks held. */
   breakMs: number;
   /**
@@ -1792,6 +1794,7 @@ const streamOrigin = (options: {
     blocks,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     breaks,
+    pieceSessions: pieceSessionsOf(pieces),
     breakMs: breakMs(breaks),
     rebuiltMs: windowsMs(rebuilt),
     streams,
@@ -1974,6 +1977,24 @@ const awayEverywhere = <T extends TimeWindow>(options: {
       );
   });
 
+const pieceSessionsOf = (pieces: ReadonlyMap<string, SessionPiece>) => {
+  const held: Record<string, string[]> = {};
+
+  for (const [key, { piece }] of pieces) (held[piece] ??= []).push(key.slice(key.indexOf('\n') + 1));
+
+  return held;
+};
+
+const mergePieceSessions = (days: readonly Record<string, string[]>[]) => {
+  const held: Record<string, string[]> = {};
+
+  for (const day of days)
+    for (const [piece, sessions] of Object.entries(day))
+      held[piece] = [...new Set([...(held[piece] ?? []), ...sessions])];
+
+  return held;
+};
+
 const mergeBreaks = (breaks: readonly BreakWindow[]): BreakWindow[] =>
   breaks
     .slice()
@@ -2086,6 +2107,7 @@ const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => 
     blocks,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     breaks,
+    pieceSessions: mergePieceSessions(days.map((day) => day.pieceSessions)),
     breakMs: breakMs(breaks),
     rebuiltMs: windowsMs(rebuilt),
     streams,

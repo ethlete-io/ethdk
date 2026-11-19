@@ -610,6 +610,7 @@ describe('streamDay', () => {
     const day = streamDay({ events: [] });
 
     expect(day).toEqual({
+      pieceSessions: {},
       presenceMs: 0,
       presence: [],
       engagedMs: 0,

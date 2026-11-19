@@ -733,6 +733,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const subagentsByRow = computed(() => {
     const roots = git.discovery()?.repos ?? [];
     const samples = agentSamplesOf({ events: evidence()?.events ?? [], roots });
+    const pieceSessions = streamed()?.pieceSessions ?? {};
     const found = new Map<string, RowSubagent[]>();
 
     for (const row of rows()) {
@@ -742,7 +743,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         laneKey: row.laneKey,
         from: row.from,
         to: row.to,
-        session: row.piece,
+        sessions: row.piece ? (pieceSessions[row.piece] ?? [row.piece]) : undefined,
       });
 
       if (subagents.length) found.set(row.id, subagents);

@@ -21,14 +21,14 @@ const sample = (
   ...(options.agentTask ? { agentTask: options.agentTask } : {}),
 });
 
-const within = (samples: AgentSessionEvent[], options: { from?: number; to?: number; session?: string } = {}) =>
+const within = (samples: AgentSessionEvent[], options: { from?: number; to?: number; sessions?: string[] } = {}) =>
   subagentsWithin({
     samples,
     roots: ROOTS,
     laneKey: `repo:${API}`,
     from: AT(options.from ?? 0),
     to: AT(options.to ?? 120),
-    session: options.session,
+    sessions: options.sessions,
   });
 
 const migration = (minutes: number) =>
@@ -77,7 +77,21 @@ describe('subagentsWithin', () => {
     expect(found).toEqual([]);
   });
 
-  it('narrows to one session for a row of parallel siblings', () => {
+  it('hangs the subagents of every session of the row piece, though its first session has no sample there', () => {
+    const samples = [
+      sample(0, { session: 'first' }),
+      sample(60, { session: 'second' }),
+      sample(61, { session: 'third' }),
+      sample(62, { session: 'second', agentId: 's1', agentTask: 'Quieter frame' }),
+      sample(63, { session: 'third', agentId: 't1' }),
+      sample(64, { session: 'other', agentId: 'o1' }),
+    ];
+    const found = within(samples, { from: 60, to: 90, sessions: ['first', 'second', 'third'] });
+
+    expect(found.map((subagent) => subagent.agentId)).toEqual(['s1', 't1']);
+  });
+
+  it('narrows to the sessions for a row of parallel siblings', () => {
     const samples = [
       sample(0, { session: 'a' }),
       sample(1, { session: 'b' }),
@@ -85,7 +99,7 @@ describe('subagentsWithin', () => {
       sample(6, { session: 'b', agentId: 'b1' }),
     ];
 
-    expect(within(samples, { session: 'b' }).map((subagent) => subagent.agentId)).toEqual(['b1']);
+    expect(within(samples, { sessions: ['b'] }).map((subagent) => subagent.agentId)).toEqual(['b1']);
     expect(within(samples).map((subagent) => subagent.agentId)).toEqual(['a1', 'b1']);
   });
 

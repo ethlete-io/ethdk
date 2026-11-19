@@ -22,8 +22,8 @@ export const agentSamplesOf = (options: {
 
 /**
  * The subagents of the sessions a row's checkout ran between `from` (included) and `to` (excluded),
- * oldest first. A session counts when one of its own samples falls in the row; `session` narrows that
- * to the one session a row of parallel siblings is drawn for. Pass the samples from {@link agentSamplesOf}.
+ * oldest first. A session counts when one of its own samples falls in the row; `sessions` narrows that
+ * to the sessions of the piece a row of parallel siblings is drawn for. Pass the samples from {@link agentSamplesOf}.
  */
 export const subagentsWithin = (options: {
   samples: readonly AgentSessionEvent[];
@@ -31,7 +31,7 @@ export const subagentsWithin = (options: {
   laneKey: string | undefined;
   from: Date;
   to: Date;
-  session?: string;
+  sessions?: readonly string[];
 }): RowSubagent[] => {
   const lanePath = options.laneKey ? streamKeyRepoPath(options.laneKey) : undefined;
 
@@ -45,7 +45,7 @@ export const subagentsWithin = (options: {
       .filter(
         (sample) =>
           !sample.agentId &&
-          (!options.session || sample.sessionId === options.session) &&
+          (!options.sessions || options.sessions.includes(sample.sessionId)) &&
           repoRootOf({ path: sample.cwd, roots: options.roots }) === lanePath,
       )
       .map((sample) => sample.sessionId),
