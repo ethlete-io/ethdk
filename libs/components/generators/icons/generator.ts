@@ -94,9 +94,16 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   const requested = normalizeIcons(config.icons, defaultVariants);
   const resolved: (ResolvedIcon & { data: string })[] = [];
   const missing: string[] = [];
+  let aliases: Map<string, string> | undefined;
 
   for (const icon of requested) {
-    const svgPath = join(source.svgsDir, icon.variant, `${icon.name}.svg`);
+    let svgPath = join(source.svgsDir, icon.variant, `${icon.name}.svg`);
+
+    if (!existsSync(svgPath)) {
+      aliases ??= readAliases(source.svgsDir);
+      const canonical = aliases.get(icon.name);
+      svgPath = canonical ? join(source.svgsDir, icon.variant, `${canonical}.svg`) : svgPath;
+    }
 
     if (!existsSync(svgPath)) {
       missing.push(`${icon.name} (${icon.variant})`);
@@ -150,6 +157,36 @@ function resolveSource(requested?: string): { package: string; svgsDir: string }
   }
 
   return null;
+}
+
+/** Maps each Font Awesome alias (`times`) to its canonical name (`xmark`) from `metadata/icons.yml`. */
+function readAliases(svgsDir: string): Map<string, string> {
+  const aliases = new Map<string, string>();
+  const metadataPath = join(dirname(svgsDir), 'metadata', 'icons.yml');
+
+  if (!existsSync(metadataPath)) return aliases;
+
+  let icon: string | undefined;
+  let inNames = false;
+
+  for (const line of readFileSync(metadataPath, 'utf-8').split(/\r?\n/)) {
+    const top = /^'?([^\s':]+)'?:\s*$/.exec(line);
+
+    if (top) {
+      icon = top[1];
+      inNames = false;
+    } else if (/^ {4}names:\s*$/.test(line)) {
+      inNames = true;
+    } else if (inNames && /^ {6}- /.test(line)) {
+      const alias = line.slice(8).trim().replace(/^'|'$/g, '');
+
+      if (icon && !aliases.has(alias)) aliases.set(alias, icon);
+    } else if (!/^ {6,}/.test(line)) {
+      inNames = false;
+    }
+  }
+
+  return aliases;
 }
 
 function normalizeIcons(entries: IconEntry[], defaultVariants: string[]): ResolvedIcon[] {
