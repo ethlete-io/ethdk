@@ -158,7 +158,8 @@ describe('a booked day', () => {
       [MORNING, false],
       [LATE, true],
     ]);
-    expect(review.check.loggedMs).toBe(105 * MINUTE);
+    expect(review.check.proposedMs).toBe(105 * MINUTE);
+    expect(review.check.loggedMs).toBe(60 * MINUTE);
   });
 
   describe('with a worklog no row carries', () => {

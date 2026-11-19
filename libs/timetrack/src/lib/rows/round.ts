@@ -177,7 +177,7 @@ export type DayCheck = {
   proposedMs: number;
   /** Time Tempo already holds for the day and no sync will write again. */
   coveredMs: number;
-  /** What the day is logged for in total: the proposals plus what Tempo already holds. */
+  /** What Tempo holds for the day: time logged outside this app plus the rows this app has booked. */
   loggedMs: number;
   /**
    * Observed time nothing could attribute, and that a person was there for. Never folded into the
@@ -191,7 +191,7 @@ export type DayCheck = {
   /** Observed time an agent worked alone. Drawn, counted, and never proposed. */
   unattendedMs: number;
   targetMs?: number;
-  /** Logged minus target. Positive is over. */
+  /** What the day holds after a sync (proposed plus covered) minus target. Positive is over. */
   deltaMs?: number;
   warnings: DayWarning[];
 };
@@ -205,6 +205,8 @@ export type CheckDayOptions = {
    * so without this the target compares against `0m` and reports a finished day as short.
    */
   coveredMs?: number;
+  /** What Tempo holds of this app's rows. A row accepted but not booked is proposed, never logged. */
+  bookedMs?: number;
   /** A day this close to the target is not worth a warning. Defaults to one rounding increment. */
   toleranceMs?: number;
   /**
@@ -361,7 +363,8 @@ export const checkDay = (options: {
   const bookable = unattributed.filter(isBookable);
   const proposedMs = (options.writes ?? options.proposals).reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const coveredMs = options.options?.coveredMs ?? 0;
-  const loggedMs = proposedMs + coveredMs;
+  const loggedMs = (options.options?.bookedMs ?? 0) + coveredMs;
+  const afterSyncMs = proposedMs + coveredMs;
   const waiting = bookable.filter((group) => group.attended !== false);
   const unattributedMs = waiting.reduce((sum, group) => sum + group.observedMs, 0);
   const unattended = bookable.filter((group) => group.attended === false);
@@ -370,7 +373,7 @@ export const checkDay = (options: {
   const warnings: DayWarning[] = [];
 
   if (targetMs !== undefined) {
-    const delta = loggedMs - targetMs;
+    const delta = afterSyncMs - targetMs;
     const proposed = `${formatDurationMs(proposedMs)} proposed`;
     const against =
       coveredMs > 0
@@ -464,7 +467,7 @@ export const checkDay = (options: {
     unattributedMs,
     unattendedMs,
     targetMs,
-    deltaMs: targetMs === undefined ? undefined : loggedMs - targetMs,
+    deltaMs: targetMs === undefined ? undefined : afterSyncMs - targetMs,
     warnings,
   };
 };

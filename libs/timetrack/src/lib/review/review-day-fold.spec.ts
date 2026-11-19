@@ -264,7 +264,7 @@ describe('reviewDay folding single-increment rows', () => {
     ]);
   });
 
-  it('keeps a weak row with an auto description edited and logged on a frozen day', () => {
+  it('keeps a weak row with an auto description edited and proposed on a frozen day', () => {
     const booked = dayRows({
       proposals: [{ ...proposal({ issueKey: 'ET-1', from: '17:00', to: '17:45' }), confidence: 'weak' }],
     });
@@ -279,7 +279,8 @@ describe('reviewDay folding single-increment rows', () => {
 
     expect(frozen.rows[0]?.state).toBe('edited');
     expect(frozen.rows[0]?.edited).toBe(true);
-    expect(frozen.check.loggedMs).toBe(45 * MINUTE);
+    expect(frozen.check.proposedMs).toBe(45 * MINUTE);
+    expect(frozen.check.loggedMs).toBe(0);
     expect(open.rows[0]?.state).toBe('suggested');
     expect(open.check.loggedMs).toBe(0);
   });

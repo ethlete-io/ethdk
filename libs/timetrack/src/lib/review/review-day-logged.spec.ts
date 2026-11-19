@@ -51,7 +51,27 @@ describe('reviewDay logged time', () => {
 
     expect(review.rows.map((row) => row.durationMs / MINUTE)).toEqual([255, 90]);
     expect(review.check.proposedMs).toBe(255 * MINUTE);
-    expect(review.check.loggedMs).toBe(255 * MINUTE);
+    expect(review.check.loggedMs).toBe(0);
     expect(review.check.deltaMs).toBe(15 * MINUTE);
+  });
+
+  it('logs the rows Tempo holds a worklog of and leaves the accepted ones proposed', () => {
+    const booked = proposal({ issueKey: 'FIFAGG-12657', from: '08:00', to: '08:30' });
+    const review = reviewDay({
+      rows: dayRows([booked, proposal({ issueKey: 'FIFAGG-12652', from: '09:00', to: '18:30' })]),
+      written: [
+        {
+          proposalId: booked.id,
+          worklogId: 'w1',
+          issueKey: booked.issueKey,
+          from: booked.from,
+          durationMs: 30 * MINUTE,
+          description: booked.description,
+        },
+      ],
+    });
+
+    expect(review.check.proposedMs).toBe(600 * MINUTE);
+    expect(review.check.loggedMs).toBe(30 * MINUTE);
   });
 });

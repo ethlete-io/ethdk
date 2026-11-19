@@ -103,8 +103,27 @@ describe('checkDay', () => {
     expect(check.warnings).toEqual([]);
     expect(check.proposedMs).toBe(60 * MINUTE);
     expect(check.coveredMs).toBe(420 * MINUTE);
-    expect(check.loggedMs).toBe(480 * MINUTE);
+    expect(check.loggedMs).toBe(420 * MINUTE);
     expect(check.deltaMs).toBe(0);
+  });
+
+  it('logs only what Tempo holds: an accepted row nobody booked is proposed', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 570 })],
+      options: { targetMs: 480 * MINUTE, coveredMs: 30 * MINUTE },
+    });
+
+    expect(check.proposedMs).toBe(570 * MINUTE);
+    expect(check.loggedMs).toBe(30 * MINUTE);
+  });
+
+  it('logs the booked part of the proposals', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 90 })],
+      options: { bookedMs: 60 * MINUTE, coveredMs: 30 * MINUTE },
+    });
+
+    expect(check.loggedMs).toBe(90 * MINUTE);
   });
 
   it('names both halves of a covered day in the warning', () => {

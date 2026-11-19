@@ -797,13 +797,18 @@ const reviewRows = (options: ReviewRowsOptions): DayReview => {
   const settled = new Set([...answeredIds, ...answeredIds.flatMap((id) => formerIds.get(id) ?? [])]);
 
   const writing = rows.filter(isNamedRow).filter((row) => syncsInState(row.state));
+  const writes = separateOverlappingProposals({
+    proposals: writing,
+    backgroundProjects: options.cut?.backgroundProjects,
+    incrementMs,
+  });
+  const booked = new Set(writing.filter((row) => row.worklogIds?.length).map((row) => row.id));
+  const bookedMs = writes
+    .filter((write) => booked.has(pieceSourceId(write.id)))
+    .reduce((sum, write) => sum + write.durationMs, 0);
   const check = checkDay({
     proposals: writing,
-    writes: separateOverlappingProposals({
-      proposals: writing,
-      backgroundProjects: options.cut?.backgroundProjects,
-      incrementMs,
-    }),
+    writes,
     unattributed: options.rows.unattributed.flatMap((group) => {
       const id = unnamedRowId(group);
 
@@ -816,7 +821,7 @@ const reviewRows = (options: ReviewRowsOptions): DayReview => {
 
       return left.length ? [{ ...group, observedMs: left.reduce((sum, row) => sum + row.observedMs, 0) }] : [];
     }),
-    options: { ...dayCheckOptions(options.rows), ...options.check },
+    options: { ...dayCheckOptions(options.rows), bookedMs, ...options.check },
   });
 
   return {
