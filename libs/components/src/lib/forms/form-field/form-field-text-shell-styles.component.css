@@ -68,8 +68,11 @@
         --et-form-field-control-border-color-focus,
         var(--et-surface-color-solid, currentColor)
       );
-      --_et-form-field-label-color: var(--et-surface-color-muted-solid, currentColor);
-      --_et-form-field-label-color-active: var(--et-surface-color-solid, currentColor);
+      --_et-form-field-label-color: var(--et-form-field-label-color, var(--et-surface-color-muted-solid, currentColor));
+      --_et-form-field-label-color-active: var(
+        --et-form-field-label-color-active,
+        var(--et-surface-color-solid, currentColor)
+      );
 
       &[data-error] {
         --_et-form-field-frame-border: var(--et-theme-color-primary-solid);
