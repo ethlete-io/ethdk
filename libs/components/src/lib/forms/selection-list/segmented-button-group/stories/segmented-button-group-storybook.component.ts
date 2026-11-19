@@ -12,7 +12,7 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
   template: `
     <div [etProvideColor]="color()" [style.max-width]="maxWidth()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       @if (inScrollable()) {
-        <et-scrollable [renderMasks]="false" [renderButtons]="false" itemSize="auto">
+        <et-scrollable [renderMasks]="false" itemSize="auto">
           <et-segmented-button-group
             [(mixed)]="mixedState"
             [variant]="variant()"
