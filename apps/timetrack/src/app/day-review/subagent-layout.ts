@@ -13,6 +13,8 @@ export type SubagentStripe = {
   span: number;
   inlineOffset: number;
   inlineSize: number;
+  /** The title this stripe draws, or null when it sits under the label of an earlier stripe. */
+  label: { more: string | null } | null;
 };
 
 /** A shorter subagent, drawn on the session band's edge. Offsets are percent of the band. */
@@ -48,6 +50,8 @@ export const subagentLayoutOf = (options: {
   subagents: readonly RowSubagent[];
   /** The text lines left in the band under its labels. */
   freeLines?: number;
+  /** The percent of the lane the title text of a stripe of the given span covers. Stripes drawn within it share one label. */
+  labelSpan?: (span: number) => number;
 }): SubagentLayout | null => {
   const { laid, drawn } = options;
   const start = drawn.from.getTime();
@@ -63,18 +67,36 @@ export const subagentLayoutOf = (options: {
   const parentSize = laid.inlineSize * PARENT_SHARE;
   const railOffset = laid.inlineOffset + parentSize;
 
+  const stripes: SubagentStripe[] = striped.map((subagent) => ({
+    key: subagent.agentId,
+    task: taskOf(subagent),
+    duration: durationOf(subagent),
+    offset: laid.block.offset + fractionOf(subagent.from) * laid.block.span,
+    span: (fractionOf(subagent.to) - fractionOf(subagent.from)) * laid.block.span,
+    inlineOffset: railOffset,
+    inlineSize: laid.inlineSize - parentSize,
+    label: { more: null },
+  }));
+
+  let leader: SubagentStripe | null = null;
+  let grouped = 0;
+
+  for (const stripe of [...stripes].sort((a, b) => a.offset - b.offset)) {
+    if (leader && options.labelSpan && stripe.offset - leader.offset < options.labelSpan(leader.span)) {
+      stripe.label = null;
+      grouped++;
+      leader.label = { more: `+${grouped}` };
+      continue;
+    }
+
+    leader = stripe;
+    grouped = 0;
+  }
+
   return {
     bandWidth: striped.length ? `calc(${parentSize}% - 0.4rem)` : null,
     rail: striped.length ? { offset: laid.block.offset, span: laid.block.span, inlineOffset: railOffset } : null,
-    stripes: striped.map((subagent) => ({
-      key: subagent.agentId,
-      task: taskOf(subagent),
-      duration: durationOf(subagent),
-      offset: laid.block.offset + fractionOf(subagent.from) * laid.block.span,
-      span: (fractionOf(subagent.to) - fractionOf(subagent.from)) * laid.block.span,
-      inlineOffset: railOffset,
-      inlineSize: laid.inlineSize - parentSize,
-    })),
+    stripes,
     ticks: short.map((subagent) => ({
       key: subagent.agentId,
       title: `${taskOf(subagent)} · ${durationOf(subagent)}`,

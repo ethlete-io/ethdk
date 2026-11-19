@@ -2,6 +2,7 @@ import { RowSubagent } from '@ethlete/timetrack';
 import { describe, expect, it } from 'vitest';
 import { LaneBlock } from './lanes';
 import { subagentLayoutOf } from './subagent-layout';
+import { FIFAGG_SUBAGENTS_2026_11_18 } from './subagent-pieces.fixture';
 
 const AT = (minutes: number) => new Date(new Date(2026, 2, 3, 13, 0, 0).getTime() + minutes * 60_000);
 
@@ -36,6 +37,7 @@ describe('subagentLayoutOf', () => {
         span: 20,
         inlineOffset: 80,
         inlineSize: 20,
+        label: { more: null },
       },
     ]);
     expect(layout?.ticks).toEqual([{ key: 'lint', title: 'Subagent · 6m', offset: 80, span: expect.closeTo(6) }]);
@@ -73,5 +75,50 @@ describe('subagentLayoutOf', () => {
 
   it('draws nothing for a row without subagents', () => {
     expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [] })).toBeNull();
+  });
+
+  describe('on the fifagg day of 2026-11-18', () => {
+    const LANE_REM = 24 * 8;
+    const lineSpan = (lines: number) => ((lines * 1.95) / LANE_REM) * 100;
+    const subagents = FIFAGG_SUBAGENTS_2026_11_18.map((piece) => ({
+      ...piece,
+      from: new Date(piece.from),
+      to: new Date(piece.to),
+    }));
+    const day = {
+      from: new Date('2026-11-18T04:00:00Z'),
+      to: new Date('2026-11-18T10:00:00Z'),
+    };
+    const lane = { block: { offset: (4 / 24) * 100, span: (6 / 24) * 100 }, inlineOffset: 0, inlineSize: 100 };
+
+    const stripes = () =>
+      subagentLayoutOf({
+        laid: { ...laid(), ...lane } as LaneBlock,
+        drawn: day,
+        subagents,
+        labelSpan: (span) => lineSpan((span / 100) * LANE_REM >= 5 ? 3 : 1),
+      })?.stripes ?? [];
+
+    it('never draws the label of one stripe within the label of another', () => {
+      const labelled = stripes().filter((stripe) => stripe.label);
+
+      expect(labelled.length).toBeGreaterThan(0);
+
+      for (const [index, stripe] of labelled.slice(1).entries()) {
+        const before = labelled[index];
+        const height = lineSpan((before!.span / 100) * LANE_REM >= 5 ? 3 : 1);
+
+        expect(stripe.offset - before!.offset).toBeGreaterThanOrEqual(height);
+      }
+    });
+
+    it('labels the first of a stack with how many more sit under it, and leaves the rest unlabelled', () => {
+      const [first, second, third] = stripes();
+
+      expect(first?.label).toEqual({ more: '+2' });
+      expect(second?.label).toBeNull();
+      expect(third?.label).toBeNull();
+      expect(stripes().filter((stripe) => stripe.label).length).toBeLessThan(stripes().length);
+    });
   });
 });

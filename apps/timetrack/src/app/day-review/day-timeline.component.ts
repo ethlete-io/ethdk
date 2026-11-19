@@ -541,13 +541,20 @@ type RowDrag = {
                           class="absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme/60 bg-et-theme/8 px-1.5 py-0.5 text-small leading-tight"
                           data-subagent
                         >
-                          @if (detailed(stripe.span)) {
-                            <span class="line-clamp-2">{{ stripe.task }}</span>
-                            <span class="truncate text-et-surface-muted">{{ stripe.duration }} · books nothing</span>
-                          } @else {
-                            <span class="truncate"
-                              >{{ stripe.task }} <span class="text-et-surface-muted">{{ stripe.duration }}</span></span
-                            >
+                          @if (stripe.label; as label) {
+                            @if (detailed(stripe.span)) {
+                              <span class="line-clamp-2">{{ stripe.task }}</span>
+                              <span class="truncate text-et-surface-muted"
+                                >{{ stripe.duration }} · books nothing{{ label.more ? ' · ' + label.more : '' }}</span
+                              >
+                            } @else {
+                              <span class="truncate"
+                                >{{ stripe.task }}
+                                <span class="text-et-surface-muted"
+                                  >{{ stripe.duration }}{{ label.more ? ' · ' + label.more : '' }}</span
+                                ></span
+                              >
+                            }
                           }
                         </div>
                       }
@@ -1015,6 +1022,7 @@ export class DayTimelineComponent {
             drawn: laid.piece ?? entry.row,
             subagents: entry.subagents,
             freeLines: this.linesLeftIn(laid) - this.carriedLabelsOf(laid, lane).length,
+            labelSpan: (span) => ((this.detailed(span) ? 3 : 1) * LINE_REM * 100) / (24 * HOUR_REM),
           });
 
         if (layout) found.set(laid.key, layout);
