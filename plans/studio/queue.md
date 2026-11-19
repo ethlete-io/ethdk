@@ -5,7 +5,7 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 ### Warteschlange, Rest
 
 6. **Windows-CEF-Spike (B480)** ⏳ Tagschicht (ADR 0239): Spike CEF auf Windows wie B469 (Build läuft, Live-Frames, ... - Builder
-7. **Design-Schriften (B490)** ⏳ Tagschicht: Design-Styles liefern eine Monospace- und die UI-Schrift selbst (ADR 0262, ... - Linux 210235327; Mac offen
+7. **Design-Schriften (B490)** ⏳ zurückgenommen (8c1671bc9), neu landen nach B633: SDK-Farbblatt lädt die Studio-Faces, Text passt in Inbox/Large/Flow, dann Mac-Shot - Builder
 8. **Part-Baum Probleme (B255)** ⏳ Part-Baum: Sketch-Titel nennt Variante, Regel, Meldung; Produkt-Probleme hängen am Part ... - Builder
 9. **Veraltete Mocks-dist (B256)** ⏳ Veraltetes dist der Design-Mocks ist Problem: check/ready/shot lehnen ab mit ... - Builder
 10. **Switch-Spur-Rahmen (B257)** ⏳ Sketch sdk switch: Rahmen der leeren Spur ja/nein; danach entfällt switchStyles in inbox ... - Builder
