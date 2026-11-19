@@ -167,7 +167,8 @@ protected teamLink = (row: NormalizedStandingRow) => ['/teams', row.participant?
   is part of its accessible name (`formEntry`: "Loss: vs Harbor City 1:2").
 - **`etStandingsFormTooltip`** swaps the text tooltip of a labelled form result for your own template, a
   match card say. Put it on an `ng-template` inside `<et-standings>`; it receives the form entry as the
-  implicit value and the row as `row`. Without it the label stays the tooltip.
+  implicit value and the row as `row`. The label stays its accessible description; without the template
+  it stays the tooltip.
 
   ```html
   <et-standings [rows]="rows()">

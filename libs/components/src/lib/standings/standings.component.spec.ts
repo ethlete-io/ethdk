@@ -568,6 +568,7 @@ describe('StandingsComponent extras', () => {
 
     expect(tooltips).toHaveLength(1);
     expect(content).toBeInstanceOf(TemplateRef);
+    expect(tooltips[0]?.injector.get(TooltipDirective).ariaDescription()).toBe('vs Neon Esports 1:2');
 
     const view = (content as TemplateRef<unknown>).createEmbeddedView({});
     view.detectChanges();

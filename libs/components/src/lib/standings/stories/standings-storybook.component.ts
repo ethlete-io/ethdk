@@ -25,7 +25,7 @@ import { NormalizedStandingRow, StandingsExpandMode, StandingsExtraColumn, Stand
             [extraColumns]="extraColumns()"
             [participantLink]="withExtras() ? PARTICIPANT_LINK : null"
           >
-            @if (withExtras()) {
+            @if (customFormTooltip()) {
               <ng-template let-entry let-row="row" etStandingsFormTooltip>
                 <div class="flex flex-col gap-1 p-2">
                   <strong>{{ entry.label }}</strong>
@@ -86,6 +86,7 @@ export class StandingsStorybookComponent {
   public expandable = input(false);
   public expandMode = input<StandingsExpandMode>('multiple');
   public withExtras = input(false);
+  public customFormTooltip = input(false);
 
   protected expandedRows = signal<readonly string[]>([]);
   protected openedSeason = signal<string | null>(null);

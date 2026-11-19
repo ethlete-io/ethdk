@@ -16,6 +16,7 @@ export default {
     expandable: false,
     expandMode: 'multiple',
     withExtras: false,
+    customFormTooltip: false,
   },
   argTypes: {
     surface: { control: 'text' },
@@ -29,6 +30,7 @@ export default {
     expandable: { control: 'boolean' },
     expandMode: { control: 'inline-radio', options: ['single', 'multiple'] },
     withExtras: { control: 'boolean' },
+    customFormTooltip: { control: 'boolean' },
   },
 } as Meta<StandingsStorybookComponent>;
 
@@ -107,8 +109,21 @@ export const ExtraColumnsAndLinks: Story = {
       description: {
         story:
           "`extraColumns` adds stat columns after the built-in ones, filled from each row's `extraStats`. A form " +
-          'entry with a `label` shows it as a tooltip - here a custom `etStandingsFormTooltip` card - and ' +
+          'entry with a `label` shows it as a tooltip, and ' +
           '`participantLink` turns each participant into a link.',
+      },
+    },
+  },
+};
+
+export const FormTooltipTemplate: Story = {
+  args: { withExtras: true, customFormTooltip: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'An `etStandingsFormTooltip` template replaces the text tooltip of a labelled form result; the label stays ' +
+          'its accessible description.',
       },
     },
   },
