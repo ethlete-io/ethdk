@@ -324,6 +324,12 @@ const cutAtBreakEnd = <T extends BoundGroup>(options: {
  */
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
+const pieceOf = (group: WorkGroup) => {
+  const piece = dominantContext(group.blocks)?.piece;
+
+  return piece ? { piece } : {};
+};
+
 /**
  * The id `baseOf` builds for each group, with the piece of its agent session as a suffix on a second
  * group with the same id: two parallel sessions of one checkout can snap to one start. A group that was
@@ -340,7 +346,7 @@ const rowIds = <T extends WorkGroup>(groups: readonly T[], baseOf: (group: T) =>
     if (!group) continue;
 
     const base = baseOf(group);
-    let id = used.has(base) ? `${base}+${dominantContext(group.blocks)?.piece ?? 'row'}` : base;
+    let id = used.has(base) ? `${base}+${pieceOf(group).piece ?? 'row'}` : base;
 
     for (let n = 2; used.has(id); n++) id = `${base}+${n}`;
 
@@ -511,6 +517,7 @@ export const propose = (options: {
       stretches,
       ...activeUntilOf({ group, blocks: sessionBlocks }),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
+      ...pieceOf(group),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,
       evidence: group.evidence,
@@ -534,6 +541,7 @@ export const propose = (options: {
       stretches,
       ...activeUntilOf({ group, blocks: sessionBlocks }),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
+      ...pieceOf(group),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,
       evidence: group.evidence,

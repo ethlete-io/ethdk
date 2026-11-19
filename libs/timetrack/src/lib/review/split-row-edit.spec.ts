@@ -13,7 +13,14 @@ const SESSION = '2ddc51f5-2e3f-44b4-8070-8712d588fd46';
 const FROM = new Date('2026-11-18T23:00:00.000Z');
 const GERMAN = 'Übergabe der Doku-Rolle besprochen';
 
-const row = (options: { id: string; laneKey: string; minutes: number; issueKey?: string; withheld?: string }) => ({
+const row = (options: {
+  id: string;
+  laneKey: string;
+  minutes: number;
+  issueKey?: string;
+  withheld?: string;
+  piece?: string;
+}) => ({
   id: options.id,
   from: FROM,
   to: new Date(FROM.getTime() + options.minutes * MINUTE),
@@ -26,6 +33,7 @@ const row = (options: { id: string; laneKey: string; minutes: number; issueKey?:
   state: 'suggested' as const,
   ...(options.issueKey ? { issueKey: options.issueKey } : {}),
   ...(options.withheld ? { withheldIssueKey: options.withheld } : {}),
+  ...(options.piece ? { piece: options.piece } : {}),
 });
 
 const dayRows = (proposals: WorklogProposal[], unnamed: UnnamedProposal[]): DayRows => ({
@@ -91,5 +99,19 @@ describe('an edit of a row that splits into per-lane pieces', () => {
       state: 'accepted',
     });
     expect(review.rows.find((candidate) => candidate.laneKey === SDK)?.description).toBe('work');
+  });
+
+  it('sticks to the piece of the session its id named, under the key of that id', () => {
+    const review = reviewDay({ rows: split({ piece: SESSION }), edits: edited(false) });
+
+    expect(review.rows.find((candidate) => candidate.laneKey === APP)).toMatchObject({
+      issueKey: 'FIFAGG-12759',
+      description: GERMAN,
+      state: 'accepted',
+    });
+    expect(review.rows.find((candidate) => candidate.laneKey === SDK)).toMatchObject({
+      issueKey: 'ET-772',
+      description: 'work',
+    });
   });
 });

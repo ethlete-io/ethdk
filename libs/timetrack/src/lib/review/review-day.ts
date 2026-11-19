@@ -410,6 +410,8 @@ const idStartOf = (id: string) => id.slice(id.lastIndexOf('@') + 1).replace(/\+.
 
 const idBaseOf = (id: string) => id.slice(0, id.lastIndexOf('@'));
 
+const idPieceOf = (id: string) => /\+(.+)$/.exec(id.slice(id.lastIndexOf('@') + 1))?.[1];
+
 const startsWithin = (id: string, row: TimeWindow) => {
   const start = Date.parse(idStartOf(id));
 
@@ -423,7 +425,8 @@ const startsWithin = (id: string, row: TimeWindow) => {
  * id any more: a rule the day learns later changes the id, and the reviewer's name still wins. And a
  * row whose start moved takes the edited id of the same issue or lane whose start it now covers. When
  * a row splits into one piece per lane, its edit stays with the piece of the lane it named, or, for an
- * edit that named no lane, with the piece still holding its issue.
+ * edit that named no lane, with the piece still holding its issue, or else with the piece of the agent
+ * session its id names, which then books the issue of that id.
  */
 const onEditedIds = (options: {
   proposals: readonly WorklogProposal[];
@@ -475,15 +478,27 @@ const onEditedIds = (options: {
         idStartOf(id) === start &&
         ['issueKey' in row ? row.issueKey : undefined, row.withheldIssueKey].includes(idBaseOf(id)),
     );
+    const ran = Object.keys(overrides).filter(
+      (id) =>
+        !taken.has(id) &&
+        !options.pinnedIds.has(id) &&
+        !!row.piece &&
+        idStartOf(id) === start &&
+        idPieceOf(id) === row.piece,
+    );
     const id =
       found.length === 1 ? found[0]?.[0] : moved.length === 1 ? moved[0] : held.length === 1 ? held[0]?.[0] : undefined;
+    const pieceId = id ? undefined : ran.length === 1 ? ran[0] : undefined;
+    const reclaimed = id ?? pieceId;
 
-    if (!id) return row;
+    if (!reclaimed) return row;
 
-    taken.add(id);
-    formerIds.set(id, row.id);
+    taken.add(reclaimed);
+    formerIds.set(reclaimed, row.id);
 
-    return { ...row, id };
+    const key = pieceId && !pieceId.startsWith('unnamed:') ? idBaseOf(pieceId) : undefined;
+
+    return key ? { ...row, id: reclaimed, issueKey: key } : { ...row, id: reclaimed };
   };
 
   return { proposals: proposals.map(reclaim), unnamed: options.unnamed.map(reclaim), formerIds };

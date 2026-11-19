@@ -82,6 +82,8 @@ export type WorklogProposal = {
    * unnamed wrote their edit against that id, so `reviewDay` reads the edit through it.
    */
   unnamedId?: string;
+  /** The piece of agent work the band mostly ran in, the suffix its id carries beside a sibling of one start. */
+  piece?: string;
 };
 
 /**
