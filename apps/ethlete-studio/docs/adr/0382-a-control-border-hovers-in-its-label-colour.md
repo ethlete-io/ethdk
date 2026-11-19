@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B640
+built: b290646ca
 decided: 2026-11-19
 source: doc-agent session 2026-11-19, on a Timetrack screenshot of the row editor checkbox
 ---
