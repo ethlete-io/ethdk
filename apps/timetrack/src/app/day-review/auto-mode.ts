@@ -133,6 +133,7 @@ import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
+import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
 import { injectStandIns } from '../stand-ins/stand-ins';
 import { callTranscriptOf$ } from './call-transcript';
 import { injectDayReview } from './day-review';
@@ -253,6 +254,7 @@ const outcomeOf = (options: {
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const standInVerdicts = injectStandInVerdicts();
   const dayReview = injectDayReview();
   const agentDay = injectAgentDay();
   const approvals = injectApprovalQueue();
@@ -1287,6 +1289,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }),
       tap(({ evidence, answers, transcribed }) => {
         runStandInPass({
+          verdicts: standInVerdicts,
           settings,
           day,
           contexts: evidence.contexts,

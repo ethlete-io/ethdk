@@ -330,6 +330,39 @@ describe('timetrack resync', () => {
   });
 });
 
+describe('timetrack naming stand-in verdicts', () => {
+  it('prints why each context did or did not open a stand-in', async () => {
+    const { handler } = answeredByOp({
+      'naming.offers': {
+        day: '2026-11-18',
+        tempoReady: true,
+        history: 'ready',
+        historyWorklogs: 3,
+        offers: [],
+        declines: [],
+        standInVerdicts: [
+          {
+            repoPath: '/work/a',
+            branch: 'feat/x',
+            observedMs: 3_600_000,
+            drawnMs: 1_800_000,
+            verdict: 'no-project-link',
+            at: 1,
+          },
+        ],
+      },
+    });
+
+    await withEndpoint(handler);
+    const lines = printedLines();
+
+    await run(['naming', '2026-11-18']);
+
+    expect(lines.join('\n')).toContain('Stand-in verdicts (1)');
+    expect(lines.join('\n')).toContain('/work/a  feat/x  no-project-link');
+  });
+});
+
 describe('timetrack argument checks', () => {
   it('refuses a malformed naming day instead of answering for today', async () => {
     const { handler, asked } = answeredByOp({});

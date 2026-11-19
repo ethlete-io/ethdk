@@ -16,3 +16,4 @@ export * from './worklog';
 export * from './match-candidates';
 export * from './mirror-rank';
 export * from './work-facts';
+export * from './stand-in-verdict-log';

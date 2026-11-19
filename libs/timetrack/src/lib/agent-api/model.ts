@@ -5,6 +5,7 @@ import { FieldSource } from '../model/field-source';
 import { WorklogProposalState } from '../model/proposal';
 import { StandInState } from '../model/stand-in';
 import { DayWarning } from '../rows/round';
+import { AutoStandInVerdict } from '../ticket/auto-stand-in';
 import { RepoNamingDeclineReason } from '../rows/repo-naming';
 import { AutoModeSubject } from '../review/model';
 import { RowPresence } from './row-presence';
@@ -221,6 +222,20 @@ export type AgentApiNaming = {
   historyMessage?: string;
   offers: AgentApiNamingOffer[];
   declines: AgentApiNamingDecline[];
+  /** The latest stand-in verdict per context the pass looked at on this day, since the app started. */
+  standInVerdicts: AgentApiStandInVerdict[];
+};
+
+export type AgentApiStandInVerdict = {
+  repoPath?: string;
+  branch?: string;
+  workPath?: string;
+  appId?: string;
+  observedMs: number;
+  drawnMs?: number;
+  verdict: AutoStandInVerdict;
+  /** When the pass that decided it ran, in epoch milliseconds. */
+  at: number;
 };
 
 export type AgentApiHistoryState = 'loading' | 'no-token' | 'ready' | 'failed';

@@ -158,6 +158,18 @@ export type TimetrackNaming = {
   historyMessage?: string;
   offers: TimetrackNamingOffer[];
   declines: TimetrackNamingDecline[];
+  standInVerdicts?: TimetrackStandInVerdict[];
+};
+
+export type TimetrackStandInVerdict = {
+  repoPath?: string;
+  branch?: string;
+  workPath?: string;
+  appId?: string;
+  observedMs: number;
+  drawnMs?: number;
+  verdict: string;
+  at: number;
 };
 
 export type TimetrackNamingOffer = {

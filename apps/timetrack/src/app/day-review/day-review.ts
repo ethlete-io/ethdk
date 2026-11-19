@@ -140,6 +140,7 @@ import { readViewState, rememberViewState } from '../view-state';
 import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
+import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
 import { ownDayRowsOf, receivedDayRowsOn, withReceivedSharedRows } from '../peers/day-rows';
 
 /** How long typing settles before a day's edits are written. */
@@ -210,6 +211,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLinks = injectProjectLinks();
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
+  const standInVerdicts = injectStandInVerdicts();
   const recurring = injectRecurringPatterns();
   const epics = injectEpicSiblings();
 
@@ -734,6 +736,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (!epics.settledFor(day())) return;
 
     runStandInPass({
+      verdicts: standInVerdicts,
       settings,
       day: day(),
       contexts: unnamed(),

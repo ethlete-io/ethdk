@@ -4,6 +4,8 @@ import {
   TimetrackProjectLink,
   UnnamedContext,
   WorkGroup,
+  StandInVerdictLog,
+  autoStandInDecisions,
   autoStandIns,
   checkoutOf,
   findStandIn,
@@ -19,6 +21,7 @@ import { injectTimetrackSettings } from '../settings/settings';
  */
 export const runStandInPass = (options: {
   settings: NonNullable<ReturnType<typeof injectTimetrackSettings>>;
+  verdicts: StandInVerdictLog;
   day: string;
   contexts: readonly UnnamedContext[];
   unattributed: readonly WorkGroup[];
@@ -32,7 +35,7 @@ export const runStandInPass = (options: {
   const { settings, day } = options;
   const current = settings.settings();
   const config = gitFlowConfigFor(current);
-  const opened = autoStandIns({
+  const passOptions = {
     contexts: options.contexts,
     unattributed: options.unattributed,
     events: options.events,
@@ -43,9 +46,12 @@ export const runStandInPass = (options: {
     offeredCheckouts: options.offeredCheckouts,
     standIns: current.standIns,
     refused: current.noStandInCheckouts,
-    day,
-    now: new Date(),
-  });
+  };
+  const now = new Date();
+
+  options.verdicts.record({ day, at: now.getTime(), decisions: autoStandInDecisions(passOptions) });
+
+  const opened = autoStandIns({ ...passOptions, day, now });
 
   for (const entry of opened) settings.nameWithStandIn({ standIn: entry.standIn, rule: entry.rule });
 

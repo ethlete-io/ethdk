@@ -102,6 +102,7 @@ import { injectProjectLinks } from '../project-links';
 import { injectStandIns } from '../stand-ins/stand-ins';
 import { injectTempoSync } from '../sync/sync';
 import { injectWindowLock } from '../window-lock';
+import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
 import { injectAgentDay } from './agent-day';
 import { injectApprovalQueue } from './approval-queue';
 
@@ -141,6 +142,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const settings = injectTimetrackSettings();
   const projectLinks = injectProjectLinks();
   const agentDay = injectAgentDay();
+  const standInVerdicts = injectStandInVerdicts();
   const tempoSync = injectTempoSync();
   const recurring = injectRecurringPatterns();
   const googleAccount = injectGoogleAccount();
@@ -458,6 +460,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           share: offer.share,
         })),
         declines: decisions.declines.map((decline) => ({ ...decline })),
+        standInVerdicts: standInVerdicts.read(request.day),
       })),
     );
 

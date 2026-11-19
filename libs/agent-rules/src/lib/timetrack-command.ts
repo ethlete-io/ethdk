@@ -1384,6 +1384,14 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       );
       say(`Not offered (${naming.declines.length})`);
       naming.declines.forEach((decline) => say(`  ${describeDecline(decline)}`));
+      const verdicts = naming.standInVerdicts ?? [];
+
+      say(`Stand-in verdicts (${verdicts.length})`);
+      verdicts.forEach((entry) =>
+        say(
+          `  ${[entry.repoPath ?? entry.appId, entry.branch, entry.verdict].join('  ')}  ${hours(entry.observedMs)}${entry.drawnMs === undefined ? '' : `, drawn ${hours(entry.drawnMs)}`}`,
+        ),
+      );
     }
 
     return printed(naming, json);
