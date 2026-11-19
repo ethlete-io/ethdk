@@ -43,7 +43,7 @@ import { debounceTime, filter, fromEvent, map, merge, tap } from 'rxjs';
 import { injectAutoMode } from './auto-mode';
 import { TimelineScroll, dayKeyOfDate, readViewState, rememberTimelineScroll } from '../view-state';
 import { formatClockTime } from './format';
-import { approvalChipOf, injectBandApprovals } from './band-approvals';
+import { approvalChipOf, approvalExistingOf, injectBandApprovals } from './band-approvals';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import {
   BREAK_LANE_KEY,
@@ -73,6 +73,7 @@ import { injectRowTicket } from './row-edit/row-ticket';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
 import { SubagentLayout, subagentLayoutOf } from './subagent-layout';
+import { foldUnattended } from './unattended-fold';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectGitCollector } from '../../collectors';
 
@@ -662,6 +663,18 @@ type RowDrag = {
                             >
                               ✓
                             </button>
+                            @if (EXISTING_OF(pending.item); as existing) {
+                              <button
+                                [attr.aria-label]="'Book ' + existing.issueKey + ' instead of a new issue'"
+                                [title]="existing.summary ?? existing.issueKey"
+                                (pointerdown)="$event.stopPropagation()"
+                                (click)="bandApprovals.bookExisting(pending.item)"
+                                class="tt-approval-press"
+                                type="button"
+                              >
+                                {{ existing.issueKey }}
+                              </button>
+                            }
                             <button
                               [attr.aria-label]="'Reject: ' + CHIP_OF(pending.item)"
                               (pointerdown)="$event.stopPropagation()"
@@ -879,7 +892,7 @@ export class DayTimelineComponent {
   private settings = injectTimetrackSettings();
   private git = injectGitCollector();
   protected approvals = injectApprovalQueue();
-  private bandApprovals = injectBandApprovals();
+  protected bandApprovals = injectBandApprovals();
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
@@ -947,6 +960,7 @@ export class DayTimelineComponent {
   protected readonly STANDS_IN = isStandInAppointment;
   protected readonly CLOCK_OF = formatClockTime;
   protected readonly CHIP_OF = approvalChipOf;
+  protected readonly EXISTING_OF = approvalExistingOf;
   protected readonly DESCRIBE_APPROVAL = describeApproval;
 
   private cuts = computed(() => {
@@ -1085,7 +1099,7 @@ export class DayTimelineComponent {
         colorToken: 'brand',
         extra: { kind: 'story', issueKey },
       })),
-      ...this.rows().map((row): Appointment<TimelineEntry> => {
+      ...foldUnattended(this.rows()).map((row): Appointment<TimelineEntry> => {
         const drag = this.boundaryDrag();
 
         return appointmentOf({
