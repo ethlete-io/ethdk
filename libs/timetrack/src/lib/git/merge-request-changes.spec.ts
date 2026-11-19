@@ -63,4 +63,32 @@ describe('collectMergeRequestChanges$', () => {
       ['event-22', '/dev/app-a', 'abc', ['libs/hub/src']],
     ]);
   });
+
+  it('reads a branch once per repository, however many worktrees share it', async () => {
+    const runs: ProcessSpec[] = [];
+    const worktrees = ['/dev/app-a', '/dev/app-a-1', '/dev/app-a-2', '/dev/app-a-3'];
+    const key = 'gitlab.example.com/group/app-a-frontend';
+    const events = await firstValueFrom(
+      collectMergeRequestChanges$({
+        processes: {
+          run$: (spec) => {
+            runs.push(spec);
+
+            return of(
+              spec.args[0] === 'worktree'
+                ? { code: 0, stdout: worktrees.map((path) => `worktree ${path}\nHEAD abc\n`).join('\n'), stderr: '' }
+                : { code: 0, stdout: '\u0000abc\n\nlibs/hub/src/a.ts\n', stderr: '' },
+            );
+          },
+        },
+        events: [activity(21)],
+        repoKeys: { ...Object.fromEntries(worktrees.map((path) => [path, key])), '/dev/other': 'x/y' },
+      }),
+    );
+
+    expect(runs.filter((run) => run.args[0] === 'log')).toHaveLength(1);
+    expect(events.map((event) => [event.repoPath, event.head, event.directories])).toEqual(
+      worktrees.map((path) => [path, 'abc', ['libs/hub/src']]),
+    );
+  });
 });
