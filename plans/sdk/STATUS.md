@@ -20,6 +20,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S5 (fifagg B-52/B-53, 19.11.): Look der Segment-Gruppe: inaktive Farbe/Stärke und Spur-Hintergrund, Spaltenbreite bei `stretch` ohne abgeschnittene Namen, 2x2 unter einem Breakpoint; nicht blockiert (Umgehungen) Segment-Gruppe-Tokens gebaut (B623, 2e89fe206), kommt mit dem nächsten Prerelease.
 - S6 (fifagg B-51/B-55, 19.11.): `et-accordion` ohne Hover-Fläche, Chevron-Einzug getrennt vom Label, Trenner unter dem letzten Eintrag app-weit; nicht blockiert Accordion-Tokens und `provideAccordionConfig` gebaut (B624, 8a44517b7), kommt mit dem nächsten Prerelease.
 - S7 (fifagg VD, 19.11.): Filter-Chip soll beim Drücken outline bleiben (Rand + Text in pressedColor), `et-button` macht outline gedrückt zu filled; nicht blockiert -> Button-Druck-Variante (B625), entschieden von mir: Zustand über Inputs (AGENTS.md Styling), Input `pressedVariant`.
+- S8 (fifagg, 19.11.): Segment-Gruppe bei 390 px mit 4 vollen Namen, nicht blockiert (eine gekürzte Zeile) -> Segment-Gruppe Überlauf (B628), entschieden von mir: Input `overflow` truncate | scroll.
 
 ## Offene Plan-Dateien
 
