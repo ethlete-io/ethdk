@@ -25,6 +25,14 @@ import { NormalizedStandingRow, StandingsExpandMode, StandingsExtraColumn, Stand
             [extraColumns]="extraColumns()"
             [participantLink]="withExtras() ? PARTICIPANT_LINK : null"
           >
+            @if (withExtras()) {
+              <ng-template let-entry let-row="row" etStandingsFormTooltip>
+                <div class="flex flex-col gap-1 p-2">
+                  <strong>{{ entry.label }}</strong>
+                  <span class="opacity-70">{{ row.participant?.name }}</span>
+                </div>
+              </ng-template>
+            }
             @if (expandable()) {
               <ng-template let-row etStandingsRowDetail>
                 @for (season of seasonsOf(row); track season.name) {
@@ -72,13 +80,13 @@ export class StandingsStorybookComponent {
   public showLegend = input(true);
   public highlight = input(true);
   public withZones = input(true);
+  public zoneStrengths = input(false);
   public withForm = input(true);
   public direction = input<'ltr' | 'rtl'>('ltr');
   public expandable = input(false);
   public expandMode = input<StandingsExpandMode>('multiple');
   public withExtras = input(false);
 
-  public zoneStrengths = input(false);
   protected expandedRows = signal<readonly string[]>([]);
   protected openedSeason = signal<string | null>(null);
 

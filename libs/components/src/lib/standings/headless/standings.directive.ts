@@ -10,6 +10,7 @@ import {
   StandingsParticipantLink,
   StandingsZone,
 } from '../standings.types';
+import { StandingsFormTooltipDirective } from './standings-form-tooltip.directive';
 import { StandingsRowDetailDirective } from './standings-row-detail.directive';
 
 let uniqueId = 0;
@@ -85,6 +86,9 @@ export class StandingsDirective {
   /** The `ng-template[etStandingsRowDetail]` registered here, or `null` when the rows do not expand. */
   public registeredRowDetailTemplate = signal<StandingsRowDetailDirective | null>(null);
 
+  /** The `ng-template[etStandingsFormTooltip]` registered here, or `null` for the plain text tooltip. */
+  public registeredFormTooltipTemplate = signal<StandingsFormTooltipDirective | null>(null);
+
   /** Whether the rows have a detail to expand into. */
   public isExpandable = computed(() => !!this.registeredRowDetailTemplate());
 
@@ -131,15 +135,16 @@ export class StandingsDirective {
     }
   }
 
-  /** Whether the row with this `id` has its detail open. Always `false` without a row detail template. */
-  public isRowExpanded(rowId: string) {
-    return this.isExpandable() && this.expandedRows().includes(rowId);
-  }
   /** A zone's `strength` clamped to 0-1, or `null` when it is unset or not a finite number. */
   public zoneStrength(zone: StandingsZone | null | undefined): number | null {
     const strength = zone?.strength;
 
     return typeof strength === 'number' && Number.isFinite(strength) ? Math.min(1, Math.max(0, strength)) : null;
+  }
+
+  /** Whether the row with this `id` has its detail open. Always `false` without a row detail template. */
+  public isRowExpanded(rowId: string) {
+    return this.isExpandable() && this.expandedRows().includes(rowId);
   }
 
   /** Open the row's detail, or close it when it is open. In `'single'` mode opening a row closes the others. */

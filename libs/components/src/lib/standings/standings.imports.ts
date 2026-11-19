@@ -1,5 +1,6 @@
 import {
   StandingsDirective,
+  StandingsFormTooltipDirective,
   StandingsPickDirective,
   StandingsPickMarkDirective,
   StandingsRowDetailDirective,
@@ -11,7 +12,12 @@ import { StandingsComponent } from './standings.component';
  * The standings table (`<et-standings>`) and the headless directive to build a table of your own. Pulls in
  * the match domain's participant primitive for the name column.
  */
-export const STANDINGS_IMPORTS = [StandingsComponent, StandingsDirective, StandingsRowDetailDirective] as const;
+export const STANDINGS_IMPORTS = [
+  StandingsComponent,
+  StandingsDirective,
+  StandingsFormTooltipDirective,
+  StandingsRowDetailDirective,
+] as const;
 
 /**
  * The predicted-order list (`<et-standings-pick>`), its headless directive, and the per-row mark template

@@ -165,6 +165,18 @@ protected teamLink = (row: NormalizedStandingRow) => ['/teams', row.participant?
   with played, won, drawn and lost. `labelFull` becomes the header's `abbr`.
 - **A form entry** is a result (`'win'`) or `{ result, label }`. A label shows as a tooltip on the square and
   is part of its accessible name (`formEntry`: "Loss: vs Harbor City 1:2").
+- **`etStandingsFormTooltip`** swaps the text tooltip of a labelled form result for your own template, a
+  match card say. Put it on an `ng-template` inside `<et-standings>`; it receives the form entry as the
+  implicit value and the row as `row`. Without it the label stays the tooltip.
+
+  ```html
+  <et-standings [rows]="rows()">
+    <ng-template let-entry let-row="row" etStandingsFormTooltip>
+      <app-match-card [label]="entry.label" [team]="row.participant" />
+    </ng-template>
+  </et-standings>
+  ```
+
 - **`participantLink`** is called per row and answers with an `href` string, router commands (rendered
   through `routerLink`, so router commands need `provideRouter`), or `null` for no link. The participant is
   then an `<a et-match-participant>`, like a [linked match participant](/components/match). A TBD slot never

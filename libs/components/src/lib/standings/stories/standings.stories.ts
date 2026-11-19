@@ -107,7 +107,8 @@ export const ExtraColumnsAndLinks: Story = {
       description: {
         story:
           "`extraColumns` adds stat columns after the built-in ones, filled from each row's `extraStats`. A form " +
-          'entry with a `label` shows it as a tooltip, and `participantLink` turns each participant into a link.',
+          'entry with a `label` shows it as a tooltip - here a custom `etStandingsFormTooltip` card - and ' +
+          '`participantLink` turns each participant into a link.',
       },
     },
   },

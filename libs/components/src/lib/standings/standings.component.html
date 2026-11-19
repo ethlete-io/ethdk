@@ -176,11 +176,19 @@
                 <span
                   [attr.data-result]="entry.result"
                   [attr.aria-label]="labels().formEntry(labels().formResult(entry.result), entryLabel)"
-                  [etTooltip]="entryLabel"
+                  [etTooltip]="standings.registeredFormTooltipTemplate() ? customTooltip : entryLabel"
                   class="et-standings-form-result"
                   role="img"
                   >{{ labels().formResultShort(entry.result) }}</span
                 >
+                <ng-template #customTooltip>
+                  <ng-container
+                    *ngTemplateOutlet="
+                      standings.registeredFormTooltipTemplate()?.templateRef ?? null;
+                      context: { $implicit: entry, row: renderRow.row }
+                    "
+                  />
+                </ng-template>
               } @else {
                 <span [attr.data-result]="entry.result" class="et-standings-form-result" aria-hidden="true">{{
                   labels().formResultShort(entry.result)

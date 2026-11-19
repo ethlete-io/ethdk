@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, TemplateRef, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import '../../test-helpers';
@@ -483,6 +483,20 @@ class ExtrasHostComponent {
   public participantLink = signal<((row: NormalizedStandingRow) => StandingsParticipantLink | null) | null>(null);
 }
 
+@Component({
+  template: `
+    <et-standings [rows]="rows()">
+      <ng-template let-entry let-row="row" etStandingsFormTooltip>
+        <b>{{ entry.result }}: {{ entry.label }} ({{ row.participant?.name }})</b>
+      </ng-template>
+    </et-standings>
+  `,
+  imports: [STANDINGS_IMPORTS],
+})
+class FormTooltipHostComponent {
+  public rows = signal<NormalizedStandingRow[]>(ROWS);
+}
+
 describe('StandingsComponent extras', () => {
   it('adds the extra columns after the built-in stats, with headers and values', () => {
     const driver = mountStandings(ExtrasHostComponent);
@@ -530,6 +544,38 @@ describe('StandingsComponent extras', () => {
     expect(labelled?.textContent?.trim()).toBe('L');
     expect(driver.queryAll('.et-standings-form-note').map((note) => note.textContent?.trim())).toEqual(['Win']);
     expect(driver.fixture.debugElement.query(By.directive(TooltipDirective))?.nativeElement).toBe(labelled);
+  });
+
+  it('keeps the text tooltip when no form tooltip template is given', () => {
+    const driver = mountStandings(ExtrasHostComponent);
+
+    driver.host.rows.set([row({ form: [{ result: 'loss', label: 'vs Neon Esports 1:2' }] })]);
+    driver.detectChanges();
+
+    const tooltip = driver.fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+
+    expect(tooltip.content()).toBe('vs Neon Esports 1:2');
+  });
+
+  it('renders a custom form tooltip template with the entry and row as context', () => {
+    const driver = mountStandings(FormTooltipHostComponent);
+
+    driver.host.rows.set([row({ form: ['win', { result: 'loss', label: 'vs Neon Esports 1:2' }] })]);
+    driver.detectChanges();
+
+    const tooltips = driver.fixture.debugElement.queryAll(By.directive(TooltipDirective));
+    const content = tooltips[0]?.injector.get(TooltipDirective).content();
+
+    expect(tooltips).toHaveLength(1);
+    expect(content).toBeInstanceOf(TemplateRef);
+
+    const view = (content as TemplateRef<unknown>).createEmbeddedView({});
+    view.detectChanges();
+
+    expect(view.rootNodes.map((node: Node) => node.textContent).join('')).toContain(
+      'loss: vs Neon Esports 1:2 (FC Berlin)',
+    );
+    view.destroy();
   });
 
   it('links the participant to an href', () => {
