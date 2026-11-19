@@ -1,6 +1,6 @@
 import { DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import { defineRootProvider, equal, toInjectFn } from '@ethlete/core';
 import {
   AutoModeAnswer,
   AutoModeDispute,
@@ -171,7 +171,16 @@ type DayEvidence = {
   /** The instant the day is read through, for anything that has to cut off a stretch still open. */
   through: Date;
   now?: Date;
+  windowsSeenThroughMs?: number;
 };
+
+const sameEvidence = (a: DayEvidence | null, b: DayEvidence | null) =>
+  a === b ||
+  (!!a &&
+    !!b &&
+    !a.now &&
+    !b.now &&
+    equal({ ...a, windowsSeenThroughMs: undefined }, { ...b, windowsSeenThroughMs: undefined }));
 
 /**
  * Cuts an open run off at now, or at the end of the day being read, whichever comes first.
@@ -247,7 +256,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const loadedDay = toSignal(
     toObservable(probe).pipe(
-      switchMap(({ key }) => {
+      switchMap(({ key, windows: seen }) => {
         const { from, to } = localDayRange(key, boundary());
         const through = new Date(Math.min(Date.now(), to.getTime()));
 
@@ -264,6 +273,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
               ...loaded,
               through,
               now: through < to ? through : undefined,
+              windowsSeenThroughMs: seen?.at.getTime(),
               // The same rule as an open timer run, for the same reason: a pause taken this morning
               // must not claim every hour left until midnight.
               pauses: pauseWindows({ events: loaded.events, window: { from, to }, through }),
@@ -398,7 +408,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return loaded?.key === day() ? loaded : null;
   });
 
-  const evidence = computed(() => evidenceLoad()?.value ?? null);
+  const evidence = computed(() => evidenceLoad()?.value ?? null, { equal: sameEvidence });
+
+  const evidenceReady = computed(() => {
+    const load = evidenceLoad();
+
+    return !!load && !load.failure;
+  });
 
   /**
    * The day's calls, classified here rather than in the loader: the rules are a setting, so editing one
@@ -479,7 +495,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             dependencies: dependencies(),
             patterns: recurring.patterns(),
             epics: epics.optionsFor(day()),
-            windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
+            windowsSeenThroughMs: collected.windowsSeenThroughMs,
             headBranches: heldHeadsOfDay().branches,
             peerHeadBranches: heldHeadsOfDay().peerBranches,
             now: collected.now,
@@ -793,10 +809,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * read is still out would take the checkout the sibling's parent was about to name.
    */
   effect(() => {
-    const load = evidenceLoad();
     const deterministic = deterministicRows();
 
-    if (!load || load.failure || !deterministic || recurring.state().state === 'loading') return;
+    if (!evidenceReady() || !deterministic || recurring.state().state === 'loading') return;
     if (!epics.settledFor(day())) return;
 
     runStandInPass({
@@ -805,7 +820,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       day: day(),
       contexts: unnamed(),
       unattributed: deterministic.unattributed,
-      events: load.value?.events ?? [],
+      events: evidence()?.events ?? [],
       links: projectLinks(),
       repoRoots: git.discovery()?.repos,
       offeredCheckouts: namingOffers().map((offer) => offer.repoPath),
@@ -844,9 +859,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ownDayRows = computed(() => {
     const current = review();
     const loaded = loadedLedger();
-    const load = evidenceLoad();
 
-    if (!current || !load || load.failure || !editsReady() || loaded?.key !== day()) return null;
+    if (!current || !evidenceReady() || !editsReady() || loaded?.key !== day()) return null;
 
     return ownDayRowsOf({
       day: day(),
@@ -920,10 +934,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   effect(() => {
     const rows = reasonedRows();
-    const load = evidenceLoad();
     const loaded = loadedLedger();
 
-    if (!rows || !load || load.failure || !editsReady() || loaded?.key !== day()) return;
+    if (!rows || !evidenceReady() || !editsReady() || loaded?.key !== day()) return;
     if (recurring.state().state === 'loading' || !epics.settledFor(day())) return;
 
     const next = withFrozenRows({

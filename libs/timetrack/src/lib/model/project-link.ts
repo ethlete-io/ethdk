@@ -47,19 +47,10 @@ export const pathIsUnder = (root: string, path: string) => {
   return !!from && covers(from, normalizeLinkPath(path));
 };
 
-/**
- * The link covering a context, longest path first — so a link on one repository beats the root it sits
- * in. That order is the whole point of allowing a root: a user marks `~/dev` private once, and still
- * links the two client checkouts inside it.
- *
- * A context with no repository never matches. A browser and a chat client are named by the app rules,
- * and a path is the only thing a link knows how to read.
- */
-export const matchProjectLink = (options: {
-  context: ActivityContext;
-  links: readonly TimetrackProjectLink[];
-}): TimetrackProjectLink | undefined => {
-  const path = normalizeLinkPath(options.context.repoPath ?? '');
+const matchesByLinks = new WeakMap<readonly TimetrackProjectLink[], Map<string, TimetrackProjectLink | undefined>>();
+
+const bestLinkFor = (options: { path: string; links: readonly TimetrackProjectLink[] }) => {
+  const { path } = options;
 
   if (!path) return undefined;
 
@@ -74,6 +65,31 @@ export const matchProjectLink = (options: {
         normalizeLinkPath(b.path).length - normalizeLinkPath(a.path).length ||
         b.createdAt.getTime() - a.createdAt.getTime(),
     )[0];
+};
+
+/**
+ * The link covering a context, longest path first — so a link on one repository beats the root it sits
+ * in. That order is the whole point of allowing a root: a user marks `~/dev` private once, and still
+ * links the two client checkouts inside it.
+ *
+ * A context with no repository never matches. A browser and a chat client are named by the app rules,
+ * and a path is the only thing a link knows how to read.
+ */
+export const matchProjectLink = (options: {
+  context: ActivityContext;
+  links: readonly TimetrackProjectLink[];
+}): TimetrackProjectLink | undefined => {
+  const repoPath = options.context.repoPath ?? '';
+  let matches = matchesByLinks.get(options.links);
+
+  if (!matches) matchesByLinks.set(options.links, (matches = new Map()));
+  if (matches.has(repoPath)) return matches.get(repoPath);
+
+  const match = bestLinkFor({ path: normalizeLinkPath(repoPath), links: options.links });
+
+  matches.set(repoPath, match);
+
+  return match;
 };
 
 /**
