@@ -521,7 +521,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     toObservable(streamInput).pipe(
       switchMap((built) =>
         built
-          ? streamDay$(built.input).pipe(map((value) => ({ day: built.day, events: built.events, value })))
+          ? streamDay$(built.input).pipe(
+              map((value) => ({ day: built.day, events: built.events, input: built.input, value })),
+            )
           : of(null),
       ),
     ),
@@ -535,6 +537,17 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const streamed = computed(() => streamedBuild()?.value ?? null);
+
+  /**
+   * Whether the rows on hand were built from the inputs on hand. The rows of the previous build stay on
+   * screen while the next one is in the worker, and a pass that names checkouts must not act on them:
+   * rows built before the epic answer arrived would open a placeholder for the checkout it names.
+   */
+  const streamCurrent = computed(() => {
+    const built = streamBuilt();
+
+    return !!built && built.input === streamInput()?.input;
+  });
 
   const deterministicRows = computed(() => edits().frozenRows ?? streamed()?.rows ?? null);
 
@@ -860,7 +873,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const deterministic = deterministicRows();
 
     if (!evidenceReady() || !deterministic || recurring.state().state === 'loading') return;
-    if (!epics.settledFor(day())) return;
+    if (!epics.settledFor(day()) || !streamCurrent()) return;
 
     runStandInPass({
       verdicts: standInVerdicts,
@@ -985,7 +998,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const loaded = loadedLedger();
 
     if (!rows || !evidenceReady() || !editsReady() || loaded?.key !== day()) return;
-    if (recurring.state().state === 'loading' || !epics.settledFor(day())) return;
+    if (recurring.state().state === 'loading' || !epics.settledFor(day()) || !streamCurrent()) return;
 
     const next = withFrozenRows({
       edits: edits(),
