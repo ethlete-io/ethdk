@@ -1,8 +1,19 @@
-import { DestroyRef, Directive, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLinkActive } from '@angular/router';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { tap } from 'rxjs';
+import { ScrollableActiveChildRef } from '../../../scrollable/headless/scrollable.directive';
 import { OVERLAY_ROUTER_LINK_TOKEN } from '../../../overlay/routing/overlay-router-link.directive';
 import { TabBarTriggerDirective } from '../../headless/tab-bar-trigger.directive';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
@@ -19,6 +30,7 @@ export class NavTabLinkDirective {
   private tabBar = inject(TabBarDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
   private hostElement = injectHostElement();
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public trigger = inject(TabBarTriggerDirective);
 
@@ -27,6 +39,20 @@ export class NavTabLinkDirective {
   public isActive = computed(() => this.overlayRouterLink?.isActive() ?? this.routerLinkIsActive());
 
   constructor() {
+    effect((onCleanup) => {
+      const scrollable = this.navTabs?.scrollable();
+
+      if (!scrollable) return;
+
+      const ref: ScrollableActiveChildRef = {
+        elementRef: this.elementRef,
+        isActiveChildEnabled: this.isActive,
+      };
+
+      scrollable.registerActiveChild(ref);
+      onCleanup(() => scrollable.unregisterActiveChild(ref));
+    });
+
     // The router owns the selection: a click only asks to navigate, so a guard that vetoes or stalls
     // the navigation leaves the tab bar where it is.
     this.trigger.deferSelection.set(true);

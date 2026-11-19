@@ -1,6 +1,7 @@
-import { DestroyRef, Directive, computed, inject } from '@angular/core';
+import { DestroyRef, Directive, computed, inject, signal } from '@angular/core';
 import { NavigationEnd } from '@angular/router';
 import { injectRouterEvent } from '@ethlete/core';
+import { ScrollableDirective } from '../../../scrollable/headless/scrollable.directive';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
 import { injectNavTabsRegistry } from './nav-tabs-registry';
 import { NAV_TABS_TOKEN } from './nav-tabs.tokens';
@@ -14,6 +15,9 @@ export class NavTabsDirective {
   private registry = injectNavTabsRegistry();
   private tabBar = inject(TabBarDirective, { self: true });
   private destroyRef = inject(DestroyRef);
+
+  /** @internal */
+  public scrollable = signal<ScrollableDirective | null>(null);
 
   /** @internal */
   public navigationVersion = computed(() => {

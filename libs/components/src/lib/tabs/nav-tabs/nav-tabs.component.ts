@@ -1,6 +1,7 @@
-import { Component, ViewEncapsulation, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, effect, inject, input, viewChild } from '@angular/core';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { ScrollableButtonsDirective } from '../../scrollable/headless/scrollable-buttons.directive';
+import { ScrollableDirective } from '../../scrollable/headless/scrollable.directive';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarDirective } from '../headless/tab-bar.directive';
 import { mountTabBarStyles } from '../tab-bar-styles.component';
@@ -114,9 +115,13 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
 export class NavTabsComponent {
   protected tabBar = inject(TabBarDirective);
 
+  private navTabs = inject(NavTabsDirective);
   public size = input<TabSize>(TAB_SIZES.MD);
 
+  private scrollable = viewChild(ScrollableDirective);
+
   constructor() {
+    effect(() => this.navTabs.scrollable.set(this.scrollable() ?? null));
     mountTabScaleStyles();
     mountTabBarStyles();
   }

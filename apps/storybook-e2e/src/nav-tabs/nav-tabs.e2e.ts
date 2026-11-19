@@ -316,6 +316,20 @@ test.describe('nav-tabs / keyboard', () => {
     expect((await scrollState(root, 3))?.scrollOffset).toBeGreaterThan(0);
   });
 
+  test('an overflowing bar opens with the active link scrolled into view', async ({ page }) => {
+    await page.setViewportSize({ width: 260, height: 720 });
+    await openStory(page, DEFAULT_STORY_ID);
+    await page.evaluate(() => {
+      window.location.hash = '#/four';
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const root = page.locator('#storybook-root');
+    await expect(root.locator('router-outlet + *')).toHaveText('Route Four Content');
+
+    await expect.poll(async () => (await scrollState(root, 3))?.inView).toBe(true);
+    expect((await scrollState(root, 3))?.scrollOffset).toBeGreaterThan(0);
+  });
+
   test('the end scroll button scrolls an overflowing bar without navigating', async ({ page }) => {
     await page.setViewportSize({ width: 260, height: 720 });
     const root = await openStory(page, DEFAULT_STORY_ID);
