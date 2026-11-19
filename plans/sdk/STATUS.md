@@ -23,6 +23,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S8 (fifagg, 19.11.): Segment-Gruppe bei 390 px mit 4 vollen Namen, nicht blockiert (eine gekürzte Zeile) -> Segment-Gruppe Überlauf (B628), entschieden von mir: Input `overflow` truncate | scroll.
 - S9 (fifagg, 19.11.): Accordion: Hover-Fläche breiter als Trenner, Tönungs-Abstand, Chevron-Farbe/Stärke, Panel-Abstand oben; nicht blockiert -> Accordion-Tokens 2 (B629), entschieden von mir wie B624.
 - S10 (fifagg NX-4, 19.11.): Icon-Aliase aus `metadata/icons.yml` im Icon-Generator, blockierte Glyphen, gebaut (d306d3007), kommt mit dem nächsten Prerelease; echte FA6-Installation meldet fifa danach.
+- S11 (fifagg, 19.11.): Formfeld-Label-Farbe ohne öffentliches Token, nicht blockiert -> Formfeld-Label-Token (B630), entschieden von mir wie B624.
 
 ## Offene Plan-Dateien
 

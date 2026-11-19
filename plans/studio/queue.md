@@ -56,3 +56,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 55. **Gebucht = Tempo (B627)** ⏳ Timetrack: „logged“ zählt nur Tempo (Timetrack ADR 0049), nach B602 - Builder
 56. **Segment-Gruppe Überlauf (B628)** ⏳ SDK (fifagg S8): Input `overflow` truncate | scroll, nach dem laufenden B602-Schritt - Builder
 57. **Accordion-Tokens 2 (B629)** ⏳ SDK (fifagg S9): vier Tokens, heutige Werte als Standard - Builder
+58. **Formfeld-Label-Token (B630)** ⏳ SDK (fifagg S11): zwei Label-Farb-Tokens, heutige Werte als Standard - Builder
