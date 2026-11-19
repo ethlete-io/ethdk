@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B508
+built: acb1e4c08
 decided: 2026-11-14
 source: doc-agent session 2026-11-14, morning rounds 1-3 on the fifagg migration questions
 ---

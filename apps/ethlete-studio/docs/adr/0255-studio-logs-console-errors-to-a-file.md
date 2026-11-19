@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B482
+built: df14efe67
 decided: 2026-11-10
 source: grill session 2026-11-10 (evening), B482 release smoke
 ---
