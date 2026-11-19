@@ -68,12 +68,17 @@ pub fn run() {
     #[cfg(all(target_os = "linux", not(debug_assertions)))]
     let builder = builder.runtime(tauri_runtime_cef::Cef::default());
     #[cfg(all(target_os = "linux", debug_assertions))]
-    let builder = builder.runtime(tauri_runtime_cef::Cef::default().remote_debugging(
-        tauri_runtime_cef::RemoteDebugging::Port {
-            port: 9222,
-            allowed_origins: vec![],
-        },
-    ));
+    let builder = builder.runtime(
+        tauri_runtime_cef::Cef::default()
+            .remote_debugging(tauri_runtime_cef::RemoteDebugging::Port {
+                port: 9222,
+                allowed_origins: vec![],
+            })
+            // Earlier runs persisted `false` to Local State, and the runtime never writes it
+            // back to `true`; Chromium reads it before this is applied, so it takes effect on
+            // the next start.
+            .global_preference("devtools.remote_debugging.allowed", true),
+    );
     #[cfg(not(target_os = "linux"))]
     let builder = builder.runtime(tauri_runtime_wry::Wry::default());
 
