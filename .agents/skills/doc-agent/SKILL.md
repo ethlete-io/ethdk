@@ -36,7 +36,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## Start
 
 1. Call `ListAgents`; the builder is an interactive session in the same repo.
-2. Send it a short English message: you are the grill/docs session; it sends
+2. Tell it in English: you are the grill/docs session; it sends
    its open design questions (facts + recommendation).
 3. Read the written queue at the top of `STATUS.md`; you alone keep it (ADR 0351). Drop an entry a commit
    already solved.
@@ -57,7 +57,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
   question for the user.
 - An open question stays open until the user answers it. Show it in full, round format, when it comes up
   and on their return, not every turn. Never a "still open" line under a status (ADR 0372).
-- A question about how something looks (layout, background, placement, sticking) never goes to the user, not even
+- A question about how something looks never goes to the user, not even
   as a sketch pick: the builder builds its own recommendation.
 - When the user says "as built" (wie umgesetzt), the app is the answer: the builder looks it up and copies it,
   never a question.
@@ -72,18 +72,17 @@ CLI gets better because Studio work uses it, not because findings are collected.
   item, and you ask the collected questions in one morning round.
 - If a collected question blocks the builder (no other work left), play a system sound once:
   Linux `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga`; Windows/WSL
-  `powershell.exe -c "[System.Media.SystemSounds]::Exclamation.Play()"`. Then write one short line on what blocks.
+  `powershell.exe -c "[System.Media.SystemSounds]::Exclamation.Play()"`. Then one line on what blocks.
 
 ## Authority over the builder
 
-- If the builder looks stuck, read its pane (`tmux capture-pane -p -t <builder tmux session>`) and the running
-  processes (`ps`) before you ask it anything.
+- If the builder looks stuck, read its pane (`tmux capture-pane`) and `ps` before you ask it.
 - You may clear its dead background agents and shells, or restart its CLI (agent-sessions `restart`, `/handoff resume` prompt), after agreeing with the builder.
 
 ## Consumers (ADR 0370)
 
 - A consumer repo keeps its decisions; here only SDK-interface ADRs.
-- Never run its shifts. Its batched SDK request (missing, repro, meanwhile, blocked?) becomes
+- Never run its shifts. Announce the human's break and deadline to every consumer session too: mailbox `send --to` from its checkout. Its batched SDK request (missing, repro, meanwhile, blocked?) becomes
   a row in `plans/sdk/STATUS.md` plus a queue entry; answer at once only a blocked one.
 - Merge the prerelease PR once CI (Next) is green, at most daily; a blocked consumer at once (ADR 0377).
 
