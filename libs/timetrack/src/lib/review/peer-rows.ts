@@ -73,7 +73,7 @@ export const peerDayRowsOf = (options: {
  * The version of the rows this app builds. Raise it when {@link peerDayRowsOf} or the rows it reads change
  * what a booked day sends: each machine then builds and sends its stored days again.
  */
-export const PEER_DAY_ROWS_VERSION = 3;
+export const PEER_DAY_ROWS_VERSION = 4;
 
 /** The wire form of {@link PeerDayRows}, stamped with {@link PEER_DAY_ROWS_VERSION}. */
 export const encodePeerDayRows = (rows: PeerDayRows) =>
@@ -173,24 +173,77 @@ const isUnderCheckout = (path: string, localKeys: CheckoutKeys) =>
     return path === trimmed || path.startsWith(`${trimmed}/`) || path.startsWith(`${trimmed}\\`);
   });
 
-const mapSharedEntry = (options: { entry: SharedEntry; peerKeys: CheckoutKeys; localKeys: CheckoutKeys }) => {
+const UNNAMED_REPO_ID = /^unnamed:repo:(.+)(@\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z.*)$/;
+
+type LocalPaths = { peerKeys: CheckoutKeys; localKeys: CheckoutKeys };
+
+const localPathOf = (options: LocalPaths & { path: string }) => {
+  const local = translatePeerPath(options);
+
+  return isUnderCheckout(local, options.localKeys) ? local : undefined;
+};
+
+const localLaneOf = (options: LocalPaths & { laneKey?: string }) => {
+  if (!options.laneKey) return undefined;
+
+  const path = streamKeyRepoPath(options.laneKey);
+
+  if (path === undefined) return options.laneKey;
+
+  const local = localPathOf({ ...options, path });
+
+  return local === undefined ? undefined : `repo:${local}`;
+};
+
+const localIdOf = (options: LocalPaths & { id: string }) => {
+  const match = UNNAMED_REPO_ID.exec(options.id);
+
+  if (!match) return options.id;
+
+  const local = localPathOf({ ...options, path: match[1] ?? '' });
+
+  return local === undefined ? undefined : `unnamed:repo:${local}${match[2] ?? ''}`;
+};
+
+const withLane = <T extends { laneKey?: string }>(value: T, laneKey: string | undefined): T => {
+  const { laneKey: _dropped, ...rest } = value;
+
+  return (laneKey ? { ...rest, laneKey } : rest) as T;
+};
+
+const mapSharedEntry = (options: LocalPaths & { entry: SharedEntry }): SharedEntry | null => {
   const { entry } = options;
+  const id = localIdOf({ ...options, id: entry.id });
 
-  if (entry.kind !== 'manual-row' || !entry.row.laneKey) return entry;
+  if (id === undefined) return null;
 
-  const path = streamKeyRepoPath(entry.row.laneKey);
+  switch (entry.kind) {
+    case 'deleted':
+      return { ...entry, id };
+    case 'row-edit':
+      return {
+        ...entry,
+        id,
+        override: withLane(entry.override, localLaneOf({ ...options, laneKey: entry.override.laneKey })),
+      };
+    case 'manual-row':
+      return { ...entry, id, row: withLane(entry.row, localLaneOf({ ...options, laneKey: entry.row.laneKey })) };
+    case 'built-row': {
+      const replaces = entry.row.replaces.flatMap((replaced) => localIdOf({ ...options, id: replaced }) ?? []);
 
-  if (path === undefined) return entry;
+      if (!replaces.length) return null;
 
-  const local = translatePeerPath({ path, peerKeys: options.peerKeys, localKeys: options.localKeys });
-  const { laneKey: _dropped, ...row } = entry.row;
+      const row = withLane(entry.row, localLaneOf({ ...options, laneKey: entry.row.laneKey }));
 
-  return { ...entry, row: isUnderCheckout(local, options.localKeys) ? { ...row, laneKey: `repo:${local}` } : row };
+      return { ...entry, id, row: { ...row, replaces } };
+    }
+  }
 };
 
 /**
  * A paired machine's rows with each lane moved onto this machine's checkout of the same repository. A shared
- * row whose repository this machine has no checkout of loses its lane rather than keep the peer's path.
+ * entry whose repository this machine has no checkout of loses its lane rather than keep the peer's path; one
+ * whose id names such a repository is dropped, and so is each engine row id a built row replaces there.
  */
 export const mapPeerDayRows = (options: {
   rows: PeerDayRows;
@@ -198,7 +251,9 @@ export const mapPeerDayRows = (options: {
   localKeys: CheckoutKeys;
 }): PeerDayRows => ({
   ...options.rows,
-  ...(options.rows.shared ? { shared: options.rows.shared.map((entry) => mapSharedEntry({ ...options, entry })) } : {}),
+  ...(options.rows.shared
+    ? { shared: options.rows.shared.flatMap((entry) => mapSharedEntry({ ...options, entry }) ?? []) }
+    : {}),
   rows: options.rows.rows.map((row) => {
     const path = streamKeyRepoPath(row.laneKey);
 

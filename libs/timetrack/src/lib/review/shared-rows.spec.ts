@@ -126,11 +126,10 @@ describe('shared manual rows', () => {
     expect(withPeerSharedEntries({ edits: tank, peers: [sent({ edits: mac, clockOffsetMs: -400 })] })).toBe(tank);
   });
 
-  it('never touches a row the engine proposed, even under the same id', () => {
+  it('never touches a pinned row it does not share, even under the same id', () => {
     const tank = change({ before: EMPTY_DAY_REVIEW_EDITS, after: added(EMPTY_DAY_REVIEW_EDITS), atMs: 1_000 });
     const engineRow: PinnedRow = {
       ...(tank.pinned[0] as PinnedRow),
-      replaces: ['proposal-1'],
       description: 'split',
       evidence: [],
     };
@@ -139,9 +138,9 @@ describe('shared manual rows', () => {
     expect(withPeerSharedEntries({ edits: mac, peers: [sent({ edits: tank })] })).toBe(mac);
   });
 
-  it('stamps only hand-written rows that changed', () => {
+  it('stamps only shared subjects that changed', () => {
     const tank = change({ before: EMPTY_DAY_REVIEW_EDITS, after: added(EMPTY_DAY_REVIEW_EDITS), atMs: 1_000 });
-    const same = { ...tank, overrides: { other: { description: 'x' } } };
+    const same = { ...tank, overrides: { other: { standInId: 'stand-in-1' } } };
 
     expect(change({ before: tank, after: same, atMs: 9_000 })).toBe(same);
   });

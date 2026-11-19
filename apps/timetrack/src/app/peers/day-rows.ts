@@ -8,6 +8,7 @@ import {
   peerDayRowsOf,
   withPeerSharedEntries,
 } from '@ethlete/timetrack';
+import { EMPTY, Observable, catchError, concatMap, debounceTime, filter, groupBy, mergeMap, take } from 'rxjs';
 import { HostReceivedRange } from '../../host';
 
 /** This machine's rows of a day as its paired machines receive them. */
@@ -57,3 +58,28 @@ export const withReceivedSharedRows = (options: {
     })),
   });
 };
+
+const SEND_DEBOUNCE_MS = 2_000;
+
+/** The day on screen is left out: the review sends that one itself as its rows change. */
+export const sendSavedDays$ = (options: {
+  saved$: Observable<string>;
+  openDay: () => string;
+  send$: (day: string) => Observable<void>;
+  debounceMs?: number;
+}): Observable<void> =>
+  options.saved$.pipe(
+    groupBy((day) => day),
+    mergeMap((perDay) =>
+      perDay.pipe(
+        debounceTime(options.debounceMs ?? SEND_DEBOUNCE_MS),
+        filter((day) => day !== options.openDay()),
+        concatMap((day) =>
+          options.send$(day).pipe(
+            take(1),
+            catchError(() => EMPTY),
+          ),
+        ),
+      ),
+    ),
+  );
