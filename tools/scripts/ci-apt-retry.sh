@@ -6,15 +6,19 @@ if [ "$#" -eq 0 ]; then
   exit 2
 fi
 
+as_root=(sudo)
+# A container job runs as root, and its image has no sudo.
+[ "$(id -u)" -eq 0 ] && as_root=()
+
 conf_dir="${ETHLETE_APT_CONF_DIR:-/etc/apt/apt.conf.d}"
-echo 'Acquire::Retries "3";' | sudo tee "$conf_dir/80-ci-retries" >/dev/null
+echo 'Acquire::Retries "3";' | "${as_root[@]}" tee "$conf_dir/80-ci-retries" >/dev/null
 
 log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 
 for attempt in 1 2 3; do
   echo "apt try $attempt of 3: $*"
-  if { sudo apt-get update -o Acquire::Retries=3 && "$@"; } 2>&1 | tee "$log" && [ "${PIPESTATUS[0]}" -eq 0 ]; then
+  if { "${as_root[@]}" apt-get update -o Acquire::Retries=3 && "$@"; } 2>&1 | tee "$log" && [ "${PIPESTATUS[0]}" -eq 0 ]; then
     exit 0
   fi
   [ "$attempt" -lt 3 ] && sleep "${ETHLETE_APT_RETRY_DELAY:-5}"

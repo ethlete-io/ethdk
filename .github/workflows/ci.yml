@@ -36,6 +36,8 @@ jobs:
     name: Checks
     # Every Linux job repeats this: a fork pull request must never reach the self-hosted runner while the repo is public.
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     permissions:
       contents: read
     steps:
@@ -106,6 +108,8 @@ jobs:
   test:
     name: Unit tests
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     permissions:
       contents: read
     steps:
@@ -127,9 +131,8 @@ jobs:
           echo "::notice title=unit-runner::nproc $(nproc), $(free -m | awk '/^Mem:/ {print "mem " $2 " MB, available " $7 " MB"}'), $(free -m | awk '/^Swap:/ {print "swap " $2 " MB"}')"
           nohup vmstat -n 5 > "$RUNNER_TEMP/vmstat.log" 2>&1 &
 
-      - run: set -o pipefail; yarn nx run-many -t test --exclude storybook-e2e --output-style=static --parallel 1 -- --logHeapUsage --maxWorkers "$(nproc)" 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
-        env:
-          TMPDIR: ${{ runner.temp }}/link-tmp
+      # In a container job `${{ runner.temp }}` is the host path; $RUNNER_TEMP is the container path.
+      - run: set -o pipefail; TMPDIR="$RUNNER_TEMP/link-tmp" yarn nx run-many -t test --exclude storybook-e2e --output-style=static --parallel 1 -- --logHeapUsage --maxWorkers "$(nproc)" 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
 
       - run: yarn nx run storybook-e2e:test
 
@@ -155,6 +158,8 @@ jobs:
   query-clock-edges:
     name: Query scenarios at clock edge .${{ matrix.fraction }}
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     permissions:
       contents: read
     strategy:
@@ -174,6 +179,8 @@ jobs:
   build:
     name: Build
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     permissions:
       contents: read
     steps:
@@ -251,6 +258,8 @@ jobs:
     name: Storybook story tests
     if: inputs.run_storybook
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     permissions:
       contents: read
     steps:
@@ -273,6 +282,8 @@ jobs:
     if: inputs.run_storybook
     needs: storybook
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     permissions:
       contents: read
     strategy:
@@ -307,6 +318,8 @@ jobs:
   timetrack-e2e:
     name: Timetrack e2e
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     permissions:
       contents: read
     steps:
@@ -329,6 +342,8 @@ jobs:
   csp-e2e:
     name: Strict CSP e2e
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     permissions:
       contents: read
     steps:
@@ -345,6 +360,8 @@ jobs:
   studio-e2e:
     name: Studio e2e (${{ matrix.shard }}/8)
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -439,6 +456,8 @@ jobs:
   design-changes:
     name: Design server changes
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     permissions:
       contents: read
     outputs:
@@ -487,6 +506,8 @@ jobs:
   perf:
     name: Perf (non-blocking)
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     continue-on-error: true
     timeout-minutes: 20
     permissions:
@@ -536,6 +557,8 @@ jobs:
         webkit-design-events,
       ]
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
@@ -545,6 +568,8 @@ jobs:
     if: ${{ !cancelled() && inputs.deploy && !contains(needs.*.result, 'failure') }}
     needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, studio-e2e, rust]
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     permissions:
       contents: read
       pull-requests: write

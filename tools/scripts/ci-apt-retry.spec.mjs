@@ -13,7 +13,7 @@ after(() => created.forEach((dir) => rmSync(dir, { recursive: true, force: true 
 const FETCH_404 =
   'E: Failed to fetch http://azure.archive.ubuntu.com/ubuntu/pool/main/libs/libsoup3/libsoup-3.0-dev_3.6.6-1ubuntu0.1_amd64v3.deb  404  Not Found [IP: 20.0.0.1 80]';
 
-const run = (failures) => {
+const run = (failures, { root = false } = {}) => {
   const dir = mkdtempSync(join(tmpdir(), 'apt-retry-'));
   created.push(dir);
   const counter = join(dir, 'installs');
@@ -31,6 +31,11 @@ if [ "$(wc -l < "${counter}")" -le ${failures} ]; then echo '${FETCH_404}'; exit
 exit 0
 `,
   );
+  if (root) {
+    writeFileSync(join(dir, 'sudo'), '#!/usr/bin/env bash\necho "sudo: command not found" >&2\nexit 127\n');
+    writeFileSync(join(dir, 'id'), '#!/usr/bin/env bash\necho 0\n');
+    chmodSync(join(dir, 'id'), 0o755);
+  }
   chmodSync(join(dir, 'sudo'), 0o755);
   chmodSync(join(dir, 'apt-get'), 0o755);
 
@@ -62,4 +67,10 @@ test('exits non-zero and names the package and the mirror when every try fails',
     /::error title=apt failed after 3 tries::.*libsoup-3\.0-dev_3\.6\.6-1ubuntu0\.1_amd64v3\.deb/,
   );
   assert.match(result.stdout, /azure\.archive\.ubuntu\.com/);
+});
+
+test('runs apt without sudo as root, where a container image has none', () => {
+  const { result, tries } = run(0, { root: true });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(tries, 1);
 });

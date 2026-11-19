@@ -105,6 +105,8 @@ jobs:
     name: Verify
     needs: resolve
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     timeout-minutes: 60
     permissions:
       contents: read
@@ -190,6 +192,8 @@ jobs:
     needs: [resolve, verify]
     if: needs.verify.outputs.action == 'push'
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     timeout-minutes: 15
     permissions:
       contents: write
@@ -262,6 +266,8 @@ jobs:
     needs: [resolve, verify]
     if: needs.verify.outputs.action == 'publish' && github.event_name == 'workflow_dispatch'
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -391,6 +397,8 @@ jobs:
     needs: [resolve, publish]
     if: needs.resolve.outputs.dry_run != 'true' && needs.publish.result == 'success'
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
     timeout-minutes: 5
     permissions: {}
     steps:

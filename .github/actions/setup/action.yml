@@ -12,12 +12,14 @@ inputs:
 runs:
   using: composite
   steps:
+    # Node 25 dropped corepack, and the Playwright image ships Node 26.
     # On Windows the runner's global Yarn 1 in C:\npm\prefix comes first in PATH, before the default
     # shim directory, so setup-node would call Yarn 1 and fail on the packageManager field.
     - run: |
         if [ "$RUNNER_OS" = Windows ]; then
           corepack enable --install-directory "$(dirname "$(command -v yarn)")"
         else
+          command -v corepack >/dev/null || npm install -g corepack@0.36.0
           corepack enable
         fi
       shell: bash
