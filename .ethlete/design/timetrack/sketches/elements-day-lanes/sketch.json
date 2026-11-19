@@ -9,6 +9,15 @@
   "baseline": {
     "components/button": "47ad2fdbb0d91120"
   },
+  "decision": {
+    "kind": "pick",
+    "variant": "a",
+    "comment": "Timetrack ADR 0052 amended in 668a3cac0: builder builds its own pick A; human also picked A in Studio",
+    "by": "designer",
+    "cmd": "design sketch pick elements/day-lanes --variant a --decided-by Timetrack ADR 0052 amended in 668a3cac0: builder builds its own pick A; human also picked A in Studio --by claude-opus-5-5 --product timetrack",
+    "pid": 2650233,
+    "decidedAt": "2026-11-19T14:16:45.265Z"
+  },
   "rounds": [
     {
       "key": "r1",
@@ -41,13 +50,5 @@
   "mergeHold": {
     "reason": "new part, the user merges",
     "at": "2026-11-19T13:19:47.283Z"
-  },
-  "decision": {
-    "kind": "pick",
-    "variant": "a",
-    "by": "designer",
-    "cmd": "POST /__design/sketch-decision",
-    "pid": 2572106,
-    "decidedAt": "2026-11-19T14:14:25.783Z"
   }
 }
