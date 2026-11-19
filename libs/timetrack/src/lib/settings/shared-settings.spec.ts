@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule } from '../model/attribution';
+import { CallNaming } from '../model/call-naming';
 import { StandIn } from '../model/stand-in';
+import { TimetrackExclusionRule } from '../store/exclusion';
 import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings } from './model';
 import { parseTimetrackSettings } from './parse';
 import {
@@ -338,6 +340,107 @@ describe('shared settings', () => {
       const wire = wireOf(tank);
 
       expect(wire).not.toContain('private');
+      expect(
+        withPeerSharedSettings({
+          settings: DEFAULT_TIMETRACK_SETTINGS,
+          peers: [sent({ settings: tank, localKeys: { '/Users/human/dev/other': 'gitlab.com/ethlete/other' } })],
+        }),
+      ).toBe(DEFAULT_TIMETRACK_SETTINGS);
+    });
+  });
+
+  describe('exclusion rules, call rules and call namings', () => {
+    const naming = (overrides: Partial<CallNaming> = {}): CallNaming => ({
+      appId: 'zoom',
+      weekday: 2,
+      durationBand: '30-60',
+      startMinute: 600,
+      target: { kind: 'issue', issueKey: 'FIFA-12' },
+      label: 'Weekly sync',
+      createdAt: CREATED,
+      ...overrides,
+    });
+
+    const callRules = (countsAsWork: string[], neverCountsAsWork: string[] = []) => ({
+      countsAsWork,
+      neverCountsAsWork,
+    });
+
+    it('travel to the peer and are taken back with a tombstone', () => {
+      const exclusions: TimetrackExclusionRule[] = [
+        { kind: 'app-id', appId: 'org.example.Vault' },
+        { kind: 'title-pattern', pattern: 'secret project' },
+      ];
+      const tank = stamped({
+        after: {
+          exclusionRules: exclusions,
+          callRules: callRules(['standup'], ['lunch']),
+          callNamings: [naming()],
+        },
+        atMs: 1_000,
+      });
+      const mac = withPeerSharedSettings({ settings: DEFAULT_TIMETRACK_SETTINGS, peers: [sent({ settings: tank })] });
+
+      expect(mac.exclusionRules).toEqual(exclusions);
+      expect(mac.callRules).toEqual(callRules(['standup'], ['lunch']));
+      expect(mac.callNamings).toEqual([naming()]);
+
+      const removed = stamped({
+        before: tank,
+        after: { exclusionRules: [], callRules: callRules([], ['lunch']), callNamings: [] },
+        atMs: 2_000,
+      });
+      const after = withPeerSharedSettings({ settings: mac, peers: [sent({ settings: removed })] });
+
+      expect(after.exclusionRules).toEqual([]);
+      expect(after.callRules).toEqual(callRules([], ['lunch']));
+      expect(after.callNamings).toEqual([]);
+      expect(withPeerSharedSettings({ settings: after, peers: [sent({ settings: tank })] })).toBe(after);
+    });
+
+    it('lets the later change of a call naming win, and does not echo', () => {
+      const base = settingsWith({ callNamings: [naming()] });
+      const tank = stamped({
+        before: base,
+        after: { callNamings: [naming({ target: { kind: 'issue', issueKey: 'FIFA-99' } })] },
+        atMs: 3_000,
+      });
+      const mac = withPeerSharedSettings({ settings: base, peers: [sent({ settings: tank })] });
+
+      expect(mac.callNamings[0]?.target).toEqual({ kind: 'issue', issueKey: 'FIFA-99' });
+      expect(
+        withPeerSharedSettings({
+          settings: tank,
+          peers: [sent({ settings: mac, peerKeys: MAC_KEYS, localKeys: TANK_KEYS })],
+        }),
+      ).toBe(tank);
+    });
+
+    it('map a checkout in a pattern and keep a path no key maps at home', () => {
+      const tank = stamped({
+        after: {
+          exclusionRules: [
+            { kind: 'title-pattern', pattern: '/home/human/dev/fifa' },
+            { kind: 'title-pattern', pattern: '/home/human/dev/private' },
+          ],
+          callRules: callRules(['/home/human/dev/fifa/call', '/home/human/dev/private/call']),
+        },
+        atMs: 1_000,
+      });
+      const mac = withPeerSharedSettings({ settings: DEFAULT_TIMETRACK_SETTINGS, peers: [sent({ settings: tank })] });
+
+      expect(wireOf(tank)).not.toContain('private');
+      expect(mac.exclusionRules).toEqual([{ kind: 'title-pattern', pattern: '/Users/human/dev/fifa' }]);
+      expect(mac.callRules.countsAsWork).toEqual(['/Users/human/dev/fifa/call']);
+      expect(JSON.stringify(mac)).not.toContain('/home/human');
+    });
+
+    it('drop a pattern naming a checkout the receiver has none of', () => {
+      const tank = stamped({
+        after: { exclusionRules: [{ kind: 'title-pattern', pattern: '/home/human/dev/fifa' }] },
+        atMs: 1_000,
+      });
+
       expect(
         withPeerSharedSettings({
           settings: DEFAULT_TIMETRACK_SETTINGS,

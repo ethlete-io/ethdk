@@ -1,6 +1,8 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
 import { CheckoutKeys, translatePeerPath } from '../model/peer-path';
+import { CallNaming } from '../model/call-naming';
 import { StandIn, StandInRefusal } from '../model/stand-in';
+import { TimetrackExclusionRule } from '../store/exclusion';
 import {
   PeerStampedEntries,
   changedStamps,
@@ -9,8 +11,8 @@ import {
   tombstonesOf,
 } from '../review/shared-stamp';
 import { SharedStamp } from '../review/model';
-import { TimetrackSettings } from './model';
-import { parseAttributionRule, parseStandIn, parseStandInRefusal } from './parse';
+import { TimetrackCallRules, TimetrackSettings } from './model';
+import { parseAttributionRule, parseCallNaming, parseExclusionRule, parseStandIn, parseStandInRefusal } from './parse';
 
 /**
  * The `day` the settings that travel are stored under beside the day rows. A day key is a date, so this
@@ -24,8 +26,13 @@ export type SharedSettingsEntry = { id: string; atMs: number } & (
   | { kind: 'stand-in'; standIn: StandIn }
   | { kind: 'rule'; rule: AttributionRule }
   | { kind: 'refusal'; refusal: StandInRefusal }
+  | { kind: 'exclusion'; exclusion: TimetrackExclusionRule }
+  | { kind: 'call-rule'; list: CallRuleList; pattern: string }
+  | { kind: 'call-naming'; naming: CallNaming }
   | { kind: 'deleted' }
 );
+
+type CallRuleList = keyof TimetrackCallRules;
 
 export type PeerSharedSettings = PeerStampedEntries<SharedSettingsEntry>;
 
@@ -37,6 +44,22 @@ const REFUSAL = 'refusal:';
 
 const refusalIdOf = (refusal: StandInRefusal) =>
   `${REFUSAL}${refusal.repoPath}\n${refusal.branch ?? ''}\n${refusal.workPath ?? ''}`;
+
+const EXCLUSION = 'exclusion:';
+const CALL_RULE = 'call-rule:';
+const CALL_NAMING = 'call-naming:';
+
+const exclusionIdOf = (rule: TimetrackExclusionRule) =>
+  `${EXCLUSION}${rule.kind}:${rule.kind === 'app-id' ? rule.appId : rule.pattern}`;
+
+const callRuleIdOf = (list: CallRuleList, pattern: string) => `${CALL_RULE}${list}:${pattern}`;
+
+const callNamingIdOf = (naming: CallNaming) =>
+  `${CALL_NAMING}${[naming.appId, naming.weekday, naming.durationBand, naming.after ?? '', naming.startMinute].join('\n')}`;
+
+const CALL_RULE_LISTS: readonly CallRuleList[] = ['countsAsWork', 'neverCountsAsWork'];
+
+const callNamingOf = (naming: CallNaming): CallNaming => defined({ ...naming });
 
 const refusalOf = (refusal: StandInRefusal): StandInRefusal => defined({ ...refusal });
 
@@ -91,6 +114,20 @@ const liveEntriesOf = (settings: TimetrackSettings): Map<string, LiveEntry> =>
       `${STAND_IN}${standIn.id}`,
       { id: `${STAND_IN}${standIn.id}`, atMs: 0, kind: 'stand-in', standIn: standInOf(standIn) },
     ]),
+    ...settings.exclusionRules.map((exclusion): [string, LiveEntry] => [
+      exclusionIdOf(exclusion),
+      { id: exclusionIdOf(exclusion), atMs: 0, kind: 'exclusion', exclusion },
+    ]),
+    ...CALL_RULE_LISTS.flatMap((list) =>
+      settings.callRules[list].map((pattern): [string, LiveEntry] => [
+        callRuleIdOf(list, pattern),
+        { id: callRuleIdOf(list, pattern), atMs: 0, kind: 'call-rule', list, pattern },
+      ]),
+    ),
+    ...settings.callNamings.map((naming): [string, LiveEntry] => [
+      callNamingIdOf(naming),
+      { id: callNamingIdOf(naming), atMs: 0, kind: 'call-naming', naming: callNamingOf(naming) },
+    ]),
     ...settings.noStandInCheckouts.map((refusal): [string, LiveEntry] => [
       refusalIdOf(refusal),
       { id: refusalIdOf(refusal), atMs: 0, kind: 'refusal', refusal: refusalOf(refusal) },
@@ -103,6 +140,8 @@ const wireOf = (entry: SharedSettingsEntry) => {
       return { ...entry, rule: { ...entry.rule, createdAt: entry.rule.createdAt.getTime() } };
     case 'stand-in':
       return { ...entry, standIn: { ...entry.standIn, createdAt: entry.standIn.createdAt.getTime() } };
+    case 'call-naming':
+      return { ...entry, naming: { ...entry.naming, createdAt: entry.naming.createdAt.getTime() } };
     default:
       return entry;
   }
@@ -192,6 +231,11 @@ const outgoingOf = (entry: SharedSettingsEntry, keys: CheckoutKeys): SharedSetti
     }
     case 'refusal':
       return travels([entry.refusal.repoPath, entry.refusal.workPath], keys) ? entry : null;
+    case 'exclusion':
+    case 'call-rule':
+      return entry;
+    case 'call-naming':
+      return travels([entry.naming.after, entry.naming.label], keys) ? entry : null;
     case 'stand-in': {
       const { standIn } = entry;
       const placed = travels([standIn.openedFor], keys) ? standIn : withoutOpenedFor(standIn);
@@ -247,6 +291,27 @@ const parseEntry = (value: unknown): SharedSettingsEntry | null => {
       const rule = parseAttributionRule(record['rule']);
 
       return rule && id === `${RULE}${rule.id}` ? { id, atMs, kind: 'rule', rule: ruleOf(rule) } : null;
+    }
+    case 'exclusion': {
+      const exclusion = parseExclusionRule(record['exclusion']);
+
+      return exclusion && id === exclusionIdOf(exclusion) ? { id, atMs, kind: 'exclusion', exclusion } : null;
+    }
+    case 'call-rule': {
+      const { list, pattern } = record;
+
+      return (list === 'countsAsWork' || list === 'neverCountsAsWork') &&
+        typeof pattern === 'string' &&
+        id === callRuleIdOf(list, pattern)
+        ? { id, atMs, kind: 'call-rule', list, pattern }
+        : null;
+    }
+    case 'call-naming': {
+      const naming = parseCallNaming(record['naming']);
+
+      return naming && id === callNamingIdOf(naming)
+        ? { id, atMs, kind: 'call-naming', naming: callNamingOf(naming) }
+        : null;
     }
     case 'refusal': {
       const refusal = parseStandInRefusal(record['refusal']);
@@ -321,6 +386,34 @@ const mapEntry = (options: Keys & { entry: SharedSettingsEntry }): SharedSetting
       if (ruleId === undefined || (entry.rule.repoPath && repoPath === undefined)) return null;
 
       return { ...entry, id, rule: defined({ ...entry.rule, id: ruleId, repoPath }) };
+    }
+    case 'exclusion': {
+      const text = localTextOf({
+        ...options,
+        text: entry.exclusion.kind === 'app-id' ? entry.exclusion.appId : entry.exclusion.pattern,
+      });
+
+      if (text === undefined) return null;
+
+      const exclusion: TimetrackExclusionRule =
+        entry.exclusion.kind === 'app-id' ? { kind: 'app-id', appId: text } : { kind: 'title-pattern', pattern: text };
+
+      return { ...entry, id: exclusionIdOf(exclusion), exclusion };
+    }
+    case 'call-rule': {
+      const pattern = localTextOf({ ...options, text: entry.pattern });
+
+      return pattern === undefined ? null : { ...entry, id: callRuleIdOf(entry.list, pattern), pattern };
+    }
+    case 'call-naming': {
+      const after = entry.naming.after ? localTextOf({ ...options, text: entry.naming.after }) : undefined;
+      const label = localTextOf({ ...options, text: entry.naming.label });
+
+      if (label === undefined || (entry.naming.after && after === undefined)) return null;
+
+      const naming = callNamingOf({ ...entry.naming, after, label });
+
+      return { ...entry, id: callNamingIdOf(naming), naming };
     }
     case 'refusal': {
       const repoPath = localTextOf({ ...options, text: entry.refusal.repoPath });
@@ -402,6 +495,16 @@ export const withPeerSharedSettings = (options: {
   const rules = new Map(settings.attributionRules.map((rule) => [`${RULE}${rule.id}`, rule]));
   const standIns = new Map(settings.standIns.map((standIn) => [`${STAND_IN}${standIn.id}`, standIn]));
   const refusals = new Map(settings.noStandInCheckouts.map((refusal) => [refusalIdOf(refusal), refusal]));
+  const exclusions = new Map(settings.exclusionRules.map((rule) => [exclusionIdOf(rule), rule]));
+  const callPatterns = new Map(
+    CALL_RULE_LISTS.flatMap((list) =>
+      settings.callRules[list].map((pattern): [string, { list: CallRuleList; pattern: string }] => [
+        callRuleIdOf(list, pattern),
+        { list, pattern },
+      ]),
+    ),
+  );
+  const namings = new Map(settings.callNamings.map((naming) => [callNamingIdOf(naming), naming]));
   const latest = latestPeerEntries(options.peers);
   let peerStandInAt = -Infinity;
 
@@ -416,6 +519,9 @@ export const withPeerSharedSettings = (options: {
       rules.delete(id);
       standIns.delete(id);
       refusals.delete(id);
+      exclusions.delete(id);
+      callPatterns.delete(id);
+      namings.delete(id);
       changed[id] = { atMs: entry.atMs, deleted: true };
       continue;
     }
@@ -424,6 +530,9 @@ export const withPeerSharedSettings = (options: {
 
     if (entry.kind === 'rule') rules.set(id, entry.rule);
     else if (entry.kind === 'refusal') refusals.set(id, entry.refusal);
+    else if (entry.kind === 'exclusion') exclusions.set(id, entry.exclusion);
+    else if (entry.kind === 'call-rule') callPatterns.set(id, { list: entry.list, pattern: entry.pattern });
+    else if (entry.kind === 'call-naming') namings.set(id, entry.naming);
     else standIns.set(id, withLocalDays(entry.standIn, standIns.get(id)));
 
     changed[id] = { atMs: entry.atMs };
@@ -438,6 +547,16 @@ export const withPeerSharedSettings = (options: {
     attributionRules: [...rules.values()],
     standIns: [...standIns.values()],
     noStandInCheckouts: [...refusals.values()],
+    exclusionRules: [...exclusions.values()],
+    callRules: {
+      countsAsWork: [...callPatterns.values()]
+        .filter((entry) => entry.list === 'countsAsWork')
+        .map((entry) => entry.pattern),
+      neverCountsAsWork: [...callPatterns.values()]
+        .filter((entry) => entry.list === 'neverCountsAsWork')
+        .map((entry) => entry.pattern),
+    },
+    callNamings: [...namings.values()],
     sharedStamps: { ...stamps, ...changed },
   };
 };
