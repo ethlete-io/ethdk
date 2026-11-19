@@ -1047,11 +1047,11 @@ describe('autoModeSharedCreate', () => {
     ]);
   });
 
-  it('queues its own create for other work, another project, another day or a rejected create', () => {
+  it('queues its own create for other work, another project, another day or an expired create', () => {
     const approvals = [
       ...createOf({ id: 'a-1', summary: 'Rework the invoice layout' }),
       ...createOf({ id: 'a-2', summary: 'Export the month', projectKey: 'XYZ' }),
-      ...markApproval(createOf({ id: 'a-3', summary: 'Export the month' }), { id: 'a-3', state: 'rejected' }),
+      ...markApproval(createOf({ id: 'a-3', summary: 'Export the month' }), { id: 'a-3', state: 'expired' }),
       ...enqueueApproval([], {
         id: 'a-4',
         request: { op: 'jira.create', summary: 'Export the month', description: '', projectKey: 'ABC' },

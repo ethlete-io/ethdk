@@ -1,5 +1,10 @@
 import { AUTO_MODE_CLIENT, ActionClasses, actionClassOf } from '../agent-api/action-classes';
-import { AgentApproval, AgentApprovalRequest, AutoModeApplyRequest } from '../agent-api/approval-queue';
+import {
+  AgentApproval,
+  AgentApprovalRequest,
+  AutoModeApplyRequest,
+  sameAutoModeApply,
+} from '../agent-api/approval-queue';
 import { AgentApiRequest } from '../agent-api/model';
 import { GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
 import { JiraIssue } from '../jira/issue';
@@ -200,12 +205,20 @@ export const withStaleStandInCreatesExpired = (
 
 type ApprovalView = Pick<AgentApproval, 'id' | 'request' | 'target' | 'state' | 'result' | 'error'>;
 
-const applyApprovalOf = (options: { approvals: readonly ApprovalView[]; day: string; subject: AutoModeSubject }) => {
+const applyApprovalOf = (options: {
+  approvals: readonly ApprovalView[];
+  day: string;
+  subject: AutoModeSubject;
+  issueKey: string;
+}) => {
   const target = autoModeApplyTarget(options.day, options.subject);
 
   return [...options.approvals]
     .reverse()
-    .find((item) => item.target === target && item.request.op === 'autoMode.apply');
+    .find(
+      ({ request, ...item }) =>
+        request.op === 'autoMode.apply' && (item.target === target || sameAutoModeApply(request, options)),
+    );
 };
 
 /**
@@ -432,7 +445,9 @@ const autoModeOwns = (options: { day: string; answer: AutoModeAnswer; approvals:
   }
 
   if (outcome.kind === 'match') {
-    return stillAutos(applyApprovalOf({ approvals: options.approvals, day: options.day, subject })?.state);
+    return stillAutos(
+      applyApprovalOf({ approvals: options.approvals, day: options.day, subject, issueKey: outcome.issueKey })?.state,
+    );
   }
 
   return true;
@@ -947,14 +962,17 @@ type DayCreateView = Pick<AgentApproval, 'id' | 'state' | 'day' | 'target' | 're
 
 const dayCreatesOf = <T extends DayCreateView>(
   approvals: readonly T[],
-  options: { day: string; subject: AutoModeSubject },
+  options: { day: string; subject: AutoModeSubject; rejected?: boolean },
 ) => {
   const own = autoModeApprovalTarget(options.day, options.subject);
 
   return approvals.filter(
     (item) =>
       item.request.op === 'jira.create' &&
-      (item.state === 'queued' || item.state === 'running' || item.state === 'approved') &&
+      (item.state === 'queued' ||
+        item.state === 'running' ||
+        item.state === 'approved' ||
+        (!!options.rejected && item.state === 'rejected')) &&
       (autoModeTargetOf(item.target)?.day ?? item.day) === options.day &&
       item.target !== own,
   );
@@ -974,7 +992,7 @@ export const autoModeSharedCreate = <T extends DayCreateView>(options: {
 
   if (!create) return undefined;
 
-  return dayCreatesOf(options.approvals, { day: options.day, subject: options.answer.subject }).find(
+  return dayCreatesOf(options.approvals, { day: options.day, subject: options.answer.subject, rejected: true }).find(
     ({ request }) =>
       request.op === 'jira.create' &&
       request.projectKey === create.projectKey &&
@@ -1183,7 +1201,12 @@ export const autoModeApplies = (options: {
   if (outcome.kind === 'draft') return !!outcome.createdKey;
   if (outcome.kind !== 'match' || outcome.done || outcome.gone) return false;
 
-  const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
+  const approval = applyApprovalOf({
+    approvals: options.approvals,
+    day: options.day,
+    subject,
+    issueKey: outcome.issueKey,
+  });
 
   if (approval?.state === 'rejected') return false;
 
@@ -1392,7 +1415,7 @@ const ticketReadout = (options: {
 
     const { issueKey } = outcome;
     const found = { ...base, issueKey, namedRows: autoNamedRows(options.edits, issueKey) };
-    const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
+    const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject, issueKey });
     const applied =
       subject.kind === 'context' || subject.kind === 'call'
         ? found.namedRows > 0

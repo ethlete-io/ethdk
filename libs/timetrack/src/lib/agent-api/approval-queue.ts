@@ -163,14 +163,79 @@ export const openApprovalFor = (queue: readonly AgentApproval[], options: { clie
       item.client === options.client,
   );
 
-/** Adds a waiting item. A target an item from the same caller still waits for queues nothing. */
+const autoModeBandOf = (subject: AutoModeSubject) => {
+  switch (subject.kind) {
+    case 'context':
+      return `context:${subject.contextId.replace(/^(repo:[^~]*)~.*$/, '$1~')}`;
+    case 'stand-in':
+      return `stand-in:${subject.standInId}`;
+    case 'call':
+      return `call:${subject.rowId}`;
+  }
+};
+
+/**
+ * Whether two auto mode applies propose the same thing: the same issue for the same band on the same day.
+ * Every agent session of one checkout counts as the same band, as the queue panel names them alike.
+ */
+export const sameAutoModeApply = (
+  left: Pick<AutoModeApplyRequest, 'day' | 'subject' | 'issueKey'>,
+  right: Pick<AutoModeApplyRequest, 'day' | 'subject' | 'issueKey'>,
+) =>
+  left.day === right.day &&
+  left.issueKey === right.issueKey &&
+  autoModeBandOf(left.subject) === autoModeBandOf(right.subject);
+
+const sameDayApplyOf = (
+  queue: readonly AgentApproval[],
+  options: { request: AutoModeApplyRequest; client?: string; day: string; expired: boolean },
+) =>
+  [...queue]
+    .reverse()
+    .find(
+      (item) =>
+        item.client === options.client &&
+        item.day === options.day &&
+        (item.state === 'expired') === options.expired &&
+        item.request.op === 'autoMode.apply' &&
+        sameAutoModeApply(item.request, options.request),
+    );
+
+/**
+ * Adds a waiting item. A target an item from the same caller still waits for queues nothing. An auto mode
+ * apply asked on a day that already holds the same proposal queues nothing either: one still waiting or
+ * decided stays as it is, and an expired one waits again under its own id.
+ */
 export const enqueueApproval = (
   queue: readonly AgentApproval[],
   options: { id: string; request: AgentApprovalRequest; client?: string; target?: string; at: Date; day: string },
 ): AgentApproval[] => {
-  const { target } = options;
+  const { target, request } = options;
 
   if (target && openApprovalFor(queue, { client: options.client, target })) return [...queue];
+
+  if (request.op === 'autoMode.apply') {
+    if (sameDayApplyOf(queue, { ...options, request, expired: false })) return [...queue];
+
+    const expired = sameDayApplyOf(queue, { ...options, request, expired: true });
+
+    if (expired) {
+      return queue.map((item) =>
+        item === expired
+          ? {
+              id: item.id,
+              request,
+              opClass: item.opClass,
+              ...(item.client ? { client: item.client } : {}),
+              ...(target ? { target } : {}),
+              askedAtMs: options.at.getTime(),
+              day: item.day,
+              state: 'queued',
+            }
+          : item,
+      );
+    }
+  }
 
   return [
     ...queue,
