@@ -18,6 +18,8 @@ export const CHOICE_INPUTS_EXAMPLES = {
     import('./checkbox-card-interactive.example').then((m) => m.CheckboxCardInteractiveExampleComponent),
   'choice-inputs/segmented-button-group-stretch': () =>
     import('./segmented-button-group-stretch.example').then((m) => m.SegmentedButtonGroupStretchExampleComponent),
+  'choice-inputs/segmented-button-group-tokens': () =>
+    import('./segmented-button-group-tokens.example').then((m) => m.SegmentedButtonGroupTokensExampleComponent),
   'choice-inputs/segmented-button-group-tabs': () =>
     import('./segmented-button-group-tabs.example').then((m) => m.SegmentedButtonGroupTabsExampleComponent),
   'choice-inputs/rating-default': () => import('./rating-default.example').then((m) => m.RatingDefaultExampleComponent),

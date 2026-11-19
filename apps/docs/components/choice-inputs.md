@@ -463,6 +463,20 @@ segment.
 
 @example choice-inputs/segmented-button-group-stretch 220px
 
+### Segmented button: look tokens {#segmented-tokens}
+
+Five tokens restyle the group without a new input. Each default is today's look.
+
+| Token                                          | Default                                      | Effect                                                                                                                |
+| ---------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--et-segmented-button-color`                  | the muted surface colour                     | Inactive label colour.                                                                                                |
+| `--et-segmented-button-font-weight`            | `500`                                        | Label weight.                                                                                                         |
+| `--et-segmented-button-group-track-background` | an 8% tint of the surface interaction colour | Track fill.                                                                                                           |
+| `--et-segmented-button-group-stretch-track`    | `1fr`                                        | Column size under `stretch`. `auto` sizes columns to their labels, so none is cut, and they still fill the row.       |
+| `--et-segmented-button-group-columns`          | unset (one row)                              | A number wraps the segments into that many columns, with or without `stretch`. Set it per breakpoint in your own CSS. |
+
+@example choice-inputs/segmented-button-group-tokens 220px
+
 ### Segmented button: tabs variant {#segmented-tabs}
 
 `et-segmented-button-group` takes `variant="tabs"`, which underlines the selected

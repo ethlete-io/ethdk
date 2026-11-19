@@ -10,7 +10,12 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
 @Component({
   selector: 'et-sb-segmented-button-group',
   template: `
-    <div [etProvideColor]="color()" [style.max-width]="maxWidth()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
+    <div
+      [etProvideColor]="color()"
+      [style.max-width]="maxWidth()"
+      [style]="tokens()"
+      class="flex max-w-md flex-col gap-4 p-8 font-sans"
+    >
       @if (inScrollable()) {
         <et-scrollable [renderMasks]="false" itemSize="auto">
           <et-segmented-button-group
@@ -82,6 +87,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public size = input<FormFieldSize>('md');
   public stretch = input(false);
   public maxWidth = input<string | null>(null);
+  public tokens = input<string | null>(null);
   public inScrollable = input(false);
 
   public options = input([

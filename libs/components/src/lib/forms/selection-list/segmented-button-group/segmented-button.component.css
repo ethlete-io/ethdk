@@ -47,6 +47,12 @@
     initial-value: auto;
   }
 
+  @property --et-segmented-button-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 500;
+  }
+
   @property --et-segmented-button-gap {
     syntax: '<length>';
     inherits: true;
@@ -77,9 +83,9 @@
     }
     outline: none;
     background: transparent;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-segmented-button-color, var(--et-surface-color-muted-solid, currentColor));
     font-size: var(--et-segmented-button-font-size);
-    font-weight: 500;
+    font-weight: var(--et-segmented-button-font-weight);
     line-height: 1.4;
     white-space: nowrap;
     -webkit-user-select: none;

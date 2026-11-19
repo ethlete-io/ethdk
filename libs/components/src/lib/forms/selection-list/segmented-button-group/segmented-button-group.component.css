@@ -120,20 +120,33 @@
 
     .et-segmented-button-group-buttons {
       display: inline-grid;
-      grid-auto-flow: column;
+      /* An unset columns token leaves the template at none and the flow at column; a set one makes the flow value
+         invalid, so it falls back to row. Do not give the token a fallback. */
+      grid-auto-flow: var(--et-segmented-button-group-columns, column);
       grid-auto-columns: minmax(0, max-content);
+      grid-template-columns: repeat(var(--et-segmented-button-group-columns), minmax(0, max-content));
       align-self: flex-start;
       min-width: 0;
       max-width: 100%;
       gap: 2px;
       padding: var(--et-segmented-button-group-track-padding);
       border-radius: var(--et-segmented-button-group-track-radius);
-      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+      background-color: var(
+        --et-segmented-button-group-track-background,
+        color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent)
+      );
     }
 
     &:where([data-stretch]) .et-segmented-button-group-buttons {
       display: grid;
-      grid-auto-columns: minmax(var(--et-segmented-button-group-segment-min-width), 1fr);
+      grid-auto-columns: minmax(
+        var(--et-segmented-button-group-segment-min-width),
+        var(--et-segmented-button-group-stretch-track, 1fr)
+      );
+      grid-template-columns: repeat(
+        var(--et-segmented-button-group-columns),
+        minmax(var(--et-segmented-button-group-segment-min-width), var(--et-segmented-button-group-stretch-track, 1fr))
+      );
       align-self: stretch;
     }
 

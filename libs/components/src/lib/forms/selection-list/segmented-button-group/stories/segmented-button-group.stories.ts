@@ -14,6 +14,7 @@ export default {
     stretch: { control: 'boolean' },
     showMixedState: { control: false, table: { disable: true } },
     maxWidth: { control: 'text' },
+    tokens: { control: 'text' },
     inScrollable: { control: 'boolean' },
     options: { table: { disable: true } },
     disabled: { control: 'boolean' },
@@ -34,6 +35,7 @@ export default {
     color: 'brand',
     size: 'md',
     maxWidth: null,
+    tokens: null,
   },
 } as Meta<SegmentedButtonGroupStorybookComponent>;
 
@@ -91,6 +93,54 @@ export const Stretch: Story = {
       { value: 'done', label: 'Done' },
     ],
     hint: 'Every segment gets the same column width and the group fills its container, whatever the label lengths.',
+  },
+};
+
+export const LabelLook: Story = {
+  args: {
+    tokens: '--et-segmented-button-color: white; --et-segmented-button-font-weight: 700;',
+    hint: 'Set --et-segmented-button-color and --et-segmented-button-font-weight to restyle the inactive labels.',
+  },
+};
+
+export const TrackBackground: Story = {
+  args: {
+    tokens: '--et-segmented-button-group-track-background: #1e3a5f;',
+    hint: 'Set --et-segmented-button-group-track-background to replace the tonal track.',
+  },
+};
+
+export const StretchTrackAuto: Story = {
+  args: {
+    stretch: true,
+    maxWidth: '410px',
+    tokens: '--et-segmented-button-group-stretch-track: auto;',
+    value: 'all',
+    label: 'Competition',
+    options: [
+      { value: 'all', label: 'All' },
+      { value: 'live', label: 'Live now' },
+      { value: 'upcoming', label: 'Upcoming' },
+      { value: 'done', label: 'Done' },
+    ],
+    hint: 'With --et-segmented-button-group-stretch-track: auto the columns size to their labels and still fill the row.',
+  },
+};
+
+export const Columns: Story = {
+  args: {
+    maxWidth: '390px',
+    stretch: true,
+    tokens: '--et-segmented-button-group-columns: 2;',
+    value: 'all',
+    label: 'Competition',
+    options: [
+      { value: 'all', label: 'All' },
+      { value: 'live', label: 'Live now' },
+      { value: 'upcoming', label: 'Upcoming' },
+      { value: 'done', label: 'Done' },
+    ],
+    hint: 'With --et-segmented-button-group-columns: 2 the four options wrap into two rows of two.',
   },
 };
 
