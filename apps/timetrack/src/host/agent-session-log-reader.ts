@@ -6,12 +6,14 @@ type HostLogRef = {
   id: string;
   path: string;
   modifiedAtMs: number;
+  description?: string;
 };
 
 const reviveRef = (ref: HostLogRef): AgentSessionLogRef => ({
   id: ref.id,
   path: ref.path,
   modifiedAt: new Date(ref.modifiedAtMs),
+  ...(ref.description ? { description: ref.description } : {}),
 });
 
 /** Whose logs to read. The host derives both the default root and the shape of the tree from it. */

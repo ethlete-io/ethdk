@@ -946,6 +946,19 @@ describe('subagent samples and machine prompts, from captured records', () => {
     }
   });
 
+  it('takes a subagent task from the description the host read, in a chunk without the prompt', () => {
+    const result = parse([subagentTurn(1)], { agentTask: 'Fix the CI flake' });
+
+    expect(result.events.length).toBeGreaterThan(0);
+    for (const event of result.events) expect(event).toMatchObject({ agentId: AGENT, agentTask: 'Fix the CI flake' });
+  });
+
+  it('prefers the description over the first line of the instructions', () => {
+    const result = parse([subagentPrompt(0), subagentTurn(1)], { agentTask: 'Fix the CI flake' });
+
+    for (const event of result.events) expect(event).toMatchObject({ agentTask: 'Fix the CI flake' });
+  });
+
   it('leaves a main-session sample without an agent id or a task', () => {
     const [event] = parse([record({ minute: 0 })]).events;
 

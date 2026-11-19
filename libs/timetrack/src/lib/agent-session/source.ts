@@ -41,6 +41,8 @@ export type AgentSessionLogParseOptions = {
    * log is read for its metadata.
    */
   promptFallback?: { maxLength: number };
+  /** The task of the subagent this log belongs to. Wins over the first line of the log's own prompt. */
+  agentTask?: string;
 };
 
 export type AgentSessionLogParseResult = {

@@ -67,7 +67,12 @@ const readToEnd$ = (options: {
         ? EMPTY
         : options.reader.readLines$({ ref: options.ref, fromLine: seen.nextLine }).pipe(
             map((chunk): LogBackfill => {
-              const parsed = options.parser({ ...options.parsing, lines: chunk.lines, resume: seen.resume });
+              const parsed = options.parser({
+                ...options.parsing,
+                ...(options.ref.description ? { agentTask: options.ref.description } : {}),
+                lines: chunk.lines,
+                resume: seen.resume,
+              });
 
               return {
                 usage: [...seen.usage, ...parsed.usage],

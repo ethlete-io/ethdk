@@ -74,6 +74,15 @@ const collect = (options: {
 };
 
 describe('collectAgentSessions$', () => {
+  it('hands the description of a subagent log to the parser as its task', () => {
+    const parser = vi.fn(() => ({ events: [], usage: [], prompts: [], unparsedLines: 0 }));
+    const { reader } = readerFor([{ ref: { ...ref('s1/agent-a1'), description: 'Fix the flake' }, lines: ['{}'] }]);
+
+    collectAgentSessions$({ parser, reader, cursors: [], parsing: {} }).subscribe();
+
+    expect(parser).toHaveBeenCalledWith(expect.objectContaining({ agentTask: 'Fix the flake' }));
+  });
+
   it('reads every log from the top on a first run and reports where it stopped', () => {
     const { result, reads } = collect({
       logs: [

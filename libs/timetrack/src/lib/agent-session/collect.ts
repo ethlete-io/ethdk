@@ -81,6 +81,7 @@ const readLog$ = (options: {
     map((chunk) => {
       const parsed = options.parser({
         ...options.parsing,
+        ...(ref.description ? { agentTask: ref.description } : {}),
         lines: chunk.lines,
         resume: cursor
           ? { after: cursor.after, title: cursor.title, cwd: cursor.cwd, session: cursor.session }

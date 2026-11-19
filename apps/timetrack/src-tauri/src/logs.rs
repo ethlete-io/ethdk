@@ -26,6 +26,8 @@ pub struct AgentLogRef {
     pub id: String,
     pub path: String,
     pub modified_at_ms: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -123,6 +125,17 @@ fn modified_at_ms(path: &Path) -> TimetrackResult<i64> {
         .unwrap_or(0))
 }
 
+fn subagent_description(log: &Path) -> Option<String> {
+    let meta = std::fs::read_to_string(log.with_extension("meta.json")).ok()?;
+    let value = serde_json::from_str::<serde_json::Value>(&meta).ok()?;
+
+    value
+        .get("description")?
+        .as_str()
+        .filter(|description| !description.trim().is_empty())
+        .map(str::to_owned)
+}
+
 fn push_logs_in(
     dir: &Path,
     id_prefix: &str,
@@ -155,6 +168,7 @@ fn push_logs_in(
             id: format!("{id_prefix}{stem}"),
             path: path.to_string_lossy().into_owned(),
             modified_at_ms: at_ms,
+            description: subagent_description(&path),
         });
     }
 
@@ -437,6 +451,36 @@ mod tests {
         ids.sort();
 
         assert_eq!(ids, ["session-one", "session-two"]);
+    }
+
+    #[test]
+    fn reads_a_subagent_description_from_its_meta_file() {
+        let root = temp_root("subagent-description");
+        let log = write_subagent_log(&root, "-home-tom-dev-a", "session-one", "agent-a1", "{}\n");
+        write_subagent_log(&root, "-home-tom-dev-a", "session-one", "agent-b2", "{}\n");
+        write_subagent_log(&root, "-home-tom-dev-a", "session-one", "agent-c3", "{}\n");
+        std::fs::write(
+            log.with_extension("meta.json"),
+            r#"{"agentType":"fork","description":"Fix the CI flake"}"#,
+        )
+        .unwrap();
+        std::fs::write(log.with_file_name("agent-c3.meta.json"), "not json").unwrap();
+
+        let mut found = list_logs(&root, None)
+            .unwrap()
+            .into_iter()
+            .map(|log| (log.id, log.description))
+            .collect::<Vec<_>>();
+        found.sort();
+
+        assert_eq!(
+            found,
+            [
+                ("session-one/agent-a1".to_owned(), Some("Fix the CI flake".to_owned())),
+                ("session-one/agent-b2".to_owned(), None),
+                ("session-one/agent-c3".to_owned(), None),
+            ]
+        );
     }
 
     #[test]

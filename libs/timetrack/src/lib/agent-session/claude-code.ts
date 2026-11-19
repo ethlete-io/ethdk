@@ -711,6 +711,7 @@ const contextOf = (record: WorkedRecord) => `${record.cwd}\u0000${record.gitBran
 export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const interval = options.sampleIntervalMs ?? DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS;
   const after = options.resume?.after;
+  const agentTask = options.agentTask;
   const titles: TitleCandidates = {};
   const records: WorkedRecord[] = [];
   // One assistant message is written as several records — one per content block — and each of them
@@ -807,7 +808,9 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
       ...(record.agentId
         ? {
             agentId: record.agentId,
-            ...(taskByAgent.has(record.agentId) ? { agentTask: taskByAgent.get(record.agentId) } : {}),
+            ...((agentTask ?? taskByAgent.get(record.agentId))
+              ? { agentTask: agentTask ?? taskByAgent.get(record.agentId) }
+              : {}),
           }
         : {}),
     });

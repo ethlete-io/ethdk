@@ -21,6 +21,8 @@ export type AgentSessionLogRef = {
   id: string;
   path: string;
   modifiedAt: Date;
+  /** The description Claude Code recorded for a subagent log, when its meta file names one. */
+  description?: string;
 };
 
 export type AgentSessionLogLines = {
