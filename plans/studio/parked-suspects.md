@@ -126,3 +126,11 @@ One line per Suspect without proof (ADR 0276). At its second time the line joins
 - B490 fonts (Linux, 19.11.): `@import './faces.css'` in a sketch variant does not resolve (Suspect); deleting studio faces.css broke CI as the sdk colors sheet + render-check.spec still load it (Cause, reverted 8c1671bc9).
 - text-inputs e2e: 17 failures vs dev Storybook (OTP, tag, number), not frame-related (19.11.). Suspect.
 - segmented group CSS selects et-scrollable's private DOM (615a6dab7, 19.11.). Suspect: a scrollable hook would remove it.
+- design actions check (GitHub #3196, 19.11.): actions check is empty when controls come from embedded parts (ownScopeOf). Suspect.
+- timetrack dev HMR (Linux, 19.11.): a row-logic change does not reach the running dev app. Suspect.
+- timetrack binaries (Linux, 19.11.): `npx ethlete-agents` 404s; `/usr/bin/timetrack` panics WebviewRuntimeNotInstalled. Suspect.
+- timetrack call row id (B616, 19.11.): `issueKey@from` may differ per machine. Suspect.
+- timetrack peer day (19.11.): an open day picks up received peer rows only on the next tick; the first rows call 4 min after app start timed out at 60 s. Suspect.
+- Storybook color-scheme (19.11.): stays dark on a light surface (light-dark() ink branch unmeasured). Suspect.
+- standings form result (19.11.): not focusable, so keyboard users get no tooltip (pre-existing). Suspect.
+- design parts without compare (19.11.): the timetrack design product has no part harness and shell-system-picker no implements link, so drift is not caught. Suspect.

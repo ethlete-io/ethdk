@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B636
+built: 8839a3ec5
 decided: 2026-11-19
 source: doc-agent session 2026-11-19, on the design CLI issues ethdk #3189, #3192, #3193
 ---

@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 19.11.2026, nachmittags
+Stand: 19.11.2026, abends
 
 ## Ziel
 
@@ -31,12 +31,11 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
-3. **Consumer-Auslieferung (B610)** ⏳ Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules, frühestens eine Woche nach B608/B609 (ADR 0374) - Builder
-4. **Timetrack-Beschreibung (B602)** ⏳ Mac-Nacht nur am Überlapp benannt (ed3812106), Basis-Branch-Vertretung ab 2 h je Tag (Timetrack ADR 0051), Schnipsel behalten den Sitzungstitel, Sub-Agent-Daten erfasst (Timetrack ADR 0052). Offen: tank-Neustart und Live-Beweis, Skizze Sub-Agent-Streifen (Tom wählt), #5, #11, #28 - Builder
-5. **Timetrack-Gleichstand (B616)** ⏳ Vergleich ordnet Checkouts zu, Branch-Verlauf und Fenster-Branch reisen mit (lokal). Offen: gebuchter Stand reist mit, Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047) - Builder
-6. **Issue-Vorschlag mit Alternative (B639)** ⏳ Neues-Issue-Vorschlag bringt ein bestehendes Issue mit, im Refactor-Lauf zuerst das bestehende (Timetrack ADR 0054) - Builder
-7. **Design-CLI in Worktrees (B636)** ⏳ Cache-Schlüssel je Checkout, Nx-Warnung bricht JSON, `design ready` ohne Grund (GitHub #3189, #3192, #3193; ADR 0381) - Builder
-8. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Linux-Jobs im Node-24-Container (`node:24.22.1-bookworm` per Hash, `corepack enable`) auf `runner-ethlete`, alte `.git/index.lock` weg, Verdaccio-Proxy für `@ethlete` prüfen, dann Testlauf mit `CI_SELF_HOSTED` und schauen, wie weit er kommt (ADR 0342) - Builder
+3. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
+4. **Timetrack-Beschreibung (B602)** ⏳ Tag-Spuren, Anruf-Entwürfe, Vertretungsname aus Ordner und Timetrack ADR 0055 gebaut. Offen: Live-Beweis, UI-Lag messen, Anruf ohne Vorschlag, Zählzeile überlappt Spur-Labels - Builder
+5. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, 18.11.-Regression behoben (ADR 0038), Warteschlangen-Dedup. Offen: Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047), neue ID bei erneutem Anlegen, Warteschlange über Rechner - Builder
+6. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Linux-Jobs im Node-24-Container (`node:24.22.1-bookworm` per Hash, `corepack enable`) auf `runner-ethlete`, alte `.git/index.lock` weg, Verdaccio-Proxy für `@ethlete` prüfen, dann Testlauf mit `CI_SELF_HOSTED` und schauen, wie weit er kommt (ADR 0342) - Builder
+7. **Overlay im Zoom-Canvas (B637)** ⏳ Popover-Animation im gezoomten Studio-Canvas falsch; Overlay-Ursprung in skaliertem Container als core-Szenariotest - Builder
 
 Geparkt: B105, B108, B109, B148.
 

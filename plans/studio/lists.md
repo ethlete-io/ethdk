@@ -218,12 +218,16 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   `product` mit zwei Varianten (unveränderter SDK-Button, neuer eigener Control-Part); Tom wählt und mergt
   (Entscheidung 11).
   sketch` zeigen ihn (Befund 180).
+- Suspect (19.11.): `spec:stress` meldet Playwright-Specs nach 1 s mit 0/4 (nur für vitest gebaut).
+- Suspect (19.11.): der Mac-post-merge-Hook findet `node` nicht über nicht-Login-SSH; Mac-Vergleich braucht `zsh -lc`.
+- Lücke (19.11.): kein Weg, die Tauri-Dev-Webview zu fotografieren; kein Szenario-Ordner in `libs/timetrack`.
+- Cause (19.11., gebaut 4c1c3fae5): im Weg-Modus erreichte die Rechtefrage eines fable-Cross-Checks Tom und schaltete den Weg-Modus aus.
 
 ## C. CLI: Tempo und Ablauf
 
 - **C1** Trefferquote des Harness-Build-Cache messen; trifft er selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json) (Q16).
 - **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
-- **B636** Design-CLI läuft in jedem Worktree gleich (ADR 0381): Slow-Check-Cache nur nach Produkt benannt (#3193), `design ready` meldet eingebettete Teile ohne Grund als nicht fertig (#3189), `design lint`/`sketch ready` stürzen ohne Nx-Graph-Cache ab (#3192).
+- **C21** Tempo (19.11.): `design check --compare` auf elements/shell-main hing über 25 min (Ursache unbekannt, Schritt nicht erfasst); shell-collapse-Compare 19,2 s (Ziel 10 s); `vitest related` lief in den Timeout; Timetrack-UI träge („teils echt extrem“, ungemessen, B602).
 
 ## D. SDK und Libs
 
@@ -238,6 +242,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Builder baut Empfehlung: menu item-active Kurzbefehl 4.10:1 (volle Textfarbe), chart bar-/pie-empty Umriss (contrast.exceptions). Empfehlung gebaut: menu built bdb5acaf6; chart dropped, check shows CONTRAST-PAIR 0.
   16.11.: pages/inbox und pages/sketches bekommen ihre ready-Marke erst, wenn die offenen Punkte der eingebetteten Teile zu sind (button, select, hold-trigger, comment-draft, comment-row, anchored-dialog; textarea/badge/tooltip nur Motions, B297); damit auch sketch-status-badge, canvas-frames, studio-menu. B520 schließt ohne sie.
 - **D19** Ein JSON-Writer für beide Libs statt zwei Kopien (`libs/agent-rules/src/lib/prettier.ts`, `libs/cli/src/lib/json-file.ts`). Subpath-Exports von agent-rules müssen im Workspace auf gebautes JS auflösen (`@ethlete/agent-rules/prettier` auf TS-Quelle ließ die gebaute CLI abstürzen, zurückgenommen). Danach `part-ready.ts` auf den Writer umstellen (nach A10).
+- **B637** Overlay-Animation im gezoomten Canvas (Studio-Popover „offen“): Ursprung ohne Zoom berechnet (Suspect).
 - **D20** core Head-Store (fifa 7.26, 15.11.): Titel-Teil ohne öffentliche Priorität; Schreiben aus einem Effect, der den Store liest, läuft endlos. [fifagg-sdk-findings-2026-11-15-seo.md](../sdk/fifagg-sdk-findings-2026-11-15-seo.md)
 
 ## E. Fragen und Entwürfe für Tom
