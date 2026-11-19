@@ -456,9 +456,9 @@
     "pid": 2851297
   },
   "components/switch": {
-    "hash": "8aed70e2054a5b0c",
+    "hash": "c34268cf88fe215f",
     "files": {
-      ".ethlete/design/sdk/components/switch/switch.ts": "81dfcd97eed60151",
+      ".ethlete/design/sdk/components/switch/switch.ts": "d70fc1043010bbd1",
       "libs/components/design/switch.ts": "a91a9e4b9c826d0d",
       "libs/components/src/lib/forms/choice-field/choice-field-card-styles.component.css": "4c3b18fe180cb96b",
       "libs/components/src/lib/forms/choice-field/choice-field.component.css": "7c64ce9249466135",
@@ -471,10 +471,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T13:03:04.734Z",
+    "at": "2026-11-19T01:57:33.876Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1264709
+    "pid": 3133782
   },
   "components/textarea": {
     "hash": "48a1911479461cc4",
