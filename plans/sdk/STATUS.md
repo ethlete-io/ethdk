@@ -19,6 +19,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S4 (fifagg, 19.11.): `et-segmented-button-group` direkt in `et-scrollable` (item-size auto) fällt zusammen (Gruppe 6 px, Label 0 px), Umgehung `w-max` in 7 Templates, gebaut (B622, 615a6dab7), kommt mit dem nächsten Prerelease; danach kann fifa `w-max` entfernen.
 - S5 (fifagg B-52/B-53, 19.11.): Look der Segment-Gruppe: inaktive Farbe/Stärke und Spur-Hintergrund, Spaltenbreite bei `stretch` ohne abgeschnittene Namen, 2x2 unter einem Breakpoint; nicht blockiert (Umgehungen) Segment-Gruppe-Tokens gebaut (B623, 2e89fe206), kommt mit dem nächsten Prerelease.
 - S6 (fifagg B-51/B-55, 19.11.): `et-accordion` ohne Hover-Fläche, Chevron-Einzug getrennt vom Label, Trenner unter dem letzten Eintrag app-weit; nicht blockiert Accordion-Tokens und `provideAccordionConfig` gebaut (B624, 8a44517b7), kommt mit dem nächsten Prerelease.
+- S7 (fifagg VD, 19.11.): Filter-Chip soll beim Drücken outline bleiben (Rand + Text in pressedColor), `et-button` macht outline gedrückt zu filled; nicht blockiert -> Button-Druck-Variante (B625), entschieden von mir: Zustand über Inputs (AGENTS.md Styling), Input `pressedVariant`.
 
 ## Offene Plan-Dateien
 
