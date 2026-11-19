@@ -11,8 +11,8 @@ body {
 }
 
 :root {
-  --font-ui: 'Noto Sans', system-ui, sans-serif;
-  --font-code: 'Noto Sans Mono', ui-monospace, monospace;
+  --font-ui: 'Source Sans 3', system-ui, sans-serif;
+  --font-code: 'Source Code Pro', ui-monospace, monospace;
   --text-xs: 1rem;
   --text-xs-line: 1.4rem;
   --text-sm: 1.15rem;

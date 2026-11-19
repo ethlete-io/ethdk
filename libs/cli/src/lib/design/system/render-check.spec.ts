@@ -18,7 +18,7 @@ import {
 const FIXTURE_FONT = 'FixtureSans';
 const FIXTURE_FONT_FILE = join(
   __dirname,
-  '../../../../../../.ethlete/design/studio/assets/fonts/noto-sans-latin-wght-normal.woff2',
+  '../../../../../../.ethlete/design/studio/assets/fonts/source-sans-3-latin-wght-normal.woff2',
 );
 const FIXTURE_FONT_CSS = `@font-face { font-family: '${FIXTURE_FONT}'; font-weight: 100 900; src: url(data:font/woff2;base64,${readFileSync(FIXTURE_FONT_FILE).toString('base64')}) format('woff2'); }
 :root { font-family: '${FIXTURE_FONT}'; }`;
@@ -282,7 +282,7 @@ describe('renderIssuesOf', () => {
       jobs: [{ product: 'shop', sketch: null, parts: null }],
     });
     if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-    expect(rendered.issues.find((issue) => issue.rule === 'CLIPPED')?.detail).toContain('content 134x19 in 20x16');
+    expect(rendered.issues.find((issue) => issue.rule === 'CLIPPED')?.detail).toContain('content 117x19 in 20x16');
   }, 120_000);
 
   it('flags a control whose rendered height is not its --control-* token, at full size and in a thumbnail', async (context) => {

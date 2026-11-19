@@ -1,21 +1,27 @@
 @font-face {
-  font-family: 'Noto Sans';
+  font-family: 'Source Sans 3';
   font-style: normal;
   font-weight: 100 900;
   font-display: block;
-  src: url('@assets/fonts/noto-sans-latin-wght-normal.woff2') format('woff2');
+  src: url('@assets/fonts/source-sans-3-latin-wght-normal.woff2') format('woff2');
+  ascent-override: 95%;
+  descent-override: 35%;
+  line-gap-override: 0%;
 }
 
 @font-face {
-  font-family: 'Noto Sans Mono';
+  font-family: 'Source Code Pro';
   font-style: normal;
   font-weight: 100 900;
   font-display: block;
-  src: url('@assets/fonts/noto-sans-mono-latin-wght-normal.woff2') format('woff2');
+  src: url('@assets/fonts/source-code-pro-latin-wght-normal.woff2') format('woff2');
+  ascent-override: 95%;
+  descent-override: 35%;
+  line-gap-override: 0%;
 }
 
 @font-face {
-  font-family: 'Noto Sans';
+  font-family: 'Source Sans 3';
   font-style: normal;
   font-weight: 100 900;
   font-display: block;
@@ -24,7 +30,7 @@
 }
 
 @font-face {
-  font-family: 'Noto Sans';
+  font-family: 'Source Sans 3';
   font-style: normal;
   font-weight: 100 900;
   font-display: block;
@@ -33,7 +39,7 @@
 }
 
 @font-face {
-  font-family: 'Noto Sans Mono';
+  font-family: 'Source Code Pro';
   font-style: normal;
   font-weight: 100 900;
   font-display: block;
@@ -42,7 +48,7 @@
 }
 
 @font-face {
-  font-family: 'Noto Sans Mono';
+  font-family: 'Source Code Pro';
   font-style: normal;
   font-weight: 100 900;
   font-display: block;

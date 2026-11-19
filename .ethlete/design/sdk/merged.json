@@ -129,7 +129,7 @@
   "components/stat-tile": "f9e9fd60cf62d06e",
   "components/stream": "0cf396ec766d8321",
   "components/switch": {
-    "hash": "4c4070fffa8217df",
+    "hash": "22415d4845293055",
     "variant": "b",
     "decidedBy": "plan: finding 325",
     "at": "2026-11-03T16:27:49.935Z"
@@ -137,7 +137,7 @@
   "components/table": "785b34208ceb65a4",
   "components/tabs": "1c8589a9ab2fdea8",
   "components/textarea": {
-    "hash": "a2477b9464d5b2a4",
+    "hash": "9b5daf1281ca3bfb",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-16T09:07:29.901Z"

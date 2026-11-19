@@ -36,7 +36,7 @@ const restOnly = (row: GridRow) => row.cells.every((cell, index) => index === 0 
 
 const described = (description?: string) =>
   description
-    ? `<span class="st-sgrid-description block w-0 min-w-full font-sans whitespace-normal">${description}</span>`
+    ? `<span class="st-sgrid-description block w-0 min-w-full font-ui whitespace-normal">${description}</span>`
     : '';
 
 const label = (text: string, extra = '', description?: string) =>

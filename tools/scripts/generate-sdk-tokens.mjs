@@ -186,8 +186,8 @@ ${dark}
 };
 
 const BASE = `:root {
-  --et-font-family: 'Noto Sans', system-ui, sans-serif;
-  --et-font-family-mono: 'Noto Sans Mono', ui-monospace, monospace;
+  --et-font-family: 'Source Sans 3', system-ui, sans-serif;
+  --et-font-family-mono: 'Source Code Pro', ui-monospace, monospace;
   --font-ui: var(--et-font-family);
   --font-code: var(--et-font-family-mono);
   font-size: 62.5%;
