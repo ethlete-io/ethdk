@@ -7,7 +7,7 @@ export type DayBuildMessage = { id: number; request: DayBuildRequest };
 
 export type DayBuildReply = { id: number; result: StreamDay | DayRows } | { id: number; error: string };
 
-/** Runs one day build. Only the day build worker calls it, so the build never blocks the page. */
+/** Runs one day build. The day build worker calls it; the page only when that worker failed to load. */
 export const runDayBuild = (request: DayBuildRequest): StreamDay | DayRows =>
   request.kind === 'stream' ? streamDay(request.input) : buildRows(request.input);
 
