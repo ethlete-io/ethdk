@@ -81,7 +81,11 @@ export default definePart({
     'server-stopped':
       'The stopped design server; check the Design-Server gestoppt heading, the log block and the restart button in the content area.',
     'server-starting':
-      'The server starting after a restart; check the SDK spinner beside the heading and that the area is marked busy.',
+      'The server starting after a restart at 42 s; check Design-Server startet, the elapsed time as seit 42 s, the SDK spinner beside the heading and that the area is marked busy.',
+    'server-cli-build':
+      'The host rebuilding the CLI at 95 s; check CLI wird gebaut as the heading, the elapsed time as seit 1 min 35 s and the spinner.',
+    'server-app-build':
+      'The host building the interface at 95 s; check Oberfläche wird gebaut as the heading, the elapsed time as seit 1 min 35 s and the spinner.',
     'server-unanswered':
       'A server that does not answer at localhost:4402; check the heading, the address and the restart button.',
     'server-crashed':

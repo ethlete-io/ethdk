@@ -37,6 +37,8 @@ type Props = {
   studio?: string;
   force?: RailForce;
   server?: 'stopped' | 'starting' | 'unanswered' | 'crashed';
+  phase?: StartPhase;
+  phaseMs?: number;
   log?: string[];
   crash?: Crash;
   serverUrl?: string;
@@ -44,6 +46,22 @@ type Props = {
   update?: boolean;
   sideWidth?: number;
   resizeForce?: RailInteraction;
+};
+
+export type StartPhase = 'starting' | 'cli-build' | 'app-build';
+
+const PHASE_HEADINGS: Record<StartPhase, string> = {
+  starting: 'Design-Server startet',
+  'cli-build': 'CLI wird gebaut',
+  'app-build': 'Oberfläche wird gebaut',
+};
+
+const elapsedLabel = (ms: number) => {
+  const seconds = Math.floor(ms / 1000);
+
+  return seconds < 60
+    ? `seit ${seconds} s`
+    : `seit ${Math.floor(seconds / 60)} min ${String(seconds % 60).padStart(2, '0')} s`;
 };
 
 const SECTIONS: Exclude<Section, 'Sketches'>[] = ['System', 'Flows', 'Inbox'];
@@ -168,6 +186,8 @@ const serverScreen = (
   serverUrl: string,
   crash: Crash,
   crashScreen: CrashScreen,
+  phase: StartPhase,
+  phaseMs: number,
 ) =>
   html`<div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
     ${
@@ -181,9 +201,10 @@ const serverScreen = (
               ${
                 server === 'starting'
                   ? html`<div class="flex items-center gap-space-2 text-et-surface">
-                      ${spinner()}
-                      <h3 class="m-0 text-ui-lg font-ui-strong">Design-Server startet</h3>
-                    </div>`
+                        ${spinner()}
+                        <h3 class="m-0 text-ui-lg font-ui-strong">${PHASE_HEADINGS[phase]}</h3>
+                      </div>
+                      <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">${elapsedLabel(phaseMs)}</p>`
                   : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server gestoppt</h3>`
               }
               ${
@@ -255,7 +276,9 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
   widths: [1440],
   states: {
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
-    'server-starting': { ...BASE, server: 'starting' },
+    'server-starting': { ...BASE, server: 'starting', phase: 'starting', phaseMs: 42_000 },
+    'server-cli-build': { ...BASE, server: 'starting', phase: 'cli-build', phaseMs: 95_000 },
+    'server-app-build': { ...BASE, server: 'starting', phase: 'app-build', phaseMs: 95_000 },
     'server-unanswered': { ...BASE, server: 'unanswered', serverUrl: 'http://localhost:4402' },
     'server-crashed': { ...BASE, server: 'crashed', crash: SERVER_CRASH },
     open: BASE,
@@ -293,6 +316,8 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     studio = '',
     force,
     server,
+    phase = 'starting',
+    phaseMs = 0,
     log = [],
     serverUrl = '',
     crash = SERVER_CRASH,
@@ -322,7 +347,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
             class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"
             ${server ? '' : slot('canvas')}
           >
-            ${server ? serverScreen(server, log, serverUrl, crash, crashScreen) : content}
+            ${server ? serverScreen(server, log, serverUrl, crash, crashScreen, phase, phaseMs) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
           ${panel === 'hidden' ? '' : resizeHandle({ width: sideWidth ?? SIDE_WIDTH.rest, interaction: resizeForce })}

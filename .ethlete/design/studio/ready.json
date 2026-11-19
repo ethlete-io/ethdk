@@ -1012,7 +1012,7 @@
     "pid": 678978
   },
   "elements/shell-main": {
-    "hash": "d8f3e2753852d80e",
+    "hash": "404e727d07bc93bf",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "63756c3ecafc67df",
@@ -1045,7 +1045,7 @@
       ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.css": "3f6d46121dfa54f6",
       ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "949e3d9317e82ff6",
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.css": "e575c402800900cd",
-      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "8947eb1def205b09",
+      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "dff3e56673be36e6",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
       ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
@@ -1103,10 +1103,7 @@
     },
     "actions": [
       "closed",
-      "emit:close",
       "emit:collapse",
-      "emit:maximize",
-      "emit:minimize",
       "emit:productChange",
       "emit:restartServer",
       "emit:sectionChange",
@@ -1118,10 +1115,10 @@
     "builderReasons": [
       "injects through injectCodeWatch() (apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts)"
     ],
-    "at": "2026-11-18T12:33:25.467Z",
+    "at": "2026-11-18T13:20:42.864Z",
     "by": "et design serve",
     "cmd": "serve",
-    "pid": 678978
+    "pid": 1123156
   },
   "elements/studio-menu": {
     "hash": "3ccac60c4cb4f777",
