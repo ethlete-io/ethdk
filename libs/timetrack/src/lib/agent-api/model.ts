@@ -513,6 +513,8 @@ export type AgentApiRequest =
       issueTypeName?: string;
       parentKey?: string;
       subject?: string;
+      /** The existing issue auto mode offers instead of filing, `leads` where it already names the band. */
+      existing?: { issueKey: string; summary?: string; leads?: true };
     }
   | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
   | { op: 'day.events'; day: string }

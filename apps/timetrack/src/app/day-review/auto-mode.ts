@@ -7,6 +7,7 @@ import {
   AutoModeAnswer,
   AutoModeDispute,
   AutoModeHideRequest,
+  AutoModeExisting,
   AutoModeOutcome,
   CollectedEvent,
   AutoModeSubject,
@@ -34,6 +35,9 @@ import {
   autoModeCreateRequest,
   autoModeContextLabel,
   autoModeCreatedKeys,
+  autoModeDeclinedAnswer,
+  autoModeDeclinedCreates,
+  autoModeExistingOf,
   autoModeHideAsks,
   autoModeHideRequest,
   autoModeHideTarget,
@@ -95,6 +99,7 @@ import {
   autoModeWorkFacts,
   WorkFacts,
   withAutoModeCreated,
+  withAutoModeDeclined,
   withSameDayCandidates,
   withAutoModeDescription,
   writeTicketWithAgent$,
@@ -194,6 +199,7 @@ type Prepared = {
   candidates: readonly TicketCandidate[];
   projectKey?: string;
   parentKeys: ReadonlySet<string>;
+  existing?: AutoModeExisting;
 };
 
 const parentKeysOf = (issues: ProjectIssues | null): ReadonlySet<string> => {
@@ -238,6 +244,7 @@ const outcomeOf = (options: {
     description: wording.description,
     ...(projectKey ? { projectKey } : {}),
     ...(wording.parentKey ? { parentKey: wording.parentKey } : {}),
+    ...(prepared.existing ? { existing: prepared.existing } : {}),
   };
 };
 
@@ -909,10 +916,32 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       take(1),
       switchMap((evidence) =>
         heldAnswers$(ask.day).pipe(
-          map((answers) =>
-            autoModeSameDayChoices({ day: ask.day, subject: ask.subject, answers, approvals: approvals.items() }),
+          switchMap((answers) =>
+            prepare$(ask.subject, {
+              evidence,
+              sameDay: autoModeSameDayChoices({
+                day: ask.day,
+                subject: ask.subject,
+                answers,
+                approvals: approvals.items(),
+              }),
+            }).pipe(
+              map((prepared): Prepared | null => {
+                if (!prepared || !evidence) return prepared;
+
+                const existing = autoModeExistingOf({
+                  subject: ask.subject,
+                  candidates: prepared.candidates,
+                  parentKeys: prepared.parentKeys,
+                  unattributed: evidence.rows.unattributed,
+                  rows: evidence.reviewed,
+                  held: answers,
+                });
+
+                return existing ? { ...prepared, existing } : prepared;
+              }),
+            ),
           ),
-          switchMap((sameDay) => prepare$(ask.subject, { evidence, sameDay })),
         ),
       ),
       switchMap((prepared) => {
@@ -1634,6 +1663,40 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             catchError(() => EMPTY),
           ),
       ),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  const declined = computed(() => {
+    const answers = dayReview.autoAnswers();
+
+    minuteTick();
+
+    if (!answers) return [];
+
+    const day = dayReview.dayKey();
+
+    return autoModeDeclinedCreates({ answers, approvals: approvals.items() }).map((entry) => ({ ...entry, day }));
+  });
+
+  toObservable(declined)
+    .pipe(
+      concatMap((entries) => from(entries)),
+      concatMap((entry) => {
+        const answer = autoModeDeclinedAnswer(entry.answer);
+        const { subject } = answer;
+        const open =
+          subject.kind !== 'stand-in' ||
+          settings.settings().standIns.find((standIn) => standIn.id === subject.standInId)?.state === 'open';
+
+        return dayReview
+          .changeDay$(entry.day, (edits) => withAutoModeDeclined(edits, entry))
+          .pipe(
+            switchMap(() => (enabled() && open ? queuedApply$(entry.day, answer) : of(false))),
+            switchMap(() => (enabled() && open ? applyAnswer$(entry.day, answer) : of(undefined))),
+            catchError(() => EMPTY),
+          );
+      }),
       takeUntilDestroyed(),
     )
     .subscribe();

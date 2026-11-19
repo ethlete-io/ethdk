@@ -1,13 +1,10 @@
 import { computed, signal } from '@angular/core';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
-  AUTO_MODE_CLIENT,
   AgentApproval,
   approvalRowIdsOf,
   autoModeTargetOf,
-  disputedTargetLabel,
   ReviewedRow,
-  formatDurationMs,
   isStandInRow,
   localDayKey,
   syncsInState,
@@ -16,32 +13,9 @@ import { injectApprovalQueue } from '../agent/approval-queue';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
 
-export { askerOf, approvalIssueKeysOf, approvalLinesOf } from './approval-lines';
+export { askerOf, approvalChipOf, approvalExistingOf, approvalIssueKeysOf, approvalLinesOf } from './approval-lines';
 export type { ApprovalLine } from './approval-lines';
-import { askerOf } from './approval-lines';
-
-/** The few words a band's inline chip says about the item it previews. */
-export const approvalChipOf = (item: AgentApproval) => {
-  const who = item.client === AUTO_MODE_CLIENT ? 'Auto' : askerOf(item);
-  const { request } = item;
-
-  switch (request.op) {
-    case 'jira.create':
-      return `${who} · File ${request.projectKey ?? 'a ticket'}`;
-    case 'worklog.add':
-      return `${who} · +${formatDurationMs(request.durationMs)} on ${request.issueKey}`;
-    case 'autoMode.apply':
-      return `${who} · Name ${request.issueKey}${request.done ? ' (done)' : ''}${request.parent ? ' (parent)' : ''}`;
-    case 'standIn.resolve':
-      return `${who} · Resolve to ${request.issueKey}`;
-    case 'autoMode.resolve':
-      return `${who} · ${request.choice === 'keep' ? `Keep ${request.booked}` : `Use ${disputedTargetLabel(request.other)}`}`;
-    case 'autoMode.hide':
-      return `${who} · Hide, off topic`;
-    default:
-      return `${who} · ${request.op}`;
-  }
-};
+import { approvalExistingOf } from './approval-lines';
 
 /** Whether a row still waits for a yes or a no, as the day reminder counts it. */
 const isUndecidedRow = (row: ReviewedRow) =>
@@ -156,6 +130,22 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     revealUndecided: () => revealing.set({ undecided: true, day: store.dayKey() }),
     revealed: () => revealing.set(null),
     forRow: (rowId: string) => placed().byRow.get(rowId) ?? [],
+    /** Books the bands a create previews on with the existing issue it offers, and rejects the create. */
+    bookExisting: (item: AgentApproval) => {
+      const existing = approvalExistingOf(item);
+
+      if (!existing) return;
+
+      for (const row of store.rows()) {
+        const waiting = placed().byRow.get(row.id) ?? [];
+
+        if (!isStandInRow(row) && waiting.some((entry) => entry.id === item.id)) {
+          store.setIssue(row, existing.issueKey);
+        }
+      }
+
+      queue.reject(item.id);
+    },
     previews: computed(() => placed().previews),
     unplaced: computed(() => placed().unplaced),
   };

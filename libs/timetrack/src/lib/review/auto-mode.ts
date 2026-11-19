@@ -28,7 +28,7 @@ import { AUTO_MODE_SETTLE_MS, autoDescriptionRowId, storedDescriptionSource } fr
 import { autoDisputeApplied, autoDisputeDoneChoice, autoDisputeOverruled, autoModeResolveTarget } from './auto-dispute';
 import { DisputeResolvingRequest } from '../ticket/dispute';
 import { disputedTargetLabel } from '../agent-api/approval-queue';
-import { AutoModeAnswer, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
+import { AutoModeAnswer, AutoModeExisting, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
 
 export const autoModeSubjectKey = (subject: AutoModeSubject) => {
   switch (subject.kind) {
@@ -836,8 +836,9 @@ export const autoModeIssueKeyOf = (answer: AutoModeAnswer) => {
   const { outcome } = answer;
 
   if (outcome.kind === 'match') return outcome.issueKey;
+  if (outcome.kind !== 'draft') return undefined;
 
-  return outcome.kind === 'draft' ? outcome.createdKey : undefined;
+  return outcome.createdKey ?? (outcome.existing?.leads ? outcome.existing.issueKey : undefined);
 };
 
 /** Stores an answer, replacing the one the same subject held. */
@@ -898,7 +899,62 @@ export const autoModeCreateRequest = (
     description: outcome.description,
     ...(outcome.projectKey ? { projectKey: outcome.projectKey } : {}),
     ...(outcome.parentKey ? { parentKey: outcome.parentKey } : {}),
+    ...(outcome.existing ? { existing: outcome.existing } : {}),
   };
+};
+
+const branchOf = (context: { repoPath?: string; branch?: string } | undefined) =>
+  context?.repoPath && context.branch ? `${context.repoPath}@${context.branch}` : undefined;
+
+/**
+ * The existing issue a draft for `subject` carries beside its new one (ADR 0054). It leads where the
+ * subject's held answer named one, or where a band of the same checkout branch already books one that
+ * day; otherwise it is the best-ranked candidate the ask offered that is no parent.
+ */
+export const autoModeExistingOf = (options: {
+  subject: AutoModeSubject;
+  candidates: readonly TicketCandidate[];
+  parentKeys?: ReadonlySet<string>;
+  unattributed: readonly WorkGroup[];
+  rows: readonly Pick<ReviewedRow, 'id' | 'issueKey'>[];
+  held?: readonly AutoModeAnswer[];
+}): AutoModeExisting | undefined => {
+  const { subject, candidates } = options;
+  const summaryOf = (issueKey: string) =>
+    candidates.find((issue) => issue.key.toUpperCase() === issueKey.toUpperCase())?.summary;
+  const withSummary = (issueKey: string, leads?: true): AutoModeExisting => {
+    const summary = summaryOf(issueKey);
+
+    return { issueKey, ...(summary ? { summary } : {}), ...(leads ? { leads } : {}) };
+  };
+  const ownKey = autoModeSubjectKey(subject);
+  const held = options.held?.find((answer) => autoModeSubjectKey(answer.subject) === ownKey);
+  const heldKey =
+    held && (autoModeIssueKeyOf(held) ?? (held.outcome.kind === 'draft' ? held.outcome.supersededKey : undefined));
+
+  if (heldKey) return withSummary(heldKey, true);
+
+  if (subject.kind === 'context') {
+    const contexts = options.unattributed.flatMap((group) => {
+      const context = dominantContext(group.blocks);
+
+      return context ? [{ rowId: unnamedRowId(group), context }] : [];
+    });
+    const branch = branchOf(contexts.find(({ context }) => contextKey(context) === subject.contextId)?.context);
+    const booked = branch
+      ? contexts.flatMap(({ rowId, context }) => {
+          const issueKey = branchOf(context) === branch ? options.rows.find((row) => row.id === rowId)?.issueKey : '';
+
+          return issueKey ? [issueKey] : [];
+        })
+      : [];
+
+    if (booked[0]) return withSummary(booked[0], true);
+  }
+
+  const best = candidates.find((issue) => !options.parentKeys?.has(issue.key));
+
+  return best ? withSummary(best.key) : undefined;
 };
 
 /**
@@ -923,6 +979,7 @@ export const autoModeQueuedAnswer = (
       description: request.description,
       ...(request.projectKey ? { projectKey: request.projectKey } : {}),
       ...(request.parentKey ? { parentKey: request.parentKey } : {}),
+      ...(outcome.existing ? { existing: outcome.existing } : {}),
       approvalId: approval.id,
     },
   };
@@ -1085,7 +1142,13 @@ export const withAutoModeRowNames = (options: {
   for (const answer of options.edits.auto ?? []) {
     const { outcome } = answer;
 
-    if (answer.subject.kind === 'context' && outcome.kind === 'draft' && !outcome.createdKey && outcome.supersededKey) {
+    if (
+      answer.subject.kind === 'context' &&
+      outcome.kind === 'draft' &&
+      !outcome.createdKey &&
+      outcome.supersededKey &&
+      !outcome.existing?.leads
+    ) {
       superseded.set(answer.subject.contextId, outcome.supersededKey);
     }
   }
@@ -1139,6 +1202,46 @@ export const autoModeCreatedKeys = (options: {
 
     return issueKey ? [{ answer, approvalId: outcome.approvalId, issueKey }] : [];
   });
+
+/**
+ * The creates auto mode queued that were rejected or expired while the draft carries an existing issue,
+ * which the band then keeps as its proposal (ADR 0054).
+ */
+export const autoModeDeclinedCreates = (options: {
+  answers: readonly AutoModeAnswer[];
+  approvals: readonly { id: string; state: string }[];
+}) =>
+  options.answers.flatMap((answer) => {
+    const { outcome } = answer;
+
+    if (outcome.kind !== 'draft' || !outcome.approvalId || outcome.createdKey || !outcome.existing) return [];
+
+    const state = options.approvals.find((item) => item.id === outcome.approvalId)?.state;
+
+    return state === 'rejected' || state === 'expired' ? [{ answer, approvalId: outcome.approvalId }] : [];
+  });
+
+/** A draft as the match on the existing issue it carries. Any other answer stays as it is. */
+export const autoModeDeclinedAnswer = (answer: AutoModeAnswer): AutoModeAnswer => {
+  const { outcome } = answer;
+
+  if (outcome.kind !== 'draft' || !outcome.existing) return answer;
+
+  const { issueKey, summary } = outcome.existing;
+
+  return { ...answer, outcome: { kind: 'match', issueKey, ...(summary ? { summary } : {}) } };
+};
+
+/** Turns the draft whose create was declined into a match on the existing issue it carried. */
+export const withAutoModeDeclined = (edits: DayReviewEdits, options: { approvalId: string }): DayReviewEdits => {
+  const answers = edits.auto ?? [];
+  const declined = (answer: AutoModeAnswer) =>
+    answer.outcome.kind === 'draft' && answer.outcome.approvalId === options.approvalId && !!answer.outcome.existing;
+
+  if (!answers.some(declined)) return edits;
+
+  return { ...edits, auto: answers.map((answer) => (declined(answer) ? autoModeDeclinedAnswer(answer) : answer)) };
+};
 
 const createdIssueKeyOf = (result: unknown) => {
   const issue = typeof result === 'object' && result !== null ? (result as { issue?: unknown }).issue : undefined;
@@ -1198,7 +1301,12 @@ export const autoModeApplies = (options: {
 }) => {
   const { outcome, subject } = options.answer;
 
-  if (outcome.kind === 'draft') return !!outcome.createdKey;
+  if (outcome.kind === 'draft') {
+    return (
+      !!outcome.createdKey ||
+      (!!outcome.existing?.leads && actionClassOf('autoMode.apply', options.classes) === 'local')
+    );
+  }
   if (outcome.kind !== 'match' || outcome.done || outcome.gone) return false;
 
   const approval = applyApprovalOf({

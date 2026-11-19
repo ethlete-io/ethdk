@@ -154,6 +154,12 @@ export type AutoModeSubject =
  * What the model answered. A `draft` is the ticket auto mode queued for the user's approval;
  * `approvalId` names the queue item and `createdKey` the issue its approval filed.
  */
+/**
+ * The existing issue a draft offers beside its new one (ADR 0054). `leads` where the same branch already
+ * books it that day: the band is named with it, and the new issue is the alternative.
+ */
+export type AutoModeExisting = { issueKey: string; summary?: string; leads?: true };
+
 export type AutoModeOutcome =
   | {
       kind: 'match';
@@ -179,6 +185,7 @@ export type AutoModeOutcome =
       createdKey?: string;
       /** The issue the answer this draft replaced named. Rows auto mode named with it lose it until the create is approved. */
       supersededKey?: string;
+      existing?: AutoModeExisting;
     }
   | { kind: 'failed' };
 
