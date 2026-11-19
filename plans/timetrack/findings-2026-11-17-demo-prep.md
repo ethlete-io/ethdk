@@ -18,7 +18,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 3. **A row's description can come from another repo's commits.** Five named rows carry commit text
    that does not fit their issue (02.11. 15:00 FIP-3149, 03.11. 12:15 and 16:30 FIFAGG-12759, 05.11.
    16:15 FIFAGG-12759, 16.11. 01:30 FIFAGG-12652): Studio commits under a FIFAGG or FIP issue.
-4. **One description is repeated on every row of a lane.** Built 39ee1d898, not yet seen in the running app. 13.11. has six ET-772 rows with the same
+4. **One description is repeated on every row of a lane.** Built 39ee1d898, reverted with the band cut in ce72b9e68. 13.11. has six ET-772 rows with the same
    three commits and "+99 more". A row should describe its own span.
 5. **Descriptions are English commit lists.** Built 7a68de505 (worklog language default German, one ask per past-day
    row), not yet seen with real model text. Tom books in German and wants one sentence for each
@@ -55,8 +55,8 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 
 ## Sync and upkeep
 
-15. **A day tidied on one machine stays untidy on the other.** Row edits travel since a1d86de13 (B616); rules and
-    stand-ins still open. Row edits, rules and stand-ins do not
+15. **A day tidied on one machine stays untidy on the other.** Row edits, rules and stand-ins travel since a1d86de13,
+    936f3c90f, 40729e5be (B616), not yet seen on two machines. Row edits, rules and stand-ins do not
     sync (ADR 0039), so the Mac names nothing of what Linux named. A presentation machine that is
     not the work machine shows the raw day. The events do arrive: the Mac's 17.11. holds Linux
     checkouts, and the fifagg ones are matched to its own. The sent rows are drawn only on a day
@@ -111,8 +111,8 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     Cause: B596 never raised `CLAUDE_CODE_PARSER_VERSION`, so stored logs were not re-read. Cause: fifagg's old
     `agent-sessions.mjs` types `/clear` and a handoff resume with no marker, so each resume counts as human (12 in the
     night). Proven not presence: cross-session messages, task notifications, subagent transcripts. Built
-    since: the band is cut at the gaps (adee7dfb0, ADR 0018), every `~/.claude*/projects` is read (3045f5d49), a role
-    skill typed after `/clear` counts as machine (5acd17def). Open: the live compare against snapshot
+    since: every `~/.claude*/projects` is read (3045f5d49), a role
+    skill typed after `/clear` counts as machine (5acd17def). Open: the band cut at the gaps (ADR 0018; adee7dfb0 reverted in ce72b9e68, it booked a paired-machine run as away, e2e `unattended-band.spec`); the live compare against snapshot
     2026-11-19T00-23-42 after the app restart. Parallel subagents stay in their session's row
     (ADR 0043: the session is the finest grain).
 28. **An incremental read keeps extra samples at each batch edge.** Suspect (B602 probes, 19.11.): the `emitted`
