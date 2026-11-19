@@ -52,26 +52,26 @@ const ownCheckoutsOf = (group: WorkGroup, config: GitFlowConfig) => {
   return lane ? new Set([lane]) : undefined;
 };
 
-const foreignCommitsOf = (group: WorkGroup, config: GitFlowConfig) => {
+const evidenceKey = (entry: { kind: EvidenceKind; detail: string }) => `${entry.kind}\u0000${entry.detail}`;
+
+const foreignEvidenceOf = (group: WorkGroup, config: GitFlowConfig) => {
   const own = ownCheckoutsOf(group, config);
 
   if (!own) return new Set<string>();
 
-  const commitsIn = (blocks: readonly ActivityBlock[]) =>
-    blocks.flatMap((block) => block.evidence.filter((entry) => entry.kind === 'commit').map((entry) => entry.detail));
+  const keysIn = (blocks: readonly ActivityBlock[]) => blocks.flatMap((block) => block.evidence.map(evidenceKey));
   const isOwn = (block: ActivityBlock) => !block.context.repoPath || own.has(streamKey(block.context));
-  const ownCommits = new Set(commitsIn(group.blocks.filter(isOwn)));
+  const ownKeys = new Set(keysIn(group.blocks.filter(isOwn)));
 
-  return new Set(commitsIn(group.blocks.filter((block) => !isOwn(block))).filter((detail) => !ownCommits.has(detail)));
+  return new Set(keysIn(group.blocks.filter((block) => !isOwn(block))).filter((key) => !ownKeys.has(key)));
 };
 
 const summariesOf = (options: { group: WorkGroup; kind: EvidenceKind; foreign: ReadonlySet<string> }) => {
-  const { group, kind } = options;
+  const { group, kind, foreign } = options;
   const found: string[] = [];
-  const foreign = kind === 'commit' ? options.foreign : new Set<string>();
 
   for (const entry of group.evidence) {
-    const summary = entry.kind === kind && !foreign.has(entry.detail) ? entry.summary?.trim() : undefined;
+    const summary = entry.kind === kind && !foreign.has(evidenceKey(entry)) ? entry.summary?.trim() : undefined;
 
     if (summary && quotable(summary, kind) && !found.includes(summary)) found.push(summary);
   }
@@ -182,7 +182,7 @@ export const describeWork = (options: {
   const { maxSummaries, maxLength } = { ...DEFAULT_DESCRIBE_OPTIONS, ...options.options };
   const { group } = options;
   const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
-  const foreign = foreignCommitsOf(group, config);
+  const foreign = foreignEvidenceOf(group, config);
 
   for (const kind of SUMMARY_PRIORITY) {
     const summaries = summariesOf({ group, kind, foreign });

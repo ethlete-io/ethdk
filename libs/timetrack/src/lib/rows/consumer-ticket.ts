@@ -29,6 +29,9 @@ const checkoutOf = (options: { repoPath: string | undefined; roots: readonly str
 const isCheckoutWide = (entry: AttributedBlock) =>
   !!entry.issueKey && entry.ruleScope === 'repo' && !entry.standInId && !entry.privateLink;
 
+/** An agent session's stretch in the library is that session's own work, never the consumer's. */
+const ranBySession = (entry: AttributedBlock) => !!entry.block.context.session;
+
 const isOpen = (options: { entry: AttributedBlock; rules: readonly AttributionRule[] }) => {
   const { entry, rules } = options;
 
@@ -48,7 +51,8 @@ const isOpen = (options: { entry: AttributedBlock; rules: readonly AttributionRu
  * next, or none at all, leaves the library's block as it was. A branch key, a stand-in, a private link and
  * every branch rule the user wrote for the context answer before this, and what this names is `weak`: it
  * is a proposal for the reviewer, never a booking. A rule covering the whole checkout gives way, and its
- * issue stays on the row as the disputed alternative.
+ * issue stays on the row as the disputed alternative. A stretch an agent session ran in the library keeps
+ * its own name: a consumer's ticket never names another checkout's session.
  */
 export const consumerTickets = (options: {
   blocks: readonly AttributedBlock[];
@@ -77,7 +81,7 @@ export const consumerTickets = (options: {
     if (!checkout) continue;
 
     const next =
-      isOpen({ entry, rules }) || isCheckoutWide(entry)
+      !ranBySession(entry) && (isOpen({ entry, rules }) || isCheckoutWide(entry))
         ? (consumers.get(checkout) ?? [])
             .flatMap((consumer) => nextIn.get(consumer) ?? [])
             .reduce<{ checkout: string; entry: AttributedBlock } | undefined>(
