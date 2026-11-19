@@ -1368,6 +1368,58 @@ describe('timetrack ask', () => {
     expect(lines[1]).toBe('  r1  02:00-02:30  30m  FIP-1  accepted  repo:/a  desk 0  prompts 3');
   });
 
+  it('prints usage for snapshot --help and asks the app for nothing', async () => {
+    const { handler, asked } = answeredByOp({});
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['snapshot', '--help'])).resolves.toBe(0);
+    expect(asked).toEqual([]);
+    expect(lines.join('\n')).toContain('timetrack snapshot --compare <file>');
+  });
+
+  it('marks a row nobody was at the machine for', async () => {
+    const fromMs = new Date(2026, 9, 2, 0, 15).getTime();
+    const { handler } = recordingBodies({
+      ok: true,
+      value: {
+        day: '2026-10-02',
+        rows: [
+          {
+            id: 'r1',
+            description: 'night work',
+            fromMs,
+            toMs: fromMs + 75 * 60_000,
+            durationMs: 75 * 60_000,
+            observedMs: 75 * 60_000,
+            laneKey: 'repo:/a',
+            state: 'suggested',
+            confidence: 'likely',
+            edited: false,
+            hidden: false,
+            unattended: true,
+          },
+        ],
+        hidden: [],
+        proposedMs: 0,
+        loggedMs: 0,
+        targetMs: 0,
+        unattributedMs: 0,
+        warnings: [],
+        behind: [],
+      },
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['rows', '2026-10-02'])).resolves.toBe(0);
+    expect(lines[1]).toBe('  r1  00:15-01:30  75m  unnamed  suggested  unattended  repo:/a');
+  });
+
   it('fails with the app refusal for a subject the day does not hold', async () => {
     const { handler } = recordingBodies({
       ok: false,

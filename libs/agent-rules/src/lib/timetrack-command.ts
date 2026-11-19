@@ -310,6 +310,7 @@ const rowLine = (row: TimetrackRow) =>
     row.state,
     ...(row.edited ? ['edited'] : []),
     ...(row.hidden ? ['hidden'] : []),
+    ...(row.unattended ? ['unattended'] : []),
     row.laneKey ?? 'no lane',
     ...(row.presence ? [`desk ${row.presence.deskEvents}`, `prompts ${row.presence.humanPrompts}`] : []),
     ...(row.autoModeSubject?.kind === 'context' ? [`context ${row.autoModeSubject.contextId}`] : []),
@@ -1172,6 +1173,12 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
   }
 
   if (subcommand === 'snapshot') {
+    if (argv.includes('--help')) {
+      say(USAGE);
+
+      return 0;
+    }
+
     const compare = flagValue(argv, '--compare');
 
     if (compare) {

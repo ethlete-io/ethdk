@@ -14,6 +14,7 @@ import { consumerTickets } from './consumer-ticket';
 import {
   BehindStretch,
   CutOptions,
+  clearOfLaneRows,
   cutBackground,
   cutSessionAcrossCheckouts,
   cutUnwatched,
@@ -36,6 +37,7 @@ import { mergeRequestActivity, reviewedMergeRequests } from './merge-request-act
 import { NoWorkContextOptions, dropNoWorkContext } from './no-work-context';
 import { clipBlocks } from './overlap';
 import { PrivateTime, privateTime } from './project-link';
+import { giveBackUnattended } from './give-back';
 import { UnnamedProposal, propose } from './propose';
 import {
   BookedRemoteWindow,
@@ -305,37 +307,49 @@ export const buildRows = (
   // are the user's own acts, so they answer it themselves.
   const graceMs = options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs;
   const peers = peerAttendance({ received: options.received ?? [], graceMs });
+  const attendance = {
+    at: [
+      ...attendedAt({
+        events: options.events.filter(isLocalEvent),
+        graceMs,
+        elsewhere: peers.flatMap((peer) => peer.at),
+      }),
+      ...(options.remoteWork ?? []),
+      ...(options.seen ?? []),
+    ],
+    claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
+    peers,
+    lanes: attendedLanes({ peers, peerLanes: options.peerLanes ?? {} }),
+    away: [...(options.breaks ?? []), ...(options.gaps ?? [])],
+    maxGapMs: options.merge?.maxMergeGapMs,
+  };
+  const marked = markAttendance({
+    groups: [
+      ...mergeBlocks({
+        blocks: filled.blocks,
+        barriers: options.breaks,
+        laneBarriers: handedOver,
+        options: options.merge,
+      }),
+      ...calls.map((call) => call.group),
+      ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
+    ],
+    ...attendance,
+  });
   const groups = joinUnattended({
-    groups: markAttendance({
-      groups: [
-        ...mergeBlocks({
-          blocks: filled.blocks,
-          barriers: options.breaks,
-          laneBarriers: handedOver,
-          options: options.merge,
-        }),
-        ...calls.map((call) => call.group),
-        ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
-      ],
-      at: [
-        ...attendedAt({
-          events: options.events.filter(isLocalEvent),
-          graceMs,
-          elsewhere: peers.flatMap((peer) => peer.at),
-        }),
-        ...(options.remoteWork ?? []),
-        ...(options.seen ?? []),
-      ],
-      claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
-      peers,
-      lanes: attendedLanes({ peers, peerLanes: options.peerLanes ?? {} }),
-      away: [...(options.breaks ?? []), ...(options.gaps ?? [])],
-      maxGapMs: options.merge?.maxMergeGapMs,
-    }),
+    groups: marked,
     gaps: options.gaps ?? [],
     maxGapMs: options.merge?.maxMergeGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,
   });
-  const { proposals, unattributed, unnamed } = propose({
+  const proposing = {
+    config: options.config,
+    round: options.round,
+    describe: options.describe,
+    sessionBlocks: working.map((entry) => entry.block),
+    breaks: options.breaks,
+    presence: [...(options.calls ?? []).filter((call) => call.isPresence), ...(options.timerRuns ?? [])],
+  };
+  const day = propose({
     groups: disputeOtherBranches({
       groups,
       events: options.events,
@@ -343,13 +357,21 @@ export const buildRows = (
       standIns: options.standIns,
       worktrees: options.worktrees,
     }),
-    config: options.config,
-    round: options.round,
-    describe: options.describe,
-    sessionBlocks: working.map((entry) => entry.block),
-    breaks: options.breaks,
-    presence: [...(options.calls ?? []).filter((call) => call.isPresence), ...(options.timerRuns ?? [])],
+    ...proposing,
   });
+  const givenBack = propose({
+    groups: giveBackUnattended({
+      groups: marked,
+      lost: cut.lost,
+      rows: [...day.proposals, ...day.unnamed],
+      breaks: options.breaks,
+      mark: (given) => markAttendance({ groups: given, ...attendance }),
+      merge: options.merge,
+    }),
+    ...proposing,
+  }).unnamed.filter((row) => row.unattended);
+  const { proposals, unattributed } = day;
+  const unnamed = [...day.unnamed, ...givenBack];
   const secludedTime = privateTime({ blocks: secluded });
   const remote = remoteBookingOnGrid({
     drawn: options.remoteWork ?? [],
@@ -372,7 +394,14 @@ export const buildRows = (
     timers,
     filledMs: filled.filledMs,
     behind: meetLaneRows({
-      behind: joinTouching([...across.behind, ...watched.behind, ...cut.behind]),
+      behind: joinTouching([
+        ...across.behind,
+        ...watched.behind,
+        ...clearOfLaneRows({
+          behind: cut.behind,
+          rows: givenBack,
+        }),
+      ]),
       rows: [...proposals, ...unnamed],
       round: options.round,
     }),

@@ -328,14 +328,16 @@ export const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch
  * The increment a running day is read through is held back from every background band — see
  * `through`. Those minutes are neither kept nor reported: nothing claims them yet.
  *
- * What it loses to a foreground band is reported as `behind` rather than thrown away. The cut is
+ * What it loses to a foreground band is reported as `behind`, and as `lost` the pieces of its blocks it lost, rather than thrown away. The cut is
  * silent otherwise: the lane holds an hour of presence, no row covers it, and nothing on the day says
  * which band took it.
  */
-export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & CutOptions): CutResult => {
+export const cutBackground = (
+  options: { blocks: readonly AttributedBlock[] } & CutOptions,
+): CutResult & { lost: AttributedBlock[] } => {
   const background = new Set((options.backgroundProjects ?? []).map((key) => key.trim().toUpperCase()).filter(Boolean));
 
-  if (!background.size) return { blocks: [...options.blocks], behind: [] };
+  if (!background.size) return { blocks: [...options.blocks], behind: [], lost: [] };
 
   const focusMs = options.focusMsByStream ?? {};
   const isBackground = (entry: AttributedBlock) => {
@@ -359,14 +361,18 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
   const covered = [...foreground.map(windowOf), ...(options.claimed ?? [])];
   const kept: AttributedBlock[] = [];
   const behind: BehindStretch[] = [];
+  const lost: AttributedBlock[] = [];
 
   for (const { entry } of ranked) {
     const issueKey = entry.issueKey;
     const pieces = piecesOf(entry, covered);
+    const holes = holesOf({ block: entry.block, kept: pieces.map((piece) => piece.block) });
+
+    lost.push(...piecesOf(entry, subtractWindows({ windows: [windowOf(entry)], without: holes })));
 
     if (issueKey) {
       behind.push(
-        ...holesOf({ block: entry.block, kept: pieces.map((piece) => piece.block) }).map((hole) => ({
+        ...holes.map((hole) => ({
           ...hole,
           issueKey,
           laneKey: streamKey(entry.block.context),
@@ -381,6 +387,7 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
   return {
     blocks: [...foreground, ...kept].sort((a, b) => a.block.from.getTime() - b.block.from.getTime()),
     behind: snapStretches(joinTouching(behind), options.round),
+    lost,
   };
 };
 

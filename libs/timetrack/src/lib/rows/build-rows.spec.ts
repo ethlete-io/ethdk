@@ -287,6 +287,7 @@ describe('buildRows on a day that is still running', () => {
     events: [],
     rules: [BACKGROUND, FOREGROUND],
     cut: { backgroundProjects: ['ET'] },
+    seen: [{ from: at(12), to: at(18) }],
   });
 
   const day = (foregroundEnd: Date) => buildRows(dayOptions(foregroundEnd));
@@ -397,6 +398,116 @@ describe('buildRows with a timed run', () => {
     });
 
     expect(rows.unnamed.map((row) => row.laneKey)).toEqual([TIMER_LANE_KEY]);
+  });
+});
+
+describe('buildRows with a background checkout nobody was at', () => {
+  const SDK = '/dev/sdk';
+  const APP = '/dev/app';
+  const RULES: AttributionRule[] = [
+    { id: 'rule-sdk', repoPath: SDK, target: { kind: 'issue', issueKey: 'ET-772' }, author: 'user', createdAt: at(8) },
+    {
+      id: 'rule-app',
+      repoPath: APP,
+      target: { kind: 'issue', issueKey: 'FIFAGG-1' },
+      author: 'user',
+      createdAt: at(8),
+    },
+  ];
+  const day = (seen: { from: Date; to: Date }[]) =>
+    buildRows({
+      blocks: [
+        block({ from: at(0, 15), to: at(1, 30), context: { repoPath: SDK, branch: 'next' } }),
+        block({ from: at(0, 15), to: at(1, 30), context: { repoPath: APP, branch: 'next' } }),
+      ],
+      events: [],
+      rules: RULES,
+      cut: { backgroundProjects: ['ET'] },
+      seen,
+    });
+
+  it('draws its unattended band beside an unattended foreground band', () => {
+    const rows = day([]);
+
+    expect(rows.unnamed.filter((row) => row.unattended).map((row) => row.laneKey)).toEqual(
+      expect.arrayContaining([`repo:${SDK}`, `repo:${APP}`]),
+    );
+    expect(rows.behind).toEqual([]);
+  });
+
+  it('still hands the minutes a person was there for to the foreground band', () => {
+    const rows = day([{ from: at(0), to: at(2) }]);
+
+    expect([...rows.proposals, ...rows.unnamed].map((row) => row.laneKey)).toEqual([`repo:${APP}`]);
+    expect(rows.behind.map((stretch) => stretch.issueKey)).toEqual(['ET-772']);
+  });
+
+  const booked = (rows: ReturnType<typeof buildRows>) =>
+    rows.proposals
+      .filter((row) => !row.unattended)
+      .map((row) => ({ laneKey: row.laneKey, from: row.from, to: row.to }))
+      .sort((a, b) => a.from.getTime() - b.from.getTime());
+  const overlapping = (rows: { from: Date; to: Date }[]) =>
+    rows.some((row, index) => index > 0 && row.from < (rows[index - 1]?.to ?? row.from));
+
+  it('keeps a background hole the user prompted inside with the foreground band, booked once', () => {
+    const rows = day([{ from: at(0, 40), to: at(0, 50) }]);
+
+    expect(booked(rows)).toEqual([{ laneKey: `repo:${APP}`, from: at(0, 45), to: at(1) }]);
+    expect(overlapping(booked(rows))).toBe(false);
+  });
+
+  it('keeps a background hole bought back after a break with the foreground band, booked once', () => {
+    const rows = buildRows({
+      blocks: [
+        block({ from: at(0, 15), to: at(1, 30), context: { repoPath: SDK, branch: 'next' } }),
+        block({ from: at(0, 15), to: at(1, 30), context: { repoPath: APP, branch: 'next' } }),
+      ],
+      events: [],
+      rules: RULES,
+      cut: { backgroundProjects: ['ET'] },
+      breaks: [{ from: at(0), to: at(1) }],
+      seen: [{ from: at(1), to: at(1, 30) }],
+    });
+
+    expect(booked(rows).map((row) => row.laneKey)).toEqual([`repo:${APP}`]);
+    expect(rows.behind.map((stretch) => stretch.issueKey)).toEqual(['ET-772']);
+  });
+
+  it('gives back no minute past the end of a break the hole runs into, booked once', () => {
+    const rows = buildRows({
+      blocks: [
+        block({ from: at(0, 15), to: at(1, 30), context: { repoPath: SDK, branch: 'next' } }),
+        block({ from: at(0, 15), to: at(1, 30), context: { repoPath: APP, branch: 'next' } }),
+      ],
+      events: [],
+      rules: RULES,
+      cut: { backgroundProjects: ['ET'] },
+      breaks: [{ from: at(0), to: at(0, 45) }],
+      seen: [],
+    });
+
+    expect(booked(rows).map((row) => row.laneKey)).toEqual([`repo:${APP}`]);
+    expect(rows.unnamed.filter((row) => row.unattended).map((row) => row.laneKey)).toContain(`repo:${SDK}`);
+  });
+
+  it('leaves a short unattended hole inside an attended foreground band with that band', () => {
+    const rows = buildRows({
+      blocks: [
+        block({ from: at(0, 15), to: at(0, 25), context: { repoPath: SDK, branch: 'next' } }),
+        block({ from: at(0), to: at(1), context: { repoPath: APP, branch: 'next' } }),
+      ],
+      events: [],
+      rules: RULES,
+      cut: { backgroundProjects: ['ET'] },
+      seen: [
+        { from: at(0), to: at(0, 14) },
+        { from: at(0, 26), to: at(1) },
+      ],
+    });
+
+    expect(booked(rows)).toEqual([{ laneKey: `repo:${APP}`, from: at(0), to: at(1) }]);
+    expect(rows.behind.map((stretch) => stretch.issueKey)).toEqual(['ET-772']);
   });
 });
 

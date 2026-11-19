@@ -227,6 +227,8 @@ export type TimetrackRow = {
   confidence: string;
   edited: boolean;
   hidden: boolean;
+  /** A band nobody was at the machine for: the timeline reads "Nobody was here". */
+  unattended?: boolean;
   /** Desk events and human prompts inside the row's span: what shows a person was there. */
   presence?: { deskEvents: number; humanPrompts: number };
   /** What `timetrackAskAutoMode` takes to ask about the row again. Absent where the app offers no ask. */
