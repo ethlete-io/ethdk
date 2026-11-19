@@ -16,11 +16,14 @@ const occurrence = (options: { id: string; title: string; from: number; to: numb
   conferenceUrl: 'https://call.example.com/qzx-room-71',
 });
 
-/** An accepted invitation whose own title names the issue, so the card can offer it with one press. */
+/** An accepted invitation whose own title names the issue. */
 const REFINEMENT = occurrence({ id: 'o-refinement', title: 'ABC-2000 Refinement', from: 0, to: 60 });
 
+/** The same invitation never answered, so the day asks about it instead of drawing it. */
+const PENDING_REFINEMENT = { ...REFINEMENT, occurrenceId: 'o-pending-refinement', accepted: false };
+
 /** One the calendar names no issue for. It is a question the add-entry panel answers, not a press. */
-const LUNCH = occurrence({ id: 'o-lunch', title: 'Team lunch', from: 120, to: 180 });
+const LUNCH = { ...occurrence({ id: 'o-lunch', title: 'Team lunch', from: 120, to: 180 }), accepted: false };
 
 const card = (page: Page) => page.locator('[data-unobserved]');
 
@@ -28,9 +31,26 @@ const offerFor = (page: Page, title: string) => page.locator('[data-unobserved-o
 
 const rows = (page: Page) => page.locator('[data-kind="row"]');
 
-test.describe('a meeting nothing heard', () => {
-  test('asks about the occurrence instead of proposing a row for it', async ({ page }) => {
+test.describe('an accepted meeting nothing heard', () => {
+  test('is suggested as a call row named from its title, not asked about', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [REFINEMENT] });
+    await page.goto('/day');
+
+    const row = rows(page).filter({ hasText: 'ABC-2000' });
+
+    await expect(row).toHaveCount(1);
+    await expect(row).toHaveAttribute('data-row-id', `ABC-2000@${E2E_DAY_KEY}T14:00:00.000Z`);
+    await expect(row).toContainText('1h 0m');
+
+    await openDayNotes(page);
+
+    await expect(offerFor(page, 'ABC-2000 Refinement')).toHaveCount(0);
+  });
+});
+
+test.describe('a meeting nothing heard that was not accepted', () => {
+  test('asks about the occurrence instead of proposing a row for it', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: [PENDING_REFINEMENT] });
     await page.goto('/day');
 
     await expect(rows(page)).toHaveCount(0);
@@ -41,7 +61,7 @@ test.describe('a meeting nothing heard', () => {
   });
 
   test('puts the meeting on the day when one press adopts it', async ({ page }) => {
-    await seedWorld(page, { now: E2E_NOW, events: [REFINEMENT] });
+    await seedWorld(page, { now: E2E_NOW, events: [PENDING_REFINEMENT] });
     await page.goto('/day');
     await openDayNotes(page);
 
@@ -52,7 +72,7 @@ test.describe('a meeting nothing heard', () => {
   });
 
   test('stops asking about a meeting the day already holds', async ({ page }) => {
-    await seedWorld(page, { now: E2E_NOW, events: [REFINEMENT, LUNCH] });
+    await seedWorld(page, { now: E2E_NOW, events: [PENDING_REFINEMENT, LUNCH] });
     await page.goto('/day');
     await openDayNotes(page);
 
