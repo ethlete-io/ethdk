@@ -1,7 +1,3 @@
 @import '../../../apps/timetrack/src/styles.css';
 
 @source './';
-
-body {
-  font-family: 'Jost', system-ui, sans-serif;
-}

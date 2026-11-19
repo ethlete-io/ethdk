@@ -4490,6 +4490,7 @@ __metadata:
     "@date-fns/tz": "npm:1.5.0"
     "@eslint/js": "npm:10.0.1"
     "@floating-ui/dom": "npm:1.8.0"
+    "@fontsource-variable/jost": "npm:^5.3.0"
     "@fontsource/noto-sans-math": "npm:5.3.0"
     "@fontsource/noto-sans-symbols-2": "npm:5.3.0"
     "@nx/angular": "npm:24.0.2"
@@ -4616,6 +4617,13 @@ __metadata:
   version: 0.2.12
   resolution: "@floating-ui/utils@npm:0.2.12"
   checksum: 10c0/bb910b90d56991a62011afaf5f8e0c4b7fb6dab69403f4dd17fbd6eb25560b28d533dff9791f270b4f459852e9006a1077b5d73cbedb5e34d9424afc6a828314
+  languageName: node
+  linkType: hard
+
+"@fontsource-variable/jost@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource-variable/jost@npm:5.3.0"
+  checksum: 10c0/7af324be7aa2067e0b601e1c9d145f0b4fb76f53afe3a7d8c5967a675639f906544224a11412b4de14bc7a6f0168aada07472a9095ef468001e0022b24ec1ee5
   languageName: node
   linkType: hard
 
