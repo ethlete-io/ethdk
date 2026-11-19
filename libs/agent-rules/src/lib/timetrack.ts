@@ -66,6 +66,8 @@ export type TimetrackAttributionRule = {
   repoPath?: string;
   branch?: string;
   appId?: string;
+  /** The local day key the rule holds on, or nothing when it holds on every day. */
+  day?: string;
   /** The issue the rule names, or nothing when it donates its time or names a stand-in instead. */
   issueKey?: string;
   /** The stand-in the rule names, as an id into what `timetrackStandIns` answers. */

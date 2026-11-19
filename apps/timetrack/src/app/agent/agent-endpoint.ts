@@ -44,14 +44,13 @@ import {
   fetchJiraFields$,
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
-  issueKeyOf,
   isAgentApiRequest,
   isNamedRow,
+  issueKeyOf,
   tempoSyncWriteRefusal,
   toAgentApiTempoSyncPlan,
   toAgentApiTempoSyncRun,
   laneIssueUses,
-  standInIdOf,
   jiraSubjectFieldCandidates,
   dayBoundaryOf,
   localDayKey,
@@ -104,6 +103,7 @@ import { injectTempoSync } from '../sync/sync';
 import { injectWindowLock } from '../window-lock';
 import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
 import { injectAgentDay } from './agent-day';
+import { toApiAttributionRule } from './agent-rules';
 import { injectApprovalQueue } from './approval-queue';
 
 const NO_JIRA = 'Timetrack has no Jira host, account email and token yet. Set them in its Settings.';
@@ -615,16 +615,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       dayTargetMs: current.dayTargetMs,
       gapFillMs: current.gapFillMs,
       dayStartHour: current.dayStartHour,
-      attributionRules: current.attributionRules.map((rule) => ({
-        id: rule.id,
-        repoPath: rule.repoPath,
-        branch: rule.branch,
-        appId: rule.appId,
-        issueKey: issueKeyOf(rule),
-        standInId: standInIdOf(rule),
-        donates: rule.target.kind === 'donate',
-        createdAtMs: rule.createdAt.getTime(),
-      })),
+      attributionRules: current.attributionRules.map(toApiAttributionRule),
       projectLinks: current.projectLinks.map((link) => ({
         id: link.id,
         path: link.path,

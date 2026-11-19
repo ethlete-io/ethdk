@@ -192,10 +192,12 @@ const describeRule = (rule: TimetrackAttributionRule) => {
     ? `app ${rule.appId}`
     : `${rule.repoPath ?? 'nowhere'}${rule.branch ? ` @ ${rule.branch}` : ''}`;
 
-  if (rule.donates) return `${where} → donate`;
-  if (rule.standInId) return `${where} → stand-in ${rule.standInId}`;
+  const scoped = rule.day ? `${where} on ${rule.day}` : where;
 
-  return `${where} → ${rule.issueKey ?? 'no issue'}`;
+  if (rule.donates) return `${scoped} → donate`;
+  if (rule.standInId) return `${scoped} → stand-in ${rule.standInId}`;
+
+  return `${scoped} → ${rule.issueKey ?? 'no issue'}`;
 };
 
 const DAY_MS = 24 * 60 * 60_000;

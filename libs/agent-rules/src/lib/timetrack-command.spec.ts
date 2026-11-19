@@ -531,6 +531,28 @@ describe('timetrack standins --resolve', () => {
   });
 });
 
+describe('timetrack rules', () => {
+  it('prints the day a rule is scoped to', async () => {
+    const { handler } = answeredByOp({
+      'settings.rules': {
+        dayTargetMs: 0,
+        dayStartHour: 0,
+        attributionRules: [
+          { id: 'rule-1', repoPath: '/repo/a', day: '2025-11-18', standInId: 'stand-in:1', donates: false },
+        ],
+        projectLinks: [],
+      },
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['rules'])).resolves.toBe(0);
+    expect(lines.join('\n')).toContain('/repo/a on 2025-11-18 → stand-in stand-in:1');
+  });
+});
+
 describe('timetrack rules --repoint', () => {
   const rule = (over: Record<string, unknown>) => ({
     id: 'rule-1',
