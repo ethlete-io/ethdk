@@ -156,6 +156,24 @@ describe('ShellMainComponent', () => {
     expect(restarts).toBe(1);
   });
 
+  it('shows a stopped design server with its log and a restart button', async () => {
+    const { fixture, host } = await setup('hidden');
+    let restarts = 0;
+
+    fixture.componentInstance.restartServer.subscribe(() => restarts++);
+    fixture.componentRef.setInput('server', 'stopped');
+    fixture.componentRef.setInput('log', ['This CLI build is stale']);
+    await fixture.whenStable();
+
+    const main = host.querySelector('main');
+
+    expect(main?.querySelector('h3')?.textContent?.trim()).toBe('Design-Server gestoppt');
+
+    main?.querySelector('button')?.click();
+
+    expect(restarts).toBe(1);
+  });
+
   it('shows when, where and why the design server crashed and restarts it', async () => {
     const { fixture, host } = await setup('hidden');
     let restarts = 0;
