@@ -40,7 +40,9 @@ const ROWS: DayRows = {
 
 const sent = (edits: Parameters<typeof peerDayRowsOf>[0]['edits']): PeerSharedEntries => {
   const parsed = parsePeerDayRows(
-    encodePeerDayRows(peerDayRowsOf({ day: DAY, frozen: false, rows: [], ledger: [], standInNames: {}, edits })),
+    encodePeerDayRows(
+      peerDayRowsOf({ day: DAY, frozen: false, rows: [], ownLanes: {}, ledger: [], standInNames: {}, edits }),
+    ),
   );
 
   if (!parsed) throw new Error('unparsable');

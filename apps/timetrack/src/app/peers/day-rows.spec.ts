@@ -29,6 +29,7 @@ const receivedFrom = (description: string, atMs: number, clockOffsetMs: number):
         day: DAY,
         frozen: false,
         rows: [],
+        ownLanes: {},
         ledger: [],
         standInNames: {},
         edits: tankRow(description, atMs),

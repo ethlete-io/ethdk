@@ -52,6 +52,7 @@ import {
   DayLane,
   LaneBlock,
   NO_LANE_KEY,
+  isPeerLaneKey,
   lanesOf,
   laneKeyOfRow,
   peerBandLabel,
@@ -332,14 +333,14 @@ type RowDrag = {
                     <div
                       [style.top.%]="placed.offset"
                       [style.height.%]="placed.span"
-                      [title]="PEER_LABEL_OF(placed.band)"
+                      [title]="PEER_LABEL_OF(placed)"
                       [attr.data-compact]="compact(placed.span) || null"
                       [attr.data-booked]="placed.band.booked || null"
                       class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-peer-band
                     >
                       @if (labelled(placed.span)) {
-                        <span class="block truncate">{{ PEER_LABEL_OF(placed.band) }}</span>
+                        <span class="block truncate">{{ PEER_LABEL_OF(placed) }}</span>
                       }
                     </div>
                   }
@@ -1306,7 +1307,7 @@ export class DayTimelineComponent {
 
   /** Whether a press on the lane draws a range. Every lane does: the break lane draws a break. */
   protected drawable(lane: DayLane) {
-    return !!lane;
+    return !!lane && !isPeerLaneKey(lane.key);
   }
 
   protected pendingOn(appointment: Appointment<TimelineEntry>) {

@@ -351,6 +351,8 @@ export type StreamDay = {
    * collected.
    */
   peerLanes: Readonly<Record<string, Readonly<Record<string, readonly TimeWindow[]>>>>;
+  /** This machine's own blocks by `streamKey`: the only evidence a row it sends to a paired machine may rest on. */
+  ownLanes: Readonly<Record<string, readonly TimeWindow[]>>;
 };
 
 /**
@@ -1101,7 +1103,7 @@ const spendOnlyStreams = (options: {
 };
 
 /** One machine's day before its rows are built, with what the rows are built from. */
-type OriginDay = Omit<StreamDay, 'rows' | 'peerLanes'> & {
+type OriginDay = Omit<StreamDay, 'rows' | 'peerLanes' | 'ownLanes'> & {
   events: readonly CollectedEvent[];
   seen: TimeWindow[];
   rebuiltWindows: TimeWindow[];
@@ -2060,7 +2062,7 @@ const rowsOf = (options: {
   });
 };
 
-const publicDayOf = (day: OriginDay): Omit<StreamDay, 'rows' | 'peerLanes'> => {
+const publicDayOf = (day: OriginDay): Omit<StreamDay, 'rows' | 'peerLanes' | 'ownLanes'> => {
   const {
     events: _events,
     seen: _seen,
@@ -2204,6 +2206,7 @@ export const streamDay = (options: {
       ...publicDayOf(local),
       rows: rowsOf({ day: local, config, events: local.events, seen: local.seen }),
       peerLanes: {},
+      ownLanes: lanesOf(local.blocks),
     };
 
   const merged = mergeOrigins([local, ...peers.map((peer) => peer.day)]);
@@ -2220,5 +2223,6 @@ export const streamDay = (options: {
       peerLanes,
     }),
     peerLanes,
+    ownLanes: lanesOf(local.blocks),
   };
 };

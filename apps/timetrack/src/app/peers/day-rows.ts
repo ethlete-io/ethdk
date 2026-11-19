@@ -3,6 +3,7 @@ import {
   PeerDayRows,
   ReviewedRow,
   StandIn,
+  StreamDay,
   SyncedWorklog,
   mapPeerDayRows,
   peerDayRowsOf,
@@ -16,6 +17,7 @@ export const ownDayRowsOf = (options: {
   day: string;
   frozen: boolean;
   rows: readonly ReviewedRow[];
+  ownLanes: StreamDay['ownLanes'];
   ledger: readonly SyncedWorklog[];
   standIns: readonly StandIn[];
   edits?: DayReviewEdits;

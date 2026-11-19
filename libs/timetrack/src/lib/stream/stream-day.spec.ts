@@ -651,6 +651,7 @@ describe('streamDay', () => {
       ambiguousNames: [],
       calls: [],
       peerLanes: {},
+      ownLanes: {},
     });
   });
 

@@ -36,11 +36,20 @@ const TRAILING_LABELS: Record<string, string> = {
   [NO_LANE_KEY]: 'No checkout',
 };
 
+const PEER_LANE_PREFIX = 'lane:peer:';
+
+/** A paired machine's own lane, which holds its bands in checkouts this machine has no lane of, and no row. */
+export const isPeerLaneKey = (key: string) => key.startsWith(PEER_LANE_PREFIX);
+
 const rankOf = (key: string) => {
+  if (isPeerLaneKey(key)) return TRAILING_LANES.length + 1;
+
   const at = TRAILING_LANES.indexOf(key);
 
   return at === -1 ? 0 : at + 1;
 };
+
+const peerLaneKeyOf = (band: PeerBand) => `${PEER_LANE_PREFIX}${band.machineId}`;
 
 const labelOf = (key: string) => TRAILING_LABELS[key] ?? streamKeyLabel(key);
 
@@ -73,17 +82,22 @@ export type BehindBand = {
   carrier: string | null;
 };
 
-/** A paired machine's work on a frozen day, placed on the day axis the same way a break is. */
+/**
+ * A paired machine's work on a frozen day, placed on the day axis the same way a break is. `checkout` names
+ * the band's checkout where it sits in its machine's lane rather than in that checkout's own.
+ */
 export type PeerLaneBand = {
   band: PeerBand;
   offset: number;
   span: number;
+  checkout: string | null;
 };
 
-export const peerBandLabel = (band: PeerBand) => {
+export const peerBandLabel = (placed: PeerLaneBand) => {
+  const { band } = placed;
   const label = band.booked ? `Booked on ${band.machineName}` : workedOnLabel(band.machineName);
 
-  return band.name ? `${label} · ${band.name}` : label;
+  return [label, placed.checkout, band.name].filter(Boolean).join(' · ');
 };
 
 /** How far a row may overrun a stretch and not carry its label: a snapped row overruns by the odd minute. */
@@ -347,6 +361,8 @@ const breakBandsOf = (options: { breaks: readonly BreakWindow[]; dayStart: Date 
  *
  * A lane is fixed by the checkout and never by who overlaps whom, so a band's width says which
  * checkout it is and a busy hour narrows nothing.
+ *
+ * A paired machine's band opens no lane: it sits in its checkout's lane, else in one last lane of its machine.
  */
 export const lanesOf = (options: {
   blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[];
@@ -386,17 +402,27 @@ export const lanesOf = (options: {
     if (!byLane.has(key)) byLane.set(key, []);
   }
 
+  for (const key of options.openLanes ?? []) if (!byLane.has(key)) byLane.set(key, []);
+
   const peersByLane = new Map<string, PeerLaneBand[]>();
+  const peerLabels = new Map<string, string>();
 
   for (const band of options.peers ?? []) {
-    const key = columnOf(band.laneKey);
-    const placed = { band, offset: offsetOf({ at: band.from, dayStart: options.dayStart }), span: spanOf(band) };
+    const column = columnOf(band.laneKey);
+    const own = byLane.has(column);
+    const key = own ? column : peerLaneKeyOf(band);
+    const placed = {
+      band,
+      offset: offsetOf({ at: band.from, dayStart: options.dayStart }),
+      span: spanOf(band),
+      checkout: own ? null : labelOf(column),
+    };
 
     peersByLane.set(key, [...(peersByLane.get(key) ?? []), placed]);
-    if (!byLane.has(key)) byLane.set(key, []);
+    if (!own) peerLabels.set(key, band.machineName);
   }
 
-  for (const key of options.openLanes ?? []) if (!byLane.has(key)) byLane.set(key, []);
+  for (const key of peerLabels.keys()) byLane.set(key, []);
 
   const startOf = (key: string, lane: SchedulerTimeGridBlock<TimelineEntry>[]) =>
     Math.min(
@@ -415,7 +441,7 @@ export const lanesOf = (options: {
 
       return {
         key,
-        label: labelOf(key),
+        label: peerLabels.get(key) ?? labelOf(key),
         blocks,
         breaks: [],
         behind: (behindByLane.get(key) ?? []).map((band) => ({ ...band, carrier: carrierOf(band, blocks) })),

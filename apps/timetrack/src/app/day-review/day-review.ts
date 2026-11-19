@@ -920,13 +920,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ownDayRows = computed(() => {
     const current = review();
     const loaded = loadedLedger();
+    const built = streamedBuild();
 
-    if (!current || !evidenceReady() || !editsReady() || loaded?.key !== day()) return null;
+    if (!current || !evidenceReady() || !editsReady() || loaded?.key !== day() || built?.day !== day()) return null;
 
     return ownDayRowsOf({
       day: day(),
       frozen: !!edits().frozenRows,
       rows: current.rows,
+      ownLanes: built.value.ownLanes,
       ledger: loaded.entries,
       standIns: settings.settings().standIns,
       edits: edits(),

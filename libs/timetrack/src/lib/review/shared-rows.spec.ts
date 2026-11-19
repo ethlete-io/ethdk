@@ -37,7 +37,15 @@ const sent = (options: {
 }): PeerSharedEntries => {
   const parsed = parsePeerDayRows(
     encodePeerDayRows(
-      peerDayRowsOf({ day: DAY, frozen: false, rows: [], ledger: [], standInNames: {}, edits: options.edits }),
+      peerDayRowsOf({
+        day: DAY,
+        frozen: false,
+        rows: [],
+        ownLanes: {},
+        ledger: [],
+        standInNames: {},
+        edits: options.edits,
+      }),
     ),
   );
 
@@ -171,7 +179,15 @@ describe('shared manual rows', () => {
       })),
     };
     const wire = encodePeerDayRows(
-      peerDayRowsOf({ day: DAY, frozen: false, rows: [], ledger: [], standInNames: {}, edits: withLocalOnly }),
+      peerDayRowsOf({
+        day: DAY,
+        frozen: false,
+        rows: [],
+        ownLanes: {},
+        ledger: [],
+        standInNames: {},
+        edits: withLocalOnly,
+      }),
     );
 
     expect(wire).not.toContain('.config');

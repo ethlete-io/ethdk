@@ -43,6 +43,7 @@ describe('the rows a machine sends of its day', () => {
       row({ id: 'e', from: '17:00', to: '17:30', laneKey: 'app:com.apple.loginwindow' }),
       row({ id: 'f', from: '17:30', to: '18:00' }),
     ],
+    ownLanes: { [SPECS]: [{ from: at('13:20'), to: at('17:00') }] },
     ledger: [{ proposalId: 'a', day: '2026-10-08', tempoWorklogId: 'w-9', contentHash: 'h', syncedAt: at('19:00') }],
     standInNames: { 's-1': 'Bracket spike' },
   });
@@ -99,6 +100,7 @@ describe('a booked row that has no repository lane', () => {
       row({ id: 'c', from: '10:00', to: '11:00', laneKey: 'app:com.apple.loginwindow' }),
       row({ id: 'n', from: '11:00', to: '12:00' }),
     ],
+    ownLanes: {},
     ledger: [
       { proposalId: 'm', day: '2026-10-08', tempoWorklogId: 'w-1', contentHash: 'h', syncedAt: at('19:00') },
       { proposalId: 'c', day: '2026-10-08', tempoWorklogId: 'w-2', contentHash: 'h', syncedAt: at('19:00') },

@@ -1,6 +1,7 @@
 import { streamKeyRepoPath } from '../model/block';
 import { CheckoutKeys, translatePeerPath } from '../model/peer-path';
 import { SyncedWorklog } from '../model/proposal';
+import { TimeWindow, windowsOverlap } from '../model/time-window';
 import { DayReviewEdits, ReviewedRow } from './model';
 import { SharedEntry, encodeSharedEntry, parseSharedEntry, sharedEntriesOf } from './shared-rows';
 
@@ -34,11 +35,16 @@ const NO_LANE = 'manual';
 
 const ACCEPTED_STATES: ReadonlySet<ReviewedRow['state']> = new Set(['accepted', 'edited', 'synced']);
 
-/** The rows of a day this machine sends: the repository rows a person was at, unattended ones left out, and every booked row. */
+/**
+ * The rows of a day this machine sends: the repository rows a person was at that this machine's own blocks
+ * (`ownLanes`, from `StreamDay.ownLanes`) touch, unattended ones left out, and every booked row. A row built
+ * only from a paired machine's events is that machine's own work, and is never sent back to it.
+ */
 export const peerDayRowsOf = (options: {
   day: string;
   frozen: boolean;
   rows: readonly ReviewedRow[];
+  ownLanes: Readonly<Record<string, readonly TimeWindow[]>>;
   ledger: readonly SyncedWorklog[];
   standInNames: Readonly<Record<string, string>>;
   edits?: DayReviewEdits;
@@ -51,9 +57,13 @@ export const peerDayRowsOf = (options: {
     ...(options.edits ? { shared: sharedEntriesOf(options.edits) } : {}),
     rows: options.rows.flatMap((row): PeerRow[] => {
       const worklogId = worklogs.get(row.id);
-      const isRepoRow = !row.unattended && !!row.laneKey && !!streamKeyRepoPath(row.laneKey);
+      const isOwnRepoRow =
+        !row.unattended &&
+        !!row.laneKey &&
+        !!streamKeyRepoPath(row.laneKey) &&
+        (options.ownLanes[row.laneKey] ?? []).some((window) => windowsOverlap(window, row));
 
-      if (!isRepoRow && !worklogId) return [];
+      if (!isOwnRepoRow && !worklogId) return [];
 
       const standInName = row.standInId ? options.standInNames[row.standInId] : undefined;
 
@@ -77,7 +87,7 @@ export const peerDayRowsOf = (options: {
  * The version of the rows this app builds. Raise it when {@link peerDayRowsOf} or the rows it reads change
  * what a booked day sends: each machine then builds and sends its stored days again.
  */
-export const PEER_DAY_ROWS_VERSION = 6;
+export const PEER_DAY_ROWS_VERSION = 7;
 
 /** The wire form of {@link PeerDayRows}, stamped with {@link PEER_DAY_ROWS_VERSION}. */
 export const encodePeerDayRows = (rows: PeerDayRows) =>
@@ -245,9 +255,11 @@ const mapSharedEntry = (options: LocalPaths & { entry: SharedEntry }): SharedEnt
 };
 
 /**
- * A paired machine's rows with each lane moved onto this machine's checkout of the same repository. A shared
- * entry whose repository this machine has no checkout of loses its lane rather than keep the peer's path; one
- * whose id names such a repository is dropped, and so is each engine row id a built row replaces there.
+ * A paired machine's rows with each lane moved onto this machine's checkout of the same repository. An
+ * unbooked row in a checkout of this machine that the paired machine has none of is this machine's own work
+ * echoed back, and is dropped. A shared entry whose repository this machine has no checkout of loses its lane
+ * rather than keep the peer's path; one whose id names such a repository is dropped, and so is each engine row
+ * id a built row replaces there.
  */
 export const mapPeerDayRows = (options: {
   rows: PeerDayRows;
@@ -258,14 +270,18 @@ export const mapPeerDayRows = (options: {
   ...(options.rows.shared
     ? { shared: options.rows.shared.flatMap((entry) => mapSharedEntry({ ...options, entry }) ?? []) }
     : {}),
-  rows: options.rows.rows.map((row) => {
+  rows: options.rows.rows.flatMap((row) => {
     const path = streamKeyRepoPath(row.laneKey);
 
-    return path === undefined
-      ? row
-      : {
-          ...row,
-          laneKey: `repo:${translatePeerPath({ path, peerKeys: options.peerKeys, localKeys: options.localKeys })}`,
-        };
+    if (path === undefined) return [row];
+    if (row.state !== 'booked' && !isUnderCheckout(path, options.peerKeys) && isUnderCheckout(path, options.localKeys))
+      return [];
+
+    return [
+      {
+        ...row,
+        laneKey: `repo:${translatePeerPath({ path, peerKeys: options.peerKeys, localKeys: options.localKeys })}`,
+      },
+    ];
   }),
 });

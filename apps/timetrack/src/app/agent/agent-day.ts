@@ -199,6 +199,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
         day: read.key,
         frozen: !!edits.frozenRows,
         rows: read.reviewWith(edits).rows,
+        ownLanes: read.day.ownLanes,
         ledger,
         standIns: settings.settings().standIns,
         edits,
