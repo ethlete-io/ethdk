@@ -32,10 +32,11 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 3. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
-4. **Timetrack-Beschreibung (B602)** ⏳ Tag-Spuren, Anruf-Entwürfe, Vertretungsname aus Ordner und Timetrack ADR 0055 gebaut. Offen: Live-Beweis, UI-Lag messen, Anruf ohne Vorschlag, Zählzeile überlappt Spur-Labels - Builder
-5. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, 18.11.-Regression behoben (ADR 0038), Warteschlangen-Dedup. Offen: Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047), neue ID bei erneutem Anlegen, Warteschlange über Rechner - Builder
-6. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Linux-Jobs im Node-24-Container (`node:24.22.1-bookworm` per Hash, `corepack enable`) auf `runner-ethlete`, alte `.git/index.lock` weg, Verdaccio-Proxy für `@ethlete` prüfen, dann Testlauf mit `CI_SELF_HOSTED` und schauen, wie weit er kommt (ADR 0342) - Builder
-7. **Overlay im Zoom-Canvas (B637)** ⏳ Popover-Animation im gezoomten Studio-Canvas falsch; Overlay-Ursprung in skaliertem Container als core-Szenariotest - Builder
+4. **Control-Rand und Hover (B640)** ⏳ Checkbox-Rand auf dunkel fast weiß, Rand hovert in Label-Farbe (ADR 0382), alle Controls der Story Control States - Builder
+5. **Timetrack-Beschreibung (B602)** ⏳ Tag-Spuren, Anruf-Entwürfe, Vertretungsname aus Ordner und Timetrack ADR 0055 gebaut. Offen: Live-Beweis, UI-Lag messen, Anruf ohne Vorschlag, Zählzeile überlappt Spur-Labels - Builder
+6. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, 18.11.-Regression behoben (ADR 0038), Warteschlangen-Dedup. Offen: Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047), neue ID bei erneutem Anlegen, Warteschlange über Rechner - Builder
+7. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Linux-Jobs im Node-24-Container (`node:24.22.1-bookworm` per Hash, `corepack enable`) auf `runner-ethlete`, alte `.git/index.lock` weg, Verdaccio-Proxy für `@ethlete` prüfen, dann Testlauf mit `CI_SELF_HOSTED` und schauen, wie weit er kommt (ADR 0342) - Builder
+8. **Overlay im Zoom-Canvas (B637)** ⏳ Popover-Animation im gezoomten Studio-Canvas falsch; Overlay-Ursprung in skaliertem Container als core-Szenariotest - Builder
 
 Geparkt: B105, B108, B109, B148.
 
