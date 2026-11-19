@@ -25,21 +25,27 @@ export type SubagentLayout = {
   rail: { offset: number; span: number; inlineOffset: number } | null;
   stripes: SubagentStripe[];
   ticks: SubagentTick[];
-  count: string;
+  count: string | null;
 };
 
 const taskOf = (subagent: RowSubagent) => subagent.task ?? 'Subagent';
 
 const durationOf = (subagent: RowSubagent) => formatDurationMs(subagent.to.getTime() - subagent.from.getTime());
 
+const countOf = (subagents: readonly RowSubagent[], short: number) =>
+  `${subagents.length} ${subagents.length === 1 ? 'subagent' : 'subagents'}${short ? ` · ${short} short` : ''}`;
+
 /**
  * The stripes, ticks and count line a block draws for the subagents of its session, or null when it has
- * none. A cascaded or clipped block has no room beside it, so every subagent becomes a tick there.
+ * none. A cascaded or clipped block has no room beside it, so every subagent becomes a tick there, and
+ * it draws no count line either: the piece under it puts its label where that line would go.
  */
 export const subagentLayoutOf = (options: {
   laid: LaneBlock;
   drawn: TimeWindow;
   subagents: readonly RowSubagent[];
+  /** The text lines left in the band under its labels. */
+  freeLines?: number;
 }): SubagentLayout | null => {
   const { laid, drawn } = options;
   const start = drawn.from.getTime();
@@ -72,8 +78,6 @@ export const subagentLayoutOf = (options: {
       offset: fractionOf(subagent.from) * 100,
       span: Math.max((fractionOf(subagent.to) - fractionOf(subagent.from)) * 100, TICK_MIN_SPAN),
     })),
-    count: `${options.subagents.length} ${options.subagents.length === 1 ? 'subagent' : 'subagents'}${
-      short.length ? ` · ${short.length} short` : ''
-    }`,
+    count: beside && (options.freeLines ?? Infinity) >= 1 ? countOf(options.subagents, short.length) : null,
   };
 };

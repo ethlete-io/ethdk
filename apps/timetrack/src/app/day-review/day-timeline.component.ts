@@ -505,11 +505,11 @@ type RowDrag = {
                             data-short-subagent
                           ></span>
                         }
-                        @if (labelled(laid.block.span)) {
+                        @if (subagents.count; as count) {
                           <span
                             class="relative mt-auto block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
                             data-subagent-count
-                            >{{ subagents.count }}</span
+                            >{{ count }}</span
                           >
                         }
                       }
@@ -996,7 +996,13 @@ export class DayTimelineComponent {
       for (const laid of lane.blocks) {
         const entry = rowEntryOf(laid.block.node.appointment);
         const layout =
-          entry?.subagents && subagentLayoutOf({ laid, drawn: laid.piece ?? entry.row, subagents: entry.subagents });
+          entry?.subagents &&
+          subagentLayoutOf({
+            laid,
+            drawn: laid.piece ?? entry.row,
+            subagents: entry.subagents,
+            freeLines: this.linesLeftIn(laid) - this.carriedLabelsOf(laid, lane).length,
+          });
 
         if (layout) found.set(laid.key, layout);
       }
@@ -1244,10 +1250,7 @@ export class DayTimelineComponent {
 
     if (!carried.length) return [];
 
-    const described = this.detailed(laid.block.span) && !!this.descriptionOf(laid.block.node.appointment);
-    const room = Math.floor((remOf(laid.block.span) - BLOCK_PADDING_REM) / LINE_REM) - 1 - (described ? 1 : 0);
-
-    return carried.slice(0, Math.max(0, room)).map((band) => behindLabel(band.stretch));
+    return carried.slice(0, Math.max(0, this.linesLeftIn(laid))).map((band) => behindLabel(band.stretch));
   }
 
   /**
@@ -1726,6 +1729,12 @@ export class DayTimelineComponent {
     if (entry.row.id === cutDrag) return this.store.endRowAtCut({ row: entry.row, at: move.appointment.end });
 
     this.rowReschedule.emit({ row: entry.row, from: move.appointment.start, to: move.appointment.end });
+  }
+
+  private linesLeftIn(laid: LaneBlock) {
+    const described = this.detailed(laid.block.span) && !!this.descriptionOf(laid.block.node.appointment);
+
+    return Math.floor((remOf(laid.block.span) - BLOCK_PADDING_REM) / LINE_REM) - 1 - (described ? 1 : 0);
   }
 
   private trackRowDrag(options: {

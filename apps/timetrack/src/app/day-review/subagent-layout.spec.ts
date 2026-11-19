@@ -55,6 +55,20 @@ describe('subagentLayoutOf', () => {
     expect(layout?.ticks.map((tick) => tick.key)).toEqual(['mig', 'lint']);
   });
 
+  it('drops the count line on a cascaded block, where it would cover the label of the piece under it', () => {
+    expect(subagentLayoutOf({ laid: laid({ layer: 1 }), drawn, subagents: [lint], freeLines: 3 })?.count).toBeNull();
+    expect(
+      subagentLayoutOf({ laid: laid({ clipPath: 'inset(0)' }), drawn, subagents: [lint], freeLines: 3 })?.count,
+    ).toBeNull();
+  });
+
+  it('drops the count line when the band has no free line left under its labels', () => {
+    expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [lint], freeLines: 0 })?.count).toBeNull();
+    expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [lint], freeLines: 1 })?.count).toBe(
+      '1 subagent · 1 short',
+    );
+  });
+
   it('draws nothing for a row without subagents', () => {
     expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [] })).toBeNull();
   });
