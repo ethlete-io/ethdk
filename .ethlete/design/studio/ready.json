@@ -963,7 +963,7 @@
     "pid": 678978
   },
   "elements/shell-main": {
-    "hash": "02bf3f0b09c1f6a3",
+    "hash": "51a3a5ed3b0c78e5",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "63756c3ecafc67df",
@@ -992,11 +992,11 @@
       ".ethlete/design/studio/assets/studio-app-icon.svg": "d1927cc46bc95568",
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
-      ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "e92e9568794a8fd8",
+      ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "5ab5290b8f15468b",
       ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.css": "3f6d46121dfa54f6",
       ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "949e3d9317e82ff6",
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.css": "e575c402800900cd",
-      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "dff3e56673be36e6",
+      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "32127ddc409ab162",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
       ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
@@ -1047,11 +1047,11 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "29eb572ac83bc779",
+    "app": "99fd7f8bfc62060d",
     "embedded": {
-      "components/shell-collapse": "3f8aca5fcd6e3f49",
-      "components/title-bar": "bd949f15fec2dcf1",
-      "components/title-search": "7324d782d524f77f"
+      "components/shell-collapse": "5ad46d483af0051b",
+      "components/title-bar": "50415c238b9fcaa9",
+      "components/title-search": "4100902f74ee9504"
     },
     "actions": [
       "closed",
@@ -1070,10 +1070,10 @@
     "builderReasons": [
       "injects through injectCodeWatch() (apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts)"
     ],
-    "at": "2026-11-19T03:21:30.116Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3340005
+    "at": "2026-11-19T14:30:57.124Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 2917241
   },
   "elements/studio-menu": {
     "hash": "3ccac60c4cb4f777",
