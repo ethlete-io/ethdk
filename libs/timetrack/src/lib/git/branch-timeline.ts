@@ -155,35 +155,48 @@ const isUnder = (path: string | undefined, root: string) =>
   !!path && (path === root || path.startsWith(`${root}/`) || path.startsWith(`${root}\\`));
 
 /**
- * The branch each checkout was on that only paired machines worked in that day, from the timeline of the
- * paired machine that sent it. A checkout this machine holds an event of is left to its own reflog.
+ * The branch each paired machine had a checkout on when its own first event there happened, from the
+ * timeline it sent, by machine id. `local` lists the checkouts this machine's reflog must answer for: one
+ * this machine holds an event of, and one no paired machine's timeline answers for.
  */
 export const peerHeadBranches = (options: {
   events: readonly OriginEvent[];
   repoPaths: readonly string[];
   localKeys: CheckoutKeys;
   timelines: readonly ReceivedBranchTimelines[];
-  at: Date;
-}): Record<string, string> => {
-  const found: Record<string, string> = {};
+}): { byMachine: Record<string, Record<string, string>>; local: string[] } => {
+  const byMachine: Record<string, Record<string, string>> = {};
+  const local: string[] = [];
 
   for (const repoPath of options.repoPaths) {
     const root = repoPath.replace(/[\\/]+$/, '');
     const key = options.localKeys[repoPath] ?? options.localKeys[root];
     const touching = options.events.filter((event) => pathsOf(event).some((path) => isUnder(path, root)));
+    const firstAt = new Map<string, Date>();
 
-    if (key === undefined || !touching.length || touching.some((event) => event.origin === 'local')) continue;
+    for (const event of touching) {
+      if (event.origin === 'local') continue;
 
-    const machines = new Set(touching.flatMap((event) => (event.origin === 'local' ? [] : [event.origin.machineId])));
-    const branch = [...options.timelines]
-      .filter((sent) => machines.has(sent.machineId))
-      .sort((left, right) => left.machineId.localeCompare(right.machineId))
-      .map((sent) => sent.checkouts.find((checkout) => checkout.key === key))
-      .map((checkout) => (checkout ? branchAtIn({ windows: checkout.windows, at: options.at }) : undefined))
-      .find((named) => named !== undefined);
+      const held = firstAt.get(event.origin.machineId);
 
-    if (branch) found[repoPath] = branch;
+      if (!held || event.at < held) firstAt.set(event.origin.machineId, event.at);
+    }
+
+    let answered = false;
+
+    for (const sent of options.timelines) {
+      const at = firstAt.get(sent.machineId);
+      const checkout = key === undefined ? undefined : sent.checkouts.find((held) => held.key === key);
+      const branch = at && checkout ? branchAtIn({ windows: checkout.windows, at }) : undefined;
+
+      if (!branch) continue;
+
+      (byMachine[sent.machineId] ??= {})[repoPath] = branch;
+      answered = true;
+    }
+
+    if (!answered || touching.some((event) => event.origin === 'local')) local.push(repoPath);
   }
 
-  return found;
+  return { byMachine, local };
 };

@@ -477,7 +477,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             patterns: recurring.patterns(),
             epics: epics.optionsFor(day()),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
-            headBranches: headBranches(),
+            headBranches: heldHeadsOfDay().branches,
+            peerHeadBranches: heldHeadsOfDay().peerBranches,
             now: collected.now,
             rows: rowOptions(),
             heard: heardChunksOf(collected.transcript),
@@ -606,9 +607,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return { day: day(), at: localDayRange(day(), boundary()).to, repoPaths: unbranchedCheckouts(current.streams) };
   });
 
-  const heldHeads = signal<{ day: string; branches: Readonly<Record<string, string>>; asked: ReadonlySet<string> }>({
+  const heldHeads = signal<{
+    day: string;
+    branches: Readonly<Record<string, string>>;
+    peerBranches: Readonly<Record<string, Readonly<Record<string, string>>>>;
+    asked: ReadonlySet<string>;
+  }>({
     day: '',
     branches: {},
+    peerBranches: {},
     asked: new Set(),
   });
 
@@ -634,21 +641,25 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
                 repoPaths: missing,
                 localKeys: collected.received.ownRepoKeys,
                 timelines: collected.timelines,
-                at: ask.at,
               })
-            : {};
-          const local = missing.filter((repoPath) => fromPeers[repoPath] === undefined);
+            : { byMachine: {}, local: missing };
 
-          return readHeadBranches$({ processes: ports.processes, repoPaths: local, at: ask.at }).pipe(
+          return readHeadBranches$({ processes: ports.processes, repoPaths: fromPeers.local, at: ask.at }).pipe(
             catchError(() => of<Record<string, string>>({})),
-            map((found) => ({ ...fromPeers, ...found })),
             tap((found) =>
               heldHeads.update((current) => {
-                const base = current.day === ask.day ? current : { branches: {}, asked: new Set<string>() };
+                const base =
+                  current.day === ask.day ? current : { branches: {}, peerBranches: {}, asked: new Set<string>() };
+                const peerBranches: Record<string, Readonly<Record<string, string>>> = { ...base.peerBranches };
+
+                for (const [machineId, held] of Object.entries(fromPeers.byMachine)) {
+                  peerBranches[machineId] = { ...peerBranches[machineId], ...held };
+                }
 
                 return {
                   day: ask.day,
                   branches: { ...base.branches, ...found },
+                  peerBranches,
                   asked: new Set([...base.asked, ...missing]),
                 };
               }),
@@ -665,10 +676,16 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * from its reflog. It resolves after the day does, so a slow repository delays the branch on one line
    * and never the day's numbers.
    */
-  const headBranches = computed(() => {
+  const heldHeadsOfDay = computed(() => {
     const held = heldHeads();
 
-    return held.day === day() ? held.branches : NO_HEAD_BRANCHES;
+    return held.day === day() ? held : { branches: NO_HEAD_BRANCHES, peerBranches: {} };
+  });
+
+  const headBranches = computed(() => {
+    const { branches, peerBranches } = heldHeadsOfDay();
+
+    return Object.assign({}, ...Object.values(peerBranches), branches) as Record<string, string>;
   });
 
   const isToday = computed(() => day() === localDayKey(new Date(), boundary()));

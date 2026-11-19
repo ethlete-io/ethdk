@@ -59,3 +59,30 @@ describe('a checkout the day names no branch for', () => {
     expect(standInsOf({ [REPO]: 'feature/upload' }).map((opened) => opened.rule.branch)).toEqual(['feature/upload']);
   });
 });
+
+describe('a checkout that two paired machines worked in', () => {
+  const peerFocus = (from: number, to: number) =>
+    focus(from, to).map((event) => ({ ...event, origin: { machineId: 'peer-1', machineName: 'Peer' } }));
+
+  const branchesOf = (options: Partial<Parameters<typeof streamDay>[0]['options']>) =>
+    streamDay({
+      events: [...focus(0, 30), ...peerFocus(120, 150)],
+      options: { repoRoots: [REPO], links: [LINK], baseBranches: ['main', 'develop'], ...options },
+    })
+      .streams.filter((stream) => stream.repoPath === REPO)
+      .flatMap((stream) => stream.branches)
+      .sort();
+
+  it('names the minutes only a paired machine filled after that machine, not after this one', () => {
+    expect(
+      branchesOf({
+        headBranches: { [REPO]: 'next' },
+        peerHeadBranches: { 'peer-1': { [REPO]: 'feature/abc-12-x' } },
+      }),
+    ).toEqual(['feature/abc-12-x', 'next']);
+  });
+
+  it('does not hand this machine head branch to the minutes a paired machine filled', () => {
+    expect(branchesOf({ headBranches: { [REPO]: 'next' } })).toEqual(['next']);
+  });
+});

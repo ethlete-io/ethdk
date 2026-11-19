@@ -84,8 +84,10 @@ export const streamDayOptionsOf = (options: {
   epics?: EpicOptions;
   /** The instant the window source has reported through, which is its last drain. */
   windowsSeenThroughMs?: number;
-  /** The branch each checkout the day names no branch for was on, from `peerHeadBranches` or `readHeadBranches$`. */
+  /** The branch each checkout the day names no branch for was on, from `readHeadBranches$`. */
   headBranches?: Readonly<Record<string, string>>;
+  /** The branch each checkout was on for the minutes a paired machine filled, by machine id, from `peerHeadBranches`. */
+  peerHeadBranches?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   /** The instant the day is read through: now, or the day's end once the day is over. */
   through?: Date;
   /** Now, while the day is still being collected. Left out for a day that is over. */
@@ -102,6 +104,7 @@ export const streamDayOptionsOf = (options: {
   ownAppIds: OWN_APP_IDS,
   windowsSeenThroughMs: options.windowsSeenThroughMs,
   headBranches: options.headBranches,
+  peerHeadBranches: options.peerHeadBranches,
   now: options.now,
   callRules: options.settings.callRules,
   heard: options.heard,

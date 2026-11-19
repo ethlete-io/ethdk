@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { branchAtIn, branchWindowsIn, encodeBranchTimelines, parseBranchTimelines } from './branch-timeline';
+import {
+  branchAtIn,
+  branchWindowsIn,
+  encodeBranchTimelines,
+  parseBranchTimelines,
+  peerHeadBranches,
+} from './branch-timeline';
+import { OriginEvent } from '../model/event';
 import { GIT_FIELD_SEPARATOR } from './format';
 import { parseHeadBranchAt } from './head';
 
@@ -44,5 +51,50 @@ describe('parseBranchTimelines', () => {
       parseBranchTimelines('{"checkouts":[{"key":"","windows":[]},{"key":"a","windows":[{"fromMs":"x"}]}]}'),
     ).toEqual([]);
     expect(parseBranchTimelines('not json')).toEqual([]);
+  });
+});
+
+describe('peerHeadBranches', () => {
+  const REPO = '/home/you/dev/app-a';
+  const PEER = { machineId: 'peer-1', machineName: 'Peer' };
+  const event = (minute: number, origin: 'local' | typeof PEER): OriginEvent => ({
+    at: new Date(Date.UTC(2026, 10, 18, 8, minute)),
+    source: 'editor',
+    kind: 'editor-heartbeat',
+    reporter: 'vscode',
+    repoPath: REPO,
+    editing: true,
+    origin,
+  });
+  const timelines = [
+    {
+      machineId: 'peer-1',
+      checkouts: [
+        {
+          key: 'app-a',
+          windows: [{ fromMs: 0 }, { fromMs: Date.UTC(2026, 10, 18, 8, 30), branch: 'feature/abc-12-x' }],
+        },
+      ],
+    },
+  ];
+  const read = (events: OriginEvent[]) =>
+    peerHeadBranches({ events, repoPaths: [REPO], localKeys: { [REPO]: 'app-a' }, timelines });
+
+  it('names a checkout both machines worked in after the peer where only the peer filled it', () => {
+    expect(read([event(0, 'local'), event(45, PEER)])).toEqual({
+      byMachine: { 'peer-1': { [REPO]: 'feature/abc-12-x' } },
+      local: [REPO],
+    });
+  });
+
+  it('answers the peer at its own first event, not at the end of the day', () => {
+    expect(read([event(10, PEER), event(45, PEER)])).toEqual({ byMachine: {}, local: [REPO] });
+  });
+
+  it('leaves a checkout only the peer worked in to the peer', () => {
+    expect(read([event(45, PEER)])).toEqual({
+      byMachine: { 'peer-1': { [REPO]: 'feature/abc-12-x' } },
+      local: [],
+    });
   });
 });

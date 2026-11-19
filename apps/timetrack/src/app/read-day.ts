@@ -89,6 +89,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
 
   return defer(() => {
     const heads: Record<string, string> = {};
+    const peerHeads: Record<string, Record<string, string>> = {};
     const asked = new Set<string>();
 
     return combineLatest({
@@ -120,6 +121,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             epics: options.epics,
             windowsSeenThroughMs: options.windowsSeenThroughMs,
             headBranches: { ...heads },
+            peerHeadBranches: { ...peerHeads },
             through: at,
             now: at < to ? at : undefined,
             rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
@@ -172,18 +174,18 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
           repoPaths: unbranched,
           localKeys: received.ownRepoKeys,
           timelines,
-          at: to,
         });
-        const missing = unbranched.filter((repoPath) => fromPeers[repoPath] === undefined);
 
-        Object.assign(heads, fromPeers);
+        for (const [machineId, found] of Object.entries(fromPeers.byMachine)) {
+          peerHeads[machineId] = { ...peerHeads[machineId], ...found };
+        }
 
-        return readHeadBranches$({ processes: ports.processes, repoPaths: missing, at: to }).pipe(
+        return readHeadBranches$({ processes: ports.processes, repoPaths: fromPeers.local, at: to }).pipe(
           catchError(() => of<Record<string, string>>({})),
           map((found) => {
             Object.assign(heads, found);
 
-            return Object.keys(found).length || Object.keys(fromPeers).length ? read() : first;
+            return Object.keys(found).length || Object.keys(fromPeers.byMachine).length ? read() : first;
           }),
         );
       }),

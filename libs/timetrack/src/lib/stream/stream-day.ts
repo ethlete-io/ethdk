@@ -146,6 +146,8 @@ export type StreamDayOptions = {
    * no rule can name them and no placeholder can open for them.
    */
   headBranches?: Readonly<Record<string, string>>;
+  /** What `headBranches` is for the minutes a paired machine filled, by machine id: its timeline's branch, never this machine's. */
+  peerHeadBranches?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   /**
    * The projects each checkout declares, which is the grain a work path is cut to. Without them a
    * checkout's own commits decide the grain between them - see `workPathsOf`.
@@ -2151,10 +2153,17 @@ export const streamDay = (options: {
     .filter(([origin]) => origin !== 'local')
     .map(([origin, events]) => ({
       origin,
-      day: peerDayOf(streamOrigin({ events, config: peerConfig, elsewhere: elsewhereOf(origin) }), {
-        machineId: origin,
-        machineName: machineNameOf(events) ?? origin,
-      }),
+      day: peerDayOf(
+        streamOrigin({
+          events,
+          config: { ...peerConfig, headBranches: config.peerHeadBranches?.[origin] },
+          elsewhere: elsewhereOf(origin),
+        }),
+        {
+          machineId: origin,
+          machineName: machineNameOf(events) ?? origin,
+        },
+      ),
     }));
 
   if (!peers.length)
