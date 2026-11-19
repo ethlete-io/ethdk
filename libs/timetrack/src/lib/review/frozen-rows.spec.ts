@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposal } from '../model/proposal';
 import { DayRows } from '../rows/build-rows';
 import { setRowDescription } from './edits';
-import { planTempoSync } from '../tempo/diff';
 import { changedAfterBooking, frozenDayPeerBands, isDayHeldByTempo, withFrozenRows } from './frozen-rows';
-import { EMPTY_DAY_REVIEW_EDITS, isNamedRow } from './model';
+import { EMPTY_DAY_REVIEW_EDITS } from './model';
 import { PeerDayRows } from './peer-rows';
 import { reviewDay } from './review-day';
 
