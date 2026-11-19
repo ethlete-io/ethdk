@@ -1291,12 +1291,22 @@ const streamOrigin = (options: {
   );
   const inSession = (repoPath: string, session: string | undefined) =>
     session ? { session, piece: pieces.get(pieceKey(repoPath, session))?.piece ?? session } : { session };
+  const overlapsAt = (options: { repoPath: string; session: string; at: Date }) =>
+    runs
+      .get(options.repoPath)
+      ?.some(
+        (run) =>
+          run.sessionId !== options.session &&
+          run.from.getTime() <= options.at.getTime() &&
+          run.to.getTime() >= options.at.getTime(),
+      ) ?? false;
   /**
-   * The directory a stretch's session worked in, where the checkout's sessions worked in more than one.
-   * It outranks the commits' reading, because a commit cannot say which of two parallel sessions made it.
+   * The directory a stretch's session worked in, where the checkout's sessions worked in more than one
+   * and another session of the checkout ran at that instant. It outranks the commits' reading there,
+   * because a commit cannot say which of two parallel sessions made it.
    */
-  const pieceWorkPath = (options: { repoPath: string; session: string | undefined }) =>
-    options.session && pieceGrains.has(options.repoPath)
+  const pieceWorkPath = (options: { repoPath: string; session: string | undefined; at: Date }) =>
+    options.session && pieceGrains.has(options.repoPath) && overlapsAt({ ...options, session: options.session })
       ? pieces.get(pieceKey(options.repoPath, options.session))?.workPath
       : undefined;
   /**
@@ -1319,7 +1329,7 @@ const streamOrigin = (options: {
     return {
       branch,
       workPath:
-        (isBase ? pieceWorkPath({ repoPath: options.repoPath, session }) : undefined) ??
+        (isBase ? pieceWorkPath({ repoPath: options.repoPath, session, at: options.at }) : undefined) ??
         workPathFor({ ...options, branch }),
       ...inSession(options.repoPath, session),
     };

@@ -280,13 +280,50 @@ describe('streamDay agent sessions', () => {
   it('names the stretches of sessions on a base branch after the directory each worked in', () => {
     const blocks = blocksOf([
       ...sessionRun({ sessionId: 'one', from: 0, to: 60, branchAt: () => 'main', workedIn: 'src/app/totw/a.ts' }),
-      ...sessionRun({ sessionId: 'two', from: 30, to: 90, branchAt: () => 'main', workedIn: 'src/app/shop/b.ts' }),
+      ...sessionRun({ sessionId: 'two', from: 0, to: 60, branchAt: () => 'main', workedIn: 'src/app/shop/b.ts' }),
     ]);
 
     expect(blocks.map((block) => [block.context.session, block.context.workPath])).toEqual([
       ['one', 'src/app/totw'],
       ['two', 'src/app/shop'],
     ]);
+  });
+
+  describe('a session folder against the commits folder on a base branch', () => {
+    const CLEANUP = 'tracks/20261030_post-angular-22-cleanup';
+    const FINDINGS = 'tracks/20261102_e2e-findings';
+    const onMain = { branchAt: () => 'main' };
+    const commitIn = (options: { minutes: number; folder: string }): CollectedEvent => ({
+      at: AT(options.minutes),
+      source: 'git',
+      kind: 'git-commit',
+      repoPath: REPO,
+      branch: 'main',
+      sha: `sha-${options.minutes}`,
+      subject: `docs(spec): OTH-${100 + options.minutes} The one at ${options.minutes}`,
+      paths: [`${options.folder}/index.md`],
+    });
+    const commits = [
+      commitIn({ minutes: 40, folder: CLEANUP }),
+      commitIn({ minutes: 60, folder: FINDINGS }),
+      commitIn({ minutes: 88, folder: FINDINGS }),
+    ];
+    const earlier = sessionRun({ sessionId: 'early', from: -120, to: -60, workedIn: `${FINDINGS}/a.md`, ...onMain });
+    const lone = sessionRun({ sessionId: '1406c64c', from: 0, to: 90, workedIn: `${CLEANUP}/b.md`, ...onMain });
+    const workPathOfLone = (events: CollectedEvent[]) =>
+      blocksOf(events).find((block) => block.context.session === '1406c64c')?.context.workPath;
+
+    it('cuts a lone session by the folders its commits changed', () => {
+      expect(workPathOfLone([...focusRun({ from: 0, to: 90 }), ...earlier, ...lone, ...commits])).toBe(FINDINGS);
+    });
+
+    it('lets the session folder decide in the minutes a second session of the checkout ran too', () => {
+      const other = sessionRun({ sessionId: 'beside', from: 0, to: 90, workedIn: `${FINDINGS}/c.md`, ...onMain });
+
+      expect(workPathOfLone([...focusRun({ from: 0, to: 90 }), ...earlier, ...lone, ...other, ...commits])).toBe(
+        CLEANUP,
+      );
+    });
   });
 
   it('leaves the stretches of sessions that all worked in one directory without one', () => {
