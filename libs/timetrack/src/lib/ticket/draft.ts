@@ -130,11 +130,19 @@ export const standInObservedMs = (options: { bands: readonly StandInBand[]; stan
 const branchSubjectOf = (options: { branch: string | undefined; config: GitFlowConfig }) =>
   options.branch ? parseBranch({ branch: options.branch, config: options.config }).subject : undefined;
 
-const summaryFor = (options: { context: UnnamedContext; notes: string[]; config: GitFlowConfig }) => {
-  const { repoPath, branch, appId } = options.context.context;
-  const fromBranch = humanized(branchSubjectOf({ branch, config: options.config }) ?? '');
+const folderNameOf = (options: { branch: string | undefined; workPath: string | undefined; config: GitFlowConfig }) => {
+  const { development, production } = options.config.baseBranches;
+  const branch = options.branch?.replace(/^refs\/heads\//, '');
 
-  return (fromBranch || options.notes[0] || (repoPath ? repoNameOf(repoPath) : (appId ?? ''))).slice(
+  return options.workPath && (!branch || branch === development || branch === production) ? options.workPath : '';
+};
+
+const summaryFor = (options: { context: UnnamedContext; notes: string[]; config: GitFlowConfig }) => {
+  const { repoPath, branch, appId, workPath } = options.context.context;
+  const fromBranch = humanized(branchSubjectOf({ branch, config: options.config }) ?? '');
+  const fromFolder = folderNameOf({ branch, workPath, config: options.config });
+
+  return (fromBranch || fromFolder || options.notes[0] || (repoPath ? repoNameOf(repoPath) : (appId ?? ''))).slice(
     0,
     MAX_TICKET_SUMMARY_LENGTH,
   );
@@ -158,10 +166,14 @@ export const contextHasTicketText = (options: {
  * to the checkout's own name.
  */
 export const standInNameFor = (options: { context: ActivityContext; config: GitFlowConfig }) => {
-  const { repoPath, branch, appId } = options.context;
+  const { repoPath, branch, appId, workPath } = options.context;
   const fromBranch = humanized(branchSubjectOf({ branch, config: options.config }) ?? '');
+  const fromFolder = folderNameOf({ branch, workPath, config: options.config });
 
-  return (fromBranch || (repoPath ? repoNameOf(repoPath) : (appId ?? ''))).slice(0, MAX_TICKET_SUMMARY_LENGTH);
+  return (fromBranch || fromFolder || (repoPath ? repoNameOf(repoPath) : (appId ?? ''))).slice(
+    0,
+    MAX_TICKET_SUMMARY_LENGTH,
+  );
 };
 
 /**
@@ -170,7 +182,8 @@ export const standInNameFor = (options: { context: ActivityContext; config: GitF
  * where the work happened.
  */
 export const standInHasTicketText = (options: {
-  standIn: Pick<StandIn, 'id' | 'name'> & Partial<Pick<StandIn, 'author' | 'openedFor' | 'openedForBranch'>>;
+  standIn: Pick<StandIn, 'id' | 'name'> &
+    Partial<Pick<StandIn, 'author' | 'openedFor' | 'openedForBranch' | 'openedForWorkPath'>>;
   bands: readonly StandInBand[];
   config: GitFlowConfig;
 }) => {
@@ -180,7 +193,10 @@ export const standInHasTicketText = (options: {
   if (branchSubjectOf({ branch: standIn.openedForBranch, config })?.trim()) return true;
   if (standInNotes({ bands: options.bands, standInId: standIn.id, max: 1 }).length) return true;
 
-  const where = standInNameFor({ context: { repoPath: standIn.openedFor, branch: standIn.openedForBranch }, config });
+  const where = standInNameFor({
+    context: { repoPath: standIn.openedFor, branch: standIn.openedForBranch, workPath: standIn.openedForWorkPath },
+    config,
+  });
 
   return isQuotableNote(standIn.name) && standIn.name !== where;
 };
@@ -190,7 +206,7 @@ export const standInHasTicketText = (options: {
  * taken out of them, or `null` when its name was not drafted from such a note.
  */
 export const readableStandInDraft = (options: {
-  standIn: Pick<StandIn, 'name' | 'description' | 'author' | 'openedFor' | 'openedForBranch'>;
+  standIn: Pick<StandIn, 'name' | 'description' | 'author' | 'openedFor' | 'openedForBranch' | 'openedForWorkPath'>;
   config: GitFlowConfig;
 }): Pick<StandIn, 'name' | 'description'> | null => {
   const { standIn, config } = options;
@@ -203,7 +219,10 @@ export const readableStandInDraft = (options: {
   const description = (firstNote ? kept : kept.map((line) => (line === NOTES_HEADING ? NO_NOTES_LINE : line)))
     .join('\n')
     .replace(/\n{3,}/g, '\n\n');
-  const where = standInNameFor({ context: { repoPath: standIn.openedFor, branch: standIn.openedForBranch }, config });
+  const where = standInNameFor({
+    context: { repoPath: standIn.openedFor, branch: standIn.openedForBranch, workPath: standIn.openedForWorkPath },
+    config,
+  });
 
   return { name: (firstNote ?? where).slice(0, MAX_TICKET_SUMMARY_LENGTH), description };
 };
@@ -297,7 +316,12 @@ export const draftRepoTicket = (options: {
   ];
   const leading = byTime[0];
   const fromBranch = humanized(branchSubjectOf({ branch: leading?.context.branch, config }) ?? '');
-  const summary = (fromBranch || notes[0] || repoNameOf(repoPath)).slice(0, MAX_TICKET_SUMMARY_LENGTH);
+  const fromFolder = folderNameOf({
+    branch: leading?.context.branch,
+    workPath: leading?.context.workPath,
+    config,
+  });
+  const summary = (fromBranch || fromFolder || notes[0] || repoNameOf(repoPath)).slice(0, MAX_TICKET_SUMMARY_LENGTH);
 
   const body = notes.length ? [NOTES_HEADING, '', ...notes.map((note) => `- ${note}`), ''] : [NO_NOTES_LINE, ''];
   const covers = branches.length ? [`Covers ${branches.join(', ')}.`, ''] : [];

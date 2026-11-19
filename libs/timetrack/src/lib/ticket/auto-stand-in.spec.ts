@@ -109,6 +109,16 @@ describe('autoStandIns', () => {
     expect(opened.map((entry) => entry.rule.workPath).sort()).toEqual([journey.workPath, rework.workPath].sort());
   });
 
+  it('names the placeholder of a directory of a base branch from the directory, not from a commit subject', () => {
+    const context = { repoPath: FIFAGG, branch: 'main', workPath: 'tracks/20261030_post-angular-22-cleanup' };
+    const opened = open({
+      contexts: [unnamed(context, 45 * 60_000)],
+      unattributed: [group(context, [commit('chore: bump the lockfile')])],
+    });
+
+    expect(opened.map((entry) => entry.standIn.name)).toEqual([context.workPath]);
+  });
+
   it('still opens none for a base branch no directory could split', () => {
     expect(open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'main' }, 45 * 60_000)] })).toEqual([]);
   });
