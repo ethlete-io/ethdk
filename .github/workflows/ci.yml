@@ -45,6 +45,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Publish is the first job to reach Verdaccio, at the end of the run; a refused token fails here first.
+      - name: Verdaccio accepts the CI token
+        if: vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          VERDACCIO_URL: ${{ vars.VERDACCIO_URL }}
+          VERDACCIO_TOKEN: ${{ secrets.VERDACCIO_TOKEN }}
+        run: node ./tools/scripts/verdaccio-check.mjs
+
       - uses: ./.github/actions/setup
         with:
           nx-cache-key: checks
