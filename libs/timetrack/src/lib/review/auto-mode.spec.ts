@@ -232,6 +232,56 @@ describe('autoModeAsks', () => {
   });
 });
 
+describe('autoModeAsks on a night nobody was at the machine for', () => {
+  const CONFIG = resolveGitFlowConfig({});
+  const night: WorkGroup = {
+    ...GROUP,
+    from: at('01:15'),
+    to: at('10:45'),
+    attended: false,
+    blocks: [
+      {
+        ...BLOCK,
+        from: at('01:15'),
+        to: at('10:45'),
+        evidence: [{ kind: 'commit', at: at('03:00'), detail: 'Align the bracket', summary: 'Align the bracket' }],
+      },
+    ],
+  };
+  const morning: WorkGroup = { ...night, from: at('10:45'), to: at('11:00'), attended: undefined };
+  const standIn = openStandIn({ name: 'E2E findings', day: TODAY, now: at('00:00') });
+  const nightRows = [
+    { id: unnamedRowId(night), unattended: true },
+    { id: 'stand-in-night', standInId: standIn.id, unattended: true },
+    { id: 'FIFAGG-12769@10:45', issueKey: 'FIFAGG-12769', sources: { issue: 'human' as const } },
+  ];
+  const asksAbout = (unattributed: WorkGroup[], rows: Parameters<typeof autoModeAsks>[0]['rows']) =>
+    autoModeAsks({
+      enabled: true,
+      day: TODAY,
+      today: TODAY,
+      nowMs: NOW,
+      contexts: [CONTEXT],
+      standIns: [standIn],
+      rows,
+      answers: [],
+      evidence: { unattributed, config: CONFIG, maskedNames: [] },
+    });
+
+  it('asks about no context and no stand-in whose only rows of the day are unattended', () => {
+    expect(asksAbout([night], nightRows)).toEqual([]);
+  });
+
+  it('still asks about a context and a stand-in that also hold an attended row', () => {
+    const rows = [...nightRows, { id: unnamedRowId(morning) }, { id: 'stand-in-morning', standInId: standIn.id }];
+
+    expect(asksAbout([night, morning], rows)).toEqual([
+      { kind: 'context', contextId: CONTEXT.id },
+      { kind: 'stand-in', standInId: standIn.id },
+    ]);
+  });
+});
+
 describe('autoModeAsks while a band still runs', () => {
   const CONFIG = resolveGitFlowConfig({});
   const SUBJECT = { kind: 'context' as const, contextId: CONTEXT.id };

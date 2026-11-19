@@ -483,6 +483,28 @@ const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: r
   );
 };
 
+const unattendedOnlySubjectKeys = (options: { rows: readonly AskRow[]; unattributed: readonly WorkGroup[] }) => {
+  const contextOfRow = contextIdsByRowId(options.unattributed);
+  const attendedBySubject = new Map<string, boolean>();
+
+  for (const row of options.rows) {
+    const contextId = contextOfRow.get(row.id ?? '') ?? contextOfRow.get(row.recutOf ?? '');
+    const subject: AutoModeSubject | null = row.standInId
+      ? { kind: 'stand-in', standInId: row.standInId }
+      : contextId
+        ? { kind: 'context', contextId }
+        : null;
+
+    if (!subject) continue;
+
+    const key = autoModeSubjectKey(subject);
+
+    attendedBySubject.set(key, !!attendedBySubject.get(key) || !row.unattended);
+  }
+
+  return new Set([...attendedBySubject].flatMap(([key, attended]) => (attended ? [] : [key])));
+};
+
 /** When each subject of a day settles, so auto mode may ask about it. A stand-in with no row has settled. */
 export const autoModeSettledAt = (options: {
   contexts: readonly UnnamedContext[];
@@ -650,7 +672,8 @@ export const leavesUnnamed = (facts: WorkFacts | undefined) => !!facts?.mergeReq
  * after its last activity, and an answer asked before that counts as outdated once it has. Nothing on any day
  * but today, nothing on a day whose rows are frozen, and nothing while auto mode is off. A stand-in the user reopened is theirs, so it is left
  * alone until a reset hands it back, and so is one whose row the user gave a ticket by hand today. A
- * context with a row the user named by hand is never asked again.
+ * context with a row the user named by hand is never asked again. Nor is a context or stand-in whose every
+ * row of the day is unattended: nobody was there, so auto mode names and proposes nothing for it.
  */
 export const autoModeAsks = (options: {
   enabled: boolean;
@@ -715,6 +738,10 @@ export const autoModeAsks = (options: {
   const calls = [
     ...new Set(options.rows.flatMap((row) => (isAutoModeCallRow(row) ? [callRowIdOf(row) ?? ''] : [])).filter(Boolean)),
   ].map((rowId): AutoModeSubject => ({ kind: 'call', rowId }));
+  const unattendedOnly = unattendedOnlySubjectKeys({
+    rows: options.rows,
+    unattributed: evidence?.unattributed ?? [],
+  });
 
   const outdated = (subject: AutoModeSubject, answer: AutoModeAnswer) => {
     if (subject.kind === 'call' || !evidence || !approvals || !handNamed) return false;
@@ -741,6 +768,8 @@ export const autoModeAsks = (options: {
   };
 
   return [...contexts, ...standIns, ...calls].filter((subject) => {
+    if (unattendedOnly.has(autoModeSubjectKey(subject))) return false;
+
     const answer = answers.get(autoModeSubjectKey(subject));
     const askedEarly =
       !answer && subject.kind === 'stand-in' && !!options.mirrorMatchedStandInIds?.has(subject.standInId);
