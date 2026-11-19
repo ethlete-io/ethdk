@@ -85,7 +85,10 @@ export default definePart({
           .join(' '),
       })
         .replace('<et-choice-field ', '<et-choice-field data-et-control="switch" ')
-        .replace('class="et-choice-field-label-area', 'data-et-skip="CLIPPED" class="et-choice-field-label-area'),
+        .replace(
+          'class="et-choice-field-label-area',
+          `${options.variant === 'card' ? '' : 'data-et-skip="CLIPPED" '}class="et-choice-field-label-area`,
+        ),
       styles: switchStyles,
     }),
 });

@@ -57,7 +57,7 @@ export default definePart({
         state: props.state,
         player: VIDEO,
         buttonAttributes: buttonAttributes(props.state, props.button),
-      }).replace('<et-spinner ', '<et-spinner data-et-skip="CLIPPED" '),
+      }),
       styles: [streamStyles, frame].join('\n'),
     }),
 });

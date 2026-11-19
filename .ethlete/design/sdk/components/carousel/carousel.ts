@@ -39,7 +39,6 @@ const render = ({ count = 5, longCaption = false, previous, next, playToggle, do
         `${INDEX_CHANGE} ${dot?.index === index ? force(dot.interaction) : ''}`,
       ]),
     ),
-    trackAttributes: 'data-et-skip="CLIPPED"',
   }).replaceAll(
     'class="et-carousel-dot-progress-half"',
     'data-et-skip="CLIPPED" class="et-carousel-dot-progress-half"',

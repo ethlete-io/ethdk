@@ -65,7 +65,7 @@ const render = (props: Props) => {
     const count = props.items ?? 24;
 
     return (
-      `<div class="${scrollbarHostClass} scrollbar-viewport" data-et-skip="CLIPPED" data-layout="vertical">` +
+      `<div class="${scrollbarHostClass} scrollbar-viewport" data-layout="vertical">` +
       `<div class="scrollbar-content" style="margin-block-start: -${scroll}px">${items(count, 'Row')}</div></div>` +
       bar('vertical', VIEWPORT_BLOCK, extent(count, ROW), scroll, props)
     );
@@ -81,7 +81,7 @@ const render = (props: Props) => {
     ).join('');
 
     return (
-      `<div class="${scrollbarHostClass} scrollbar-viewport" data-et-skip="CLIPPED" data-layout="both">` +
+      `<div class="${scrollbarHostClass} scrollbar-viewport" data-layout="both">` +
       `<div class="scrollbar-content" style="margin-block-start: -${scroll}px; margin-inline-start: -${scrollInline}px">${grid}</div></div>` +
       bar('vertical', VIEWPORT_BLOCK, extent(rows, CELL_BLOCK), scroll, props) +
       bar('horizontal', VIEWPORT_INLINE, extent(columns, CELL_INLINE), scrollInline, props)
@@ -91,7 +91,7 @@ const render = (props: Props) => {
   const count = props.items ?? 14;
 
   return (
-    `<div class="${scrollbarHostClass} scrollbar-viewport" data-et-skip="CLIPPED" data-layout="horizontal">` +
+    `<div class="${scrollbarHostClass} scrollbar-viewport" data-layout="horizontal">` +
     `<div class="scrollbar-content" style="margin-inline-start: -${scrollInline}px">${items(count, 'Card')}</div></div>` +
     bar('horizontal', VIEWPORT_INLINE, extent(count, CARD), scrollInline, props)
   );

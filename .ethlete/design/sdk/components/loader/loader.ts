@@ -69,7 +69,6 @@ export default definePart({
       'Progress bars in brand, danger and warning; check that each fill and track takes its theme color.',
     'brand-loader': 'The brand loader; check that the mark shows whole and centered in the frame.',
   },
-  checks: { skip: ['CLIPPED'] },
   widths: [480],
   frame: (body) => `<div class="loader-frame">${body}</div>`,
   render: (props: Props) =>

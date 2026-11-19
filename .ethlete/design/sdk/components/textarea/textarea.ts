@@ -115,12 +115,7 @@ export default definePart({
   scrolls: ['long-max-rows', 'manual-resize-overflow'],
   render: (props: Props) =>
     drawing({
-      body: props.scrolled
-        ? markControl(textareaField(props.field)).replace(
-            '<div class="et-form-field-control-frame"',
-            '$& data-et-skip="CLIPPED"',
-          )
-        : markControl(textareaField(props.field)),
+      body: markControl(textareaField(props.field)),
       styles: [textareaFieldStyles, frame].join('\n'),
     }),
 });

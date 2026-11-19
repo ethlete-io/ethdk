@@ -243,8 +243,8 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   const partPathOf = (element) => {
     const names = [];
     for (let at = element; at && at !== root; at = at.parentElement) {
-      names.unshift(nameOf(at));
       if (at.hasAttribute('data-et-part')) break;
+      names.unshift(nameOf(at));
     }
     return names.join(' > ');
   };

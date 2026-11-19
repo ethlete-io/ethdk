@@ -59,7 +59,7 @@ const render = (props: Props) => {
   const active = position === 'end' ? items - 1 : position === 'start' ? 0 : best;
   const buttons = props.buttons ?? 'inside';
 
-  const markup = scrollable({
+  return scrollable({
     direction,
     canScroll,
     position,
@@ -71,7 +71,7 @@ const render = (props: Props) => {
     itemGap: GAP,
     color: props.color,
     endButtonAttributes: props.endButton ? `data-et-force="${props.endButton}"` : undefined,
-    containerAttributes: `data-et-skip="CLIPPED" style="--scrollable-offset: -${offset}px"`,
+    containerAttributes: `style="--scrollable-offset: -${offset}px"`,
     items: Array.from({ length: items }, (_, index) => ({
       tag: 'button',
       content: `Item ${index}`,
@@ -85,11 +85,6 @@ const render = (props: Props) => {
         .join(' '),
     })),
   });
-
-  return markup.replace(
-    'class="et-scrollable-progress-bar"',
-    'data-et-skip="CLIPPED" class="et-scrollable-progress-bar"',
-  );
 };
 
 export default definePart({
