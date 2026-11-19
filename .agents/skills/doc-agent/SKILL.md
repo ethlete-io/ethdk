@@ -82,7 +82,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## Consumers (ADR 0370)
 
 - A consumer repo keeps its decisions; here only SDK-interface ADRs.
-- Never run its shifts. Announce the human's break and deadline to every consumer session too: mailbox `send --to` from its checkout. Its batched SDK request (missing, repro, meanwhile, blocked?) becomes
+- Never run its shifts. A break deadline means PC off: every session (consumers via mailbox) saves its handoff by then. Its batched SDK request (missing, repro, meanwhile, blocked?) becomes
   a row in `plans/sdk/STATUS.md` plus a queue entry; answer at once only a blocked one.
 - Merge the prerelease PR once CI (Next) is green, at most daily; a blocked consumer at once (ADR 0377).
 
