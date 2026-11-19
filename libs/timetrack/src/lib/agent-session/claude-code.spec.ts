@@ -605,6 +605,10 @@ describe('parseClaudeCodeSessionLog prompts', () => {
       '{"parentUuid":"c6904bdd-75e9-4329-88d5-66cb587f5264","isSidechain":false,"type":"user","message":{"role":"user","content":"<command-name>/clear</command-name>\\n            <command-message>clear</command-message>\\n            <command-args></command-args>"},"uuid":"68327b70-ad79-483f-8673-ef879a01de6f","timestamp":"2026-11-18T00:21:12.485Z","userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}';
     const resumeAt = (timestamp: string) =>
       `{"parentUuid":"14d6ab9c-e13a-47c6-949c-43739e724308","isSidechain":false,"promptId":"8054b9c2-b052-4086-aab8-10b39a8bc710","type":"user","message":{"role":"user","content":"<command-message>ethlete-handoff</command-message>\\n<command-name>/ethlete-handoff</command-name>\\n<command-args>resume post-upgrade</command-args>"},"uuid":"fc3df37c-c554-4dab-9ace-4c64a6072230","timestamp":"${timestamp}","origin":{"kind":"human"},"turnOrigin":"human","turnPosition":{"promptIndex":1,"turnIndex":1},"userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}`;
+    const roleRestartAt = (timestamp: string) =>
+      `{"parentUuid":"8a6795ae-81ec-4d7a-aee3-0c58542b0e8d","isSidechain":false,"type":"user","message":{"role":"user","content":"<command-message>doc-agent</command-message>\\n<command-name>/doc-agent</command-name>\\n<command-args>then read .claude/handoffs/doc-agent-night.md and continue the night shift from it</command-args>"},"uuid":"4e538837-d336-4505-aaae-f4b5b2d0a50e","timestamp":"${timestamp}","origin":{"kind":"human"},"turnOrigin":"human","turnPosition":{"promptIndex":1,"turnIndex":1},"userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}`;
+    const roleAskedBy = (lines: string[]) =>
+      parse(lines).prompts.find((event) => event.promptId === '4e538837-d336-4505-aaae-f4b5b2d0a50e')?.askedBy;
     const askedBy = (lines: string[]) =>
       parse(lines).prompts.find((event) => event.promptId === 'fc3df37c-c554-4dab-9ace-4c64a6072230')?.askedBy;
 
@@ -618,6 +622,18 @@ describe('parseClaudeCodeSessionLog prompts', () => {
 
     it('still says a human asked, for a handoff resume no /clear came before', () => {
       expect(askedBy([resumeAt('2026-11-18T00:21:17.445Z')])).toBe('human');
+    });
+
+    it('says the machine asked, for the role skill it typed seconds after its /clear', () => {
+      expect(roleAskedBy([clear, roleRestartAt('2026-11-18T00:21:17.445Z')])).toBe('machine');
+    });
+
+    it('still says a human asked, for a role skill long after a /clear', () => {
+      expect(roleAskedBy([clear, roleRestartAt('2026-11-18T00:23:17.445Z')])).toBe('human');
+    });
+
+    it('still says a human asked, for a role skill no /clear came before', () => {
+      expect(roleAskedBy([roleRestartAt('2026-11-18T00:21:17.445Z')])).toBe('human');
     });
   });
 

@@ -481,6 +481,7 @@ const isTypedByProgram = (text: string) => {
 
 const CLEAR_COMMAND = /^<command-name>\/clear<\/command-name>/;
 const HANDOFF_COMMAND = /<command-name>\/(?:[\w-]+-)?handoff<\/command-name>/;
+const ROLE_COMMAND = /<command-name>\/(?:builder|doc)-agent<\/command-name>/;
 
 /**
  * How soon after a `/clear` the restart of an `agent-sessions` copy older than its marker types the
@@ -497,8 +498,8 @@ const isClearCommand = (record: Record<string, unknown>) => {
 const isUnmarkedRestartResume = (text: string, sinceClearMs: number | undefined) =>
   sinceClearMs !== undefined &&
   sinceClearMs <= RESUME_AFTER_CLEAR_MS &&
-  HANDOFF_COMMAND.test(text) &&
-  /^resume\b/.test(commandArgsOf(text).trim());
+  ((HANDOFF_COMMAND.test(text) && /^resume\b/.test(commandArgsOf(text).trim())) ||
+    (ROLE_COMMAND.test(text) && /^then\s/.test(commandArgsOf(text).trim())));
 
 /** The `promptSource` values a person is behind. Anything else the agent wrote for itself. */
 const HUMAN_PROMPT_SOURCES = ['typed', 'queued', 'suggestion_accepted'];
@@ -645,7 +646,7 @@ const leftCwdFor = (record: WorkedRecord) => {
  * The version of the parse rules below. Raise it with every change that alters what a log already read
  * would store: the collector then reads each stored log again from its top, without anyone asking.
  */
-export const CLAUDE_CODE_PARSER_VERSION = 4;
+export const CLAUDE_CODE_PARSER_VERSION = 5;
 
 /** The log group of a Claude Code log id: a subagent's log sits under its parent session's id. */
 export const claudeCodeLogGroupOf = (logId: string) => logId.split('/')[0] ?? logId;
