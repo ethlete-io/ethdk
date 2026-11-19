@@ -532,7 +532,7 @@
     "pid": 2342738
   },
   "components/shell-system-picker": {
-    "hash": "5a8b97a4d997826d",
+    "hash": "2b6c6ec238c35ebc",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "63756c3ecafc67df",
@@ -556,7 +556,7 @@
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.css": "e575c402800900cd",
-      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "8947eb1def205b09",
+      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "32127ddc409ab162",
       ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -585,10 +585,10 @@
     },
     "actions": ["closed", "emit:productChange", "open"],
     "builder": "designer",
-    "at": "2026-11-17T20:30:48.939Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-19T14:29:59.092Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 2909163
   },
   "components/sketch-question": {
     "hash": "00929200d33aa85b",
