@@ -450,6 +450,9 @@ thumbnail measures the same as the full size. A compare of design and app never 
 both are off by the same amount. Its hits on merged parts that predate it are listed in the
 product's `rule-baseline.json` (ADR 0201), and `data-et-skip="CONTROL-HEIGHT"` marks one on purpose.
 
+`SKIP-UNUSED` names a `data-et-skip` (or a `checks: { skip }` entry of the part) that suppresses no problem in any rendered
+state of its part: delete it, a skip lives only while it hides something.
+
 The design server answers the same list as JSON: `GET /__design/open-points?product=` lists every part with
 open points as `{ drawn: false, parts: [{ part, points }] }`, and `&part=<layer>/<name>` answers one part as
 `{ part, drawn, points }`. Missing control states need a draw, so only `&draw=true` with a `part`

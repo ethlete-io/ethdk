@@ -69,6 +69,9 @@ export type RenderIssue = {
 export type RenderedState = Pick<RenderIssue, 'product' | 'part' | 'state' | 'size' | 'sketch'>;
 
 const BUSY_MARK = 'BUSY';
+const SKIP_USED_MARK = 'SKIPUSED';
+const SKIP_SEEN_MARK = 'SKIPSEEN';
+const SKIP_UNUSED = 'SKIP-UNUSED';
 
 /** One drawn state of a part whose render holds `aria-busy="true"` or a loading button, so it shows ongoing work. */
 export type BusyState = Pick<RenderIssue, 'product' | 'part' | 'state' | 'sketch'>;
@@ -219,6 +222,7 @@ const inspectFrame = (options: {
     }
     return skipped;
   };
+  const usedSkips = new Set();
   const nameOf = (element) => {
     const tag = element.tagName.toLowerCase();
     const kit = element.getAttribute('data-wireframe');
@@ -236,9 +240,37 @@ ${VISUALLY_HIDDEN_STATEMENTS}
     for (let at = element; at && at !== root && names.length < ${PATH_DEPTH}; at = at.parentElement) names.unshift(nameOf(at));
     return names.join(' > ');
   };
+  const partPathOf = (element) => {
+    const names = [];
+    for (let at = element; at && at !== root; at = at.parentElement) {
+      names.unshift(nameOf(at));
+      if (at.hasAttribute('data-et-part')) break;
+    }
+    return names.join(' > ');
+  };
+  const skipSourcesOf = (element, rule) => {
+    const ids = [];
+    for (let at = element; at && at !== root; at = at.parentElement) {
+      if ((at.getAttribute('data-et-skip') ?? '').split(' ').includes(rule)) ids.push(JSON.stringify(['attr', rule, partPathOf(at)]));
+      for (const key of (at.getAttribute('data-et-part') ?? '').split(' '))
+        if ((options.skips[key] ?? []).includes(rule)) ids.push(JSON.stringify(['part', rule, key]));
+    }
+    return ids;
+  };
+  const withSkipMarks = () => {
+    for (const id of usedSkips) found.push({ rule: '${SKIP_USED_MARK}', path: '', detail: id });
+    for (const element of root.querySelectorAll('[data-et-skip]'))
+      for (const rule of element.getAttribute('data-et-skip').split(' ').filter((name) => options.escapable.includes(name)))
+        found.push({ rule: '${SKIP_SEEN_MARK}', path: pathOf(element), detail: JSON.stringify([JSON.stringify(['attr', rule, partPathOf(element)]), (element.closest('[data-et-part]')?.getAttribute('data-et-part') ?? '').split(' ')[0]]) });
+    return found;
+  };
   const report = (rule, element, detail) => {
     const path = pathOf(element);
-    if ((rule !== 'HIDDEN-CONTENT' && skipsOf(element).has(rule)) || seen.has(rule + path)) return;
+    if (rule !== 'HIDDEN-CONTENT' && skipsOf(element).has(rule)) {
+      for (const id of skipSourcesOf(element, rule)) usedSkips.add(id);
+      return;
+    }
+    if (seen.has(rule + path)) return;
     seen.add(rule + path);
     const escape = '; on purpose: data-et-skip="' + rule + '" on the element, or definePart({ checks: { skip: [\\'' + rule + '\\'] } })';
     found.push({ rule, path, detail: options.escapable.includes(rule) ? detail + escape : detail });
@@ -257,7 +289,7 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   }
 
   const partRoot = root.querySelector('[data-et-part]') ?? root.querySelector(':scope > :not(style)');
-  if (!partRoot) return found;
+  if (!partRoot) return withSkipMarks();
 
   const busy = root.querySelector('${BUSY_SELECTOR}');
   if (busy) found.push({ rule: '${BUSY_MARK}', path: pathOf(busy), detail: 'draws ongoing work' });
@@ -303,7 +335,7 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   const box = partRoot.getBoundingClientRect();
   if (box.width === 0 || box.height === 0) {
     report('ZERO-SIZE', partRoot, 'drawn at ' + Math.round(box.width) + 'x' + Math.round(box.height));
-    return found;
+    return withSkipMarks();
   }
 
   const page = document.documentElement;
@@ -599,7 +631,7 @@ ${SEE_THROUGH_STATEMENTS}
     }
 ${ARROW_ANCHOR_STATEMENTS}
 ${CONTROL_HEIGHT_STATEMENTS}
-  return found;
+  return withSkipMarks();
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;
 
 const stringsOf = (value: unknown) =>
@@ -632,6 +664,61 @@ const firstOfEach = (issues: RenderIssue[]) => {
 
     return true;
   });
+};
+
+const SKIP_MARKS: ReadonlySet<string> = new Set([SKIP_USED_MARK, SKIP_SEEN_MARK]);
+
+type SkipJudged = { product: string; part: string; skips: string[] };
+
+const unusedSkipsOf = (options: { issues: RenderIssue[]; judged: SkipJudged[] }): RenderIssue[] => {
+  const { issues, judged } = options;
+  const undrawn = new Set(
+    issues
+      .filter((issue) => issue.undrawn || issue.rule === RENDER_TIMEOUT)
+      .map((issue) => `${issue.product}\0${issue.part}`),
+  );
+  const result: RenderIssue[] = [];
+
+  for (const { product, part, skips } of judged) {
+    if (undrawn.has(`${product}\0${part}`)) continue;
+
+    const own = issues.filter((issue) => issue.product === product && issue.part === part && !issue.sketch);
+    const used = new Set(own.filter((issue) => issue.rule === SKIP_USED_MARK).map((issue) => issue.detail));
+    const reported = new Set<string>();
+
+    for (const issue of own) {
+      if (issue.rule !== SKIP_SEEN_MARK) continue;
+
+      const [id, owner] = JSON.parse(issue.detail) as [string, string];
+      const [, rule] = JSON.parse(id) as [string, string, string];
+
+      if (owner !== part || used.has(id) || reported.has(id)) continue;
+
+      reported.add(id);
+      result.push({
+        ...issue,
+        rule: SKIP_UNUSED,
+        detail: `data-et-skip="${rule}" suppresses nothing in any state - remove it`,
+      });
+    }
+
+    for (const rule of skips) {
+      if (used.has(JSON.stringify(['part', rule, part]))) continue;
+
+      result.push({
+        rule: SKIP_UNUSED,
+        product,
+        part,
+        state: '-',
+        size: '-',
+        path: `definePart checks.skip ${rule}`,
+        detail: `checks: { skip: ['${rule}'] } suppresses nothing in any state - remove it`,
+        sketch: null,
+      });
+    }
+  }
+
+  return result;
 };
 
 export const uniqueIssuesOf = (issues: RenderIssue[]) => {
@@ -1028,6 +1115,7 @@ export const renderIssuesOf = async (options: {
     const gridWarnings: RenderIssue[] = [];
     const baselines = new Map<string, Frame[]>();
     const mergedSkips = new Map<string, string[]>();
+    const judged: SkipJudged[] = [];
     const framed = new Map<string, boolean>();
     for (const { product, sketch, parts, unchanged } of jobs) {
       const skips: Record<string, string[]> = {};
@@ -1074,6 +1162,8 @@ export const renderIssuesOf = async (options: {
         skips[key] = stringsOf(definition?.checks?.skip);
 
         if (parts && !parts.includes(key)) continue;
+
+        if (!sketch && !unchanged?.[key]?.length) judged.push({ product, part: key, skips: skips[key] ?? [] });
 
         const states =
           definition?.states && typeof definition.states === 'object' ? Object.keys(definition.states) : [];
@@ -1264,7 +1354,11 @@ export const renderIssuesOf = async (options: {
           options.onProgress?.(`[${done}/${total}] ${part} ${Math.round(ms / 1000)}s`),
       }),
     );
-    const inspected = uniqueIssuesOf(all.filter((issue) => issue.rule !== BUSY_MARK));
+    const unused = unusedSkipsOf({ issues: all, judged });
+    const inspected = uniqueIssuesOf([
+      ...all.filter((issue) => issue.rule !== BUSY_MARK && !SKIP_MARKS.has(issue.rule)),
+      ...unused,
+    ]);
     const isInput = isControlInput;
     const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
     const keyOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part]);
@@ -1318,6 +1412,7 @@ export const renderIssuesOf = async (options: {
           (issue) =>
             asked.has(JSON.stringify([issue.product, issue.part])) &&
             issue.rule !== BUSY_MARK &&
+            !SKIP_MARKS.has(issue.rule) &&
             issue.rule !== RENDER_TIMEOUT &&
             !WARNING_RULES.has(issue.rule) &&
             !isInput(issue),

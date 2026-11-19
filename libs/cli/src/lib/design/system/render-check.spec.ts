@@ -1461,6 +1461,72 @@ describe('groupedIssueLinesOf', () => {
   });
 });
 
+describe('SKIP-UNUSED', () => {
+  const skipFixture = (name: string, markup: string) => {
+    const target = checkout({ [`components/${name}`]: { body: '<div></div>' } });
+
+    writeFileSync(
+      join(target, DESIGN_DIR, 'shop/components', name, `${name}.ts`),
+      `import { definePart, drawing, html } from '@design-system';
+
+export default definePart({
+  note: 'A fixture.',
+  describe: { a: 'a', b: 'b' },
+  states: { a: { cut: true }, b: { cut: false } },
+  render: ({ cut }: { cut: boolean }) =>
+    drawing({ body: html\`${markup}\`, styles: '' }),
+});
+`,
+    );
+
+    return target;
+  };
+  const skipIssuesOf = async (context: { skip: (note?: string) => never }, target: string) => {
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    return rendered.issues.filter((issue) => issue.rule === 'CLIPPED' || issue.rule === 'SKIP-UNUSED');
+  };
+  const WIDE =
+    '<div data-et-skip="CLIPPED" style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div>';
+  const NARROW = '<div data-et-skip="CLIPPED" style="width: 100px; overflow: hidden"><div>Fine</div></div>';
+
+  it('is silent when the skip suppresses a clipped box', async (context) => {
+    const found = await skipIssuesOf(context, checkout({ 'components/cut-element': PARTS['components/cut-element']! }));
+
+    expect(found).toEqual([]);
+  }, 120_000);
+
+  it('names a skip on an element that clips in no state', async (context) => {
+    const found = await skipIssuesOf(context, checkout({ 'components/fine': { body: NARROW } }));
+
+    expect(found.map((issue) => [issue.rule, issue.part, issue.detail])).toEqual([
+      ['SKIP-UNUSED', 'components/fine', 'data-et-skip="CLIPPED" suppresses nothing in any state - remove it'],
+    ]);
+  }, 120_000);
+
+  it('is silent when the skip suppresses in only one of two states', async (context) => {
+    const found = await skipIssuesOf(context, skipFixture('stated', '${cut ? `' + WIDE + '` : `' + NARROW + '`}'));
+
+    expect(found).toEqual([]);
+  }, 120_000);
+
+  it('names a part-level skip that suppresses nothing', async (context) => {
+    const found = await skipIssuesOf(
+      context,
+      checkout({ 'components/fine-part': { body: '<div>Fine</div>', extra: "checks: { skip: ['CLIPPED'] }," } }),
+    );
+
+    expect(found.map((issue) => [issue.rule, issue.part])).toEqual([['SKIP-UNUSED', 'components/fine-part']]);
+  }, 120_000);
+});
+
 describe('uniqueIssuesOf', () => {
   const issue = {
     rule: 'CLIPPED',
