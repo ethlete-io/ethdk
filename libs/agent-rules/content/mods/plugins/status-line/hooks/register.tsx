@@ -7,7 +7,14 @@ import type { StatusFields } from './line';
 const TICK_MS = 5000;
 const CI_EVERY_MS = 2 * 60_000;
 const CI_TIMEOUT_MS = 15_000;
+const ROLE_SKILLS: Record<string, boolean> = { 'doc-agent': true, 'builder-agent': false };
 const line = atom({ plugin: 'status-line', key: 'line' } as const, null);
+const isDocSession = atom({ plugin: 'status-line', key: 'isDocSession' } as const, false);
+
+async function markRole($: EngineInterface, skill: string | undefined) {
+  const isDoc = skill === undefined ? undefined : ROLE_SKILLS[skill];
+  if (isDoc !== undefined) await update($, isDocSession, () => isDoc);
+}
 
 type Source = { mtimeMs: number; text: string };
 
@@ -93,6 +100,7 @@ async function compute($: EngineInterface, nowMs: number): Promise<StatusFields>
 
 async function tick($: EngineInterface) {
   try {
+    if (!(await $.state.get({ plugin: 'status-line', key: 'isDocSession' } as const)).value) return;
     const nowMs = await $.clock.now();
     void refreshCi($, nowMs);
     const text = formatLine(await compute($, nowMs));
@@ -109,7 +117,18 @@ export const register: Register = (on) => {
     return next(e);
   });
 
+  on('tool.call', { tool: 'Skill' }, async ($, e, next) => {
+    await markRole($, e.skill).catch(() => undefined);
+    return next(e);
+  });
+
+  on('prompt.submit', async ($, e, next) => {
+    await markRole($, e.command?.name).catch(() => undefined);
+    return next(e);
+  });
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (!(await $.state.get({ plugin: 'status-line', key: 'isDocSession' } as const)).value) return next(e);
     const text = (await $.state.get({ plugin: 'status-line', key: 'line' } as const)).value;
     if (!text) return next(e);
     const { Box, Text } = $.ui.resolve(e);

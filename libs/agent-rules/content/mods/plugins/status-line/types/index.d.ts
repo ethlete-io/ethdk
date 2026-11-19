@@ -1,5 +1,5 @@
 declare module 'claude-code' {
   interface PluginState {
-    'status-line': { line: string | null };
+    'status-line': { line: string | null; isDocSession: boolean };
   }
 }
