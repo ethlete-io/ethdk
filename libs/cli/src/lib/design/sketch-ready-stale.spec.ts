@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -103,5 +103,49 @@ describe('sketch ready on a stale base', { timeout: 120_000 }, () => {
     lines.length = 0;
     expect(await designSketch({ target, argv: ['check', '--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines).toContain(line);
+  });
+
+  it('carries a declaration-only change of the part into every open variant and keeps ready passing', async () => {
+    const target = acme();
+    const lines = output();
+    const part = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
+    const variants = ['a', 'b'];
+
+    expect(
+      await write(
+        target,
+        'new',
+        'components/button',
+        '--override',
+        '--variants',
+        'a,b',
+        '--round',
+        'R',
+        '--note',
+        'n',
+        '--product',
+        'acme',
+      ),
+    ).toBe(0);
+    const git = (...args: string[]) => gitExec(args, { cwd: target, encoding: 'utf8' }).trim();
+
+    git('init', '-q');
+    git('add', '-A');
+    git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'drawn');
+    writeFileSync(part, readFileSync(part, 'utf8').replace('  states:', '  controls: {},\n  states:'));
+    git('add', '-A');
+    git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'controls');
+
+    lines.length = 0;
+    expect(await write(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);
+
+    for (const variant of variants) {
+      const file = join(target, DESIGN_DIR, 'acme/sketches/components-button', variant, 'components/button/button.ts');
+
+      expect(readFileSync(file, 'utf8')).toContain('controls: {},');
+      expect(lines.some((line) => line.startsWith(`PORTED ${variant}: components/button/button.ts`))).toBe(true);
+    }
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
 });
