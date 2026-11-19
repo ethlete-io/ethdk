@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import { defineRootProvider, equal, toInjectFn } from '@ethlete/core';
 import {
   CurrentActivity,
   DayCheck,
@@ -152,6 +152,16 @@ const LOCKED: Readouts = {
  */
 const isSame = (before: Readouts, after: Readouts) => JSON.stringify(before) === JSON.stringify(after);
 
+const withoutAt = (value: unknown) =>
+  value && typeof value === 'object' && 'at' in value ? { ...value, at: undefined } : value;
+
+const sameCollected = (a: Record<string, unknown>, b: Record<string, unknown>) => {
+  const stripped = (all: Record<string, unknown>) =>
+    Object.fromEntries(Object.entries(all).map(([name, value]) => [name, withoutAt(value)]));
+
+  return equal(stripped(a), stripped(b));
+};
+
 /**
  * Keeps the tray menu saying what today looks like, whether or not the window is open.
  *
@@ -176,21 +186,24 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const readout = signal<TrayReadout | null>(null);
   const published = signal<WidgetReadout | null>(null);
 
-  const collected = computed(() => ({
-    windows: windows.lastRun(),
-    git: git.lastRun(),
-    sessions: agentSessions.lastRun(),
-    calendar: calendar.lastRun(),
-    gitlab: gitlab.lastRun(),
-    github: github.lastRun(),
-    ingest: ingest.lastRun(),
-    timer: timers.revision(),
-    elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
-    pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
-    targetMs: settings.settings().dayTargetMs,
-    /** A rule named a context the day could not, so the total it reports changes with it. */
-    rules: settings.settings().attributionRules.length,
-  }));
+  const collected = computed(
+    () => ({
+      windows: windows.lastRun(),
+      git: git.lastRun(),
+      sessions: agentSessions.lastRun(),
+      calendar: calendar.lastRun(),
+      gitlab: gitlab.lastRun(),
+      github: github.lastRun(),
+      ingest: ingest.lastRun(),
+      timer: timers.revision(),
+      elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
+      pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
+      targetMs: settings.settings().dayTargetMs,
+      /** A rule named a context the day could not, so the total it reports changes with it. */
+      rules: settings.settings().attributionRules.length,
+    }),
+    { equal: sameCollected },
+  );
 
   const read$ = (): Observable<Readouts> => {
     const current = settings.settings();
