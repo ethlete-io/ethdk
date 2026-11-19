@@ -211,7 +211,7 @@ describe('parseCodexSessionLog', () => {
       ],
     });
 
-    expect(result.session).toEqual({ sessionId: SESSION, model: 'gpt-5.6-pro' });
+    expect(result.session).toMatchObject({ sessionId: SESSION, model: 'gpt-5.6-pro' });
   });
 
   it('drops a sample the cursor has already seen and keeps the spend beside it', () => {
@@ -229,7 +229,7 @@ describe('parseCodexSessionLog', () => {
     expect(result.usage.map((event) => event.at.toISOString())).toEqual(['2026-08-18T21:04:30.207Z']);
   });
 
-  it('thins the samples to the interval but always emits a change of checkout and the last record', () => {
+  it('thins the samples to the interval but always emits a change of checkout', () => {
     const result = parse({
       lines: [
         sessionMeta('2026-08-18T21:00:00.000Z'),
@@ -245,8 +245,27 @@ describe('parseCodexSessionLog', () => {
       ['2026-08-18T21:00:00.000Z', CWD],
       ['2026-08-18T21:01:00.000Z', CWD],
       ['2026-08-18T21:01:10.000Z', '/home/human/dev/fut-frontend'],
-      ['2026-08-18T21:01:20.000Z', '/home/human/dev/fut-frontend'],
     ]);
+  });
+
+  it('stores the same samples whether a log is read from the top or in chunks', () => {
+    const stamps = ['00:10', '00:40', '01:10', '01:40', '02:10'];
+    const dated = [
+      sessionMeta('2026-08-18T21:00:00.000Z'),
+      ...stamps.map((stamp) => item(`2026-08-18T21:${stamp}.000Z`)),
+    ];
+    const whole = parse({ lines: dated, sampleIntervalMs: 60_000 });
+    const events: string[] = [];
+    let resume: Parameters<typeof parse>[0]['resume'];
+
+    for (const chunk of [dated.slice(0, 3), dated.slice(3, 5), dated.slice(5)]) {
+      const result = parse({ lines: chunk, sampleIntervalMs: 60_000, resume });
+
+      events.push(...result.events.map((event) => event.at.toISOString()));
+      resume = { after: new Date(events[events.length - 1] ?? 0), session: result.session, cwd: CWD };
+    }
+
+    expect(events).toEqual(whole.events.map((event) => event.at.toISOString()));
   });
 
   it('counts a line that is not a JSON record and reads the rest of the batch', () => {

@@ -103,6 +103,7 @@ describe('collectAgentSessions$', () => {
         after: new Date('2026-08-11T09:00:00.000Z'),
         title: undefined,
         cwd: '/Users/human/dev/ethlete-sdk',
+        session: { sampled: expect.any(Object) },
       },
       {
         id: 's2',
@@ -110,6 +111,7 @@ describe('collectAgentSessions$', () => {
         after: new Date('2026-08-11T09:10:00.000Z'),
         title: undefined,
         cwd: '/Users/human/dev/ethlete-sdk',
+        session: { sampled: expect.any(Object) },
       },
     ]);
   });

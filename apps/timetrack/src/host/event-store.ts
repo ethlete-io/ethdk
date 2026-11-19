@@ -68,11 +68,17 @@ const sessionRecordOf = (json: string): Record<string, unknown> | undefined => {
   }
 };
 
+const isSampled = (value: unknown): value is NonNullable<AgentLogSessionState['sampled']> =>
+  typeof value === 'object' &&
+  value !== null &&
+  Object.values(value).every((entry) => typeof entry?.at === 'number' && typeof entry?.context === 'string');
+
 const reviveSessionState = (record: Record<string, unknown> | undefined): AgentLogSessionState | undefined =>
   record && {
     sessionId: stringField(record, 'sessionId'),
     model: stringField(record, 'model'),
     ...(record['titleIsCustom'] === true ? { titleIsCustom: true } : {}),
+    ...(isSampled(record['sampled']) ? { sampled: record['sampled'] } : {}),
   };
 
 /**

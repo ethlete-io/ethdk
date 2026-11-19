@@ -123,18 +123,38 @@ describe('parseClaudeCodeSessionLog', () => {
     expect(times(result.events)).toEqual([at(0, 0), at(0, 62)].map((date) => date.toISOString()));
   });
 
-  it('always emits the final record so a block ends where the session did', () => {
+  it('does not emit a record inside the interval just because it is the last one', () => {
     const result = parse([record({ minute: 0 }), record({ minute: 0, second: 10 })], { sampleIntervalMs: 60_000 });
 
-    expect(times(result.events)).toEqual([at(0, 0), at(0, 10)].map((date) => date.toISOString()));
+    expect(times(result.events)).toEqual([at(0, 0).toISOString()]);
   });
 
-  it('does not emit a duplicate when the final record shares the last sample instant', () => {
-    const line = record({ minute: 0 });
+  it('stores the same samples whether a log is read from the top or in chunks', () => {
+    const lines = [0, 20, 50, 70, 100, 130, 150, 190, 250].map((second) => record({ minute: 0, second }));
+    lines.splice(5, 0, record({ minute: 2, second: 15, branch: 'other' }));
+    const whole = parse(lines, { sampleIntervalMs: 60_000 });
 
-    const result = parse([line, line], { sampleIntervalMs: 60_000 });
+    const chunked = [lines.slice(0, 3), lines.slice(3, 7), lines.slice(7)].reduce<{
+      events: AgentSessionEvent[];
+      resume?: Parameters<typeof parseClaudeCodeSessionLog>[0]['resume'];
+    }>(
+      (state, chunk) => {
+        const result = parse(chunk, { sampleIntervalMs: 60_000, resume: state.resume });
+        const events = [...state.events, ...result.events];
 
-    expect(result.events).toHaveLength(1);
+        return {
+          events,
+          resume: {
+            after: events[events.length - 1]?.at,
+            title: result.title,
+            session: result.session,
+          },
+        };
+      },
+      { events: [] },
+    );
+
+    expect(times(chunked.events)).toEqual(times(whole.events));
   });
 
   it('emits on a branch switch even inside the sampling interval', () => {
@@ -389,7 +409,7 @@ describe('parseClaudeCodeSessionLog, on token spend', () => {
 
     const result = parse(lines, { sampleIntervalMs: 60_000 });
 
-    expect(result.events).toHaveLength(2);
+    expect(result.events).toHaveLength(1);
     expect(result.usage).toHaveLength(3);
   });
 
@@ -531,7 +551,7 @@ describe('parseClaudeCodeSessionLog prompts', () => {
       at(5, 20).toISOString(),
       at(5, 40).toISOString(),
     ]);
-    expect(times(result.events)).toEqual([at(5).toISOString(), at(5, 40).toISOString()]);
+    expect(times(result.events)).toEqual([at(5).toISOString()]);
   });
 
   it('reads a prompt behind the resume cursor, because the store keys it', () => {
@@ -701,7 +721,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     expect(workedIn(result.events)).toEqual([CWD]);
   });
 
-  it('follows a command that changes into another checkout first, and emits there inside the interval', () => {
+  it('follows a command that changes into another checkout first, and emits at the change', () => {
     const result = parse(
       [
         record({ minute: 0 }),
@@ -712,8 +732,8 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
       { sampleIntervalMs: 60_000 },
     );
 
-    expect(workedIn(result.events)).toEqual([CWD, ALTCHA_DIR, ALTCHA_DIR]);
-    expect(times(result.events)).toEqual([at(0, 0), at(0, 5), at(0, 30)].map((date) => date.toISOString()));
+    expect(workedIn(result.events)).toEqual([CWD, ALTCHA_DIR]);
+    expect(times(result.events)).toEqual([at(0, 0), at(0, 5)].map((date) => date.toISOString()));
   });
 
   it('follows the file an edit or a write names', () => {

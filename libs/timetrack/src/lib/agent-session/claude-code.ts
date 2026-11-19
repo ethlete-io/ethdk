@@ -687,7 +687,7 @@ const leftCwdFor = (record: WorkedRecord) => {
  * The version of the parse rules below. Raise it with every change that alters what a log already read
  * would store: the collector then reads each stored log again from its top, without anyone asking.
  */
-export const CLAUDE_CODE_PARSER_VERSION = 6;
+export const CLAUDE_CODE_PARSER_VERSION = 7;
 
 /** The log group of a Claude Code log id: a subagent's log sits under its parent session's id. */
 export const claudeCodeLogGroupOf = (logId: string) => logId.split('/')[0] ?? logId;
@@ -700,7 +700,8 @@ const contextOf = (record: WorkedRecord) => `${record.cwd}\u0000${record.gitBran
  * so switching branch mid-session splits the block the way a checkout would.
  *
  * Records are thinned to one sample per `sampleIntervalMs`, except that a change of directory or branch
- * always emits, and so does each session's final record, so a block ends where the session did.
+ * always emits. The last sample per stream travels in `session.sampled`, so the samples do not depend on
+ * where a read cut the log.
  *
  * Every turn that reports `message.usage` also becomes an `AgentUsageEvent`, and every prompt the user
  * typed becomes an `AgentPromptEvent`, both whatever the sample interval: neither is a sample of time.
@@ -785,13 +786,12 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     ...(workedIn ? { workedIn } : {}),
     ...(custom !== undefined ? { titleIsCustom: true } : {}),
   };
-  const finalIndexOf = new Map<string, number>();
 
   const streamOf = (record: WorkedRecord) => `${record.sessionId}\u0000${record.agentId ?? ''}`;
 
-  records.forEach((record, index) => finalIndexOf.set(streamOf(record), index));
-
-  const emitted = new Map<string, { at: number; context: string }>();
+  const emitted = new Map<string, { at: number; context: string }>(
+    Object.entries(options.resume?.session?.sampled ?? {}),
+  );
   const events: AgentSessionEvent[] = [];
 
   const emit = (record: WorkedRecord) => {
@@ -816,7 +816,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     });
   };
 
-  records.forEach((record, index) => {
+  records.forEach((record) => {
     const previous = emitted.get(streamOf(record));
 
     if (!previous) {
@@ -826,10 +826,11 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     }
 
     const elapsed = record.at.getTime() - previous.at;
-    const isFinal = finalIndexOf.get(streamOf(record)) === index;
 
-    if (previous.context !== contextOf(record) || elapsed >= interval || (isFinal && elapsed > 0)) emit(record);
+    if (previous.context !== contextOf(record) || elapsed >= interval) emit(record);
   });
+
+  if (emitted.size) session.sampled = Object.fromEntries(emitted);
 
   const usage = [...usageByTurnId.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
   const prompts = [...promptById.values()].sort((a, b) => a.at.getTime() - b.at.getTime());

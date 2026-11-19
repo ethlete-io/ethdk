@@ -189,7 +189,7 @@ const promptOf = (record: CodexRecord, state: CodexSessionState): AgentPromptEve
 };
 
 /** The version of the parse rules below, raised the way `CLAUDE_CODE_PARSER_VERSION` is. */
-export const CODEX_PARSER_VERSION = 1;
+export const CODEX_PARSER_VERSION = 2;
 
 /**
  * Reads a Codex CLI rollout log — the JSONL file under `~/.codex/sessions/<yyyy>/<mm>/<dd>/` — into
@@ -197,8 +197,8 @@ export const CODEX_PARSER_VERSION = 1;
  *
  * Every record carrying a timestamp counts as a sample of the session running, so a record type Codex
  * adds later still lands. Records are thinned to one sample per `sampleIntervalMs`, except that a
- * change of directory always emits, and so does the log's final record, so a block ends where the
- * session did.
+ * change of directory always emits. The last sample travels in `session.sampled`, so the samples do not
+ * depend on where a read cut the log.
  *
  * The log names its session and its model once rather than per record, so both are carried in and out
  * through `resume.session`. A read that resumes mid-turn has no `turn_context` in view, and a turn
@@ -251,13 +251,13 @@ export const parseCodexSessionLog: AgentSessionLogParser = (options) => {
   records.sort((a, b) => a.at.getTime() - b.at.getTime());
 
   const events: AgentSessionEvent[] = [];
-  let emitted: { at: number; cwd: string } | undefined;
+  const sampledBefore = options.resume?.session?.sampled?.[''];
+  let emitted = sampledBefore && { at: sampledBefore.at, cwd: sampledBefore.context };
 
-  records.forEach((record, index) => {
-    const isFinal = index === records.length - 1;
+  records.forEach((record) => {
     const elapsed = emitted ? record.at.getTime() - emitted.at : 0;
 
-    if (emitted && emitted.cwd === record.cwd && elapsed < interval && !(isFinal && elapsed > 0)) return;
+    if (emitted && emitted.cwd === record.cwd && elapsed < interval) return;
 
     emitted = { at: record.at.getTime(), cwd: record.cwd };
     events.push({
@@ -272,5 +272,15 @@ export const parseCodexSessionLog: AgentSessionLogParser = (options) => {
   const usage = [...usageByTurnId.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
   const prompts = [...promptById.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  return { events, usage, prompts, session: { sessionId: state.sessionId, model: state.model }, unparsedLines };
+  return {
+    events,
+    usage,
+    prompts,
+    session: {
+      sessionId: state.sessionId,
+      model: state.model,
+      ...(emitted ? { sampled: { '': { at: emitted.at, context: emitted.cwd } } } : {}),
+    },
+    unparsedLines,
+  };
 };

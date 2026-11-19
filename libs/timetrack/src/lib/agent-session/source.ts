@@ -21,6 +21,11 @@ export type AgentLogSessionState = {
   workedIn?: string;
   /** Set when the carried title is one the user gave the session, which a generated title must not replace. */
   titleIsCustom?: boolean;
+  /**
+   * The last sample taken per stream, so a read that resumes thins against it instead of starting a
+   * stream over. Keeps the stored samples the same wherever the batches cut.
+   */
+  sampled?: Record<string, { at: number; context: string }>;
 };
 
 export type AgentSessionLogParseOptions = {

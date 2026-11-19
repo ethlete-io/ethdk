@@ -8,6 +8,12 @@ describe('the stored agent-log cursor', () => {
     expect(reviveCursor(toStoredCursor(cursor, 'agent-session'))).toEqual(cursor);
   });
 
+  it('keeps the last sample of each stream across a restart', () => {
+    const cursor = { id: 'log-a', nextLine: 12, session: { sampled: { 'a\u0000': { at: 1000, context: 'ctx' } } } };
+
+    expect(reviveCursor(toStoredCursor(cursor, 'agent-session'))).toEqual(cursor);
+  });
+
   it('keeps the parse rules of a cursor that holds no session state', () => {
     const cursor = { id: 'log-a', nextLine: 12, parserVersion: 2 };
 
