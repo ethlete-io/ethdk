@@ -1,5 +1,5 @@
 import { normalizeLinkPath } from '../model/link-path';
-import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
+import { TimetrackProjectLink, matchProjectLink, withWorktreeLinks } from '../model/project-link';
 import { TimetrackFavoriteProject } from './model';
 
 /** A word short enough to appear in any directory name says nothing about which project it is. */
@@ -65,6 +65,8 @@ type RepoProjectRow = {
   private: boolean;
   /** What the path suggests, offered only while nothing covers it yet. */
   suggestion?: TimetrackFavoriteProject;
+  /** How many linked worktrees of this checkout it answers for. */
+  worktreeCount?: number;
 };
 
 /**
@@ -116,6 +118,8 @@ export type ProjectPathRow = {
   private: boolean;
   /** What the path suggests, offered only while nothing covers it yet. */
   suggestion?: TimetrackFavoriteProject;
+  /** How many linked worktrees of this checkout it answers for. */
+  worktreeCount?: number;
 };
 
 /**
@@ -128,18 +132,41 @@ export type ProjectPathRow = {
  */
 export const projectPathRows = (options: {
   repoPaths: readonly string[];
+  /** Each linked worktree mapped to its main checkout, as `linkedWorktreesOf` builds it. */
+  worktrees?: Readonly<Record<string, string>>;
   links: readonly TimetrackProjectLink[];
   projects: readonly TimetrackFavoriteProject[];
 }): ProjectPathRow[] => {
-  const repos = repoProjectRows(options).map(({ repoPath, ...row }): ProjectPathRow => ({
-    ...row,
-    path: repoPath,
-    kind: 'repo',
-  }));
+  const worktrees = options.worktrees ?? {};
+  const mainOf = new Map(Object.entries(worktrees).map(([worktree, main]) => [normalizeLinkPath(worktree), main]));
+  const counts = new Map<string, number>();
+
+  for (const main of mainOf.values())
+    counts.set(normalizeLinkPath(main), (counts.get(normalizeLinkPath(main)) ?? 0) + 1);
+
+  const checkouts = new Map<string, string>();
+
+  for (const repoPath of options.repoPaths) {
+    const path = mainOf.get(normalizeLinkPath(repoPath)) ?? repoPath;
+
+    if (!checkouts.has(normalizeLinkPath(path))) checkouts.set(normalizeLinkPath(path), path);
+  }
+
+  const links = withWorktreeLinks({ links: options.links, worktrees });
+  const repos = repoProjectRows({ ...options, repoPaths: [...checkouts.values()], links }).map(
+    ({ repoPath, ...row }): ProjectPathRow => {
+      const worktreeCount = counts.get(normalizeLinkPath(repoPath));
+
+      return { ...row, path: repoPath, kind: 'repo', ...(worktreeCount ? { worktreeCount } : {}) };
+    },
+  );
   const found = new Set(repos.map((row) => normalizeLinkPath(row.path)));
+  const answered = new Set(
+    [...mainOf.keys()].filter((path) => repos.some((row) => row.link && mainOf.get(path) === row.path)),
+  );
 
   const folders = options.links
-    .filter((link) => !found.has(normalizeLinkPath(link.path)))
+    .filter((link) => !found.has(normalizeLinkPath(link.path)) && !answered.has(normalizeLinkPath(link.path)))
     .map((link): ProjectPathRow => ({
       path: link.path,
       label: segmentsOf(link.path).pop() ?? link.path,

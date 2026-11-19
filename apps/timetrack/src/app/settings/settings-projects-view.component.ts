@@ -28,6 +28,7 @@ import { injectTimetrackSettings } from './settings';
 
       <ethlete-project-paths
         [repoPaths]="repoPaths()"
+        [worktrees]="git.worktrees()"
         [links]="store.settings().projectLinks"
         [projects]="store.settings().favoriteProjects"
         (addLink)="store.addProjectLink($event)"

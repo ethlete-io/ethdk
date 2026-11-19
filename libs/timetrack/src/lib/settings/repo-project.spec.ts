@@ -128,3 +128,43 @@ describe('projectPathRows', () => {
     expect(rows).toHaveLength(1);
   });
 });
+
+describe('projectPathRows with linked worktrees', () => {
+  const MAIN = '/home/you/dev/abc-frontend';
+  const WORKTREES = { '/home/you/dev/abc-frontend-b02': MAIN, '/home/you/dev/abc-frontend-b03': MAIN };
+
+  it('folds each worktree into its main checkout, which counts them', () => {
+    const rows = projectPathRows({
+      repoPaths: [MAIN, ...Object.keys(WORKTREES)],
+      worktrees: WORKTREES,
+      links: [link({})],
+      projects: PROJECTS,
+    });
+
+    expect(rows.map((row) => [row.path, row.projectKey, row.worktreeCount])).toEqual([[MAIN, 'ABC', 2]]);
+  });
+
+  it('lists the main checkout when the discovery found only its worktrees', () => {
+    const rows = projectPathRows({
+      repoPaths: Object.keys(WORKTREES),
+      worktrees: WORKTREES,
+      links: [],
+      projects: PROJECTS,
+    });
+
+    expect(rows.map((row) => [row.path, row.kind, row.suggestion?.key, row.worktreeCount])).toEqual([
+      [MAIN, 'repo', 'ABC', 2],
+    ]);
+  });
+
+  it('hides a link stored on a worktree while its main checkout answers for it', () => {
+    const rows = projectPathRows({
+      repoPaths: [MAIN],
+      worktrees: WORKTREES,
+      links: [link({}), link({ id: 'stale', path: '/home/you/dev/abc-frontend-b02', target: { kind: 'private' } })],
+      projects: PROJECTS,
+    });
+
+    expect(rows.map((row) => row.path)).toEqual([MAIN]);
+  });
+});

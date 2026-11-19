@@ -83,10 +83,10 @@ describe('a linked worktree', () => {
     expect(opened?.rule).toMatchObject({ repoPath: WORKTREE, branch: 'feat/login-altcha' });
   });
 
-  it('keeps a link the user put on the worktree itself', () => {
+  it('files the worktree by its main checkout over a link stored on the worktree itself', () => {
     const own: TimetrackProjectLink = { ...LINK, id: 'link:altcha', path: WORKTREE, target: { kind: 'private' } };
     const links = withWorktreeLinks({ links: [LINK, own], worktrees });
 
-    expect(matchProjectLink({ context: { repoPath: WORKTREE }, links })).toBe(own);
+    expect(matchProjectLink({ context: { repoPath: WORKTREE }, links })?.id).toBe(LINK.id);
   });
 });

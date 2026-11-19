@@ -93,26 +93,33 @@ export const matchProjectLink = (options: {
 };
 
 /**
- * The links, plus one per linked worktree that files it the way its main checkout is filed.
+ * The links, with each linked worktree filed the way its main checkout is filed.
  *
  * `worktrees` maps a linked worktree's path to its main checkout's path, as `git worktree list` names
- * them. A link the user put on the worktree itself is left to answer for it.
+ * them. A link stored on a worktree answers for it only while its main checkout has none.
  */
 export const withWorktreeLinks = (options: {
   links: readonly TimetrackProjectLink[];
   worktrees: Readonly<Record<string, string>>;
 }): readonly TimetrackProjectLink[] => {
+  const worktreePaths = new Set(Object.keys(options.worktrees).map(normalizeLinkPath).filter(Boolean));
+  const ownLinks = options.links.filter((link) => !worktreePaths.has(normalizeLinkPath(link.path)));
+  const overridden = new Set<string>();
+
   const derived = Object.entries(options.worktrees).flatMap(([worktree, main]) => {
     const path = normalizeLinkPath(worktree);
+    const link = path ? bestLinkFor({ path: normalizeLinkPath(main), links: ownLinks }) : undefined;
 
-    if (!path || options.links.some((link) => normalizeLinkPath(link.path) === path)) return [];
+    if (!link) return [];
 
-    const link = matchProjectLink({ context: { repoPath: main }, links: options.links });
+    overridden.add(path);
 
-    return link ? [{ ...link, path }] : [];
+    return [{ ...link, path }];
   });
 
-  return derived.length ? [...options.links, ...derived] : options.links;
+  if (!derived.length) return options.links;
+
+  return [...options.links.filter((link) => !overridden.has(normalizeLinkPath(link.path))), ...derived];
 };
 
 /** The Jira project a context files its tickets in, or nothing when no link names one. */

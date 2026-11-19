@@ -55,7 +55,12 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
           >
             <span class="text-et-surface-subtle">{{ row.kind }}</span>
 
-            <span [title]="row.path" class="truncate text-mono">{{ row.path }}</span>
+            <span [title]="row.path" class="truncate text-mono">
+              {{ row.path }}
+              @if (row.worktreeCount; as count) {
+                <span class="text-et-surface-subtle">+ {{ count }} {{ count === 1 ? 'worktree' : 'worktrees' }}</span>
+              }
+            </span>
 
             <span class="text-right text-et-surface-subtle">
               @if (row.inherited) {
@@ -167,6 +172,7 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
 })
 export class ProjectPathsComponent {
   public repoPaths = input.required<readonly string[]>();
+  public worktrees = input<Readonly<Record<string, string>>>({});
   public links = input.required<readonly TimetrackProjectLink[]>();
   public projects = input.required<readonly TimetrackFavoriteProject[]>();
 
@@ -181,7 +187,12 @@ export class ProjectPathsComponent {
   protected projectKey = signal('');
 
   protected rows = computed(() =>
-    projectPathRows({ repoPaths: this.repoPaths(), links: this.links(), projects: this.projects() }),
+    projectPathRows({
+      repoPaths: this.repoPaths(),
+      worktrees: this.worktrees(),
+      links: this.links(),
+      projects: this.projects(),
+    }),
   );
 
   protected canAdd = computed(() => !!this.path().trim() && !!this.projectKey().trim());

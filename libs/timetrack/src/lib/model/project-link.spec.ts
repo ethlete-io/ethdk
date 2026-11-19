@@ -6,6 +6,7 @@ import {
   issueKeysInText,
   matchProjectLink,
   projectKeyFor,
+  withWorktreeLinks,
 } from './project-link';
 
 const link = (options: Partial<TimetrackProjectLink> & Pick<TimetrackProjectLink, 'path' | 'target'>) => ({
@@ -95,5 +96,30 @@ describe('epicKeysFor', () => {
 describe('issueKeysInText', () => {
   it('reads the keys of a typed list, upper-cased, each once', () => {
     expect(issueKeysInText('fifagg-12601, FIFAGG-12601; FIP-3 epic')).toEqual(['FIFAGG-12601', 'FIP-3']);
+  });
+});
+
+describe('withWorktreeLinks', () => {
+  const worktrees = { '/home/human/dev/ea-frontend-b02': '/home/human/dev/ea-frontend' };
+  const keyOf = (links: readonly TimetrackProjectLink[]) =>
+    projectKeyFor({
+      context: { repoPath: '/home/human/dev/ea-frontend-b02' },
+      links: withWorktreeLinks({ links, worktrees }),
+    });
+
+  it('files a worktree the way its main checkout is filed', () => {
+    expect(keyOf([work])).toBe('FIP');
+  });
+
+  it('never leaves a worktree private or unlinked while its main checkout is linked', () => {
+    const stale = link({ path: '/home/human/dev/ea-frontend-b02', target: { kind: 'private' } });
+
+    expect(keyOf([work, stale])).toBe('FIP');
+  });
+
+  it('keeps a link stored on a worktree whose main checkout has none', () => {
+    const own = link({ path: '/home/human/dev/ea-frontend-b02', target: { kind: 'project', projectKey: 'OWN' } });
+
+    expect(keyOf([own])).toBe('OWN');
   });
 });
