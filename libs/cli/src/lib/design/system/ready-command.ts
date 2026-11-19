@@ -5,6 +5,7 @@ import { refreshHarnessMap } from './harness-map';
 import { openPointsText } from './open-points';
 import { DesignConfig } from '../design-config';
 import { buildReadyInputsOf, readyInputPartsOf, ruleProblemsOf } from './check-system';
+import { embeddedPartsOf } from './embedded-actions';
 import { drawnFindingsOf } from './drawn-open-points';
 import { markPartReady } from './mark-part-ready';
 import { NoVerdict, noVerdictOf } from './no-verdict';
@@ -36,7 +37,12 @@ export const readyInputsOf = async (options: {
 }): Promise<BuildReadyInputs | NoVerdict> => {
   const { target, config, product, part } = options;
 
-  if (slowProblemsOf({ product, part }) === 'pending') await runSlowChecks({ target, config, product, parts: [part] });
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
+  const pending = [part, ...(resolved ? embeddedPartsOf({ product, part: resolved }).map(partKeyOf) : [])].filter(
+    (key) => slowProblemsOf({ product, part: key }) === 'pending',
+  );
+
+  if (pending.length > 0) await runSlowChecks({ target, config, product, parts: pending });
 
   const findings = await drawnFindingsOf({ target, config, product, parts: [part] });
 

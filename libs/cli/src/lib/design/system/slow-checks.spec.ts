@@ -1,4 +1,4 @@
-import { appendFileSync, cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -8,6 +8,8 @@ import { designHashOf } from './design-hash';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { RULE_BASELINE_FILE } from './rule-baseline';
 import {
+  readSlowCache,
+  slowCacheFileOf,
   slowInputsOf,
   slowProblemsOf,
   staleSlowPartsOf,
@@ -48,6 +50,25 @@ const acme = () => {
 };
 
 const problem = { rule: 'APP-SPEC', file: 'apps/acme/src/chip.component.spec.ts', message: 'fails: chip' };
+
+describe('slow cache of worktrees sharing node_modules', () => {
+  it('keeps the result of one checkout out of another', () => {
+    const first = acme();
+    const second = acme();
+
+    mkdirSync(join(first.target, 'node_modules'), { recursive: true });
+    symlinkSync(join(first.target, 'node_modules'), join(second.target, 'node_modules'));
+
+    const part = 'components/chip';
+    const hashes = { [part]: 'h' };
+
+    writeSlowResults({ product: first.product(), hashes, results: new Map([[part, [problem]]]) });
+    writeSlowResults({ product: second.product(), hashes, results: new Map() });
+
+    expect(slowCacheFileOf(first.product())).not.toBe(slowCacheFileOf(second.product()));
+    expect(readSlowCache(first.product())[part]?.problems).toEqual([problem]);
+  });
+});
 
 describe('slowProblemsOf', { timeout: 30_000 }, () => {
   it('is pending without a result, answers the stored problems, and is pending again once an input changes', () => {

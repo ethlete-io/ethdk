@@ -273,3 +273,21 @@ describe('the design lint gate', { timeout: 60_000 }, () => {
     );
   });
 });
+
+describe('lintFindingsOf with a config that prints to stdout', () => {
+  it('reads the findings although the config writes the Nx project graph warning before the JSON', () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-lint-warning-'));
+    const file = join(target, 'a.ts');
+
+    writeFileSync(
+      join(target, 'eslint.config.mjs'),
+      `console.log('warning No cached ProjectGraph is available. The result may be incorrect.');\n${eslintConfig()}`,
+    );
+    writeFileSync(file, PRELUDE + BANG);
+
+    const findings = lintFindingsOf({ target, files: [file] });
+
+    expect(Array.isArray(findings)).toBe(true);
+    expect(findings).toContainEqual(expect.objectContaining({ rule: '@typescript-eslint/no-non-null-assertion' }));
+  });
+});

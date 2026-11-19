@@ -1,6 +1,7 @@
 import { writeDesignFile } from './system/design-file';
-import { existsSync, readFileSync } from 'fs';
-import { dirname, relative, resolve, sep } from 'path';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
+import { dirname, join, relative, resolve, sep } from 'path';
 import { spawnPlain, spawnPlainAsync } from '../plain-output';
 import { callsRootOf } from './design-config';
 import { addedBaselineNamesOf } from './system/baseline-history';
@@ -43,6 +44,25 @@ const eslintArgvOf = (options: { target: string; files: string[] }): string[] | 
   return eslint ? [process.execPath, eslint, '--format', 'json', '--no-warn-ignored', ...files] : null;
 };
 
+const withOutputFile = <T>(argv: string[], run: (argv: string[], read: () => string) => T): T => {
+  const dir = mkdtempSync(join(tmpdir(), 'et-design-lint-'));
+  const file = join(dir, 'eslint.json');
+  const cleanup = () => rmSync(dir, { recursive: true, force: true });
+
+  try {
+    const result = run([...argv, '--output-file', file], () => readFileSync(file, 'utf8'));
+
+    if (result instanceof Promise) return result.finally(cleanup) as T;
+
+    cleanup();
+
+    return result;
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
+};
+
 const findingsOfOutput = (stdout: string): LintFinding[] =>
   (JSON.parse(stdout) as EslintResult[]).flatMap((result) =>
     result.messages.map((message) => ({
@@ -64,12 +84,14 @@ export const lintFindingsOf = (options: { target: string; files: string[] }): Li
   if (argv === undefined) return [];
   if (argv === null) return null;
 
-  const run = spawnPlain(argv, { cwd: options.target, maxBuffer: 1 << 26 });
+  return withOutputFile(argv, (withFile, read) => {
+    const run = spawnPlain(withFile, { cwd: options.target, maxBuffer: 1 << 26 });
 
-  if (run.status !== 0 && run.status !== 1)
-    return `eslint failed (${run.status ?? run.signal}): ${trim(run.stderr || run.stdout || String(run.error ?? ''))}`;
+    if (run.status !== 0 && run.status !== 1)
+      return `eslint failed (${run.status ?? run.signal}): ${trim(run.stderr || run.stdout || String(run.error ?? ''))}`;
 
-  return findingsOfOutput(run.stdout);
+    return findingsOfOutput(read());
+  });
 };
 
 /** `lintFindingsOf` without blocking; `undefined` when eslint failed, so the caller reruns it with `lintFindingsOf`. */
@@ -82,15 +104,17 @@ export const lintFindingsAsync = async (options: {
   if (argv === undefined) return [];
   if (argv === null) return null;
 
-  const run = await spawnPlainAsync(argv, { cwd: options.target });
+  return withOutputFile(argv, async (withFile, read) => {
+    const run = await spawnPlainAsync(withFile, { cwd: options.target });
 
-  if (run.status !== 0 && run.status !== 1) return undefined;
+    if (run.status !== 0 && run.status !== 1) return undefined;
 
-  try {
-    return findingsOfOutput(run.stdout);
-  } catch {
-    return undefined;
-  }
+    try {
+      return findingsOfOutput(read());
+    } catch {
+      return undefined;
+    }
+  });
 };
 
 /** The lintable files under `productDir` that differ from HEAD or git does not track yet, of `part` only when given. */

@@ -64,9 +64,12 @@ const SLOW_RESULT_FORMAT = 'states';
 
 const SPEC_SIBLING = /\.(?:ts|html|css)$/u;
 
-/** The gitignored file that holds a product's slow results, under the checkout's `node_modules/.cache`. */
-export const slowCacheFileOf = (product: ResolvedProduct) =>
-  join(repoRootOf(product), 'node_modules', '.cache', 'ethlete-design', product.name, 'slow-checks.json');
+/** The gitignored file that holds a product's slow results, under `node_modules/.cache` and keyed by the checkout root, so worktrees that share `node_modules` do not overwrite each other. */
+export const slowCacheFileOf = (product: ResolvedProduct) => {
+  const root = repoRootOf(product);
+
+  return join(root, 'node_modules', '.cache', 'ethlete-design', product.name, sha16(root), 'slow-checks.json');
+};
 
 export const readSlowCache = (product: ResolvedProduct): SlowCache => {
   try {

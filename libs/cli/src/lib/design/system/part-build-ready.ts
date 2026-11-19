@@ -33,6 +33,9 @@ const NO_HARNESS: Blocker = {
   text: 'the product has no harness in config.json, so its slow checks and actions never run',
 };
 
+const PENDING_TEXT =
+  'the slow checks have not run on the current inputs (the design, app files or specs changed since the last run)';
+
 const ownBlockersOf = ({ product, part, inputs }: Target): Blocker[] => {
   const found = (inputs.slowOf ?? slowProblemsOf)({ product, part });
   const slow = found === 'pending' && !hasHarness(product) ? [] : found;
@@ -43,7 +46,7 @@ const ownBlockersOf = ({ product, part, inputs }: Target): Blocker[] => {
       .problemsOf(part)
       .map((problem) => ({ kind: 'problem' as const, text: `${problem.rule}: ${problem.message}` })),
     ...(slow === 'pending'
-      ? [{ kind: 'pending' as const, text: 'the slow checks have not run on the current inputs' }]
+      ? [{ kind: 'pending' as const, text: PENDING_TEXT }]
       : slow.map((problem) => ({
           kind: blockerKindOfRule(problem.rule),
           text: `${problem.rule}: ${problem.message}`,
@@ -69,7 +72,12 @@ const embeddedBlockersOf = (target: Target, readyOf: (part: string) => boolean):
   return (resolved ? embeddedPartsOf({ product: target.product, part: resolved }) : [])
     .map(partKeyOf)
     .filter((part) => !readyOf(part))
-    .map((part) => ({ kind: 'embedded' as const, text: `${part} is not build-ready`, part }));
+    .map((part) => {
+      const own = ownBlockersOf({ ...target, part });
+      const reason = own.length > 0 && own.every((blocker) => blocker.kind === 'pending') ? `: ${PENDING_TEXT}` : '';
+
+      return { kind: 'embedded' as const, text: `${part} is not build-ready${reason}`, part };
+    });
 };
 
 const isPartReady = (target: Target) => recordBlockersOf(target).length === 0 && ownBlockersOf(target).length === 0;

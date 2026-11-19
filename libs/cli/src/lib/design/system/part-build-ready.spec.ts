@@ -67,7 +67,9 @@ describe('buildReadyOf', () => {
     ).toEqual({ ready: false, blockers: [{ kind: 'problem', text: 'HARD-CODED-COLOUR: #fff' }] });
     expect(buildReadyOf({ product, part, inputs: { ...green, slowOf: () => 'pending' } })).toEqual({
       ready: false,
-      blockers: [{ kind: 'pending', text: 'the slow checks have not run on the current inputs' }],
+      blockers: [
+        { kind: 'pending', text: expect.stringContaining('the slow checks have not run on the current inputs') },
+      ],
     });
     expect(
       buildReadyOf({
