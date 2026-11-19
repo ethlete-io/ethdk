@@ -16,7 +16,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S1 (fifagg, 18.11.): fünf Tokens/Looks für waagerechtes `et-progress-steps`, gebaut (B617, 209d65db7), kommt mit dem nächsten Prerelease (frühestens 20.11.).
 - S2 (fifagg, 19.11.): Stärke je Zone in `et-standings`, nicht blockiert -> Standings-Zonenstärke (B620).
 - S3 (fifagg, 19.11.): Tooltip der Form-Einträge mit eigenem Inhalt, nicht blockiert -> Standings-Form-Tooltip (B621). Ausblick ohne Anfrage: Status-Slot je Zeile ("Qualified"-Badge), sobald die Gruppentabellen auf `et-standings` wechseln.
-- S4 (fifagg, 19.11.): `et-segmented-button-group` direkt in `et-scrollable` (item-size auto) fällt zusammen (Gruppe 6 px, Label 0 px), Umgehung `w-max` in 7 Templates, nicht blockiert -> Segment-Gruppe im Scrollbereich (B622).
+- S4 (fifagg, 19.11.): `et-segmented-button-group` direkt in `et-scrollable` (item-size auto) fällt zusammen (Gruppe 6 px, Label 0 px), Umgehung `w-max` in 7 Templates, gebaut (B622, 615a6dab7), kommt mit dem nächsten Prerelease; danach kann fifa `w-max` entfernen.
 
 ## Offene Plan-Dateien
 
