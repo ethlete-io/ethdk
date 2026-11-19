@@ -143,10 +143,11 @@
   "components/table": "785b34208ceb65a4",
   "components/tabs": "1c8589a9ab2fdea8",
   "components/textarea": {
-    "hash": "9b5daf1281ca3bfb",
+    "hash": "742c358ec850abc4",
     "variant": "new",
     "decidedBy": "user",
-    "at": "2026-11-16T09:07:29.901Z"
+    "at": "2026-11-19T17:11:06.640Z",
+    "note": "merged: Frame hover in the label colour (ADR 0382, B640)"
   },
   "components/timeline": "353bba510dfa0f31",
   "components/toolbar": "791a83c722fb5830",
