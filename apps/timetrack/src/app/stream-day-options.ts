@@ -93,7 +93,10 @@ export const streamDayOptionsOf = (options: {
   /** What this reader adds to the shared row options: the day's timer runs, pauses and edits. */
   rows?: Omit<BuildRowsOptions, 'links' | 'calls'>;
   heard?: readonly HeardChunk[];
+  /** The local day key being read, which a day-scoped attribution rule is matched against. */
+  day?: string;
 }): Partial<StreamDayOptions> => ({
+  day: options.day,
   repoRoots: [...options.repoRoots],
   links: options.links,
   ownAppIds: OWN_APP_IDS,

@@ -11,6 +11,7 @@ import {
   fetchJiraIssues$,
   gitFlowConfigFor,
   readJiraCredentials$,
+  rulesForDay,
 } from '@ethlete/timetrack';
 import { Observable, catchError, distinctUntilChanged, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { injectGitCollector } from '../../collectors';
@@ -120,7 +121,7 @@ export const readEpicOptions$ = (options: DayReadOptions & { day: string }): Obs
         blocks: day.day.blocks,
         unattributed: day.day.rows.unattributed,
         proposals: day.day.rows.proposals,
-        rules: options.settings.attributionRules,
+        rules: rulesForDay(options.settings.attributionRules, options.day),
         config: gitFlowConfigFor(options.settings),
       }),
     ),

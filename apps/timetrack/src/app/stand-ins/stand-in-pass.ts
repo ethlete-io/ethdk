@@ -36,6 +36,7 @@ export const runStandInPass = (options: {
   const current = settings.settings();
   const config = gitFlowConfigFor(current);
   const passOptions = {
+    day,
     contexts: options.contexts,
     unattributed: options.unattributed,
     events: options.events,
@@ -51,7 +52,7 @@ export const runStandInPass = (options: {
 
   options.verdicts.record({ day, at: now.getTime(), decisions: autoStandInDecisions(passOptions) });
 
-  const opened = autoStandIns({ ...passOptions, day, now });
+  const opened = autoStandIns({ ...passOptions, now });
 
   for (const entry of opened) settings.nameWithStandIn({ standIn: entry.standIn, rule: entry.rule });
 

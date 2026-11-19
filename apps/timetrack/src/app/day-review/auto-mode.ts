@@ -78,6 +78,7 @@ import {
   localDayKey,
   ModelCall,
   matchAttributionRule,
+  rulesForDay,
   reasoningOptionsOf,
   recordingRunner,
   rankMirrorCandidates,
@@ -1312,7 +1313,9 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           contexts: evidence.contexts,
           ruledContextIds: new Set(
             evidence.contexts
-              .filter((context) => matchAttributionRule({ context: context.context, rules: current.attributionRules }))
+              .filter((context) =>
+                matchAttributionRule({ context: context.context, rules: rulesForDay(current.attributionRules, day) }),
+              )
               .map((context) => context.id),
           ),
           standIns: current.standIns,

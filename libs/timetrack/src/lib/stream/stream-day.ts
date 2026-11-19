@@ -105,6 +105,8 @@ export type StreamDayOptions = {
    * sample. Without it a day still being collected reports its own live tail as rebuilt.
    */
   windowsSeenThroughMs?: number;
+  /** The local day key being streamed, which a day-scoped attribution rule is matched against. */
+  day?: string;
   /** The instant a day still being collected is read at. Left out for a day that is over. */
   now?: Date;
   /** Which calls counted as work. Nothing configured leaves every call unclassified — see `classifyCalls`. */
@@ -2009,6 +2011,7 @@ const rowsOf = (options: {
 
   return buildRows({
     ...config.rows,
+    ...(config.day ? { day: config.day } : {}),
     blocks: day.blocks,
     events: options.events,
     links: config.links ?? [],

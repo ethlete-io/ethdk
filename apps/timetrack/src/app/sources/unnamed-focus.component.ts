@@ -250,8 +250,8 @@ export class UnnamedFocusComponent {
 
         return this.ports.events.eventsBetween$(from, to).pipe(
           map((events) => {
-            const perDay = byLocalDay({ items: events, days, boundary }).map((held) =>
-              streamDay({ events: held, options }),
+            const perDay = byLocalDay({ items: events, days, boundary }).map((held, index) =>
+              streamDay({ events: held, options: { ...options, day: days[index] } }),
             );
 
             return {

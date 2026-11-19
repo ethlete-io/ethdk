@@ -28,6 +28,7 @@ import {
   localDayKey,
   localDayRange,
   matchAttributionRule,
+  rulesForDay,
   namedIssueKeys,
   readJiraCredentials$,
   readTempoCredentials$,
@@ -313,7 +314,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const dayRows = editsOf(read).frozenRows ?? read.day.rows;
     const { unattributed } = dayRows;
     const contexts = unnamedContexts({ unattributed });
-    const rules = settings.settings().attributionRules;
+    const rules = rulesForDay(settings.settings().attributionRules, read.key);
 
     return {
       dayRows,
@@ -352,6 +353,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
       links: projectLinks(),
       rules: settings.settings().attributionRules,
+      day: read.key,
       worklogs: recurring.worklogs(),
       loggedIssues: recurring.loggedIssues(),
     });

@@ -122,6 +122,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             now: at < to ? at : undefined,
             rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
             heard: heardChunksOf(transcript),
+            day: key,
           });
           const day = streamDay({ events: merged, options: dayOptions });
           const reviewWith = (current: DayReviewEdits) =>
@@ -131,6 +132,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
               cut: dayOptions.rows?.cut,
               standIns: settings.standIns,
               rules: settings.attributionRules,
+              day: key,
               check: {
                 targetMs: settings.dayTargetMs,
                 coveredMs: coveredMsOf(coverage),

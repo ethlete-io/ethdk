@@ -14,7 +14,7 @@ import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { UnnamedProposal, unnamedRowId } from '../rows/propose';
 import { describeWork } from '../rows/describe';
 import { snapRowBounds } from '../rows/snap';
-import { AttributionRule } from '../model/attribution';
+import { AttributionRule, rulesForDay } from '../model/attribution';
 import { streamKeyRepoPath } from '../model/block';
 import { foldCrowdedSiblings, foldShortRows } from './fold';
 import { describeCallPiece } from './call-pieces';
@@ -554,6 +554,8 @@ type ReviewDayOptions = {
   standIns?: readonly StandIn[];
   /** The standing rules, so a row the reviewer built still follows the one that covers its checkout. */
   rules?: readonly AttributionRule[];
+  /** The local day key being reviewed, which a day-scoped rule is matched against. */
+  day?: string;
 };
 
 type ReviewRowsOptions = ReviewDayOptions & {
@@ -684,7 +686,7 @@ const reviewRows = (options: ReviewRowsOptions): DayReview => {
   const { edits, ended } = foldEndedRests(options.edits ?? EMPTY_DAY_REVIEW_EDITS);
   const frozen = !!edits.frozenRows;
   const standIns = options.standIns ?? [];
-  const rules = options.rules ?? [];
+  const rules = rulesForDay(options.rules ?? [], options.day);
   const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
   const isBackground = backgroundTest(options.cut?.backgroundProjects);
   const incrementMs = { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs;

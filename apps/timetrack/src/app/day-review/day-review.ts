@@ -44,6 +44,7 @@ import {
   encodePeerDayRows,
   pinnedOntoDay,
   matchAttributionRule,
+  rulesForDay,
   callBehindRow,
   callLabel,
   countsAsWorkPatternOf,
@@ -428,6 +429,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       epics: epics.optionsFor(day()),
       through: evidence()?.through,
     }),
+    day: day(),
     timerRuns: evidence()?.runs ?? [],
     pauses: evidence()?.pauses ?? [],
   }));
@@ -475,6 +477,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             now: collected.now,
             rows: rowOptions(),
             heard: heardChunksOf(collected.transcript),
+            day: day(),
           }),
         })
       : null;
@@ -492,7 +495,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * answered, which reads as a button that did nothing.
    */
   const rulesByContext = computed(() => {
-    const rules = settings.settings().attributionRules;
+    const rules = rulesForDay(settings.settings().attributionRules, day());
     const found = new Map<string, AttributionRule>();
 
     for (const context of unnamed()) {
@@ -527,6 +530,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
       links: projectLinks(),
       rules: settings.settings().attributionRules,
+      day: day(),
       worklogs: recurring.worklogs(),
       loggedIssues: recurring.loggedIssues(),
     }),
@@ -661,6 +665,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           cut: rowOptions().cut,
           standIns: daySettings().standIns,
           rules: daySettings().attributionRules,
+          day: day(),
           check: {
             targetMs: targetMs(),
             coveredMs: coveredMsOf(coverage()),
