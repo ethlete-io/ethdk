@@ -249,8 +249,8 @@ setting one on `et-progress-steps` or any ancestor configures every step inside 
 | `--et-progress-step-current-dot-size`           | `0px`                                                           | Diameter of a dot centred in the `current` marker. `0px` draws none.                 |
 | `--et-progress-step-current-dot-color`          | theme ink                                                       | Colour of that dot.                                                                  |
 | `--et-progress-step-current-marker-content`     | step number                                                     | Set to `''` to hide the number so the dot stands alone.                              |
-| `--et-progress-step-label-upcoming-font-weight` | inherited                                                       | Label weight of `upcoming` steps.                                                    |
-| `--et-progress-step-label-done-font-weight`     | `600` for `success`/`warning`/`error`, inherited for `complete` | Label weight of resolved steps.                                                      |
+| `--et-progress-step-upcoming-label-font-weight` | inherited                                                       | Label weight of `upcoming` steps.                                                    |
+| `--et-progress-step-complete-label-font-weight` | `600` for `success`/`warning`/`error`, inherited for `complete` | Label weight of resolved steps.                                                      |
 | `--et-progress-step-description-line-height`    | inherited                                                       | Line height of `[etProgressStepDescription]`.                                        |
 
 A filled marker with a dot for the current step:

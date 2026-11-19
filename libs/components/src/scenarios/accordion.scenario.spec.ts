@@ -1,7 +1,6 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
-  ACCORDION_CONFIG_TOKEN,
   ACCORDION_ERROR_CODES,
   ACCORDION_GROUP_TOKEN,
   ACCORDION_IMPORTS,
@@ -119,7 +118,6 @@ const text = (element: Element | null | undefined) => element?.textContent?.repl
 })
 class ProvidedDividerComponent {
   config = injectAccordionConfig();
-  token = inject(ACCORDION_CONFIG_TOKEN);
 }
 
 describe('accordion scenarios', () => {
@@ -292,7 +290,6 @@ describe('accordion scenarios', () => {
     s.tick();
 
     expect(fixture.componentInstance.config).toEqual({ lastDivider: true });
-    expect(fixture.componentInstance.token).toBe(fixture.componentInstance.config);
     expect(host.querySelector('.provided')?.hasAttribute('data-last-divider')).toBe(true);
     expect(host.querySelector('.explicit')?.hasAttribute('data-last-divider')).toBe(false);
   });

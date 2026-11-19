@@ -483,7 +483,7 @@ Five tokens restyle the group without a new input. Each default is today's look.
 
 | Token                                          | Default                                      | Effect                                                                                                                |
 | ---------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `--et-segmented-button-color`                  | the muted surface colour                     | Inactive label colour.                                                                                                |
+| `--et-segmented-button-inactive-color`         | the muted surface colour                     | Inactive label colour.                                                                                                |
 | `--et-segmented-button-font-weight`            | `500`                                        | Label weight.                                                                                                         |
 | `--et-segmented-button-group-track-background` | an 8% tint of the surface interaction colour | Track fill.                                                                                                           |
 | `--et-segmented-button-group-stretch-track`    | `1fr`                                        | Column size under `stretch`. `auto` sizes columns to their labels, so none is cut, and they still fill the row.       |

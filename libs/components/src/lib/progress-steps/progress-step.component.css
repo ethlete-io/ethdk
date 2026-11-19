@@ -155,7 +155,6 @@
 
     .et-progress-step-label {
       color: var(--et-surface-color-muted-solid, currentColor);
-      font-weight: var(--et-progress-step-label-upcoming-font-weight, inherit);
       transition: color 200ms ease;
     }
 
@@ -170,18 +169,22 @@
       margin-block-start: 4px;
     }
 
+    &[data-state='upcoming'] .et-progress-step-label {
+      font-weight: var(--et-progress-step-upcoming-label-font-weight, inherit);
+    }
+
     &[data-state='current'] .et-progress-step-label {
       color: var(--et-surface-color-solid, currentColor);
       font-weight: 600;
     }
 
     &[data-state='complete'] .et-progress-step-label {
-      font-weight: var(--et-progress-step-label-done-font-weight, inherit);
+      font-weight: var(--et-progress-step-complete-label-font-weight, inherit);
     }
 
     &:is([data-state='success'], [data-state='warning'], [data-state='error']) .et-progress-step-label {
       color: var(--et-theme-color-ink-solid, currentColor);
-      font-weight: var(--et-progress-step-label-done-font-weight, 600);
+      font-weight: var(--et-progress-step-complete-label-font-weight, 600);
     }
 
     .et-progress-steps:where([data-align='start']) & {

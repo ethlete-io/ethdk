@@ -286,8 +286,8 @@ export class AccordionHeadlessStorybookComponent {
       <et-accordion-group
         [style.max-inline-size.px]="560"
         style="
-          --et-accordion-trigger-hover-background: transparent;
-          --et-accordion-trigger-active-background: transparent;
+          --et-accordion-header-hover-background: transparent;
+          --et-accordion-header-active-background: transparent;
           --et-accordion-header-padding-inline: 3px;
           --et-accordion-header-padding-inline-end: 17px;
         "

@@ -118,8 +118,8 @@ export const OverflowScroll: Story = {
 
 export const LabelLook: Story = {
   args: {
-    tokens: '--et-segmented-button-color: white; --et-segmented-button-font-weight: 700;',
-    hint: 'Set --et-segmented-button-color and --et-segmented-button-font-weight to restyle the inactive labels.',
+    tokens: '--et-segmented-button-inactive-color: white; --et-segmented-button-font-weight: 700;',
+    hint: 'Set --et-segmented-button-inactive-color and --et-segmented-button-font-weight to restyle the inactive labels.',
   },
 };
 

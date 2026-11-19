@@ -37,8 +37,20 @@ describe('progress-step.component.css tokens', () => {
   });
 
   it('exposes the done and upcoming label weights and the description line-height', () => {
-    expect(css).toContain('var(--et-progress-step-label-done-font-weight, 600)');
-    expect(css).toContain('var(--et-progress-step-label-upcoming-font-weight,');
+    expect(css).toContain('var(--et-progress-step-complete-label-font-weight, 600)');
+    expect(css).toContain('var(--et-progress-step-upcoming-label-font-weight,');
     expect(css).toContain('var(--et-progress-step-description-line-height,');
+  });
+
+  it('applies the upcoming label weight to upcoming steps only, so a skipped step ignores it', () => {
+    const rule = (selector: string) =>
+      css.match(new RegExp(`${selector.replace(/[[\]'.&]/g, '\\$&')}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
+
+    expect(css.match(/--et-progress-step-upcoming-label-font-weight,/g)).toHaveLength(1);
+    expect(rule('.et-progress-step-label')).not.toContain('font-weight');
+    expect(rule("&[data-state='upcoming'] .et-progress-step-label")).toContain(
+      'var(--et-progress-step-upcoming-label-font-weight,',
+    );
+    expect(rule("&[data-state='skipped'] .et-progress-step-label")).toBe('');
   });
 });

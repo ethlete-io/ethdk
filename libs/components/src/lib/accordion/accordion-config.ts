@@ -1,11 +1,11 @@
-import { InjectionToken, StaticProvider, inject } from '@angular/core';
-
-export const ACCORDION_CONFIG_TOKEN = new InjectionToken<AccordionConfig>('ACCORDION_CONFIG_TOKEN');
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type AccordionConfig = {
   /** Default for `lastDivider` on every accordion group. An explicit `[lastDivider]` input still wins. */
   lastDivider?: boolean;
 };
+
+const ACCORDION_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<AccordionConfig>({}, { name: 'AccordionConfig' });
 
 /**
  * Sets app-wide accordion defaults.
@@ -13,8 +13,5 @@ export type AccordionConfig = {
  * @example
  * providers: [provideAccordionConfig({ lastDivider: true })]
  */
-export const provideAccordionConfig = (config: AccordionConfig): StaticProvider[] => {
-  return [{ provide: ACCORDION_CONFIG_TOKEN, useValue: config }];
-};
-
-export const injectAccordionConfig = (): AccordionConfig | null => inject(ACCORDION_CONFIG_TOKEN, { optional: true });
+export const provideAccordionConfig = /* @__PURE__ */ toProvideFn(ACCORDION_CONFIG_DEF);
+export const injectAccordionConfig = /* @__PURE__ */ toInjectFn(ACCORDION_CONFIG_DEF);

@@ -36,5 +36,5 @@ export class AccordionGroupComponent {
     transform: (v: unknown) => (v === undefined ? undefined : booleanAttribute(v)),
   });
 
-  protected lastDividerResolved = computed(() => this.lastDivider() ?? this.config?.lastDivider ?? false);
+  protected lastDividerResolved = computed(() => this.lastDivider() ?? this.config.lastDivider ?? false);
 }

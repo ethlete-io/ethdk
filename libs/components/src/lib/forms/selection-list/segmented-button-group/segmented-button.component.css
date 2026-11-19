@@ -83,7 +83,7 @@
     }
     outline: none;
     background: transparent;
-    color: var(--et-segmented-button-color, var(--et-surface-color-muted-solid, currentColor));
+    color: var(--et-segmented-button-inactive-color, var(--et-surface-color-muted-solid, currentColor));
     font-size: var(--et-segmented-button-font-size);
     font-weight: var(--et-segmented-button-font-weight);
     line-height: 1.4;
