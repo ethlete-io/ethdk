@@ -55,3 +55,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 54. **Kalender-Vorschlag (B626)** ⏳ Timetrack: Kalendertermin ohne Anruf als Vorschlag (Timetrack ADR 0048), nach B602 - Builder
 55. **Gebucht = Tempo (B627)** ⏳ Timetrack: „logged“ zählt nur Tempo (Timetrack ADR 0049), nach B602 - Builder
 56. **Segment-Gruppe Überlauf (B628)** ⏳ SDK (fifagg S8): Input `overflow` truncate | scroll, nach dem laufenden B602-Schritt - Builder
+57. **Accordion-Tokens 2 (B629)** ⏳ SDK (fifagg S9): vier Tokens, heutige Werte als Standard - Builder
