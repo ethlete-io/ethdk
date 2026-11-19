@@ -64,6 +64,8 @@ describe('subagentLayoutOf', () => {
 
   it('drops the count line when the band has no free line left under its labels', () => {
     expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [lint], freeLines: 0 })?.count).toBeNull();
+    expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [lint], freeLines: 0 })?.more).toBe('+1');
+    expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [lint], freeLines: 1 })?.more).toBeNull();
     expect(subagentLayoutOf({ laid: laid(), drawn, subagents: [lint], freeLines: 1 })?.count).toBe(
       '1 subagent · 1 short',
     );

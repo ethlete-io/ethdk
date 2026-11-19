@@ -475,6 +475,9 @@ type RowDrag = {
                           @if (notInTempo(laid.block.node.appointment)) {
                             <span class="text-et-theme-ink" data-not-in-tempo>{{ NOT_IN_TEMPO }}</span>
                           }
+                          @if (subagentsOf(laid)?.more; as more) {
+                            <span class="text-et-surface-muted" data-subagent-more>{{ ' ' + more }}</span>
+                          }
                           @if (
                             !detailed(laid.block.span) && descriptionOf(laid.block.node.appointment);
                             as description

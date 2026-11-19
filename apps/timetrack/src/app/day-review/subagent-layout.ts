@@ -26,6 +26,8 @@ export type SubagentLayout = {
   stripes: SubagentStripe[];
   ticks: SubagentTick[];
   count: string | null;
+  /** A compact "+N" for the title line when the band has no line left for the count. */
+  more: string | null;
 };
 
 const taskOf = (subagent: RowSubagent) => subagent.task ?? 'Subagent';
@@ -57,6 +59,7 @@ export const subagentLayoutOf = (options: {
   const fractionOf = (at: Date) => Math.min(Math.max((at.getTime() - start) / length, 0), 1);
   const striped = beside ? options.subagents.filter(isSubagentStripe) : [];
   const short = options.subagents.filter((subagent) => !striped.includes(subagent));
+  const fits = beside && (options.freeLines ?? Infinity) >= 1;
   const parentSize = laid.inlineSize * PARENT_SHARE;
   const railOffset = laid.inlineOffset + parentSize;
 
@@ -78,6 +81,7 @@ export const subagentLayoutOf = (options: {
       offset: fractionOf(subagent.from) * 100,
       span: Math.max((fractionOf(subagent.to) - fractionOf(subagent.from)) * 100, TICK_MIN_SPAN),
     })),
-    count: beside && (options.freeLines ?? Infinity) >= 1 ? countOf(options.subagents, short.length) : null,
+    count: fits ? countOf(options.subagents, short.length) : null,
+    more: beside && !fits ? `+${options.subagents.length}` : null,
   };
 };
