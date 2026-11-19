@@ -114,6 +114,8 @@ export type BuildRowsOptions = {
    * one row per lane and stretch — see `joinUnattended`.
    */
   gaps?: readonly TimeWindow[];
+  /** The absences too long to be a break, from `longAbsences`. See `markAttendance`. */
+  absences?: readonly TimeWindow[];
   /** The stretches the user worked from another device, from `remoteWorkWindows`. A band in one is attended. */
   remoteWork?: readonly TimeWindow[];
   /** The stretches a window or an idle transition of this machine watched, from `streamDay`. A band in one is attended. */
@@ -321,6 +323,7 @@ export const buildRows = (
     peers,
     lanes: attendedLanes({ peers, peerLanes: options.peerLanes ?? {} }),
     away: [...(options.breaks ?? []), ...(options.gaps ?? [])],
+    absences: options.absences,
     maxGapMs: options.merge?.maxMergeGapMs,
   };
   const marked = markAttendance({

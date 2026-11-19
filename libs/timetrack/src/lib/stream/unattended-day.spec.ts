@@ -784,3 +784,53 @@ describe('streamDay, on an agent that finished a prompt a few minutes after the 
     ]);
   });
 });
+
+describe('streamDay, on agents in two checkouts that worked through the night', () => {
+  const APP = '/home/human/dev/fifa-app';
+  const inCheckout = (cwd: string, gitBranch: string) => (event: CollectedEvent) =>
+    'cwd' in event ? { ...event, cwd, gitBranch } : event;
+  const nightIn = (cwd: string, gitBranch: string, sessionId: string) =>
+    running(30, 630, sessionId).map(inCheckout(cwd, gitBranch)) as CollectedEvent[];
+
+  /**
+   * 2026-11-19: The human stopped at 00:14 and came back at 10:45. Agents in two checkouts ran from
+   * 00:30 to 10:30. The absence is longer than `DEFAULT_MAX_BREAK_MS`, so it is no break.
+   */
+  const NIGHT: CollectedEvent[] = [
+    focus(0),
+    session(1),
+    prompt(2, 'human'),
+    turn(3),
+    turn(12),
+    idle(14, 'idle-start'),
+    ...nightIn(REPO, BRANCH, 'session-sdk'),
+    ...nightIn(APP, 'next', 'session-app'),
+    idle(645, 'idle-end'),
+    focus(645),
+    prompt(646, 'human'),
+    turn(647),
+    turn(700),
+  ];
+  const nightDay = () =>
+    streamDay({
+      events: NIGHT.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
+      options: {
+        repoRoots: [REPO, APP],
+        windowsSeenThroughMs: AT(900).getTime(),
+        rows: { config: CONFIG },
+      },
+    });
+  const inNight = (row: { from: Date; to: Date }) =>
+    row.to.getTime() > AT(30).getTime() && row.from.getTime() < AT(630).getTime();
+
+  it('draws the night as unattended rows in the lane of each checkout that worked', () => {
+    const { unnamed } = nightDay().rows;
+    const night = unnamed.filter((row) => row.unattended && inNight(row));
+
+    expect([...new Set(night.map((row) => row.laneKey))].sort()).toEqual([`repo:${REPO}`, `repo:${APP}`]);
+  });
+
+  it('proposes nothing of the night to Tempo', () => {
+    expect(nightDay().rows.proposals.filter(inNight)).toEqual([]);
+  });
+});

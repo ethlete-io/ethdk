@@ -22,7 +22,15 @@ import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { BookedRemoteWindow } from '../rows/remote-booking';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
-import { BreakWindow, bookedRemoteWindows, breakGaps, breakMs, breakWindows, remoteWorkWindows } from './breaks';
+import {
+  BreakWindow,
+  bookedRemoteWindows,
+  breakGaps,
+  breakMs,
+  breakWindows,
+  longAbsences,
+  remoteWorkWindows,
+} from './breaks';
 import { HeardChunk, classifyCalls, lastHostSampleAt } from './calls';
 import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
@@ -1739,7 +1747,7 @@ const streamOrigin = (options: {
       ...clipSpans({ spans: focusSpans, within: seen }),
       ...clipSpans({
         spans: agentSpans.filter((span) => !waitingSpans.has(span)),
-        within: mergeWindows([...presence, ...gaps]),
+        within: mergeWindows([...presence, ...gaps, ...longAbsences({ presence })]),
       }),
       // A session silent until the prompt that ended a break waited through it rather than worked.
       ...clipSpans({
@@ -2007,6 +2015,7 @@ const rowsOf = (options: {
     calls: day.calls,
     breaks: day.breaks,
     gaps: day.gaps,
+    absences: longAbsences({ presence: day.presence }),
     remoteWork: day.remoteWork,
     bookedRemote: day.bookedRemote,
     seen: options.seen,

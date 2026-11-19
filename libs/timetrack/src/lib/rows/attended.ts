@@ -203,7 +203,12 @@ const partOf = (options: { group: WorkGroup; part: TimeWindow; first: boolean; l
 const cutAtAttendance = (options: {
   group: WorkGroup;
   spans: readonly TimeWindow[];
-  cut: { away: readonly TimeWindow[]; elsewhere: readonly TimeWindow[]; maxGapMs: number };
+  cut: {
+    away: readonly TimeWindow[];
+    elsewhere: readonly TimeWindow[];
+    absences: readonly TimeWindow[];
+    maxGapMs: number;
+  };
 }): { group: WorkGroup; attended: boolean }[] => {
   const { group, spans, cut } = options;
   const held = clipWindows({ windows: spans, within: [group] });
@@ -211,7 +216,9 @@ const cutAtAttendance = (options: {
   if (!held.length) return [{ group, attended: false }];
 
   const gaps = subtractWindows({ windows: [group], without: [...held, ...cut.away, ...cut.elsewhere] }).filter(
-    (gap) => gap.to.getTime() - gap.from.getTime() > cut.maxGapMs,
+    (gap) =>
+      gap.to.getTime() - gap.from.getTime() > cut.maxGapMs ||
+      cut.absences.some((absence) => absence.from <= gap.from && gap.to <= absence.to),
   );
 
   if (!gaps.length || !group.blocks.length) return [{ group, attended: true }];
@@ -259,10 +266,20 @@ export const markAttendance = (options: {
    * inside an absence buy the rest of it back, so neither cuts a band here.
    */
   away?: readonly TimeWindow[];
+  /**
+   * The absences too long to be a break. Attendance does not reach into one, and a part of a band in one
+   * that nobody attended is cut off however short it is, so an agent's night stays unattended to its edges.
+   */
+  absences?: readonly TimeWindow[];
   maxGapMs?: number;
 }): WorkGroup[] => {
-  const spans = mergeWindows([...options.at, ...(options.claimed ?? [])]);
+  const absences = options.absences ?? [];
+  const spans = mergeWindows([
+    ...subtractWindows({ windows: options.at, without: absences }),
+    ...(options.claimed ?? []),
+  ]);
   const cut = {
+    absences,
     away: options.away ?? [],
     elsewhere: (options.peers ?? []).flatMap((peer) => peer.at),
     maxGapMs: options.maxGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,

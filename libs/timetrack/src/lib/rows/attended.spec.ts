@@ -184,6 +184,19 @@ describe('markAttendance', () => {
     expect(marked.map(shape)).toEqual([[0, 60, true]]);
   });
 
+  it('cuts the part of a band in an absence too long for a break off its attended part, however short', () => {
+    const marked = markAttendance({
+      groups: [group(0, 28)],
+      at: present([focus(0), focus(14)]),
+      absences: [{ from: AT(14), to: AT(645) }],
+    });
+
+    expect(marked.map(shape)).toEqual([
+      [0, 14, true],
+      [14, 28, false],
+    ]);
+  });
+
   it('marks a band nothing but a commit and a turn covered as unattended', () => {
     const marked = markAttendance({ groups: [group(0, 60)], at: present([commit(30), turn(40)]) });
 

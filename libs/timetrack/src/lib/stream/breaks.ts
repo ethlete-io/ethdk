@@ -148,6 +148,23 @@ export const breakGaps = (options: {
 };
 
 /**
+ * The gaps between two stretches of presence that are too long to be a break: the night, a day away.
+ * An agent that ran in one still draws a band, which `markAttendance` finds nobody attended.
+ */
+export const longAbsences = (options: { presence: readonly TimeWindow[]; maxBreakMs?: number }): TimeWindow[] => {
+  const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
+  const ordered = mergeWindows([...options.presence]);
+
+  return ordered.flatMap((earlier, index) => {
+    const later = ordered[index + 1];
+
+    if (!later || later.from.getTime() - earlier.to.getTime() <= maxBreakMs) return [];
+
+    return [{ from: earlier.to, to: later.from }];
+  });
+};
+
+/**
  * The stretches of each break the user worked from another device. Each remote prompt claims its
  * allowance backwards from itself, inside its break, and allowances that touch join one stretch, so
  * a stretch runs on while the prompts in it are at most `promptAttentionMs` apart. See ADR 0033.
