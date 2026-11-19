@@ -59,9 +59,16 @@ const parsedOf = (output: string) =>
 const movesOf = (entries: ReflogEntry[]): ReflogMoves => {
   const madeHere = new Set(entries.filter((entry) => MADE_HERE.test(entry.action)).map((entry) => entry.sha));
   const byRef = new Map<string, ReflogEntry[]>();
+  const seen = new Set<string>();
 
   for (const entry of entries) {
     if (entry.ref === 'HEAD') continue;
+
+    const key = [entry.ref, entry.at.getTime(), entry.sha, entry.action].join(GIT_FIELD_SEPARATOR);
+
+    if (seen.has(key)) continue;
+
+    seen.add(key);
 
     const moves = byRef.get(entry.ref);
 

@@ -1,5 +1,6 @@
 use crate::error::{TimetrackError, TimetrackResult};
-use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use notify::event::{AccessKind, AccessMode};
+use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
@@ -87,6 +88,12 @@ fn is_a_move(relative: &Path) -> bool {
             .and_then(|first| first.as_os_str().to_str()),
         Some("HEAD") | Some("refs") | Some("packed-refs")
     )
+}
+
+/// `notify` also reports a file being opened, and every `git` command opens `HEAD` and the refs, the
+/// scan this watch triggers included: counting those would rescan every repository forever.
+fn is_a_write(kind: &EventKind) -> bool {
+    !matches!(kind, EventKind::Access(access) if *access != AccessKind::Close(AccessMode::Write))
 }
 
 /// Every watched repository a moved path belongs to.
@@ -249,6 +256,11 @@ impl GitWatcher {
             let Ok(event) = event else {
                 return;
             };
+
+            if !is_a_write(&event.kind) {
+                return;
+            }
+
             let Ok(repos) = watched.lock() else {
                 return;
             };
@@ -636,5 +648,58 @@ mod tests {
         watcher.mark("/home/tom/dev/sdk".to_string());
 
         assert_eq!(watcher.changed_after(first.seq).unwrap().repos, ["/home/tom/dev/sdk"]);
+    }
+
+    fn moved_after(watcher: &GitWatcher, after_seq: u64, repo: &Path) -> GitChanges {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+
+        loop {
+            let changes = watcher.changed_after(after_seq).unwrap();
+
+            if changes.repos.iter().any(|moved| moved == &repo.to_string_lossy())
+                || std::time::Instant::now() > deadline
+            {
+                return changes;
+            }
+
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+    }
+
+    #[test]
+    fn reads_a_ref_being_read_as_no_move() {
+        let root = temp_root("read-is-no-move");
+        let read = repo(&root, "read");
+        let written = repo(&root, "written");
+        let head = read.join(".git").join("HEAD");
+        let branch = read.join(".git").join("refs").join("heads").join("main");
+
+        std::fs::write(&head, "ref: refs/heads/main\n").unwrap();
+
+        let watcher = GitWatcher::new();
+
+        assert!(watcher.watch(&[read.clone(), written.clone()]).is_none());
+
+        std::fs::write(&branch, "a\n").unwrap();
+
+        let armed = moved_after(&watcher, 0, &read);
+
+        assert!(armed.repos.contains(&read.to_string_lossy().into_owned()));
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        let before = watcher.changed_after(0).unwrap().seq;
+
+        std::fs::read(&head).unwrap();
+        std::fs::read(&branch).unwrap();
+        std::fs::write(written.join(".git").join("refs").join("heads").join("main"), "b\n").unwrap();
+
+        moved_after(&watcher, before, &written);
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        assert_eq!(
+            watcher.changed_after(before).unwrap().repos,
+            [written.to_string_lossy().into_owned()]
+        );
     }
 }

@@ -29,6 +29,17 @@ describe('gitArrivalsOf', () => {
     ).toEqual(new Map([[UPSTREAM, new Date('2026-08-11T10:00:03+02:00')]]));
   });
 
+  it('lists each move once when every worktree reads the same branch reflog', () => {
+    const shared = [
+      line('next@{2026-08-11T10:00:00+02:00}', 'pull: Fast-forward', UPSTREAM),
+      line('next@{2026-08-11T10:00:00+02:00}', 'reset: moving to ' + OLD, OLD),
+      line('next@{2026-08-10T09:00:00+02:00}', 'pull: Fast-forward', REPLAYED),
+    ].join('\n');
+    const once = gitArrivalsOf({ outputs: [shared], window: WINDOW });
+
+    expect(gitArrivalsOf({ outputs: [shared, `${shared}\n`, shared], window: WINDOW })).toEqual(once);
+  });
+
   it('reads a commit another checkout wrote as written here', () => {
     const main = line('next@{2026-08-11T12:00:00+02:00}', 'merge wt/fix: Fast-forward', REWRITTEN);
     const worktree = line('HEAD@{2026-08-11T11:00:00+02:00}', 'commit: fix(repo): In the worktree', REWRITTEN);

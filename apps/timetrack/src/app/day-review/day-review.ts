@@ -174,13 +174,20 @@ type DayEvidence = {
   windowsSeenThroughMs?: number;
 };
 
+const MINUTE_MS = 60_000;
+
+/** Today's `now` moves on every collector drain, stored or not; within one minute that alone rebuilds no day. */
+const collectedOf = (evidence: DayEvidence) => ({
+  ...evidence,
+  minute: evidence.now && Math.floor(evidence.now.getTime() / MINUTE_MS),
+  now: undefined,
+  through: undefined,
+  pauses: undefined,
+  windowsSeenThroughMs: undefined,
+});
+
 const sameEvidence = (a: DayEvidence | null, b: DayEvidence | null) =>
-  a === b ||
-  (!!a &&
-    !!b &&
-    !a.now &&
-    !b.now &&
-    equal({ ...a, windowsSeenThroughMs: undefined }, { ...b, windowsSeenThroughMs: undefined }));
+  a === b || (!!a && !!b && equal(collectedOf(a), collectedOf(b)));
 
 /**
  * Cuts an open run off at now, or at the end of the day being read, whichever comes first.
