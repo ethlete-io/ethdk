@@ -118,5 +118,9 @@
     "elements/list-row missing-state": 1,
     "elements/login-dialog missing-state": 1,
     "elements/shell-main missing-state": 1
+  },
+  "timetrack": {
+    "components/button missing-motion": 2,
+    "components/button missing-state": 1
   }
 }

@@ -117,6 +117,17 @@
           "fix": "Use the SDK colour theming: --et-theme-color-* tokens under a colour theme scope (injectSemanticColorTheme types), not the Studio accent, warning or danger vars"
         }
       ]
+    },
+    "timetrack": {
+      "styles": [".ethlete/design/timetrack/styles.css"],
+      "head": ".ethlete/design/calls/timetrack/head.html",
+      "base": "@ethlete/components",
+      "presets": {
+        "desktop": {
+          "width": 1440,
+          "height": 900
+        }
+      }
     }
   }
 }
