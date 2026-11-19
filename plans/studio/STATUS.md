@@ -35,7 +35,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 4. **Control-Rand und Hover (B640)** ⏳ gebaut (b290646ca, aadefd64d); offen: Live-Bild der Checkbox im Zeilen-Editor - Builder
 5. **Timetrack-Beschreibung (B602)** ⏳ Tag-Spuren, Anruf-Entwürfe, Vertretungsname aus Ordner und Timetrack ADR 0055 gebaut. Tag-Aufbau linear, Banner, Titel-Überlappung gebaut. Ruckeln großteils behoben; offen: streamDay billiger oder im Worker, Tom bestätigt Scrollen, Host-Speicherleck, Live-Bild; Anruf ohne Vorschlag - Builder
 6. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, 18.11.-Regression behoben (ADR 0038), Warteschlangen-Dedup. Offen: Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047), neue ID bei erneutem Anlegen, Warteschlange über Rechner - Builder
-7. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Linux-Jobs im Node-24-Container (`node:24.22.1-bookworm` per Hash, `corepack enable`) auf `runner-ethlete`, alte `.git/index.lock` weg, Verdaccio-Proxy für `@ethlete` prüfen, dann Testlauf mit `CI_SELF_HOSTED` und schauen, wie weit er kommt (ADR 0342) - Builder
+7. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Linux-Jobs im Node-24-Container (`node:24.22.1-bookworm` per Hash, `corepack enable`) auf `runner-ethlete`, Verdaccio-Proxy für `@ethlete` prüfen, dann Testlauf mit `CI_SELF_HOSTED` und schauen, wie weit er kommt (ADR 0342) - Builder
 
 Geparkt: B105, B108, B109, B148.
 
