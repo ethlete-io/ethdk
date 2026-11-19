@@ -55,6 +55,7 @@ const withoutWork = (rows: DayRows): DayRows => {
     unattributed: [],
     unnamed: [],
     unobserved: [],
+    suggested: [],
     calls: [],
     timers: [],
     filledMs: 0,

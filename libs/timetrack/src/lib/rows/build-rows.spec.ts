@@ -6,7 +6,9 @@ import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent, CollectedEvent } from '../model/event';
 import { TimetrackProjectLink } from '../model/project-link';
 import { StandIn } from '../model/stand-in';
+import { rememberMeetingNaming } from '../model/meeting-naming';
 import { buildRows } from './build-rows';
+import { meetingBehindRow } from './calls';
 import { CALL_LANE_KEY, TIMER_LANE_KEY } from './lane';
 import { checkDay } from './round';
 
@@ -900,5 +902,19 @@ describe('buildRows with an accepted meeting no call was heard over', () => {
 
     expect(callRows(rows)).toEqual([]);
     expect(rows.unobserved.map((entry) => entry.event.occurrenceId)).toEqual(['workshop', 'later']);
+  });
+
+  it('names the next occurrence of its series from the answer given to the suggested row', () => {
+    const weekly = { ...MEETING, recurringEventId: 'weekly-workshop' };
+    const day = buildRows({ blocks: [], events: [weekly] });
+    const [row] = callRows(day);
+    const event = meetingBehindRow({ row: row!, calls: day.calls, suggested: day.suggested });
+    const namings = event ? rememberMeetingNaming({ namings: [], event, issueKey: 'ABC-48', at: at(17) }) : [];
+    const nextWeek = { ...weekly, occurrenceId: 'workshop-next', title: 'Workshop (moved)' };
+
+    expect(event?.occurrenceId).toBe('workshop');
+    expect(callRows(buildRows({ blocks: [], events: [nextWeek], meetings: { namings } }))).toMatchObject([
+      { issueKey: 'ABC-48', state: 'suggested' },
+    ]);
   });
 });

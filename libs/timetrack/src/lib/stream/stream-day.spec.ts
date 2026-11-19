@@ -629,6 +629,7 @@ describe('streamDay', () => {
         unattributed: [],
         unnamed: [],
         unobserved: [],
+        suggested: [],
         calls: [],
         timers: [],
         filledMs: 0,

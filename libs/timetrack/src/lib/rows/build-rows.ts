@@ -144,6 +144,8 @@ export type DayRows = {
    * blocker. They are questions the review asks.
    */
   unobserved: UnobservedOccurrence[];
+  /** The occurrences no call was heard over that each suggest a call row (ADR 0048). */
+  suggested?: UnobservedOccurrence[];
   /**
    * Every call of the day as a row: the ones a rule counted as work, named from the calendar and
    * carrying the activity seen during them, and the ones a rule excluded, which carry neither.
@@ -296,7 +298,8 @@ export const buildRows = (
   });
   const silent = unobservedOccurrences({ occurrences, calls: options.calls ?? [], meetings: naming });
   const unobserved = silent.filter((occurrence) => !suggestsMeetingRow(occurrence));
-  const suggestedMeetings = silent.filter(suggestsMeetingRow).map(suggestedMeetingRow);
+  const suggested = silent.filter(suggestsMeetingRow);
+  const suggestedMeetings = suggested.map(suggestedMeetingRow);
   // A call a rule excluded claims nothing: it books no time, and a voice room left open is the one
   // thing that must never stand in for a person being at the machine.
   const booked = calls.filter((match) => match.call.countsAsWork);
@@ -395,6 +398,7 @@ export const buildRows = (
     unattributed,
     unnamed: unnamed.map((row, index) => withoutUnbooked(row, proposals.length + index)),
     unobserved,
+    suggested,
     calls,
     timers,
     filledMs: filled.filledMs,

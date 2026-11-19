@@ -1122,7 +1122,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       if (!issueKey) return;
 
       const calls = reasonedRows()?.calls ?? [];
-      const event = meetingBehindRow({ row, calls });
+      const event = meetingBehindRow({ row, calls, suggested: reasonedRows()?.suggested });
 
       if (event) {
         settings.nameMeeting({ event, issueKey });

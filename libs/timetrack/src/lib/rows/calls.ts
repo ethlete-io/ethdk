@@ -338,7 +338,8 @@ export const callOfRow = (options: {
 };
 
 /**
- * The calendar occurrence a row was named from, or nothing.
+ * The calendar occurrence a row was named from, or nothing: the meeting of the call behind it, else the
+ * `suggested` occurrence the row was drawn from.
  *
  * A naming is remembered against a calendar series, so naming a row only teaches the day something
  * when the row can be traced back to an occurrence.
@@ -346,7 +347,22 @@ export const callOfRow = (options: {
 export const meetingBehindRow = (options: {
   row: { from: Date; to: Date; laneKey?: string };
   calls: readonly CallMatch[];
-}): CalendarOccurrenceEvent | undefined => callOfRow(options)?.meeting?.event;
+  suggested?: readonly UnobservedOccurrence[];
+}): CalendarOccurrenceEvent | undefined => {
+  const call = callOfRow(options);
+
+  if (call || options.row.laneKey !== CALL_LANE_KEY) return call?.meeting?.event;
+
+  return (options.suggested ?? [])
+    .map((occurrence) => ({ event: occurrence.event, sharedMs: sharedMs(options.row, occurrenceSpan(occurrence)) }))
+    .filter((entry) => entry.sharedMs > 0)
+    .sort((a, b) => b.sharedMs - a.sharedMs)[0]?.event;
+};
+
+const occurrenceSpan = (occurrence: UnobservedOccurrence) => ({
+  from: occurrence.event.at,
+  to: occurrence.event.until,
+});
 
 /**
  * The call a row was named from when no calendar occurrence named it, or nothing.
