@@ -27,7 +27,7 @@ import { injectCollectionPause } from './collection-pause';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
 import { injectTimetrackSettings } from './settings/settings';
 import { injectTimer } from './timer';
-import { readToday$ } from './read-day';
+import { injectTodayRead } from './read-day';
 import { injectWindowLock } from './window-lock';
 import { injectCheckoutDependencies } from './checkout-dependencies';
 import { injectProjectLinks } from './project-links';
@@ -182,6 +182,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const timers = injectTimer();
   const pause = injectCollectionPause();
   const settings = injectTimetrackSettings();
+  const { read$: readToday$ } = injectTodayRead();
   const lock = injectWindowLock();
   const readout = signal<TrayReadout | null>(null);
   const published = signal<WidgetReadout | null>(null);

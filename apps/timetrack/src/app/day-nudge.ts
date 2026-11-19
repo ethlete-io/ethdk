@@ -27,7 +27,7 @@ import {
 import { injectGitCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 import { injectTimetrackSettings } from './settings/settings';
-import { readToday$ } from './read-day';
+import { injectTodayRead } from './read-day';
 import { injectCheckoutDependencies } from './checkout-dependencies';
 import { injectProjectLinks } from './project-links';
 import { injectDayReview } from './day-review/day-review';
@@ -50,6 +50,7 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLinks = injectProjectLinks();
   const windows = injectWindowCollector();
   const settings = injectTimetrackSettings();
+  const { read$: readToday$ } = injectTodayRead();
   const dayReview = injectDayReview();
   const sync = injectTempoSync();
   const pending = signal<DayNudge | null>(null);

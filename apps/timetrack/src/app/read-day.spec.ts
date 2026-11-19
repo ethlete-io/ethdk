@@ -1,3 +1,4 @@
+import '@angular/compiler';
 import {
   CollectedEvent,
   DEFAULT_TIMETRACK_SETTINGS,
