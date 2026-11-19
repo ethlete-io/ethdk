@@ -38,7 +38,7 @@ const TRAILING_LABELS: Record<string, string> = {
 
 const PEER_LANE_PREFIX = 'lane:peer:';
 
-/** A paired machine's own lane, which holds its bands in checkouts this machine has no lane of, and no row. */
+/** A paired machine's own lane, which holds all its bands so none shares horizontal space with a block, and has no row. */
 export const isPeerLaneKey = (key: string) => key.startsWith(PEER_LANE_PREFIX);
 
 const rankOf = (key: string) => {
@@ -84,7 +84,7 @@ export type BehindBand = {
 
 /**
  * A paired machine's work on a frozen day, placed on the day axis the same way a break is. `checkout` names
- * the band's checkout where it sits in its machine's lane rather than in that checkout's own.
+ * the band's checkout where this machine has no lane of it.
  */
 export type PeerLaneBand = {
   band: PeerBand;
@@ -410,7 +410,7 @@ export const lanesOf = (options: {
   for (const band of options.peers ?? []) {
     const column = columnOf(band.laneKey);
     const own = byLane.has(column);
-    const key = own ? column : peerLaneKeyOf(band);
+    const key = peerLaneKeyOf(band);
     const placed = {
       band,
       offset: offsetOf({ at: band.from, dayStart: options.dayStart }),
@@ -419,7 +419,7 @@ export const lanesOf = (options: {
     };
 
     peersByLane.set(key, [...(peersByLane.get(key) ?? []), placed]);
-    if (!own) peerLabels.set(key, band.machineName);
+    peerLabels.set(key, band.machineName);
   }
 
   for (const key of peerLabels.keys()) byLane.set(key, []);
