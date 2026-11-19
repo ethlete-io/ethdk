@@ -201,71 +201,73 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
 
     const claimPriority = () => priorityCounter++;
 
-    const addTag = (id: symbol, rawConfig: MetaTagConfig, priority = claimPriority()) => {
-      const selector = getSelector(rawConfig);
+    const addTag = (id: symbol, rawConfig: MetaTagConfig, priority = claimPriority()) =>
+      untracked(() => {
+        const selector = getSelector(rawConfig);
 
-      metaTagsBySelector.update((tagsBySelector) => {
-        const newTagsBySelector = new Map(tagsBySelector);
-        const selectorBindings = newTagsBySelector.get(selector) || new Map();
-
-        selectorBindings.set(id, { config: rawConfig, priority });
-        newTagsBySelector.set(selector, new Map(selectorBindings));
-
-        return newTagsBySelector;
-      });
-
-      applyActiveTag(selector);
-    };
-
-    const removeTag = (id: symbol, selector?: string) => {
-      if (selector) {
         metaTagsBySelector.update((tagsBySelector) => {
           const newTagsBySelector = new Map(tagsBySelector);
-          const selectorBindings = newTagsBySelector.get(selector);
+          const selectorBindings = newTagsBySelector.get(selector) || new Map();
 
-          if (selectorBindings) {
-            selectorBindings.delete(id);
-
-            if (selectorBindings.size === 0) {
-              newTagsBySelector.delete(selector);
-            } else {
-              newTagsBySelector.set(selector, new Map(selectorBindings));
-            }
-          }
+          selectorBindings.set(id, { config: rawConfig, priority });
+          newTagsBySelector.set(selector, new Map(selectorBindings));
 
           return newTagsBySelector;
         });
 
         applyActiveTag(selector);
-
-        return;
-      }
-
-      metaTagsBySelector.update((tagsBySelector) => {
-        const newTagsBySelector = new Map(tagsBySelector);
-        let affectedSelector: string | undefined;
-
-        for (const [sel, bindings] of newTagsBySelector) {
-          if (bindings.has(id)) {
-            bindings.delete(id);
-            affectedSelector = sel;
-
-            if (bindings.size === 0) {
-              newTagsBySelector.delete(sel);
-            } else {
-              newTagsBySelector.set(sel, new Map(bindings));
-            }
-            break;
-          }
-        }
-
-        if (affectedSelector) {
-          queueMicrotask(() => applyActiveTag(affectedSelector));
-        }
-
-        return newTagsBySelector;
       });
-    };
+
+    const removeTag = (id: symbol, selector?: string) =>
+      untracked(() => {
+        if (selector) {
+          metaTagsBySelector.update((tagsBySelector) => {
+            const newTagsBySelector = new Map(tagsBySelector);
+            const selectorBindings = newTagsBySelector.get(selector);
+
+            if (selectorBindings) {
+              selectorBindings.delete(id);
+
+              if (selectorBindings.size === 0) {
+                newTagsBySelector.delete(selector);
+              } else {
+                newTagsBySelector.set(selector, new Map(selectorBindings));
+              }
+            }
+
+            return newTagsBySelector;
+          });
+
+          applyActiveTag(selector);
+
+          return;
+        }
+
+        metaTagsBySelector.update((tagsBySelector) => {
+          const newTagsBySelector = new Map(tagsBySelector);
+          let affectedSelector: string | undefined;
+
+          for (const [sel, bindings] of newTagsBySelector) {
+            if (bindings.has(id)) {
+              bindings.delete(id);
+              affectedSelector = sel;
+
+              if (bindings.size === 0) {
+                newTagsBySelector.delete(sel);
+              } else {
+                newTagsBySelector.set(sel, new Map(bindings));
+              }
+              break;
+            }
+          }
+
+          if (affectedSelector) {
+            queueMicrotask(() => applyActiveTag(affectedSelector));
+          }
+
+          return newTagsBySelector;
+        });
+      });
 
     effect(() => {
       currentLocale();

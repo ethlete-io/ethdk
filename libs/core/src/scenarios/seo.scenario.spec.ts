@@ -1,5 +1,5 @@
 import { provideLocationMocks } from '@angular/common/testing';
-import { inject, signal } from '@angular/core';
+import { effect, inject, signal, untracked } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import {
@@ -15,7 +15,12 @@ import {
   applyRobotsBinding,
   applyStructuredDataBinding,
   applyTwitterCardBindings,
+  injectFaviconStore,
+  injectLinkStore,
   injectLocale,
+  injectMetaStore,
+  injectStructuredDataStore,
+  injectTitleStore,
   JsonLD,
   LinkConfig,
   MetaTagConfig,
@@ -468,5 +473,120 @@ describe('seo child-first title scenarios', () => {
     c.destroy();
     document.title = '';
     if (!hadTitleElement) document.head.querySelector('title')?.remove();
+  });
+});
+
+describe('seo store writes inside an effect', () => {
+  const scenario = useScenario({
+    providers: [provideRouter([{ path: '', children: [] }]), provideLocationMocks()],
+  });
+
+  const countRuns = async (write: () => void) => {
+    const s = scenario();
+    const c = s.consumer();
+    const locale = s.run(() => injectLocale()).currentLocale;
+    let runs = 0;
+
+    c.run(() =>
+      effect(() => {
+        runs++;
+        write();
+      }),
+    );
+    await settle(s);
+
+    const initial = runs;
+
+    locale.set('de');
+    await settle(s);
+
+    c.destroy();
+
+    return { initial, final: runs };
+  };
+
+  it('runs an effect that writes a meta tag once and does not follow the locale', async () => {
+    const s = scenario();
+    const store = s.run(() => injectMetaStore());
+    const id = Symbol('meta');
+
+    const runs = await countRuns(() => store.addTag(id, { name: 'description', content: 'a' }));
+
+    store.removeTag(id);
+    expect(runs).toEqual({ initial: 1, final: 1 });
+  });
+
+  it('runs an effect that writes a link once and does not follow the locale', async () => {
+    const s = scenario();
+    const store = s.run(() => injectLinkStore());
+    const id = Symbol('link');
+
+    const runs = await countRuns(() => store.addLink(id, { rel: 'canonical', href: 'https://a.test' }));
+
+    store.removeLink(id);
+    expect(runs).toEqual({ initial: 1, final: 1 });
+  });
+
+  it('runs an effect that writes a title part and marker once', async () => {
+    const s = scenario();
+    const store = s.run(() => injectTitleStore());
+    const partId = Symbol('part');
+    const markerId = Symbol('marker');
+
+    const hadTitleElement = !!document.head.querySelector('title');
+
+    const runs = await countRuns(() => {
+      store.addPart(partId, { text: 'Page' });
+      store.addMarker(markerId, '●');
+    });
+
+    document.title = '';
+    if (!hadTitleElement) document.head.querySelector('title')?.remove();
+
+    store.removePart(partId);
+    store.removeMarker(markerId);
+    expect(runs).toEqual({ initial: 1, final: 1 });
+  });
+
+  it('runs an effect that writes structured data once', async () => {
+    const s = scenario();
+    const store = s.run(() => injectStructuredDataStore());
+    const id = Symbol('ld');
+
+    const runs = await countRuns(() => store.addStructuredData(id, organization('Acme')));
+
+    store.removeStructuredData(id);
+    expect(runs).toEqual({ initial: 1, final: 1 });
+  });
+
+  it('runs an effect that writes a favicon overlay once', async () => {
+    const s = scenario();
+    const store = s.run(() => injectFaviconStore());
+    const id = Symbol('favicon');
+
+    const runs = await countRuns(() => store.addOverlay(id, { type: 'dot' } as never));
+
+    store.removeOverlay(id);
+    expect(runs).toEqual({ initial: 1, final: 1 });
+  });
+
+  it('does not loop an effect that writes a store it also reads', async () => {
+    const s = scenario();
+    const store = s.run(() => injectMetaStore());
+    const c = s.consumer();
+    const id = Symbol('meta');
+    let runs = 0;
+
+    c.run(() =>
+      effect(() => {
+        runs++;
+        store.addTag(id, { name: 'description', content: 'a' });
+        untracked(() => store.removeTag(id));
+      }),
+    );
+    await settle(s);
+
+    expect(runs).toBe(1);
+    c.destroy();
   });
 });
