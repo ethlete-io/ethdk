@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 18.11.2026, nachmittags
+Stand: 19.11.2026, nachmittags
 
 ## Ziel
 
@@ -32,7 +32,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 3. **Consumer-Auslieferung (B610)** ⏳ Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules, frühestens eine Woche nach B608/B609 (ADR 0374) - Builder
-4. **Timetrack-Beschreibung (B602)** ⏳ Timetrack: Band-Schnitt und #4 neu gelandet (8ce7c5a6b, e2e-Fall „books the run, since the user was away from neither machine“ grün). Offen nur die Morgenprüfungen mit laufender App: Snapshot-Vergleich, echte Zeilen vom 13.11. (ET-772), deutsche Einzeiler (#5) - Tom + Builder
+4. **Timetrack-Beschreibung (B602)** ⏳ Hintergrund-Band gebaut (bcdb44893). Läuft: Nacht ohne Zeilen, dann verschwundene ET-772-Zeile, Ticket in falscher Spur, fremder Zeilentext. Danach bucht Tom 18. und 19.11. - Builder
 5. **Timetrack-Gleichstand (B616)** ⏳ gekoppelte Rechner zeigen denselben Tag, SSH-Arbeit auf tank erscheint auf dem Mac (Timetrack ADR 0047) - Builder
 
 Geparkt: B105, B108, B109, B580, B148.

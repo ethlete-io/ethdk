@@ -10,6 +10,10 @@ Zu [STATUS.md](STATUS.md).
 - Suspect (19.11.): der slice-paths-Hook warnt über `apps/timetrack/src/**`, obwohl genau dieses Glob gesetzt war.
 - Suspect (19.11.): die Timetrack-Dev-App starb 01:25 (SIGBUS), als ein Subagent mit `cargo test`/`clippy` das laufende
   `target/debug/timetrack` neu linkte. Unmöglich, wenn `nx serve timetrack-app` in ein eigenes Target-Verzeichnis baut.
+- Cause (19.11., zweimal): WIP eines Subagenten (Debug-Code, Band-Versuch 2) kam per Hot-Reload in Toms laufende
+  Timetrack-Dev-App und verfälschte seinen Tag. Unmöglich, wenn Subagenten in einem eigenen Scratch-Checkout arbeiten.
+- Befund (19.11., Doc-Agent): Grill-Frage auf ungeprüfter Annahme (tank headless) und eine schon in der Roadmap.
+  Vor einer Frage Rechnerfakten (hostname, loginctl) und `plans/timetrack/roadmap.md` prüfen.
 - Suspect: `yarn adr:governs` ordnet Timetrack-ADR-Nummern (`libs/timetrack/docs/adr`) den Studio-ADRs mit derselben Nummer zu (zitierte 0039-0041 in `frozen-rows.ts` listeten Studio 0039-0041).
 
 ## A. Studio: was man sieht

@@ -7,12 +7,11 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 
 ## Warteschlange (nächstes oben)
 
-1. B602: #4, #5 und der Band-Schnitt (#27) gepusht (Neu-Landung 8ce7c5a6b: ein Abschnitt, den ein gekoppelter Rechner sah, zählt als anwesend). Offen, Tagschicht, braucht die laufende
-   Dev-App: Snapshot-Vergleich, echte Zeilen vom 13.11. (#4), deutsche Einzeiler (#5),
-   Dev-App: #28 (schrittweises Lesen behält Extra-Proben) und #29 (17 Zeilen vom 18.11. ohne bekannte Änderung). #11 ist
-   wahrscheinlich durch 714b49bc9 behoben, die Linux-Maschine läuft vermutlich auf einem alten Build.
+1. B602: Hintergrund-Band gebaut (bcdb44893). Läuft: Nacht ohne Zeilen (Abwesenheit > 3 h zeichnet keine Blöcke,
+   `breaks.ts`, `stream-day.ts`), dann verschwundene ET-772-Zeile (18.11.), Ticket in falscher Spur, fremder Zeilentext.
+   Abnahme: Toms Tag 19.11. und frischer Snapshot-Vergleich, der jede Zeile erklärt; erst dann bucht Tom 18. und 19.11.
 2. B616: gekoppelte Rechner zeigen denselben Tag; Handzeilen, Zeilen-Änderungen, Regeln und Vertretungen gebaut, auf zwei Rechnern ungeprüft; SSH-Arbeit auf
-   tank erscheint auf dem Mac (ADR 0047, Befunde #7, #15, #24, #25).
+   tank erscheint auf dem Mac (ADR 0047, Befunde #7, #15, #24, #25). Headless fällt weg: tank hat einen Bildschirm.
 3. Roadmap-Meilensteine M5 bis M11: [`roadmap.md`](./roadmap.md). Ein Meilenstein wird erst nach Plan
    mit dem Menschen gebaut.
 
