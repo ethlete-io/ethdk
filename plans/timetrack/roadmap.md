@@ -218,7 +218,6 @@ None of these is recorded as done:
 - Is `conferenceUrl` stored whole, or redacted?
 - Should an editor heartbeat extend presence past `maxUnobservedMs`? It needs a day where the two
   answers differ, or park it.
-- Repair the duplicate worktree rows stored before the worktree fix, or leave them?
 - Is the masking name list seeded from the Jira project names yet?
 - Is the concurrency ceiling warning (off by default) still wanted?
 - Does outbound model payload privacy need a separate review beyond ADR 0013?
