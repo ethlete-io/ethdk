@@ -126,10 +126,10 @@
   "foundations/motion": "ac83e57ab4b998f1",
   "foundations/spacing": "e22f8ddd6616fbd8",
   "foundations/type": {
-    "hash": "453db103c17c37c3",
-    "variant": "b",
+    "hash": "1b63fea4e6e16cfe",
+    "variant": "c",
     "decidedBy": "user",
-    "at": "2026-11-19T10:25:13.055Z"
+    "at": "2026-11-11T13:34:12.243Z"
   },
   "pages/flows": "4950706aa3a64d19",
   "pages/inbox": {

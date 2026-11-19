@@ -41,7 +41,7 @@ describe('styles.css', () => {
     const css = compileStyles();
 
     expect(css).toMatch(
-      /@layer studio-tokens\s*{[\s\S]*--font-ui: 'Source Sans 3', system-ui[\s\S]*--radius-control-md: 0\.6rem/,
+      /@layer studio-tokens\s*{[\s\S]*--font-ui: 'Noto Sans', system-ui[\s\S]*--radius-control-md: 0\.6rem/,
     );
     expect(css).not.toMatch(/--radius-md: 0\.6rem/);
     expect(css).not.toMatch(/--radius-control-md: var\(--radius-control-md\)/);

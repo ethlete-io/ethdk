@@ -1294,21 +1294,8 @@
     "pid": 2342738
   },
   "foundations/type": {
-    "hash": "009f21546416334e",
-    "files": {
-      ".ethlete/design/studio/assets/fonts/noto-sans-math-latin-400-normal.woff2": "c39a9444f9574734",
-      ".ethlete/design/studio/assets/fonts/noto-sans-symbols-2-symbols-400-normal.woff2": "9c07d511848c274b",
-      ".ethlete/design/studio/assets/fonts/source-code-pro-latin-wght-normal.woff2": "8b774aaa5137a38e",
-      ".ethlete/design/studio/assets/fonts/source-sans-3-latin-wght-normal.woff2": "19143dca075972bc",
-      ".ethlete/design/studio/foundations/type/type.css": "555b37ba867dc543",
-      ".ethlete/design/studio/foundations/type/type.ts": "942880c11f33a677"
-    },
     "actions": [],
-    "builder": "designer",
-    "at": "2026-11-19T10:26:12.287Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 1894076
+    "at": "2026-11-17T13:28:23.854Z"
   },
   "pages/flows": {
     "hash": "89a0f45ea3ca099a",
