@@ -25,7 +25,6 @@ import {
   agedNamings,
   classifyCalls,
   closeTimerRun,
-  buildRows,
   breaksBetweenRows,
   coveredMsOf,
   dayBoundaryOf,
@@ -95,7 +94,6 @@ import {
   agentSamplesOf,
   agentTurnsOf,
   agentUsageWithin,
-  streamDay,
   subagentsWithin,
   RowSubagent,
   TokenUsage,
@@ -138,6 +136,7 @@ import { HostReceivedRange, NOTHING_RECEIVED, TranscriptChunk, injectHostPorts }
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectEpicSiblings } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
+import { buildRows$, streamDay$ } from '../day-build/build-day';
 import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
 import { heardChunksOf, transcriptBetween$ } from '../transcript-chunks';
 import { injectTimer } from '../timer';
@@ -485,34 +484,57 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * time asks the same question — an answer that fed back into its own input would narrow every later
    * run.
    */
-  const streamed = computed(() => {
+  const streamInput = computed(() => {
     const collected = evidence();
     const discovery = git.discovery();
 
     const events = merged();
 
     return collected && events && discovery && !settings.isLoading() && editsReady()
-      ? streamDay({
+      ? {
+          day: day(),
           events,
-          options: streamDayOptionsOf({
-            repoRoots: discovery.repos,
-            settings: daySettings(),
-            links: projectLinks(),
-            worktrees: git.worktrees(),
-            dependencies: dependencies(),
-            patterns: recurring.patterns(),
-            epics: epics.optionsFor(day()),
-            windowsSeenThroughMs: collected.windowsSeenThroughMs,
-            headBranches: heldHeadsOfDay().branches,
-            peerHeadBranches: heldHeadsOfDay().peerBranches,
-            now: collected.now,
-            rows: rowOptions(),
-            heard: heardChunksOf(collected.transcript),
-            day: day(),
-          }),
-        })
+          input: {
+            events,
+            options: streamDayOptionsOf({
+              repoRoots: discovery.repos,
+              settings: daySettings(),
+              links: projectLinks(),
+              worktrees: git.worktrees(),
+              dependencies: dependencies(),
+              patterns: recurring.patterns(),
+              epics: epics.optionsFor(day()),
+              windowsSeenThroughMs: collected.windowsSeenThroughMs,
+              headBranches: heldHeadsOfDay().branches,
+              peerHeadBranches: heldHeadsOfDay().peerBranches,
+              now: collected.now,
+              rows: rowOptions(),
+              heard: heardChunksOf(collected.transcript),
+              day: day(),
+            }),
+          },
+        }
       : null;
   });
+
+  const streamBuilt = toSignal(
+    toObservable(streamInput).pipe(
+      switchMap((built) =>
+        built
+          ? streamDay$(built.input).pipe(map((value) => ({ day: built.day, events: built.events, value })))
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  const streamedBuild = computed(() => {
+    const built = streamBuilt();
+
+    return built && streamInput()?.day === built.day ? built : null;
+  });
+
+  const streamed = computed(() => streamedBuild()?.value ?? null);
 
   const deterministicRows = computed(() => edits().frozenRows ?? streamed()?.rows ?? null);
 
@@ -592,36 +614,55 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   /** Keyed by payload rather than by day: a day whose evidence grew is a new question, and only then. */
   const inferred = computed(() => answers()[plan()?.hash ?? ''] ?? []);
 
+  const reasonedInput = computed(() => {
+    const current = streamedBuild();
+    const proposed = inferred();
+
+    if (!current || edits().frozenRows || !proposed.length) return null;
+
+    return {
+      current,
+      input: {
+        blocks: current.value.blocks,
+        events: current.events,
+        links: projectLinks(),
+        calls: calls(),
+        breaks: current.value.breaks,
+        inferred: proposed,
+        ...rowOptions(),
+        received: receivedEventsOf(current.events),
+        peerLanes: current.value.peerLanes,
+      },
+    };
+  });
+
+  const reasonedBuilt = toSignal(
+    toObservable(reasonedInput).pipe(
+      switchMap((built) =>
+        built ? buildRows$(built.input).pipe(map((rows) => ({ current: built.current, rows }))) : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
   /**
    * The same day with the provider's answers in it, rebuilt from the blocks the stream pass already
    * produced rather than by reading the day a second time. Only the ladder changes, so re-running the
    * whole of `streamDay` for it would recompute presence, concurrency and spend to the same numbers.
    */
   const reasonedRows = computed(() => {
-    const current = streamed();
-    const collected = evidence();
-    const proposed = inferred();
+    const current = streamedBuild();
 
-    if (!current || !collected) return null;
+    if (!current || !evidence()) return null;
 
     const frozen = edits().frozenRows;
 
     if (frozen) return frozen;
-    if (!proposed.length) return current.rows;
+    if (!inferred().length) return current.value.rows;
 
-    const events = merged() ?? collected.events;
+    const reasoned = reasonedBuilt();
 
-    return buildRows({
-      blocks: current.blocks,
-      events,
-      links: projectLinks(),
-      calls: calls(),
-      breaks: current.breaks,
-      inferred: proposed,
-      ...rowOptions(),
-      received: receivedEventsOf(events),
-      peerLanes: current.peerLanes,
-    });
+    return reasoned?.current.day === current.day ? reasoned.rows : current.value.rows;
   });
 
   /** The checkouts the day named no branch for: no commit, no branch switch and no agent session. */

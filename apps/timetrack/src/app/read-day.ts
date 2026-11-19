@@ -26,7 +26,6 @@ import {
   readHeadBranches$,
   reviewDay,
   settingsOnDay,
-  streamDay,
   unbranchedCheckouts,
 } from '@ethlete/timetrack';
 import { defineRootProvider, equal, toInjectFn } from '@ethlete/core';
@@ -40,8 +39,10 @@ import {
   of,
   ObservedValueOf,
   shareReplay,
+  switchMap,
   tap,
 } from 'rxjs';
+import { streamDay$ } from './day-build/build-day';
 import { HostPorts, NOTHING_RECEIVED } from '../host';
 import { streamDayOptionsOf } from './stream-day-options';
 import { receivedDayRowsOn, withReceivedSharedRows } from './peers/day-rows';
@@ -147,7 +148,7 @@ export const readDay$ = (options: DayReadOptions & { day: string; memo?: DayRead
         keys: received.ownRepoKeys,
         rules: effectiveExclusionRules(settings),
       });
-      const read = () => {
+      const read$ = (): Observable<DayRead> => {
         const at = new Date(Math.min(Date.now(), to.getTime()));
         const pauses = pauseWindows({ events, window: { from, to }, through: at });
         const dayOptions = streamDayOptionsOf({
@@ -167,66 +168,73 @@ export const readDay$ = (options: DayReadOptions & { day: string; memo?: DayRead
           heard: heardChunksOf(transcript),
           day: key,
         });
-        const day = streamDay({ events: merged, options: dayOptions });
-        const reviewWith = (current: DayReviewEdits) =>
-          reviewDay({
-            rows: day.rows,
-            edits: current,
-            cut: dayOptions.rows?.cut,
-            standIns: settings.standIns,
-            rules: settings.attributionRules,
-            day: key,
-            check: {
-              targetMs: settings.dayTargetMs,
-              coveredMs: coveredMsOf(coverage),
-              pausedMs: pausedMs(pauses),
-              ...options.check,
-            },
-          });
         const stored = pinnedOntoDay({
           edits: withReceivedSharedRows({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, received, day: key }),
           day: key,
           boundary,
         });
 
-        return {
-          key,
-          at,
-          events,
-          day,
-          edits: stored,
-          cut: dayOptions.rows?.cut,
-          review: reviewWith(stored),
-          reviewWith,
-          peerRows: receivedDayRowsOn({ received, day: key }),
-        };
+        return streamDay$({ events: merged, options: dayOptions }).pipe(
+          map((day) => {
+            const reviewWith = (current: DayReviewEdits) =>
+              reviewDay({
+                rows: day.rows,
+                edits: current,
+                cut: dayOptions.rows?.cut,
+                standIns: settings.standIns,
+                rules: settings.attributionRules,
+                day: key,
+                check: {
+                  targetMs: settings.dayTargetMs,
+                  coveredMs: coveredMsOf(coverage),
+                  pausedMs: pausedMs(pauses),
+                  ...options.check,
+                },
+              });
+
+            return {
+              key,
+              at,
+              events,
+              day,
+              edits: stored,
+              cut: dayOptions.rows?.cut,
+              review: reviewWith(stored),
+              reviewWith,
+              peerRows: receivedDayRowsOn({ received, day: key }),
+            };
+          }),
+        );
       };
-      const first = read();
-      const unbranched = unbranchedCheckouts(first.day.streams).filter((repoPath) => !asked.has(repoPath));
+      const withHeads$ = (first: DayRead): Observable<DayRead> => {
+        const unbranched = unbranchedCheckouts(first.day.streams).filter((repoPath) => !asked.has(repoPath));
 
-      if (!unbranched.length) return of(first);
+        if (!unbranched.length) return of(first);
 
-      unbranched.forEach((repoPath) => asked.add(repoPath));
+        unbranched.forEach((repoPath) => asked.add(repoPath));
 
-      const fromPeers = peerHeadBranches({
-        events: merged,
-        repoPaths: unbranched,
-        localKeys: received.ownRepoKeys,
-        timelines,
-      });
+        const fromPeers = peerHeadBranches({
+          events: merged,
+          repoPaths: unbranched,
+          localKeys: received.ownRepoKeys,
+          timelines,
+        });
 
-      for (const [machineId, found] of Object.entries(fromPeers.byMachine)) {
-        peerHeads[machineId] = { ...peerHeads[machineId], ...found };
-      }
+        for (const [machineId, found] of Object.entries(fromPeers.byMachine)) {
+          peerHeads[machineId] = { ...peerHeads[machineId], ...found };
+        }
 
-      return readHeadBranches$({ processes: ports.processes, repoPaths: fromPeers.local, at: to }).pipe(
-        catchError(() => of<Record<string, string>>({})),
-        map((found) => {
-          Object.assign(heads, found);
+        return readHeadBranches$({ processes: ports.processes, repoPaths: fromPeers.local, at: to }).pipe(
+          catchError(() => of<Record<string, string>>({})),
+          switchMap((found) => {
+            Object.assign(heads, found);
 
-          return Object.keys(found).length || Object.keys(fromPeers.byMachine).length ? read() : first;
-        }),
-      );
+            return Object.keys(found).length || Object.keys(fromPeers.byMachine).length ? read$() : of(first);
+          }),
+        );
+      };
+
+      return read$().pipe(switchMap(withHeads$));
     };
 
     return evidence$.pipe(

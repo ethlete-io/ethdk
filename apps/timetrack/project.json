@@ -16,6 +16,7 @@
         "outputPath": "dist/apps/timetrack",
         "index": "apps/timetrack/src/index.html",
         "tsConfig": "apps/timetrack/tsconfig.app.json",
+        "webWorkerTsConfig": "apps/timetrack/tsconfig.worker.json",
         "assets": [],
         "styles": ["apps/timetrack/src/styles.css"]
       },
@@ -79,7 +80,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p apps/timetrack/tsconfig.app.json --noEmit && tsc -p apps/timetrack/tsconfig.spec.json --noEmit"
+        "command": "tsc -p apps/timetrack/tsconfig.app.json --noEmit && tsc -p apps/timetrack/tsconfig.spec.json --noEmit && tsc -p apps/timetrack/tsconfig.worker.json --noEmit"
       }
     },
     "test": {

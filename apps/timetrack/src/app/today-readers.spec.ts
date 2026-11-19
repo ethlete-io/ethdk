@@ -8,25 +8,25 @@ import {
   runInInjectionContext,
   ɵINJECTOR_SCOPE,
 } from '@angular/core';
-import * as timetrack from '@ethlete/timetrack';
 import { firstValueFrom } from 'rxjs';
 import { createFakePorts } from '../e2e/fake-ports';
 import { injectWindowCollector } from '../collectors/window-collector';
 import { HOST_PORTS } from '../host';
+import type * as dayBuild from './day-build/build-day';
 import { injectDayNudge } from './day-nudge';
 import { injectTrayReadout } from './tray-readout';
 
 const readerBuilds = vi.hoisted(() => ({ count: 0 }));
 
-vi.mock('@ethlete/timetrack', async (original) => {
-  const actual = await original<typeof timetrack>();
+vi.mock('./day-build/build-day', async (original) => {
+  const actual = await original<typeof dayBuild>();
 
   return {
     ...actual,
-    streamDay: vi.fn((input: Parameters<typeof actual.streamDay>[0]) => {
+    streamDay$: vi.fn((input: Parameters<typeof actual.streamDay$>[0]) => {
       if (new Error().stack?.includes('read-day')) readerBuilds.count++;
 
-      return actual.streamDay(input);
+      return actual.streamDay$(input);
     }),
   };
 });

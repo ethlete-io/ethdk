@@ -12,15 +12,15 @@ import {
   formatDurationMs,
   localDayKey,
   localDayRange,
-  streamDay,
   unnamedFocusOver,
 } from '@ethlete/timetrack';
-import { catchError, map, of, startWith, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { injectCallCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { streamDayOptionsOf } from '../stream-day-options';
+import { streamDay$ } from '../day-build/build-day';
 import { formatShare } from './format';
 import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
@@ -249,16 +249,17 @@ export class UnnamedFocusComponent {
         });
 
         return this.ports.events.eventsBetween$(from, to).pipe(
-          map((events) => {
-            const perDay = byLocalDay({ items: events, days, boundary }).map((held, index) =>
-              streamDay({ events: held, options: { ...options, day: days[index] } }),
-            );
-
-            return {
-              value: { today: unnamedFocusOver(perDay.slice(-1)), span: unnamedFocusOver(perDay) },
-              failure: null,
-            };
-          }),
+          switchMap((events) =>
+            forkJoin(
+              byLocalDay({ items: events, days, boundary }).map((held, index) =>
+                streamDay$({ events: held, options: { ...options, day: days[index] } }),
+              ),
+            ),
+          ),
+          map((perDay) => ({
+            value: { today: unnamedFocusOver(perDay.slice(-1)), span: unnamedFocusOver(perDay) },
+            failure: null,
+          })),
           catchError((error: unknown) => of({ value: null, failure: messageOf(error) })),
         );
       }),
