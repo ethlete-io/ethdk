@@ -32,6 +32,7 @@ One line per Suspect without proof (ADR 0276). At its second time the line joins
 - slice-paths dir/** warning (machinery, 16.11.): the pre-commit slice-paths hook warns about staged files that match a listed `dir/**` glob (seen 3x in the e2e speed slices). Not blocking.
 - et-label clash (SDK, 14.11., fifagg 9.7a2): cdk et-label and components et-label clash when one component imports both, so a half-migrated form loses the floating label. Suspect. fifa migrates whole forms (ADR 0297).
 - menu, select, pickers (SDK, 14.11.): schlucken den Klick auf ihren Trigger wie vorher das Toggletip (consumer-`(click)` auf dem Trigger geht verloren); Fix wäre closeOnOutsidePointer `except-origin` + Trigger schließt per Toggle. Geparkt, bis ein Consumer es trifft (nach 442f2ce40). Suspect.
+- tauri dev restarts on agent edits (machinery, 19.11.): an agent edit of `apps/timetrack` lib.rs rebuilds and restarts the human's live Timetrack (`yarn timetrack` runs from the shared tree, Timetrack ADR 0050), unannounced once at 18:01. Built only on red CI.
 - RSS leak (Linux, 986): an RSS leak seen in the B499 runs did not reproduce. Parked until a recipe (ADR 0302).
 - agent-sessions up --dry-run (machinery, fifa 15.11.): `up --dry-run` ignores the flag and starts the tmux sessions; `run` inside an existing tmux session of its own name returns without starting the agent. Built only on red CI.
 - runner image without Ubuntu mirror (CI, 15.11.): spec-sweep --slow 1 apt exit 100 on image ubuntu-26.04 20261111.82.6, no Ubuntu mirror fetched; not our code.
