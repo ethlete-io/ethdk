@@ -13,13 +13,17 @@ const rowSlots = (root: Locator) => root.locator('.et-standings-pick-row');
 const zoneBarColor = (row: Locator) =>
   row
     .locator('.et-standings-cell[data-column="position"]')
-    .evaluate((el) => getComputedStyle(el).boxShadow.match(/^rgba?\([^)]*\)/)?.[0] ?? 'rgba(0, 0, 0, 0)');
+    .evaluate((el) => getComputedStyle(el).boxShadow.match(/^(rgba?|color)\([^)]*\)/)?.[0] ?? 'rgba(0, 0, 0, 0)');
 
-const rgbOf = (color: string) =>
-  color
-    .match(/\d+(\.\d+)?/g)
-    ?.slice(0, 3)
-    .map(Number) ?? [];
+const rgbOf = (color: string) => {
+  const channels =
+    color
+      .match(/\d+(\.\d+)?/g)
+      ?.slice(0, 3)
+      .map(Number) ?? [];
+
+  return color.startsWith('color(') ? channels.map((v) => Math.round(v * 255)) : channels;
+};
 
 const centerOf = async (locator: Locator) => {
   const box = await boxOf(locator);
@@ -62,9 +66,7 @@ test.describe('standings / zone colours', () => {
     const rows = root.locator(ROW);
     const tintOf = (row: Locator) => row.evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    expect(rgbOf(await tintOf(rows.nth(0))).map((v) => Math.round(v * 255))).toEqual(
-      rgbOf(await zoneBarColor(rows.nth(0))),
-    );
+    expect(rgbOf(await tintOf(rows.nth(0)))).toEqual(rgbOf(await zoneBarColor(rows.nth(0))));
     expect(await tintOf(rows.nth(3))).toBe('rgba(0, 0, 0, 0)');
   });
 
