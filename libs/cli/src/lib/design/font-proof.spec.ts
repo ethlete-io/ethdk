@@ -34,14 +34,21 @@ type PlatformFont = { familyName: string; postScriptName?: string; isCustomFont:
 
 const unloadedFaces = `(() => {
   const rules = [];
+  const rulesOf = (sheet) => {
+    try {
+      return sheet.cssRules;
+    } catch {
+      return [];
+    }
+  };
   const collect = (list) => {
     for (const rule of list) {
       if (rule instanceof CSSFontFaceRule) rules.push(rule);
-      else if (rule instanceof CSSImportRule && rule.styleSheet) collect(rule.styleSheet.cssRules);
+      else if (rule instanceof CSSImportRule && rule.styleSheet) collect(rulesOf(rule.styleSheet));
       else if (rule.cssRules) collect(rule.cssRules);
     }
   };
-  for (const sheet of [...document.styleSheets, ...document.adoptedStyleSheets]) collect(sheet.cssRules);
+  for (const sheet of [...document.styleSheets, ...document.adoptedStyleSheets]) collect(rulesOf(sheet));
   const unquoted = (family) => family.replace(/^["']|["']$/g, '');
   const seen = new Map();
   const inUse = new Set(${facesInUse});
