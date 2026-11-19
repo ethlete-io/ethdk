@@ -117,6 +117,10 @@
 
         &:not([aria-disabled='true']) {
           --_et-accordion-secondary-color: var(--et-surface-color-solid, CanvasText);
+
+          .et-accordion-label {
+            text-decoration: var(--et-accordion-header-hover-text-decoration, none);
+          }
         }
       }
     }
