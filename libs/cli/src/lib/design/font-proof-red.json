@@ -22,17 +22,5 @@
     "part": "pages/film-detail",
     "property": "text",
     "count": 3
-  },
-  {
-    "product": "timetrack",
-    "part": "components/button",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "timetrack",
-    "part": "elements/day-lanes",
-    "property": "text",
-    "count": 11
   }
 ]
