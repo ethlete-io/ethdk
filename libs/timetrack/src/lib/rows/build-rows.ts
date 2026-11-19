@@ -1,3 +1,4 @@
+import { rulesForDay } from '../model/attribution';
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { CheckoutDependencies } from '../git/dependencies';
 import { ActivityBlock } from '../model/block';
@@ -55,6 +56,8 @@ export type BuildRowsOptions = {
   activity?: AttributeOptions['activity'];
   patterns?: AttributeOptions['patterns'];
   rules?: AttributeOptions['rules'];
+  /** The local day key being built. A rule scoped to another day, or to any day when this is left out, names nothing. */
+  day?: string;
   /** The stand-ins the rules point at. Without them a stand-in rule names nothing. */
   standIns?: AttributeOptions['standIns'];
   /** The user's path-to-project links. A private one takes its context out of the day entirely. */
@@ -203,6 +206,7 @@ export const buildRows = (
   options: { blocks: readonly ActivityBlock[]; events: readonly CollectedEvent[] } & BuildRowsOptions,
 ): DayRows => {
   const { blocks } = options;
+  const rules = options.rules && rulesForDay(options.rules, options.day);
   const timers = matchTimerRuns({ runs: options.timerRuns ?? [], blocks });
   const pauses = options.pauses ?? [];
   // Before anything else is cut: a call's own window is the call, and a band of it beside the call row
@@ -229,7 +233,7 @@ export const buildRows = (
       activity,
       reviewed,
       patterns: options.patterns,
-      rules: options.rules,
+      rules,
       standIns: options.standIns,
       links: options.links,
       inferred: options.inferred,
@@ -237,7 +241,7 @@ export const buildRows = (
     }),
   );
   const attributed = options.dependencies
-    ? consumerTickets({ blocks: laddered, dependencies: options.dependencies, rules: options.rules })
+    ? consumerTickets({ blocks: laddered, dependencies: options.dependencies, rules })
     : laddered;
   // Private blocks leave before donation rather than after proposal: a repository the user took out
   // of their working day must not lend its time to the work beside it either.
@@ -272,7 +276,7 @@ export const buildRows = (
     focusByStream: options.cut?.focusByStream,
     round: options.round,
   });
-  const donated = donateBlocks({ blocks: watched.blocks, rules: options.rules, options: options.donate });
+  const donated = donateBlocks({ blocks: watched.blocks, rules, options: options.donate });
   // Before the gaps are filled rather than after: a filled minute is idle time joined to the work
   // around it, and cutting one away afterwards would leave `filledMs` claiming time no row holds.
   // The calls are handed in raw rather than as the rows `matchCalls` builds later: a call is the
@@ -361,7 +365,7 @@ export const buildRows = (
     groups: disputeOtherBranches({
       groups,
       events: options.events,
-      rules: options.rules,
+      rules,
       standIns: options.standIns,
       worktrees: options.worktrees,
     }),

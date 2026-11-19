@@ -1,7 +1,7 @@
 import { stripRefPrefix } from '@ethlete/agent-rules/git-flow';
 import { autoModeActs } from '../agent-api/action-classes';
 import { AgentApproval } from '../agent-api/approval-queue';
-import { UnnamedContext, matchAttributionRule } from '../model/attribution';
+import { UnnamedContext, matchAttributionRule, rulesForDay } from '../model/attribution';
 import { TimetrackProjectLink } from '../model/project-link';
 import { TimetrackSettings } from '../settings/model';
 import { gitFlowConfigFor } from '../settings/attribution';
@@ -117,7 +117,9 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
     !input.flags.windowLocked;
   const ruled = new Set(
     input.contexts
-      .filter((entry) => matchAttributionRule({ context: entry.context, rules: settings.attributionRules }))
+      .filter((entry) =>
+        matchAttributionRule({ context: entry.context, rules: rulesForDay(settings.attributionRules, day) }),
+      )
       .map((entry) => entry.id),
   );
   const unattributed = input.stream?.rows.unattributed ?? [];
@@ -261,6 +263,7 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
       ruled: ruled.has(entry.id),
     })),
     standInPass: autoStandInDecisions({
+      day,
       contexts: input.contexts,
       unattributed,
       links: input.links,

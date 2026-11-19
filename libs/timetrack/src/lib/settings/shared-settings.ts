@@ -75,6 +75,7 @@ const ruleOf = (rule: AttributionRule): AttributionRule =>
     branch: rule.branch,
     workPath: rule.workPath,
     appId: rule.appId,
+    day: rule.day,
     target: rule.target.kind === 'stand-in' ? { kind: 'stand-in', standInId: rule.target.standInId } : rule.target,
     author: rule.author,
     createdAt: rule.createdAt,

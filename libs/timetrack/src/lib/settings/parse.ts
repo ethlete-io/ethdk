@@ -126,6 +126,7 @@ const asAttributionRule = (value: unknown, index: number): AttributionRule | nul
   const appId = asText(raw['appId']);
   const branch = asText(raw['branch']);
   const workPath = asText(raw['workPath']);
+  const day = asText(raw['day']);
 
   if (!target || (!repoPath && !appId)) return null;
 
@@ -135,6 +136,7 @@ const asAttributionRule = (value: unknown, index: number): AttributionRule | nul
     branch: repoPath && branch ? branch : undefined,
     workPath: repoPath && workPath ? workPath : undefined,
     appId: repoPath ? undefined : appId,
+    day: day || undefined,
     target,
     author: asAuthor(raw['author']),
     createdAt: asDate(raw['createdAt']),

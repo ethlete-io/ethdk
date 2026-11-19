@@ -1,6 +1,6 @@
 import { GitFlowConfig, stripRefPrefix } from '@ethlete/agent-rules/git-flow';
 import { WorkGroup } from '../rows/merge';
-import { AttributionRule, UnnamedContext } from '../model/attribution';
+import { AttributionRule, UnnamedContext, rulesForDay } from '../model/attribution';
 import { ActivityBlock, blockDurationMs, contextKey } from '../model/block';
 import { repoRootOf } from '../model/context';
 import { CollectedEvent } from '../model/event';
@@ -16,6 +16,9 @@ import { TicketDraft, draftRepoTicket } from './draft';
  * answer later for nothing. Fifteen minutes is the smallest stretch this app books at all.
  */
 export const DEFAULT_MIN_AUTO_STAND_IN_MS = 15 * 60_000;
+
+/** The observed time on a base branch in one day from which it gets a stand-in of its own. */
+export const BASE_BRANCH_STAND_IN_MIN_MS = 2 * 60 * 60_000;
 
 /** A stand-in the app opened, with the rule that makes it cover the branch on every later day. */
 export type AutoStandIn = {
@@ -142,8 +145,9 @@ const alreadyAnswered = (options: {
   branch: string;
   workPath?: string;
   rules: readonly AttributionRule[];
+  day: string | undefined;
 }) =>
-  options.rules.some(
+  rulesForDay(options.rules, options.day).some(
     (rule) =>
       rule.repoPath === options.repoPath &&
       (!rule.branch || stripRefPrefix(rule.branch) === options.branch) &&
@@ -166,10 +170,17 @@ const alreadyWaiting = (options: {
   branch: string;
   workPath?: string;
   standIns: readonly StandIn[];
+  day: string | undefined;
+  dayScoped: boolean;
 }) =>
   options.standIns.some(
     (standIn) =>
       standIn.state === 'open' &&
+      (!options.dayScoped ||
+        !standIn.openedForBranch ||
+        !!standIn.openedForWorkPath ||
+        options.day === undefined ||
+        standIn.days.includes(options.day)) &&
       standIn.openedFor === options.repoPath &&
       (!standIn.openedForBranch || standIn.openedForBranch === options.branch) &&
       (!standIn.openedForWorkPath || standIn.openedForWorkPath === options.workPath),
@@ -230,7 +241,7 @@ export type AutoStandInDecision = {
 };
 
 const verdictOf = (
-  options: Omit<AutoStandInOptions, 'day' | 'now'> & { group: BranchGroup; roots: readonly string[] },
+  options: Omit<AutoStandInOptions, 'day' | 'now'> & { day?: string; group: BranchGroup; roots: readonly string[] },
 ) => {
   const { group, roots } = options;
   const { repoPath, branch, workPath } = group;
@@ -243,20 +254,23 @@ const verdictOf = (
     !hasStrongEvidence({ group, events: options.events ?? [] })
   )
     return { verdict: 'below-floor' as const };
-  if (base.has(branch) && !workPath) return { verdict: 'base-branch' as const };
+  const dayScoped = base.has(branch) && !workPath;
+
+  if (dayScoped && group.observedMs < BASE_BRANCH_STAND_IN_MIN_MS) return { verdict: 'base-branch' as const };
   if (!isCheckout({ repoPath, roots })) return { verdict: 'not-a-checkout' as const };
   if (options.offeredCheckouts.includes(repoPath)) return { verdict: 'offered' as const };
   if (isStandInRefused({ repoPath, branch, workPath, refused: options.refused }))
     return { verdict: 'refused' as const };
-  if (alreadyWaiting({ repoPath, branch, workPath, standIns: options.standIns }))
+  if (alreadyWaiting({ repoPath, branch, workPath, standIns: options.standIns, day: options.day, dayScoped }))
     return { verdict: 'waiting' as const };
-  if (alreadyAnswered({ repoPath, branch, workPath, rules: options.rules })) return { verdict: 'answered' as const };
+  if (alreadyAnswered({ repoPath, branch, workPath, rules: options.rules, day: options.day }))
+    return { verdict: 'answered' as const };
 
   const first = group.contexts[0];
   const link = first && matchProjectLink({ context: first.context, links: options.links });
 
   return link?.target.kind === 'project'
-    ? { verdict: 'opens' as const, projectKey: link.target.projectKey }
+    ? { verdict: 'opens' as const, projectKey: link.target.projectKey, dayScoped }
     : { verdict: 'no-project-link' as const };
 };
 
@@ -264,7 +278,9 @@ const verdictOf = (
  * What the stand-in pass decides for each piece of work a day left unnamed, including the work it never
  * groups: a context on no checkout and a checkout on no branch.
  */
-export const autoStandInDecisions = (options: Omit<AutoStandInOptions, 'day' | 'now'>): AutoStandInDecision[] => {
+export const autoStandInDecisions = (
+  options: Omit<AutoStandInOptions, 'day' | 'now'> & { day?: string },
+): AutoStandInDecision[] => {
   const ungrouped = new Map<string, AutoStandInDecision>();
 
   for (const unnamed of options.contexts) {
@@ -310,10 +326,11 @@ export const autoStandInDecisions = (options: Omit<AutoStandInOptions, 'day' | '
  * Yesterday's and today's bands of the same branch still land on the same placeholder, so one resolve
  * books both days.
  *
- * A base branch gets one only when a directory says which piece of work it was. Work on a base branch
- * is otherwise integration rather than a piece of work, and a placeholder for the branch itself would
- * take every later branch of the checkout with it — which is what `workPath` avoids: the placeholder
- * covers one directory of the base branch and nothing else.
+ * A base branch gets one when a directory says which piece of work it was, or from two hours of
+ * observed work in a day. Work on a base branch is otherwise integration rather than a piece of work, and
+ * a placeholder for the branch itself would take every later branch of the checkout with it — which is
+ * what `workPath` avoids: the placeholder covers one directory of the base branch and nothing else. The
+ * two-hour one holds on its day only: its rule carries the day, and a later day opens its own.
  *
  * Only a checkout with a `project` link qualifies. The link is what says the path is work at all and
  * which Jira project a ticket is filed in, so a placeholder opened without one has nowhere to go.
@@ -355,7 +372,9 @@ export const autoStandIns = (options: AutoStandInOptions): AutoStandIn[] => {
       openedFor: group.repoPath,
       openedForBranch: group.branch,
       openedForWorkPath: workPath,
-      key: [describeProjectLink({ path: repoPath }), branch, workPath].filter(Boolean).join('-'),
+      key: [describeProjectLink({ path: repoPath }), branch, workPath, decided.dayScoped ? options.day : undefined]
+        .filter(Boolean)
+        .join('-'),
     });
 
     opened.push({
@@ -367,6 +386,7 @@ export const autoStandIns = (options: AutoStandInOptions): AutoStandIn[] => {
         repoPath,
         branch,
         workPath,
+        ...(decided.dayScoped ? { day: options.day } : {}),
         target: { kind: 'stand-in', standInId: standIn.id },
         author: 'app',
         createdAt: options.now,

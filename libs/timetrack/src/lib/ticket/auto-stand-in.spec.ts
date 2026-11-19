@@ -9,6 +9,8 @@ import { TimetrackProjectLink } from '../model/project-link';
 import { StandIn, StandInRefusal } from '../model/stand-in';
 import { autoStandIns } from './auto-stand-in';
 
+const HOUR = 60 * 60_000;
+
 const FIFAGG = '/Users/human/dev/fifagg-frontend';
 const OTHER = '/Users/human/dev/side-project';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
@@ -77,6 +79,7 @@ const open = (options: {
   standIns?: readonly StandIn[];
   refused?: readonly StandInRefusal[];
   events?: readonly CollectedEvent[];
+  day?: string;
 }) =>
   autoStandIns({
     contexts: options.contexts,
@@ -89,7 +92,7 @@ const open = (options: {
     offeredCheckouts: options.offeredCheckouts ?? [],
     standIns: options.standIns ?? [],
     refused: options.refused ?? [],
-    day: '2026-09-15',
+    day: options.day ?? '2026-09-15',
     now: NOW,
   });
 
@@ -165,6 +168,61 @@ describe('autoStandIns', () => {
     ];
 
     expect(open({ contexts }).map((entry) => entry.rule.branch)).toEqual(['feat/x']);
+  });
+
+  describe('a base branch with two hours of work', () => {
+    const next = { repoPath: FIFAGG, branch: 'next' };
+
+    it('opens from 2 h observed, and not from 1 h 59', () => {
+      expect(open({ contexts: [unnamed(next, 2 * HOUR)] })).toHaveLength(1);
+      expect(open({ contexts: [unnamed(next, 2 * HOUR - 60_000)] })).toEqual([]);
+    });
+
+    it('names it from the day commits and scopes its rule and key to the day', () => {
+      const contexts = [unnamed(next, 2 * HOUR)];
+      const [opened] = open({
+        contexts,
+        unattributed: [group(next, [commit('Add the standings table')])].map((entry) => ({
+          ...entry,
+          observedMs: 2 * HOUR,
+        })),
+      });
+
+      expect(opened?.rule.day).toBe('2026-09-15');
+      expect(opened?.standIn.name).toBe('Add the standings table');
+      expect(opened?.standIn.id).toContain('2026-09-15');
+    });
+
+    it('opens a second one on the next day, past the first day rule and open stand-in', () => {
+      const [first] = open({ contexts: [unnamed(next, 2 * HOUR)] });
+
+      if (!first) throw new Error('no first stand-in');
+
+      const second = open({
+        contexts: [unnamed(next, 2 * HOUR)],
+        rules: [first.rule],
+        standIns: [{ ...first.standIn, createdAt: new Date('2026-09-15T09:00:00Z') }],
+        day: '2026-09-16',
+      });
+
+      expect(second).toHaveLength(1);
+      expect(second[0]?.rule.day).toBe('2026-09-16');
+      expect(second[0]?.standIn.id).not.toBe(first.standIn.id);
+    });
+
+    it('opens none again on its own day', () => {
+      const [first] = open({ contexts: [unnamed(next, 2 * HOUR)] });
+
+      if (!first) throw new Error('no first stand-in');
+
+      expect(open({ contexts: [unnamed(next, 2 * HOUR)], rules: [first.rule], standIns: [first.standIn] })).toEqual([]);
+    });
+
+    it('leaves the rule of another auto stand-in permanent', () => {
+      const [feature] = open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)] });
+
+      expect(feature?.rule.day).toBeUndefined();
+    });
   });
 
   it('reads a ref and a branch name as one branch', () => {

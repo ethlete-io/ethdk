@@ -207,6 +207,15 @@ describe('buildRows with a rule naming a stand-in', () => {
     expect(rows.proposals).toEqual([]);
   });
 
+  it('names the row from a day-scoped rule on its own day and not on another', () => {
+    const scoped = { ...RULE, day: '2026-09-15' };
+    const own = buildRows({ blocks: WORK, events: [], rules: [scoped], standIns: [STAND_IN], day: '2026-09-15' });
+    const other = buildRows({ blocks: WORK, events: [], rules: [scoped], standIns: [STAND_IN], day: '2026-09-16' });
+
+    expect(own.unnamed[0]?.standInId).toBe(STAND_IN.id);
+    expect(other.unnamed[0]?.standInId).toBeUndefined();
+  });
+
   it('leaves the row unnamed when the stand-in the rule points at is gone', () => {
     const rows = buildRows({ blocks: WORK, events: [], rules: [RULE], standIns: [] });
 

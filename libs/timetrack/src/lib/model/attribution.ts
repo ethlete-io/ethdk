@@ -51,10 +51,16 @@ export type AttributionRule = {
   workPath?: string;
   /** Matches work that has no repository at all, such as a browser or a chat client. */
   appId?: string;
+  /** The local day key the rule holds on. Without it the rule holds on every day. */
+  day?: string;
   target: AttributionTarget;
   author: NamingAuthor;
   createdAt: Date;
 };
+
+/** The rules that hold on a day: the ones with no day, and the ones scoped to it. With no day, only the former. */
+export const rulesForDay = (rules: readonly AttributionRule[], day: string | undefined) =>
+  rules.filter((rule) => !rule.day || rule.day === day);
 
 /** The issue a rule names, or nothing when it names a stand-in or donates its time instead. */
 export const issueKeyOf = (rule: AttributionRule) => (rule.target.kind === 'issue' ? rule.target.issueKey : undefined);

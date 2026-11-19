@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { WorkGroup } from './merge';
 import { unnamedContexts } from './rules';
-import { AttributionRule, describeAttributionRule, issueKeyOf, matchAttributionRule } from '../model/attribution';
+import {
+  AttributionRule,
+  describeAttributionRule,
+  issueKeyOf,
+  matchAttributionRule,
+  rulesForDay,
+} from '../model/attribution';
 
 const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   id: 'rule-1',
@@ -98,6 +104,19 @@ describe('matchAttributionRule', () => {
     });
 
     expect(issueKeyOf(match!.rule)).toBe('FIP-400');
+  });
+});
+
+describe('rulesForDay', () => {
+  it('keeps a rule without a day on every day and a day rule on its own day only', () => {
+    const permanent = rule();
+    const scoped = rule({ id: 'rule-2', day: '2026-09-15' });
+    const context = { repoPath: '/Users/human/dev/ea-frontend' };
+
+    expect(rulesForDay([permanent, scoped], '2026-09-15')).toEqual([permanent, scoped]);
+    expect(rulesForDay([permanent, scoped], '2026-09-16')).toEqual([permanent]);
+    expect(rulesForDay([permanent, scoped], undefined)).toEqual([permanent]);
+    expect(matchAttributionRule({ context, rules: rulesForDay([scoped], '2026-09-16') })).toBeUndefined();
   });
 });
 

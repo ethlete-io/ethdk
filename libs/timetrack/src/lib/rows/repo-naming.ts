@@ -1,4 +1,4 @@
-import { AttributionRule, matchAttributionRule } from '../model/attribution';
+import { AttributionRule, matchAttributionRule, rulesForDay } from '../model/attribution';
 import { TimetrackProjectLink, projectKeyFor } from '../model/project-link';
 import { HistoricalWorklog, LoggedIssue } from '../model/recurrence';
 
@@ -153,6 +153,8 @@ export const repoNamingDecisions = (options: {
   checkouts: readonly NamedCheckout[];
   links: readonly TimetrackProjectLink[];
   rules: readonly AttributionRule[];
+  /** The local day key a rule scoped to a day holds on. Without it such a rule offers no answer. */
+  day?: string;
   /** The user's own worklogs over the history span, which is the whole of the evidence. */
   worklogs: readonly HistoricalWorklog[];
   /** The same span's issues, for the line a card shows under the key. */
@@ -172,7 +174,8 @@ export const repoNamingDecisions = (options: {
     const contexts = checkout.branches.length
       ? checkout.branches.map((branch) => ({ repoPath, branch }))
       : [{ repoPath }];
-    const matched = contexts.flatMap((context) => matchAttributionRule({ context, rules: options.rules })?.rule ?? []);
+    const dayRules = rulesForDay(options.rules, options.day);
+    const matched = contexts.flatMap((context) => matchAttributionRule({ context, rules: dayRules })?.rule ?? []);
 
     const answering = matched.filter((rule) => rule.target.kind !== 'donate');
 
