@@ -1,5 +1,5 @@
 ---
-open: B627
+built: 3bb6f9aeb
 decided: 2026-11-19
 ---
 

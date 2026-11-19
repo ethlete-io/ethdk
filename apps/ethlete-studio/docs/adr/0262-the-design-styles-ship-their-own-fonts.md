@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B490
+built: 916b550f9
 decided: 2026-11-11
 source: grill session 2026-11-11 (phone round), finding 811
 governs: ['.ethlete/design/studio/foundations/type/type.css']
