@@ -499,6 +499,8 @@ export class SystemViewComponent {
 
   public productNames = computed(() => this.products().map((listed) => listed.name));
 
+  public productName = computed(() => this.product()?.name ?? '');
+
   private sketchRead: Signal<SketchRead | null> = toSignal(
     toObservable(
       computed(() => ({

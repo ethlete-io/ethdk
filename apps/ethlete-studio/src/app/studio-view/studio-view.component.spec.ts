@@ -1,4 +1,4 @@
-import { Component, input, output, provideZonelessChangeDetection } from '@angular/core';
+import { Component, input, output, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
@@ -21,6 +21,8 @@ class SystemViewStubComponent {
   public project = input('');
   public projects = input<string[]>([]);
   public projectChange = output<string>();
+  public productNames = signal<string[]>([]);
+  public productName = signal('');
 }
 
 class FakeEventSource {
@@ -254,6 +256,36 @@ describe('StudioViewComponent', () => {
     await settle(fixture);
 
     expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
+  });
+
+  it('keeps the product it showed last in the switcher while the design server is stopped', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+
+    const foreign = { ...RUNNING, foreign: true };
+    const stopped = { ...RUNNING, listening: false, exited: true };
+    let current = foreign;
+
+    stubHost({ design_server_state: () => current, design_server_start: () => stopped });
+
+    try {
+      const fixture = await mount();
+
+      system(fixture)?.productName.set('studio');
+      system(fixture)?.productNames.set(['sdk', 'studio']);
+      await settle(fixture);
+      current = stopped;
+      vi.advanceTimersByTime(3000);
+      await settle(fixture);
+
+      const shell = fixture.debugElement.query(By.directive(ShellPageComponent))
+        .componentInstance as ShellPageComponent;
+
+      expect(shell.shell().server).toBe('stopped');
+      expect(shell.shell().product).toBe('studio');
+      expect(shell.shell().products).toEqual(['sdk', 'studio']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows the crash the exited design server wrote with a Restart', async () => {

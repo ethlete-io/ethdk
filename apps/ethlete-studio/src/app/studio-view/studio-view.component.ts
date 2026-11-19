@@ -1,4 +1,4 @@
-import { Component, DOCUMENT, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
+import { Component, DOCUMENT, DestroyRef, ViewEncapsulation, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
@@ -57,14 +57,16 @@ const SERVER_ANSWER_TIMEOUT_MS = 5000;
 
 const SERVER_SILENT_MS = 30_000;
 
+type ShownProducts = { product: string; products: string[] };
+
 @Component({
   selector: 'ethlete-studio-view',
   template: `
     @if (serverDown() || serverStarting()) {
       <ethlete-shell-page
         [shell]="{
-          product: '',
-          products: [],
+          product: shownProducts().product,
+          products: shownProducts().products,
           project: projectName(),
           projects: checkouts.names(),
           panel: serverPanel(),
@@ -77,6 +79,7 @@ const SERVER_SILENT_MS = 30_000;
       />
     } @else {
       <ethlete-system-view
+        #systemView
         [port]="server()?.listening ? (design()?.port ?? null) : null"
         [epoch]="epoch()"
         [checkout]="checkout()"
@@ -101,6 +104,7 @@ export class StudioViewComponent {
   private destroyRef = inject(DestroyRef);
   private codeWatch = injectCodeWatch();
 
+  private systemView = viewChild<SystemViewComponent>('systemView');
   public checkout = signal('');
   protected projectName = computed(() => folderNameOf(this.checkout()));
   protected serverPanel = signal<'open' | 'hidden'>('open');
@@ -109,7 +113,19 @@ export class StudioViewComponent {
   public serverBusy = signal(false);
   protected epoch = signal(0);
   protected lists = signal(NO_LIST_REVISIONS);
+
   public frameRevisions = signal(NO_FRAME_REVISIONS);
+
+  protected shownProducts = toSignal(
+    toObservable(
+      computed(() => {
+        const view = this.systemView();
+
+        return view ? { product: view.productName(), products: view.productNames() } : null;
+      }),
+    ).pipe(filter((shown): shown is ShownProducts => !!shown && shown.products.length > 0)),
+    { initialValue: { product: '', products: [] } as ShownProducts },
+  );
 
   private foreignWatch: Subscription | null = null;
 
