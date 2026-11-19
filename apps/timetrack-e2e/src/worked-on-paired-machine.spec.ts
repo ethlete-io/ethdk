@@ -36,13 +36,15 @@ const session = (minutes: number): CollectedEvent => ({
   title: 'A run nobody watched here',
 });
 
-const focusOnTheMac: CollectedEvent = {
-  at: at(30),
+const focusOnTheMac = (minutes: number): CollectedEvent => ({
+  at: at(minutes),
   source: 'window',
   kind: 'window-focus',
-  appId: 'com.microsoft.VSCode',
-  title: 'main.ts - ethlete-sdk - Visual Studio Code',
-};
+  appId: 'com.apple.Safari',
+  title: 'Inbox - Safari',
+});
+
+const focusOnTheMacThroughout = Array.from({ length: 13 }, (_, step) => focusOnTheMac(step * 5));
 
 const band = (page: Page, title: string) => page.locator(`[data-kind="row"][title^="${title}"]`);
 
@@ -57,7 +59,7 @@ const seed = (page: Page, received: CollectedEvent[]) =>
 
 test.describe('a band nobody was at here, while a person was at the paired MacBook', () => {
   test('reads as worked on the MacBook, books nothing, and raises no unattended check', async ({ page }) => {
-    await seed(page, [focusOnTheMac]);
+    await seed(page, focusOnTheMacThroughout);
     await page.goto('/day');
 
     await expect(band(page, 'Worked on MacBook · ABC-4040')).toHaveCount(1);
