@@ -100,9 +100,9 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     human was on tank over SSH from the Mac on 4 ptys. Suspect: the work evidence (agent sessions, commits) is on tank,
     the attendance evidence on the Mac, which sees only a terminal. New against slice 8 / M7 and `m7-sync-research.md`:
     both machines are used at the same time, one of them headless.
-26. **The release locks its window when idle, the dev build does not.** The human, 2026-11-19: the Mac release locks the
-    window after about 5 minutes idle; the serve build on tank never locks. Suspect: the dev/serve host has no window
-    lock or no idle signal.
+26. ~~**The release locks its window when idle, the dev build does not.**~~ By design: a debug build locks only with
+    `TIMETRACK_LOCK=1` (`src-tauri/src/lock.rs`), a browser tab cannot lock. The human, 2026-11-19: the Mac release locks the
+    window after about 5 minutes idle; the serve build on tank never locks.
 27. **Agent work counts as presence.** On 18.11. the fifagg lane holds one 13 h 30 row from 00:00, the ethlete-sdk lane is
     nearly empty although SDK sessions ran all day, and the agents' night counts as the human's time. The B602
     presence slice (1c8bb8371, reverted in 363745c after an unexplained snapshot change, 1 h 15 to 20 h logged) proved:
