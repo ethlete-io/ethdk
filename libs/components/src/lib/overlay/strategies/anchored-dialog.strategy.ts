@@ -71,6 +71,13 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
         });
       };
 
+      const scaleOriginOf = (origin: Element | Event) => {
+        const position = origin instanceof Element ? cfg.positionStrategy?.(origin) : undefined;
+        const arrowAnchor = position?.kind === 'anchored' ? position.arrowAnchor : null;
+
+        return getOriginCoordinatesAndDimensions(arrowAnchor ?? origin);
+      };
+
       return {
         id: randomId(),
         config: cfg,
@@ -82,7 +89,7 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
-          const originData = getOriginCoordinatesAndDimensions(context.origin);
+          const originData = scaleOriginOf(context.origin);
           if (!originData) {
             context.lifecycle.enter();
 
@@ -109,7 +116,7 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
-          const originData = getOriginCoordinatesAndDimensions(context.origin);
+          const originData = scaleOriginOf(context.origin);
           if (!originData) {
             context.lifecycle.leave();
 
