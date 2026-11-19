@@ -270,7 +270,24 @@ describe('markAttendance with paired machines', () => {
   it('names the machine a person was at for a band nobody attended here, and leaves it unattended', () => {
     const marked = markAttendance({ groups: [group(0, 60)], at: present([commit(30)]), peers: macbook });
 
-    expect(marked[0]).toMatchObject({ attended: false, workedOn: 'MacBook' });
+    expect(marked.map((entry) => [...shape(entry), entry.workedOn])).toEqual([
+      [0, 15, false, undefined],
+      [15, 45, false, 'MacBook'],
+      [45, 60, false, undefined],
+    ]);
+  });
+
+  it('names the machine only for the overlap when the peer window starts before the band', () => {
+    const marked = markAttendance({
+      groups: [group(15, 195)],
+      at: [],
+      peers: macbook.map((peer) => ({ ...peer, at: [{ from: AT(0), to: AT(30) }] })),
+    });
+
+    expect(marked.map((entry) => [...shape(entry), entry.workedOn])).toEqual([
+      [15, 30, false, 'MacBook'],
+      [30, 195, false, undefined],
+    ]);
   });
 
   it('names no machine on a band attended here, nor on one no machine saw a person for', () => {

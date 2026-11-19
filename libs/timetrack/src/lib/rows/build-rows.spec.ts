@@ -567,11 +567,11 @@ describe('buildRows with a paired machine a person was at', () => {
     });
 
     expect(rows.proposals).toEqual([]);
-    expect(rows.unnamed).toHaveLength(1);
-    expect(rows.unnamed[0]).toMatchObject({ unattended: true, workedOn: 'MacBook' });
+    expect(rows.unnamed.map((row) => row.workedOn)).toEqual([undefined, 'MacBook', undefined]);
+    expect(rows.unnamed.every((row) => row.unattended)).toBe(true);
   });
 
-  it('does not warn that an agent worked alone for that band', () => {
+  it('warns only for the parts of the band outside the machine window', () => {
     const rows = buildRows({
       blocks: WORK,
       events: [],
@@ -579,7 +579,9 @@ describe('buildRows with a paired machine a person was at', () => {
     });
     const check = checkDay({ proposals: rows.proposals, unattributed: rows.unattributed });
 
-    expect(check.warnings.map((warning) => warning.kind)).not.toContain('unattended-time');
+    const alone = check.warnings.find((warning) => warning.kind === 'unattended-time');
+
+    expect(alone?.detail).toContain('2 block(s)');
   });
 
   it('names no machine on a band attended here', () => {

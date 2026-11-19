@@ -286,8 +286,8 @@ export const markAttendance = (options: {
   };
 
   return options.groups.flatMap((whole) =>
-    cutAtAttendance({ group: whole, spans, cut }).map(({ group, attended }) => {
-      if (attended) return { ...group, attended: true };
+    cutAtAttendance({ group: whole, spans, cut }).flatMap(({ group, attended }): WorkGroup[] => {
+      if (attended) return [{ ...group, attended: true }];
 
       const from = group.from.getTime();
       const to = group.to.getTime();
@@ -298,11 +298,30 @@ export const markAttendance = (options: {
         options.lanes?.[streamKey(block.context)]?.some((window) => window.from < block.to && window.to > block.from),
       );
 
-      if (elsewhere) return { ...group, attended: true };
+      if (elsewhere) return [{ ...group, attended: true }];
 
-      const peer = options.peers?.find((candidate) => candidate.at.some(touches));
+      const peers = (options.peers ?? []).filter((candidate) => candidate.at.some(touches));
 
-      return { ...group, attended: false, ...(peer ? { workedOn: peer.machineName } : {}) };
+      if (!peers.length) return [{ ...group, attended: false }];
+
+      const peerSpans = mergeWindows(
+        peers.flatMap((candidate) => clipWindows({ windows: candidate.at, within: [group] })),
+      );
+      const noCut = { absences: [], away: [], elsewhere: [], maxGapMs: 0 };
+      const parts = cutAtAttendance({ group, spans: peerSpans, cut: noCut });
+
+      return parts.map((part) => {
+        if (!part.attended) return { ...part.group, attended: false };
+
+        const owner = peers.find((candidate) =>
+          candidate.at.some(
+            (window) =>
+              window.from.getTime() < part.group.to.getTime() && window.to.getTime() > part.group.from.getTime(),
+          ),
+        );
+
+        return { ...part.group, attended: false, ...(owner ? { workedOn: owner.machineName } : {}) };
+      });
     }),
   );
 };
