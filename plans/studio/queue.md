@@ -59,3 +59,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 58. **Formfeld-Label-Token (B630)** ⏳ SDK (fifagg S11): zwei Label-Farb-Tokens, heutige Werte als Standard - Builder
 59. **Fortschritt-Tokens 2 (B631)** ⏳ SDK (fifagg S12): zwei Tokens für den „upcoming“-Marker, heutige Werte als Standard - Builder
 60. **Accordion-Unterstrich-Hover (B632)** ⏳ SDK (fifagg S13): ein Token für den Unterstrich beim Hover, Standard keiner - Builder
+61. **Leiser Feldrahmen (B633)** ⏳ SDK: Ruhe-Rahmen von Input und Textarea auf etwa 3:1 statt 6,94:1 (ADR 0379), ersetzt den Weiß-Rahmen-Befund aus Timetrack - Builder
