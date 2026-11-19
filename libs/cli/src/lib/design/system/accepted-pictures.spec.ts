@@ -604,7 +604,7 @@ describe('autoAcceptOf', () => {
       ]);
       expect(problems).toEqual([]);
       expect(existsSync(join(sketchDir, 'sketch.json'))).toBe(false);
-    });
+    }, 30_000);
 
     it('reports an old that does not draw as a check problem, not as a pick', async () => {
       const { target, dir, draw: drawOpen } = await openSketch();

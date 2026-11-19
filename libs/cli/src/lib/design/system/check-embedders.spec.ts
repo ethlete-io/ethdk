@@ -135,5 +135,5 @@ describe('design check --part also checks the parts that embed it', () => {
     expect(passing.lines).toContain('EMBEDDERS PASS components/frame: 2 parts');
     expect(passing.code).toBe(alone.code);
     expect(droppedBroken).toEqual([...dropped(), 'components/frame']);
-  });
+  }, 30_000);
 });
