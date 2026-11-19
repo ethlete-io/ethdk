@@ -217,7 +217,7 @@ const cutAtAttendance = (options: {
 
   const gaps = subtractWindows({ windows: [group], without: [...held, ...cut.away, ...cut.elsewhere] }).filter(
     (gap) =>
-      gap.to.getTime() - gap.from.getTime() > cut.maxGapMs ||
+      gap.to.getTime() - gap.from.getTime() >= cut.maxGapMs ||
       cut.absences.some((absence) => absence.from <= gap.from && gap.to <= absence.to),
   );
 

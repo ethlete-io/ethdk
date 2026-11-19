@@ -558,6 +558,34 @@ describe('buildRows with a rule naming an issue for work nobody watched', () => 
   });
 });
 
+describe('buildRows with an unattended slot of exactly the merge gap beside an attended one', () => {
+  const rule = (repoPath: string): AttributionRule => ({
+    id: `rule-${repoPath}`,
+    repoPath,
+    target: { kind: 'issue', issueKey: 'ET-772' },
+    author: 'user',
+    createdAt: at(8),
+  });
+
+  it('keeps the slot its own unattended row when two lanes merge by the same name', () => {
+    const rows = buildRows({
+      blocks: [
+        block({ from: at(19, 45), to: at(20), context: { repoPath: '/dev/a', branch: 'next' } }),
+        block({ from: at(19, 30), to: at(19, 45), context: { repoPath: '/dev/b', branch: 'next' } }),
+      ],
+      events: [],
+      rules: [rule('/dev/a'), rule('/dev/b')],
+      seen: [{ from: at(19, 45), to: at(20) }],
+    });
+    const all = [...rows.proposals, ...rows.unnamed].sort((a, b) => a.from.getTime() - b.from.getTime());
+
+    expect(all.map((row) => [row.from, row.to, !!row.unattended])).toEqual([
+      [at(19, 30), at(19, 45), true],
+      [at(19, 45), at(20), false],
+    ]);
+  });
+});
+
 describe('buildRows with a paired machine a person was at', () => {
   const WORK = [block({ from: at(9), to: at(10), context: { repoPath: '/dev/a', branch: 'main' } })];
   const focus: CollectedEvent = {
@@ -600,8 +628,10 @@ describe('buildRows with a paired machine a person was at', () => {
       received: [{ machineId: 'mac-1', machineName: 'MacBook', event: focus }],
     });
 
-    expect(rows.unnamed[0]?.unattended).toBeUndefined();
-    expect(rows.unnamed[0]?.workedOn).toBeUndefined();
+    const attended = rows.unnamed.filter((row) => !row.unattended);
+
+    expect(attended).toHaveLength(1);
+    expect(attended[0]?.workedOn).toBeUndefined();
   });
 });
 
@@ -774,7 +804,7 @@ describe('buildRows with activity on another branch inside a rule-named band', (
 
     it('keeps the rule when the session also committed on the checked-out branch', () => {
       const commit: CollectedEvent = {
-        at: at(14, 50),
+        at: at(14, 35),
         source: 'git',
         kind: 'git-commit',
         repoPath: REPO,

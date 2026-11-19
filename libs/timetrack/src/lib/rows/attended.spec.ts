@@ -178,10 +178,14 @@ describe('markAttendance', () => {
     expect(marked.map((entry) => !!entry.cutPart)).toEqual([false, true, true, true, true]);
   });
 
-  it('leaves a gap no longer than the merge gap on the attended part beside it', () => {
+  it('cuts a gap of exactly the merge gap off the attended part beside it', () => {
     const marked = markAttendance({ groups: [group(0, 60)], at: present([focus(30)]) });
 
-    expect(marked.map(shape)).toEqual([[0, 60, true]]);
+    expect(marked.map(shape)).toEqual([
+      [0, 15, false],
+      [15, 45, true],
+      [45, 60, false],
+    ]);
   });
 
   it('cuts the part of a band in an absence too long for a break off its attended part, however short', () => {
