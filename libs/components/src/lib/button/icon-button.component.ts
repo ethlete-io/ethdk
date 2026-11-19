@@ -29,7 +29,7 @@ const warnUnmarkedIconButtonContent = (host: HTMLElement, iconSlot: HTMLElement)
   );
 };
 
-const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
+const PRESSED_VARIANT_MAP: Record<ButtonVariant, ButtonVariant> = {
   filled: 'transparent',
   outline: 'filled',
   tonal: 'filled',
@@ -76,7 +76,7 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
     class: 'et-icon-button',
     '[attr.data-variant]': 'variant()',
     '[attr.data-size]': 'size()',
-    '[attr.data-pressed-variant]': 'pressedVariant()',
+    '[attr.data-pressed-variant]': 'activePressedVariant()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
@@ -87,13 +87,18 @@ export class IconButtonComponent {
   public variant = input<ButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
   public size = input<ButtonSize>(BUTTON_SIZES.MD);
 
+  /** The variant the button shows while `pressed`. Defaults to the flavor's fixed swap (e.g. `outline` -> `filled`). */
+  public pressedVariant = input<ButtonVariant | undefined>(undefined);
+
   private iconSlot = viewChild.required<ElementRef<HTMLElement>>('iconSlot');
 
   public canAnimate = createCanAnimateSignal();
 
   public spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 
-  public pressedVariant = computed(() => (this.buttonDir.pressed() ? PRESSED_VARIANT_MAP[this.variant()] : null));
+  protected activePressedVariant = computed(() =>
+    this.buttonDir.pressed() ? (this.pressedVariant() ?? PRESSED_VARIANT_MAP[this.variant()]) : null,
+  );
 
   constructor() {
     if (ngDevMode) {

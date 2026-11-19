@@ -15,7 +15,7 @@ import {
 } from './button.types';
 import { ButtonColorDirective, ButtonDirective } from './headless';
 
-const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
+const PRESSED_VARIANT_MAP: Record<ButtonVariant, ButtonVariant> = {
   filled: 'outline',
   outline: 'filled',
   tonal: 'filled',
@@ -79,7 +79,7 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
     '[attr.data-variant]': 'variant()',
     '[attr.data-size]': 'size()',
     '[attr.data-stretch-contents]': 'stretchContents() || null',
-    '[attr.data-pressed-variant]': 'pressedVariant()',
+    '[attr.data-pressed-variant]': 'activePressedVariant()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
@@ -93,9 +93,14 @@ export class ButtonComponent {
   /** Lets the projected contents fill the space beside the icon, e.g. to push a trailing element to the far edge. */
   public stretchContents = input(false, { transform: booleanAttribute });
 
+  /** The variant the button shows while `pressed`. Defaults to the flavor's fixed swap (e.g. `outline` -> `filled`). */
+  public pressedVariant = input<ButtonVariant | undefined>(undefined);
+
   public canAnimate = createCanAnimateSignal();
 
   public spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 
-  public pressedVariant = computed(() => (this.buttonDir.pressed() ? PRESSED_VARIANT_MAP[this.variant()] : null));
+  protected activePressedVariant = computed(() =>
+    this.buttonDir.pressed() ? (this.pressedVariant() ?? PRESSED_VARIANT_MAP[this.variant()]) : null,
+  );
 }

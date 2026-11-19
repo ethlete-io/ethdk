@@ -117,6 +117,9 @@ class SaveFormComponent {
       x
     </button>
     <button [pressed]="bold()" class="pinned" type="button" et-button>Pin</button>
+    <button [pressed]="bold()" class="kept" type="button" et-button variant="outline" pressedVariant="outline">
+      Keep
+    </button>
   `,
 })
 class ToolbarComponent {
@@ -326,6 +329,7 @@ describe('button scenarios', () => {
     expect(bold.className).toContain('et-color--inherited');
     expect(pinned.getAttribute('aria-pressed')).toBe('true');
     expect(pinned.dataset['pressedVariant']).toBe('outline');
+    expect(query(host, '.kept').dataset['pressedVariant']).toBe('outline');
     expect(silent.hasAttribute('aria-pressed')).toBe(false);
 
     bold.click();
