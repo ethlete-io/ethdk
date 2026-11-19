@@ -61,3 +61,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 60. **Accordion-Unterstrich-Hover (B632)** ⏳ SDK (fifagg S13): ein Token für den Unterstrich beim Hover, Standard keiner - Builder
 61. **Leiser Feldrahmen (B633)** ⏳ SDK: Ruhe-Rahmen von Input und Textarea auf etwa 3:1 statt 6,94:1 (ADR 0379), ersetzt den Weiß-Rahmen-Befund aus Timetrack - Builder
 62. **Token-Namen vor Prerelease (B634)** ⏳ SDK: Namen der fifa-Tokens vereinheitlichen, bevor sie veröffentlicht werden; Prerelease wartet darauf - Builder
+63. **Leiser Feldrahmen Hover (B635)** ⏳ SDK: Hover-Rahmen etwa 4,5:1 statt nahezu weiß (ADR 0379) - Builder
