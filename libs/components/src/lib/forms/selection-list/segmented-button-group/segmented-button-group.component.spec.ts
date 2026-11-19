@@ -24,7 +24,7 @@ import { SegmentedButtonGroupComponent } from './segmented-button-group.componen
 class SegmentedButtonGroupTestHost {
   public value = signal<string | null>(null);
   public variant = signal<'pill' | 'tabs'>('pill');
-  public overflow = signal<'truncate' | 'scroll'>('truncate');
+  public overflow = signal<'truncate' | 'scroll'>('scroll');
   public showWeek = signal(true);
 }
 
@@ -58,16 +58,16 @@ describe('SegmentedButtonGroupComponent', () => {
     expect(driver.listEl().classList).toContain('et-tab-scale');
   });
 
-  it('wraps the buttons in a scrollable only for overflow scroll', () => {
-    expect(driver.attr('data-overflow')).toBe('truncate');
-    expect(driver.listEl().querySelector('et-scrollable')).toBeNull();
-
-    driver.host.overflow.set('scroll');
-    driver.fixture.detectChanges();
-
+  it('wraps the buttons in a scrollable by default and not for overflow truncate', () => {
     expect(driver.attr('data-overflow')).toBe('scroll');
     expect(driver.listEl().querySelectorAll('et-scrollable .et-segmented-button-group-buttons')).toHaveLength(1);
     expect(driver.optionEls()).toHaveLength(2);
+
+    driver.host.overflow.set('truncate');
+    driver.fixture.detectChanges();
+
+    expect(driver.attr('data-overflow')).toBe('truncate');
+    expect(driver.listEl().querySelector('et-scrollable')).toBeNull();
   });
 
   it('drops the active background reference when the checked button is destroyed', () => {

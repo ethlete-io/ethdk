@@ -29,7 +29,6 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
             [size]="size()"
             [stretch]="stretch()"
             [overflow]="overflow()"
-            [overflow]="overflow()"
           >
             <et-label>{{ label() }}</et-label>
 
@@ -93,7 +92,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public variant = input<SegmentedButtonGroupVariant>('pill');
   public size = input<FormFieldSize>('md');
   public stretch = input(false);
-  public overflow = input<SegmentedButtonGroupOverflow>('truncate');
+  public overflow = input<SegmentedButtonGroupOverflow>('scroll');
   public maxWidth = input<string | null>(null);
   public tokens = input<string | null>(null);
   public inScrollable = input(false);

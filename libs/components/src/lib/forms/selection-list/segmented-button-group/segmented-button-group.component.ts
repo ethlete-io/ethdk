@@ -103,11 +103,11 @@ export class SegmentedButtonGroupComponent {
   public stretch = input(false, { transform: booleanAttribute });
 
   /**
-   * What happens when the segments are wider than the container. `'truncate'` shrinks every segment and cuts its
-   * label with an ellipsis; `'scroll'` keeps each segment at its full width, scrolls the track horizontally and
-   * centers the selected segment. @default 'truncate'
+   * What happens when the segments are wider than the container. `'scroll'` shrinks the segments down to their full
+   * label plus padding, never an ellipsis, then scrolls the track horizontally and centers the selected segment;
+   * `'truncate'` shrinks every segment and cuts its label with an ellipsis. @default 'scroll'
    */
-  public overflow = input<SegmentedButtonGroupOverflow>(SEGMENTED_BUTTON_GROUP_OVERFLOWS.TRUNCATE);
+  public overflow = input<SegmentedButtonGroupOverflow>(SEGMENTED_BUTTON_GROUP_OVERFLOWS.SCROLL);
 
   private scrollable = viewChild(ScrollableDirective);
   protected isScrollOverflow = computed(() => this.overflow() === SEGMENTED_BUTTON_GROUP_OVERFLOWS.SCROLL);

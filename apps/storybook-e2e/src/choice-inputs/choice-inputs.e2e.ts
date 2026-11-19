@@ -21,6 +21,7 @@ const CHECKBOX_GROUP_DEFAULT = 'components-forms-selection-list-checkbox-group--
 const SEGMENTED_BUTTON_GROUP_DEFAULT = 'components-forms-selection-list-segmented-button-group--default';
 const SEGMENTED_BUTTON_GROUP_OVERFLOW_SCROLL =
   'components-forms-selection-list-segmented-button-group--overflow-scroll';
+const SEGMENTED_BUTTON_GROUP_STRETCH = 'components-forms-selection-list-segmented-button-group--stretch';
 const SEGMENTED_BUTTON_GROUP_TABS = 'components-forms-selection-list-segmented-button-group--tabs';
 
 interface SegmentBackground {
@@ -327,6 +328,48 @@ test.describe('choice-inputs / segmented overflow scroll', () => {
 
     const metrics = await measure();
     expect(metrics.truncated).toBe(0);
+  });
+});
+
+test.describe('choice-inputs / segmented shrink before scroll', () => {
+  test.use({ viewport: { width: 700, height: 800 } });
+
+  const measureTrack = (root: Locator) =>
+    root.evaluate((el) => {
+      const container = el.querySelector('.et-scrollable-container')!;
+      const group = el.querySelector('et-segmented-button-group')!;
+      return {
+        overflowX: container.scrollWidth - container.clientWidth,
+        truncated: [...el.querySelectorAll('.et-segmented-button-label')].filter((l) => l.scrollWidth > l.clientWidth)
+          .length,
+        chrome: el.querySelectorAll('.et-scrollable-button, .et-scrollable-mask').length,
+        height: group.getBoundingClientRect().height,
+      };
+    });
+
+  test('stretched segments that fit only after shrinking neither scroll nor truncate', async ({ page }) => {
+    const root = await openStory(page, SEGMENTED_BUTTON_GROUP_STRETCH, { args: { maxWidth: '500px' } });
+    const metrics = await measureTrack(root);
+
+    expect(metrics.overflowX).toBeLessThanOrEqual(0);
+    expect(metrics.truncated).toBe(0);
+    expect(metrics.chrome).toBe(0);
+  });
+
+  test('a group that fits is as tall as the truncate one and shows no scroll chrome', async ({ page }) => {
+    const height = async (args?: Record<string, string>) =>
+      (await openStory(page, SEGMENTED_BUTTON_GROUP_DEFAULT, { args }))
+        .locator('et-segmented-button-group')
+        .evaluate((el) => el.getBoundingClientRect().height);
+
+    const scrollHeight = await height();
+    const root = page.locator('#storybook-root');
+    const metrics = await measureTrack(root);
+    const truncateHeight = await height({ overflow: 'truncate' });
+
+    expect(metrics.overflowX).toBeLessThanOrEqual(0);
+    expect(metrics.chrome).toBe(0);
+    expect(scrollHeight).toBe(truncateHeight);
   });
 });
 

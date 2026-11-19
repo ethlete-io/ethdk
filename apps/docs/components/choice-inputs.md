@@ -466,15 +466,16 @@ segment.
 ### Segmented button: overflow {#segmented-overflow}
 
 When the segments are wider than the container, `et-segmented-button-group`
-shrinks every segment and truncates its label (`overflow="truncate"`, the
-default). Set `overflow="scroll"` to keep each segment at its full width
-instead: the track scrolls horizontally inside an `et-scrollable` and the
-selected segment is scrolled to the center, the way nav tabs do it. It
-combines with `stretch`, which then fills the container only while the
-segments fit.
+shrinks them down to their full label plus padding, never an ellipsis
+(`overflow="scroll"`, the default). If they are still too wide, the track
+scrolls horizontally inside an `et-scrollable` and the selected segment is
+scrolled to the center, the way nav tabs do it. A group that fits shows no
+scroll chrome. It combines with `stretch`, which fills the container only
+while the segments fit. Set `overflow="truncate"` to shrink every segment and
+cut its label with an ellipsis instead.
 
 ```html
-<et-segmented-button-group [formField]="form.competition" overflow="scroll"> ... </et-segmented-button-group>
+<et-segmented-button-group [formField]="form.competition" overflow="truncate"> ... </et-segmented-button-group>
 ```
 
 ### Segmented button: look tokens {#segmented-tokens}
