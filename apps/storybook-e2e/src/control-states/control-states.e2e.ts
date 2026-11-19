@@ -259,6 +259,7 @@ test.describe('control-states / borders', () => {
     for (const control of BORDERED_CONTROLS) {
       test(`a resting ${control.name} border sits near 3:1 and hovers in its label colour (${surface})`, async ({
         page,
+        isMobile,
       }) => {
         const root = await openStory(page, ALL_STATES_STORY_ID);
         const target = control.hoverTarget(root.locator('et-sb-control-states-column').first());
@@ -274,6 +275,7 @@ test.describe('control-states / borders', () => {
             return ratio >= 3 && ratio <= 4 ? 'near 3:1' : ratio;
           })
           .toBe('near 3:1');
+        if (isMobile) return;
 
         await (control.hoverHost ? target : border).hover();
         await expect
