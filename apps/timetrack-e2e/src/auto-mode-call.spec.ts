@@ -163,3 +163,52 @@ test.describe('auto mode on an unnamed call, with transcripts let in afterwards'
     await expect(sent).toHaveCount(2);
   });
 });
+
+const SLACK = 'com.slack.Slack';
+
+const SLACK_LABEL = 'Erik Wetendorf - Braune Digital - Slack';
+
+const SLACK_SUMMARY = 'Abstimmung mit Erik Wetendorf zur Einbindung der FIFA.com-Rewards';
+
+const slackWorld = () => {
+  const base = defaultSettings();
+  const settings: TimetrackSettings = {
+    ...base,
+    nudge: { ...base.nudge, enabled: false },
+    reasoning: { ...base.reasoning, autoMode: true },
+  };
+
+  return {
+    now: E2E_NOW,
+    events: [
+      { at: at('13:15'), source: 'window', kind: 'window-focus', appId: SLACK, title: SLACK_LABEL },
+      { at: at('13:15'), source: 'call', kind: 'call-start', appId: SLACK },
+      { at: at('14:09'), source: 'call', kind: 'call-end', appId: SLACK },
+    ] satisfies CollectedEvent[],
+    settings,
+    tempo: { worklogs: [tempoWorklogOn({ day: '2026-08-05', minutes: 60, issueId: E2E_ISSUE_ID })] },
+  };
+};
+
+test.describe('auto mode on an unnamed call the model drafts a ticket for', () => {
+  test('queues a create with the existing issue beside it and names the call once it is filed', async ({ page }) => {
+    await seedWorld(page, slackWorld());
+    await page.goto('/day');
+
+    const existing = page.getByRole('button', { name: `Book ${E2E_ISSUE_KEY} instead of a new issue` });
+
+    await expect(existing).toBeVisible();
+    expect(await callRow(page)).toEqual(expect.not.objectContaining({ issueKey: expect.any(String) }));
+
+    const dialog = await openApprovals(page);
+    const item = dialog.locator('[data-approval]');
+
+    await expect(item).toHaveCount(1);
+    await expect(item).toContainText(SLACK_SUMMARY);
+
+    await item.getByRole('button', { name: 'Approve' }).click();
+    await expect(item).toBeHidden();
+    await expect.poll(async () => (await callRow(page))?.issueKey).toMatch(/^[A-Z]+-\d+$/);
+    expect((await callRow(page))?.sources.issue).toBe('auto');
+  });
+});

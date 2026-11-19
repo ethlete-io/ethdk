@@ -79,6 +79,7 @@ import {
   gitFlowConfigFor,
   isAgentApiRequest,
   inferTicketProjectKey,
+  projectKeyOf as issueProjectKeyOf,
   localDayKey,
   ModelCall,
   matchAttributionRule,
@@ -741,6 +742,19 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     { initialValue: new Set<string>() },
   );
 
+  const callProjectKeyOf = (candidates: readonly TicketCandidate[]) => {
+    const single = (keys: readonly string[]) => {
+      const found = [...new Set(keys.map((key) => key.toUpperCase()))];
+
+      return found.length === 1 ? found[0] : undefined;
+    };
+
+    return (
+      single(favoriteProjectKeys(settings.settings())) ??
+      single(candidates.flatMap((issue) => issueProjectKeyOf(issue.key) ?? []))
+    );
+  };
+
   const prepareCall$ = (rowId: string, evidence: AskEvidence): Observable<Prepared | null> => {
     const row = evidence && callRowOf(rowId, evidence.reviewed);
 
@@ -755,7 +769,11 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const call = { label: callLabelOf(row), observedMs: row.observedMs, ...(transcript ? { transcript } : {}) };
         const request = requestOf({ subject: { kind: 'call', rowId }, evidence, issues: null, candidates, call });
 
-        return request ? { request, candidates, parentKeys: new Set<string>() } : null;
+        const projectKey = callProjectKeyOf(candidates);
+
+        return request
+          ? { request, candidates, parentKeys: new Set<string>(), ...(projectKey ? { projectKey } : {}) }
+          : null;
       }),
     );
   };

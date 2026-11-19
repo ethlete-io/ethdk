@@ -782,6 +782,10 @@ const FAKE_DISPUTE_ANSWER = `{"structured_output":${JSON.stringify({ choice: 'us
 const asksInGerman = (spec: ProcessSpec) =>
   spec.args.some((arg) => arg.includes('Write every word you answer in Deutsch,'));
 
+const FAKE_DRAFTED_CALL_LABEL = 'Erik Wetendorf';
+
+const FAKE_DRAFTED_CALL_SUMMARY = 'Abstimmung mit Erik Wetendorf zur Einbindung der FIFA.com-Rewards';
+
 const fakeTicketAnswer = (spec: ProcessSpec) => {
   const request = JSON.parse(spec.stdin ?? '{}') as {
     branch?: string;
@@ -790,9 +794,10 @@ const fakeTicketAnswer = (spec: ProcessSpec) => {
     parents?: { key: string }[];
     issues?: { key: string }[];
   };
-  const existingKey = request.standIn || request.call ? (request.issues?.[0]?.key ?? null) : null;
+  const drafted = request.call?.label.includes(FAKE_DRAFTED_CALL_LABEL);
+  const existingKey = request.standIn || (request.call && !drafted) ? (request.issues?.[0]?.key ?? null) : null;
   const wording = {
-    summary: `Drafted ${request.standIn?.name ?? request.branch ?? 'work'}`,
+    summary: drafted ? FAKE_DRAFTED_CALL_SUMMARY : `Drafted ${request.standIn?.name ?? request.branch ?? 'work'}`,
     description: 'Drafted by the fake agent.',
     parentKey: request.parents?.[0]?.key ?? null,
     existingKey,

@@ -10,6 +10,7 @@ import {
   autoModeReadout,
   autoModeSubjectKey,
   withAutoModeAnswer,
+  withAutoModeCreated,
   withAutoModeRowNames,
 } from './auto-mode';
 import { setRowIssue } from './edits';
@@ -149,10 +150,26 @@ describe('auto mode on an unnamed call', () => {
     expect(rowsOf(named)[0]?.issueKey).toBe('ABC-1');
   });
 
-  it('files no ticket it drafted for a call', () => {
+  it('queues the create a call draft proposes, with its existing alternative', () => {
+    const existing = { issueKey: 'ABC-3', summary: 'Rewards' };
+
     expect(
-      autoModeCreateRequest(answer({ kind: 'draft', summary: 'Sync', description: 'Talk.', projectKey: 'ABC' })),
-    ).toBeNull();
+      autoModeCreateRequest(
+        answer({ kind: 'draft', summary: 'Sync', description: 'Talk.', projectKey: 'ABC', existing }),
+      ),
+    ).toEqual({ op: 'jira.create', summary: 'Sync', description: 'Talk.', projectKey: 'ABC', existing });
+  });
+
+  it('names the call row with the key its filed create made', () => {
+    const drafted = answer({ kind: 'draft', summary: 'Sync', description: 'Talk.', projectKey: 'ABC' });
+    const queued = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, {
+      ...drafted,
+      outcome: { ...drafted.outcome, approvalId: 'ap-1' } as typeof drafted.outcome,
+    });
+    const filed = withAutoModeCreated(queued, { approvalId: 'ap-1', issueKey: 'ABC-42' });
+    const named = withAutoModeRowNames({ edits: filed, rows: rowsOf(filed), unattributed: [] });
+
+    expect(rowsOf(named)[0]?.issueKey).toBe('ABC-42');
   });
 
   it('reads out the call by its label and links its row', () => {

@@ -882,7 +882,7 @@ export const withAutoModeCreated = (
 };
 
 /**
- * The create a draft queues. `null` for any other answer, and for a draft already queued or filed:
+ * The create a draft queues, for any subject. `null` for any other answer, and for a draft already queued or filed:
  * a second create would file the ticket twice.
  */
 export const autoModeCreateRequest = (
@@ -891,7 +891,6 @@ export const autoModeCreateRequest = (
   const { outcome } = answer;
 
   if (outcome.kind !== 'draft' || outcome.approvalId || outcome.createdKey) return null;
-  if (answer.subject.kind === 'call') return null;
 
   return {
     op: 'jira.create',
