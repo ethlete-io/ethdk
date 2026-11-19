@@ -16,7 +16,7 @@ directly. A technical detail the doc agent may decide (a limit, a name, a thresh
 
 ## Run
 
-`Agent` with `model: "fable"`, in the foreground: the human approved fable for this use only. The run does not know
+`Agent` with `subagent_type: "cross-check"` (fable, no approval prompt; also while the human is away). The run does not know
 the day's course, so the brief carries everything it needs. Fill in and send:
 
 ```

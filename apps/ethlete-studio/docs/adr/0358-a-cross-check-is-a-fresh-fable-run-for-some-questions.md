@@ -34,3 +34,11 @@ The analysis session proposed a fresh run per question instead of a standing ses
      saved. The re-measurement in about a week counts them.
 
 It supersedes ADR 0287 (the doc agent sends its questions to the supervisor, the analysis session).
+
+## Amendment 2026-11-19: no approval prompt
+
+A cross-check started while the human was away asked for his approval of fable. The human (verbatim):
+
+> Solche Fragen Checks darfst du auch ohne meine Zustimmung mit fable machen
+
+A cross-check runs as the `cross-check` agent type, which sets fable itself, so it starts without asking.
