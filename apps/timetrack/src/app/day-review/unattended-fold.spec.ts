@@ -45,6 +45,18 @@ describe('foldUnattended', () => {
     expect(folded[0]).toMatchObject({ from: AT(15), to: AT(45), durationMs: 30 * 60_000, folded: ['b'] });
   });
 
+  it('keeps parallel accepted rows of one issue, lane and description apart', () => {
+    const accepted = { state: 'accepted', unattended: false, issueKey: 'XYZ-4200', description: 'work' } as const;
+    const folded = foldUnattended([
+      row('one', 0, 60, accepted),
+      row('two', 20, 50, accepted),
+      row('next', 50, 70, accepted),
+    ]);
+
+    expect(folded.map((kept) => kept.id)).toEqual(['one', 'two']);
+    expect(folded[1]).toMatchObject({ from: AT(20), to: AT(70), folded: ['next'] });
+  });
+
   it('keeps apart what another issue, another lane, a gap or a person separates', () => {
     const rows = [
       row('a', 0, 15),

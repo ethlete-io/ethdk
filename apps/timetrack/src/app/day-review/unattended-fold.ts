@@ -1,29 +1,41 @@
 import { ReviewedRow } from '@ethlete/timetrack';
 
-const foldKeyOf = (row: ReviewedRow) => {
+type FoldKey = { key: string; joins: (run: ReviewedRow, row: ReviewedRow) => boolean };
+
+const overlaps = (run: ReviewedRow, row: ReviewedRow) => row.from <= run.to;
+const touches = (run: ReviewedRow, row: ReviewedRow) => row.from.getTime() === run.to.getTime();
+
+const foldKeyOf = (row: ReviewedRow): FoldKey | null => {
   if (row.excluded || row.standInId) return null;
 
-  if (row.state === 'accepted' && row.issueKey) return `accepted|${row.laneKey}|${row.issueKey}|${row.description}`;
+  if (row.state === 'accepted' && row.issueKey) {
+    return { key: `accepted|${row.laneKey}|${row.issueKey}|${row.description}`, joins: touches };
+  }
 
   return row.unattended && !row.issueKey && row.state !== 'rejected'
-    ? `${row.laneKey}|${row.withheldIssueKey ?? ''}|${row.workedOn ?? ''}`
+    ? { key: `${row.laneKey}|${row.withheldIssueKey ?? ''}|${row.workedOn ?? ''}`, joins: overlaps }
     : null;
 };
 
 export const foldUnattended = (rows: readonly ReviewedRow[]): ReviewedRow[] => {
   const runs = new Map<ReviewedRow, ReviewedRow>();
-  const open = new Map<string, ReviewedRow>();
+  const open = new Map<string, ReviewedRow[]>();
   const absorbed = new Set<ReviewedRow>();
 
   for (const row of [...rows].sort((a, b) => a.from.getTime() - b.from.getTime())) {
-    const key = foldKeyOf(row);
+    const fold = foldKeyOf(row);
 
-    if (!key) continue;
+    if (!fold) continue;
 
-    const head = open.get(key);
+    const heads = open.get(fold.key) ?? [];
+    const head = heads.find((candidate) => {
+      const run = runs.get(candidate);
+
+      return run && fold.joins(run, row);
+    });
     const run = head && runs.get(head);
 
-    if (head && run && row.from <= run.to) {
+    if (head && run) {
       runs.set(head, {
         ...run,
         to: row.to > run.to ? row.to : run.to,
@@ -34,7 +46,7 @@ export const foldUnattended = (rows: readonly ReviewedRow[]): ReviewedRow[] => {
       continue;
     }
 
-    open.set(key, row);
+    open.set(fold.key, [...heads, row]);
     runs.set(row, row);
   }
 
