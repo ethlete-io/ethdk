@@ -72,6 +72,7 @@ import { rowActionsFor } from './row-edit/row-actions';
 import { injectRowTicket } from './row-edit/row-ticket';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
+import { SubagentLayout, subagentLayoutOf } from './subagent-layout';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectGitCollector } from '../../collectors';
 
@@ -361,7 +362,7 @@ type RowDrag = {
                       [style.zIndex]="laid.layer"
                       [attr.data-cascade]="laid.layer !== null || null"
                       [style.left.%]="laid.inlineOffset"
-                      [style.width.%]="laid.inlineSize"
+                      [style.width]="subagentsOf(laid)?.bandWidth ?? laid.inlineSize + '%'"
                       [style.clipPath]="laid.clipPath"
                       [style.paddingInlineStart]="insetOf(laid).start"
                       [style.paddingInlineEnd]="insetOf(laid).end"
@@ -493,7 +494,59 @@ type RowDrag = {
                           >{{ label }}</span
                         >
                       }
+                      @if (subagentsOf(laid); as subagents) {
+                        @for (tick of subagents.ticks; track tick.key) {
+                          <span
+                            [style.top.%]="tick.offset"
+                            [style.height.%]="tick.span"
+                            [title]="tick.title"
+                            class="absolute right-0 min-h-1 w-2 rounded-l-sm bg-et-theme"
+                            data-short-subagent
+                          ></span>
+                        }
+                        @if (labelled(laid.block.span)) {
+                          <span
+                            class="relative mt-auto block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
+                            data-subagent-count
+                            >{{ subagents.count }}</span
+                          >
+                        }
+                      }
                     </div>
+                    @if (subagentsOf(laid); as subagents) {
+                      @if (subagents.rail; as rail) {
+                        <div
+                          [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
+                          [style.top.%]="rail.offset"
+                          [style.height.%]="rail.span"
+                          [style.left.%]="rail.inlineOffset"
+                          class="pointer-events-none absolute border-l border-dashed border-l-et-theme/40"
+                          data-subagent-rail
+                        ></div>
+                      }
+                      @for (stripe of subagents.stripes; track stripe.key) {
+                        <div
+                          [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
+                          [style.top.%]="stripe.offset"
+                          [style.height.%]="stripe.span"
+                          [style.left.%]="stripe.inlineOffset"
+                          [style.width.%]="stripe.inlineSize"
+                          [title]="stripe.task"
+                          (pointerdown)="$event.stopPropagation()"
+                          class="absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme/60 bg-et-theme/8 px-1.5 py-0.5 text-small leading-tight"
+                          data-subagent
+                        >
+                          @if (detailed(stripe.span)) {
+                            <span class="line-clamp-2">{{ stripe.task }}</span>
+                            <span class="truncate text-et-surface-muted">{{ stripe.duration }} · books nothing</span>
+                          } @else {
+                            <span class="truncate"
+                              >{{ stripe.task }} <span class="text-et-surface-muted">{{ stripe.duration }}</span></span
+                            >
+                          }
+                        </div>
+                      }
+                    }
                   }
 
                   @for (boundary of boundariesIn(lane); track boundary.id) {
@@ -922,6 +975,22 @@ export class DayTimelineComponent {
     }),
   );
 
+  private subagentLayouts = computed(() => {
+    const found = new Map<string, SubagentLayout>();
+
+    for (const lane of this.lanes()) {
+      for (const laid of lane.blocks) {
+        const entry = rowEntryOf(laid.block.node.appointment);
+        const layout =
+          entry?.subagents && subagentLayoutOf({ laid, drawn: laid.piece ?? entry.row, subagents: entry.subagents });
+
+        if (layout) found.set(laid.key, layout);
+      }
+    }
+
+    return found;
+  });
+
   /**
    * The pairs of rows that meet at one instant, by the lane they are in. A pair of two increments
    * gets no handle: `limitsOf` then puts the boundary's only legal instant where it already is.
@@ -1002,6 +1071,7 @@ export class DayTimelineComponent {
   protected appointments = computed<Appointment<TimelineEntry>[]>(() => {
     const storyIds = this.storyIdOf();
     const agentUsage = this.store.agentUsageByRow();
+    const subagents = this.store.subagentsByRow();
     const sharedMs = sharedMsByRow(this.rows());
 
     return [
@@ -1027,6 +1097,7 @@ export class DayTimelineComponent {
           excludedReason: this.excludedReasonOf(row),
           waitingKey: waitingKeyOf(this.bandApprovals.forRow(row.id)),
           agentUsage: agentUsage.get(row.id),
+          subagents: subagents.get(row.id),
           sharedMs: sharedMs.get(row.id),
         });
       }),
@@ -1339,6 +1410,10 @@ export class DayTimelineComponent {
 
   protected kindOf(appointment: Appointment<TimelineEntry>) {
     return appointment.extra?.kind ?? 'row';
+  }
+
+  protected subagentsOf(laid: LaneBlock) {
+    return this.subagentLayouts().get(laid.key) ?? null;
   }
 
   protected rowOf(appointment: Appointment<TimelineEntry>) {

@@ -4,6 +4,7 @@ import {
   BehindStretch,
   Confidence,
   ReviewedRow,
+  RowSubagent,
   TokenUsage,
   formatDurationMs,
   isManualRow,
@@ -113,6 +114,8 @@ export type RowEntry = {
   agentUsage?: TokenUsage;
   /** What the parallel sessions on this row's ticket book together, when the row is one of them. */
   sharedMs?: number;
+  /** The subagents of the row's session. They are drawn on and beside the band and book nothing. */
+  subagents?: readonly RowSubagent[];
 };
 
 /** What the parallel sessions on each shared row's ticket book together, by row id. */
@@ -166,6 +169,7 @@ export const appointmentOf = (options: {
   waitingKey?: string;
   agentUsage?: TokenUsage;
   sharedMs?: number;
+  subagents?: readonly RowSubagent[];
 }): Appointment<TimelineEntry> => ({
   id: options.row.id,
   parentId: options.parentId ?? null,
@@ -184,6 +188,7 @@ export const appointmentOf = (options: {
     waitingKey: options.waitingKey,
     agentUsage: options.agentUsage,
     sharedMs: options.sharedMs,
+    subagents: options.subagents,
   },
 });
 

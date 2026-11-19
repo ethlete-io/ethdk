@@ -60,6 +60,17 @@ const agent = (span: Span, options: { id: string; cwd: string; branch: string; t
     title: options.title,
   }));
 
+const subagent = (span: Span, options: { parent: string; id: string; cwd: string; task: string }) =>
+  every(span, 3).map((clock): CollectedEvent => ({
+    at: at(clock),
+    source: 'agent-session',
+    kind: 'agent-session',
+    sessionId: options.parent,
+    cwd: options.cwd,
+    agentId: options.id,
+    agentTask: options.task,
+  }));
+
 const commit = (
   clock: string,
   { repoPath, branch, sha, subject }: { repoPath: string; branch: string; sha: string; subject: string },
@@ -100,6 +111,19 @@ const events = (): CollectedEvent[] => [
       branch: CHECKOUT_BRANCH,
       title: 'Adressvalidierung im Checkout',
     },
+  ),
+  ...subagent(
+    { from: '09:10', to: '09:52' },
+    {
+      parent: 'demo-checkout',
+      id: 'demo-postal-codes',
+      cwd: SHOP,
+      task: 'Collect the postal code rules for DE and AT',
+    },
+  ),
+  ...subagent(
+    { from: '10:02', to: '10:08' },
+    { parent: 'demo-checkout', id: 'demo-checkout-specs', cwd: SHOP, task: 'Run the checkout specs' },
   ),
   commit('10:20', {
     repoPath: SHOP,

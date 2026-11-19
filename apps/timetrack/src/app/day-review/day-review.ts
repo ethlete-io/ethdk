@@ -92,9 +92,12 @@ import {
   stampSharedEdits,
   standInNameFor,
   statedPresence,
+  agentSamplesOf,
   agentTurnsOf,
   agentUsageWithin,
   streamDay,
+  subagentsWithin,
+  RowSubagent,
   TokenUsage,
   unnamedContexts,
   windowsMs,
@@ -727,6 +730,26 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     return found;
   });
+  const subagentsByRow = computed(() => {
+    const roots = git.discovery()?.repos ?? [];
+    const samples = agentSamplesOf({ events: evidence()?.events ?? [], roots });
+    const found = new Map<string, RowSubagent[]>();
+
+    for (const row of rows()) {
+      const subagents = subagentsWithin({
+        samples,
+        roots,
+        laneKey: row.laneKey,
+        from: row.from,
+        to: row.to,
+        session: row.piece,
+      });
+
+      if (subagents.length) found.set(row.id, subagents);
+    }
+
+    return found;
+  });
   const hiddenRows = computed(() => review()?.hidden ?? []);
   const statements = computed(() => edits().statements);
   const breaks = computed(() =>
@@ -1053,6 +1076,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     isToday,
     /** The agents' tokens inside each row's checkout and range, by row id; a row with none has no entry. */
     agentUsageByRow,
+    /** The subagents of each row's session, by row id. They draw beside the row and book nothing. */
+    subagentsByRow,
     /** The rows the model's answers are in, which is what the screen draws and the reviewer edits. */
     reasoned: reasonedRows,
     /**
