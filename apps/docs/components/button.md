@@ -133,6 +133,11 @@ far edge. Don't style `.et-button-contents` from outside; set `--et-button-gap` 
 
 @example button/button-stretch 120px
 
+### Fixed height
+
+The button lines its icon and label up on the label's baseline and takes its height from `padding`. A button given a
+fixed height with no block padding (`h-control-md py-0`) keeps that line at the top; add `items-center` to centre it.
+
 ## States
 
 All flavors share the headless `ButtonDirective` (`[etButton]`):
