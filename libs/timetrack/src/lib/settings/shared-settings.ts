@@ -172,7 +172,7 @@ export const stampSharedSettings = (options: {
   return { ...options.after, sharedStamps: { ...options.after.sharedStamps, ...changed } };
 };
 
-const ABSOLUTE_PATH = /(?:^|[\s:@#=])(?:\/|[A-Za-z]:[\\/]|\\\\)/;
+const ABSOLUTE_PATH = /(?:^|[\s@#=]|:(?!\/\/))(?:\/|[A-Za-z]:[\\/]|\\\\)/;
 
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

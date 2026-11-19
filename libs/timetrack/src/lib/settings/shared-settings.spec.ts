@@ -435,6 +435,20 @@ describe('shared settings', () => {
       expect(JSON.stringify(mac)).not.toContain('/home/human');
     });
 
+    it('send a URL pattern, which names no machine path', () => {
+      const tank = stamped({
+        after: {
+          exclusionRules: [{ kind: 'title-pattern', pattern: 'https://bank.example.com/login' }],
+          callRules: callRules(['https://meet.example.com/abc', 'join repo:/home/human/dev/private']),
+        },
+        atMs: 1_000,
+      });
+      const mac = withPeerSharedSettings({ settings: DEFAULT_TIMETRACK_SETTINGS, peers: [sent({ settings: tank })] });
+
+      expect(mac.exclusionRules).toEqual([{ kind: 'title-pattern', pattern: 'https://bank.example.com/login' }]);
+      expect(mac.callRules.countsAsWork).toEqual(['https://meet.example.com/abc']);
+    });
+
     it('drop a pattern naming a checkout the receiver has none of', () => {
       const tank = stamped({
         after: { exclusionRules: [{ kind: 'title-pattern', pattern: '/home/human/dev/fifa' }] },
