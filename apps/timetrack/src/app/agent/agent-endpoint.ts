@@ -423,18 +423,16 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * other row of the day, so what an edit did is only legible in the day it left behind.
    */
   const editDay$ = (request: Extract<AgentApiRequest, { op: 'day.edits' }>): Observable<AgentApiEditedDay> =>
-    agentDay
-      .editRows$({ day: request.day, edits: request.edits })
-      .pipe(
-        switchMap(({ applied, ...read }) =>
-          combineLatest({ events: eventsOfDay$(request.day), checkoutKeys: ownCheckoutKeys$(ports) }).pipe(
-            map(({ events, checkoutKeys }) => ({
-              ...toApiDay({ day: request.day, ...read, events, checkoutKeys }),
-              applied,
-            })),
-          ),
+    agentDay.editRows$({ day: request.day, edits: request.edits }).pipe(
+      switchMap(({ applied, ...read }) =>
+        combineLatest({ events: eventsOfDay$(request.day), checkoutKeys: ownCheckoutKeys$(ports) }).pipe(
+          map(({ events, checkoutKeys }) => ({
+            ...toApiDay({ day: request.day, ...read, events, checkoutKeys }),
+            applied,
+          })),
         ),
-      );
+      ),
+    );
 
   const dayEvents$ = (request: Extract<AgentApiRequest, { op: 'day.events' }>) => {
     const { from, to } = localDayRange(request.day, dayBoundaryOf(settings.settings()));
