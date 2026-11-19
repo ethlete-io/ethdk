@@ -74,7 +74,7 @@
     "studio:verify": "node tools/scripts/verify-studio-headless.mjs",
     "test:e2e-helpers": "node ./tools/scripts/heavy-gate.mjs test:e2e-helpers -- node --test apps/ethlete-studio/e2e/*.spec.mjs",
     "test:tools": "node ./tools/scripts/heavy-gate.mjs test:tools -- node --import ./tools/scripts/spec-tmp-hook.mjs --test tools/scripts/*.spec.mjs apps/ethlete-studio/eslint-rules/*.spec.mjs",
-    "timetrack": "nx tauri:dev timetrack-app",
+    "timetrack": "node tools/scripts/timetrack-install-guard.mjs && nx tauri:dev timetrack-app",
     "timetrack:build": "nx tauri:build timetrack-app",
     "tmp-sweep": "node ./tools/scripts/tmp-sweep.mjs",
     "tmp-sweep:install": "node ./tools/scripts/tmp-sweep.mjs install",
