@@ -24,7 +24,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
       variant: 'transparent',
       color: 'surface',
       size: 'sm',
-      class: 'size-control-sm p-0',
+      class: 'size-control-sm items-center p-0',
     }).replace(
       /^<button /,
       '<button data-et-control="collapse" title="Hide panel" aria-label="Hide panel" data-can-animate ',

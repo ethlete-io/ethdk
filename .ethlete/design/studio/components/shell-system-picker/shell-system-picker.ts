@@ -82,7 +82,7 @@ export const shellSystemPicker = (
       variant: 'transparent',
       color: 'surface',
       size: 'sm',
-      class: 'min-w-0 h-control-md justify-start gap-space-2 py-0 px-space-2 text-left',
+      class: 'min-w-0 h-control-md items-center justify-start gap-space-2 py-0 px-space-2 text-left',
     }).replace(
       /^<button /,
       `<button data-et-control="system" aria-haspopup="menu" aria-expanded="${open}" data-can-animate `,

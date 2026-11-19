@@ -9,7 +9,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
       [etTooltip]="LABELS.hidePanel"
       [attr.aria-label]="LABELS.hidePanel"
       (click)="collapse.emit()"
-      class="size-control-sm p-0"
+      class="size-control-sm items-center p-0"
       et-button
       type="button"
       variant="transparent"
