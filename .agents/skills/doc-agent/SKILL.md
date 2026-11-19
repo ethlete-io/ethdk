@@ -57,8 +57,8 @@ CLI gets better because Studio work uses it, not because findings are collected.
   question for the user.
 - An open question stays open until the user answers it. Show it in full, round format, when it comes up
   and on their return, not every turn. Never a "still open" line under a status (ADR 0372).
-- A question about how something looks (layout, background, placement, sticking) is never a grill question in
-  chat. Send it to the builder as a sketch, with variants when there is a choice.
+- A question about how something looks (layout, background, placement, sticking) never goes to the user, not even
+  as a sketch pick: the builder builds its own recommendation.
 - When the user says "as built" (wie umgesetzt), the app is the answer: the builder looks it up and copies it,
   never a question.
 

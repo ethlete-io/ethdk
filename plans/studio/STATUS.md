@@ -35,6 +35,8 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 4. **Timetrack-Beschreibung (B602)** ⏳ Mac-Nacht nur am Überlapp benannt (ed3812106), Basis-Branch-Vertretung ab 2 h je Tag (Timetrack ADR 0051), Schnipsel behalten den Sitzungstitel, Sub-Agent-Daten erfasst (Timetrack ADR 0052). Offen: tank-Neustart und Live-Beweis, Skizze Sub-Agent-Streifen (Tom wählt), #5, #11, #28 - Builder
 5. **Timetrack-Gleichstand (B616)** ⏳ Vergleich ordnet Checkouts zu, Branch-Verlauf und Fenster-Branch reisen mit (lokal). Offen: gebuchter Stand reist mit, Live-Vergleich beider Rechner auf einem Commit (Timetrack ADR 0047) - Builder
 
+6. **Design-CLI in Worktrees (B636)** ⏳ Cache-Schlüssel je Checkout, Nx-Warnung bricht JSON, `design ready` ohne Grund (GitHub #3189, #3192, #3193; ADR 0381) - Builder
+
 Geparkt: B105, B108, B109, B580, B148.
 
 ## Plan-Dateien

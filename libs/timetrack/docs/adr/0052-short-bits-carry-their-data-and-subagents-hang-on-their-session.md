@@ -19,4 +19,6 @@ vs zb. 2 echte sessions die paralel arbeiten". The human confirmed the summary b
   as a detail of the session's row. Its task is its description.
 - Tempo still gets the wall clock once: a subagent never adds bookable time.
 - A subagent's time is attended only as its session's is: working while nobody is there stays unattended (ADR 0018).
-- How a subagent stripe and a parallel session differ in the picture is shown to the human as a sketch with variants.
+- How a subagent stripe and a parallel session differ in the picture is not a question for the human: offered a pick
+  between three sketch variants, the human answered "design frage agent violation". The builder builds its own pick, thin
+  stripes inside the parent session's lane.

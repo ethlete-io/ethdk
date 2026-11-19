@@ -223,6 +223,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 
 - **C1** Trefferquote des Harness-Build-Cache messen; trifft er selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json) (Q16).
 - **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
+- **B636** Design-CLI läuft in jedem Worktree gleich (ADR 0381): Slow-Check-Cache nur nach Produkt benannt (#3193), `design ready` meldet eingebettete Teile ohne Grund als nicht fertig (#3189), `design lint`/`sketch ready` stürzen ohne Nx-Graph-Cache ab (#3192).
 
 ## D. SDK und Libs
 
