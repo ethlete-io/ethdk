@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B642
+built: 68473db8c
 decided: 2026-11-19
 source: doc-agent session 2026-11-19, the human on the status line showing in both sessions
 ---
