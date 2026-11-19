@@ -19,6 +19,8 @@ import {
   sampleMaxLoad,
   waitForLowLoad,
   STEPS,
+  COVERAGE_LIBS,
+  coverageLibs,
   stepLine,
   touchedProjects,
   withTarget,
@@ -36,7 +38,7 @@ test('--only refuses a step outside the fast set before it takes any lock', asyn
   const lines = [];
 
   assert.equal(await pushSuite({ only: 'lint,e2e', range: 'HEAD..HEAD' }, (line) => lines.push(line)), 1);
-  assert.deepEqual(lines, ['push-suite: blocked unknown step e2e, expected one of lint, typecheck, tools']);
+  assert.deepEqual(lines, ['push-suite: blocked unknown step e2e, expected one of lint, typecheck, tools, coverage']);
 });
 
 test('keeps workspace links relative so the export resolves them to its own libs, links the rest to the repo', () => {
@@ -114,6 +116,14 @@ test('typechecks only the touched projects that have a typecheck target, right a
   assert.deepEqual(touched, ['cli', 'ethlete-studio']);
   assert.deepEqual(withTarget(touched, ['core', 'ethlete-studio']), ['ethlete-studio']);
   assert.deepEqual(STEPS.slice(0, 2), ['lint', 'typecheck']);
+});
+
+test('checks export coverage only for the covered libs the range touches, all of them on a tool change', () => {
+  assert.deepEqual(coverageLibs(['libs/core/src/a.ts', 'libs/cdk/b.ts', 'apps/x/c.ts']), ['core']);
+  assert.deepEqual(coverageLibs(['libs/components/x.ts', 'libs/query/y.ts']), ['query', 'components']);
+  assert.deepEqual(coverageLibs(['tools/export-coverage/core.allowlist.json']), COVERAGE_LIBS);
+  assert.deepEqual(coverageLibs(['plans/x.md']), []);
+  assert.equal(STEPS.at(-1), 'coverage');
 });
 
 const loadHarness = (loads, limit = 4) => {

@@ -46,7 +46,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
   Every slice runs `npx vitest related --run <changed files>` in the dir of each touched vitest project, and `node --test <related specs>` for `tools/**`, before its commit (finding 779, 914); vitest at the repo root refuses to run: a spec
   that mocks a module the slice now imports from fails there, not in CI. Push with `yarn push` once the running CI run on
   `next` has finished; until then commit locally and take the next row (ADR 0357); it pushes HEAD to `next` and releases the push slot. The pre-push hook of `next`
-  first runs checks, lint, typecheck and `yarn test:tools` on an export of the pushed range (about 30 s); fix what it
+  first runs checks, lint, typecheck, `yarn test:tools` and export coverage on an export of the pushed range (~30 s); fix what it
   reports. CI runs the cli specs, quota and e2e; a red CI is fixed first, before new work. A subagent runs no full
   suite. Tell each subagent the same.
 - A change that adds or tightens a static design rule runs that rule over every committed sketch and part of every

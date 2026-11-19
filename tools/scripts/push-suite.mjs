@@ -9,7 +9,8 @@ const INNER_EXPORT = process.env['PUSH_SUITE_EXPORT'];
 const root = process.env['PUSH_SUITE_REPO'] ?? resolve(import.meta.dirname, '../..');
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 
-export const STEPS = ['lint', 'typecheck', 'tools'];
+export const STEPS = ['lint', 'typecheck', 'tools', 'coverage'];
+export const COVERAGE_LIBS = ['query', 'core', 'components'];
 
 export const parseArgs = (argv) => {
   const at = argv.indexOf('--only');
@@ -107,6 +108,20 @@ export const touchedProjects = (files, read = (path) => readFileSync(path, 'utf8
     if (exists(projectFile)) names.add(JSON.parse(read(projectFile)).name);
   }
   return [...names].sort();
+};
+
+export const coverageLibs = (files) =>
+  files.some((file) => file.startsWith('tools/export-coverage/'))
+    ? COVERAGE_LIBS
+    : COVERAGE_LIBS.filter((lib) => files.some((file) => file.startsWith(`libs/${lib}/`)));
+
+export const coverageStep = async (libs, dir) => {
+  if (libs.length === 0) return { status: 0, output: '', note: 'no covered lib touched' };
+  for (const lib of libs) {
+    const run = await runStep('node', ['tools/export-coverage/check.mjs', lib], dir);
+    if (run.status !== 0) return run;
+  }
+  return { status: 0, output: '', note: libs.join(', ') };
 };
 
 export const withTarget = (projects, available) => projects.filter((name) => available.includes(name));
@@ -398,6 +413,11 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       return typecheckStep(touchedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
     },
     tools: () => runStep('yarn', ['test:tools'], dir, toolsStepEnv(root)),
+    coverage: () => {
+      const changed = git('diff', '--name-only', range);
+      if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
+      return coverageStep(coverageLibs(changed.stdout.split('\n').filter(Boolean)), dir);
+    },
   };
 
   try {
