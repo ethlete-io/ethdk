@@ -198,6 +198,41 @@ describe('StandingsComponent', () => {
       expect(marked).toEqual([true, true, false]);
     });
 
+    it('carry a zone strength as a custom property on the band and its legend swatch', () => {
+      const driver = create();
+
+      driver.host.zones.set([
+        { from: 1, to: 1, color: 'brand', label: 'Full', strength: 1 },
+        { from: 2, to: 2, color: 'brand', label: 'Faded', strength: 0.4 },
+        { from: 3, to: 3, color: 'brand', label: 'Wild', strength: 7 },
+      ]);
+      driver.detectChanges();
+
+      const read = (selector: string) =>
+        driver
+          .queryAll(selector)
+          .map((element) => (element as HTMLElement).style.getPropertyValue('--et-standings-zone-strength'));
+
+      expect(read('tbody tr')).toEqual(['1', '0.4', '1']);
+      expect(read('.et-standings-legend-swatch')).toEqual(['1', '0.4', '1']);
+    });
+
+    it('set no strength property when the zone has none or an invalid one', () => {
+      const driver = create();
+
+      driver.host.zones.set([
+        { from: 1, to: 1, color: 'brand', label: 'A' },
+        { from: 2, to: 2, color: 'brand', label: 'B', strength: Number.NaN },
+      ]);
+      driver.detectChanges();
+
+      const values = [...driver.queryAll('tbody tr'), ...driver.queryAll('.et-standings-legend-swatch')].map(
+        (element) => (element as HTMLElement).style.getPropertyValue('--et-standings-zone-strength'),
+      );
+
+      expect(values.every((value) => value === '')).toBe(true);
+    });
+
     it('say what they mean in text, so the banding is never colour-only', () => {
       expect(
         zoned()

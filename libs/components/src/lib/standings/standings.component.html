@@ -69,6 +69,7 @@
             [id]="renderRow.detailId"
             [etProvideColor]="renderRow.zone?.color ?? null"
             [attr.data-zone]="renderRow.zone ? '' : null"
+            [style.--et-standings-zone-strength]="standings.zoneStrength(renderRow.zone)"
             class="et-standings-detail"
             animate.enter="et-standings-detail--enter"
             animate.leave="et-standings-detail--leave"
@@ -94,7 +95,12 @@
       <ul [attr.aria-label]="labels().legend" class="et-standings-legend">
         @for (zone of zones; track zone.from) {
           <li class="et-standings-legend-item">
-            <span [etProvideColor]="zone.color" class="et-standings-legend-swatch" aria-hidden="true"></span>
+            <span
+              [etProvideColor]="zone.color"
+              [style.--et-standings-zone-strength]="standings.zoneStrength(zone)"
+              class="et-standings-legend-swatch"
+              aria-hidden="true"
+            ></span>
             {{ zone.label }}
           </li>
         }
@@ -107,6 +113,7 @@
   <tr
     [etProvideColor]="renderRow.zone?.color ?? null"
     [attr.data-zone]="renderRow.zone ? '' : null"
+    [style.--et-standings-zone-strength]="standings.zoneStrength(renderRow.zone)"
     [attr.data-highlighted]="renderRow.isHighlighted ? '' : null"
     [attr.aria-current]="renderRow.isHighlighted ? 'true' : null"
     class="et-standings-row"

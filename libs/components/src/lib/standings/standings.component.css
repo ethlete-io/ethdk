@@ -134,30 +134,58 @@
   /* A band's colour comes from the theme the row is scoped to, which the consumer names — so "advancing"
      looks like whatever their app decided, and this file names no colour at all. */
   .et-standings-row:where([data-zone]) {
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, transparent) 7%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, transparent) calc(7% * var(--et-standings-zone-strength, 1)),
+      transparent
+    );
   }
 
   .et-standings-row:where([data-zone]) .et-standings-cell:where([data-column='position']) {
     box-shadow: inset var(--et-standings-zone-bar-width) 0 0
-      light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      color-mix(
+        in srgb,
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+          calc(100% * var(--et-standings-zone-strength, 1)),
+        transparent
+      );
 
     &:dir(rtl) {
       box-shadow: inset calc(var(--et-standings-zone-bar-width) * -1) 0 0
-        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+        color-mix(
+          in srgb,
+          light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+            calc(100% * var(--et-standings-zone-strength, 1)),
+          transparent
+        );
     }
   }
 
   .et-standings-detail:where([data-zone]) {
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, transparent) 7%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, transparent) calc(7% * var(--et-standings-zone-strength, 1)),
+      transparent
+    );
   }
 
   .et-standings-detail:where([data-zone]) > tr > :first-child {
     box-shadow: inset var(--et-standings-zone-bar-width) 0 0
-      light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      color-mix(
+        in srgb,
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+          calc(100% * var(--et-standings-zone-strength, 1)),
+        transparent
+      );
 
     &:dir(rtl) {
       box-shadow: inset calc(var(--et-standings-zone-bar-width) * -1) 0 0
-        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+        color-mix(
+          in srgb,
+          light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+            calc(100% * var(--et-standings-zone-strength, 1)),
+          transparent
+        );
     }
   }
 
@@ -314,7 +342,12 @@
     flex: none;
     inline-size: 10px;
     block-size: 3px;
-    background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+    background: color-mix(
+      in srgb,
+      light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+        calc(100% * var(--et-standings-zone-strength, 1)),
+      transparent
+    );
     border-radius: 2px;
   }
 }

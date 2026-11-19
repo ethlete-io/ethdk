@@ -78,6 +78,7 @@ export class StandingsStorybookComponent {
   public expandMode = input<StandingsExpandMode>('multiple');
   public withExtras = input(false);
 
+  public zoneStrengths = input(false);
   protected expandedRows = signal<readonly string[]>([]);
   protected openedSeason = signal<string | null>(null);
 
@@ -85,12 +86,17 @@ export class StandingsStorybookComponent {
   protected boxWidth = computed(() => `min(${this.width()}px, 100%)`);
 
   protected zones = computed<StandingsZone[]>(() =>
-    this.withZones()
+    this.zoneStrengths()
       ? [
-          { from: 1, to: 2, color: 'success', label: 'Advances to the playoffs' },
-          { from: 6, to: 6, color: 'danger', label: 'Relegated' },
+          { from: 1, to: 2, color: 'success', label: 'Direct qualification', strength: 1 },
+          { from: 3, to: 4, color: 'success', label: 'Playoff round', strength: 0.4 },
         ]
-      : [],
+      : this.withZones()
+        ? [
+            { from: 1, to: 2, color: 'success', label: 'Advances to the playoffs' },
+            { from: 6, to: 6, color: 'danger', label: 'Relegated' },
+          ]
+        : [],
   );
 
   protected extraColumns = computed<StandingsExtraColumn[]>(() =>

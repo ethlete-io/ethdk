@@ -135,6 +135,12 @@ export class StandingsDirective {
   public isRowExpanded(rowId: string) {
     return this.isExpandable() && this.expandedRows().includes(rowId);
   }
+  /** A zone's `strength` clamped to 0-1, or `null` when it is unset or not a finite number. */
+  public zoneStrength(zone: StandingsZone | null | undefined): number | null {
+    const strength = zone?.strength;
+
+    return typeof strength === 'number' && Number.isFinite(strength) ? Math.min(1, Math.max(0, strength)) : null;
+  }
 
   /** Open the row's detail, or close it when it is open. In `'single'` mode opening a row closes the others. */
   public toggleRow(rowId: string) {

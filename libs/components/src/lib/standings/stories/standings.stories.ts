@@ -23,6 +23,7 @@ export default {
     showLegend: { control: 'boolean' },
     highlight: { control: 'boolean' },
     withZones: { control: 'boolean' },
+    zoneStrengths: { control: 'boolean' },
     withForm: { control: 'boolean' },
     direction: { control: 'inline-radio', options: ['ltr', 'rtl'] },
     expandable: { control: 'boolean' },
@@ -56,6 +57,19 @@ export const NoZones: Story = {
         story:
           'Without zones there is no banding and no legend - nothing to explain. Zones are a config, not a mode: ' +
           'the same array draws the bands and the legend, so the two cannot drift apart.',
+      },
+    },
+  },
+};
+
+export const ZoneStrength: Story = {
+  args: { zoneStrengths: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Two zones of one type told apart by `strength`: 1 and 0.4. The band tint, the accent bar and the legend ' +
+          'swatch all fade with it.',
       },
     },
   },

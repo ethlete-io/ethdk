@@ -91,6 +91,21 @@ Zones must not overlap: a row in two bands has no defined appearance, and dev mo
 [`ET4400`](/components/error-codes#standings-et44xx) naming the two zones. Set `showLegend` to `false` to
 band the rows without explaining them.
 
+### Zone strength
+
+Two zones of the same type (say two promotion steps in a Swiss stage) look identical. Give each a `strength`
+from 0 to 1 to tell them apart:
+
+```ts
+{ from: 1, to: 8, color: 'success', label: 'Direct qualification', strength: 1 },
+{ from: 9, to: 24, color: 'success', label: 'Playoff round', strength: 0.4 },
+```
+
+The value is clamped to 0-1 and exposed as `--et-standings-zone-strength` on the band's row and on its legend
+swatch. The default stylesheet scales the tint and the accent bar by it; unset, or not a finite number, the zone
+is drawn at full strength. The library sets no opacity per strength, so a stylesheet of yours can read the same
+variable for anything else.
+
 ## Two densities
 
 Like the match card, the table measures itself and drops columns rather than scrolling sideways:
@@ -214,15 +229,16 @@ table's text, borders and row banding, and the zone's own color theme for its ac
 form is drawn from surface tokens rather than a green/amber/red this library invents - the letter inside
 each square, not its fill, tells the results apart.
 
-| Token                                | Default | What it sets                              |
-| ------------------------------------ | ------- | ----------------------------------------- |
-| `--et-standings-row-height`          | `44px`  | Row and header height                     |
-| `--et-standings-cell-padding-inline` | `8px`   | Horizontal cell padding                   |
-| `--et-standings-zone-bar-width`      | `3px`   | Width of a zone's inline-start accent bar |
-| `--et-standings-font-size`           | `13px`  | Table text, including participant names   |
-| `--et-standings-expand-toggle-size`  | `28px`  | Size of the row detail toggle             |
-| `--et-standings-expand-chevron-size` | `16px`  | Size of the toggle's chevron              |
-| `--et-standings-expand-duration`     | `180ms` | Detail fade and chevron turn              |
+| Token                                | Default | What it sets                                          |
+| ------------------------------------ | ------- | ----------------------------------------------------- |
+| `--et-standings-row-height`          | `44px`  | Row and header height                                 |
+| `--et-standings-cell-padding-inline` | `8px`   | Horizontal cell padding                               |
+| `--et-standings-zone-bar-width`      | `3px`   | Width of a zone's inline-start accent bar             |
+| `--et-standings-zone-strength`       | `1`     | Set per zone from `strength`; scales its tint and bar |
+| `--et-standings-font-size`           | `13px`  | Table text, including participant names               |
+| `--et-standings-expand-toggle-size`  | `28px`  | Size of the row detail toggle                         |
+| `--et-standings-expand-chevron-size` | `16px`  | Size of the toggle's chevron                          |
+| `--et-standings-expand-duration`     | `180ms` | Detail fade and chevron turn                          |
 
 ## Error codes
 

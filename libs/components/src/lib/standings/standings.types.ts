@@ -69,6 +69,8 @@ export type StandingsZone = {
   color: RegisteredColorThemeName | ColorTheme;
   /** What the band means, for the legend. */
   label: string;
+  /** How strongly the band is drawn, 0 to 1, exposed as `--et-standings-zone-strength`. Unset draws it at full strength. */
+  strength?: number;
 };
 
 /** How the rows of a table with a row detail expand: one at a time, or independently. */
