@@ -212,7 +212,7 @@ export const joinGroups = (into: WorkGroup, next: WorkGroup): WorkGroup => {
 };
 
 /** The issue or stand-in naming a band, which is its track whatever checkout or branch it is on. */
-const nameOf = (group: WorkGroup) => {
+const nameOf = (group: Pick<WorkGroup, 'issueKey' | 'standInId'>) => {
   if (group.issueKey) return `issue:${group.issueKey}`;
 
   return group.standInId ? `stand-in:${group.standInId}` : undefined;
@@ -256,13 +256,72 @@ const pieceOfBlock = (block: ActivityBlock) => {
  * issue in two repositories is one row, as it was before sessions had pieces.
  */
 const holdsOtherPiece = (left: WorkGroup, right: WorkGroup) => {
-  const piecesOf = (group: WorkGroup) => group.blocks.flatMap((block) => pieceOfBlock(block) ?? []);
-  const held = piecesOf(left);
+  const held = [...summaryOf(left.blocks).checkoutPieces.values()];
 
-  return piecesOf(right).some((own) =>
+  return [...summaryOf(right.blocks).checkoutPieces.values()].some((own) =>
     held.some((other) => other.checkout === own.checkout && other.piece !== own.piece),
   );
 };
+
+type Piece = { checkout: string; piece: string };
+
+type BlocksSummary = {
+  streamMs: ReadonlyMap<string, number>;
+  /** The last piece each piece name was seen with, in first-seen order. */
+  pieces: ReadonlyMap<string, Piece>;
+  checkoutPieces: ReadonlyMap<string, Piece>;
+};
+
+/** Holds for a blocks array only while nothing mutates it; a `WorkGroup`'s blocks are never mutated. */
+const summaries = new WeakMap<readonly ActivityBlock[], BlocksSummary>();
+
+const joinSummaries = (left: BlocksSummary, right: BlocksSummary): BlocksSummary => {
+  const streamMs = new Map(left.streamMs);
+  const pieces = new Map(left.pieces);
+  const checkoutPieces = new Map(left.checkoutPieces);
+
+  for (const [key, ms] of right.streamMs) streamMs.set(key, (streamMs.get(key) ?? 0) + ms);
+  for (const [key, piece] of right.pieces) pieces.set(key, piece);
+  for (const [key, piece] of right.checkoutPieces) if (!checkoutPieces.has(key)) checkoutPieces.set(key, piece);
+
+  return { streamMs, pieces, checkoutPieces };
+};
+
+const summaryOf = (blocks: readonly ActivityBlock[]): BlocksSummary => {
+  const cached = summaries.get(blocks);
+
+  if (cached) return cached;
+
+  const streamMs = new Map<string, number>();
+  const pieces = new Map<string, Piece>();
+  const checkoutPieces = new Map<string, Piece>();
+
+  for (const block of blocks) {
+    const key = streamKey(block.context);
+    const piece = pieceOfBlock(block);
+
+    streamMs.set(key, (streamMs.get(key) ?? 0) + blockDurationMs(block));
+
+    if (!piece) continue;
+
+    pieces.set(piece.piece, piece);
+
+    const pair = `${piece.checkout}\n${piece.piece}`;
+
+    if (!checkoutPieces.has(pair)) checkoutPieces.set(pair, piece);
+  }
+
+  const summary = { streamMs, pieces, checkoutPieces };
+
+  summaries.set(blocks, summary);
+
+  return summary;
+};
+
+const laneOf = (summary: BlocksSummary) =>
+  [...summary.streamMs]
+    .filter(([key]) => key !== 'app:')
+    .sort(([a, aMs], [b, bMs]) => bMs - aMs || a.localeCompare(b))[0]?.[0];
 
 /**
  * The piece of a checkout an unnamed band belongs to. A named band has none: its issue or stand-in, within
@@ -306,11 +365,7 @@ const pieceOf = (group: WorkGroup) => {
  * Whether every block behind a band is one checkout, which is one lane on the day screen. A block with
  * no context at all is in no lane, so a band holding one is not.
  */
-const oneLane = (group: WorkGroup) => {
-  const keys = new Set(group.blocks.map((block) => streamKey(block.context)));
-
-  return keys.size === 1 && !keys.has('app:');
-};
+const oneLane = (summary: BlocksSummary) => summary.streamMs.size === 1 && !summary.streamMs.has('app:');
 
 /** Whether one of the barriers falls in the gap a join would swallow. */
 const barred = (options: { from: Date; to: Date; barriers: readonly TimeWindow[] }) =>
@@ -325,7 +380,7 @@ type PassOptions = {
   barriers: readonly TimeWindow[];
   laneBarriers: Readonly<Record<string, readonly TimeWindow[]>>;
   /** The part of a window another piece of the band's checkout worked on the band's own ticket. */
-  siblingMs?: (group: WorkGroup, window: TimeWindow) => number;
+  siblingMs?: (options: { name: string | undefined; summary: BlocksSummary; window: TimeWindow }) => number;
 };
 
 /**
@@ -350,16 +405,42 @@ const siblingTime = (ordered: readonly AttributedBlock[]) => {
     held.set(key, list);
   }
 
-  return (group: WorkGroup, window: TimeWindow) => {
-    const name = nameOf(group);
-    const pieces = new Map(group.blocks.flatMap((block) => pieceOfBlock(block) ?? []).map((own) => [own.piece, own]));
-    const [own, ...more] = [...pieces.values()];
+  const reachOf = new Map(
+    [...held].map(([key, list]) => {
+      let reach = -Infinity;
+
+      return [key, list.map((other) => (reach = Math.max(reach, other.to)))] as const;
+    }),
+  );
+  const firstIndex = (count: number, past: (index: number) => boolean) => {
+    let low = 0;
+    let high = count;
+
+    while (low < high) {
+      const middle = (low + high) >> 1;
+
+      if (past(middle)) high = middle;
+      else low = middle + 1;
+    }
+
+    return low;
+  };
+
+  return (options: { name: string | undefined; summary: BlocksSummary; window: TimeWindow }) => {
+    const { name, summary, window } = options;
+    const [own, ...more] = [...summary.pieces.values()];
 
     if (!name || !own || more.length) return 0;
 
     const from = window.from.getTime();
     const to = window.to.getTime();
-    const clipped = (held.get(keyOf(name, own.checkout)) ?? [])
+    const key = keyOf(name, own.checkout);
+    const list = held.get(key) ?? [];
+    const reach = reachOf.get(key) ?? [];
+    const first = firstIndex(list.length, (index) => (reach[index] ?? 0) > from);
+    const last = firstIndex(list.length, (index) => (list[index]?.from ?? 0) >= to);
+    const clipped = list
+      .slice(first, Math.max(first, last))
       .filter((other) => other.piece !== own.piece && other.from < to && other.to > from)
       .map((other) => ({ from: Math.max(from, other.from), to: Math.min(to, other.to) }))
       .sort((left, right) => left.from - right.from);
@@ -388,33 +469,45 @@ const siblingTime = (ordered: readonly AttributedBlock[]) => {
  * The span test is what keeps the picture honest. Without it a band whose gaps another checkout filled
  * is drawn as a rectangle across the whole day while its label says fifteen minutes.
  */
-const joinable = (options: {
-  into: WorkGroup;
-  added: WorkGroup;
-  joined: WorkGroup;
-  gap: TimeWindow;
-  pass: PassOptions;
-}) => {
-  const { into, added, joined, gap, pass } = options;
-  const siblingMs = (window: TimeWindow) => pass.siblingMs?.(joined, window) ?? 0;
-  const span = joined.to.getTime() - joined.from.getTime() - siblingMs(joined);
-  const ratio = oneLane(joined) ? pass.maxLaneSpanRatio : pass.maxSpanRatio;
-  const lane = laneKeyOf(into.blocks);
+const joinable = (options: { into: WorkGroup; added: WorkGroup; gap: TimeWindow; pass: PassOptions }) => {
+  const { into, added, gap, pass } = options;
+  const intoSummary = summaryOf(into.blocks);
+  const summary = joinSummaries(intoSummary, summaryOf(added.blocks));
+  const name = nameOf({ issueKey: into.issueKey ?? added.issueKey, standInId: into.standInId ?? added.standInId });
+  const siblingMs = (window: TimeWindow) => pass.siblingMs?.({ name, summary, window }) ?? 0;
+  const from = into.from <= added.from ? into.from : added.from;
+  const to = into.to >= added.to ? into.to : added.to;
+  const span = to.getTime() - from.getTime() - siblingMs({ from, to });
+  const ratio = oneLane(summary) ? pass.maxLaneSpanRatio : pass.maxSpanRatio;
+  const lane = laneOf(intoSummary);
 
-  return (
+  const fits =
     gap.to.getTime() - gap.from.getTime() - siblingMs(gap) <= pass.maxGapMs &&
-    span <= joined.observedMs * ratio &&
+    span <= (into.observedMs + added.observedMs) * ratio &&
     !barred({ from: gap.from, to: gap.to, barriers: pass.barriers }) &&
-    !joined.blocks.some((block) =>
-      barred({ from: gap.from, to: gap.to, barriers: pass.laneBarriers[streamKey(block.context)] ?? [] }),
+    ![...summary.streamMs.keys()].some((key) =>
+      barred({ from: gap.from, to: gap.to, barriers: pass.laneBarriers[key] ?? [] }),
     ) &&
     !added.blocks.some(
       (block) =>
         !!lane &&
         streamKey(block.context) !== lane &&
         barred({ from: block.from, to: block.to, barriers: pass.laneBarriers[lane] ?? [] }),
-    )
-  );
+    );
+
+  return fits ? summary : undefined;
+};
+
+const joinFitting = (options: { into: WorkGroup; added: WorkGroup; gap: TimeWindow; pass: PassOptions }) => {
+  const summary = joinable(options);
+
+  if (!summary) return undefined;
+
+  const joined = joinGroups(options.into, options.added);
+
+  summaries.set(joined.blocks, summary);
+
+  return joined;
 };
 
 /**
@@ -490,9 +583,9 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     const previous = at === undefined ? undefined : rows[at];
 
     if (at !== undefined && previous) {
-      const joined = joinGroups(previous, group);
+      const joined = joinFitting({ into: previous, added: group, gap: { from: previous.to, to: group.from }, pass });
 
-      if (joinable({ into: previous, added: group, joined, gap: { from: previous.to, to: group.from }, pass })) {
+      if (joined) {
         rows[at] = joined;
         open({ row: joined, added: group, at });
         continue;
@@ -546,9 +639,9 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
       .sort((left, right) => distance(sliver, left.row) - distance(sliver, right.row));
 
     for (const host of hosts) {
-      const joined = joinGroups(host.row, sliver);
+      const joined = joinFitting({ into: host.row, added: sliver, gap: gapBetween(host.row, sliver), pass });
 
-      if (!joinable({ into: host.row, added: sliver, joined, gap: gapBetween(host.row, sliver), pass })) continue;
+      if (!joined) continue;
 
       rows[host.at] = joined;
       taken.add(index);

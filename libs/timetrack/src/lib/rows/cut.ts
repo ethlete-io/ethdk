@@ -638,6 +638,24 @@ export const cutSessionAcrossCheckouts = (options: {
     else bySession.set(session, [entry]);
   }
 
+  const agentTouches = new Map<string, { at: number; workedIn: string }[]>();
+
+  for (const event of options.events) {
+    if (event.kind !== 'agent-session' && event.kind !== 'agent-usage' && event.kind !== 'agent-prompt') continue;
+
+    const { sessionId, workedIn } = event;
+
+    if (!workedIn || !bySession.has(sessionId)) continue;
+
+    const found = agentTouches.get(sessionId);
+    const touch = { at: event.at.getTime(), workedIn };
+
+    if (found) found.push(touch);
+    else agentTouches.set(sessionId, [touch]);
+  }
+
+  for (const list of agentTouches.values()) list.sort((left, right) => left.at - right.at);
+
   const lost = new Map<AttributedBlock, TimeWindow[]>();
 
   for (const [session, entries] of bySession) {
@@ -645,21 +663,13 @@ export const cutSessionAcrossCheckouts = (options: {
 
     if (new Set(repoPaths.map(attentionOf)).size < 2) continue;
 
-    const touches = options.events
-      .flatMap((event) => {
-        if (event.kind !== 'agent-session' && event.kind !== 'agent-usage' && event.kind !== 'agent-prompt') return [];
+    const touches = (agentTouches.get(session) ?? []).flatMap(({ at, workedIn }) => {
+      const touched = repoPaths
+        .filter((repoPath) => isWithin(workedIn, repoPath))
+        .sort((left, right) => right.length - left.length)[0];
 
-        const workedIn = event.workedIn;
-
-        if (event.sessionId !== session || !workedIn) return [];
-
-        const touched = repoPaths
-          .filter((repoPath) => isWithin(workedIn, repoPath))
-          .sort((left, right) => right.length - left.length)[0];
-
-        return touched ? [{ at: event.at.getTime(), attention: attentionOf(touched) }] : [];
-      })
-      .sort((left, right) => left.at - right.at);
+      return touched ? [{ at, attention: attentionOf(touched) }] : [];
+    });
     const oldest = [...entries].sort((left, right) => left.block.from.getTime() - right.block.from.getTime())[0];
     const firstHeld = attentionOf(oldest?.block.context.repoPath ?? '');
     const focus = new Map(
@@ -673,16 +683,37 @@ export const cutSessionAcrossCheckouts = (options: {
       ]),
     ].sort((left, right) => left - right);
 
+    const starting = entries
+      .map((entry, index) => ({ entry, index, from: entry.block.from.getTime(), to: entry.block.to.getTime() }))
+      .sort((left, right) => left.from - right.from);
+    const lastTouchOf = new Map<string, number>();
+    let active: typeof starting = [];
+    let started = 0;
+    let touchAt = 0;
+
     for (let index = 0; index < edges.length - 1; index++) {
       const from = edges[index] ?? 0;
       const to = edges[index + 1] ?? 0;
-      const covering = entries.filter((entry) => entry.block.from.getTime() <= from && entry.block.to.getTime() >= to);
+
+      for (let next = starting[started]; next && next.from <= from; next = starting[++started]) active.push(next);
+
+      for (let touch = touches[touchAt]; touch && touch.at <= from; touch = touches[++touchAt]) {
+        lastTouchOf.set(touch.attention, touchAt);
+      }
+
+      active = active.filter((item) => item.to >= to);
+
+      if (active.length < 2) continue;
+
+      const covering = [...active].sort((left, right) => left.index - right.index).map((item) => item.entry);
       const held = new Set(covering.map((entry) => attentionOf(entry.block.context.repoPath ?? '')));
 
       if (held.size < 2) continue;
 
-      const touched = touches.filter((touch) => touch.at <= from && held.has(touch.attention)).at(-1);
-      const holder = touched?.attention ?? (held.has(firstHeld) ? firstHeld : [...held][0]);
+      const touched = [...held]
+        .filter((attention) => lastTouchOf.has(attention))
+        .sort((left, right) => (lastTouchOf.get(right) ?? 0) - (lastTouchOf.get(left) ?? 0))[0];
+      const holder = touched ?? (held.has(firstHeld) ? firstHeld : [...held][0]);
 
       for (const entry of covering) {
         const repoPath = entry.block.context.repoPath ?? '';
