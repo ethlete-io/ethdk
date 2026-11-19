@@ -75,7 +75,10 @@
 
   .et-accordion-heading {
     --_et-accordion-header-padding-block: var(--et-accordion-header-padding-block, var(--et-accordion-padding-block));
-    --_et-accordion-tint-inset: min(4px, var(--_et-accordion-header-padding-block));
+    --_et-accordion-tint-inset: var(
+      --et-accordion-header-tint-inset,
+      min(4px, var(--_et-accordion-header-padding-block))
+    );
 
     display: block;
     padding-block: var(--_et-accordion-tint-inset);
@@ -87,7 +90,8 @@
     display: flex;
     align-items: center;
     gap: var(--et-accordion-gap);
-    inline-size: 100%;
+    inline-size: calc(100% + 2 * var(--et-accordion-trigger-outset-inline, 0px));
+    margin-inline: calc(-1 * var(--et-accordion-trigger-outset-inline, 0px));
     padding: calc(var(--_et-accordion-header-padding-block) - var(--_et-accordion-tint-inset))
       var(--et-accordion-header-padding-inline, var(--et-accordion-padding-inline));
     padding-inline-end: var(
@@ -155,7 +159,9 @@
       flex: none;
       inline-size: var(--et-accordion-chevron-size);
       block-size: var(--et-accordion-chevron-size);
-      color: var(--_et-accordion-secondary-color);
+      color: var(--et-accordion-chevron-color, var(--_et-accordion-secondary-color));
+      stroke: currentColor;
+      stroke-width: var(--et-accordion-chevron-stroke-width, 0);
       rotate: 180deg;
     }
 
@@ -220,6 +226,7 @@
   }
 
   .et-accordion-panel-body {
+    padding-block-start: var(--et-accordion-panel-padding-block-start, 0px);
     padding-block-end: var(--et-accordion-padding-block);
     padding-inline: var(--et-accordion-padding-inline);
   }
