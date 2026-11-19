@@ -280,6 +280,21 @@ describe('autoModeAsks on a night nobody was at the machine for', () => {
       { kind: 'stand-in', standInId: standIn.id },
     ]);
   });
+
+  it('refuses an agent that asks about a context or stand-in held only by unattended rows', () => {
+    const refusalOf = (subject: AutoModeSubject) =>
+      autoModeAskRefusal({
+        subject,
+        day: TODAY,
+        contexts: [CONTEXT],
+        unattributed: [night],
+        rows: nightRows,
+        standIns: [standIn],
+      });
+
+    expect(refusalOf({ kind: 'context', contextId: CONTEXT.id })).toMatch(/nobody was at the machine/);
+    expect(refusalOf({ kind: 'stand-in', standInId: standIn.id })).toMatch(/nobody was at the machine/);
+  });
 });
 
 describe('autoModeAsks while a band still runs', () => {

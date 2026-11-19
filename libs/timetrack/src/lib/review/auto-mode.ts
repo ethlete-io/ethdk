@@ -610,7 +610,8 @@ export const autoModeReaskSubjectOf = (options: {
  * Why an agent may not ask auto mode about a subject of a day, or `null` where it may. It refuses what
  * "Ask auto mode again" is never offered on: a stand-in Timetrack does not hold, one the day holds no
  * time of, a resolved one or one the user reopened, and a context the day holds no unnamed work of,
- * one a standing rule answers or one the user named by hand.
+ * one a standing rule answers or one the user named by hand, and a context or stand-in whose every row of the
+ * day is unattended.
  */
 export const autoModeAskRefusal = (options: {
   subject: AutoModeSubject;
@@ -624,6 +625,14 @@ export const autoModeAskRefusal = (options: {
   const { subject, day } = options;
 
   if (subject.kind === 'call') return 'Auto mode asks about a call by itself only.';
+
+  if (
+    unattendedOnlySubjectKeys({ rows: options.rows, unattributed: options.unattributed }).has(
+      autoModeSubjectKey(subject),
+    )
+  ) {
+    return `Every row of ${autoModeSubjectKey(subject)} on ${day} is one nobody was at the machine for, so auto mode names nothing.`;
+  }
 
   if (subject.kind === 'stand-in') {
     const id = subject.standInId;
