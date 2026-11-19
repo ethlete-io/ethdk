@@ -32,6 +32,7 @@ import {
   startWith,
   switchMap,
   take,
+  tap,
   throwError,
   toArray,
 } from 'rxjs';
@@ -225,6 +226,7 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
   runStates$
     .pipe(
       filter((state): state is Extract<SyncRunStatus, { kind: 'written' }> => state.kind === 'written'),
+      tap(() => dayReview.reloadLedger()),
       concatMap((state) =>
         agentDay.book$(state.day, { plan: state.plan, outcome: state.outcome }).pipe(catchError(() => EMPTY)),
       ),

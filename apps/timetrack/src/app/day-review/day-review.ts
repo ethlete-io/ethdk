@@ -17,7 +17,6 @@ import {
   InferredAttribution,
   ManualRow,
   ReviewedRow,
-  SyncedWorklog,
   TempoDayCoverage,
   TimeWindow,
   TimerRun,
@@ -145,6 +144,7 @@ import { injectProjectLinks } from '../project-links';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
 import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
 import { ownDayRowsOf, receivedDayRowsOn, withReceivedSharedRows } from '../peers/day-rows';
+import { reloadableLedger$ } from './reloadable-ledger';
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
@@ -793,15 +793,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   // The whole day's ledger, not the rows': an entry no row claims is a worklog the sync has to delete,
   // and a read by row id can never return it. The failure stays inside the switch, or one failed read
   // would end the subscription and no later day would be read at all.
+  const ledgerReloads$ = new Subject<void>();
   const loadedLedger = toSignal(
-    toObservable(day).pipe(
-      switchMap((key) =>
-        ledgerEntriesForRange$({ ledger: ports.ledger, day: key, boundary: boundary() }).pipe(
-          catchError(() => of<SyncedWorklog[]>([])),
-          map((entries) => ({ key, entries })),
-        ),
-      ),
-    ),
+    reloadableLedger$({
+      day$: toObservable(day),
+      reload$: ledgerReloads$,
+      read$: (key) => ledgerEntriesForRange$({ ledger: ports.ledger, day: key, boundary: boundary() }),
+    }),
     { initialValue: null },
   );
 
@@ -992,6 +990,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     dayKey: day.asReadonly(),
     /** The day whose edits just reached the store, once per write. */
     saved$: saved$.asObservable(),
+    /** Reads the day's ledger again, after a sync wrote to it. */
+    reloadLedger: () => ledgerReloads$.next(),
     targetMs,
     /** What auto mode asked and answered on the day on screen, or `null` until its edits are read. */
     autoAnswers: computed(() => (editsReady() ? (edits().auto ?? []) : null)),
