@@ -57,6 +57,26 @@ describe('foldUnattended', () => {
     expect(folded[1]).toMatchObject({ from: AT(20), to: AT(70), folded: ['next'] });
   });
 
+  it('draws touching rows of one stand-in as one block that keeps each row its own description', () => {
+    const cleanup = { withheldIssueKey: undefined, standInId: 'stand-in:1:specs-cleanup' } as const;
+    const folded = foldUnattended([
+      row('a', 0, 15, { ...cleanup, description: 'NX-11: cause' }),
+      row('b', 15, 30, { ...cleanup, description: 'NX-11: fix ok' }),
+      row('c', 30, 45, { ...cleanup, description: 'NX-11: fix ok' }),
+      row('gap', 60, 75, cleanup),
+      row('other', 75, 90, { ...cleanup, standInId: 'stand-in:2:specs-e2e' }),
+      row('attended', 90, 105, { ...cleanup, unattended: false }),
+    ]);
+
+    expect(folded.map((kept) => kept.id)).toEqual(['a', 'gap', 'other', 'attended']);
+    expect(folded[0]).toMatchObject({
+      to: AT(45),
+      durationMs: 45 * 60_000,
+      description: 'NX-11: cause; NX-11: fix ok',
+      folded: ['b', 'c'],
+    });
+  });
+
   it('keeps apart what another issue, another lane, a gap or a person separates', () => {
     const rows = [
       row('a', 0, 15),

@@ -1,12 +1,18 @@
 import { ReviewedRow } from '@ethlete/timetrack';
 
-type FoldKey = { key: string; joins: (run: ReviewedRow, row: ReviewedRow) => boolean };
+type FoldKey = { key: string; joins: (run: ReviewedRow, row: ReviewedRow) => boolean; describes?: true };
 
 const overlaps = (run: ReviewedRow, row: ReviewedRow) => row.from <= run.to;
 const touches = (run: ReviewedRow, row: ReviewedRow) => row.from.getTime() === run.to.getTime();
 
 const foldKeyOf = (row: ReviewedRow): FoldKey | null => {
-  if (row.excluded || row.standInId) return null;
+  if (row.excluded) return null;
+
+  if (row.standInId) {
+    return row.issueKey || row.state === 'rejected'
+      ? null
+      : { key: `stand-in|${row.laneKey}|${row.standInId}|${!!row.unattended}`, joins: touches, describes: true };
+  }
 
   if (row.state === 'accepted' && row.issueKey) {
     return { key: `accepted|${row.laneKey}|${row.issueKey}|${row.description}`, joins: touches };
@@ -16,6 +22,9 @@ const foldKeyOf = (row: ReviewedRow): FoldKey | null => {
     ? { key: `${row.laneKey}|${row.withheldIssueKey ?? ''}|${row.workedOn ?? ''}`, joins: overlaps }
     : null;
 };
+
+const joinedDescription = (run: string, row: string) =>
+  !row || run.split('; ').includes(row) ? run : run ? `${run}; ${row}` : row;
 
 export const foldUnattended = (rows: readonly ReviewedRow[]): ReviewedRow[] => {
   const runs = new Map<ReviewedRow, ReviewedRow>();
@@ -40,6 +49,7 @@ export const foldUnattended = (rows: readonly ReviewedRow[]): ReviewedRow[] => {
         ...run,
         to: row.to > run.to ? row.to : run.to,
         observedMs: run.observedMs + row.observedMs,
+        description: fold.describes ? joinedDescription(run.description, row.description) : run.description,
         folded: [...(run.folded ?? []), row.id, ...(row.folded ?? [])],
       });
       absorbed.add(row);
