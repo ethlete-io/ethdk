@@ -12,6 +12,7 @@ The title binding utilities provide a signal-based approach to managing the docu
 
 - **Reactive Updates**: Automatically updates when signal values change
 - **Priority System**: Child routes can override parent titles or be merged with them
+- **Layers**: `applyHeadTitleBinding(text, { layer: 'overlay' })` always ranks after every `'page'` binding, whatever the creation order
 - **i18n Ready**: Integrates with locale-aware transformations
 - **Divider Support**: Automatically joins multiple title parts with a configurable divider
 

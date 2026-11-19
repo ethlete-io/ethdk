@@ -3,6 +3,7 @@ import { Meta } from '@angular/platform-browser';
 import { injectLocale } from '../providers';
 import { MaybeSignal } from '../signals';
 import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { HeadLayerOptions, layerPriority } from './head-layer';
 import { applyHeadBinding, createArrayPropertyBinding, createPropertyBinding, toStringBinding } from './head-binding';
 import { applyHeadTitleBinding } from './title-binding';
 
@@ -289,11 +290,15 @@ export const injectMetaStore = /* @__PURE__ */ toInjectFn(META_STORE_DEF);
 /**
  * Binds a meta tag. While it is bound, pre-existing tags matching the same selector (e.g. from `index.html`) are removed;
  * they come back once the last binding for that selector is released. Link bindings leave pre-existing links alone.
+ * Pass `{ layer: 'overlay' }` to outrank every page binding.
  */
-export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | undefined>) => {
+export const applyMetaBinding = (
+  binding: MaybeSignal<MetaTagConfig | null | undefined>,
+  options?: HeadLayerOptions,
+) => {
   const metaStore = injectMetaStore();
   const tagId = Symbol('meta-tag');
-  const priority = metaStore.claimPriority();
+  const priority = layerPriority(options?.layer, metaStore.claimPriority());
   let currentSelector: string | undefined;
 
   applyHeadBinding(

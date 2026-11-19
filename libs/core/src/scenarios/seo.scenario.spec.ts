@@ -335,6 +335,55 @@ describe('seo scenarios', () => {
     if (!hadTitleElement) document.head.querySelector('title')?.remove();
   });
 
+  it('ranks overlay bindings above page bindings and keeps creation order within a layer', async () => {
+    const s = scenario();
+    const overlay = s.consumer();
+    const pageA = s.consumer();
+    const pageB = s.consumer();
+    const hadTitleElement = !!document.head.querySelector('title');
+
+    document.title = 'App';
+
+    await s.run(() => inject(Router)).navigateByUrl('/');
+    overlay.run(() => {
+      applyHeadTitleBinding('Overlay', { layer: 'overlay' });
+      applyMetaBinding({ name: 'description', content: 'overlay' }, { layer: 'overlay' });
+      applyLinkBinding({ rel: 'canonical', href: 'https://a.example/overlay' }, { layer: 'overlay' });
+    });
+    pageA.run(() => {
+      applyHeadTitleBinding('A');
+      applyMetaBinding({ name: 'description', content: 'a' });
+      applyLinkBinding({ rel: 'canonical', href: 'https://a.example/a' });
+    });
+    pageB.run(() => {
+      applyHeadTitleBinding('B');
+      applyMetaBinding({ name: 'description', content: 'b' });
+      applyLinkBinding({ rel: 'canonical', href: 'https://a.example/b' });
+    });
+    await settle(s);
+
+    expect(document.title).toBe('A | B | Overlay');
+    expect(metaContent('name="description"')).toEqual(['overlay']);
+    expect(linkHrefs('canonical')).toEqual(['https://a.example/overlay']);
+
+    overlay.destroy();
+    await settle(s);
+
+    expect(document.title).toBe('A | B');
+    expect(metaContent('name="description"')).toEqual(['b']);
+    expect(linkHrefs('canonical')).toEqual(['https://a.example/b']);
+
+    pageB.destroy();
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['a']);
+    expect(linkHrefs('canonical')).toEqual(['https://a.example/a']);
+
+    pageA.destroy();
+    document.title = '';
+    if (!hadTitleElement) document.head.querySelector('title')?.remove();
+  });
+
   it('keeps a closing script tag in structured data inside the JSON', async () => {
     const s = scenario();
     const c = s.consumer();

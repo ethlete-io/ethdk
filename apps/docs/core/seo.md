@@ -18,7 +18,7 @@ export class HomeComponent {
 
 ## Title
 
-`applyHeadTitleBinding(text, options?)` adds a title part; the store composes all active parts into the document title. Configure composition app-wide:
+`applyHeadTitleBinding(text, options?)` adds a title part; the store composes all active parts into the document title. `applyMetaBinding` and `applyLinkBinding` take the same `layer` option: `{ layer: 'overlay' }` outranks every `'page'` binding (default) regardless of creation order, while bindings in one layer keep creation order. Configure composition app-wide:
 
 ```ts
 // app.config.ts

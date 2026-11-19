@@ -12,7 +12,7 @@ The meta binding utilities provide a comprehensive signal-based approach to mana
 
 - **Reactive Updates**: Automatically updates when signal values change
 - **Multi-Instance Support**: Some tags (like og:image) can have multiple instances
-- **Priority System**: The binding bound last wins, so a child route overrides its parent. A binding keeps its place when its value updates
+- **Priority System**: The binding bound last wins, so a child route overrides its parent. A binding keeps its place when its value updates. Pass `{ layer: 'overlay' }` as the second argument to outrank every `'page'` binding regardless of creation order
 - **Pre-existing Tags**: Tags from `index.html` are hidden while a binding owns their selector and come back once it is released
 
 ## Basic Usage

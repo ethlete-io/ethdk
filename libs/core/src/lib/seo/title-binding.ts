@@ -3,6 +3,7 @@ import { Title } from '@angular/platform-browser';
 import { injectLocale } from '../providers';
 import { injectIsRouterInitialized, MaybeSignal } from '../signals';
 import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { HeadLayerOptions, layerPriority } from './head-layer';
 import { applyHeadBinding } from './head-binding';
 
 export type TitlePart = {
@@ -164,17 +165,22 @@ const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
 export const provideTitleStore = /* @__PURE__ */ toProvideFn(TITLE_STORE_DEF);
 export const injectTitleStore = /* @__PURE__ */ toInjectFn(TITLE_STORE_DEF);
 
+/**
+ * Adds a title part; the part bound last is the deepest. Pass `{ layer: 'overlay' }` to place it after every page part,
+ * whatever the creation order.
+ */
 export const applyHeadTitleBinding = (
   binding: MaybeSignal<string | number | null | undefined>,
-  options?: Omit<TitlePart, 'text'>,
+  options?: Omit<TitlePart, 'text'> & HeadLayerOptions,
 ) => {
+  const { layer, ...partOptions } = options ?? {};
   const titleStore = injectTitleStore();
   const partId = Symbol('title-part');
-  const priority = titleStore.claimPriority();
+  const priority = layerPriority(layer, titleStore.claimPriority());
 
   applyHeadBinding(
     binding,
-    (value) => titleStore.addPart(partId, { text: `${value}`, ...options }, priority),
+    (value) => titleStore.addPart(partId, { text: `${value}`, ...partOptions }, priority),
     () => titleStore.removePart(partId),
     (value): value is string | number => value !== null && value !== undefined && value !== '',
   );

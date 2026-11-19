@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { computed, inject, isSignal, signal, untracked } from '@angular/core';
 import { MaybeSignal } from '../signals';
 import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { HeadLayerOptions, layerPriority } from './head-layer';
 import { applyHeadBinding, createArrayPropertyBinding, createPropertyBinding } from './head-binding';
 
 export type LinkConfig = {
@@ -233,11 +234,12 @@ export const injectLinkStore = /* @__PURE__ */ toInjectFn(LINK_STORE_DEF);
 
 /**
  * Binds a link tag. Only removes the elements it created; pre-existing links are left in place, unlike meta bindings.
+ * Pass `{ layer: 'overlay' }` to outrank every page binding.
  */
-export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefined>) => {
+export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefined>, options?: HeadLayerOptions) => {
   const linkStore = injectLinkStore();
   const linkId = Symbol('link-tag');
-  const priority = linkStore.claimPriority();
+  const priority = layerPriority(options?.layer, linkStore.claimPriority());
   let currentKey: string | undefined;
 
   applyHeadBinding(
