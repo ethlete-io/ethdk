@@ -18,6 +18,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S3 (fifagg, 19.11.): Tooltip der Form-Einträge mit eigenem Inhalt, nicht blockiert -> Standings-Form-Tooltip (B621). Ausblick ohne Anfrage: Status-Slot je Zeile ("Qualified"-Badge), sobald die Gruppentabellen auf `et-standings` wechseln.
 - S4 (fifagg, 19.11.): `et-segmented-button-group` direkt in `et-scrollable` (item-size auto) fällt zusammen (Gruppe 6 px, Label 0 px), Umgehung `w-max` in 7 Templates, gebaut (B622, 615a6dab7), kommt mit dem nächsten Prerelease; danach kann fifa `w-max` entfernen.
 - S5 (fifagg B-52/B-53, 19.11.): Look der Segment-Gruppe: inaktive Farbe/Stärke und Spur-Hintergrund, Spaltenbreite bei `stretch` ohne abgeschnittene Namen, 2x2 unter einem Breakpoint; nicht blockiert (Umgehungen) -> Segment-Gruppe-Tokens (B623), entschieden von mir wie B617: nur Tokens mit heutigem Wert als Standard, kein neues Input.
+- S6 (fifagg B-51/B-55, 19.11.): `et-accordion` ohne Hover-Fläche, Chevron-Einzug getrennt vom Label, Trenner unter dem letzten Eintrag app-weit; nicht blockiert -> Accordion-Tokens und -Config (B624), entschieden von mir wie B617 und ADR 0317 (Menü-Abstand per provideMenuConfig).
 
 ## Offene Plan-Dateien
 

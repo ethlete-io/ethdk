@@ -54,3 +54,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 53. **Standings-Zonenstärke (B620)** ⏳ SDK (fifagg S2): `StandingsZone.strength` als CSS-Variable am Band, Tagschicht - Builder
 54. **Standings-Form-Tooltip (B621)** ⏳ SDK (fifagg S3): optionales Template für den Form-Tooltip, Tagschicht - Builder
 55. **Segment-Gruppe-Tokens (B623)** ⏳ SDK (fifagg S5): fünf Tokens mit heutigem Standard, kein neues Input - Builder
+56. **Accordion-Tokens und -Config (B624)** ⏳ SDK (fifagg S6): drei Tokens + `provideAccordionConfig({ lastDivider })` - Builder
