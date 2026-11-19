@@ -7,7 +7,7 @@ const DISCOVERY = { version: INGEST_PROTOCOL_VERSION, port: 51234, token: 'a'.re
 const record = (atMs: number): IngestRecord => ({
   atMs,
   kind: 'editor-heartbeat',
-  repoPath: '/home/tom/dev/sdk',
+  repoPath: '/home/human/dev/sdk',
   editing: true,
 });
 

@@ -5,7 +5,7 @@ const AT = new Date(E2E_NOW).getTime();
 
 const MACBOOK: FakePairedMachine = {
   machineId: 'mac-1',
-  label: 'Tom-Runes-MacBook-Pro.local',
+  label: 'human-MacBook-Pro.local',
   certFingerprint: 'fp-mac',
   lastAddr: '192.168.1.20:52741',
   lastSeenMs: AT - 30_000,
@@ -25,7 +25,7 @@ test.describe('the paired machines modal', () => {
     const row = modal.locator('[data-paired-machine]');
 
     await expect(row).toHaveCount(1);
-    await expect(row.locator('[data-machine-name] input')).toHaveValue('Tom-Runes-MacBook-Pro.local');
+    await expect(row.locator('[data-machine-name] input')).toHaveValue('human-MacBook-Pro.local');
     await expect(row.locator('[data-paired-last-seen]')).toHaveText('Last seen just now');
     await expect(row.locator('[data-paired-last-sync]')).toHaveText('Synced 5m ago');
     await expect(row.locator('[data-clock-offset="ok"]')).toBeVisible();

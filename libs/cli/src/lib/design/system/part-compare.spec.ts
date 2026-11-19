@@ -140,12 +140,12 @@ describe('part compare', () => {
   it('reads the forced elements of a design picture with their aria-label, role and text', () => {
     expect(
       forcedElementsOf(
-        '<div><button class="a" aria-label="Tom &amp; Co" data-et-force="hover active">x</button><span data-et-force="focus-visible"></span>' +
+        '<div><button class="a" aria-label="human &amp; Co" data-et-force="hover active">x</button><span data-et-force="focus-visible"></span>' +
           '<div role="treeitem" data-et-force="hover"><span>Com</span><div>ponents\n <!-- c --><i>3</i></div></div><input data-et-force="hover"></div>',
       ),
     ).toEqual([
-      { interaction: 'hover', label: 'Tom & Co', role: 'button', text: 'x' },
-      { interaction: 'active', label: 'Tom & Co', role: 'button', text: 'x' },
+      { interaction: 'hover', label: 'human & Co', role: 'button', text: 'x' },
+      { interaction: 'active', label: 'human & Co', role: 'button', text: 'x' },
       { interaction: 'focus-visible', label: null, role: 'span', text: '' },
       { interaction: 'hover', label: null, role: 'treeitem', text: 'Components 3' },
       { interaction: 'hover', label: null, role: 'input', text: '' },

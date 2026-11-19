@@ -191,7 +191,7 @@ describe('transitive part hash', () => {
 
     writeFileSync(
       join(dir, 'ready.json'),
-      JSON.stringify({ [CHIP]: { hash: legacy, at }, 'elements/icon': { hash: 'old', by: 'tom', at } }),
+      JSON.stringify({ [CHIP]: { hash: legacy, at }, 'elements/icon': { hash: 'old', by: 'human', at } }),
     );
     writeFileSync(join(dir, 'implemented.json'), JSON.stringify({ [CHIP]: { hash: legacy, at, states: {} } }));
 
@@ -204,7 +204,7 @@ describe('transitive part hash', () => {
     const implemented = JSON.parse(readFileSync(join(dir, 'implemented.json'), 'utf8')) as Record<string, unknown>;
 
     expect(ready[CHIP]).toEqual({ hash: now.hash, files: now.files, at });
-    expect(ready['elements/icon']).toEqual({ hash: 'old', by: 'tom', at });
+    expect(ready['elements/icon']).toEqual({ hash: 'old', by: 'human', at });
     expect(implemented[CHIP]).toEqual({ hash: now.hash, at, states: {}, files: now.files, app: expect.any(Object) });
     expect(readyMarkOf({ product: productOf(target), part: CHIP })).not.toBeNull();
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
@@ -264,12 +264,12 @@ describe('transitive part hash', () => {
 
     gitExec(['init', '-q'], { cwd: target });
     commitAt(target, '2026-09-01T00:00:00Z');
-    writeFileSync(join(dir, 'ready.json'), JSON.stringify({ [CHIP]: { hash: legacy, by: 'tom', at } }));
+    writeFileSync(join(dir, 'ready.json'), JSON.stringify({ [CHIP]: { hash: legacy, by: 'human', at } }));
     appendFileSync(join(dir, 'elements/icon/icon.ts'), '// moved\n');
     commitAt(target, '2026-10-15T00:00:00Z');
 
     expect(upgradeLegacyMarksOf({ product: productOf(target) })).toEqual([]);
-    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))[CHIP]).toEqual({ hash: legacy, by: 'tom', at });
+    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))[CHIP]).toEqual({ hash: legacy, by: 'human', at });
   });
 
   it('fails check --rules --base on an app file of an implemented part changed in the range since its record', () => {

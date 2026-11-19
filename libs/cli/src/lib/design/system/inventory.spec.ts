@@ -45,7 +45,7 @@ const ask = (options: { target: string; method: string; path: string; body?: unk
 });
 
 describe('inventoryStateOf', () => {
-  const approval = { ids: ['more', 'pick'], hash: 'h1', by: 'tom', at: '2026-10-30T00:00:00.000Z' };
+  const approval = { ids: ['more', 'pick'], hash: 'h1', by: 'human', at: '2026-10-30T00:00:00.000Z' };
 
   it('holds while the ids and the hash match', () => {
     expect(inventoryStateOf({ approval, ids: ['more', 'pick'], hash: 'h1' })).toEqual({ state: 'approved' });
@@ -270,11 +270,11 @@ describe('inventory endpoints', () => {
         ask({ target, method: 'POST', path: '/?product=app-a', body, inventory: inventoryOf(dir, findings) }),
       );
 
-    expect(await approve({ part: 'pages/home', hash: 'h1', by: 'tom' }, 1)).toEqual({
+    expect(await approve({ part: 'pages/home', hash: 'h1', by: 'human' }, 1)).toEqual({
       status: 422,
       body: { error: 'pages/home has 1 undeclared or unclassified control(s) - declare them before approving' },
     });
-    expect((await approve({ part: 'pages/home', hash: 'h0', by: 'tom' }, 0)).status).toBe(409);
+    expect((await approve({ part: 'pages/home', hash: 'h0', by: 'human' }, 0)).status).toBe(409);
     expect((await approve({ part: 'pages/home', hash: 'h1' }, 0)).status).toBe(400);
     expect(readInventory(dir)).toEqual({});
   });
@@ -286,7 +286,7 @@ describe('inventory endpoints', () => {
         target,
         method: 'POST',
         path: '/?product=app-a',
-        body: { part: 'pages/home', hash: 'h1', by: 'tom' },
+        body: { part: 'pages/home', hash: 'h1', by: 'human' },
         inventory: inventoryOf(dir, 0),
       }),
     );
@@ -294,7 +294,7 @@ describe('inventory endpoints', () => {
     expect(answer.status).toBe(200);
     expect(answer.body).toMatchObject({ state: { state: 'approved' }, reason: null });
     expect(readInventory(dir)).toEqual({
-      'pages/home': { ids: ['more'], hash: 'h1', by: 'tom', at: expect.any(String) },
+      'pages/home': { ids: ['more'], hash: 'h1', by: 'human', at: expect.any(String) },
     });
   });
 
@@ -306,7 +306,7 @@ describe('inventory endpoints', () => {
         target,
         method: 'POST',
         path: '/?product=app-a',
-        body: { part: 'pages/home', hash: 'h1', by: 'tom' },
+        body: { part: 'pages/home', hash: 'h1', by: 'human' },
         inventory: inventoryOf(dir, 0),
       }),
     );

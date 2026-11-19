@@ -1483,7 +1483,7 @@ describe('the design server for sketches and comments', () => {
   it('writes, lists and finishes a canvas comment', async () => {
     const target = acme();
     gitExec(['init', '--quiet'], { cwd: target });
-    gitExec(['config', 'user.name', 'Tom Test'], { cwd: target });
+    gitExec(['config', 'user.name', 'human Test'], { cwd: target });
 
     const { ask } = await serveAcme(target);
     const on = { part: 'pages/home', state: 'empty', size: 'phone', text: 'Say why it is empty.' };
@@ -1497,7 +1497,7 @@ describe('the design server for sketches and comments', () => {
       comments: [{ id, text: on.text }],
     });
     expect((await ask('/__design/comments', '?product=acme&part=pages/other')).body).toMatchObject({ comments: [] });
-    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({ userName: 'Tom Test' });
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({ userName: 'human Test' });
     expect(await ask('/__design/comment-reply', '?product=acme', 'POST', { id, text: 'The title.' })).toMatchObject({
       status: 200,
       body: { id, replies: [{ by: 'user', text: 'The title.', createdAt: expect.any(String) }], stale: null },

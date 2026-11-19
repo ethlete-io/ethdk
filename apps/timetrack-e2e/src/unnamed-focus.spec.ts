@@ -29,7 +29,7 @@ const focus = (minutes: number, appId: string, title: string): CollectedEvent =>
 const day = (): CollectedEvent[] => [
   { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
   ...[0, 15, 30].map((minutes) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code')),
-  ...[45, 60].map((minutes) => focus(minutes, 'foot', 'tom@e2e: ~')),
+  ...[45, 60].map((minutes) => focus(minutes, 'foot', 'human@e2e: ~')),
   ...[75, 90].map((minutes) => focus(minutes, 'spotify', 'Spotify')),
 ];
 
@@ -85,7 +85,7 @@ test.describe('the focus that named no checkout', () => {
   test('calls it a gap when the application that lost the time names checkouts elsewhere', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
-      events: [...day(), focus(105, 'code', 'Visual Studio Code'), focus(120, 'foot', 'tom@e2e: ~')],
+      events: [...day(), focus(105, 'code', 'Visual Studio Code'), focus(120, 'foot', 'human@e2e: ~')],
     });
     await page.reload();
 
@@ -100,7 +100,7 @@ test.describe('the focus that named no checkout', () => {
   test('drops a window that held the focus for less than a rounded minute', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
-      events: [...day(), focus(91, 'gnome-ssh-askpass', 'ssh'), focus(91.25, 'foot', 'tom@e2e: ~')],
+      events: [...day(), focus(91, 'gnome-ssh-askpass', 'ssh'), focus(91.25, 'foot', 'human@e2e: ~')],
     });
     await page.reload();
 
@@ -137,7 +137,7 @@ test.describe('the focus that named no checkout', () => {
       events: [
         ...day(),
         focus(105, 'code', 'plan.md - umbau-elrond - Visual Studio Code'),
-        focus(120, 'foot', 'tom@e2e: ~'),
+        focus(120, 'foot', 'human@e2e: ~'),
       ],
       settings: {
         ...defaultSettings(),
@@ -187,7 +187,7 @@ test.describe('the focus that named no checkout', () => {
 
     await titlesButton(page, 'foot').click();
 
-    await expect(titles(page, 'foot')).toHaveText(['tom@e2e: ~']);
+    await expect(titles(page, 'foot')).toHaveText(['human@e2e: ~']);
   });
 
   test('names the distinct titles behind one application, longest first', async ({ page }) => {
@@ -197,7 +197,7 @@ test.describe('the focus that named no checkout', () => {
         ...day(),
         focus(105, 'firefox', 'localhost:4200 - Mozilla Firefox'),
         focus(115, 'firefox', 'Mail - Mozilla Firefox'),
-        focus(120, 'foot', 'tom@e2e: ~'),
+        focus(120, 'foot', 'human@e2e: ~'),
       ],
     });
     await page.reload();
@@ -216,7 +216,7 @@ test.describe('the focus that named no checkout', () => {
         ...[115, 115.25, 115.5, 115.75].map((minutes, index) =>
           focus(minutes, 'firefox', `A short page ${index} - Mozilla Firefox`),
         ),
-        focus(116, 'foot', 'tom@e2e: ~'),
+        focus(116, 'foot', 'human@e2e: ~'),
       ],
     });
     await page.reload();
@@ -232,7 +232,7 @@ test.describe('the focus that named no checkout', () => {
       events: [
         ...day(),
         focus(105, 'code', 'plan.md - umbau-elrond - Visual Studio Code'),
-        focus(120, 'foot', 'tom@e2e: ~'),
+        focus(120, 'foot', 'human@e2e: ~'),
       ],
       settings: {
         ...defaultSettings(),
@@ -256,7 +256,7 @@ test.describe('the focus that named no checkout', () => {
         focus(115, 'code', 'invite.ts - fut-frontend - Visual Studio Code'),
         focus(120, 'google-chrome', 'localhost:4200 - Google Chrome'),
         focus(130, 'google-chrome', 'News - Google Chrome'),
-        focus(150, 'foot', 'tom@e2e: ~'),
+        focus(150, 'foot', 'human@e2e: ~'),
       ],
     });
     await page.reload();

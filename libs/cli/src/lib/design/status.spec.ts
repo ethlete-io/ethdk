@@ -20,8 +20,8 @@ describe('designStatus', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('names the file the way Studio flattens a checkout and a call', () => {
-    expect(basename(statusPath({ checkout: '/home/tom/dev/sdk', slug: 'app/01-one' }))).toBe(
-      '-home-tom-dev-sdk-app-01-one.status.json',
+    expect(basename(statusPath({ checkout: '/home/human/dev/sdk', slug: 'app/01-one' }))).toBe(
+      '-home-human-dev-sdk-app-01-one.status.json',
     );
     expect(statusPath({ checkout: '/x', slug: 'app/one' })).toContain(join(tmpdir(), 'ethlete-studio-checks'));
   });

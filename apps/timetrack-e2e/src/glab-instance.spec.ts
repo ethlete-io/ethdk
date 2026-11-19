@@ -19,7 +19,7 @@ test.describe('the GitLab instance field', () => {
     await seedWorld(page, {
       now: E2E_NOW,
       settings: { ...defaultSettings(), gitlab: { host: 'trb@braune-digital.com' } },
-      glab: { installed: true, logins: [{ host: HELD, login: 'bornholdt' }] },
+      glab: { installed: true, logins: [{ host: HELD, login: 'human' }] },
     });
     await openSources(page);
 
@@ -35,7 +35,7 @@ test.describe('the GitLab instance field', () => {
     await seedWorld(page, {
       now: E2E_NOW,
       settings: { ...defaultSettings(), gitlab: { host: '' } },
-      glab: { installed: true, logins: [{ host: HELD, login: 'bornholdt' }] },
+      glab: { installed: true, logins: [{ host: HELD, login: 'human' }] },
     });
     await openSources(page);
 
@@ -46,7 +46,7 @@ test.describe('the GitLab instance field', () => {
     await seedWorld(page, {
       now: E2E_NOW,
       settings: { ...defaultSettings(), gitlab: { host: HELD } },
-      glab: { installed: true, logins: [{ host: HELD, login: 'bornholdt' }] },
+      glab: { installed: true, logins: [{ host: HELD, login: 'human' }] },
     });
     await openSources(page);
 
@@ -57,7 +57,7 @@ test.describe('the GitLab instance field', () => {
     await seedWorld(page, {
       now: E2E_NOW,
       settings: { ...defaultSettings(), gitlab: { host: HELD } },
-      glab: { installed: true, logins: [{ host: HELD, login: 'bornholdt' }] },
+      glab: { installed: true, logins: [{ host: HELD, login: 'human' }] },
     });
     await openSources(page);
 

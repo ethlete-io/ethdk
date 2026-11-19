@@ -12,14 +12,14 @@ const named = (options: { id: string; openedFor: string; openedForBranch?: strin
 
 const SPEC = named({
   id: 'stand-in-spec',
-  openedFor: '/home/tom/dev/fifagg/specs',
+  openedFor: '/home/human/dev/fifagg/specs',
   openedForBranch: 'main',
   openedForWorkPath: 'context/tracks/20260911_competition-journey-overlay',
 });
 
 const BRANCH = named({
   id: 'stand-in-branch',
-  openedFor: '/home/tom/dev/fifagg-frontend',
+  openedFor: '/home/human/dev/fifagg-frontend',
   openedForBranch: 'feature/20260911_competition-journey-overlay',
 });
 

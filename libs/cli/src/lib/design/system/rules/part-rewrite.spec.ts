@@ -106,7 +106,7 @@ describe('partRewritesOf', () => {
 
     write(target, 'acme/pages/home/home.ts', page);
     sketch('pages-home');
-    sketch('pages-home.old', { kind: 'discard', at: '2026-11-03T00:00:00.000Z', by: 'tom' });
+    sketch('pages-home.old', { kind: 'discard', at: '2026-11-03T00:00:00.000Z', by: 'human' });
 
     expect(
       partRewritesOf(productOf(target)).map(

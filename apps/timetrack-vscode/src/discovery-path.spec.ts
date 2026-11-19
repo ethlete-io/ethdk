@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { discoveryPathOf } from './discovery-path';
 
-const HOME = '/home/tom';
+const HOME = '/home/human';
 
 describe('discoveryPathOf', () => {
   it('looks where Tauri puts an application data directory on macOS', () => {
-    expect(discoveryPathOf({ platform: 'darwin', home: '/Users/tom', env: {} })).toBe(
-      '/Users/tom/Library/Application Support/io.ethlete.timetrack/ingest.json',
+    expect(discoveryPathOf({ platform: 'darwin', home: '/Users/human', env: {} })).toBe(
+      '/Users/human/Library/Application Support/io.ethlete.timetrack/ingest.json',
     );
   });
 
@@ -15,19 +15,23 @@ describe('discoveryPathOf', () => {
       '/data/io.ethlete.timetrack/ingest.json',
     );
     expect(discoveryPathOf({ platform: 'linux', home: HOME, env: {} })).toBe(
-      '/home/tom/.local/share/io.ethlete.timetrack/ingest.json',
+      '/home/human/.local/share/io.ethlete.timetrack/ingest.json',
     );
   });
 
   it('ignores an XDG_DATA_HOME that is set to nothing', () => {
     expect(discoveryPathOf({ platform: 'linux', home: HOME, env: { XDG_DATA_HOME: '' } })).toBe(
-      '/home/tom/.local/share/io.ethlete.timetrack/ingest.json',
+      '/home/human/.local/share/io.ethlete.timetrack/ingest.json',
     );
   });
 
   it('follows APPDATA on Windows', () => {
     expect(
-      discoveryPathOf({ platform: 'win32', home: 'C:/Users/tom', env: { APPDATA: 'C:/Users/tom/AppData/Roaming' } }),
-    ).toBe('C:/Users/tom/AppData/Roaming/io.ethlete.timetrack/ingest.json');
+      discoveryPathOf({
+        platform: 'win32',
+        home: 'C:/Users/human',
+        env: { APPDATA: 'C:/Users/human/AppData/Roaming' },
+      }),
+    ).toBe('C:/Users/human/AppData/Roaming/io.ethlete.timetrack/ingest.json');
   });
 });

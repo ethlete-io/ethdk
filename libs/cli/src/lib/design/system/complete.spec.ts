@@ -1381,13 +1381,13 @@ export default definePart({
     ).toBe(
       'no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too - its exception is pending - approve it in Studio ("pressing only opens it")',
     );
-    expect(approveException({ product, key: 'components/flat.more.hover', by: 'Tom' })).toEqual({
+    expect(approveException({ product, key: 'components/flat.more.hover', by: 'human' })).toEqual({
       status: 404,
       error: 'no exception "components/flat.more.hover" was requested',
     });
     expect(approveException({ product, key: 'components/flat.more.active', by: ' ' })).toMatchObject({ status: 400 });
 
-    approveException({ product, key: 'components/flat.more.active', by: 'Tom', at: '2026-10-30T00:00:00.000Z' });
+    approveException({ product, key: 'components/flat.more.active', by: 'human', at: '2026-10-30T00:00:00.000Z' });
 
     const approved = await flat();
 

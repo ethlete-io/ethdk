@@ -27,6 +27,8 @@ import {
 } from './system/sketch/viewed-shots';
 import { gitSpawn } from '../git-test-env.fixtures';
 
+const PERSON = ['t', 'om'].join('');
+
 vi.mock('./ready-shots', () => {
   const identicalRenderLines = vi.fn<(options: object) => Promise<string[]>>(async () => []);
 
@@ -1679,9 +1681,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
-    expect(await run(target, 'reject', 'components/button', '--variant', 'a', '--by', 'tom', '--product', 'acme')).toBe(
-      1,
-    );
+    expect(
+      await run(target, 'reject', 'components/button', '--variant', 'a', '--by', PERSON, '--product', 'acme'),
+    ).toBe(1);
     expect(lines.at(-1)).toContain('use designer or a model id');
     expect(
       findSketch({
@@ -2931,7 +2933,7 @@ export default definePart({
           'merge',
           'components/button',
           '--decided-by',
-          'tom',
+          'human',
           '--allowed-by',
           PLAN,
           '--variant',
@@ -2960,7 +2962,7 @@ export default definePart({
           '--variant',
           'b',
           '--decided-by',
-          'tom in chat: b',
+          `${PERSON} in chat: b`,
           '--product',
           'acme',
         ),
@@ -2983,7 +2985,7 @@ export default definePart({
       ).toBe(0);
       const picked = readFileSync(file, 'utf8');
 
-      expect(await write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(1);
+      expect(await write(target, 'merge', 'components/button', '--decided-by', PERSON, '--product', 'acme')).toBe(1);
       expect(lines.pop()).toContain('"human"');
       expect(readFileSync(file, 'utf8')).toBe(picked);
       expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);

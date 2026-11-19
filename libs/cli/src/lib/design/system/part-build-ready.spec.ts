@@ -107,7 +107,7 @@ describe('buildReadyOf', () => {
 
     writeFileSync(
       join(dir, READY_FILE),
-      JSON.stringify({ 'components/chip': { ...old, by: 'tom', at: '2026-01-01T00:00:00.000Z' } }),
+      JSON.stringify({ 'components/chip': { ...old, by: 'human', at: '2026-01-01T00:00:00.000Z' } }),
     );
 
     expect(buildReadyOf({ product: productOf(target), part: 'components/chip', inputs: green })).toEqual({

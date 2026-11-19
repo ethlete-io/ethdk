@@ -27,5 +27,5 @@ export const uncommittedDecisionsWarningOf = (product: ResolvedProduct): string 
 
   return files.length === 0
     ? null
-    : `WARNING UNCOMMITTED-DECISIONS ${product.name}: ${files.join(', ')} differ from HEAD - Studio or Tom commits them`;
+    : `WARNING UNCOMMITTED-DECISIONS ${product.name}: ${files.join(', ')} differ from HEAD - Studio or human commits them`;
 };

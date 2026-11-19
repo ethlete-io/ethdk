@@ -40,7 +40,7 @@ describe('mergeStepOf on a sketch with two live variants', { timeout: 30_000 }, 
   });
 
   it('refuses an @edit sketch without a ref', () => {
-    expect(stepOf({ target: readySketch('edit'), part: 'elements/hero@edit', note: 'Tom said so' })).toContain(
+    expect(stepOf({ target: readySketch('edit'), part: 'elements/hero@edit', note: 'human said so' })).toContain(
       'the user picks in Studio',
     );
   });

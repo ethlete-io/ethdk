@@ -101,7 +101,7 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(warnings.filter((line) => line.includes('UNCOMMITTED-DECISIONS'))).toEqual([
-      'WARNING UNCOMMITTED-DECISIONS acme: merged.json, sketches/hero/sketch.json differ from HEAD - Studio or Tom ' +
+      'WARNING UNCOMMITTED-DECISIONS acme: merged.json, sketches/hero/sketch.json differ from HEAD - Studio or human ' +
         'commits them',
     ]);
   });

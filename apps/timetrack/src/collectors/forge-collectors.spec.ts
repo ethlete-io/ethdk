@@ -36,8 +36,8 @@ vi.mock('@ethlete/timetrack', async (importOriginal) => ({
       cli: 'glab',
       state: 'logged-in',
       logins: [
-        { host: 'git.example.com', login: 'tom' },
-        { host: 'github.com', login: 'tom' },
+        { host: 'git.example.com', login: 'human' },
+        { host: 'github.com', login: 'human' },
       ],
     }),
   ),

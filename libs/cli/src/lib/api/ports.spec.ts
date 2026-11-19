@@ -14,7 +14,7 @@ services:
     - 8040:80
     volumes:
     - ./..:/var/www/app
-    - /home/tom/.composer:/root/.composer
+    - /home/human/.composer:/root/.composer
   database:
     image: mysql:8.0
     ports:
