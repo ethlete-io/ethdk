@@ -27,6 +27,7 @@ import {
   agentApiCallerOf,
   agentApiLockRefusal$,
   AutoModeSubject,
+  CheckoutKeys,
   DayReview,
   JiraCredentials,
   JiraIssue,
@@ -73,6 +74,7 @@ import {
   EMPTY,
   Observable,
   catchError,
+  combineLatest,
   concatMap,
   filter,
   forkJoin,
@@ -103,6 +105,7 @@ import { injectTempoSync } from '../sync/sync';
 import { injectWindowLock } from '../window-lock';
 import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
 import { injectAgentDay } from './agent-day';
+import { ownCheckoutKeys$ } from './own-checkout-keys';
 import { toApiAttributionRule } from './agent-rules';
 import { injectApprovalQueue } from './approval-queue';
 
@@ -372,11 +375,13 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     review: DayReview;
     askSubjectOf: (row: ReviewedRow) => AutoModeSubject | undefined;
     events: readonly CollectedEvent[];
+    checkoutKeys: CheckoutKeys;
   }): AgentApiDayRows => {
-    const { day, review: current, askSubjectOf, events } = options;
+    const { day, review: current, askSubjectOf, events, checkoutKeys } = options;
 
     return {
       day,
+      checkoutKeys,
       rows: current.rows.filter((row) => row.durationMs !== 0).map((row) => toApiRow({ row, askSubjectOf, events })),
       hidden: current.hidden.map((row) => toApiRow({ row, askSubjectOf, events })),
       proposedMs: current.check.proposedMs,
@@ -403,7 +408,13 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const dayRows$ = (day: string): Observable<AgentApiDayRows> =>
     agentDay
       .review$(day)
-      .pipe(switchMap((read) => eventsOfDay$(day).pipe(map((events) => toApiDay({ day, ...read, events })))));
+      .pipe(
+        switchMap((read) =>
+          combineLatest({ events: eventsOfDay$(day), checkoutKeys: ownCheckoutKeys$(ports) }).pipe(
+            map(({ events, checkoutKeys }) => toApiDay({ day, ...read, events, checkoutKeys })),
+          ),
+        ),
+      );
 
   /**
    * Makes the edits a caller stated, then answers the day as it reads afterwards.
@@ -416,8 +427,11 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       .editRows$({ day: request.day, edits: request.edits })
       .pipe(
         switchMap(({ applied, ...read }) =>
-          eventsOfDay$(request.day).pipe(
-            map((events) => ({ ...toApiDay({ day: request.day, ...read, events }), applied })),
+          combineLatest({ events: eventsOfDay$(request.day), checkoutKeys: ownCheckoutKeys$(ports) }).pipe(
+            map(({ events, checkoutKeys }) => ({
+              ...toApiDay({ day: request.day, ...read, events, checkoutKeys }),
+              applied,
+            })),
           ),
         ),
       );

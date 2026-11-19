@@ -3,6 +3,7 @@ import { NamingAuthor } from '../model/attribution';
 import { Confidence } from '../model/evidence';
 import { FieldSource } from '../model/field-source';
 import { WorklogProposalState } from '../model/proposal';
+import { CheckoutKeys } from '../model/peer-path';
 import { StandInState } from '../model/stand-in';
 import { DayWarning } from '../rows/round';
 import { AutoStandInVerdict } from '../ticket/auto-stand-in';
@@ -402,6 +403,8 @@ export type AgentApiDayRows = {
   warnings: DayWarning[];
   /** The stretches a foreground row took from a background row, drawn as hatched bands in its lane. */
   behind: AgentApiBehindStretch[];
+  /** This machine's checkout paths and the repository key of each, so a paired machine's export can be mapped onto them. */
+  checkoutKeys?: CheckoutKeys;
 };
 
 export type AgentApiBehindStretch = {
