@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DayRows } from '../rows/build-rows';
 import { CALL_LANE_KEY } from '../rows/lane';
 import { WorklogProposal } from '../model/proposal';
+import { EMPTY_DAY_REVIEW_EDITS } from './model';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
@@ -59,16 +60,22 @@ describe('reviewDay logged time', () => {
     const booked = proposal({ issueKey: 'FIFAGG-12657', from: '08:00', to: '08:30' });
     const review = reviewDay({
       rows: dayRows([booked, proposal({ issueKey: 'FIFAGG-12652', from: '09:00', to: '18:30' })]),
-      written: [
-        {
-          proposalId: booked.id,
-          worklogId: 'w1',
-          issueKey: booked.issueKey,
-          from: booked.from,
-          durationMs: 30 * MINUTE,
-          description: booked.description,
+      edits: {
+        ...EMPTY_DAY_REVIEW_EDITS,
+        booked: {
+          edits: EMPTY_DAY_REVIEW_EDITS,
+          written: [
+            {
+              proposalId: booked.id,
+              worklogId: 'w1',
+              issueKey: booked.issueKey,
+              from: booked.from,
+              durationMs: 30 * MINUTE,
+              description: booked.description,
+            },
+          ],
         },
-      ],
+      },
     });
 
     expect(review.check.proposedMs).toBe(600 * MINUTE);
