@@ -61,7 +61,7 @@ const collect = (
 
   collectGitHubEvents$({
     runner,
-    login: 'TomTomB',
+    login: 'human-gh',
     from: new Date(2026, 7, 11, 0, 0),
     to: new Date(2026, 7, 11, 23, 59, 59),
     maxPullRequestLookups: options.maxPullRequestLookups,

@@ -8,7 +8,7 @@ import { streamDay } from './stream-day';
 const MINUTE = 60_000;
 const DAY_START = new Date(2026, 8, 10, 9, 0, 0);
 const AT = (minute: number) => new Date(DAY_START.getTime() + minute * MINUTE);
-const REPO = '/home/tom/dev/ethlete-sdk';
+const REPO = '/home/human/dev/ethlete-sdk';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['ET'] });
 const READ_THROUGH = AT(200);
 

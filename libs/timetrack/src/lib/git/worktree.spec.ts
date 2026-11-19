@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { parseGitWorktrees } from './worktree';
 
 const OUTPUT = [
-  'worktree /home/tom/dev/sdk',
+  'worktree /home/human/dev/sdk',
   'HEAD 1111111111111111111111111111111111111111',
   'branch refs/heads/next',
   '',
-  'worktree /home/tom/dev/sdk-e2e',
+  'worktree /home/human/dev/sdk-e2e',
   'HEAD 2222222222222222222222222222222222222222',
   'branch refs/heads/wt/components-e2e',
   '',
@@ -15,21 +15,21 @@ const OUTPUT = [
 describe('parseGitWorktrees', () => {
   it('reads every checkout and the branch it holds, main worktree first', () => {
     expect(parseGitWorktrees(OUTPUT)).toEqual([
-      { path: '/home/tom/dev/sdk', branch: 'next' },
-      { path: '/home/tom/dev/sdk-e2e', branch: 'wt/components-e2e' },
+      { path: '/home/human/dev/sdk', branch: 'next' },
+      { path: '/home/human/dev/sdk-e2e', branch: 'wt/components-e2e' },
     ]);
   });
 
   it('leaves a detached checkout without a branch', () => {
-    const output = ['worktree /home/tom/dev/sdk', 'HEAD 1111111111111111111111111111111111111111', 'detached'].join(
+    const output = ['worktree /home/human/dev/sdk', 'HEAD 1111111111111111111111111111111111111111', 'detached'].join(
       '\n',
     );
 
-    expect(parseGitWorktrees(output)).toEqual([{ path: '/home/tom/dev/sdk' }]);
+    expect(parseGitWorktrees(output)).toEqual([{ path: '/home/human/dev/sdk' }]);
   });
 
   it('keeps a branch name that contains a slash whole', () => {
-    const output = ['worktree /home/tom/dev/sdk', 'branch refs/heads/feat/FIP-2177-user-management'].join('\n');
+    const output = ['worktree /home/human/dev/sdk', 'branch refs/heads/feat/FIP-2177-user-management'].join('\n');
 
     expect(parseGitWorktrees(output)[0]?.branch).toBe('feat/FIP-2177-user-management');
   });

@@ -4,8 +4,8 @@ import { ReceivedRange } from '../model/received-event';
 import { mergeDayEvents } from './merge-day-events';
 
 const SDK = 'gitlab.com/ethlete/sdk';
-const LOCAL_SDK = '/home/tom/dev/ethlete-sdk';
-const MAC_SDK = '/Users/tom/code/sdk';
+const LOCAL_SDK = '/home/human/dev/ethlete-sdk';
+const MAC_SDK = '/Users/human/code/sdk';
 const MAC = { machineId: 'mac-id', machineName: 'MacBook' };
 const LAPTOP = { machineId: 'laptop-id', machineName: 'Laptop' };
 const keys = { [LOCAL_SDK]: SDK };
@@ -95,12 +95,12 @@ describe('mergeDayEvents', () => {
   it('keeps a peer path no local checkout shares a repository with', () => {
     const [merged] = mergeDayEvents({
       local: [],
-      received: receivedFrom(MAC, [commit({ repoPath: '/Users/tom/code/other' })]),
+      received: receivedFrom(MAC, [commit({ repoPath: '/Users/human/code/other' })]),
       keys,
       rules: [],
     });
 
-    expect(merged).toMatchObject({ repoPath: '/Users/tom/code/other' });
+    expect(merged).toMatchObject({ repoPath: '/Users/human/code/other' });
   });
 
   it('counts a calendar occurrence once, this machine’s copy first', () => {
@@ -229,7 +229,7 @@ describe('mergeDayEvents', () => {
 
   it('keeps a commit written on two checkouts of this machine', () => {
     const merged = mergeDayEvents({
-      local: [commit(), commit({ repoPath: '/home/tom/dev/ethlete-sdk-2' })],
+      local: [commit(), commit({ repoPath: '/home/human/dev/ethlete-sdk-2' })],
       received: { events: [], repoKeys: {} },
       keys,
       rules: [],

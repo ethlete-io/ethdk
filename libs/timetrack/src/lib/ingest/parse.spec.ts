@@ -15,7 +15,7 @@ const record = (overrides: Partial<IngestedRecord> = {}): IngestedRecord => ({
   reporter: 'vscode',
   atMs: NOW.getTime() - 1_000,
   kind: 'editor-heartbeat',
-  payload: { repoPath: '/home/tom/dev/fut-frontend', branch: 'feat/FIP-2177-user-management', editing: true },
+  payload: { repoPath: '/home/human/dev/fut-frontend', branch: 'feat/FIP-2177-user-management', editing: true },
   ...overrides,
 });
 
@@ -25,7 +25,7 @@ describe('parseIngestedRecords', () => {
   it('turns a posted heartbeat into an editor event', () => {
     const { events, rejected } = parse([
       record({
-        payload: { repoPath: '/home/tom/dev/x', branch: 'next', directory: 'libs', language: 'ts', editing: true },
+        payload: { repoPath: '/home/human/dev/x', branch: 'next', directory: 'libs', language: 'ts', editing: true },
       }),
     ]);
 
@@ -35,7 +35,7 @@ describe('parseIngestedRecords', () => {
         source: 'editor',
         kind: 'editor-heartbeat',
         reporter: 'vscode',
-        repoPath: '/home/tom/dev/x',
+        repoPath: '/home/human/dev/x',
         branch: 'next',
         directory: 'libs',
         language: 'ts',
@@ -47,12 +47,12 @@ describe('parseIngestedRecords', () => {
 
   it('reads a missing editing flag as reading rather than editing', () => {
     expect(
-      (parse([record({ payload: { repoPath: '/home/tom/dev/x' } })]).events[0] as EditorHeartbeatEvent).editing,
+      (parse([record({ payload: { repoPath: '/home/human/dev/x' } })]).events[0] as EditorHeartbeatEvent).editing,
     ).toBe(false);
   });
 
   it('drops a blank field instead of storing an empty string', () => {
-    const event = parse([record({ payload: { repoPath: '/home/tom/dev/x', branch: '   ', language: '' } })])
+    const event = parse([record({ payload: { repoPath: '/home/human/dev/x', branch: '   ', language: '' } })])
       .events[0] as EditorHeartbeatEvent;
 
     expect(event.branch).toBeUndefined();
@@ -62,7 +62,7 @@ describe('parseIngestedRecords', () => {
   it('drops a field longer than any path or branch could be', () => {
     const long = 'x'.repeat(MAX_INGESTED_FIELD_LENGTH + 1);
     const { events, rejected } = parse([
-      record({ payload: { repoPath: '/home/tom/dev/x', branch: long, language: long } }),
+      record({ payload: { repoPath: '/home/human/dev/x', branch: long, language: long } }),
       record({ payload: { repoPath: `/${long}`, directory: long } }),
     ]);
 

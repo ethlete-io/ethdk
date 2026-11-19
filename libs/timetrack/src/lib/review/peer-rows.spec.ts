@@ -29,7 +29,7 @@ const row = (
   to: at(options.to),
 });
 
-const SPECS = 'repo:/Users/tom/dev/fifagg-specs';
+const SPECS = 'repo:/Users/human/dev/fifagg-specs';
 
 describe('the rows a machine sends of its day', () => {
   const sent = peerDayRowsOf({
@@ -98,7 +98,7 @@ describe('a paired machine’s rows on this machine', () => {
       rows: [
         { laneKey: SPECS, from: at('13:15'), to: at('15:00'), description: '', state: 'booked' },
         {
-          laneKey: 'repo:/Users/tom/dev/elsewhere',
+          laneKey: 'repo:/Users/human/dev/elsewhere',
           from: at('15:00'),
           to: at('16:00'),
           description: '',
@@ -110,10 +110,10 @@ describe('a paired machine’s rows on this machine', () => {
     expect(
       mapPeerDayRows({
         rows,
-        peerKeys: { '/Users/tom/dev/fifagg-specs': 'gitlab.com/fifagg/specs' },
-        localKeys: { '/home/tom/dev/specs': 'gitlab.com/fifagg/specs' },
+        peerKeys: { '/Users/human/dev/fifagg-specs': 'gitlab.com/fifagg/specs' },
+        localKeys: { '/home/human/dev/specs': 'gitlab.com/fifagg/specs' },
       }).rows.map((mapped) => mapped.laneKey),
-    ).toEqual(['repo:/home/tom/dev/specs', 'repo:/Users/tom/dev/elsewhere']);
+    ).toEqual(['repo:/home/human/dev/specs', 'repo:/Users/human/dev/elsewhere']);
   });
 });
 

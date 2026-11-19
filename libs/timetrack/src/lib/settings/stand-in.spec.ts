@@ -35,7 +35,7 @@ const standIn = (overrides: Partial<StandIn> = {}): StandIn => ({
 
 const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   id: 'rule-1',
-  repoPath: '/home/tom/dev/ea-frontend',
+  repoPath: '/home/human/dev/ea-frontend',
   target: { kind: 'stand-in', standInId: 'stand-in-1' },
   author: 'user',
   createdAt: new Date('2026-09-14T00:00:00.000Z'),
@@ -157,12 +157,12 @@ describe('withoutStandIn', () => {
   it('refuses the branch of one the app opened, so the next pass writes no replacement', () => {
     const settings = withoutStandIn({
       settings: settingsWith({
-        standIns: [standIn({ author: 'app', openedFor: '/home/tom/dev/ea-frontend', openedForBranch: 'feat/x' })],
+        standIns: [standIn({ author: 'app', openedFor: '/home/human/dev/ea-frontend', openedForBranch: 'feat/x' })],
       }),
       id: 'stand-in-1',
     });
 
-    expect(settings.noStandInCheckouts).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' }]);
+    expect(settings.noStandInCheckouts).toEqual([{ repoPath: '/home/human/dev/ea-frontend', branch: 'feat/x' }]);
   });
 
   it('reads the checkout off the rule where the record never recorded one', () => {
@@ -171,7 +171,7 @@ describe('withoutStandIn', () => {
       id: 'stand-in-1',
     });
 
-    expect(settings.noStandInCheckouts).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' }]);
+    expect(settings.noStandInCheckouts).toEqual([{ repoPath: '/home/human/dev/ea-frontend', branch: 'feat/x' }]);
   });
 
   it('refuses only the directory of one opened for a directory of a base branch', () => {
@@ -180,7 +180,7 @@ describe('withoutStandIn', () => {
         standIns: [
           standIn({
             author: 'app',
-            openedFor: '/home/tom/dev/ea-frontend',
+            openedFor: '/home/human/dev/ea-frontend',
             openedForBranch: 'develop',
             openedForWorkPath: 'specs/journey',
           }),
@@ -190,13 +190,13 @@ describe('withoutStandIn', () => {
     });
 
     expect(settings.noStandInCheckouts).toEqual([
-      { repoPath: '/home/tom/dev/ea-frontend', branch: 'develop', workPath: 'specs/journey' },
+      { repoPath: '/home/human/dev/ea-frontend', branch: 'develop', workPath: 'specs/journey' },
     ]);
   });
 
   it('refuses nothing for one opened while the grain was the checkout, so the pass can redo it', () => {
     const settings = withoutStandIn({
-      settings: settingsWith({ standIns: [standIn({ author: 'app', openedFor: '/home/tom/dev/ea-frontend' })] }),
+      settings: settingsWith({ standIns: [standIn({ author: 'app', openedFor: '/home/human/dev/ea-frontend' })] }),
       id: 'stand-in-1',
     });
 
@@ -225,21 +225,24 @@ describe('withStandInCheckoutAllowed', () => {
     });
     const both = {
       ...refused,
-      noStandInCheckouts: [...refused.noStandInCheckouts, { repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/y' }],
+      noStandInCheckouts: [
+        ...refused.noStandInCheckouts,
+        { repoPath: '/home/human/dev/ea-frontend', branch: 'feat/y' },
+      ],
     };
 
     expect(
-      withStandInCheckoutAllowed({ settings: both, repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' })
+      withStandInCheckoutAllowed({ settings: both, repoPath: '/home/human/dev/ea-frontend', branch: 'feat/x' })
         .noStandInCheckouts,
-    ).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/y' }]);
+    ).toEqual([{ repoPath: '/home/human/dev/ea-frontend', branch: 'feat/y' }]);
   });
 
   it('takes one directory off and leaves a sibling directory of the branch refused', () => {
-    const sibling = { repoPath: '/home/tom/dev/ea-frontend', branch: 'develop', workPath: 'specs/other' };
+    const sibling = { repoPath: '/home/human/dev/ea-frontend', branch: 'develop', workPath: 'specs/other' };
     const refused = {
       ...settingsWith(),
       noStandInCheckouts: [
-        { repoPath: '/home/tom/dev/ea-frontend', branch: 'develop', workPath: 'specs/journey' },
+        { repoPath: '/home/human/dev/ea-frontend', branch: 'develop', workPath: 'specs/journey' },
         sibling,
       ],
     };
@@ -247,7 +250,7 @@ describe('withStandInCheckoutAllowed', () => {
     expect(
       withStandInCheckoutAllowed({
         settings: refused,
-        repoPath: '/home/tom/dev/ea-frontend',
+        repoPath: '/home/human/dev/ea-frontend',
         branch: 'develop',
         workPath: 'specs/journey',
       }).noStandInCheckouts,
@@ -256,10 +259,10 @@ describe('withStandInCheckoutAllowed', () => {
 
   it('takes a whole-checkout entry off, which is what an older delete wrote', () => {
     const settings = settingsWith();
-    const refused = { ...settings, noStandInCheckouts: [{ repoPath: '/home/tom/dev/ea-frontend' }] };
+    const refused = { ...settings, noStandInCheckouts: [{ repoPath: '/home/human/dev/ea-frontend' }] };
 
     expect(
-      withStandInCheckoutAllowed({ settings: refused, repoPath: '/home/tom/dev/ea-frontend' }).noStandInCheckouts,
+      withStandInCheckoutAllowed({ settings: refused, repoPath: '/home/human/dev/ea-frontend' }).noStandInCheckouts,
     ).toEqual([]);
   });
 });
@@ -362,7 +365,7 @@ describe('resolveStandIn', () => {
       issueKey: 'FIP-100',
     });
     const later = matchAttributionRule({
-      context: { repoPath: '/home/tom/dev/ea-frontend', branch: 'dev-player-name-auto-size' },
+      context: { repoPath: '/home/human/dev/ea-frontend', branch: 'dev-player-name-auto-size' },
       rules: settings.attributionRules,
     });
 
@@ -722,7 +725,7 @@ describe('withNamedStandIn', () => {
 
   it('keeps the rule of each directory piece on one branch, so no placeholder is swept', () => {
     const piece = (workPath: string) => ({
-      standIn: standIn({ id: `stand-in:${workPath}`, author: 'app', openedFor: '/home/tom/dev/ea-frontend' }),
+      standIn: standIn({ id: `stand-in:${workPath}`, author: 'app', openedFor: '/home/human/dev/ea-frontend' }),
       rule: rule({
         id: `rule:${workPath}`,
         branch: 'next',
@@ -748,14 +751,14 @@ describe('splitStandIn', () => {
     id: 'stand-in:1:specs',
     name: 'Competition journey spec frontend',
     author: 'app',
-    openedFor: '/home/tom/dev/fifagg/specs',
+    openedFor: '/home/human/dev/fifagg/specs',
     projectKey: 'FIFAGG',
     days: ['2026-09-08', '2026-09-09', '2026-09-11'],
     createdAt: new Date('2026-09-08T08:00:00.000Z'),
   });
   const wideRule = rule({
-    id: 'repo:/home/tom/dev/fifagg/specs#1',
-    repoPath: '/home/tom/dev/fifagg/specs',
+    id: 'repo:/home/human/dev/fifagg/specs#1',
+    repoPath: '/home/human/dev/fifagg/specs',
     author: 'app',
     target: { kind: 'stand-in', standInId: 'stand-in:1:specs' },
   });
@@ -810,7 +813,7 @@ describe('splitStandIn', () => {
   it('gives each rule the directory scope, so one directory no longer answers for the other', () => {
     const rules = split().settings.attributionRules;
     const match = matchAttributionRule({
-      context: { repoPath: '/home/tom/dev/fifagg/specs', branch: 'main', workPath: 'context/tracks/season-pass' },
+      context: { repoPath: '/home/human/dev/fifagg/specs', branch: 'main', workPath: 'context/tracks/season-pass' },
       rules,
     });
 
@@ -872,13 +875,13 @@ describe('splitStandIn', () => {
   it('splits a record that names no checkout when the caller names one', () => {
     const result = split({
       settings: settingsWith({ standIns: [standIn({ id: 'stand-in:1:specs' })], rules: [] }),
-      repoPath: '/home/tom/dev/fifagg/specs',
+      repoPath: '/home/human/dev/fifagg/specs',
     });
 
     expect(result.refused).toBeUndefined();
     expect(result.opened.map((entry) => entry.openedFor)).toEqual([
-      '/home/tom/dev/fifagg/specs',
-      '/home/tom/dev/fifagg/specs',
+      '/home/human/dev/fifagg/specs',
+      '/home/human/dev/fifagg/specs',
     ]);
   });
 
@@ -916,7 +919,7 @@ describe('reading back a stand-in the app named after a note that does not read 
       name: '(click)=',
       description: 'What the work says it was:\n\n- (click)=\n\nCovers main.',
       author: 'app',
-      openedFor: '/home/tom/dev/ea-frontend',
+      openedFor: '/home/human/dev/ea-frontend',
       openedForBranch: 'main',
     });
     const settings = parseTimetrackSettings({

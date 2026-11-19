@@ -10,7 +10,7 @@ import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
-const LANE = 'repo:/home/tom/dev/fifagg/fifagg-frontend';
+const LANE = 'repo:/home/human/dev/fifagg/fifagg-frontend';
 const STAND_IN = 'stand-in:1:competition-navigation';
 const at = (time: string) => new Date(`2026-09-23T${time}:00Z`);
 
@@ -149,7 +149,7 @@ describe('reviewDay folding single-increment rows', () => {
     const rows = (unnamed: UnnamedProposal[]) =>
       dayRows({
         proposals: [
-          proposal({ issueKey: 'ET-772', from: '13:45', to: '14:30', laneKey: 'repo:/home/tom/dev/ethlete-sdk' }),
+          proposal({ issueKey: 'ET-772', from: '13:45', to: '14:30', laneKey: 'repo:/home/human/dev/ethlete-sdk' }),
         ],
         unnamed,
       });
@@ -175,7 +175,7 @@ describe('reviewDay folding single-increment rows', () => {
           call('09:15', '09:30', 15),
           call('09:30', '09:45', 6),
           proposal({ issueKey: 'XYZ-1', from: '09:15', to: '09:45' }),
-          proposal({ issueKey: 'ET-772', from: '09:00', to: '09:45', laneKey: 'repo:/home/tom/dev/ethlete-sdk' }),
+          proposal({ issueKey: 'ET-772', from: '09:00', to: '09:45', laneKey: 'repo:/home/human/dev/ethlete-sdk' }),
         ],
       }),
       cut: { backgroundProjects: ['ET'] },

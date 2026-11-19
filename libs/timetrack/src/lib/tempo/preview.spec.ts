@@ -46,7 +46,7 @@ const previewTransport = (options: { worklogs?: unknown[]; issues?: unknown[]; i
       requests.push(request);
 
       if (request.url.includes('/myself')) {
-        return of({ status: 200, headers: {}, body: { accountId: 'acc:123', displayName: 'Tom' } }) as never;
+        return of({ status: 200, headers: {}, body: { accountId: 'acc:123', displayName: 'human' } }) as never;
       }
 
       if (request.url.includes('/search/jql')) {
@@ -145,7 +145,7 @@ describe('previewTempoSync$', () => {
     const result = seen.mock.calls[0]?.[0];
 
     expect(asked).toContain('2026-08-11');
-    expect(result.account).toEqual({ accountId: 'acc:123', displayName: 'Tom', emailAddress: undefined });
+    expect(result.account).toEqual({ accountId: 'acc:123', displayName: 'human', emailAddress: undefined });
     expect(result.plan.creates).toHaveLength(1);
     expect(result.plan.creates[0]).toMatchObject({ issueId: '10100', reason: 'new' });
   });

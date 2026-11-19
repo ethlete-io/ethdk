@@ -218,7 +218,7 @@ describe('buildRows with a rule naming a stand-in', () => {
 });
 
 describe('buildRows with a stand-in a sibling checkout holds', () => {
-  const FRONTEND = '/home/tom/dev/fifagg/fifagg-frontend';
+  const FRONTEND = '/home/human/dev/fifagg/fifagg-frontend';
 
   const link = (path: string): TimetrackProjectLink => ({
     id: `link-${path}`,
@@ -230,7 +230,7 @@ describe('buildRows with a stand-in a sibling checkout holds', () => {
   const BRACKET_CHALLENGE: StandIn = {
     id: 'stand-in:1789989837130:specs-main-context-tracks-20260819-bracket-challenge',
     name: 'Bracket challenge',
-    openedFor: '/home/tom/dev/fifagg/specs',
+    openedFor: '/home/human/dev/fifagg/specs',
     openedForBranch: 'main',
     openedForWorkPath: 'context/tracks/20260819_bracket-challenge',
     projectKey: 'FIFAGG',
@@ -250,7 +250,7 @@ describe('buildRows with a stand-in a sibling checkout holds', () => {
         }),
       ],
       events: [],
-      links: [link(FRONTEND), link('/home/tom/dev/fifagg/specs')],
+      links: [link(FRONTEND), link('/home/human/dev/fifagg/specs')],
       standIns: [BRACKET_CHALLENGE],
       activity: [{ kind: 'issue-view', issueKey: 'FIP-2867', at: at(9, 30), detail: 'viewed FIP-2867' }],
     });

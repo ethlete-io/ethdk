@@ -8,7 +8,7 @@ import { LoggedIssue } from '../model/recurrence';
 import { reasoningCandidates, reasoningPlan } from './payload';
 import { pseudonymMap } from './pseudonym';
 
-const REPO = '/Users/tom/dev/ea-frontend';
+const REPO = '/Users/human/dev/ea-frontend';
 
 const block = (context: ActivityBlock['context'], evidence: Evidence[] = []): ActivityBlock => ({
   from: new Date('2026-08-16T09:00:00Z'),
@@ -50,7 +50,7 @@ describe('reasoningPlan', () => {
     expect(request.contexts).toEqual([
       { id: 'c1', repo: 'ea-frontend', branch: 'refactor/hub-query-v3', app: undefined, minutes: 90, notes: [] },
     ]);
-    expect(JSON.stringify(request)).not.toContain('/Users/tom');
+    expect(JSON.stringify(request)).not.toContain('/Users/human');
     expect(contextIds['c1']).toBe(contextKey(context));
   });
 

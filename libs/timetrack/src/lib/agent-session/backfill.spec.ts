@@ -13,7 +13,7 @@ const MODIFIED_AT = new Date(Date.UTC(2026, 7, 11, 9, 30));
 
 const ref = (id: string, modifiedAt = MODIFIED_AT): AgentSessionLogRef => ({
   id,
-  path: `/Users/tom/.claude/projects/-Users-tom-dev-ethlete-sdk/${id}.jsonl`,
+  path: `/Users/human/.claude/projects/-Users-human-dev-ethlete-sdk/${id}.jsonl`,
   modifiedAt,
 });
 
@@ -22,7 +22,7 @@ const turn = (options: { timestamp: string; id: string; sessionId?: string; cwd?
     type: 'assistant',
     timestamp: options.timestamp,
     sessionId: options.sessionId ?? 's1',
-    cwd: options.cwd ?? '/Users/tom/dev/ethlete-sdk',
+    cwd: options.cwd ?? '/Users/human/dev/ethlete-sdk',
     gitBranch: 'next',
     message: {
       id: options.id,
@@ -102,7 +102,7 @@ describe('backfillAgentLogs$', () => {
   it('reads a log again once a re-sync has dropped its read-through', () => {
     const { reads } = backfill({
       logs: [{ ref: ref('a'), lines: [turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1' })] }],
-      cursors: [{ id: 'a', nextLine: 0, cwd: '/Users/tom/dev/ethlete-sdk' }],
+      cursors: [{ id: 'a', nextLine: 0, cwd: '/Users/human/dev/ethlete-sdk' }],
     });
 
     expect(reads[0]).toEqual({ id: 'a', fromLine: 0 });
@@ -118,7 +118,7 @@ describe('backfillAgentLogs$', () => {
     expect(reads.map((read) => read.fromLine)).toEqual([0, 2, 4, 5]);
     expect(result.usage.map((event) => event.turnId)).toEqual(['t0', 't1', 't2', 't3', 't4']);
     expect(result.cursors).toEqual([
-      { id: 'a', nextLine: 5, readThrough: MODIFIED_AT, cwd: '/Users/tom/dev/ethlete-sdk' },
+      { id: 'a', nextLine: 5, readThrough: MODIFIED_AT, cwd: '/Users/human/dev/ethlete-sdk' },
     ]);
   });
 
@@ -189,14 +189,14 @@ describe('backfillAgentLogs$', () => {
         {
           ref: ref('a'),
           lines: [
-            turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1', cwd: '/Users/tom/dev/ethlete-sdk' }),
-            turn({ timestamp: '2026-08-11T09:05:00Z', id: 't2', cwd: '/Users/tom/dev/fut-frontend' }),
+            turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1', cwd: '/Users/human/dev/ethlete-sdk' }),
+            turn({ timestamp: '2026-08-11T09:05:00Z', id: 't2', cwd: '/Users/human/dev/fut-frontend' }),
           ],
         },
       ],
     });
 
-    expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/fut-frontend');
+    expect(result.cursors[0]?.cwd).toBe('/Users/human/dev/fut-frontend');
   });
 
   it('carries a Codex session, checkout and model into every later read of the log', () => {
@@ -225,10 +225,13 @@ describe('backfillAgentLogs$', () => {
         {
           ref: ref('a'),
           lines: [
-            codexLine('2026-08-11T09:00:00Z', 'session_meta', { session_id: 's1', cwd: '/Users/tom/dev/ethlete-sdk' }),
+            codexLine('2026-08-11T09:00:00Z', 'session_meta', {
+              session_id: 's1',
+              cwd: '/Users/human/dev/ethlete-sdk',
+            }),
             codexLine('2026-08-11T09:00:01Z', 'turn_context', {
               turn_id: 't1',
-              cwd: '/Users/tom/dev/ethlete-sdk',
+              cwd: '/Users/human/dev/ethlete-sdk',
               model: 'gpt-5.6-sol',
             }),
             tokenCount('2026-08-11T09:01:00Z'),
@@ -240,8 +243,8 @@ describe('backfillAgentLogs$', () => {
     });
 
     expect(result.usage.map((event) => [event.sessionId, event.cwd, event.model])).toEqual([
-      ['s1', '/Users/tom/dev/ethlete-sdk', 'gpt-5.6-sol'],
-      ['s1', '/Users/tom/dev/ethlete-sdk', 'gpt-5.6-sol'],
+      ['s1', '/Users/human/dev/ethlete-sdk', 'gpt-5.6-sol'],
+      ['s1', '/Users/human/dev/ethlete-sdk', 'gpt-5.6-sol'],
     ]);
     expect(result.prompts.map((event) => event.promptId)).toEqual(['msg_2']);
   });

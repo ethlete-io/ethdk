@@ -14,8 +14,8 @@ const link = (path: string, target: TimetrackProjectLink['target']): TimetrackPr
 });
 
 const LINKS = [
-  link('/home/tom/dev/fut-frontend', { kind: 'project', projectKey: 'FIP' }),
-  link('/home/tom/dev/side', { kind: 'private' }),
+  link('/home/human/dev/fut-frontend', { kind: 'project', projectKey: 'FIP' }),
+  link('/home/human/dev/side', { kind: 'private' }),
 ];
 
 const RULES: TimetrackExclusionRule[] = [
@@ -28,7 +28,7 @@ const cursor = (over: Partial<AgentSessionCursor> = {}): AgentSessionCursor => (
   nextLine: 120,
   after: new Date('2026-08-17T09:00:00Z'),
   title: 'a session',
-  cwd: '/home/tom/dev/fut-frontend',
+  cwd: '/home/human/dev/fut-frontend',
   session: { sessionId: 's-1', model: 'opus' },
   ...over,
 });
@@ -49,7 +49,7 @@ describe('sanitizeAgentSessionCursors', () => {
   });
 
   it('drops the title, the checkout and the session of a private checkout', () => {
-    expect(sanitized({ cwd: '/home/tom/dev/side' })).toEqual({
+    expect(sanitized({ cwd: '/home/human/dev/side' })).toEqual({
       id: 'log-a',
       nextLine: 120,
       after: new Date('2026-08-17T09:00:00Z'),
@@ -57,33 +57,33 @@ describe('sanitizeAgentSessionCursors', () => {
   });
 
   it('drops them for a log whose last tool call worked in a private checkout', () => {
-    expect(sanitized({ session: { workedIn: '/home/tom/dev/side/notes.md' } }).session).toBeUndefined();
+    expect(sanitized({ session: { workedIn: '/home/human/dev/side/notes.md' } }).session).toBeUndefined();
   });
 
   it('drops them for a checkout below a private directory too', () => {
-    expect(sanitized({ cwd: '/home/tom/dev/side/experiment' }).cwd).toBeUndefined();
+    expect(sanitized({ cwd: '/home/human/dev/side/experiment' }).cwd).toBeUndefined();
   });
 
   it('keeps the read-through instant of a private checkout, so a backfill pass stays converged', () => {
     const readThrough = new Date('2026-08-17T10:00:00Z');
 
-    expect(sanitized({ cwd: '/home/tom/dev/side', readThrough }).readThrough).toEqual(readThrough);
+    expect(sanitized({ cwd: '/home/human/dev/side', readThrough }).readThrough).toEqual(readThrough);
   });
 
   it('keeps the parse rules of a private checkout, so its log is not read again for newer ones', () => {
-    expect(sanitized({ cwd: '/home/tom/dev/side', parserVersion: 2 }).parserVersion).toBe(2);
+    expect(sanitized({ cwd: '/home/human/dev/side', parserVersion: 2 }).parserVersion).toBe(2);
   });
 
   it('drops the title a rule denies and keeps the checkout', () => {
     const result = sanitized({ title: 'Onlinebanking — transfers' });
 
     expect(result.title).toBeUndefined();
-    expect(result.cwd).toBe('/home/tom/dev/fut-frontend');
+    expect(result.cwd).toBe('/home/human/dev/fut-frontend');
   });
 
   it('drops everything when the rule denies the checkout itself', () => {
     const result = sanitizeAgentSessionCursors({
-      cursors: [cursor({ cwd: '/home/tom/dev/onlinebanking-ui' })],
+      cursors: [cursor({ cwd: '/home/human/dev/onlinebanking-ui' })],
       links: LINKS,
       rules: RULES,
     })[0];
@@ -98,7 +98,7 @@ describe('sanitizeAgentSessionCursors', () => {
   });
 
   it('keeps a cursor of an unlinked checkout whole, so a later link can re-read its log', () => {
-    expect(sanitized({ cwd: '/home/tom/dev/unlinked' }).cwd).toBe('/home/tom/dev/unlinked');
+    expect(sanitized({ cwd: '/home/human/dev/unlinked' }).cwd).toBe('/home/human/dev/unlinked');
   });
 
   it('leaves a cursor that names no checkout to its title alone', () => {
@@ -125,7 +125,7 @@ describe('repairStoredCursors$', () => {
 
   it('writes back only the cursors it changed', async () => {
     const { store, written } = storeOf({
-      'agent-session': [cursor(), cursor({ id: 'log-b', cwd: '/home/tom/dev/side' })],
+      'agent-session': [cursor(), cursor({ id: 'log-b', cwd: '/home/human/dev/side' })],
     });
 
     await expect(

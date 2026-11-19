@@ -3,8 +3,8 @@ import { AgentUsageEvent, CollectedEvent, TIMETRACK_PROVIDER } from '../model/ev
 import { totalTokens } from '../model/tokens';
 import { agentTurnsOf, agentUsageWithin } from './row-agent-usage';
 
-const SDK = '/home/tom/dev/ethlete-sdk';
-const FUT = '/home/tom/dev/fut-frontend';
+const SDK = '/home/human/dev/ethlete-sdk';
+const FUT = '/home/human/dev/fut-frontend';
 const ROOTS = [SDK, FUT];
 
 const AT = (minutes: number) => new Date(new Date(2026, 7, 12, 9, 0, 0).getTime() + minutes * 60_000);

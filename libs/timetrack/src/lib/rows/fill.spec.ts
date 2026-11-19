@@ -3,7 +3,7 @@ import { CollectedEvent, PresenceEvent } from '../model/event';
 import { AttributedBlock } from './attribute';
 import { fillGaps } from './fill';
 
-const REPO = '/Users/tom/dev/ea-frontend';
+const REPO = '/Users/human/dev/ea-frontend';
 
 const attributed = (from: string, to: string, issueKey?: string): AttributedBlock => ({
   block: {

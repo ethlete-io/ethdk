@@ -10,7 +10,7 @@ const PLAN: ReasoningPlan = {
     candidates: [{ issueKey: 'FIP-2201', summary: 'Hub query rewrite' }],
     contexts: [{ id: 'c1', repo: 'ea-frontend', branch: 'refactor/hub-query-v3', minutes: 95, notes: [] }],
   },
-  contextIds: { c1: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3' },
+  contextIds: { c1: 'repo:/Users/human/dev/ea-frontend@refactor/hub-query-v3' },
   map: EMPTY_PSEUDONYM_MAP,
   hash: 'abc',
 };

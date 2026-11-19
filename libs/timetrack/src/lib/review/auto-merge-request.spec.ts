@@ -21,7 +21,7 @@ import { AutoModeAnswer, AutoModeSubject } from './model';
 const TODAY = '2026-10-09';
 const at = (clock: string) => new Date(`${TODAY}T${clock}:00Z`);
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
-const ON_MAIN = { repoPath: '/home/tom/dev/fut-frontend', branch: 'main', session: 'bug-hunt' };
+const ON_MAIN = { repoPath: '/home/human/dev/fut-frontend', branch: 'main', session: 'bug-hunt' };
 const TITLE = 'Find why the order transfer came back on main';
 
 const note: Evidence = { kind: 'agent-session', at: at('08:43'), detail: TITLE, summary: TITLE };

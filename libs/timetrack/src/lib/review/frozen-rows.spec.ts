@@ -128,8 +128,8 @@ describe('a day Tempo holds', () => {
 const window = (from: string, to: string) => ({ from: at(from), to: at(to) });
 
 describe('a frozen day a paired machine worked on', () => {
-  const SDK = 'repo:/home/tom/dev/ethlete-sdk';
-  const FUT = 'repo:/home/tom/dev/fut-frontend';
+  const SDK = 'repo:/home/human/dev/ethlete-sdk';
+  const FUT = 'repo:/home/human/dev/fut-frontend';
   const frozen = dayRows([proposal({ issueKey: 'ET-1', from: '18:15', to: '19:45', laneKey: SDK })]);
   const current = dayRows([
     proposal({ issueKey: 'FUT-1', from: '13:15', to: '15:00', laneKey: FUT }),
@@ -202,7 +202,7 @@ describe('a frozen day a paired machine worked on', () => {
 });
 
 describe('a frozen day a paired machine sent its rows for', () => {
-  const FUT = 'repo:/home/tom/dev/fut-frontend';
+  const FUT = 'repo:/home/human/dev/fut-frontend';
   const frozen = dayRows([]);
   const sent: PeerDayRows = {
     day: '2026-10-01',

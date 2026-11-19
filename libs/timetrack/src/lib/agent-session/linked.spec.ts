@@ -11,8 +11,8 @@ const link = (path: string, target: TimetrackProjectLink['target']): TimetrackPr
 });
 
 const LINKS = [
-  link('/home/tom/dev/fut-frontend', { kind: 'project', projectKey: 'FIP' }),
-  link('/home/tom/dev/side', { kind: 'private' }),
+  link('/home/human/dev/fut-frontend', { kind: 'project', projectKey: 'FIP' }),
+  link('/home/human/dev/side', { kind: 'private' }),
 ];
 
 const session = (cwd: string, at: string): AgentSessionEvent => ({
@@ -47,39 +47,39 @@ const typed = (cwd: string, at: string): AgentPromptEvent => ({
 
 describe('keepPublicAgentRecords', () => {
   it('keeps a prompt typed in a checkout no link covers, because the day still happened', () => {
-    const kept = typed('/home/tom/dev/ethlete-sdk', '2026-09-07T09:57:00Z');
+    const kept = typed('/home/human/dev/ethlete-sdk', '2026-09-07T09:57:00Z');
 
     expect(keepPublicAgentRecords({ events: [kept], links: LINKS })).toEqual([kept]);
   });
 
   it('keeps a prompt typed in a linked checkout', () => {
-    const kept = typed('/home/tom/dev/fut-frontend', '2026-09-07T09:57:00Z');
+    const kept = typed('/home/human/dev/fut-frontend', '2026-09-07T09:57:00Z');
 
     expect(keepPublicAgentRecords({ events: [kept], links: LINKS })).toEqual([kept]);
   });
 
   it('drops a prompt typed in a private checkout', () => {
-    const dropped = typed('/home/tom/dev/side/thing', '2026-09-07T09:57:00Z');
+    const dropped = typed('/home/human/dev/side/thing', '2026-09-07T09:57:00Z');
 
     expect(keepPublicAgentRecords({ events: [dropped], links: LINKS })).toEqual([]);
   });
 
   it('keeps a turn in a checkout no link covers, so it can hold a rebuilt stretch open', () => {
-    const kept = spend('/home/tom/dev/ethlete-sdk', '2026-09-07T10:04:00Z');
+    const kept = spend('/home/human/dev/ethlete-sdk', '2026-09-07T10:04:00Z');
 
     expect(keepPublicAgentRecords({ events: [kept], links: LINKS })).toEqual([kept]);
   });
 
   it('drops a turn in a private checkout', () => {
-    const dropped = spend('/home/tom/dev/side/thing', '2026-09-07T10:04:00Z');
+    const dropped = spend('/home/human/dev/side/thing', '2026-09-07T10:04:00Z');
 
     expect(keepPublicAgentRecords({ events: [dropped], links: LINKS })).toEqual([]);
   });
 
   it('drops a turn that worked in a private checkout, wherever it was started', () => {
     const dropped = {
-      ...spend('/home/tom/dev/fut-frontend', '2026-09-07T10:04:00Z'),
-      workedIn: '/home/tom/dev/side/x.ts',
+      ...spend('/home/human/dev/fut-frontend', '2026-09-07T10:04:00Z'),
+      workedIn: '/home/human/dev/side/x.ts',
     };
 
     expect(keepPublicAgentRecords({ events: [dropped], links: LINKS })).toEqual([]);
@@ -88,26 +88,29 @@ describe('keepPublicAgentRecords', () => {
 
 describe('keepLinkedAgentSessions', () => {
   it('keeps a session in a checkout a link files into a project', () => {
-    const kept = session('/home/tom/dev/fut-frontend', '2026-08-17T09:00:00Z');
+    const kept = session('/home/human/dev/fut-frontend', '2026-08-17T09:00:00Z');
 
     expect(keepLinkedAgentSessions({ events: [kept], links: LINKS }).kept).toEqual([kept]);
   });
 
   it('keeps a session below the linked directory, not only at it', () => {
-    const kept = session('/home/tom/dev/fut-frontend/apps/web', '2026-08-17T09:00:00Z');
+    const kept = session('/home/human/dev/fut-frontend/apps/web', '2026-08-17T09:00:00Z');
 
     expect(keepLinkedAgentSessions({ events: [kept], links: LINKS }).kept).toEqual([kept]);
   });
 
   it('drops a session that worked in a private checkout without reporting it as unlinked', () => {
-    const worked = { ...session('/home/tom/dev/fut-frontend', '2026-08-17T09:00:00Z'), workedIn: '/home/tom/dev/side' };
+    const worked = {
+      ...session('/home/human/dev/fut-frontend', '2026-08-17T09:00:00Z'),
+      workedIn: '/home/human/dev/side',
+    };
 
     expect(keepLinkedAgentSessions({ events: [worked], links: LINKS })).toEqual({ kept: [], unlinked: [] });
   });
 
   it('drops a private session without reporting it as unlinked, because it has its answer', () => {
     const result = keepLinkedAgentSessions({
-      events: [session('/home/tom/dev/side', '2026-08-17T09:00:00Z')],
+      events: [session('/home/human/dev/side', '2026-08-17T09:00:00Z')],
       links: LINKS,
     });
 
@@ -117,34 +120,34 @@ describe('keepLinkedAgentSessions', () => {
   it('reports an unlinked checkout with its sample count and its last sample', () => {
     const result = keepLinkedAgentSessions({
       events: [
-        session('/home/tom/dev/local-ai', '2026-08-17T09:00:00Z'),
-        session('/home/tom/dev/local-ai', '2026-08-17T11:00:00Z'),
+        session('/home/human/dev/local-ai', '2026-08-17T09:00:00Z'),
+        session('/home/human/dev/local-ai', '2026-08-17T11:00:00Z'),
       ],
       links: LINKS,
     });
 
     expect(result.kept).toEqual([]);
     expect(result.unlinked).toEqual([
-      { cwd: '/home/tom/dev/local-ai', events: 2, lastAt: new Date('2026-08-17T11:00:00Z') },
+      { cwd: '/home/human/dev/local-ai', events: 2, lastAt: new Date('2026-08-17T11:00:00Z') },
     ]);
   });
 
   it('orders the unlinked checkouts by how much they cost, largest first', () => {
     const result = keepLinkedAgentSessions({
       events: [
-        session('/home/tom/dev/one', '2026-08-17T09:00:00Z'),
-        session('/home/tom/dev/two', '2026-08-17T09:00:00Z'),
-        session('/home/tom/dev/two', '2026-08-17T10:00:00Z'),
+        session('/home/human/dev/one', '2026-08-17T09:00:00Z'),
+        session('/home/human/dev/two', '2026-08-17T09:00:00Z'),
+        session('/home/human/dev/two', '2026-08-17T10:00:00Z'),
       ],
       links: LINKS,
     });
 
-    expect(result.unlinked.map((entry) => entry.cwd)).toEqual(['/home/tom/dev/two', '/home/tom/dev/one']);
+    expect(result.unlinked.map((entry) => entry.cwd)).toEqual(['/home/human/dev/two', '/home/human/dev/one']);
   });
 
   it('drops everything when no link exists at all, rather than falling back to keeping it', () => {
     const result = keepLinkedAgentSessions({
-      events: [session('/home/tom/dev/fut-frontend', '2026-08-17T09:00:00Z')],
+      events: [session('/home/human/dev/fut-frontend', '2026-08-17T09:00:00Z')],
       links: [],
     });
 
@@ -153,18 +156,18 @@ describe('keepLinkedAgentSessions', () => {
   });
 
   it("filters a turn's spend by the same link, and gives back the same shape", () => {
-    const kept = spend('/home/tom/dev/fut-frontend', '2026-08-17T09:00:00Z');
-    const dropped = spend('/home/tom/dev/unlinked', '2026-08-17T09:05:00Z');
+    const kept = spend('/home/human/dev/fut-frontend', '2026-08-17T09:00:00Z');
+    const dropped = spend('/home/human/dev/unlinked', '2026-08-17T09:05:00Z');
 
     const result = keepLinkedAgentSessions({ events: [kept, dropped], links: LINKS });
 
     expect(result.kept).toEqual([kept]);
-    expect(result.unlinked).toEqual([{ cwd: '/home/tom/dev/unlinked', events: 1, lastAt: dropped.at }]);
+    expect(result.unlinked).toEqual([{ cwd: '/home/human/dev/unlinked', events: 1, lastAt: dropped.at }]);
   });
 
   it('drops the spend of a checkout a private link covers, the way it drops the session', () => {
     const result = keepLinkedAgentSessions({
-      events: [spend('/home/tom/dev/side', '2026-08-17T09:00:00Z')],
+      events: [spend('/home/human/dev/side', '2026-08-17T09:00:00Z')],
       links: LINKS,
     });
 

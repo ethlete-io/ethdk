@@ -63,7 +63,7 @@ describe('specForCommits$', () => {
 
     return {
       ...h,
-      spec: firstValueFrom(specForCommits$({ repoPath: '/home/tom/dev/fifagg/specs', shas: ['a1b2c3d'], ...h })),
+      spec: firstValueFrom(specForCommits$({ repoPath: '/home/human/dev/fifagg/specs', shas: ['a1b2c3d'], ...h })),
     };
   };
 
@@ -81,7 +81,7 @@ describe('specForCommits$', () => {
     const h = run({ result: { stdout: 'a/b/spec.md\n' }, files: null });
 
     await h.spec;
-    expect(h.spawned[0]).toMatchObject({ command: 'git', cwd: '/home/tom/dev/fifagg/specs' });
+    expect(h.spawned[0]).toMatchObject({ command: 'git', cwd: '/home/human/dev/fifagg/specs' });
   });
 
   it('answers null where no directory holds a spec', async () => {

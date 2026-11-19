@@ -15,7 +15,7 @@ import {
   standInNameFor,
 } from './draft';
 
-const REPO = '/Users/tom/dev/ea-frontend';
+const REPO = '/Users/human/dev/ea-frontend';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
 
 const evidence = (kind: Evidence['kind'], detail: string, summary?: string): Evidence => ({
@@ -115,7 +115,7 @@ describe('draftTicket', () => {
     expect(drafted.summary).toBe('ea-frontend');
     expect(drafted.notes).toEqual([]);
     expect(drafted.description).not.toContain('5f0c2a9e');
-    expect(drafted.description).not.toContain('/Users/tom');
+    expect(drafted.description).not.toContain('/Users/human');
   });
 
   it('leads with the work rather than with where the time came from', () => {
@@ -144,7 +144,7 @@ describe('draftTicket', () => {
 
   it('ignores evidence from another context', () => {
     const context = { repoPath: REPO, branch: 'feat/user-management' };
-    const other = { repoPath: '/Users/tom/dev/other', branch: 'next' };
+    const other = { repoPath: '/Users/human/dev/other', branch: 'next' };
     const drafted = draftTicket({
       context: unnamed(context),
       unattributed: [group([block(other, [evidence('commit', 'x', 'Not this work')])])],

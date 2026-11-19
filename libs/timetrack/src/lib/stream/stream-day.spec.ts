@@ -4,9 +4,9 @@ import { TimetrackProjectLink } from '../model/project-link';
 import { OTHER_APPLICATIONS_KEY, streamDay } from './stream-day';
 import { unnamedFocusMs } from './unnamed-focus';
 
-const SDK = '/home/tom/dev/ethlete-sdk';
-const FUT = '/home/tom/dev/fut-frontend';
-const ELROND = '/home/tom/umbau-elrond';
+const SDK = '/home/human/dev/ethlete-sdk';
+const FUT = '/home/human/dev/fut-frontend';
+const ELROND = '/home/human/umbau-elrond';
 
 const AT = (minutes: number) => new Date(new Date(2026, 7, 12, 9, 0, 0).getTime() + minutes * 60_000);
 
@@ -367,10 +367,10 @@ describe('streamDay', () => {
         ...focusRun({ from: 0, to: 10, appId: 'code', title: 'notes.md - specs - Code' }),
         ...focusRun({ from: 11, to: 20, appId: 'code', title: 'bracket.spec.ts - fut-frontend - Code' }),
       ],
-      options: { repoRoots: ['/home/tom/dev/specs', FUT] },
+      options: { repoRoots: ['/home/human/dev/specs', FUT] },
     });
 
-    expect(streamOf(day, 'repo:/home/tom/dev/specs')?.engagedMs).toBe(11 * MINUTE);
+    expect(streamOf(day, 'repo:/home/human/dev/specs')?.engagedMs).toBe(11 * MINUTE);
     expect(streamOf(day, `repo:${FUT}`)?.engagedMs).toBe(9 * MINUTE);
   });
 
@@ -586,11 +586,11 @@ describe('streamDay', () => {
   });
 
   it('names the checkout name it dropped, so the folded time on the screen has a reason', () => {
-    const OTHER_ELROND = '/home/tom/elrond-usb/stick-bios/doku/elrond';
+    const OTHER_ELROND = '/home/human/elrond-usb/stick-bios/doku/elrond';
 
     const day = streamDay({
       events: focusRun({ from: 0, to: 10, appId: 'code', title: 'boot.md - elrond - Code' }),
-      options: { repoRoots: ['/home/tom/umbau-elrond/elrond', OTHER_ELROND] },
+      options: { repoRoots: ['/home/human/umbau-elrond/elrond', OTHER_ELROND] },
     });
 
     expect(day.ambiguousNames).toEqual(['elrond']);
@@ -600,7 +600,7 @@ describe('streamDay', () => {
   it('names nothing for a day whose windows never claimed a shared name', () => {
     const day = streamDay({
       events: focusRun({ from: 0, to: 10, appId: 'slack' }),
-      options: { repoRoots: ['/home/tom/umbau-elrond/elrond', '/home/tom/elrond-usb/stick-bios/doku/elrond'] },
+      options: { repoRoots: ['/home/human/umbau-elrond/elrond', '/home/human/elrond-usb/stick-bios/doku/elrond'] },
     });
 
     expect(day.ambiguousNames).toEqual([]);
@@ -764,7 +764,7 @@ describe('streamDay, on a day an editor reported', () => {
     const day = streamDay({
       events: [
         ...focusRun({ from: 0, to: 10, appId: 'code', title: 'Visual Studio Code' }),
-        heartbeat({ minutes: 2, directory: '/home/tom/Downloads/scratch' }),
+        heartbeat({ minutes: 2, directory: '/home/human/Downloads/scratch' }),
       ],
       options: { repoRoots: [SDK] },
     });
@@ -843,7 +843,10 @@ describe('streamDay, on a day the collector never ran', () => {
 
   it('gives the folded line the minutes of a prompt typed where no checkout is, and names the directory nowhere', () => {
     const day = streamDay({
-      events: [typed(0, '/home/tom/Downloads/ImageGeneratorProd'), typed(10, '/home/tom/Downloads/ImageGeneratorProd')],
+      events: [
+        typed(0, '/home/human/Downloads/ImageGeneratorProd'),
+        typed(10, '/home/human/Downloads/ImageGeneratorProd'),
+      ],
       options: { repoRoots: [SDK] },
     });
 
@@ -855,7 +858,7 @@ describe('streamDay, on a day the collector never ran', () => {
 
   it('gives the folded line the turns spent in a directory that is no checkout', () => {
     const day = streamDay({
-      events: [typed(0, '/home/tom'), usage(5, '/home/tom', { output: 900 }), typed(10, '/home/tom')],
+      events: [typed(0, '/home/human'), usage(5, '/home/human', { output: 900 }), typed(10, '/home/human')],
       options: { repoRoots: [SDK] },
     });
 
@@ -955,15 +958,15 @@ describe('streamDay, on the app reading the day', () => {
 
   it('does not book its own window to a checkout its title happens to name', () => {
     const events = [
-      commit(0, 'feat(timetrack): Add the day', '/home/tom/dev/timetrack'),
+      commit(0, 'feat(timetrack): Add the day', '/home/human/dev/timetrack'),
       ...focusRun({ from: 1, to: 10, appId: 'timetrack', title: 'timetrack' }),
     ];
-    const repoRoots = ['/home/tom/dev/timetrack'];
+    const repoRoots = ['/home/human/dev/timetrack'];
     const own = streamDay({ events, options: { repoRoots, ownAppIds: ['timetrack'] } });
     const named = streamDay({ events, options: { repoRoots } });
 
-    expect(streamOf(named, 'repo:/home/tom/dev/timetrack')?.neverFocused).toBe(false);
-    expect(streamOf(own, 'repo:/home/tom/dev/timetrack')?.neverFocused).toBe(true);
+    expect(streamOf(named, 'repo:/home/human/dev/timetrack')?.neverFocused).toBe(false);
+    expect(streamOf(own, 'repo:/home/human/dev/timetrack')?.neverFocused).toBe(true);
     expect(streamOf(own, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(9 * MINUTE);
   });
 });
@@ -1168,7 +1171,7 @@ describe('streamDay, on a day something held the microphone', () => {
           source: 'calendar',
           kind: 'calendar-event',
           occurrenceId: 'o-afternoon',
-          title: 'Tom unterwegs',
+          title: 'human unterwegs',
           accepted: true,
         },
       ],
@@ -1202,13 +1205,13 @@ describe('streamDay, the focus that named no checkout', () => {
       events: [
         commit(0, 'feat(bracket): Add the resolver'),
         ...focusRun({ from: 0, to: 5, appId: 'firefox', title: 'localhost:4200 \u2014 Mozilla Firefox' }),
-        ...focusRun({ from: 6, to: 20, appId: 'foot', title: 'tom@fedora: ~' }),
+        ...focusRun({ from: 6, to: 20, appId: 'foot', title: 'human@fedora: ~' }),
       ],
       options: { repoRoots: [SDK] },
     });
 
     expect(day.unnamedFocus).toEqual([
-      { appId: 'foot', reason: 'no-name', ms: 14 * MINUTE, titles: [{ title: 'tom@fedora: ~', ms: 14 * MINUTE }] },
+      { appId: 'foot', reason: 'no-name', ms: 14 * MINUTE, titles: [{ title: 'human@fedora: ~', ms: 14 * MINUTE }] },
       {
         appId: 'firefox',
         reason: 'no-name',
@@ -1333,14 +1336,14 @@ describe('streamDay, the focus that named no checkout', () => {
   });
 
   it('marks a name two checkouts share apart from a title that names nothing', () => {
-    const OTHER_ELROND = '/home/tom/elrond-usb/stick-bios/doku/elrond';
+    const OTHER_ELROND = '/home/human/elrond-usb/stick-bios/doku/elrond';
 
     const day = streamDay({
       events: [
         ...focusRun({ from: 0, to: 10, appId: 'code', title: 'boot.md - elrond - Code' }),
         ...focusRun({ from: 11, to: 20, appId: 'spotify', title: 'Spotify' }),
       ],
-      options: { repoRoots: ['/home/tom/umbau-elrond/elrond', OTHER_ELROND] },
+      options: { repoRoots: ['/home/human/umbau-elrond/elrond', OTHER_ELROND] },
     });
 
     expect(day.unnamedFocus).toEqual([

@@ -3,7 +3,7 @@ import { AgentSessionEvent } from '../model/event';
 import { CLAUDE_CODE_PROVIDER, parseClaudeCodeSessionLog } from './claude-code';
 
 const SESSION = '154009aa-3442-401d-852b-07a0d5156e97';
-const CWD = '/home/tom/dev/fut-frontend';
+const CWD = '/home/human/dev/fut-frontend';
 const BRANCH = 'feat/FIP-2177-user-management';
 
 const at = (minute: number, second = 0) => new Date(Date.UTC(2026, 7, 11, 9, minute, second));
@@ -160,11 +160,14 @@ describe('parseClaudeCodeSessionLog', () => {
   });
 
   it('emits on a working-directory switch even inside the sampling interval', () => {
-    const result = parse([record({ minute: 0 }), record({ minute: 0, second: 5, cwd: '/home/tom/dev/ethlete-sdk' })], {
-      sampleIntervalMs: 60_000,
-    });
+    const result = parse(
+      [record({ minute: 0 }), record({ minute: 0, second: 5, cwd: '/home/human/dev/ethlete-sdk' })],
+      {
+        sampleIntervalMs: 60_000,
+      },
+    );
 
-    expect(result.events.map((event) => event.cwd)).toEqual([CWD, '/home/tom/dev/ethlete-sdk']);
+    expect(result.events.map((event) => event.cwd)).toEqual([CWD, '/home/human/dev/ethlete-sdk']);
   });
 
   it('samples every record type that carries the metadata', () => {
@@ -424,12 +427,12 @@ describe('parseClaudeCodeSessionLog, on token spend', () => {
   it('reads a branch and a directory per turn, so a mid-session switch is attributed to each', () => {
     const result = parse([
       turn({ minute: 0, id: 'msg_a' }),
-      turn({ minute: 1, id: 'msg_b', cwd: '/home/tom/dev/ethlete-sdk', branch: 'next' }),
+      turn({ minute: 1, id: 'msg_b', cwd: '/home/human/dev/ethlete-sdk', branch: 'next' }),
     ]);
 
     expect(result.usage.map((event) => [event.cwd, event.gitBranch])).toEqual([
       [CWD, BRANCH],
-      ['/home/tom/dev/ethlete-sdk', 'next'],
+      ['/home/human/dev/ethlete-sdk', 'next'],
     ]);
   });
 
@@ -669,7 +672,7 @@ describe('parseClaudeCodeSessionLog prompts', () => {
   });
 });
 
-const ALTCHA = '/home/tom/dev/fut-frontend-altcha';
+const ALTCHA = '/home/human/dev/fut-frontend-altcha';
 const ALTCHA_DIR = `${ALTCHA}/`;
 
 const toolCall = (options: { minute: number; second?: number; name: string; input: Record<string, unknown> }) =>
@@ -728,7 +731,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
   });
 
   it('lets no read move where the work is, nor put it back', () => {
-    const sdk = '/home/tom/dev/ethlete-sdk';
+    const sdk = '/home/human/dev/ethlete-sdk';
     const result = parse(
       [
         toolCall({ minute: 0, name: 'Edit', input: { file_path: `${ALTCHA}/libs/login.ts` } }),
@@ -749,7 +752,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
   });
 
   it('follows a command into another checkout once it builds, tests or writes there', () => {
-    const sdk = '/home/tom/dev/ethlete-sdk';
+    const sdk = '/home/human/dev/ethlete-sdk';
     const result = parse(
       [
         toolCall({

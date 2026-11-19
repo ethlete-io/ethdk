@@ -3,7 +3,7 @@ import { CollectedEvent } from '../model/event';
 import { reviewDay } from '../review/review-day';
 import { streamDay } from './stream-day';
 
-const REPO = '/home/tom/dev/fut-frontend';
+const REPO = '/home/human/dev/fut-frontend';
 const BRANCH = 'fix/totw-16-9-special-layout';
 
 const AT = (minutes: number) => new Date(new Date(2026, 8, 22, 10, 0, 0).getTime() + minutes * 60_000);
@@ -342,7 +342,7 @@ describe('streamDay agent sessions', () => {
   });
 
   it('keeps sessions one after the other on a base branch in two checkouts apart', () => {
-    const other = '/home/tom/dev/other-frontend';
+    const other = '/home/human/dev/other-frontend';
     const onMain = { branchAt: () => 'main' };
     const { rows } = streamDay({
       events: [

@@ -100,7 +100,7 @@ describe('donateBlocks', () => {
   it('does not donate from a repository no rule names', () => {
     const [donor] = donateBlocks({
       blocks: [
-        attributed('/Users/tom/dev/other', '2026-08-13T10:00:00Z', '2026-08-13T11:00:00Z'),
+        attributed('/Users/human/dev/other', '2026-08-13T10:00:00Z', '2026-08-13T11:00:00Z'),
         attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'ABC-2904'),
       ],
       rules: [DONOR_RULE],

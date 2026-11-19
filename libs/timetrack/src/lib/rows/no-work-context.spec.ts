@@ -11,7 +11,7 @@ const block = (options: { fromMinute: number; toMinute: number; context: Activit
   evidence: [],
 });
 
-const SDK = '/home/tom/dev/ethlete-sdk';
+const SDK = '/home/human/dev/ethlete-sdk';
 
 describe('dropNoWorkContext', () => {
   it('drops an application-only block when no rule says the application holds work', () => {
@@ -78,7 +78,7 @@ describe('dropNoWorkContext', () => {
       blocks: [
         block({ fromMinute: 0, toMinute: 10, context: { appId: 'code', repoPath: SDK } }),
         block({ fromMinute: 10, toMinute: 10.5, context: { appId: 'xdg-desktop-portal-gnome' } }),
-        block({ fromMinute: 10.5, toMinute: 30, context: { appId: 'code', repoPath: '/home/tom/dev/other' } }),
+        block({ fromMinute: 10.5, toMinute: 30, context: { appId: 'code', repoPath: '/home/human/dev/other' } }),
       ],
       transientApps: ['xdg-desktop-portal-gnome'],
     });

@@ -20,7 +20,7 @@ const session = (minutes: number): ActivityEvent => ({
   source: 'agent-session',
   kind: 'agent-session',
   sessionId: 'session-1',
-  cwd: '/home/tom/dev/ethlete-sdk',
+  cwd: '/home/human/dev/ethlete-sdk',
 });
 
 const presence = (minutes: number, kind: 'idle-start' | 'idle-end' | 'pause-start' | 'pause-end'): ActivityEvent => ({
@@ -29,7 +29,7 @@ const presence = (minutes: number, kind: 'idle-start' | 'idle-end' | 'pause-star
   kind,
 });
 
-const typed = (minutes: number, cwd = '/home/tom/dev/fifagg/fifagg-frontend'): AgentPromptEvent => ({
+const typed = (minutes: number, cwd = '/home/human/dev/fifagg/fifagg-frontend'): AgentPromptEvent => ({
   at: AT(minutes),
   source: 'agent-prompt',
   kind: 'agent-prompt',
@@ -40,7 +40,7 @@ const typed = (minutes: number, cwd = '/home/tom/dev/fifagg/fifagg-frontend'): A
 });
 
 /** A prompt nobody was there for: a schedule, a task notification, another session. */
-const scheduled = (minutes: number, cwd = '/home/tom/dev/fifagg/fifagg-frontend'): AgentPromptEvent => ({
+const scheduled = (minutes: number, cwd = '/home/human/dev/fifagg/fifagg-frontend'): AgentPromptEvent => ({
   ...typed(minutes, cwd),
   askedBy: 'machine',
 });
@@ -52,7 +52,7 @@ const turn = (minutes: number): AgentUsageEvent => ({
   provider: 'claude-code',
   sessionId: 'session-1',
   turnId: `msg_${minutes}`,
-  cwd: '/home/tom/dev/fifagg/fifagg-frontend',
+  cwd: '/home/human/dev/fifagg/fifagg-frontend',
   model: 'claude-opus-5',
   usage: { input: 1, output: 10, cacheWrite: 0, cacheRead: 500, thinking: 0 },
 });

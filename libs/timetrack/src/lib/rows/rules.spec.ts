@@ -6,7 +6,7 @@ import { AttributionRule, describeAttributionRule, issueKeyOf, matchAttributionR
 
 const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   id: 'rule-1',
-  repoPath: '/Users/tom/dev/ea-frontend',
+  repoPath: '/Users/human/dev/ea-frontend',
   target: { kind: 'issue', issueKey: 'FIP-100' },
   author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
@@ -32,7 +32,7 @@ const group = (blocks: ActivityBlock[]): WorkGroup => ({
 describe('matchAttributionRule', () => {
   it('matches a repository rule against any branch of it', () => {
     const match = matchAttributionRule({
-      context: { repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' },
+      context: { repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' },
       rules: [rule()],
     });
 
@@ -42,7 +42,7 @@ describe('matchAttributionRule', () => {
 
   it('prefers the branch rule over the repository rule it sits inside', () => {
     const match = matchAttributionRule({
-      context: { repoPath: '/Users/tom/dev/ea-frontend', branch: 'next' },
+      context: { repoPath: '/Users/human/dev/ea-frontend', branch: 'next' },
       rules: [rule(), rule({ id: 'rule-2', branch: 'next', target: { kind: 'issue', issueKey: 'FIP-200' } })],
     });
 
@@ -52,7 +52,7 @@ describe('matchAttributionRule', () => {
 
   it('reads a ref and a plain branch name as the same branch', () => {
     const match = matchAttributionRule({
-      context: { repoPath: '/Users/tom/dev/ea-frontend', branch: 'refs/heads/next' },
+      context: { repoPath: '/Users/human/dev/ea-frontend', branch: 'refs/heads/next' },
       rules: [rule({ branch: 'next', target: { kind: 'issue', issueKey: 'FIP-200' } })],
     });
 
@@ -61,7 +61,7 @@ describe('matchAttributionRule', () => {
 
   it('does not let a branch rule match a different branch of the same repository', () => {
     const match = matchAttributionRule({
-      context: { repoPath: '/Users/tom/dev/ea-frontend', branch: 'chore/cleanup' },
+      context: { repoPath: '/Users/human/dev/ea-frontend', branch: 'chore/cleanup' },
       rules: [rule({ branch: 'next', target: { kind: 'issue', issueKey: 'FIP-200' } })],
     });
 
@@ -86,7 +86,7 @@ describe('matchAttributionRule', () => {
 
   it('takes the newest of two rules that are equally specific', () => {
     const match = matchAttributionRule({
-      context: { repoPath: '/Users/tom/dev/ea-frontend' },
+      context: { repoPath: '/Users/human/dev/ea-frontend' },
       rules: [
         rule(),
         rule({
@@ -103,7 +103,7 @@ describe('matchAttributionRule', () => {
 
 describe('unnamedContexts', () => {
   it('folds the day fragments of one context into a single question', () => {
-    const context = { repoPath: '/Users/tom/dev/ea-frontend', branch: 'next' };
+    const context = { repoPath: '/Users/human/dev/ea-frontend', branch: 'next' };
     const contexts = unnamedContexts({
       unattributed: [
         group([block(context, '2026-08-11T08:00:00Z', '2026-08-11T09:00:00Z')]),
@@ -124,7 +124,7 @@ describe('unnamedContexts', () => {
         group([block({ appId: 'com.google.Chrome' }, '2026-08-11T08:00:00Z', '2026-08-11T08:20:00Z')]),
         group([
           block(
-            { repoPath: '/Users/tom/dev/ea-frontend', branch: 'next' },
+            { repoPath: '/Users/human/dev/ea-frontend', branch: 'next' },
             '2026-08-11T09:00:00Z',
             '2026-08-11T12:00:00Z',
           ),
@@ -133,7 +133,7 @@ describe('unnamedContexts', () => {
     });
 
     expect(contexts.map((entry) => entry.context.repoPath ?? entry.context.appId)).toEqual([
-      '/Users/tom/dev/ea-frontend',
+      '/Users/human/dev/ea-frontend',
       'com.google.Chrome',
     ]);
   });

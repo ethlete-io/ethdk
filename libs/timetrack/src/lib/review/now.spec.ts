@@ -10,7 +10,7 @@ const at = (hour: number, minute = 0) => new Date(2026, 7, 11, hour, minute);
 const block = (options: { from: Date; to: Date; branch?: string }): ActivityBlock => ({
   from: options.from,
   to: options.to,
-  context: { appId: 'code', repoPath: '/home/tom/dev/ethlete-sdk', branch: options.branch ?? 'next' },
+  context: { appId: 'code', repoPath: '/home/human/dev/ethlete-sdk', branch: options.branch ?? 'next' },
   evidence: [],
 });
 

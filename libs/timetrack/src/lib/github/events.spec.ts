@@ -24,7 +24,7 @@ const read = (runner: TimetrackProcessRunner, options: { pageSize?: number; maxP
 
   fetchGitHubEvents$({
     runner,
-    login: 'TomTomB',
+    login: 'human-gh',
     from: new Date(2026, 7, 11, 0, 0),
     to: new Date(2026, 7, 11, 23, 59, 59),
     paging: { pageSize: options.pageSize ?? 1, maxPages: options.maxPages ?? 3 },
@@ -75,7 +75,7 @@ describe('fetchGitHubEvents$', () => {
     read(runner);
 
     expect(specs[0]?.command).toBe('gh');
-    expect(specs[0]?.args.at(-1)).toContain('users/TomTomB/events');
+    expect(specs[0]?.args.at(-1)).toContain('users/human-gh/events');
   });
 
   it('takes the head ref off a review, which is the whole issue key and needs no second call', () => {

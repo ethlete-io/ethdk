@@ -152,7 +152,7 @@ describe('describeWork', () => {
     const text = describeWork({
       group: group({
         branch: 'feat/FIP-2177-user-management',
-        evidence: [{ kind: 'agent-session', at: AT, detail: 'agent session 7f3 in /home/tom/dev/fut-frontend' }],
+        evidence: [{ kind: 'agent-session', at: AT, detail: 'agent session 7f3 in /home/human/dev/fut-frontend' }],
       }),
       config: FIP,
     });

@@ -11,7 +11,7 @@ const PLAN: ReasoningPlan = {
     ],
     contexts: [{ id: 'c1', repo: 'ea-frontend', branch: 'refactor/hub-query-v3', minutes: 95, notes: [] }],
   },
-  contextIds: { c1: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3' },
+  contextIds: { c1: 'repo:/Users/human/dev/ea-frontend@refactor/hub-query-v3' },
   map: EMPTY_PSEUDONYM_MAP,
   hash: 'abc',
 };
@@ -29,7 +29,7 @@ describe('parseReasoningOutput', () => {
 
     expect(parseReasoningOutput({ stdout, plan: PLAN })).toEqual([
       {
-        contextId: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3',
+        contextId: 'repo:/Users/human/dev/ea-frontend@refactor/hub-query-v3',
         issueKey: 'FIP-2201',
         reason: 'the branch names the rewrite',
       },
@@ -97,7 +97,7 @@ describe('parseReasoningOutput over a request written in pseudonyms', () => {
       candidates: [{ issueKey: `${pseudonym.toUpperCase()}-12623`, summary: `the ${pseudonym} journey` }],
       contexts: [{ id: 'c1', repo: 'app', minutes: 95, notes: [] }],
     },
-    contextIds: { c1: 'repo:/Users/tom/dev/app@feat/journey' },
+    contextIds: { c1: 'repo:/Users/human/dev/app@feat/journey' },
     map,
     hash: 'abc',
   };

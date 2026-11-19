@@ -15,7 +15,7 @@ const MINUTE = 60_000;
 const DAY_START = new Date(2026, 7, 11, 8, 0, 0);
 const AT = (minute: number) => new Date(DAY_START.getTime() + minute * MINUTE);
 const FIP = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
-const REPO = '/home/tom/dev/fut-frontend';
+const REPO = '/home/human/dev/fut-frontend';
 const BRANCH = 'feat/FIP-2177-club-pack';
 
 const focus = (minute: number, appId: string, title: string): CollectedEvent => ({

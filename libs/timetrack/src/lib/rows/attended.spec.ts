@@ -7,7 +7,7 @@ import { attendedAt, markAttendance, peerAttendance } from './attended';
 
 const AT = (minute: number) => new Date(2026, 8, 12, 0, minute, 0);
 const GRACE = 15 * 60_000;
-const REPO = '/home/tom/dev/ethlete-sdk';
+const REPO = '/home/human/dev/ethlete-sdk';
 
 const focus = (minute: number): CollectedEvent => ({
   at: AT(minute),

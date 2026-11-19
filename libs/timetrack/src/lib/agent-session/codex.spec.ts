@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CODEX_PROVIDER, parseCodexSessionLog } from './codex';
 import { AgentLogSessionState } from './source';
 
-const CWD = '/home/tom/dev/ethlete-sdk';
+const CWD = '/home/human/dev/ethlete-sdk';
 const SESSION = '01a016ac-fe48-73d1-bf46-fc7e92d6c807';
 
 let nextOrdinal = 0;
@@ -235,7 +235,7 @@ describe('parseCodexSessionLog', () => {
         sessionMeta('2026-08-18T21:00:00.000Z'),
         item('2026-08-18T21:00:30.000Z'),
         item('2026-08-18T21:01:00.000Z'),
-        turnContext('2026-08-18T21:01:10.000Z', { cwd: '/home/tom/dev/fut-frontend' }),
+        turnContext('2026-08-18T21:01:10.000Z', { cwd: '/home/human/dev/fut-frontend' }),
         item('2026-08-18T21:01:20.000Z'),
       ],
       sampleIntervalMs: 60_000,
@@ -244,8 +244,8 @@ describe('parseCodexSessionLog', () => {
     expect(result.events.map((event) => [event.at.toISOString(), event.cwd])).toEqual([
       ['2026-08-18T21:00:00.000Z', CWD],
       ['2026-08-18T21:01:00.000Z', CWD],
-      ['2026-08-18T21:01:10.000Z', '/home/tom/dev/fut-frontend'],
-      ['2026-08-18T21:01:20.000Z', '/home/tom/dev/fut-frontend'],
+      ['2026-08-18T21:01:10.000Z', '/home/human/dev/fut-frontend'],
+      ['2026-08-18T21:01:20.000Z', '/home/human/dev/fut-frontend'],
     ]);
   });
 

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { streamDay } from './stream-day';
 
-const MAIN = '/home/tom/dev/fut-frontend';
-const WORKTREE = '/home/tom/dev/fut-frontend-altcha';
+const MAIN = '/home/human/dev/fut-frontend';
+const WORKTREE = '/home/human/dev/fut-frontend-altcha';
 const MAIN_BRANCH = 'fix/security-audit-general';
 const WORKTREE_BRANCH = 'feat/login-altcha';
 

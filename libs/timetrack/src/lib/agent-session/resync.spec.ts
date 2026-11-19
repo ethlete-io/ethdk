@@ -28,17 +28,17 @@ const rewound = (cursors: AgentSessionCursor[], paths: string[]) =>
 describe('resyncAgentSessionCursors', () => {
   it('rewinds a cursor whose checkout the path names', () => {
     const result = resyncAgentSessionCursors({
-      cursors: [cursor('a', '/home/tom/dev/fut-frontend')],
-      paths: ['/home/tom/dev/fut-frontend'],
+      cursors: [cursor('a', '/home/human/dev/fut-frontend')],
+      paths: ['/home/human/dev/fut-frontend'],
     });
 
-    expect(result).toEqual([{ id: 'a', nextLine: 0, cwd: '/home/tom/dev/fut-frontend' }]);
+    expect(result).toEqual([{ id: 'a', nextLine: 0, cwd: '/home/human/dev/fut-frontend' }]);
   });
 
   it('clears the last sample and the title, so the re-read starts as a first read would', () => {
     const [reset] = resyncAgentSessionCursors({
-      cursors: [cursor('a', '/home/tom/dev/fut-frontend')],
-      paths: ['/home/tom/dev/fut-frontend'],
+      cursors: [cursor('a', '/home/human/dev/fut-frontend')],
+      paths: ['/home/human/dev/fut-frontend'],
     });
 
     expect(reset?.after).toBeUndefined();
@@ -46,30 +46,30 @@ describe('resyncAgentSessionCursors', () => {
   });
 
   it('rewinds a cursor below a directory the path names', () => {
-    expect(rewound([cursor('a', '/home/tom/dev/fut-frontend/apps/web')], ['/home/tom/dev'])).toEqual(['a']);
+    expect(rewound([cursor('a', '/home/human/dev/fut-frontend/apps/web')], ['/home/human/dev'])).toEqual(['a']);
   });
 
   it('leaves a cursor in a sibling directory alone, because a re-read would double its samples', () => {
-    expect(rewound([cursor('a', '/home/tom/dev-old/fut-frontend')], ['/home/tom/dev'])).toEqual([]);
+    expect(rewound([cursor('a', '/home/human/dev-old/fut-frontend')], ['/home/human/dev'])).toEqual([]);
   });
 
   it('leaves a cursor written before the checkout was recorded alone', () => {
-    expect(rewound([cursor('a')], ['/home/tom/dev/fut-frontend'])).toEqual([]);
+    expect(rewound([cursor('a')], ['/home/human/dev/fut-frontend'])).toEqual([]);
   });
 
   it('rewinds nothing when no path is given', () => {
-    expect(rewound([cursor('a', '/home/tom/dev')], [])).toEqual([]);
+    expect(rewound([cursor('a', '/home/human/dev')], [])).toEqual([]);
   });
 
   it('ignores an empty path rather than reading it as every checkout', () => {
-    expect(rewound([cursor('a', '/home/tom/dev')], ['', '  '])).toEqual([]);
+    expect(rewound([cursor('a', '/home/human/dev')], ['', '  '])).toEqual([]);
   });
 
   it('keeps the cursors it did not rewind exactly as they were', () => {
-    const kept = cursor('b', '/home/tom/dev/other');
+    const kept = cursor('b', '/home/human/dev/other');
     const result = resyncAgentSessionCursors({
-      cursors: [cursor('a', '/home/tom/dev/fut-frontend'), kept],
-      paths: ['/home/tom/dev/fut-frontend'],
+      cursors: [cursor('a', '/home/human/dev/fut-frontend'), kept],
+      paths: ['/home/human/dev/fut-frontend'],
     });
 
     expect(result[1]).toBe(kept);
@@ -77,12 +77,12 @@ describe('resyncAgentSessionCursors', () => {
 
   it('rewinds every cursor a path covers, not only the first', () => {
     const cursors = [
-      cursor('a', '/home/tom/dev/fut-frontend'),
-      cursor('b', '/home/tom/dev/fut-frontend/apps/web'),
-      cursor('c', '/home/tom/dev/other'),
+      cursor('a', '/home/human/dev/fut-frontend'),
+      cursor('b', '/home/human/dev/fut-frontend/apps/web'),
+      cursor('c', '/home/human/dev/other'),
     ];
 
-    expect(rewound(cursors, ['/home/tom/dev/fut-frontend'])).toEqual(['a', 'b']);
+    expect(rewound(cursors, ['/home/human/dev/fut-frontend'])).toEqual(['a', 'b']);
   });
 });
 
@@ -101,10 +101,10 @@ const skipped = (cwd: string, events = 3): UnlinkedAgentSessions => ({
 
 describe('agentSessionResyncOffers', () => {
   it('offers a skipped checkout a link now files into a project', () => {
-    const entry = skipped('/home/tom/dev/fut-frontend');
+    const entry = skipped('/home/human/dev/fut-frontend');
     const result = agentSessionResyncOffers({
       unlinked: [entry],
-      links: [link('/home/tom/dev/fut-frontend', { kind: 'project', projectKey: 'FIP' })],
+      links: [link('/home/human/dev/fut-frontend', { kind: 'project', projectKey: 'FIP' })],
     });
 
     expect(result).toEqual([{ ...entry, projectKey: 'FIP' }]);
@@ -112,21 +112,21 @@ describe('agentSessionResyncOffers', () => {
 
   it('offers a checkout a linked directory above it covers', () => {
     const result = agentSessionResyncOffers({
-      unlinked: [skipped('/home/tom/dev/fut-frontend/apps/web')],
-      links: [link('/home/tom/dev', { kind: 'project', projectKey: 'FIP' })],
+      unlinked: [skipped('/home/human/dev/fut-frontend/apps/web')],
+      links: [link('/home/human/dev', { kind: 'project', projectKey: 'FIP' })],
     });
 
     expect(result.map((offer) => offer.projectKey)).toEqual(['FIP']);
   });
 
   it('offers nothing for a checkout still covered by no link', () => {
-    expect(agentSessionResyncOffers({ unlinked: [skipped('/home/tom/dev/local-ai')], links: [] })).toEqual([]);
+    expect(agentSessionResyncOffers({ unlinked: [skipped('/home/human/dev/local-ai')], links: [] })).toEqual([]);
   });
 
   it('offers nothing for a checkout the user marked private, because a re-read would drop it again', () => {
     const result = agentSessionResyncOffers({
-      unlinked: [skipped('/home/tom/dev/side')],
-      links: [link('/home/tom/dev/side', { kind: 'private' })],
+      unlinked: [skipped('/home/human/dev/side')],
+      links: [link('/home/human/dev/side', { kind: 'private' })],
     });
 
     expect(result).toEqual([]);
@@ -134,11 +134,11 @@ describe('agentSessionResyncOffers', () => {
 
   it('keeps the order it was given, which is the costliest checkout first', () => {
     const result = agentSessionResyncOffers({
-      unlinked: [skipped('/home/tom/dev/two', 9), skipped('/home/tom/dev/one', 2)],
-      links: [link('/home/tom/dev', { kind: 'project', projectKey: 'FIP' })],
+      unlinked: [skipped('/home/human/dev/two', 9), skipped('/home/human/dev/one', 2)],
+      links: [link('/home/human/dev', { kind: 'project', projectKey: 'FIP' })],
     });
 
-    expect(result.map((offer) => offer.cwd)).toEqual(['/home/tom/dev/two', '/home/tom/dev/one']);
+    expect(result.map((offer) => offer.cwd)).toEqual(['/home/human/dev/two', '/home/human/dev/one']);
   });
 });
 
@@ -152,33 +152,33 @@ describe('rewindAgentBackfillCursors', () => {
 
   it('clears the cursor of a log run under one of the paths', () => {
     const result = rewindAgentBackfillCursors({
-      cursors: [spendCursor('a', { cwd: '/home/tom/dev/fut-frontend/apps/web' })],
-      paths: ['/home/tom/dev/fut-frontend'],
+      cursors: [spendCursor('a', { cwd: '/home/human/dev/fut-frontend/apps/web' })],
+      paths: ['/home/human/dev/fut-frontend'],
     });
 
-    expect(result).toEqual([{ id: 'a', nextLine: 0, cwd: '/home/tom/dev/fut-frontend/apps/web' }]);
+    expect(result).toEqual([{ id: 'a', nextLine: 0, cwd: '/home/human/dev/fut-frontend/apps/web' }]);
   });
 
   it('returns only the cleared cursors, because they are the whole write', () => {
     const result = rewindAgentBackfillCursors({
       cursors: [
-        spendCursor('a', { cwd: '/home/tom/dev/fut-frontend' }),
-        spendCursor('b', { cwd: '/home/tom/dev/ethlete-sdk' }),
+        spendCursor('a', { cwd: '/home/human/dev/fut-frontend' }),
+        spendCursor('b', { cwd: '/home/human/dev/ethlete-sdk' }),
       ],
-      paths: ['/home/tom/dev/fut-frontend'],
+      paths: ['/home/human/dev/fut-frontend'],
     });
 
     expect(result.map((cursor) => cursor.id)).toEqual(['a']);
   });
 
   it('leaves a cursor whose checkout was never recorded, because nothing says the path covers it', () => {
-    expect(rewindAgentBackfillCursors({ cursors: [spendCursor('a')], paths: ['/home/tom/dev'] })).toEqual([]);
+    expect(rewindAgentBackfillCursors({ cursors: [spendCursor('a')], paths: ['/home/human/dev'] })).toEqual([]);
   });
 
   it('leaves a log the pass has not read through, because it is queued already', () => {
-    const cursors = [spendCursor('a', { cwd: '/home/tom/dev/fut-frontend', readThrough: false })];
+    const cursors = [spendCursor('a', { cwd: '/home/human/dev/fut-frontend', readThrough: false })];
 
-    expect(rewindAgentBackfillCursors({ cursors, paths: ['/home/tom/dev/fut-frontend'] })).toEqual([]);
+    expect(rewindAgentBackfillCursors({ cursors, paths: ['/home/human/dev/fut-frontend'] })).toEqual([]);
   });
 });
 
@@ -194,11 +194,11 @@ describe('agentSessionSpansUnder', () => {
   it('spans each session from its first sample to its last, whichever order they came in', () => {
     const spans = agentSessionSpansUnder({
       events: [
-        sample('s1', '2026-09-24T10:30:00Z', '/home/tom/dev/ethlete-sdk'),
-        sample('s1', '2026-09-24T09:00:00Z', '/home/tom/dev/ethlete-sdk'),
-        sample('s1', '2026-09-24T11:00:00Z', '/home/tom/dev/ethlete-sdk'),
+        sample('s1', '2026-09-24T10:30:00Z', '/home/human/dev/ethlete-sdk'),
+        sample('s1', '2026-09-24T09:00:00Z', '/home/human/dev/ethlete-sdk'),
+        sample('s1', '2026-09-24T11:00:00Z', '/home/human/dev/ethlete-sdk'),
       ],
-      paths: ['/home/tom/dev/ethlete-sdk'],
+      paths: ['/home/human/dev/ethlete-sdk'],
     });
 
     expect(spans).toEqual([
@@ -209,10 +209,10 @@ describe('agentSessionSpansUnder', () => {
   it('leaves out a session no sample of which was taken under the paths', () => {
     const spans = agentSessionSpansUnder({
       events: [
-        sample('s1', '2026-09-24T09:00:00Z', '/home/tom/dev/ethlete-sdk/apps/timetrack'),
-        sample('s2', '2026-09-24T09:00:00Z', '/home/tom/dev/fut-frontend'),
+        sample('s1', '2026-09-24T09:00:00Z', '/home/human/dev/ethlete-sdk/apps/timetrack'),
+        sample('s2', '2026-09-24T09:00:00Z', '/home/human/dev/fut-frontend'),
       ],
-      paths: ['/home/tom/dev/ethlete-sdk'],
+      paths: ['/home/human/dev/ethlete-sdk'],
     });
 
     expect(spans.map((span) => span.sessionId)).toEqual(['s1']);
@@ -221,10 +221,10 @@ describe('agentSessionSpansUnder', () => {
   it('spans the samples a session took in another checkout too', () => {
     const [span] = agentSessionSpansUnder({
       events: [
-        sample('s1', '2026-09-24T09:00:00Z', '/home/tom/dev/ethlete-sdk'),
-        sample('s1', '2026-09-24T12:00:00Z', '/home/tom/dev/fut-frontend'),
+        sample('s1', '2026-09-24T09:00:00Z', '/home/human/dev/ethlete-sdk'),
+        sample('s1', '2026-09-24T12:00:00Z', '/home/human/dev/fut-frontend'),
       ],
-      paths: ['/home/tom/dev/ethlete-sdk'],
+      paths: ['/home/human/dev/ethlete-sdk'],
     });
 
     expect(span?.to).toEqual(new Date('2026-09-24T12:00:00Z'));
@@ -236,7 +236,7 @@ describe('agentSessionReparseBatch', () => {
     id,
     nextLine: 40,
     after: new Date(after),
-    cwd: '/home/tom/dev/fut-frontend',
+    cwd: '/home/human/dev/fut-frontend',
     ...(parserVersion ? { parserVersion } : {}),
   });
   const groupOf = (logId: string) => logId.split('/')[0] ?? logId;
@@ -249,7 +249,7 @@ describe('agentSessionReparseBatch', () => {
       limit: 1,
     });
 
-    expect(batch).toEqual([{ id: 'b', nextLine: 0, cwd: '/home/tom/dev/fut-frontend' }]);
+    expect(batch).toEqual([{ id: 'b', nextLine: 0, cwd: '/home/human/dev/fut-frontend' }]);
   });
 
   it('leaves a log the current parse rules read, and one the host no longer lists', () => {
@@ -282,7 +282,7 @@ describe('reparsedAgentSessionWrite', () => {
     source: 'agent-session',
     kind: 'agent-session',
     sessionId,
-    cwd: '/home/tom/dev/fut-frontend',
+    cwd: '/home/human/dev/fut-frontend',
   });
   const dayOf = (at: Date) => at.toISOString().slice(0, 10);
 

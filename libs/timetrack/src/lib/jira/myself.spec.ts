@@ -23,7 +23,7 @@ describe('fetchJiraMyself$', () => {
   it('reads the account the token authenticates as', () => {
     const { transport, requests } = myselfTransport({
       accountId: 'acc:123',
-      displayName: 'Tom',
+      displayName: 'human',
       emailAddress: 'me@example.com',
     });
     const seen = vi.fn();
@@ -31,11 +31,11 @@ describe('fetchJiraMyself$', () => {
     fetchJiraMyself$({ transport, credentials: CREDENTIALS }).subscribe(seen);
 
     expect(requests[0]?.url).toBe('https://team.atlassian.net/rest/api/3/myself');
-    expect(seen).toHaveBeenCalledWith({ accountId: 'acc:123', displayName: 'Tom', emailAddress: 'me@example.com' });
+    expect(seen).toHaveBeenCalledWith({ accountId: 'acc:123', displayName: 'human', emailAddress: 'me@example.com' });
   });
 
   it('fails rather than resolving when jira answers without an account id', () => {
-    const { transport } = myselfTransport({ displayName: 'Tom' });
+    const { transport } = myselfTransport({ displayName: 'human' });
     const failed = vi.fn();
 
     fetchJiraMyself$({ transport, credentials: CREDENTIALS }).subscribe({ error: failed });

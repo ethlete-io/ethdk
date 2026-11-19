@@ -386,7 +386,7 @@ describe('dropCallWindows', () => {
 
   it('keeps every other application, so work done while listening still counts', () => {
     const blocks = [
-      app({ from: at(10, 5), to: at(10, 40), appId: 'code', repoPath: '/home/tom/dev/sdk' }),
+      app({ from: at(10, 5), to: at(10, 40), appId: 'code', repoPath: '/home/human/dev/sdk' }),
       app({ from: at(10, 40), to: at(10, 50), appId: 'firefox' }),
     ];
 
@@ -394,7 +394,9 @@ describe('dropCallWindows', () => {
   });
 
   it('keeps a checkout named in the call application, because other evidence named it', () => {
-    const blocks = [app({ from: at(10, 5), to: at(10, 40), appId: 'com.hnc.Discord', repoPath: '/home/tom/dev/sdk' })];
+    const blocks = [
+      app({ from: at(10, 5), to: at(10, 40), appId: 'com.hnc.Discord', repoPath: '/home/human/dev/sdk' }),
+    ];
 
     expect(dropCallWindows({ blocks, calls: [call()] })).toEqual(blocks);
   });

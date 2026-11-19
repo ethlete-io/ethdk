@@ -14,7 +14,7 @@ import { streamDay } from './stream-day';
 const MINUTE = 60_000;
 const DAY_START = new Date(2026, 8, 12, 0, 0, 0);
 const AT = (minute: number) => new Date(DAY_START.getTime() + minute * MINUTE);
-const REPO = '/home/tom/dev/ethlete-sdk';
+const REPO = '/home/human/dev/ethlete-sdk';
 const BRANCH = 'feat/ET-772-name-the-ticket';
 const SESSION = 'session-1';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['ET'] });
@@ -191,7 +191,7 @@ describe('streamDay, on commits another machine made', () => {
 
 describe('streamDay, on work the user steered from a phone', () => {
   /**
-   * 2026-09-15: Tom left the desk and kept prompting through Claude remote. The idle notifier saw
+   * 2026-09-15: The human left the desk and kept prompting through Claude remote. The idle notifier saw
    * nobody at the seat for 1h 20m, and eight prompts he typed landed inside it.
    */
   const REMOTE: CollectedEvent[] = [
@@ -243,7 +243,7 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
   });
 
   /**
-   * 2026-09-23: Tom left the desk for three hours and steered two agents from his phone in the
+   * 2026-09-23: The human left the desk for three hours and steered two agents from his phone in the
    * middle of them. The seat stopped at 89 and was touched again at 240.
    */
   const AWAY: CollectedEvent[] = [
@@ -278,7 +278,7 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
     ]);
   });
 
-  const OTHER = '/home/tom/dev/fut-frontend';
+  const OTHER = '/home/human/dev/fut-frontend';
   const PHONE_BRANCH = 'feat/ET-900-steer-from-the-phone';
   const steered = (minutes: number[]) =>
     minutes.flatMap((minute): CollectedEvent[] => [
@@ -421,7 +421,7 @@ describe('streamDay, on an agent that ran through a lunch break', () => {
   });
 
   /**
-   * 2026-09-29: Tom left at 12:36 and nothing closed the idle-start. Agent sessions kept working one
+   * 2026-09-29: The human left at 12:36 and nothing closed the idle-start. Agent sessions kept working one
    * after another for 2h 40m, and a meeting that counts as work brought him back. The gap is under
    * `DEFAULT_MAX_BREAK_MS`, and each session is a piece of its own.
    */
@@ -499,7 +499,7 @@ describe('streamDay, on a day still being collected while the user steers from a
   });
 
   /**
-   * 2026-09-29: Tom left the desk at 15:01 and prompted two sessions of one checkout from his phone
+   * 2026-09-29: The human left the desk at 15:01 and prompted two sessions of one checkout from his phone
    * at 15:21 to 15:24. He was still away when the day was read.
    */
   const AWAY: CollectedEvent[] = [

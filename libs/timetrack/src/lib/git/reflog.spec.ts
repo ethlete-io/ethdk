@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GIT_FIELD_SEPARATOR } from './format';
 import { parseGitReflog } from './reflog';
 
-const REPO = '/home/tom/dev/fut-frontend';
+const REPO = '/home/human/dev/fut-frontend';
 
 const line = (options: { stamp: string; subject: string }) =>
   `HEAD@{${options.stamp}}${GIT_FIELD_SEPARATOR}${options.subject}`;

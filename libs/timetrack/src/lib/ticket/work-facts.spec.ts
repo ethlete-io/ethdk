@@ -7,7 +7,7 @@ import { contextWorkFacts, standInWorkFacts } from './work-facts';
 const DAY = '2026-10-09';
 const at = (clock: string) => new Date(`${DAY}T${clock}:00.000Z`);
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
-const REPO = '/home/tom/dev/fut-frontend';
+const REPO = '/home/human/dev/fut-frontend';
 const PROJECT = 'ea/fut-item-platform/fut-item-platform-fe';
 const KEYS = { [REPO]: `gitlab.example.com/${PROJECT}` };
 

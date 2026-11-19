@@ -6,8 +6,8 @@ import { ActivityContext, contextKey } from '../model/block';
 import { TimetrackProjectLink, matchProjectLink, withWorktreeLinks } from '../model/project-link';
 import { autoStandIns } from './auto-stand-in';
 
-const MAIN = '/home/tom/dev/fut-frontend';
-const WORKTREE = '/home/tom/dev/fut-frontend-altcha';
+const MAIN = '/home/human/dev/fut-frontend';
+const WORKTREE = '/home/human/dev/fut-frontend-altcha';
 
 const LIST = [
   `worktree ${MAIN}`,
@@ -73,7 +73,7 @@ describe('a linked worktree', () => {
     const links = withWorktreeLinks({ links: [LINK], worktrees });
 
     expect(matchProjectLink({ context: { repoPath: WORKTREE }, links })?.target).toEqual(LINK.target);
-    expect(matchProjectLink({ context: { repoPath: '/home/tom/dev/fut-frontend-old' }, links })).toBeUndefined();
+    expect(matchProjectLink({ context: { repoPath: '/home/human/dev/fut-frontend-old' }, links })).toBeUndefined();
   });
 
   it('opens a stand-in in that project for its own branch', () => {

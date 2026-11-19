@@ -10,14 +10,14 @@ const GLAB_REPORT = `gitlab.com
   ✓ API calls for gitlab.com are made over https protocol.
   ! No token found (checked config file, keyring, and environment variables).
 gitlab.braune-digital.com
-  ✓ Logged in to gitlab.braune-digital.com as bornholdt (keyring)
+  ✓ Logged in to gitlab.braune-digital.com as human (keyring)
   ✓ Git operations for gitlab.braune-digital.com configured to use ssh protocol.
   ✓ Token found in operating system keyring: **************************
 `;
 
 /** `gh auth status` on the same machine and the same day. */
 const GH_REPORT = `github.com
-  ✓ Logged in to github.com account TomTomB (keyring)
+  ✓ Logged in to github.com account human-gh (keyring)
   - Active account: true
   - Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo'
 `;
@@ -33,11 +33,11 @@ const probe = (result: ProcessResult) => {
 
 describe('parseForgeAuthStatus', () => {
   it('reads the host and the account off `glab`’s line', () => {
-    expect(parseForgeAuthStatus(GLAB_REPORT)).toEqual([{ host: 'gitlab.braune-digital.com', login: 'bornholdt' }]);
+    expect(parseForgeAuthStatus(GLAB_REPORT)).toEqual([{ host: 'gitlab.braune-digital.com', login: 'human' }]);
   });
 
   it('reads `gh`’s line too, which words the same fact differently', () => {
-    expect(parseForgeAuthStatus(GH_REPORT)).toEqual([{ host: 'github.com', login: 'TomTomB' }]);
+    expect(parseForgeAuthStatus(GH_REPORT)).toEqual([{ host: 'github.com', login: 'human-gh' }]);
   });
 
   it('leaves out a configured host that holds no token', () => {
@@ -79,7 +79,7 @@ describe('forgeLoginFor', () => {
   it('finds the host whatever case it was written in, and answers null for one with no login', () => {
     const auth = probe({ code: 1, stdout: '', stderr: GLAB_REPORT });
 
-    expect(forgeLoginFor(auth, 'GitLab.Braune-Digital.com')?.login).toBe('bornholdt');
+    expect(forgeLoginFor(auth, 'GitLab.Braune-Digital.com')?.login).toBe('human');
     expect(forgeLoginFor(auth, 'gitlab.com')).toBeNull();
   });
 });

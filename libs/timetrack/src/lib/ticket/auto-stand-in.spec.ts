@@ -9,8 +9,8 @@ import { TimetrackProjectLink } from '../model/project-link';
 import { StandIn, StandInRefusal } from '../model/stand-in';
 import { autoStandIns } from './auto-stand-in';
 
-const FIFAGG = '/Users/tom/dev/fifagg-frontend';
-const OTHER = '/Users/tom/dev/side-project';
+const FIFAGG = '/Users/human/dev/fifagg-frontend';
+const OTHER = '/Users/human/dev/side-project';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
 const NOW = new Date('2026-09-15T09:00:00Z');
 

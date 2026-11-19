@@ -17,7 +17,7 @@ describe('repoKeyOf', () => {
     ['git@host.example:/srv/repo.git', 'host.example/srv/repo'],
     ['ssh://git@host.example:8080/team/sub/repo.git//', 'host.example/team/sub/repo'],
   ])('normalizes %s to %s', (remoteUrl, expected) => {
-    expect(repoKeyOf(remoteUrl, '/home/tom/dev/x')).toBe(expected);
+    expect(repoKeyOf(remoteUrl, '/home/human/dev/x')).toBe(expected);
   });
 
   it('keys two spellings of one repository identically', () => {
@@ -25,11 +25,11 @@ describe('repoKeyOf', () => {
   });
 
   it.each([null, '', '   '])('falls back to the directory name without a URL (%j)', (remoteUrl) => {
-    expect(repoKeyOf(remoteUrl, '/home/tom/dev/Ethlete-SDK')).toBe('ethlete-sdk');
+    expect(repoKeyOf(remoteUrl, '/home/human/dev/Ethlete-SDK')).toBe('ethlete-sdk');
   });
 
   it('takes the last segment of a checkout path with a trailing slash', () => {
-    expect(repoKeyOf(null, '/Users/tom/dev/x/')).toBe('x');
+    expect(repoKeyOf(null, '/Users/human/dev/x/')).toBe('x');
   });
 
   it('takes the last segment of a Windows checkout path', () => {
@@ -55,14 +55,14 @@ describe('readRepoKey$', () => {
       'remote get-url fork': 'git@github.com:someone/sdk.git\n',
     });
 
-    await expect(firstValueFrom(readRepoKey$({ processes, repoPath: '/home/tom/dev/x' }))).resolves.toBe(
+    await expect(firstValueFrom(readRepoKey$({ processes, repoPath: '/home/human/dev/x' }))).resolves.toBe(
       'gitlab.com/ethlete/sdk',
     );
   });
 
   it('keys a checkout without a remote by its directory name', async () => {
     await expect(
-      firstValueFrom(readRepoKey$({ processes: runnerOf({ remote: '' }), repoPath: '/home/tom/dev/Notes' })),
+      firstValueFrom(readRepoKey$({ processes: runnerOf({ remote: '' }), repoPath: '/home/human/dev/Notes' })),
     ).resolves.toBe('notes');
   });
 });
@@ -70,15 +70,15 @@ describe('readRepoKey$', () => {
 describe('resolveLocalOrigins', () => {
   it('keys a clone of a local checkout as that checkout', () => {
     const keys = {
-      '/home/tom/dev/ethlete-sdk': 'github.com/ethlete-io/ethdk',
-      '/home/tom/dev/tt-booked-clone': repoKeyOf('/home/tom/dev/ethlete-sdk', '/home/tom/dev/tt-booked-clone'),
-      '/home/tom/dev/notes': 'notes',
+      '/home/human/dev/ethlete-sdk': 'github.com/ethlete-io/ethdk',
+      '/home/human/dev/tt-booked-clone': repoKeyOf('/home/human/dev/ethlete-sdk', '/home/human/dev/tt-booked-clone'),
+      '/home/human/dev/notes': 'notes',
     };
 
     expect(resolveLocalOrigins(keys)).toEqual({
-      '/home/tom/dev/ethlete-sdk': 'github.com/ethlete-io/ethdk',
-      '/home/tom/dev/tt-booked-clone': 'github.com/ethlete-io/ethdk',
-      '/home/tom/dev/notes': 'notes',
+      '/home/human/dev/ethlete-sdk': 'github.com/ethlete-io/ethdk',
+      '/home/human/dev/tt-booked-clone': 'github.com/ethlete-io/ethdk',
+      '/home/human/dev/notes': 'notes',
     });
   });
 

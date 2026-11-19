@@ -6,7 +6,7 @@ import { parseTimetrackSettings } from './parse';
 
 const link = (overrides: Partial<TimetrackProjectLink> = {}): TimetrackProjectLink => ({
   id: 'link-1',
-  path: '/Users/tom/dev/ea-frontend',
+  path: '/Users/human/dev/ea-frontend',
   target: { kind: 'project', projectKey: 'FIP' },
   createdAt: new Date('2026-08-01T00:00:00Z'),
   ...overrides,
@@ -28,7 +28,7 @@ describe('withProjectLink', () => {
   it('reads a trailing slash as the same path', () => {
     const settings = withProjectLink({
       settings: settingsWith([link()]),
-      link: link({ id: 'link-2', path: '/Users/tom/dev/ea-frontend/' }),
+      link: link({ id: 'link-2', path: '/Users/human/dev/ea-frontend/' }),
     });
 
     expect(settings.projectLinks.map((entry) => entry.id)).toEqual(['link-2']);
@@ -37,7 +37,7 @@ describe('withProjectLink', () => {
   it('keeps a link on a repository beside the root it sits in', () => {
     const settings = withProjectLink({
       settings: settingsWith([link()]),
-      link: link({ id: 'link-2', path: '/Users/tom/dev', target: { kind: 'private' } }),
+      link: link({ id: 'link-2', path: '/Users/human/dev', target: { kind: 'private' } }),
     });
 
     expect(settings.projectLinks.map((entry) => entry.id)).toEqual(['link-1', 'link-2']);

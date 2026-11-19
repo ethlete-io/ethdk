@@ -43,7 +43,7 @@ const group = (observedMinutes: number): WorkGroup => ({
   observedMs: observedMinutes * MINUTE,
   confidence: 'weak',
   evidence: [],
-  blocks: [block({ repoPath: '/home/tom/dev/ethlete-sdk' })],
+  blocks: [block({ repoPath: '/home/human/dev/ethlete-sdk' })],
 });
 
 /** A band in an application alone, which no worklog can hold. */

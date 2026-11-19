@@ -34,7 +34,7 @@ const standIn = (overrides: Partial<StandIn> = {}): StandIn => ({
 
 const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   id: 'rule-1',
-  repoPath: '/home/tom/dev/ea-frontend',
+  repoPath: '/home/human/dev/ea-frontend',
   target: { kind: 'stand-in', standInId: 'stand-in-1' },
   author: 'user',
   createdAt: new Date('2026-09-14T00:00:00.000Z'),
@@ -42,12 +42,12 @@ const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
 });
 
 describe('standInJoinTargets', () => {
-  const REPO = '/home/tom/dev/ethlete-sdk';
+  const REPO = '/home/human/dev/ethlete-sdk';
   const standIns = [
     standIn({ id: 'a', name: 'Timetrack pieces', openedFor: REPO }),
     standIn({ id: 'b', name: 'Scan sub-agents', openedFor: REPO, createdAt: new Date('2026-09-20') }),
     standIn({ id: 'c', name: 'Timetrack pieces', openedFor: REPO, createdAt: new Date('2026-09-25') }),
-    standIn({ id: 'd', name: 'Other checkout', openedFor: '/home/tom/dev/fut-frontend' }),
+    standIn({ id: 'd', name: 'Other checkout', openedFor: '/home/human/dev/fut-frontend' }),
     standIn({ id: 'e', name: 'Resolved', openedFor: REPO, state: 'resolved' }),
     standIn({ id: 'f', name: 'Written by hand' }),
   ];
@@ -124,7 +124,7 @@ describe('matchStandIn', () => {
     const open = standIn();
 
     expect(
-      matchStandIn({ context: { repoPath: '/home/tom/dev/ea-frontend' }, rules: [rule()], standIns: [open] }),
+      matchStandIn({ context: { repoPath: '/home/human/dev/ea-frontend' }, rules: [rule()], standIns: [open] }),
     ).toBe(open);
   });
 
@@ -133,7 +133,7 @@ describe('matchStandIn', () => {
 
     expect(
       matchStandIn({
-        context: { repoPath: '/home/tom/dev/ea-frontend', branch: 'next' },
+        context: { repoPath: '/home/human/dev/ea-frontend', branch: 'next' },
         rules,
         standIns: [standIn()],
       }),
@@ -142,13 +142,13 @@ describe('matchStandIn', () => {
 
   it('answers nothing for a rule pointing at a stand-in that was deleted', () => {
     expect(
-      matchStandIn({ context: { repoPath: '/home/tom/dev/ea-frontend' }, rules: [rule()], standIns: [] }),
+      matchStandIn({ context: { repoPath: '/home/human/dev/ea-frontend' }, rules: [rule()], standIns: [] }),
     ).toBeUndefined();
   });
 
   it('answers nothing for a context no rule covers', () => {
     expect(
-      matchStandIn({ context: { repoPath: '/home/tom/dev/other' }, rules: [rule()], standIns: [standIn()] }),
+      matchStandIn({ context: { repoPath: '/home/human/dev/other' }, rules: [rule()], standIns: [standIn()] }),
     ).toBeUndefined();
   });
 });
@@ -163,7 +163,7 @@ describe('standInWhere', () => {
   it('names the directory a piece was cut to, under its checkout', () => {
     expect(
       standInWhere({
-        openedFor: '/home/tom/dev/fifagg/specs',
+        openedFor: '/home/human/dev/fifagg/specs',
         openedForBranch: 'main',
         openedForWorkPath: 'context/tracks/20260911_competition-journey-overlay',
       }),
@@ -172,12 +172,12 @@ describe('standInWhere', () => {
 
   it('names the branch where no directory cut it', () => {
     expect(
-      standInWhere({ openedFor: '/home/tom/dev/fifagg-frontend', openedForBranch: 'feature/20260911_overlay' }),
+      standInWhere({ openedFor: '/home/human/dev/fifagg-frontend', openedForBranch: 'feature/20260911_overlay' }),
     ).toBe('fifagg-frontend, on feature/20260911_overlay');
   });
 
   it('names the checkout alone where neither says more', () => {
-    expect(standInWhere({ openedFor: '/home/tom/dev/fifagg-frontend' })).toBe('fifagg-frontend');
+    expect(standInWhere({ openedFor: '/home/human/dev/fifagg-frontend' })).toBe('fifagg-frontend');
   });
 
   it('says nothing for a record the user wrote by hand', () => {

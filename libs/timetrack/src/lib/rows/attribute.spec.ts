@@ -44,7 +44,7 @@ const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['ABC'] });
 
 const REPO_RULE: AttributionRule = {
   id: 'rule-repo',
-  repoPath: '/Users/tom/dev/ea-frontend',
+  repoPath: '/Users/human/dev/ea-frontend',
   target: { kind: 'issue', issueKey: 'ABC-100' },
   author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
@@ -75,7 +75,7 @@ const STAND_IN_RULE: AttributionRule = {
 
 const DONATE_RULE: AttributionRule = {
   id: 'rule-donate',
-  repoPath: '/Users/tom/dev/ethlete-sdk',
+  repoPath: '/Users/human/dev/ethlete-sdk',
   target: { kind: 'donate' },
   author: 'user',
   createdAt: new Date('2026-08-01T00:00:00Z'),
@@ -83,14 +83,14 @@ const DONATE_RULE: AttributionRule = {
 
 const PRIVATE_LINK: TimetrackProjectLink = {
   id: 'link-private',
-  path: '/Users/tom/dev/private',
+  path: '/Users/human/dev/private',
   target: { kind: 'private' },
   createdAt: new Date('2026-08-01T00:00:00Z'),
 };
 
 const PROJECT_LINK: TimetrackProjectLink = {
   id: 'link-ea',
-  path: '/Users/tom/dev/ea-frontend',
+  path: '/Users/human/dev/ea-frontend',
   target: { kind: 'project', projectKey: 'ABC' },
   createdAt: new Date('2026-08-01T00:00:00Z'),
 };
@@ -278,7 +278,7 @@ describe('attribute', () => {
 
   it('attributes a keyless branch through the rule the user wrote for it', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
       config: CONFIG,
       rules: [BRANCH_RULE],
     });
@@ -290,7 +290,7 @@ describe('attribute', () => {
 
   it('names a keyless branch with the stand-in the user opened for it, and no issue key', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
       config: CONFIG,
       rules: [STAND_IN_RULE],
       standIns: [STAND_IN],
@@ -306,7 +306,7 @@ describe('attribute', () => {
 
   it('lets a conforming branch outrank the stand-in, so the stand-in ends without being told', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
       config: CONFIG,
       rules: [{ ...STAND_IN_RULE, branch: 'feat/ABC-2177-user-management' }],
       standIns: [STAND_IN],
@@ -318,7 +318,7 @@ describe('attribute', () => {
 
   describe('a deprecated spelling that leads with a key', () => {
     const DEV_BRANCH = 'dev-ABC-2721-integrate-engagement-items';
-    const devBlock = block({ repoPath: '/Users/tom/dev/ea-frontend', branch: DEV_BRANCH });
+    const devBlock = block({ repoPath: '/Users/human/dev/ea-frontend', branch: DEV_BRANCH });
 
     it('names the key, short of certain', () => {
       const result = attribute({ block: devBlock, config: CONFIG });
@@ -352,7 +352,7 @@ describe('attribute', () => {
 
   it('lets a rule the user wrote for a conforming branch outrank the key it spells', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
       config: CONFIG,
       rules: [{ ...BRANCH_RULE, branch: 'feat/ABC-2177-user-management' }],
     });
@@ -362,7 +362,7 @@ describe('attribute', () => {
 
   it('lets a stand-in rule outrank a merge request naming another issue', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
       config: CONFIG,
       rules: [STAND_IN_RULE],
       standIns: [STAND_IN],
@@ -375,7 +375,7 @@ describe('attribute', () => {
 
   it('falls through to the rungs below when the stand-in a rule names was deleted', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
       config: CONFIG,
       rules: [STAND_IN_RULE],
       standIns: [],
@@ -388,7 +388,7 @@ describe('attribute', () => {
 
   it('lets a conforming branch outrank a rule for the same repository', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
       config: CONFIG,
       rules: [REPO_RULE],
     });
@@ -399,7 +399,7 @@ describe('attribute', () => {
 
   it('lets a branch rule outrank a merge request naming another issue', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
       config: CONFIG,
       rules: [BRANCH_RULE],
       activity: [mergeRequest({ branch: 'refactor/hub-query-v3' })],
@@ -411,7 +411,7 @@ describe('attribute', () => {
   /** A rule about a whole project says only which project, so an MR for this very branch beats it. */
   it('lets a merge request outrank a repository-wide rule', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'fix/logout-confirmation' }),
+      block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'fix/logout-confirmation' }),
       config: CONFIG,
       rules: [REPO_RULE],
       activity: [mergeRequest()],
@@ -422,7 +422,7 @@ describe('attribute', () => {
 
   it('takes a repository-wide rule above a recurring pattern, and as a statement the user made', () => {
     const result = attribute({
-      block: localBlock({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'next' }),
+      block: localBlock({ repoPath: '/Users/human/dev/ea-frontend', branch: 'next' }),
       config: CONFIG,
       rules: [REPO_RULE],
       patterns: [TUESDAY_PATTERN],
@@ -434,7 +434,7 @@ describe('attribute', () => {
 
   it('leaves a donating context for the day to place, rather than reading a browser tab', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ethlete-sdk', branch: 'next' }, [
+      block: block({ repoPath: '/Users/human/dev/ethlete-sdk', branch: 'next' }, [
         { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: '[ABC-2222] Button not visible - Jira' },
       ]),
       config: CONFIG,
@@ -446,7 +446,7 @@ describe('attribute', () => {
 
   it('leaves a donating context alone even where a recurring pattern would claim it', () => {
     const result = attribute({
-      block: localBlock({ repoPath: '/Users/tom/dev/ethlete-sdk', branch: 'next' }),
+      block: localBlock({ repoPath: '/Users/human/dev/ethlete-sdk', branch: 'next' }),
       config: CONFIG,
       rules: [DONATE_RULE],
       patterns: [TUESDAY_PATTERN],
@@ -458,7 +458,7 @@ describe('attribute', () => {
   describe('an inferred attribution', () => {
     const INFERRED = [
       {
-        contextId: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3',
+        contextId: 'repo:/Users/human/dev/ea-frontend@refactor/hub-query-v3',
         issueKey: 'ABC-2201',
         reason: 'the branch and the commits both name the query rewrite',
       },
@@ -466,7 +466,7 @@ describe('attribute', () => {
 
     it('names a context nothing else could, weakly and with its reason in the chain', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+        block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
         config: CONFIG,
         inferred: INFERRED,
       });
@@ -481,7 +481,7 @@ describe('attribute', () => {
 
     it('never reaches a context the provider was not shown', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v4' }),
+        block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v4' }),
         config: CONFIG,
         inferred: INFERRED,
       });
@@ -491,7 +491,7 @@ describe('attribute', () => {
 
     it('loses to every deterministic rung, including a repository-wide rule', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+        block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
         config: CONFIG,
         rules: [REPO_RULE],
         inferred: INFERRED,
@@ -505,7 +505,7 @@ describe('attribute', () => {
   describe('a private link', () => {
     it('answers before the branch grammar, so a side project keeps no key it happens to spell', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/private/game', branch: 'feat/ABC-2177-user-management' }),
+        block: block({ repoPath: '/Users/human/dev/private/game', branch: 'feat/ABC-2177-user-management' }),
         config: CONFIG,
         links: [PRIVATE_LINK],
       });
@@ -520,9 +520,9 @@ describe('attribute', () => {
     });
 
     it('answers before a rule the user wrote for the same repository', () => {
-      const rule: AttributionRule = { ...REPO_RULE, repoPath: '/Users/tom/dev/private/game' };
+      const rule: AttributionRule = { ...REPO_RULE, repoPath: '/Users/human/dev/private/game' };
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/private/game' }),
+        block: block({ repoPath: '/Users/human/dev/private/game' }),
         config: CONFIG,
         rules: [rule],
         links: [PRIVATE_LINK],
@@ -534,7 +534,7 @@ describe('attribute', () => {
 
     it('leaves a repository the same root links to a project alone', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+        block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
         config: CONFIG,
         links: [PRIVATE_LINK, PROJECT_LINK],
       });
@@ -545,7 +545,7 @@ describe('attribute', () => {
 
     it('changes nothing for a link that only names a project', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+        block: block({ repoPath: '/Users/human/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
         config: CONFIG,
         links: [PROJECT_LINK],
       });
@@ -673,12 +673,12 @@ describe('attribute — a stand-in a sibling checkout holds', () => {
     createdAt: new Date('2026-01-01T00:00:00Z'),
   });
 
-  const LINKS = [fifaggLink('/home/tom/dev/fifagg/fifagg-frontend'), fifaggLink('/home/tom/dev/fifagg/specs')];
+  const LINKS = [fifaggLink('/home/human/dev/fifagg/fifagg-frontend'), fifaggLink('/home/human/dev/fifagg/specs')];
 
   const BRACKET_CHALLENGE: StandIn = {
     id: 'stand-in:1789989837130:specs-main-context-tracks-20260819-bracket-challenge',
     name: 'Bracket challenge',
-    openedFor: '/home/tom/dev/fifagg/specs',
+    openedFor: '/home/human/dev/fifagg/specs',
     openedForBranch: 'main',
     openedForWorkPath: 'context/tracks/20260819_bracket-challenge',
     projectKey: 'FIFAGG',
@@ -688,7 +688,7 @@ describe('attribute — a stand-in a sibling checkout holds', () => {
     createdAt: new Date('2026-09-22T00:00:00Z'),
   };
 
-  const FRONTEND = { repoPath: '/home/tom/dev/fifagg/fifagg-frontend', branch: 'feature/20260819_bracket-challenge' };
+  const FRONTEND = { repoPath: '/home/human/dev/fifagg/fifagg-frontend', branch: 'feature/20260819_bracket-challenge' };
 
   const MEETING_VIEW = mergeRequest({
     kind: 'issue-view',
@@ -765,7 +765,7 @@ describe('attribute — a stand-in a sibling checkout holds', () => {
       epics: {
         siblings: [
           {
-            repoPath: '/home/tom/dev/fifagg/specs',
+            repoPath: '/home/human/dev/fifagg/specs',
             branch: 'spec/20260819_bracket-challenge',
             issueKey: 'FIFAGG-12623',
             parentKey: 'FIFAGG-12605',
@@ -801,12 +801,12 @@ describe('attribute — a project link guards the coincidence rungs', () => {
 
   const LINK: TimetrackProjectLink = {
     id: 'link-frontend',
-    path: '/home/tom/dev/fifagg/fifagg-frontend',
+    path: '/home/human/dev/fifagg/fifagg-frontend',
     target: { kind: 'project', projectKey: 'FIFAGG' },
     createdAt: new Date('2026-01-01T00:00:00Z'),
   };
 
-  const FRONTEND = { repoPath: '/home/tom/dev/fifagg/fifagg-frontend', branch: 'feature/20260819_bracket-challenge' };
+  const FRONTEND = { repoPath: '/home/human/dev/fifagg/fifagg-frontend', branch: 'feature/20260819_bracket-challenge' };
 
   const view = (issueKey: string, at = new Date('2026-08-11T08:30:00Z')) =>
     mergeRequest({ kind: 'issue-view', issueKey, branch: undefined, at, detail: `viewed ${issueKey}` });
@@ -878,7 +878,7 @@ describe('attribute — a project link guards the coincidence rungs', () => {
       links: [LINK],
       inferred: [
         {
-          contextId: 'repo:/home/tom/dev/fifagg/fifagg-frontend@feature/20260819_bracket-challenge',
+          contextId: 'repo:/home/human/dev/fifagg/fifagg-frontend@feature/20260819_bracket-challenge',
           issueKey: 'FIP-2867',
           reason: 'meetings',
         },

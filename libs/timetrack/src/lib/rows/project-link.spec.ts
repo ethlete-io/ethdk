@@ -9,18 +9,18 @@ const link = (options: Partial<TimetrackProjectLink> & Pick<TimetrackProjectLink
   ...options,
 });
 
-const secluded = link({ path: '/home/tom/dev/private', target: { kind: 'private' } });
+const secluded = link({ path: '/home/human/dev/private', target: { kind: 'private' } });
 
 const block = (options: { from: string; to: string }): ActivityBlock => ({
   from: new Date(options.from),
   to: new Date(options.to),
-  context: { repoPath: '/home/tom/dev/private' },
+  context: { repoPath: '/home/human/dev/private' },
   evidence: [],
 });
 
 describe('privateTime', () => {
   it('folds every block of one link into one entry, largest first', () => {
-    const other = link({ path: '/home/tom/dev/other', target: { kind: 'private' } });
+    const other = link({ path: '/home/human/dev/other', target: { kind: 'private' } });
     const folded = privateTime({
       blocks: [
         { block: block({ from: '2026-08-16T09:00:00Z', to: '2026-08-16T09:30:00Z' }), link: secluded },

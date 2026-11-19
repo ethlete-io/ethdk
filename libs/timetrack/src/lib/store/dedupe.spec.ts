@@ -17,7 +17,7 @@ const commit = (overrides: Partial<GitCommitEvent> = {}): GitCommitEvent => ({
   at: new Date(2026, 7, 11, 11, 30),
   source: 'git',
   kind: 'git-commit',
-  repoPath: '/home/tom/dev/fut-frontend',
+  repoPath: '/home/human/dev/fut-frontend',
   branch: 'feat/FIP-2177-user-management',
   sha: 'abc1234',
   subject: 'feat(user): Add the invite flow',
@@ -28,7 +28,7 @@ const checkout = (overrides: Partial<GitCheckoutEvent> = {}): GitCheckoutEvent =
   at: new Date(2026, 7, 11, 9, 15),
   source: 'git',
   kind: 'git-checkout',
-  repoPath: '/home/tom/dev/fut-frontend',
+  repoPath: '/home/human/dev/fut-frontend',
   branch: 'feat/FIP-2177-user-management',
   ...overrides,
 });
@@ -63,7 +63,7 @@ describe('dedupeKeyOf', () => {
   });
 
   it('separates the same sha in two repositories', () => {
-    expect(dedupeKeyOf(commit({ repoPath: '/home/tom/dev/ethlete-sdk' }))).not.toBe(dedupeKeyOf(commit()));
+    expect(dedupeKeyOf(commit({ repoPath: '/home/human/dev/ethlete-sdk' }))).not.toBe(dedupeKeyOf(commit()));
   });
 
   it('separates two commits in one repository', () => {
@@ -134,7 +134,7 @@ describe('dedupeKeyOf', () => {
       source: 'agent-session',
       kind: 'agent-session',
       sessionId: '154009aa-3442-401d-852b-07a0d5156e97',
-      cwd: '/home/tom/dev/fut-frontend',
+      cwd: '/home/human/dev/fut-frontend',
       ...overrides,
     });
 
@@ -151,7 +151,7 @@ describe('dedupeKeyOf', () => {
       source: 'editor',
       kind: 'editor-heartbeat',
       reporter: 'vscode',
-      repoPath: '/home/tom/dev/fut-frontend',
+      repoPath: '/home/human/dev/fut-frontend',
       directory: 'src/app',
       editing: true,
       ...overrides,
@@ -170,7 +170,7 @@ describe('dedupeKeyOf', () => {
       provider: 'claude-code',
       sessionId: '154009aa-3442-401d-852b-07a0d5156e97',
       turnId: 'msg_011Ceqk1wsbtNyCbzz8e9kGB',
-      cwd: '/home/tom/dev/fut-frontend',
+      cwd: '/home/human/dev/fut-frontend',
       gitBranch: 'feat/FIP-2177-user-management',
       model: 'claude-opus-5',
       usage: { input: 2, output: 289, cacheWrite: 17_421, cacheRead: 18_910, thinking: 0 },
@@ -190,7 +190,7 @@ describe('dedupeKeyOf', () => {
       provider: 'claude-code',
       sessionId: '154009aa-3442-401d-852b-07a0d5156e97',
       promptId: '7afab4fa-fa08-475b-b9c0-23ba6a62ceb2',
-      cwd: '/home/tom/dev/fut-frontend',
+      cwd: '/home/human/dev/fut-frontend',
       ...overrides,
     });
 

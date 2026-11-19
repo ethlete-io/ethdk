@@ -5,7 +5,7 @@ import { WorklogProposal } from '../model/proposal';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
-const LANE = 'repo:/home/tom/dev/fifagg/fifagg-frontend';
+const LANE = 'repo:/home/human/dev/fifagg/fifagg-frontend';
 const at = (time: string) => new Date(`2026-10-06T${time}:00Z`);
 
 const proposal = (options: { issueKey: string; from: string; to: string; laneKey?: string }): WorklogProposal => {

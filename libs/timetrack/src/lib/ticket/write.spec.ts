@@ -13,7 +13,7 @@ import {
   writeTicketWithAgent$,
 } from './write';
 
-const CONTEXT: UnnamedContext['context'] = { repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/hub-review' };
+const CONTEXT: UnnamedContext['context'] = { repoPath: '/Users/human/dev/ea-frontend', branch: 'feat/hub-review' };
 
 const UNNAMED: UnnamedContext = {
   id: contextKey(CONTEXT),

@@ -7,7 +7,7 @@ import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, WrittenWorklog } fro
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
-const LANE = 'repo:/home/tom/dev/ethlete-sdk';
+const LANE = 'repo:/home/human/dev/ethlete-sdk';
 const at = (time: string) => new Date(`2026-10-06T${time}:00Z`);
 
 const proposal = (options: { issueKey: string; from: string; to: string }): WorklogProposal => {

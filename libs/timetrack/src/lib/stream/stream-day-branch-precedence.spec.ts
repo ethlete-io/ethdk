@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { streamDay } from './stream-day';
 
-const REPO = '/home/tom/dev/fut-frontend';
+const REPO = '/home/human/dev/fut-frontend';
 const FEATURE = 'fix/security-audit-general';
 
 const AT = (minutes: number) => new Date(Date.UTC(2026, 8, 23, 14, 0, 0) + minutes * 60_000);

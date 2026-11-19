@@ -256,7 +256,7 @@ describe('reviewDay', () => {
       to: at('10:00'),
       durationMs: 120 * MINUTE,
       observedMs: 120 * MINUTE,
-      laneKey: 'repo:/home/tom/dev/example',
+      laneKey: 'repo:/home/human/dev/example',
       description: 'unattributed activity',
       confidence: 'weak',
       evidence: [],
@@ -275,7 +275,7 @@ describe('reviewDay', () => {
   });
 
   it('draws one band where an edited row lost every source to a change of the id scheme', () => {
-    const laneKey = 'repo:/home/tom/dev/example';
+    const laneKey = 'repo:/home/human/dev/example';
     const band = (id: string): UnnamedProposal => ({
       id,
       from: at('08:00'),
@@ -305,7 +305,7 @@ describe('reviewDay', () => {
   });
 
   it('keeps the part of the band a row the reviewer added in the same lane does not cover', () => {
-    const laneKey = 'repo:/home/tom/dev/example';
+    const laneKey = 'repo:/home/human/dev/example';
     const base = dayRows({
       proposals: [],
       unnamed: [
@@ -352,7 +352,7 @@ describe('reviewDay', () => {
   });
 
   it('reports drift under an edited row while an edited band beside it holds time of its own', () => {
-    const laneKey = 'repo:/home/tom/dev/example';
+    const laneKey = 'repo:/home/human/dev/example';
     const band: UnnamedProposal = {
       id: `unnamed:${laneKey}@${at('11:00').toISOString()}`,
       from: at('11:00'),
@@ -588,7 +588,7 @@ describe('describing a row the reviewer built', () => {
           ],
         }),
         description: 'feat(match-overlay): Journey; fix(competition): Standings; fix(competition): Groups',
-        laneKey: 'repo:/home/tom/dev/sdk',
+        laneKey: 'repo:/home/human/dev/sdk',
       },
     ],
   });
@@ -710,13 +710,13 @@ describe('mergeRows', () => {
   it("keeps the first row's lane, so a merge leaves the column it was drawn in", () => {
     const laned = dayRows({
       proposals: [
-        { ...proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }), laneKey: 'repo:/home/tom/dev/sdk' },
-        { ...proposal({ issueKey: 'ABC-2', from: '10:00', to: '11:00' }), laneKey: 'repo:/home/tom/dev/other' },
+        { ...proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }), laneKey: 'repo:/home/human/dev/sdk' },
+        { ...proposal({ issueKey: 'ABC-2', from: '10:00', to: '11:00' }), laneKey: 'repo:/home/human/dev/other' },
       ],
     });
     const edits = mergeRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: reviewDay({ rows: laned }).rows });
 
-    expect(reviewDay({ rows: laned, edits }).rows[0]!.laneKey).toBe('repo:/home/tom/dev/sdk');
+    expect(reviewDay({ rows: laned, edits }).rows[0]!.laneKey).toBe('repo:/home/human/dev/sdk');
   });
 
   it('drops the overrides of the rows it consumed', () => {
@@ -906,9 +906,9 @@ describe('addManualRow', () => {
   });
 
   it('keeps the row in the lane it was drawn in', () => {
-    const review = reviewDay({ rows: base, edits: added({ laneKey: 'repo:/home/tom/dev/thing' }) });
+    const review = reviewDay({ rows: base, edits: added({ laneKey: 'repo:/home/human/dev/thing' }) });
 
-    expect(rowFor(review, 'ABC-9').laneKey).toBe('repo:/home/tom/dev/thing');
+    expect(rowFor(review, 'ABC-9').laneKey).toBe('repo:/home/human/dev/thing');
   });
 
   it('leaves a row drawn with no lane without one, so it stays beside the work nothing placed', () => {
@@ -1812,7 +1812,7 @@ describe('reviewDay over a row written by hand at the start of an observed row o
 });
 
 describe('reviewDay over a row the reviewer built in a checkout a stand-in covers', () => {
-  const REPO = '/home/tom/dev/app';
+  const REPO = '/home/human/dev/app';
   const standIn = openStandIn({ name: 'the competition journey', day: '2026-08-11', now: at('07:00') });
   const rule = (target: AttributionRule['target'], extra?: Partial<AttributionRule>): AttributionRule => ({
     id: 'rule-1',
@@ -2038,7 +2038,7 @@ describe('reviewDay, a row the reviewer drew over a band a rule excluded', () =>
 });
 
 describe('reviewDay over rows the reviewer pinned before the merge cut the band differently', () => {
-  const laneKey = 'repo:/home/tom/dev/app-a';
+  const laneKey = 'repo:/home/human/dev/app-a';
   const band = (options: { from: string; to: string; standInId: string }): UnnamedProposal => {
     const observedMs = at(options.to).getTime() - at(options.from).getTime();
 

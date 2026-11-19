@@ -24,7 +24,7 @@ const commit: CollectedEvent = {
   at: new Date(2026, 7, 11, 11, 30),
   source: 'git',
   kind: 'git-commit',
-  repoPath: '/home/tom/dev/fut-frontend',
+  repoPath: '/home/human/dev/fut-frontend',
   branch: 'feat/FIP-2177-user-management',
   sha: 'abc1234',
   subject: 'feat(user): Add the invite flow',
@@ -144,7 +144,7 @@ describe('applyExclusionRules, for a source with no title', () => {
 
   it('denies an editor heartbeat by the checkout it names', () => {
     const result = applyExclusionRules({
-      events: [heartbeat('/home/tom/dev/tax-return'), heartbeat('/home/tom/dev/fut-frontend')],
+      events: [heartbeat('/home/human/dev/tax-return'), heartbeat('/home/human/dev/fut-frontend')],
       rules: [{ kind: 'title-pattern', pattern: 'tax-return' }],
     });
 
@@ -154,7 +154,7 @@ describe('applyExclusionRules, for a source with no title', () => {
 
   it('denies it by the directory as well as the checkout', () => {
     const result = applyExclusionRules({
-      events: [heartbeat('/home/tom/dev/fut-frontend', 'src/billing')],
+      events: [heartbeat('/home/human/dev/fut-frontend', 'src/billing')],
       rules: [{ kind: 'title-pattern', pattern: 'billing' }],
     });
 
@@ -163,7 +163,7 @@ describe('applyExclusionRules, for a source with no title', () => {
 
   it('keeps no path in the summary of what it denied', () => {
     const result = applyExclusionRules({
-      events: [heartbeat('/home/tom/dev/tax-return', 'invoices')],
+      events: [heartbeat('/home/human/dev/tax-return', 'invoices')],
       rules: [{ kind: 'title-pattern', pattern: 'tax-return' }],
     });
 
@@ -249,7 +249,7 @@ describe('applyExclusionRules, on a typed prompt', () => {
 
   it('tests a title pattern against the checkout the prompt was typed in', () => {
     const result = applyExclusionRules({
-      events: [prompt('/home/tom/dev/invoices')],
+      events: [prompt('/home/human/dev/invoices')],
       rules: [{ kind: 'title-pattern', pattern: 'invoices' }],
     });
 
@@ -259,7 +259,7 @@ describe('applyExclusionRules, on a typed prompt', () => {
 
   it('tests a title pattern against the branch as well', () => {
     const result = applyExclusionRules({
-      events: [prompt('/home/tom/dev/fut-frontend', 'feat/secret-launch')],
+      events: [prompt('/home/human/dev/fut-frontend', 'feat/secret-launch')],
       rules: [{ kind: 'title-pattern', pattern: 'secret-launch' }],
     });
 
@@ -267,7 +267,7 @@ describe('applyExclusionRules, on a typed prompt', () => {
   });
 
   it('keeps a prompt no rule names', () => {
-    const kept = prompt('/home/tom/dev/fut-frontend', 'next');
+    const kept = prompt('/home/human/dev/fut-frontend', 'next');
 
     expect(
       applyExclusionRules({ events: [kept], rules: [{ kind: 'title-pattern', pattern: 'invoices' }] }).kept,
@@ -291,7 +291,7 @@ describe("applyExclusionRules, on a turn's token spend", () => {
 
   it('tests a title pattern against the checkout the turn ran in', () => {
     const result = applyExclusionRules({
-      events: [spend('/home/tom/dev/invoices')],
+      events: [spend('/home/human/dev/invoices')],
       rules: [{ kind: 'title-pattern', pattern: 'invoices' }],
     });
 
@@ -301,7 +301,7 @@ describe("applyExclusionRules, on a turn's token spend", () => {
 
   it('tests a title pattern against the branch as well', () => {
     const result = applyExclusionRules({
-      events: [spend('/home/tom/dev/fut-frontend', 'feat/secret-launch')],
+      events: [spend('/home/human/dev/fut-frontend', 'feat/secret-launch')],
       rules: [{ kind: 'title-pattern', pattern: 'secret-launch' }],
     });
 
@@ -310,7 +310,7 @@ describe("applyExclusionRules, on a turn's token spend", () => {
 
   it('tests a title pattern against the path the turn worked in', () => {
     const result = applyExclusionRules({
-      events: [{ ...spend('/home/tom/dev/fut-frontend'), workedIn: '/home/tom/dev/invoices/ledger.ts' }],
+      events: [{ ...spend('/home/human/dev/fut-frontend'), workedIn: '/home/human/dev/invoices/ledger.ts' }],
       rules: [{ kind: 'title-pattern', pattern: 'invoices' }],
     });
 
@@ -318,7 +318,7 @@ describe("applyExclusionRules, on a turn's token spend", () => {
   });
 
   it('keeps a turn no rule names, and reports no name in the summary', () => {
-    const kept = spend('/home/tom/dev/fut-frontend', 'next');
+    const kept = spend('/home/human/dev/fut-frontend', 'next');
 
     const result = applyExclusionRules({ events: [kept], rules: [{ kind: 'title-pattern', pattern: 'invoices' }] });
 

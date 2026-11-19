@@ -5,10 +5,10 @@ import { DEFAULT_EXCLUSION_RULES } from '../store/exclusion';
 import { mergeDayEvents } from './merge-day-events';
 import { streamDay } from './stream-day';
 
-const SDK = '/home/tom/dev/ethlete-sdk';
-const FUT = '/home/tom/dev/fut-frontend';
-const MAC_SDK = '/Users/tom/code/ethlete-sdk';
-const MAC_FUT = '/Users/tom/code/fut-frontend';
+const SDK = '/home/human/dev/ethlete-sdk';
+const FUT = '/home/human/dev/fut-frontend';
+const MAC_SDK = '/Users/human/code/ethlete-sdk';
+const MAC_FUT = '/Users/human/code/fut-frontend';
 const MAC = { machineId: 'mac-id', machineName: 'MacBook' };
 const OWN_KEYS = { [SDK]: 'gitlab.com/ethlete/sdk', [FUT]: 'gitlab.com/ethlete/fut' };
 const MAC_KEYS = { [MAC_SDK]: 'gitlab.com/ethlete/sdk', [MAC_FUT]: 'gitlab.com/ethlete/fut' };

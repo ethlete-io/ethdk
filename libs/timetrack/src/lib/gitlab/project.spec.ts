@@ -31,7 +31,7 @@ describe('parseGitLabRemoteUrl', () => {
   });
 
   it('drops a user and a port from the host', () => {
-    expect(parseGitLabRemoteUrl('https://tom@gitlab.test:8443/group/repo.git')).toEqual({
+    expect(parseGitLabRemoteUrl('https://human@gitlab.test:8443/group/repo.git')).toEqual({
       host: 'gitlab.test',
       path: 'group/repo',
     });

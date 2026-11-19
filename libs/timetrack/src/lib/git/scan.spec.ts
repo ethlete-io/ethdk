@@ -4,7 +4,7 @@ import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { GIT_FIELD_SEPARATOR } from './format';
 import { GitRepoScan, GitScanResult, collectGitEvents$ } from './scan';
 
-const REPO = '/home/tom/dev/fut-frontend';
+const REPO = '/home/human/dev/fut-frontend';
 const WINDOW = { from: new Date('2026-08-11T00:00:00+02:00'), to: new Date('2026-08-11T23:59:59+02:00') };
 
 const REFLOG = [
@@ -97,7 +97,7 @@ describe('collectGitEvents$', () => {
   });
 
   it('merges several repositories into one timeline, oldest first', () => {
-    const other = '/home/tom/dev/ethlete-sdk';
+    const other = '/home/human/dev/ethlete-sdk';
     const { result } = scan({
       repos: [
         { path: REPO, window: WINDOW },
@@ -124,11 +124,13 @@ describe('collectGitEvents$', () => {
   it('reports a repository that is gone instead of failing the scan', () => {
     const { result } = scan({
       repos: [
-        { path: '/home/tom/dev/moved-away', window: WINDOW },
+        { path: '/home/human/dev/moved-away', window: WINDOW },
         { path: REPO, window: WINDOW },
       ],
       outputs: (spec) =>
-        spec.cwd === REPO ? byCommand(spec) : { code: 128, stderr: 'fatal: cannot change to /home/tom/dev/moved-away' },
+        spec.cwd === REPO
+          ? byCommand(spec)
+          : { code: 128, stderr: 'fatal: cannot change to /home/human/dev/moved-away' },
     });
 
     expect(result?.failures).toHaveLength(3);

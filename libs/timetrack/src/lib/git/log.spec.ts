@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GIT_FIELD_SEPARATOR } from './format';
 import { parseGitLog } from './log';
 
-const REPO = '/home/tom/dev/fut-frontend';
+const REPO = '/home/human/dev/fut-frontend';
 const SHA = 'b39d77c350735b4ec158869ff238ac9e076ae105';
 
 const line = (options: { sha?: string; authored?: string; ref?: string; subject?: string }) =>

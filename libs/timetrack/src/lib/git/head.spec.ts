@@ -78,8 +78,8 @@ const runner = (byRepo: Record<string, ProcessResult>) => {
 };
 
 describe('readHeadBranches$', () => {
-  const FIFAGG = '/home/tom/dev/fifagg/fifagg-frontend';
-  const GONE = '/home/tom/dev/moved-away';
+  const FIFAGG = '/home/human/dev/fifagg/fifagg-frontend';
+  const GONE = '/home/human/dev/moved-away';
 
   const output = [checkout({ stamp: '2026-08-19T09:00:00+02:00', from: 'main', to: 'feature/x' })].join('\n');
 

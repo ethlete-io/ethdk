@@ -31,7 +31,7 @@ const patternTransport = (options: { worklogs?: unknown[]; issuesById?: unknown[
       requests.push(request);
 
       if (request.url.includes('/myself')) {
-        return of({ status: 200, headers: {}, body: { accountId: 'acc:123', displayName: 'Tom' } }) as never;
+        return of({ status: 200, headers: {}, body: { accountId: 'acc:123', displayName: 'human' } }) as never;
       }
 
       if (request.url.includes('/search/jql')) {

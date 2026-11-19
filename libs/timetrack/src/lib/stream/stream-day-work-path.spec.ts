@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { streamDay } from './stream-day';
 
-const SPECS = '/home/tom/dev/fifagg/specs';
+const SPECS = '/home/human/dev/fifagg/specs';
 const REWORK = 'context/tracks/20260921_competition-navigation-rework';
 const JOURNEY = 'context/tracks/20260808_competition-journey';
 

@@ -5,9 +5,9 @@ const AT = new Date(2026, 7, 16, 14, 0, 0);
 
 const snapshot = (overrides: Partial<EditorSnapshot> = {}): EditorSnapshot => ({
   at: AT,
-  repoPath: '/home/tom/dev/ethlete-sdk',
+  repoPath: '/home/human/dev/ethlete-sdk',
   branch: 'next',
-  filePath: '/home/tom/dev/ethlete-sdk/libs/components/src/lib/table/table.component.ts',
+  filePath: '/home/human/dev/ethlete-sdk/libs/components/src/lib/table/table.component.ts',
   language: 'typescript',
   editing: true,
   ...overrides,
@@ -20,7 +20,7 @@ describe('heartbeatRecordOf', () => {
     expect(record).toEqual({
       atMs: AT.getTime(),
       kind: 'editor-heartbeat',
-      repoPath: '/home/tom/dev/ethlete-sdk',
+      repoPath: '/home/human/dev/ethlete-sdk',
       branch: 'next',
       directory: 'libs/components/src/lib/table',
       language: 'typescript',
@@ -33,9 +33,9 @@ describe('heartbeatRecordOf', () => {
   });
 
   it('keeps the whole path for a file outside the checkout', () => {
-    const record = heartbeatRecordOf(snapshot({ filePath: '/home/tom/notes/standup.md' }));
+    const record = heartbeatRecordOf(snapshot({ filePath: '/home/human/notes/standup.md' }));
 
-    expect(record?.['directory']).toBe('/home/tom/notes');
+    expect(record?.['directory']).toBe('/home/human/notes');
   });
 
   it('reports the checkout alone when nothing is open in it', () => {
@@ -44,7 +44,7 @@ describe('heartbeatRecordOf', () => {
     expect(record).toEqual({
       atMs: AT.getTime(),
       kind: 'editor-heartbeat',
-      repoPath: '/home/tom/dev/ethlete-sdk',
+      repoPath: '/home/human/dev/ethlete-sdk',
       branch: 'next',
       editing: true,
     });
@@ -56,15 +56,18 @@ describe('heartbeatRecordOf', () => {
 
   it('reads a Windows path the same way', () => {
     const record = heartbeatRecordOf(
-      snapshot({ repoPath: undefined, filePath: 'C:\\Users\\tom\\dev\\sdk\\libs\\core\\index.ts' }),
+      snapshot({ repoPath: undefined, filePath: 'C:\\Users\\human\\dev\\sdk\\libs\\core\\index.ts' }),
     );
 
-    expect(record?.['directory']).toBe('C:/Users/tom/dev/sdk/libs/core');
+    expect(record?.['directory']).toBe('C:/Users/human/dev/sdk/libs/core');
   });
 
   it('reports the directory inside a Windows checkout relative to it', () => {
     const record = heartbeatRecordOf(
-      snapshot({ repoPath: 'C:\\Users\\tom\\dev\\sdk', filePath: 'C:\\Users\\tom\\dev\\sdk\\libs\\core\\index.ts' }),
+      snapshot({
+        repoPath: 'C:\\Users\\human\\dev\\sdk',
+        filePath: 'C:\\Users\\human\\dev\\sdk\\libs\\core\\index.ts',
+      }),
     );
 
     expect(record?.['directory']).toBe('libs/core');

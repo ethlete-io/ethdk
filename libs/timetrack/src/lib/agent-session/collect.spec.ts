@@ -8,7 +8,7 @@ type Log = { ref: AgentSessionLogRef; lines: string[] };
 
 const ref = (id: string, modifiedAt = new Date(Date.UTC(2026, 7, 11, 9, 30))): AgentSessionLogRef => ({
   id,
-  path: `/Users/tom/.claude/projects/-Users-tom-dev-ethlete-sdk/${id}.jsonl`,
+  path: `/Users/human/.claude/projects/-Users-human-dev-ethlete-sdk/${id}.jsonl`,
   modifiedAt,
 });
 
@@ -17,7 +17,7 @@ const record = (options: { timestamp: string; sessionId?: string; cwd?: string }
     type: 'assistant',
     timestamp: options.timestamp,
     sessionId: options.sessionId ?? 's1',
-    cwd: options.cwd ?? '/Users/tom/dev/ethlete-sdk',
+    cwd: options.cwd ?? '/Users/human/dev/ethlete-sdk',
     gitBranch: 'next',
   });
 
@@ -26,7 +26,7 @@ const turn = (options: { timestamp: string; id: string; sessionId?: string; outp
     type: 'assistant',
     timestamp: options.timestamp,
     sessionId: options.sessionId ?? 's1',
-    cwd: '/Users/tom/dev/ethlete-sdk',
+    cwd: '/Users/human/dev/ethlete-sdk',
     gitBranch: 'next',
     message: {
       id: options.id,
@@ -93,14 +93,14 @@ describe('collectAgentSessions$', () => {
         nextLine: 1,
         after: new Date('2026-08-11T09:00:00.000Z'),
         title: undefined,
-        cwd: '/Users/tom/dev/ethlete-sdk',
+        cwd: '/Users/human/dev/ethlete-sdk',
       },
       {
         id: 's2',
         nextLine: 1,
         after: new Date('2026-08-11T09:10:00.000Z'),
         title: undefined,
-        cwd: '/Users/tom/dev/ethlete-sdk',
+        cwd: '/Users/human/dev/ethlete-sdk',
       },
     ]);
   });
@@ -150,21 +150,21 @@ describe('collectAgentSessions$', () => {
       logs: [
         {
           ref: ref('s1'),
-          lines: [record({ timestamp: '2026-08-11T09:00:00.000Z', cwd: '/Users/tom/dev/fut-frontend' })],
+          lines: [record({ timestamp: '2026-08-11T09:00:00.000Z', cwd: '/Users/human/dev/fut-frontend' })],
         },
       ],
     });
 
-    expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/fut-frontend');
+    expect(result.cursors[0]?.cwd).toBe('/Users/human/dev/fut-frontend');
   });
 
   it('keeps the checkout the last run recorded when the new lines hold no sample', () => {
     const { result } = collect({
       logs: [{ ref: ref('s1'), lines: [record({ timestamp: '2026-08-11T09:00:00.000Z' })] }],
-      cursors: [{ id: 's1', nextLine: 1, cwd: '/Users/tom/dev/fut-frontend' }],
+      cursors: [{ id: 's1', nextLine: 1, cwd: '/Users/human/dev/fut-frontend' }],
     });
 
-    expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/fut-frontend');
+    expect(result.cursors[0]?.cwd).toBe('/Users/human/dev/fut-frontend');
   });
 
   it('takes the last checkout of a log that changed one part way through', () => {
@@ -173,14 +173,14 @@ describe('collectAgentSessions$', () => {
         {
           ref: ref('s1'),
           lines: [
-            record({ timestamp: '2026-08-11T09:00:00.000Z', cwd: '/Users/tom/dev/one' }),
-            record({ timestamp: '2026-08-11T09:05:00.000Z', cwd: '/Users/tom/dev/two' }),
+            record({ timestamp: '2026-08-11T09:00:00.000Z', cwd: '/Users/human/dev/one' }),
+            record({ timestamp: '2026-08-11T09:05:00.000Z', cwd: '/Users/human/dev/two' }),
           ],
         },
       ],
     });
 
-    expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/two');
+    expect(result.cursors[0]?.cwd).toBe('/Users/human/dev/two');
   });
 
   it('carries a title the previous run resolved into a batch that holds none', () => {

@@ -4,7 +4,7 @@ import { TimetrackProjectLink } from '../model/project-link';
 import { HistoricalWorklog } from '../model/recurrence';
 import { NamedCheckout, repoNamingDecisions, repoNamingOffers } from './repo-naming';
 
-const SDK = '/home/tom/dev/ethlete-sdk';
+const SDK = '/home/human/dev/ethlete-sdk';
 
 const checkout = (overrides: Partial<NamedCheckout> = {}): NamedCheckout => ({
   repoPath: SDK,
@@ -198,7 +198,7 @@ describe('repoNamingOffers', () => {
   it('reads a link on the directory above the checkout, the way attribution does', () => {
     const offers = repoNamingOffers({
       checkouts: [checkout()],
-      links: [link({ path: '/home/tom/dev' })],
+      links: [link({ path: '/home/human/dev' })],
       rules: [],
       worklogs: DOMINANT,
     });
