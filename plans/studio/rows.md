@@ -28,7 +28,6 @@ Die Eintragstabelle zu [STATUS.md](STATUS.md) (ADR 0354).
 | B299 | e2e-check Hook-sha | e2e-check.spec bekommt die sha vom Hook (env/arg), läuft im Pre-commit-Index-Checkout (Bef. 352). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
 | B300 | Abgeschnittener Text | Regel TEXT-TRUNCATED: abgeschnittener Inhaltstext pro State ist ein Befund; Opt-out data-et-skip=TRUNCATE (Bef. 353). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
 | B301 | Stale-dist HEAD-Blobs | Stale-dist-Hash nur über committete Quellen (HEAD-Blobs); Agent-Briefs verbieten Edits an build-info.json (Bef. 354). Maschinerie (nur bei rotem CI). | ⏳ | - | Builder |
-| B304 | Mac-Ampel zentriert | macOS-Ampel vertikal in der Titelleiste zentrieren + Fensterprüfung (Bef. 357). | ⏳ | - | Builder |
 | B312 | Overscroll-Sperre | Overscroll der Shell: overscroll-behavior none überall (de2b83743); Scroll-Kanten-Probe im macOS-WebKit-Job (Bef. 366). | ⏳ | - | Builder |
 | B313 | Canvas-Isolation | Frames über dem Explorer unter Last: isolate + contain-paint am Canvas (de2b83743); Pixel-Check unter Frame-Churn (Bef. 367). | ⏳ | - | Builder |
 | B332 | Sketch-Import-Regel | Design-Check-Regel: löst die Imports jeder Sketch-Variante auf, damit ein veraltetes `old/` gegen ein neues `shared/` rot wird (Folge von B325, 296429625; Bef. 380). | ⏳ | - | Builder |
