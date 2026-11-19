@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B615
+built: fdf3ef0cf
 decided: 2026-11-19
 source: doc-agent morning round 2026-11-19, fifa SDK finding #1 in plans/sdk/fifagg-sdk-findings-2026-11-15-seo.md
 ---
