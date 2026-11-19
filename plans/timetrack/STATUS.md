@@ -7,7 +7,8 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 
 ## Warteschlange (nächstes oben)
 
-1. B602: Anwesenheit neu bauen (Befund #27, Revert 363745c), dann #4, #5 (Beschreibungen). #22 gebaut (19fa204d6). #11 ist
+1. B602: Anwesenheit (#27) und #4, #5 gebaut, teils noch lokal beim Builder. Offen, Tagschicht, braucht die laufende
+   Dev-App: #28 (schrittweises Lesen behält Extra-Proben) und #29 (17 Zeilen vom 18.11. ohne bekannte Änderung). #11 ist
    wahrscheinlich durch 714b49bc9 behoben, die Linux-Maschine läuft vermutlich auf einem alten Build.
 2. B616: gekoppelte Rechner zeigen denselben Tag, auch Handzeilen, Änderungen, Regeln und Vertretungen; SSH-Arbeit auf
    tank erscheint auf dem Mac (ADR 0047, Befunde #7, #15, #24, #25).
