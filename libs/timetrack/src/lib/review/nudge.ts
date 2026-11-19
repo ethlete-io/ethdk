@@ -5,7 +5,7 @@ import { TempoDayCoverage, coverageAsForeignTime } from '../tempo/coverage';
 import { contentHashOf } from '../tempo/diff';
 import { subtractForeignTime } from '../tempo/subtract';
 import { DayBoundary } from './day';
-import { DayReview, isNamedRow, isStandInRow } from './model';
+import { DayReview, ReviewedRow, isNamedRow, isStandInRow } from './model';
 
 /** What a day still owes the person who worked it. */
 export type DayNudgeReason =
@@ -31,6 +31,26 @@ export type DayReviewGap = {
   undecidedMs: number;
   unattributedMs: number;
   waitingMs: number;
+};
+
+/** The clock time rows on parallel lanes cover together, never more than their durations add up to. */
+const clockMsOf = (rows: readonly Pick<ReviewedRow, 'from' | 'to' | 'durationMs'>[]) => {
+  const summedMs = rows.reduce((total, row) => total + row.durationMs, 0);
+  const spans = rows
+    .map((row) => ({ from: row.from.getTime(), to: row.to.getTime() }))
+    .sort((left, right) => left.from - right.from);
+  let coveredMs = 0;
+  let reachedMs = -Infinity;
+
+  for (const span of spans) {
+    const from = Math.max(span.from, reachedMs);
+
+    if (span.to > from) coveredMs += span.to - from;
+
+    reachedMs = Math.max(reachedMs, span.to);
+  }
+
+  return Math.min(summedMs, coveredMs);
 };
 
 /**
@@ -68,7 +88,7 @@ export const dayReviewGap = (options: {
   const reasons: DayNudgeReason[] = [];
   let unsyncedMs = 0;
   let changedRows = 0;
-  let undecidedMs = 0;
+  const undecided: Pick<ReviewedRow, 'from' | 'to' | 'durationMs'>[] = [];
   let waitingMs = 0;
   let pendingDelete = false;
 
@@ -87,7 +107,7 @@ export const dayReviewGap = (options: {
     }
 
     if (row.state === 'suggested') {
-      undecidedMs += row.durationMs;
+      undecided.push(row);
       continue;
     }
 
@@ -99,7 +119,7 @@ export const dayReviewGap = (options: {
     }
 
     if (!row.issueKey) {
-      undecidedMs += row.durationMs;
+      undecided.push(row);
       continue;
     }
 
@@ -125,6 +145,7 @@ export const dayReviewGap = (options: {
 
   pendingDelete ||= options.ledger.some((entry) => !claimed.has(entry.proposalId));
 
+  const undecidedMs = clockMsOf(undecided);
   const unattributedMs = options.review.check.unattributedMs;
 
   if (unsyncedMs >= tolerance || changedRows > 0 || pendingDelete) reasons.push('unsynced');

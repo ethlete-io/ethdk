@@ -177,6 +177,18 @@ describe('dayReviewGap', () => {
     expect(gap?.undecidedMs).toBe(45 * MINUTE);
   });
 
+  it('counts parallel undecided rows by the clock, not by their sum', () => {
+    const rows = [
+      row({ issueKey: 'FIP-1', from: '09:00', minutes: 60, state: 'suggested' }),
+      row({ issueKey: 'FIP-2', from: '09:30', minutes: 60, state: 'suggested' }),
+      row({ issueKey: 'FIP-3', from: '09:30', minutes: 30, state: 'suggested' }),
+      row({ issueKey: 'FIP-4', from: '14:00', minutes: 15, state: 'suggested' }),
+    ];
+    const gap = dayReviewGap({ review: review({ rows }), ledger: [] });
+
+    expect(gap?.undecidedMs).toBe(105 * MINUTE);
+  });
+
   it('reports observed time no issue claimed', () => {
     const gap = dayReviewGap({ review: review({ rows: [], unattributedMs: 90 * MINUTE }), ledger: [] });
 
