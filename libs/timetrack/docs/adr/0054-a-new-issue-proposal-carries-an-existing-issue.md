@@ -1,5 +1,5 @@
 ---
-open: B639
+built: f1c6ae311
 decided: 2026-11-19
 ---
 
