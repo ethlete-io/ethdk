@@ -9,8 +9,8 @@ import {
   shortSubagentsOf,
   stripesOf,
   topRemOf,
-} from '@shared/day';
-import { LANE_MIN_REM, laneHeader, dayTimeline, rowBand } from '@shared/timeline';
+} from './shared/day';
+import { LANE_MIN_REM, laneHeader, dayTimeline, rowBand } from './shared/timeline';
 
 const PARENT_WIDTH = 60;
 
@@ -78,6 +78,7 @@ const laneBody = (rows: Row[]) =>
 
 export default definePart({
   note: 'A subagent of 15 min or longer is a thin stripe inside its session lane, beside the session band, in the session colour at a lower tone. A shorter one is a tick on the session band.',
+  madeBy: ['claude-opus-5-5'],
   controls: {},
   states: { default: {} },
   describe: { default: 'Day of 19.11. shape: two parallel sessions, three subagents under the acme-web session' },
