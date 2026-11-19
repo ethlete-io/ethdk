@@ -288,20 +288,28 @@ const cutAtBreakEnd = <T extends BoundGroup>(options: {
     if (!inside.length || !after.length) return [row];
 
     const afterMs = Math.min(row.group.observedMs, windowsMs(mergeWindows(after)));
+    const before = row.group.evidence.filter((entry) => entry.at < cut);
 
     return [
       {
         ...row,
         to: cut,
         durationMs: cut.getTime() - from,
-        group: { ...row.group, to: cut, blocks: inside, observedMs: row.group.observedMs - afterMs },
+        group: { ...row.group, to: cut, blocks: inside, evidence: before, observedMs: row.group.observedMs - afterMs },
       },
       {
         ...row,
         afterBreak: true as const,
         from: cut,
         durationMs: row.to.getTime() - cut.getTime(),
-        group: { ...row.group, from: cut, blocks: after, observedMs: afterMs, attended: true },
+        group: {
+          ...row.group,
+          from: cut,
+          blocks: after,
+          evidence: row.group.evidence.filter((entry) => !before.includes(entry)),
+          observedMs: afterMs,
+          attended: true,
+        },
       },
     ];
   });

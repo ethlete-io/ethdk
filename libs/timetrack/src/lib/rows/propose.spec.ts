@@ -453,6 +453,20 @@ describe('propose, on a row nobody attended', () => {
     expect((unnamed[0]?.observedMs ?? 0) + (proposals[0]?.observedMs ?? 0)).toBe(ALONE.observedMs);
   });
 
+  it('describes each part from the commits in its own span', () => {
+    const evidence: Evidence[] = [
+      { kind: 'commit', at: AT(38), detail: 'a1 feat(app): Seed the bracket', summary: 'feat(app): Seed the bracket' },
+      { kind: 'commit', at: AT(48), detail: 'b2 fix(app): Order the seeds', summary: 'fix(app): Order the seeds' },
+    ];
+    const { proposals, unnamed } = propose({
+      groups: [{ ...ALONE, evidence }],
+      breaks: [{ from: AT_SECOND(31, 48), to: AT_SECOND(51, 42) }],
+    });
+
+    expect(unnamed.map((row) => row.description)).toEqual(['feat(app): Seed the bracket']);
+    expect(proposals.map((row) => row.description)).toEqual(['fix(app): Order the seeds']);
+  });
+
   it('leaves an unattended row alone when its break holds the whole of it', () => {
     const { proposals, unnamed } = propose({
       groups: [ALONE],
