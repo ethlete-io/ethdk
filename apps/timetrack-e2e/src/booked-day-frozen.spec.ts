@@ -95,6 +95,7 @@ test.describe('a finished day this app booked', () => {
 
     expect(sent?.rows.map((row) => ({ laneKey: row.laneKey, issueKey: row.issueKey }))).toEqual([
       { laneKey: `repo:${E2E_REPO}`, issueKey: E2E_ISSUE_KEY },
+      { laneKey: 'manual', issueKey: E2E_ISSUE_KEY },
     ]);
     expect(JSON.stringify(sent)).not.toContain('evidence');
   });
