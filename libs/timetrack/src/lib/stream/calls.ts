@@ -144,6 +144,49 @@ export const WORK_CALL_APPS = ['com.slack.Slack', 'slack', 'com.tinyspeck.slackm
 const isWorkCallApp = (appId: string) =>
   WORK_CALL_APPS.some((workApp) => workApp.toLowerCase() === appId.trim().toLowerCase());
 
+const sameCallApp = (left: string, right: string) =>
+  callHolderBelongsTo(left, right) ||
+  callHolderBelongsTo(right, left) ||
+  [left, right].every((appId) => WORK_CALL_APPS.some((workApp) => callHolderBelongsTo(appId.trim(), workApp)));
+
+const weightOf = (call: CallWindow) => (call.countsAsWork ? 2 : call.isPresence ? 1 : 0);
+
+/**
+ * Every machine's calls as one list, where a call of the same application that several machines held over
+ * the same minutes is one call. Pass the calls of each machine as one list, this machine's first.
+ */
+export const oneCallAcrossMachines = (machines: readonly (readonly CallWindow[])[]): CallWindow[] => {
+  const kept: { call: CallWindow; machine: number }[] = [];
+
+  machines.forEach((calls, machine) => {
+    for (const call of calls) {
+      const twin = kept.find(
+        (held) =>
+          held.machine !== machine &&
+          held.call.from < call.to &&
+          call.from < held.call.to &&
+          sameCallApp(held.call.appId, call.appId),
+      );
+
+      if (!twin) {
+        kept.push({ call, machine });
+        continue;
+      }
+
+      const [lead, other] = weightOf(call) > weightOf(twin.call) ? [call, twin.call] : [twin.call, call];
+
+      twin.call = {
+        ...lead,
+        from: lead.from < other.from ? lead.from : other.from,
+        to: lead.to > other.to ? lead.to : other.to,
+        title: lead.title || other.title,
+      };
+    }
+  });
+
+  return kept.map(({ call }) => call).sort((a, b) => a.from.getTime() - b.from.getTime());
+};
+
 /**
  * Whether this call counts as work. Deny beats everything, and nothing saying so is no — except a
  * meeting the user accepted over the same minutes, which says so on its own, and a

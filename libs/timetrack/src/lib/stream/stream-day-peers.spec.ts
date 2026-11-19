@@ -291,4 +291,34 @@ describe('streamDay over a paired machine’s events', () => {
       expect(rowsIn(day, `repo:${FUT}`).filter((row) => 'unattended' in row && row.unattended)).toEqual([]);
     });
   });
+
+  it('draws one row for a call both machines held the microphone for', () => {
+    const callEdge = (
+      minutes: number,
+      kind: 'call-start' | 'call-end',
+      appId: string,
+      title?: string,
+    ): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'call',
+      kind,
+      appId,
+      ...(title ? { title } : {}),
+    });
+    const day = dayOf({
+      local: [
+        callEdge(0, 'call-start', 'com.slack.Slack', 'Huddle - Team - Slack'),
+        ...focusRun({ from: 0, to: 60, appId: 'com.slack.Slack', title: 'Huddle - Team - Slack' }),
+        callEdge(54, 'call-end', 'com.slack.Slack'),
+      ],
+      mac: [
+        ...focusRun({ from: 0, to: 60, appId: 'code', title: 'ethlete-sdk - Code' }),
+        callEdge(31, 'call-start', 'com.tinyspeck.slackmacgap.helper'),
+        callEdge(54, 'call-end', 'com.tinyspeck.slackmacgap.helper'),
+      ],
+    });
+
+    expect(day.calls.map((call) => [call.appId, call.from, call.to])).toEqual([['com.slack.Slack', AT(0), AT(54)]]);
+    expect(rowsIn(day, 'lane:call')).toHaveLength(1);
+  });
 });

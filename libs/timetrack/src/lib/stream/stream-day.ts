@@ -31,7 +31,7 @@ import {
   longAbsences,
   remoteWorkWindows,
 } from './breaks';
-import { HeardChunk, classifyCalls, lastHostSampleAt } from './calls';
+import { HeardChunk, classifyCalls, lastHostSampleAt, oneCallAcrossMachines } from './calls';
 import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
@@ -2095,7 +2095,7 @@ const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => 
     unattributedTurns: days.flatMap((day) => day.unattributedTurns),
     ownSpend: totalSpend(days.map((day) => day.ownSpend)),
     ambiguousNames: union(days.map((day) => day.ambiguousNames)),
-    calls: days.flatMap((day) => day.calls).sort((a, b) => a.from.getTime() - b.from.getTime()),
+    calls: oneCallAcrossMachines(days.map((day) => day.calls)),
     events: days.flatMap((day) => day.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
     seen,
     rebuiltWindows: rebuilt,
