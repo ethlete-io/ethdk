@@ -48,7 +48,7 @@ import {
   timetrackCalendarEvents,
 } from './timetrack';
 import { plain } from './plain-text';
-import { diffLines, diffSnapshots, Snapshot, SnapshotDay, snapshotDayOf } from './timetrack-snapshot';
+import { diffDayRows, diffLines, diffSnapshots, Snapshot, SnapshotDay, snapshotDayOf } from './timetrack-snapshot';
 import { commitAuthorOf, commitPathsOnDays, currentBranch, git, projectRootsOf } from './git';
 
 const FLAGS_WITH_VALUE = [
@@ -877,6 +877,8 @@ A waiting write can be rejected from here; only the user approves one, in the ap
   timetrack transcript [YYYY-MM-DD]
                                 What the app transcribed of your own microphone during the day's calls
   timetrack rows [YYYY-MM-DD]   The rows the day drew, with the ids an edit names them by
+  timetrack rows <D> --json > f   Export a day; on another machine, rows <D> --compare f prints each
+                                differing row (paths and order normalised) and exits 1 on any
   timetrack snapshot [from] [to] [--out <file>]
                                 Record the rows of the last 7 days (default) before a change
   timetrack snapshot --compare <file>
@@ -1137,7 +1139,27 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
     if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
 
+    const compare = flagValue(argv, '--compare');
     const found = await timetrackDayRows(day);
+
+    if (compare) {
+      const recorded = JSON.parse(readFileSync(resolve(root, compare), 'utf8')) as Partial<typeof found>;
+
+      if (!Array.isArray(recorded.rows) || typeof recorded.day !== 'string')
+        throw new Error(`${compare} is not the output of timetrack rows <day> --json.`);
+      if (value && recorded.day !== day) throw new Error(`${compare} holds ${recorded.day}, not ${day}.`);
+
+      const diff = diffDayRows(
+        snapshotDayOf({ loggedMs: 0, proposedMs: 0, hidden: [], ...recorded, rows: recorded.rows, day: recorded.day }),
+        snapshotDayOf(found),
+      );
+
+      if (json) console.log(JSON.stringify(diff, null, 2));
+      else if (diff.changedRows || diff.days.length) diffLines(diff).forEach((line) => say(line));
+      else say(`${found.day}  the same ${found.rows.length + found.hidden.length} row(s) as ${compare}`);
+
+      return diff.changedRows || diff.days.length ? 1 : 0;
+    }
 
     if (!json) {
       say(`${found.day}  ${hours(found.loggedMs)} logged of a ${hours(found.targetMs)} target`);

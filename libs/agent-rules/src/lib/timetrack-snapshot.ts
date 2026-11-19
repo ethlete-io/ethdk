@@ -67,6 +67,34 @@ export const snapshotDayOf = (found: DayRowsLike): SnapshotDay => ({
   }),
 });
 
+const PATH_IN_KEY = /\/(?:[^/|@\s]+\/)*([^/|@\s]+)/g;
+
+const withoutPaths = (value: unknown) => (typeof value === 'string' ? value.replace(PATH_IN_KEY, '$1') : value);
+
+/** Drops what differs per machine: repo paths in ids and lane keys shrink to their last segment, and rows sort. */
+export const normaliseSnapshotDay = (day: SnapshotDay): SnapshotDay => ({
+  ...day,
+  rows: day.rows
+    .map((row) => ({
+      ...row,
+      id: String(withoutPaths(row.id)),
+      ...(row.laneKey === undefined ? {} : { laneKey: withoutPaths(row.laneKey) }),
+    }))
+    .sort(
+      (left, right) =>
+        Number(left.fromMs ?? 0) - Number(right.fromMs ?? 0) ||
+        String(left.laneKey).localeCompare(String(right.laneKey)) ||
+        left.id.localeCompare(right.id),
+    ),
+});
+
+/** Compares one day's rows from two machines, with machine-specific parts normalised away. */
+export const diffDayRows = (theirs: SnapshotDay, ours: SnapshotDay): SnapshotDiff =>
+  diffSnapshots(
+    { takenAt: 'then', days: [normaliseSnapshotDay(theirs)] },
+    { takenAt: 'now', days: [normaliseSnapshotDay(ours)] },
+  );
+
 const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
 
 const changesOf = (before: SnapshotRow, after: SnapshotRow): FieldChange[] =>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffLines, diffSnapshots, snapshotDayOf, Snapshot, SnapshotRow } from './timetrack-snapshot';
+import { diffDayRows, diffLines, diffSnapshots, snapshotDayOf, Snapshot, SnapshotRow } from './timetrack-snapshot';
 
 const row = (overrides: Partial<SnapshotRow> = {}): SnapshotRow => ({
   id: 'FIP-1@a',
@@ -84,5 +84,28 @@ describe('snapshotDayOf', () => {
       { id: 'a', issueKey: 'X-1' },
       { id: 'b', hidden: true },
     ]);
+  });
+});
+
+describe('diffDayRows', () => {
+  const day = (rows: SnapshotRow[]) => ({ day: '2026-09-29', loggedMs: 10, proposedMs: 20, rows });
+
+  it('ignores home paths in ids and lane keys, and row order', () => {
+    const mac = [
+      row({ id: 'repo:/Users/human/a@1', laneKey: 'repo:/Users/human/a', fromMs: 1 }),
+      row({ id: 'repo:/Users/human/b@2', laneKey: 'repo:/Users/human/b', fromMs: 2 }),
+    ];
+    const tank = [
+      row({ id: 'repo:/home/human/dev/b@2', laneKey: 'repo:/home/human/dev/b', fromMs: 2 }),
+      row({ id: 'repo:/home/human/dev/a@1', laneKey: 'repo:/home/human/dev/a', fromMs: 1 }),
+    ];
+
+    expect(diffDayRows(day(mac), day(tank)).changedRows).toBe(0);
+  });
+
+  it('reports a row only one machine holds', () => {
+    const diff = diffDayRows(day([row()]), day([row(), row({ id: 'extra', fromMs: 5 })]));
+
+    expect(diff.days[0]?.added.map((added) => added.id)).toEqual(['extra']);
   });
 });

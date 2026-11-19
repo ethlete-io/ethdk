@@ -950,6 +950,80 @@ describe('timetrack sync', () => {
   });
 });
 
+describe('timetrack rows --compare', () => {
+  const fromMs = new Date(2026, 9, 2, 9, 0).getTime();
+  const rowOn = (home: string, overrides: Record<string, unknown> = {}) => ({
+    id: `repo:${home}/sdk@${fromMs}`,
+    description: 'pdf export',
+    fromMs,
+    toMs: fromMs + 30 * 60_000,
+    durationMs: 30 * 60_000,
+    observedMs: 30 * 60_000,
+    issueKey: 'FIP-1',
+    laneKey: `repo:${home}/sdk`,
+    state: 'accepted',
+    confidence: 'likely',
+    edited: false,
+    hidden: false,
+    ...overrides,
+  });
+  const dayOf = (rows: unknown[]) => ({
+    day: '2026-10-02',
+    rows,
+    hidden: [],
+    proposedMs: 0,
+    loggedMs: 30 * 60_000,
+    targetMs: 0,
+    unattributedMs: 0,
+    warnings: [],
+    behind: [],
+  });
+  const exported = (rows: unknown[]) => {
+    const path = join(mkdtempSync(join(tmpdir(), 'agent-rules-rows-')), 'tank.json');
+
+    writeFileSync(path, JSON.stringify(dayOf(rows)));
+
+    return path;
+  };
+  const answerWith = async (rows: unknown[]) => {
+    await withEndpoint((_request, response) => {
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify({ ok: true, value: dayOf(rows) }));
+    });
+  };
+
+  it('exits 0 when the same rows sit under another home path', async () => {
+    const file = exported([rowOn('/home/human')]);
+
+    await answerWith([rowOn('/Users/human')]);
+
+    const lines = printedLines();
+
+    await expect(run(['rows', '2026-10-02', '--compare', file])).resolves.toBe(0);
+    expect(lines).toEqual([`2026-10-02  the same 1 row(s) as ${file}`]);
+  });
+
+  it('prints the differing row and exits 1', async () => {
+    const file = exported([rowOn('/home/human')]);
+
+    await answerWith([rowOn('/Users/human', { issueKey: 'FIP-2' })]);
+
+    const lines = printedLines();
+
+    await expect(run(['rows', '2026-10-02', '--compare', file])).resolves.toBe(1);
+    expect(lines).toContain('  changed  repo:sdk@' + fromMs);
+    expect(lines).toContain('    issueKey: FIP-1 → FIP-2');
+  });
+
+  it('refuses a file of another day', async () => {
+    const file = exported([]);
+
+    await answerWith([]);
+
+    await expect(run(['rows', '2026-10-03', '--compare', file])).rejects.toThrow(/holds 2026-10-02, not 2026-10-03/);
+  });
+});
+
 describe('timetrack create', () => {
   it('queues the issue, naming this caller for the approval queue', async () => {
     const bodies: unknown[] = [];
