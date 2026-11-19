@@ -140,6 +140,14 @@
       content: counter(et-progress-step);
     }
 
+    &[data-state='upcoming'] .et-progress-step-marker {
+      background: var(--et-progress-step-upcoming-marker-background, var(--et-surface-background-solid, Canvas));
+    }
+
+    &[data-state='upcoming'] .et-progress-step-marker-number::before {
+      content: var(--et-progress-step-upcoming-marker-content, counter(et-progress-step));
+    }
+
     /* Keep the label's font-size on this element, not on the label: the vertical orientation's
        optical centering below measures `1lh` here, and inheriting the page's size instead would
        leave the label sitting off-center against its marker. */

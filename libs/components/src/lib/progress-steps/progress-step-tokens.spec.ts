@@ -53,4 +53,18 @@ describe('progress-step.component.css tokens', () => {
     );
     expect(rule("&[data-state='skipped'] .et-progress-step-label")).toBe('');
   });
+
+  it('exposes the upcoming marker content and background on upcoming steps only', () => {
+    const rule = (selector: string) =>
+      css.match(new RegExp(`${selector.replace(/[[\]'.&]/g, '\\$&')}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
+
+    expect(css.match(/--et-progress-step-upcoming-marker-content,/g)).toHaveLength(1);
+    expect(css.match(/--et-progress-step-upcoming-marker-background,/g)).toHaveLength(1);
+    expect(rule("&[data-state='upcoming'] .et-progress-step-marker")).toContain(
+      'var(--et-progress-step-upcoming-marker-background, var(--et-surface-background-solid, Canvas))',
+    );
+    expect(rule("&[data-state='upcoming'] .et-progress-step-marker-number::before")).toContain(
+      'var(--et-progress-step-upcoming-marker-content, counter(et-progress-step))',
+    );
+  });
 });
