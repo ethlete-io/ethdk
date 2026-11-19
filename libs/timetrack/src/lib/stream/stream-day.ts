@@ -2164,9 +2164,10 @@ export const streamDay = (options: {
   const byOrigin = new Map<string, CollectedEvent[]>([['local', []]]);
 
   for (const event of options.events) {
-    const origin = originIdOf(event);
+    const ofOrigin = byOrigin.get(originIdOf(event));
 
-    byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), event]);
+    if (ofOrigin) ofOrigin.push(event);
+    else byOrigin.set(originIdOf(event), [event]);
   }
 
   const inputsOf = new Map(

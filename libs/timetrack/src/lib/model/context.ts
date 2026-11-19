@@ -1,3 +1,6 @@
+// Keyed by the roots array itself: a caller must not mutate a roots array it has already passed.
+const rootsResolved = new WeakMap<readonly string[], Map<string, string>>();
+
 /**
  * The checkout a directory belongs to, or the directory itself when no known root contains it.
  *
@@ -6,6 +9,11 @@
  * walked is still context, and dropping it would lose the branch it reported with it.
  */
 export const repoRootOf = (options: { path: string; roots: readonly string[] }) => {
+  const known = rootsResolved.get(options.roots) ?? new Map<string, string>();
+  const cached = known.get(options.path);
+
+  if (cached !== undefined) return cached;
+
   let found: string | undefined;
 
   for (const root of options.roots) {
@@ -14,6 +22,9 @@ export const repoRootOf = (options: { path: string; roots: readonly string[] }) 
 
     found = root;
   }
+
+  known.set(options.path, found ?? options.path);
+  rootsResolved.set(options.roots, known);
 
   return found ?? options.path;
 };

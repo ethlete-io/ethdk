@@ -28,6 +28,14 @@
         "command": "tsc -p libs/timetrack/tsconfig.spec.json --noEmit && tsc -p libs/timetrack/tsconfig.lib.json --noEmit"
       }
     },
+    "bench": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "esbuild libs/timetrack/testing/row-build.bench.ts --bundle --platform=node --format=esm --tsconfig=tsconfig.base.json --log-level=warning --outfile=tmp/timetrack-bench/row-build.mjs && node {args.prof} tmp/timetrack-bench/row-build.mjs {args.events} {args.runs}",
+        "args": "--events=synthetic --runs=5 --prof="
+      }
+    },
     "lint": {
       "inputs": [
         "default",
