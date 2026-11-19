@@ -1,5 +1,5 @@
 ---
-open: B602
+built: 33c7f020e
 decided: 2026-11-19
 ---
 
