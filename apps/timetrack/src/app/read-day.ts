@@ -22,6 +22,7 @@ import {
   pinnedOntoDay,
   pauseWindows,
   pausedMs,
+  peerHeadBranches,
   readHeadBranches$,
   reviewDay,
   settingsOnDay,
@@ -97,8 +98,9 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
       coverage: ports.coverage.forDay$(key),
       received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of(NOTHING_RECEIVED))),
       transcript: transcriptBetween$({ ports, from, to }),
+      timelines: ports.peers.receivedBranchTimelines$().pipe(catchError(() => of([]))),
     }).pipe(
-      concatMap(({ events, edits, runs, coverage, received, transcript }) => {
+      concatMap(({ events, edits, runs, coverage, received, transcript, timelines }) => {
         const merged = mergeDayEvents({
           local: events,
           received,
@@ -159,18 +161,29 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
           };
         };
         const first = read();
-        const missing = unbranchedCheckouts(first.day.streams).filter((repoPath) => !asked.has(repoPath));
+        const unbranched = unbranchedCheckouts(first.day.streams).filter((repoPath) => !asked.has(repoPath));
 
-        if (!missing.length) return of(first);
+        if (!unbranched.length) return of(first);
 
-        missing.forEach((repoPath) => asked.add(repoPath));
+        unbranched.forEach((repoPath) => asked.add(repoPath));
+
+        const fromPeers = peerHeadBranches({
+          events: merged,
+          repoPaths: unbranched,
+          localKeys: received.ownRepoKeys,
+          timelines,
+          at: to,
+        });
+        const missing = unbranched.filter((repoPath) => fromPeers[repoPath] === undefined);
+
+        Object.assign(heads, fromPeers);
 
         return readHeadBranches$({ processes: ports.processes, repoPaths: missing, at: to }).pipe(
           catchError(() => of<Record<string, string>>({})),
           map((found) => {
             Object.assign(heads, found);
 
-            return Object.keys(found).length ? read() : first;
+            return Object.keys(found).length || Object.keys(fromPeers).length ? read() : first;
           }),
         );
       }),

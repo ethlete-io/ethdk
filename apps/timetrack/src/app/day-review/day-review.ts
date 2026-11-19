@@ -63,12 +63,14 @@ import {
   pauseWindows,
   pausedMs,
   projectKeyFor,
+  peerHeadBranches,
   readHeadBranches$,
   unbranchedCheckouts,
   readJiraCredentials$,
   readTempoCredentials$,
   reasoningCandidates,
   reasoningOptionsOf,
+  ReceivedBranchTimelines,
   RepoNamingOffer,
   reasoningPlan,
   repoNamingDecisions,
@@ -159,6 +161,7 @@ type Loaded<T> = { key: string; value: T | null; failure: string | null };
 type DayEvidence = {
   events: CollectedEvent[];
   received: HostReceivedRange;
+  timelines: readonly ReceivedBranchTimelines[];
   transcript: TranscriptChunk[];
   runs: ClosedTimerRun[];
   pauses: TimeWindow[];
@@ -251,6 +254,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             events: ports.events.eventsBetween$(from, to),
             runs: ports.timers.runsBetween$(from, to).pipe(map((runs) => closedThrough(runs, to))),
             received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of(NOTHING_RECEIVED))),
+            timelines: ports.peers.receivedBranchTimelines$().pipe(catchError(() => of([]))),
             transcript: transcriptBetween$({ ports, from, to }),
           }).pipe(
             map((loaded) => ({
@@ -623,8 +627,21 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
           if (!ask || !missing.length) return EMPTY;
 
-          return readHeadBranches$({ processes: ports.processes, repoPaths: missing, at: ask.at }).pipe(
+          const collected = evidence();
+          const fromPeers = collected
+            ? peerHeadBranches({
+                events: merged() ?? [],
+                repoPaths: missing,
+                localKeys: collected.received.ownRepoKeys,
+                timelines: collected.timelines,
+                at: ask.at,
+              })
+            : {};
+          const local = missing.filter((repoPath) => fromPeers[repoPath] === undefined);
+
+          return readHeadBranches$({ processes: ports.processes, repoPaths: local, at: ask.at }).pipe(
             catchError(() => of<Record<string, string>>({})),
+            map((found) => ({ ...fromPeers, ...found })),
             tap((found) =>
               heldHeads.update((current) => {
                 const base = current.day === ask.day ? current : { branches: {}, asked: new Set<string>() };
@@ -644,8 +661,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .subscribe();
 
   /**
-   * The branch each of those checkouts was on that day, from its reflog. It resolves after the day
-   * does, so a slow repository delays the branch on one line and never the day's numbers.
+   * The branch each of those checkouts was on that day, from the paired machine that worked in it or
+   * from its reflog. It resolves after the day does, so a slow repository delays the branch on one line
+   * and never the day's numbers.
    */
   const headBranches = computed(() => {
     const held = heldHeads();

@@ -1,4 +1,7 @@
 import {
+  BRANCH_TIMELINE_DAY,
+  BRANCH_TIMELINE_DAY_START_MS,
+  CheckoutBranchTimeline,
   CheckoutKeys,
   PeerDayRows,
   PeerSharedSettings,
@@ -6,9 +9,12 @@ import {
   SHARED_SETTINGS_DAY,
   SHARED_SETTINGS_DAY_START_MS,
   SharedSettingsEntry,
+  ReceivedBranchTimelines,
+  encodeBranchTimelines,
   encodePeerDayRows,
   encodeSharedSettings,
   mapSharedSettings,
+  parseBranchTimelines,
   parsePeerDayRows,
   parseSharedSettings,
 } from '@ethlete/timetrack';
@@ -128,6 +134,10 @@ export type TauriPeers = {
   receivedSettings$(): Observable<HostReceivedSettings>;
   /** Replaces the rules and stand-ins of this machine that the next pull from here carries. */
   setSharedSettings$(entries: readonly SharedSettingsEntry[]): Observable<void>;
+  /** The branch timelines the paired machines last sent, by repository key. */
+  receivedBranchTimelines$(): Observable<readonly ReceivedBranchTimelines[]>;
+  /** Replaces the branch timelines of this machine that the next pull from here carries. */
+  setBranchTimelines$(checkouts: readonly CheckoutBranchTimeline[]): Observable<void>;
 };
 
 export const createTauriPeers = (): TauriPeers => ({
@@ -181,5 +191,26 @@ export const createTauriPeers = (): TauriPeers => ({
   setSharedSettings$: (entries) =>
     invokeHost$<void>('set_day_rows', {
       rows: { day: SHARED_SETTINGS_DAY, dayStartMs: SHARED_SETTINGS_DAY_START_MS, rows: encodeSharedSettings(entries) },
+    }),
+  receivedBranchTimelines$: () =>
+    invokeHost$<StoredReceivedRange>('received_between', {
+      fromMs: BRANCH_TIMELINE_DAY_START_MS,
+      toMs: BRANCH_TIMELINE_DAY_START_MS + 1,
+    }).pipe(
+      map((stored) =>
+        (stored.dayRows ?? []).flatMap((sent) =>
+          sent.day === BRANCH_TIMELINE_DAY
+            ? [{ machineId: sent.machineId, checkouts: parseBranchTimelines(sent.rows) }]
+            : [],
+        ),
+      ),
+    ),
+  setBranchTimelines$: (checkouts) =>
+    invokeHost$<void>('set_day_rows', {
+      rows: {
+        day: BRANCH_TIMELINE_DAY,
+        dayStartMs: BRANCH_TIMELINE_DAY_START_MS,
+        rows: encodeBranchTimelines(checkouts),
+      },
     }),
 });

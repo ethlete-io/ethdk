@@ -9,7 +9,8 @@ import { branchOrNothing, gitBranchSwitchesIn } from './reflog-switch';
  */
 const REFLOG_DEPTH = 500;
 
-const headReflogSpec = (repoPath: string): ProcessSpec => ({
+/** The `git reflog show` call whose output `parseHeadBranchAt` and `branchWindowsIn` read. */
+export const headReflogSpec = (repoPath: string): ProcessSpec => ({
   command: 'git',
   args: ['reflog', 'show', `-n${REFLOG_DEPTH}`, '--date=iso-strict', `--format=${GIT_REFLOG_FORMAT}`],
   cwd: repoPath,

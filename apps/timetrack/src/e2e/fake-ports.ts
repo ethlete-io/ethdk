@@ -724,6 +724,8 @@ export const createFakePorts = (): HostPorts => {
         ),
       receivedSettings$: () => ok({ ownRepoKeys: {}, peers: [] }),
       setSharedSettings$: () => ok(undefined),
+      receivedBranchTimelines$: () => ok([]),
+      setBranchTimelines$: () => ok(undefined),
     },
 
     transcription: {

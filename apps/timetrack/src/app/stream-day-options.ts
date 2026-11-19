@@ -84,7 +84,7 @@ export const streamDayOptionsOf = (options: {
   epics?: EpicOptions;
   /** The instant the window source has reported through, which is its last drain. */
   windowsSeenThroughMs?: number;
-  /** The branch each checkout the day names no branch for was on, from `readHeadBranches$`. */
+  /** The branch each checkout the day names no branch for was on, from `peerHeadBranches` or `readHeadBranches$`. */
   headBranches?: Readonly<Record<string, string>>;
   /** The instant the day is read through: now, or the day's end once the day is over. */
   through?: Date;
