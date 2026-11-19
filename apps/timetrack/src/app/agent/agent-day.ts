@@ -200,6 +200,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
         rows: read.reviewWith(edits).rows,
         ledger,
         standIns: settings.settings().standIns,
+        edits,
       }),
       localDayRange(read.key, dayBoundaryOf(settings.settings())).from,
     );

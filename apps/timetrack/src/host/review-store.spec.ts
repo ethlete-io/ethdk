@@ -28,6 +28,13 @@ const frozenRows: DayRows = {
 };
 
 describe('review store', () => {
+  it('reads back the stamps of the shared rows', () => {
+    const stamps = { 'manual:ABC-1@2026-10-01T18:15:00.000Z': { atMs: 5, deleted: true as const } };
+    const stored = JSON.parse(JSON.stringify(toStoredEdits({ ...EMPTY_DAY_REVIEW_EDITS, stamps })));
+
+    expect(parseStoredEdits(stored).stamps).toEqual(stamps);
+  });
+
   it('reads back the frozen rows of a booked day with their dates', () => {
     const stored = JSON.parse(JSON.stringify(toStoredEdits({ ...EMPTY_DAY_REVIEW_EDITS, frozenRows })));
 

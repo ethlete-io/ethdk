@@ -87,6 +87,7 @@ import {
   showRow,
   writeStatement,
   splitRow,
+  stampSharedEdits,
   standInNameFor,
   statedPresence,
   agentTurnsOf,
@@ -139,7 +140,7 @@ import { readViewState, rememberViewState } from '../view-state';
 import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
-import { ownDayRowsOf, receivedDayRowsOn } from '../peers/day-rows';
+import { ownDayRowsOf, receivedDayRowsOn, withReceivedSharedRows } from '../peers/day-rows';
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
@@ -405,13 +406,16 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         })
       : [];
   });
-  const edits = computed(() =>
-    pinnedOntoDay({
-      edits: local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS,
+  const edits = computed(() => {
+    const held = local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS;
+    const received = evidence()?.received;
+
+    return pinnedOntoDay({
+      edits: received ? withReceivedSharedRows({ edits: held, received, day: day() }) : held,
       day: day(),
       boundary: boundary(),
-    }),
-  );
+    });
+  });
 
   const daySettings = computed(() => settingsOnDay({ settings: settings.settings(), day: day() }));
 
@@ -785,6 +789,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       rows: current.rows,
       ledger: loaded.entries,
       standIns: settings.settings().standIns,
+      edits: edits(),
     });
   });
 
@@ -825,10 +830,20 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  const applyOn = (key: string, next: DayReviewEdits) => {
+  const store = (key: string, next: DayReviewEdits) => {
     local.update((all) => ({ ...all, [key]: next }));
     saves$.next({ key, edits: next });
   };
+
+  const applyOver = (options: { key: string; before?: DayReviewEdits; next: DayReviewEdits }) =>
+    store(
+      options.key,
+      options.before
+        ? stampSharedEdits({ before: options.before, after: options.next, atMs: Date.now() })
+        : options.next,
+    );
+
+  const applyOn = (key: string, next: DayReviewEdits) => applyOver({ key, before: heldEditsOf(key), next });
 
   const apply = (next: DayReviewEdits) => applyOn(day(), next);
 
@@ -870,9 +885,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       if (held) return of(applyOn(key, change(held)));
 
-      return ports.review
-        .editsFor$(key)
-        .pipe(map((stored) => applyOn(key, change(local()[key] ?? stored ?? EMPTY_DAY_REVIEW_EDITS))));
+      return ports.review.editsFor$(key).pipe(
+        map((stored) => {
+          const base = local()[key] ?? stored ?? EMPTY_DAY_REVIEW_EDITS;
+
+          return applyOver({ key, before: base, next: change(base) });
+        }),
+      );
     });
 
   /**

@@ -411,7 +411,8 @@ export type ManualRow = {
 export const isManualRow = (row: Pick<ReviewedRow, 'evidence'>) =>
   row.evidence.some((entry) => entry.kind === 'manual');
 
-const manualEvidence = (row: ManualRow): Evidence[] => [
+/** The evidence a row written by hand carries: the reviewer's word, at the row's start. */
+export const manualEvidence = (row: Pick<ManualRow, 'from'>): Evidence[] => [
   { kind: 'manual', at: row.from, detail: 'you added this row by hand' },
 ];
 

@@ -31,7 +31,7 @@ import {
 import { Observable, catchError, combineLatest, concatMap, defer, map, of } from 'rxjs';
 import { HostPorts, NOTHING_RECEIVED } from '../host';
 import { streamDayOptionsOf } from './stream-day-options';
-import { receivedDayRowsOn } from './peers/day-rows';
+import { receivedDayRowsOn, withReceivedSharedRows } from './peers/day-rows';
 import { heardChunksOf, transcriptBetween$ } from './transcript-chunks';
 
 export type DayRead = {
@@ -138,7 +138,11 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
                 ...options.check,
               },
             });
-          const stored = pinnedOntoDay({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, day: key, boundary });
+          const stored = pinnedOntoDay({
+            edits: withReceivedSharedRows({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, received, day: key }),
+            day: key,
+            boundary,
+          });
 
           return {
             key,

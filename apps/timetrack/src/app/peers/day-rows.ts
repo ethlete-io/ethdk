@@ -1,4 +1,13 @@
-import { PeerDayRows, ReviewedRow, StandIn, SyncedWorklog, mapPeerDayRows, peerDayRowsOf } from '@ethlete/timetrack';
+import {
+  DayReviewEdits,
+  PeerDayRows,
+  ReviewedRow,
+  StandIn,
+  SyncedWorklog,
+  mapPeerDayRows,
+  peerDayRowsOf,
+  withPeerSharedEntries,
+} from '@ethlete/timetrack';
 import { HostReceivedRange } from '../../host';
 
 /** This machine's rows of a day as its paired machines receive them. */
@@ -8,6 +17,7 @@ export const ownDayRowsOf = (options: {
   rows: readonly ReviewedRow[];
   ledger: readonly SyncedWorklog[];
   standIns: readonly StandIn[];
+  edits?: DayReviewEdits;
 }): PeerDayRows =>
   peerDayRowsOf({
     ...options,
@@ -31,3 +41,19 @@ export const receivedDayRowsOn = (options: {
         }),
       ]),
   );
+
+export const withReceivedSharedRows = (options: {
+  edits: DayReviewEdits;
+  received: HostReceivedRange;
+  day: string;
+}): DayReviewEdits => {
+  const offsets = new Map(options.received.dayRows.map((sent) => [sent.machineId, sent.clockOffsetMs ?? 0]));
+
+  return withPeerSharedEntries({
+    edits: options.edits,
+    peers: Object.entries(receivedDayRowsOn(options)).map(([machineId, rows]) => ({
+      entries: rows.shared ?? [],
+      clockOffsetMs: offsets.get(machineId) ?? 0,
+    })),
+  });
+};

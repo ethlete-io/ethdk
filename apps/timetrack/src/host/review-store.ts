@@ -56,6 +56,7 @@ export const toStoredEdits = (edits: DayReviewEdits): StoredEdits => ({
   ...(edits.autoDisputes ? { autoDisputes: edits.autoDisputes } : {}),
   ...(edits.frozenRows ? { frozenRows: withStoredDates(edits.frozenRows) } : {}),
   ...(edits.booked ? { booked: withStoredDates(edits.booked) } : {}),
+  ...(edits.stamps ? { stamps: edits.stamps } : {}),
   pinned: edits.pinned.map(({ from, to, evidence, ...rest }) => ({
     ...rest,
     fromMs: from.getTime(),
@@ -80,6 +81,7 @@ export const parseStoredEdits = (stored: StoredEdits): DayReviewEdits => ({
   ...(stored.booked && typeof stored.booked === 'object'
     ? { booked: withRevivedDates(stored.booked) as BookedDay }
     : {}),
+  ...(stored.stamps && typeof stored.stamps === 'object' ? { stamps: stored.stamps } : {}),
   pinned: (stored.pinned ?? []).map(({ fromMs, toMs, evidence, ...rest }) => ({
     ...rest,
     from: new Date(fromMs),

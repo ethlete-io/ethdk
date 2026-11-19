@@ -711,12 +711,13 @@ pub struct ReceivedDayRows {
     pub machine_id: String,
     pub day: String,
     pub rows: String,
+    pub clock_offset_ms: Option<i64>,
 }
 
 /// The day rows of the days that start in `[from_ms, to_ms)`. A forgotten machine's are left out.
 fn received_day_rows_in(connection: &Connection, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<ReceivedDayRows>> {
     let mut statement = connection.prepare(
-        "SELECT received.machine_id, received.day, received.rows
+        "SELECT received.machine_id, received.day, received.rows, paired.clock_offset_ms
            FROM received_day_rows received
            JOIN paired_machine paired ON paired.machine_id = received.machine_id
           WHERE received.day_start_ms >= ?1 AND received.day_start_ms < ?2
@@ -727,6 +728,7 @@ fn received_day_rows_in(connection: &Connection, from_ms: i64, to_ms: i64) -> Ti
             machine_id: row.get(0)?,
             day: row.get(1)?,
             rows: row.get(2)?,
+            clock_offset_ms: row.get(3)?,
         })
     })?;
 
@@ -2375,6 +2377,30 @@ mod tests {
         b.forget(&a_id).await.unwrap();
 
         assert!(rows_in(b.received_between(0, 10_000).await.unwrap()).is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn received_day_rows_carry_the_senders_clock_offset() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+        let hello = b.hello(&a_id).await.unwrap();
+
+        a.set_day_rows(day_rows("2026-10-08", 1_000, "first")).await.unwrap();
+        b.pull(&a_id).await.unwrap();
+
+        let offsets = b
+            .received_between(0, 2_000)
+            .await
+            .unwrap()
+            .day_rows
+            .into_iter()
+            .map(|rows| rows.clock_offset_ms)
+            .collect::<Vec<_>>();
+
+        assert_eq!(offsets, vec![Some(hello.clock_offset_ms)]);
     }
 
     #[tokio::test(flavor = "multi_thread")]

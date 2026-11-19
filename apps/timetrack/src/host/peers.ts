@@ -46,11 +46,11 @@ type StoredReceivedRange = {
   repoKeys: { machineId: string; path: string; key: string }[];
   ownRepoKeys: { path: string; key: string }[];
   /** Absent from a host that predates day rows. */
-  dayRows?: { machineId: string; day: string; rows: string }[];
+  dayRows?: { machineId: string; day: string; rows: string; clockOffsetMs?: number | null }[];
 };
 
 /** The last rows a paired machine sent for a day, as that machine's checkouts name its lanes. */
-export type ReceivedDayRows = { machineId: string; rows: PeerDayRows };
+export type ReceivedDayRows = { machineId: string; rows: PeerDayRows; clockOffsetMs?: number };
 
 /**
  * A range's received events with each paired machine's checkout keys, this machine's own, and the rows
@@ -104,7 +104,15 @@ export const createTauriPeers = (): TauriPeers => ({
         dayRows: (stored.dayRows ?? []).flatMap((sent) => {
           const rows = parsePeerDayRows(sent.rows);
 
-          return rows ? [{ machineId: sent.machineId, rows }] : [];
+          return rows
+            ? [
+                {
+                  machineId: sent.machineId,
+                  rows,
+                  ...(sent.clockOffsetMs ? { clockOffsetMs: sent.clockOffsetMs } : {}),
+                },
+              ]
+            : [];
         }),
       })),
     ),

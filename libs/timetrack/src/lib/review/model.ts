@@ -116,7 +116,12 @@ export type DayReviewEdits = {
   frozenRows?: DayRows;
   /** The day as it was drawn when it was booked, from `withBookedReview`. `reviewDay` draws a booked day from it. */
   booked?: BookedDay;
+  /** When each shared subject of the day last changed here, by id. See `stampSharedEdits`. */
+  stamps?: Record<string, SharedStamp>;
 };
+
+/** When a subject that travels to paired machines last changed, in this machine's clock; `deleted` marks its removal. */
+export type SharedStamp = { atMs: number; deleted?: true };
 
 /** A worklog this app wrote for a row of a booked day, as Tempo held it when the day was booked. */
 export type WrittenWorklog = {
