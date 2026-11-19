@@ -4,6 +4,7 @@ use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
+use tokio::io::AsyncBufReadExt;
 
 use crate::design_server::DesignServers;
 use crate::error::{StudioError, StudioResult};
@@ -89,40 +90,71 @@ pub struct CodeState {
     uncommitted: Vec<String>,
 }
 
-async fn run_script(command: &str) -> StudioResult<(String, Vec<String>)> {
-    let output = crate::child_env::command("node")
+const PHASE_PREFIX: &str = "phase: ";
+
+async fn run_script(command: &str, on_phase: &(dyn Fn(&str) + Send + Sync)) -> StudioResult<(String, Vec<String>)> {
+    let mut child = crate::child_env::command("node")
         .arg(SCRIPT)
         .arg(command)
         .current_dir(repo_root())
         .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .kill_on_drop(true)
-        .output()
-        .await
+        .spawn()
         .map_err(|error| match error.kind() {
             std::io::ErrorKind::NotFound => StudioError::NotInstalled("node".to_owned()),
             _ => StudioError::Io(error),
         })?;
-    let lines: Vec<String> = String::from_utf8_lossy(&output.stderr)
-        .lines()
-        .map(str::to_owned)
-        .collect();
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| StudioError::Rejected("node has no stdout".to_owned()))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| StudioError::Rejected("node has no stderr".to_owned()))?;
+    let collected = async {
+        let mut text = String::new();
 
-    if !output.status.success() {
+        tokio::io::AsyncReadExt::read_to_string(&mut stdout, &mut text).await?;
+
+        Ok::<_, std::io::Error>(text)
+    };
+    let streamed = async {
+        let mut lines = Vec::new();
+        let mut reader = tokio::io::BufReader::new(stderr).lines();
+
+        while let Some(line) = reader.next_line().await? {
+            if let Some(name) = line.strip_prefix(PHASE_PREFIX) {
+                on_phase(name.trim());
+            }
+
+            lines.push(line);
+        }
+
+        Ok::<_, std::io::Error>(lines)
+    };
+    let (stdout, lines) = tokio::join!(collected, streamed);
+    let status = child.wait().await.map_err(StudioError::Io)?;
+    let (stdout, lines) = (stdout.map_err(StudioError::Io)?, lines.map_err(StudioError::Io)?);
+
+    if !status.success() {
         return Err(StudioError::Rejected(format!(
             "{SCRIPT} {command} failed.\n{}",
             lines.join("\n")
         )));
     }
 
-    Ok((String::from_utf8_lossy(&output.stdout).trim().to_owned(), lines))
+    Ok((stdout.trim().to_owned(), lines))
 }
 
 fn parsed<T: for<'de> Deserialize<'de>>(text: &str) -> StudioResult<T> {
     serde_json::from_str(text).map_err(|error| StudioError::Rejected(format!("{SCRIPT} answered no JSON: {error}")))
 }
 
-pub async fn cli_copy() -> StudioResult<(CliCopy, Vec<String>)> {
-    let (stdout, mut lines) = run_script("cli-copy").await?;
+pub async fn cli_copy(on_phase: &(dyn Fn(&str) + Send + Sync)) -> StudioResult<(CliCopy, Vec<String>)> {
+    let (stdout, mut lines) = run_script("cli-copy", on_phase).await?;
 
     lines.drain(..lines.len().saturating_sub(PREFACE_LINES));
 
@@ -134,8 +166,8 @@ pub struct AppCopy {
     pub switched: bool,
 }
 
-pub async fn app_copy() -> StudioResult<AppCopy> {
-    parsed(&run_script("app-copy").await?.0)
+pub async fn app_copy(on_phase: &(dyn Fn(&str) + Send + Sync)) -> StudioResult<AppCopy> {
+    parsed(&run_script("app-copy", on_phase).await?.0)
 }
 
 /// Reloads every window once `app-copy` points the frontend server at another commit.
@@ -179,7 +211,7 @@ pub async fn studio_code_state(servers: tauri::State<'_, DesignServers>) -> Stud
         return Ok(None);
     }
 
-    let areas: Areas = parsed(&run_script("state").await?.0)?;
+    let areas: Areas = parsed(&run_script("state", &|_: &str| ()).await?.0)?;
 
     Ok(Some(CodeState {
         cli: CliCode {

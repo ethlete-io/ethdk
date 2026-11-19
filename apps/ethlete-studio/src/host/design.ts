@@ -137,6 +137,10 @@ export type ServerState = {
   crash: DesignServerCrash | null;
   log: string[];
   logRevision: number;
+  /** The step a start or restart is in, `null` when none runs. */
+  phase: 'starting' | 'cli-build' | 'app-build' | null;
+  /** Milliseconds spent in `phase`, 0 without one. */
+  phaseMs: number;
 };
 
 /** Reads whether the checkout's design server answers on its port. `known` saves resending an unchanged log. */

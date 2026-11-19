@@ -71,6 +71,41 @@ pub struct ServerState {
     /// `None` when the log is still the one the caller named by `log_revision`.
     pub log: Option<Vec<String>>,
     pub log_revision: u64,
+    /// The step a start or restart is in, `None` when none runs.
+    pub phase: Option<StartPhase>,
+    /// Milliseconds spent in `phase`, 0 without one.
+    pub phase_ms: u64,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum StartPhase {
+    Starting,
+    CliBuild,
+    AppBuild,
+}
+
+impl StartPhase {
+    fn named(name: &str) -> Option<Self> {
+        match name {
+            "cli-build" => Some(Self::CliBuild),
+            "app-build" => Some(Self::AppBuild),
+            _ => None,
+        }
+    }
+}
+
+struct PhaseGuard {
+    servers: DesignServers,
+    checkout: String,
+}
+
+impl Drop for PhaseGuard {
+    fn drop(&mut self) {
+        if let Ok(mut phases) = self.servers.phases.lock() {
+            phases.remove(&self.checkout);
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -123,9 +158,39 @@ pub struct DesignServers {
     table: Arc<Mutex<HashMap<String, Server>>>,
     /// Stale verdicts per checkout and port, kept until the port stops answering or Studio starts a server on it.
     verdicts: Arc<Mutex<HashMap<(String, u16), bool>>>,
+    phases: Arc<Mutex<HashMap<String, (StartPhase, Instant)>>>,
 }
 
 impl DesignServers {
+    fn begin(&self, checkout: &str) -> PhaseGuard {
+        self.set_phase(checkout, StartPhase::Starting);
+
+        PhaseGuard {
+            servers: self.clone(),
+            checkout: checkout.to_owned(),
+        }
+    }
+
+    fn set_phase(&self, checkout: &str, phase: StartPhase) {
+        if let Ok(mut phases) = self.phases.lock() {
+            if phases.get(checkout).map(|(current, _)| *current) != Some(phase) {
+                phases.insert(checkout.to_owned(), (phase, Instant::now()));
+            }
+        }
+    }
+
+    fn phase_of(&self, checkout: &str) -> (Option<StartPhase>, u64) {
+        let phases = match self.phases.lock() {
+            Ok(phases) => phases,
+            Err(_) => return (None, 0),
+        };
+
+        match phases.get(checkout) {
+            Some((phase, since)) => (Some(*phase), since.elapsed().as_millis() as u64),
+            None => (None, 0),
+        }
+    }
+
     pub fn cli_sha(&self) -> Option<String> {
         self.table
             .lock()
@@ -170,6 +235,7 @@ async fn state(
     let mut managed = false;
     let mut exited = false;
     let mut crash = None;
+    let (phase, phase_ms) = servers.phase_of(checkout);
 
     if let Some(server) = table.get_mut(checkout) {
         let log = server.log.lock().map_err(|_| StudioError::Poisoned)?;
@@ -204,6 +270,8 @@ async fn state(
         crash,
         log: (known_log != Some(log_revision)).then_some(lines),
         log_revision,
+        phase,
+        phase_ms,
     })
 }
 
@@ -599,13 +667,20 @@ enum Prepared {
     },
 }
 
-async fn prepare(checkout: &str) -> StudioResult<Prepared> {
+async fn prepare(servers: &DesignServers, checkout: &str) -> StudioResult<Prepared> {
     if !crate::studio_code::starts_from_repo_build(Path::new(checkout)) {
         return Ok(Prepared::Script);
     }
 
-    let (copy, preface) = crate::studio_code::cli_copy().await?;
-    let app_copy = crate::studio_code::app_copy().await?;
+    let on_phase = |name: &str| {
+        if let Some(phase) = StartPhase::named(name) {
+            servers.set_phase(checkout, phase);
+        }
+    };
+    let (copy, preface) = crate::studio_code::cli_copy(&on_phase).await?;
+    let app_copy = crate::studio_code::app_copy(&on_phase).await?;
+
+    servers.set_phase(checkout, StartPhase::Starting);
 
     Ok(Prepared::RepoBuild {
         copy,
@@ -634,7 +709,7 @@ fn launch(
 }
 
 async fn start(servers: &DesignServers, checkout: &str) -> StudioResult<Option<crate::studio_code::AppCopy>> {
-    let prepared = prepare(checkout).await?;
+    let prepared = prepare(servers, checkout).await?;
 
     launch(servers, checkout, prepared)
 }
@@ -789,9 +864,11 @@ pub async fn design_server_start(
         return Ok(current);
     }
 
+    let phase = servers.begin(&checkout);
     let app_copy = start(servers.inner(), &checkout).await?;
     forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
+    drop(phase);
 
     let answer = state(servers.inner(), &checkout, port, None).await;
 
@@ -865,7 +942,9 @@ pub async fn design_server_restart(
     checkout: String,
 ) -> StudioResult<ServerState> {
     let port = port_of_checkout(&checkout)?;
-    let app_copy = restart(servers.inner(), &checkout, port, prepare(&checkout)).await?;
+    let phase = servers.begin(&checkout);
+    let app_copy = restart(servers.inner(), &checkout, port, prepare(servers.inner(), &checkout)).await?;
+    drop(phase);
 
     let answer = judged(servers.inner(), &checkout, port, None).await;
 
@@ -1037,6 +1116,76 @@ mod tests {
 
             tokio::time::sleep(POLL).await;
         }
+    }
+
+    #[test]
+    fn a_phase_is_set_by_begin_and_gone_when_the_guard_drops() {
+        let servers = DesignServers::default();
+
+        assert_eq!(servers.phase_of("a"), (None, 0));
+
+        let guard = servers.begin("a");
+
+        assert_eq!(servers.phase_of("a").0, Some(StartPhase::Starting));
+        assert_eq!(servers.phase_of("b"), (None, 0));
+
+        drop(guard);
+
+        assert_eq!(servers.phase_of("a"), (None, 0));
+    }
+
+    #[test]
+    fn a_marker_switches_the_phase_and_its_elapsed_time_grows() {
+        let servers = DesignServers::default();
+        let _guard = servers.begin("a");
+
+        servers.set_phase("a", StartPhase::named("cli-build").expect("a known phase"));
+
+        let (phase, first) = servers.phase_of("a");
+
+        assert_eq!(phase, Some(StartPhase::CliBuild));
+
+        std::thread::sleep(Duration::from_millis(20));
+
+        assert!(servers.phase_of("a").1 > first);
+        assert_eq!(StartPhase::named("unknown"), None);
+    }
+
+    #[test]
+    fn a_phase_serializes_in_kebab_case() {
+        let names: Vec<String> = [StartPhase::Starting, StartPhase::CliBuild, StartPhase::AppBuild]
+            .iter()
+            .map(|phase| serde_json::to_string(phase).expect("a name"))
+            .collect();
+
+        assert_eq!(names, ["\"starting\"", "\"cli-build\"", "\"app-build\""]);
+    }
+
+    #[tokio::test]
+    async fn the_state_reports_the_phase_and_its_elapsed_time() {
+        const PORT: u16 = 45881;
+
+        let checkout = fake_checkout(PORT);
+        let servers = DesignServers::default();
+        let idle = state(&servers, &checkout, PORT, None).await.expect("a state");
+
+        assert_eq!((idle.phase, idle.phase_ms), (None, 0));
+
+        let guard = servers.begin(&checkout);
+
+        tokio::time::sleep(Duration::from_millis(20)).await;
+
+        let busy = state(&servers, &checkout, PORT, None).await.expect("a state");
+
+        assert_eq!(busy.phase, Some(StartPhase::Starting));
+        assert!(busy.phase_ms >= 20);
+
+        drop(guard);
+
+        assert_eq!(
+            state(&servers, &checkout, PORT, None).await.expect("a state").phase,
+            None
+        );
     }
 
     #[tokio::test]

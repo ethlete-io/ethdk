@@ -12,6 +12,7 @@ import {
   cliCopyPlan,
   dirtyCliNoteOf,
   cliBuildMarkOf,
+  ensureAppCopy,
   ensureCliCopy,
   pushStateOf,
   uncommittedOf,
@@ -303,6 +304,86 @@ test('the uncommitted lines come from the built CLI and are empty without one', 
 
     assert.deepEqual(uncommittedOf(root), ['SKETCH UNTRACKED studio a.b: x']);
   } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+const phaseSpecRepo = () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-code-spec-'));
+
+  git(root, 'init', '-q');
+  git(root, 'config', 'user.email', 'spec@example.com');
+  git(root, 'config', 'user.name', 'spec');
+  mkdirSync(join(root, 'libs/cli'), { recursive: true });
+  writeFileSync(join(root, 'libs/cli/file.txt'), 'one\n');
+  git(root, 'add', '.');
+  git(root, 'commit', '-qm', 'init');
+
+  return root;
+};
+
+test('a CLI build logs the cli-build phase before the build runs, a kept copy logs none', () => {
+  const root = phaseSpecRepo();
+
+  try {
+    const lines = [];
+    const order = [];
+    const build = (...args) => {
+      order.push(lines.at(-1));
+      fakeBuild(...args);
+    };
+
+    ensureCliCopy(root, { log: (line) => lines.push(line), build });
+
+    assert.ok(lines.includes('phase: cli-build'));
+    assert.equal(order[0], 'phase: cli-build');
+
+    const again = [];
+
+    ensureCliCopy(root, { log: (line) => again.push(line), build });
+
+    assert.equal(
+      again.some((line) => line.startsWith('phase:')),
+      false,
+    );
+  } finally {
+    gitSpawn(['worktree', 'prune'], { cwd: root });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('an app build logs the app-build phase, an existing app copy logs none', () => {
+  const root = phaseSpecRepo();
+
+  try {
+    const sources = AREAS.frontend[0];
+
+    mkdirSync(join(root, sources), { recursive: true });
+    writeFileSync(join(root, sources, 'file.txt'), 'one\n');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'app');
+
+    const build = (_root, tree) => {
+      mkdirSync(join(tree, 'dist/apps/ethlete-studio/browser'), { recursive: true });
+      writeFileSync(join(tree, 'dist/apps/ethlete-studio/browser/index.html'), '');
+    };
+    const lines = [];
+
+    ensureAppCopy(root, { log: (line) => lines.push(line), build });
+
+    assert.ok(lines.includes('phase: app-build'));
+    assert.equal(lines.includes('phase: cli-build'), false);
+
+    const again = [];
+
+    ensureAppCopy(root, { log: (line) => again.push(line), build });
+
+    assert.equal(
+      again.some((line) => line.startsWith('phase:')),
+      false,
+    );
+  } finally {
+    gitSpawn(['worktree', 'prune'], { cwd: root });
     rmSync(root, { recursive: true, force: true });
   }
 });

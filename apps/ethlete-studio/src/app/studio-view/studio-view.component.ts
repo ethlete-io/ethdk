@@ -57,6 +57,13 @@ const SERVER_ANSWER_TIMEOUT_MS = 5000;
 
 const SERVER_SILENT_MS = 30_000;
 
+const START_PHASE_POLL_MS = 1000;
+
+export type StartPhaseReading = { phase: NonNullable<ServerState['phase']>; phaseMs: number };
+
+const messageLinesOf = (error: unknown) =>
+  (error instanceof Error ? error.message : typeof error === 'string' ? error : String(error)).split('\n');
+
 type ShownProducts = { product: string; products: string[] };
 
 @Component({
@@ -127,6 +134,29 @@ export class StudioViewComponent {
     { initialValue: { product: '', products: [] } as ShownProducts },
   );
 
+  public startPhase = toSignal(
+    toObservable(this.serverBusy).pipe(
+      switchMap((busy) =>
+        busy
+          ? interval(START_PHASE_POLL_MS).pipe(
+              switchMap(() =>
+                designServerState$(this.checkout(), this.server()).pipe(
+                  // eslint-disable-next-line ethlete/no-silent-catch-error -- a missed poll keeps the last phase until the next one
+                  catchError(() => EMPTY),
+                ),
+              ),
+              map((state): StartPhaseReading | null =>
+                state.listening || !state.phase ? null : { phase: state.phase, phaseMs: state.phaseMs },
+              ),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null as StartPhaseReading | null },
+  );
+
+  public startError = signal<string[] | null>(null);
+
   private foreignWatch: Subscription | null = null;
 
   protected checkouts = createCheckouts({
@@ -169,7 +199,7 @@ export class StudioViewComponent {
 
   protected serverCrash = computed(() => serverCrashOf(this.serverDown()?.crash ?? null));
 
-  protected downLog = computed(() => (this.serverDown()?.log ?? []).slice(-10));
+  protected downLog = computed(() => (this.startError() ?? this.serverDown()?.log ?? []).slice(-10));
 
   constructor() {
     injectUpdateCheck();
@@ -241,13 +271,17 @@ export class StudioViewComponent {
 
     if (!checkout || this.serverBusy()) return;
 
+    this.startError.set(null);
     this.serverBusy.set(true);
 
     designServerStart$(checkout)
       .pipe(
         tap((state) => this.showServer(state)),
-        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
-        catchError(() => of(null)),
+        catchError((error) => {
+          this.startError.set(messageLinesOf(error));
+
+          return of(null);
+        }),
         finalize(() => this.serverBusy.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -259,6 +293,7 @@ export class StudioViewComponent {
 
     if (!checkout || this.serverBusy()) return;
 
+    this.startError.set(null);
     this.serverBusy.set(true);
 
     designServerRestart$(checkout)

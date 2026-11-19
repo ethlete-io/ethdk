@@ -71,6 +71,8 @@ const RUNNING = {
   crash: null as DesignServerCrash | null,
   log: [] as string[],
   logRevision: 0,
+  phase: null as 'starting' | 'cli-build' | 'app-build' | null,
+  phaseMs: 0,
 };
 
 const sent: { command: string; args: unknown }[] = [];
@@ -341,6 +343,55 @@ describe('StudioViewComponent', () => {
     await settle(fixture);
 
     expect(system(fixture)?.port()).toBe(4402);
+  });
+
+  it('reads the start phase from the host while the design server starts', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+
+    try {
+      stubHost({
+        design_server_state: () => ({ ...RUNNING, listening: false, phase: 'cli-build', phaseMs: 4200 }),
+      });
+
+      const original = (window as unknown as { __TAURI_INTERNALS__: { invoke: (c: string, a: unknown) => unknown } })
+        .__TAURI_INTERNALS__;
+      const invoke = original.invoke;
+
+      original.invoke = (command, args) =>
+        command === 'design_server_start' ? new Promise(() => undefined) : invoke(command, args);
+
+      const fixture = await mount();
+
+      expect(fixture.componentInstance.startPhase()).toBeNull();
+
+      vi.advanceTimersByTime(1000);
+      await settle(fixture);
+
+      expect(fixture.componentInstance.startPhase()).toEqual({ phase: 'cli-build', phaseMs: 4200 });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows the error of a failed start in the stopped page log', async () => {
+    const stopped = () => ({ ...RUNNING, listening: false, log: ['older output'] });
+
+    stubHost({ design_server_state: stopped });
+
+    const original = (window as unknown as { __TAURI_INTERNALS__: { invoke: (c: string, a: unknown) => unknown } })
+      .__TAURI_INTERNALS__;
+    const invoke = original.invoke;
+
+    original.invoke = (command, args) =>
+      command === 'design_server_start'
+        ? Promise.reject('studio-code.mjs cli-copy failed.\nBuilding the CLI failed.')
+        : invoke(command, args);
+
+    const fixture = await mount();
+    const panel = element(fixture).querySelector('[role="alert"]');
+
+    expect(panel?.textContent).toContain('Building the CLI failed.');
+    expect(panel?.textContent).not.toContain('older output');
   });
 
   it('says the design server starts until it answers, then shows the system view', async () => {

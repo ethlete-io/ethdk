@@ -154,7 +154,14 @@ const buildWithNx = nxBuild('the CLI', ['cli']);
 
 const buildAppWithNx = nxBuild('the Studio app', ['ethlete-studio', '--configuration=development']);
 
-const buildInWorktree = (root, sha, target, log, build, { label = 'the CLI', output = 'dist/libs/cli' } = {}) => {
+const buildInWorktree = (
+  root,
+  sha,
+  target,
+  log,
+  build,
+  { label = 'the CLI', output = 'dist/libs/cli', phase = 'cli-build' } = {},
+) => {
   const scratch = mkdtempSync(join(tmpdir(), 'studio-code-'));
   const tree = join(scratch, 'tree');
 
@@ -162,6 +169,7 @@ const buildInWorktree = (root, sha, target, log, build, { label = 'the CLI', out
   git(root, ['worktree', 'add', '--detach', tree, sha]);
 
   try {
+    log(`phase: ${phase}`);
     build(root, tree, log);
 
     const staging = `${target}.partial-${process.pid}`;
@@ -306,6 +314,7 @@ export const ensureAppCopy = (root, { log = (line) => console.error(line), build
     rmSync(target, { recursive: true, force: true });
     buildInWorktree(root, sha, target, log, build, {
       label: 'the Studio app',
+      phase: 'app-build',
       output: 'dist/apps/ethlete-studio/browser',
     });
   }

@@ -95,6 +95,8 @@ describe('designServerState$', () => {
     crash: null,
     log: ['kept'],
     logRevision: 7,
+    phase: null,
+    phaseMs: 0,
   };
 
   afterEach(() => delete (window as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
