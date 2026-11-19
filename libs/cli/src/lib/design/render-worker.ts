@@ -102,6 +102,10 @@ const shimLayout = (server: { ɵDominoAdapter: { makeCurrent: () => void } }) =>
 
     element.prototype.getBoundingClientRect = () => ({ ...rect, toJSON: () => rect });
   }
+
+  for (const name of ['scroll', 'scrollTo', 'scrollBy'] as const) {
+    if (element && typeof element.prototype[name] !== 'function') element.prototype[name] = () => undefined;
+  }
 };
 
 const importAngular = async () => {
