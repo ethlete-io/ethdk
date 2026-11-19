@@ -368,6 +368,8 @@ describe('StudioViewComponent', () => {
       await settle(fixture);
 
       expect(fixture.componentInstance.startPhase()).toEqual({ phase: 'cli-build', phaseMs: 4200 });
+      expect(element(fixture).textContent).toContain('CLI wird gebaut');
+      expect(element(fixture).textContent).toContain('seit 4 s');
     } finally {
       vi.useRealTimers();
     }

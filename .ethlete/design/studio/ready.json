@@ -1012,7 +1012,7 @@
     "pid": 678978
   },
   "elements/shell-main": {
-    "hash": "404e727d07bc93bf",
+    "hash": "3e7d2246bca8129b",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "63756c3ecafc67df",
@@ -1049,10 +1049,10 @@
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
       ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
-      ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
-      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "60ab8a8e3ff76e83",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "0458b3bf9d7fb306",
+      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "c193f3b2ccc870e5",
       ".ethlete/design/studio/elements/shell-main/shell-main.css": "aae7d3a0d66518cd",
-      ".ethlete/design/studio/elements/shell-main/shell-main.ts": "e401a6d39935d5ac",
+      ".ethlete/design/studio/elements/shell-main/shell-main.ts": "58c297d9f4bee258",
       ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
       ".ethlete/design/studio/foundations/logo/logo.ts": "7b41928bfc64e439",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
@@ -1061,7 +1061,7 @@
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/menu.ts": "d9aabbb5a9eff093",
-      "libs/components/design/notification.ts": "6304c4bcd68d8946",
+      "libs/components/design/notification.ts": "096f9bd0eb0cd93d",
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
       "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
@@ -1096,14 +1096,18 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
+    "app": "29eb572ac83bc779",
     "embedded": {
-      "components/shell-collapse": "4b982d63d6eca7c8",
-      "components/title-bar": "7eee4d67c345d4de",
-      "components/title-search": "9bfb8bb747932e89"
+      "components/shell-collapse": "3f8aca5fcd6e3f49",
+      "components/title-bar": "bd949f15fec2dcf1",
+      "components/title-search": "7324d782d524f77f"
     },
     "actions": [
       "closed",
+      "emit:close",
       "emit:collapse",
+      "emit:maximize",
+      "emit:minimize",
       "emit:productChange",
       "emit:restartServer",
       "emit:sectionChange",
@@ -1115,10 +1119,10 @@
     "builderReasons": [
       "injects through injectCodeWatch() (apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts)"
     ],
-    "at": "2026-11-18T13:20:42.864Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 1123156
+    "at": "2026-11-19T03:11:24.099Z",
+    "by": "et design check",
+    "cmd": "check",
+    "pid": 3340005
   },
   "elements/studio-menu": {
     "hash": "3ccac60c4cb4f777",

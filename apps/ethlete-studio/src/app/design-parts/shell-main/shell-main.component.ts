@@ -10,6 +10,8 @@ import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from './side-width';
 
 export type ServerCrash = { time: string; pid: number; port: number; path: string; stack: readonly string[] };
 
+export type StartPhase = 'starting' | 'cli-build' | 'app-build';
+
 export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
 const SECTIONS: { label: ShellSection; icon: string }[] = [
@@ -47,6 +49,8 @@ export class ShellMainComponent {
   public panel = input<'open' | 'hidden'>('open');
   public systemPicker = model<'open' | 'closed'>('closed');
   public server = input<'stopped' | 'starting' | 'unanswered' | 'crashed' | null>(null);
+  public phase = input<StartPhase>('starting');
+  public phaseMs = input(0);
   public log = input<readonly string[]>([]);
   public serverUrl = input('');
   public crash = input<ServerCrash | null>(null);

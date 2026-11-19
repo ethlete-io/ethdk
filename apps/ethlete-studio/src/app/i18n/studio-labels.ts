@@ -14,6 +14,18 @@ export const STUDIO_LABELS = {
     stop: 'Design-Server stoppen',
     stopped: 'Design-Server gestoppt',
     starting: 'Design-Server startet',
+    startPhase: {
+      starting: 'Design-Server startet',
+      'cli-build': 'CLI wird gebaut',
+      'app-build': 'Oberfläche wird gebaut',
+    },
+    startElapsed: (ms: number) => {
+      const seconds = Math.floor(ms / 1000);
+
+      return seconds < 60
+        ? `seit ${seconds} s`
+        : `seit ${Math.floor(seconds / 60)} min ${String(seconds % 60).padStart(2, '0')} s`;
+    },
     unanswered: (url: string) => `Design-Server antwortet nicht: ${url}`,
     restartButton: 'Neu starten',
     crashed: 'Design-Server abgestürzt',

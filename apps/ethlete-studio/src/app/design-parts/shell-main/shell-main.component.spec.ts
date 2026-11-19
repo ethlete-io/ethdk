@@ -136,6 +136,26 @@ describe('ShellMainComponent', () => {
     expect(screen?.querySelector('button')).toBeNull();
   });
 
+  it.each([
+    ['cli-build', 187_000, 'CLI wird gebaut', 'seit 3 min 07 s'],
+    ['app-build', 5_400, 'Oberfläche wird gebaut', 'seit 5 s'],
+  ] as const)(
+    'names the %s phase and its elapsed time on the starting screen',
+    async (phase, phaseMs, heading, elapsed) => {
+      const { fixture, host } = await setup('hidden');
+
+      fixture.componentRef.setInput('server', 'starting');
+      fixture.componentRef.setInput('phase', phase);
+      fixture.componentRef.setInput('phaseMs', phaseMs);
+      await fixture.whenStable();
+
+      const screen = host.querySelector('main [aria-busy="true"]');
+
+      expect(screen?.querySelector('h3')?.textContent?.trim()).toBe(heading);
+      expect(screen?.querySelector('p')?.textContent?.trim()).toBe(elapsed);
+    },
+  );
+
   it('names the url of a design server that does not answer and restarts it', async () => {
     const { fixture, host } = await setup('hidden');
     let restarts = 0;

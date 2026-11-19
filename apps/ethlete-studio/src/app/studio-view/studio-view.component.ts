@@ -80,6 +80,7 @@ type ShownProducts = { product: string; products: string[] };
           server: serverDown() ? (serverCrash() ? 'crashed' : 'stopped') : serverSilent() ? 'unanswered' : 'starting',
           serverUrl: serverUrl(),
           serverLog: downLog(),
+          startPhase: startPhase(),
           serverCrash: serverCrash(),
         }"
         (action)="runShellAction($event)"

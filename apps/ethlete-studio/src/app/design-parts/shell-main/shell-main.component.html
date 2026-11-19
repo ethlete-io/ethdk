@@ -177,8 +177,9 @@
               @if (server === 'starting') {
                 <div class="flex items-center gap-space-2 text-et-surface">
                   <et-spinner />
-                  <h3 class="m-0 font-ui-strong text-ui-lg">{{ LABELS.starting }}</h3>
+                  <h3 class="m-0 font-ui-strong text-ui-lg">{{ LABELS.startPhase[phase()] }}</h3>
                 </div>
+                <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">{{ LABELS.startElapsed(phaseMs()) }}</p>
               } @else {
                 <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.stopped }}</h3>
               }

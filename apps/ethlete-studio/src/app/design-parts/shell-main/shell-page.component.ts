@@ -20,7 +20,7 @@ import { UpdateDialogComponent } from '../../components/update-dialog/update-dia
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
-import { ServerCrash, ShellMainComponent, ShellSection } from './shell-main.component';
+import { ServerCrash, ShellMainComponent, ShellSection, StartPhase } from './shell-main.component';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
 export type ShellState = {
@@ -32,6 +32,7 @@ export type ShellState = {
   server?: 'running' | 'starting' | 'unanswered' | 'stopped' | 'crashed';
   serverUrl?: string;
   serverLog?: readonly string[];
+  startPhase?: { phase: StartPhase; phaseMs: number } | null;
   serverCrash?: ServerCrash | null;
 };
 
@@ -61,6 +62,8 @@ export const SHELL_SAMPLE: ShellState = {
       [products]="shell().products"
       [panel]="shell().panel"
       [server]="screen()"
+      [phase]="shell().startPhase?.phase ?? 'starting'"
+      [phaseMs]="shell().startPhase?.phaseMs ?? 0"
       [log]="shell().serverLog ?? []"
       [serverUrl]="shell().serverUrl ?? ''"
       [crash]="shell().serverCrash ?? null"
