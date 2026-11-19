@@ -70,6 +70,12 @@ const group = (from: number, to: number): WorkGroup => ({
   blocks: [block(from, to)],
 });
 
+const shape = (entry: WorkGroup) => [
+  (entry.from.getTime() - AT(0).getTime()) / 60_000,
+  (entry.to.getTime() - AT(0).getTime()) / 60_000,
+  entry.attended,
+];
+
 const present = (events: readonly CollectedEvent[], graceMs = GRACE) => attendedAt({ events, graceMs });
 
 describe('attendedAt', () => {
@@ -150,9 +156,32 @@ describe('attendedAt', () => {
 
 describe('markAttendance', () => {
   it('marks a band holding one instant of a person as attended', () => {
+    const marked = markAttendance({ groups: [group(20, 40)], at: present([focus(30)]) });
+
+    expect(marked.map(shape)).toEqual([[20, 40, true]]);
+  });
+
+  it('cuts a band at the gaps no attendance reaches, so a night run is not the time of the person who left it', () => {
+    const marked = markAttendance({
+      groups: [group(0, 765)],
+      at: present([focus(0), focus(8), prompt(672, 'human'), prompt(674, 'human'), prompt(753, 'human')]),
+    });
+
+    expect(marked.map(shape)).toEqual([
+      [0, 23, true],
+      [23, 657, false],
+      [657, 689, true],
+      [689, 738, false],
+      [738, 765, true],
+    ]);
+    expect(marked.reduce((sum, entry) => sum + entry.observedMs, 0)).toBe(765 * 60_000);
+    expect(marked.map((entry) => !!entry.cutPart)).toEqual([false, true, true, true, true]);
+  });
+
+  it('leaves a gap no longer than the merge gap on the attended part beside it', () => {
     const marked = markAttendance({ groups: [group(0, 60)], at: present([focus(30)]) });
 
-    expect(marked[0]?.attended).toBe(true);
+    expect(marked.map(shape)).toEqual([[0, 60, true]]);
   });
 
   it('marks a band nothing but a commit and a turn covered as unattended', () => {
@@ -162,7 +191,7 @@ describe('markAttendance', () => {
   });
 
   it('does not let one band lend its attendance to another', () => {
-    const marked = markAttendance({ groups: [group(0, 60), group(200, 260)], at: present([focus(30)]) });
+    const marked = markAttendance({ groups: [group(20, 40), group(200, 260)], at: present([focus(30)]) });
 
     expect(marked.map((entry) => entry.attended)).toEqual([true, false]);
   });
@@ -174,7 +203,10 @@ describe('markAttendance', () => {
       claimed: [{ from: AT(210), to: AT(240) }],
     });
 
-    expect(marked[0]?.attended).toBe(true);
+    expect(marked.map(shape)).toEqual([
+      [200, 240, true],
+      [240, 260, false],
+    ]);
   });
 
   it('marks the band a ten-minute absence left behind as attended, from the work either side of it', () => {
@@ -230,7 +262,7 @@ describe('markAttendance with paired machines', () => {
 
   it('names no machine on a band attended here, nor on one no machine saw a person for', () => {
     const marked = markAttendance({
-      groups: [group(0, 60), group(200, 260)],
+      groups: [group(10, 30), group(200, 260)],
       at: present([focus(20)]),
       peers: macbook,
     });

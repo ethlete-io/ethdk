@@ -114,6 +114,8 @@ export type BuildRowsOptions = {
   gaps?: readonly TimeWindow[];
   /** The stretches the user worked from another device, from `remoteWorkWindows`. A band in one is attended. */
   remoteWork?: readonly TimeWindow[];
+  /** The stretches a window or an idle transition of this machine watched, from `streamDay`. A band in one is attended. */
+  seen?: readonly TimeWindow[];
   /** `remoteWork` split by the lane of the prompt that bought each part, from `bookedRemoteWindows`. */
   bookedRemote?: readonly BookedRemoteWindow[];
   /**
@@ -322,10 +324,13 @@ export const buildRows = (
           elsewhere: peers.flatMap((peer) => peer.at),
         }),
         ...(options.remoteWork ?? []),
+        ...(options.seen ?? []),
       ],
       claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
       peers,
       lanes: attendedLanes({ peers, peerLanes: options.peerLanes ?? {} }),
+      away: [...(options.breaks ?? []), ...(options.gaps ?? [])],
+      maxGapMs: options.merge?.maxMergeGapMs,
     }),
     gaps: options.gaps ?? [],
     maxGapMs: options.merge?.maxMergeGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,

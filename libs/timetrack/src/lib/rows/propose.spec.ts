@@ -190,6 +190,24 @@ describe('propose, the work nothing named', () => {
     expect(unattributed.map((row) => row.rowId)).toEqual(unnamed.map((row) => row.id));
   });
 
+  it('leaves a row its id when a part cut from an earlier band starts in the same slot', () => {
+    const inLane = (repoPath: string, extra: Partial<WorkGroup> = {}): WorkGroup => {
+      const base = group({ fromMinute: 0, observedMinutes: 15, issueKey: 'FIP-1' });
+
+      return {
+        ...base,
+        ...extra,
+        blocks: base.blocks.map((block) => ({ ...block, context: { repoPath, piece: repoPath.slice(-1) } })),
+      };
+    };
+
+    const alone = propose({ groups: [inLane('/dev/b')] });
+    const { proposals } = propose({ groups: [inLane('/dev/a', { cutPart: true }), inLane('/dev/b')] });
+    const id = alone.proposals[0]?.id;
+
+    expect(proposals.map((row) => row.id)).toEqual([`${id}+a`, id]);
+  });
+
   it('gives a band one id whatever branches its blocks were on', () => {
     const onBranches = (...branches: string[]): WorkGroup => {
       const base = group({ fromMinute: 0, observedMinutes: 60 });

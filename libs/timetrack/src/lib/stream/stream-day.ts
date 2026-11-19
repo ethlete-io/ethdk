@@ -1993,6 +1993,8 @@ const rowsOf = (options: {
   day: OriginDay;
   config: StreamDayOptions;
   events: readonly CollectedEvent[];
+  /** What this machine watched, which a merged day's `seen` widens with every peer's. */
+  seen: readonly TimeWindow[];
   peerLanes?: StreamDay['peerLanes'];
 }) => {
   const { day, config } = options;
@@ -2007,6 +2009,7 @@ const rowsOf = (options: {
     gaps: day.gaps,
     remoteWork: day.remoteWork,
     bookedRemote: day.bookedRemote,
+    seen: options.seen,
     cut: { ...config.rows?.cut, focusMsByStream: day.focusMsByStream, focusByStream: day.focusByStream },
     ...(options.peerLanes ? { peerLanes: options.peerLanes } : {}),
   });
@@ -2143,7 +2146,11 @@ export const streamDay = (options: {
     }));
 
   if (!peers.length)
-    return { ...publicDayOf(local), rows: rowsOf({ day: local, config, events: local.events }), peerLanes: {} };
+    return {
+      ...publicDayOf(local),
+      rows: rowsOf({ day: local, config, events: local.events, seen: local.seen }),
+      peerLanes: {},
+    };
 
   const merged = mergeOrigins([local, ...peers.map((peer) => peer.day)]);
   const peerLanes = Object.fromEntries(peers.map((peer) => [peer.origin, lanesOf(peer.day.blocks)]));
@@ -2155,6 +2162,7 @@ export const streamDay = (options: {
       day: merged,
       config: { ...config, rows: { ...config.rows, received } },
       events: merged.events,
+      seen: local.seen,
       peerLanes,
     }),
     peerLanes,

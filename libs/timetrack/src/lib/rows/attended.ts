@@ -1,8 +1,10 @@
 import { CollectedEvent } from '../model/event';
 import { ReceivedEvent } from '../model/received-event';
-import { streamKey } from '../model/block';
+import { ActivityBlock, blockDurationMs, streamKey } from '../model/block';
+import { Confidence } from '../model/evidence';
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows } from '../model/time-window';
-import { WorkGroup } from './merge';
+import { DEFAULT_MERGE_OPTIONS, WorkGroup } from './merge';
+import { clipBlocks } from './overlap';
 
 const LEAVING: ReadonlySet<string> = new Set(['idle-start', 'lock']);
 const RETURNING: ReadonlySet<string> = new Set(['idle-end', 'unlock']);
@@ -154,12 +156,82 @@ export const attendedLanes = (options: {
   return Object.fromEntries(Object.entries(lanes).map(([lane, windows]) => [lane, mergeWindows(windows)]));
 };
 
+const ALL_TIME = { from: new Date(-8.64e15), to: new Date(8.64e15) };
+
+const blocksMs = (blocks: readonly ActivityBlock[]) => blocks.reduce((sum, block) => sum + blockDurationMs(block), 0);
+
+/** The part of `group` inside `part`, with the share of its observed time that part's blocks hold. */
+const partOf = (options: { group: WorkGroup; part: TimeWindow; first: boolean; last: boolean }): WorkGroup | [] => {
+  const { group, part, ...edges } = options;
+  const blocks = clipBlocks({
+    blocks: group.blocks,
+    windows: subtractWindows({ windows: [ALL_TIME], without: [part] }),
+  });
+
+  if (!blocks.length) return [];
+
+  const share = Math.min(1, blocksMs(blocks) / Math.max(1, blocksMs(group.blocks)));
+  const tiers = group.observedByConfidence;
+  const extent = mergeWindows(blocks);
+  const evidenceFrom = edges.first ? -Infinity : part.from.getTime();
+  const evidenceTo = edges.last ? Infinity : part.to.getTime();
+
+  return {
+    ...group,
+    from: edges.first ? group.from : (extent[0]?.from ?? part.from),
+    to: edges.last ? group.to : (extent[extent.length - 1]?.to ?? part.to),
+    blocks,
+    ...(edges.first ? {} : { cutPart: true as const }),
+    evidence: group.evidence.filter((entry) => entry.at.getTime() >= evidenceFrom && entry.at.getTime() < evidenceTo),
+    observedMs: Math.round(group.observedMs * share),
+    ...(tiers
+      ? {
+          observedByConfidence: Object.fromEntries(
+            Object.entries(tiers).map(([tier, ms]) => [tier, Math.round((ms ?? 0) * share)]),
+          ) as Partial<Record<Confidence, number>>,
+        }
+      : {}),
+  };
+};
+
 /**
- * Marks each group with whether anybody was there for it.
- *
- * One stretch of attendance touching a band answers for the whole band. `false` is reserved for what it
- * is for — a chunk that ran with nobody in the room at all, such as a scheduled agent session at five
- * on a Sunday morning, which no stretch of presence comes near.
+ * `group` cut at the gaps in `spans` no shorter than `maxGapMs`, each part with whether a span holds
+ * it. A group with no blocks of its own, like a call or a timer run, is never cut, and neither is a
+ * stretch in `away`: ADR 0028 and ADR 0037 decide what of a break is booked.
+ */
+const cutAtAttendance = (options: {
+  group: WorkGroup;
+  spans: readonly TimeWindow[];
+  cut: { away: readonly TimeWindow[]; maxGapMs: number };
+}): { group: WorkGroup; attended: boolean }[] => {
+  const { group, spans, cut } = options;
+  const held = clipWindows({ windows: spans, within: [group] });
+
+  if (!held.length) return [{ group, attended: false }];
+
+  const gaps = subtractWindows({ windows: [group], without: [...held, ...cut.away] }).filter(
+    (gap) => gap.to.getTime() - gap.from.getTime() > cut.maxGapMs,
+  );
+
+  if (!gaps.length || !group.blocks.length) return [{ group, attended: true }];
+
+  const parts = [
+    ...subtractWindows({ windows: [group], without: gaps }).map((part) => ({ part, attended: true })),
+    ...gaps.map((part) => ({ part, attended: false })),
+  ].sort((a, b) => a.part.from.getTime() - b.part.from.getTime());
+
+  return parts.flatMap(({ part, attended }, index) => {
+    const cut = partOf({ group, part, first: index === 0, last: index === parts.length - 1 });
+
+    return Array.isArray(cut) ? [] : [{ group: cut, attended }];
+  });
+};
+
+/**
+ * Marks each group with whether anybody was there for it, cutting a band at the gaps attendance leaves
+ * in it: the part of a band that attendance reaches is attended, and the rest is a band of its own that
+ * nobody attended, such as an agent's night after the person who started it left. A gap shorter than
+ * `maxGapMs` stays with the attended part, so a band is never cut into slivers at its edges.
  *
  * The test is deliberately lenient in that direction — a row wrongly called unattended costs the user a
  * manual entry, and a row wrongly called attended is what puts hours nobody worked into Tempo. The
@@ -181,28 +253,34 @@ export const markAttendance = (options: {
   peers?: readonly PeerAttendance[];
   /** From `attendedLanes`: a block of a lane in one of these stretches makes its band attended. */
   lanes?: Readonly<Record<string, readonly TimeWindow[]>>;
+  /**
+   * The breaks and whole absences of the day. `propose` cuts a break out of the rows, and the prompts
+   * inside an absence buy the rest of it back, so neither cuts a band here.
+   */
+  away?: readonly TimeWindow[];
+  maxGapMs?: number;
 }): WorkGroup[] => {
-  const spans = [...options.at, ...(options.claimed ?? [])].map((window) => ({
-    from: window.from.getTime(),
-    to: window.to.getTime(),
-  }));
+  const spans = mergeWindows([...options.at, ...(options.claimed ?? [])]);
+  const cut = { away: options.away ?? [], maxGapMs: options.maxGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs };
 
-  return options.groups.map((group) => {
-    const from = group.from.getTime();
-    const to = group.to.getTime();
+  return options.groups.flatMap((whole) =>
+    cutAtAttendance({ group: whole, spans, cut }).map(({ group, attended }) => {
+      if (attended) return { ...group, attended: true };
 
-    const touches = (window: TimeWindow) => window.from.getTime() < to && window.to.getTime() > from;
+      const from = group.from.getTime();
+      const to = group.to.getTime();
 
-    if (spans.some((span) => span.from < to && span.to > from)) return { ...group, attended: true };
+      const touches = (window: TimeWindow) => window.from.getTime() < to && window.to.getTime() > from;
 
-    const elsewhere = group.blocks.some((block) =>
-      options.lanes?.[streamKey(block.context)]?.some((window) => window.from < block.to && window.to > block.from),
-    );
+      const elsewhere = group.blocks.some((block) =>
+        options.lanes?.[streamKey(block.context)]?.some((window) => window.from < block.to && window.to > block.from),
+      );
 
-    if (elsewhere) return { ...group, attended: true };
+      if (elsewhere) return { ...group, attended: true };
 
-    const peer = options.peers?.find((candidate) => candidate.at.some(touches));
+      const peer = options.peers?.find((candidate) => candidate.at.some(touches));
 
-    return { ...group, attended: false, ...(peer ? { workedOn: peer.machineName } : {}) };
-  });
+      return { ...group, attended: false, ...(peer ? { workedOn: peer.machineName } : {}) };
+    }),
+  );
 };
