@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dayOwnerOf } from './frozen-rows';
 import { ReviewedRow } from './model';
 import {
   PEER_DAY_ROWS_VERSION,
@@ -87,6 +88,37 @@ describe('the rows a machine sends of its day', () => {
       frozen: false,
       rows: [{ laneKey: 'repo:/a', from: new Date(1), to: new Date(2), description: '', state: 'suggested' }],
     });
+  });
+});
+
+describe('a booked row that has no repository lane', () => {
+  const sent = peerDayRowsOf({
+    day: '2026-10-08',
+    frozen: true,
+    rows: [
+      row({ id: 'm', from: '09:00', to: '10:00', issueKey: 'ABC-1', description: 'Planning' }),
+      row({ id: 'c', from: '10:00', to: '11:00', laneKey: 'app:com.apple.loginwindow' }),
+      row({ id: 'n', from: '11:00', to: '12:00' }),
+    ],
+    ledger: [
+      { proposalId: 'm', day: '2026-10-08', tempoWorklogId: 'w-1', contentHash: 'h', syncedAt: at('19:00') },
+      { proposalId: 'c', day: '2026-10-08', tempoWorklogId: 'w-2', contentHash: 'h', syncedAt: at('19:00') },
+    ],
+    standInNames: {},
+  });
+
+  it('is sent as booked, so a paired machine knows the day is owned', () => {
+    expect(sent.rows.map((sentRow) => [sentRow.state, sentRow.worklogId, sentRow.issueKey])).toEqual([
+      ['booked', 'w-1', 'ABC-1'],
+      ['booked', 'w-2', undefined],
+    ]);
+    expect(dayOwnerOf({ ledger: [], peerRows: { 'mac-id': sent } })).toEqual({ kind: 'peer', machineId: 'mac-id' });
+  });
+
+  it('is sent again by a machine that stored its day before rows carried it', () => {
+    expect(peerDayRowsToBackfill({ bookedDays: ['2026-10-08'], stored: { '2026-10-08': '{"version":5}' } })).toEqual([
+      '2026-10-08',
+    ]);
   });
 });
 

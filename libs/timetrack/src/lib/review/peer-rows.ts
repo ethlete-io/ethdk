@@ -30,9 +30,11 @@ export type PeerDayRows = {
   shared?: SharedEntry[];
 };
 
+const NO_LANE = 'manual';
+
 const ACCEPTED_STATES: ReadonlySet<ReviewedRow['state']> = new Set(['accepted', 'edited', 'synced']);
 
-/** The rows of a day this machine sends: the repository rows a person was at, unattended ones left out. */
+/** The rows of a day this machine sends: the repository rows a person was at, unattended ones left out, and every booked row. */
 export const peerDayRowsOf = (options: {
   day: string;
   frozen: boolean;
@@ -48,14 +50,16 @@ export const peerDayRowsOf = (options: {
     frozen: options.frozen,
     ...(options.edits ? { shared: sharedEntriesOf(options.edits) } : {}),
     rows: options.rows.flatMap((row): PeerRow[] => {
-      if (row.unattended || !row.laneKey || !streamKeyRepoPath(row.laneKey)) return [];
-
       const worklogId = worklogs.get(row.id);
+      const isRepoRow = !row.unattended && !!row.laneKey && !!streamKeyRepoPath(row.laneKey);
+
+      if (!isRepoRow && !worklogId) return [];
+
       const standInName = row.standInId ? options.standInNames[row.standInId] : undefined;
 
       return [
         {
-          laneKey: row.laneKey,
+          laneKey: row.laneKey || NO_LANE,
           from: row.from,
           to: row.to,
           ...(row.issueKey ? { issueKey: row.issueKey } : {}),
@@ -73,7 +77,7 @@ export const peerDayRowsOf = (options: {
  * The version of the rows this app builds. Raise it when {@link peerDayRowsOf} or the rows it reads change
  * what a booked day sends: each machine then builds and sends its stored days again.
  */
-export const PEER_DAY_ROWS_VERSION = 5;
+export const PEER_DAY_ROWS_VERSION = 6;
 
 /** The wire form of {@link PeerDayRows}, stamped with {@link PEER_DAY_ROWS_VERSION}. */
 export const encodePeerDayRows = (rows: PeerDayRows) =>
