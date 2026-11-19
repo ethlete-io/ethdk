@@ -468,7 +468,7 @@
     "pid": 2026945
   },
   "components/shell-collapse": {
-    "hash": "af16d9ac0cb56d9e",
+    "hash": "9c55d06de9652204",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -489,7 +489,7 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "e92e9568794a8fd8",
+      ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "5ab5290b8f15468b",
       ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -510,12 +510,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
+    "app": "5ad46d483af0051b",
     "actions": ["emit:collapse"],
     "builder": "designer",
-    "at": "2026-11-17T17:53:13.751Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-19T14:30:09.665Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 2911764
   },
   "components/shell-resize-handle": {
     "hash": "b7b7754eedba1c72",
