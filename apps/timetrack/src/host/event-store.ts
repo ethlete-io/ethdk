@@ -77,6 +77,7 @@ const reviveSessionState = (record: Record<string, unknown> | undefined): AgentL
   record && {
     sessionId: stringField(record, 'sessionId'),
     model: stringField(record, 'model'),
+    ...(stringField(record, 'workedIn') ? { workedIn: stringField(record, 'workedIn') } : {}),
     ...(record['titleIsCustom'] === true ? { titleIsCustom: true } : {}),
     ...(isSampled(record['sampled']) ? { sampled: record['sampled'] } : {}),
   };

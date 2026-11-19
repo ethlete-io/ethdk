@@ -14,6 +14,12 @@ describe('the stored agent-log cursor', () => {
     expect(reviveCursor(toStoredCursor(cursor, 'agent-session'))).toEqual(cursor);
   });
 
+  it('keeps where the last tool call worked across a restart', () => {
+    const cursor = { id: 'log-a', nextLine: 12, session: { sessionId: 's-1', workedIn: '/repo/sub' } };
+
+    expect(reviveCursor(toStoredCursor(cursor, 'agent-session'))).toEqual(cursor);
+  });
+
   it('keeps the parse rules of a cursor that holds no session state', () => {
     const cursor = { id: 'log-a', nextLine: 12, parserVersion: 2 };
 
