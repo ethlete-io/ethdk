@@ -53,3 +53,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 52. **Standings-Form-Tooltip (B621)** ⏳ SDK (fifagg S3): optionales Template für den Form-Tooltip, Tagschicht - Builder
 53. **Button-Druck-Variante (B625)** ⏳ SDK (fifagg S7): Input `pressedVariant`, Standard = heutige Zuordnung - Builder
 54. **Kalender-Vorschlag (B626)** ⏳ Timetrack: Kalendertermin ohne Anruf als Vorschlag (Timetrack ADR 0048), nach B602 - Builder
+55. **Gebucht = Tempo (B627)** ⏳ Timetrack: „logged“ zählt nur Tempo (Timetrack ADR 0049), nach B602 - Builder
