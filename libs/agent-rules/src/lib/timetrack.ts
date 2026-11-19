@@ -209,6 +209,8 @@ export type TimetrackDayEvents = {
   fromMs: number;
   toMs: number;
   events: unknown[];
+  /** The events paired machines sent for the same range, present only when asked for with `received`. */
+  received?: { machineId: string; machineName: string; event: unknown }[];
 };
 
 /** One transcribed stretch of the user's own microphone during a call. */
@@ -558,7 +560,8 @@ export const timetrackAddWorklog = (options: {
   durationMs: number;
 }) => askTimetrack<TimetrackQueued>({ op: 'worklog.add', ...options });
 
-export const timetrackDayEvents = (day: string) => askTimetrack<TimetrackDayEvents>({ op: 'day.events', day });
+export const timetrackDayEvents = (day: string, options: { received?: boolean } = {}) =>
+  askTimetrack<TimetrackDayEvents>({ op: 'day.events', day, ...(options.received ? { received: true } : {}) });
 
 export const timetrackTranscriptDay = (day: string) =>
   askTimetrack<TimetrackTranscriptDay>({ op: 'transcript.day', day });

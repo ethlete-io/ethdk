@@ -222,6 +222,38 @@ describe('timetrack output', () => {
   });
 });
 
+describe('timetrack day --received', () => {
+  it('asks for what paired machines sent and counts it per machine', async () => {
+    const bodies: Record<string, unknown>[] = [];
+
+    await withEndpoint((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body || '{}'));
+        answered({
+          day: '2026-09-16',
+          events: [{ kind: 'window-focus' }],
+          received: [{ machineId: 'mac-id', machineName: 'MacBook', event: { kind: 'agent-usage' } }],
+        })(request, response);
+      });
+    });
+
+    const lines = printedLines();
+
+    await run(['day', '2026-09-16', '--received']);
+
+    expect(bodies.find((body) => body['op'] === 'day.events')).toEqual({
+      op: 'day.events',
+      day: '2026-09-16',
+      received: true,
+    });
+    expect(lines).toContain('received from MacBook  1 events');
+    expect(lines).toContain('  agent-usage  1');
+  });
+});
+
 describe('timetrack day --out', () => {
   const dayEvents = { day: '2026-09-16', events: [{ kind: 'window' }] };
 

@@ -195,6 +195,15 @@ const countByKind = (events: readonly unknown[]) => {
   return [...counts].sort((left, right) => right[1] - left[1]);
 };
 
+const receivedByMachine = (received: readonly { machineName: string; event: unknown }[]) => {
+  const byMachine = new Map<string, unknown[]>();
+
+  for (const { machineName, event } of received)
+    byMachine.set(machineName, [...(byMachine.get(machineName) ?? []), event]);
+
+  return byMachine;
+};
+
 const describeRule = (rule: TimetrackAttributionRule) => {
   const where = rule.appId
     ? `app ${rule.appId}`
@@ -885,6 +894,7 @@ A waiting write can be rejected from here; only the user approves one, in the ap
   timetrack log --issue <KEY> --minutes <n>
                                 Add a row nothing observed to the day it belongs to
   timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
+                                (only this machine's; --received adds what paired machines sent)
   timetrack transcript [YYYY-MM-DD]
                                 What the app transcribed of your own microphone during the day's calls
   timetrack rows [YYYY-MM-DD]   The rows the day drew, with the ids an edit names them by
@@ -1105,7 +1115,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
     if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
 
-    const found = await timetrackDayEvents(day);
+    const found = await timetrackDayEvents(day, { received: argv.includes('--received') });
     const outFlag = flagValue(argv, '--out');
 
     if (outFlag) {
@@ -1124,6 +1134,12 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!json) {
       say(`${found.day}  ${found.events.length} events`);
       countByKind(found.events).forEach(([kind, count]) => say(`  ${kind}  ${count}`));
+
+      for (const [machine, events] of receivedByMachine(found.received ?? [])) {
+        say(`received from ${machine}  ${events.length} events`);
+        countByKind(events).forEach(([kind, count]) => say(`  ${kind}  ${count}`));
+      }
+
       say('Pass --out <path> to write the events themselves, which are far too many to read.');
     }
 

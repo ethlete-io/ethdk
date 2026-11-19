@@ -517,7 +517,7 @@ export type AgentApiRequest =
       existing?: { issueKey: string; summary?: string; leads?: true };
     }
   | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
-  | { op: 'day.events'; day: string }
+  | { op: 'day.events'; day: string; received?: true }
   | { op: 'day.rows'; day: string }
   | { op: 'day.inputs'; day: string }
   | { op: 'transcript.day'; day: string }

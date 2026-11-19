@@ -437,9 +437,19 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const dayEvents$ = (request: Extract<AgentApiRequest, { op: 'day.events' }>) => {
     const { from, to } = localDayRange(request.day, dayBoundaryOf(settings.settings()));
 
+    const range = { day: request.day, fromMs: from.getTime(), toMs: to.getTime() };
+
     return ports.events
       .eventsBetween$(from, to)
-      .pipe(map((events) => ({ day: request.day, fromMs: from.getTime(), toMs: to.getTime(), events })));
+      .pipe(
+        switchMap((events) =>
+          request.received
+            ? ports.peers
+                .receivedBetween$(from, to)
+                .pipe(map((received) => ({ ...range, events, received: received.events })))
+            : of({ ...range, events }),
+        ),
+      );
   };
 
   /**

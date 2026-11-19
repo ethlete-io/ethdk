@@ -295,6 +295,17 @@ describe('parseAgentRequest, over a day', () => {
     });
   });
 
+  it('asks for the events paired machines sent only when told to', () => {
+    expect(parseAgentRequest({ op: 'day.events', day: '2026-09-10', received: true })).toEqual({
+      ok: true,
+      request: { op: 'day.events', day: '2026-09-10', received: true },
+    });
+    expect(parseAgentRequest({ op: 'day.events', day: '2026-09-10', received: 'yes' })).toEqual({
+      ok: true,
+      request: { op: 'day.events', day: '2026-09-10' },
+    });
+  });
+
   it('refuses anything that is not a day key', () => {
     expect(parseAgentRequest({ op: 'day.events', day: 'yesterday' })).toEqual({
       ok: false,

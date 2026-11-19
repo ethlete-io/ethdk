@@ -278,15 +278,34 @@ export const markAttendance = (options: {
     ...subtractWindows({ windows: options.at, without: absences }),
     ...(options.claimed ?? []),
   ]);
+  const peers = (options.peers ?? []).map((peer) => ({
+    ...peer,
+    at: subtractWindows({ windows: peer.at, without: absences }),
+  }));
+  const laneAttendance = Object.fromEntries(
+    Object.entries(options.lanes ?? {}).map(([lane, windows]) => [
+      lane,
+      subtractWindows({ windows, without: absences }),
+    ]),
+  );
   const cut = {
     absences,
     away: options.away ?? [],
-    elsewhere: (options.peers ?? []).flatMap((peer) => peer.at),
+    elsewhere: peers.flatMap((peer) => peer.at),
     maxGapMs: options.maxGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,
   };
 
+  // A paired machine's attendance in a band's own lanes must cut the band as local attendance does, or
+  // the machine that only received the events reads a whole night as attended.
+  const spansOf = (group: WorkGroup) => {
+    const lanes = new Set(group.blocks.map((block) => streamKey(block.context)));
+    const elsewhere = [...lanes].flatMap((lane) => laneAttendance[lane] ?? []);
+
+    return elsewhere.length ? mergeWindows([...spans, ...elsewhere]) : spans;
+  };
+
   return options.groups.flatMap((whole) =>
-    cutAtAttendance({ group: whole, spans, cut }).flatMap(({ group, attended }): WorkGroup[] => {
+    cutAtAttendance({ group: whole, spans: spansOf(whole), cut }).flatMap(({ group, attended }): WorkGroup[] => {
       if (attended) return [{ ...group, attended: true }];
 
       const from = group.from.getTime();
@@ -295,17 +314,17 @@ export const markAttendance = (options: {
       const touches = (window: TimeWindow) => window.from.getTime() < to && window.to.getTime() > from;
 
       const elsewhere = group.blocks.some((block) =>
-        options.lanes?.[streamKey(block.context)]?.some((window) => window.from < block.to && window.to > block.from),
+        laneAttendance[streamKey(block.context)]?.some((window) => window.from < block.to && window.to > block.from),
       );
 
       if (elsewhere) return [{ ...group, attended: true }];
 
-      const peers = (options.peers ?? []).filter((candidate) => candidate.at.some(touches));
+      const touching = peers.filter((candidate) => candidate.at.some(touches));
 
-      if (!peers.length) return [{ ...group, attended: false }];
+      if (!touching.length) return [{ ...group, attended: false }];
 
       const peerSpans = mergeWindows(
-        peers.flatMap((candidate) => clipWindows({ windows: candidate.at, within: [group] })),
+        touching.flatMap((candidate) => clipWindows({ windows: candidate.at, within: [group] })),
       );
       const noCut = { absences: [], away: [], elsewhere: [], maxGapMs: 0 };
       const parts = cutAtAttendance({ group, spans: peerSpans, cut: noCut });
@@ -313,7 +332,7 @@ export const markAttendance = (options: {
       return parts.map((part) => {
         if (!part.attended) return { ...part.group, attended: false };
 
-        const owner = peers.find((candidate) =>
+        const owner = touching.find((candidate) =>
           candidate.at.some(
             (window) =>
               window.from.getTime() < part.group.to.getTime() && window.to.getTime() > part.group.from.getTime(),

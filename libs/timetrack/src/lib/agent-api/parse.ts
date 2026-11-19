@@ -308,7 +308,15 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return { ok: true, request: { op, day, worklogId } };
   }
 
-  if (op === 'day.events' || op === 'day.rows' || op === 'day.inputs' || op === 'transcript.day') {
+  if (op === 'day.events') {
+    const day = asText(raw['day']);
+
+    if (!isDayKey(day)) return missing(op, 'day as YYYY-MM-DD');
+
+    return { ok: true, request: asFlag(raw['received']) ? { op, day, received: true } : { op, day } };
+  }
+
+  if (op === 'day.rows' || op === 'day.inputs' || op === 'transcript.day') {
     const day = asText(raw['day']);
 
     return isDayKey(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
