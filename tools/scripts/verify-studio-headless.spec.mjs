@@ -94,6 +94,22 @@ test('gives a product view the themes the app gives it', () => {
   for (const [name, { themes }] of themed) assert.deepEqual(project.themes[name], themes);
 });
 
+test('reads the port from the coloured ready banner a real vite run prints', async () => {
+  const dir = tempDir('design-banner-');
+  const entry = join(dir, 'fake-cli.cjs');
+  const banner = join(import.meta.dirname, 'fixtures', 'vite-dev-ready-color.txt');
+
+  writeFileSync(
+    entry,
+    `process.stdout.write(require('node:fs').readFileSync(${JSON.stringify(banner)}, 'utf8')); setInterval(() => undefined, 1000);`,
+  );
+
+  const { child, port } = await startDesignServer(dir, () => undefined, false, entry);
+
+  child.kill('SIGTERM');
+  assert.equal(port, 5199);
+});
+
 test('moves a taken pinned DE_PORT to a free port instead of failing the run', async () => {
   const dir = tempDir('design-port-');
   const entry = join(dir, 'fake-cli.cjs');
