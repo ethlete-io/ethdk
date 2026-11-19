@@ -14,6 +14,8 @@ eine Zeile `S<n>` und bekommt einen Eintrag in der Builder-Warteschlange (ADR 03
 eine blockierte Sitzung unterbricht sofort.
 
 - S1 (fifagg, 18.11.): fünf Tokens/Looks für waagerechtes `et-progress-steps`, gebaut (B617, 209d65db7), kommt mit dem nächsten Prerelease (frühestens 20.11.).
+- S2 (fifagg, 19.11.): Stärke je Zone in `et-standings`, nicht blockiert -> Standings-Zonenstärke (B620).
+- S3 (fifagg, 19.11.): Tooltip der Form-Einträge mit eigenem Inhalt, nicht blockiert -> Standings-Form-Tooltip (B621). Ausblick ohne Anfrage: Status-Slot je Zeile ("Qualified"-Badge), sobald die Gruppentabellen auf `et-standings` wechseln.
 
 ## Offene Plan-Dateien
 
