@@ -1104,10 +1104,7 @@
     },
     "actions": [
       "closed",
-      "emit:close",
       "emit:collapse",
-      "emit:maximize",
-      "emit:minimize",
       "emit:productChange",
       "emit:restartServer",
       "emit:sectionChange",

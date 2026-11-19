@@ -87,10 +87,10 @@
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "f6eeb5a1e0ec70ad",
+    "hash": "dd5eba4c2f125763",
     "variant": "a",
-    "decidedBy": "user",
-    "at": "2026-11-19T03:07:33.919Z"
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-19T03:19:23.359Z"
   },
   "elements/studio-menu": {
     "hash": "111e3adb6a48de0f",
