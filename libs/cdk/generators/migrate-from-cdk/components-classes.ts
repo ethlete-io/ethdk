@@ -906,6 +906,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-segmented-button-bg',
   'et-segmented-button-group-buttons',
   'et-segmented-button-group-label',
+  'et-segmented-button-group-scrollable',
   'et-segmented-button-label',
   'et-select-add-new',
   'et-select-all-option-dash',
