@@ -1,6 +1,7 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  ACCORDION_CONFIG_TOKEN,
   ACCORDION_ERROR_CODES,
   ACCORDION_GROUP_TOKEN,
   ACCORDION_IMPORTS,
@@ -14,6 +15,8 @@ import {
   AccordionLabelDirective,
   AccordionPanelDirective,
   AccordionTriggerDirective,
+  injectAccordionConfig,
+  provideAccordionConfig,
 } from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
@@ -102,6 +105,22 @@ const queryAll = <E extends HTMLElement = HTMLElement>(selector: string, root: P
   Array.from(root.querySelectorAll<E>(selector));
 
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+
+@Component({
+  selector: 'et-scenario-provided-divider',
+  imports: [AccordionGroupComponent, AccordionComponent],
+  providers: [provideAccordionConfig({ lastDivider: true })],
+  template: `
+    <et-accordion-group class="provided"><et-accordion label="Kits">Home and away.</et-accordion></et-accordion-group>
+    <et-accordion-group [lastDivider]="false" class="explicit">
+      <et-accordion label="Venues">Two stadiums.</et-accordion>
+    </et-accordion-group>
+  `,
+})
+class ProvidedDividerComponent {
+  config = injectAccordionConfig();
+  token = inject(ACCORDION_CONFIG_TOKEN);
+}
 
 describe('accordion scenarios', () => {
   const scenario = useScenario();
@@ -264,6 +283,18 @@ describe('accordion scenarios', () => {
     app.items.set(['Staff']);
     s.tick();
     expect(app.group().accordions()).toHaveLength(1);
+  });
+
+  it('takes the app-wide last divider from provideAccordionConfig unless the group input sets it', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ProvidedDividerComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    s.tick();
+
+    expect(fixture.componentInstance.config).toEqual({ lastDivider: true });
+    expect(fixture.componentInstance.token).toBe(fixture.componentInstance.config);
+    expect(host.querySelector('.provided')?.hasAttribute('data-last-divider')).toBe(true);
+    expect(host.querySelector('.explicit')?.hasAttribute('data-last-divider')).toBe(false);
   });
 
   it('reports misuse with its error codes', () => {
