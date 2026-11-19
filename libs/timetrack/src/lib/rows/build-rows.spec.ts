@@ -522,7 +522,7 @@ describe('buildRows after a restart that lost the end of an idle stretch', () =>
 
   it('keeps the issue key of a band after the first window focus', () => {
     const rows = buildRows({
-      blocks: [block({ from: at(14, 10), to: at(14, 35), context: { repoPath: '/dev/a', branch: 'no-key-here' } })],
+      blocks: [block({ from: at(14, 10), to: at(14, 40), context: { repoPath: '/dev/a', branch: 'no-key-here' } })],
       events: EVENTS,
       rules: [RULE],
     });

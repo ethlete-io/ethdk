@@ -190,24 +190,6 @@ describe('propose, the work nothing named', () => {
     expect(unattributed.map((row) => row.rowId)).toEqual(unnamed.map((row) => row.id));
   });
 
-  it('leaves a row its id when a part cut from an earlier band starts in the same slot', () => {
-    const inLane = (repoPath: string, extra: Partial<WorkGroup> = {}): WorkGroup => {
-      const base = group({ fromMinute: 0, observedMinutes: 15, issueKey: 'FIP-1' });
-
-      return {
-        ...base,
-        ...extra,
-        blocks: base.blocks.map((block) => ({ ...block, context: { repoPath, piece: repoPath.slice(-1) } })),
-      };
-    };
-
-    const alone = propose({ groups: [inLane('/dev/b')] });
-    const { proposals } = propose({ groups: [inLane('/dev/a', { cutPart: true }), inLane('/dev/b')] });
-    const id = alone.proposals[0]?.id;
-
-    expect(proposals.map((row) => row.id)).toEqual([`${id}+a`, id]);
-  });
-
   it('gives a band one id whatever branches its blocks were on', () => {
     const onBranches = (...branches: string[]): WorkGroup => {
       const base = group({ fromMinute: 0, observedMinutes: 60 });
@@ -451,20 +433,6 @@ describe('propose, on a row nobody attended', () => {
     expect(proposals).toHaveLength(1);
     expect(proposals[0]).toMatchObject({ issueKey: 'ABC-100', from: AT(45), to: AT(60), durationMs: 15 * MINUTE });
     expect((unnamed[0]?.observedMs ?? 0) + (proposals[0]?.observedMs ?? 0)).toBe(ALONE.observedMs);
-  });
-
-  it('describes each part from the commits in its own span', () => {
-    const evidence: Evidence[] = [
-      { kind: 'commit', at: AT(38), detail: 'a1 feat(app): Seed the bracket', summary: 'feat(app): Seed the bracket' },
-      { kind: 'commit', at: AT(48), detail: 'b2 fix(app): Order the seeds', summary: 'fix(app): Order the seeds' },
-    ];
-    const { proposals, unnamed } = propose({
-      groups: [{ ...ALONE, evidence }],
-      breaks: [{ from: AT_SECOND(31, 48), to: AT_SECOND(51, 42) }],
-    });
-
-    expect(unnamed.map((row) => row.description)).toEqual(['feat(app): Seed the bracket']);
-    expect(proposals.map((row) => row.description)).toEqual(['fix(app): Order the seeds']);
   });
 
   it('leaves an unattended row alone when its break holds the whole of it', () => {

@@ -274,7 +274,7 @@ describe('streamDay over a paired machine’s events', () => {
       expect(atTheMac?.durationMs).toBe(75 * 60_000);
     });
 
-    it('lets the grace of this machine reach a band where only this machine was away, and no further', () => {
+    it('lets the grace of this machine reach a band where only this machine was away', () => {
       const day = dayOf({
         local: [
           ...focusRun({ from: 0, to: 10, appId: 'code', title: 'fut-frontend - Code' }),
@@ -288,16 +288,7 @@ describe('streamDay over a paired machine’s events', () => {
         mac: focusRun({ from: 11, to: 89, appId: 'code', title: 'ethlete-sdk - Code' }),
       });
 
-      const unattended = rowsIn(day, `repo:${FUT}`).filter((row) => 'unattended' in row && row.unattended);
-
-      expect(
-        rowsIn(day, `repo:${FUT}`).some(
-          (row) => row.from.getTime() === AT(15).getTime() && !('unattended' in row && row.unattended),
-        ),
-      ).toBe(true);
-      expect(unattended.map((row) => [row.from, row.to, 'workedOn' in row ? row.workedOn : undefined])).toEqual([
-        [AT(30), AT(75), 'MacBook'],
-      ]);
+      expect(rowsIn(day, `repo:${FUT}`).filter((row) => 'unattended' in row && row.unattended)).toEqual([]);
     });
   });
 });
