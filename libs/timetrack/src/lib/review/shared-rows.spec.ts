@@ -140,12 +140,24 @@ describe('shared manual rows', () => {
 
   it('stamps only shared subjects that changed', () => {
     const tank = change({ before: EMPTY_DAY_REVIEW_EDITS, after: added(EMPTY_DAY_REVIEW_EDITS), atMs: 1_000 });
-    const same = { ...tank, overrides: { other: { standInId: 'stand-in-1' } } };
+    const same = { ...tank, pinned: tank.pinned.map((row) => ({ ...row })) };
 
     expect(change({ before: tank, after: same, atMs: 9_000 })).toBe(same);
   });
 
-  it('sends no machine path, stand-in or evidence detail, and drops a lane the receiver has no checkout of', () => {
+  it('sends the stand-in of a hand-written row by its id', () => {
+    const plain = change({ before: EMPTY_DAY_REVIEW_EDITS, after: added(EMPTY_DAY_REVIEW_EDITS), atMs: 1_000 });
+    const named = { ...plain, pinned: plain.pinned.map((row) => ({ ...row, standInId: 'stand-in:1:fifa' })) };
+    const tank = change({ before: plain, after: named, atMs: 2_000 });
+
+    expect(tank.stamps?.[named.pinned[0]?.id ?? '']).toEqual({ atMs: 2_000 });
+
+    const mac = withPeerSharedEntries({ edits: EMPTY_DAY_REVIEW_EDITS, peers: [sent({ edits: tank })] });
+
+    expect(mac.pinned[0]?.standInId).toBe('stand-in:1:fifa');
+  });
+
+  it('sends no machine path or evidence detail, and drops a lane the receiver has no checkout of', () => {
     const tank = change({
       before: EMPTY_DAY_REVIEW_EDITS,
       after: added(EMPTY_DAY_REVIEW_EDITS, 'repo:/home/human/dev/secret-client'),
@@ -155,7 +167,6 @@ describe('shared manual rows', () => {
       ...tank,
       pinned: tank.pinned.map((row) => ({
         ...row,
-        standInId: 'stand-in-1',
         evidence: [...row.evidence, { kind: 'manual', at: at('13:00'), detail: '/home/human/.config/token' }],
       })),
     };
@@ -164,7 +175,6 @@ describe('shared manual rows', () => {
     );
 
     expect(wire).not.toContain('.config');
-    expect(wire).not.toContain('stand-in-1');
     expect(wire).not.toContain('evidence');
 
     const mac = withPeerSharedEntries({ edits: EMPTY_DAY_REVIEW_EDITS, peers: [sent({ edits: withLocalOnly })] });

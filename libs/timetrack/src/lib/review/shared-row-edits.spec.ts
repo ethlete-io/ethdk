@@ -147,23 +147,23 @@ describe('shared row edits', () => {
     expect(withPeerSharedEntries({ edits: mac, peers: [sent({ edits: tank, clockOffsetMs: 2_000 })] })).toBe(mac);
   });
 
-  it('removes a reset edit on the peer, keeping the stand-in only this machine knows', () => {
+  it('removes a reset edit on the peer, its stand-in with it', () => {
     const tank = stampSharedEdits({
       before: EMPTY_DAY_REVIEW_EDITS,
-      after: edited({ [MORNING]: { description: 'Standings' } }),
+      after: edited({ [MORNING]: { description: 'Standings', standInId: 'stand-in:1:fifa' } }),
       atMs: 1_000,
     });
-    const mac: DayReviewEdits = {
-      ...withPeerSharedEntries({ edits: EMPTY_DAY_REVIEW_EDITS, peers: [sent({ edits: tank })] }),
-    };
-    const macWithStandIn = { ...mac, overrides: { [MORNING]: { ...mac.overrides[MORNING], standInId: 'stand-in-1' } } };
+    const mac = withPeerSharedEntries({ edits: EMPTY_DAY_REVIEW_EDITS, peers: [sent({ edits: tank })] });
+
+    expect(mac.overrides[MORNING]?.standInId).toBe('stand-in:1:fifa');
+
     const reset = stampSharedEdits({ before: tank, after: edited({}, tank), atMs: 2_000 });
 
     expect(sharedEntriesOf(reset)).toEqual([{ id: MORNING, atMs: 2_000, kind: 'deleted' }]);
 
-    const after = withPeerSharedEntries({ edits: macWithStandIn, peers: [sent({ edits: reset })] });
+    const after = withPeerSharedEntries({ edits: mac, peers: [sent({ edits: reset })] });
 
-    expect(after.overrides).toEqual({ [MORNING]: { standInId: 'stand-in-1' } });
+    expect(after.overrides).toEqual({});
     expect(after.stamps?.[MORNING]).toEqual({ atMs: 2_000, deleted: true });
     expect(withPeerSharedEntries({ edits: after, peers: [sent({ edits: tank })] })).toBe(after);
   });
@@ -257,21 +257,26 @@ describe('shared row edits', () => {
     expect(JSON.stringify(mac)).not.toContain('/home/human');
   });
 
-  it('never sends a stand-in, and a stand-in change alone is no shared change', () => {
+  it('sends a stand-in naming by its id, and a later peer naming replaces the local one', () => {
     const tank = stampSharedEdits({
       before: EMPTY_DAY_REVIEW_EDITS,
-      after: edited({ [MORNING]: { standInId: 'stand-in-1', description: 'Standings' } }),
+      after: edited({ [MORNING]: { standInId: 'stand-in:1:fifa', description: 'Standings' } }),
       atMs: 1_000,
     });
-    const wire = encodePeerDayRows(
-      peerDayRowsOf({ day: DAY, frozen: false, rows: [], ledger: [], standInNames: {}, edits: tank }),
-    );
+    const changed = edited({ [MORNING]: { standInId: 'stand-in:2:fifa', description: 'Standings' } }, tank);
 
-    expect(wire).not.toContain('stand-in-1');
+    expect(stampSharedEdits({ before: tank, after: changed, atMs: 2_000 }).stamps?.[MORNING]).toEqual({ atMs: 2_000 });
 
-    const changed = edited({ [MORNING]: { standInId: 'stand-in-2', description: 'Standings' } }, tank);
+    const mac: DayReviewEdits = {
+      ...EMPTY_DAY_REVIEW_EDITS,
+      overrides: { [MORNING]: { standInId: 'stand-in:mac' } },
+      stamps: { [MORNING]: { atMs: 500 } },
+    };
 
-    expect(stampSharedEdits({ before: tank, after: changed, atMs: 2_000 })).toBe(changed);
+    expect(withPeerSharedEntries({ edits: mac, peers: [sent({ edits: tank })] }).overrides[MORNING]).toEqual({
+      standInId: 'stand-in:1:fifa',
+      description: 'Standings',
+    });
   });
 
   it('takes a later cut of the same engine row over its own, and keeps its own when it is later', () => {
@@ -295,6 +300,27 @@ describe('shared row edits', () => {
     expect(later.stamps?.['pin:mac']).toEqual({ atMs: 4_000, deleted: true });
 
     expect(withPeerSharedEntries({ edits: macCut, peers: [sent({ edits: tank, clockOffsetMs: 2_000 })] })).toBe(macCut);
+  });
+
+  it('carries the stand-in of a built row, so the peer version replaces a local stand-in', () => {
+    const cut = cutMorning(EMPTY_DAY_REVIEW_EDITS);
+    const named = {
+      ...cut,
+      pinned: cut.pinned.map((row, index) => (index ? row : { ...row, standInId: 'stand-in:1:fifa' })),
+    };
+    const tank = stampSharedEdits({ before: EMPTY_DAY_REVIEW_EDITS, after: named, atMs: 1_000 });
+    const mac = withPeerSharedEntries({ edits: EMPTY_DAY_REVIEW_EDITS, peers: [sent({ edits: tank })] });
+
+    expect(mac.pinned.map((row) => row.standInId)).toEqual(['stand-in:1:fifa', undefined]);
+
+    const macRenamed: DayReviewEdits = {
+      ...mac,
+      pinned: mac.pinned.map((row) => ({ ...row, standInId: 'stand-in:mac' })),
+    };
+    const unnamed = stampSharedEdits({ before: tank, after: cutMorning(tank), atMs: 9_000 });
+    const after = withPeerSharedEntries({ edits: macRenamed, peers: [sent({ edits: unnamed })] });
+
+    expect(after.pinned.map((row) => row.standInId)).toEqual([undefined, 'stand-in:mac']);
   });
 
   it('never re-cuts a day booked here: a peer edit lands on the frozen rows', () => {

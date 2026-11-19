@@ -5,6 +5,7 @@ import { PriceTable } from '../model/price';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
 import { StandIn, StandInRefusal } from '../model/stand-in';
+import { SharedStamp } from '../review/model';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { JiraParenting } from '../jira/hierarchy';
@@ -391,6 +392,8 @@ export type TimetrackSettings = {
    * an entry is taken back off.
    */
   noStandInCheckouts: StandInRefusal[];
+  /** When each rule and stand-in that travels to paired machines last changed here, by `sharedSettingsEntriesOf` id. */
+  sharedStamps?: Record<string, SharedStamp>;
   /**
    * Whether the window locks itself, so the months of window titles in the database are not readable by
    * whoever walks up to an unlocked desktop.

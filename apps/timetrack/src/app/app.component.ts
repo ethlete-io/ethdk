@@ -14,6 +14,7 @@ import { injectAutoMode } from './day-review/auto-mode';
 import { injectStandInPins } from './stand-ins/stand-in-pins';
 import { injectDayRowsBackfill } from './peers/day-rows-backfill';
 import { injectDayRowsOnSave } from './peers/day-rows-on-save';
+import { injectSharedSettings } from './peers/shared-settings-on-change';
 import { injectScreenDayBooking } from './day-review/screen-day-booking';
 import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
@@ -121,6 +122,7 @@ export class AppComponent {
     injectStandInPins();
     injectDayRowsBackfill();
     injectDayRowsOnSave();
+    injectSharedSettings();
     injectScreenDayBooking();
 
     // Nor any backfill pass, each of which has to converge whether or not anybody opens the Sources screen.

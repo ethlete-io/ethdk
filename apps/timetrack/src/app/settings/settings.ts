@@ -13,6 +13,7 @@ import {
   DEFAULT_TIMETRACK_SETTINGS,
   NamedTarget,
   ProjectLinkTarget,
+  PeerSharedSettings,
   StandIn,
   StandInRefusal,
   TIMETRACK_SECRET_KEYS,
@@ -71,6 +72,8 @@ import {
   withActionClass,
   withModelPrice,
   withoutModelPrice,
+  stampSharedSettings,
+  withPeerSharedSettings,
 } from '@ethlete/timetrack';
 import {
   Subject,
@@ -182,10 +185,13 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  const apply = (next: TimetrackSettings) => {
+  const store = (next: TimetrackSettings) => {
     local.set(next);
     saves$.next(next);
   };
+
+  const apply = (next: TimetrackSettings) =>
+    store(stampSharedSettings({ before: settings(), after: next, atMs: Date.now() }));
 
   const patch = (change: Partial<TimetrackSettings>) => apply({ ...settings(), ...change });
 
@@ -230,6 +236,14 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Asks the keychain again, for a caller that stored or removed a secret through another route. */
     recheckCredentials: () => secretRevision.update((count) => count + 1),
+
+    /** Takes the rules and stand-ins the paired machines changed later than this machine. */
+    mergePeerSettings: (peers: readonly PeerSharedSettings[]) => {
+      const current = settings();
+      const next = withPeerSharedSettings({ settings: current, peers });
+
+      if (next !== current) store(next);
+    },
 
     setDateStyle: (dateStyle: DateStyle) => patch({ display: { ...settings().display, dateStyle } }),
     setClock: (clock: ClockStyle) => patch({ display: { ...settings().display, clock } }),

@@ -1,4 +1,17 @@
-import { CheckoutKeys, PeerDayRows, ReceivedRange, encodePeerDayRows, parsePeerDayRows } from '@ethlete/timetrack';
+import {
+  CheckoutKeys,
+  PeerDayRows,
+  PeerSharedSettings,
+  ReceivedRange,
+  SHARED_SETTINGS_DAY,
+  SHARED_SETTINGS_DAY_START_MS,
+  SharedSettingsEntry,
+  encodePeerDayRows,
+  encodeSharedSettings,
+  mapSharedSettings,
+  parsePeerDayRows,
+  parseSharedSettings,
+} from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { StoredEvent, reviveEvent } from './event-store';
 import { invokeHost$ } from './invoke';
@@ -58,6 +71,40 @@ export type ReceivedDayRows = { machineId: string; rows: PeerDayRows; clockOffse
  */
 export type HostReceivedRange = ReceivedRange & { ownRepoKeys: CheckoutKeys; dayRows: readonly ReceivedDayRows[] };
 
+/** The rules and stand-ins each paired machine last sent, in this machine's checkouts, and this machine's own keys. */
+export type HostReceivedSettings = { ownRepoKeys: CheckoutKeys; peers: readonly PeerSharedSettings[] };
+
+const repoKeysOf = (stored: StoredReceivedRange) =>
+  stored.repoKeys.reduce<Record<string, Record<string, string>>>((byMachine, row) => {
+    (byMachine[row.machineId] ??= {})[row.path] = row.key;
+
+    return byMachine;
+  }, {});
+
+const ownRepoKeysOf = (stored: StoredReceivedRange): CheckoutKeys =>
+  Object.fromEntries(stored.ownRepoKeys.map((row) => [row.path, row.key]));
+
+const receivedSettingsOf = (stored: StoredReceivedRange): HostReceivedSettings => {
+  const repoKeys = repoKeysOf(stored);
+  const ownRepoKeys = ownRepoKeysOf(stored);
+
+  return {
+    ownRepoKeys,
+    peers: (stored.dayRows ?? []).flatMap((sent) => {
+      const entries = sent.day === SHARED_SETTINGS_DAY ? parseSharedSettings(sent.rows) : null;
+
+      return entries
+        ? [
+            {
+              entries: mapSharedSettings({ entries, peerKeys: repoKeys[sent.machineId] ?? {}, localKeys: ownRepoKeys }),
+              clockOffsetMs: sent.clockOffsetMs ?? 0,
+            },
+          ]
+        : [];
+    }),
+  };
+};
+
 export const NOTHING_RECEIVED: HostReceivedRange = { events: [], repoKeys: {}, ownRepoKeys: {}, dayRows: [] };
 
 export type TauriPeers = {
@@ -77,6 +124,10 @@ export type TauriPeers = {
   setDayRows$(rows: PeerDayRows, dayStart: Date): Observable<void>;
   /** This machine's stored rows of the days that start at or after `from`, in their wire form, by day. */
   ownDayRowsFrom$(from: Date): Observable<Readonly<Record<string, string>>>;
+  /** The rules and stand-ins the paired machines last sent. */
+  receivedSettings$(): Observable<HostReceivedSettings>;
+  /** Replaces the rules and stand-ins of this machine that the next pull from here carries. */
+  setSharedSettings$(entries: readonly SharedSettingsEntry[]): Observable<void>;
 };
 
 export const createTauriPeers = (): TauriPeers => ({
@@ -95,12 +146,8 @@ export const createTauriPeers = (): TauriPeers => ({
           machineName: row.label,
           event: reviveEvent(row),
         })),
-        repoKeys: stored.repoKeys.reduce<Record<string, Record<string, string>>>((byMachine, row) => {
-          (byMachine[row.machineId] ??= {})[row.path] = row.key;
-
-          return byMachine;
-        }, {}),
-        ownRepoKeys: Object.fromEntries(stored.ownRepoKeys.map((row) => [row.path, row.key])),
+        repoKeys: repoKeysOf(stored),
+        ownRepoKeys: ownRepoKeysOf(stored),
         dayRows: (stored.dayRows ?? []).flatMap((sent) => {
           const rows = parsePeerDayRows(sent.rows);
 
@@ -126,4 +173,13 @@ export const createTauriPeers = (): TauriPeers => ({
     invokeHost$<{ day: string; rows: string }[]>('own_day_rows', { fromMs: from.getTime() }).pipe(
       map((stored) => Object.fromEntries(stored.map((sent) => [sent.day, sent.rows]))),
     ),
+  receivedSettings$: () =>
+    invokeHost$<StoredReceivedRange>('received_between', {
+      fromMs: SHARED_SETTINGS_DAY_START_MS,
+      toMs: SHARED_SETTINGS_DAY_START_MS + 1,
+    }).pipe(map(receivedSettingsOf)),
+  setSharedSettings$: (entries) =>
+    invokeHost$<void>('set_day_rows', {
+      rows: { day: SHARED_SETTINGS_DAY, dayStartMs: SHARED_SETTINGS_DAY_START_MS, rows: encodeSharedSettings(entries) },
+    }),
 });

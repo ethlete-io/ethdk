@@ -12,3 +12,4 @@ export * from './repo-project';
 export * from './rules';
 export * from './stand-in';
 export * from './transcription';
+export * from './shared-settings';

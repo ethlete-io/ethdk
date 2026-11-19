@@ -2,8 +2,9 @@ import { Confidence } from '../model/evidence';
 import { FieldSource, RowFieldSources } from '../model/field-source';
 import { manualEvidence } from './edits';
 import { DayReviewEdits, PinnedRow, ProposalOverride, SharedStamp } from './model';
+import { changedStamps, latestPeerEntries, peerEntryWins, tombstonesOf } from './shared-stamp';
 
-/** A row the reviewer wrote by hand, as it travels: no evidence and no stand-in, its lane in the sender's checkout. */
+/** A row the reviewer wrote by hand, as it travels: no evidence, its lane in the sender's checkout. */
 export type SharedManualRow = {
   issueKey?: string;
   storyKey?: string;
@@ -11,6 +12,7 @@ export type SharedManualRow = {
   to: Date;
   durationMs: number;
   laneKey?: string;
+  standInId?: string;
   description: string;
   state?: 'accepted' | 'rejected';
   hidden?: boolean;
@@ -18,7 +20,7 @@ export type SharedManualRow = {
 
 /**
  * A row the reviewer built out of engine rows by a cut, merge, move or resize, as it travels: the engine
- * row ids it replaces, no evidence and no stand-in.
+ * row ids it replaces, no evidence.
  */
 export type SharedBuiltRow = SharedManualRow & {
   replaces: string[];
@@ -34,10 +36,10 @@ export type SharedBuiltRow = SharedManualRow & {
   sources?: RowFieldSources;
 };
 
-/** A reviewer's change to an engine row (name, description, decision, hidden), as it travels: no stand-in. */
+/** A reviewer's change to an engine row (name, stand-in, description, decision, hidden), as it travels. */
 export type SharedOverride = Pick<
   ProposalOverride,
-  'issueKey' | 'laneKey' | 'description' | 'state' | 'hidden' | 'sources'
+  'issueKey' | 'laneKey' | 'standInId' | 'description' | 'state' | 'hidden' | 'sources'
 >;
 
 /** One subject of a day a machine shares with its paired machines, stamped in the sender's clock. */
@@ -68,6 +70,7 @@ const sharedRowOf = (row: PinnedRow): SharedManualRow => ({
   to: row.to,
   durationMs: row.durationMs,
   ...(row.laneKey ? { laneKey: row.laneKey } : {}),
+  ...(row.standInId ? { standInId: row.standInId } : {}),
   description: row.description,
   ...(row.state ? { state: row.state } : {}),
   ...(row.hidden ? { hidden: true } : {}),
@@ -94,6 +97,7 @@ const sharedOverrideOf = (override: ProposalOverride): SharedOverride | null => 
   const shared = defined<SharedOverride>({
     issueKey: override.issueKey,
     laneKey: override.laneKey,
+    standInId: override.standInId,
     description: override.description,
     state: override.state,
     hidden: override.hidden || undefined,
@@ -142,6 +146,7 @@ const pinnedOf = (id: string, row: SharedManualRow): PinnedRow => ({
   durationMs: row.durationMs,
   observedMs: 0,
   ...(row.laneKey ? { laneKey: row.laneKey } : {}),
+  ...(row.standInId ? { standInId: row.standInId } : {}),
   description: row.description,
   confidence: 'certain',
   evidence: manualEvidence(row),
@@ -157,13 +162,9 @@ const builtPinnedOf = (options: { id: string; row: SharedBuiltRow; local?: Pinne
     id: options.id,
     replaces: [...row.replaces],
     evidence: local?.evidence ?? [],
-    ...(local?.standInId && !row.issueKey ? { standInId: local.standInId } : {}),
     ...(local?.workedOn ? { workedOn: local.workedOn } : {}),
   };
 };
-
-const localOnlyOf = (override: ProposalOverride | undefined, shared?: SharedOverride): ProposalOverride | null =>
-  override?.standInId && !shared?.issueKey ? { standInId: override.standInId } : null;
 
 /**
  * `after` with every shared subject that was added, changed or removed since `before` stamped at `atMs`,
@@ -175,19 +176,9 @@ export const stampSharedEdits = (options: {
   after: DayReviewEdits;
   atMs: number;
 }): DayReviewEdits => {
-  const was = liveEntriesOf(options.before);
-  const now = liveEntriesOf(options.after);
-  const changed: Record<string, SharedStamp> = {};
-
-  for (const [id, entry] of now) {
-    const old = was.get(id);
-
-    if (!old || bodyOf(old) !== bodyOf(entry)) changed[id] = { atMs: options.atMs };
-  }
-
-  for (const id of was.keys()) {
-    if (!now.has(id)) changed[id] = { atMs: options.atMs, deleted: true };
-  }
+  const bodies = (edits: DayReviewEdits) =>
+    new Map([...liveEntriesOf(edits)].map(([id, entry]) => [id, bodyOf(entry)]));
+  const changed = changedStamps({ was: bodies(options.before), now: bodies(options.after), atMs: options.atMs });
 
   if (!Object.keys(changed).length) return options.after;
 
@@ -201,9 +192,7 @@ export const sharedEntriesOf = (edits: DayReviewEdits): SharedEntry[] => {
 
   return [
     ...[...live.values()].map((entry): SharedEntry => ({ ...entry, atMs: stamps[entry.id]?.atMs ?? 0 })),
-    ...Object.entries(stamps)
-      .filter(([id, stamp]) => stamp.deleted && !live.has(id))
-      .map(([id, stamp]): SharedEntry => ({ id, atMs: stamp.atMs, kind: 'deleted' })),
+    ...tombstonesOf(stamps, live),
   ];
 };
 
@@ -220,16 +209,7 @@ export const withPeerSharedEntries = (options: {
   peers: readonly PeerSharedEntries[];
 }): DayReviewEdits => {
   const { edits } = options;
-  const latest = new Map<string, SharedEntry>();
-
-  for (const peer of options.peers) {
-    for (const entry of peer.entries) {
-      const atMs = entry.atMs - peer.clockOffsetMs;
-      const held = latest.get(entry.id);
-
-      if (!held || atMs > held.atMs) latest.set(entry.id, { ...entry, atMs });
-    }
-  }
+  const latest = latestPeerEntries(options.peers);
 
   const live = liveEntriesOf(edits);
   const pinnedById = new Map(edits.pinned.map((row) => [row.id, row]));
@@ -243,14 +223,12 @@ export const withPeerSharedEntries = (options: {
     if (unshared.has(id)) continue;
 
     const local = live.get(id);
-    const localAtMs = stamps[id]?.atMs ?? (local ? 0 : -Infinity);
 
-    if (entry.atMs <= localAtMs) continue;
+    if (!peerEntryWins({ entry, held: !!local, stamp: stamps[id] })) continue;
 
     if (entry.kind === 'deleted') {
-      if (!local && stamps[id]?.deleted) continue;
       if (pinnedById.has(id)) rows.set(id, null);
-      if (edits.overrides[id]) overrides.set(id, localOnlyOf(edits.overrides[id]));
+      if (edits.overrides[id]) overrides.set(id, null);
 
       changed[id] = { atMs: entry.atMs, deleted: true };
       continue;
@@ -261,7 +239,7 @@ export const withPeerSharedEntries = (options: {
     if (entry.kind === 'row-edit') {
       if (pinnedById.has(id)) continue;
 
-      overrides.set(id, { ...localOnlyOf(edits.overrides[id], entry.override), ...entry.override });
+      overrides.set(id, entry.override);
     } else if (entry.kind === 'manual-row') {
       rows.set(id, pinnedOf(id, entry.row));
     } else {
@@ -348,6 +326,7 @@ const sharedRowFrom = (value: unknown, minimumMs: number): SharedManualRow | nul
   const issueKey = textOf(record['issueKey']);
   const storyKey = textOf(record['storyKey']);
   const laneKey = textOf(record['laneKey']);
+  const standInId = textOf(record['standInId']);
   const state = stateFrom(record['state']);
 
   return {
@@ -357,6 +336,7 @@ const sharedRowFrom = (value: unknown, minimumMs: number): SharedManualRow | nul
     to: new Date(to),
     durationMs,
     ...(laneKey ? { laneKey } : {}),
+    ...(standInId ? { standInId } : {}),
     description: typeof record['description'] === 'string' ? record['description'] : '',
     ...(state ? { state } : {}),
     ...(record['hidden'] === true ? { hidden: true } : {}),
@@ -417,6 +397,7 @@ const overrideFrom = (value: unknown): SharedOverride | null => {
   const override = defined<SharedOverride>({
     issueKey: textOf(record['issueKey']),
     laneKey: textOf(record['laneKey']),
+    standInId: textOf(record['standInId']),
     description: typeof record['description'] === 'string' ? record['description'] : undefined,
     state: stateFrom(record['state']),
     hidden: record['hidden'] === true || undefined,

@@ -4,6 +4,7 @@ import { ProjectLinkTarget, TimetrackProjectLink, issueKeysInText } from '../mod
 import { AttributionRule, AttributionTarget, NamedTarget, NamingAuthor } from '../model/attribution';
 import { FieldSource } from '../model/field-source';
 import { StandIn, StandInRefusal } from '../model/stand-in';
+import { SharedStamp } from '../review/model';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { DEFAULT_WORKLOG_LANGUAGE, REASONING_COMMANDS } from '../reason/model';
@@ -225,6 +226,26 @@ const asStandInRefusal = (value: unknown): StandInRefusal | null => {
   if (!branch) return { repoPath };
 
   return workPath ? { repoPath, branch, workPath } : { repoPath, branch };
+};
+
+/** A stand-in read field by field, as the stored settings read it; `null` without an id or a name. */
+export const parseStandIn = (value: unknown): StandIn | null =>
+  asText(asRecord(value)['id']) ? asStandIn(value, 0) : null;
+
+/** An attribution rule read field by field, as the stored settings read it; `null` without an id. */
+export const parseAttributionRule = (value: unknown): AttributionRule | null =>
+  asText(asRecord(value)['id']) ? asAttributionRule(value, 0) : null;
+
+const asSharedStamps = (value: unknown): Record<string, SharedStamp> | undefined => {
+  const stamps = Object.entries(asRecord(value)).flatMap(([id, stamp]): [string, SharedStamp][] => {
+    const raw = asRecord(stamp);
+
+    if (typeof raw['atMs'] !== 'number') return [];
+
+    return [[id, raw['deleted'] === true ? { atMs: raw['atMs'], deleted: true } : { atMs: raw['atMs'] }]];
+  });
+
+  return stamps.length ? Object.fromEntries(stamps) : undefined;
 };
 
 const asStandInRefusals = (value: unknown) =>
@@ -535,6 +556,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     projectLinks: asProjectLinks(document['projectLinks']),
     standIns: asStandIns(document['standIns']),
     noStandInCheckouts: asStandInRefusals(document['noStandInCheckouts']),
+    ...(asSharedStamps(document['sharedStamps']) ? { sharedStamps: asSharedStamps(document['sharedStamps']) } : {}),
     lockWindow: document['lockWindow'] !== false,
     lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
     transcribeCalls: document['transcribeCalls'] === true,

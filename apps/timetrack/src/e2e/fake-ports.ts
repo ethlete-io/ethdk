@@ -722,6 +722,8 @@ export const createFakePorts = (): HostPorts => {
               .map(([day, sent]) => [day, encodePeerDayRows(sent)]),
           ),
         ),
+      receivedSettings$: () => ok({ ownRepoKeys: {}, peers: [] }),
+      setSharedSettings$: () => ok(undefined),
     },
 
     transcription: {
