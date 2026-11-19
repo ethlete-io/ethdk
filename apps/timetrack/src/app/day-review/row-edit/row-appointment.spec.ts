@@ -117,3 +117,17 @@ describe('a band whose auto mode answer waits for approval', () => {
     expect(waitingKeyOf([{ request: { op: 'standIn.resolve', issueKey: 'ABC-1' } } as typeof apply])).toBeUndefined();
   });
 });
+
+describe('an unattended band a stand-in names', () => {
+  it('reads as the stand-in name', () => {
+    const row = rowOf({ unattended: true, standInId: 'stand-in:1' });
+
+    expect(appointmentLabel(appointmentOf({ row, standInName: 'Handoff' }))).toBe('Handoff · 1h 0m');
+  });
+
+  it('reads as nobody was here once the stand-in is gone', () => {
+    const row = rowOf({ unattended: true, standInId: 'stand-in:1' });
+
+    expect(appointmentLabel(appointmentOf({ row }))).toBe('Nobody was here · 1h 0m');
+  });
+});
