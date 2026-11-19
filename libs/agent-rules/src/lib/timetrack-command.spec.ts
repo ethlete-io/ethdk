@@ -1007,24 +1007,25 @@ describe('timetrack sync', () => {
 
 describe('timetrack rows --compare', () => {
   const fromMs = new Date(2026, 9, 2, 9, 0).getTime();
-  const rowOn = (home: string, overrides: Record<string, unknown> = {}) => ({
-    id: `repo:${home}/sdk@${fromMs}`,
+  const rowOn = (home: string, overrides: Record<string, unknown> = {}, folder = 'sdk') => ({
+    id: `repo:${home}/${folder}@${fromMs}`,
     description: 'pdf export',
     fromMs,
     toMs: fromMs + 30 * 60_000,
     durationMs: 30 * 60_000,
     observedMs: 30 * 60_000,
     issueKey: 'FIP-1',
-    laneKey: `repo:${home}/sdk`,
+    laneKey: `repo:${home}/${folder}`,
     state: 'accepted',
     confidence: 'likely',
     edited: false,
     hidden: false,
     ...overrides,
   });
-  const dayOf = (rows: unknown[]) => ({
+  const dayOf = (rows: unknown[], checkoutKeys?: Record<string, string>) => ({
     day: '2026-10-02',
     rows,
+    ...(checkoutKeys ? { checkoutKeys } : {}),
     hidden: [],
     proposedMs: 0,
     loggedMs: 30 * 60_000,
@@ -1033,17 +1034,17 @@ describe('timetrack rows --compare', () => {
     warnings: [],
     behind: [],
   });
-  const exported = (rows: unknown[]) => {
+  const exported = (rows: unknown[], checkoutKeys?: Record<string, string>) => {
     const path = join(mkdtempSync(join(tmpdir(), 'agent-rules-rows-')), 'tank.json');
 
-    writeFileSync(path, JSON.stringify(dayOf(rows)));
+    writeFileSync(path, JSON.stringify(dayOf(rows, checkoutKeys)));
 
     return path;
   };
-  const answerWith = async (rows: unknown[]) => {
+  const answerWith = async (rows: unknown[], checkoutKeys?: Record<string, string>) => {
     await withEndpoint((_request, response) => {
       response.setHeader('content-type', 'application/json');
-      response.end(JSON.stringify({ ok: true, value: dayOf(rows) }));
+      response.end(JSON.stringify({ ok: true, value: dayOf(rows, checkoutKeys) }));
     });
   };
 
@@ -1056,6 +1057,25 @@ describe('timetrack rows --compare', () => {
 
     await expect(run(['rows', '2026-10-02', '--compare', file])).resolves.toBe(0);
     expect(lines).toEqual([`2026-10-02  the same 1 row(s) as ${file}`]);
+  });
+
+  it('maps differently named checkouts of one repository onto the same rows', async () => {
+    const file = exported([rowOn('/home/x/dev', {}, 'specs')], { '/home/x/dev/specs': 'org/specs' });
+
+    await answerWith([rowOn('/Users/x/dev', {}, 'clientA-specs')], { '/Users/x/dev/clientA-specs': 'org/specs' });
+
+    const lines = printedLines();
+
+    await expect(run(['rows', '2026-10-02', '--compare', file])).resolves.toBe(0);
+    expect(lines).toEqual([`2026-10-02  the same 1 row(s) as ${file}`]);
+  });
+
+  it('keeps comparing by last path segment against an export without checkout keys', async () => {
+    const file = exported([rowOn('/home/human')]);
+
+    await answerWith([rowOn('/Users/human')], { '/Users/human/sdk': 'org/sdk' });
+
+    await expect(run(['rows', '2026-10-02', '--compare', file])).resolves.toBe(0);
   });
 
   it('prints the differing row and exits 1', async () => {

@@ -259,6 +259,8 @@ export type TimetrackDayRows = {
   targetMs: number;
   unattributedMs: number;
   warnings: { kind: string; detail: string }[];
+  /** This machine's checkouts, each path keyed by its repository, so a peer's export can be mapped onto them. */
+  checkoutKeys?: Record<string, string>;
   behind?: { fromMs: number; toMs: number; issueKey: string; laneKey: string; durationMs: number }[];
 };
 

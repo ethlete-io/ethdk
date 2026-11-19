@@ -1,3 +1,7 @@
+import { CheckoutKeys, translatePeerPath } from './peer-path';
+
+const PATH_TOKEN = /\/(?:[^/|@\s]+\/)*[^/|@\s]+/g;
+
 export const SNAPSHOT_ROW_FIELDS = [
   'fromMs',
   'toMs',
@@ -66,6 +70,28 @@ export const snapshotDayOf = (found: DayRowsLike): SnapshotDay => ({
     return kept;
   }),
 });
+
+/** Rewrites every path in a recorded day's row ids and lane keys from a peer's checkouts to this machine's, by repository key. */
+export const translateSnapshotDay = (options: {
+  day: SnapshotDay;
+  peerKeys: CheckoutKeys;
+  localKeys: CheckoutKeys;
+}): SnapshotDay => {
+  const { day, peerKeys, localKeys } = options;
+  const translate = (value: unknown) =>
+    typeof value === 'string'
+      ? value.replace(PATH_TOKEN, (path) => translatePeerPath({ path, peerKeys, localKeys }))
+      : value;
+
+  return {
+    ...day,
+    rows: day.rows.map((row) => ({
+      ...row,
+      id: String(translate(row.id)),
+      ...(row.laneKey === undefined ? {} : { laneKey: translate(row.laneKey) }),
+    })),
+  };
+};
 
 const PATH_IN_KEY = /\/(?:[^/|@\s]+\/)*([^/|@\s]+)/g;
 

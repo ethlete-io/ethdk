@@ -48,7 +48,15 @@ import {
   timetrackCalendarEvents,
 } from './timetrack';
 import { plain } from './plain-text';
-import { diffDayRows, diffLines, diffSnapshots, Snapshot, SnapshotDay, snapshotDayOf } from './timetrack-snapshot';
+import {
+  diffDayRows,
+  diffLines,
+  diffSnapshots,
+  Snapshot,
+  SnapshotDay,
+  snapshotDayOf,
+  translateSnapshotDay,
+} from './timetrack-snapshot';
 import { commitAuthorOf, commitPathsOnDays, currentBranch, git, projectRootsOf } from './git';
 
 const FLAGS_WITH_VALUE = [
@@ -1152,8 +1160,22 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
         throw new Error(`${compare} is not the output of timetrack rows <day> --json.`);
       if (value && recorded.day !== day) throw new Error(`${compare} holds ${recorded.day}, not ${day}.`);
 
+      const theirs = snapshotDayOf({
+        loggedMs: 0,
+        proposedMs: 0,
+        hidden: [],
+        ...recorded,
+        rows: recorded.rows,
+        day: recorded.day,
+      });
       const diff = diffDayRows(
-        snapshotDayOf({ loggedMs: 0, proposedMs: 0, hidden: [], ...recorded, rows: recorded.rows, day: recorded.day }),
+        recorded.checkoutKeys
+          ? translateSnapshotDay({
+              day: theirs,
+              peerKeys: recorded.checkoutKeys,
+              localKeys: found.checkoutKeys ?? {},
+            })
+          : theirs,
         snapshotDayOf(found),
       );
 
