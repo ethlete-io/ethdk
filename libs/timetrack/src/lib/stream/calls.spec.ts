@@ -999,7 +999,7 @@ describe('classifyCalls, a Slack huddle', () => {
     call(12, 'call-end', appId),
   ];
 
-  it.each(['com.slack.Slack', 'slack', 'com.tinyspeck.slackmacgap'])(
+  it.each(['com.slack.Slack', 'slack', 'com.tinyspeck.slackmacgap', 'com.tinyspeck.slackmacgap.helper'])(
     'counts %s as work with no rule naming it',
     (appId) => {
       const [window] = classify(huddle(appId), { countsAsWork: ['google-chrome', 'Discord'] });

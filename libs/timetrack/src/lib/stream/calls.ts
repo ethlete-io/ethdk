@@ -141,8 +141,7 @@ const matches = (expressions: readonly RegExp[], named: Named) =>
  */
 export const WORK_CALL_APPS = ['com.slack.Slack', 'slack', 'com.tinyspeck.slackmacgap'];
 
-const isWorkCallApp = (appId: string) =>
-  WORK_CALL_APPS.some((workApp) => workApp.toLowerCase() === appId.trim().toLowerCase());
+const isWorkCallApp = (appId: string) => WORK_CALL_APPS.some((workApp) => callHolderBelongsTo(appId.trim(), workApp));
 
 const sameCallApp = (left: string, right: string) =>
   callHolderBelongsTo(left, right) ||
