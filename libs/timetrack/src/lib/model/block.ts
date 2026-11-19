@@ -48,7 +48,8 @@ export const blockDurationMs = (block: ActivityBlock) => block.to.getTime() - bl
 export const contextKey = (context: ActivityContext) => {
   if (!context.repoPath) return `app:${context.appId ?? ''}`;
 
-  if (context.session) return `repo:${context.repoPath}~${context.session}`;
+  if (context.session)
+    return `repo:${context.repoPath}~${context.session}${context.workPath ? `#${context.workPath}` : ''}`;
 
   const key = `repo:${context.repoPath}@${context.branch ?? ''}`;
 

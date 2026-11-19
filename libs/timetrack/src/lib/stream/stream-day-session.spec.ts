@@ -310,19 +310,24 @@ describe('streamDay agent sessions', () => {
     ];
     const earlier = sessionRun({ sessionId: 'early', from: -120, to: -60, workedIn: `${FINDINGS}/a.md`, ...onMain });
     const lone = sessionRun({ sessionId: '1406c64c', from: 0, to: 90, workedIn: `${CLEANUP}/b.md`, ...onMain });
-    const workPathOfLone = (events: CollectedEvent[]) =>
-      blocksOf(events).find((block) => block.context.session === '1406c64c')?.context.workPath;
+    const workPathsOfLone = (events: CollectedEvent[]) =>
+      blocksOf(events)
+        .filter((block) => block.context.session === '1406c64c')
+        .map((block) => block.context.workPath);
 
-    it('cuts a lone session by the folders its commits changed', () => {
-      expect(workPathOfLone([...focusRun({ from: 0, to: 90 }), ...earlier, ...lone, ...commits])).toBe(FINDINGS);
+    it('cuts a lone session into one block per folder its commits changed', () => {
+      expect(workPathsOfLone([...focusRun({ from: 0, to: 90 }), ...earlier, ...lone, ...commits])).toEqual([
+        CLEANUP,
+        FINDINGS,
+      ]);
     });
 
     it('lets the session folder decide in the minutes a second session of the checkout ran too', () => {
       const other = sessionRun({ sessionId: 'beside', from: 0, to: 90, workedIn: `${FINDINGS}/c.md`, ...onMain });
 
-      expect(workPathOfLone([...focusRun({ from: 0, to: 90 }), ...earlier, ...lone, ...other, ...commits])).toBe(
+      expect(workPathsOfLone([...focusRun({ from: 0, to: 90 }), ...earlier, ...lone, ...other, ...commits])).toEqual([
         CLEANUP,
-      );
+      ]);
     });
   });
 
