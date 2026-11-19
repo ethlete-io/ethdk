@@ -1230,13 +1230,21 @@ export class DayTimelineComponent {
     afterNextRender(() => {
       const body = this.body().nativeElement;
 
+      let unsaved: { day: string; scroll: TimelineScroll } | null = null;
+
+      // A day switch can destroy the timeline inside the debounce window, so the last scroll is written on destroy.
+      this.destroyRef.onDestroy(() => unsaved && rememberTimelineScroll(unsaved.day, unsaved.scroll));
+
       // eslint-disable-next-line ethlete/prefer-scroll-state
       fromEvent(body, 'scroll')
         .pipe(
           filter(() => !this.scrollTarget()),
-          map(() => ({ day: this.scrollDay(), scroll: { top: body.scrollTop, left: body.scrollLeft } })),
+          map(() => (unsaved = { day: this.scrollDay(), scroll: { top: body.scrollTop, left: body.scrollLeft } })),
           debounceTime(SCROLL_REMEMBER_DEBOUNCE_MS),
-          tap(({ day, scroll }) => rememberTimelineScroll(day, scroll)),
+          tap(({ day, scroll }) => {
+            unsaved = null;
+            rememberTimelineScroll(day, scroll);
+          }),
           takeUntilDestroyed(this.destroyRef),
         )
         .subscribe();
