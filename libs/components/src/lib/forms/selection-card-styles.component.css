@@ -44,17 +44,22 @@
     padding: var(--et-selection-card-padding);
     border-radius: var(--et-selection-card-border-radius);
     background-color: var(--et-surface-background-solid, transparent);
-    border: var(--et-selection-card-border-width) solid var(--et-surface-interaction-solid, currentColor);
+    border: var(--et-selection-card-border-width) solid
+      color-mix(
+        in oklab,
+        var(--et-surface-color-solid, currentColor) 43%,
+        var(--et-surface-background-solid, transparent)
+      );
 
     /* Every state guard sits in `:where()` so source order decides; the checked rule below relies on it. */
     @media (hover: hover) {
       &:where(:hover:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly]))) {
-        border-color: var(--et-surface-interaction-hover-solid, currentColor);
+        border-color: var(--et-surface-color-solid, currentColor);
       }
     }
 
     &:where(:active:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly]))) {
-      border-color: var(--et-surface-interaction-active-solid, currentColor);
+      border-color: var(--et-surface-color-solid, currentColor);
     }
 
     /* After hover/active so a chosen card keeps its accent under the cursor. */
@@ -98,6 +103,13 @@
 
     &:where([aria-checked='true'], :has(:is([aria-checked='true'], [aria-checked='mixed']))) .et-selection-card-label {
       color: var(--et-surface-color-solid, currentColor);
+    }
+
+    @media (hover: hover) {
+      &:where(:hover:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly])))
+        .et-selection-card-label {
+        color: var(--et-surface-color-solid, currentColor);
+      }
     }
 
     /* Outside `:where()` on purpose: these must outweigh the plain variant's host-level control rules. */

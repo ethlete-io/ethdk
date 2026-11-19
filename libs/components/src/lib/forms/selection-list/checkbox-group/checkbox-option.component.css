@@ -55,7 +55,14 @@
       block-size: var(--et-checkbox-option-size);
       border-radius: var(--et-checkbox-option-border-radius);
       border: var(--et-checkbox-option-border-width) solid
-        var(--_et-control-border, var(--et-surface-interaction-solid, currentColor));
+        var(
+          --_et-control-border,
+          color-mix(
+            in oklab,
+            var(--et-surface-color-solid, currentColor) 43%,
+            var(--et-surface-background-solid, transparent)
+          )
+        );
       background-color: transparent;
       display: grid;
       place-items: center;
@@ -88,7 +95,7 @@
 
     @media (hover: hover) {
       &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-checkbox-option-box {
-        border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
+        border-color: var(--_et-control-border, var(--et-surface-color-solid, currentColor));
         background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
       }
     }

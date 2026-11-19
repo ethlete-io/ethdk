@@ -103,7 +103,12 @@
       inline-size: var(--et-otp-input-segment-size);
       min-inline-size: 0;
       aspect-ratio: 1;
-      border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border: 1px solid
+        color-mix(
+          in oklab,
+          var(--et-surface-color-solid, currentColor) 43%,
+          var(--et-surface-background-solid, transparent)
+        );
       border-radius: var(--et-otp-input-segment-radius);
       font-size: calc(var(--et-otp-input-segment-size) * 0.45);
       font-variant-numeric: tabular-nums;
@@ -167,7 +172,11 @@
 
     @media (hover: hover) {
       &:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
-        border-color: var(--et-surface-interaction-hover-solid);
+        border-color: var(--et-surface-color-solid, currentColor);
+      }
+
+      &:not([data-error]):not(:has(.et-otp-input-native:read-only)):hover > et-label {
+        color: var(--et-surface-color-solid, currentColor);
       }
 
       &[data-error]:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {

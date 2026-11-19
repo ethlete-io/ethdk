@@ -457,7 +457,9 @@ test.describe('form-field / frame states', () => {
     ['textarea', TEXTAREA_STORY_ID],
   ] as const) {
     for (const surface of ['light', 'dark'] as const) {
-      test(`a resting ${control} frame sits near 3:1 and hover draws it near 4.5:1 (${surface})`, async ({ page }) => {
+      test(`a resting ${control} frame sits near 3:1 and hover draws it in the label colour (${surface})`, async ({
+        page,
+      }) => {
         const root = await openStory(page, storyId);
         const frame = root.locator('et-form-field .et-form-field-control-frame').first();
 
@@ -468,15 +470,18 @@ test.describe('form-field / frame states', () => {
             return ratio >= 3 && ratio <= 3.6 ? 'near 3:1' : ratio;
           })
           .toBe('near 3:1');
-        const rest = await contrastAgainstPage(frame, 'borderTopColor');
+        const label = root.locator('et-form-field .et-form-field-label-area').first();
 
         await frame.hover();
         await expect
           .poll(async () => {
-            const ratio = await contrastAgainstPage(frame, 'borderTopColor');
-            return ratio >= 4.3 && ratio <= 5 && ratio >= rest + 0.5 ? 'near 4.5:1' : ratio;
+            const [edge, ink] = [
+              await frame.evaluate((el) => getComputedStyle(el).borderTopColor),
+              await label.evaluate((el) => getComputedStyle(el).color),
+            ];
+            return edge === ink ? 'label colour' : `${edge} vs ${ink}`;
           })
-          .toBe('near 4.5:1');
+          .toBe('label colour');
       });
     }
   }

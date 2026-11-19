@@ -1,9 +1,10 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { expectTouchMode, openStory, pressKey, settle, tabSequence, tap } from '../support';
+import { contrastAgainstPage, expectTouchMode, openStory, pressKey, settle, tabSequence, tap } from '../support';
 
 const FOCUS_WALK_STORY_ID = 'components-forms-control-states--focus-walk';
 const READONLY_STORY_ID = 'components-forms-control-states--readonly';
 const DISABLED_STORY_ID = 'components-forms-control-states--disabled';
+const ALL_STATES_STORY_ID = 'components-forms-control-states--all-states';
 
 const BLOCK_SELECTOR =
   'et-form-field, et-choice-field, et-radio-group, et-checkbox-group, et-segmented-button-group, et-slider, et-range-slider, et-rating, et-otp-input, et-dropzone';
@@ -170,4 +171,121 @@ test.describe('control-states / touch', () => {
 
     expect(checkedAfter).toBe(checkedBefore);
   });
+});
+
+interface BorderedControl {
+  name: string;
+  hoverTarget: (column: Locator) => Locator;
+  border: string;
+  label: string;
+  hoverHost?: boolean;
+}
+
+const BORDERED_CONTROLS: readonly BorderedControl[] = [
+  ...(['et-input', 'et-textarea', 'et-select'] as const).map((tag) => ({
+    name: tag,
+    hoverTarget: (column: Locator) => column.locator(`et-form-field:has(${tag})`).first(),
+    border: '.et-form-field-control-frame',
+    label: '.et-form-field-label-area',
+  })),
+  {
+    name: 'checkbox',
+    hoverTarget: (column) => column.locator('et-choice-field:not([data-variant="card"]):has(et-checkbox)').first(),
+    border: '.et-checkbox-box',
+    label: '.et-choice-field-label-area',
+  },
+  {
+    name: 'checkbox card',
+    hoverTarget: (column) => column.locator('et-choice-field[data-variant="card"]:has(et-checkbox)').first(),
+    border: '.et-selection-card',
+    label: '.et-choice-field-label-area',
+  },
+  {
+    name: 'radio',
+    hoverTarget: (column) => column.locator('et-radio[aria-checked="false"]:not(.et-selection-card)').first(),
+    border: '.et-radio-circle',
+    label: '.et-radio-label',
+  },
+  {
+    name: 'radio card',
+    hoverTarget: (column) => column.locator('et-radio.et-selection-card[aria-checked="false"]').first(),
+    border: ':scope',
+    label: '.et-selection-card-label',
+  },
+  {
+    name: 'checkbox group option',
+    hoverTarget: (column) => column.locator('et-checkbox-option[aria-checked="false"]').first(),
+    border: '.et-checkbox-option-box',
+    label: '.et-checkbox-option-label',
+  },
+  {
+    name: 'otp input',
+    hoverTarget: (column) => column.locator('et-otp-input').first(),
+    border: '.et-otp-input-segment',
+    label: ':scope > et-label',
+    hoverHost: true,
+  },
+];
+
+async function renderAllOnSurface(root: Locator, surface: 'light' | 'dark'): Promise<void> {
+  await root.evaluate((host, name) => {
+    for (const el of [host, ...host.querySelectorAll('[class*="et-surface--"]')]) {
+      for (const cls of [...el.classList]) {
+        if (cls.startsWith('et-surface--')) el.classList.replace(cls, `et-surface--${name}`);
+      }
+    }
+    document.documentElement.style.colorScheme = name;
+    const scope = host.querySelector('et-form-field') ?? host;
+    document.documentElement.style.background = getComputedStyle(scope).getPropertyValue(
+      '--et-surface-background-solid',
+    );
+  }, surface);
+  await root.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+}
+
+async function colorOf(scope: Locator, selector: string, property: 'borderTopColor' | 'color'): Promise<string> {
+  return scope.evaluate(
+    (el, { selector, property }) => {
+      const target = selector === ':scope' ? el : el.querySelector(selector);
+      if (!target) throw new Error(`no ${selector}`);
+      return getComputedStyle(target)[property];
+    },
+    { selector, property },
+  );
+}
+
+test.describe('control-states / borders', () => {
+  for (const surface of ['dark', 'light'] as const) {
+    for (const control of BORDERED_CONTROLS) {
+      test(`a resting ${control.name} border sits near 3:1 and hovers in its label colour (${surface})`, async ({
+        page,
+      }) => {
+        const root = await openStory(page, ALL_STATES_STORY_ID);
+        const target = control.hoverTarget(root.locator('et-sb-control-states-column').first());
+        const border = control.border === ':scope' ? target : target.locator(control.border).first();
+
+        const checked = target.locator('[aria-checked="true"]');
+        if (await checked.count()) await checked.first().click();
+        await renderAllOnSurface(root, surface);
+        await page.mouse.move(0, 0);
+        await expect
+          .poll(async () => {
+            const ratio = await contrastAgainstPage(border, 'borderTopColor');
+            return ratio >= 3 && ratio <= 4 ? 'near 3:1' : ratio;
+          })
+          .toBe('near 3:1');
+
+        await (control.hoverHost ? target : border).hover();
+        await expect
+          .poll(async () => {
+            const [edge, label] = [
+              await colorOf(target, control.border, 'borderTopColor'),
+              await colorOf(target, control.label, 'color'),
+            ];
+            return edge === label ? 'label colour' : `${edge} vs ${label}`;
+          })
+          .toBe('label colour');
+      });
+    }
+  }
 });

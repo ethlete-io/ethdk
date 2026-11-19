@@ -58,11 +58,7 @@
       );
       --_et-form-field-frame-border-hover: var(
         --et-form-field-control-border-color-hover,
-        color-mix(
-          in oklab,
-          var(--et-surface-color-solid, currentColor) 53.5%,
-          var(--et-surface-background-solid, transparent)
-        )
+        var(--_et-form-field-label-color-active)
       );
       --_et-form-field-frame-focus: var(
         --et-form-field-control-border-color-focus,

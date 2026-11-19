@@ -261,12 +261,13 @@ control trailing, and the selection shows on the panel's border as well as in th
 control.
 
 In this variant the **label carries the selection too** - muted until the option
-is chosen, full strength once it is. Hover and focus are answered by the panel,
-not by the label, so an unselected card under the cursor never reads as selected.
+is chosen, full strength once it is. Hover lifts the label and the panel border to
+the same full-strength surface text colour; the accent stays reserved for focus and
+selection, so an unselected card under the cursor never reads as selected.
 
 The panel's chrome follows the **`et-form-field` frame**: a neutral border at
-rest, `--et-surface-interaction-hover-solid` on hover and
-`--et-surface-interaction-active-solid` on press, the accent on focus, and the
+rest (near 3:1 against the surface), the label's hover colour (the surface text
+colour) on hover and press, the accent on focus, and the
 accent while selected. There is no tinted fill - the background stays the
 surface, so a selected card differs from its neighbours by its border alone.
 Because each card is `[etColorInteractive]`, a **selected** card's border also
@@ -589,6 +590,11 @@ assistive tech (it reflects `aria-checked="mixed"`; the switch keeps
   [Validation & accessibility](/components/forms#validation-accessibility).
 
 ## Theming
+
+An unchecked checkbox, radio, checkbox option and select-all box draws its border
+like a text field frame: near 3:1 against the surface at rest (a mix of the surface
+text colour into its background), and on hover the same colour as its label's hover
+colour, the surface text colour. Checked and error states keep the theme colour.
 
 Public design tokens (override them in your CSS scope):
 

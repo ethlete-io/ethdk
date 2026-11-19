@@ -57,7 +57,12 @@
       place-items: center;
       width: var(--et-checkbox-size);
       height: var(--et-checkbox-size);
-      border: var(--et-checkbox-border-width) solid var(--et-surface-interaction-solid, currentColor);
+      border: var(--et-checkbox-border-width) solid
+        color-mix(
+          in oklab,
+          var(--et-surface-color-solid, currentColor) 43%,
+          var(--et-surface-background-solid, transparent)
+        );
       border-radius: var(--et-checkbox-border-radius);
     }
 
@@ -71,7 +76,7 @@
       :where(et-choice-field:has(.et-choice-field-label-area:hover))
         &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
         .et-checkbox-box {
-        border-color: var(--et-surface-interaction-hover-solid, currentColor);
+        border-color: var(--et-surface-color-solid, currentColor);
       }
     }
 
@@ -154,7 +159,7 @@
     :where(et-choice-field:has(.et-choice-field-label-area:active))
       &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
       .et-checkbox-box {
-      border-color: var(--et-surface-interaction-hover-solid, currentColor);
+      border-color: var(--et-surface-color-solid, currentColor);
       transform: scale(0.95);
     }
 

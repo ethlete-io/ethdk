@@ -15,7 +15,12 @@
     place-items: center;
     inline-size: var(--et-checkbox-option-size, 20px);
     block-size: var(--et-checkbox-option-size, 20px);
-    border: var(--et-checkbox-option-border-width, 2px) solid var(--et-surface-interaction-solid, currentColor);
+    border: var(--et-checkbox-option-border-width, 2px) solid
+      color-mix(
+        in oklab,
+        var(--et-surface-color-solid, currentColor) 43%,
+        var(--et-surface-background-solid, transparent)
+      );
     border-radius: var(--et-checkbox-option-border-radius, 4px);
     transition:
       border-color var(--et-checkbox-option-transition-duration, 150ms) ease,
@@ -63,7 +68,7 @@
         [aria-disabled='true']
       ):not([aria-readonly='true'])
       .et-checkbox-group-select-all-box {
-      border-color: var(--et-surface-interaction-hover-solid, currentColor);
+      border-color: var(--et-surface-color-solid, currentColor);
       background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
     }
   }

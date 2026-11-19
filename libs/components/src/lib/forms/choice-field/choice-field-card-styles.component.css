@@ -48,6 +48,13 @@
       color: var(--et-surface-color-solid, currentColor);
     }
 
+    @media (hover: hover) {
+      &:where(:has(.et-choice-field-control:hover)):where(:not(:has([aria-disabled='true'], [data-readonly])))
+        .et-choice-field-label-area {
+        color: var(--et-surface-color-solid, currentColor);
+      }
+    }
+
     /* Opacity on top of the shared border/background transition, for the one-unit dim above. */
     &[data-can-animate] .et-choice-field-control {
       transition:
