@@ -239,7 +239,7 @@ counter leaves the frame at rest.
 
 A text field's frame sits near 3:1 against its surface at rest, in light and dark
 (a mix of the surface text colour into its background), and keeps at least 3:1 in
-error. Hover draws it stronger. Focus keeps the 1px border and turns it
+error. Hover draws it near 4.5:1 with the same mix. Focus keeps the 1px border and turns it
 the theme colour (the error theme's ink while erroring); hover leaves it alone,
 and there is no halo. The placeholder keeps 4.5:1 and stays lighter than the value.
 
