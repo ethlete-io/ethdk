@@ -80,6 +80,7 @@
       justify-content: center;
       inline-size: var(--et-progress-step-marker-size);
       block-size: var(--et-progress-step-marker-size);
+      flex-shrink: 0;
       border-radius: 50%;
       border: var(--et-progress-step-marker-ring-width) solid
         var(--et-progress-step-marker-ring-color, var(--et-surface-border-solid, currentColor));
