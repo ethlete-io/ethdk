@@ -1,9 +1,12 @@
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { provideAccordionConfig } from '../accordion-config';
 import {
+  AccordionConfigStorybookComponent,
   AccordionExpensiveStorybookComponent,
   AccordionHeadlessStorybookComponent,
   AccordionLazyStorybookComponent,
   AccordionStorybookComponent,
+  AccordionTokensStorybookComponent,
 } from './accordion-storybook.component';
 
 export default {
@@ -86,6 +89,38 @@ export const Headless: Story = {
           'nothing else. This one is a stack of step cards with its own animation: the panel stays mounted and ' +
           'grows its grid track and fades in off `data-open`, gated on `data-can-animate` so a step that starts ' +
           'open does not animate in.',
+      },
+    },
+  },
+};
+
+export const TriggerTokens: StoryObj = {
+  render: () => ({ template: '<et-sb-accordion-tokens />' }),
+  decorators: [moduleMetadata({ imports: [AccordionTokensStorybookComponent] })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`--et-accordion-trigger-hover-background` and `--et-accordion-trigger-active-background` set to ' +
+          '`transparent` drop the fill; `--et-accordion-header-padding-inline` (3px) and ' +
+          '`--et-accordion-header-padding-inline-end` (17px) inset the label and the chevron differently.',
+      },
+    },
+  },
+};
+
+export const ProvidedLastDivider: StoryObj = {
+  render: () => ({ template: '<et-sb-accordion-config />' }),
+  decorators: [
+    moduleMetadata({ imports: [AccordionConfigStorybookComponent] }),
+    applicationConfig({ providers: [provideAccordionConfig({ lastDivider: true })] }),
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`provideAccordionConfig({ lastDivider: true })` keeps the last hairline on every group. The second ' +
+          'group sets `[lastDivider]="false"` and drops it again: an explicit input wins.',
       },
     },
   },

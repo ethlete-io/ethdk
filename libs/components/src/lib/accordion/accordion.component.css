@@ -90,6 +90,10 @@
     inline-size: 100%;
     padding: calc(var(--_et-accordion-header-padding-block) - var(--_et-accordion-tint-inset))
       var(--et-accordion-header-padding-inline, var(--et-accordion-padding-inline));
+    padding-inline-end: var(
+      --et-accordion-header-padding-inline-end,
+      var(--et-accordion-header-padding-inline, var(--et-accordion-padding-inline))
+    );
     border: 0;
     border-radius: var(--et-accordion-radius);
     background: transparent;
@@ -102,7 +106,10 @@
 
     @media (hover: hover) {
       &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
+        background: var(
+          --et-accordion-trigger-hover-background,
+          color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent)
+        );
 
         &:not([aria-disabled='true']) {
           --_et-accordion-secondary-color: var(--et-surface-color-solid, CanvasText);
@@ -111,7 +118,10 @@
     }
 
     &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 14%, transparent);
+      background: var(
+        --et-accordion-trigger-active-background,
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 14%, transparent)
+      );
     }
 
     &:focus-visible {

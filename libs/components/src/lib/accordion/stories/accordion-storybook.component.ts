@@ -278,3 +278,48 @@ export class AccordionHeadlessStorybookComponent {
     },
   ];
 }
+
+@Component({
+  selector: 'et-sb-accordion-tokens',
+  template: `
+    <div class="text-medium flex flex-col gap-8 p-8 font-sans" etProvideSurface="dark">
+      <et-accordion-group
+        [style.max-inline-size.px]="560"
+        style="
+          --et-accordion-trigger-hover-background: transparent;
+          --et-accordion-trigger-active-background: transparent;
+          --et-accordion-header-padding-inline: 3px;
+          --et-accordion-header-padding-inline-end: 17px;
+        "
+      >
+        <et-accordion label="Label at 3px, chevron at 17px, no hover fill" isOpenByDefault>
+          The trigger fill is transparent on hover and press, and the label and chevron insets differ.
+        </et-accordion>
+        <et-accordion label="Second item">Second panel.</et-accordion>
+      </et-accordion-group>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [ACCORDION_IMPORTS, ProvideSurfaceDirective],
+})
+export class AccordionTokensStorybookComponent {}
+
+@Component({
+  selector: 'et-sb-accordion-config',
+  template: `
+    <div class="text-medium flex flex-col gap-8 p-8 font-sans" etProvideSurface="dark">
+      <et-accordion-group [style.max-inline-size.px]="560">
+        <et-accordion label="Provider default">The last hairline comes from provideAccordionConfig.</et-accordion>
+        <et-accordion label="Last item">Last panel.</et-accordion>
+      </et-accordion-group>
+
+      <et-accordion-group [lastDivider]="false" [style.max-inline-size.px]="560">
+        <et-accordion label="Explicit false">The input wins over the provider.</et-accordion>
+        <et-accordion label="Last item">Last panel.</et-accordion>
+      </et-accordion-group>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [ACCORDION_IMPORTS, ProvideSurfaceDirective],
+})
+export class AccordionConfigStorybookComponent {}
