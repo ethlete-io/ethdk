@@ -11,6 +11,7 @@
   "PAGINATION_SIZES": "constant: value set of the pagination size input",
   "PipCollapseOverlayDirective": "S8b stream: internal to et-pip-window, collapse is a drag gesture - e2e",
   "PipTitleBarDirective": "S8b stream: internal to et-pip-window, drag is a pointer gesture - e2e",
+  "SEGMENTED_BUTTON_GROUP_OVERFLOWS": "constant: value set of the segmented button group overflow input",
   "SELECTION_LIST_ERROR_CODES": "spec: libs/components/src/lib/forms/selection-list/selection-list-errors.spec.ts",
   "TAB_BAR_ALIGNS": "constant: value set of the tab bar align input",
   "dateTimeRangeOrder": "spec: libs/components/src/lib/forms/date-time/date-time-range-validators.spec.ts",
