@@ -477,10 +477,10 @@
     "pid": 3133782
   },
   "components/textarea": {
-    "hash": "48a1911479461cc4",
+    "hash": "a6e013b681343e20",
     "files": {
       ".ethlete/design/sdk/components/textarea/textarea.css": "e0a2d2284eeab65d",
-      ".ethlete/design/sdk/components/textarea/textarea.ts": "d8ef7e9a68136852",
+      ".ethlete/design/sdk/components/textarea/textarea.ts": "b07767d016e5cc00",
       "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
       "libs/components/design/textarea.ts": "d111b478450a84d9",
       "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
@@ -500,10 +500,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-17T20:18:45.858Z",
+    "at": "2026-11-19T01:57:49.457Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 804051
+    "pid": 3136272
   },
   "foundations/colors": {
     "hash": "5dce981a59c816ce",
