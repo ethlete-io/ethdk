@@ -18,6 +18,7 @@ import {
   StandingPick,
   StandingsComponent,
   StandingsDirective,
+  StandingsFormTooltipDirective,
   StandingsPickComponent,
   StandingsPickDirective,
   StandingsPickMarkDirective,
@@ -127,6 +128,30 @@ class GroupTableComponent {
 })
 class PlainTableComponent {
   rows = GROUP.placements.map(normalizeEthletePlacement).map((row) => ({ ...row, difference: null }));
+}
+
+@Component({
+  selector: 'et-scenario-form-tooltip-cards',
+  imports: [StandingsDirective, StandingsFormTooltipDirective, NgTemplateOutlet],
+  template: `
+    <section #table="etStandings" [rows]="rows" etStandings>
+      @let tooltip = table.registeredFormTooltipTemplate();
+      @if (tooltip) {
+        @for (entry of table.renderRows(); track entry.row.id) {
+          <ng-container *ngTemplateOutlet="tooltip.templateRef; context: { $implicit: null, row: entry.row }" />
+        }
+      }
+      @if (custom()) {
+        <ng-template let-entry let-row="row" etStandingsFormTooltip>
+          <p class="card">{{ row.participant?.name ?? 'Open slot' }}</p>
+        </ng-template>
+      }
+    </section>
+  `,
+})
+class FormTooltipCardsComponent {
+  rows = GROUP.placements.map(normalizeEthletePlacement);
+  custom = signal(true);
 }
 
 @Component({
@@ -596,6 +621,23 @@ describe('standings scenarios', () => {
 
     expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual(['false', 'true', 'false', 'false']);
     expect(queryAll('.detail', host).map(text)).toEqual(['4 points']);
+  });
+
+  it('hands a registered form tooltip template to headless cards and drops it with the template', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(FormTooltipCardsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    expect(queryAll('.card', host).length).toBe(GROUP.placements.length);
+
+    fixture.componentInstance.custom.set(false);
+    s.tick();
+    s.flush();
+
+    expect(queryAll('.card', host)).toEqual([]);
   });
 
   it('refuses a second row detail template on one table', () => {
