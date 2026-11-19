@@ -105,6 +105,10 @@ export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-sessi
   workedIn?: string;
   /** The session's own summary line, when it has one. */
   title?: string;
+  /** Set on a sample of a subagent's run, never on the parent session's own samples. */
+  agentId?: string;
+  /** First line of the instructions a subagent was given. Set with `agentId`. */
+  agentTask?: string;
 };
 
 /**
@@ -160,6 +164,9 @@ export type AgentUsageEvent = CollectedEventBase<'agent-usage', 'agent-usage'> &
 /** Who asked for a prompt. A machine prompt is a schedule, a task notification or another session. */
 export type PromptAskedBy = 'human' | 'machine';
 
+/** Who wrote a machine prompt: a subagent handing back, another session, or the agent itself. */
+export type PromptSenderKind = 'subagent' | 'session' | 'system';
+
 /**
  * One prompt an agent was given: its instant, its session and the checkout it was given in.
  *
@@ -192,6 +199,10 @@ export type AgentPromptEvent = CollectedEventBase<'agent-prompt', 'agent-prompt'
    * Codex prompt is, and those keep counting as a person.
    */
   askedBy?: PromptAskedBy;
+  /** First line of a machine prompt, trimmed and capped. Absent on a human prompt. */
+  text?: string;
+  /** Who wrote a machine prompt, where the log shows it. Absent on a human prompt. */
+  senderKind?: PromptSenderKind;
 };
 
 /**

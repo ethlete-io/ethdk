@@ -1,5 +1,13 @@
 import { isReadableSummary } from '../model/acknowledgement';
-import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, PromptAskedBy, TokenUsage } from '../model/event';
+import { MAX_REASONING_NOTE_LENGTH, clippedReasoningText } from '../reason/model';
+import {
+  AgentPromptEvent,
+  AgentSessionEvent,
+  AgentUsageEvent,
+  PromptAskedBy,
+  PromptSenderKind,
+  TokenUsage,
+} from '../model/event';
 import { pathIsUnder } from '../model/project-link';
 import { asJsonObject, countAt, objectAt, stringAt } from './record';
 import {
@@ -17,7 +25,7 @@ const SYNTHETIC_MODEL = '<synthetic>';
 
 type ActivityRecord = { at: Date; sessionId: string; cwd: string; gitBranch?: string };
 
-type WorkedRecord = ActivityRecord & { workedIn: string };
+type WorkedRecord = ActivityRecord & { workedIn: string; agentId?: string; agentTask?: string };
 
 type TitleCandidates = { custom?: string; generated?: string; firstPrompt?: string };
 
@@ -528,6 +536,38 @@ const askedByOf = (record: Record<string, unknown>, text: string): PromptAskedBy
   return HUMAN_PROMPT_SOURCES.includes(source) ? 'human' : 'machine';
 };
 
+const firstLineOf = (text: string | undefined) => {
+  const line = text
+    ?.split('\n')
+    .map((part) => part.replace(/<[^>]*>/g, '').trim())
+    .find((part) => part && part !== 'Another Claude session sent a message:');
+
+  return line ? clippedReasoningText(line, MAX_REASONING_NOTE_LENGTH) : undefined;
+};
+
+const machineTextOf = (record: Record<string, unknown>, content: string) => {
+  const origin = objectAt(record, 'origin');
+  const summary = /<summary>([\s\S]*?)<\/summary>/.exec(content)?.[1];
+
+  return firstLineOf(
+    (origin && (stringAt(origin, 'handbackReportText') ?? stringAt(origin, 'body'))) || summary || content,
+  );
+};
+
+const senderKindOf = (record: Record<string, unknown>, content: string): PromptSenderKind => {
+  const origin = objectAt(record, 'origin');
+
+  if (origin?.['handback'] === true || content.includes('[Subagent hand-back]')) return 'subagent';
+
+  return (origin && stringAt(origin, 'kind') === 'peer') || isTypedByProgram(content) ? 'session' : 'system';
+};
+
+const machinePromptOf = (record: Record<string, unknown>, content: string) => {
+  const text = machineTextOf(record, content);
+
+  return { ...(text ? { text } : {}), senderKind: senderKindOf(record, content) };
+};
+
 /**
  * The prompt an agent was given, or `null` for every other record.
  *
@@ -577,6 +617,7 @@ const promptOf = (
     gitBranch: activity.gitBranch,
     workedIn: workedIn ?? activity.cwd,
     ...(askedBy ? { askedBy } : {}),
+    ...(askedBy === 'machine' ? machinePromptOf(record, message['content']) : {}),
   };
 };
 
@@ -646,7 +687,7 @@ const leftCwdFor = (record: WorkedRecord) => {
  * The version of the parse rules below. Raise it with every change that alters what a log already read
  * would store: the collector then reads each stored log again from its top, without anyone asking.
  */
-export const CLAUDE_CODE_PARSER_VERSION = 5;
+export const CLAUDE_CODE_PARSER_VERSION = 6;
 
 /** The log group of a Claude Code log id: a subagent's log sits under its parent session's id. */
 export const claudeCodeLogGroupOf = (logId: string) => logId.split('/')[0] ?? logId;
@@ -678,6 +719,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const usageByTurnId = new Map<string, AgentUsageEvent>();
   const promptById = new Map<string, AgentPromptEvent>();
   const enqueued = new Map<string, Date[]>();
+  const taskByAgent = new Map<string, string>();
   let clearedAt: Date | undefined;
   let unparsedLines = 0;
   let workedIn = options.resume?.session?.workedIn;
@@ -714,10 +756,18 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     if (prompt && !promptById.has(prompt.promptId)) promptById.set(prompt.promptId, prompt);
 
     const record = activityOf(parsed);
+    const agentId = record ? stringAt(parsed, 'agentId') : undefined;
+
+    if (agentId && !taskByAgent.has(agentId)) {
+      const content = stringAt(objectAt(parsed, 'message') ?? {}, 'content');
+      const task = parsed['isSidechain'] === true && parsed['type'] === 'user' ? firstLineOf(content) : undefined;
+
+      if (task) taskByAgent.set(agentId, task);
+    }
 
     if (!record || (after && record.at.getTime() <= after.getTime())) continue;
 
-    records.push({ ...record, workedIn: workedIn ?? record.cwd });
+    records.push({ ...record, workedIn: workedIn ?? record.cwd, ...(agentId ? { agentId } : {}) });
   }
 
   records.sort((a, b) => a.at.getTime() - b.at.getTime());
@@ -736,13 +786,15 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   };
   const finalIndexOf = new Map<string, number>();
 
-  records.forEach((record, index) => finalIndexOf.set(record.sessionId, index));
+  const streamOf = (record: WorkedRecord) => `${record.sessionId}\u0000${record.agentId ?? ''}`;
+
+  records.forEach((record, index) => finalIndexOf.set(streamOf(record), index));
 
   const emitted = new Map<string, { at: number; context: string }>();
   const events: AgentSessionEvent[] = [];
 
   const emit = (record: WorkedRecord) => {
-    emitted.set(record.sessionId, { at: record.at.getTime(), context: contextOf(record) });
+    emitted.set(streamOf(record), { at: record.at.getTime(), context: contextOf(record) });
     events.push({
       at: record.at,
       source: 'agent-session',
@@ -752,11 +804,17 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
       gitBranch: record.gitBranch,
       workedIn: record.workedIn,
       title,
+      ...(record.agentId
+        ? {
+            agentId: record.agentId,
+            ...(taskByAgent.has(record.agentId) ? { agentTask: taskByAgent.get(record.agentId) } : {}),
+          }
+        : {}),
     });
   };
 
   records.forEach((record, index) => {
-    const previous = emitted.get(record.sessionId);
+    const previous = emitted.get(streamOf(record));
 
     if (!previous) {
       emit(record);
@@ -765,7 +823,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     }
 
     const elapsed = record.at.getTime() - previous.at;
-    const isFinal = finalIndexOf.get(record.sessionId) === index;
+    const isFinal = finalIndexOf.get(streamOf(record)) === index;
 
     if (previous.context !== contextOf(record) || elapsed >= interval || (isFinal && elapsed > 0)) emit(record);
   });

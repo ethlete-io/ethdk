@@ -880,3 +880,149 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     expect(workedIn(next.events)).toEqual([ALTCHA_DIR]);
   });
 });
+
+describe('subagent samples and machine prompts, from captured records', () => {
+  const PARENT = '4e85c8d9-28ba-49e8-9a82-a2b9b1a97fc7';
+  const AGENT = 'adaf31484fc75e37d';
+  const ts = (minute: number) => at(minute).toISOString();
+
+  const subagentPrompt = (minute: number) =>
+    JSON.stringify({
+      parentUuid: null,
+      isSidechain: true,
+      promptId: 'e19ca51b-7a9b-4449-85ef-b71cbefa84b7',
+      agentId: AGENT,
+      type: 'user',
+      message: {
+        role: 'user',
+        content:
+          'You fix a CI flake in /home/user/dev/client-frontend (branch next).\n\nFacts:\n- CI runs failed in Unit tests: a spec timed out at 5000 ms.',
+      },
+      uuid: 'b1',
+      timestamp: ts(minute),
+      cwd: CWD,
+      sessionId: PARENT,
+      gitBranch: 'next',
+    });
+
+  const subagentTurn = (minute: number) =>
+    JSON.stringify({
+      parentUuid: 'b1',
+      isSidechain: true,
+      agentId: AGENT,
+      type: 'assistant',
+      message: { id: `msg_${minute}`, model: 'claude-opus-5', role: 'assistant', content: [] },
+      uuid: `b-${minute}`,
+      timestamp: ts(minute),
+      cwd: CWD,
+      sessionId: PARENT,
+      gitBranch: 'next',
+    });
+
+  const machinePrompt = (minute: number, origin: Record<string, unknown>, content: string) =>
+    JSON.stringify({
+      parentUuid: 'p0',
+      isSidechain: false,
+      type: 'user',
+      message: { role: 'user', content },
+      uuid: `m-${minute}`,
+      timestamp: ts(minute),
+      origin,
+      cwd: CWD,
+      sessionId: PARENT,
+      gitBranch: 'next',
+    });
+
+  it('stamps a subagent sample with its id and the first line of its instructions', () => {
+    const result = parse([subagentPrompt(0), subagentTurn(1)]);
+
+    expect(result.events.length).toBeGreaterThan(0);
+    for (const event of result.events) {
+      expect(event).toMatchObject({
+        sessionId: PARENT,
+        agentId: AGENT,
+        agentTask: 'You fix a CI flake in /home/user/dev/client-frontend (branch next).',
+      });
+    }
+  });
+
+  it('leaves a main-session sample without an agent id or a task', () => {
+    const [event] = parse([record({ minute: 0 })]).events;
+
+    expect(event).not.toHaveProperty('agentId');
+    expect(event).not.toHaveProperty('agentTask');
+  });
+
+  it('does not count a subagent record as a prompt', () => {
+    expect(parse([subagentPrompt(0), subagentTurn(1)]).prompts).toEqual([]);
+  });
+
+  it('keeps a subagent hand-back as machine, with the first line of its report', () => {
+    const [event] = parse([
+      machinePrompt(
+        3,
+        {
+          kind: 'peer',
+          from: AGENT,
+          name: 'general-purpose',
+          handback: true,
+          handbackReportText: '  Nothing was fixed.\n\nDetails follow.',
+        },
+        'Another Claude session sent a message:\n<agent-message from="adaf31484fc75e37d">\n[Subagent hand-back] The text below is the final report',
+      ),
+    ]).prompts;
+
+    expect(event).toMatchObject({ askedBy: 'machine', senderKind: 'subagent', text: 'Nothing was fixed.' });
+  });
+
+  it('keeps a cross-session message as machine, from the body of the peer origin', () => {
+    const [event] = parse([
+      machinePrompt(
+        4,
+        {
+          kind: 'peer',
+          from: 'uds:/run/user/1000/cc-socks/1.sock',
+          name: 'sdk-a6',
+          body: 'Approved. Copy ready.json to /tmp.\nThen merge.',
+        },
+        'Another Claude session sent a message:\n<cross-session-message from="uds:/run/user/1000/cc-socks/1.sock">\nApproved. Copy ready.json to /tmp.',
+      ),
+    ]).prompts;
+
+    expect(event).toMatchObject({
+      askedBy: 'machine',
+      senderKind: 'session',
+      text: 'Approved. Copy ready.json to /tmp.',
+    });
+  });
+
+  it('keeps a task notification as system, with its summary', () => {
+    const [event] = parse([
+      machinePrompt(
+        5,
+        { kind: 'task-notification', producer: 'session-task' },
+        '<task-notification>\n<task-id>adaf31484fc75e37d</task-id>\n<status>completed</status>\n<summary>Agent "Fix spec timeout" completed</summary>\n</task-notification>',
+      ),
+    ]).prompts;
+
+    expect(event).toMatchObject({
+      askedBy: 'machine',
+      senderKind: 'system',
+      text: 'Agent "Fix spec timeout" completed',
+    });
+  });
+
+  it('caps the text at the length of other quoted notes', () => {
+    const [event] = parse([machinePrompt(6, { kind: 'peer', body: 'x'.repeat(500) }, 'x')]).prompts;
+
+    expect(event?.text).toHaveLength(200);
+    expect(event?.text?.endsWith('…')).toBe(true);
+  });
+
+  it('gives a human prompt neither a text nor a sender', () => {
+    const [event] = parse([prompt({ minute: 7, extra: { origin: { kind: 'human' } } })]).prompts;
+
+    expect(event).not.toHaveProperty('text');
+    expect(event).not.toHaveProperty('senderKind');
+  });
+});
