@@ -24,67 +24,25 @@ export const isDayHeldByTempo = (options: {
   coverage: Pick<TempoDayCoverage, 'issues'> | null;
 }) => options.ledger.length > 0 || !!options.coverage?.issues.length;
 
-/** The machine a day belongs to (Timetrack ADR 0041): this one, or the paired machine that booked it. */
-export type DayOwner = { kind: 'self' } | { kind: 'peer'; machineId: string };
+const holdsWork = (rows: DayRows) => rows.proposals.length > 0 || rows.unnamed.length > 0 || rows.filledMs > 0;
 
 /**
- * Who owns a day: this machine once it wrote to Tempo on it, else a paired machine whose sent rows of
- * the day hold a booked one, else nobody.
- */
-export const dayOwnerOf = (options: {
-  /** What this app wrote to Tempo on the day. */
-  ledger: readonly SyncedWorklog[];
-  /** The rows each paired machine sent for the day, by machine id. */
-  peerRows: Readonly<Record<string, PeerDayRows>>;
-}): DayOwner | null => {
-  if (options.ledger.length > 0) return { kind: 'self' };
-
-  const machineId = Object.keys(options.peerRows)
-    .sort()
-    .find((id) => options.peerRows[id]?.rows.some((row) => row.state === 'booked'));
-
-  return machineId ? { kind: 'peer', machineId } : null;
-};
-
-const withoutWork = (rows: DayRows): DayRows => {
-  const { handedOver: _handedOver, remote: _remote, ...kept } = rows;
-
-  return {
-    ...kept,
-    proposals: [],
-    unattributed: [],
-    unnamed: [],
-    unobserved: [],
-    suggested: [],
-    calls: [],
-    timers: [],
-    filledMs: 0,
-    behind: [],
-  };
-};
-
-/**
- * The edits with the day's rows frozen into them, or `null` when nothing is to be frozen: no machine
- * owns the day ({@link dayOwnerOf}), this machine does and the day is still running, or its rows are
- * frozen already. A day a paired machine owns is frozen with none of this machine's work in it, so
- * nothing here proposes, syncs or auto-names it; the rows that machine sent are drawn over it instead.
+ * The edits with the day's rows frozen into them, or `null` when nothing changes. Only a finished day this
+ * machine wrote to Tempo on is frozen (Timetrack ADR 0038); a paired machine's booking never freezes it.
+ * A stored freeze with no work in it and no worklog of this machine behind it is dropped.
  */
 export const withFrozenRows = (options: {
   edits: DayReviewEdits;
   rows: DayRows;
   /** What this app wrote to Tempo on the day. */
   ledger: readonly SyncedWorklog[];
-  /** The rows each paired machine sent for the day, by machine id. */
-  peerRows: Readonly<Record<string, PeerDayRows>>;
   finished: boolean;
 }): DayReviewEdits | null => {
-  if (options.edits.frozenRows) return null;
+  const { frozenRows, ...unfrozen } = options.edits;
 
-  const owner = dayOwnerOf(options);
+  if (frozenRows) return options.ledger.length === 0 && !holdsWork(frozenRows) ? unfrozen : null;
 
-  if (owner?.kind === 'peer') return { ...options.edits, frozenRows: withoutWork(options.rows) };
-
-  return owner && options.finished ? { ...options.edits, frozenRows: options.rows } : null;
+  return options.ledger.length > 0 && options.finished ? { ...options.edits, frozenRows: options.rows } : null;
 };
 
 /** A paired machine's work on a frozen day that the frozen rows do not hold. Drawn, never booked here. */

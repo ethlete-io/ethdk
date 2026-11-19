@@ -930,7 +930,6 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       edits: edits(),
       rows,
       ledger: loaded.entries,
-      peerRows: peerDayRows(),
       finished: !isToday(),
     });
 

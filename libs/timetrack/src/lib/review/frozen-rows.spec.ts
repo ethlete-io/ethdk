@@ -3,7 +3,7 @@ import { SyncedWorklog, WorklogProposal } from '../model/proposal';
 import { DayRows } from '../rows/build-rows';
 import { setRowDescription } from './edits';
 import { planTempoSync } from '../tempo/diff';
-import { changedAfterBooking, dayOwnerOf, frozenDayPeerBands, isDayHeldByTempo, withFrozenRows } from './frozen-rows';
+import { changedAfterBooking, frozenDayPeerBands, isDayHeldByTempo, withFrozenRows } from './frozen-rows';
 import { EMPTY_DAY_REVIEW_EDITS, isNamedRow } from './model';
 import { PeerDayRows } from './peer-rows';
 import { reviewDay } from './review-day';
@@ -80,7 +80,6 @@ describe('a day Tempo holds', () => {
       edits: describedOn(booked),
       rows: booked,
       ledger: LEDGER,
-      peerRows: {},
       finished: true,
     });
 
@@ -93,14 +92,13 @@ describe('a day Tempo holds', () => {
   it('freezes nothing on a day Tempo does not hold, one still running, or one already frozen', () => {
     const edits = describedOn(booked);
 
-    expect(withFrozenRows({ edits, rows: booked, ledger: [], peerRows: {}, finished: true })).toBeNull();
-    expect(withFrozenRows({ edits, rows: booked, ledger: LEDGER, peerRows: {}, finished: false })).toBeNull();
+    expect(withFrozenRows({ edits, rows: booked, ledger: [], finished: true })).toBeNull();
+    expect(withFrozenRows({ edits, rows: booked, ledger: LEDGER, finished: false })).toBeNull();
     expect(
       withFrozenRows({
         edits: { ...edits, frozenRows: booked },
         rows: recut,
         ledger: LEDGER,
-        peerRows: {},
         finished: true,
       }),
     ).toBeNull();
@@ -274,74 +272,33 @@ describe('a frozen day a paired machine sent its rows for', () => {
 describe('a day only a paired machine booked', () => {
   const FUT = 'repo:/home/dev/fut-frontend';
   const own = dayRows([proposal({ issueKey: 'FUT-9', from: '13:00', to: '16:00', laneKey: FUT })]);
-  const sentAs = (state: PeerDayRows['rows'][number]['state']): PeerDayRows => ({
-    day: '2026-10-01',
-    frozen: state === 'booked',
-    rows: [
-      {
-        laneKey: FUT,
-        from: at('13:15'),
-        to: at('15:00'),
-        issueKey: 'FUT-1',
-        description: 'a',
-        state,
-        ...(state === 'booked' ? { worklogId: '7' } : {}),
-      },
-    ],
-  });
-  const bookedThere = { 'mac-id': sentAs('booked') };
-  const frozenOf = (finished: boolean) =>
-    withFrozenRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: own, ledger: [], peerRows: bookedThere, finished });
 
-  it('is owned by the machine that booked it, and by this one once it wrote to Tempo itself', () => {
-    expect(dayOwnerOf({ ledger: [], peerRows: bookedThere })).toEqual({ kind: 'peer', machineId: 'mac-id' });
-    expect(dayOwnerOf({ ledger: LEDGER, peerRows: bookedThere })).toEqual({ kind: 'self' });
-    expect(dayOwnerOf({ ledger: [], peerRows: { 'mac-id': sentAs('accepted') } })).toBeNull();
-    expect(dayOwnerOf({ ledger: [], peerRows: {} })).toBeNull();
+  it('is not frozen, finished or still running', () => {
+    expect(withFrozenRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: own, ledger: [], finished: true })).toBeNull();
+    expect(withFrozenRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: own, ledger: [], finished: false })).toBeNull();
   });
 
-  it('is frozen with none of this machine’s work, finished or still running', () => {
-    expect(frozenOf(true)?.frozenRows?.proposals).toEqual([]);
-    expect(frozenOf(false)?.frozenRows?.proposals).toEqual([]);
+  it('is frozen with its own rows once this machine booked it', () => {
     expect(
       withFrozenRows({
         edits: EMPTY_DAY_REVIEW_EDITS,
         rows: own,
-        ledger: [],
-        peerRows: { 'mac-id': sentAs('accepted') },
+        ledger: LEDGER,
         finished: true,
-      }),
-    ).toBeNull();
+      })?.frozenRows,
+    ).toEqual(own);
   });
 
-  it('proposes nothing and plans no write', () => {
-    const review = reviewDay({ rows: own, edits: frozenOf(true) ?? undefined });
-    const plan = planTempoSync({
-      proposals: review.rows.filter(isNamedRow),
-      ledger: [],
-      remote: [],
-      issueIdsByKey: new Map([['FUT-9', '10009']]),
-    });
+  it('drops a freeze stored from the paired machine’s rows alone, and keeps one this machine booked', () => {
+    const peerFreeze = { ...EMPTY_DAY_REVIEW_EDITS, frozenRows: { ...dayRows([]), private: own.private } };
+    const ownFreeze = { ...EMPTY_DAY_REVIEW_EDITS, frozenRows: own };
+    const reread = (edits: typeof peerFreeze, ledger: SyncedWorklog[]) =>
+      withFrozenRows({ edits, rows: own, ledger, finished: true });
 
-    expect(review.rows).toEqual([]);
-    expect(review.check.proposedMs).toBe(0);
-    expect([...plan.creates, ...plan.updates, ...plan.deletes]).toEqual([]);
-  });
-
-  it('draws the rows the paired machine sent over it, booked', () => {
-    const frozen = frozenOf(true)?.frozenRows;
-
-    if (!frozen) throw new Error('the day was not frozen');
-
-    expect(
-      frozenDayPeerBands({
-        frozen,
-        current: { rows: own, peerLanes: {} },
-        peerRows: bookedThere,
-        machineNames: { 'mac-id': 'MacBook' },
-        foreignIssues: [],
-      }).map((band) => ({ name: band.name, booked: band.booked })),
-    ).toEqual([{ name: 'FUT-1', booked: true }]);
+    expect(reread(peerFreeze, [])).toEqual(EMPTY_DAY_REVIEW_EDITS);
+    expect(reread(peerFreeze, LEDGER)).toBeNull();
+    expect(reread(ownFreeze, [])).toBeNull();
+    expect(reread(ownFreeze, LEDGER)).toBeNull();
   });
 
   it('draws a paired machine that sent no rows from its raw events', () => {

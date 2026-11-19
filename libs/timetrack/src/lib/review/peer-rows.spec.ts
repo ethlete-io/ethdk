@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { dayOwnerOf } from './frozen-rows';
 import { ReviewedRow } from './model';
 import {
   PEER_DAY_ROWS_VERSION,
@@ -107,12 +106,11 @@ describe('a booked row that has no repository lane', () => {
     standInNames: {},
   });
 
-  it('is sent as booked, so a paired machine knows the day is owned', () => {
+  it('is sent as booked, so a paired machine sees the booking', () => {
     expect(sent.rows.map((sentRow) => [sentRow.state, sentRow.worklogId, sentRow.issueKey])).toEqual([
       ['booked', 'w-1', 'ABC-1'],
       ['booked', 'w-2', undefined],
     ]);
-    expect(dayOwnerOf({ ledger: [], peerRows: { 'mac-id': sent } })).toEqual({ kind: 'peer', machineId: 'mac-id' });
   });
 
   it('is sent again by a machine that stored its day before rows carried it', () => {

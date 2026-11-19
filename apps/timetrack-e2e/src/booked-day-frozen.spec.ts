@@ -355,18 +355,11 @@ test.describe('a day only a paired machine booked', () => {
     await page.getByRole('button', { name: 'Previous day' }).click();
   });
 
-  test('draws the MacBook’s booked rows and proposes none of its own', async ({ page }) => {
-    await expect.poll(async () => !!(await inputsOf(page, BOOKED_DAY))?.frozenRows).toBe(true);
-    await expect(page.locator('[data-peer-band]')).toHaveText(['Booked on MacBook · ABC-3020']);
+  test('is not frozen, and this machine keeps its own rows of the day', async ({ page }) => {
+    await expect
+      .poll(async () => drawnIds(await askAgent<AgentApiDayRows>(page, { op: 'day.rows', day: BOOKED_DAY })).length)
+      .toBeGreaterThan(0);
 
-    expect(drawnIds(await askAgent<AgentApiDayRows>(page, { op: 'day.rows', day: BOOKED_DAY }))).toEqual([]);
-  });
-
-  test('plans no write to Tempo for it', async ({ page }) => {
-    await expect.poll(async () => !!(await inputsOf(page, BOOKED_DAY))?.frozenRows).toBe(true);
-
-    const plan = await askAgent<AgentApiTempoSyncPlan>(page, { op: 'tempo.sync', day: BOOKED_DAY });
-
-    expect(plan.ok && plan.value.writes).toEqual([]);
+    expect((await inputsOf(page, BOOKED_DAY))?.frozenRows).toBeUndefined();
   });
 });

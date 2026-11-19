@@ -217,7 +217,6 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
                 edits,
                 rows: read.day.rows,
                 ledger,
-                peerRows: read.peerRows,
                 finished: finishedDay(day),
               });
 
