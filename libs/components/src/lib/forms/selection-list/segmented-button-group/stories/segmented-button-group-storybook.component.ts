@@ -2,6 +2,7 @@ import { JsonPipe } from '@angular/common';
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
+import { ScrollableComponent } from '../../../../scrollable/scrollable.component';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { SegmentedButtonGroupComponent, SegmentedButtonGroupVariant } from '../segmented-button-group.component';
 import { SegmentedButtonComponent } from '../segmented-button.component';
@@ -10,22 +11,43 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
   selector: 'et-sb-segmented-button-group',
   template: `
     <div [etProvideColor]="color()" [style.max-width]="maxWidth()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-segmented-button-group
-        [(mixed)]="mixedState"
-        [variant]="variant()"
-        [formField]="demoForm.viewMode"
-        [size]="size()"
-        [stretch]="stretch()"
-      >
-        <et-label>{{ label() }}</et-label>
+      @if (inScrollable()) {
+        <et-scrollable [renderMasks]="false" [renderButtons]="false" itemSize="auto">
+          <et-segmented-button-group
+            [(mixed)]="mixedState"
+            [variant]="variant()"
+            [formField]="demoForm.viewMode"
+            [size]="size()"
+            [stretch]="stretch()"
+          >
+            <et-label>{{ label() }}</et-label>
 
-        @for (option of options(); track option.value) {
-          <et-segmented-button [value]="option.value">{{ option.label }}</et-segmented-button>
-        }
-        @if (hint()) {
-          <et-hint>{{ hint() }}</et-hint>
-        }
-      </et-segmented-button-group>
+            @for (option of options(); track option.value) {
+              <et-segmented-button [value]="option.value">{{ option.label }}</et-segmented-button>
+            }
+            @if (hint()) {
+              <et-hint>{{ hint() }}</et-hint>
+            }
+          </et-segmented-button-group>
+        </et-scrollable>
+      } @else {
+        <et-segmented-button-group
+          [(mixed)]="mixedState"
+          [variant]="variant()"
+          [formField]="demoForm.viewMode"
+          [size]="size()"
+          [stretch]="stretch()"
+        >
+          <et-label>{{ label() }}</et-label>
+
+          @for (option of options(); track option.value) {
+            <et-segmented-button [value]="option.value">{{ option.label }}</et-segmented-button>
+          }
+          @if (hint()) {
+            <et-hint>{{ hint() }}</et-hint>
+          }
+        </et-segmented-button-group>
+      }
 
       @if (showMixedState()) {
         <div class="text-sm opacity-60">
@@ -42,6 +64,7 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
     FormField,
     JsonPipe,
     ProvideColorDirective,
+    ScrollableComponent,
     HintComponent,
     LabelDirective,
   ],
@@ -59,6 +82,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public size = input<FormFieldSize>('md');
   public stretch = input(false);
   public maxWidth = input<string | null>(null);
+  public inScrollable = input(false);
 
   public options = input([
     { value: 'list', label: 'List' },

@@ -53,6 +53,15 @@
     initial-value: 0px;
   }
 
+  :where(
+    .et-scrollable[item-size='auto']:is([direction='horizontal'], :not([direction]))
+      > .et-scrollable-wrapper
+      > .et-scrollable-container
+      > et-segmented-button-group
+  ) {
+    inline-size: max-content;
+  }
+
   et-segmented-button-group {
     display: flex;
     flex-direction: column;

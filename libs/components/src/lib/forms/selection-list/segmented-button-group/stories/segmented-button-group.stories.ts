@@ -14,6 +14,7 @@ export default {
     stretch: { control: 'boolean' },
     showMixedState: { control: false, table: { disable: true } },
     maxWidth: { control: 'text' },
+    inScrollable: { control: 'boolean' },
     options: { table: { disable: true } },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -90,5 +91,14 @@ export const Stretch: Story = {
       { value: 'done', label: 'Done' },
     ],
     hint: 'Every segment gets the same column width and the group fills its container, whatever the label lengths.',
+  },
+};
+
+export const InScrollable: Story = {
+  args: {
+    inScrollable: true,
+    value: 'ea',
+    label: 'Game',
+    options: [{ value: 'ea', label: 'EA SPORTS FC' }],
   },
 };
