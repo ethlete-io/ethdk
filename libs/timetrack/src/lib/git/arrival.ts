@@ -25,36 +25,82 @@ const entriesOf = (output: string): ReflogEntry[] =>
     return [{ ref, at, action: action.trim(), sha: object }];
   });
 
-/**
- * Reads the reflogs of every checkout of one repository, each from `git reflog show HEAD --branches`
- * with `GIT_REFLOG_FORMAT`. A commit a reflog entry wrote was made here; every other move of a local
- * branch inside `window` is an arrival, whose new commits `gitArrivalArgs` lists.
- */
-export const gitArrivalsOf = (options: { outputs: readonly string[]; window: GitScanWindow }): GitArrivals => {
-  const entries = options.outputs.flatMap(entriesOf);
+type ReflogMoves = { madeHere: ReadonlySet<string>; arrivals: GitArrival[] };
+
+const REMEMBERED = 64;
+
+const remembered = <T>(options: { cache: Map<string, T>; key: string; build: () => T }): T => {
+  const { cache, key, build } = options;
+  const hit = cache.get(key);
+
+  if (hit !== undefined) {
+    cache.delete(key);
+    cache.set(key, hit);
+
+    return hit;
+  }
+
+  const value = build();
+
+  cache.set(key, value);
+
+  if (cache.size > REMEMBERED) cache.delete(cache.keys().next().value as string);
+
+  return value;
+};
+
+const parsedOutputs = new Map<string, { id: number; entries: ReflogEntry[] }>();
+const movesByOutputs = new Map<string, ReflogMoves>();
+let parsedCount = 0;
+
+const parsedOf = (output: string) =>
+  remembered({ cache: parsedOutputs, key: output, build: () => ({ id: ++parsedCount, entries: entriesOf(output) }) });
+
+const movesOf = (entries: ReflogEntry[]): ReflogMoves => {
   const madeHere = new Set(entries.filter((entry) => MADE_HERE.test(entry.action)).map((entry) => entry.sha));
   const byRef = new Map<string, ReflogEntry[]>();
 
   for (const entry of entries) {
     if (entry.ref === 'HEAD') continue;
 
-    byRef.set(entry.ref, [...(byRef.get(entry.ref) ?? []), entry]);
+    const moves = byRef.get(entry.ref);
+
+    if (moves) moves.push(entry);
+    else byRef.set(entry.ref, [entry]);
   }
 
   const arrivals = [...byRef.values()].flatMap((moves) => {
-    const ordered = [...moves].sort((a, b) => a.at.getTime() - b.at.getTime());
+    const ordered = moves.sort((a, b) => a.at.getTime() - b.at.getTime());
 
     return ordered.flatMap((entry, index): GitArrival[] => {
       const from = ordered[index - 1]?.sha;
 
       if (MADE_HERE.test(entry.action) || entry.sha === from) return [];
-      if (entry.at < options.window.from || entry.at > options.window.to) return [];
 
       return [{ at: entry.at, to: entry.sha, ...(from ? { from } : {}) }];
     });
   });
 
   return { madeHere, arrivals };
+};
+
+/**
+ * Reads the reflogs of every checkout of one repository, each from `git reflog show HEAD --branches`
+ * with `GIT_REFLOG_FORMAT`. A commit a reflog entry wrote was made here; every other move of a local
+ * branch inside `window` is an arrival, whose new commits `gitArrivalArgs` lists.
+ */
+export const gitArrivalsOf = (options: { outputs: readonly string[]; window: GitScanWindow }): GitArrivals => {
+  const parsed = options.outputs.map(parsedOf);
+  const moves = remembered({
+    cache: movesByOutputs,
+    key: parsed.map((output) => output.id).join(','),
+    build: () => movesOf(parsed.flatMap((output) => output.entries)),
+  });
+
+  return {
+    madeHere: moves.madeHere,
+    arrivals: moves.arrivals.filter((arrival) => arrival.at >= options.window.from && arrival.at <= options.window.to),
+  };
 };
 
 export const gitArrivalArgs = (options: { arrival: GitArrival; window: GitScanWindow }) => [

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { gitArrivalsOf, gitArrivedAt } from './arrival';
 import { GIT_FIELD_SEPARATOR } from './format';
 
@@ -37,5 +37,38 @@ describe('gitArrivalsOf', () => {
     expect(
       gitArrivedAt({ arrivals, listed: arrivals.arrivals.map((arrival) => ({ arrival, output: REWRITTEN })) }),
     ).toEqual(new Map());
+  });
+
+  it('parses only the reflog that changed when a later scan with a moved window sees one new move', () => {
+    const sha = (index: number) => index.toString(16).padStart(40, 'a');
+    const moves = (branch: string, count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        line(
+          `${branch}@{${new Date(Date.UTC(2026, 7, 11, 6, index)).toISOString()}}`,
+          'pull: Fast-forward',
+          sha(index),
+        ),
+      );
+    const main = moves('next', 200);
+    const worktree = moves('fix', 150);
+    const later = { from: WINDOW.from, to: new Date('2026-08-11T23:59:59+02:00') };
+    const arrived = line('next@{2026-08-11T12:00:00+02:00}', 'pull: Fast-forward', UPSTREAM);
+    const split = vi.spyOn(String.prototype, 'split');
+
+    gitArrivalsOf({ outputs: [main.join('\n'), worktree.join('\n')], window: { ...WINDOW } });
+    split.mockClear();
+    const unchanged = gitArrivalsOf({ outputs: [main.join('\n'), worktree.join('\n')], window: later });
+    const unchangedSplits = split.mock.calls.length;
+
+    split.mockClear();
+    const next = gitArrivalsOf({ outputs: [[arrived, ...main].join('\n'), worktree.join('\n')], window: later });
+    const nextSplits = split.mock.calls.length;
+
+    split.mockRestore();
+
+    expect(unchangedSplits).toBe(0);
+    expect(nextSplits).toBe(1 + 201);
+    expect(next.arrivals).toHaveLength(unchanged.arrivals.length + 1);
+    expect(next.arrivals).toContainEqual({ at: new Date('2026-08-11T12:00:00+02:00'), to: UPSTREAM, from: sha(199) });
   });
 });
