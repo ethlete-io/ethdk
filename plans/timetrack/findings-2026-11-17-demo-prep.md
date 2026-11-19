@@ -18,7 +18,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 3. **A row's description can come from another repo's commits.** Five named rows carry commit text
    that does not fit their issue (02.11. 15:00 FIP-3149, 03.11. 12:15 and 16:30 FIFAGG-12759, 05.11.
    16:15 FIFAGG-12759, 16.11. 01:30 FIFAGG-12652): Studio commits under a FIFAGG or FIP issue.
-4. **One description is repeated on every row of a lane.** Built 39ee1d898, reverted with the band cut in ce72b9e68. 13.11. has six ET-772 rows with the same
+4. **One description is repeated on every row of a lane.** Built 39ee1d898, reverted with the band cut in ce72b9e68, relanded in 8ce7c5a6b; the real-data check needs the app. 13.11. has six ET-772 rows with the same
    three commits and "+99 more". A row should describe its own span.
 5. **Descriptions are English commit lists.** Built 7a68de505 (worklog language default German, one ask per past-day
    row), not yet seen with real model text. Tom books in German and wants one sentence for each
@@ -105,7 +105,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 26. ~~**The release locks its window when idle, the dev build does not.**~~ By design: a debug build locks only with
     `TIMETRACK_LOCK=1` (`src-tauri/src/lock.rs`), a browser tab cannot lock. The human, 2026-11-19: the Mac release locks the
     window after about 5 minutes idle; the serve build on tank never locks.
-27. **Agent work counts as presence.** On 18.11. the fifagg lane holds one 13 h 30 row from 00:00, the ethlete-sdk lane is
+27. **Agent work counts as presence.** Band cut relanded in 8ce7c5a6b (a stretch a paired machine attended counts as attended); snapshot compare open. On 18.11. the fifagg lane holds one 13 h 30 row from 00:00, the ethlete-sdk lane is
     nearly empty although SDK sessions ran all day, and the agents' night counts as the human's time. The B602
     presence slice (1c8bb8371, reverted in 363745c after an unexplained snapshot change, 1 h 15 to 20 h logged) proved:
     Cause: B596 never raised `CLAUDE_CODE_PARSER_VERSION`, so stored logs were not re-read. Cause: fifagg's old

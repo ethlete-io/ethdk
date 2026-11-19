@@ -7,7 +7,8 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 
 ## Warteschlange (nächstes oben)
 
-1. B602: #5 und das Lesen aller Claude-Ordner gepusht; der Band-Schnitt (#27) und #4 sind zurückgenommen (ce72b9e68), weil ein gebuchter Lauf am gekoppelten Rechner als abwesend zählte. Neu landen mit dem e2e-Fall als Nachweis. Offen, Tagschicht, braucht die laufende
+1. B602: #4, #5 und der Band-Schnitt (#27) gepusht (Neu-Landung 8ce7c5a6b: ein Abschnitt, den ein gekoppelter Rechner sah, zählt als anwesend). Offen, Tagschicht, braucht die laufende
+   Dev-App: Snapshot-Vergleich, echte Zeilen vom 13.11. (#4), deutsche Einzeiler (#5),
    Dev-App: #28 (schrittweises Lesen behält Extra-Proben) und #29 (17 Zeilen vom 18.11. ohne bekannte Änderung). #11 ist
    wahrscheinlich durch 714b49bc9 behoben, die Linux-Maschine läuft vermutlich auf einem alten Build.
 2. B616: gekoppelte Rechner zeigen denselben Tag; Handzeilen, Zeilen-Änderungen, Regeln und Vertretungen gebaut, auf zwei Rechnern ungeprüft; SSH-Arbeit auf
