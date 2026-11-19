@@ -452,4 +452,18 @@ describe('streamDay agent sessions', () => {
     expect(blocks).toHaveLength(1);
     expect(blocks[0]?.context.branch).toBe('next');
   });
+
+  it('hands the session title to every block the session holds an instant of', () => {
+    const events = [
+      ...sessionRun({ sessionId: 'one', from: 10, to: 30, title: 'Fix the totw layout' }),
+      ...sessionRun({ sessionId: 'one', from: 120, to: 140, title: 'Fix the totw layout' }),
+    ];
+    const blocks = blocksOf(events);
+
+    expect(blocks.length).toBeGreaterThanOrEqual(2);
+
+    for (const block of blocks) {
+      expect(block.evidence.some((entry) => entry.summary === 'Fix the totw layout')).toBe(true);
+    }
+  });
 });

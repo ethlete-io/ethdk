@@ -8,8 +8,22 @@ export type ContextSpan = TimeWindow & { context: ActivityContext };
 /** One observation and where it was made, for the block that ends up holding its instant. */
 export type ContextObservation = { at: Date; context: ActivityContext; evidence: Evidence };
 
+/**
+ * Rows are cut from a block in quarters and take only the evidence inside them, so a repeat in another
+ * quarter must stay or every quarter after the first loses it.
+ */
+const EVIDENCE_SLOT_MS = 15 * 60_000;
+
+const slotOf = (at: Date) => Math.floor(at.getTime() / EVIDENCE_SLOT_MS);
+
 const addEvidence = (into: Evidence[], evidence: Evidence) => {
-  if (into.some((entry) => entry.kind === evidence.kind && entry.detail === evidence.detail)) return;
+  if (
+    into.some(
+      (entry) =>
+        entry.kind === evidence.kind && entry.detail === evidence.detail && slotOf(entry.at) === slotOf(evidence.at),
+    )
+  )
+    return;
 
   into.push(evidence);
 };
