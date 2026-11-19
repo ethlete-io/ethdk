@@ -237,8 +237,9 @@ activate the control - not to the whole field. The field's box also spans the
 label band, the gap and the hint/counter row, so a pointer resting next to the
 counter leaves the frame at rest.
 
-A text field's frame keeps at least 3:1 against its surface at rest, also in
-error. Hover steps it a little stronger. Focus keeps the 1px border and turns it
+A text field's frame sits near 3:1 against its surface at rest, in light and dark
+(a mix of the surface text colour into its background), and keeps at least 3:1 in
+error. Hover draws it stronger. Focus keeps the 1px border and turns it
 the theme colour (the error theme's ink while erroring); hover leaves it alone,
 and there is no halo. The placeholder keeps 4.5:1 and stays lighter than the value.
 

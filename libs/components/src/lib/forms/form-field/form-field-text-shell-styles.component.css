@@ -50,7 +50,11 @@
     &[data-text-shell] {
       --_et-form-field-frame-border: var(
         --et-form-field-control-border-color,
-        var(--et-surface-interaction-solid, currentColor)
+        color-mix(
+          in oklab,
+          var(--et-surface-color-solid, currentColor) 43%,
+          var(--et-surface-background-solid, transparent)
+        )
       );
       --_et-form-field-frame-border-hover: var(
         --et-form-field-control-border-color-hover,

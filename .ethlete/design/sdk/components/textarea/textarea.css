@@ -10,7 +10,11 @@
 
 @layer components {
   et-form-field[data-text-shell] {
-    --_et-form-field-frame-border: var(--et-surface-interaction-solid);
+    --_et-form-field-frame-border: color-mix(
+      in oklab,
+      var(--et-surface-color-solid) 43%,
+      var(--et-surface-background-solid)
+    );
     --_et-form-field-frame-border-hover: color-mix(
       in srgb,
       var(--et-surface-interaction-solid) 75%,

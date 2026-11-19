@@ -12,6 +12,7 @@ import {
 } from '../support';
 
 const INPUT_STORY_ID = 'components-forms-input--default';
+const TEXTAREA_STORY_ID = 'components-forms-textarea--default';
 const DESCRIPTION_STORY_ID = 'components-forms-input--description';
 const WARNING_STORY_ID = 'components-forms-warning--default';
 const COUNTER_STORY_ID = 'components-forms-counter--default';
@@ -34,6 +35,23 @@ function fieldParts(scope: Locator): FieldParts {
     label: field.locator('.et-form-field-label-area'),
     control: field.locator('input.et-input-native'),
   };
+}
+
+/** Storybook always provides the dark surface; this swaps every surface scope in the story to `surface`. */
+async function renderOnSurface(root: Locator, surface: 'light' | 'dark'): Promise<void> {
+  await root.evaluate((host, name) => {
+    for (const el of [host, ...host.querySelectorAll('[class*="et-surface--"]')]) {
+      for (const cls of [...el.classList]) {
+        if (cls.startsWith('et-surface--')) el.classList.replace(cls, `et-surface--${name}`);
+      }
+    }
+    document.documentElement.style.colorScheme = name;
+    const scope = host.querySelector('et-form-field') ?? host;
+    document.documentElement.style.background = getComputedStyle(scope).getPropertyValue(
+      '--et-surface-background-solid',
+    );
+  }, surface);
+  await root.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
 }
 
 async function openLabelMode(page: Page, labelMode: string, value = ''): Promise<FieldParts> {
@@ -433,6 +451,30 @@ test.describe('form-field / frame states', () => {
     const invalid = await invalidField(page);
     expect(await contrastAgainstPage(invalid.frame, 'borderTopColor')).toBeGreaterThanOrEqual(3);
   });
+
+  for (const [control, storyId] of [
+    ['input', INPUT_STORY_ID],
+    ['textarea', TEXTAREA_STORY_ID],
+  ] as const) {
+    for (const surface of ['light', 'dark'] as const) {
+      test(`a resting ${control} frame sits near 3:1 and hover draws it stronger (${surface})`, async ({ page }) => {
+        const root = await openStory(page, storyId);
+        const frame = root.locator('et-form-field .et-form-field-control-frame').first();
+
+        await renderOnSurface(root, surface);
+        await expect
+          .poll(async () => {
+            const ratio = await contrastAgainstPage(frame, 'borderTopColor');
+            return ratio >= 3 && ratio <= 3.6 ? 'near 3:1' : ratio;
+          })
+          .toBe('near 3:1');
+        const rest = await contrastAgainstPage(frame, 'borderTopColor');
+
+        await frame.hover();
+        await expect.poll(() => contrastAgainstPage(frame, 'borderTopColor')).toBeGreaterThan(rest + 0.5);
+      });
+    }
+  }
 
   test('the placeholder keeps 4.5:1 against the page and stays lighter than the value', async ({ page }) => {
     const { control } = fieldParts(await openStory(page, INPUT_STORY_ID));
