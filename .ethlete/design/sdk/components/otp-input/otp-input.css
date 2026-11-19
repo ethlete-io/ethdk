@@ -25,7 +25,7 @@
 
   @media (hover: hover) {
     et-otp-input:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
-      border-color: var(--et-surface-interaction-hover-solid);
+      border-color: var(--et-surface-color-solid);
     }
 
     et-otp-input[data-error]:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {

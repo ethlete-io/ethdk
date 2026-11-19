@@ -15,11 +15,7 @@
       var(--et-surface-color-solid) 43%,
       var(--et-surface-background-solid)
     );
-    --_et-form-field-frame-border-hover: color-mix(
-      in oklab,
-      var(--et-surface-color-solid) 53.5%,
-      var(--et-surface-background-solid)
-    );
+    --_et-form-field-frame-border-hover: var(--et-surface-color-solid);
   }
 
   et-form-field[data-text-shell][data-error] {
