@@ -406,7 +406,7 @@ const coveredByPins = (options: {
   );
 };
 
-const idStartOf = (id: string) => id.slice(id.lastIndexOf('@') + 1);
+const idStartOf = (id: string) => id.slice(id.lastIndexOf('@') + 1).replace(/\+.*$/, '');
 
 const idBaseOf = (id: string) => id.slice(0, id.lastIndexOf('@'));
 
@@ -421,7 +421,9 @@ const startsWithin = (id: string, row: TimeWindow) => {
  * band later never drops what they said. A proposal takes the id it carried while unnamed. Any row
  * takes the id of a band of its lane and start the reviewer named by hand, where no row carries that
  * id any more: a rule the day learns later changes the id, and the reviewer's name still wins. And a
- * row whose start moved takes the edited id of the same issue or lane whose start it now covers.
+ * row whose start moved takes the edited id of the same issue or lane whose start it now covers. When
+ * a row splits into one piece per lane, its edit stays with the piece of the lane it named, or, for an
+ * edit that named no lane, with the piece still holding its issue.
  */
 const onEditedIds = (options: {
   proposals: readonly WorklogProposal[];
@@ -465,7 +467,16 @@ const onEditedIds = (options: {
       (id) =>
         !taken.has(id) && !options.pinnedIds.has(id) && idBaseOf(id) === idBaseOf(row.id) && startsWithin(id, row),
     );
-    const id = found.length === 1 ? found[0]?.[0] : moved.length === 1 ? moved[0] : undefined;
+    const held = Object.entries(overrides).filter(
+      ([id, override]) =>
+        !taken.has(id) &&
+        !options.pinnedIds.has(id) &&
+        !override.laneKey &&
+        idStartOf(id) === start &&
+        ['issueKey' in row ? row.issueKey : undefined, row.withheldIssueKey].includes(idBaseOf(id)),
+    );
+    const id =
+      found.length === 1 ? found[0]?.[0] : moved.length === 1 ? moved[0] : held.length === 1 ? held[0]?.[0] : undefined;
 
     if (!id) return row;
 
