@@ -196,4 +196,154 @@ describe('shared settings', () => {
 
     expect(read.sharedStamps).toEqual({ 'stand-in:stand-in:1:fifa': { atMs: 1_000 } });
   });
+
+  describe('the same placeholder opened on both machines', () => {
+    const opened = (id: string, checkout: string, overrides: Partial<StandIn> = {}) =>
+      standIn({
+        id,
+        author: 'app',
+        openedFor: checkout,
+        openedForBranch: 'feat/standings',
+        ...overrides,
+      });
+
+    const pointing = (checkout: string, standInId: string) =>
+      rule({
+        id: `repo:${checkout}@feat/standings#1`,
+        repoPath: checkout,
+        target: { kind: 'stand-in', standInId },
+      });
+
+    const tank = () =>
+      stamped({
+        after: {
+          standIns: [opened('stand-in:b:fifa', '/home/human/dev/fifa', { days: ['2026-11-17'], heldOn: ['feat/a'] })],
+          attributionRules: [pointing('/home/human/dev/fifa', 'stand-in:b:fifa')],
+        },
+        atMs: 1_000,
+      });
+
+    const mac = () =>
+      stamped({
+        after: {
+          standIns: [opened('stand-in:a:fifa', '/Users/human/dev/fifa', { days: ['2026-11-18'], heldOn: ['feat/b'] })],
+          attributionRules: [pointing('/Users/human/dev/fifa', 'stand-in:a:fifa')],
+        },
+        atMs: 1_500,
+      });
+
+    const exchange = (own: TimetrackSettings, other: TimetrackSettings, ownKeys: Record<string, string>) =>
+      withPeerSharedSettings({
+        settings: own,
+        peers: [
+          sent({
+            settings: other,
+            peerKeys: ownKeys === MAC_KEYS ? TANK_KEYS : MAC_KEYS,
+            localKeys: ownKeys,
+          }),
+        ],
+      });
+
+    it('keeps the smaller id on both machines and records the other in mergedIds', () => {
+      const onMac = exchange(mac(), tank(), MAC_KEYS);
+      const onTank = exchange(tank(), mac(), TANK_KEYS);
+
+      expect(onMac.standIns.map((entry) => entry.id)).toEqual(['stand-in:a:fifa']);
+      expect(onTank.standIns.map((entry) => entry.id)).toEqual(['stand-in:a:fifa']);
+      expect(onMac.standIns[0]).toMatchObject({
+        mergedIds: ['stand-in:b:fifa'],
+        days: ['2026-11-17', '2026-11-18'],
+        heldOn: ['feat/a', 'feat/b'],
+      });
+      expect(onTank.standIns[0]).toMatchObject({
+        mergedIds: ['stand-in:b:fifa'],
+        days: ['2026-11-17', '2026-11-18'],
+        heldOn: ['feat/a', 'feat/b'],
+      });
+      expect(onMac.attributionRules.map((entry) => entry.target)).toEqual([
+        { kind: 'stand-in', standInId: 'stand-in:a:fifa' },
+      ]);
+      expect(onTank.attributionRules.map((entry) => entry.target)).toEqual([
+        { kind: 'stand-in', standInId: 'stand-in:a:fifa' },
+      ]);
+    });
+
+    it('stays converged when the machines exchange again, and the old copy does not return', () => {
+      const onMac = exchange(mac(), tank(), MAC_KEYS);
+      const onTank = exchange(tank(), mac(), TANK_KEYS);
+      const macAgain = exchange(onMac, onTank, MAC_KEYS);
+      const tankAgain = exchange(onTank, onMac, TANK_KEYS);
+
+      expect(macAgain.standIns).toEqual(onMac.standIns);
+      expect(tankAgain.standIns).toEqual(onTank.standIns);
+      expect(exchange(macAgain, tank(), MAC_KEYS).standIns.map((entry) => entry.id)).toEqual(['stand-in:a:fifa']);
+      expect(exchange(tankAgain, tank(), TANK_KEYS).standIns.map((entry) => entry.id)).toEqual(['stand-in:a:fifa']);
+    });
+
+    it('folds only open app placeholders of the same branch', () => {
+      const other = stamped({
+        after: { standIns: [opened('stand-in:c:fifa', '/home/human/dev/fifa', { openedForBranch: 'feat/other' })] },
+        atMs: 1_000,
+      });
+      const user = stamped({
+        after: { standIns: [standIn({ id: 'stand-in:0:fifa', openedFor: '/home/human/dev/fifa' })] },
+        atMs: 1_000,
+      });
+
+      expect(exchange(mac(), other, MAC_KEYS).standIns).toHaveLength(2);
+      expect(exchange(mac(), user, MAC_KEYS).standIns).toHaveLength(2);
+    });
+  });
+
+  describe('refused placeholders', () => {
+    const refusal = { repoPath: '/home/human/dev/fifa', branch: 'feat/standings' };
+
+    it('travel to the peer in the peer checkout and are taken back with a tombstone', () => {
+      const tank = stamped({ after: { noStandInCheckouts: [refusal] }, atMs: 1_000 });
+      const mac = withPeerSharedSettings({ settings: DEFAULT_TIMETRACK_SETTINGS, peers: [sent({ settings: tank })] });
+
+      expect(mac.noStandInCheckouts).toEqual([{ repoPath: '/Users/human/dev/fifa', branch: 'feat/standings' }]);
+      expect(JSON.stringify(mac)).not.toContain('/home/human');
+
+      const allowed = stamped({ before: tank, after: { noStandInCheckouts: [] }, atMs: 2_000 });
+      const after = withPeerSharedSettings({ settings: mac, peers: [sent({ settings: allowed })] });
+
+      expect(after.noStandInCheckouts).toEqual([]);
+      expect(withPeerSharedSettings({ settings: after, peers: [sent({ settings: tank })] })).toBe(after);
+    });
+
+    it('keeps a work path and does not echo', () => {
+      const tank = stamped({
+        after: { noStandInCheckouts: [{ ...refusal, workPath: '/home/human/dev/fifa/apps/web' }] },
+        atMs: 1_000,
+      });
+      const mac = withPeerSharedSettings({ settings: DEFAULT_TIMETRACK_SETTINGS, peers: [sent({ settings: tank })] });
+
+      expect(mac.noStandInCheckouts).toEqual([
+        { repoPath: '/Users/human/dev/fifa', branch: 'feat/standings', workPath: '/Users/human/dev/fifa/apps/web' },
+      ]);
+      expect(
+        withPeerSharedSettings({
+          settings: tank,
+          peers: [sent({ settings: mac, peerKeys: MAC_KEYS, localKeys: TANK_KEYS })],
+        }),
+      ).toBe(tank);
+    });
+
+    it('drop for a checkout the receiver has none of, and stay home when unkeyed', () => {
+      const tank = stamped({
+        after: { noStandInCheckouts: [refusal, { repoPath: '/home/human/dev/private' }] },
+        atMs: 1_000,
+      });
+      const wire = wireOf(tank);
+
+      expect(wire).not.toContain('private');
+      expect(
+        withPeerSharedSettings({
+          settings: DEFAULT_TIMETRACK_SETTINGS,
+          peers: [sent({ settings: tank, localKeys: { '/Users/human/dev/other': 'gitlab.com/ethlete/other' } })],
+        }),
+      ).toBe(DEFAULT_TIMETRACK_SETTINGS);
+    });
+  });
 });

@@ -1,6 +1,6 @@
-import { AttributionRule } from '../model/attribution';
+import { AttributionRule, standInIdOf } from '../model/attribution';
 import { CheckoutKeys, translatePeerPath } from '../model/peer-path';
-import { StandIn } from '../model/stand-in';
+import { StandIn, StandInRefusal } from '../model/stand-in';
 import {
   PeerStampedEntries,
   changedStamps,
@@ -10,7 +10,7 @@ import {
 } from '../review/shared-stamp';
 import { SharedStamp } from '../review/model';
 import { TimetrackSettings } from './model';
-import { parseAttributionRule, parseStandIn } from './parse';
+import { parseAttributionRule, parseStandIn, parseStandInRefusal } from './parse';
 
 /**
  * The `day` the settings that travel are stored under beside the day rows. A day key is a date, so this
@@ -19,9 +19,12 @@ import { parseAttributionRule, parseStandIn } from './parse';
 export const SHARED_SETTINGS_DAY = 'settings';
 export const SHARED_SETTINGS_DAY_START_MS = Number.MAX_SAFE_INTEGER - 1;
 
-/** One rule or stand-in a machine shares with its paired machines, stamped in the sender's clock. */
+/** One setting a machine shares with its paired machines, stamped in the sender's clock. */
 export type SharedSettingsEntry = { id: string; atMs: number } & (
-  { kind: 'stand-in'; standIn: StandIn } | { kind: 'rule'; rule: AttributionRule } | { kind: 'deleted' }
+  | { kind: 'stand-in'; standIn: StandIn }
+  | { kind: 'rule'; rule: AttributionRule }
+  | { kind: 'refusal'; refusal: StandInRefusal }
+  | { kind: 'deleted' }
 );
 
 export type PeerSharedSettings = PeerStampedEntries<SharedSettingsEntry>;
@@ -30,6 +33,12 @@ type LiveEntry = Exclude<SharedSettingsEntry, { kind: 'deleted' }>;
 
 const RULE = 'rule:';
 const STAND_IN = 'stand-in:';
+const REFUSAL = 'refusal:';
+
+const refusalIdOf = (refusal: StandInRefusal) =>
+  `${REFUSAL}${refusal.repoPath}\n${refusal.branch ?? ''}\n${refusal.workPath ?? ''}`;
+
+const refusalOf = (refusal: StandInRefusal): StandInRefusal => defined({ ...refusal });
 
 const sorted = (values: readonly string[] | undefined) => (values?.length ? [...values].sort() : undefined);
 
@@ -81,6 +90,10 @@ const liveEntriesOf = (settings: TimetrackSettings): Map<string, LiveEntry> =>
     ...settings.standIns.map((standIn): [string, LiveEntry] => [
       `${STAND_IN}${standIn.id}`,
       { id: `${STAND_IN}${standIn.id}`, atMs: 0, kind: 'stand-in', standIn: standInOf(standIn) },
+    ]),
+    ...settings.noStandInCheckouts.map((refusal): [string, LiveEntry] => [
+      refusalIdOf(refusal),
+      { id: refusalIdOf(refusal), atMs: 0, kind: 'refusal', refusal: refusalOf(refusal) },
     ]),
   ]);
 
@@ -177,6 +190,8 @@ const outgoingOf = (entry: SharedSettingsEntry, keys: CheckoutKeys): SharedSetti
 
       return travels([rule.id, rule.repoPath, standInId], keys) ? entry : null;
     }
+    case 'refusal':
+      return travels([entry.refusal.repoPath, entry.refusal.workPath], keys) ? entry : null;
     case 'stand-in': {
       const { standIn } = entry;
       const placed = travels([standIn.openedFor], keys) ? standIn : withoutOpenedFor(standIn);
@@ -232,6 +247,11 @@ const parseEntry = (value: unknown): SharedSettingsEntry | null => {
       const rule = parseAttributionRule(record['rule']);
 
       return rule && id === `${RULE}${rule.id}` ? { id, atMs, kind: 'rule', rule: ruleOf(rule) } : null;
+    }
+    case 'refusal': {
+      const refusal = parseStandInRefusal(record['refusal']);
+
+      return refusal && id === refusalIdOf(refusal) ? { id, atMs, kind: 'refusal', refusal: refusalOf(refusal) } : null;
     }
     case 'stand-in': {
       const standIn = parseStandIn(record['standIn']);
@@ -302,6 +322,16 @@ const mapEntry = (options: Keys & { entry: SharedSettingsEntry }): SharedSetting
 
       return { ...entry, id, rule: defined({ ...entry.rule, id: ruleId, repoPath }) };
     }
+    case 'refusal': {
+      const repoPath = localTextOf({ ...options, text: entry.refusal.repoPath });
+      const workPath = entry.refusal.workPath ? localTextOf({ ...options, text: entry.refusal.workPath }) : undefined;
+
+      if (repoPath === undefined || (entry.refusal.workPath && workPath === undefined)) return null;
+
+      const refusal = refusalOf({ ...entry.refusal, repoPath, workPath });
+
+      return { ...entry, id: refusalIdOf(refusal), refusal };
+    }
     case 'stand-in': {
       const { standIn } = entry;
       const openedFor = standIn.openedFor ? localTextOf({ ...options, text: standIn.openedFor }) : undefined;
@@ -339,11 +369,27 @@ const withLocalDays = (standIn: StandIn, local: StandIn | undefined): StandIn =>
     ? defined({ ...standIn, days: union(standIn.days, local.days) ?? [], heldOn: union(standIn.heldOn, local.heldOn) })
     : standIn;
 
+const placeholderKeyOf = (standIn: StandIn) =>
+  standIn.state === 'open' && standIn.author === 'app' && standIn.openedFor && standIn.openedForBranch
+    ? [standIn.openedFor, standIn.openedForBranch, standIn.openedForWorkPath ?? ''].join('\n')
+    : undefined;
+
+const foldStandIn = (into: StandIn, from: StandIn): StandIn =>
+  defined({
+    ...into,
+    days: union(into.days, from.days) ?? [],
+    heldOn: union(into.heldOn, from.heldOn),
+    mergedIds: union(into.mergedIds, [from.id, ...(from.mergedIds ?? [])]),
+    createdAt: from.createdAt < into.createdAt ? from.createdAt : into.createdAt,
+  });
+
 /**
- * `settings` with the rules and stand-ins the paired machines changed later than this machine: the latest
- * stamp wins once each peer's stamp is moved onto this machine's clock (ADR 0041 pt 2), and a tie keeps
- * this machine's version. A stand-in taken from a peer keeps the days this machine drew it on. Returns
- * `settings` when no peer changed anything.
+ * `settings` with the rules, stand-ins and refusals the paired machines changed later than this machine: the
+ * latest stamp wins once each peer's stamp is moved onto this machine's clock (ADR 0041 pt 2), and a tie
+ * keeps this machine's version. A stand-in taken from a peer keeps the days this machine drew it on.
+ * Open placeholders the app made for one checkout and branch fold into the one with the smallest id, so
+ * every machine keeps the same survivor; rows of a folded one still read it through `mergedIds`. Returns
+ * `settings` when nothing changed.
  */
 export const withPeerSharedSettings = (options: {
   settings: TimetrackSettings;
@@ -355,8 +401,13 @@ export const withPeerSharedSettings = (options: {
   const changed: Record<string, SharedStamp> = {};
   const rules = new Map(settings.attributionRules.map((rule) => [`${RULE}${rule.id}`, rule]));
   const standIns = new Map(settings.standIns.map((standIn) => [`${STAND_IN}${standIn.id}`, standIn]));
+  const refusals = new Map(settings.noStandInCheckouts.map((refusal) => [refusalIdOf(refusal), refusal]));
+  const latest = latestPeerEntries(options.peers);
+  let peerStandInAt = -Infinity;
 
-  for (const [id, entry] of latestPeerEntries(options.peers)) {
+  for (const [id, entry] of latest) {
+    if (entry.kind === 'stand-in') peerStandInAt = Math.max(peerStandInAt, entry.atMs);
+
     const local = live.get(id);
 
     if (!peerEntryWins({ entry, held: !!local, stamp: stamps[id] })) continue;
@@ -364,6 +415,7 @@ export const withPeerSharedSettings = (options: {
     if (entry.kind === 'deleted') {
       rules.delete(id);
       standIns.delete(id);
+      refusals.delete(id);
       changed[id] = { atMs: entry.atMs, deleted: true };
       continue;
     }
@@ -371,10 +423,13 @@ export const withPeerSharedSettings = (options: {
     if (local && bodyOf(local) === bodyOf(entry)) continue;
 
     if (entry.kind === 'rule') rules.set(id, entry.rule);
+    else if (entry.kind === 'refusal') refusals.set(id, entry.refusal);
     else standIns.set(id, withLocalDays(entry.standIn, standIns.get(id)));
 
     changed[id] = { atMs: entry.atMs };
   }
+
+  if (peerStandInAt > -Infinity) foldPlaceholders({ standIns, rules, stamps, changed, atMs: peerStandInAt });
 
   if (!Object.keys(changed).length) return settings;
 
@@ -382,6 +437,60 @@ export const withPeerSharedSettings = (options: {
     ...settings,
     attributionRules: [...rules.values()],
     standIns: [...standIns.values()],
+    noStandInCheckouts: [...refusals.values()],
     sharedStamps: { ...stamps, ...changed },
   };
+};
+
+const foldPlaceholders = (options: {
+  standIns: Map<string, StandIn>;
+  rules: Map<string, AttributionRule>;
+  stamps: Readonly<Record<string, SharedStamp>>;
+  changed: Record<string, SharedStamp>;
+  atMs: number;
+}) => {
+  const { standIns, rules, stamps, changed } = options;
+  const stampAt = (id: string) => ({ atMs: Math.max(options.atMs, changed[id]?.atMs ?? 0, stamps[id]?.atMs ?? 0) });
+  const groups = new Map<string, StandIn[]>();
+
+  for (const standIn of standIns.values()) {
+    const key = placeholderKeyOf(standIn);
+
+    if (key) groups.set(key, [...(groups.get(key) ?? []), standIn]);
+  }
+
+  const mergedInto = new Map<string, string>();
+
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+
+    const [keep, ...rest] = [...group].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+
+    if (!keep) continue;
+
+    standIns.set(`${STAND_IN}${keep.id}`, rest.reduce(foldStandIn, keep));
+    changed[`${STAND_IN}${keep.id}`] = stampAt(`${STAND_IN}${keep.id}`);
+
+    for (const from of rest) {
+      standIns.delete(`${STAND_IN}${from.id}`);
+      changed[`${STAND_IN}${from.id}`] = { ...stampAt(`${STAND_IN}${from.id}`), deleted: true };
+      mergedInto.set(from.id, keep.id);
+    }
+  }
+
+  const liveIds = new Set([...standIns.values()].map((standIn) => standIn.id));
+
+  for (const standIn of standIns.values()) {
+    for (const id of standIn.mergedIds ?? []) if (!liveIds.has(id)) mergedInto.set(id, standIn.id);
+  }
+
+  for (const [id, rule] of rules) {
+    const standInId = standInIdOf(rule);
+    const into = standInId === undefined ? undefined : mergedInto.get(standInId);
+
+    if (into === undefined) continue;
+
+    rules.set(id, { ...rule, target: { kind: 'stand-in', standInId: into } });
+    changed[id] = stampAt(id);
+  }
 };

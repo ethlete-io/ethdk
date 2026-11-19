@@ -232,6 +232,15 @@ const asStandInRefusal = (value: unknown): StandInRefusal | null => {
 export const parseStandIn = (value: unknown): StandIn | null =>
   asText(asRecord(value)['id']) ? asStandIn(value, 0) : null;
 
+/** A refusal read as the stored settings read it; `null` without a repository. */
+export const parseStandInRefusal = (value: unknown): StandInRefusal | null => asStandInRefusal(value);
+
+/** An exclusion rule read as the stored settings read it; `null` when it names nothing. */
+export const parseExclusionRule = (value: unknown): TimetrackExclusionRule | null => asRule(value);
+
+/** A call naming read as the stored settings read it; `null` without an application or a target. */
+export const parseCallNaming = (value: unknown): CallNaming | null => asCallNaming(value);
+
 /** An attribution rule read field by field, as the stored settings read it; `null` without an id. */
 export const parseAttributionRule = (value: unknown): AttributionRule | null =>
   asText(asRecord(value)['id']) ? asAttributionRule(value, 0) : null;
