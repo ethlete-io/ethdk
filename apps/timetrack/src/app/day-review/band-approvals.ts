@@ -13,7 +13,14 @@ import { injectApprovalQueue } from '../agent/approval-queue';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
 
-export { askerOf, approvalChipOf, approvalExistingOf, approvalIssueKeysOf, approvalLinesOf } from './approval-lines';
+export {
+  askerOf,
+  approvalButtonsOf,
+  approvalChipOf,
+  approvalExistingOf,
+  approvalIssueKeysOf,
+  approvalLinesOf,
+} from './approval-lines';
 export type { ApprovalLine } from './approval-lines';
 import { approvalExistingOf } from './approval-lines';
 

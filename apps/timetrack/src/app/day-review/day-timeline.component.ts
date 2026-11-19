@@ -28,6 +28,7 @@ import {
 } from '@ethlete/components';
 import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethlete/core';
 import {
+  AgentApproval,
   BehindStretch,
   PeerBand,
   BreakWindow,
@@ -43,7 +44,7 @@ import { debounceTime, filter, fromEvent, map, merge, tap } from 'rxjs';
 import { injectAutoMode } from './auto-mode';
 import { TimelineScroll, dayKeyOfDate, readViewState, rememberTimelineScroll } from '../view-state';
 import { formatClockTime } from './format';
-import { approvalChipOf, approvalExistingOf, injectBandApprovals } from './band-approvals';
+import { approvalButtonsOf, approvalChipOf, approvalExistingOf, injectBandApprovals } from './band-approvals';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import {
   BREAK_LANE_KEY,
@@ -657,22 +658,30 @@ type RowDrag = {
                             <button
                               [attr.aria-label]="'Approve: ' + CHIP_OF(pending.item)"
                               (pointerdown)="$event.stopPropagation()"
-                              (click)="approvals.approve(pending.item.id)"
+                              (click)="confirm(pending.item)"
                               class="tt-approval-press"
                               type="button"
                             >
                               ✓
                             </button>
-                            @if (EXISTING_OF(pending.item); as existing) {
+                            @if (BUTTONS_OF(pending.item).alternative; as alternative) {
                               <button
-                                [attr.aria-label]="'Book ' + existing.issueKey + ' instead of a new issue'"
-                                [title]="existing.summary ?? existing.issueKey"
+                                [attr.aria-label]="
+                                  alternative.kind === 'existing'
+                                    ? 'Book ' + alternative.label + ' instead of a new issue'
+                                    : alternative.label + ' instead of the existing issue'
+                                "
+                                [title]="EXISTING_OF(pending.item)?.summary ?? alternative.label"
                                 (pointerdown)="$event.stopPropagation()"
-                                (click)="bandApprovals.bookExisting(pending.item)"
+                                (click)="
+                                  alternative.kind === 'existing'
+                                    ? bandApprovals.bookExisting(pending.item)
+                                    : approvals.approve(pending.item.id)
+                                "
                                 class="tt-approval-press"
                                 type="button"
                               >
-                                {{ existing.issueKey }}
+                                {{ alternative.label }}
                               </button>
                             }
                             <button
@@ -961,8 +970,9 @@ export class DayTimelineComponent {
   protected readonly CLOCK_OF = formatClockTime;
   protected readonly CHIP_OF = approvalChipOf;
   protected readonly EXISTING_OF = approvalExistingOf;
-  protected readonly DESCRIBE_APPROVAL = describeApproval;
+  protected readonly BUTTONS_OF = approvalButtonsOf;
 
+  protected readonly DESCRIBE_APPROVAL = describeApproval;
   private cuts = computed(() => {
     const found = new Map<string, TimelineCut>();
 
@@ -1226,6 +1236,11 @@ export class DayTimelineComponent {
         )
         .subscribe();
     });
+  }
+
+  protected confirm(item: AgentApproval) {
+    if (approvalButtonsOf(item).confirm === 'existing') this.bandApprovals.bookExisting(item);
+    else this.approvals.approve(item.id);
   }
 
   protected labelled(span: number) {

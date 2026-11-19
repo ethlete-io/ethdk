@@ -1,5 +1,5 @@
 import { AUTO_MODE_CLIENT, AgentApproval } from '@ethlete/timetrack';
-import { approvalChipOf, approvalExistingOf } from './approval-lines';
+import { approvalButtonsOf, approvalChipOf, approvalExistingOf } from './approval-lines';
 
 const createOf = (existing?: { issueKey: string; leads?: true }) =>
   ({
@@ -24,5 +24,25 @@ describe('approvalChipOf for an auto mode create', () => {
   it('shows the new issue alone without an existing one', () => {
     expect(approvalChipOf(createOf())).toBe('Auto · File FIFAGG');
     expect(approvalExistingOf(createOf())).toBeNull();
+  });
+});
+
+describe('approvalButtonsOf for an auto mode create', () => {
+  it('confirms the create and offers the existing issue', () => {
+    expect(approvalButtonsOf(createOf({ issueKey: 'FIFAGG-12769' }))).toEqual({
+      confirm: 'create',
+      alternative: { kind: 'existing', label: 'FIFAGG-12769' },
+    });
+  });
+
+  it('confirms the existing issue it leads with and offers the create', () => {
+    expect(approvalButtonsOf(createOf({ issueKey: 'FIFAGG-12769', leads: true }))).toEqual({
+      confirm: 'existing',
+      alternative: { kind: 'create', label: 'File FIFAGG' },
+    });
+  });
+
+  it('has no alternative without an existing issue', () => {
+    expect(approvalButtonsOf(createOf())).toEqual({ confirm: 'create', alternative: null });
   });
 });

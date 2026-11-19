@@ -40,6 +40,24 @@ export const approvalChipOf = (item: AgentApproval) => {
 export const approvalExistingOf = (item: AgentApproval) =>
   item.request.op === 'jira.create' ? (item.request.existing ?? null) : null;
 
+/** What a create's chip buttons do: which one the check confirms, and the second one offered beside it. */
+export const approvalButtonsOf = (item: AgentApproval) => {
+  const existing = approvalExistingOf(item);
+
+  if (!existing) return { confirm: 'create' as const, alternative: null };
+
+  if (existing.leads) {
+    const project = item.request.op === 'jira.create' ? (item.request.projectKey ?? 'a ticket') : '';
+
+    return {
+      confirm: 'existing' as const,
+      alternative: { kind: 'create' as const, label: `File ${project}` },
+    };
+  }
+
+  return { confirm: 'create' as const, alternative: { kind: 'existing' as const, label: existing.issueKey } };
+};
+
 /** The issue keys an item names, so their summaries can be read before its lines are drawn. */
 export const approvalIssueKeysOf = (item: AgentApproval): string[] => {
   const { request } = item;
