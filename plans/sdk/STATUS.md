@@ -24,6 +24,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S9 (fifagg, 19.11.): Accordion: Hover-Fläche breiter als Trenner, Tönungs-Abstand, Chevron-Farbe/Stärke, Panel-Abstand oben; nicht blockiert -> Accordion-Tokens 2 (B629), entschieden von mir wie B624.
 - S10 (fifagg NX-4, 19.11.): Icon-Aliase aus `metadata/icons.yml` im Icon-Generator, blockierte Glyphen, gebaut (d306d3007), kommt mit dem nächsten Prerelease; echte FA6-Installation meldet fifa danach.
 - S11 (fifagg, 19.11.): Formfeld-Label-Farbe ohne öffentliches Token, nicht blockiert -> Formfeld-Label-Token (B630), entschieden von mir wie B624.
+- S12 (fifagg NX-11, 19.11.): Fortschritts-Marker „upcoming“: Zahl ausblenden (Prod: leerer Ring) und eigener Hintergrund, nicht blockiert -> Fortschritt-Tokens 2 (B631), entschieden von mir wie B624. B617 und S10 kommen mit dem Prerelease ab 20.11. (ADR 0377, Doc-Agent mergt).
 
 ## Offene Plan-Dateien
 

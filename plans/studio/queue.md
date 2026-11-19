@@ -57,3 +57,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 56. **Segment-Gruppe Überlauf (B628)** ⏳ SDK (fifagg S8): Input `overflow` truncate | scroll, nach dem laufenden B602-Schritt - Builder
 57. **Accordion-Tokens 2 (B629)** ⏳ SDK (fifagg S9): vier Tokens, heutige Werte als Standard - Builder
 58. **Formfeld-Label-Token (B630)** ⏳ SDK (fifagg S11): zwei Label-Farb-Tokens, heutige Werte als Standard - Builder
+59. **Fortschritt-Tokens 2 (B631)** ⏳ SDK (fifagg S12): zwei Tokens für den „upcoming“-Marker, heutige Werte als Standard - Builder
