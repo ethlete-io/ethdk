@@ -18,9 +18,10 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 3. **A row's description can come from another repo's commits.** Five named rows carry commit text
    that does not fit their issue (02.11. 15:00 FIP-3149, 03.11. 12:15 and 16:30 FIFAGG-12759, 05.11.
    16:15 FIFAGG-12759, 16.11. 01:30 FIFAGG-12652): Studio commits under a FIFAGG or FIP issue.
-4. **One description is repeated on every row of a lane.** 13.11. has six ET-772 rows with the same
+4. **One description is repeated on every row of a lane.** Built 39ee1d898, not yet seen in the running app. 13.11. has six ET-772 rows with the same
    three commits and "+99 more". A row should describe its own span.
-5. **Descriptions are English commit lists.** Tom books in German and wants one sentence for each
+5. **Descriptions are English commit lists.** Built 7a68de505 (worklog language default German, one ask per past-day
+   row), not yet seen with real model text. Tom books in German and wants one sentence for each
    row. The agent rewrote 57 by hand.
 
 ## Auto mode
@@ -54,7 +55,8 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 
 ## Sync and upkeep
 
-15. **A day tidied on one machine stays untidy on the other.** Row edits, rules and stand-ins do not
+15. **A day tidied on one machine stays untidy on the other.** Row edits travel since a1d86de13 (B616); rules and
+    stand-ins still open. Row edits, rules and stand-ins do not
     sync (ADR 0039), so the Mac names nothing of what Linux named. A presentation machine that is
     not the work machine shows the raw day. The events do arrive: the Mac's 17.11. holds Linux
     checkouts, and the fifagg ones are matched to its own. The sent rows are drawn only on a day
@@ -92,7 +94,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     2026-11-17. Which event opened the call is unknown.
 23. ~~**Rejected rows stay on the page.**~~ Fixed (ec696f5e1). The Mac's 17.11. still shows `elrond` and `3d-projekte`
     rows after they were rejected; hiding them takes a second edit (`--hide`) per row.
-24. **A manual row exists on one machine only.** Linux holds `manual:FIFAGG-12769` 13:00-15:15 on
+24. **A manual row exists on one machine only.** Built 612bf0486 (last edit wins), not yet seen on two machines. Linux holds `manual:FIFAGG-12769` 13:00-15:15 on
     17.11.; the Mac shows a gap there.
 25. **Work done over SSH on another machine is invisible.** The human, 2026-11-18 (German, verbatim): "ich arbeite
     am mac aber via wireguard auf tank. timetrack hier auf dem mac sieht das nicht. eventuell läuft timetrack auf tank
@@ -108,9 +110,10 @@ written a wrong record. "Suspected" marks a cause nobody proved.
     presence slice (1c8bb8371, reverted in 363745c after an unexplained snapshot change, 1 h 15 to 20 h logged) proved:
     Cause: B596 never raised `CLAUDE_CODE_PARSER_VERSION`, so stored logs were not re-read. Cause: fifagg's old
     `agent-sessions.mjs` types `/clear` and a handoff resume with no marker, so each resume counts as human (12 in the
-    night). Proven not presence: cross-session messages, task notifications, subagent transcripts. Open:
-    `rows/attended.ts` counts one attended moment as the whole band instead of cutting at the gaps (ADR 0018); the app
-    reads only `~/.claude/projects`, never `~/.claude-second` (B616). Parallel subagents stay in their session's row
+    night). Proven not presence: cross-session messages, task notifications, subagent transcripts. Built
+    since: the band is cut at the gaps (adee7dfb0, ADR 0018), every `~/.claude*/projects` is read (3045f5d49), a role
+    skill typed after `/clear` counts as machine (5acd17def). Open: the live compare against snapshot
+    2026-11-19T00-23-42 after the app restart. Parallel subagents stay in their session's row
     (ADR 0043: the session is the finest grain).
 28. **An incremental read keeps extra samples at each batch edge.** Suspect (B602 probes, 19.11.): the `emitted`
     thinning state is not on the cursor, so a read every 60 s keeps more samples than a read from the top, and the
