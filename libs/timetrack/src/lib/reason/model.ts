@@ -65,6 +65,9 @@ export type ReasoningOptions = {
   timeoutMs: number;
 };
 
+/** The language a worklog description is written in until the user picks another. */
+export const DEFAULT_WORKLOG_LANGUAGE = 'German';
+
 export const DEFAULT_REASONING_OPTIONS: ReasoningOptions = {
   command: 'claude',
   model: '',

@@ -76,11 +76,25 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
             }
           </et-select>
         </et-form-field>
+
+        <et-form-field class="w-40" appearance="underline" size="sm">
+          <et-label>Worklog language</et-label>
+          <et-select
+            [value]="store.settings().reasoning.worklogLanguage"
+            (valueChange)="setWorklogLanguage($event)"
+            placeholder="the notes decide"
+            data-worklog-language
+          >
+            @for (option of worklogLanguages(); track option.value) {
+              <et-select-option [value]="option.value" [label]="option.label" />
+            }
+          </et-select>
+        </et-form-field>
       </div>
 
       <span class="text-small text-et-surface-muted">
-        Every ticket, every parent and every suggestion is written in this language. Leave it empty and each answer
-        follows the language of the work it was given.
+        Every ticket, every parent and every suggestion is written in the language, every worklog description in the
+        worklog language. Leave one empty and its answers follow the language of the work they were given.
       </span>
 
       <ethlete-masked-names
@@ -113,6 +127,10 @@ export class SettingsSuggestionsViewComponent {
     withStoredOption(REASONING_LANGUAGES, this.store.settings().reasoning.language),
   );
 
+  protected worklogLanguages = computed(() =>
+    withStoredOption(REASONING_LANGUAGES, this.store.settings().reasoning.worklogLanguage),
+  );
+
   protected setReasoningEnabled(enabled: boolean) {
     this.store.setReasoning({ ...this.store.settings().reasoning, enabled });
   }
@@ -129,5 +147,11 @@ export class SettingsSuggestionsViewComponent {
     if (typeof language !== 'string') return;
 
     this.store.setReasoning({ ...this.store.settings().reasoning, language });
+  }
+
+  protected setWorklogLanguage(worklogLanguage: unknown) {
+    if (typeof worklogLanguage !== 'string') return;
+
+    this.store.setReasoning({ ...this.store.settings().reasoning, worklogLanguage });
   }
 }

@@ -34,7 +34,14 @@ describe('parseTimetrackSettings', () => {
         subjectField: 'customfield_10057',
         initialStatus: 'In Progress',
       },
-      reasoning: { enabled: true, command: 'codex', model: 'gpt-5', language: 'Deutsch', maskedNames: ['Fifagg'] },
+      reasoning: {
+        enabled: true,
+        command: 'codex',
+        model: 'gpt-5',
+        language: 'Deutsch',
+        worklogLanguage: 'English',
+        maskedNames: ['Fifagg'],
+      },
       actionClasses: { 'autoMode.apply': 'external', 'standIn.rename': 'human-only', 'jira.create': 'local' },
       nudge: { enabled: false, atMinute: 18 * 60 },
       standIn: { overdueAfterWorkdays: 3, overdueAfterMs: 2 * 3_600_000 },
@@ -70,6 +77,7 @@ describe('parseTimetrackSettings', () => {
         command: 'codex',
         model: 'gpt-5',
         language: 'Deutsch',
+        worklogLanguage: 'English',
         maskedNames: ['Fifagg'],
         autoMode: false,
         autoModeTranscripts: false,
@@ -244,11 +252,20 @@ describe('parseTimetrackSettings', () => {
       command: DEFAULT_TIMETRACK_SETTINGS.reasoning.command,
       model: '',
       language: '',
+      worklogLanguage: 'German',
       maskedNames: [],
       autoMode: false,
       autoModeTranscripts: false,
     });
     expect(parseTimetrackSettings({ reasoning: { command: 'claude' } }).reasoning.enabled).toBe(false);
+  });
+
+  it('writes worklogs in German until the user picks another language, or empties it to follow the notes', () => {
+    expect(parseTimetrackSettings({}).reasoning.worklogLanguage).toBe('German');
+    expect(parseTimetrackSettings({ reasoning: { worklogLanguage: ' French ' } }).reasoning.worklogLanguage).toBe(
+      'French',
+    );
+    expect(parseTimetrackSettings({ reasoning: { worklogLanguage: '' } }).reasoning.worklogLanguage).toBe('');
   });
 
   it('refuses a parenting mode the create call cannot execute', () => {

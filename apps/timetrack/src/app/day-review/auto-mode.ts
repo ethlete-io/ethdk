@@ -61,7 +61,6 @@ import {
   withAutoModeDispute,
   autoDescriptionRequest,
   autoDescriptionRowId,
-  autoDescriptionTicketId,
   AutoDescriptionAsk,
   isDayHeldByTempo,
   ledgerEntriesForRange$,
@@ -1101,6 +1100,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           runner,
           request,
           options: reasoningOptionsOf(current),
+          language: current.reasoning.worklogLanguage,
           maskedNames,
         }).pipe(
           switchMap((description) =>
@@ -1122,13 +1122,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
-  const describeLabelOf = (ask: AutoDescriptionAsk) => {
-    const issueKey = ask.rows[0]?.issueKey ?? 'a row';
-
-    return ask.id === autoDescriptionTicketId(issueKey)
-      ? `Describes the day's worklogs of ${issueKey}`
-      : `Describes the worklog of ${issueKey}`;
-  };
+  const describeLabelOf = (ask: AutoDescriptionAsk) => `Describes the worklog of ${ask.rows[0]?.issueKey ?? 'a row'}`;
 
   const queueDescribe = (options: {
     day: string;

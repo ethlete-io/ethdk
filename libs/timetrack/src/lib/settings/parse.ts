@@ -6,7 +6,7 @@ import { FieldSource } from '../model/field-source';
 import { StandIn, StandInRefusal } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
-import { REASONING_COMMANDS } from '../reason/model';
+import { DEFAULT_WORKLOG_LANGUAGE, REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import { CLOCK_STYLES, DATE_STYLES, DEFAULT_DISPLAY_SETTINGS, TimetrackDisplaySettings } from './display';
 import {
@@ -369,6 +369,8 @@ const asReasoning = (value: unknown): TimetrackReasoningSettings => {
     command: REASONING_COMMANDS.includes(command) ? command : DEFAULT_TIMETRACK_SETTINGS.reasoning.command,
     model: asText(raw['model']),
     language: asText(raw['language']),
+    worklogLanguage:
+      typeof raw['worklogLanguage'] === 'string' ? asText(raw['worklogLanguage']) : DEFAULT_WORKLOG_LANGUAGE,
     maskedNames: asTextList(raw['maskedNames']),
     autoMode: raw['autoMode'] === true,
     autoModeTranscripts: raw['autoModeTranscripts'] === true,

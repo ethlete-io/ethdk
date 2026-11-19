@@ -4,8 +4,8 @@ import { maskNames, pseudonymMap } from '../reason/pseudonym';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import {
   WORKLOG_WRITING_JSON_SCHEMA,
-  WORKLOG_WRITING_SYSTEM_PROMPT,
   WorklogWritingRequest,
+  worklogWritingSystemPrompt,
   worklogWritingSpec,
   writeWorklogWithAgent$,
 } from './worklog';
@@ -45,10 +45,33 @@ describe('worklogWritingSpec', () => {
     expect(spec.stdin).toBe(JSON.stringify(REQUEST));
     expect(spec.ask).toBe('a worklog');
     expect(spec.args.join(' ')).toContain('one line saying what the work in this stretch did');
-    expect(WORKLOG_WRITING_SYSTEM_PROMPT).toContain('Never repeat `issue.summary`');
-    expect(WORKLOG_WRITING_SYSTEM_PROMPT).toContain('Aim under 100 characters');
-    expect(WORKLOG_WRITING_SYSTEM_PROMPT).not.toContain('still to do');
+    expect(worklogWritingSystemPrompt('German')).toContain('Never repeat `issue.summary`');
+    expect(worklogWritingSystemPrompt('German')).toContain('Aim under 100 characters');
+    expect(worklogWritingSystemPrompt('German')).not.toContain('still to do');
     expect(WORKLOG_WRITING_JSON_SCHEMA.required).toEqual(['description']);
+  });
+
+  it('writes in German unless another worklog language is configured', () => {
+    expect(worklogWritingSpec({ request: REQUEST }).args.join(' ')).toContain(
+      'Write the description in German, whatever language the notes or this instruction are in.',
+    );
+    expect(worklogWritingSpec({ request: REQUEST, language: 'French' }).args.join(' ')).toContain(
+      'Write the description in French',
+    );
+    expect(worklogWritingSpec({ request: REQUEST }).args.join(' ')).not.toContain('the language the notes are in');
+  });
+
+  it('follows the notes only where the worklog language is left empty', () => {
+    expect(worklogWritingSpec({ request: REQUEST, language: '' }).args.join(' ')).toContain(
+      'Write in the language the notes are in',
+    );
+  });
+
+  it('lets the worklog language outrank the language every other answer is written in', () => {
+    const prompt = worklogWritingSpec({ request: REQUEST, options: { language: 'English' } }).args.join(' ');
+
+    expect(prompt).toContain('Write the description in German');
+    expect(prompt).not.toContain('Write every word you answer in English');
   });
 });
 

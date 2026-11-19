@@ -42,20 +42,14 @@ const sameNotes = (left: readonly string[], right: readonly string[]) =>
 /** How many days back a day that is over may still have its tickets described. */
 export const AUTO_DESCRIPTION_PAST_DAYS = 7;
 
-/**
- * What auto mode describes in one call: a single row, keyed by {@link autoDescriptionRowId}, or every
- * row of one ticket of a day that is over, keyed `ticket:<key>`.
- */
+/** What auto mode describes in one call: a single row, keyed by {@link autoDescriptionRowId}. */
 export type AutoDescriptionAsk = { id: string; rows: ReviewedRow[] };
-
-/** The answer id of the call that describes every row of one ticket on a day. */
-export const autoDescriptionTicketId = (issueKey: string) => `ticket:${issueKey}`;
 
 /**
  * Whether a row's ticket is one the whole day books on rather than this stretch's own: a standing rule
- * named it, or its project is a background project. Such rows are described once, together.
+ * named it, or its project is a background project. Such rows are described once their day is over.
  */
-export const describedPerTicket = (options: {
+export const describedAfterItsDay = (options: {
   row: Pick<ReviewedRow, 'issueKey' | 'evidence' | 'sources'>;
   backgroundProjects?: readonly string[];
 }) => {
@@ -72,8 +66,8 @@ export const describedPerTicket = (options: {
  * What auto mode still has to describe on a day: settled code rows that name an issue, whose
  * description the user did not write, and that hold notes no answer was asked from yet: an ask whose
  * notes changed since its answer is asked again, and one with none is not asked. A row whose ticket a
- * rule or a background project names ({@link describedPerTicket}) waits until its day is over, and is
- * then asked once per ticket with the notes of all its rows, on a day at most
+ * rule or a background project names ({@link describedAfterItsDay}) waits until its day is over, and is
+ * then asked on its own with only its own notes, on a day at most
  * {@link AUTO_DESCRIPTION_PAST_DAYS} back that Tempo holds nothing of yet (`heldByTempo` false). Any
  * other row is asked on today only. Nothing while auto mode is off, and nothing where the user made
  * `autoMode.apply` stricter than `local`.
@@ -116,15 +110,12 @@ export const autoDescriptionAsks = (options: {
   const asks = new Map<string, ReviewedRow[]>();
 
   for (const row of describable) {
-    const perTicket = describedPerTicket({ row, backgroundProjects: options.backgroundProjects });
+    const afterItsDay = describedAfterItsDay({ row, backgroundProjects: options.backgroundProjects });
+    const id = autoDescriptionRowId(row);
 
-    if (perTicket ? !isOver : !isToday) continue;
+    if ((afterItsDay ? !isOver : !isToday) || asks.has(id)) continue;
 
-    const id = perTicket ? autoDescriptionTicketId(row.issueKey ?? '') : autoDescriptionRowId(row);
-
-    if (!perTicket && asks.has(id)) continue;
-
-    asks.set(id, [...(asks.get(id) ?? []), row]);
+    asks.set(id, [row]);
   }
 
   return [...asks].flatMap(([id, rows]) => {

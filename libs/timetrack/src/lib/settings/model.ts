@@ -8,7 +8,7 @@ import { StandIn, StandInRefusal } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { JiraParenting } from '../jira/hierarchy';
-import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
+import { DEFAULT_REASONING_OPTIONS, DEFAULT_WORKLOG_LANGUAGE } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import { DEFAULT_DISPLAY_SETTINGS, TimetrackDisplaySettings } from './display';
 
@@ -127,6 +127,11 @@ export type TimetrackReasoningSettings = {
    * German already gets a German ticket. Naming one here is for a user whose evidence is mixed.
    */
   language: string;
+  /**
+   * The language a worklog description is written in, named the same way as `language`, which it
+   * takes the place of for descriptions. Empty follows the notes of the row.
+   */
+  worklogLanguage: string;
   /**
    * The names that become pseudonyms in anything sent to the model — clients, products, Jira project
    * keys. Grown by hand, because only the user knows which word in their own commit subjects is a
@@ -438,6 +443,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     command: DEFAULT_REASONING_OPTIONS.command,
     model: DEFAULT_REASONING_OPTIONS.model,
     language: DEFAULT_REASONING_OPTIONS.language,
+    worklogLanguage: DEFAULT_WORKLOG_LANGUAGE,
     maskedNames: [],
     autoMode: false,
     autoModeTranscripts: false,

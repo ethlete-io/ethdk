@@ -7,7 +7,6 @@ import {
   AUTO_MODE_SETTLE_MS,
   autoDescriptionAsks,
   autoDescriptionRequest,
-  autoDescriptionTicketId,
   withAutoModeDescription,
 } from './auto-description';
 import { setRowDescription, setRowIssue } from './edits';
@@ -267,7 +266,7 @@ describe('autoDescriptionAsks, a ticket the whole day books on', () => {
     expect(asks({ rows: ruledRows(), heldByTempo: false })).toEqual([]);
   });
 
-  it('asks once per ticket once the day is over, with the notes of all its rows', () => {
+  it('asks once per row once the day is over, each with only its own notes', () => {
     const found = autoDescriptionAsks({
       enabled: true,
       day: TODAY,
@@ -280,14 +279,13 @@ describe('autoDescriptionAsks, a ticket the whole day books on', () => {
     });
 
     expect(found.map((ask) => [ask.id, ask.rows.map((row) => row.id)])).toEqual([
-      [autoDescriptionTicketId('ET-772'), ['ET-772@08:00', 'ET-772@10:00']],
+      ['ET-772@08:00', ['ET-772@08:00']],
+      ['ET-772@10:00', ['ET-772@10:00']],
     ]);
-    expect(autoDescriptionRequest({ rows: found[0]?.rows ?? [] })).toEqual({
-      repo: expect.any(String),
-      minutes: 120,
-      issue: { key: 'ET-772' },
-      notes: ['Fold short rows', 'Mark auto descriptions'],
-    });
+    expect(found.map((ask) => autoDescriptionRequest({ rows: ask.rows }))).toEqual([
+      { repo: expect.any(String), minutes: 60, issue: { key: 'ET-772' }, notes: ['Fold short rows'] },
+      { repo: expect.any(String), minutes: 60, issue: { key: 'ET-772' }, notes: ['Mark auto descriptions'] },
+    ]);
   });
 
   it('treats a ticket of a background project the same, with no rule behind it', () => {
@@ -299,7 +297,8 @@ describe('autoDescriptionAsks, a ticket the whole day books on', () => {
 
     expect(asks({ rows, backgroundProjects: ['et'] })).toEqual([]);
     expect(asks({ rows, today: TOMORROW, nowMs: LATER_MS, heldByTempo: false, backgroundProjects: ['et'] })).toEqual([
-      autoDescriptionTicketId('ET-772'),
+      'ET-772@08:00',
+      'ET-772@10:00',
     ]);
   });
 
@@ -309,25 +308,28 @@ describe('autoDescriptionAsks, a ticket the whole day books on', () => {
     expect(asks({ rows: ruledRows(), today: '2026-08-19', nowMs: LATER_MS, heldByTempo: false })).toEqual([]);
   });
 
-  it('writes the answer to every row of the ticket, and asks no second time', () => {
+  it('writes each answer to its own row only, and asks no second time', () => {
     const rows = ruledRows();
-    const edits = withAutoModeDescription({
-      edits: EMPTY_DAY_REVIEW_EDITS,
-      rows,
-      answer: {
-        rowId: autoDescriptionTicketId('ET-772'),
-        askedAtMs: LATER_MS,
-        request: autoDescriptionRequest({ rows }),
-        description: 'Short rows fold, auto descriptions are marked',
-      },
-    });
+    const edits = rows.reduce(
+      (written, row, index) =>
+        withAutoModeDescription({
+          edits: written,
+          rows: [row],
+          answer: {
+            rowId: row.id,
+            askedAtMs: LATER_MS,
+            request: autoDescriptionRequest({ rows: [row] }),
+            description: ['Kurze Zeilen falten', 'Automatische Beschreibungen markieren'][index],
+          },
+        }),
+      EMPTY_DAY_REVIEW_EDITS,
+    );
     const written = ruledRows(edits);
 
     expect(written.map((row) => [row.description, row.sources?.description, row.edited])).toEqual([
-      ['Short rows fold, auto descriptions are marked', 'auto', false],
-      ['Short rows fold, auto descriptions are marked', 'auto', false],
+      ['Kurze Zeilen falten', 'auto', false],
+      ['Automatische Beschreibungen markieren', 'auto', false],
     ]);
-    expect(edits.autoDescriptions?.[0]?.rowIds).toEqual(['ET-772@08:00', 'ET-772@10:00']);
     expect(over({ rows: written, answers: edits.autoDescriptions })).toEqual([]);
   });
 
