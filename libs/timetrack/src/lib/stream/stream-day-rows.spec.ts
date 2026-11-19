@@ -179,10 +179,12 @@ describe('the rows a quiet day produces', () => {
 describe('the rows a day with a meeting produces', () => {
   const rows = rowsOf(MEETING_DAY);
 
-  it('proposes no row for a meeting the microphone never heard, and asks about it instead', () => {
-    expect(rows.unobserved.map((entry) => entry.event.title)).toEqual(['Sprint planning']);
+  it('suggests a call row for a meeting the microphone never heard', () => {
+    expect(rows.unobserved).toEqual([]);
     expect(rows.calls).toEqual([]);
-    expect(rows.unnamed).toEqual([]);
+    expect(rows.unnamed.map((row) => [row.description, row.laneKey, row.state])).toEqual([
+      ['Sprint planning', CALL_LANE_KEY, 'suggested'],
+    ]);
   });
 
   it('reads the meeting off the calendar once a call was heard over it', () => {
@@ -317,14 +319,15 @@ describe('the rows a remembered naming produces', () => {
     expect(rows.calls.map((entry) => entry.group.issueKey)).toEqual(['FIP-3000']);
   });
 
-  it('offers the answer on an occurrence no call was heard over, without proposing a row for it', () => {
+  it('names the suggested row of an occurrence no call was heard over with the answer', () => {
     const events = dayOf(60).filter((event) => event.source !== 'call');
     const rows = rowsOf(events, { callRules: ['firefox'], namings: namingFor('FIP-3000') });
 
     expect(rows.calls).toEqual([]);
-    expect(rows.unobserved.map((entry) => [entry.event.title, entry.issueKey])).toEqual([
-      ['Sprint planning', 'FIP-3000'],
-    ]);
+    expect(rows.unobserved).toEqual([]);
+    expect(
+      rows.proposals.filter((row) => row.laneKey === CALL_LANE_KEY).map((row) => [row.issueKey, row.state]),
+    ).toEqual([['FIP-3000', 'suggested']]);
   });
 });
 

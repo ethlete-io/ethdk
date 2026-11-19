@@ -14,6 +14,8 @@ import {
   NamedIssue,
   NamedWork,
   PickedCandidate,
+  UnobservedOccurrence,
+  calendarEvidence,
   candidatesFor,
   occurrenceIssueKey,
   patternIssueKey,
@@ -298,6 +300,26 @@ const matchOne = (options: {
     },
   };
 };
+
+/** Whether an occurrence no call was heard over is drawn as a suggested call row: ADR 0048. */
+export const suggestsMeetingRow = (occurrence: UnobservedOccurrence) =>
+  occurrence.event.accepted && isSharedOccurrence(occurrence.event);
+
+/**
+ * The call row an accepted meeting no call was heard over suggests: the occurrence's own span, named
+ * from its title or a remembered answer, and never sure enough to book without review.
+ */
+export const suggestedMeetingRow = (occurrence: UnobservedOccurrence): WorkGroup => ({
+  ...(occurrence.issueKey ? { issueKey: occurrence.issueKey } : {}),
+  from: occurrence.event.at,
+  to: occurrence.event.until,
+  observedMs: occurrence.event.until.getTime() - occurrence.event.at.getTime(),
+  confidence: 'weak',
+  evidence: [calendarEvidence(occurrence.event)],
+  blocks: [],
+  laneKey: CALL_LANE_KEY,
+  attended: true,
+});
 
 /**
  * The call a row was built from: the one it shares the most time with, so two calls in one hour still

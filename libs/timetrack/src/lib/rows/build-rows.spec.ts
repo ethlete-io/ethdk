@@ -103,14 +103,17 @@ describe('buildRows with a transient window over the work', () => {
     expect(laneKeys(rows)).not.toContain(`app:${POPUP}`);
   });
 
-  it('asks about the meeting rather than billing it when no call was heard', () => {
+  it('suggests the meeting as a call row when no call was heard', () => {
     const rows = buildRows({
       blocks: [block({ from: at(10, 10), to: at(10, 11), context: { appId: POPUP } })],
       events: [OCCURRENCE],
       noWorkContext: { transientApps: [POPUP] },
     });
 
-    expect(rows.unobserved.map((entry) => entry.event.title)).toEqual(['weekly']);
+    const meeting = [...rows.proposals, ...rows.unnamed].filter((row) => row.laneKey === CALL_LANE_KEY);
+
+    expect(meeting.map((row) => [row.from, row.state])).toEqual([[at(10), 'suggested']]);
+    expect(rows.unobserved).toEqual([]);
     expect(rows.calls).toEqual([]);
   });
 
@@ -863,5 +866,39 @@ describe('buildRows with a library a later checkout uses', () => {
 
     expect(rows.proposals.map((row) => row.laneKey)).toEqual([`repo:${APP}`]);
     expect(rows.unnamed.map((row) => row.laneKey)).toEqual([`repo:${LIBRARY}`]);
+  });
+});
+
+describe('buildRows with an accepted meeting no call was heard over', () => {
+  const MEETING: CalendarOccurrenceEvent = {
+    at: at(13),
+    until: at(16),
+    source: 'calendar',
+    kind: 'calendar-event',
+    occurrenceId: 'workshop',
+    title: 'Workshop',
+    accepted: true,
+    participants: ['Someone Else'],
+  };
+  const work = block({ from: at(13), to: at(15), context: { repoPath: '/dev/a', branch: 'main' } });
+  const callRows = (rows: ReturnType<typeof buildRows>) =>
+    [...rows.proposals, ...rows.unnamed].filter((row) => row.laneKey === CALL_LANE_KEY);
+
+  it('suggests it beside the work observed during it', () => {
+    const rows = buildRows({ blocks: [work], events: [MEETING] });
+
+    expect(callRows(rows).map((row) => [row.from, row.durationMs, row.state])).toEqual([
+      [at(13), 3 * 60 * 60_000, 'suggested'],
+    ]);
+    expect([...rows.proposals, ...rows.unnamed].map((row) => row.laneKey)).toContain('repo:/dev/a');
+  });
+
+  it('suggests nothing for an own blocker or a meeting never accepted', () => {
+    const blocker = { ...MEETING, participants: [] };
+    const unanswered = { ...MEETING, occurrenceId: 'later', at: at(17), until: at(18), accepted: false };
+    const rows = buildRows({ blocks: [work], events: [blocker, unanswered] });
+
+    expect(callRows(rows)).toEqual([]);
+    expect(rows.unobserved.map((entry) => entry.event.occurrenceId)).toEqual(['workshop', 'later']);
   });
 });

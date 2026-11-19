@@ -272,7 +272,7 @@ const rememberedIssueKey = (options: {
   };
 };
 
-/** A calendar occurrence the day observed no call for. It is a question the review asks, never a row. */
+/** A calendar occurrence the day observed no call for. */
 export type UnobservedOccurrence = {
   event: CalendarOccurrenceEvent;
   /** The issue its own title or a remembered naming gives it, for the card to offer with one press. */
@@ -283,9 +283,8 @@ export type UnobservedOccurrence = {
 /**
  * The occurrences no call was heard over.
  *
- * An invitation is an intention, and only the microphone records that a meeting happened, so one of
- * these proposes no row. It becomes a question the day asks instead, which is also the honest answer
- * for a meeting held in a room or on a telephone.
+ * An accepted, shared one suggests a call row (`suggestedMeetingRow`); the rest are questions the day
+ * asks.
  *
  * Every call counts here, not only the ones a rule counted as work: a call the attendance gate
  * dropped still says the user was in something at that hour.

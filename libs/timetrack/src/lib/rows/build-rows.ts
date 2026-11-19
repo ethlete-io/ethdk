@@ -9,7 +9,7 @@ import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { TimeWindow } from '../model/time-window';
 import { attendedAt, attendedLanes, markAttendance, peerAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
-import { CallMatch, dropCallWindows, matchCalls } from './calls';
+import { CallMatch, dropCallWindows, matchCalls, suggestedMeetingRow, suggestsMeetingRow } from './calls';
 import { consumerTickets } from './consumer-ticket';
 import {
   BehindStretch,
@@ -140,8 +140,8 @@ export type DayRows = {
   /** The unattributed work as rows, for the day screen to draw and the reviewer to cut and name. */
   unnamed: UnnamedProposal[];
   /**
-   * The occurrences the day heard no call over. They are questions the review asks, never rows: an
-   * invitation records an intention, and only the microphone records that a meeting happened.
+   * The occurrences the day heard no call over that suggest no call row: one never accepted, or an own
+   * blocker. They are questions the review asks.
    */
   unobserved: UnobservedOccurrence[];
   /**
@@ -294,7 +294,9 @@ export const buildRows = (
     occurrences,
     meetings: naming,
   });
-  const unobserved = unobservedOccurrences({ occurrences, calls: options.calls ?? [], meetings: naming });
+  const silent = unobservedOccurrences({ occurrences, calls: options.calls ?? [], meetings: naming });
+  const unobserved = silent.filter((occurrence) => !suggestsMeetingRow(occurrence));
+  const suggestedMeetings = silent.filter(suggestsMeetingRow).map(suggestedMeetingRow);
   // A call a rule excluded claims nothing: it books no time, and a voice room left open is the one
   // thing that must never stand in for a person being at the machine.
   const booked = calls.filter((match) => match.call.countsAsWork);
@@ -340,7 +342,7 @@ export const buildRows = (
     ...attendance,
   });
   const groups = joinUnattended({
-    groups: marked,
+    groups: [...marked, ...suggestedMeetings],
     gaps: options.gaps ?? [],
     maxGapMs: options.merge?.maxMergeGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,
   });
