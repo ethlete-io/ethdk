@@ -31,6 +31,20 @@ describe('foldUnattended', () => {
     expect(folded[0]).toMatchObject({ id: 'a', from: AT(0), to: AT(30), observedMs: 180_000, folded: ['b', 'c'] });
   });
 
+  it('draws touching accepted rows of one issue, lane and description as one block with the summed duration', () => {
+    const accepted = { state: 'accepted', unattended: false, issueKey: 'FIFAGG-12769', description: 'work' } as const;
+    const folded = foldUnattended([
+      row('a', 15, 30, accepted),
+      row('b', 30, 45, accepted),
+      row('c', 60, 75, accepted),
+      row('d', 45, 60, { ...accepted, description: 'other' }),
+      row('e', 30, 45, { ...accepted, issueKey: 'FIFAGG-1' }),
+    ]);
+
+    expect(folded.map((kept) => kept.id)).toEqual(['a', 'c', 'd', 'e']);
+    expect(folded[0]).toMatchObject({ from: AT(15), to: AT(45), durationMs: 30 * 60_000, folded: ['b'] });
+  });
+
   it('keeps apart what another issue, another lane, a gap or a person separates', () => {
     const rows = [
       row('a', 0, 15),

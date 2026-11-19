@@ -1,9 +1,14 @@
 import { ReviewedRow } from '@ethlete/timetrack';
 
-const foldKeyOf = (row: ReviewedRow) =>
-  row.unattended && !row.issueKey && !row.standInId && !row.excluded && row.state !== 'rejected'
+const foldKeyOf = (row: ReviewedRow) => {
+  if (row.excluded || row.standInId) return null;
+
+  if (row.state === 'accepted' && row.issueKey) return `accepted|${row.laneKey}|${row.issueKey}|${row.description}`;
+
+  return row.unattended && !row.issueKey && row.state !== 'rejected'
     ? `${row.laneKey}|${row.withheldIssueKey ?? ''}|${row.workedOn ?? ''}`
     : null;
+};
 
 export const foldUnattended = (rows: readonly ReviewedRow[]): ReviewedRow[] => {
   const runs = new Map<ReviewedRow, ReviewedRow>();
