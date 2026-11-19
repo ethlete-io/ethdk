@@ -109,13 +109,16 @@ import {
   catchError,
   concatMap,
   defer,
+  delay,
   exhaustMap,
   finalize,
   forkJoin,
   from,
   interval,
   map,
+  merge,
   of,
+  skip,
   switchMap,
   take,
   takeWhile,
@@ -1357,9 +1360,19 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return enabled() && approvals.isLoaded() && dayReview.dayKey() !== day ? day : null;
   });
 
+  const standInKeys = computed(() =>
+    settings
+      .settings()
+      .standIns.map((standIn) => standIn.id)
+      .join(),
+  );
+  const standInsChanged$ = toObservable(standInKeys).pipe(skip(1), delay(0));
+
   toObservable(offScreenDay)
     .pipe(
-      switchMap((day) => (day ? timer(0, OFF_SCREEN_TICK_MS).pipe(exhaustMap(() => offScreenPass$(day))) : EMPTY)),
+      switchMap((day) =>
+        day ? merge(timer(0, OFF_SCREEN_TICK_MS), standInsChanged$).pipe(exhaustMap(() => offScreenPass$(day))) : EMPTY,
+      ),
       takeUntilDestroyed(),
     )
     .subscribe();
