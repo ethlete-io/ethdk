@@ -119,11 +119,10 @@
   },
   "components/scheduler": "3897faf73c598b17",
   "components/scrollable": {
-    "hash": "87824b455dfdb860",
+    "hash": "5accf58be0bbdd5e",
     "variant": "new",
-    "decidedBy": "plan: finding 343: the mock passes the gap the real scrollable measures",
-    "at": "2026-11-18T13:37:19.364Z",
-    "note": "merged without a pick: allowed by finding 343: the mock passes the gap the real scrollable measures"
+    "decidedBy": "builder",
+    "at": "2026-11-20T22:55:56.272Z"
   },
   "components/scrollbar": "ba792b958ff840d9",
   "components/select": "1a96ea5db00e7c22",

@@ -1,9 +1,9 @@
 import { scrollable, scrollableStyles } from '@ethlete/components/design/scrollable';
-import { definePart, drawing } from '@design-system';
+import { definePart, drawing, interactionRows } from '@design-system';
 import frame from './scrollable.css?inline';
 
 type Position = 'start' | 'middle' | 'end';
-type Interaction = 'hover' | 'active';
+type Interaction = 'hover' | 'active' | 'focus-visible';
 
 const ITEM_SIZES = ['same', 'full', 'half', 'third', 'quarter'] as const;
 type ItemSize = (typeof ITEM_SIZES)[number];
@@ -70,7 +70,7 @@ const render = (props: Props) => {
     itemSize: props.itemSize,
     itemGap: GAP,
     color: props.color,
-    endButtonAttributes: props.endButton ? `data-et-force="${props.endButton}"` : undefined,
+    endButtonAttributes: `data-et-control="end-button" data-can-animate ${props.endButton ? `data-et-force="${props.endButton}"` : ''}`,
     containerAttributes: `style="--scrollable-offset: -${offset}px"`,
     items: Array.from({ length: items }, (_, index) => ({
       tag: 'button',
@@ -87,6 +87,14 @@ const render = (props: Props) => {
   });
 };
 
+const { states: interactionStates, grid } = interactionRows<Props, 'end-button', Interaction>(
+  { 'end-button': { position: 'middle' } },
+  {
+    interactions: ['hover', 'active', 'focus-visible'],
+    force: (props, interaction) => ({ ...props, endButton: interaction }),
+  },
+);
+
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
   consumerAction: 'the buttons inside are content the consumer projects',
@@ -98,8 +106,7 @@ export default definePart({
     'vertical-start': { direction: 'vertical' },
     'vertical-middle': { direction: 'vertical', position: 'middle' },
     'vertical-end': { direction: 'vertical', position: 'end' },
-    'button-hover': { position: 'middle', endButton: 'hover' },
-    'button-active': { position: 'middle', endButton: 'active' },
+    ...interactionStates,
     'border-mask': { position: 'middle', maskVariant: 'border' },
     'vertical-border-mask': { direction: 'vertical', position: 'middle', maskVariant: 'border' },
     'navigation-start': { navigation: true },
@@ -127,8 +134,12 @@ export default definePart({
     'vertical-start': 'A vertical list at the start; check that only the bottom shows a mask and a button.',
     'vertical-middle': 'The vertical list in the middle; check that masks and buttons show at top and bottom.',
     'vertical-end': 'The vertical list at the end; check that only the top shows a mask and a button.',
-    'button-hover': 'The middle row with the end button hovered; check that only the end button shows hover.',
-    'button-active': 'The middle row with the end button pressed; check that the press look is deeper than hover.',
+    'end-button':
+      'The middle row with the end button at rest; check its size and tint against the hover, pressed and focus looks.',
+    'end-button-hover': 'The middle row with the end button hovered; check that only the end button shows hover.',
+    'end-button-active': 'The middle row with the end button pressed; check that the press look is deeper than hover.',
+    'end-button-focus-visible':
+      'The middle row with the end button focused by keyboard; check the focus ring around it.',
     'border-mask': 'The middle row with the border mask; check that edges show a border line instead of a gradient.',
     'vertical-border-mask': 'The vertical list with the border mask; check the border lines at top and bottom.',
     'navigation-start': 'The row at the start with navigation dots; check that the first dot is active.',
@@ -150,6 +161,10 @@ export default definePart({
     'item-size-third': 'Items at a third; check that three items fill the viewport with two gaps.',
     'item-size-quarter': 'Items at a quarter; check that four items fill the viewport with three gaps.',
   },
+  grid,
+  controls: {
+    'end-button': { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
+  },
   widths: [480],
   scrolls: [
     'horizontal-start',
@@ -158,8 +173,7 @@ export default definePart({
     'vertical-start',
     'vertical-middle',
     'vertical-end',
-    'button-hover',
-    'button-active',
+    ...(Object.keys(interactionStates) as (keyof typeof interactionStates)[]),
     'border-mask',
     'vertical-border-mask',
     'navigation-start',
