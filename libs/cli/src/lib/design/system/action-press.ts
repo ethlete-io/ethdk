@@ -25,8 +25,9 @@ export const SETTLE_TIMEOUT_MS = 3_000;
 export class SettleTimeoutError extends Error {}
 
 /**
- * Waits until no finite, time-based animation runs for a few frames. Throws a `SettleTimeoutError` when they still run
- * after `timeout`, capped at `SETTLE_TIMEOUT_MS`.
+ * Waits until no finite, time-based animation runs for a few frames, finishing each one that ends within the cap
+ * instead of waiting it out. Throws a `SettleTimeoutError` when they still run after `timeout`, capped at
+ * `SETTLE_TIMEOUT_MS`.
  */
 export const settle = async (page: Page, timeout: number) => {
   const cap = Math.min(timeout, SETTLE_TIMEOUT_MS);
@@ -34,6 +35,10 @@ export const settle = async (page: Page, timeout: number) => {
   await page
     .waitForFunction(
       `(() => {
+        for (const animation of document.getAnimations().filter(${UNSETTLED_ANIMATION})) {
+          if (animation.effect.getComputedTiming().endTime > ${cap}) continue;
+          try { animation.finish(); } catch {}
+        }
         const settled = !document.getAnimations().some(${UNSETTLED_ANIMATION});
         window.__etActionFrames = settled ? (window.__etActionFrames ?? 0) + 1 : 0;
         return window.__etActionFrames >= ${SETTLED_FRAMES};

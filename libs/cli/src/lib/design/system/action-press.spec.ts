@@ -39,6 +39,25 @@ describe('settle', () => {
     await page.close();
   });
 
+  it('finishes an animation that ends within its cap instead of waiting it out', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(`<style>
+        @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+        .body { animation: fade 2s linear }
+      </style><div class="body">x</div>`);
+
+    const start = Date.now();
+
+    await settle(page, 15_000);
+
+    expect(Date.now() - start).toBeLessThan(1000);
+    expect(await page.evaluate(`getComputedStyle(document.querySelector('.body')).opacity`)).toBe('1');
+    await page.close();
+  });
+
   it('names an animation that outruns its cap instead of waiting the caller timeout out silently', async (context) => {
     if (!browser) return context.skip('no browser');
 
