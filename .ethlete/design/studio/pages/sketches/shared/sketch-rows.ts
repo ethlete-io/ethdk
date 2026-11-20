@@ -23,13 +23,14 @@ type Render = { body: string; styles: string };
 
 export type SketchPart = {
   key: string;
+  sample?: string;
   width: number;
   states: string[];
   rows: Row[];
   render: (state: string) => Promise<Render>;
 };
 
-export type PartKind = 'wide' | 'narrow' | 'edit';
+export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours';
 
 const OPUS: Omit<Model, 'when'> = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' };
 const SOL: Omit<Model, 'when'> = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' };
@@ -108,6 +109,32 @@ export const PARTS: Record<PartKind, SketchPart> = {
       },
     ],
   },
+  neighbours: {
+    key: 'components/zoom-chip',
+    sample: 'neighbours',
+    width: 176,
+    states: Object.keys(zoomChipStates),
+    render: placeholderChip,
+    rows: [
+      { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
+      {
+        key: 'a',
+        label: 'Entwurf 1',
+        note: 'Die Prozentzahl färbt sich beim Überfahren des Reset-Knopfs.',
+        model: { ...OPUS, when: '02.11. 11:02' },
+        changed: ['reset-hover'],
+        look: '[&_[data-camera-reset]_button]:text-et-theme',
+      },
+      {
+        key: 'b',
+        label: 'Entwurf 2',
+        note: 'Der Einpassen-Knopf zeigt beim Drücken und beim Fokus einen Rand.',
+        model: { ...SOL, when: '02.11. 11:09' },
+        changed: ['fit-active', 'fit-focus-visible'],
+        look: '[&_[data-camera-fit]_button]:rounded-full',
+      },
+    ],
+  },
   narrow: {
     key: 'components/zoom-chip',
     width: 176,
@@ -145,8 +172,11 @@ export const withSame = (part: SketchPart, same: RowKey[]): SketchPart => ({
 
 export const isSame = (row: Row) => !isBase(row) && row.changed.length === 0;
 
+const interactionGroupOf = (state: string) => state.replace(/-(hover|focus-visible|active|disabled)$/, '');
+
 export const unchangedStates = (part: SketchPart) => {
-  const unchanged = part.states.filter((state) => part.rows.every((row) => !row.changed.includes(state)));
+  const touched = new Set(part.rows.flatMap((row) => row.changed.map(interactionGroupOf)));
+  const unchanged = part.states.filter((state) => !touched.has(interactionGroupOf(state)));
   return unchanged.length < part.states.length ? unchanged : [];
 };
 
@@ -178,8 +208,9 @@ export const cell = (part: SketchPart, row: Row, state: string, place = '', pend
     look: row.changed.includes(state) ? row.look : '',
     same: !pending && unchanged(row, state),
     first: !pending && state === firstChanged(row),
+    marked: !pending && !isBase(row) && row.changed.includes(state),
     place,
-    sample: pending ? undefined : `${part.key} ${row.key} ${state}${isSame(row) ? ' unchanged' : ''}`,
+    sample: pending ? undefined : `${part.sample ?? part.key} ${row.key} ${state}${isSame(row) ? ' unchanged' : ''}`,
   });
 
 export const wrapStage = (part: SketchPart, row: Row, pending = false) =>

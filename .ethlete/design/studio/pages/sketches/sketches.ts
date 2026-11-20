@@ -287,13 +287,11 @@ const treeOf = (key: string, multi: MultiTargets | undefined, status: SketchStat
       {
         title: 'Components',
         open: true,
-        parts: Object.values(PARTS)
-          .map((entry) => entry.key.replace('components/', ''))
-          .map((name) => ({
-            name,
-            leaf: true,
-            ...(!multi && `components/${name}` === key ? { selected: true } : {}),
-          })),
+        parts: [...new Set(Object.values(PARTS).map((entry) => entry.key.replace('components/', '')))].map((name) => ({
+          name,
+          leaf: true,
+          ...(!multi && `components/${name}` === key ? { selected: true } : {}),
+        })),
       },
       {
         title: 'Pages',
@@ -329,6 +327,7 @@ const controlsOf = async () => ({
   pickers: {
     wide: await pickerOf('Runde 1 · Suche und Update'),
     narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
+    neighbours: await pickerOf('Runde 3 · Nachbarschaft einer Änderung'),
     edit: await pickerOf('Direkte Änderung'),
     screen: await pickerOf('Runde 2 · Port nach dem Merge'),
   },
@@ -856,6 +855,7 @@ export default definePart<Props>({
     'list-error': { camera: 'fit', part: 'narrow', comparing: true, listError: LIST_ERROR },
     'compare-pending': { camera: 'fit', part: 'narrow', comparing: true, known: [...RESET_STATES] },
     'compare-answered': { camera: 'fit', part: 'narrow' },
+    neighbourhood: { camera: 'fit', part: 'neighbours' },
     'added-state': { camera: 'fit', part: 'narrow', added: true },
     'narrow-wide-state': { camera: 'fit', part: 'narrow', wideState: true },
     'panned-zoomed': { camera: { zoom: 1.5, x: -500, y: 0 }, part: 'narrow' },
@@ -933,6 +933,8 @@ export default definePart<Props>({
       'The sketch listing failed while comparing; check Erneut laden before Verwerfen and Vergleich fehlgeschlagen with the reason in the error colour.',
     'compare-pending':
       'Some states known as changed while the rest still compare; check that only those show and the rest sit folded behind one line.',
+    neighbourhood:
+      'Each variant changes one interaction of a control; check that the whole row of that control shows, the changed cell marked and its neighbours dimmed, and that the other controls stay folded.',
     'compare-answered':
       'The comparison done; check that unchanged states are dimmed, the first change is marked and the grid did not jump.',
     'added-state':

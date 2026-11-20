@@ -111,10 +111,10 @@
     "at": "2026-11-20T14:42:44.014Z"
   },
   "elements/variant-cell": {
-    "hash": "336c8ebfeff87080",
-    "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-13T07:17:52.594Z"
+    "hash": "01e93a1e5d83354a",
+    "variant": "c",
+    "decidedBy": "user",
+    "at": "2026-11-20T22:25:21.277Z"
   },
   "foundations/agent-logos": {
     "hash": "a7da916151a12f97",
@@ -159,10 +159,10 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "pages/sketches": {
-    "hash": "4bf95f1170fd24f1",
-    "variant": "a",
+    "hash": "e3aaa3cd26ec62da",
+    "variant": "c",
     "decidedBy": "user",
-    "at": "2026-11-20T21:20:07.189Z"
+    "at": "2026-11-20T22:25:21.277Z"
   },
   "pages/start": {
     "hash": "845cd04839f8e662",
@@ -171,9 +171,9 @@
     "at": "2026-11-20T06:52:42.718Z"
   },
   "pages/system": {
-    "hash": "1de347b713b1c124",
-    "variant": "calm",
+    "hash": "0e2d14ca8d9e8cbb",
+    "variant": "new",
     "decidedBy": "user",
-    "at": "2026-11-20T22:28:18.114Z"
+    "at": "2026-11-20T06:36:25.168Z"
   }
 }

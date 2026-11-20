@@ -10,6 +10,7 @@ type Props = {
   look?: string;
   same?: boolean;
   first?: boolean;
+  marked?: boolean;
   place?: string;
   loading?: boolean;
   sample?: string;
@@ -114,7 +115,7 @@ const frame = ({
 };
 
 export const variantCell = (props: Props) => {
-  const { state, same = false, first = false, place = '', loading = false } = props;
+  const { state, same = false, first = false, marked = false, place = '', loading = false } = props;
   return html`<div
     class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
     data-sk-state="${state}"
@@ -128,7 +129,7 @@ export const variantCell = (props: Props) => {
           same ? 'text-et-surface-muted' : 'text-et-surface'
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span>${same ? 'unverändert' : ''}</span
-      >${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''}${loading ? loadingBadge : ''}</span
+      >${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''}${loading ? loadingBadge : ''}</span
     >
     ${frame(props)}
   </div>`;
@@ -143,11 +144,12 @@ const base: Props = { state: 'rest', width: 480, shot: demo };
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
   note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height and the label row carries the Lädt mark the canvas frames show in a loading frame head: the SDK spinner at 14 px and Lädt. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; comment pins sit on their point in the shot.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [240],
   states: {
     changed: base,
     first: { ...base, first: true },
+    marked: { ...base, marked: true },
     unchanged: { ...base, same: true },
     loading: { ...base, loading: true },
     selected: { ...base, height: 120, selected: true },
@@ -179,6 +181,7 @@ export default definePart({
     changed:
       'A changed state cell with rest above the half-scale Speichern shot; check that the label sits on the first row and the shot fits the 240px frame.',
     first: 'The first changed state; check the erste Änderung mark beside the state name, on one line with it.',
+    marked: 'A changed cell inside a row of unchanged neighbours; check that the cell stands out from the dimmed ones.',
     unchanged:
       'A state the variant leaves as it was; check that the whole cell is dimmed and the label reads rest · unverändert.',
     selected: 'The cell whose frame is selected; check the 2px accent outline inset in the frame.',
