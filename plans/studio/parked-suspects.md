@@ -122,6 +122,7 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - timetrack binaries (Linux, 19.11.): `npx ethlete-agents` 404s; `/usr/bin/timetrack` panics WebviewRuntimeNotInstalled. Suspect.
 - timetrack call row id (B616, 19.11.): `issueKey@from` may differ per machine. Suspect.
 - timetrack peer day (19.11.): an open day picks up received peer rows only on the next tick; the first rows call 4 min after app start timed out at 60 s. Suspect.
+- Storybook theme (20.11., first sighting): maps ink and primary to one colour, so ink-vs-primary looks are unverifiable there.
 - Storybook color-scheme (19.11.): stays dark on a light surface (light-dark() ink branch unmeasured). Suspect.
 - standings form result (19.11.): not focusable, so keyboard users get no tooltip (pre-existing). Suspect.
 - design parts without compare (19.11.): the timetrack design product has no part harness and shell-system-picker no implements link, so drift is not caught. Suspect.
@@ -142,6 +143,6 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - headless stubs (20.11.): host commands added by A26/A27 had no stubs in verify-studio-headless (ce1e65214). Suspect: a new host command lands without its stub.
 - look claims (20.11.): 08e824394 said the diff-mark ring is not clipped in the app; only a design shot backed it, the app clips it. Suspect: a look commit claims app behaviour from a design shot.
 - mac Studio bundle (20.11.): publish Bundle ethlete-studio (macos-latest) in 44774695508 failed with npm ECOMPROMISED "Lock compromised". Suspect: npm cache lock race on the runner.
-- compare without run deadline (Linux, 20.11., C21): one shell-main compare hung > 25 min; not reproduced in 3 uncached runs (26-35 s). Suspect: compare has no run deadline (RUN_DEADLINES_MS covers shot and check only).
+- compare without run deadline (Linux, 20.11., C21): the shell-main compare hang of 19.11. (> 25 min) is not reproduced in 3 uncached runs (26-35 s). Suspect: compare has no run deadline (RUN_DEADLINES_MS covers shot and check only).
 - host-signal under CI (CI, 20.11., 454d99322): `studio:e2e:host-signal` sigint/sigterm left 8 processes after 5 s, sigint-inherited-ignore 4.9 s; rerun green, local 4/4. Suspect: 6e0b50cd4 pre_exec (fork instead of posix_spawn) or a slow runner.
 - scratch checkout lost files (machinery, 20.11.): a builder scratch checkout lost 16274 tracked files between two design server runs, once; restored. Suspect, first time.

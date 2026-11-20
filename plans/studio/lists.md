@@ -22,18 +22,15 @@ Zu [STATUS.md](STATUS.md).
   Pfadangabe) und nahm fast Dateien anderer Agents mit. Unmöglich, wenn ohne Pfade nichts dazukommt.
 - Cause (20.11., git): ein Subagent committete a155bf140 per commit-tree an den Hooks vorbei (commitlint rot); einmalig
   umformuliert (ADR 0391). Unmöglich, wenn Subagenten nur über `yarn commit` committen.
+- Cause (20.11., Code): pre-push läuft weder `studio:classes:check` (eigener CI-Schritt, kein eslint) noch die Unit-Specs der Libs; die cdk-Spec components-classes liest das CSS von der Platte, daher findet `vitest related` sie nicht (rotes CI 44806835681). Unmöglich, wenn die Regel `canonical-class` ein eslint-Lauf ist und die Spec das CSS importiert, das sie liest.
+- Cause (20.11.): Agent-Isolation `worktree` schneidet von main und löscht sich selbst; bei zwei Subagenten fiel ein fehlgeschlagenes `cd` auf den Haupt-Checkout zurück und `git checkout -B` lief dort (kurz verschoben, wiederhergestellt). Unmöglich, wenn Builder-Slices `git worktree add` auf origin/next nutzen und jeder Aufruf mit `cd <wt>` beginnt.
 
 ## A. Studio: was man sieht
 
-- **A1** Titelleiste: Sketch `components/title-bar` Variante C ist gemergt (02.11.); jetzt den Code angleichen
-  (Fensterknöpfe, Suchfeld „studio / Part“, Update-Knopf nur bei bereitem Update; Befund 133).
-  Gebaut ff698951f (c8, ungepusht; SDK-Fensterknopf `shape: 'caption'`). Offen: die 12 übersprungenen Hover-Zustände
-  (Befund 483), ein echtes Windows-Fenster, Sketch `components/title-bar@notice-hint` (Befund 484). `check --part
 elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
-- **A10** Baubereit (ADR 0048): der Kern, B250 und B251 sind gebaut; offen ist nur der Live-Nachweis der B251b-Skizze (Bild der App in `design serve`); die Wahl von `built` merget als Platzhalter mit offenem Punkt `redraw` (Commit "Keep a merged built pick as a placeholder with a redraw open point").
+
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
 - **A16** Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
-- **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).
 - **A22** Flows: Pins, Notizen (verschieben per Ziehen, Liste verwaister Notizen), Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
 - **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81). Chat zeigt den Zustand des Agenten
   (arbeitet, wartet, unterbrochen, fehlgeschlagen) mit Stopp und Fortsetzen, Anmeldung in Studio, Verweis auf Teil,
@@ -56,7 +53,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   eigenes Git-Setup; Chat, Editor und Git arbeiten auf demselben Stand (designer-workflow.md, Abschnitte 3 und 4).
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
   (existing-code-import.md; offene Entscheidungen dort).
-- **A40** Neues Produkt in Studio anlegen: Formular mit Name und optionaler Basis (ADR 0366).
 
 ## B. Design-CLI: neue Prüfungen
 
@@ -64,15 +60,12 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   Seite (Befunde 84, 85).
 - **B2** `--live` meldet fertige Teile, die keine Seite zeigt (Befunde 89, 91).
 - **B3** Prüfung bei breiterem Fenster: feste Breite in einem wachsenden Bereich (Befund 90).
-- **B4** Hover-Zustand im Vergleich (Befund 96).
 - **B5** Scroll-Position nach Neuladen prüfen (Befund 99).
 - **B6** Größenänderung pro Canvas prüfen (Befund 100).
-- **B7** SDK-Teile erben Schrift und Fläche richtig; Warnung bei veraltetem dist (Befund 101).
 - **B8** Wiederholte Gruppen brauchen ein Control (Befund 102).
 - **B9** Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
 - **B10** Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
 - **B11** Lint-Regel `ethlete/no-native-title` und Design-Regel NATIVE-TITLE als Fehler einschalten, wenn der zoom-chip/shell-collapse-Port aus B520 fertig ist (Befund 116).
-- **B12** Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
 - **B13** Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
 - **B16** Eine getestete Offset-Hilfe für Fit und Kamera (Befund 129).
 - **B17** Zustände auch mit echten, großen Daten prüfen (Befund 118).
@@ -80,18 +73,11 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **B19** `emit:`-Aktion prüft auch, was der Host daraus macht (Befund 113).
 - **B22** „Erreicht Zustand X“ auch bei Fehlschlägen, die nur aria-expanded prüft (Befund 131).
 - **B23** Eine Vergleichsregel für die Ecken der SDK-Panels (Q51).
-- **B24** Harness erzeugt die Tailwind-Klassen der Entwürfe selbst (Q50).
 - **B25** `design dom --app` stellt Hover-, Active- und Klick-Zustände her, statt sie abzulehnen.
-- **B27** Kanonische Tailwind-Klassen im App-Code prüfen.
 - **B28** Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
-- **B31** Live-Aktionsprüfung: ein Navigations-Eintrag hat nach dem Klick `aria-current="page"` (Befund 84).
 - **B32** Harness-Render mit leeren Inputs meldet Demo-Text, der trotzdem sichtbar bleibt (Befund 104).
 - **B33** Prüfen, ob noch offen: `inventory.json` nicht Prettier-formatiert; erzwungenes Hover/Active auch auf
   disabled-Zuständen (dl, Systemlehren 01.11.).
-- **B34** Studio zeigt einen Sketch, der nicht `ready` ist, als „in Arbeit“, je Variante „Agent baut gerade“
-  (gebaut wird nach dem Design e: Kopf-Badge „In Arbeit“, je Variante „zeichnet“ und Platzhalter „<Modell> zeichnet diese
-  Variante“)
-  (neue sichtbare Oberfläche: erst Sketch pages/sketches, dann Bau; Befund 136, 143).
 - **B35** `sketch check` und `sketch ready` scheitern an einer Variante, die noch das unveränderte Gerüst ist (Befund 136).
 - **B36** Sketch-Ansicht: Rahmen in der gefitteten Größe des Teils, Spalten = Varianten + 1, Platz für den Kopf, „neu“
   statt leerem „Aktuell“; E2E mit kurzem und neuem Teil (Befund 136).
@@ -110,16 +96,12 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   (Befund 140).
 - **B44** `sketch check` und `design check` melden SDK-Warnungen aus der Konsole als Warnung, nicht nur ET-Fehler
   (Befund 140).
-- **B45** Die Clipping-Prüfung überspringt bewusst unsichtbare sr-only-Elemente selbst, ohne `data-et-skip` (Befund
-  141).
 - **B46** Sketch im Kontext: Umschalter „Einzeln | Im Kontext“ in der Sketch-Ansicht, für jedes Produkt; bei
   mehreren Fundstellen die erste plus Auswahl; `sketch check` prüft die Passform im Kontext. Erst Sketch, dann Bau
   (Tom, 02.11.).
 - **B47** Ansicht bleibt stabil: Spec prüft, dass eine wiederholte Größenmeldung keine neue iframe-Quelle und keine
   neue Größe setzt; E2E zählt iframe-Ladevorgänge 2 s nach dem Einschwingen, mehr als einer je Rahmen scheitert
   (Befund 142, Flackern).
-- **B49** Rest: compare, Live-Vergleich, actions und dom scheitern auch laut an einer Fehlerseite im Rahmen; eine
-  200-Seite mit Vites Fehler-Overlay zählt als Fehler (Befund 144).
 - **B54** Design-Checks variieren die Eingaben: jeder Part wird mit abgeleiteten Fixture-Varianten gerendert (Anzahl
   0/1/N, Größen aus der Matrix, optionale Eingaben leer). Dazu die Sketch-Ansicht: Rahmen in echter Part-Größe, eine
   Zeile pro Variante, „Aktuell“ nur wenn der Part existiert, Refit bei Resize, Zustände der Varianten sichtbar,
@@ -130,23 +112,14 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   vergleichbar waren; ein CI-Schritt vergleicht jeden fertigen Part erneut; die drei Abweichungen (shell-main,
   merge, system) sind Werkzeugfehler: compare wartet, bis Overlays stehen und alle Overlays des Zustands da sind,
   und friert laufende Animationen beim Bruchteil des Designs ein (Befund 149).
-- **B57** Kompositions-Check: importiert ein Design einen umgesetzten Part, muss die Komponente dessen Komponente
-  nutzen; der Task darf die Ordner komponierter Parts und `design-parts/shared/` ändern (Befund 151).
-- **B58** Input-Check: Inputs, die keine App bindet (außer `designOnly`), `*_SAMPLE` als Input-Default und
-  umgesetzte Parts ohne App-Importeur werden gemeldet; Seiten-Zustände tragen Daten statt Knöpfe (Befund 151).
 - **B60** Lint für App-Templates: kein Überschreiben von `et-button`-Innereien, keine handgemachten Fokusringe
   (stattdessen `etFocusRing`) (Befund 151).
 - **B62** Merge-Ansicht: Ladezustand sofort, Liste füllt sich laufend, jede geänderte Zeile nennt den Grund (Pixel,
   fehlt, Fehler); E2E-Budget bis zur ersten Zeile und bis die gemergte Sketch aus dem Baum fällt; Render-Regel
   für Bezeichner, die mitten im Wort umbrechen, und für Fließtext in zu schmaler Spalte; Layout per Sketch, auch für die
   Befunde eines abgelehnten Merges, die heute in einer Zeile stehen (Befund 152, 150).
-- **B63** Merge und `sketch ready` warnen bei einem Teil ohne `implements`-Link (Befund 153).
 - **B64** Sketch-Brief und `sketch new`: ein Teil neben OS-Chrome zeigt diese als Demo-Inhalt in einem Slot, den
   compare leert (Befund 154).
-- **B67** E2E „Hover allein zeichnet keinen Rahmen“ prüft jede Outline und jeden Schatten über dem Rahmen im ganzen
-  Canvas; `studio:e2e` läuft in CI (Job nach dem cli-Build, `canvas.e2e.mjs --built`, nur bei Änderungen in
-  apps/ethlete-studio/** oder libs/cli/src/lib/design/**); die echte Skizze pages/sketches r2 wird E2E-Ziel statt der
-  synthetischen Ein-Varianten-Skizze (Befund 158).
 - **B71** Rest: erster Reload nach Kaltstart dauert 2,6 s statt ≤ 2 s; Ursache prüfen (volles Lesen blockiert den
   Node-Thread?), dann yield oder Cache in targetsOf/openSketchProblemsOf; sketches-tree.e2e.mjs in package.json und
   CI (mit B67) (Befund 161).
@@ -195,8 +168,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **B95** (hoch) Check eines geänderten Parts rendert auch jeden Part und jede offene Skizze, die ihn einbetten; das
   Commit-Gate genauso; eine Regel verweigert Zeichnen beim Modul-Laden; dazu `define-call.ts:47` (SDK-Render-Helfer
   liest `location` und lädt relativ, scheitert in Node für Seiten mit Titelleiste) (Befund 172).
-- **B96** sdk components/stream: Consent- und Player-Error-Karte bei 320 px 3 px zu kurz (NESTED-SCROLL-Treffer);
-  Fix im Stream-CSS in libs/components.
 - **B97** Sketches-Ansicht ohne Auswahl: Klick und Pan wählen nichts aus, kein Rahmen; Shift+2 zoomt auf den Frame
   nächst der Ansichtsmitte (Befund 158, Entscheidung 02.11.).
 - **B98** pages/inbox: die Seitenleisten-Liste scrollt erklärt (Design zeigt das Scrollen, z. B. Ausblenden unten),
@@ -217,20 +188,16 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - Suspect (19.11.): der Mac-post-merge-Hook findet `node` nicht über nicht-Login-SSH; Mac-Vergleich braucht `zsh -lc`.
 - Lücke (19.11.): kein Weg, die Tauri-Dev-Webview zu fotografieren; kein Szenario-Ordner in `libs/timetrack`.
 - Cause (19.11., gebaut 4c1c3fae5): im Weg-Modus erreichte die Rechtefrage eines fable-Cross-Checks Tom und schaltete den Weg-Modus aus.
+- Suspect (20.11.): `capability-place.spec` „confirmed studio list ... warnings“ scheitert lokal (zweites Mal gesehen: D10, C4d/D9c); Ursache unbekannt.
+- Suspect (20.11.): der Design-Harness kann Inhalt (Pins) nicht in einen Part projizieren, daher weicht `compare` bei `pinned` ab (D9d).
 
 ## C. CLI: Tempo und Ablauf
 
-- **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
-- **C21** Tempo (19.11.): `design check --compare` auf elements/shell-main hing über 25 min (Ursache unbekannt, Schritt nicht erfasst); shell-collapse-Compare 19,2 s (Ziel 10 s); `vitest related` lief in den Timeout; Timetrack-UI träge („teils echt extrem“, ungemessen, B602).
+- Suspect (20.11.): `sleepSync` im Produkt-Lock (2,9 s) steht bei parallelen Sessions im Wettstreit.
 
 ## D. SDK und Libs
 
 - **D2** Controls der fünf SDK-Teile carousel, scrollable, match, table, bracket. Design-Arbeit, keine Prio (Tom, 04.11.): jedes Control braucht gezeichnete Interaktionszustände, das Budget sinkt im selben Commit; match evtl. nur `controls: {}`.
-- **D3** Fokus-Rahmen als API: `focusRingStyles`, öffentliche Tokens (E11).
-- **D5** Eigener Sketch für ein randloses, gedämpftes Select (Q231).
-- **D7** Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
-- **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
-- **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 
 ## E. Fragen und Entwürfe für Tom
 
