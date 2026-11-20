@@ -138,16 +138,16 @@
     "pid": 1952942
   },
   "components/button": {
-    "hash": "fdcd94fedd3764cf",
+    "hash": "e7c4fc5ef2a63d1e",
     "files": {
-      ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
-      ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
+      ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
+      ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
-      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
@@ -161,10 +161,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-17T20:23:44.313Z",
-    "by": "claude-opus-5-5",
+    "at": "2026-11-20T19:28:22.628Z",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 954605
+    "pid": 491352
   },
   "components/card": {
     "hash": "e3627a1890dfbd1f",
