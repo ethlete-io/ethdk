@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B295
+built: ad6ae2b04
 governs: ['.husky/pre-push', '.github/workflows/*']
 decided: 2026-11-07
 source: doc-agent session, after the human asked why the work hangs on git hooks again (finding 560)

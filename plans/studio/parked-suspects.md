@@ -131,3 +131,5 @@ One line per Suspect without proof (ADR 0276). At its second time the line joins
 - design parts without compare (19.11.): the timetrack design product has no part harness and shell-system-picker no implements link, so drift is not caught. Suspect.
 - sketch check motion hint (20.11.): `sketch-command.ts:1392` passes `merged: []`, so a merged part with a busy state gets no motion hint; no real sketch hits it today (finding 337). Suspect.
 - studio e2e "pan beyond every edge" (20.11.): flaky in full run; a far cell is sized from the picture ratio until its live frame reports a taller height; not reproduced 6/6 (B391). Suspect.
+- design check slow pass (20.11.): slow-rule problems (NO-VISIBLE-CHANGE, APP-SPEC, UNCOVERED-REGION) miss the per-rule table and the findings count, exit stays 0. Suspect.
+- studio e2e cold start (20.11.): "a sketch scroll never empties a cell" failed once with "no frame after 60 s", rerun green. Suspect.

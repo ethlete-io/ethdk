@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B295
+built: ad6ae2b04
 governs: ['.husky/*', 'tools/scripts/*gate*']
 decided: 2026-11-04
 source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Solo focus, sketch view, behavior tests and pre-push decisions", what stops a defect
