@@ -69,7 +69,6 @@ import {
   suggestProjectForRepo,
   workPathDays,
   workPathPieces,
-  sameDraftSummary,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -108,6 +107,7 @@ import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
 import { injectAgentDay } from './agent-day';
 import { ownCheckoutKeys$ } from './own-checkout-keys';
 import { toApiAttributionRule } from './agent-rules';
+import { queuedCreateSummaryMatch } from '../peers/shared-approvals';
 import { injectApprovalQueue } from './approval-queue';
 
 const NO_JIRA = 'Timetrack has no Jira host, account email and token yet. Set them in its Settings.';
@@ -255,7 +255,10 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * Files an issue with the instance's own ticket settings, which is what keeps a ticket an agent
    * opened indistinguishable from one the review opened.
    */
-  const create$ = (request: Extract<AgentApiRequest, { op: 'jira.create' }>) => {
+  const create$ = (
+    request: Extract<AgentApiRequest, { op: 'jira.create' }>,
+    sameSummary?: (held: string, wanted: string) => boolean,
+  ) => {
     const current = settings.settings();
     const favorites = current.favoriteProjects;
     const projectKey = request.projectKey ?? (favorites.length === 1 ? favorites[0]?.key : undefined);
@@ -286,7 +289,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           subjectField: current.ticket.subjectField,
           subject: request.subject,
         },
-        sameSummary: sameDraftSummary,
+        ...(sameSummary ? { sameSummary } : {}),
       }),
     ).pipe(
       map((created) => ({
@@ -875,7 +878,10 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return of(replace ? { paths, replace } : { paths });
   };
 
-  const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
+  const carryOut$ = (
+    request: AgentApiRequest,
+    sameSummary?: (held: string, wanted: string) => boolean,
+  ): Observable<unknown> => {
     switch (request.op) {
       case 'status':
         return status$();
@@ -888,7 +894,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       case 'repo.project':
         return repoProject$(request.repoPath);
       case 'jira.create':
-        return create$(request);
+        return create$(request, sameSummary);
       case 'worklog.add':
         return addWorklog$(request);
       case 'day.events':
@@ -1013,7 +1019,9 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .pipe(
       mergeMap(({ id, request }) =>
         isAgentApiRequest(request)
-          ? answered(carryOut$(request)).pipe(tap((answer) => approvals.finish(id, answer)))
+          ? answered(carryOut$(request, queuedCreateSummaryMatch(approvals.pairedMachines()))).pipe(
+              tap((answer) => approvals.finish(id, answer)),
+            )
           : EMPTY,
       ),
       takeUntilDestroyed(destroyRef),

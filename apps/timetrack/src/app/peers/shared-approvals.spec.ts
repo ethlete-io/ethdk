@@ -1,7 +1,8 @@
-import { AgentApproval, findApproval } from '@ethlete/timetrack';
+import { AgentApproval, findApproval, sameDraftSummary } from '@ethlete/timetrack';
+import { PairedMachine } from '../../host';
 import { Subject, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mergedApprovalQueue, sendSharedApprovals$ } from './shared-approvals';
+import { mergedApprovalQueue, queuedCreateSummaryMatch, sendSharedApprovals$ } from './shared-approvals';
 
 const create = (id: string, over: Partial<AgentApproval> = {}): AgentApproval => ({
   id,
@@ -100,5 +101,27 @@ describe('sendSharedApprovals$', () => {
 
     expect(sent.map((queue) => queue[0]?.state)).toEqual(['queued', 'rejected']);
     subscription.unsubscribe();
+  });
+});
+
+describe('queuedCreateSummaryMatch', () => {
+  const machine: PairedMachine = {
+    machineId: 'B',
+    label: 'MacBook',
+    certFingerprint: 'fp',
+    lastAddr: null,
+    lastSeenMs: 1_000,
+    clockOffsetMs: 0,
+    pairedAtMs: 0,
+    lastPullMs: 1_000,
+  };
+
+  it('keeps the exact summary check while no machine shares the queue', () => {
+    expect(queuedCreateSummaryMatch(undefined)).toBeUndefined();
+    expect(queuedCreateSummaryMatch([])).toBeUndefined();
+  });
+
+  it('matches the near summary the queue folds by once a paired machine shares it', () => {
+    expect(queuedCreateSummaryMatch([machine])).toBe(sameDraftSummary);
   });
 });

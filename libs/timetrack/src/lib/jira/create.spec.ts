@@ -277,4 +277,24 @@ describe('createJiraIssue$ across paired machines', () => {
     expect(second).toHaveBeenCalledWith({ id: '10000', key: 'FIP-1', duplicate: true });
     expect(first).toHaveBeenCalledWith({ id: '10000', key: 'FIP-1' });
   });
+
+  it('files a near-same summary as its own issue when no near match is asked for', () => {
+    const jira = fakeJira();
+
+    createJiraIssue$({
+      transport: jira.transport,
+      credentials: CREDENTIALS,
+      input: { ...INPUT, summary: 'Visuelle Baselines in die CI integrieren' },
+    }).subscribe();
+    createJiraIssue$({
+      transport: jira.transport,
+      credentials: CREDENTIALS,
+      input: { ...INPUT, summary: 'Visuelle Baselines in CI integrieren' },
+    }).subscribe();
+
+    expect(jira.issues.map((issue) => issue.fields.summary)).toEqual([
+      'Visuelle Baselines in die CI integrieren',
+      'Visuelle Baselines in CI integrieren',
+    ]);
+  });
 });

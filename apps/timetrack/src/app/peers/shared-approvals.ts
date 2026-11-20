@@ -1,4 +1,10 @@
-import { AgentApproval, SharedApprovalQueue, encodeSharedApprovals, mergeSharedApprovals } from '@ethlete/timetrack';
+import {
+  AgentApproval,
+  SharedApprovalQueue,
+  encodeSharedApprovals,
+  mergeSharedApprovals,
+  sameDraftSummary,
+} from '@ethlete/timetrack';
 import {
   EMPTY,
   Observable,
@@ -8,8 +14,11 @@ import {
   distinctUntilChanged,
   exhaustMap,
   map,
+  of,
+  switchMap,
   take,
 } from 'rxjs';
+import { PairedMachine } from '../../host';
 
 const SEND_DEBOUNCE_MS = 2_000;
 
@@ -66,20 +75,31 @@ export const sendSharedApprovals$ = (options: {
     ),
   );
 
-/** On each tick, hands the queues the paired machines last sent to `merge`. */
+/** The paired machines and the queues they last sent, handed to `sync` on each tick. */
 export const receiveSharedApprovals$ = (options: {
   tick$: Observable<unknown>;
+  machines$: () => Observable<readonly PairedMachine[]>;
   received$: () => Observable<readonly SharedApprovalQueue[]>;
-  merge: (peers: readonly SharedApprovalQueue[]) => void;
+  sync: (state: { machines: readonly PairedMachine[]; peers: readonly SharedApprovalQueue[] }) => void;
 }): Observable<void> =>
   options.tick$.pipe(
+    // Machines before queues: a pull between the two reads would date the queues later than they are.
     exhaustMap(() =>
-      options.received$().pipe(
+      options.machines$().pipe(
         take(1),
-        catchError(() => EMPTY),
+        catchError(() => of([])),
+        switchMap((machines) =>
+          options.received$().pipe(
+            take(1),
+            catchError(() => of([])),
+            map((peers) => ({ machines, peers })),
+          ),
+        ),
       ),
     ),
-    map((peers) => {
-      if (peers.length) options.merge(peers);
-    }),
+    map(options.sync),
   );
+
+/** The summary match an approved create runs with: the near match the queue folds by once it is shared. */
+export const queuedCreateSummaryMatch = (machines: readonly PairedMachine[] | undefined) =>
+  machines?.length ? sameDraftSummary : undefined;

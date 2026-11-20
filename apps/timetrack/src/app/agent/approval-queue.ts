@@ -38,7 +38,7 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { injectHostPorts } from '../../host';
+import { PairedMachine, injectHostPorts } from '../../host';
 import { mergedApprovalQueue } from '../peers/shared-approvals';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
@@ -67,6 +67,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const today = () => localDayKey(new Date(), dayBoundaryOf(settings.settings()));
   const sharingAnswers = signal<readonly AutoModeAnswer[] | undefined>(undefined);
+  const pairedMachines = signal<readonly PairedMachine[] | undefined>(undefined);
   const machineId = toSignal(ports.peers.machineId$().pipe(catchError(() => EMPTY)), { initialValue: null });
 
   // A change before the read landed would save over the stored queue with a partial one.
@@ -206,16 +207,21 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Today's auto mode answers, so settling keeps a create that another subject's draft still shares. */
     shareAnswers: (answers: readonly AutoModeAnswer[]) => sharingAnswers.set(answers),
 
+    /** The paired machines, `undefined` until they were first listed. */
+    pairedMachines: pairedMachines.asReadonly(),
+
     /**
-     * Merges the queues the paired machines sent into this one and runs what another machine approved
-     * for this one. An item another machine owns is never run here.
+     * Takes the paired machines, merges the queues they sent into this one and runs what another machine
+     * approved for this one. An item another machine owns is never run here.
      */
-    mergePeers: (peers: readonly SharedApprovalQueue[]) => {
+    syncPeers: (state: { machines: readonly PairedMachine[]; peers: readonly SharedApprovalQueue[] }) => {
+      pairedMachines.set(state.machines);
+
       const id = machineId();
 
-      if (!id || !loaded()) return;
+      if (!id || !loaded() || !state.peers.length) return;
 
-      const merged = mergedApprovalQueue({ machineId: id, own: queue(), peers });
+      const merged = mergedApprovalQueue({ machineId: id, own: queue(), peers: state.peers });
 
       revise(() => merged.queue);
       merged.toRun.forEach(approveOne);

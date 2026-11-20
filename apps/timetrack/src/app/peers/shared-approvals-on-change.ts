@@ -19,8 +19,9 @@ const SHARED_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
           ? merge(
               receiveSharedApprovals$({
                 tick$: timer(0, RECEIVE_EVERY_MS),
+                machines$: () => ports.peers.list$(),
                 received$: () => ports.peers.receivedApprovals$(),
-                merge: approvals.mergePeers,
+                sync: approvals.syncPeers,
               }),
               sendSharedApprovals$({
                 queue$,
