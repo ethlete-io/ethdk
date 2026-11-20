@@ -1100,9 +1100,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     events: computed(() => evidence()?.events ?? null),
     heldEditsOf,
     changeDay$,
-    /** Whether the reads the stand-in pass waits for all answered, so it has had its turn. */
+    /** Whether the reads the stand-in pass waits for all answered and the rows on hand were built from them. */
     namingSettled: computed(
-      () => recurring.state().state !== 'loading' && epics.settledFor(day()) && !!git.discovery(),
+      () => recurring.state().state !== 'loading' && epics.settledFor(day()) && !!git.discovery() && streamCurrent(),
     ),
 
     /** Names the unnamed rows of the day on screen with what auto mode found for their context. */

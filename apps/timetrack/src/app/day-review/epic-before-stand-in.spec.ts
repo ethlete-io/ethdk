@@ -2,6 +2,7 @@ import '@angular/compiler';
 import {
   ApplicationRef,
   EnvironmentInjector,
+  effect,
   Injector,
   createEnvironmentInjector,
   provideZonelessChangeDetection,
@@ -102,6 +103,40 @@ describe('the stand-in pass on a checkout the epic rung names', () => {
   afterEach(() => {
     delete (globalThis as Record<string, unknown>)[TIMETRACK_E2E_SEED_KEY];
     vi.useRealTimers();
+  });
+
+  it('reports naming settled only once the rows on hand were built with the epic answer', async () => {
+    const injector = createEnvironmentInjector(
+      [
+        { provide: ɵINJECTOR_SCOPE, useValue: 'root' },
+        provideZonelessChangeDetection(),
+        { provide: HOST_PORTS, useValue: createFakePorts() },
+      ],
+      Injector.NULL as EnvironmentInjector,
+    );
+    const app = injector.get(ApplicationRef);
+    const { review, settings } = runInInjectionContext(injector, () => ({
+      review: injectDayReview(),
+      settings: injectTimetrackSettings(),
+    }));
+    const staleSettled: boolean[] = [];
+    runInInjectionContext(injector, () =>
+      effect(() => {
+        if (review.namingSettled() && !review.rows().some((row) => row.issueKey === FREE_CHILD))
+          staleSettled.push(true);
+      }),
+    );
+    for (let step = 0; step < 4000; step++) {
+      if (step === 1000) settings.setGapFillMs(settings.settings().gapFillMs + 60_000);
+      await vi.advanceTimersByTimeAsync(2);
+      app.tick();
+      review.day();
+    }
+
+    expect(review.namingSettled()).toBe(true);
+    expect(staleSettled).toEqual([]);
+
+    injector.destroy();
   });
 
   it('waits for the rows built with the epic answer, so it opens no placeholder for the checkout', async () => {
