@@ -838,7 +838,7 @@
     "pid": 2342738
   },
   "elements/canvas-frames": {
-    "hash": "8d09947ca3e165ae",
+    "hash": "9b50c7d7fbc62848",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -851,7 +851,7 @@
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "74dfe163a9f382a9",
       ".ethlete/design/studio/elements/canvas-frames/shared/canvas-marks.ts": "819c21b35e20ba2b",
       ".ethlete/design/studio/elements/canvas-frames/shared/diff-grid.ts": "ff02bb048e4dad35",
-      "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "3488f278f9175675",
+      "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "e451ae4c854defba",
       "apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry.ts": "38fcada05a738bc1",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
@@ -876,7 +876,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "ee2b22776fb85b3b",
+    "app": "173667efd0e559bc",
     "embedded": {
       "components/canvas-viewport": "12e97fa796796f8f",
       "components/zoom-chip": "6873303d0b629ebf"
@@ -898,10 +898,10 @@
       "injects the service DesignCanvasComponent (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)",
       "injects the service CANVAS_LIVE_REST_MS (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)"
     ],
-    "at": "2026-11-20T10:53:08.691Z",
+    "at": "2026-11-20T11:18:45.813Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2891952
+    "pid": 3932679
   },
   "elements/part-tree": {
     "hash": "229a31a8858ffdee",
