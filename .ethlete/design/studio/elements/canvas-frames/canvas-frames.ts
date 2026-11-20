@@ -45,7 +45,7 @@ const label = (text: string, extra = '', description?: string) =>
 type Place = NonNullable<StateGridOptions['place']>;
 
 const cell = (place: Place) => (body: string | undefined) =>
-  `<div class="st-sgrid-cell py-space-2 px-space-1 bg-et-surface-bg ${place === 'center' ? 'grid place-items-center' : ''}">${body ?? ''}</div>`;
+  `<div class="st-sgrid-cell p-space-3 bg-et-surface-bg ${place === 'center' ? 'grid place-items-center' : ''}">${body ?? ''}</div>`;
 
 const tableRow =
   (place: Place) =>

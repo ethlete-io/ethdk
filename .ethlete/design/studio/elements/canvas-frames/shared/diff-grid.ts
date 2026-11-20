@@ -7,38 +7,33 @@ type Cell = { open: boolean; interaction: Interaction };
 
 type Box = { x: number; y: number; width: number; height: number };
 
-const BASE: Cell = { open: false, interaction: 'rest' };
+const REST: Interaction = 'rest';
 
 const interactions: Interaction[] = ['rest', 'hover', 'active', 'focus-visible'];
 
-const CELL = { width: 220, height: 96 };
+const CELL = { width: 196, height: 96 };
 
 const STROKE = 2;
 
-const REGIONS = {
-  trigger: { x: 8, y: 8, width: 120, height: 28 },
-  reason: { x: 8, y: 48, width: 150, height: 20 },
-  both: { x: 8, y: 8, width: 150, height: 60 },
-} satisfies Record<string, Box>;
+const TRIGGER: Box = { x: 8, y: 8, width: 120, height: 28 };
+
+const OPEN_TRIGGER: Box = { ...TRIGGER, width: 168 };
 
 const content = html`<span class="text-ui-sm text-et-surface-muted">Pausiert</span>`;
 const reason = html`<span class="font-ui-medium text-et-surface">Wartet auf ADR 0331</span>`;
 
-const regionOf = (cell: Cell) => {
-  const trigger = cell.interaction !== BASE.interaction;
-  const reasonChanged = cell.open !== BASE.open;
-  if (trigger && reasonChanged) return REGIONS.both;
-  if (trigger) return REGIONS.trigger;
-  if (reasonChanged) return REGIONS.reason;
-  return undefined;
-};
+const regionOf = (cell: Cell) => (cell.interaction === REST ? undefined : cell.open ? OPEN_TRIGGER : TRIGGER);
 
-const insetOf = (edge: number) => `${Math.max(STROKE, edge - STROKE)}px`;
+const insetOf = (edge: number) => `${edge - STROKE}px`;
 
 const markOf = (box: Box) =>
-  html`<div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark data-et-skip="CLIPPED">
+  html`<div
+    class="pointer-events-none absolute inset-0 overflow-clip [overflow-clip-margin:4px]"
+    data-diff-mark
+    data-et-skip="CLIPPED"
+  >
     <div
-      class="absolute rounded-control-sm outline-2 outline-solid outline-(--et-theme-color-primary-solid) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_78%,transparent)]"
+      class="absolute rounded-control-sm outline-2 outline-solid outline-(--et-theme-color-primary-solid) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_40%,transparent)]"
       style="left: ${insetOf(box.x)}; top: ${insetOf(box.y)}; right: ${insetOf(
         CELL.width - box.x - box.width,
       )}; bottom: ${insetOf(CELL.height - box.y - box.height)}"
@@ -60,7 +55,7 @@ const drawCell = async (cell: Cell) => {
   </div>`;
 };
 
-/** The states of components/hold-trigger as a state grid of framed part stills, each state but closed rest marked over the region it changes against closed rest. */
+/** The states of components/hold-trigger as a state grid of framed part stills, each state in an interaction marked over the region it changes against the rest state of its row. */
 export const diffGrid = async () => ({
   columns: interactions,
   rows: await Promise.all(

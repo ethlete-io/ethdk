@@ -233,14 +233,12 @@ describe('CanvasFrameGridComponent', () => {
     expect(host.querySelectorAll('[data-grid-group]')).toHaveLength(0);
   });
 
-  it('pads a sheet cell more along the block axis than along the inline axis', async () => {
+  it('pads a sheet cell on every side, so a ring at the edge of the drawing stays off the cell edge', async () => {
     const host = await renderGrid({ columns, rows, cells, sheet: 'groups' });
 
-    expect(
-      [...host.querySelectorAll('[data-grid-cell]')].every(
-        (cell) => cell.classList.contains('py-space-2') && cell.classList.contains('px-space-1'),
-      ),
-    ).toBe(true);
+    expect([...host.querySelectorAll('[data-grid-cell]')].every((cell) => cell.classList.contains('p-space-3'))).toBe(
+      true,
+    );
     expect(host.querySelector('[data-grid-cell]')?.classList).not.toContain('place-items-center');
   });
 

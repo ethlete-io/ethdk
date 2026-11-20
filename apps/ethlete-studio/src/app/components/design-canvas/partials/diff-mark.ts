@@ -6,13 +6,11 @@ const DIFF_STROKE = '--et-diff-mark-stroke';
 
 const percentOf = (part: number, whole: number) => `${(part / Math.max(whole, 1)) * 100}%`;
 
-const outsetOf = (edge: number, whole: number) =>
-  `max(var(${DIFF_STROKE}), calc(${percentOf(edge, whole)} - var(${DIFF_STROKE})))`;
+const outsetOf = (edge: number, whole: number) => `calc(${percentOf(edge, whole)} - var(${DIFF_STROKE}))`;
 
 /**
  * Where a cell draws the outline around the region `diff` found, as insets from the cell edges: one stroke outside the
- * box so the outline never covers its pixels, and at least one stroke inside the cell so it is never clipped; `null`
- * without a region.
+ * box so the outline never covers its pixels, also past a cell edge; `null` without a region.
  */
 export const diffMarkOf = (diff: StateDiff | null): DiffMark | null => {
   if (!diff?.box) return null;

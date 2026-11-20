@@ -89,7 +89,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
     }
     @if (diffMark(); as mark) {
       <div
-        class="pointer-events-none absolute inset-0 overflow-clip [--et-diff-mark-stroke:calc(0.2rem*var(--et-design-canvas-label-scale,1))]"
+        class="pointer-events-none absolute inset-0 overflow-clip [--et-diff-mark-stroke:calc(0.2rem*var(--et-design-canvas-label-scale,1))] [overflow-clip-margin:calc(2*var(--et-diff-mark-stroke))]"
         data-diff-mark
       >
         <div
@@ -97,7 +97,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
           [style.top]="mark.top"
           [style.right]="mark.right"
           [style.bottom]="mark.bottom"
-          class="absolute rounded-control-sm outline-solid outline-(--et-theme-color-primary-solid) outline-(length:--et-diff-mark-stroke) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_78%,transparent)]"
+          class="absolute rounded-control-sm outline-solid outline-(--et-theme-color-primary-solid) outline-(length:--et-diff-mark-stroke) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_40%,transparent)]"
         ></div>
       </div>
     }
@@ -306,7 +306,7 @@ export class CanvasFrameCellComponent {
                 <div
                   [class.grid]="sheet.centered"
                   [class.place-items-center]="sheet.centered"
-                  class="bg-(--et-surface-background-solid) px-space-1 py-space-2 ring-1 ring-(--et-surface-border-solid)"
+                  class="bg-(--et-surface-background-solid) p-space-3 ring-1 ring-(--et-surface-border-solid)"
                   data-grid-cell
                 >
                   @if (cellOf(row, column); as cell) {
@@ -356,7 +356,7 @@ export class CanvasFrameCellComponent {
               }
               @for (row of line; track row) {
                 <div
-                  class="bg-(--et-surface-background-solid) px-space-1 py-space-2 ring-1 ring-(--et-surface-border-solid)"
+                  class="bg-(--et-surface-background-solid) p-space-3 ring-1 ring-(--et-surface-border-solid)"
                   data-grid-cell
                 >
                   @if (cellOf(row, sheet.first); as cell) {

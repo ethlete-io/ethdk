@@ -1,6 +1,6 @@
 import { diffMarkOf } from './diff-mark';
 
-const outset = (share: string) => `max(var(--et-diff-mark-stroke), calc(${share} - var(--et-diff-mark-stroke)))`;
+const outset = (share: string) => `calc(${share} - var(--et-diff-mark-stroke))`;
 
 describe('diffMarkOf', () => {
   it('marks nothing without a difference', () => {
@@ -17,7 +17,7 @@ describe('diffMarkOf', () => {
     });
   });
 
-  it('keeps a box on the cell edge one stroke inside the cell', () => {
+  it('sets a box on the cell edge one stroke outside the cell', () => {
     expect(diffMarkOf({ box: { x: 0, y: 0, width: 200, height: 10 }, frame: { width: 200, height: 40 } })).toEqual({
       left: outset('0%'),
       top: outset('0%'),
