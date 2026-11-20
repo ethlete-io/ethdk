@@ -34,6 +34,7 @@ export type ScrollableScrollOrigin = (typeof SCROLLABLE_SCROLL_ORIGINS)[keyof ty
 
 export const SCROLLABLE_BUTTON_POSITIONS = {
   INSIDE: 'inside',
+  INLINE: 'inline',
   FOOTER: 'footer',
 } as const;
 

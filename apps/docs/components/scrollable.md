@@ -18,13 +18,13 @@ import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS } from '@ethlete/components
 
 Everything optional is a directive you put on the `<et-scrollable>` itself, and each ships in its own imports array. A track you only scroll therefore carries no buttons, no icon button, no spinner and no drag code - you pay for what you write.
 
-| Imports array                   | Directive                  | What it adds                                                                                                        |
-| ------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `SCROLLABLE_NAVIGATION_IMPORTS` | `[etScrollableButtons]`    | Prev/next buttons. Config: `{ position, sticky, size, enabled }`; `size` is the icon-button size, `'xs'` by default |
-| `SCROLLABLE_NAVIGATION_IMPORTS` | `[etScrollableNavigation]` | Dot navigation below the track. Config: `{ enabled }`                                                               |
-| `SCROLLABLE_DRAG_IMPORTS`       | `[etScrollableDrag]`       | Drag the track with a mouse. Takes a boolean to toggle                                                              |
-| `SCROLLABLE_DRAG_IMPORTS`       | `[etScrollableSnap]`       | Native scroll snap; also takes `snapOrigin` - see [Snapping](#snapping)                                             |
-| `SCROLLABLE_DARKEN_IMPORTS`     | `[etScrollableDarken]`     | Dims children that are only partly in view. Takes a boolean to toggle                                               |
+| Imports array                   | Directive                  | What it adds                                                                                                                                                            |
+| ------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SCROLLABLE_NAVIGATION_IMPORTS` | `[etScrollableButtons]`    | Prev/next buttons. Config: `{ position, sticky, size, enabled }`; `position` is `'inside'`, `'inline'` or `'footer'`, `size` is the icon-button size, `'xs'` by default |
+| `SCROLLABLE_NAVIGATION_IMPORTS` | `[etScrollableNavigation]` | Dot navigation below the track. Config: `{ enabled }`                                                                                                                   |
+| `SCROLLABLE_DRAG_IMPORTS`       | `[etScrollableDrag]`       | Drag the track with a mouse. Takes a boolean to toggle                                                                                                                  |
+| `SCROLLABLE_DRAG_IMPORTS`       | `[etScrollableSnap]`       | Native scroll snap; also takes `snapOrigin` - see [Snapping](#snapping)                                                                                                 |
+| `SCROLLABLE_DARKEN_IMPORTS`     | `[etScrollableDarken]`     | Dims children that are only partly in view. Takes a boolean to toggle                                                                                                   |
 
 ```html
 <et-scrollable
@@ -43,6 +43,24 @@ import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPO
 ```
 
 A directive cannot be applied conditionally, so each takes a value to switch it off at runtime - `[etScrollableDrag]="false"`, `[etScrollableButtons]="{ enabled: canScroll() }"` - rather than being added and removed.
+
+### Buttons app-wide
+
+`provideScrollableConfig` turns the buttons on for every scrollable that imports `SCROLLABLE_NAVIGATION_IMPORTS`, without `etScrollableButtons` on each one. `enabled` and `position` take a value or one per breakpoint; a breakpoint key applies from there up until the next key.
+
+```ts
+import { provideScrollableConfig } from '@ethlete/components';
+
+providers: [
+  provideScrollableConfig({
+    buttons: { enabled: { md: true }, position: { xs: 'inline', lg: 'inside' }, size: 'sm' },
+  }),
+];
+```
+
+- `'inside'` floats the buttons over the track's edges, `'inline'` puts them beside the track at the row's ends (above and below it when vertical), `'footer'` puts them in a row under the track, flanking the dots when navigation is on.
+- Below the first `enabled` key the buttons stay off.
+- Inputs on an instance win: `[etScrollableButtons]="{ position: 'footer' }"` or `{ enabled: false }` overrides the provider for that scrollable.
 
 ## Live demo
 

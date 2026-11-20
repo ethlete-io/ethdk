@@ -112,6 +112,71 @@
       }
     }
 
+    &.et-scrollable--inline-buttons.et-scrollable--can-scroll {
+      & > .et-scrollable-wrapper {
+        align-items: center;
+        gap: 4px;
+      }
+
+      & .et-scrollable-buttons {
+        display: contents;
+      }
+
+      & .et-scrollable-button {
+        position: static;
+        opacity: 1;
+        pointer-events: all;
+        transform: none;
+      }
+
+      &[direction='horizontal'],
+      &:not([direction]) {
+        & > .et-scrollable-wrapper {
+          grid-template-columns: auto minmax(0, 1fr) auto;
+
+          & > .et-scrollable-container,
+          & > .et-scrollable-masks {
+            grid-column: 2;
+            grid-row: 1;
+          }
+
+          & .et-scrollable-button--start {
+            grid-column: 1;
+            grid-row: 1;
+          }
+
+          & .et-scrollable-button--end {
+            grid-column: 3;
+            grid-row: 1;
+          }
+        }
+      }
+
+      &[direction='vertical'] {
+        & > .et-scrollable-wrapper {
+          grid-template-rows: auto minmax(0, 1fr) auto;
+          justify-items: center;
+
+          & > .et-scrollable-container,
+          & > .et-scrollable-masks {
+            grid-row: 2;
+            grid-column: 1;
+            justify-self: stretch;
+          }
+
+          & .et-scrollable-button--start {
+            grid-row: 1;
+            grid-column: 1;
+          }
+
+          & .et-scrollable-button--end {
+            grid-row: 3;
+            grid-column: 1;
+          }
+        }
+      }
+    }
+
     /* Wins the equal-weight tie with the direction rules above only by coming after them - keep the
        footer overrides in this file, below them. */
     & .et-scrollable-footer {

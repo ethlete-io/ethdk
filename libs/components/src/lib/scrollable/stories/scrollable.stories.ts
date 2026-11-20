@@ -1,4 +1,6 @@
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { provideScrollableConfig } from '../headless/scrollable-config';
+import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../scrollable.imports';
 import { ScrollableStorybookComponent } from './components';
 
 export default {
@@ -118,6 +120,40 @@ export const WithSnap: Story = {
 
 export const FooterButtons: Story = {
   args: { buttonPosition: 'footer', renderNavigation: true },
+};
+
+export const InlineButtons: Story = {
+  args: { buttonPosition: 'inline' },
+};
+
+export const InlineButtonsVertical: Story = {
+  args: { buttonPosition: 'inline', direction: 'vertical' },
+};
+
+export const ProvidedButtons: Story = {
+  decorators: [
+    applicationConfig({
+      providers: [
+        provideScrollableConfig({
+          buttons: { enabled: { md: true }, position: { xs: 'inline', lg: 'inside' } },
+        }),
+      ],
+    }),
+    moduleMetadata({ imports: [SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS] }),
+  ],
+  render: () => ({
+    template: `
+      <div data-testid="provided" class="w-full max-w-xl">
+        <et-scrollable class="block">
+          <div class="flex gap-2">
+            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
+              <div class="shrink-0 w-32 h-16 bg-gray-200 flex items-center justify-center">{{ i }}</div>
+            }
+          </div>
+        </et-scrollable>
+      </div>
+    `,
+  }),
 };
 
 export const StickyButtons: Story = {

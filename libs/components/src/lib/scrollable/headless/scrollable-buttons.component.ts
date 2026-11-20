@@ -43,6 +43,7 @@ import { ScrollableButtonPosition } from './scrollable.types';
   host: {
     class: 'et-scrollable-buttons',
     '[class.et-scrollable-buttons--inside]': 'position() === "inside"',
+    '[class.et-scrollable-buttons--inline]': 'position() === "inline"',
     '[class.et-scrollable-buttons--footer]': 'position() === "footer"',
   },
 })
