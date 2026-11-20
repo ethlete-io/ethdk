@@ -1,4 +1,4 @@
-import { AgentApproval } from '@ethlete/timetrack';
+import { AgentApproval, findApproval } from '@ethlete/timetrack';
 import { Subject, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mergedApprovalQueue, sendSharedApprovals$ } from './shared-approvals';
@@ -37,6 +37,29 @@ describe('mergedApprovalQueue', () => {
 
     expect(queue[0]).toEqual(expect.objectContaining({ state: 'approved', result: { key: 'ABC-1' } }));
     expect(toRun).toEqual([]);
+  });
+
+  it('keeps the id of its own item resolvable once it folds into the equivalent item of the paired machine', () => {
+    const { queue } = mergedApprovalQueue({
+      machineId: 'B',
+      own: [
+        create('b1', {
+          askedAtMs: 2_000,
+          request: { op: 'jira.create', projectKey: 'ABC', summary: 'Same', description: '' },
+        }),
+      ],
+      peers: [
+        {
+          machineId: 'A',
+          queue: [
+            create('a1', { request: { op: 'jira.create', projectKey: 'ABC', summary: 'Same', description: '' } }),
+          ],
+        },
+      ],
+    });
+
+    expect(queue.map((item) => item.id)).toEqual(['a1']);
+    expect(findApproval(queue, 'b1')?.id).toBe('a1');
   });
 
   it('keeps the held object when the decision did not change', () => {

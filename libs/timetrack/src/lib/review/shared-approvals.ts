@@ -31,6 +31,8 @@ const ownerOf = (copies: readonly Copy[]) => {
   return first.item.ownerMachineId ?? first.machineId;
 };
 
+const unionOf = (lists: readonly (readonly string[] | undefined)[]) => [...new Set(lists.flatMap((ids) => ids ?? []))];
+
 const decidedLater = (left: Copy, right: Copy) =>
   (right.item.decidedAtMs ?? 0) - (left.item.decidedAtMs ?? 0) || left.machineId.localeCompare(right.machineId);
 
@@ -79,8 +81,14 @@ export const mergeSharedApprovals = (options: {
 
   const merged = [...groups.values()].map((copies): SharedApproval => {
     const { item } = winnerOf(copies);
+    const foldedIds = unionOf(copies.map(({ item: copy }) => copy.foldedIds));
 
-    return { ...item, ownerMachineId: ownerOf(copies), final: isFinalApproval(item) ? true : undefined };
+    return {
+      ...item,
+      ownerMachineId: ownerOf(copies),
+      foldedIds: foldedIds.length ? foldedIds : undefined,
+      final: isFinalApproval(item) ? true : undefined,
+    };
   });
 
   const kept: SharedApproval[] = [];
@@ -91,10 +99,20 @@ export const mergeSharedApprovals = (options: {
       left.id.localeCompare(right.id),
   );
 
-  for (const item of ranked) if (!kept.some((other) => sameWork(other, item))) kept.push(item);
+  for (const item of ranked) {
+    const index = kept.findIndex((other) => sameWork(other, item));
+    const into = kept[index];
+
+    if (!into) kept.push(item);
+    else kept[index] = { ...into, foldedIds: unionOf([into.foldedIds, [item.id], item.foldedIds]) };
+  }
 
   return kept
-    .map(({ final, ...item }) => (final ? { ...item, final } : item))
+    .map(({ final, foldedIds, ...item }) => ({
+      ...item,
+      ...(foldedIds?.length ? { foldedIds } : {}),
+      ...(final ? { final } : {}),
+    }))
     .sort((left, right) => left.askedAtMs - right.askedAtMs || left.id.localeCompare(right.id));
 };
 

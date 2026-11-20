@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AgentApproval } from '../agent-api/approval-queue';
+import { AgentApproval, findApproval, parseApprovalQueue } from '../agent-api/approval-queue';
 import { AutoModeApplyRequest } from '../agent-api/approval-queue';
 import {
   encodeSharedApprovals,
@@ -94,6 +94,15 @@ describe('mergeSharedApprovals', () => {
     const merged = merge('B', [createItem('b1', 2)], ['A', [createItem('a1', 1)]]);
 
     expect(merged.map(({ id, ownerMachineId }) => [id, ownerMachineId])).toEqual([['a1', 'A']]);
+  });
+
+  it('keeps the id of an item folded away resolvable, across later merges', () => {
+    const merged = merge('B', [createItem('b1', 2)], ['A', [createItem('a1', 1)]]);
+    const again = merge('A', [createItem('a1', 1)], ['B', merged]);
+
+    expect(findApproval(merged, 'b1')?.id).toBe('a1');
+    expect(findApproval(again, 'b1')?.id).toBe('a1');
+    expect(findApproval(parseApprovalQueue(JSON.parse(JSON.stringify(again))), 'b1')?.id).toBe('a1');
   });
 
   it('folds the same auto mode apply across three machines', () => {

@@ -15,6 +15,7 @@ import {
   enqueueApproval,
   localDayKey,
   markApproval,
+  findApproval,
   foldedApprovalOf,
   rejectApproval,
   settleApprovalQueue,
@@ -158,7 +159,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     take(1),
   );
 
-  const find = (id: string) => queue().find((item) => item.id === id);
+  const find = (id: string) => findApproval(queue(), id);
 
   const approveOne = (item: AgentApproval) => {
     change(markApproval(queue(), { id: item.id, state: 'running', decidedAtMs: Date.now() }));
@@ -260,7 +261,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     reject: (id: string) => {
       settle();
 
-      const rejected = rejectApproval(queue(), { id, decidedAtMs: Date.now() });
+      const rejected = rejectApproval(queue(), { id: find(id)?.id ?? id, decidedAtMs: Date.now() });
 
       if (rejected.ok) change(rejected.queue);
     },
@@ -279,7 +280,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         map(() => {
           settle();
 
-          const rejected = rejectApproval(queue(), { id, decidedAtMs: Date.now() });
+          const rejected = rejectApproval(queue(), { id: find(id)?.id ?? id, decidedAtMs: Date.now() });
 
           if (!rejected.ok) throw new Error(rejected.message);
 

@@ -86,6 +86,8 @@ export type AgentApproval = {
   error?: string;
   /** The paired machine that queued it first and alone runs it; absent on an item no peer has seen. */
   ownerMachineId?: string;
+  /** The ids of equivalent items a paired machine's queue folded into this one. */
+  foldedIds?: string[];
 };
 
 export type AgentApiQueued = { status: 'queued'; approvalId: string };
@@ -313,6 +315,10 @@ export const markApproval = (
   change: Pick<AgentApproval, 'id' | 'state'> & Partial<Pick<AgentApproval, 'decidedAtMs' | 'result' | 'error'>>,
 ): AgentApproval[] => queue.map((item) => (item.id === change.id ? { ...item, ...change } : item));
 
+/** The item `id` names: its own id, or the id of an equivalent item a paired machine's queue folded into it. */
+export const findApproval = <T extends AgentApproval>(queue: readonly T[], id: string): T | undefined =>
+  queue.find((item) => item.id === id) ?? queue.find((item) => item.foldedIds?.includes(id));
+
 export const approvalStatusOf = (item: AgentApproval): AgentApiApprovalStatus => {
   if (item.state === 'running' || item.state === 'queued') {
     return { status: 'queued', approvalId: item.id, request: waitingApprovalOf(item) };
@@ -447,6 +453,9 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
     const error = typeof raw['error'] === 'string' ? raw['error'] : undefined;
     const target = typeof raw['target'] === 'string' && raw['target'] ? raw['target'] : undefined;
     const ownerMachineId = typeof raw['ownerMachineId'] === 'string' ? raw['ownerMachineId'] : undefined;
+    const foldedIds = Array.isArray(raw['foldedIds'])
+      ? raw['foldedIds'].filter((folded): folded is string => typeof folded === 'string')
+      : [];
 
     return [
       {
@@ -466,6 +475,7 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
             }),
         ...(decidedAtMs === undefined ? {} : { decidedAtMs }),
         ...(ownerMachineId ? { ownerMachineId } : {}),
+        ...(foldedIds.length ? { foldedIds } : {}),
       },
     ];
   });

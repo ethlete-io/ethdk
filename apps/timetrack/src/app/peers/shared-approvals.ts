@@ -17,7 +17,8 @@ const sameDecision = (left: AgentApproval, right: AgentApproval) =>
   left.state === right.state &&
   left.error === right.error &&
   JSON.stringify(left.result) === JSON.stringify(right.result) &&
-  left.ownerMachineId === right.ownerMachineId;
+  left.ownerMachineId === right.ownerMachineId &&
+  String(left.foldedIds) === String(right.foldedIds);
 
 /**
  * This machine's queue with the queues of its paired machines merged in, and the items another machine
