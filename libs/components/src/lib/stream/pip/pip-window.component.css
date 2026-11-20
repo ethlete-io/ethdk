@@ -32,12 +32,11 @@
       content: '';
       display: block;
       position: absolute;
-      inset: 0;
+      inset: var(--et-pip-title-bar-h) 0 0;
       background: var(--et-pip-bg, color-mix(in srgb, var(--et-surface-background-solid, rgb(0 0 0)) 60%, transparent));
       backdrop-filter: blur(var(--et-pip-backdrop-blur));
       z-index: -1;
-      transform: translateY(var(--et-pip-title-bar-h));
-      transition: transform 0.2s ease;
+      transition: inset 0.2s ease;
       pointer-events: none;
       border-radius: var(--et-pip-border-radius);
     }
@@ -85,7 +84,7 @@
     }
 
     &::after {
-      transform: translateY(0);
+      inset: 0;
     }
   }
 
