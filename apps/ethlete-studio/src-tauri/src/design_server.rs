@@ -1093,6 +1093,16 @@ mod tests {
         assert!(listening(listener.local_addr().expect("an address").port()).await);
     }
 
+    /// Below every default ephemeral range (Linux 32768, macOS and Windows 49152): a port in one can
+    /// be held by any client socket, or its TIME_WAIT, and the fake design tool then fails to listen.
+    const FIXED_PORTS: u16 = 25870;
+
+    async fn assert_answered(servers: &DesignServers, checkout: &str, port: u16) {
+        let read = state(servers, checkout, port, None).await.expect("a state");
+
+        assert!(read.listening, "the design tool never answered: {:?}", read.log);
+    }
+
     /// A checkout that installs a design tool which answers on one port, which is all Studio asks.
     fn fake_checkout(port: u16) -> String {
         let dir = std::env::temp_dir().join(format!("studio-design-server-{port}"));
@@ -1163,7 +1173,7 @@ mod tests {
 
     #[tokio::test]
     async fn the_state_reports_the_phase_and_its_elapsed_time() {
-        const PORT: u16 = 45881;
+        const PORT: u16 = FIXED_PORTS + 11;
 
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
@@ -1190,14 +1200,14 @@ mod tests {
 
     #[tokio::test]
     async fn a_restart_whose_build_fails_keeps_the_running_server() {
-        const PORT: u16 = 45880;
+        const PORT: u16 = FIXED_PORTS + 10;
 
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
 
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
-        assert!(listening(PORT).await);
+        assert_answered(&servers, &checkout, PORT).await;
 
         let failed = restart(&servers, &checkout, PORT, async {
             Err(StudioError::Rejected("the build failed".to_owned()))
@@ -1216,7 +1226,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_server_that_crashed_reads_as_exited_with_its_own_crash_log_entry() {
-        const PORT: u16 = 45876;
+        const PORT: u16 = FIXED_PORTS + 6;
 
         let dir = std::env::temp_dir().join(format!("studio-design-server-{PORT}"));
         let entry = dir.join("node_modules/@ethlete/cli/src/index.js");
@@ -1251,7 +1261,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_server_that_dies_at_start_reads_as_exited_with_its_last_output() {
-        const PORT: u16 = 45875;
+        const PORT: u16 = FIXED_PORTS + 5;
 
         let dir = std::env::temp_dir().join(format!("studio-design-server-{PORT}"));
         let entry = dir.join("node_modules/@ethlete/cli/src/index.js");
@@ -1289,7 +1299,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_checkout_is_served_by_its_design_tool_and_the_stop_reaches_the_whole_group() {
-        const PORT: u16 = 45872;
+        const PORT: u16 = FIXED_PORTS + 2;
 
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
@@ -1297,7 +1307,7 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        assert!(listening(PORT).await, "the design tool never answered");
+        assert_answered(&servers, &checkout, PORT).await;
         assert!(state(&servers, &checkout, PORT, None).await.expect("a state").managed);
 
         let taken = servers.table.lock().expect("the table").remove(&checkout);
@@ -1313,7 +1323,7 @@ mod tests {
 
     #[tokio::test]
     async fn the_app_leaves_no_server_behind_when_it_exits() {
-        const PORT: u16 = 45873;
+        const PORT: u16 = FIXED_PORTS + 3;
 
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
@@ -1321,7 +1331,7 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        assert!(listening(PORT).await, "the design tool never answered");
+        assert_answered(&servers, &checkout, PORT).await;
 
         stop_every(&servers);
         await_stopped(PORT).await;
@@ -1334,7 +1344,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_server_stops_when_the_app_dies_without_stopping_it() {
-        const PORT: u16 = 45877;
+        const PORT: u16 = FIXED_PORTS + 7;
 
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
@@ -1342,7 +1352,7 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        assert!(listening(PORT).await, "the design tool never answered");
+        assert_answered(&servers, &checkout, PORT).await;
 
         servers
             .table
@@ -1425,7 +1435,7 @@ mod tests {
     #[cfg(unix)]
     #[tokio::test]
     async fn a_server_somebody_else_started_is_ended_by_the_port_it_listens_on() {
-        const PORT: u16 = 45874;
+        const PORT: u16 = FIXED_PORTS + 4;
 
         let checkout = fake_checkout(PORT);
         let entry = Path::new(&checkout).join("node_modules/@ethlete/cli/src/index.js");
@@ -1475,16 +1485,18 @@ mod tests {
 
     #[tokio::test]
     async fn the_log_is_sent_only_when_it_changed_since_the_named_revision() {
-        let checkout = fake_checkout(45878);
+        let checkout = fake_checkout(FIXED_PORTS + 8);
         let servers = DesignServers::default();
 
         spawn(&servers, &checkout, vec!["first".to_owned()]).expect("the design tool runs");
 
-        let first = state(&servers, &checkout, 45878, None).await.expect("a state");
+        let first = state(&servers, &checkout, FIXED_PORTS + 8, None)
+            .await
+            .expect("a state");
 
         assert_eq!(first.log, Some(vec!["first".to_owned()]));
 
-        let again = state(&servers, &checkout, 45878, Some(first.log_revision))
+        let again = state(&servers, &checkout, FIXED_PORTS + 8, Some(first.log_revision))
             .await
             .expect("a state");
 
@@ -1502,7 +1514,7 @@ mod tests {
             .expect("the log")
             .push("second".to_owned());
 
-        let changed = state(&servers, &checkout, 45878, Some(first.log_revision))
+        let changed = state(&servers, &checkout, FIXED_PORTS + 8, Some(first.log_revision))
             .await
             .expect("a state");
 
@@ -1543,7 +1555,7 @@ mod tests {
         assert!(!restarted.stale);
         assert_eq!(judged.load(Ordering::SeqCst), 2);
 
-        const STOPPED: u16 = 45879;
+        const STOPPED: u16 = FIXED_PORTS + 9;
 
         servers
             .verdicts
