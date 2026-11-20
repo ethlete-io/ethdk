@@ -14,6 +14,9 @@ pub fn remember() {
 pub fn command(program: impl AsRef<OsStr>) -> Command {
     let mut command = Command::new(program);
 
+    #[cfg(all(unix, debug_assertions))]
+    crate::debug_hooks::close_inherited_sockets(&mut command);
+
     match INHERITED_GDK_BACKEND.get() {
         Some(Some(backend)) => {
             command.env("GDK_BACKEND", backend);

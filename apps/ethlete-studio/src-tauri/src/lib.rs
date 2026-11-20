@@ -1,6 +1,8 @@
 mod call_status;
 mod child_env;
 mod console_log;
+#[cfg(debug_assertions)]
+mod debug_hooks;
 mod design;
 mod design_action_log;
 mod design_roots;
@@ -208,6 +210,8 @@ pub fn run() {
         .manage(window_chrome::ChromeWatch::default())
         .setup(|app| {
             shutdown::end_on(signals, app.handle());
+            #[cfg(debug_assertions)]
+            debug_hooks::open_root(app.handle());
             Ok(console_log::start(app.handle())?)
         })
         .invoke_handler(tauri::generate_handler![
@@ -253,9 +257,25 @@ pub fn run() {
 fn cef_runtime() -> tauri_runtime_cef::Cef {
     use tauri_runtime_cef::cef::{ContentSettingTypes, ContentSettingValues};
 
-    tauri_runtime_cef::Cef::default()
+    let runtime = tauri_runtime_cef::Cef::default()
         .secret_storage(console_log::secret_storage())
-        .default_content_setting(ContentSettingTypes::LOOPBACK_NETWORK, ContentSettingValues::ALLOW)
+        .default_content_setting(ContentSettingTypes::LOOPBACK_NETWORK, ContentSettingValues::ALLOW);
+
+    #[cfg(debug_assertions)]
+    let runtime = match debug_hooks::cdp_port() {
+        Some(port) => {
+            debug_hooks::forget_disallowed_port();
+            runtime
+                .remote_debugging(tauri_runtime_cef::RemoteDebugging::Port {
+                    port,
+                    allowed_origins: vec![],
+                })
+                .global_preference("devtools.remote_debugging.allowed", true)
+        }
+        None => runtime,
+    };
+
+    runtime
 }
 
 #[cfg(test)]

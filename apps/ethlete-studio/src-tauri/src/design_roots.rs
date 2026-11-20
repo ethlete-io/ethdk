@@ -156,6 +156,11 @@ fn store_path(app: &tauri::AppHandle) -> StudioResult<PathBuf> {
         .map_err(|error| StudioError::Rejected(format!("Studio has no config directory: {error}")))
 }
 
+#[cfg(debug_assertions)]
+pub fn keep_root(app: &tauri::AppHandle, checkout: &str) -> StudioResult<DesignRoots> {
+    add(&store_path(app)?, checkout)
+}
+
 #[tauri::command]
 pub fn design_roots(app: tauri::AppHandle) -> StudioResult<DesignRoots> {
     Ok(read(&store_path(&app)?))
