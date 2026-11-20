@@ -49,25 +49,19 @@ const noProducts = (copy: string, repo: string) =>
   );
 
 export default definePart<Props>({
-  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent, a copy button and the real CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button: the spinner covers the label, the button is disabled and aria-busy and takes no second click.',
+  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent, a copy button and the real CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331).',
   madeBy: ['claude-opus-5-5'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
   states: {
     'no-repo': {},
-    'no-repo-busy': { busy: true },
     'no-products': { repo: 'ethlete-sdk' },
-    'no-products-busy': { repo: 'ethlete-sdk', busy: true },
   },
   describe: {
     'no-repo':
       'The start page without a repo; check the mark, the centred Kein Repo geöffnet card and the filled Repo öffnen button, without the shell.',
-    'no-repo-busy':
-      'Repo öffnen after the folder was picked; check its spinner over the label and that the button is disabled.',
     'no-products':
       'A repo without products; check the repo name in the header, Noch keine Produkte with the et design product new shop prompt and Prompt kopieren.',
-    'no-products-busy':
-      'Anderes Repo after the folder was picked; check its spinner over the label and that the button is disabled.',
   },
   render: async ({ repo, busy }) => {
     const open = await button.render({ label: 'Repo öffnen', variant: 'filled', loading: busy });
