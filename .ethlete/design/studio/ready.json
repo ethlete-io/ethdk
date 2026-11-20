@@ -1195,21 +1195,8 @@
     "pid": 2953350
   },
   "elements/variant-cell": {
-    "hash": "d27bd6b31fee83f0",
-    "files": {
-      ".ethlete/design/studio/elements/variant-cell/variant-cell.css": "9ea8a222b03e9446",
-      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "4bf0d98cac70679d",
-      "libs/components/design/loader.ts": "e05586c3d6f1de74",
-      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
-      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
-      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9"
-    },
     "actions": [],
-    "builder": "designer",
-    "at": "2026-11-17T13:28:25.374Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-19T14:15:36.555Z"
   },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",
