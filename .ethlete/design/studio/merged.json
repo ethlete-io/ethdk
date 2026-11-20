@@ -151,10 +151,10 @@
     "at": "2026-11-18T11:08:51.727Z"
   },
   "pages/start": {
-    "hash": "9e322eaac6939326",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-04T14:48:14.692Z"
+    "hash": "b0c76c4d3ba90c9b",
+    "variant": "a",
+    "decidedBy": "builder",
+    "at": "2026-11-20T06:46:59.083Z"
   },
   "pages/system": {
     "hash": "0e2d14ca8d9e8cbb",
