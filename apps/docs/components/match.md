@@ -335,6 +335,8 @@ participant, which is how an editor picks one:
 </et-match-participant>
 ```
 
+@example match/match-edit-slot 420px
+
 ### Scoreline and time
 
 `<et-match-scoreline>` is the centre of a match row - `home : away` with the start time under it - for a row
