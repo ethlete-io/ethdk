@@ -1,5 +1,31 @@
 # ethlete-studio
 
+## 0.2.0-next.26
+
+### Minor Changes
+
+- `design shot --states --variants` draws the same frames as the Studio sketch view, folding states no variant changes; `--all-states` draws them all.
+- The starting screen names the design server's start phase and how long it has run.
+
+### Patch Changes
+
+- On macOS the window buttons sit vertically centred in the title bar.
+- A failed screenshot in the crop thumb and in the inventory view shows the render-failed state instead of a broken image.
+- The Studio command palette is linked to its design part and takes its `query` model; `et design check` no longer exempts it from `IMPLEMENTS-UNLINKED`.
+- A live sketch frame whose page is scrolled sideways now gives way to its picture, like one scrolled down: the frame page reports its horizontal scroll too.
+- Fill the sketch view's live-frame cap with the cells nearest the view instead of in row order, so a variant near the view no longer starves behind Aktuell.
+- A sketch state now shows live frames or pictures for all its cells, and a live frame replaces its picture only while it fills its cell unscrolled.
+- Ctrl-wheel zoom on the Sketches canvas scales the drawn cells while the wheel turns and redraws them sharp once it rests, which keeps zooming smooth in Safari.
+- A ctrl-wheel zoom on the Sketches canvas no longer re-measures the fit at a user zoom, so the frame after a zoom settles stays short on WebKit.
+- Scroll the explorer when the mouse wheel is over a tree row label: the overscroll stop now sits on the root only, so a truncated label no longer ends the wheel's scroll chain.
+- The host ends on SIGINT, SIGTERM and SIGHUP through its own exit path and stops its design servers, and Ctrl+C in `yarn studio` reaches it.
+- The studio menu stays busy until the latest project read answers on a quick project switch.
+- The studio menu and the start page show a spinner while their action runs.
+- Level the Studio panel head: the design-system picker label, chevron, pill and panel-toggle icon now share one vertical centre.
+- Studio sets its type in Source Sans 3 and Source Code Pro; the sdk colors sheet loads the same faces from studio's one faces.css.
+- Studio reports which step of the design server's start it is in and for how long, and a failed start shows its error.
+- Keep the last shown product in the product switcher while the design server is stopped or starting.
+
 ## 0.2.0-next.25
 
 ### Minor Changes

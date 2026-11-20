@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 5.0.0-next.79
+
+### Minor Changes
+
+- Add an optional `layer: 'page' | 'overlay'` to the head title, meta and link bindings so an overlay always outranks page bindings
+
+### Patch Changes
+
+- Stop `MetaStore.addTag` and `removeTag` from tracking the current locale when called inside an `effect()`.
+
 ## 5.0.0-next.78
 
 ### Minor Changes
