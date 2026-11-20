@@ -45,7 +45,12 @@ import {
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
-import { changedStateCountLinesOf, noChangedStateLinesOf, noChangeOf } from './system/sketch/no-visible-change';
+import {
+  autoMergeForecastLineOf,
+  autoMergeForecastOf,
+  changedStateCountLinesOf,
+  noChangedStateLinesOf,
+} from './system/sketch/no-visible-change';
 import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
@@ -88,6 +93,7 @@ import {
   editVariantNote,
   findSketch,
   finishSketchReport,
+  forecastedSketchOf,
   heldProblemOf,
   holdSketch,
   isVariantName,
@@ -1005,6 +1011,11 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
         variantChangesShown({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
       )
     : null;
+  const forecast = autoMergeForecastOf(changes);
+
+  console.log(autoMergeForecastLineOf(forecast));
+  recordAutoMergeForecast({ sketch, forecast });
+
   const unchangedVariants = Array.isArray(changes)
     ? noChangedStateLinesOf({ sketch, changes, noVisibleChange: context.args.flags.has('--no-visible-change') })
     : [];
@@ -1161,6 +1172,23 @@ const committedMerge = (options: { target: string; product: ResolvedProduct; ske
   return committed.status === 0;
 };
 
+const recordAutoMergeForecast = ({ sketch, forecast }: { sketch: Sketch; forecast: true | string }) => {
+  if (!existsSync(resolve(sketch.dir, SKETCH_FILE))) return;
+
+  const forecasted = forecastedSketchOf(sketch, forecast);
+  const { autoMergeForecast: before } = sketch;
+  const { autoMergeForecast: after } = forecasted;
+
+  if (
+    before?.merges === after?.merges &&
+    before?.reason === after?.reason &&
+    JSON.stringify(before?.contents) === JSON.stringify(after?.contents)
+  )
+    return;
+
+  writeSketchFile(forecasted, { base: sketch, sets: ['autoMergeForecast'] });
+};
+
 const autoMerged = (options: {
   context: Context;
   product: ResolvedProduct;
@@ -1170,8 +1198,7 @@ const autoMerged = (options: {
   const { context, product, changes } = options;
   const again = options.sketch.status === 'ready';
   const author = authorOf(context.args) ?? undefined;
-  const noChange =
-    changes === null ? 'new part, the user merges' : typeof changes === 'string' ? changes : noChangeOf(changes);
+  const noChange = autoMergeForecastOf(changes);
   const sketch = journaledReadyOf({
     target: context.target,
     product,

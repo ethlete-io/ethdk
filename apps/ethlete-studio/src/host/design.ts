@@ -493,6 +493,8 @@ export type ListedSketch = {
   rebaseUncommitted?: { commit: string } | null;
   /** Each `data-et-skip` a live variant adds over the merged part, empty once decided. Missing from an `@ethlete/cli` older than it. */
   addedSkips?: { variant: string; part: string; classes: string }[];
+  /** What `sketch ready` forecast for the sketch's current variants: `merges` when it would merge itself, else why not. `null` before a run or once a variant changed. Missing from an `@ethlete/cli` older than it. */
+  autoMergeForecast?: { merges: boolean; reason?: string; at: string } | null;
   /** Why the last `sketch ready` of the running round refused the sketch, `null` without one or once ready. Missing from an `@ethlete/cli` older than it. */
   readyRefusal?: { lines: string[]; round: string; at: string } | null;
 };

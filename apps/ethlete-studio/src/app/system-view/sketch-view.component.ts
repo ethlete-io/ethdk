@@ -219,6 +219,7 @@ const scrollOf = (data: unknown) =>
       [heading]="heading()"
       [rows]="rows()"
       [fresh]="!part()"
+      [autoMerge]="sketch().autoMergeForecast?.merges === true"
       [status]="sketchStatus()"
       [lastChange]="lastChange()"
       [readyReason]="readyReason()"

@@ -62,6 +62,7 @@ import {
   SketchDecisionInput,
   listSketches,
   changedSinceReadyOf,
+  currentAutoMergeForecastOf,
   listSketchesInTurns,
   parseTarget,
   readSketchReport,
@@ -226,10 +227,11 @@ const problemOf = ({ target, problem }: { target: string; problem: Problem }) =>
 });
 
 const sketchOf = ({ sketch, target }: { sketch: Sketch; target: string }) => {
-  const { dir, targets, ...rest } = sketch;
+  const { dir, targets, autoMergeForecast: _forecast, ...rest } = sketch;
 
   return {
     ...rest,
+    autoMergeForecast: currentAutoMergeForecastOf(sketch),
     targetParts: targets,
     dir: relative(target, dir),
     changedSinceReady: changedSinceReadyOf(sketch),

@@ -90,6 +90,17 @@ export type SketchPortMark = { merged: string[]; parts: string[]; reasons: strin
  */
 export type SketchMergeHold = { reason: string; at: string; dirty?: string[] };
 
+/**
+ * What `sketch ready` forecast for a sketch: `merges` when it would merge itself because no variant changes a state,
+ * else `reason`. `contents` is the hash of each variant when it judged, so a later edit makes it stale.
+ */
+export type SketchAutoMergeForecast = {
+  merges: boolean;
+  reason?: string;
+  contents: Record<string, string>;
+  at: string;
+};
+
 export type SketchFile = {
   target: string;
   /** Every part the sketch targets, `target` first; absent on a sketch with one target. */
@@ -123,6 +134,7 @@ export type SketchFile = {
   readyContent?: Record<string, string>;
   portAfterMerge?: SketchPortMark;
   mergeHold?: SketchMergeHold;
+  autoMergeForecast?: SketchAutoMergeForecast;
 };
 
 export type SketchCreatedBy = { cmd: string; session?: string };
@@ -464,6 +476,21 @@ const isUntilSketch = (value: unknown) => {
   );
 };
 
+const isAutoMergeForecast = (value: unknown): value is SketchAutoMergeForecast => {
+  const forecast = value as Partial<Record<keyof SketchAutoMergeForecast, unknown>> | null;
+
+  return (
+    typeof forecast === 'object' &&
+    forecast !== null &&
+    typeof forecast.merges === 'boolean' &&
+    (forecast.reason === undefined || typeof forecast.reason === 'string') &&
+    typeof forecast.contents === 'object' &&
+    forecast.contents !== null &&
+    Object.values(forecast.contents).every((hash) => typeof hash === 'string') &&
+    typeof forecast.at === 'string'
+  );
+};
+
 const isHold = (value: unknown): value is SketchHold => {
   const hold = value as Partial<Record<keyof SketchHold, unknown>> | null;
 
@@ -605,6 +632,8 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
   if (parsed.mergeHold !== undefined && !isMergeHold(parsed.mergeHold))
     return `${file}: mergeHold must be { reason, at }`;
+  if (parsed.autoMergeForecast !== undefined && !isAutoMergeForecast(parsed.autoMergeForecast))
+    return `${file}: autoMergeForecast must be { merges, reason?, contents, at }`;
   if (parsed.createdBy !== undefined && !isCreatedBy(parsed.createdBy))
     return `${file}: createdBy must be { cmd: string, session?: string }`;
   if (parsed.baselineTree !== undefined && (typeof parsed.baselineTree !== 'string' || !parsed.baselineTree))
@@ -732,6 +761,7 @@ const sketchFileOf = (sketch: Sketch): SketchFile => ({
   ...(sketch.undesigned && sketch.undesigned.length > 0 ? { undesigned: sketch.undesigned } : {}),
   ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
   ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
+  ...(sketch.autoMergeForecast ? { autoMergeForecast: sketch.autoMergeForecast } : {}),
 });
 
 type Fields = Record<string, unknown>;
@@ -1409,6 +1439,27 @@ export const reopenChangedReady = (
   writeSketchFile(reopened, { base: sketch });
 
   return { sketch: reopened, changed };
+};
+
+const contentsOf = (sketch: Sketch) =>
+  Object.fromEntries(sketch.variants.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
+
+/** The sketch with the forecast of `sketch ready` for its current variants, `merges` or the `reason` it would not. */
+export const forecastedSketchOf = (sketch: Sketch, forecast: true | string): Sketch => ({
+  ...sketch,
+  autoMergeForecast: {
+    merges: forecast === true,
+    ...(forecast === true ? {} : { reason: forecast }),
+    contents: contentsOf(sketch),
+    at: new Date().toISOString(),
+  },
+});
+
+/** The recorded forecast while no variant changed since it was made, else `null`. */
+export const currentAutoMergeForecastOf = (sketch: Sketch): SketchAutoMergeForecast | null => {
+  const { autoMergeForecast: forecast } = sketch;
+
+  return forecast && sameJson(forecast.contents, contentsOf(sketch)) ? forecast : null;
 };
 
 /** Why a held sketch cannot be ready, or `null` when it holds nothing. */

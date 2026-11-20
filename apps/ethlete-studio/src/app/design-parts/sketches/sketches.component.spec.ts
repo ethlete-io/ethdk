@@ -506,6 +506,13 @@ describe('SketchesComponent', () => {
     expect(textOf(root.querySelector('header'))).toContain(LABELS.fresh);
   });
 
+  it('shows the auto-merge mark in the header only when the forecast says the sketch merges itself', async () => {
+    const mark = (root: HTMLElement) => root.querySelector('header [data-sk-auto-merge]');
+
+    expect(textOf(mark((await render({ autoMerge: true, status: 'drawing' })).nativeElement))).toBe(LABELS.autoMerge);
+    expect(mark((await render({ status: 'drawing' })).nativeElement)).toBeNull();
+  });
+
   it('offers Verwerfen on a sketch, but not on the old/new sketch of a direct edit', async () => {
     const buttons = (root: HTMLElement) => [...root.querySelectorAll('header button')].map(textOf);
 

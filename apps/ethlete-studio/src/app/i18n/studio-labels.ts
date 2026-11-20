@@ -197,6 +197,7 @@ export const STUDIO_LABELS = {
     addedSkipIn: (part: string) => `in ${part} - stellt eine Prüfung stumm`,
     mergePort: (merged: readonly string[]) => `Agent portiert nach Merge von ${merged.join(', ')}`,
     fresh: 'neu',
+    autoMerge: 'Übernimmt sich selbst',
     status: {
       drawing: 'zeichnet',
       waiting: 'Wartet auf deine Wahl',

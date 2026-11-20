@@ -7,6 +7,8 @@ import { DESIGN_DIR, readConfig } from '../../design-config';
 import { partKeyOf, resolveProduct } from '../resolve-product';
 import {
   addVariant,
+  currentAutoMergeForecastOf,
+  forecastedSketchOf,
   authorsOf,
   createSketch,
   decideSketch,
@@ -1108,5 +1110,40 @@ describe('two sketches on one part', () => {
     expect(() => open(target, 'components/card@alt')).toThrow('components/card@alt already has an open sketch');
     expect(parseTarget('components/card@Alt')).toEqual(expect.stringContaining('is no target'));
     expect(parseTarget('components/card@a@b')).toEqual(expect.stringContaining('is no target'));
+  });
+});
+
+describe('the auto-merge forecast of a sketch', () => {
+  it('is written to the sketch file, read back, and stale once a variant changes', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    writeSketchFile(forecastedSketchOf(sketch, true), { base: sketch, sets: ['autoMergeForecast'] });
+
+    expect(sketchJson(target, 'elements-hero')['autoMergeForecast']).toMatchObject({ merges: true });
+
+    const reread = () =>
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'elements', name: 'hero' },
+      }) as Sketch;
+    const read = reread();
+
+    expect(currentAutoMergeForecastOf(read)).toMatchObject({ merges: true });
+
+    writeFileSync(join(read.dir, 'a/elements/hero/hero.css'), '.hero { color: red; }\n');
+
+    expect(currentAutoMergeForecastOf(reread())).toBeNull();
+
+    writeSketchFile(forecastedSketchOf(sketch, 'variant a changes default'), {
+      base: sketch,
+      sets: ['autoMergeForecast'],
+    });
+
+    expect(sketchJson(target, 'elements-hero')['autoMergeForecast']).toMatchObject({
+      merges: false,
+      reason: 'variant a changes default',
+    });
   });
 });

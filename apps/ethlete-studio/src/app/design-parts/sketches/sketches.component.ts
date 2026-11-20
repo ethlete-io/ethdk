@@ -238,6 +238,7 @@ export class SketchesComponent {
   public heading = input<string | null>(null);
   public rows = input<SketchRow[]>(SKETCH_ROWS);
   public fresh = input(false);
+  public autoMerge = input(false);
   public status = input<SketchStatus>('waiting');
   public openPoints = input<OpenPointGroup[]>([]);
   public pointsClosed = model(true);

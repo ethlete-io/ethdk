@@ -156,6 +156,14 @@ export const noChangeOf = (changes: VariantChange[]): true | string => {
   return found.length === 0 ? true : found.join('; ');
 };
 
+/** `true` when `sketch ready` would merge the sketch by itself, else why not; `changes` is `null` for a part the product lacks. */
+export const autoMergeForecastOf = (changes: VariantChange[] | string | null): true | string =>
+  changes === null ? 'new part, the user merges' : typeof changes === 'string' ? changes : noChangeOf(changes);
+
+/** The line `sketch ready` prints for a forecast. */
+export const autoMergeForecastLineOf = (forecast: true | string) =>
+  forecast === true ? 'auto-merge forecast: merges by itself' : `auto-merge forecast: the user merges - ${forecast}`;
+
 /** Why each target of each live variant of the sketch fails to load, one line each; `[]` when all of them load. */
 export const variantLoadProblemsOf = async (options: {
   product: ResolvedProduct;

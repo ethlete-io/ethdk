@@ -6,6 +6,8 @@ import { PictureOf } from '../../merge-compare';
 import { readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import {
+  autoMergeForecastLineOf,
+  autoMergeForecastOf,
   changedStateCountLinesOf,
   noChangedStateLinesOf,
   sketchShowsNoChange,
@@ -291,5 +293,20 @@ describe('variantLoadProblemsOf', () => {
     expect(await variantLoadProblemsOf({ product, sketch, load: throwing })).toEqual([
       'variant a elements/hero does not load: exports is not defined',
     ]);
+  });
+});
+
+describe('autoMergeForecastOf', () => {
+  it('forecasts a merge only when no variant changes a state, and words the line for the report', () => {
+    expect(autoMergeForecastOf([{ variant: 'a', changed: 0, change: null }])).toBe(true);
+    expect(autoMergeForecastOf([{ variant: 'a', changed: 2, change: 'variant a changes default' }])).toBe(
+      'variant a changes default',
+    );
+    expect(autoMergeForecastOf(null)).toBe('new part, the user merges');
+    expect(autoMergeForecastOf('the sketch has no live variant')).toBe('the sketch has no live variant');
+    expect(autoMergeForecastLineOf(true)).toBe('auto-merge forecast: merges by itself');
+    expect(autoMergeForecastLineOf('new part, the user merges')).toBe(
+      'auto-merge forecast: the user merges - new part, the user merges',
+    );
   });
 });
