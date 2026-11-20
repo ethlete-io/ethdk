@@ -33,4 +33,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 32. **Standings-Zonenstärke (B620)** ⏳ SDK (fifagg S2): `StandingsZone.strength` als CSS-Variable am Band, Tagschicht - Builder
 33. **Standings-Form-Tooltip (B621)** ⏳ SDK (fifagg S3): optionales Template für den Form-Tooltip, Tagschicht - Builder
 34. **Button-Druck-Variante (B625)** ⏳ SDK (fifagg S7): Input `pressedVariant`, Standard = heutige Zuordnung - Builder
-35. **Befehlspalette portieren (B644)** ⏳ Studio components/command-palette: App nimmt den Entwurfs-Zustand (state/selected statt entries/recents), dann UNLINKED_ON_PURPOSE in implements.ts streichen und implements setzen (12 DROPPED-PROP heute, B276 5fce21285) - Builder
+35. **Befehlspalette portieren (B644)** 🔨 gebaut 21073fb72, bb902abef, 3adbd1622 (Studio-Check 39 Teile, 0 Funde); offen: Bild der echten Palette - Builder
