@@ -203,4 +203,24 @@ describe('identicalRenderLinesOf', () => {
       `elements/hero variant b draws the same pixels as variant a in every state (${names.filter((name) => name !== 's1').join(', ')}) - it adds nothing visible: withdraw it with \`sketch withdraw elements/hero --variant b --by <model id>\` or redraw it`,
     ]);
   });
+
+  it('names a variant that fails to load as not compared and still compares the others', async () => {
+    const { product, sketch } = acme(['a', 'b', 'c']);
+    const loadWithBroken: SketchPartLoader = async ({ sketch: drawn }) => {
+      if (drawn?.variant === 'a') throw new Error('boom');
+
+      return load({ file: '', product: '', sketch: drawn });
+    };
+    const pictureOf = drawing({
+      now: { default: 0, hover: 0 },
+      b: { default: 1, hover: 2 },
+      c: { default: 1, hover: 2 },
+    });
+    const lines = await identicalRenderLinesOf({ product, sketch, load: loadWithBroken, pictureOf, boxOf });
+
+    expect(lines).toEqual([
+      expect.stringContaining('elements/hero variant c draws the same pixels as variant b in every state'),
+      'elements/hero variant a was not compared: it failed to load (boom)',
+    ]);
+  });
 });

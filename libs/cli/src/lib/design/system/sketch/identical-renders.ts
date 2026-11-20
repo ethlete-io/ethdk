@@ -24,7 +24,7 @@ const drawingOf = async (options: {
   sketch: SketchVariant | null;
   load: SketchPartLoader;
   pictureOf: PictureOf;
-}): Promise<Map<string, DrawnState> | null> => {
+}): Promise<Map<string, DrawnState> | { problem: string }> => {
   const { product, part, file, sketch, load, pictureOf } = options;
   const read = await readPartModule({
     part: { file },
@@ -32,7 +32,7 @@ const drawingOf = async (options: {
     load: () => load({ file, product: product.name, sketch }),
   });
 
-  if (read.problem) return null;
+  if (read.problem) return { problem: read.problem };
 
   const layer = product.parts.find((entry) => partKeyOf(entry) === part)?.layer ?? part.split('/')[0];
   const frames = framesOf(
@@ -144,7 +144,7 @@ const refusalsOf = async (options: {
 /**
  * One line per live variant of the sketch that draws every state of a target pixel for pixel like another live
  * variant, or like the product's part when the sketch has more than one live variant. Of two variants that draw
- * alike in every state, only the later one is named. A lone variant like the product is a change without a visible
+ * alike in every state, only the later one is named. A variant that fails to load is named as not compared. A lone variant like the product is a change without a visible
  * difference, which `sketch ready` merges on its own, so it is never named. A state that fails to draw counts as
  * different. Any other variant is named when its first changed state, in its own state order, draws like the first
  * changed state of an earlier variant. "Changed" and "draws like" there are the pixel diff of `design shot` (`boxOf`),
@@ -178,6 +178,7 @@ export const sketchRendersOf = async (options: {
   const alike: string[] = [];
   const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
   const found: IdenticalRender[] = [];
+  const notCompared: IdenticalRender[] = [];
 
   for (const part of sketch.targets) {
     const variants: Drawn[] = [];
@@ -188,11 +189,19 @@ export const sketchRendersOf = async (options: {
         ? await drawingOf({ product, part, file, sketch: { target: sketch.target, variant }, load, pictureOf })
         : null;
 
-      if (drawn) variants.push({ name: variant, states: drawn });
+      if (drawn instanceof Map) variants.push({ name: variant, states: drawn });
+      else if (drawn)
+        notCompared.push({
+          variant,
+          sibling: null,
+          everyState: false,
+          line: `${sketch.target} variant ${variant}${sketch.targets.length > 1 ? ` ${part}` : ''} was not compared: it failed to load (${drawn.problem})`,
+        });
     }
 
     const file = product.parts.find((entry) => partKeyOf(entry) === part)?.file;
-    const now = file ? await drawingOf({ product, part, file, sketch: null, load, pictureOf }) : null;
+    const drawnNow = file ? await drawingOf({ product, part, file, sketch: null, load, pictureOf }) : null;
+    const now = drawnNow instanceof Map ? drawnNow : null;
     const of = sketch.targets.length > 1 ? ` ${part}` : '';
 
     const current = now ? { name: AKTUELL, states: now } : null;
@@ -231,5 +240,5 @@ export const sketchRendersOf = async (options: {
     );
   }
 
-  return { identical: found, lookAlike, alike };
+  return { identical: [...found, ...notCompared], lookAlike, alike };
 };
