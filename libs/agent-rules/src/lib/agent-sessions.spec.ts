@@ -1233,7 +1233,7 @@ describe('agent-sessions', () => {
       `#!/bin/sh\ncase "$1" in\n  list-clients) [ "$4" = -F ] && echo /dev/fake-client; exit 0;;\n  switch-client) echo "$@" >> '${log}'; exit 0;;\nesac\nunset TMUX\nexec '${real}' "$@"\n`,
       { mode: 0o755 },
     );
-    return { log, env: { PATH: `${bin}:${process.env.PATH}`, TMUX: 'fake', HOME: dir } };
+    return { log, env: { PATH: `${bin}:${process.env['PATH']}`, TMUX: 'fake', HOME: dir } };
   };
 
   it.skipIf(!hasTmux)('run inside a tmux pane switches the calling client to the session it created', () => {
