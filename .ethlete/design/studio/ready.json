@@ -33,12 +33,12 @@
     "at": "2026-11-19T14:15:37.312Z"
   },
   "components/comment-draft": {
-    "hash": "d9b7ea77d3ba668e",
+    "hash": "c7cf34feaf9c180a",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
-      ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
-      ".ethlete/design/sdk/components/textarea/textarea.css": "e0a2d2284eeab65d",
-      ".ethlete/design/sdk/components/textarea/textarea.ts": "d8ef7e9a68136852",
+      ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
+      ".ethlete/design/sdk/components/textarea/textarea.css": "1a7a7756d0890a81",
+      ".ethlete/design/sdk/components/textarea/textarea.ts": "e939c255a8098b8b",
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
       ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
@@ -58,8 +58,8 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "fc6cdc0150b6a82e",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "869759984c9a754e",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
@@ -74,7 +74,7 @@
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
-      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "e4f70765b72267ab",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "256c80dd0afd952f",
       "libs/components/src/lib/forms/form-field/form-field-textarea-styles.component.css": "3cdff8e980e47658",
       "libs/components/src/lib/forms/form-field/form-field.component.css": "934d0fc0e7a53ff4",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
@@ -91,12 +91,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
+    "app": "5498d3ab6c57b1ea",
     "actions": ["comment-mode", "emit:sendComment"],
     "builder": "designer",
-    "at": "2026-11-17T20:29:24.292Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-20T13:13:17.399Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 4159628
   },
   "components/comment-flow": {
     "hash": "2d88f1078b17c6dc",
