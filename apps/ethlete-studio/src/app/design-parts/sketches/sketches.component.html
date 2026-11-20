@@ -644,6 +644,7 @@
     [stateHidden]="transposed()"
     [same]="isSame(row, item.changed)"
     [first]="item.state === firstChangeOf(row)"
+    [marked]="isMarked(row, item.changed)"
     [loading]="loadingShots().has(key)"
     [frameKey]="key"
     [width]="item.width ?? row.width"

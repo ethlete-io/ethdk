@@ -63,6 +63,29 @@ describe('the frame set of a sketch round', () => {
   });
 });
 
+describe('the interaction neighbourhood of a changed state', () => {
+  const NAMES = ['save', 'save-hover', 'save-active', 'save-focus-visible', 'remove', 'remove-hover'];
+  const rowsOf = (changed: string[]): SketchFrameRow[] => [
+    { key: 'current', shots: NAMES.map((state) => ({ state, changed: false })) },
+    { key: 'a', shots: NAMES.map((state) => ({ state, changed: changed.includes(state) ? true : false })) },
+  ];
+  const statesShown = (rows: SketchFrameRow[]) => [
+    ...new Set(sketchFrameSetOf({ listed: rows }).map(([, state]) => state)),
+  ];
+
+  it('keeps the whole row of a changed interaction and folds the other rows', () => {
+    expect(statesShown(rowsOf(['save-hover']))).toEqual(['save', 'save-hover', 'save-active', 'save-focus-visible']);
+  });
+
+  it('keeps the row of a changed rest state', () => {
+    expect(statesShown(rowsOf(['remove']))).toEqual(['remove', 'remove-hover']);
+  });
+
+  it('draws every state when each row has a change', () => {
+    expect(statesShown(rowsOf(['save-hover', 'remove-hover']))).toEqual(NAMES);
+  });
+});
+
 describe('keptStatesOf', () => {
   it('keeps the states every variant lists as unchanged', () => {
     expect(keptStatesOf(['rest', 'hover'], [['rest', 'hover'], ['rest']])).toEqual(['rest']);

@@ -36,6 +36,18 @@ describe('VariantCellComponent', () => {
     expect(frame?.style.height).toBe('36px');
   });
 
+  it('marks a changed cell with the geändert chip only when asked', async () => {
+    const marked = await setup({ state: 'rest-hover', marked: true, width: 200, height: 50 });
+
+    expect(marked.querySelector('[data-sk-changed-mark]')?.textContent?.trim()).toBe('geändert');
+  });
+
+  it('draws no geändert chip without the mark', async () => {
+    const plain = await setup({ state: 'rest-hover', width: 200, height: 50 });
+
+    expect(plain.querySelector('[data-sk-changed-mark]')).toBeNull();
+  });
+
   it('dims an unchanged state and reads unverändert', async () => {
     const cell = await setup({ state: 'rest', same: true, width: 200, height: 50 });
 

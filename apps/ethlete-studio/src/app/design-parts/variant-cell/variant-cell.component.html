@@ -14,6 +14,13 @@
     ><span [class.hidden]="stateHidden()">{{ state() }}{{ same() ? LABELS.stateSeparator : '' }}</span
     >{{ same() ? LABELS.unchanged : '' }}</span
   >
+  @if (marked()) {
+    <span
+      class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink"
+      data-sk-changed-mark
+      >{{ LABELS.changedCell }}</span
+    >
+  }
   @if (first()) {
     <span class="text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{ LABELS.firstChange }}</span>
   }

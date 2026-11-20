@@ -175,6 +175,7 @@ export const STUDIO_LABELS = {
     reload: 'Erneut laden',
     sameVariants: (names: string[]) => `Unverändert: ${names.map((name) => name.replace(/ /g, '\u00A0')).join(', ')}`,
     firstChange: 'erste Änderung',
+    changedCell: 'geändert',
     foldedStates: (count: number) =>
       count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`,
     pendingStates: (count: number) => (count === 1 ? 'vergleicht 1 Zustand …' : `vergleicht ${count} Zustände …`),

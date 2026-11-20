@@ -152,6 +152,27 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="current"] .opacity-50')).toBeNull();
   });
 
+  it('shows the whole interaction row of a changed state, marks the changed cell and folds the other rows', async () => {
+    const states = ['save', 'save-hover', 'save-active', 'remove', 'remove-hover'];
+    const rowOf = (key: string, changed: string[]): SketchRow => ({
+      key,
+      note: key,
+      width: 300,
+      shots: states.map((state) => ({ state, changed: changed.includes(state), height: 40 })),
+    });
+    const rows = [rowOf('current', []), rowOf('x', ['save-hover'])];
+    const root: HTMLElement = (await render({ camera: '100', rows })).nativeElement;
+    const variant = root.querySelector('[data-sk-row="x"]');
+    const names = [...(variant?.querySelectorAll('[data-sk-state]') ?? [])].map((cell) =>
+      cell.getAttribute('data-sk-state'),
+    );
+
+    expect(names).toEqual(['save', 'save-hover', 'save-active']);
+    expect(variant?.querySelectorAll('[data-sk-changed-mark]')).toHaveLength(1);
+    expect(variant?.querySelector('[data-sk-state="save-hover"] [data-sk-changed-mark]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="current"] [data-sk-changed-mark]')).toBeNull();
+  });
+
   it('folds every state no variant is known to change while a compare is pending, and shows all from the toggle', async () => {
     const rows: SketchRow[] = [
       ...ROWS.slice(0, 1).map((row) => ({

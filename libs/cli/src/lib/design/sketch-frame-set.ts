@@ -4,22 +4,33 @@ export type SketchFrameRow = { key: string; shots: readonly SketchFrameShot[] };
 
 const isBaseRow = (row: SketchFrameRow) => row.key === 'current' || row.key === 'old' || row.key === 'new';
 
+const INTERACTION_SUFFIX = /-(hover|focus-visible|active|disabled)$/;
+
+const interactionGroupOf = (state: string) => state.replace(INTERACTION_SUFFIX, '');
+
 const statesOf = (rows: readonly SketchFrameRow[]) => [
   ...new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state))),
 ];
 
 /**
- * The states no row changes (`changed === false`), Current and the rows old and new of an @edit sketch included; a state
- * still compared (`null`) never folds, and none folds when every state would.
+ * The states no row changes that also share no interaction group (`reset`, `reset-hover`, ...) with a changed state; a
+ * state still compared (`null`) never folds, and none folds when every state would.
  */
 export const foldedStatesOf = (rows: readonly SketchFrameRow[]): ReadonlySet<string> => {
   const states = statesOf(rows);
-  const folded = states.filter((state) =>
-    rows.every((row) =>
-      isBaseRow(row)
-        ? row.shots.every((shot) => shot.state !== state || shot.changed === false)
-        : row.shots.some((shot) => shot.state === state && shot.changed === false),
+  const touched = new Set(
+    rows.flatMap((row) =>
+      row.shots.filter((shot) => shot.changed === true).map((shot) => interactionGroupOf(shot.state)),
     ),
+  );
+  const folded = states.filter(
+    (state) =>
+      !touched.has(interactionGroupOf(state)) &&
+      rows.every((row) =>
+        isBaseRow(row)
+          ? row.shots.every((shot) => shot.state !== state || shot.changed === false)
+          : row.shots.some((shot) => shot.state === state && shot.changed === false),
+      ),
   );
 
   return new Set(folded.length < states.length ? folded : []);

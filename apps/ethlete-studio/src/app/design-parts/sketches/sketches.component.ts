@@ -764,6 +764,10 @@ export class SketchesComponent {
     return row.key !== SKETCH_CURRENT && this.pendingRows().has(row.key);
   }
 
+  protected isMarked(row: SketchRow, changed: boolean | null) {
+    return !isBaseRow(row) && changed === true && !this.isPending(row) && !this.screenMode();
+  }
+
   protected firstChangeOf(row: SketchRow) {
     return isBaseRow(row) || this.isPending(row) || this.screenMode()
       ? null
