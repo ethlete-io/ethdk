@@ -1065,18 +1065,18 @@
     "pid": 4176593
   },
   "elements/studio-menu": {
-    "hash": "4edee4e5e26dd83b",
+    "hash": "f81a1e5ddcfd3252",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
-      ".ethlete/design/sdk/components/menu/menu.ts": "63756c3ecafc67df",
+      ".ethlete/design/sdk/components/menu/menu.ts": "9183353168e14ff7",
       ".ethlete/design/studio/assets/studio-app-icon.svg": "d1927cc46bc95568",
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "178aac4a1cdb5a5c",
       ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "d3afeb407b97da7d",
       ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "8bf6af80ec5cb668",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "dc836092d8c50cc6",
-      ".ethlete/design/studio/foundations/logo/logo.ts": "7b41928bfc64e439",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "8f3415dc6847e186",
+      ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -1102,13 +1102,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "1caa7206ce93cd77",
+    "app": "5330e3500b16c1b9",
     "actions": ["closed", "open", "studio-menu.busy", "studio-menu.busy-open"],
     "builder": "designer",
-    "at": "2026-11-20T08:50:46.725Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 456086
+    "at": "2026-11-20T13:13:15.784Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 22160
   },
   "elements/variant-cell": {
     "hash": "d27bd6b31fee83f0",
