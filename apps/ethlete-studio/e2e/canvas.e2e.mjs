@@ -34,6 +34,7 @@ const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
 const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
 const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
+const zoomFixture = args.includes('--zoom-fixture') || args.includes('--prepare-checkout');
 const engine = args.includes('--engine') ? args[args.indexOf('--engine') + 1] : 'chromium';
 const pageGroups = args.includes('--page') ? args[args.indexOf('--page') + 1].split('|') : undefined;
 const VIEWS = {
@@ -1121,6 +1122,7 @@ const percentile = (sorted, share) => sorted[Math.max(0, Math.ceil(share * sorte
 const CASES = [
   {
     name: 'ctrl-wheel zoom over 100 cells keeps the frame interval budget',
+    perf: true,
     pages: ['Zoom'],
     engines: ['chromium', 'webkit'],
     run: async (page) => {
@@ -4411,6 +4413,41 @@ const assertSketchFixtures = async (page, designPort, assertStates) => {
   if (faults.length) throw new Error(`sketch fixture check failed: ${faults.join('; ')}`);
 };
 
+const addZoomFixture = (dir) => {
+  const zoom = join(
+    dir,
+    '.ethlete/design/studio/sketches',
+    `${ZOOM_SKETCH.part.replace('/', '-')}.${ZOOM_SKETCH.name}`,
+  );
+  const zoomTs = join(ZOOM_SKETCH.part, `${ZOOM_SKETCH.part.split('/')[1]}.ts`);
+
+  ZOOM_SKETCH.variants.forEach((variant, index) => {
+    cpSync(join(root, '.ethlete/design/studio', ZOOM_SKETCH.part), join(zoom, variant, ZOOM_SKETCH.part), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(zoom, variant, zoomTs),
+      readFileSync(join(zoom, variant, zoomTs), 'utf8').replaceAll(
+        'canvasFrameStyles +',
+        `canvasFrameStyles + 'body { opacity: ${0.4 + index * 0.15}; }' +`,
+      ),
+    );
+  });
+  writeFileSync(
+    join(zoom, 'sketch.json'),
+    JSON.stringify({
+      target: `${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}`,
+      targets: [ZOOM_SKETCH.part],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+      variantInfo: Object.fromEntries(
+        ZOOM_SKETCH.variants.map((variant) => [variant, { authors: ['canvas-e2e'], round: 'r1' }]),
+      ),
+    }),
+  );
+};
+
 const prepareCheckout = () => {
   const dir = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
 
@@ -4504,38 +4541,7 @@ const prepareCheckout = () => {
     }),
   );
 
-  const zoom = join(
-    dir,
-    '.ethlete/design/studio/sketches',
-    `${ZOOM_SKETCH.part.replace('/', '-')}.${ZOOM_SKETCH.name}`,
-  );
-  const zoomTs = join(ZOOM_SKETCH.part, `${ZOOM_SKETCH.part.split('/')[1]}.ts`);
-
-  ZOOM_SKETCH.variants.forEach((variant, index) => {
-    cpSync(join(root, '.ethlete/design/studio', ZOOM_SKETCH.part), join(zoom, variant, ZOOM_SKETCH.part), {
-      recursive: true,
-    });
-    writeFileSync(
-      join(zoom, variant, zoomTs),
-      readFileSync(join(zoom, variant, zoomTs), 'utf8').replaceAll(
-        'canvasFrameStyles +',
-        `canvasFrameStyles + 'body { opacity: ${0.4 + index * 0.15}; }' +`,
-      ),
-    );
-  });
-  writeFileSync(
-    join(zoom, 'sketch.json'),
-    JSON.stringify({
-      target: `${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}`,
-      targets: [ZOOM_SKETCH.part],
-      status: 'ready',
-      createdAt: '2026-01-01T00:00:00.000Z',
-      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
-      variantInfo: Object.fromEntries(
-        ZOOM_SKETCH.variants.map((variant) => [variant, { authors: ['canvas-e2e'], round: 'r1' }]),
-      ),
-    }),
-  );
+  if (zoomFixture) addZoomFixture(dir);
 
   return dir;
 };
@@ -5008,7 +5014,15 @@ const lead = async () => {
       fixturesAsked ||= checkFixtures;
       const child = fork(
         fileURLToPath(import.meta.url),
-        ['--worker', '--built', built ?? scratch, '--engine', engine, ...(checkFixtures ? ['--check-fixtures'] : [])],
+        [
+          '--worker',
+          '--built',
+          built ?? scratch,
+          '--engine',
+          engine,
+          ...(checkFixtures ? ['--check-fixtures'] : []),
+          ...(declared.some((job) => job.page === 'Zoom') ? ['--zoom-fixture'] : []),
+        ],
         {
           env: {
             ETHLETE_DESIGN_SLOW_CHECKS: 'off',
