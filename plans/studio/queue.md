@@ -32,11 +32,11 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 31. **Scrollable-Buttons app-weit (B650)** ⏳ blockiert fifagg: Provider für `et-scrollable`-Buttons (an je Breakpoint, Position inside/inline an den Zeilenenden) statt `etSc... - Builder
 32. **Sticky-Kind über dem Scroll-Fade (B651)** ⏳ blockiert fifagg: Fade ist mask-image am Scroll-Container, ein sticky Kind (left:0) bleibt im verblassten Bereich. Öffentliches ... - Builder
 33. **Pagination scrollt nur nach oben (B652)** ⏳ blockiert fifagg: `FloatingActionDirective.scrollToTop` scrollt beim Seitenwechsel in beide Richtungen; Option: nur nach oben, w... - Builder
-34. **Mailbox und Neustart verlieren nichts (B658)** ⏳ Verteiler startet mit jeder Sitzung; restart stoppt Hintergrund-Agents vor /clear (ADR 0384) - Builder
-35. **Host-Signal-Test im CI (B645)** 🔨 127 behoben (395a0932f); unter xvfb startet der Host seine Helfer nicht (CI 44701159109, Suspect: CEF-Start ohne GPU/Sandbox/Libs), Schritte wieder raus (57606a507); nächster Versuch: e2e zeigt Host-stderr, ein CI-Lauf - Builder
-36. **Strg+C beim CEF-Start (B647)** ⏳ Tagschicht: ein echtes Strg+C in den ersten ~400 ms des CEF-Starts geht im Host verloren; Fix in tauri-runtime-cef oder Signalmaske im Host - Builder
-37. **Carousel mit einer Folie (B653)** ⏳ fifagg, nicht blockiert - Builder
-38. **Segment-Gruppe im Scrollable (B654)** ⏳ fifagg, nicht blockiert - Builder
-39. **et-label in et-dropzone (B655)** ⏳ fifagg, nicht blockiert - Builder
-40. **Dropzone resolveExisting mit Bild-Varianten (B656)** ⏳ fifagg, nicht blockiert - Builder
-41. **Tab-Unterstrich in Label-Breite (B657)** ⏳ fifagg, nicht blockiert - Builder
+34. **Tab-Linie und Tab-Label-Tokens (B657)** ⏳ blockiert fifagg: Grundlinie übermalt Unterstrich, Grundlinien-Farbe, Label-Farben, aktiv ohne Unterstrich; plus Unterstrich in Label-Breite - Builder
+35. **Mailbox und Neustart verlieren nichts (B658)** ⏳ Verteiler startet mit jeder Sitzung; restart stoppt Hintergrund-Agents vor /clear (ADR 0384) - Builder
+36. **Host-Signal-Test im CI (B645)** 🔨 127 behoben (395a0932f); unter xvfb startet der Host seine Helfer nicht (CI 44701159109, Suspect: CEF-Start ohne GPU/Sandbox/Libs), Schritte wieder raus (57606a507); nächster Versuch: e2e zeigt Host-stderr, ein CI-Lauf - Builder
+37. **Strg+C beim CEF-Start (B647)** ⏳ Tagschicht: ein echtes Strg+C in den ersten ~400 ms des CEF-Starts geht im Host verloren; Fix in tauri-runtime-cef oder Signalmaske im Host - Builder
+38. **Carousel mit einer Folie (B653)** ⏳ fifagg, nicht blockiert - Builder
+39. **Segment-Gruppe im Scrollable (B654)** ⏳ fifagg, nicht blockiert - Builder
+40. **et-label in et-dropzone (B655)** ⏳ fifagg, nicht blockiert - Builder
+41. **Dropzone resolveExisting mit Bild-Varianten (B656)** ⏳ fifagg, nicht blockiert - Builder

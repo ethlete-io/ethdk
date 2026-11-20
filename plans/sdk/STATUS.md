@@ -35,6 +35,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S20 (fifagg, 20.11.): et-label in et-dropzone, nicht blockiert -> et-label in et-dropzone (B655).
 - S21 (fifagg, 20.11.): Dropzone resolveExisting mit Bild-Varianten, nicht blockiert -> Dropzone resolveExisting mit Bild-Varianten (B656).
 - S22 (fifagg, 19.11.): Tab-Unterstrich in Label-Breite, nicht blockiert -> Tab-Unterstrich in Label-Breite (B657).
+- S23-S25 (fifagg, 20.11.): Tab-Grundlinie übermalt den Unterstrich, Grundlinien-Farb-Token, Label-Farb-Tokens und aktiv ohne Unterstrich, blockiert -> Tab-Linie und Tab-Label-Tokens (B657).
 
 ## Offene Plan-Dateien
 
