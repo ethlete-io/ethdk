@@ -66,7 +66,27 @@ const elapsedLabel = (ms: number) => {
 
 const SECTIONS: Exclude<Section, 'Sketches'>[] = ['System', 'Flows', 'Inbox'];
 
-const RECENT_PRODUCTS = ['studio', 'timetrack', 'docs'];
+const RECENT_PRODUCTS = ['studio', 'studio-lab', 'sdk', 'timetrack', 'docs'];
+
+const railLetters = (names: string[]) => {
+  const taken = new Set<string>();
+
+  return names.map((name) => {
+    const words = name.split('-').filter(Boolean);
+    const chars = [...name.replace(/-/g, '')];
+    const candidates = [
+      ...(words.length > 1 ? [words.map((word) => word[0]).join('')] : []),
+      ...chars.slice(1).map((char) => name.charAt(0) + char),
+    ].map((letters) => letters.charAt(0).toUpperCase() + letters.slice(1));
+    const letters: string = candidates.find((candidate) => !taken.has(candidate)) ?? name.charAt(0).toUpperCase();
+
+    taken.add(letters);
+
+    return letters;
+  });
+};
+
+const RAIL_LETTERS = railLetters(RECENT_PRODUCTS);
 
 const ICONS: Record<(typeof SECTIONS)[number], IconName> = {
   System: 'grid',
@@ -138,7 +158,7 @@ const rail = (section: Section, product: string, panelHidden: boolean, studio: s
     ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === railSection(section), 'section', panelHidden, force, s === section)).join('')}
     <div class="flex-1"></div>
     ${sep}
-    ${RECENT_PRODUCTS.map((p) => railItem(p.charAt(0).toUpperCase(), p, p === product, 'product', false, force)).join('')}
+    ${RECENT_PRODUCTS.map((p, index) => railItem(RAIL_LETTERS[index] ?? p, p, p === product, 'product', false, force)).join('')}
   </nav>`;
 
 const sidePanel = (side: string, head: string, top: string) =>

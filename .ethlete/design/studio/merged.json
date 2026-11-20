@@ -67,7 +67,7 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "components/zoom-chip": {
-    "hash": "5f12d1c9b61f4cee",
+    "hash": "cab5790575c62dd4",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-17T17:55:04.370Z"
@@ -86,10 +86,11 @@
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "5a680b700835405c",
+    "hash": "02aa4d2e7ed3e9eb",
     "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-19T03:19:23.359Z"
+    "decidedBy": "plan: ADR 0387 #4, ADR 0305; A6 brief (builder picks)",
+    "at": "2026-11-20T13:57:01.433Z",
+    "note": "merged without a pick: allowed by ADR 0387 #4, ADR 0305; A6 brief (builder picks) - merged: A6 Quick switch: two unique letters per rail product, tooltip"
   },
   "elements/studio-menu": {
     "hash": "57b9e834125ac815",
