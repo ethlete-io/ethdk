@@ -476,6 +476,10 @@ jobs:
           mkdir -p target/debug/locales
           find "$cef_dir" -maxdepth 1 -type f -exec cp -t target/debug {} +
           find "$cef_dir/locales" -maxdepth 1 -type f -exec cp -t target/debug/locales {} +
+          # Ubuntu's AppArmor blocks the user namespace sandbox, so Chromium falls back to the SUID
+          # helper and aborts unless it is root-owned with mode 4755.
+          sudo chown root:root target/debug/chrome-sandbox
+          sudo chmod 4755 target/debug/chrome-sandbox
 
       - run: bash tools/scripts/ci-apt-retry.sh sudo apt-get install -y --no-install-recommends xvfb xauth
         timeout-minutes: 5
