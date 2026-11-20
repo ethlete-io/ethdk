@@ -6,7 +6,7 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - slice typecheck gap (Mac, 920): a slice check ran tsc with the app tsconfig only, so a spec type error reached push:suite.
 - sketch ready note spam (Linux, 945): `sketch ready` prints ~30 UNBOUND-INPUT notes per variant.
 - stale baseline entries (Mac, 948): design check keeps reporting baseline entries that no longer fire.
-- compare mid-run rebuild (Mac, 949): compare does not say when the app rebuilt in the middle of a run.
+- compare mid-run rebuild (Mac, 949): compare does not say the app rebuilt mid-run.
 - jsdom and @layer (Mac, 950): jsdom ignores rules inside `@layer`, so a spec of an SDK component needs a hand shim.
 - sketch withdraw default reason (Mac, 952): `sketch withdraw` without `--reason` wrote a default reason that did not match the variant.
 - --lint refuses --product (Mac, 953): `design check --lint` refuses `--product` while the sketch commands want it.
@@ -135,4 +135,4 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - studio e2e cold start (20.11.): "a sketch scroll never empties a cell" failed once with "no frame after 60 s", rerun green. Suspect.
 - CI runner speed (20.11.): studio sketch listing 13-26 s on the runner vs 3.6 s locally, serve.perf 262-266 > 200-208 ms. Suspect.
 - studio checkouts.adding (20.11.): one flag for all folder adds, two adds at once could race (B646). Suspect.
-- compare pages/inventory (20.11.): one 400 ERR_BAD_REQUEST on old code. Suspect.
+- compare pages/inventory (20.11.): one HTTP 400 on old code. Suspect.
