@@ -15,6 +15,7 @@ import {
   injectHostElement,
   RuntimeError,
 } from '@ethlete/core';
+import { ScrollableActiveChildRef, ScrollableDirective } from '../../../scrollable/headless/scrollable.directive';
 import { SELECTION_LIST_TOKEN, SelectionOptionDirective } from '../headless';
 import { SELECTION_LIST_ERROR_CODES } from '../selection-list-errors';
 import { SegmentedButtonGroupComponent } from './segmented-button-group.component';
@@ -45,6 +46,7 @@ import { SegmentedButtonGroupComponent } from './segmented-button-group.componen
 export class SegmentedButtonComponent {
   public optionDirective = inject(SelectionOptionDirective);
   private group = inject(SegmentedButtonGroupComponent, { optional: true });
+  private scrollable = inject(ScrollableDirective, { optional: true });
   private backgroundRef = viewChild.required<ElementRef<HTMLElement>>('background');
 
   public canAnimate = createCanAnimateSignal();
@@ -71,6 +73,34 @@ export class SegmentedButtonComponent {
         group.lastActiveBackgroundElement.set(null);
       }
     });
+
+    const scrollable = this.scrollable;
+
+    if (scrollable) {
+      const ref: ScrollableActiveChildRef = {
+        elementRef: new ElementRef(hostEl),
+        isActiveChildEnabled: this.optionDirective.checked,
+      };
+
+      scrollable.registerActiveChild(ref);
+      inject(DestroyRef).onDestroy(() => scrollable.unregisterActiveChild(ref));
+
+      let isFirstRun = true;
+
+      effect(() => {
+        const isChecked = this.optionDirective.checked();
+
+        if (isFirstRun) {
+          isFirstRun = false;
+
+          return;
+        }
+
+        if (isChecked) {
+          untracked(() => scrollable.scrollToElement({ element: hostEl, origin: 'center' }));
+        }
+      });
+    }
 
     effect(() => {
       const group = this.group;

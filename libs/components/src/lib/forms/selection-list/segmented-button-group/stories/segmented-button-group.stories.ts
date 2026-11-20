@@ -190,3 +190,22 @@ export const InScrollable: Story = {
     options: [{ value: 'ea', label: 'EA SPORTS FC' }],
   },
 };
+
+export const InScrollableFarSelection: Story = {
+  args: {
+    inScrollable: true,
+    value: 'sk',
+    label: 'Language',
+    maxWidth: '20rem',
+    options: [
+      { value: 'de', label: 'Deutsch' },
+      { value: 'en', label: 'English' },
+      { value: 'fr', label: 'Francais' },
+      { value: 'es', label: 'Espanol' },
+      { value: 'it', label: 'Italiano' },
+      { value: 'nl', label: 'Nederlands' },
+      { value: 'pl', label: 'Polski' },
+      { value: 'sk', label: 'Slovencina' },
+    ],
+  },
+};

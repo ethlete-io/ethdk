@@ -1,7 +1,10 @@
 import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../../../test-helpers';
 import { mountSelectionList, SelectionListDriver } from '../../testing/selection-list-driver';
+import { ScrollableDirective } from '../../../scrollable/headless/scrollable.directive';
+import { SCROLLABLE_IMPORTS } from '../../../scrollable/scrollable.imports';
 import { SEGMENTED_BUTTON_IMPORTS } from '../selection-list.imports';
 import { SegmentedButtonGroupComponent } from './segmented-button-group.component';
 
@@ -84,5 +87,42 @@ describe('SegmentedButtonGroupComponent', () => {
     driver.fixture.detectChanges();
 
     expect(group.lastActiveBackgroundElement()).toBeNull();
+  });
+
+  it('registers the checked segment with a surrounding scrollable and scrolls to a later selection', () => {
+    @Component({
+      template: `
+        <et-scrollable>
+          <et-segmented-button-group [value]="value()">
+            <et-segmented-button value="a">A</et-segmented-button>
+            <et-segmented-button value="b">B</et-segmented-button>
+          </et-segmented-button-group>
+        </et-scrollable>
+      `,
+      imports: [SEGMENTED_BUTTON_IMPORTS, SCROLLABLE_IMPORTS],
+    })
+    class ScrollableHost {
+      public value = signal('a');
+    }
+
+    const fixture = TestBed.createComponent(ScrollableHost);
+    fixture.detectChanges();
+
+    const scrollable = fixture.debugElement.query(By.directive(ScrollableDirective)).injector.get(ScrollableDirective);
+    const scrollSpy = vi.spyOn(scrollable, 'scrollToElement').mockImplementation(() => undefined);
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('et-segmented-button')) as HTMLElement[];
+
+    expect(
+      scrollable
+        .getActiveChildren()()
+        .map((c) => c.elementRef.nativeElement),
+    ).toEqual(buttons);
+    expect(scrollable.getActiveChildren()()[0]?.isActiveChildEnabled()).toBe(true);
+    expect(scrollable.getActiveChildren()()[1]?.isActiveChildEnabled()).toBe(false);
+
+    fixture.componentInstance.value.set('b');
+    fixture.detectChanges();
+
+    expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ element: buttons[1] }));
   });
 });
