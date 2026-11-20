@@ -33,13 +33,17 @@
         #000 calc(100% - var(--_et-scrollable-mask-end)),
         transparent 100%
       ),
-      linear-gradient(#000 0 0);
+      linear-gradient(#000 0 0), linear-gradient(#000 0 0), linear-gradient(#000 0 0);
     mask-size:
       100% calc(100% - var(--_et-scrollable-scrollbar-size, 0px)),
-      100% var(--_et-scrollable-scrollbar-size, 0px);
+      100% var(--_et-scrollable-scrollbar-size, 0px),
+      var(--et-scrollable-mask-inset-start, 0px) 100%,
+      var(--et-scrollable-mask-inset-end, 0px) 100%;
     mask-position:
       left top,
-      left bottom;
+      left bottom,
+      left top,
+      right top;
     mask-repeat: no-repeat;
   }
 
@@ -54,18 +58,24 @@
         #000 calc(100% - var(--_et-scrollable-mask-end)),
         transparent 100%
       ),
-      linear-gradient(#000 0 0);
+      linear-gradient(#000 0 0), linear-gradient(#000 0 0), linear-gradient(#000 0 0);
     mask-size:
       calc(100% - var(--_et-scrollable-scrollbar-size, 0px)) 100%,
-      var(--_et-scrollable-scrollbar-size, 0px) 100%;
+      var(--_et-scrollable-scrollbar-size, 0px) 100%,
+      100% var(--et-scrollable-mask-inset-start, 0px),
+      100% var(--et-scrollable-mask-inset-end, 0px);
     mask-position:
       left top,
-      right top;
+      right top,
+      left top,
+      left bottom;
 
     &:dir(rtl) {
       mask-position:
         right top,
-        left top;
+        left top,
+        right top,
+        right bottom;
     }
   }
 

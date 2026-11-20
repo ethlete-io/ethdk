@@ -84,6 +84,17 @@ providers: [
 
 The edge fade is a CSS `mask-image` on the scroll container, so the faded edge shows whatever is behind the track - a card's class background or a background image - instead of a painted colour. Only an edge that can scroll further fades. The fade is `--mask-size` wide on the `<et-scrollable>` (`25px` for the gradient variant, `32px` for the border variant, which also draws a line on that edge). The native scrollbar (`renderScrollbars`) is not faded.
 
+### Sticky children over the fade
+
+A `position: sticky; inset-inline-start: 0` child sits inside the faded area, so it fades with the content. Set `--et-scrollable-mask-inset-start` (and `--et-scrollable-mask-inset-end` for a child stuck to the end) on the `<et-scrollable>` to the child's size: the first that many pixels of the track stay fully opaque and the fade continues behind them. Both default to `0px`, which leaves the fade unchanged. Vertical tracks inset from the top and bottom.
+
+```html
+<et-scrollable style="--et-scrollable-mask-inset-start: 6rem">
+  <div class="sticky left-0 w-24">Sticky label</div>
+  ...
+</et-scrollable>
+```
+
 With `itemSize: 'auto'` a child is as wide as its content (`min-content`) unless it sets its own width, and percent widths and margins resolve against the scroll container: `width: 50%` is half the visible track, and `margin-inline-end: 10%` on the last child leaves a tenth of it as trailing space, no `scrollableClass` needed. An `et-segmented-button-group` as a direct child is sized to its content, so it needs no `w-max`.
 
 ### Snapping

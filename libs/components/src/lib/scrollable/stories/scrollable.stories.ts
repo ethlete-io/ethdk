@@ -156,6 +156,24 @@ export const ProvidedButtons: Story = {
   }),
 };
 
+export const StickyChild: Story = {
+  decorators: [moduleMetadata({ imports: [SCROLLABLE_IMPORTS] })],
+  render: () => ({
+    template: `
+      <div class="w-full max-w-xl">
+        <et-scrollable data-testid="sticky" class="block" style="--et-scrollable-mask-inset-start: 6rem">
+          <div class="flex gap-2">
+            <div data-testid="sticky-child" style="background:#00f" class="sticky left-0 z-10 shrink-0 w-24 h-16 flex items-center justify-center">Sticky</div>
+            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
+              <div class="shrink-0 w-32 h-16 bg-gray-200 flex items-center justify-center">{{ i }}</div>
+            }
+          </div>
+        </et-scrollable>
+      </div>
+    `,
+  }),
+};
+
 export const StickyButtons: Story = {
   args: { stickyButtons: true },
 };
