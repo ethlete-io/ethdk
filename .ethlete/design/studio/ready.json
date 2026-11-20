@@ -676,7 +676,7 @@
     "pid": 10152
   },
   "components/tree-row": {
-    "hash": "4017f6e8c9dfa080",
+    "hash": "54194a38f4ab321d",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -699,16 +699,17 @@
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/tree-row/shared/tree-row.ts": "dc2d8ce0b66fe0c2",
       ".ethlete/design/studio/components/tree-row/tree-row.css": "799459ba9916614e",
-      ".ethlete/design/studio/components/tree-row/tree-row.ts": "e8f18a177ac1e315",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      ".ethlete/design/studio/components/tree-row/tree-row.ts": "ab34ce543b8e3652",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
+    "app": "53c27d5c4b648103",
     "actions": ["emit:rowPress"],
     "builder": "designer",
-    "at": "2026-11-17T15:25:10.400Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-20T13:12:25.613Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 13068
   },
   "components/update-dialog": {
     "hash": "ed0f51662fb1a3b7",
