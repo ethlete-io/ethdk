@@ -1,8 +1,9 @@
 import { spawn } from 'child_process';
-import { cpSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join, relative, resolve } from 'path';
-import { describe, expect, it } from 'vitest';
+import { build } from 'esbuild';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
 import { gitResult } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
@@ -12,8 +13,10 @@ import { recordMerged } from './merged-parts';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch } from './sketch';
 
 const PART = 'elements/hero';
-const CHILD = resolve(__dirname, 'merge-journal.child.ts');
-const JITI = resolve(require.resolve('jiti/package.json'), '../lib/jiti-cli.mjs');
+const CHILD_SOURCE = resolve(__dirname, 'merge-journal.child.ts');
+const MODULES = resolve(require.resolve('typescript/package.json'), '../..');
+let bundleDir = '';
+let CHILD = '';
 
 const productOf = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
@@ -162,7 +165,8 @@ const stateOf = (target: string) => {
 
 const runChild = (target: string, killAt: number, action = 'merge') =>
   new Promise<{ out: string; killed: boolean }>((done) => {
-    const child = spawn(process.execPath, [JITI, CHILD, target, String(killAt), PART, action], {
+    const child = spawn(process.execPath, [CHILD, target, String(killAt), PART, action], {
+      env: { ...process.env, NODE_PATH: MODULES },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let out = '';
@@ -187,7 +191,15 @@ const killEveryWrite = async (options: {
   caseOf: () => string;
 }) => {
   const { action, done, gone } = options;
-  const reference = options.caseOf();
+  const template = options.caseOf();
+  const caseOf = () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-merge-journal-'));
+
+    cpSync(template, target, { recursive: true });
+
+    return target;
+  };
+  const reference = caseOf();
   const whole = await runChild(reference, 0, action);
   const steps = Number(/writes (\d+)/u.exec(whole.out)?.[1]);
 
@@ -198,7 +210,7 @@ const killEveryWrite = async (options: {
   const outcomes: string[] = [];
 
   const killAt = async (step: number) => {
-    const target = options.caseOf();
+    const target = caseOf();
     const old = stateOf(target);
     const killed = await runChild(target, step, action);
 
@@ -233,7 +245,44 @@ const killEveryWrite = async (options: {
   expect(outcomes.some((outcome) => outcome.endsWith('old'))).toBe(true);
 };
 
-describe('a merge killed at any write leaves the old or the new state', { timeout: 1_200_000 }, () => {
+describe.concurrent('a merge killed at any write leaves the old or the new state', { timeout: 1_200_000 }, () => {
+  beforeAll(async () => {
+    bundleDir = mkdtempSync(join(tmpdir(), 'cli-merge-journal-bundle-'));
+    CHILD = join(bundleDir, 'child.cjs');
+    await build({
+      entryPoints: [CHILD_SOURCE],
+      outfile: CHILD,
+      bundle: true,
+      platform: 'node',
+      format: 'cjs',
+      packages: 'external',
+      logLevel: 'error',
+      plugins: [
+        {
+          name: 'no-external-tools',
+          setup: (build) => {
+            build.onLoad({ filter: /design.typecheck\.ts$/ }, (args) => ({
+              loader: 'ts',
+              contents: `${readFileSync(args.path, 'utf8').split('/** Runs `tsc')[0]}
+export const typecheck = () => ({ kind: 'ok' });
+export const typecheckAsync = async () => ({ kind: 'ok' });`,
+            }));
+            build.onLoad({ filter: /system.prettier\.ts$/ }, (args) => ({
+              loader: 'ts',
+              contents: readFileSync(args.path, 'utf8').replace(
+                'export const prettierBinOf = (target: string) => {',
+                'export const prettierBinOf = (target: string) => {\n  if (target) return null;',
+              ),
+            }));
+          },
+        },
+      ],
+      define: { __dirname: JSON.stringify(resolve(__dirname, '../..')) },
+    });
+  });
+
+  afterAll(() => rmSync(bundleDir, { recursive: true, force: true }));
+
   it('is undone or finished by the next process, and a re-run merges or reports the sketch gone', () =>
     killEveryWrite({
       action: 'merge',
