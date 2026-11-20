@@ -933,7 +933,7 @@ export const partActionFailuresOf = async (options: {
 
   if (stale !== null) return noVerdictOf(stale);
 
-  const check = (url: string) =>
+  const check = (url: string, root: string | null = null) =>
     (options.check ?? checkActions)({
       target,
       config,
@@ -941,7 +941,7 @@ export const partActionFailuresOf = async (options: {
       part,
       url,
       only: null,
-      appRoot: options.appRoot ?? null,
+      appRoot: options.appRoot ?? root,
       designsDrawn: options.designsDrawn,
     });
   const checked = options.harness
