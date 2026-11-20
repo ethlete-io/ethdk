@@ -533,7 +533,7 @@ describe('table core scenarios', () => {
     expect(icon.getAttribute('role')).toBe('img');
     expect(icon.getAttribute('aria-label')).toBe('Score rejected');
     expect(icon.hasAttribute('aria-hidden')).toBe(false);
-    expect(icon.getAttribute('title')).toBe('Score rejected');
+    expect(icon.hasAttribute('title')).toBe(false);
   });
 });
 

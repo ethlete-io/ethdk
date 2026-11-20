@@ -1516,8 +1516,8 @@ protected cellState = (row: User, key: string) =>
 <et-table [data]="users()" [columns]="COLUMNS" [cellState]="cellState" etTableSkeleton />
 ```
 
-Return `{ state: 'error', message }` and the message rides along on the mark - as its `title`
-and accessible name in the base table, and as a real tooltip once
+Return `{ state: 'error', message }` and the message rides along on the mark - as its accessible
+name (`aria-label`) in the base table, and as a real tooltip once
 `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` / `etTableCellErrorTooltip` is on the table. That is a
 separate feature because a tooltip means the overlay runtime, which no table should pay for to
 render a list; its mark is stamped only into cells that are actually failing.

@@ -401,7 +401,7 @@ export class TableComponent<T> implements TableFeatureHost {
    * Per-cell async state, for a cell that loads or fails on its own (inline editing). Return
    * `'loading'` to replace that cell's content with a placeholder bar, `'error'` to mark it, or
    * `null`/nothing for a normal cell. Return `{ state: 'error', message }` and the message rides
-   * along on the mark - as its `title` and accessible name, or as a tooltip with
+   * along on the mark - as its accessible name, or as a tooltip with
    * `etTableCellErrorTooltip`. Resolved once per rendered cell (see `bodyRows`), but keep it cheap
    * anyway - a map lookup, not a search.
    */
