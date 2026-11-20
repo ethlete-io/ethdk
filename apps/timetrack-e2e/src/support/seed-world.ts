@@ -1,5 +1,12 @@
 import { Page } from '@playwright/test';
-import { AgentSessionCursor, PeerDayRows, TimetrackSettings, parsePeerDayRows } from '@ethlete/timetrack';
+import {
+  AgentApproval,
+  AgentSessionCursor,
+  PeerDayRows,
+  TimetrackSettings,
+  parsePeerDayRows,
+  parseSharedApprovals,
+} from '@ethlete/timetrack';
 import {
   FakeBackend,
   TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
@@ -8,6 +15,7 @@ import {
   TIMETRACK_E2E_DAY_ROWS_KEY,
   TIMETRACK_E2E_SEED_KEY,
   TIMETRACK_E2E_SETTINGS_KEY,
+  TIMETRACK_E2E_SHARED_APPROVALS_KEY,
   TIMETRACK_E2E_REPORT_FILE_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   TimetrackWorldSeed,
@@ -102,4 +110,14 @@ export const readSentDayRows = async (page: Page, day: string): Promise<PeerDayR
   );
 
   return sent ? parsePeerDayRows(sent) : null;
+};
+
+/** The approval queue this machine last handed its paired machines, or `null` before it handed one. */
+export const readSentApprovals = async (page: Page): Promise<AgentApproval[] | null> => {
+  const sent = await page.evaluate(
+    (key) => (globalThis as Record<string, unknown>)[key] as string | undefined,
+    TIMETRACK_E2E_SHARED_APPROVALS_KEY,
+  );
+
+  return sent ? parseSharedApprovals(sent) : null;
 };

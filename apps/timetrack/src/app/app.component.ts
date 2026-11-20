@@ -15,6 +15,7 @@ import { injectStandInPins } from './stand-ins/stand-in-pins';
 import { injectDayRowsBackfill } from './peers/day-rows-backfill';
 import { injectBranchTimelines } from './peers/branch-timelines-on-tick';
 import { injectDayRowsOnSave } from './peers/day-rows-on-save';
+import { injectSharedApprovals } from './peers/shared-approvals-on-change';
 import { injectSharedSettings } from './peers/shared-settings-on-change';
 import { injectScreenDayBooking } from './day-review/screen-day-booking';
 import { injectCollectionPause } from './collection-pause';
@@ -124,6 +125,7 @@ export class AppComponent {
     injectDayRowsBackfill();
     injectDayRowsOnSave();
     injectSharedSettings();
+    injectSharedApprovals();
     injectBranchTimelines();
     injectScreenDayBooking();
 

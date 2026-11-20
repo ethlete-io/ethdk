@@ -1,5 +1,5 @@
 import { computed, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentApiAnswer,
@@ -18,6 +18,7 @@ import {
   foldedApprovalOf,
   rejectApproval,
   settleApprovalQueue,
+  SharedApprovalQueue,
   waitingApprovalsOf,
   withStaleStandInCreatesExpired,
 } from '@ethlete/timetrack';
@@ -37,6 +38,7 @@ import {
   throwError,
 } from 'rxjs';
 import { injectHostPorts } from '../../host';
+import { mergedApprovalQueue } from '../peers/shared-approvals';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
 
@@ -64,6 +66,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const today = () => localDayKey(new Date(), dayBoundaryOf(settings.settings()));
   const sharingAnswers = signal<readonly AutoModeAnswer[] | undefined>(undefined);
+  const machineId = toSignal(ports.peers.machineId$().pipe(catchError(() => EMPTY)), { initialValue: null });
 
   // A change before the read landed would save over the stored queue with a partial one.
   const change = (next: AgentApproval[]) => {
@@ -158,8 +161,15 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const find = (id: string) => queue().find((item) => item.id === id);
 
   const approveOne = (item: AgentApproval) => {
-    change(markApproval(queue(), { id: item.id, state: 'running' }));
+    change(markApproval(queue(), { id: item.id, state: 'running', decidedAtMs: Date.now() }));
     approved$.next(item);
+  };
+
+  const runsHere = (item: AgentApproval) => !item.ownerMachineId || item.ownerMachineId === machineId();
+
+  const approveHere = (item: AgentApproval) => {
+    if (runsHere(item)) approveOne(item);
+    else change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now() }));
   };
 
   return {
@@ -178,6 +188,21 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Today's auto mode answers, so settling keeps a create that another subject's draft still shares. */
     shareAnswers: (answers: readonly AutoModeAnswer[]) => sharingAnswers.set(answers),
+
+    /**
+     * Merges the queues the paired machines sent into this one and runs what another machine approved
+     * for this one. An item another machine owns is never run here.
+     */
+    mergePeers: (peers: readonly SharedApprovalQueue[]) => {
+      const id = machineId();
+
+      if (!id || !loaded()) return;
+
+      const merged = mergedApprovalQueue({ machineId: id, own: queue(), peers });
+
+      revise(() => merged.queue);
+      merged.toRun.forEach(approveOne);
+    },
 
     /** Answers with the item `foldedApprovalOf` names, waiting again if it expired, and queues a new one otherwise. */
     enqueue$: (options: {
@@ -224,12 +249,12 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       const item = find(id);
 
-      if (item?.state === 'queued') approveOne(item);
+      if (item?.state === 'queued') approveHere(item);
     },
 
     approveAll: () => {
       settle();
-      approvableByAll(queue(), settings.settings().actionClasses).forEach(approveOne);
+      approvableByAll(queue(), settings.settings().actionClasses).forEach(approveHere);
     },
 
     reject: (id: string) => {
