@@ -1195,7 +1195,7 @@
     "pid": 2953350
   },
   "elements/variant-cell": {
-    "hash": "43e548686fe4a31f",
+    "hash": "dea9153ce2f392ac",
     "files": {
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
@@ -1228,7 +1228,7 @@
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
       ".ethlete/design/studio/elements/variant-cell/variant-cell.css": "9ea8a222b03e9446",
-      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "69d742eb230131fc",
+      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "1a123186f434cd66",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
@@ -1238,16 +1238,16 @@
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9"
     },
-    "app": "38a5c2287ed9d816",
+    "app": "b7dc8539a3436cd0",
     "embedded": {
-      "components/comment-pin": "bad7bbce026e4135"
+      "components/comment-pin": "4a81b8a796ada4c1"
     },
     "actions": ["emit:pinToggle"],
     "builder": "designer",
-    "at": "2026-11-20T20:06:45.408Z",
-    "by": "claude-sonnet-5-5",
-    "cmd": "ready",
-    "pid": 1536948
+    "at": "2026-11-20T22:39:48.502Z",
+    "by": "et design check",
+    "cmd": "check",
+    "pid": 529254
   },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",
@@ -2088,26 +2088,26 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "fb6c39daa83072b1",
+    "app": "a93aa436e7482537",
     "embedded": {
-      "components/canvas-viewport": "2661c3a4a0cec057",
-      "components/comment-draft": "4739a96fc9735533",
-      "components/comment-pin": "5f2c1b5b2f6380d5",
-      "components/comment-row": "5ae48419fc30ef92",
-      "components/comment-target": "e4e26fdfa1f69cb0",
+      "components/canvas-viewport": "bedf15737281c299",
+      "components/comment-draft": "92951a9d4a05a33c",
+      "components/comment-pin": "4a81b8a796ada4c1",
+      "components/comment-row": "b7785a69c737f8bd",
+      "components/comment-target": "02fb29f7e554cdca",
       "components/disclosure": "e44a0395c81c64f9",
       "components/hold-trigger": "4e25491c5b82b2d0",
-      "components/shell-collapse": "394dfe8745122387",
-      "components/shell-resize-handle": "b2566d162ce43d36",
-      "components/shell-system-picker": "4b3383a12dd909c8",
-      "components/title-bar": "f86f95fea93c55fd",
-      "components/title-search": "b19269aed3859c06",
-      "components/tree-row": "962460e5d00d4e1f",
-      "components/zoom-chip": "9eaaf92e31d0a5c3",
-      "elements/canvas-frames": "419645173c29df98",
-      "elements/part-tree": "e89a8b3256a6942f",
-      "elements/shell-main": "7639a57f24c6b07c",
-      "elements/studio-menu": "cc19b38d39deed5b"
+      "components/shell-collapse": "f2682fd775e20440",
+      "components/shell-resize-handle": "0769380ef77950fd",
+      "components/shell-system-picker": "cf3d1a305eb08867",
+      "components/title-bar": "1ce370199f557e19",
+      "components/title-search": "6678418d446d24a1",
+      "components/tree-row": "1b8c33fd73889de0",
+      "components/zoom-chip": "fa73f40ff9af7e30",
+      "elements/canvas-frames": "9b07ff16052b292c",
+      "elements/part-tree": "4f72c99085792123",
+      "elements/shell-main": "4a0369d8018d9f7d",
+      "elements/studio-menu": "7a95250dc1944a0c"
     },
     "actions": [
       "blockers-open",
@@ -2150,6 +2150,6 @@
     "at": "2026-11-20T22:31:13.249Z",
     "by": "et design check",
     "cmd": "check",
-    "pid": 212027
+    "pid": 529254
   }
 }
