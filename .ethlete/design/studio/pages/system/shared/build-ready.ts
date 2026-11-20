@@ -1,7 +1,4 @@
-import { html } from '@design-system';
 import { icon, type IconName } from '@system/foundations/icons';
-import { agentLogo } from '@system/foundations/agent-logos';
-import { checkIcon } from './open-points';
 
 type BlockerKind = 'direct-edit' | 'open-point' | 'embedded' | 'problem' | 'compare' | 'sdk-error' | 'stale-record';
 
@@ -60,18 +57,6 @@ export const statusLabel = (status: BuildReady) =>
       ? 'Wird geprüft'
       : `Nicht baubereit (${status.blockers.length})`;
 
-const pendingRing = html`<span
-  class="block size-3.5 flex-none rounded-full border-2 border-(--et-surface-border-solid) border-t-(--et-surface-color-muted-solid)"
-  aria-hidden="true"
-></span>`;
-
-export const statusIcon = (status: BuildReady) =>
-  status.state === 'ready'
-    ? checkIcon()
-    : status.state === 'checking'
-      ? pendingRing
-      : `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 16, cls: 'flex-none text-et-theme' })}</span>`;
-
 export const blockerIcon = (name: IconName) =>
   icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' });
 
@@ -111,10 +96,3 @@ export const agentOnReadyPart: AgentProgress = {
   doing: 'zeichnet',
   detail: 'einen Sketch für den Zustand pressed',
 };
-
-export const agentMark = (progress: AgentProgress) =>
-  progress.state === 'failed'
-    ? `<span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'flex-none text-et-theme' })}</span>`
-    : progress.state === 'interrupted'
-      ? icon('minimize', { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' })
-      : agentLogo('claude', 'flex-none size-3.5');
