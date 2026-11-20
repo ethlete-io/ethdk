@@ -2,7 +2,6 @@ import { definePart, drawing, html, interactionRows } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
 import { action, type MenuInteraction, studioTrigger } from './shared/studio-menu-rows';
-import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import menu from '@system/components/menu';
 import { studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
@@ -108,13 +107,17 @@ const studioPanel = (server: Server, busy: boolean, interaction?: MenuInteractio
     forced: interaction === 'focus-visible' ? undefined : interaction,
   });
 
+const busyMark = `<svg data-et-drawing class="st-studio-busy block" width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
+  <rect width="32" height="32" rx="8" fill="var(--st-tile)" />
+  <g class="st-studio-busy-bubble" color="var(--st-on-tile)">
+    <path fill="currentColor" d="M11.5 5.5H24.1C26 5.5 27 6.9 26.4 8.7L22.8 20.9C22.5 22 21.8 22.9 20.8 23.4L8 28L9 21.6L5.9 17.4C5.2 16.5 5.2 15.2 5.9 14.2L9.4 6.8C9.8 6 10.6 5.5 11.5 5.5Z" />
+    <path class="st-studio-busy-eye" fill="var(--st-tile)" d="M12.8 11.5C12 11.3 11.2 11.8 11 12.6L10.2 15.7C10 16.5 10.5 17.3 11.3 17.5C12.1 17.7 12.9 17.2 13.1 16.4L13.9 13.3C14.1 12.5 13.6 11.7 12.8 11.5Z" />
+    <path class="st-studio-busy-eye" fill="var(--st-tile)" d="M20.1 10.6C19.3 10.4 18.5 10.9 18.3 11.7L17.5 14.8C17.3 15.6 17.8 16.4 18.6 16.6C19.4 16.8 20.2 16.3 20.4 15.5L21.2 12.4C21.4 11.6 20.9 10.8 20.1 10.6Z" />
+  </g>
+</svg>`;
+
 const busyTrigger = (trigger: string) =>
-  trigger
-    .replace(/^<button /, '<button aria-busy="true" ')
-    .replace(
-      studioMark(40),
-      `<span class="flex size-10 items-center justify-center text-et-surface">${spinner()}</span>`,
-    );
+  trigger.replace(/^<button /, '<button aria-busy="true" ').replace(studioMark(40), busyMark);
 
 export const studioMenu = async ({ open, server = 'running', interaction, option, busy = false }: Props) => {
   const panel =
@@ -136,7 +139,7 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
         ${panel.body}
       </div>
     </div>`,
-    styles: styles + buttonStyles + loaderStyles + panel.styles,
+    styles: styles + buttonStyles + panel.styles,
     setup: setupStudioMenu,
   };
 };
@@ -147,7 +150,7 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, Checkouts suchen… keeps every checkout with design work below the search folder. The Design-Server label names the state (läuft, veraltet, gestoppt) and the rows the state allows: Neu laden, restart and stop while it runs (restart first and the label veraltet when the server runs an older cli build than the checkout), start while it is stopped. Neu laden stays enabled while an action runs. Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the SDK spinner instead of the mark; reopened, every action row is disabled until the work answers.',
+  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, Checkouts suchen… keeps every checkout with design work below the search folder. The Design-Server label names the state (läuft, veraltet, gestoppt) and the rows the state allows: Neu laden, restart and stop while it runs (restart first and the label veraltet when the server runs an older cli build than the checkout), start while it is stopped. Neu laden stays enabled while an action runs. Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the mark with blinking eyes on the unchanged tile background instead of the static mark; reopened, every action row is disabled until the work answers.',
   madeBy: ['gpt-6', 'claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   states: {
     ...menuRows.states,
@@ -182,17 +185,17 @@ export default definePart({
     'studio-menu.option-active':
       'fut-frontend pressed; check its press highlight and that the other rows do not change.',
     'studio-menu.busy':
-      'A menu action running (server start, project switch or open); check the SDK spinner in the tile instead of the mark.',
+      'A menu action running (server start, project switch or open); check the tile keeps its rest background and only the mark blinks.',
     'studio-menu.busy-open':
-      'The menu reopened while an action runs; check the spinner in the tile, every action row disabled and Tastenkürzel, Hilfe and Über Studio enabled.',
+      'The menu reopened while an action runs; check the blinking mark in the tile, every action row disabled and Tastenkürzel, Hilfe and Über Studio enabled.',
     'studio-menu.busy-focus-visible':
-      'The busy tile focused by keyboard after the menu closed; check the focus ring around the tile with the spinner inside.',
+      'The busy tile focused by keyboard after the menu closed; check the focus ring around the tile with the blinking mark inside.',
     'studio-menu.busy-open-focus-visible':
-      'The busy menu opened by keyboard; check the keyboard highlight on ethlete-sdk, the only enabled project row, and the spinner in the tile.',
+      'The busy menu opened by keyboard; check the keyboard highlight on ethlete-sdk, the only enabled project row, and the blinking mark in the tile.',
   },
   grid: menuRows.grid,
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
-  styles: styles + buttonStyles + loaderStyles,
+  styles: styles + buttonStyles,
   implements: 'apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts',
   render: async (props: Props) => {
     const menu = await studioMenu(props);

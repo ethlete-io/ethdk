@@ -1,5 +1,5 @@
 import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
@@ -19,7 +19,7 @@ const SERVER_ROWS: Record<DesignServerStatus, ServerRow[]> = {
   selector: 'ethlete-studio-menu',
   templateUrl: './studio-menu.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective, SpinnerComponent],
+  imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective],
   host: {
     '[class]': "bare() ? 'block size-10' : 'box-border block h-120 w-3xl p-space-3 font-ui text-ui-md text-et-surface'",
   },

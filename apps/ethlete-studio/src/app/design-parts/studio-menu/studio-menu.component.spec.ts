@@ -172,7 +172,7 @@ describe('StudioMenuComponent', () => {
     expect(fixture.componentInstance.open()).toBe(false);
   });
 
-  it('shows a spinner in the busy tile and disables every action row', async () => {
+  it('keeps the mark with blinking eyes in the busy tile and disables every action row', async () => {
     const { fixture, events, row } = await openMenu({ project: 'b', projects: ['a', 'b', 'c'], busy: true });
     const root = (fixture.nativeElement as HTMLElement).querySelector('[etMenu]');
     const trigger = root?.querySelector('button');
@@ -183,8 +183,9 @@ describe('StudioMenuComponent', () => {
     await fixture.whenStable();
 
     expect(root?.getAttribute('aria-busy')).toBe('true');
-    expect(trigger?.querySelector('et-spinner')).not.toBeNull();
-    expect(trigger?.querySelector('svg[viewBox="0 0 32 32"]')).toBeNull();
+    expect(trigger?.querySelector('et-spinner')).toBeNull();
+    expect(trigger?.querySelector('svg[viewBox="0 0 32 32"] rect')).not.toBeNull();
+    expect(trigger?.querySelectorAll('path.motion-safe\\:animate-studio-blink')).toHaveLength(2);
     expect(row('a')?.getAttribute('aria-disabled')).toBe('true');
     expect(row('b')?.getAttribute('aria-disabled')).not.toBe('true');
     expect(row('Projekt öffnen…')?.getAttribute('aria-disabled')).toBe('true');
@@ -199,5 +200,6 @@ describe('StudioMenuComponent', () => {
 
     expect(root?.hasAttribute('aria-busy')).toBe(false);
     expect(trigger?.querySelector('et-spinner')).toBeNull();
+    expect(trigger?.querySelector('.motion-safe\\:animate-studio-blink')).toBeNull();
   });
 });

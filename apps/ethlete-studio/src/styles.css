@@ -19,6 +19,21 @@
 @theme {
   --spacing: 0.4rem;
 
+  --animate-studio-bob: studio-bob calc(var(--duration-state) * 13) var(--ease-standard) infinite;
+  --animate-studio-blink: studio-blink calc(var(--duration-state) * 13) var(--ease-standard) infinite;
+
+  @keyframes studio-bob {
+    50% {
+      transform: translateY(-0.6px);
+    }
+  }
+
+  @keyframes studio-blink {
+    48% {
+      transform: scaleY(0.12);
+    }
+  }
+
   --shadow-*: initial;
   --shadow-sm:
     0 1px 3px 0 rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1),
