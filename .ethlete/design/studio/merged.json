@@ -152,11 +152,11 @@
     "note": "merged without a pick: allowed by ADR 0387"
   },
   "pages/inventory": {
-    "hash": "a5f9ac63fb5969d7",
-    "variant": "new",
-    "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit",
-    "at": "2026-11-07T14:51:05.960Z",
-    "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
+    "hash": "ab4ebbb7500be639",
+    "variant": "a",
+    "decidedBy": "builder",
+    "at": "2026-11-20T22:59:44.636Z",
+    "note": "merged: Fester Spaltenplatz für die Liste hält sie bei jedem Zoom lesbar und gibt einen Freigeben-Knopf; b zwingt zum Schwenken"
   },
   "pages/sketches": {
     "hash": "09e067be00fec0e3",

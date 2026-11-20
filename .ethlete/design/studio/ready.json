@@ -1833,16 +1833,12 @@
     "actions": [
       "emit:activate",
       "emit:approveInventory",
-      "emit:close",
       "emit:collapse",
       "emit:expandedChange",
-      "emit:maximize",
-      "emit:minimize",
       "emit:productChange",
       "emit:reloadInventory",
       "emit:sectionChange",
       "emit:sideWidthChange",
-      "emit:toggleInventory",
       "open",
       "opens:command-palette",
       "system-picker"
