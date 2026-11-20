@@ -115,6 +115,21 @@ export default definePart({
     'single-slide': 'A carousel with one slide; check how arrows and dots show with nothing to move to.',
   },
   grid,
+  omits: [
+    {
+      option: 'itemSize',
+      value: 'full',
+      reason: 'The default size, which every other state draws without setting it.',
+    },
+    { option: 'itemSize', value: 'half', reason: 'Drawn as the multiple-items state, outside the grid.' },
+    { option: 'itemSize', value: 'third', reason: 'Drawn as the item-size-third state, outside the grid.' },
+    {
+      option: 'slideAlign',
+      value: 'start',
+      reason: 'The default alignment, which every other state draws without setting it.',
+    },
+    { option: 'slideAlign', value: 'center', reason: 'Drawn as the center-aligned state, outside the grid.' },
+  ],
   controls: {
     arrow: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
     dot: { kind: 'button', input: ['pointer', 'keyboard'] },
