@@ -1,3 +1,4 @@
+import { foldedStatesOf, shownSketchRowsOf } from '@ethlete/cli/sketch-frames';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
@@ -116,31 +117,7 @@ const EDIT_ROW_LABELS: Record<string, string> = {
 
 const isBaseRow = (row: SketchRow) => row.key === SKETCH_CURRENT || row.key === 'old' || row.key === 'new';
 
-/**
- * The states no row changes (`changed === false`), Current and the rows old and new of an @edit sketch included; a state
- * still compared (`null`) never folds, and none folds when every state would.
- */
-export const foldedStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> => {
-  const states = statesOf(rows);
-  const folded = states.filter((state) =>
-    rows.every((row) =>
-      isBaseRow(row)
-        ? row.shots.every((shot) => shot.state !== state || shot.changed === false)
-        : row.shots.some((shot) => shot.state === state && shot.changed === false),
-    ),
-  );
-
-  return new Set(folded.length < states.length ? folded : []);
-};
-
-/** The states no variant is known to change yet: those still compared (`null`) and those known unchanged. */
-export const unknownStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> =>
-  new Set(
-    statesOf(rows).filter(
-      (state) =>
-        !rows.some((row) => !isBaseRow(row) && row.shots.some((shot) => shot.state === state && shot.changed === true)),
-    ),
-  );
+export { foldedStatesOf };
 
 const WRAP_WIDTH = 1440;
 
@@ -389,10 +366,9 @@ export class SketchesComponent {
       ),
   );
   protected foldedStates = computed(() => {
-    const hidden = this.hiddenWithdrawnRows();
-    const rows = hidden.length === 0 ? this.listedRows() : [...this.listedRows(), ...hidden];
+    const shown = new Set(statesOf(this.shownRowsOf(false)));
 
-    return this.pendingStates().size > 0 ? unknownStatesOf(rows) : foldedStatesOf(rows);
+    return new Set(statesOf(this.listedRows()).filter((state) => !shown.has(state)));
   });
   protected foldLabel = computed(() => {
     const count = this.foldedStates().size;
@@ -401,15 +377,7 @@ export class SketchesComponent {
 
     return this.listError() ? this.LABELS.pendingFailed(count) : this.LABELS.pendingStates(count);
   });
-  public shownRows = computed(() => {
-    const rows = this.listedRows();
-    const folded = this.statesOpen() ? new Set<string>() : this.foldedStates();
-    const shown = new Set(statesOf(rows).filter((state) => !folded.has(state)));
-
-    if (shown.size === statesOf(rows).length) return rows;
-
-    return rows.map((row) => ({ ...row, shots: row.shots.filter((shot) => shown.has(shot.state)) }));
-  });
+  public shownRows = computed(() => this.shownRowsOf(this.statesOpen()));
   protected stageStates = computed(() => statesOf(this.shownRows()));
   protected discardable = computed(() => !this.isEdit());
   public columns = computed(() => {
@@ -459,12 +427,12 @@ export class SketchesComponent {
     );
   });
   private fitScale = computed(() => this.fitAt()?.scale ?? 1);
-
   protected scale = computed(() => {
     const zoom = this.canvas.zoom();
 
     return zoom === 'fit' ? this.fitScale() : zoom;
   });
+
   // A user zoom holds the fit the labels were sized at: a new fit from a wider viewport would resize the gutter and head
   // columns and move every frame on screen.
   private noteFit = linkedSignal<{ zoom: FrameZoom; fit: { scale: number; fonts: number } | null }, number>({
@@ -486,8 +454,8 @@ export class SketchesComponent {
         ? 'failed'
         : this.status(),
   );
-
   protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
+
   private sameRowsSource = computed(() => ({
     part: this.part(),
     rows: this.shownRows(),
@@ -543,7 +511,6 @@ export class SketchesComponent {
   protected percent = computed(() => {
     return Math.round(this.shownZoom() * 100);
   });
-
   constructor() {
     afterRenderEffect(() => {
       const kind = this.confirm();
@@ -829,6 +796,10 @@ export class SketchesComponent {
 
   protected zoomOut() {
     this.zoomTo(this.shownZoom() / ZOOM_STEP);
+  }
+
+  private shownRowsOf(open: boolean) {
+    return shownSketchRowsOf({ listed: this.listedRows(), hidden: this.hiddenWithdrawnRows(), open });
   }
 
   private confirmTargetOf(kind: SketchConfirm) {

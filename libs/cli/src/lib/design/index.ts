@@ -6,3 +6,4 @@ export * from './package-root';
 export * from './vite-cache';
 export * from './work-root';
 export * from './serve';
+export * from './sketch-frame-set';

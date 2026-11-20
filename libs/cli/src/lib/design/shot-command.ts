@@ -14,7 +14,13 @@ import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from './system/sketch/sketch';
 import { noteStep } from './run-deadline';
 import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
-import { defaultFrameOf } from './system/sketch/unchanged-states';
+import { shownSketchRowsOf, SketchFrameRow } from './sketch-frame-set';
+import {
+  defaultFrameOf,
+  keptComparisonOf,
+  SketchPartLoader,
+  unchangedStatesOf,
+} from './system/sketch/unchanged-states';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { partsReachedFrom } from './system/imports';
 import { gridOf, ListedGrid } from './system/list-system';
@@ -24,7 +30,7 @@ import { BoxOf } from './variant-diff';
 import { unstableCellsOf, unstableReportOf } from './unstable-cells';
 import { WarmDraw } from './warm-draw';
 
-export const SHOT_USAGE = `shot <layer>/<name>[@<sketch>] --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props] [--in <layer>/<name>]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name>[@<sketch>] --states [--variants [--all-states] [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props] [--in <layer>/<name>]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
 /** The state names a shot of a part can draw: every state it defines, so the grid's interaction cells of an unchanged row draw too. */
 export const shotStateNamesOf = async (definition: unknown): Promise<string[]> => {
@@ -34,9 +40,26 @@ export const shotStateNamesOf = async (definition: unknown): Promise<string[]> =
   return typeof states === 'object' && states !== null && !Array.isArray(states) ? Object.keys(states) : [];
 };
 
-type Axis = { label: string; sketch: SketchVariant | null };
+export type Axis = { label: string; sketch: SketchVariant | null };
 
 type Plan = { label: string; address: PartAddress; absent?: true };
+
+export type ComparedRow = { axis: Axis; names: string[]; unchanged: string[] };
+
+const frameRowOf = ({ axis, names, unchanged }: ComparedRow): SketchFrameRow => ({
+  key: axis.sketch ? axis.sketch.variant : 'current',
+  shots: names.map((state) => ({ state, changed: axis.sketch ? !unchanged.includes(state) : false })),
+});
+
+/** The states each listed row of a `--states --variants` shot draws: the fold the Studio sketch view applies. */
+export const shownStatesOf = (options: { listed: ComparedRow[]; hidden?: ComparedRow[] }) => {
+  const { listed, hidden = [] } = options;
+  const shown = shownSketchRowsOf({ listed: listed.map(frameRowOf), hidden: hidden.map(frameRowOf) });
+
+  return new Map(
+    listed.map(({ axis }, index) => [axis, new Set(shown[index]?.shots.map((shot) => shot.state))] as const),
+  );
+};
 
 export const NEW_STATE_NOTE = 'New state - no merged version';
 
@@ -466,7 +489,7 @@ export const designShot = async (options: {
       '--scheme',
       '--out',
     ],
-    switches: ['--all', '--diff-props', '--states', '--variants'],
+    switches: ['--all', '--all-states', '--diff-props', '--states', '--variants'],
   });
   const usage = `usage: ${invocation} ${SHOT_USAGE}`;
 
@@ -674,10 +697,63 @@ export const designShot = async (options: {
 
     if (args.values['--crop'] && !cropChanged) params.set('clip', args.values['--crop']);
 
+    const folding = states && variants && sketch && asked.length === 0 && !args.flags.has('--all-states');
+    let shown = new Map<Axis, Set<string>>();
+
+    if (folding) {
+      const resolved = system.productOf(product);
+      const withdrawn = sketch.variants.filter(
+        (name) => !shownVariants?.includes(name) && rejectionOf(sketch, name)?.status === 'withdrawn',
+      );
+      const hidden: Axis[] = withdrawn.map((name) => ({
+        label: name,
+        sketch: { target: sketch.target, variant: name },
+      }));
+      const load: SketchPartLoader = ({ file, product: name, sketch: variant }) =>
+        server.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: variant }));
+
+      for (const axis of hidden) {
+        const found = system.partOf({ product, part, sketch: axis.sketch });
+        const module = found
+          ? ((await server.ssrLoadModule(productModuleIdOf({ file: found.file, product, sketch: axis.sketch }))) as {
+              default?: unknown;
+            })
+          : undefined;
+
+        loaded.set(axis, module ? await shotStateNamesOf(module.default) : []);
+      }
+
+      const compared = async (axis: Axis): Promise<ComparedRow> => {
+        const names = loaded.get(axis) ?? [];
+
+        if (!axis.sketch) return { axis, names, unchanged: names };
+
+        const { variant } = axis.sketch;
+        const kept = resolved
+          ? await keptComparisonOf({ product: resolved, sketch, variant, pictured: true, part })
+          : null;
+        const unchanged =
+          kept?.unchanged ??
+          (resolved ? await unchangedStatesOf({ product: resolved, sketch, variant, load, part }) : []);
+
+        return { axis, names, unchanged };
+      };
+
+      shown = shownStatesOf({
+        listed: await Promise.all(rows.map(compared)),
+        hidden: await Promise.all(hidden.map(compared)),
+      });
+    }
+
     const plan = planOf({
       base: { product, part, ...frameOf() },
       rows,
-      statesOf: (axis) => loaded.get(axis) ?? [],
+      statesOf: (axis) => {
+        const names = loaded.get(axis) ?? [];
+        const keep = shown.get(axis);
+
+        return keep ? names.filter((name) => keep.has(name)) : names;
+      },
       widthOf: (axis) => frameOf(axis).width,
       states,
       state: asked[0] ?? null,

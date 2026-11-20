@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { sketchFrameSetOf } from '@ethlete/cli/sketch-frames';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
@@ -909,6 +910,16 @@ describe('SketchesComponent', () => {
     expect(folded.size).toBeGreaterThan(0);
     expect([...folded].filter((state) => changed.has(state))).toEqual([]);
     expect(folded.size + changed.size).toBe(new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state))).size);
+  });
+
+  it('mounts the frame set the shared list function gives for the rows', async () => {
+    const rows = SKETCH_EDIT_SAMPLE.rows;
+    const fixture = await render({ camera: '100', rows, part: 'components/chip@edit' });
+    const mounted = fixture.componentInstance
+      .shownRows()
+      .flatMap((row) => row.shots.map((shot): [string, string] => [row.key, shot.state]));
+
+    expect(mounted).toEqual(sketchFrameSetOf({ listed: rows }));
   });
 
   it('shows both named rows of an @edit sketch with a button each when new equals Aktuell', async () => {
