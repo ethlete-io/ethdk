@@ -415,17 +415,18 @@
     "pid": 2342738
   },
   "components/hold-trigger": {
-    "hash": "110d377909b571f4",
+    "hash": "547e43ae4395cdf7",
     "files": {
       ".ethlete/design/studio/components/hold-trigger/hold-trigger.css": "58922d213e30d6be",
-      ".ethlete/design/studio/components/hold-trigger/hold-trigger.ts": "b7270a46ac38aec4"
+      ".ethlete/design/studio/components/hold-trigger/hold-trigger.ts": "5e3c9d89d3a9998c"
     },
+    "app": "4e25491c5b82b2d0",
     "actions": ["emit:openChange"],
     "builder": "designer",
-    "at": "2026-11-17T15:14:37.108Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-20T19:21:38.826Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 420891
   },
   "components/list-row": {
     "hash": "7886422661d37b2f",
