@@ -174,26 +174,35 @@ export const frameFitsCell = ({
   frameWidth,
   viewportWidth,
   scrollY = 0,
+  scrollX = 0,
 }: {
   cellWidth: number;
   frameWidth: number;
   viewportWidth?: number;
   scrollY?: number;
+  scrollX?: number;
 }) =>
   Math.abs(frameWidth - cellWidth) <= 1 &&
   (viewportWidth === undefined || Math.abs(viewportWidth - cellWidth) <= 1) &&
-  scrollY === 0;
+  scrollY === 0 &&
+  scrollX === 0;
 
-type FrameReport = { cellWidth: number; frameWidth: number; viewportWidth?: number; scrollY?: number };
+type FrameReport = {
+  cellWidth: number;
+  frameWidth: number;
+  viewportWidth?: number;
+  scrollY?: number;
+  scrollX?: number;
+};
 
-const scrollYOf = (data: unknown) =>
+const scrollOf = (data: unknown) =>
   typeof data === 'object' &&
   data !== null &&
   'type' in data &&
   data.type === 'design-explore:scroll' &&
   'y' in data &&
   typeof data.y === 'number'
-    ? data.y
+    ? { scrollY: data.y, ...('x' in data && typeof data.x === 'number' ? { scrollX: data.x } : {}) }
     : null;
 
 @Component({
@@ -460,10 +469,10 @@ export class SketchViewComponent {
       scan((reports: ReadonlyMap<HTMLIFrameElement, FrameReport>, event) => {
         const frame = this.shotFrameOf(event.source);
         const message = frameMessageOf(event.data);
-        const scrollY = scrollYOf(event.data);
+        const scroll = scrollOf(event.data);
         const viewportWidth = message?.type === 'height' ? message.viewport?.width : undefined;
 
-        if (!frame || (scrollY === null && viewportWidth === undefined)) return reports;
+        if (!frame || (scroll === null && viewportWidth === undefined)) return reports;
 
         const mounted = new Set(this.shotFrames().map(({ nativeElement }) => nativeElement));
         const next = new Map([...reports].filter(([known]) => mounted.has(known)));
@@ -472,7 +481,7 @@ export class SketchViewComponent {
           ...reports.get(frame),
           cellWidth: frame.parentElement?.clientWidth ?? 0,
           frameWidth: frame.clientWidth,
-          ...(scrollY === null ? {} : { scrollY }),
+          ...scroll,
           ...(viewportWidth === undefined ? {} : { viewportWidth }),
         });
       }, new Map()),

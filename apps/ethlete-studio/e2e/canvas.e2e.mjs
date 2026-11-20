@@ -497,6 +497,39 @@ const livePaintGapOf = (page, { live, picture, type }) =>
     { live, picture, type, channel: LIVE_PAINT_GAP.channel },
   );
 
+const liveFrameFaultsOf = async (page, frame) => {
+  const wrong = [];
+  const content = await page.$(`iframe[data-live-paint="${frame.index}"]`).then((iframe) => iframe?.contentFrame());
+  const scroll = await content
+    ?.evaluate(() => ({
+      left: document.scrollingElement?.scrollLeft ?? 0,
+      top: document.scrollingElement?.scrollTop ?? 0,
+      x: scrollX,
+      y: scrollY,
+    }))
+    .catch(() => null);
+
+  if (!scroll) wrong.push(`${frame.key}: no frame document`);
+  else if (scroll.left || scroll.top || scroll.x || scroll.y)
+    wrong.push(`${frame.key}: scrolled ${scroll.left}/${scroll.top} (window ${scroll.x}/${scroll.y})`);
+  if (Math.abs(frame.frameWidth - frame.cellWidth) > 1)
+    wrong.push(`${frame.key}: iframe ${frame.frameWidth} px in a ${frame.cellWidth} px cell`);
+  if (!frame.inView || !frame.picture) return { wrong, gap: null };
+
+  const answer = await page.request.get(frame.picture, { timeout: WAIT_MS, headers: OWN_CONNECTION });
+  const live = await page.screenshot({ clip: frame.clip });
+  const gap = await livePaintGapOf(page, {
+    live: live.toString('base64'),
+    picture: (await answer.body()).toString('base64'),
+    type: answer.headers()['content-type'] ?? 'image/png',
+  });
+
+  if (gap.share > LIVE_PAINT_GAP.share)
+    wrong.push(`${frame.key}: ${(gap.share * 100).toFixed(1)}% of its pixels differ from its picture`);
+
+  return { wrong, gap: `${frame.key} ${(gap.share * 100).toFixed(1)}% of ${gap.width}x${gap.height}` };
+};
+
 const wheelCanvas = async (page, deltaY) => {
   const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
 
@@ -2592,41 +2625,68 @@ const CASES = [
       const gaps = [];
 
       for (const frame of frames) {
-        const content = await page
-          .$(`iframe[data-live-paint="${frame.index}"]`)
-          .then((iframe) => iframe?.contentFrame());
-        const scroll = await content
-          ?.evaluate(() => ({
-            left: document.scrollingElement?.scrollLeft ?? 0,
-            top: document.scrollingElement?.scrollTop ?? 0,
-            x: scrollX,
-            y: scrollY,
-          }))
-          .catch(() => null);
+        const fault = await liveFrameFaultsOf(page, frame);
 
-        if (!scroll) wrong.push(`${frame.key}: no frame document`);
-        else if (scroll.left || scroll.top || scroll.x || scroll.y)
-          wrong.push(`${frame.key}: scrolled ${scroll.left}/${scroll.top} (window ${scroll.x}/${scroll.y})`);
-        if (Math.abs(frame.frameWidth - frame.cellWidth) > 1)
-          wrong.push(`${frame.key}: iframe ${frame.frameWidth} px in a ${frame.cellWidth} px cell`);
-        if (!frame.inView || !frame.picture) continue;
-
-        const answer = await page.request.get(frame.picture, { timeout: WAIT_MS, headers: OWN_CONNECTION });
-        const live = await page.screenshot({ clip: frame.clip });
-        const gap = await livePaintGapOf(page, {
-          live: live.toString('base64'),
-          picture: (await answer.body()).toString('base64'),
-          type: answer.headers()['content-type'] ?? 'image/png',
-        });
-
-        gaps.push(`${frame.key} ${(gap.share * 100).toFixed(1)}% of ${gap.width}x${gap.height}`);
-        if (gap.share > LIVE_PAINT_GAP.share)
-          wrong.push(`${frame.key}: ${(gap.share * 100).toFixed(1)}% of its pixels differ from its picture`);
+        wrong.push(...fault.wrong);
+        if (fault.gap) gaps.push(fault.gap);
       }
 
       return {
         ok: wrong.length === 0 && gaps.length > 0,
         detail: `${frames.length} live frames, compared with their picture: ${gaps.join(', ') || 'none in view'}${wrong.length ? `; wrong: ${wrong.slice(0, 6).join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
+    name: 'a live sketch frame scrolled sideways is hidden for its picture and the 0/0 check flags it',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      await showAllStates(page);
+
+      let frames = [];
+
+      for (const until = Date.now() + FULL_COMPARE_MS; Date.now() < until; frames = await shownLiveFrames(page)) {
+        if (frames.some((frame) => frame.inView && frame.picture)) break;
+        await page.waitForTimeout(250);
+      }
+
+      const target = frames.find((frame) => frame.inView && frame.picture);
+
+      if (!target) return { ok: false, detail: 'no live sketch frame painted' };
+
+      const content = await page
+        .$(`iframe[data-live-paint="${target.index}"]`)
+        .then((iframe) => iframe?.contentFrame());
+
+      await content?.evaluate(() => {
+        document.documentElement.style.minWidth = '3000px';
+        scrollTo(250, 0);
+      });
+
+      const state = () =>
+        page.evaluate((index) => {
+          const iframe = document.querySelector(`iframe[data-live-paint="${index}"]`);
+          const picture = iframe?.closest('[data-shot]')?.querySelector('img[data-shot-picture]');
+
+          return {
+            frameHidden: !iframe || getComputedStyle(iframe).opacity === '0',
+            pictureShown: !!picture && getComputedStyle(picture).opacity !== '0',
+          };
+        }, target.index);
+      let now = await state();
+
+      for (const until = Date.now() + WAIT_MS; Date.now() < until && !(now.frameHidden && now.pictureShown);) {
+        await page.waitForTimeout(250);
+        now = await state();
+      }
+
+      const fault = await liveFrameFaultsOf(page, target);
+      const flagged = fault.wrong.some((entry) => entry.includes('scrolled 250'));
+
+      return {
+        ok: now.frameHidden && now.pictureShown && flagged,
+        detail: `${target.key}: frame hidden ${now.frameHidden}, picture shown ${now.pictureShown}; 0/0 check: ${fault.wrong.join(' | ') || 'not flagged'}`,
       };
     },
   },

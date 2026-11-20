@@ -580,7 +580,11 @@ const drawFrame = async () => {
 
   addEventListener(
     'scroll',
-    () => parent.postMessage({ type: 'design-explore:scroll', variant: key, y: Math.round(scrollY) }, '*'),
+    () =>
+      parent.postMessage(
+        { type: 'design-explore:scroll', variant: key, y: Math.round(scrollY), x: Math.round(scrollX) },
+        '*',
+      ),
     { passive: true },
   );
 };

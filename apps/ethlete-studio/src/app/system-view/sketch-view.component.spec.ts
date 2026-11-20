@@ -273,7 +273,11 @@ describe('SketchViewComponent', () => {
 
     expect(iframe.classList).toContain('opacity-0');
 
-    await post({ type: 'design-explore:scroll', y: 0 });
+    await post({ type: 'design-explore:scroll', y: 0, x: 250 });
+
+    expect(iframe.classList).toContain('opacity-0');
+
+    await post({ type: 'design-explore:scroll', y: 0, x: 0 });
 
     expect(iframe.classList).not.toContain('opacity-0');
     expect(picture().classList).toContain('opacity-0');
@@ -445,6 +449,8 @@ describe('SketchViewComponent', () => {
     expect(frameFitsCell({ cellWidth: 320, frameWidth: 320, viewportWidth: 70 })).toBe(false);
     expect(frameFitsCell({ cellWidth: 320, frameWidth: 240 })).toBe(false);
     expect(frameFitsCell({ cellWidth: 320, frameWidth: 320, scrollY: 40 })).toBe(false);
+    expect(frameFitsCell({ cellWidth: 320, frameWidth: 320, scrollX: 250 })).toBe(false);
+    expect(frameFitsCell({ cellWidth: 320, frameWidth: 320, scrollX: 0 })).toBe(true);
   });
 
   it('switches the round from the select, remembers it, and follows a new round', async () => {
