@@ -95,7 +95,7 @@ import { TabComponent } from './tab.component';
     },
     {
       directive: TabBarDirective,
-      inputs: ['orientation', 'fit', 'align', 'divider', 'variant'],
+      inputs: ['orientation', 'fit', 'align', 'divider', 'variant', 'activeUnderline', 'underlineWidth'],
     },
     {
       directive: TabGroupDirective,

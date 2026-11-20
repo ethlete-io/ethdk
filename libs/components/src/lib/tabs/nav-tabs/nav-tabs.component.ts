@@ -40,7 +40,7 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     },
     {
       directive: TabBarDirective,
-      inputs: ['orientation', 'fit', 'align', 'divider', 'variant'],
+      inputs: ['orientation', 'fit', 'align', 'divider', 'variant', 'activeUnderline', 'underlineWidth'],
     },
     NavTabsDirective,
   ],

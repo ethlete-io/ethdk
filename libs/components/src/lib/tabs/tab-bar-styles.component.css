@@ -34,7 +34,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--et-surface-interaction-solid, inherit);
+    color: var(--et-tab-inactive-color, var(--et-surface-interaction-solid, inherit));
     cursor: pointer;
     position: relative;
     white-space: nowrap;
@@ -77,7 +77,7 @@
     content: '';
     position: absolute;
     z-index: -1;
-    background: var(--et-surface-border-solid, currentColor);
+    background: var(--et-tab-baseline-color, var(--et-surface-border-solid, currentColor));
     opacity: var(--et-tab-baseline-opacity);
     pointer-events: none;
   }
@@ -156,10 +156,34 @@
     border-radius: 0 var(--et-tab-bar-underline-size) var(--et-tab-bar-underline-size) 0;
   }
 
+  [data-active-underline='false'] .et-tab-bar-underline--active {
+    opacity: 0;
+  }
+
+  [data-underline-width='label'][data-orientation='horizontal'] .et-tab-group__trigger .et-tab-bar-underline {
+    left: var(--et-tab-group-trigger-padding-inline);
+    right: var(--et-tab-group-trigger-padding-inline);
+  }
+
+  [data-underline-width='label'][data-orientation='horizontal'] .et-nav-tab-link .et-tab-bar-underline {
+    left: var(--et-nav-tab-link-padding-inline);
+    right: var(--et-nav-tab-link-padding-inline);
+  }
+
+  [data-underline-width='label'][data-orientation='vertical'] .et-tab-group__trigger .et-tab-bar-underline {
+    top: var(--et-tab-group-trigger-padding-block);
+    bottom: var(--et-tab-group-trigger-padding-block);
+  }
+
+  [data-underline-width='label'][data-orientation='vertical'] .et-nav-tab-link .et-tab-bar-underline {
+    top: var(--et-nav-tab-link-padding-block);
+    bottom: var(--et-nav-tab-link-padding-block);
+  }
+
   @media (hover: hover) {
     .et-tab-group__trigger:not(.et-tab-group__trigger--active):not(:disabled):hover,
     .et-nav-tab-link:not(.et-nav-tab-link--active):not(.et-nav-tab-link--disabled):hover {
-      color: var(--et-tab-hover-color, var(--et-surface-interaction-solid, inherit));
+      color: var(--et-tab-hover-color, var(--et-tab-inactive-color, var(--et-surface-interaction-solid, inherit)));
 
       .et-tab-bar-underline {
         opacity: var(--et-tab-hover-underline-opacity, 0);
@@ -184,7 +208,7 @@
 
   .et-tab-group__trigger.et-tab-group__trigger--active,
   .et-nav-tab-link.et-nav-tab-link--active {
-    color: var(--et-surface-color-solid, inherit);
+    color: var(--et-tab-active-color, var(--et-surface-color-solid, inherit));
   }
 
   .et-tab-group__trigger.et-tab-bar-trigger--no-initial-transition,

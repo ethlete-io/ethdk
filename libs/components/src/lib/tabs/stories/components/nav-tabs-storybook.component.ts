@@ -20,6 +20,8 @@ const SIZES = Object.values(TAB_SIZES);
             [align]="align()"
             [style]="tokens()"
             [divider]="divider()"
+            [activeUnderline]="activeUnderline()"
+            [underlineWidth]="underlineWidth()"
             [size]="size"
             [color]="color()"
             [variant]="variant()"
@@ -45,6 +47,8 @@ export class NavTabsStorybookComponent {
   public align = input<'start' | 'center' | 'end'>('start');
   public tokens = input<Record<string, string> | null>(null);
   public divider = input(true);
+  public activeUnderline = input(true);
+  public underlineWidth = input<'tab' | 'label'>('tab');
   public disabled = input(false);
   public color = input<string | null>('brand');
   public readonly SIZES = SIZES;

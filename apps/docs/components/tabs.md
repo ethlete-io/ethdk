@@ -87,15 +87,17 @@ It is a `button` rather than an anchor - an overlay route is not an address unle
 
 Both flavors accept the shared tab-bar inputs:
 
-| Input               | Default        | Values                                           |
-| ------------------- | -------------- | ------------------------------------------------ |
-| `variant`           | `'secondary'`  | `'primary' \| 'secondary'`                       |
-| `orientation`       | `'horizontal'` | `'horizontal' \| 'vertical'`                     |
-| `fit`               | `'content'`    | `'content' \| 'fill'`                            |
-| `align`             | `'start'`      | `'start' \| 'center' \| 'end'` (horizontal bars) |
-| `divider`           | `true`         | Divider line under the bar                       |
-| `size`              | `'md'`         | `'sm' \| 'md' \| 'lg'`                           |
-| `color` / `surface` | -              | App-registered theme names                       |
+| Input               | Default        | Values                                                        |
+| ------------------- | -------------- | ------------------------------------------------------------- |
+| `variant`           | `'secondary'`  | `'primary' \| 'secondary'`                                    |
+| `orientation`       | `'horizontal'` | `'horizontal' \| 'vertical'`                                  |
+| `fit`               | `'content'`    | `'content' \| 'fill'`                                         |
+| `align`             | `'start'`      | `'start' \| 'center' \| 'end'` (horizontal bars)              |
+| `divider`           | `true`         | Divider line under the bar                                    |
+| `activeUnderline`   | `true`         | Underline under the active tab                                |
+| `underlineWidth`    | `'tab'`        | `'tab' \| 'label'`: underline spans the tab or only its label |
+| `size`              | `'md'`         | `'sm' \| 'md' \| 'lg'`                                        |
+| `color` / `surface` | -              | App-registered theme names                                    |
 
 ## Accessibility
 
@@ -109,15 +111,28 @@ Underneath, all of those default from **one shared scale** that `size` drives - 
 
 Both flavors also read these optional tokens, unset by default:
 
-| Token                              | Default when unset   | What it changes                                         |
-| ---------------------------------- | -------------------- | ------------------------------------------------------- |
-| `--et-tab-font-weight`             | inherited            | Trigger label weight                                    |
-| `--et-tab-text-transform`          | none                 | Trigger label case, e.g. `uppercase`                    |
-| `--et-tab-letter-spacing`          | normal               | Trigger label tracking, e.g. `0.12em`                   |
-| `--et-tab-line-height`             | inherited            | Trigger label line height                               |
-| `--et-tab-baseline-size`           | the underline size   | Thickness of the divider line under the bar             |
-| `--et-tab-hover-color`             | the surface's colour | Text colour of a hovered inactive trigger               |
-| `--et-tab-hover-underline-opacity` | `0`                  | Shows the underline on a hovered inactive trigger (`1`) |
+| Token                              | Default when unset               | What it changes                                         |
+| ---------------------------------- | -------------------------------- | ------------------------------------------------------- |
+| `--et-tab-font-weight`             | inherited                        | Trigger label weight                                    |
+| `--et-tab-text-transform`          | none                             | Trigger label case, e.g. `uppercase`                    |
+| `--et-tab-letter-spacing`          | normal                           | Trigger label tracking, e.g. `0.12em`                   |
+| `--et-tab-line-height`             | inherited                        | Trigger label line height                               |
+| `--et-tab-baseline-size`           | the underline size               | Thickness of the divider line under the bar             |
+| `--et-tab-baseline-color`          | the surface's border             | Colour of the divider line under the bar                |
+| `--et-tab-active-color`            | the surface's colour             | Text colour of the active trigger                       |
+| `--et-tab-inactive-color`          | the surface's interaction colour | Text colour of an inactive trigger                      |
+| `--et-tab-hover-color`             | the surface's colour             | Text colour of a hovered inactive trigger               |
+| `--et-tab-hover-underline-opacity` | `0`                              | Shows the underline on a hovered inactive trigger (`1`) |
+
+### Defaults for the whole app
+
+`provideTabsConfig` sets `activeUnderline` and `underlineWidth` for every tab group and nav tabs bar; an input on a bar wins over it.
+
+```ts
+providers: [provideTabsConfig({ activeUnderline: false, underlineWidth: 'label' })];
+```
+
+With the underline off, tell the active tab apart by colour, e.g. `--et-tab-active-color: var(--et-theme-color-primary-solid)` with `--et-tab-inactive-color: #fff` on the bar.
 
 ## Error codes
 

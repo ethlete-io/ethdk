@@ -37,6 +37,8 @@ export default {
     align: 'start',
     tokens: null,
     divider: true,
+    activeUnderline: true,
+    underlineWidth: 'tab',
     disabled: false,
     color: 'brand',
   },
@@ -47,6 +49,8 @@ export default {
     align: { control: 'radio', options: ['start', 'center', 'end'] },
     tokens: { control: 'object' },
     divider: { control: 'boolean' },
+    activeUnderline: { control: 'boolean' },
+    underlineWidth: { control: 'radio', options: ['tab', 'label'] },
     disabled: { control: 'boolean' },
     color: { control: 'select', options: COLOR_OPTIONS },
   },
@@ -85,6 +89,33 @@ export const RestyledWithTokens: Story = {
       '--et-tab-baseline-size': '1px',
       '--et-tab-hover-color': 'var(--et-surface-color-solid)',
       '--et-tab-hover-underline-opacity': '1',
+    },
+  },
+};
+
+export const ThickUnderlineThinBaseline: Story = {
+  args: {
+    tokens: {
+      '--et-tab-underline-size': '2px',
+      '--et-tab-baseline-size': '1px',
+      '--et-tab-baseline-opacity': '1',
+      '--et-tab-baseline-color': 'var(--et-surface-color-solid)',
+    },
+  },
+};
+
+export const LabelWidthUnderline: Story = {
+  args: {
+    underlineWidth: 'label',
+  },
+};
+
+export const ColoredLabelsWithoutUnderline: Story = {
+  args: {
+    activeUnderline: false,
+    tokens: {
+      '--et-tab-active-color': 'var(--et-theme-color-primary-solid)',
+      '--et-tab-inactive-color': '#fff',
     },
   },
 };

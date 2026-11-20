@@ -25,6 +25,7 @@ import {
   TabBarOrientation,
   TabBarVariant,
 } from './tab-bar.types';
+import { injectTabsConfig, TAB_UNDERLINE_WIDTHS, TabUnderlineWidth } from '../tabs-config';
 
 let nextTabBarId = 0;
 
@@ -32,6 +33,8 @@ let nextTabBarId = 0;
   selector: '[etTabBar]',
   providers: [{ provide: TAB_BAR_TOKEN, useExisting: TabBarDirective }],
   host: {
+    '[attr.data-active-underline]': 'activeUnderlineResolved()',
+    '[attr.data-underline-width]': 'underlineWidthResolved()',
     '[attr.role]': 'hostRole()',
     '[attr.aria-orientation]': "hostRole() === 'tablist' ? orientation() : null",
     '(keydown)': 'handleKeydown($event)',
@@ -43,12 +46,25 @@ export class TabBarDirective {
   private document = inject(DOCUMENT);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  private config = injectTabsConfig();
   public orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
   public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
   /** Where a horizontal bar places its triggers when they do not fill it. */
   public align = input<TabBarAlign>(TAB_BAR_ALIGNS.START);
   public variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
   public divider = input(true, { transform: booleanAttribute });
+  /** Shows the underline under the active tab. Falls back to `provideTabsConfig`, then `true`. */
+  public activeUnderline = input<boolean | undefined, unknown>(undefined, {
+    transform: (v: unknown) => (v === undefined ? undefined : booleanAttribute(v)),
+  });
+  /** Whether the active underline spans the whole tab or only its label. Falls back to `provideTabsConfig`, then `'tab'`. */
+  public underlineWidth = input<TabUnderlineWidth | undefined>(undefined);
+  /** @internal */
+  public activeUnderlineResolved = computed(() => this.activeUnderline() ?? this.config.activeUnderline ?? true);
+  /** @internal */
+  public underlineWidthResolved = computed(
+    () => this.underlineWidth() ?? this.config.underlineWidth ?? TAB_UNDERLINE_WIDTHS.TAB,
+  );
   /** @internal */
   public hostRole = signal<'tablist' | 'none'>('tablist');
   private registeredTriggers = signal<TabBarTriggerDirective[]>([]);
