@@ -334,8 +334,18 @@
     "pid": 1595614
   },
   "components/comment-target": {
+    "hash": "4d209cda9a09f8f1",
+    "files": {
+      ".ethlete/design/studio/components/comment-target/comment-target.ts": "522835896447fe12",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6"
+    },
+    "app": "b3d177b811c39701",
     "actions": ["emit:comment"],
-    "at": "2026-11-17T20:29:11.349Z"
+    "builder": "designer",
+    "at": "2026-11-20T20:04:04.979Z",
+    "by": "sonnet",
+    "cmd": "ready",
+    "pid": 1209386
   },
   "components/disclosure": {
     "hash": "17f459ae69df97ec",
