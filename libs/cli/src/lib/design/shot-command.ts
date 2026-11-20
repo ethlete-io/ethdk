@@ -20,6 +20,7 @@ import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } fr
 import { partsReachedFrom } from './system/imports';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
+import { hostPagesOf } from './system/sketch/host-shots';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
 import { unstableCellsOf, unstableReportOf } from './unstable-cells';
@@ -892,7 +893,18 @@ export const designShot = async (options: {
 
       for (const line of unstableReportOf(unstable)) console.error(line);
 
-      return unstable.length > 0 ? 1 : 0;
+      const hosts =
+        sketch && variants && inPage === undefined && args.values['--out'] === undefined && at === undefined
+          ? hostPagesOf({ product: system.productOf(product) as ResolvedProduct, sketch })
+          : [];
+      let hostCode = 0;
+
+      for (const host of hosts) {
+        console.log(`host page ${host}: ${requested} drawn in it`);
+        hostCode = Math.max(hostCode, await designShot({ ...options, argv: [...argv, '--in', host] }));
+      }
+
+      return unstable.length > 0 ? 1 : hostCode;
     } finally {
       if (!warm) await shooter.close();
     }
