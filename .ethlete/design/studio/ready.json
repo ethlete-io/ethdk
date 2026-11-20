@@ -1753,7 +1753,7 @@
     "pid": 3171295
   },
   "pages/system": {
-    "hash": "0433b0fe438c1698",
+    "hash": "06d46f8d7762ec08",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "abec18bb97a9c4d8",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "62a6638e5e6dd289",
@@ -1826,7 +1826,7 @@
       ".ethlete/design/studio/components/tree-row/tree-row.ts": "ab34ce543b8e3652",
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "a325e9c839da61a0",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "bb250924422734e1",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "3e78778508ddb2fa",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "b544584736287f4f",
       ".ethlete/design/studio/elements/canvas-frames/shared/canvas-marks.ts": "819c21b35e20ba2b",
       ".ethlete/design/studio/elements/canvas-frames/shared/diff-grid.ts": "53ae6a26cb305bdb",
       ".ethlete/design/studio/elements/part-tree/part-tree.ts": "cac27f8ffda99432",
@@ -1919,7 +1919,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "b2450ba1b8484056",
+    "app": "4713bfe71eda5e03",
     "embedded": {
       "components/canvas-viewport": "f9108a1090236748",
       "components/comment-draft": "04d565c1ca875cd5",
@@ -1933,7 +1933,7 @@
       "components/zoom-chip": "f26dab0f4a17568d",
       "elements/canvas-frames": "da1c9551033e14af",
       "elements/part-tree": "53f060aec2aaa03c",
-      "elements/shell-main": "39db2e2c0ae2af94",
+      "elements/shell-main": "73d567c6882bd94b",
       "elements/studio-menu": "d64bbd8d3cd2607a"
     },
     "actions": [
@@ -1974,9 +1974,9 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-20T14:50:23.817Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-20T15:33:24.326Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1732860
+    "pid": 2134073
   }
 }
