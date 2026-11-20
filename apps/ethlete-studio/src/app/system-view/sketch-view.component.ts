@@ -4,6 +4,7 @@ import {
   ElementRef,
   ViewEncapsulation,
   computed,
+  viewChild,
   viewChildren,
   inject,
   input,
@@ -32,6 +33,7 @@ import {
   tap,
 } from 'rxjs';
 import { FrameMessage, followedSizes, frameMessageOf } from '../components/design-canvas/canvas-frame';
+import { createElementDimensions } from '@ethlete/core';
 import { Camera } from '../components/design-canvas/canvas-math';
 import {
   ListedComment,
@@ -145,6 +147,9 @@ export const nearShotsOf = ({
       ]),
   );
 };
+
+const rectOf = (element: HTMLElement): ShotRect =>
+  createElementDimensions(element).rect?.() ?? { left: 0, top: 0, right: 0, bottom: 0 };
 
 const stateOfShot = (key: string) => key.slice(key.indexOf(' ') + 1);
 
@@ -383,6 +388,8 @@ export class SketchViewComponent {
 
   private shotFrames = viewChildren<ElementRef<HTMLIFrameElement>>('shotFrame');
 
+  private sketches = viewChild(SketchesComponent);
+
   private shotCellRefs = viewChildren<ElementRef<HTMLElement>>('shotCell');
 
   protected camera = signal<Camera | null>(null);
@@ -393,17 +400,18 @@ export class SketchViewComponent {
     this.camera();
     this.moving();
 
-    // The cell rects change with the camera, which this computed reads, so no ResizeObserver signal fits.
-    /* eslint-disable ethlete/prefer-element-dimensions, ethlete/no-dom-query */
+    const canvas = this.sketches()?.viewport();
+
+    if (!canvas) {
+      return new Map<string, number>();
+    }
+
     const cells = this.shotCellRefs().map((ref) => ({
       key: ref.nativeElement.dataset['shot'] ?? '',
-      rect: ref.nativeElement.getBoundingClientRect(),
-      canvas: ref.nativeElement.closest('ethlete-canvas-viewport'),
+      rect: rectOf(ref.nativeElement),
     }));
-    const canvas = cells[0]?.canvas;
-    /* eslint-enable ethlete/prefer-element-dimensions, ethlete/no-dom-query */
 
-    return canvas ? nearShotsOf({ cells, viewport: canvas.getBoundingClientRect() }) : new Map<string, number>();
+    return nearShotsOf({ cells, viewport: rectOf(canvas) });
   });
 
   private pictureRatios = signal<Record<string, number>>({});

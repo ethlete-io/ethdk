@@ -296,8 +296,8 @@ export class SketchesComponent {
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
   private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
-
   private fold = viewChild('fold', { read: ElementRef<HTMLElement> });
+
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
   private cells = viewChildren(VariantCellComponent);
@@ -305,6 +305,7 @@ export class SketchesComponent {
   private discardAnchor = viewChild('discardAnchor', { read: ElementRef<HTMLElement> });
   private gutters = viewChildren('gutter', { read: ElementRef<HTMLElement> });
   private notes = viewChildren('note', { read: ElementRef<HTMLElement> });
+  public viewport = computed(() => this.list().nativeElement as HTMLElement);
   private frames = computed(() => this.cells().flatMap((cell) => cell.frameRef() ?? []));
   private labels = computed(() => this.cells().flatMap((cell) => cell.stateLabelRef() ?? []));
   private labelRows = computed(() => this.cells().flatMap((cell) => cell.labelRowRef() ?? []));
