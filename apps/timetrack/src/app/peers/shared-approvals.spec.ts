@@ -2,7 +2,12 @@ import { AgentApproval, findApproval, sameDraftSummary } from '@ethlete/timetrac
 import { PairedMachine } from '../../host';
 import { Subject, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mergedApprovalQueue, queuedCreateSummaryMatch, sendSharedApprovals$ } from './shared-approvals';
+import {
+  approvedCreatesToRun,
+  mergedApprovalQueue,
+  queuedCreateSummaryMatch,
+  sendSharedApprovals$,
+} from './shared-approvals';
 
 const create = (id: string, over: Partial<AgentApproval> = {}): AgentApproval => ({
   id,
@@ -104,18 +109,18 @@ describe('sendSharedApprovals$', () => {
   });
 });
 
-describe('queuedCreateSummaryMatch', () => {
-  const machine: PairedMachine = {
-    machineId: 'B',
-    label: 'MacBook',
-    certFingerprint: 'fp',
-    lastAddr: null,
-    lastSeenMs: 1_000,
-    clockOffsetMs: 0,
-    pairedAtMs: 0,
-    lastPullMs: 1_000,
-  };
+const machine: PairedMachine = {
+  machineId: 'B',
+  label: 'MacBook',
+  certFingerprint: 'fp',
+  lastAddr: null,
+  lastSeenMs: 1_000,
+  clockOffsetMs: 0,
+  pairedAtMs: 0,
+  lastPullMs: 1_000,
+};
 
+describe('queuedCreateSummaryMatch', () => {
   it('keeps the exact summary check while no machine shares the queue', () => {
     expect(queuedCreateSummaryMatch(undefined)).toBeUndefined();
     expect(queuedCreateSummaryMatch([])).toBeUndefined();
@@ -123,5 +128,90 @@ describe('queuedCreateSummaryMatch', () => {
 
   it('matches the near summary the queue folds by once a paired machine shares it', () => {
     expect(queuedCreateSummaryMatch([machine])).toBe(sameDraftSummary);
+  });
+});
+
+describe('approvedCreatesToRun', () => {
+  const AT = 1_000_000;
+  const peer = (machineId: string, pulledAtMs: number): PairedMachine => ({
+    ...machine,
+    machineId,
+    lastSeenMs: pulledAtMs,
+    lastPullMs: pulledAtMs,
+  });
+  const approvedCreate = (id: string, summary: string, askedAtMs: number) =>
+    create(id, {
+      request: { op: 'jira.create', projectKey: 'ABC', summary, description: '' },
+      askedAtMs,
+      state: 'approved',
+      decidedAtMs: AT,
+    });
+
+  it('files one Jira issue when two unsynced machines approve the same create in the same second', () => {
+    const jira: string[] = [];
+    const runOn = (machineId: string, queue: readonly AgentApproval[], machines: PairedMachine[], nowMs: number) => {
+      const ready = approvedCreatesToRun({ machineId, queue, machines, nowMs });
+
+      return queue.map((item) => {
+        if (!ready.includes(item) || item.request.op !== 'jira.create') return item;
+
+        jira.push(item.request.summary);
+
+        return { ...item, result: { key: `ABC-${jira.length}` } };
+      });
+    };
+
+    const onA = runOn(
+      'A',
+      [approvedCreate('a1', 'Visuelle Baselines in die CI integrieren', AT - 60_000)],
+      [peer('B', AT - 10_000)],
+      AT,
+    );
+    const onB = runOn(
+      'B',
+      [approvedCreate('b1', 'Visuelle Baselines in CI integrieren', AT - 50_000)],
+      [peer('A', AT - 10_000)],
+      AT,
+    );
+    const pulledAtMs = AT + 60_000;
+    const mergedOnA = mergedApprovalQueue({ machineId: 'A', own: onA, peers: [{ machineId: 'B', queue: onB }] });
+    const mergedOnB = mergedApprovalQueue({ machineId: 'B', own: onB, peers: [{ machineId: 'A', queue: onA }] });
+
+    const laterOnA = runOn('A', mergedOnA.queue, [peer('B', pulledAtMs)], pulledAtMs);
+    const laterOnB = runOn('B', mergedOnB.queue, [peer('A', pulledAtMs)], pulledAtMs);
+
+    expect(jira).toEqual(['Visuelle Baselines in die CI integrieren']);
+    expect(findApproval(laterOnA, 'b1')?.result).toEqual({ key: 'ABC-1' });
+    expect(findApproval(laterOnB, 'b1')?.result).toBeUndefined();
+  });
+
+  it('runs an approved create at once while no paired machine is reachable', () => {
+    const queue = [approvedCreate('a1', 'Pdf export', AT - 60_000)];
+
+    expect(approvedCreatesToRun({ machineId: 'A', queue, machines: [], nowMs: AT })).toEqual(queue);
+    expect(approvedCreatesToRun({ machineId: 'A', queue, machines: [peer('B', AT - 3_600_000)], nowMs: AT })).toEqual(
+      queue,
+    );
+  });
+
+  it('runs nothing before the paired machines were listed, and nothing another machine owns', () => {
+    const queue = [approvedCreate('a1', 'Pdf export', AT - 60_000)];
+
+    expect(approvedCreatesToRun({ machineId: 'A', queue, machines: undefined, nowMs: AT })).toEqual([]);
+    expect(
+      approvedCreatesToRun({
+        machineId: 'A',
+        queue: [{ ...queue[0]!, ownerMachineId: 'B' }],
+        machines: [],
+        nowMs: AT,
+      }),
+    ).toEqual([]);
+  });
+
+  it('waits longer for a paired machine whose clock is behind', () => {
+    const queue = [approvedCreate('a1', 'Pdf export', AT - 60_000)];
+    const pulled = { ...peer('B', AT + 30_000), clockOffsetMs: -40_000 };
+
+    expect(approvedCreatesToRun({ machineId: 'A', queue, machines: [pulled], nowMs: AT + 30_000 })).toEqual([]);
   });
 });

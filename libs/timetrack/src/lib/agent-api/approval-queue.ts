@@ -319,8 +319,14 @@ export const markApproval = (
 export const findApproval = <T extends AgentApproval>(queue: readonly T[], id: string): T | undefined =>
   queue.find((item) => item.id === id) ?? queue.find((item) => item.foldedIds?.includes(id));
 
+const awaitsItsCreate = (item: AgentApproval) =>
+  item.state === 'approved' &&
+  item.request.op === 'jira.create' &&
+  item.result === undefined &&
+  item.error === undefined;
+
 export const approvalStatusOf = (item: AgentApproval): AgentApiApprovalStatus => {
-  if (item.state === 'running' || item.state === 'queued') {
+  if (item.state === 'running' || item.state === 'queued' || awaitsItsCreate(item)) {
     return { status: 'queued', approvalId: item.id, request: waitingApprovalOf(item) };
   }
   if (item.state !== 'approved') return { status: item.state, approvalId: item.id };

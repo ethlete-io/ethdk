@@ -72,6 +72,8 @@ import { injectApprovalQueue } from './approval-queue';
 
                 @if (item.state === 'running') {
                   <span class="text-small text-et-surface-muted">Carrying it out…</span>
+                } @else if (item.state === 'approved') {
+                  <span class="text-small text-et-surface-muted">Approved, waits for the paired machine to sync…</span>
                 } @else {
                   <button (click)="queue.reject(item.id)" et-text-button etProvideColor="danger">Reject</button>
                   <button (click)="queue.approve(item.id)" et-text-button>Approve</button>

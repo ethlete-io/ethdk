@@ -103,3 +103,42 @@ export const receiveSharedApprovals$ = (options: {
 /** The summary match an approved create runs with: the near match the queue folds by once it is shared. */
 export const queuedCreateSummaryMatch = (machines: readonly PairedMachine[] | undefined) =>
   machines?.length ? sameDraftSummary : undefined;
+
+const REACHABLE_MS = 150_000;
+
+const SEND_LAG_MS = 10_000;
+
+const isReachable = (machine: PairedMachine, nowMs: number) =>
+  machine.lastSeenMs !== null && nowMs - machine.lastSeenMs <= REACHABLE_MS;
+
+// A queue pulled at `lastPullMs` may still miss what its machine queued in the last SEND_LAG_MS. A machine
+// whose clock is behind dates such a miss earlier, so the fold could rank it first.
+const exchangedSince = (machine: PairedMachine, atMs: number) =>
+  machine.lastPullMs !== null && machine.lastPullMs - SEND_LAG_MS + Math.min(0, machine.clockOffsetMs ?? 0) > atMs;
+
+/**
+ * The approved creates this machine files now. While a paired machine is reachable, a create waits for a
+ * queue that machine sent after the approval, so the fold has picked the one machine that files it.
+ */
+export const approvedCreatesToRun = (options: {
+  machineId: string | null;
+  queue: readonly AgentApproval[];
+  machines: readonly PairedMachine[] | undefined;
+  nowMs: number;
+}): AgentApproval[] => {
+  const { machines } = options;
+
+  if (!machines) return [];
+
+  const reachable = machines.filter((machine) => isReachable(machine, options.nowMs));
+
+  return options.queue.filter(
+    (item) =>
+      item.request.op === 'jira.create' &&
+      item.state === 'approved' &&
+      item.result === undefined &&
+      item.error === undefined &&
+      (!item.ownerMachineId || item.ownerMachineId === options.machineId) &&
+      reachable.every((machine) => exchangedSince(machine, item.decidedAtMs ?? 0)),
+  );
+};

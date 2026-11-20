@@ -133,6 +133,12 @@ describe('approvalStatusOf', () => {
     });
   });
 
+  it('reads an approved create nobody filed yet as still queued', () => {
+    const [item] = markApproval(queueOf(CREATE), { id: 'a0', state: 'approved' });
+
+    expect(item && approvalStatusOf(item)).toMatchObject({ status: 'queued', approvalId: 'a0' });
+  });
+
   it('answers the result of an approved item', () => {
     const [item] = markApproval(queueOf(CREATE), { id: 'a0', state: 'approved', result: { issue: { key: 'ABC-1' } } });
 

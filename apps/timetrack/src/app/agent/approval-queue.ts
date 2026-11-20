@@ -39,7 +39,7 @@ import {
   throwError,
 } from 'rxjs';
 import { PairedMachine, injectHostPorts } from '../../host';
-import { mergedApprovalQueue } from '../peers/shared-approvals';
+import { approvedCreatesToRun, mergedApprovalQueue } from '../peers/shared-approvals';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
 
@@ -171,8 +171,26 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const runsHere = (item: AgentApproval) => !item.ownerMachineId || item.ownerMachineId === machineId();
 
+  const runReadyCreates = () =>
+    approvedCreatesToRun({
+      machineId: machineId(),
+      queue: queue(),
+      machines: pairedMachines(),
+      nowMs: Date.now(),
+    }).forEach(approveOne);
+
+  const waitsForPeers = (item: AgentApproval) =>
+    item.request.op === 'jira.create' &&
+    item.state === 'approved' &&
+    item.result === undefined &&
+    item.error === undefined &&
+    runsHere(item);
+
   const approveHere = (item: AgentApproval) => {
-    if (runsHere(item)) approveOne(item);
+    if (runsHere(item) && item.request.op === 'jira.create') {
+      change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now() }));
+      runReadyCreates();
+    } else if (runsHere(item)) approveOne(item);
     else {
       approvedHere.update((ids) => new Set(ids).add(item.id));
       change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now() }));
@@ -183,7 +201,9 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     items: queue.asReadonly(),
     /** Whether `items` holds the stored queue yet. Before that it is empty whatever the store holds. */
     isLoaded: loaded.asReadonly(),
-    waiting: computed(() => queue().filter((item) => item.state === 'queued' || item.state === 'running')),
+    waiting: computed(() =>
+      queue().filter((item) => item.state === 'queued' || item.state === 'running' || waitsForPeers(item)),
+    ),
     approvedElsewhere: computed(() =>
       queue().filter(
         (item) =>
@@ -219,12 +239,16 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       const id = machineId();
 
-      if (!id || !loaded() || !state.peers.length) return;
+      if (!loaded()) return;
 
-      const merged = mergedApprovalQueue({ machineId: id, own: queue(), peers: state.peers });
+      if (id && state.peers.length) {
+        const merged = mergedApprovalQueue({ machineId: id, own: queue(), peers: state.peers });
 
-      revise(() => merged.queue);
-      merged.toRun.forEach(approveOne);
+        revise(() => merged.queue);
+        merged.toRun.filter((item) => item.request.op !== 'jira.create').forEach(approveOne);
+      }
+
+      runReadyCreates();
     },
 
     /** Answers with the item `foldedApprovalOf` names, waiting again if it expired, and queues a new one otherwise. */

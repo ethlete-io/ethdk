@@ -664,7 +664,7 @@ type RowDrag = {
                       } @else {
                         <span [title]="DESCRIBE_APPROVAL(pending.item.request)" class="tt-approval-chip">
                           <span class="truncate">{{ CHIP_OF(pending.item) }}</span>
-                          @if (pending.item.state === 'running') {
+                          @if (pending.item.state !== 'queued') {
                             <span>…</span>
                           } @else {
                             <button
