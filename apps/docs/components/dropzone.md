@@ -52,6 +52,8 @@ protected demoForm = form(this.formModel, (s) => {
 import { DROPZONE_IMPORTS } from '@ethlete/components';
 ```
 
+The `<et-label>` and `<et-hint>` must come from `@ethlete/components` (`LabelDirective`). The legacy `@ethlete/cdk` `<et-label>` injects the cdk `FormFieldStateService`, which a components field never provides, so projecting it throws `NG0201`.
+
 ## Live demo
 
 In single mode (the default) a successful upload replaces the drop area with a preview of the exact same size - no layout shift - plus replace/remove actions:
