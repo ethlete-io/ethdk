@@ -129,3 +129,4 @@ One line per Suspect without proof (ADR 0276). At its second time the line joins
 - Storybook color-scheme (19.11.): stays dark on a light surface (light-dark() ink branch unmeasured). Suspect.
 - standings form result (19.11.): not focusable, so keyboard users get no tooltip (pre-existing). Suspect.
 - design parts without compare (19.11.): the timetrack design product has no part harness and shell-system-picker no implements link, so drift is not caught. Suspect.
+- sketch check motion hint (20.11.): `sketch-command.ts:1392` passes `merged: []`, so a merged part with a busy state gets no motion hint; no real sketch hits it today (finding 337). Suspect.
