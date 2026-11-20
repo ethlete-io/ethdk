@@ -27,5 +27,6 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 26. **Resident-e2e (B414)** 📋 Resident-e2e-Spec: echter Hintergrundprozess, compare, Part ändern, compare erneut - ... - c0
 27. **compare schneller (B416)** 📋 compare schneller (Bef. 521): App-Shots parallel, S4 Bild-Cache vorziehen, mehrere Parts ... - c0
 28. **WebKit-Zoom-Budget (B356)** ⏳ Einschwingen ohne Fit-Neumessung (5a6c656f2): Linux-WebKit p95 37-43 ms lokal; im CI nur gemessen, ohne GPU (530bdb826); offen: p95 ≤ 33 ms lokal, Mac-Zahl (Tom morgens) - Builder
-29. **Host-Signal-Test im CI (B645)** 🔨 gebaut 395a0932f (CEF-Dateien neben das Binary, e2e wartet bis der Host seinen Signal-Handler wieder hat, lokal 75/75); offen: CI auf 395a0932f grün - Builder
-30. **Strg+C beim CEF-Start (B647)** ⏳ Tagschicht: ein echtes Strg+C in den ersten ~400 ms des CEF-Starts geht im Host verloren; Fix in tauri-runtime-cef oder Signalmaske im Host - Builder
+29. **GitHub-Issues Design-CLI (B648)** ⏳ Meldungen eines SDK-Nutzers vom 19.11.: ethdk #3190, #3191, #3194, #3195, #3196, #3197; #3190 blockiert (ADR 0377), nach dem laufenden B416-Teil; #3189, #3192, #3193 behoben (8839a3ec5) - Builder
+30. **Host-Signal-Test im CI (B645)** 🔨 127 behoben (395a0932f); unter xvfb startet der Host seine Helfer nicht (CI 44701159109, Suspect: CEF-Start ohne GPU/Sandbox/Libs), Schritte wieder raus (57606a507); nächster Versuch: e2e zeigt Host-stderr, ein CI-Lauf - Builder
+31. **Strg+C beim CEF-Start (B647)** ⏳ Tagschicht: ein echtes Strg+C in den ersten ~400 ms des CEF-Starts geht im Host verloren; Fix in tauri-runtime-cef oder Signalmaske im Host - Builder
