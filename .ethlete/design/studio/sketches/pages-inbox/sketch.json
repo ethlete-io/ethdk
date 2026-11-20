@@ -15,6 +15,7 @@
     "foundations/motion": "0be6c20c5198ddfb",
     "foundations/spacing": "7e63ba482f9c8547",
     "foundations/type": "b0fb4a94bec10fd6",
+    "components/about-dialog": "affc1879ca49d3b1",
     "components/accent-on-light": "567fbf4fe2fcb819",
     "components/accordion": "2de81b9e2cf77053",
     "components/action-sheet": "8736a8998dad6413",
@@ -71,6 +72,7 @@
     "components/shell-collapse": "7e276891f235f84e",
     "components/shell-resize-handle": "f73f56719a2c6c53",
     "components/shell-system-picker": "8e74deb42ef514e7",
+    "components/shortcuts-dialog": "4da55209077cdedf",
     "components/skeleton": "05507b79c084a190",
     "components/sketch-question": "6e89f2fb5176e02d",
     "components/sketch-status-badge": "e8a680ec21c90f02",
@@ -94,7 +96,7 @@
     "elements/canvas-frames": "25ceb22550a55b51",
     "elements/part-tree": "5d32e942525b33b8",
     "elements/shell-main": "02aa4d2e7ed3e9eb",
-    "elements/studio-menu": "72c5d28b2ccb5b95",
+    "elements/studio-menu": "7fc0f042ea5c6d89",
     "elements/variant-cell": "8edfe224fd2f5538",
     "pages/flows": "5d081458cbd766f3",
     "pages/inbox": "bbbe4a2ad2d71f5a",
@@ -104,7 +106,7 @@
     "pages/system": "f66ae63ec616b56f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "c1756aefe7f5cdaec01843fcb34917738c5a7989",
+  "baselineTree": "b3acd98446bc1242d8a9d082b0a7874cab58b388",
   "sharedBase": {
     "pages/inbox/shared/inbox.css": "fb26873e34ae1883",
     "pages/inbox/shared/inbox.ts": "b9061f3bd8348273"

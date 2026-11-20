@@ -35,6 +35,12 @@ const serverRows = (server: Server, busy: boolean): MenuMockRow[] => [
   })),
 ];
 
+const HELP_ROWS = [
+  { name: 'shortcuts', label: 'Tastenkürzel', output: 'showShortcuts' },
+  { name: 'help', label: 'Hilfe', output: 'openHelp' },
+  { name: 'about', label: 'Über Studio', output: 'showAbout' },
+];
+
 const REPOS = ['ethlete-sdk', 'fut-frontend', 'design-playground'];
 
 const optionAttributes = (base: string, option?: MenuInteraction) =>
@@ -70,6 +76,11 @@ const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, key
   },
   { kind: 'separator' },
   ...serverRows(server, busy),
+  { kind: 'separator' },
+  ...HELP_ROWS.map(({ name, label, output }) => ({
+    label,
+    attributes: `${action(name)} data-et-action="emit:${output}"`,
+  })),
 ];
 
 const studioPanel = (server: Server, busy: boolean, interaction?: MenuInteraction, option?: MenuInteraction) =>
@@ -117,7 +128,7 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, the design server actions the server state allows (restart and stop while it runs, start while it is stopped). Rows without a target (Erscheinungsbild, Einstellungen, Tastenkürzel, Hilfe, Über Studio) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the SDK spinner instead of the mark; reopened, every action row is disabled until the work answers.',
+  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, the design server actions the server state allows (restart and stop while it runs, start while it is stopped). Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the SDK spinner instead of the mark; reopened, every action row is disabled until the work answers.',
   madeBy: ['gpt-6', 'claude-opus-5-5', 'design check'],
   states: {
     ...menuRows.states,
@@ -135,7 +146,7 @@ export default definePart({
     'closed-hover': 'The logo tile hovered; check the hover fill on the tile only.',
     'closed-active': 'The logo tile pressed; check the darker press fill on the tile.',
     'closed-focus-visible': 'The logo tile focused by keyboard; check the focus ring around the tile, not clipped.',
-    open: 'The open menu beside the tile; check Projekt with ethlete-sdk checked, Projekt öffnen…, and the server actions, with no row below them.',
+    open: 'The open menu beside the tile; check Projekt with ethlete-sdk checked, Projekt öffnen…, the server actions, and Tastenkürzel, Hilfe and Über Studio below a separator.',
     'open-hover': 'The open menu in its hover state; check that the menu keeps its place and the rows stay readable.',
     'open-active': 'The open menu in its press state; check that no row loses its label or check mark.',
     'open-focus-visible':
@@ -151,11 +162,11 @@ export default definePart({
     'studio-menu.busy':
       'A menu action running (server start, project switch or open); check the SDK spinner in the tile instead of the mark.',
     'studio-menu.busy-open':
-      'The menu reopened while an action runs; check the spinner in the tile and that every action row is disabled.',
+      'The menu reopened while an action runs; check the spinner in the tile, every action row disabled and Tastenkürzel, Hilfe and Über Studio enabled.',
     'studio-menu.busy-focus-visible':
       'The busy tile focused by keyboard after the menu closed; check the focus ring around the tile with the spinner inside.',
     'studio-menu.busy-open-focus-visible':
-      'The busy menu opened by keyboard; check the keyboard highlight on ethlete-sdk, the only enabled row, and the spinner in the tile.',
+      'The busy menu opened by keyboard; check the keyboard highlight on ethlete-sdk, the only enabled project row, and the spinner in the tile.',
   },
   grid: menuRows.grid,
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
@@ -164,7 +175,7 @@ export default definePart({
   render: async (props: Props) => {
     const menu = await studioMenu(props);
     return drawing({
-      body: html`<div class="box-border w-3xl h-100 p-space-3 text-et-surface font-ui text-ui-md">${menu.body}</div>`,
+      body: html`<div class="box-border w-3xl h-120 p-space-3 text-et-surface font-ui text-ui-md">${menu.body}</div>`,
       setup: menu.setup,
       styles: menu.styles,
     });

@@ -16,6 +16,7 @@
   }
 
   .st-studio-menu {
+    --et-menu-max-height: 80vh;
     transform: translate3d(0, 0, 0);
   }
 

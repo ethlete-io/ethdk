@@ -1,4 +1,11 @@
 {
+  "components/about-dialog": {
+    "hash": "affc1879ca49d3b1",
+    "variant": "a",
+    "decidedBy": "plan: ADR 0387",
+    "at": "2026-11-20T14:03:08.582Z",
+    "note": "merged without a pick: allowed by ADR 0387"
+  },
   "components/canvas-viewport": {
     "hash": "7d1896bec023c51a",
     "variant": "a",
@@ -44,6 +51,13 @@
     "decidedBy": "plan: finding 911 precedent: harness frame correction, component unchanged",
     "at": "2026-11-16T01:22:41.594Z",
     "note": "merged without a pick: allowed by finding 911 precedent: harness frame correction, component unchanged"
+  },
+  "components/shortcuts-dialog": {
+    "hash": "4da55209077cdedf",
+    "variant": "a",
+    "decidedBy": "plan: ADR 0387",
+    "at": "2026-11-20T14:03:08.582Z",
+    "note": "merged without a pick: allowed by ADR 0387"
   },
   "components/sketch-status-badge": {
     "hash": "0d7cbd781152272a",
@@ -93,10 +107,11 @@
     "note": "merged without a pick: allowed by ADR 0387 #4, ADR 0305; A6 brief (builder picks) - merged: A6 Quick switch: two unique letters per rail product, tooltip"
   },
   "elements/studio-menu": {
-    "hash": "57b9e834125ac815",
+    "hash": "7fc0f042ea5c6d89",
     "variant": "a",
-    "decidedBy": "builder",
-    "at": "2026-11-20T06:58:43.058Z"
+    "decidedBy": "plan: ADR 0387",
+    "at": "2026-11-20T14:03:08.582Z",
+    "note": "merged without a pick: allowed by ADR 0387"
   },
   "elements/variant-cell": {
     "hash": "3711c38f14063686",

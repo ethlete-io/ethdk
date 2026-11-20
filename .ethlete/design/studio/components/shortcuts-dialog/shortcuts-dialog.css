@@ -1,0 +1,9 @@
+.sd-frame {
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+.sd-frame .et-overlay--dialog {
+  inline-size: 100%;
+  max-inline-size: 40rem;
+}

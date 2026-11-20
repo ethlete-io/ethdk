@@ -1,0 +1,13 @@
+.ad-frame {
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+.ad-frame .et-overlay--dialog {
+  inline-size: 100%;
+  max-inline-size: 40rem;
+}
+
+.ad-wrap {
+  overflow-wrap: anywhere;
+}
