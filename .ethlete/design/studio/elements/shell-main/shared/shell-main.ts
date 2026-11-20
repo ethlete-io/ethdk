@@ -48,7 +48,7 @@ type Props = {
   resizeForce?: RailInteraction;
 };
 
-export type StartPhase = 'starting' | 'cli-build' | 'app-build';
+type StartPhase = 'starting' | 'cli-build' | 'app-build';
 
 const PHASE_HEADINGS: Record<StartPhase, string> = {
   starting: 'Design-Server startet',
