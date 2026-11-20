@@ -9,7 +9,7 @@ Timetrack ist aktiv. Die Arbeit läuft in der Builder-Warteschlange (ADR 0355), 
 
 1. B602: Hintergrund-Band gebaut (bcdb44893). Läuft: Nacht ohne Zeilen (Abwesenheit > 3 h zeichnet keine Blöcke,
    `breaks.ts`, `stream-day.ts`), dann verschwundene ET-772-Zeile (18.11.), Ticket in falscher Spur, fremder Zeilentext.
-   Dazu #27 (Agentenarbeit zählt als Anwesenheit, Bandschnitt), #28 (schrittweises Lesen behält Extra-Proben) und #11 (vermutlich durch 714b49bc9 behoben, prüfen).
+   Dazu #27 (Agentenarbeit zählt als Anwesenheit, Bandschnitt) und #11 (vermutlich durch 714b49bc9 behoben, prüfen).
    Abnahme: Toms Tag 19.11. und frischer Snapshot-Vergleich, der jede Zeile erklärt; erst dann bucht Tom 18. und 19.11.
 2. B616: gekoppelte Rechner zeigen denselben Tag; Handzeilen, Zeilen-Änderungen, Regeln und Vertretungen gebaut, auf zwei Rechnern ungeprüft; SSH-Arbeit auf
    tank erscheint auf dem Mac (ADR 0047, Befunde #7, #15, #24, #25). Headless fällt weg: tank hat einen Bildschirm.
