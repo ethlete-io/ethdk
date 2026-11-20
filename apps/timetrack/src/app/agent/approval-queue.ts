@@ -15,7 +15,7 @@ import {
   enqueueApproval,
   localDayKey,
   markApproval,
-  openApprovalFor,
+  foldedApprovalOf,
   rejectApproval,
   settleApprovalQueue,
   waitingApprovalsOf,
@@ -179,7 +179,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Today's auto mode answers, so settling keeps a create that another subject's draft still shares. */
     shareAnswers: (answers: readonly AutoModeAnswer[]) => sharingAnswers.set(answers),
 
-    /** A `target` an item from the same client still waits for answers that item and queues nothing. */
+    /** Answers with the item `foldedApprovalOf` names, waiting again if it expired, and queues a new one otherwise. */
     enqueue$: (options: {
       request: AgentApprovalRequest;
       client?: string;
@@ -189,14 +189,14 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         map(() => {
           settle();
 
-          const { target } = options;
-          const open = target ? openApprovalFor(queue(), { client: options.client, target }) : undefined;
+          const day = today();
+          const folded = foldedApprovalOf(queue(), { ...options, day });
 
-          if (open) return { status: 'queued', approvalId: open.id };
+          if (folded && !folded.reopen) return { status: 'queued', approvalId: folded.item.id };
 
-          const id = crypto.randomUUID();
+          const id = folded?.item.id ?? crypto.randomUUID();
 
-          change(enqueueApproval(queue(), { id, ...options, at: new Date(), day: today() }));
+          change(enqueueApproval(queue(), { id, ...options, at: new Date(), day }));
 
           const queuedItem = find(id);
 

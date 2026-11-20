@@ -201,40 +201,78 @@ const sameDayApplyOf = (
         sameAutoModeApply(item.request, options.request),
     );
 
-/**
- * Adds a waiting item. A target an item from the same caller still waits for queues nothing. An auto mode
- * apply asked on a day that already holds the same proposal queues nothing either: one still waiting or
- * decided stays as it is, and an expired one waits again under its own id.
- */
-export const enqueueApproval = (
-  queue: readonly AgentApproval[],
-  options: { id: string; request: AgentApprovalRequest; client?: string; target?: string; at: Date; day: string },
-): AgentApproval[] => {
-  const { target, request } = options;
+const expiredAutoModeCreateOf = (queue: readonly AgentApproval[], options: { client?: string; target?: string }) =>
+  options.client === AUTO_MODE_CLIENT && options.target
+    ? [...queue]
+        .reverse()
+        .find(
+          (item) =>
+            item.state === 'expired' &&
+            item.request.op === 'jira.create' &&
+            item.client === options.client &&
+            item.target === options.target,
+        )
+    : undefined;
 
-  if (target && openApprovalFor(queue, { client: options.client, target })) return [...queue];
+type EnqueueOptions = { request: AgentApprovalRequest; client?: string; target?: string; day: string };
+
+/**
+ * The item an enqueue answers with instead of adding one: one the same caller still waits for on the same
+ * target, the same auto mode apply asked that day, or an expired auto mode create or apply that waits again.
+ */
+export const foldedApprovalOf = (queue: readonly AgentApproval[], options: EnqueueOptions) => {
+  const { target, request } = options;
+  const open = target ? openApprovalFor(queue, { client: options.client, target }) : undefined;
+
+  if (open) return { item: open, reopen: false };
 
   if (request.op === 'autoMode.apply') {
-    if (sameDayApplyOf(queue, { ...options, request, expired: false })) return [...queue];
+    const waiting = sameDayApplyOf(queue, { ...options, request, expired: false });
+
+    if (waiting) return { item: waiting, reopen: false };
 
     const expired = sameDayApplyOf(queue, { ...options, request, expired: true });
 
-    if (expired) {
-      return queue.map((item) =>
-        item === expired
-          ? {
-              id: item.id,
-              request,
-              opClass: item.opClass,
-              ...(item.client ? { client: item.client } : {}),
-              ...(target ? { target } : {}),
-              askedAtMs: options.at.getTime(),
-              day: item.day,
-              state: 'queued',
-            }
-          : item,
-      );
-    }
+    return expired ? { item: expired, reopen: true } : undefined;
+  }
+
+  if (request.op === 'jira.create') {
+    const expired = expiredAutoModeCreateOf(queue, options);
+
+    return expired ? { item: expired, reopen: true } : undefined;
+  }
+
+  return undefined;
+};
+
+/**
+ * Adds a waiting item, unless `foldedApprovalOf` names one to answer with: an expired one of those waits
+ * again under its own id, any other stays as it is.
+ */
+export const enqueueApproval = (
+  queue: readonly AgentApproval[],
+  options: EnqueueOptions & { id: string; at: Date },
+): AgentApproval[] => {
+  const { target, request } = options;
+  const folded = foldedApprovalOf(queue, options);
+
+  if (folded && !folded.reopen) return [...queue];
+
+  if (folded) {
+    return queue.map((item) =>
+      item === folded.item
+        ? {
+            id: item.id,
+            request,
+            opClass: item.opClass,
+            ...(item.client ? { client: item.client } : {}),
+            ...(target ? { target } : {}),
+            askedAtMs: options.at.getTime(),
+            day: options.day,
+            state: 'queued',
+          }
+        : item,
+    );
   }
 
   return [

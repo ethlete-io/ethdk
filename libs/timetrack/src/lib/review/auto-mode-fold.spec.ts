@@ -4,8 +4,10 @@ import {
   AgentApproval,
   AgentApprovalState,
   enqueueApproval,
+  foldedApprovalOf,
   markApproval,
   openApprovalFor,
+  settleApprovalQueue,
   waitingApprovalsOf,
 } from '../agent-api/approval-queue';
 import {
@@ -67,7 +69,11 @@ const queueApply = (queue: readonly AgentApproval[], answer: AutoModeAnswer, opt
   });
 };
 
-const queueCreate = (queue: readonly AgentApproval[], answer: AutoModeAnswer, options: { id: string }) => {
+const queueCreate = (
+  queue: readonly AgentApproval[],
+  answer: AutoModeAnswer,
+  options: { id: string; asked?: string },
+) => {
   const shared = autoModeSharedCreate({ day: TODAY, answer, approvals: queue });
 
   if (shared) return { queue: [...queue], answer: autoModeQueuedAnswer(answer, shared) };
@@ -76,20 +82,20 @@ const queueCreate = (queue: readonly AgentApproval[], answer: AutoModeAnswer, op
 
   if (!request) throw new Error('nothing to queue');
 
-  const next = enqueueApproval(queue, {
-    id: options.id,
+  const enqueue = {
     request,
     client: AUTO_MODE_CLIENT,
     target: autoModeApprovalTarget(TODAY, answer.subject),
-    at: at('12:58'),
-    day: TODAY,
-  });
+    day: options.asked ?? TODAY,
+  };
+  const id = foldedApprovalOf(queue, enqueue)?.item.id ?? options.id;
+  const next = enqueueApproval(queue, { ...enqueue, id, at: at('12:58') });
 
   return {
     queue: next,
     answer: autoModeQueuedAnswer(
       answer,
-      next.find((item) => item.id === options.id)!,
+      next.find((item) => item.id === id)!,
     ),
   };
 };
@@ -182,5 +188,19 @@ describe('the same auto mode create drafted twice on one day', () => {
     });
 
     expect(second.queue.map((item) => [item.id, item.state])).toEqual([['create-1', 'rejected']]);
+  });
+
+  it('waits again on the expired create under its own id, which the draft keeps', () => {
+    const NEXT_DAY = '2026-11-20';
+    const first = queueCreate([], draftFor(sessionOf('a')), { id: 'create-1' });
+    const again = queueCreate(settleApprovalQueue(first.queue, NEXT_DAY), draftFor(sessionOf('a')), {
+      id: 'create-2',
+      asked: NEXT_DAY,
+    });
+
+    expect(settleApprovalQueue(again.queue, NEXT_DAY).map((item) => [item.id, item.state])).toEqual([
+      ['create-1', 'queued'],
+    ]);
+    expect(again.answer.outcome).toMatchObject({ approvalId: 'create-1' });
   });
 });
