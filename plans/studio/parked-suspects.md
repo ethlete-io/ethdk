@@ -1,6 +1,6 @@
 # Parked suspects
 
-One line per Suspect without proof (ADR 0276). At its second time the line joins its rebuild group; a new group is a decision of the human (ADR 0280).
+One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; a new group is the human's call (ADR 0280).
 
 - eslint-plugin checkJs (Mac, 989): allowJs+checkJs gives 271 errors; its new typecheck target checks no file. Measured, not blocking.
 - slice typecheck gap (Mac, 920): a slice check ran tsc with the app tsconfig only, so a spec type error reached push:suite.
@@ -135,4 +135,4 @@ One line per Suspect without proof (ADR 0276). At its second time the line joins
 - studio e2e cold start (20.11.): "a sketch scroll never empties a cell" failed once with "no frame after 60 s", rerun green. Suspect.
 - CI runner speed (20.11.): studio sketch listing 13-26 s on the runner vs 3.6 s locally, serve.perf 262-266 > 200-208 ms. Suspect.
 - studio checkouts.adding (20.11.): one flag for all folder adds, two adds at once could race (B646). Suspect.
-- compare pages/inventory (20.11.): printed once "Request failed with status code 400 (ERR_BAD_REQUEST)" on old code, not hunted. Suspect.
+- compare pages/inventory (20.11.): one 400 ERR_BAD_REQUEST on old code. Suspect.
