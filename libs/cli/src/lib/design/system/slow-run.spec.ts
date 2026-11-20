@@ -9,7 +9,9 @@ import { recordSettledBuildReady } from './record-settled';
 import { openPointsInWorker } from './open-points.fixtures';
 import { createPartPictureCache } from './part-picture-cache';
 import { partKeyOf, resolveProduct } from './resolve-product';
-import { startSlowRunner } from './slow-run';
+import { runSlowChecks, startSlowRunner } from './slow-run';
+import { createSketch, Sketch } from './sketch/sketch';
+import { NO_VISIBLE_CHANGE_RULE } from './rules/no-visible-change';
 import { readStampText, withStampsInMemory } from './stamp-files';
 import { upgradeLegacyMarksOf } from './stale-parts';
 import { designStatus } from '../status';
@@ -406,5 +408,44 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect(tracked).toEqual([]);
     expect(kindsOf(here)).toContain('direct-edit');
     expect(kindsOf(answer)).toContain('direct-edit');
+  });
+});
+
+describe('NO-VISIBLE-CHANGE in the slow run', { timeout: 60_000 }, () => {
+  it('hands the runner the in-progress sketches of a part and stores its problem on that part', async () => {
+    const { target, config, product } = staleChip();
+    const sketch = createSketch({
+      product: product(),
+      sketch: { layer: 'components', name: 'chip' },
+      variants: ['a'],
+    }) as Sketch;
+    const seen: string[] = [];
+    const run = () =>
+      runSlowChecks({
+        target,
+        config,
+        product: product(),
+        runners: {
+          specs: async () => [],
+          start: async () => ({ url: 'http://app', stop: async () => undefined }),
+          live: async () => [],
+          controlState: async () => [],
+          droppedProps: async () => [],
+          actionLost: async () => [],
+          pageStateInner: async () => [],
+          noVisibleChange: async ({ sketches }) =>
+            sketches.map((entry) => {
+              seen.push(entry.target);
+
+              return { rule: NO_VISIBLE_CHANGE_RULE, file: 'x', part: entry.target, message: 'no change' };
+            }),
+        },
+      });
+
+    const results = await run();
+
+    expect(seen).toEqual([CHIP]);
+    expect(results.get(CHIP)?.map(({ rule }) => rule)).toEqual([NO_VISIBLE_CHANGE_RULE]);
+    expect(sketch.status).toBe('in progress');
   });
 });

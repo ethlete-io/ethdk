@@ -2,6 +2,8 @@ import { exhaustMap, from, interval } from 'rxjs';
 import { openUndesignedSketches, ShootBuilt, shootBuiltState } from './sketch/undesigned-sketch';
 import { relative, resolve } from 'path';
 import { DesignConfig } from '../design-config';
+import { noVisibleChangeProblems } from '../ready-shots';
+import { createRunDraw } from '../warm-draw';
 import { actionLostProblemsOf } from './action-lost';
 import { pageStateInnerProblemsOf } from './rules/page-state-inner';
 import { bespokeControlProblemsOf } from './bespoke-controls';
@@ -30,6 +32,8 @@ import { withStampsInCache } from './stamp-files';
 import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolve-product';
 import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
+import { isJudgedForVisibleChange, NO_VISIBLE_CHANGE_RULE } from './rules/no-visible-change';
+import { listSketches, Sketch } from './sketch/sketch';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
 import { sdkErrorLineOf } from './sdk-errors';
 import { autoAcceptOf, settleCommittedEdits } from './accepted-pictures';
@@ -66,6 +70,12 @@ export type SlowRunners = {
   pageProps: typeof pagePropTakerOf;
   actionLost: typeof actionLostProblemsOf;
   pageStateInner: typeof pageStateInnerProblemsOf;
+  noVisibleChange: (options: {
+    target: string;
+    config: DesignConfig;
+    product: ResolvedProduct;
+    sketches: Sketch[];
+  }) => Promise<Problem[]>;
 };
 
 const defaultRunners: SlowRunners = {
@@ -84,6 +94,27 @@ const defaultRunners: SlowRunners = {
   pageProps: (options) => pagePropTakerOf(options),
   actionLost: actionLostProblemsOf,
   pageStateInner: pageStateInnerProblemsOf,
+  noVisibleChange: async ({ target, config, product, sketches }) => {
+    const run = createRunDraw(target);
+
+    try {
+      const problems: Problem[] = [];
+
+      for (const sketch of sketches)
+        problems.push(...(await noVisibleChangeProblems({ target, config, product, sketch, warm: run.warm })));
+
+      return problems;
+    } catch (error) {
+      return sketches.map((sketch) => ({
+        rule: NO_VISIBLE_CHANGE_RULE,
+        file: relative(repoRootOf(product), sketch.dir),
+        part: sketch.target,
+        message: `the shots failed: ${error instanceof Error ? error.message : String(error)}`,
+      }));
+    } finally {
+      await run.close();
+    }
+  },
 };
 
 const merge = (into: Map<string, Problem[]>, from: Map<string, Problem[]>) => {
@@ -205,6 +236,19 @@ export const runSlowChecks = async (options: {
       results,
       byPart(await runners.pageStateInner({ target, config, product, parts: ruled(PAGE_STATE_INNER_RULE) })),
     );
+
+  if (ruled(NO_VISIBLE_CHANGE_RULE).length > 0) {
+    const judged = listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+      typeof sketch !== 'string' &&
+      ruled(NO_VISIBLE_CHANGE_RULE).includes(sketch.target) &&
+      isJudgedForVisibleChange({ product, sketch })
+        ? [sketch]
+        : [],
+    );
+
+    for (const problem of await runners.noVisibleChange({ target, config, product, sketches: judged }))
+      results.set(problem.part ?? PRODUCT_PART, [...(results.get(problem.part ?? PRODUCT_PART) ?? []), problem]);
+  }
 
   if (inputs[PRODUCT_PART]?.rules.includes(ACTION_LOST_RULE)) {
     const lost = await runners.actionLost({

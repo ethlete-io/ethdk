@@ -100,7 +100,7 @@ const helpOf = (invocation: string) =>
     '  Exits 1 on a finding.',
     '',
     `${invocation} check --product <name>… --slow [--part <layer>/<name>…]`,
-    '  Run the slow rules - APP-SPEC, UNCOVERED-REGION, compare and the SDK-error',
+    '  Run the slow rules - APP-SPEC, UNCOVERED-REGION, NO-VISIBLE-CHANGE, compare and the SDK-error',
     "  watch - and store each part's problems in node_modules/.cache/ethlete-design, where the build-ready state reads",
     '  them. Then run check without --slow on the same scope, which writes the check record into ready.json',
     '  uncommitted and prints READY UNCOMMITTED for each record that differs from HEAD.',

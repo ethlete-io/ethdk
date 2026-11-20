@@ -22,7 +22,10 @@ import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { APP_SPEC_RULE } from './rules/app-spec';
+import { isJudgedForVisibleChange, NO_VISIBLE_CHANGE_RULE } from './rules/no-visible-change';
 import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
+import { partHashOf } from './sketch/baseline';
+import { listSketches, Sketch } from './sketch/sketch';
 import { unbaselinedProblemsOf } from './rule-baseline';
 import { withoutWaitingUndesigned } from './sketch/undesigned-sketch';
 import { appSourcesOf } from './rules/implemented-components';
@@ -44,7 +47,8 @@ export const isDrawRule = (rule: string) =>
 
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
 export const isSlowRule = (rule: string) =>
-  isDrawRule(rule) || [APP_SPEC_RULE, UNCOVERED_REGION_RULE, COMPARE_RULE, SDK_ERROR_RULE].includes(rule);
+  isDrawRule(rule) ||
+  [APP_SPEC_RULE, UNCOVERED_REGION_RULE, COMPARE_RULE, SDK_ERROR_RULE, NO_VISIBLE_CHANGE_RULE].includes(rule);
 
 const DECLARES_CONTROLS = /\bcontrols\s*:/u;
 
@@ -130,6 +134,7 @@ type PartContext = {
   harness: Exclude<ReturnType<typeof harnessOf>, string>;
   pages: Set<string> | null;
   designs: Map<string, DesignHash>;
+  judged: Map<string, Sketch>;
 };
 
 const designOf = (context: PartContext, part: ResolvedPart) => {
@@ -145,6 +150,15 @@ const designOf = (context: PartContext, part: ResolvedPart) => {
   return design;
 };
 
+const judgedSketchesOf = (product: ResolvedProduct) =>
+  new Map(
+    listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+      typeof sketch === 'string' || !isJudgedForVisibleChange({ product, sketch })
+        ? []
+        : [[sketch.target, sketch] as const],
+    ),
+  );
+
 const contextOf = (product: ResolvedProduct): PartContext => {
   const root = repoRootOf(product);
   const found = harnessOf(product);
@@ -156,6 +170,7 @@ const contextOf = (product: ResolvedProduct): PartContext => {
     harness,
     pages: livePagesOf(root, harness?.live),
     designs: new Map(),
+    judged: judgedSketchesOf(product),
   };
 };
 
@@ -182,6 +197,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const current = typeof implemented === 'string' && designHolds(implemented, design);
   const designOnly = component !== null && implemented !== undefined && !current;
   const app = linked === null ? {} : appFilesOf({ root, component: linked });
+  const sketch = context.judged.get(key);
   const rules = [
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
     ...(measuresContrastPairs(part) ? [CONTRAST_PAIR_RULE] : []),
@@ -193,6 +209,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
     ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
     ...(designOnly ? [COMPARE_RULE] : []),
+    ...(context.judged.has(key) ? [NO_VISIBLE_CHANGE_RULE] : []),
   ];
 
   if (rules.length === 0) return { rules, hash: '' };
@@ -218,6 +235,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
         hashOfFiles(specs),
         hashOfFiles(live),
         rules.includes(STATE_NO_SOURCE_RULE) ? hashOfFiles(consumersOf(root, linked)) : '',
+        sketch ? partHashOf({ product, dir: sketch.dir }) : '',
       ].join('\0'),
     ),
     ...(designOnly ? { designOnly: true as const } : {}),

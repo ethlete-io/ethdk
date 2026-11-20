@@ -392,6 +392,9 @@ on the same product or parts, so it writes the same check record, and exits 1 on
   `harness.specs` the rule is off.
 - `UNCOVERED-REGION` opens every state of the `harness.live` spec and reports each visible region no part covers, on
   the page part of that live page, else on `(product)`.
+- `NO-VISIBLE-CHANGE` draws each in-progress sketch of a part and reports it on the sketch's part when every live
+  variant draws the pixels the product draws now (the judgment `sketch ready` refuses with). A sketch marked ready,
+  for example with `--no-visible-change`, is not judged.
 - The same pass derives the `implements` link of each part the page's design embeds: the app component whose host
   covers the part at every spot the design draws it becomes the link, written into the part file, and the harness map
   is regenerated. A page's own component never counts, a part drawn inline keeps its link, and a part with two

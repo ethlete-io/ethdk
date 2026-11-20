@@ -5,6 +5,8 @@ import { ResolvedProduct } from './system/resolve-product';
 import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
 import { IdenticalRender, identicalRendersOf, sketchRendersOf } from './system/sketch/identical-renders';
 import { variantChangesOf, variantLoadProblemsOf } from './system/sketch/no-visible-change';
+import { Problem } from './system/problem';
+import { noVisibleChangeProblemsOf } from './system/rules/no-visible-change';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { Sketch } from './system/sketch/sketch';
 import { VariantChange } from './system/sketch/viewed-shots';
@@ -171,3 +173,14 @@ export const sketchRenderLines = async (options: SketchShots): Promise<{ refusal
     return { refusals: [couldNotRender(options.sketch, error)], warnings: [] };
   }
 };
+
+/** Shoots the sketch on a render server; the `NO-VISIBLE-CHANGE` problems of its part, see `noVisibleChangeProblemsOf`. */
+export const noVisibleChangeProblems = async (options: SketchShots): Promise<Problem[]> =>
+  drawingOn(options, (drawing) =>
+    noVisibleChangeProblemsOf({
+      product: options.product,
+      sketch: options.sketch,
+      pictureOf: shooterOf(options, drawing).pictureOf,
+      load: loaderOf(drawing.server),
+    }),
+  );
