@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.22
+
+### Patch Changes
+
+- The Linux host bounds the glibc heap it keeps resident: freed IPC bodies return to the system instead of staying in per-thread arenas.
+
 ## 0.2.0-next.21
 
 ### Minor Changes

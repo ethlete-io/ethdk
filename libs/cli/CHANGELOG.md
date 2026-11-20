@@ -1,5 +1,15 @@
 # @ethlete/cli
 
+## 3.0.0-next.39
+
+### Patch Changes
+
+- `et design check --rules` reports `DIRECT-EDIT-PENDING` on a merged part whose files changed without a `merged.json` record, so pre-push and CI no longer let a stale merged hash through.
+- `et design check` no longer warns that a merged part changed outside a sketch; `DIRECT-EDIT-PENDING` reports it.
+- `et design sketch merge` re-records the parts that use a changed asset before it checks, so `DIRECT-EDIT-PENDING` does not fail the merge.
+- `et design` rebuilds a stale lib without rebuilding its fresh dependency libs: each stale lib runs its own build targets with `--exclude-task-dependencies`, dependencies first.
+- Fix a passing design check exiting 1 when a queued draw nobody awaited was aborted with its run.
+
 ## 3.0.0-next.38
 
 ### Patch Changes

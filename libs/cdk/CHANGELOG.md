@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.56
+
+### Patch Changes
+
+- The migrate-from-cdk class list includes the match scoreline and match time classes added to `@ethlete/components`.
+
 ## 5.0.0-next.55
 
 ### Patch Changes

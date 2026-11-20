@@ -1,5 +1,11 @@
 # ethlete-studio
 
+## 0.2.0-next.28
+
+### Patch Changes
+
+- Internal: the canvas columns lose the unread `section` field, and the matrix layout its unused head rows.
+
 ## 0.2.0-next.27
 
 ### Patch Changes
