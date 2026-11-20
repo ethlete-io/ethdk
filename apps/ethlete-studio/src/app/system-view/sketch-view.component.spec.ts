@@ -5,7 +5,7 @@ import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../ho
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
-import { SketchViewComponent, frameFitsCell, liveShotsOf } from './sketch-view.component';
+import { SketchViewComponent, frameFitsCell, liveShotsOf, nearShotsOf } from './sketch-view.component';
 import { waitsForPick } from './system-tree';
 import { undecidedShotsOf } from './undecided-shots';
 
@@ -37,31 +37,6 @@ class SilentResizeObserver {
 
   public disconnect() {
     return undefined;
-  }
-}
-
-class NearIntersectionObserver {
-  public constructor(private callback: IntersectionObserverCallback) {}
-
-  public observe(target: Element) {
-    setTimeout(() =>
-      this.callback(
-        [{ target, isIntersecting: true, intersectionRatio: 1 } as unknown as IntersectionObserverEntry],
-        this as unknown as IntersectionObserver,
-      ),
-    );
-  }
-
-  public unobserve() {
-    return undefined;
-  }
-
-  public disconnect() {
-    return undefined;
-  }
-
-  public takeRecords() {
-    return [];
   }
 }
 
@@ -171,7 +146,6 @@ describe('SketchViewComponent', () => {
     vi.stubGlobal('fetch', noComments);
     vi.stubGlobal('EventSource', SilentEventSource);
     vi.stubGlobal('ResizeObserver', SilentResizeObserver);
-    vi.stubGlobal('IntersectionObserver', NearIntersectionObserver);
     configure();
 
     const fixture = TestBed.createComponent(SketchViewComponent);
@@ -193,7 +167,7 @@ describe('SketchViewComponent', () => {
     localStorage.clear();
     vi.stubGlobal('EventSource', SilentEventSource);
     vi.stubGlobal('ResizeObserver', SilentResizeObserver);
-    vi.stubGlobal('IntersectionObserver', NearIntersectionObserver);
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1000, 1000));
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
     });
@@ -219,8 +193,8 @@ describe('SketchViewComponent', () => {
     expect(root.textContent).toContain('Calmer');
   });
 
-  it('keeps at most six near cells live and the stored picture in every cell', async () => {
-    const states = ['default', 'hover', 'focus'];
+  it('keeps at most twelve near cells live and the stored picture in every cell', async () => {
+    const states = ['default', 'hover', 'focus', 'active', 'disabled'];
     const wide = {
       ...SKETCH,
       targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [], unchanged: [] })),
@@ -228,17 +202,17 @@ describe('SketchViewComponent', () => {
 
     const { root } = await render(wide, noComments, { ...CARD, states });
 
-    expect(root.querySelectorAll('[data-shot]').length).toBe(9);
-    expect(root.querySelectorAll('iframe[data-state]').length).toBe(6);
-    expect(root.querySelectorAll('iframe[data-state] + ethlete-frame-shield.pointer-events-auto').length).toBe(6);
-    expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(9);
+    expect(root.querySelectorAll('[data-shot]').length).toBe(15);
+    expect(root.querySelectorAll('iframe[data-state]').length).toBe(12);
+    expect(root.querySelectorAll('iframe[data-state] + ethlete-frame-shield.pointer-events-auto').length).toBe(12);
+    expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(15);
   });
 
   it('keeps the live frames while a zoom gesture runs and updates them once it rests', async () => {
     vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(100);
     vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(50);
 
-    const states = ['default', 'hover', 'focus'];
+    const states = ['default', 'hover', 'focus', 'active', 'disabled'];
     const wide = {
       ...SKETCH,
       targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [], unchanged: [] })),
@@ -256,7 +230,7 @@ describe('SketchViewComponent', () => {
       .forEach((frame) => frame.parentElement!.querySelector('img')!.dispatchEvent(new Event('load')));
     await settle(fixture);
 
-    expect(before.length).toBe(6);
+    expect(before.length).toBe(12);
     expect(live()).toEqual(before);
 
     await new Promise((resolve) => setTimeout(resolve, 600));
@@ -414,6 +388,30 @@ describe('SketchViewComponent', () => {
         ]),
       ]),
     ]).toEqual(['current y', 'a y', 'b x', 'b y']);
+  });
+
+  it('takes the cells that meet the viewport, even when a clipping ancestor hides their pixels, by distance from its centre', () => {
+    const box = (left: number, top: number) => ({ left, top, right: left + 100, bottom: top + 100 });
+    const near = nearShotsOf({
+      cells: [
+        { key: 'in', rect: box(450, 450) },
+        { key: 'edge', rect: box(950, 0) },
+        { key: 'beside', rect: box(1000, 0) },
+        { key: 'far', rect: box(0, 5000) },
+      ],
+      viewport: { left: 0, top: 0, right: 1000, bottom: 1000 },
+    });
+
+    expect([...near.keys()]).toEqual(['in', 'edge']);
+    expect(near.get('in')).toBe(0);
+    expect(near.get('edge')).toBeGreaterThan(0);
+  });
+
+  it('keeps the live count at the cap when the viewport meets more cells', () => {
+    const order = Array.from({ length: 40 }, (_, index) => `v s${index}`);
+    const near = new Map(order.map((key, index) => [key, index] as const));
+
+    expect(liveShotsOf({ order, near, cap: 20 })).toEqual(order.slice(0, 20));
   });
 
   it('fills the cap with whole states nearest to the view, listing order breaking ties', () => {

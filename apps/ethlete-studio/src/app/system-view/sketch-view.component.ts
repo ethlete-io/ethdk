@@ -13,7 +13,6 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { signalElementIntersection } from '@ethlete/core';
 import { DOCUMENT } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
@@ -117,9 +116,35 @@ const sketchModelOf = (author: string): SketchModel => ({
 
 const FALLBACK_SIZE = { width: 1440, height: 900 };
 
-const NEAR_MARGIN = '400px';
+const LIVE_SHOT_CAP = 12;
 
-const LIVE_SHOT_CAP = 6;
+type ShotRect = { left: number; top: number; right: number; bottom: number };
+
+/** The keys of the cells whose rect meets `viewport`, each with its centre's distance from the viewport's centre. */
+export const nearShotsOf = ({
+  cells,
+  viewport,
+}: {
+  cells: readonly { key: string; rect: ShotRect }[];
+  viewport: ShotRect;
+}) => {
+  const centre = { x: (viewport.left + viewport.right) / 2, y: (viewport.top + viewport.bottom) / 2 };
+
+  return new Map(
+    cells
+      .filter(
+        ({ rect }) =>
+          rect.right > viewport.left &&
+          rect.left < viewport.right &&
+          rect.bottom > viewport.top &&
+          rect.top < viewport.bottom,
+      )
+      .map(({ key, rect }) => [
+        key,
+        Math.hypot((rect.left + rect.right) / 2 - centre.x, (rect.top + rect.bottom) / 2 - centre.y),
+      ]),
+  );
+};
 
 const stateOfShot = (key: string) => key.slice(key.indexOf(' ') + 1);
 
@@ -255,7 +280,7 @@ const scrollOf = (data: unknown) =>
       (sendComment)="commentStore.send($event)"
       (commentPick)="pickComment($event)"
       (retry)="retry.emit()"
-      (cameraChange)="cameraChange.emit($event)"
+      (cameraChange)="camera.set($event); cameraChange.emit($event)"
       (moving)="moving.set($event)"
       (listWidthChange)="saveListWidth($event)"
       (discard)="discard()"
@@ -360,26 +385,26 @@ export class SketchViewComponent {
 
   private shotCellRefs = viewChildren<ElementRef<HTMLElement>>('shotCell');
 
-  private shotCells = signalElementIntersection(this.shotCellRefs, {
-    rootMargin: NEAR_MARGIN,
-  });
-
-  public nearShots = computed(
-    () =>
-      new Map(
-        this.shotCells()
-          .filter((entry) => entry.isIntersecting)
-          .map((entry) => {
-            const rect = entry.target.getBoundingClientRect();
-            const bounds = entry.rootBounds;
-            const distance = bounds ? Math.abs(rect.top + rect.height / 2 - (bounds.top + bounds.height / 2)) : 0;
-
-            return [(entry.target as HTMLElement).dataset['shot'] ?? '', distance] as const;
-          }),
-      ),
-  );
+  protected camera = signal<Camera | null>(null);
 
   public moving = signal(false);
+
+  public nearShots = computed(() => {
+    this.camera();
+    this.moving();
+
+    // The cell rects change with the camera, which this computed reads, so no ResizeObserver signal fits.
+    /* eslint-disable ethlete/prefer-element-dimensions, ethlete/no-dom-query */
+    const cells = this.shotCellRefs().map((ref) => ({
+      key: ref.nativeElement.dataset['shot'] ?? '',
+      rect: ref.nativeElement.getBoundingClientRect(),
+      canvas: ref.nativeElement.closest('ethlete-canvas-viewport'),
+    }));
+    const canvas = cells[0]?.canvas;
+    /* eslint-enable ethlete/prefer-element-dimensions, ethlete/no-dom-query */
+
+    return canvas ? nearShotsOf({ cells, viewport: canvas.getBoundingClientRect() }) : new Map<string, number>();
+  });
 
   private pictureRatios = signal<Record<string, number>>({});
 
