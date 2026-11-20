@@ -4,6 +4,8 @@
   "DEFAULT_FORM_FIELD_DEFAULTS": "constant: default value of provideFormFieldDefaults",
   "DROPZONE_CROP_SHAPES": "constant: value set of the dropzone crop shape config",
   "DROPZONE_LAYOUTS": "constant: value set of the dropzone layout input",
+  "FORM_FIELD_VARIANTS": "constant: value set of the form field variant input",
+  "FocusRingStylesComponent": "spec: libs/components/src/lib/focus-ring/focus-ring-styles.component.spec.ts",
   "INPUT_CLEAR_IMPORTS": "imports tuple: covered by input-clear.directive.spec.ts and the input story",
   "InputClearDirective": "opt-in et-input clear button: covered by input-clear.directive.spec.ts",
   "KBD_LABELS": "token: read through injectKbdLabels, set through provideKbdLabels",
