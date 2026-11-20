@@ -91,13 +91,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "5498d3ab6c57b1ea",
+    "app": "04d565c1ca875cd5",
     "actions": ["comment-mode", "emit:sendComment"],
     "builder": "designer",
     "at": "2026-11-20T13:13:17.399Z",
-    "by": "claude-opus-5-5",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 4159628
+    "pid": 1573521
   },
   "components/comment-flow": {
     "hash": "13b02d931056c6e5",
