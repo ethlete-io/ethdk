@@ -107,11 +107,10 @@
     "note": "merged without a pick: allowed by ADR 0387 #4, ADR 0305; A6 brief (builder picks) - merged: A6 Quick switch: two unique letters per rail product, tooltip"
   },
   "elements/studio-menu": {
-    "hash": "568dfc5b95e72938",
+    "hash": "4f7c69be22a43262",
     "variant": "a",
     "decidedBy": "user",
-    "at": "2026-11-20T14:27:16.615Z",
-    "note": "merged: A27 Server status, ADR 0387"
+    "at": "2026-11-20T14:42:44.014Z"
   },
   "elements/variant-cell": {
     "hash": "3711c38f14063686",
