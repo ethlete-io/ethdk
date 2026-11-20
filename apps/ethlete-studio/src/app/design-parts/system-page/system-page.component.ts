@@ -111,13 +111,13 @@ export const FRAME_HEAD_CLASS =
             </figure>
           </ethlete-canvas-frames>
         </ng-content>
-        <header
-          class="absolute inset-x-0 top-0 flex items-center gap-space-3 border-b border-(--et-surface-border-solid) bg-(--et-surface-background-solid) py-space-3 ps-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] pe-space-4"
+        <div
+          class="absolute inset-s-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] top-space-3 min-w-0 max-w-1/2"
         >
-          <div class="min-w-0 flex-1">
-            <span class="font-code text-ui-xs text-et-surface-muted">{{ shown.slug }}</span>
-            <h2 class="m-0 truncate font-ui-strong text-ui-md text-et-surface">{{ shown.headline }}</h2>
-          </div>
+          <h2 class="m-0 truncate font-ui-strong text-ui-md text-et-surface">{{ shown.headline }}</h2>
+          <span class="font-code text-ui-xs text-et-surface-muted">{{ shown.slug }}</span>
+        </div>
+        <div class="absolute top-space-3 right-space-3 flex items-center gap-space-2">
           @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
             <div
               [attr.aria-label]="themeSwitch.kind === 'surface' ? SHELL_LABELS.surfaceTheme : SHELL_LABELS.colorTheme"
@@ -155,7 +155,7 @@ export const FRAME_HEAD_CLASS =
               {{ SHELL_LABELS.markTransferred }}
             </button>
           }
-        </header>
+        </div>
       } @else if (noted()) {
         <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
           <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">

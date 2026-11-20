@@ -1937,7 +1937,7 @@ describe('SystemViewComponent on a tree pick', () => {
     expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
   });
 
-  it('opens a readable call in the system page with its header, its canvas and the transfer action', async () => {
+  it('opens a readable call in the system page with its title, its canvas and the transfer action', async () => {
     const posts: string[] = [];
     const readable: ListedCall = {
       slug: 'web/start',
@@ -1969,11 +1969,11 @@ describe('SystemViewComponent on a tree pick', () => {
 
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'legacy:web/start' });
     const page: HTMLElement | null = (fixture.nativeElement as HTMLElement).querySelector('ethlete-system-page');
-    const transfer = [...(page?.querySelectorAll<HTMLButtonElement>('header button') ?? [])].find(
+    const transfer = [...(page?.querySelectorAll<HTMLButtonElement>('button') ?? [])].find(
       (button) => button.textContent?.trim() === STUDIO_LABELS.shell.markTransferred,
     );
 
-    expect(page?.querySelector('header h2')?.textContent?.trim()).toBe('A start page for the web app');
+    expect(page?.querySelector('h2')?.textContent?.trim()).toBe('A start page for the web app');
     expect(page?.querySelector('[systemCallCanvas] ethlete-design-canvas')).not.toBeNull();
     expect(page?.querySelector('ethlete-canvas-frames')).toBeNull();
 

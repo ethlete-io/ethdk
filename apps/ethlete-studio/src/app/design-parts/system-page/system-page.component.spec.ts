@@ -169,3 +169,41 @@ describe('SystemPageComponent canvas note', () => {
     expect(card.querySelector('[data-sketch-missing]')?.textContent?.trim()).toBe('Lesefehler');
   });
 });
+
+describe('SystemPageComponent legacy call', () => {
+  it('shows a legacy call without a header bar and emits the transfer of its slug', async () => {
+    const fixture = await render({
+      call: {
+        slug: 'shop/basket/07-long-name',
+        headline: 'Ein sehr langer Titel für den Warenkorb',
+        transferred: false,
+      },
+      themeSwitches: [{ kind: 'surface', names: ['hell', 'dunkel'], current: 'hell' }],
+    });
+    const root = fixture.nativeElement as HTMLElement;
+    const transferred: string[] = [];
+
+    fixture.componentInstance.markTransferred.subscribe((slug) => transferred.push(slug));
+
+    expect(root.querySelector('h2')?.closest('header')).toBeNull();
+    expect(root.querySelector('h2')?.textContent?.trim()).toBe('Ein sehr langer Titel für den Warenkorb');
+    expect(root.textContent).toContain('shop/basket/07-long-name');
+
+    const transfer = [...root.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === STUDIO_LABELS.shell.markTransferred,
+    );
+
+    transfer?.click();
+
+    expect(transferred).toEqual(['shop/basket/07-long-name']);
+
+    fixture.componentRef.setInput('call', {
+      slug: 'shop/basket/07-long-name',
+      headline: 'Ein sehr langer Titel für den Warenkorb',
+      transferred: true,
+    });
+    await fixture.whenStable();
+
+    expect(root.querySelector('et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.shell.transferred);
+  });
+});

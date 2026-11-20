@@ -1922,7 +1922,7 @@
     "pid": 3171295
   },
   "pages/system": {
-    "hash": "f620578860a0847a",
+    "hash": "e4e5f2bf08f0e7f6",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "abec18bb97a9c4d8",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "62a6638e5e6dd289",
@@ -2012,11 +2012,11 @@
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
       ".ethlete/design/studio/pages/system/build-ready-footer.ts": "891b6531d5ef01f6",
       ".ethlete/design/studio/pages/system/shared/build-ready.ts": "8cfb91475a25b129",
-      ".ethlete/design/studio/pages/system/shared/capabilities.ts": "8bc7757b7fb2476d",
+      ".ethlete/design/studio/pages/system/shared/capabilities.ts": "0802eec14b2145f0",
       ".ethlete/design/studio/pages/system/shared/folded-states.ts": "3a8f1fb0c4743a4c",
       ".ethlete/design/studio/pages/system/shared/many-states.ts": "c135fda5d1f832db",
       ".ethlete/design/studio/pages/system/shared/open-points.ts": "5de98752abfaa910",
-      ".ethlete/design/studio/pages/system/system.ts": "1ab94dd8fb0552cd",
+      ".ethlete/design/studio/pages/system/system.ts": "a6fc6b8a1215ca70",
       "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "ad2ef8b293d8db6a",
       "apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry.ts": "b6a23bfac763fb58",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
@@ -2088,7 +2088,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "a93aa436e7482537",
+    "app": "19ffb5fffe0291ee",
     "embedded": {
       "components/canvas-viewport": "bedf15737281c299",
       "components/comment-draft": "92951a9d4a05a33c",
@@ -2116,10 +2116,14 @@
       "comments",
       "emit:activate",
       "emit:approveException",
+      "emit:close",
       "emit:collapse",
       "emit:copyPrompt",
       "emit:expandedChange",
+      "emit:fit",
       "emit:markTransferred",
+      "emit:maximize",
+      "emit:minimize",
       "emit:openEditSketch",
       "emit:pick",
       "emit:pickTheme",
@@ -2133,6 +2137,9 @@
       "emit:showAllStates",
       "emit:sideWidthChange",
       "emit:withdrawComment",
+      "emit:zoomIn",
+      "emit:zoomOut",
+      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "part",
@@ -2140,9 +2147,9 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-20T22:31:13.249Z",
+    "at": "2026-11-20T22:55:22.594Z",
     "by": "et design check",
     "cmd": "check",
-    "pid": 529254
+    "pid": 731247
   }
 }
