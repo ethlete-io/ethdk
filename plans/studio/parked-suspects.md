@@ -4,7 +4,7 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 
 - eslint-plugin checkJs (Mac, 989): allowJs+checkJs gives 271 errors; its new typecheck target checks no file. Measured, not blocking.
 - slice typecheck gap (Mac, 920): a slice check ran tsc with the app tsconfig only, so a spec type error reached push:suite.
-- sketch ready note spam (Linux, 945): `sketch ready` prints about 30 UNBOUND-INPUT note lines per variant.
+- sketch ready note spam (Linux, 945): `sketch ready` prints ~30 UNBOUND-INPUT notes per variant.
 - stale baseline entries (Mac, 948): design check keeps reporting baseline entries that no longer fire.
 - compare mid-run rebuild (Mac, 949): compare does not say when the app rebuilt in the middle of a run.
 - jsdom and @layer (Mac, 950): jsdom ignores rules inside `@layer`, so a spec of an SDK component needs a hand shim.
