@@ -283,9 +283,9 @@
     "actions": ["emit:pinToggle"],
     "builder": "designer",
     "at": "2026-11-20T13:12:30.112Z",
-    "by": "sonnet",
-    "cmd": "ready",
-    "pid": 1286914
+    "by": "et design check",
+    "cmd": "check",
+    "pid": 1278290
   },
   "components/comment-row": {
     "hash": "cb3ef346603a0c41",
