@@ -54,6 +54,7 @@
     "red-check": "node ./tools/scripts/red-check.mjs",
     "release": "yarn prepare:release && yarn changeset publish",
     "release:smoke": "node ./tools/release-smoke/smoke.mjs",
+    "resident:e2e": "node ./tools/scripts/resident-e2e.mjs",
     "revert:check": "node ./tools/scripts/revert-check.mjs",
     "scratch:checkout": "node ./tools/scripts/scratch-checkout.mjs",
     "sdk:tokens": "node tools/scripts/generate-sdk-tokens.mjs",

@@ -1,0 +1,6 @@
+building ethlete-studio:build:development for the harness app (up to 5 min)
+started the harness app on http://127.0.0.1:43169
+out SIZE 164x30 vs 163x30
+pictures: /tmp/et-design-compare-h5uEap
+every declared action works
+over target: compare took 27.0 s > 10.0 s - slowest phase harness-start 14.7 s (noisy: load 49.2 > 16 cores, no verdict)
