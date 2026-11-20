@@ -65,6 +65,7 @@ const launch = (ignoreInterrupt) => {
     XDG_CONFIG_HOME: join(home, 'config'),
     XDG_DATA_HOME: join(home, 'data'),
     XDG_STATE_HOME: join(home, 'state'),
+    ETHLETE_STUDIO_CONSOLE_LOG: join(home, 'setup', 'console.log'),
   };
   const [command, commandArgs] = ignoreInterrupt ? ['sh', ['-c', 'trap "" INT; exec "$0"', binary]] : [binary, []];
   const stderrFile = join(home, 'stderr.log');
@@ -74,17 +75,21 @@ const launch = (ignoreInterrupt) => {
   const exit = new Promise((done) => child.once('exit', (code, signal) => done({ code, signal, at: Date.now() })));
   const stderrTail = () => readFileSync(stderrFile, 'utf8').slice(-STDERR_TAIL).trim();
 
-  return { child, exit, home, stderrTail };
+  const setUp = () => existsSync(join(home, 'setup'));
+
+  return { child, exit, home, setUp, stderrTail };
 };
 
 const runCase = async ({ name, signal, ignoreInterrupt }) => {
-  const { child, exit, home, stderrTail } = launch(ignoreInterrupt);
+  const { child, exit, home, setUp, stderrTail } = launch(ignoreInterrupt);
   const pid = child.pid;
 
   try {
     const readyBy = Date.now() + READY_TIMEOUT_MS;
 
-    while (groupOf(pid).length < READY_HELPERS || !catches(pid, signal)) {
+    // Chromium's own handlers also catch the signal while cef::initialize runs; the host's handlers
+    // are back once its setup created the console log folder.
+    while (groupOf(pid).length < READY_HELPERS || !catches(pid, signal) || !setUp()) {
       if (Date.now() > readyBy)
         return { name, ok: false, detail: `the host did not start its helpers or catch ${signal}` };
       if (child.exitCode !== null) {
