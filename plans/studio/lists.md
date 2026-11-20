@@ -220,7 +220,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 
 ## C. CLI: Tempo und Ablauf
 
-- **C1** Trefferquote des Harness-Build-Cache messen; trifft er selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json) (Q16).
 - **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
 - **C21** Tempo (19.11.): `design check --compare` auf elements/shell-main hing über 25 min (Ursache unbekannt, Schritt nicht erfasst); shell-collapse-Compare 19,2 s (Ziel 10 s); `vitest related` lief in den Timeout; Timetrack-UI träge („teils echt extrem“, ungemessen, B602).
 
@@ -228,14 +227,10 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 
 - **D2** Controls der fünf SDK-Teile carousel, scrollable, match, table, bracket.
 - **D3** Fokus-Rahmen als API: `focusRingStyles`, öffentliche Tokens (E11).
-- **D4** SDK-Teil `checkbox` (Studio nutzt noch die native Checkbox).
 - **D5** Eigener Sketch für ein randloses, gedämpftes Select (Q231).
-- **D6** Rahmen von `components/floating-action` (E10).
 - **D7** Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
-- **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Builder baut Empfehlung: menu item-active Kurzbefehl 4.10:1 (volle Textfarbe), chart bar-/pie-empty Umriss (contrast.exceptions). Empfehlung gebaut: menu built bdb5acaf6; chart dropped, check shows CONTRAST-PAIR 0.
-  16.11.: pages/inbox und pages/sketches bekommen ihre ready-Marke erst, wenn die offenen Punkte der eingebetteten Teile zu sind (button, select, hold-trigger, comment-draft, comment-row, anchored-dialog; textarea/badge/tooltip nur Motions, B297); damit auch sketch-status-badge, canvas-frames, studio-menu. B520 schließt ohne sie.
 
 ## E. Fragen und Entwürfe für Tom
 
