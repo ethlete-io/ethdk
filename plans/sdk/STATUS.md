@@ -19,6 +19,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S18, S19, S22 (fifagg): nicht blockiert -> B653, B654, B657; gebaut.
 - S20, S21 (fifagg, 20.11.): kein SDK-Code: cdk-Label statt components (B655), Bild-Varianten gehören zu fifagg (B656); fifagg informiert.
 - S26 (fifagg, 20.11.): blockiert, Seitenwechsel scrollt nur nach oben = S17 (B652), gebaut, fehlt nur im Prerelease; fifagg informiert.
+- S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
 
 ## Offene Plan-Dateien
 
