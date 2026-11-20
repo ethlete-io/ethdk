@@ -105,10 +105,11 @@
     "note": "merged without a pick: allowed by ADR 0305"
   },
   "elements/studio-menu": {
-    "hash": "4f7c69be22a43262",
+    "hash": "4a2a718deec6497b",
     "variant": "a",
-    "decidedBy": "user",
-    "at": "2026-11-20T14:42:44.014Z"
+    "decidedBy": "builder",
+    "at": "2026-11-20T23:00:25.593Z",
+    "note": "merged: Einziger Entwurf: Inventory als Menüzeile"
   },
   "elements/variant-cell": {
     "hash": "f4a2744ceb83f78c",

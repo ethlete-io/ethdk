@@ -93,6 +93,8 @@ const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, key
     attributes: `${action('scan')} data-et-action="emit:scanProjects"`,
   },
   { kind: 'separator' },
+  { label: 'Inventory', attributes: `${action('inventory')} data-et-action="emit:openInventory"` },
+  { kind: 'separator' },
   ...serverRows(server, busy),
   { kind: 'separator' },
   ...HELP_ROWS.map(({ name, label, output }) => ({
@@ -150,7 +152,7 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, Checkouts suchen… keeps every checkout with design work below the search folder. The Design-Server label names the state (läuft, veraltet, gestoppt) and the rows the state allows: Neu laden, restart and stop while it runs (restart first and the label veraltet when the server runs an older cli build than the checkout), start while it is stopped. Neu laden stays enabled while an action runs. Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the mark with blinking eyes on the unchanged tile background instead of the static mark; reopened, every action row is disabled until the work answers.',
+  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, Checkouts suchen… keeps every checkout with design work below the search folder. Below a separator Inventory opens pages/inventory, the inventory of every page of the product; it stays enabled while an action runs. The Design-Server label names the state (läuft, veraltet, gestoppt) and the rows the state allows: Neu laden, restart and stop while it runs (restart first and the label veraltet when the server runs an older cli build than the checkout), start while it is stopped. Neu laden stays enabled while an action runs. Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the mark with blinking eyes on the unchanged tile background instead of the static mark; reopened, every action row is disabled until the work answers.',
   madeBy: ['gpt-6', 'claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   states: {
     ...menuRows.states,
@@ -169,7 +171,7 @@ export default definePart({
     'closed-hover': 'The logo tile hovered; check the hover fill on the tile only.',
     'closed-active': 'The logo tile pressed; check the darker press fill on the tile.',
     'closed-focus-visible': 'The logo tile focused by keyboard; check the focus ring around the tile, not clipped.',
-    open: 'The open menu beside the tile; check Projekt with ethlete-sdk checked, Projekt öffnen…, the server actions, and Tastenkürzel, Hilfe and Über Studio below a separator.',
+    open: 'The open menu beside the tile; check Projekt with ethlete-sdk checked, Projekt öffnen…, Inventory below a separator, the server actions, and Tastenkürzel, Hilfe and Über Studio below a separator.',
     'open-hover': 'The open menu in its hover state; check that the menu keeps its place and the rows stay readable.',
     'open-active': 'The open menu in its press state; check that no row loses its label or check mark.',
     'open-focus-visible':
