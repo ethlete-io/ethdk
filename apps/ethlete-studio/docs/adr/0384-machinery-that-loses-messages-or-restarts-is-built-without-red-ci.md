@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B658
+built: d8e9cd613
 decided: 2026-11-20
 source: doc-agent session 2026-11-20, the human on the dead mailbox dispatcher and a fifagg restart stuck behind a background agent
 ---

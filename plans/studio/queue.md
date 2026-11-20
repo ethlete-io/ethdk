@@ -25,6 +25,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 25. **compare schneller (B416)** ⏳ erster Watch-Build nach Neustart nutzt den Harness-Cache (3fc2811e1): compare pages/sketches kalt 13,4 -> 2,5 s, check studio --part kalt 44,6 -> 7,9 s. Offen: lib-build-wait 33,8 s nach HEAD-Wechsel (Suspect), check sdk Rest 7-9 s warm - c0
 26. **WebKit-Zoom-Budget (B356)** ⏳ Einschwingen ohne Fit-Neumessung (5a6c656f2): Linux-WebKit p95 37-43 ms lokal; im CI nur gemessen, ohne GPU (530bdb826); offen: p95 ≤ 33 ms lokal, Mac-Zahl (Tom morgens) - Builder
 27. **GitHub-Issues Design-CLI (B648)** ⏳ #3190, #3191, #3195, #3197 geschlossen, #3194 war behoben; offen: #3196 wartet auf Reporter-Markup - Builder
-28. **Mailbox und Neustart verlieren nichts (B658)** ⏳ gepusht (d8e9cd613); schließen bei grünem CI - Builder
-29. **Host-Signal-Test im CI (B645)** 🔨 127 behoben (395a0932f); unter xvfb startet der Host seine Helfer nicht (CI 44701159109, Suspect: CEF-Start ohne GPU/Sandbox/Libs), Schritte wieder raus (57606a507); nächster Versuch: e2e zeigt Host-stderr, ein CI-Lauf - Builder
-30. **Match-Teilnehmer bearbeitbar (B659)** 📋 fifagg S27: Platzhalter-Slot an et-match-participant, Score/Zeit-Layout als eigener Baustein - Builder
+28. **Match-Teilnehmer bearbeitbar (B659)** 📋 fifagg S27: Platzhalter-Slot an et-match-participant, Score/Zeit-Layout als eigener Baustein - Builder
