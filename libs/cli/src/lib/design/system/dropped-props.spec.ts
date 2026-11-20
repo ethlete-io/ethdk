@@ -125,6 +125,14 @@ describe('droppedStatePropsOf', () => {
     );
   });
 
+  it('passes a prop a pointer open of a declared surface toggles', () => {
+    const disclosure = { closed: { label: 'a', expanded: false }, open: { label: 'a', expanded: true } };
+    const controls = { toggle: { kind: 'disclosure', surfaces: { body: 'open' } } };
+
+    expect(droppedStatePropsOf({ states: disclosure, inputs: ['label'] }).size).toBe(2);
+    expect(droppedStatePropsOf({ states: disclosure, inputs: ['label'], controls }).size).toBe(0);
+  });
+
   it('treats a state named after an interaction as forcing it', () => {
     expect(
       droppedStatePropsOf({ states: { rest: { n: 1 }, 'open-focus-visible': { n: 1, focus: true } }, inputs: ['n'] })

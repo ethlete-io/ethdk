@@ -5,7 +5,7 @@ import { INTERACTIONS } from '../force-interactions';
 import { DesignConfig } from '../design-config';
 import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE } from './build-ready-contract';
 import { productSampledPropsOf } from './harness-samples';
-import { designOnlyPropsOf } from './part-compare';
+import { designOnlyPropsOf, pointerOpensOf } from './part-compare';
 import { Problem } from './problem';
 import { linkedComponentOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -187,8 +187,10 @@ export const droppedStatePropsOf = (options: {
   states: Record<string, unknown>;
   inputs: readonly string[];
   sampled?: readonly string[];
+  controls?: unknown;
 }): Map<string, string[]> => {
-  const { states, inputs, sampled = [] } = options;
+  const { states, inputs, sampled = [], controls } = options;
+  const opens = pointerOpensOf({ states, controls });
   const forcedOf = (state: string, props: unknown): string[] => [
     ...INTERACTIONS.filter((known) => state.endsWith(`-${known}`)),
     ...Object.values(isRecord(props) ? props : {}).flatMap((value) => {
@@ -205,7 +207,7 @@ export const droppedStatePropsOf = (options: {
   for (const [state, props] of Object.entries(states)) {
     const designOnly = designOnlyPropsOf({
       states,
-      opens: {},
+      opens,
       state,
       forced: forcedOf(state, props),
       forcing,
@@ -351,10 +353,10 @@ export const droppedPropsMessageOf = (dropped: readonly string[]) =>
 
 const statesOn = async (server: DesignServer, options: { product: string; file: string }) => {
   const module = (await server.ssrLoadModule(productModuleIdOf(options)).catch(() => null)) as {
-    default?: { states?: unknown };
+    default?: { states?: unknown; controls?: unknown };
   } | null;
 
-  return module?.default?.states;
+  return { states: module?.default?.states, controls: module?.default?.controls };
 };
 
 /** The props any of `states` sends that `inputs` lacks, as DROPPED-PROP counts them, each once. */
@@ -364,11 +366,21 @@ export const unportedStatePropsOf = (options: {
   part: string;
   states: Record<string, unknown>;
   inputs: readonly string[];
+  controls?: unknown;
 }) => {
   const sampled = productSampledPropsOf({ target: options.target, product: options.product, part: options.part });
 
   return [
-    ...new Set([...droppedStatePropsOf({ states: options.states, inputs: options.inputs, sampled }).values()].flat()),
+    ...new Set(
+      [
+        ...droppedStatePropsOf({
+          states: options.states,
+          inputs: options.inputs,
+          sampled,
+          controls: options.controls,
+        }).values(),
+      ].flat(),
+    ),
   ];
 };
 
@@ -402,11 +414,11 @@ export const unportedPropsOf = async (options: {
     const unported: UnportedProps[] = [];
 
     for (const { part, component, inputs } of linked) {
-      const states = await statesOn(server, { file: part.file, product: product.name });
+      const { states, controls } = await statesOn(server, { file: part.file, product: product.name });
 
       if (!isRecord(states)) continue;
 
-      const props = unportedStatePropsOf({ target, product, part: partKeyOf(part), states, inputs });
+      const props = unportedStatePropsOf({ target, product, part: partKeyOf(part), states, inputs, controls });
 
       if (props.length > 0) unported.push({ part: partKeyOf(part), component, props });
     }
@@ -475,13 +487,13 @@ export const droppedPropProblemsOf = async (options: {
     const problems: Problem[] = [];
 
     for (const { part, path, inputs, initials, template, defaults, unbound, selector, appDir, text } of candidates) {
-      const states = await statesOn(server, { file: part.file, product: product.name });
+      const { states, controls } = await statesOn(server, { file: part.file, product: product.name });
 
       if (!isRecord(states)) continue;
 
       const sampled = productSampledPropsOf({ target, product, part: partKeyOf(part) });
 
-      for (const [state, dropped] of droppedStatePropsOf({ states, inputs, sampled }))
+      for (const [state, dropped] of droppedStatePropsOf({ states, inputs, sampled, controls }))
         problems.push({
           rule: DROPPED_PROP_RULE,
           file: part.file,
