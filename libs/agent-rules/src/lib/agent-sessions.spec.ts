@@ -1018,6 +1018,57 @@ describe('agent-sessions', () => {
     30_000,
   );
 
+  describe.skipIf(!hasTmux)('plain restart with background work', () => {
+    const rule = '─'.repeat(40);
+    const startPane = (agent: string, footer: string) => {
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, `${agent}.started`);
+      const fakeAgent = join(dir, `${agent}.sh`);
+      writeFileSync(fakeAgent, `#!/bin/sh\necho started > ${started}; exec cat\n`, { mode: 0o755 });
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        scoped,
+        `printf '${rule}\\n❯ \\n${rule}\\n${footer}\\n'; read line; exec cat`,
+      ]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+      return { scoped, started };
+    };
+    const restartIn = (agent: string, scoped: string) =>
+      run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+        TMUX_PANE: paneOf(scoped),
+        SHELL: 'sh',
+        AGENT_RESTART_EXIT_WAIT_MS: '1000',
+      });
+
+    it('takes the process path when the footer shows shells', async () => {
+      const agent = `claude-bgshell-${process.pid}`;
+      const { scoped, started } = startPane(agent, '  2 shells · ↓ to manage');
+      try {
+        restartIn(agent, scoped);
+        await expect.poll(() => existsSync(started), { timeout: 5_000, interval: 250 }).toBe(true);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('shows background work (2 shells');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    }, 30_000);
+
+    it('clears the context when the pane shows no background work', () => {
+      const agent = `claude-bgclean-${process.pid}`;
+      const { scoped, started } = startPane(agent, '  ? for shortcuts');
+      try {
+        restartIn(agent, scoped);
+        expect(existsSync(started)).toBe(false);
+        expect(
+          existsSync(join(dir, 'restart.log')) ? readFileSync(join(dir, 'restart.log'), 'utf8') : '',
+        ).not.toContain('background work');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    }, 30_000);
+  });
+
   it.skipIf(!hasTmux)(
     'stores the command of run without the prompt',
     async () => {
@@ -1177,7 +1228,7 @@ process.stdin.on('data', (data) => {
   };
 
   it.skipIf(!hasTmux)(
-    'leaves the agent panel before it types the clear and the prompt into a captured pane',
+    'leaves the agent panel before it types the exit command into a captured pane',
     async () => {
       const agent = `claude-panel-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
@@ -1189,13 +1240,12 @@ process.stdin.on('data', (data) => {
       try {
         run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {
           TMUX_PANE: paneOf(scoped),
-          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
         });
 
         const typed = readFileSync(log, 'utf8');
-        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
-        expect(typed.endsWith('resume slug [typed by agent-sessions]\r')).toBe(true);
-        expect(existsSync(join(dir, 'restart.log'))).toBe(false);
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/exit\r`))).toBe(true);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('shows background work');
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
@@ -1204,7 +1254,7 @@ process.stdin.on('data', (data) => {
   );
 
   it.skipIf(!hasTmux)(
-    'leaves a focused footer pill of a captured pane before it types the clear and the prompt',
+    'leaves a focused footer pill of a captured pane before it types the exit command',
     async () => {
       const agent = `claude-pill-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
@@ -1226,12 +1276,11 @@ process.stdin.on('data', (data) => {
       try {
         run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {
           TMUX_PANE: paneOf(scoped),
-          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
         });
 
         const typed = readFileSync(log, 'utf8');
-        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
-        expect(typed.endsWith('resume slug [typed by agent-sessions]\r')).toBe(true);
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/exit\r`))).toBe(true);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }

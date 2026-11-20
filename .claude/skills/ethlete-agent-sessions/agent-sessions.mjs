@@ -318,6 +318,7 @@ const commandWithRole = (command, agentRole) => {
 const bypassingShellFunction = (base) => base.replace(/^((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)/, '$1command ');
 const EXIT_DIALOG_JOBS = /will stop when you exit/i;
 const EXIT_AND_STOP = /exit and stop/i;
+const BACKGROUND_FOOTER = /\b\d+ (?:shells?|agents?)\b|↓ to manage/i;
 
 /**
  * Reads the last prompt line (`❯` for Claude Code, `›` for Codex) of the pane. Dim text is the empty
@@ -395,6 +396,11 @@ const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, allowBusy = false) => 
     sleep(RESTART_POLL_MS);
   }
   return false;
+};
+
+const backgroundWorkOf = (lines) => {
+  const footer = lines.slice(lastRuleIndex(lines) + 1).map(plain);
+  return footer.find((line) => BACKGROUND_FOOTER.test(line) || isPanelRow(line))?.trim() ?? null;
 };
 
 /** The IDE context chip (`[⧉ In file.ts]`, `[⧉ 3 lines selected]`) shares the prompt line and survives `/clear`. */
@@ -765,7 +771,10 @@ if (command === 'send' && sender) {
         `restart of ${session} gave up, the focus did not leave the agent panel after ${PANEL_UP_LIMIT} Up`,
       );
       process.exitCode = 1;
-    } else if (newProcess) {
+    } else if (newProcess || backgroundWorkOf(paneLines(session)) !== null) {
+      const background = newProcess ? null : backgroundWorkOf(paneLines(session));
+      if (background !== null)
+        restartLog(`${session} shows background work (${background}), restart goes through --process`);
       const pane = `=${session}:`;
       const restartRole = restartRoleOf(session, words.join(' '));
       const stored = commandWithoutPrompt(agentCommandOf(session));
