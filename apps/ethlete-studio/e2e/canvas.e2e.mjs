@@ -1986,6 +1986,45 @@ const CASES = [
     },
   },
   {
+    name: 'a quick switch product button shows its full name as a tooltip and a click switches the product',
+    holdListings: false,
+    listingMayPend: 'the evidence is the tooltip and the remembered product, not a listing',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const names = await page
+        .locator('ethlete-shell-main nav button[aria-label]:not([aria-current])')
+        .evaluateAll((all) =>
+          all.map((button) => button.getAttribute('aria-label')).filter((label) => /^[a-z][a-z-]+$/.test(label ?? '')),
+        );
+
+      if (!names.length) return { ok: false, detail: 'no inactive product button in the rail' };
+
+      const name = names[0];
+      const button = page.locator(`ethlete-shell-main nav button[aria-label="${name}"]`);
+
+      await button.hover();
+      const tip = page.getByRole('tooltip').filter({ hasText: name }).first();
+      const shown = await tip.waitFor({ timeout: 5000 }).then(
+        () => true,
+        () => false,
+      );
+      const text = shown ? ((await tip.textContent()) ?? '').trim() : null;
+
+      await button.click();
+      const switched = await readUntil(
+        page,
+        () => page.evaluate(() => JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemProduct),
+        (product) => product === name,
+      );
+
+      return {
+        ok: text === name && switched === name,
+        detail: `product=${name} tooltip=${JSON.stringify(text)} remembered=${JSON.stringify(switched)}`,
+      };
+    },
+  },
+  {
     name: 'the comment button: crosshair, a click places the draft, Esc cancels it, a sent comment lands on disk, in the Inbox and as a pin at once, Esc without a draft leaves comment mode, no button in the Inbox',
     pages: ['System'],
     viewport: WIDE,
