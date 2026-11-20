@@ -127,8 +127,9 @@ const ensuredClaudeTmpDir = () => {
 };
 const tempDirEnv = () => `CLAUDE_CODE_TMPDIR=${quote(ensuredClaudeTmpDir())} `;
 const withTempDir = (command) => (/(^|\s)CLAUDE_CODE_TMPDIR=/.test(command) ? command : `${tempDirEnv()}${command}`);
+const programOf = (words) => words.find((word) => word !== 'env' && !ENV_WORD.test(word) && !word.startsWith('-'));
 const withRole = (words) =>
-  role === 'builder' && basename(words[0]) === 'claude' ? [...words, ...builderFlags()] : words;
+  role === 'builder' && basename(programOf(words) ?? '') === 'claude' ? [...words, ...builderFlags()] : words;
 const roleEnvOf = (agentRole) =>
   agentRole
     ? { ETHLETE_AGENT_ROLE: agentRole, ...(agentRole === 'builder' ? { CLAUDE_CODE_SILENT_TURN_REMINDER: '0' } : {}) }
@@ -380,7 +381,7 @@ const commandWithRole = (command, agentRole) => {
       !(word === BUILDER_PROMPT && words[index - 1] === '--append-system-prompt') &&
       !/^(--strict-mcp-config|--mcp-config=.*|--disallowedTools=.*)$/.test(word),
   );
-  const rule = agentRole === 'builder' && basename(kept[0] ?? '') === 'claude' ? builderFlags() : [];
+  const rule = agentRole === 'builder' && basename(programOf(kept) ?? '') === 'claude' ? builderFlags() : [];
   return [
     ...env.filter((word) => !/^(ETHLETE_AGENT_ROLE|CLAUDE_CODE_SILENT_TURN_REMINDER)=/.test(word)),
     ...roleEnvWords(agentRole),

@@ -876,6 +876,47 @@ describe('agent-sessions', () => {
   };
 
   it.skipIf(!hasTmux)(
+    'gives the builder rule to a stored env CLAUDE_CONFIG_DIR claude command for restart --process',
+    async () => {
+      const agent = `claude-envrole-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `'env' 'CLAUDE_CONFIG_DIR=${join(dir, 'claude')}' '${claude}'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff resume builder-x'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toContain(`--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it('adds the builder flags to a run whose claude follows env', () => {
+    const result = run(['run', 'claude', 'env', 'FOO=1', 'claude', '--role', 'builder', '--dry-run'], undefined, {
+      HOME: dir,
+    });
+
+    expect(result.stdout).toContain(`'--disallowedTools=${DENIED_TOOLS}'`);
+  });
+
+  it.skipIf(!hasTmux)(
     'gives the builder role and rule to a session without a role that resumes a builder handoff for restart --process',
     async () => {
       const agent = `claude-role-${process.pid}`;
