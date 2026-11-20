@@ -669,6 +669,19 @@ describe('SketchViewComponent', () => {
     expect(waitsForPick(refused)).toBe(false);
   });
 
+  it('shows the auto-merge badge in the head only while the forecast says merges, also on a held merge', async () => {
+    const badge = (root: HTMLElement) => root.querySelector('header [data-sk-auto-merge]')?.textContent?.trim() ?? null;
+    const forecast = (merges: boolean) => ({ merges, at: '2026-10-27T10:00:00Z' });
+    const held = { reason: 'uncommitted edits', at: '2026-10-27T10:00:00Z', dirty: ['components/card.ts'] };
+    const drawing = { ...SKETCH, status: 'in progress' as const, decision: undefined };
+
+    expect(
+      badge((await render({ ...drawing, autoMergeForecast: forecast(true), mergeHold: held }, noComments)).root),
+    ).toBe(STUDIO_LABELS.sketches.autoMerge);
+    expect(badge((await render({ ...drawing, autoMergeForecast: forecast(false) }, noComments)).root)).toBeNull();
+    expect(badge((await render({ ...drawing, autoMergeForecast: null }, noComments)).root)).toBeNull();
+  });
+
   it('lists the skip markers the listing names for a variant in that variant head', async () => {
     const { root } = await render(
       {
