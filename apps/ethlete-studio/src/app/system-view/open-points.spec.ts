@@ -7,7 +7,7 @@ describe('openPointGroupsOf', () => {
         points: [
           { kind: 'missing-motion', from: 'rest', to: 'hover' },
           { kind: 'open-comment', comment: 'a', state: 'outline', answered: false },
-          { kind: 'unmerged-sketch', sketch: 'rating', status: 'ready', decision: 'pick' },
+          { kind: 'unmerged-sketch', sketch: 'rating', primary: true, status: 'ready', decision: 'pick' },
           { kind: 'missing-state', control: null },
           { kind: 'missing-state', control: 'size' },
           { kind: 'open-comment', comment: 'b', state: 'filled', answered: true },
@@ -201,6 +201,13 @@ describe('openPointGroupsOf blockers', () => {
       { text: 'x is not build-ready', detail: 'embedded' },
     ]);
   });
+  it('lists a decided but unbuilt ADR naming the part with the comments', () => {
+    expect(
+      openPointGroupsOf({ points: [{ kind: 'plan-question', adr: '0412' }], buildReady: { ready: true } }),
+    ).toEqual([
+      { icon: 'comment', lines: [{ text: 'ADR 0412 ist entschieden, aber noch nicht gebaut', detail: 'ADR 0412' }] },
+    ]);
+  });
 });
 
 describe('buildReadyStatusOf', () => {
@@ -345,7 +352,7 @@ describe('sketchPointGroupsOf', () => {
     expect(
       sketchPointGroupsOf({
         points: [
-          { kind: 'unmerged-sketch', sketch: 'system', status: 'ready', decision: null },
+          { kind: 'unmerged-sketch', sketch: 'system', primary: true, status: 'ready', decision: null },
           { kind: 'stale-sketch-base', sketch: 'system', changed: ['pages/system'] },
           { kind: 'missing-state', control: null },
         ],

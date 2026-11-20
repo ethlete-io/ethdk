@@ -268,6 +268,7 @@ export const STUDIO_LABELS = {
     sketchOpen: 'Sketch noch nicht gemergt',
     sketchProblem: (rule: string) => `Sketch-Regel verletzt: ${rule}`,
     sketchStaleBase: (parts: readonly string[]) => `Braucht Rebase vor dem Merge: ${parts.join(', ')} geändert`,
+    planQuestion: (adr: string) => `ADR ${adr} ist entschieden, aber noch nicht gebaut`,
     recordStale: 'Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen',
     slowChecksPending: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen',
     noHarness: 'Kein Harness - ohne Harness in config.json laufen die App-Prüfungen nie',

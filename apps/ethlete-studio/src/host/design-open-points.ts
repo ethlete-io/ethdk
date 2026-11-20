@@ -1,16 +1,8 @@
 import { Observable, defer, finalize, map, share } from 'rxjs';
+import { OpenPoint } from '@ethlete/cli/open-point';
 import { ProductAddress, designAnswer$ } from './design';
 
-/** One thing that keeps a part from being done, as `design check` and the design server list it. */
-export type OpenPoint =
-  | { kind: 'missing-state'; control: string | null; data?: 'loading' | 'error' | 'empty'; state?: string }
-  | { kind: 'redraw'; state: string }
-  | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
-  | { kind: 'unmerged-sketch'; sketch: string; status: 'in progress' | 'ready'; decision: 'pick' | 'discard' | null }
-  | { kind: 'sketch-problem'; sketch: string; variant: string; rule: string; message: string }
-  | { kind: 'stale-sketch-base'; sketch: string; changed: string[] }
-  | { kind: 'missing-motion'; from: string; to: string }
-  | { kind: 'direct-edit'; sketch: string | null };
+export type { OpenPoint, OpenPointKind } from '@ethlete/cli/open-point';
 
 /** One thing that keeps a part from being build-ready; `part` names the embedded part it is about. */
 export type BuildReadyBlocker = { kind: string; text: string; part?: string };

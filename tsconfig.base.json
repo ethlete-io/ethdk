@@ -27,6 +27,7 @@
       "@ethlete/components/testing": ["libs/components/testing/index.ts"],
       "@ethlete/eslint-plugin": ["libs/eslint-plugin/src/index.js"],
       "@ethlete/cli": ["libs/cli/src/index.ts"],
+      "@ethlete/cli/open-point": ["libs/cli/src/lib/design/system/open-point.ts"],
       "@ethlete/cli/sketch-frames": ["libs/cli/src/lib/design/sketch-frame-set.ts"],
       "@ethlete/contentful": ["libs/contentful/src/index.ts"],
       "@ethlete/core": ["libs/core/src/index.ts"],

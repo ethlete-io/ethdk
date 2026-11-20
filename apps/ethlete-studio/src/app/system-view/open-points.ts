@@ -13,21 +13,18 @@ const ICONS: OpenPointIcon[] = ['grid', 'comment', 'error', 'flow'];
 
 type ListedPoint = Exclude<OpenPoint, { kind: 'direct-edit' }>;
 
-const iconOf = (point: ListedPoint): OpenPointIcon => {
-  switch (point.kind) {
-    case 'missing-state':
-    case 'redraw':
-    case 'unmerged-sketch':
-      return 'grid';
-    case 'sketch-problem':
-    case 'stale-sketch-base':
-      return 'error';
-    case 'open-comment':
-      return 'comment';
-    case 'missing-motion':
-      return 'flow';
-  }
+const ICON_OF: Record<ListedPoint['kind'], OpenPointIcon> = {
+  'missing-state': 'grid',
+  redraw: 'grid',
+  'unmerged-sketch': 'grid',
+  'sketch-problem': 'error',
+  'stale-sketch-base': 'error',
+  'open-comment': 'comment',
+  'plan-question': 'comment',
+  'missing-motion': 'flow',
 };
+
+const iconOf = (point: ListedPoint): OpenPointIcon => ICON_OF[point.kind];
 
 const lineOf = (point: ListedPoint): OpenPointLine => {
   switch (point.kind) {
@@ -68,6 +65,8 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
         detail: 'sketch',
         target: { kind: 'sketch', sketch: point.sketch },
       };
+    case 'plan-question':
+      return { text: LABELS.planQuestion(point.adr), detail: `ADR ${point.adr}` };
     case 'missing-motion':
       return {
         text: `${point.from} → ${point.to}`,
