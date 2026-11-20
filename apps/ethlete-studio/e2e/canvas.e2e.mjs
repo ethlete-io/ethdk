@@ -4178,12 +4178,20 @@ const CASES = [
 
       if (unzoomed) return unzoomed;
 
+      // A loading badge grows the label row above every frame in its grid row, so one that clears between the two
+      // measurements moves the frames without any camera change.
+      const badgesGone = () =>
+        page.waitForFunction(() => !document.querySelector('[data-loading-badge]'), null, { timeout: WAIT_MS });
+
+      await badgesGone();
       const before = await probe(page);
       const frameBefore = await firstFrame();
       const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
 
       await page.getByRole('button', { name: 'Hide panel' }).first().click();
       await settle(page);
+      await badgesGone();
+
       const after = await probe(page);
       const frameAfter = await firstFrame();
       const headAfter = frameAfter ? await headOffset(frameAfter) : 0;
