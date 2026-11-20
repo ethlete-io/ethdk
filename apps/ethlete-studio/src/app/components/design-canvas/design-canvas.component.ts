@@ -139,8 +139,6 @@ export type CanvasColumn = {
   group?: CanvasColumnGroup;
   /** A column without frames, `width` wide, with `note` below its head; its head is a button that emits `columnToggle`. */
   folded?: { width: number; note?: string };
-  /** The entry of `sections` the column sits in. */
-  section?: string;
 };
 
 export type CanvasOpening = 'start' | 'all' | 'visible';
@@ -407,7 +405,6 @@ export class DesignCanvasComponent {
       columnGap: MATRIX_COLUMN_GAP,
       rowGap,
       groupGap: rowGap * GROUP_GAP_FACTOR,
-      headGap: 0,
       minRowHeight: MIN_FRAME_ROW_HEIGHT,
       emptyColumnWidth: FALLBACK_WIDTH,
     };
@@ -421,7 +418,6 @@ export class DesignCanvasComponent {
             frames: sized,
             columns: columns.map((column) => column.key),
             spacing,
-            heads: [],
             emptyWidths,
           });
     const sheet =

@@ -1019,12 +1019,11 @@ describe('sketches of a part that pages use', () => {
       ],
     ]);
     expect(context[1]?.screenshot).toMatch(/part=pages%2Fsystem.*sketch=elements%2Ftree&variant=a/);
-    expect(matrix.columns.filter((column) => column.section === 'in context').map((column) => column.key)).toEqual([
+    expect(matrix.columns.map((column) => column.key).filter((key) => key.startsWith('in context'))).toEqual([
       'in context current',
       'in context a',
       'in context b',
     ]);
-    expect(matrix.columns.every((column) => column.section !== undefined)).toBe(true);
   });
 });
 
@@ -1402,14 +1401,8 @@ describe('sketchMatrixOf', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded });
 
       expect(matrix.columns).toEqual([
-        { key: 'current', label: 'current', drawing: false, section: 'round r2' },
-        {
-          key: 'c',
-          label: 'c',
-          drawing: false,
-          group: { key: 'round r2', label: 'r2 · Combined' },
-          section: 'round r2',
-        },
+        { key: 'current', label: 'current', drawing: false },
+        { key: 'c', label: 'c', drawing: false, group: { key: 'round r2', label: 'r2 · Combined' } },
       ]);
       expect([...new Set(matrix.frames.map((frame) => frame.column))]).toEqual(['current', 'c']);
     });
@@ -1417,8 +1410,8 @@ describe('sketchMatrixOf', () => {
     it('gives every open band its own rows, labelled by state', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: true, r2: true } });
 
-      expect(matrix.columns.map((column) => [column.key, column.section])).toEqual([
-        ['current', 'round r2'],
+      expect(matrix.columns.map((column) => [column.key, column.group?.key])).toEqual([
+        ['current', undefined],
         ['c', 'round r2'],
         ['a', 'round r1'],
         ['b', 'round r1'],
@@ -1438,7 +1431,8 @@ describe('sketchMatrixOf', () => {
     it('puts the current column in a band of its own while no round is open', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: false, r2: false } });
 
-      expect(matrix.columns).toEqual([{ key: 'current', label: 'current', drawing: false, section: 'current' }]);
+      expect(matrix.columns).toEqual([{ key: 'current', label: 'current', drawing: false }]);
+      expect(matrix.frames.map((frame) => frame.row)).toEqual(['current default', 'current disabled']);
     });
 
     it('marks every frame of the newest round pending until the sketch is ready', () => {

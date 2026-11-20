@@ -788,7 +788,6 @@ export type MatrixColumn = {
   title?: string;
   note?: string;
   group?: { key: string; label: string; note?: string; title?: string };
-  section?: string;
 };
 
 export type ShownRound = SketchRound & { variants: string[]; open: boolean };
@@ -866,8 +865,8 @@ export type SketchMatrix = {
 };
 
 export const CURRENT = 'current';
-const SKETCH_SECTION = 'sketch';
 const IN_CONTEXT = 'in context';
+type RoundColumn = MatrixColumn & { section?: string };
 const contextColumnKeyOf = (column: string) => `${IN_CONTEXT} ${column}`;
 
 type CellSize = { preset?: string; width?: number; height?: number; label: string };
@@ -1008,7 +1007,7 @@ export const sketchMatrixOf = ({
       error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
     };
   };
-  const roundColumns = (roundsGrouped ? newestFirst : rounds).flatMap((round): MatrixColumn[] => {
+  const roundColumns = (roundsGrouped ? newestFirst : rounds).flatMap((round): RoundColumn[] => {
     const name = roundNameOf(round);
     const shownNote = [round.note, round.lost && `Lost: ${round.lost}`].filter(Boolean).join('\n\n');
     const note = shownNote === '' ? {} : { note: shownNote };
@@ -1213,19 +1212,14 @@ export const sketchMatrixOf = ({
   const blocks = (sketch.targetParts ?? [sketch.target]).map(blockOf);
   const frames = blocks.flatMap((block) => block.frames);
 
-  const headOf = ({ key, label, title, note, drawing: isDrawing, group }: MatrixColumn): MatrixColumn => {
-    const section = sectionOf(key);
-
-    return {
-      key,
-      label,
-      drawing: isDrawing,
-      ...(title === undefined ? {} : { title }),
-      ...(note === undefined ? {} : { note }),
-      ...(group === undefined ? {} : { group }),
-      ...(section === undefined ? {} : { section }),
-    };
-  };
+  const headOf = ({ key, label, title, note, drawing: isDrawing, group }: MatrixColumn): MatrixColumn => ({
+    key,
+    label,
+    drawing: isDrawing,
+    ...(title === undefined ? {} : { title }),
+    ...(note === undefined ? {} : { note }),
+    ...(group === undefined ? {} : { group }),
+  });
 
   const heads = [...columns.slice(0, part ? 1 : 0), ...roundColumns].map(headOf);
   const pages = sketchUsingPagesOf({ product, sketch, part });
@@ -1270,17 +1264,13 @@ export const sketchMatrixOf = ({
       interaction,
     };
 
-  const inBand = <T extends { section?: string }>(entry: T) =>
-    roundsGrouped ? entry : { ...entry, section: SKETCH_SECTION };
-
   return {
     columns: [
-      ...heads.map(inBand),
+      ...heads,
       ...heads.map(({ key, label, drawing: isDrawing }) => ({
         key: contextColumnKeyOf(key),
         label,
         drawing: isDrawing,
-        section: IN_CONTEXT,
       })),
     ],
     frames: [...frames, ...contextFrames],
