@@ -50,6 +50,7 @@ import {
   layoutGrid,
   layoutMatrix,
   layoutSheet,
+  offsetWithin,
   panCamera,
   zoomAtPoint,
 } from './canvas-math';
@@ -109,17 +110,11 @@ const ARROWS: Record<string, Point> = {
   ArrowDown: { x: 0, y: -ARROW_STEP },
 };
 
-const offsetIn = (element: HTMLElement, world: HTMLElement): Rect => {
-  let x = 0;
-  let y = 0;
-
-  for (let at: HTMLElement | null = element; at && at !== world; at = at.offsetParent as HTMLElement | null) {
-    x += at.offsetLeft;
-    y += at.offsetTop;
-  }
-
-  return { x, y, width: element.offsetWidth, height: element.offsetHeight };
-};
+const offsetIn = (element: HTMLElement, world: HTMLElement): Rect => ({
+  ...offsetWithin(element, world),
+  width: element.offsetWidth,
+  height: element.offsetHeight,
+});
 
 /** Neighbouring columns with the same group `key` share one head above their own; a `switch` there emits `groupSwitch`. */
 export type CanvasColumnGroup = {

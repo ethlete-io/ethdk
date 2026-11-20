@@ -10,6 +10,7 @@ import {
   layoutGrid,
   layoutMatrix,
   layoutSheet,
+  offsetWithin,
   rectsIntersect,
   screenToWorld,
   visibleWorldRect,
@@ -350,5 +351,35 @@ describe('canvas math', () => {
       { name: 'narrow', x: 0, width: 120 },
       { name: 'x', x: 160, width: 300 },
     ]);
+  });
+});
+
+describe('offsetWithin', () => {
+  const box = (offsetLeft: number, offsetTop: number, offsetParent: HTMLElement | null) =>
+    ({ offsetLeft, offsetTop, offsetParent }) as unknown as HTMLElement;
+
+  it('sums the offset chain up to the document without an ancestor', () => {
+    const canvas = box(10, 20, null);
+    const strip = box(260, 0, canvas);
+    const frame = box(40, 48, strip);
+
+    expect(offsetWithin(frame)).toEqual({ x: 310, y: 68 });
+  });
+
+  it('stops at the ancestor and leaves its own offset out', () => {
+    const world = box(500, 500, null);
+    const stage = box(30, 40, world);
+
+    expect(offsetWithin(stage, world)).toEqual({ x: 30, y: 40 });
+  });
+
+  it('does not count a transformed strip twice (finding 129)', () => {
+    const canvas = box(0, 0, null);
+    const strip = box(260, 0, canvas);
+    const direct = offsetWithin(box(300, 48, canvas));
+    const viaStrip = offsetWithin(box(40, 48, strip));
+
+    expect(viaStrip).toEqual(direct);
+    expect({ x: viaStrip.x - offsetWithin(strip).x, y: viaStrip.y - offsetWithin(strip).y }).toEqual({ x: 40, y: 48 });
   });
 });

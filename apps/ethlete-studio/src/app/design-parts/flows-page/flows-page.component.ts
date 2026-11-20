@@ -14,6 +14,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
 import { signalElementDimensions } from '@ethlete/core';
+import { offsetWithin } from '../../components/design-canvas/canvas-math';
 import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
@@ -317,14 +318,15 @@ export class FlowsPageComponent {
   private resetOnPick() {
     const selected = this.selected();
     const stage = this.stage()?.nativeElement;
+    const world = this.world()?.nativeElement;
     const previous = this.pickedFlow;
     const canvas = untracked(() => this.canvas());
 
     this.pickedFlow = selected ?? null;
 
-    if (previous === null || previous === selected || !canvas || !stage) return;
+    if (previous === null || previous === selected || !canvas || !stage || !world) return;
 
-    canvas.reset({ x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 });
+    canvas.reset({ ...offsetWithin(stage, world), zoom: 1 });
   }
 
   private mountCamera() {
@@ -342,7 +344,7 @@ export class FlowsPageComponent {
         frameSelector: 'figure',
         padding: 24,
         covered: () => this.covered(),
-        start: { x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 },
+        start: { ...offsetWithin(stage, world), zoom: 1 },
       }),
     );
   }

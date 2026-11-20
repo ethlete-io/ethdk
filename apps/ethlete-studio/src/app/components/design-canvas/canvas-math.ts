@@ -12,6 +12,23 @@ export const MAX_ZOOM = 8;
 
 export const clampZoom = (zoom: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 
+/** Layout offset of `element` summed along its `offsetParent` chain up to, but not including, `ancestor` (the document when omitted). */
+export const offsetWithin = (element: HTMLElement, ancestor: HTMLElement | null = null): Point => {
+  let x = 0;
+  let y = 0;
+
+  for (
+    let node: HTMLElement | null = element;
+    node && node !== ancestor;
+    node = node.offsetParent as HTMLElement | null
+  ) {
+    x += node.offsetLeft;
+    y += node.offsetTop;
+  }
+
+  return { x, y };
+};
+
 const wholePixel = (value: number) => Math.round(value) || 0;
 
 export const panInsideRoom = (pan: Point, room: Point): Point => ({
