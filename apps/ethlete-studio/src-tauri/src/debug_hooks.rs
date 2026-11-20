@@ -66,7 +66,7 @@ pub fn close_inherited_sockets(command: &mut tokio::process::Command) {
 
 pub fn open_root(app: &tauri::AppHandle) {
     if let Some(root) = std::env::var_os(ROOT_VAR) {
-        if let Err(error) = crate::design_roots::keep_root(app, &root.to_string_lossy()) {
+        if let Err(error) = crate::design_roots::keep_only_root(app, &root.to_string_lossy()) {
             eprintln!("{ROOT_VAR}: {error}");
         }
     }

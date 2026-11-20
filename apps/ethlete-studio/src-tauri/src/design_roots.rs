@@ -157,8 +157,26 @@ fn store_path(app: &tauri::AppHandle) -> StudioResult<PathBuf> {
 }
 
 #[cfg(debug_assertions)]
-pub fn keep_root(app: &tauri::AppHandle, checkout: &str) -> StudioResult<DesignRoots> {
-    add(&store_path(app)?, checkout)
+fn keep_only(store: &Path, checkout: &str) -> StudioResult<DesignRoots> {
+    let kept = tidy(checkout);
+
+    if !holds_design(Path::new(&kept)) {
+        return Err(StudioError::Rejected(format!(
+            "{kept} holds no {DESIGN_DIR}/config.json, so it carries no design work."
+        )));
+    }
+
+    let held = DesignRoots {
+        roots: vec![kept],
+        ..read(store)
+    };
+
+    write(store, &held)
+}
+
+#[cfg(debug_assertions)]
+pub fn keep_only_root(app: &tauri::AppHandle, checkout: &str) -> StudioResult<DesignRoots> {
+    keep_only(&store_path(app)?, checkout)
 }
 
 #[tauri::command]
@@ -261,6 +279,23 @@ mod tests {
         assert!(read(&store).roots.is_empty());
 
         fs::remove_dir_all(ground).expect("a clean ground");
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn keeping_only_one_checkout_drops_the_others_and_keeps_the_search() {
+        let ground = a_ground("keep-only");
+        let store = ground.join(STORE_FILE);
+        let one = a_checkout(&ground, "one");
+        let two = a_checkout(&ground, "two");
+
+        add(&store, &one).expect("the first checkout is kept");
+        set_search(&store, &ground.to_string_lossy()).expect("the search folder is set");
+
+        let held = keep_only(&store, &two).expect("the second checkout replaces the first");
+
+        assert_eq!(held.roots, vec![tidy(&two)]);
+        assert_eq!(held.search, tidy(&ground.to_string_lossy()));
     }
 
     #[test]
