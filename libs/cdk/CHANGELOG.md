@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.55
+
+### Patch Changes
+
+- The cdk migration lists the `et-scrollable--inline-buttons` class of the components scrollable.
+
 ## 5.0.0-next.54
 
 ### Patch Changes
