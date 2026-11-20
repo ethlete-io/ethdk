@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, utimesSync, writeFil
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { buildFailureLineOf, missingDistOf, rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
+import { buildFailureLineOf, libBuildArgsOf, missingDistOf, rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
 
 vi.mock('child_process', async (importOriginal) => ({ ...(await importOriginal<object>()), spawnSync: vi.fn() }));
 
@@ -117,6 +117,47 @@ describe('rebuildStaleDist', () => {
 
     expect(rebuildStaleDist({ target, config, build })).toBe(true);
     expect(build).not.toHaveBeenCalled();
+  });
+});
+
+describe('libBuildArgsOf', () => {
+  const tail = ['--exclude-task-dependencies', '--skip-nx-cache'];
+
+  it('rebuilds the lib with the targets its own build depends on, never its dependency libs', () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'cli-design-lib-args-'));
+
+    file(
+      join(workspace, 'libs/components/project.json'),
+      JSON.stringify({
+        targets: {
+          build: {
+            dependsOn: ['^build', 'generate-version', { target: 'stage' }, { target: 'deps', dependencies: true }],
+          },
+        },
+      }),
+      1_000,
+    );
+
+    expect(libBuildArgsOf({ workspace, name: 'components' })).toEqual([
+      ...['nx', 'run-many', '-t', 'generate-version', 'stage', 'build', '-p', 'components'],
+      ...tail,
+    ]);
+  });
+
+  it('takes the own targets from the executor default of nx.json when the project declares none', () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'cli-design-lib-args-'));
+
+    file(join(workspace, 'libs/types/project.json'), JSON.stringify({ targets: { build: { executor: 'tsc' } } }), 1);
+    file(
+      join(workspace, 'nx.json'),
+      JSON.stringify({ targetDefaults: { tsc: { dependsOn: ['^build', 'prepare'] } } }),
+      1_000,
+    );
+
+    expect(libBuildArgsOf({ workspace, name: 'types' })).toEqual([
+      ...['nx', 'run-many', '-t', 'prepare', 'build', '-p', 'types'],
+      ...tail,
+    ]);
   });
 });
 

@@ -50,7 +50,7 @@ describe('et design shot on a stale SDK dist', () => {
 
     expect(vi.mocked(spawnSync).mock.calls[0]?.slice(0, 2)).toEqual([
       'npx',
-      ['nx', 'build', 'core', '--skip-nx-cache'],
+      ['nx', 'run-many', '-t', 'build', '-p', 'core', '--exclude-task-dependencies', '--skip-nx-cache'],
     ]);
     expect(statSync(join(target, 'dist/libs/core/package.json')).mtimeMs).toBeGreaterThan(NEW * 1000);
     expect(designShot).toHaveBeenCalledTimes(1);

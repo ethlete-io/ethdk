@@ -139,8 +139,55 @@ export const buildFailureLineOf = (options: {
   return `BUILD OUTPUT ${name} (exit ${status ?? signal}): ${tail.length > 2000 ? `...${tail.slice(-2000)}` : tail || '(none)'}`;
 };
 
+type DependsOn = (string | { target?: string; projects?: unknown; dependencies?: boolean })[];
+
+const jsonOrNull = (path: string) => {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * The nx arguments that rebuild lib `name` with the targets its own build depends on, but none of its dependency
+ * libs: `rebuildStaleDist` rebuilds each stale one itself, and a fresh one needs no rebuild.
+ */
+export const libBuildArgsOf = (options: { workspace: string; name: string }) => {
+  const project = jsonOrNull(join(options.workspace, 'libs', options.name, 'project.json'));
+  const build = (project?.['targets'] as Record<string, { dependsOn?: DependsOn; executor?: string }> | undefined)?.[
+    'build'
+  ];
+  const defaults = (jsonOrNull(join(options.workspace, 'nx.json'))?.['targetDefaults'] ?? {}) as Record<
+    string,
+    { dependsOn?: DependsOn }
+  >;
+  const dependsOn =
+    build?.dependsOn ?? defaults['build']?.dependsOn ?? defaults[build?.executor ?? '']?.dependsOn ?? [];
+  const own = dependsOn.flatMap((entry) =>
+    typeof entry === 'string'
+      ? entry.startsWith('^')
+        ? []
+        : [entry]
+      : entry.target && !entry.dependencies && entry.projects === undefined
+        ? [entry.target]
+        : [],
+  );
+
+  return [
+    'nx',
+    'run-many',
+    '-t',
+    ...new Set([...own, 'build']),
+    '-p',
+    options.name,
+    '--exclude-task-dependencies',
+    '--skip-nx-cache',
+  ];
+};
+
 const runLibBuild: LibBuildRunner = ({ workspace, name, dir }) => {
-  const result = spawnSync('npx', ['nx', 'build', name, '--skip-nx-cache'], {
+  const result = spawnSync('npx', libBuildArgsOf({ workspace, name }), {
     cwd: workspace,
     env: { ...process.env, NX_NO_CLOUD: 'true' },
     stdio: ['ignore', 'pipe', 'pipe'],
