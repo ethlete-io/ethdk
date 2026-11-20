@@ -9,6 +9,7 @@ import { studioRowsText } from './studio-plan.mjs';
 const STATUS_VALUE = /^(accepted|superseded by \d{4})$/;
 const BUILT_VALUE = /^[0-9a-f]{7,40}$/;
 const OPEN_VALUE = /^(B\d+|none)$/;
+const PARTS_VALUE = /^\[\s*([a-z-]+\/[a-z0-9-]+(\s*,\s*[a-z-]+\/[a-z0-9-]+)*)\s*\]$/;
 const LIST_ITEM = /^(\d+)\. /;
 const FINDING_LIKE_LIST_NUMBER = 100;
 const OPEN_NONE_GRANDFATHERED_UP_TO = 204;
@@ -25,13 +26,24 @@ export const frontmatterOf = (text) => {
   );
 };
 
-export const checkAdr = (name, text, rows) => {
+export const partsOf = (value) => PARTS_VALUE.exec(value ?? '')?.[1].split(/\s*,\s*/) ?? [];
+
+export const checkAdr = (name, text, rows, partExists = () => true) => {
   const errors = [];
   const warnings = [];
   const meta = frontmatterOf(text);
   if (!meta) return { errors: [`${name}: no frontmatter`], warnings };
   if (!STATUS_VALUE.test(meta.status ?? '')) {
     errors.push(`${name}: status must be "accepted" or "superseded by NNNN", got "${meta.status ?? ''}"`);
+  }
+  if ('parts' in meta) {
+    if (!PARTS_VALUE.test(meta.parts)) {
+      errors.push(`${name}: parts must be a list like [components/title-bar], got "${meta.parts}"`);
+    } else {
+      for (const part of partsOf(meta.parts)) {
+        if (!partExists(part)) errors.push(`${name}: parts names ${part}, which is not a design part`);
+      }
+    }
   }
   const hasBuilt = 'built' in meta;
   const hasOpen = 'open' in meta;
@@ -117,6 +129,15 @@ const readArchives = (dir) =>
 
 const ADR_DIRS = ['apps/ethlete-studio/docs/adr', 'docs/adr'];
 
+const partExistsIn = (root) => {
+  const designDir = join(root, '.ethlete/design');
+  const products = existsSync(designDir) ? readdirSync(designDir) : [];
+  return (part) => {
+    const name = part.split('/')[1];
+    return products.some((product) => existsSync(join(designDir, product, part, `${name}.ts`)));
+  };
+};
+
 export const checkAdrs = (root) => {
   const statusText = studioRowsText(root);
   const archives = readArchives(join(root, 'plans/studio/archive'));
@@ -130,7 +151,8 @@ export const checkAdrs = (root) => {
       : [];
   });
   const rows = parseStatusRows(statusText);
-  const results = files.map((f) => checkAdr(f.path, readFileSync(f.file, 'utf8'), rows));
+  const partExists = partExistsIn(root);
+  const results = files.map((f) => checkAdr(f.path, readFileSync(f.file, 'utf8'), rows, partExists));
   const seen = new Map();
   const duplicates = [];
   for (const { path } of files) {

@@ -29,7 +29,7 @@ export type DataState = (typeof DATA_STATES)[number];
  * name its `dataStates` gives it; `redraw` is a
  * state the part draws as the app picture a merged `built` pick left, a placeholder until a sketch draws it; `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
- * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
+ * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `plan-question` is an ADR that names the part in `parts` and has no `built` yet; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
  * (`sketch` null until one is open); `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
  * `to`, an ongoing-work state without its looping motion.
  */
@@ -46,6 +46,7 @@ export type OpenPoint =
     }
   | { kind: 'sketch-problem'; sketch: string; variant: string; rule: string; message: string }
   | { kind: 'direct-edit'; sketch: string | null }
+  | { kind: 'plan-question'; adr: string }
   | { kind: 'missing-motion'; from: string; to: string };
 
 /** The state pairs of a part as its file declares them, read without running it. */
@@ -85,6 +86,7 @@ export type OpenPointsInput = {
   missingStates?: { part: string; control: string }[];
   busyStates?: { part: string; state: string }[];
   directEdits?: { part: string; sketch: string | null }[];
+  planQuestions?: { part: string; adr: string }[];
   sketchProblems?: { part: string; sketch: string; variant: string; rule: string; message: string }[];
 };
 
@@ -200,6 +202,9 @@ const keyedPointsOf = (input: OpenPointsInput, key: string): OpenPoint[] => [
   ...(input.directEdits ?? [])
     .filter((edit) => edit.part === key)
     .map(({ sketch }) => ({ kind: 'direct-edit' as const, sketch })),
+  ...(input.planQuestions ?? [])
+    .filter((question) => question.part === key)
+    .map(({ adr }) => ({ kind: 'plan-question' as const, adr })),
   ...input.sketches
     .filter((sketch) => sketch.targets.includes(key))
     .map((sketch) => ({
@@ -280,6 +285,8 @@ const subjectOf = (point: OpenPoint) => {
       return point.comment;
     case 'direct-edit':
       return point.sketch ?? '';
+    case 'plan-question':
+      return point.adr;
     case 'sketch-problem':
       return `${point.sketch} ${point.variant} ${point.rule} ${point.message}`;
     default:
@@ -394,6 +401,11 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
           ? `sketch ${point.sketch} variant ${point.variant} breaks ${point.rule}: ${point.message}`
           : '',
       )
+      .join('; ');
+
+  if (kind === 'plan-question')
+    return points
+      .map((point) => (point.kind === 'plan-question' ? `ADR ${point.adr} is decided but not built` : ''))
       .join('; ');
 
   if (kind === 'direct-edit')

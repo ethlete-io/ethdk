@@ -27,6 +27,7 @@ import {
   stateNamesOf,
   unreachableOf,
 } from './sketch/part-definition';
+import { planQuestionsOf } from './adr-parts';
 import { directEditsOf } from './sketch/merged-parts';
 import { variantProblemsOf } from './sketch/check-sketches';
 import { overlaySketch } from './sketch/overlay';
@@ -279,6 +280,7 @@ export const readOpenPoints = (
     })),
     sketchProblems: sketchProblems ? sketchProblemsOf({ product, sketches, productRules }) : [],
     directEdits,
+    planQuestions: planQuestionsOf(resolve(product.dir, '..', '..', '..')),
     ...rendered,
   });
 };

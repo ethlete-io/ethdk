@@ -144,3 +144,13 @@ test('the summary prints one line for many warnings and every line without it', 
   assert.deepEqual(warningLines(warnings), ['warning: a', 'warning: b', 'warning: c']);
   assert.deepEqual(warningLines([], { summary: true }), []);
 });
+
+test('parts must be a list of existing design parts', () => {
+  const known = (part) => part === 'components/title-bar';
+  const check = (front) => checkAdr('a', adr(`status: accepted\nbuilt: 409246e68\n${front}`), rows, known).errors;
+
+  assert.deepEqual(check('parts: [components/title-bar]'), []);
+  assert.match(check('parts: components/title-bar')[0], /parts must be a list/);
+  assert.match(check('parts: []')[0], /parts must be a list/);
+  assert.match(check('parts: [components/missing]')[0], /components\/missing, which is not a design part/);
+});
