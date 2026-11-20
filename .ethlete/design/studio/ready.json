@@ -923,7 +923,7 @@
     "pid": 933805
   },
   "elements/canvas-frames": {
-    "hash": "9bec3d87fe61b886",
+    "hash": "a2405dd845ddb7b3",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -932,10 +932,10 @@
       ".ethlete/design/studio/components/hold-trigger/hold-trigger.css": "58922d213e30d6be",
       ".ethlete/design/studio/components/hold-trigger/hold-trigger.ts": "5e3c9d89d3a9998c",
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "a325e9c839da61a0",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "bb250924422734e1",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "b544584736287f4f",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "5969029e682ff5d9",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "1aba52ec28a49721",
       ".ethlete/design/studio/elements/canvas-frames/shared/canvas-marks.ts": "819c21b35e20ba2b",
-      ".ethlete/design/studio/elements/canvas-frames/shared/diff-grid.ts": "53ae6a26cb305bdb",
+      ".ethlete/design/studio/elements/canvas-frames/shared/diff-grid.ts": "abcdf1a3c0edb6ab",
       "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "e451ae4c854defba",
       "apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry.ts": "38fcada05a738bc1",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
@@ -983,10 +983,10 @@
       "injects the service DesignCanvasComponent (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)",
       "injects the service CANVAS_LIVE_REST_MS (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)"
     ],
-    "at": "2026-11-20T15:33:17.887Z",
+    "at": "2026-11-20T16:28:52.058Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2145414
+    "pid": 2908107
   },
   "elements/part-tree": {
     "hash": "a079c595928375fd",
