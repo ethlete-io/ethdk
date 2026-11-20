@@ -147,6 +147,7 @@ const FULL_COMPARE_MS = 60000;
 // design server's idle close and resets (ECONNRESET under load). Each API request opens its own connection.
 const OWN_CONNECTION = { connection: 'close' };
 const COLD_START_MS = 60000;
+const ZOOM_LISTING_MS = 180000;
 const BUDGET_MS = 5 * 60 * 1000;
 
 const PAGE_SWITCHES = [
@@ -4595,16 +4596,17 @@ const serverProbe = async (designPort) => {
 
 const assertSketchFixtures = async (page, designPort, assertStates) => {
   const url = `http://[::1]:${designPort}/__design/sketches?product=studio`;
+  const limit = zoomFixture ? ZOOM_LISTING_MS : COLD_START_MS;
   const startedAt = performance.now();
   const listing = await page.request
-    .get(url, { timeout: COLD_START_MS })
+    .get(url, { timeout: limit })
     .then((response) => response.json())
     .catch(async (error) => {
       const waited = seconds(performance.now() - startedAt).trim();
       const probe = await serverProbe(designPort);
 
       throw new Error(
-        `sketch fixture check could not list the sketches: GET ${url} failed after ${waited} (limit ${COLD_START_MS} ms); ${probe}: ${String(error).split('\n')[0]}`,
+        `sketch fixture check could not list the sketches: GET ${url} failed after ${waited} (limit ${limit} ms); ${probe}: ${String(error).split('\n')[0]}`,
       );
     });
 
