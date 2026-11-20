@@ -1,11 +1,12 @@
 import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, DragHandleDirective, DragMoveEvent } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
 import { injectCodeWatch } from '../../code-watch';
 import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
+import { railLetters } from './rail-letters';
 import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from './side-width';
 
 export type ServerCrash = { time: string; pid: number; port: number; path: string; stack: readonly string[] };
@@ -32,6 +33,7 @@ const HOVER_PRESS_RAISED =
   imports: [
     BUTTON_IMPORTS,
     MENU_IMPORTS,
+    TOOLTIP_IMPORTS,
     AutoSurfaceDirective,
     DragHandleDirective,
     ShellCollapseComponent,
@@ -68,6 +70,7 @@ export class ShellMainComponent {
 
   public closeRequest = output();
   protected readonly SECTIONS = SECTIONS;
+  protected railLabels = computed(() => railLetters(this.products()));
   protected railSection = computed(() => (this.section() === 'Sketches' ? 'System' : this.section()));
 
   protected readonly LABELS = STUDIO_LABELS.designServer;

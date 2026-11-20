@@ -1,5 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { TooltipDirective } from '@ethlete/components';
 import { EMPTY, of } from 'rxjs';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { StudioCodeState } from '../../../host/studio-code';
@@ -223,6 +225,50 @@ describe('ShellMainComponent', () => {
     main?.querySelector('button')?.click();
 
     expect(restarts).toBe(1);
+  });
+
+  describe('rail products', () => {
+    const products = async () => {
+      const setupResult = await setup('open');
+      const events: string[] = [];
+
+      setupResult.fixture.componentRef.setInput('products', ['studio', 'studio-lab', 'sdk']);
+      setupResult.fixture.componentInstance.productChange.subscribe((product: string) => events.push(product));
+      await setupResult.fixture.whenStable();
+
+      const button = (name: string) =>
+        setupResult.host.querySelector<HTMLElement>(`nav button[aria-label="${name}"]`) as HTMLElement;
+
+      return { ...setupResult, events, button };
+    };
+
+    it('gives studio, studio-lab and sdk three different labels', async () => {
+      const { button } = await products();
+
+      expect(['studio', 'studio-lab', 'sdk'].map((name) => button(name).textContent?.trim())).toEqual([
+        'St',
+        'Sl',
+        'Sd',
+      ]);
+    });
+
+    it('keeps the full name as the accessible name and emits it on click', async () => {
+      const { button, events } = await products();
+
+      button('studio-lab').click();
+
+      expect(events).toEqual(['studio-lab']);
+    });
+
+    it('names the full product in an SDK tooltip', async () => {
+      const { fixture } = await products();
+      const tooltips = fixture.debugElement
+        .queryAll(By.directive(TooltipDirective))
+        .filter((el) => (el.nativeElement as HTMLElement).closest('nav'))
+        .map((el) => el.injector.get(TooltipDirective).content());
+
+      expect(tooltips).toEqual(['studio', 'studio-lab', 'sdk']);
+    });
   });
 
   it('hides the open panel when the active section is clicked', async () => {

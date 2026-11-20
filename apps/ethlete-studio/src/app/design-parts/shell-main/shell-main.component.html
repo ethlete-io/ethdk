@@ -99,7 +99,7 @@
     }
     <div class="flex-1"></div>
     <div class="my-space-2 h-px w-6 bg-et-surface-border"></div>
-    @for (name of products(); track name) {
+    @for (name of products(); track name; let index = $index) {
       @let active = name === product();
       <div
         [class]="
@@ -113,6 +113,7 @@
           [class]="productClass(active)"
           [attr.aria-label]="name"
           [attr.aria-current]="active ? 'true' : null"
+          [etTooltip]="name"
           (click)="productChange.emit(name)"
           class="flex items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
           etAutoSurface
@@ -122,7 +123,7 @@
           color="surface"
           size="sm"
         >
-          {{ name.charAt(0).toUpperCase() }}
+          {{ railLabels()[index] }}
         </button>
       </div>
     }
@@ -276,7 +277,7 @@
               <et-menu class="box-border w-58 text-ui-md">
                 <et-menu-radio-group [value]="product()" (valueChange)="selectProduct($event)">
                   <et-menu-group-label>{{ SHELL_LABELS.designSystem }}</et-menu-group-label>
-                  @for (name of products(); track name) {
+                  @for (name of products(); track name; let index = $index) {
                     <et-menu-radio-item [value]="name" closeOnActivate>{{ name }}</et-menu-radio-item>
                   }
                 </et-menu-radio-group>
