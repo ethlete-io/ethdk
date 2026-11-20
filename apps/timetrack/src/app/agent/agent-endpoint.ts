@@ -69,6 +69,7 @@ import {
   suggestProjectForRepo,
   workPathDays,
   workPathPieces,
+  sameDraftSummary,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -285,6 +286,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           subjectField: current.ticket.subjectField,
           subject: request.subject,
         },
+        sameSummary: sameDraftSummary,
       }),
     ).pipe(
       map((created) => ({

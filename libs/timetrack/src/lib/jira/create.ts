@@ -129,11 +129,13 @@ const lockKeyOf = (credentials: JiraCredentials, input: JiraIssueInput) =>
 /**
  * Files one issue and reads back its key. An issue the project already holds with this summary, or one
  * another call is filing right now, is answered with `duplicate: true` instead of being filed again.
+ * `sameSummary` widens what counts as the same summary, such as the near match paired machines fold by.
  */
 export const createJiraIssue$ = (options: {
   transport: TimetrackTransport;
   credentials: JiraCredentials;
   input: JiraIssueInput;
+  sameSummary?: (held: string, wanted: string) => boolean;
 }): Observable<JiraCreatedIssue> =>
   defer(() => {
     const { transport, credentials, input } = options;
@@ -149,7 +151,9 @@ export const createJiraIssue$ = (options: {
       subjectField: input.subjectField,
     }).pipe(
       switchMap((issues) => {
-        const held = alreadyFiled({ summary: input.summary, issues });
+        const held =
+          alreadyFiled({ summary: input.summary, issues }) ??
+          (options.sameSummary && issues.find((issue) => options.sameSummary?.(issue.summary, input.summary)));
 
         return held
           ? of<JiraCreatedIssue>({ id: held.id, key: held.key, duplicate: true })

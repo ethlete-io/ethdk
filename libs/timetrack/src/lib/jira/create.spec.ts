@@ -2,6 +2,7 @@ import { Subject, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
+import { sameDraftSummary } from '../review/auto-mode';
 import { JiraIssueInput, createJiraIssue$ } from './create';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
@@ -228,5 +229,52 @@ describe('createJiraIssue$ guard', () => {
     createJiraIssue$({ transport, credentials: CREDENTIALS, input: INPUT }).subscribe();
 
     expect(requests).toHaveLength(2);
+  });
+});
+
+describe('createJiraIssue$ across paired machines', () => {
+  const fakeJira = () => {
+    const issues: { id: string; key: string; fields: { summary: string; issuetype: { name: string } } }[] = [];
+    const transport: TimetrackTransport = {
+      request$: vi.fn((request: TimetrackRequest) => {
+        if (request.method === 'GET') return of({ status: 200, headers: {}, body: { issues: [...issues] } }) as never;
+
+        const id = String(10_000 + issues.length);
+        const key = `FIP-${issues.length + 1}`;
+
+        issues.push({
+          id,
+          key,
+          fields: { summary: fieldsOf(request)['summary'] as string, issuetype: { name: 'Task' } },
+        });
+
+        return of({ status: 201, headers: {}, body: { id, key } }) as never;
+      }),
+    };
+
+    return { transport, issues };
+  };
+
+  it('answers the issue an unsynced machine filed for the same work instead of filing a second one', () => {
+    const jira = fakeJira();
+    const first = vi.fn();
+    const second = vi.fn();
+
+    createJiraIssue$({
+      transport: jira.transport,
+      credentials: CREDENTIALS,
+      input: { ...INPUT, summary: 'Visuelle Baselines in die CI integrieren' },
+      sameSummary: sameDraftSummary,
+    }).subscribe(first);
+    createJiraIssue$({
+      transport: jira.transport,
+      credentials: CREDENTIALS,
+      input: { ...INPUT, summary: 'Visuelle Baselines in CI integrieren' },
+      sameSummary: sameDraftSummary,
+    }).subscribe(second);
+
+    expect(jira.issues).toHaveLength(1);
+    expect(second).toHaveBeenCalledWith({ id: '10000', key: 'FIP-1', duplicate: true });
+    expect(first).toHaveBeenCalledWith({ id: '10000', key: 'FIP-1' });
   });
 });
