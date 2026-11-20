@@ -84,6 +84,7 @@ export default definePart({
     'focus-visible': 'An interactive finished match with keyboard focus; check that a focus ring wraps the whole card.',
   },
   widths: [280, 480, 720],
+  controls: {},
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
