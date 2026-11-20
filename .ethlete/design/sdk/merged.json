@@ -53,7 +53,7 @@
   "components/carousel": "0ce28ec61e49874e",
   "components/chart": "7484c4d80d418295",
   "components/checkbox": {
-    "hash": "571b0f5c59ee4cda",
+    "hash": "82de2417d7afe015",
     "variant": "new",
     "decidedBy": "plan: B584: fill the missing control states of components/checkbox",
     "at": "2026-11-18T14:07:36.538Z",
