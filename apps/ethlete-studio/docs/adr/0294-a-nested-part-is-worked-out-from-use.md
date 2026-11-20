@@ -1,6 +1,6 @@
 ---
 status: accepted
-built: a033f9de1
+built: 1ea3bd773
 decided: 2026-11-13
 source: doc agent chat 2026-11-13, afternoon (A36 remainder)
 ---
