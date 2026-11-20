@@ -33,6 +33,8 @@ const tagsOf = (selector: string, texts: string[]): string[] => {
 const isBound = (name: string, tags: string[]) =>
   tags.some((attributes) => new RegExp(`(?:\\[\\(?${name}\\)?\\]|(?<![\\w\\[(-])${name}\\s*=)`, 'u').test(attributes));
 
+const classNameOf = (source: string) => source.match(/export\s+class\s+(\w+)/u)?.[1] ?? null;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -305,8 +307,13 @@ export const statesWithoutSourceOf = (options: {
   selector: string;
   templates: readonly string[];
   defaults?: Readonly<Record<string, string>>;
+  component?: string | null;
 }): Map<string, string[]> => {
-  const { states, inputs, selector, templates, defaults = {} } = options;
+  const { states, inputs, selector, templates, defaults = {}, component = null } = options;
+  const openers =
+    component === null ? [] : templates.filter((text) => new RegExp(`\\b${escaped(component)}\\b`, 'u').test(text));
+  const isOpened = (key: string) =>
+    openers.some((text) => new RegExp(`(?:inputBinding|twoWayBinding)\\(\\s*['"]${escaped(key)}['"]`, 'u').test(text));
   const tags = tagsOf(selector, [...templates]);
   const missing = new Map<string, string[]>();
 
@@ -316,6 +323,8 @@ export const statesWithoutSourceOf = (options: {
     const keys = Object.entries(props)
       .filter(([key]) => inputs.includes(key))
       .filter(([key, value]) => {
+        if (isOpened(key)) return false;
+
         if (!isBound(key, tags)) return true;
 
         const constants = tags.map((attributes) => {
@@ -452,6 +461,7 @@ export const droppedPropProblemsOf = async (options: {
               (known) => known.input,
             ),
             selector: selectorOf(text),
+            text,
             appDir: src ? resolve(target, src) : null,
           },
         ];
@@ -464,7 +474,7 @@ export const droppedPropProblemsOf = async (options: {
   return loadingOn({ target, config, warm: options.warm }, async (server) => {
     const problems: Problem[] = [];
 
-    for (const { part, path, inputs, initials, template, defaults, unbound, selector, appDir } of candidates) {
+    for (const { part, path, inputs, initials, template, defaults, unbound, selector, appDir, text } of candidates) {
       const states = await statesOn(server, { file: part.file, product: product.name });
 
       if (!isRecord(states)) continue;
@@ -503,6 +513,7 @@ export const droppedPropProblemsOf = async (options: {
         selector,
         templates,
         defaults,
+        component: classNameOf(text),
       }))
         problems.push({
           rule: STATE_NO_SOURCE_RULE,

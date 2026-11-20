@@ -43,6 +43,30 @@ describe('statesWithoutSourceOf', () => {
   });
 });
 
+describe('statesWithoutSourceOf with overlay bindings', () => {
+  const states = { rest: { hold: false, reason: 'late' } };
+  const run = (templates: string[]) =>
+    statesWithoutSourceOf({
+      states,
+      inputs: ['hold', 'reason'],
+      selector: 'app-row',
+      component: 'RowComponent',
+      templates,
+    });
+
+  it('counts an inputBinding or twoWayBinding in a file naming the component class as a source', () => {
+    const opener = `overlay.open(RowComponent, { bindings: [inputBinding('hold', held), twoWayBinding('reason', text)] });`;
+
+    expect(run([opener]).size).toBe(0);
+  });
+
+  it('ignores a binding in a file that does not name the component class', () => {
+    expect(run([`open(Other, { bindings: [inputBinding('hold', held)] });`])).toEqual(
+      new Map([['rest', ['hold', 'reason']]]),
+    );
+  });
+});
+
 describe('inputDefaultsOf', () => {
   it('reads the literal first argument of each signal input, aliases applied', () => {
     const source = `@Component({}) export class X {
