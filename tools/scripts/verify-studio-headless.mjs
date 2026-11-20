@@ -155,6 +155,7 @@ export const designProject = (checkout, designPort) => ({
 const IDLE_HOST_COMMANDS = [
   'design_action_refused',
   'design_status_watch',
+  'help_open',
   'studio_code_state',
   'studio_quit_for_rebuild',
   'update_ready',
@@ -163,7 +164,9 @@ const IDLE_HOST_COMMANDS = [
 ];
 
 export const studioHostAnswer = async (command, checkout, designPort) => {
-  if (command === 'design_roots' || command === 'design_roots_add') return { search: '', roots: [checkout] };
+  if (command === 'design_roots' || command === 'design_roots_add' || command === 'design_roots_search')
+    return { search: '', roots: [checkout] };
+  if (command === 'design_scan') return [];
   if (command === 'design_project') return designProject(checkout, designPort);
   if (command === 'workspace_root') return checkout;
   if (command === 'workspace_status' || command === 'workspace_diff') return '';
