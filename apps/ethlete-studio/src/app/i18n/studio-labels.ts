@@ -140,6 +140,7 @@ export const STUDIO_LABELS = {
     restart: 'Neu starten',
   },
   sketches: {
+    loading: 'Lädt',
     discard: 'Verwerfen',
     editHint: 'Kein Verwerfen: wähle eine der beiden Zeilen',
     editOld: 'Zuletzt gemergter Stand',

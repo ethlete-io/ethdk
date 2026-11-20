@@ -243,6 +243,7 @@ const scrollOf = (data: unknown) =>
       [commentDraft]="sketchDraft()"
       [sendPhase]="commentStore.sendPhase()"
       [sendReason]="commentStore.sendReason()"
+      [loadingShots]="loadingShots()"
       [shot]="shot"
       [tree]="shell().tree"
       [shell]="shell()"
@@ -912,6 +913,19 @@ export class SketchViewComponent {
   protected liveShots = linkedSignal<{ now: Set<string>; moving: boolean }, Set<string>>({
     source: () => ({ now: this.currentLiveShots(), moving: this.moving() }),
     computation: ({ now, moving }, previous) => (moving && previous ? previous.value : now),
+  });
+
+  protected loadingShots = computed(() => {
+    const live = this.liveShots();
+    const painted = this.paintedFrames();
+    const loaded = this.loadedPictures();
+    const failed = this.failedPictures();
+
+    return new Set(
+      [...this.shotPictures()]
+        .filter(([key, picture]) => !loaded.has(key) && !painted.has(key) && (live.has(key) || !failed.has(picture)))
+        .map(([key]) => key),
+    );
   });
 
   protected startComment({ variant, shot, point }: SketchCommentPlace) {

@@ -1,7 +1,18 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { VariantCellComponent } from './variant-cell.component';
+
+@Component({
+  selector: 'ethlete-variant-cell-host',
+  imports: [VariantCellComponent],
+  template: `<ethlete-variant-cell [loading]="busy" [width]="200" [height]="50" state="rest"
+    ><div data-shot></div
+  ></ethlete-variant-cell>`,
+})
+class HostComponent {
+  protected busy = true;
+}
 
 const setup = async (inputs: Record<string, unknown>) => {
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
@@ -61,5 +72,28 @@ describe('VariantCellComponent', () => {
     const cell = await setup({ state: 'a', labelHidden: true, width: 100, height: 20 });
 
     expect(cell.querySelector('[data-sk-label]')?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('shows an aria-busy box and the loading badge while keeping the projected shot mounted', async () => {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+    const fixture = TestBed.createComponent(HostComponent);
+
+    await fixture.whenStable();
+
+    const cell = fixture.nativeElement as HTMLElement;
+
+    expect(cell.querySelector('[data-loading][aria-busy="true"]')).not.toBeNull();
+    expect(cell.querySelector('[data-loading-badge] et-spinner')).not.toBeNull();
+    expect(cell.querySelector('[data-loading-badge]')?.textContent).toContain('Lädt');
+    expect(cell.querySelector('[data-shot]')).not.toBeNull();
+    expect(cell.querySelector('[data-shot]')?.parentElement?.classList.contains('invisible')).toBe(true);
+  });
+
+  it('shows no loading box or badge by default', async () => {
+    const cell = await setup({ state: 'rest', width: 200, height: 50 });
+
+    expect(cell.querySelector('[data-loading]')).toBeNull();
+    expect(cell.querySelector('[data-loading-badge]')).toBeNull();
   });
 });

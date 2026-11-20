@@ -442,7 +442,7 @@
         @if (commentTargeting() && row.key !== CURRENT) {
           <ethlete-comment-target
             [frame]="row.key"
-            (comment)="startComment($event.type === 'click' ? $any($event) : null, row)"
+            (comment)="startComment($event, row)"
             class="absolute inset-0 z-1"
           />
         }
@@ -637,6 +637,7 @@
     [stateHidden]="transposed()"
     [same]="isSame(row, item.changed)"
     [first]="item.state === firstChangeOf(row)"
+    [loading]="loadingShots().has(key)"
     [frameKey]="key"
     [width]="item.width ?? row.width"
     [rowWidth]="row.width"

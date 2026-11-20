@@ -17,6 +17,11 @@
   @if (first()) {
     <span class="text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{ LABELS.firstChange }}</span>
   }
+  @if (loading()) {
+    <span class="flex shrink-0 items-center gap-space-1 text-ui-xs text-et-surface-muted" data-loading-badge
+      ><et-spinner [diameter]="14" [strokeWidth]="1.75" />{{ LABELS.loading }}</span
+    >
+  }
 </span>
 <div [class]="wrapperClass()" class="relative row-start-2 flex min-w-0 flex-col self-start">
   <ng-content select="[overlay]" />
@@ -45,7 +50,12 @@
         [style.transform]="crop()"
         class="relative origin-top-left"
       >
-        <ng-content />
+        @if (loading()) {
+          <div class="h-30" aria-busy="true" data-loading></div>
+        }
+        <div [class]="loading() ? 'invisible absolute inset-x-0 top-0' : 'contents'">
+          <ng-content />
+        </div>
         @if (mark(); as box) {
           <span
             [style.left.px]="box.left"

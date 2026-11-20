@@ -1,4 +1,5 @@
 import { Component, computed, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { SpinnerComponent } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 export type VariantCellMark = { left: number; top: number; width: number; height: number };
@@ -10,6 +11,7 @@ const SELECTED_RING = 'outline-2 -outline-offset-2 outline-(--et-theme-color-pri
   selector: 'ethlete-variant-cell',
   templateUrl: './variant-cell.component.html',
   encapsulation: ViewEncapsulation.None,
+  imports: [SpinnerComponent],
   host: {
     class: 'row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1',
     '[attr.data-sk-state]': 'state()',
@@ -33,6 +35,7 @@ export class VariantCellComponent {
   public stateHidden = input(false);
   public same = input(false);
   public first = input(false);
+  public loading = input(false);
   public frameKey = input('');
   public width = input(0);
   public rowWidth = input(0);

@@ -260,6 +260,7 @@ export class SketchesComponent {
   public withdrawn = model<SketchWithdrawn>('hidden');
   public wholeScreens = model<readonly string[]>([]);
 
+  public loadingShots = input<ReadonlySet<string>>(new Set());
   public shot = input<TemplateRef<SketchShotContext> | null>(null);
   public tree = input(SKETCH_TREE);
   public error = input<string | null>(null);
@@ -802,7 +803,8 @@ export class SketchesComponent {
     this.commentMode.update((on) => !on);
   }
 
-  protected startComment(event: MouseEvent | null, row: SketchRow) {
+  protected startComment(trigger: Event, row: SketchRow) {
+    const event = trigger instanceof MouseEvent && trigger.type === 'click' ? trigger : null;
     const frames = row.shots.flatMap((candidate) => {
       const key = frameKeyOf(row, candidate.state);
       const element = this.frames().find((frame) => frame.nativeElement.getAttribute('data-sk-frame') === key);
