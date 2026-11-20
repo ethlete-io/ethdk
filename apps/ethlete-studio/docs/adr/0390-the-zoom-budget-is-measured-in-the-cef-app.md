@@ -17,3 +17,6 @@ The budget (p50 <= 20 ms, p95 <= 33 ms frame interval while zooming) holds for t
 Mac and on Linux. The Safari measurement is dropped; ADR 0386 now refers to the CEF app instead of Safari. The fix that
 freezes the live frames during a zoom or pan gesture goes ahead in any engine. The row is renamed "Zoom-Budget im
 Canvas".
+
+The two Safari timelines stay valid evidence for the cause. The human (German, verbatim): "auf cef wird es aber nicht
+wirklich anders aussehen den perf log können wir also weiter nutzen".
