@@ -436,6 +436,67 @@ const showAllStates = async (page) => {
   }
 };
 
+const LIVE_PAINT_GAP = { channel: 48, share: 0.08 };
+
+const shownLiveFrames = (page) =>
+  page.evaluate(() => {
+    const vw = innerWidth;
+    const vh = innerHeight;
+
+    return [...document.querySelectorAll('ethlete-sketch-view [data-shot] iframe')].flatMap((iframe, index) => {
+      const cell = iframe.closest('[data-shot]');
+      const box = iframe.getBoundingClientRect();
+      const picture = cell.querySelector('img[data-shot-picture]');
+
+      if (getComputedStyle(iframe).opacity === '0') return [];
+      iframe.dataset['livePaint'] = String(index);
+
+      return [
+        {
+          index,
+          key: cell.dataset['shot'],
+          frameWidth: iframe.clientWidth,
+          cellWidth: cell.clientWidth,
+          picture: picture?.src ?? null,
+          inView: box.left >= 0 && box.top >= 0 && box.right <= vw && box.bottom <= vh && box.width > 0,
+          clip: { x: box.left, y: box.top, width: box.width, height: box.height },
+        },
+      ];
+    });
+  });
+
+const livePaintGapOf = (page, { live, picture, type }) =>
+  page.evaluate(
+    async ({ live, picture, type, channel }) => {
+      const bitmapOf = async (base64, mime) =>
+        createImageBitmap(await (await fetch(`data:${mime};base64,${base64}`)).blob());
+      const shown = await bitmapOf(live, 'image/png');
+      const stored = await bitmapOf(picture, type);
+      const width = shown.width;
+      const height = Math.min(shown.height, Math.floor((stored.height * width) / stored.width));
+      const pixelsOf = (bitmap, drawnHeight) => {
+        const canvas = new OffscreenCanvas(width, height);
+        const context = canvas.getContext('2d');
+
+        context.drawImage(bitmap, 0, 0, width, drawnHeight);
+
+        return context.getImageData(0, 0, width, height).data;
+      };
+      const a = pixelsOf(shown, shown.height);
+      const b = pixelsOf(stored, (stored.height * width) / stored.width);
+      let off = 0;
+
+      for (let at = 0; at < a.length; at += 4) {
+        const gap = Math.max(Math.abs(a[at] - b[at]), Math.abs(a[at + 1] - b[at + 1]), Math.abs(a[at + 2] - b[at + 2]));
+
+        if (gap > channel) off++;
+      }
+
+      return { width, height, share: off / (width * height) };
+    },
+    { live, picture, type, channel: LIVE_PAINT_GAP.channel },
+  );
+
 const wheelCanvas = async (page, deltaY) => {
   const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
 
@@ -2509,6 +2570,63 @@ const CASES = [
       return {
         ok: empties.length === 0,
         detail: `empty/visible cells per step at +${SCROLL_SAMPLES_MS.join(' +')} ms: ${steps.join(', ')}; frames gone before their probe: ${reread}${empties.length ? `; first: ${empties.slice(0, 6).join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
+    name: 'every live sketch frame sits at 0/0, fills its cell and paints its picture',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      await showAllStates(page);
+
+      let frames = [];
+
+      for (const until = Date.now() + FULL_COMPARE_MS; Date.now() < until; frames = await shownLiveFrames(page)) {
+        if (frames.some((frame) => frame.inView && frame.picture)) break;
+        await page.waitForTimeout(250);
+      }
+      if (frames.length === 0) return { ok: false, detail: 'no live sketch frame painted' };
+
+      const wrong = [];
+      const gaps = [];
+
+      for (const frame of frames) {
+        const content = await page
+          .$(`iframe[data-live-paint="${frame.index}"]`)
+          .then((iframe) => iframe?.contentFrame());
+        const scroll = await content
+          ?.evaluate(() => ({
+            left: document.scrollingElement?.scrollLeft ?? 0,
+            top: document.scrollingElement?.scrollTop ?? 0,
+            x: scrollX,
+            y: scrollY,
+          }))
+          .catch(() => null);
+
+        if (!scroll) wrong.push(`${frame.key}: no frame document`);
+        else if (scroll.left || scroll.top || scroll.x || scroll.y)
+          wrong.push(`${frame.key}: scrolled ${scroll.left}/${scroll.top} (window ${scroll.x}/${scroll.y})`);
+        if (Math.abs(frame.frameWidth - frame.cellWidth) > 1)
+          wrong.push(`${frame.key}: iframe ${frame.frameWidth} px in a ${frame.cellWidth} px cell`);
+        if (!frame.inView || !frame.picture) continue;
+
+        const answer = await page.request.get(frame.picture, { timeout: WAIT_MS, headers: OWN_CONNECTION });
+        const live = await page.screenshot({ clip: frame.clip });
+        const gap = await livePaintGapOf(page, {
+          live: live.toString('base64'),
+          picture: (await answer.body()).toString('base64'),
+          type: answer.headers()['content-type'] ?? 'image/png',
+        });
+
+        gaps.push(`${frame.key} ${(gap.share * 100).toFixed(1)}% of ${gap.width}x${gap.height}`);
+        if (gap.share > LIVE_PAINT_GAP.share)
+          wrong.push(`${frame.key}: ${(gap.share * 100).toFixed(1)}% of its pixels differ from its picture`);
+      }
+
+      return {
+        ok: wrong.length === 0 && gaps.length > 0,
+        detail: `${frames.length} live frames, compared with their picture: ${gaps.join(', ') || 'none in view'}${wrong.length ? `; wrong: ${wrong.slice(0, 6).join(' | ')}` : ''}`,
       };
     },
   },

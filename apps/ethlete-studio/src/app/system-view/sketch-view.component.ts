@@ -121,10 +121,14 @@ const NEAR_MARGIN = '400px';
 
 const LIVE_SHOT_CAP = 6;
 
+const stateOfShot = (key: string) => key.slice(key.indexOf(' ') + 1);
+
 /**
- * The keys that stay live frames: at most `cap` keys of `near` (key to distance from the view, nearest first within a
- * rank), dropping the frames of `pictured` keys (a picture loaded) first and of `painted` keys last, plus every `painted` key without a picture, near or not, so no cell that
- * showed its frame goes empty before its picture can take its place.
+ * The keys that stay live frames, whole states at a time so no state mixes live frames and pictures: the states with a
+ * key in `near` (key to distance from the view), up to `cap` keys, a state with a `painted` key first and one whose keys
+ * all hold a picture (`pictured`) last, nearest first within a rank; plus every state with a `painted` key without a
+ * picture, near or not, so no cell that showed its frame goes empty before its picture can take its place. The nearest
+ * state alone may pass the cap.
  */
 export const liveShotsOf = ({
   order,
@@ -140,16 +144,57 @@ export const liveShotsOf = ({
   painted?: ReadonlySet<string>;
 }) => {
   const rank = (key: string) => (pictured.has(key) ? 2 : painted.has(key) ? 0 : 1);
+  const states = new Map<string, string[]>();
 
-  const capped = new Set(
-    order
-      .filter((key) => near.has(key))
-      .sort((a, b) => rank(a) - rank(b) || (near.get(a) ?? 0) - (near.get(b) ?? 0))
-      .slice(0, cap),
-  );
+  order.forEach((key) => states.set(stateOfShot(key), [...(states.get(stateOfShot(key)) ?? []), key]));
 
-  return order.filter((key) => capped.has(key) || (painted.has(key) && !pictured.has(key)));
+  const ranked = [...states.values()]
+    .flatMap((keys) => {
+      const distances = keys.flatMap((key) => (near.has(key) ? [near.get(key) ?? 0] : []));
+
+      return distances.length ? [{ keys, rank: Math.min(...keys.map(rank)), distance: Math.min(...distances) }] : [];
+    })
+    .sort((a, b) => a.rank - b.rank || a.distance - b.distance);
+  const live = new Set<string>();
+
+  ranked.forEach(({ keys }) => {
+    if (live.size > 0 && live.size + keys.length > cap) return;
+    keys.forEach((key) => live.add(key));
+  });
+  states.forEach((keys) => {
+    if (keys.some((key) => painted.has(key) && !pictured.has(key))) keys.forEach((key) => live.add(key));
+  });
+
+  return order.filter((key) => live.has(key));
 };
+
+/** Whether a painted frame shows what its picture shows: as wide as its cell, its document scrolled to the top. */
+export const frameFitsCell = ({
+  cellWidth,
+  frameWidth,
+  viewportWidth,
+  scrollY = 0,
+}: {
+  cellWidth: number;
+  frameWidth: number;
+  viewportWidth?: number;
+  scrollY?: number;
+}) =>
+  Math.abs(frameWidth - cellWidth) <= 1 &&
+  (viewportWidth === undefined || Math.abs(viewportWidth - cellWidth) <= 1) &&
+  scrollY === 0;
+
+type FrameReport = { cellWidth: number; frameWidth: number; viewportWidth?: number; scrollY?: number };
+
+const scrollYOf = (data: unknown) =>
+  typeof data === 'object' &&
+  data !== null &&
+  'type' in data &&
+  data.type === 'design-explore:scroll' &&
+  'y' in data &&
+  typeof data.y === 'number'
+    ? data.y
+    : null;
 
 @Component({
   selector: 'ethlete-sketch-view',
@@ -408,7 +453,44 @@ export class SketchViewComponent {
     }),
   );
 
-  protected paintedFrames = signal<ReadonlyMap<string, { frame: HTMLIFrameElement; src: SafeResourceUrl }>>(new Map());
+  private reportedFrames = signal<ReadonlyMap<string, { frame: HTMLIFrameElement; src: SafeResourceUrl }>>(new Map());
+
+  private frameReports = toSignal(
+    fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message').pipe(
+      scan((reports: ReadonlyMap<HTMLIFrameElement, FrameReport>, event) => {
+        const frame = this.shotFrameOf(event.source);
+        const message = frameMessageOf(event.data);
+        const scrollY = scrollYOf(event.data);
+        const viewportWidth = message?.type === 'height' ? message.viewport?.width : undefined;
+
+        if (!frame || (scrollY === null && viewportWidth === undefined)) return reports;
+
+        const mounted = new Set(this.shotFrames().map(({ nativeElement }) => nativeElement));
+        const next = new Map([...reports].filter(([known]) => mounted.has(known)));
+
+        return next.set(frame, {
+          ...reports.get(frame),
+          cellWidth: frame.parentElement?.clientWidth ?? 0,
+          frameWidth: frame.clientWidth,
+          ...(scrollY === null ? {} : { scrollY }),
+          ...(viewportWidth === undefined ? {} : { viewportWidth }),
+        });
+      }, new Map()),
+    ),
+    { initialValue: new Map<HTMLIFrameElement, FrameReport>() },
+  );
+
+  protected paintedFrames = computed(() => {
+    const reports = this.frameReports();
+
+    return new Map(
+      [...this.reportedFrames()].filter(([, { frame }]) => {
+        const report = reports.get(frame);
+
+        return !report || frameFitsCell(report);
+      }),
+    );
+  });
 
   protected paintedShots = computed(() => {
     const mounted = new Set(this.shotFrames().map(({ nativeElement }) => nativeElement));
@@ -897,7 +979,7 @@ export class SketchViewComponent {
     src: SafeResourceUrl;
     painted: boolean;
   }) {
-    this.paintedFrames.update((frames) => {
+    this.reportedFrames.update((frames) => {
       if (!painted && frames.get(key)?.frame !== frame) return frames;
 
       const next = new Map(frames);
@@ -932,10 +1014,14 @@ export class SketchViewComponent {
     return safe;
   }
 
-  private shotShowing(source: MessageEventSource | null) {
-    const frame = this.shotFrames()
+  private shotFrameOf(source: MessageEventSource | null) {
+    return this.shotFrames()
       .map(({ nativeElement }) => nativeElement)
       .find((candidate) => source !== null && candidate.contentWindow === source);
+  }
+
+  private shotShowing(source: MessageEventSource | null) {
+    const frame = this.shotFrameOf(source);
 
     return frame ? `${frame.dataset['variant']} ${frame.dataset['state']}` : null;
   }

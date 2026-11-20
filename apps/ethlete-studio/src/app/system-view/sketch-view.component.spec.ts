@@ -5,7 +5,7 @@ import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../ho
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
-import { SketchViewComponent, liveShotsOf } from './sketch-view.component';
+import { SketchViewComponent, frameFitsCell, liveShotsOf } from './sketch-view.component';
 import { waitsForPick } from './system-tree';
 import { undecidedShotsOf } from './undecided-shots';
 
@@ -252,6 +252,33 @@ describe('SketchViewComponent', () => {
     expect(picture().classList).toContain('opacity-0');
   });
 
+  it('shows the picture, not a painted frame, while the frame page is narrower than its cell or scrolled', async () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
+    const { fixture, root } = await render(ROUNDED, noComments);
+    const iframe = root.querySelector<HTMLIFrameElement>('iframe[data-state]')!;
+    const picture = () => iframe.parentElement!.querySelector('img[data-shot-picture]')!;
+    const post = async (data: object) => {
+      window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data }));
+      await settle(fixture);
+    };
+
+    await post({ type: 'design-explore:height', height: 96, viewport: { width: 70, height: 600 } });
+    await post({ type: 'design-explore:painted' });
+
+    expect(iframe.classList).toContain('opacity-0');
+    expect(picture().classList).not.toContain('opacity-0');
+
+    await post({ type: 'design-explore:height', height: 96, viewport: { width: 0, height: 600 } });
+    await post({ type: 'design-explore:scroll', y: 40 });
+
+    expect(iframe.classList).toContain('opacity-0');
+
+    await post({ type: 'design-explore:scroll', y: 0 });
+
+    expect(iframe.classList).not.toContain('opacity-0');
+    expect(picture().classList).toContain('opacity-0');
+  });
+
   it('keeps a painted frame shown until the frame of a new revision paints, so a cell without a picture never goes empty', async () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
     const { fixture, root } = await render(ROUNDED, noComments);
@@ -354,7 +381,7 @@ describe('SketchViewComponent', () => {
     ]).toEqual(['current y', 'a y', 'b x', 'b y']);
   });
 
-  it('fills the cap with the near keys closest to the view, row order breaking ties', () => {
+  it('fills the cap with whole states nearest to the view, listing order breaking ties', () => {
     const live = (distances: [string, number][]) =>
       liveShotsOf({ order: ['a 1', 'a 2', 'b 1', 'b 2'], near: new Map(distances), cap: 2 });
 
@@ -365,40 +392,59 @@ describe('SketchViewComponent', () => {
         ['b 1', 100],
         ['b 2', 300],
       ]),
-    ).toEqual(['b 1', 'b 2']);
+    ).toEqual(['a 1', 'b 1']);
     expect(
       live([
         ['a 1', 0],
         ['a 2', 0],
         ['b 1', 0],
       ]),
-    ).toEqual(['a 1', 'a 2']);
+    ).toEqual(['a 1', 'b 1']);
   });
 
-  it('keeps the frames of painted cells without a picture ahead of pictured cells', () => {
+  it('never splits the cells of one state between live frames and pictures at the cap', () => {
+    const order = ['current 1', 'current 2', 'a 1', 'a 2', 'b 1', 'b 2'];
+
+    expect(liveShotsOf({ order, near: new Map(order.map((key) => [key, 0] as const)), cap: 4 })).toEqual([
+      'current 1',
+      'a 1',
+      'b 1',
+    ]);
+    expect(liveShotsOf({ order, near: new Map([['b 2', 0]]), cap: 2 })).toEqual(['current 2', 'a 2', 'b 2']);
+  });
+
+  it('keeps the frames of a state with a painted cell ahead of a state whose cells all hold a picture', () => {
     expect(
       liveShotsOf({
         order: ['a 1', 'a 2', 'b 1', 'b 2'],
         near: new Map(['a 1', 'a 2', 'b 1', 'b 2'].map((key) => [key, 0] as const)),
         cap: 2,
-        pictured: new Set(['a 1', 'a 2']),
-        painted: new Set(['a 1', 'b 2']),
+        pictured: new Set(['a 1', 'b 1']),
+        painted: new Set(['b 2']),
       }),
-    ).toEqual(['b 1', 'b 2']);
+    ).toEqual(['a 2', 'b 2']);
   });
 
-  it('keeps the frame of a painted cell without a picture live after it leaves the near cells, until its picture loads', () => {
+  it('keeps the state of a painted cell without a picture live after it leaves the near cells, until its picture loads', () => {
     const live = (pictured: string[]) =>
       liveShotsOf({
         order: ['a 1', 'a 2', 'b 1', 'b 2'],
-        near: new Map(['b 1', 'b 2'].map((key) => [key, 0] as const)),
+        near: new Map([['b 2', 0]]),
         cap: 2,
         pictured: new Set(pictured),
-        painted: new Set(['a 1', 'b 1']),
+        painted: new Set(['a 1']),
       });
 
-    expect(live([])).toEqual(['a 1', 'b 1', 'b 2']);
-    expect(live(['a 1'])).toEqual(['b 1', 'b 2']);
+    expect(live([])).toEqual(['a 1', 'a 2', 'b 1', 'b 2']);
+    expect(live(['a 1'])).toEqual(['a 2', 'b 2']);
+  });
+
+  it('counts a painted frame only while it is as wide as its cell and its page is scrolled to the top', () => {
+    expect(frameFitsCell({ cellWidth: 320, frameWidth: 320, viewportWidth: 320, scrollY: 0 })).toBe(true);
+    expect(frameFitsCell({ cellWidth: 320, frameWidth: 320 })).toBe(true);
+    expect(frameFitsCell({ cellWidth: 320, frameWidth: 320, viewportWidth: 70 })).toBe(false);
+    expect(frameFitsCell({ cellWidth: 320, frameWidth: 240 })).toBe(false);
+    expect(frameFitsCell({ cellWidth: 320, frameWidth: 320, scrollY: 40 })).toBe(false);
   });
 
   it('switches the round from the select, remembers it, and follows a new round', async () => {
