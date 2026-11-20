@@ -114,10 +114,10 @@ html {
   font-size: 62.5%;
 }
 
+/* Only the root: on any other box (an overflow-hidden label too) Chromium stops the wheel's scroll chain there. */
 @layer base {
   html,
-  body,
-  * {
+  body {
     overscroll-behavior: none;
   }
 }

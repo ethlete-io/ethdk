@@ -23,10 +23,11 @@ const compileStyles = () =>
   );
 
 describe('styles.css', () => {
-  it('turns off overscroll on the root and on every scroll container', () => {
+  it('turns off overscroll on the root only, so no inner box ends the scroll chain', () => {
     const css = compileStyles();
 
-    expect(css).toMatch(/@layer base\s*{[\s\S]*html,\s*body,\s*\*\s*{\s*overscroll-behavior: none;/);
+    expect(css).toMatch(/@layer base\s*{[\s\S]*html,\s*body\s*{\s*overscroll-behavior: none;/);
+    expect(css).not.toMatch(/\*\s*{\s*overscroll-behavior/);
   });
 
   it('loads the merged Studio product tokens in the lowest layer', () => {

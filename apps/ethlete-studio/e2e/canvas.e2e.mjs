@@ -1807,6 +1807,45 @@ const CASES = [
     },
   },
   {
+    name: 'a wheel over a tree row label scrolls the part tree',
+    pages: ['System'],
+    run: async (page) => {
+      await page.waitForSelector('ethlete-part-tree [etTreeNode]');
+      const point = await page.evaluate(() => {
+        const scroller = document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto');
+        const label = [...scroller.querySelectorAll('[ethlete-tree-row-item] .text-ellipsis')].find((element) => {
+          const box = element.getBoundingClientRect();
+
+          return box.height > 0 && box.top >= scroller.getBoundingClientRect().top;
+        });
+        const box = label.getBoundingClientRect();
+        const x = box.left + Math.min(box.width / 2, 20);
+        const y = box.top + box.height / 2;
+
+        scroller.scrollTop = 0;
+
+        return {
+          x,
+          y,
+          max: scroller.scrollHeight - scroller.clientHeight,
+          hit: document.elementFromPoint(x, y) === label,
+        };
+      });
+
+      if (point.max < 40) return { ok: false, detail: `the tree cannot scroll, scrollable ${point.max} px` };
+      if (!point.hit) return { ok: false, detail: 'no row label under the wheel point' };
+
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.wheel(0, 120);
+      await page.waitForTimeout(400);
+      const top = await page.evaluate(
+        () => document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto')?.scrollTop ?? -1,
+      );
+
+      return { ok: top > 0, detail: `a 120 px wheel over a row label scrolled the tree to ${top}` };
+    },
+  },
+  {
     name: 'every product view shows a described state',
     holdListings: false,
     listingMayPend: 'waits for the described state of each product view, not for a listing',
