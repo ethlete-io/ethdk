@@ -178,6 +178,10 @@ const createRunSession = (session, shellCommand, baseCommand) => {
     process.exitCode = 1;
   }
 };
+const ownSession = () =>
+  process.env.TMUX_PANE
+    ? tmux('display-message', '-p', '-t', process.env.TMUX_PANE, '#{session_name}').stdout.trim() || null
+    : null;
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
 const hasTerminal = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 const runsInSession = (agentArgs) => !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
@@ -209,6 +213,10 @@ const configMismatch = (words) => {
   const given = configDirOf(words);
   return given !== undefined && resolve(given) !== callerConfigDir();
 };
+const callerConfigWords = (words) =>
+  process.env.CLAUDE_CONFIG_DIR && configDirOf(words) === undefined
+    ? [`${CONFIG_WORD}${quote(process.env.CLAUDE_CONFIG_DIR)}`]
+    : [];
 const unquoteWord = (word) => word.replace(/'([^']*)'|\\(.)/g, (_, quoted, escaped) => quoted ?? escaped);
 const hasAgentBinary = (words) => {
   let index = 0;
@@ -221,7 +229,31 @@ const hasAgentBinary = (words) => {
     index++;
   return index < words.length;
 };
+const quoteShellWord = (word) =>
+  ENV_WORD.test(word) ? word.replace(/^([^=]+=)(.*)$/s, (_, key, value) => `${key}${quote(value)}`) : quote(word);
+const unwrappedRun = (command) => {
+  const tokens = [...command.matchAll(SHELL_WORD)].map(([word]) => word);
+  const words = tokens.map(unquoteWord);
+  const at = words.findIndex((word, index) => basename(word) === 'agent-sessions.mjs' && words[index + 1] === 'run');
+  if (at < 0) return null;
+  let rest = words.slice(at + 3);
+  let runRole = null;
+  while (rest[0]?.startsWith('--')) {
+    if (rest[0] === '--role') runRole = rest[1];
+    rest = rest.slice(rest[0] === '--role' ? 2 : 1);
+  }
+  const end = rest.findIndex((word) => /[;&|]$/.test(word));
+  const inner = end < 0 ? rest : [...rest.slice(0, end), rest[end].replace(/[;&|]+$/, '')];
+  const program = inner.findIndex((word) => !ENV_WORD.test(word));
+  if (program < 0 || !hasAgentBinary(inner)) return null;
+  const kept = [...inner.slice(0, program), ...withoutPrompt(inner.slice(program))];
+  const env = tokens.slice(0, at).filter((word) => ENV_WORD.test(word));
+  const unwrapped = [...env, ...kept.map(quoteShellWord)].join(' ');
+  return runRole ? commandWithRole(unwrapped, runRole) : unwrapped;
+};
 const healedCommand = (command, agent) => {
+  const unwrapped = unwrappedRun(command);
+  if (unwrapped) return unwrapped;
   const words = [...command.matchAll(SHELL_WORD)].map(([word]) => unquoteWord(word));
   if (hasAgentBinary(words)) return command;
   const binary = agent.match(/^(claude|codex)/)?.[1];
@@ -654,8 +686,28 @@ if (command === 'send' && sender) {
   );
   process.exitCode = 1;
 } else if (command === 'run' && sender && words.length && dryRun) {
-  process.stdout.write(`${withTempDir([...roleEnvWords(role), ...withRole(words).map(quote)].join(' '))}\n`);
-} else if (command === 'run' && sender && words.length && !runsInSession(words.slice(1))) {
+  process.stdout.write(
+    `${withTempDir([...callerConfigWords(words), ...roleEnvWords(role), ...withRole(words).map(quote)].join(' '))}\n`,
+  );
+} else if (
+  command === 'run' &&
+  sender &&
+  words.length &&
+  (!runsInSession(words.slice(1)) || (process.env.TMUX && [sessionFor(sender), sender].includes(ownSession())))
+) {
+  if (runsInSession(words.slice(1))) {
+    const own = `=${ownSession()}:`;
+    tmux(
+      'set-option',
+      '-t',
+      own,
+      COMMAND_OPTION,
+      withTempDir(
+        [...callerConfigWords(words), ...roleEnvWords(role), ...withRole(withoutPrompt(words)).map(quote)].join(' '),
+      ),
+    );
+    if (role) tmux('set-option', '-t', own, ROLE_OPTION, role);
+  }
   const [program, ...programArgs] = withRole(words);
   process.exitCode =
     spawnSync(program, programArgs, {
@@ -669,14 +721,7 @@ if (command === 'send' && sender) {
 } else if (command === 'run' && sender && words.length) {
   ensureDispatch();
   const session = freeSessionFor(sender);
-  const roleEnv = [
-    ...(process.env.CLAUDE_CONFIG_DIR && configDirOf(words) === undefined
-      ? [`${CONFIG_WORD}${quote(process.env.CLAUDE_CONFIG_DIR)}`]
-      : []),
-    ...roleEnvWords(role),
-  ]
-    .map((word) => `${word} `)
-    .join('');
+  const roleEnv = [...callerConfigWords(words), ...roleEnvWords(role)].map((word) => `${word} `).join('');
   const shellCommand = withTempDir(`${roleEnv}${withRole(words).map(quote).join(' ')}`);
   const baseCommand = withTempDir(`${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`);
   if (process.env.TMUX) {
@@ -844,7 +889,7 @@ if (command === 'send' && sender) {
       }
       if (stored !== recorded) {
         tmux('set-option', '-t', pane, COMMAND_OPTION, stored);
-        restartLog(`${session} stored command had no agent program, healed to: ${stored}`);
+        restartLog(`${session} stored command could not restart, healed to: ${stored}`);
       }
       const base = withTempDir(restartRole ? commandWithRole(stored, restartRole) : stored);
       if (restartRole) tmux('set-option', '-t', pane, ROLE_OPTION, restartRole);

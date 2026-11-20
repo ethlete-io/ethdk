@@ -411,7 +411,7 @@ describe('agent-sessions', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toBe(
-      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.' '--strict-mcp-config' '--mcp-config=${realpathSync(dir)}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'\n`,
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' CLAUDE_CONFIG_DIR='${dir}/claude' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.' '--strict-mcp-config' '--mcp-config=${realpathSync(dir)}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'\n`,
     );
     expect(existsSync(join(dir, '.cache/claude-tmp'))).toBe(true);
   });
@@ -452,7 +452,7 @@ describe('agent-sessions', () => {
 
   it('adds no system prompt for another program and rejects an unknown role', () => {
     expect(run(['run', 'codex', 'codex', '--role', 'builder', '--dry-run'], undefined, { HOME: dir }).stdout).toBe(
-      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'codex'\n`,
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' CLAUDE_CONFIG_DIR='${dir}/claude' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'codex'\n`,
     );
     expect(run(['run', 'claude', 'claude', '--role', 'x', '--dry-run']).status).toBe(1);
   });
@@ -1323,6 +1323,86 @@ describe('agent-sessions', () => {
     },
     30_000,
   );
+
+  it.skipIf(!hasTmux)(
+    'keeps the session alive for restart --process when the stored command is a run of itself',
+    async () => {
+      const agent = `claude-rerun-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const config = join(dir, 'claude');
+      const started = join(dir, 'started.log');
+      const fakeAgent = join(dir, 'fakeagent');
+      writeFileSync(
+        fakeAgent,
+        `#!/bin/sh\nprintf '%s|%s|%s\\n' "$*" "$CLAUDE_CONFIG_DIR" "$ETHLETE_AGENT_ROLE" > ${started}; exec cat\n`,
+        { mode: 0o755 },
+      );
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'node' '${SCRIPT}' 'run' '${agent}' '--role' 'builder' 'env' 'CLAUDE_CONFIG_DIR=${config}' '${fakeAgent}' '/handoff resume builder-night-queue;' 'exec'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(`resume [typed by agent-sessions]|${config}|builder\n`);
+        expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
+            .stdout,
+        ).not.toContain('agent-sessions.mjs');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=mailbox-dispatch@${basename(dir)}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)('run inside the pane of its own session starts the agent in place', () => {
+    const agent = `claude-inplace-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const started = join(dir, 'started.log');
+    const { log, env } = fakeClientTmux();
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+    try {
+      const result = run(
+        ['run', agent, 'sh', '-c', `echo "$ETHLETE_AGENT_ROLE" > ${started}`, '--role', 'builder'],
+        undefined,
+        {
+          ...env,
+          TMUX_PANE: paneOf(scoped),
+          AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+        },
+      );
+
+      expect(result.status).toBe(0);
+      expect(readFileSync(started, 'utf8')).toBe('builder\n');
+      expect(existsSync(log)).toBe(false);
+      expect(spawnSync('tmux', ['list-sessions', '-F', '#{session_name}'], { encoding: 'utf8' }).stdout).not.toContain(
+        `${agent}-2@`,
+      );
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    }
+  });
+
+  it('shows the caller CLAUDE_CONFIG_DIR in a dry run', () => {
+    const result = run(['run', 'claude', 'claude', '--dry-run'], undefined, { HOME: dir, CLAUDE_CONFIG_DIR: '/mine' });
+
+    expect(result.stdout).toContain("CLAUDE_CONFIG_DIR='/mine' ");
+  });
 
   it.skipIf(!hasTmux)(
     'types the prompt when only the IDE context chip sits on the prompt line',
