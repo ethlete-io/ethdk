@@ -6,11 +6,10 @@
     "at": "2026-11-07T17:19:30.454Z"
   },
   "components/command-palette": {
-    "hash": "c697b06bd6a810c9",
-    "variant": "a",
-    "decidedBy": "plan: Palette Leerzustand, Wahl durch Grill",
-    "at": "2026-11-13T15:04:10.065Z",
-    "note": "merged without a pick: allowed by Palette Leerzustand, Wahl durch Grill"
+    "hash": "8a1e79be772ad516",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-20T04:00:49.298Z"
   },
   "components/comment-draft": {
     "hash": "d0426a5b4fe8ca4e",
