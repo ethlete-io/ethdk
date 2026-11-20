@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 20.11.2026, nachts
+Stand: 20.11.2026, nachmittags
 
 ## Ziel
 
@@ -32,9 +32,12 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 3. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
-4. **Timetrack-Beschreibung (B602)** ⏳ Tag-Aufbau linear und im Web Worker, Git-Watch ignoriert Dateizugriffe, MR-Abgleich ein git log pro Repo (5a09de401, a30be57c7); Scroll beim Tageswechsel gesichert (c505db63f); Texte stoßen nicht mehr übereinander (0dd316f76); Auto-Modus wartet auf aktuelle Zeilen (12a0c3f8a). Offen: Toms nächstes Tagesbild, Rest-Blockaden 65-330 ms im JS-Thread messen (App muss laufen, morgens), serve.perf 354 > 224 ms, Host-Speicherleck, Tom bestätigt Scrollen; Anruf ohne Vorschlag - Builder
-5. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, 18.11.-Regression behoben (ADR 0038), Warteschlangen-Dedup; Echo-Spur behoben (321df5aaf), Band eines gekoppelten Rechners als Unterspalte seiner Projekt-Spur (ef27f72d0, Timetrack ADR 0057); abgelaufene Anlage behält ihre ID (2d54570b4); gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut in Schritten (b7a15ba07, 8dac8f3f6, f1c0d4066, 5dd099aaa, ec503ae3a): eine Anlage läuft erst nach einem Abgleich, ähnliche Zusammenfassung nur für Warteschlangen-Anlagen (ADR 0022 sonst). decidedBy und übernommene Freigabe (a8d69c00c). Offen: beide Rechner auf neuem Build prüfen, Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
+4. **Timetrack-Beschreibung (B602)** ⏳ Tag-Aufbau im Web Worker, Scroll und Auto-Modus behoben. Host-Speicher: Cause (gemessen) glibc behält freigegebene IPC-Körper, mit Arena-Grenze 1,76 statt 6,36 GB nach 26 min; Probe nach 2 h offen. Tag-Aufbau: Cause (CPU-Profil) absorbSlivers prüft foldsInto vor isSliver, Patch 740 -> 410 ms bereit, landet nach der Speicherprobe. Offen: Toms nächstes Tagesbild, keine Aufgabe < 50 ms bisher, serve.perf 354 > 224 ms, Tom bestätigt Scrollen; Anruf ohne Vorschlag - Builder
+5. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Offen: beide Rechner auf neuem Build prüfen, Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
 6. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: Tom löscht `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
+
+7. **Studio-Vorschau ruckelt in Safari (B356)** ⏳ Linux p50 16-17 ms, p95 ~46 ms; Mac WebKit p95 ~170 ms, ssh ausgeschlossen (gemessen), content-visibility brachte nichts. Tom nimmt am Mac eine Safari-Timeline auf (Schritte in agent-results/b356-safari-steps.md, nach dem Push) - Tom, dann Builder
+8. **Abschluss nach grünem CI** ⏳ B658 (Neustart startet das Programm direkt, Live-Beweis 13:02Z), B412 (DIRECT-EDIT-PENDING), B659 (Match-Bearbeitungs-Slot, fifa S27) schließen, wenn CI auf dem Push grün ist; CI 44736963412 auf ae76b7931 rot (Unit-Tests), Ursache offen - Builder
 
 Geparkt: B105, B108, B109, B148, B312, B313.
 
