@@ -1,7 +1,6 @@
 import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideOverlay } from '@ethlete/components';
-import { of } from 'rxjs';
 import { injectStudioMenuDialogs } from '../studio-menu/studio-menu-dialogs';
 
 const host = vi.hoisted(() => ({ helpOpened: 0 }));
