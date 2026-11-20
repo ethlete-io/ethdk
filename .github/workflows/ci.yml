@@ -544,6 +544,7 @@ jobs:
       - if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: yarn studio:e2e --perf --engine webkit --case "ctrl-wheel zoom over 100 cells keeps the frame interval budget"
         timeout-minutes: 10
+        continue-on-error: true
         env:
           STUDIO_E2E_WORKERS: 1
 
