@@ -55,9 +55,6 @@ export const badLinksOf = (product: ResolvedProduct): Problem[] =>
     return component(link.path);
   });
 
-// B276: the app palette takes entries and recents, not the drawn state and selected, so a link fails DROPPED-PROP until it is ported.
-const UNLINKED_ON_PURPOSE = ['studio components/command-palette'];
-
 const appComponentsOf = (checkout: string, app: string) => {
   const dir = resolve(checkout, app, 'src');
 
@@ -80,12 +77,7 @@ export const unlinkedNamesOf = (product: ResolvedProduct): Problem[] => {
   const components = appComponentsOf(checkoutOf(product), harness.app);
 
   return product.parts
-    .filter(
-      (part) =>
-        part.origin !== 'base' &&
-        partLinkOf(part.source).kind === 'none' &&
-        !UNLINKED_ON_PURPOSE.includes(`${product.name} ${partKeyOf(part)}`),
-    )
+    .filter((part) => part.origin !== 'base' && partLinkOf(part.source).kind === 'none')
     .flatMap((part) =>
       components
         .filter((path) => basename(path) === `${part.name}.component.ts`)

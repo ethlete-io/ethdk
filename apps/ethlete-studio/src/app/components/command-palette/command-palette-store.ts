@@ -1,4 +1,14 @@
-import { DOCUMENT, DestroyRef, Signal, computed, inject, inputBinding, outputBinding, signal } from '@angular/core';
+import {
+  DOCUMENT,
+  DestroyRef,
+  Signal,
+  computed,
+  inject,
+  inputBinding,
+  outputBinding,
+  signal,
+  twoWayBinding,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   KBD_PLATFORM,
@@ -28,6 +38,7 @@ export class CommandPaletteStore {
   private field: (() => HTMLElement) | null = null;
   private ref: OverlayRef<CommandPaletteComponent> | null = null;
   private recentKeys = signal<string[]>([]);
+  private query = signal('');
 
   public recents = computed(() => {
     const entries = this.entries();
@@ -74,6 +85,8 @@ export class CommandPaletteStore {
   public open() {
     if (this.ref) return;
 
+    this.query.set('');
+
     const ref = this.overlay.open(CommandPaletteComponent, {
       strategies: dialogOverlayStrategy({
         width: 'var(--container-3xl)',
@@ -87,6 +100,7 @@ export class CommandPaletteStore {
       bindings: [
         inputBinding('entries', this.entries),
         inputBinding('recents', this.recents),
+        twoWayBinding('query', this.query),
         outputBinding<PaletteEntry>('choose', (entry) => this.choose(entry)),
       ],
     });

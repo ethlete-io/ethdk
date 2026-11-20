@@ -159,4 +159,14 @@ describe('CommandPaletteComponent', () => {
     await key('Enter');
     expect(chosen).toEqual([ENTRIES[1]]);
   });
+
+  it('starts with the query model', async () => {
+    const { fixture, rows } = render();
+
+    fixture.componentRef.setInput('query', 'tree');
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.query()).toBe('tree');
+    expect(rows()).toHaveLength(3);
+  });
 });

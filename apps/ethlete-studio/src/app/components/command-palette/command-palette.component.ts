@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, model, output, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import {
   CommandPaletteDirective,
   CommandPaletteResult,
@@ -126,6 +126,8 @@ export class CommandPaletteComponent {
   public entries = input<PaletteEntry[]>([]);
   public recents = input<PaletteEntry[]>([]);
 
+  public query = model('');
+
   public choose = output<PaletteEntry>();
 
   private behavior = viewChild.required(CommandPaletteDirective);
@@ -133,7 +135,6 @@ export class CommandPaletteComponent {
 
   protected readonly LABELS = LABELS;
 
-  protected query = signal('');
   protected navigated = signal(false);
 
   private commands = computed(() => {
