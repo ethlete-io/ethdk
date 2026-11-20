@@ -1,6 +1,6 @@
 import { NgComponentOutlet } from '@angular/common';
 import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent, TOOLTIP_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, SpinnerComponent, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
 import { injectCodeWatch } from '../../code-watch';
@@ -8,6 +8,7 @@ import { TitleBarComponent } from '../../components/title-bar/title-bar.componen
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 import { ShellResizeHandleComponent } from '../shell-resize-handle/shell-resize-handle.component';
+import { ShellSystemPickerComponent } from '../shell-system-picker/shell-system-picker.component';
 import { PRODUCT_LOGOS } from './product-logos';
 import { railLetters } from './rail-letters';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
@@ -36,11 +37,11 @@ const HOVER_PRESS_RAISED =
   imports: [
     NgComponentOutlet,
     BUTTON_IMPORTS,
-    MENU_IMPORTS,
     TOOLTIP_IMPORTS,
     AutoSurfaceDirective,
     ShellCollapseComponent,
     ShellResizeHandleComponent,
+    ShellSystemPickerComponent,
     SpinnerComponent,
     TitleBarComponent,
   ],
@@ -109,9 +110,5 @@ export class ShellMainComponent {
 
   protected setSystemPicker(open: boolean) {
     this.systemPicker.set(open ? 'open' : 'closed');
-  }
-
-  protected selectProduct(value: unknown) {
-    if (typeof value === 'string' && value !== this.product()) this.productChange.emit(value);
   }
 }

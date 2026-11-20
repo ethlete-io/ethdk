@@ -112,6 +112,7 @@ const openRows = interactionRows<Props, 'open', PickerInteraction>(
 
 export default definePart({
   note: 'The design-system choice in the shell panel head: product name and an up-down chevron; it opens an SDK menu of the design systems below it, the open one checked. SDK transparent button: SDK hover, press, focus ring and its 120 ms fade. SDK does not fit alone: no et-button size gives the control-md height with space-2 padding, a start-aligned truncating ui-lg label, so the trigger keeps its own classes.',
+  implements: 'apps/ethlete-studio/src/app/design-parts/shell-system-picker/shell-system-picker.component.ts',
   madeBy: ['claude-opus-5-5'],
   states: {
     ...closedRows.states,

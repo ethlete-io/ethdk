@@ -26,6 +26,10 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/shell-resize-handle/shell-resize-handle.component').then(
       (m) => m.ShellResizeHandleComponent,
     ),
+  'components/shell-system-picker': () =>
+    import('../design-parts/shell-system-picker/shell-system-picker.component').then(
+      (m) => m.ShellSystemPickerComponent,
+    ),
   'components/shortcuts-dialog': () =>
     import('../design-parts/shortcuts-dialog/shortcuts-dialog.component').then((m) => m.ShortcutsDialogComponent),
   'components/sketch-question': () =>

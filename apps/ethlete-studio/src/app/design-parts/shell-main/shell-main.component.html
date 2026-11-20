@@ -242,53 +242,14 @@
         <header
           class="box-border flex h-12 items-center justify-between gap-space-1 border-b border-et-surface-border px-space-2"
         >
-          <div
+          <ethlete-shell-system-picker
+            [product]="product()"
+            [products]="products()"
             [open]="systemPicker() === 'open'"
-            [offset]="{ mainAxis: 12, crossAxis: 0 }"
             (openChange)="setSystemPicker($event)"
-            class="flex min-w-0"
-            etMenu
-            arrow="false"
-            placement="bottom-start"
-          >
-            <button
-              class="h-control-md min-w-0 items-center justify-start gap-space-2 px-space-2 py-0 text-left"
-              etMenuTrigger
-              et-button
-              type="button"
-              variant="transparent"
-              color="surface"
-              size="sm"
-            >
-              <span class="min-w-0 overflow-hidden font-ui-strong text-ui-lg text-ellipsis whitespace-nowrap">{{
-                product()
-              }}</span>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="m5.5 6 2.5-2.5 2.5 2.5" />
-                <path d="m5.5 10 2.5 2.5 2.5-2.5" />
-              </svg>
-            </button>
-            <ng-template etMenuSurface>
-              <et-menu class="box-border w-58 text-ui-md">
-                <et-menu-radio-group [value]="product()" (valueChange)="selectProduct($event)">
-                  <et-menu-group-label>{{ SHELL_LABELS.designSystem }}</et-menu-group-label>
-                  @for (name of products(); track name; let index = $index) {
-                    <et-menu-radio-item [value]="name" closeOnActivate>{{ name }}</et-menu-radio-item>
-                  }
-                </et-menu-radio-group>
-              </et-menu>
-            </ng-template>
-          </div>
+            (productChange)="productChange.emit($event)"
+            class="contents"
+          />
           <ethlete-shell-collapse (collapse)="collapse.emit()" />
         </header>
         <div class="min-h-0 flex-1 overflow-hidden p-space-2">
