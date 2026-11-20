@@ -22,7 +22,7 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 22. **Design-Hintergrundprozess (B404)** 🔨 Design-Hintergrundprozess (Bef. 492, 493): S1 Lib-Build-Sperre, S2 Prozess + Client + ... - Builder (c0)
 23. **Drift-Baseline (B405)** 🔨 Alte Implementierungs-Drift (sketches, system, canvas-frames) in schrumpfende Baseline ... - cb, dann c8
 24. **Merged-Hash-Regel (B412)** ⏳ gebaut 21360c443; schließen nach grünem CI auf dem Push - Builder
-25. **WebKit-Zoom-Budget (B356)** ⏳ Linux p95 ~46 ms; Mac WebKit p95 ~170 ms, ssh ausgeschlossen, content-visibility ohne Gewinn (gemessen). Tom nimmt am Mac eine Safari-Timeline auf (agent-results/b356-safari-steps.md, nach dem Push); ADR 0386 - Tom, dann Builder
+25. **Zoom-Budget im Canvas (B356)** ⏳ Budget gilt für die CEF-App, Mac und Linux (ADR 0390). Safari-Aufnahmen: p95 586 ms beim Zoomen, Suspect Live-Vorschauen starten während der Geste neu; Bite: Live-Frames während Zoom/Pan einfrieren - Builder
 26. **GitHub-Issues Design-CLI (B648)** ⏳ #3190, #3191, #3195, #3197 geschlossen, #3194 war behoben; offen: #3196 wartet auf Reporter-Markup - Builder
 27. **Match-Teilnehmer bearbeitbar (B659)** ⏳ gebaut e3d90c8fb, 821fb877a; schließen nach grünem CI, dann fifa S27 Version - Builder
 28. **Freigegebene Studio-Themen (B660)** ⏳ in dieser Folge: Studio-Menü Rest (A26), Inbox (A19), Server-Status (A27), Schnellwahl (A6), Kommentar-Pins an gemergten Skizzen (A18); ohne Entwurf baut der Builder seine eigene Skizze (ADR 0387) - Builder
