@@ -88,6 +88,32 @@ describe('InboxComponent', () => {
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
+  it('shows the server message of a failed load', async () => {
+    const { fixture, text } = await render(COMMENTS, 'error');
+
+    fixture.componentRef.setInput('error', 'HTTP 500 boom');
+    await fixture.whenStable();
+
+    expect(text()).toContain('HTTP 500 boom');
+    expect(text()).not.toContain('Die Liste kam nicht vom Design-Server an.');
+  });
+
+  it('keeps the list under an interrupted notice that emits retry', async () => {
+    const { fixture, element, text } = await render(COMMENTS);
+    const retry = vi.fn();
+
+    fixture.componentInstance.retry.subscribe(retry);
+    fixture.componentRef.setInput('interrupted', true);
+    await fixture.whenStable();
+
+    expect(text()).toContain('Verbindung unterbrochen');
+    expect(text()).toContain('Text x1');
+
+    [...element.querySelectorAll('button')].find((b) => b.textContent?.includes('Erneut laden'))?.click();
+
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the loading state', async () => {
     const { text } = await render(COMMENTS, 'loading');
 

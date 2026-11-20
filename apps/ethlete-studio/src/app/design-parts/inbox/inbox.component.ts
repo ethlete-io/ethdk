@@ -33,6 +33,7 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
 })
 export class InboxComponent {
   protected errorTheme = injectSemanticColorTheme('error');
+  protected warningTheme = injectSemanticColorTheme('warning');
   public shell = input<ShellState>(SHELL_SAMPLE);
   public comments = input<InboxComment[]>(INBOX_SAMPLE);
   public activePart = input(INBOX_SAMPLE_PART);
@@ -40,6 +41,8 @@ export class InboxComponent {
   public showResolved = model(false);
   public openOn = input<InboxOpenOn>('all');
   public load = input<InboxLoad>('loaded');
+  public error = input('');
+  public interrupted = input(false);
   public canvas = input<TemplateRef<unknown> | null>(null);
   public thread = input<CommentThread | null>(null);
   public replyText = model('');
