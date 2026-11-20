@@ -4,6 +4,7 @@ import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { CanvasLine } from '../components/design-canvas/flow-layout';
 import { FramesSource, TreeGroup, partKeyOf, schemesOf } from './system-tree';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { partErrorsOf } from './part-errors';
 
 export const flowKeyOf = (name: string) => `flow:${name}`;
 
@@ -72,7 +73,7 @@ export const flowFramesOf = (source: FlowFramesSource): { frames: CanvasFrame[];
       : !known.states.includes(state)
         ? STUDIO_LABELS.flowFrames.noState(key, state)
         : part
-          ? part.problems.find((problem) => problem.rule === 'LOAD')?.message
+          ? partErrorsOf({ problems: part.problems })[0]
           : sketched?.error;
     const page = known?.layer === 'pages';
 

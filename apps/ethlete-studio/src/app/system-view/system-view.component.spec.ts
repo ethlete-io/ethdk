@@ -1768,6 +1768,35 @@ describe('SystemViewComponent on a tree pick', () => {
     expect(element.querySelector('ethlete-sketch-view')).toBeNull();
   });
 
+  it('blocks the pick of a part that reports a load error, though the server calls it ready', async () => {
+    const broken = {
+      ...PRODUCT,
+      parts: PRODUCT.parts.map((part) =>
+        part.name === 'rating'
+          ? { ...part, problems: [{ rule: 'LOAD', file: 'rating.ts', message: 'no export' }] }
+          : part,
+      ),
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/open-points')) return json({ points: [], buildReady: { ready: true } });
+      if (url.includes('/__design/sketches')) return json({ sketches: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([broken]);
+      if (url.includes('/__design/calls')) return json([CALL]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const chip = fixture.debugElement.query(By.directive(OpenPointsChipComponent));
+
+    expect(chip.componentInstance.buildReady()).toEqual({
+      state: 'blocked',
+      blockers: [{ kind: 'sdk-error', text: 'no export' }],
+    });
+  });
+
   it('shows a direct edit as a build-ready blocker without a Go button and opens the edit sketch only on request', async () => {
     vi.stubGlobal('fetch', (url: string) => {
       if (url.includes('/__design/open-points'))
