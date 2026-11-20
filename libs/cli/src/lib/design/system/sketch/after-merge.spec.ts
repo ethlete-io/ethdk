@@ -159,6 +159,48 @@ describe('a merge and the other open sketches', { timeout: 120_000 }, () => {
     );
   });
 
+  describe('a picked open sketch', () => {
+    const pickedOther = (conflicting: 'a' | 'b') => {
+      const target = acme();
+      const lines = output();
+      const drawn = createSketch({
+        product: resolveAcme(target),
+        sketch: { layer: 'elements', name: 'hero', sketch: 'other' },
+        variants: ['a', 'b'],
+      }) as Sketch;
+
+      edit(join(drawn.dir, conflicting, 'elements/hero/hero.ts'), 'One featured film', 'A featured film');
+
+      const other = decideSketch({
+        sketch: markSketchReady({ checkout: target, sketch: drawn }) as Sketch,
+        decision: { kind: 'pick', variant: 'a', ...originOf('designer') },
+      }) as Sketch;
+      const hero = readyOn(target, { layer: 'elements', name: 'hero' });
+
+      edit(heroFile(hero), 'One featured film', 'The featured film');
+
+      return { target, lines, other, hero };
+    };
+
+    it('rebases it when only a variant that is not the pick conflicts', () => {
+      const { target, lines, other, hero } = pickedOther('b');
+
+      expect(mergeHero(target, hero)).toEqual(['elements/hero']);
+      expect(reread(other).portAfterMerge).toBeUndefined();
+      expect(lines).toContain('REBASED acme elements/hero@other after the merge of elements/hero');
+    });
+
+    it('marks it for its agent when the picked variant conflicts', () => {
+      const { target, lines, other, hero } = pickedOther('a');
+
+      expect(mergeHero(target, hero)).toEqual(['elements/hero']);
+      expect(reread(other).portAfterMerge?.reasons).toEqual([
+        'a: elements/hero/hero.ts - the variant and the product both changed it',
+      ]);
+      expect(lines.some((line) => line.startsWith('AGENT PORTS acme elements/hero@other'))).toBe(true);
+    });
+  });
+
   it('clears the port mark once the agent has ported the sketch by hand and rebased it', () => {
     const target = acme();
 

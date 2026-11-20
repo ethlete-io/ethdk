@@ -2562,6 +2562,53 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(JSON.parse(readFileSync(sketchFile, 'utf8')).decision).toBeUndefined();
   });
 
+  describe('rebasing a picked sketch', () => {
+    const pickedHero = async (conflicting: 'a' | 'b') => {
+      const target = acme();
+      const lines = output();
+      const product = join(target, DESIGN_DIR, 'acme');
+      const sketchDir = join(product, 'sketches/elements-hero');
+      const git = (...args: string[]) =>
+        gitSpawn(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+      const edit = (file: string, to: string) =>
+        writeFileSync(file, readFileSync(file, 'utf8').replace('One featured film', to));
+
+      git('init');
+      git('add', '.');
+      git('commit', '-m', 'base');
+      await write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+      edit(join(sketchDir, `${conflicting}/elements/hero/hero.ts`), 'Variant film');
+      edit(join(product, 'elements/hero/hero.ts'), 'Product film');
+
+      const sketchFile = join(sketchDir, 'sketch.json');
+
+      writeFileSync(
+        sketchFile,
+        JSON.stringify({
+          ...JSON.parse(readFileSync(sketchFile, 'utf8')),
+          decision: { kind: 'pick', variant: 'a', decidedAt: '2026-11-04T00:00:00.000Z', by: 'designer' },
+        }),
+      );
+
+      return { target, lines };
+    };
+
+    it('keeps a conflict in a variant that is not the pick and rebases', async () => {
+      const { target, lines } = await pickedHero('b');
+
+      expect(await write(target, 'rebase', 'elements/hero', '--product', 'acme')).toBe(0);
+      expect(lines.some((line) => /^KEPT b: .* \(not merged\)$/u.test(line))).toBe(true);
+      expect(lines).toContain('elements/hero now compares with the product as it is');
+    });
+
+    it('still refuses a conflict in the picked variant', async () => {
+      const { target, lines } = await pickedHero('a');
+
+      expect(await write(target, 'rebase', 'elements/hero', '--product', 'acme')).toBe(1);
+      expect(lines.join('\n')).toContain('elements/hero not rebased - port these by hand');
+    });
+  });
+
   it('refuses to discard the old/new sketch of a direct edit', async () => {
     const target = acme();
     const lines = output();

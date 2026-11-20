@@ -200,7 +200,7 @@ const allKept = (conflicts: string[], keep: ((variant: string) => boolean) | und
   conflicts.every((conflict) => keep?.(conflictVariantOf(conflict)) ?? false);
 
 /**
- * Which conflicts `rebase --ported <named>` may keep as the variant holds them: those of a named variant, of a rejected
+ * Which conflicts `rebase` may keep as the variant holds them: those of a variant named by `--ported`, of a rejected
  * or withdrawn one, and of one that is not the pick of a picked sketch.
  */
 export const keptByPortedOf = (sketch: Sketch, named: string[]) => (variant: string) =>

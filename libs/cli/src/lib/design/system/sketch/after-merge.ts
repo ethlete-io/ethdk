@@ -2,8 +2,8 @@ import { dirname, relative, resolve } from 'path';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf, FIXTURES_KEY, partInputsOf } from './baseline';
 import { variantProblemsOf } from './check-sketches';
-import { journaledRebaseOf } from './rebase-port';
-import { listSketches, rejectionOf, Sketch, writeSketchFile } from './sketch';
+import { journaledRebaseOf, keptByPortedOf } from './rebase-port';
+import { listSketches, orphanedPickOf, rejectionOf, Sketch, writeSketchFile } from './sketch';
 import { staleBaseOf } from './stale-base';
 
 const changedKeysOf = (before: Record<string, string>, now: Record<string, string>) =>
@@ -53,7 +53,15 @@ const rebaseStaleSketches = (options: {
         },
         { base: marked },
       );
-    const { ported, conflicts, rebased, withdrawn } = journaledRebaseOf({ target, product, sketch });
+    const { ported, conflicts, rebased, withdrawn } = journaledRebaseOf({
+      target,
+      product,
+      sketch,
+      keepConflicts:
+        sketch.decision?.kind === 'pick' && !orphanedPickOf(sketch, product.name)
+          ? keptByPortedOf(sketch, [])
+          : undefined,
+    });
 
     dirs.push(sketch.dir);
 

@@ -1540,7 +1540,8 @@ const rebased = (context: Context) =>
     if (unknown.length > 0) return fail(`${sketch.target} has no variant ${unknown.join(', ')}`);
 
     const orphan = orphanedPickOf(sketch, product.name);
-    const keep = named.length > 0 ? keptByPortedOf(sketch, named) : undefined;
+    const keep =
+      named.length > 0 || (sketch.decision?.kind === 'pick' && !orphan) ? keptByPortedOf(sketch, named) : undefined;
     const { ported, conflicts, rebased, withdrawn } = journaledRebaseOf({
       target: context.target,
       product,
