@@ -85,11 +85,11 @@
     "at": "2026-11-17T17:55:04.370Z"
   },
   "elements/canvas-frames": {
-    "hash": "ecb40ec0334002b0",
+    "hash": "e13a79eb20f608a3",
     "variant": "a",
-    "decidedBy": "builder",
+    "decidedBy": "plan",
     "at": "2026-11-17T15:56:19.710Z",
-    "note": "merged: Builder recommendation a (outline + dim the rest), picked per ADR 0305"
+    "note": "builder: fix of 08e824394 drift"
   },
   "elements/part-tree": {
     "hash": "8cfdc85c3fa08ebf",

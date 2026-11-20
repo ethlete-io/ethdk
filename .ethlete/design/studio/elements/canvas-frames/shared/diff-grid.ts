@@ -27,11 +27,7 @@ const regionOf = (cell: Cell) => (cell.interaction === REST ? undefined : cell.o
 const insetOf = (edge: number) => `${edge - STROKE}px`;
 
 const markOf = (box: Box) =>
-  html`<div
-    class="pointer-events-none absolute inset-0 overflow-clip [overflow-clip-margin:4px]"
-    data-diff-mark
-    data-et-skip="CLIPPED"
-  >
+  html`<div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark data-et-skip="CLIPPED">
     <div
       class="absolute rounded-control-sm outline-2 outline-solid outline-(--et-theme-color-primary-solid) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_40%,transparent)]"
       style="left: ${insetOf(box.x)}; top: ${insetOf(box.y)}; right: ${insetOf(

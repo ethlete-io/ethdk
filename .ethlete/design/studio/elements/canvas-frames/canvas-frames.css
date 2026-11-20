@@ -19,11 +19,11 @@
   }
 
   .st-sgrid-group {
-    grid-template-columns: 12rem repeat(var(--st-cols), calc(var(--st-cell-w) + 2 * var(--space-1)));
+    grid-template-columns: 12rem repeat(var(--st-cols), calc(var(--st-cell-w) + 2 * var(--space-3)));
   }
 
   .st-sgrid[data-described] .st-sgrid-group {
-    grid-template-columns: 20rem repeat(var(--st-cols), calc(var(--st-cell-w) + 2 * var(--space-1)));
+    grid-template-columns: 20rem repeat(var(--st-cols), calc(var(--st-cell-w) + 2 * var(--space-3)));
   }
 
   .st-sgrid-description {

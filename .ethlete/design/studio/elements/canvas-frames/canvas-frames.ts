@@ -235,7 +235,7 @@ const gridOf = async (part: string, heads: GridHeads) =>
 
 const ZOOM = { kind: 'button', part: 'components/zoom-chip' } as const;
 
-const diffFrame = async () => canvasFrame('hold-trigger', stateGrid(await diffGrid(), { cellWidth: '220px' }));
+const diffFrame = async () => canvasFrame('hold-trigger', stateGrid(await diffGrid(), { cellWidth: '196px' }));
 
 const defaultFrames: Props = {
   part: 'button',
