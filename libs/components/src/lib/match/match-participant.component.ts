@@ -24,12 +24,22 @@ import { NormalizedMatchParticipant } from './match.types';
  * participant (so the link doesn't read "FC Berlin emblem FC Berlin"), takes the shared focus ring, and gets
  * an interactive hover.
  *
+ * **An edit slot** takes a control - a select, a button - marked `etMatchParticipantEdit`. By default it
+ * replaces the name block (the emblem stays); `etMatchParticipantEdit="beside"` keeps the name and
+ * puts the control after it. It works for a `null` participant too, which is how an editor picks one.
+ *
  * @example
  * <et-match-participant [participant]="match().home" />
  *
  * @example
  * <!-- a bracket cell -->
  * <et-match-participant [participant]="match().away" compact showSeed />
+ *
+ * @example
+ * <!-- an editor: pick the participant of a TBD slot -->
+ * <et-match-participant [participant]="match().home">
+ *   <button etMatchParticipantEdit type="button">Select home team</button>
+ * </et-match-participant>
  *
  * @example
  * <!-- a player card that navigates -->
@@ -86,6 +96,8 @@ import { NormalizedMatchParticipant } from './match.types';
         }
       </span>
     }
+
+    <ng-content select="[etMatchParticipantEdit]" />
 
     @if (showSeed() && participant()?.seed !== null && participant()?.seed !== undefined) {
       <span class="et-match-participant-seed">

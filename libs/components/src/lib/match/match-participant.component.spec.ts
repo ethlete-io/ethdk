@@ -325,4 +325,27 @@ describe('MatchParticipantComponent', () => {
 
     expect(name(fixture)).toBe('Offen');
   });
+
+  describe('edit slot', () => {
+    @Component({
+      template: `
+        <et-match-participant [participant]="null">
+          <button etMatchParticipantEdit type="button">Select team</button>
+        </et-match-participant>
+      `,
+      imports: [MatchParticipantComponent],
+    })
+    class EditHostComponent {}
+
+    it('projects the marked control into the participant, after the names', () => {
+      const fixture = TestBed.createComponent(EditHostComponent);
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement.querySelector('et-match-participant') as HTMLElement;
+      const button = host.querySelector(':scope > button');
+
+      expect(button?.textContent).toBe('Select team');
+      expect(host.querySelector('.et-match-participant-names')?.nextElementSibling).toBe(button);
+    });
+  });
 });

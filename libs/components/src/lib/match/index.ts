@@ -6,5 +6,7 @@ export * from './match-labels';
 export * from './match-participant-name';
 export * from './match-participant.component';
 export * from './match-score.component';
+export * from './match-scoreline.component';
+export * from './match-time.component';
 export * from './match.imports';
 export * from './match.types';

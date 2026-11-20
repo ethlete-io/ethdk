@@ -10,6 +10,7 @@ import {
 } from './headless';
 import { MatchParticipantComponent } from './match-participant.component';
 import { MatchScoreComponent } from './match-score.component';
+import { MatchTimeComponent } from './match-time.component';
 
 /**
  * The default match card: both sides with their emblems, the score or the kick-off, the per-game
@@ -39,6 +40,7 @@ import { MatchScoreComponent } from './match-score.component';
   imports: [
     MatchParticipantComponent,
     MatchScoreComponent,
+    MatchTimeComponent,
     MatchCardMetaDirective,
     MatchCardScoreDirective,
     MatchCardGameScoresDirective,

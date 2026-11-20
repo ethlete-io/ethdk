@@ -107,6 +107,18 @@
     content: attr(data-mark);
   }
 
+  .et-match-participant:has(> [etMatchParticipantEdit]:not([etMatchParticipantEdit='beside']))
+    .et-match-participant-names,
+  .et-match-participant:has(> [etMatchParticipantEdit]:not([etMatchParticipantEdit='beside']))
+    .et-match-participant-name-bone {
+    display: none;
+  }
+
+  .et-match-participant > [etMatchParticipantEdit] {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
   /* One column for the two lines, so the emblem stays centred against both of them. */
   .et-match-participant-names {
     display: flex;

@@ -1,0 +1,53 @@
+@layer components.sdk {
+  @property --et-match-scoreline-score-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-match-scoreline-score-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 700;
+  }
+
+  @property --et-match-scoreline-time-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  @property --et-match-scoreline-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  .et-match-scoreline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--et-match-scoreline-gap);
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  .et-match-scoreline-scores {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--et-match-scoreline-score-font-size);
+    font-weight: var(--et-match-scoreline-score-font-weight);
+  }
+
+  .et-match-scoreline-separator {
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-match-scoreline-time {
+    font-size: var(--et-match-scoreline-time-font-size);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+}

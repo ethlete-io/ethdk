@@ -8,6 +8,8 @@ import {
 import { MatchCardComponent } from './match-card.component';
 import { MatchParticipantComponent } from './match-participant.component';
 import { MatchScoreComponent } from './match-score.component';
+import { MatchScorelineComponent } from './match-scoreline.component';
+import { MatchTimeComponent } from './match-time.component';
 
 /**
  * The participant display primitive (`<et-match-participant>`) - emblem, name and optional seed for one
@@ -24,6 +26,8 @@ export const MATCH_CARD_IMPORTS = [
   MatchCardComponent,
   MatchParticipantComponent,
   MatchScoreComponent,
+  MatchScorelineComponent,
+  MatchTimeComponent,
   MatchCardDirective,
   MatchCardMetaDirective,
   MatchCardScoreDirective,

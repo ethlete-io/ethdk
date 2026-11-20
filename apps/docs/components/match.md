@@ -322,6 +322,39 @@ other way.
 | `interactive` | `boolean \| null`                    | `null`  | `null` infers it from the host tag (`<a>` / `<button>`).              |
 | `labels`      | `Partial<MatchLabels> \| null`       | `null`  | Per-instance string overrides.                                        |
 
+### An edit slot
+
+Mark a control `etMatchParticipantEdit` to project it into the participant - an editor's select or button.
+By default it **replaces the name block** (the emblem stays, so a TBD slot keeps its frame);
+`etMatchParticipantEdit="beside"` keeps the name and puts the control after it. It works for a `null`
+participant, which is how an editor picks one:
+
+```html
+<et-match-participant [participant]="match.home">
+  <button etMatchParticipantEdit et-button type="button">Select home team</button>
+</et-match-participant>
+```
+
+### Scoreline and time
+
+`<et-match-scoreline>` is the centre of a match row - `home : away` with the start time under it - for a row
+the card's own layout does not fit, such as the editor above. `<et-match-time>` is the tabular time text it
+shares with the card.
+
+```html
+<et-match-scoreline [homeScore]="match.homeScore" [awayScore]="match.awayScore" time="18:30" />
+```
+
+| Input                     | Type                       | Default | What it does                                    |
+| ------------------------- | -------------------------- | ------- | ----------------------------------------------- |
+| `homeScore` / `awayScore` | `string \| number \| null` | `null`  | The values; `null` draws `-`.                   |
+| `separator`               | `string`                   | `':'`   | Text between the values.                        |
+| `time`                    | `string \| null`           | `null`  | An already formatted start time, drawn below.   |
+| `animate`, `subject`      | `boolean`, `unknown`       | -       | Roll a changed value, as `et-match-score` does. |
+
+Tokens: `--et-match-scoreline-score-font-size` (`16px`), `--et-match-scoreline-score-font-weight` (`700`),
+`--et-match-scoreline-time-font-size` (`10px`), `--et-match-scoreline-gap` (`2px`).
+
 `loading` and a `null` participant are different states on purpose: a `null` participant is a decided
 **absence** - a bracket match whose feeder hasn't finished - and renders "TBD" at full row height, so nothing
 jumps when the name arrives. `loading` is a pending one.
