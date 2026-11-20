@@ -792,7 +792,11 @@ export class SketchViewComponent {
   private sketchComments = computed(() =>
     [
       ...this.commentStore.comments(),
-      ...this.commentStore.resolved().filter((comment) => comment.id === this.jumpedCommentId()),
+      ...this.commentStore
+        .resolved()
+        .filter(
+          (comment) => comment.id === this.jumpedCommentId() || comment.sketch?.createdAt === this.sketch().createdAt,
+        ),
     ].filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
   );
 

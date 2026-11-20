@@ -26,13 +26,18 @@ export const resolvedCommentsOf = (comments: ListedComment[]): ResolvedComment[]
 
 const interactionOf = (place: { interaction?: string }) => place.interaction ?? REST;
 
-const isOnPlace = (comment: CommentPlace, place: FramePlace) =>
-  comment.part === place.part &&
-  comment.state === place.state &&
-  comment.size === place.size &&
-  interactionOf(comment) === interactionOf(place) &&
-  comment.sketch?.target === place.sketch?.target &&
-  comment.sketch?.variant === place.sketch?.variant;
+const isOnPlace = (comment: CommentPlace & Pick<ListedComment, 'addressed'>, place: FramePlace) => {
+  const sketch = comment.addressed?.reason === 'merge' ? undefined : comment.sketch;
+
+  return (
+    comment.part === place.part &&
+    comment.state === place.state &&
+    comment.size === place.size &&
+    interactionOf(comment) === interactionOf(place) &&
+    sketch?.target === place.sketch?.target &&
+    sketch?.variant === place.sketch?.variant
+  );
+};
 
 /** Whether the sketch view shows a comment: one made in this sketch, or one on a page the target is used in. */
 export const isInSketch = (
@@ -44,7 +49,7 @@ export const isInSketch = (
  * The frame to move the camera to for a comment: its state and interaction at the size on show, else its state in
  * the interaction on show.
  */
-export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace) => {
+export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace & Pick<ListedComment, 'addressed'>) => {
   const placed = frames.filter((frame): frame is CanvasFrame & { place: FramePlace } => !!frame.place);
   const frame =
     placed.find((candidate) => isOnPlace({ ...comment, size: candidate.place.size }, candidate.place)) ??

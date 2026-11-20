@@ -58,6 +58,19 @@ describe('comments', () => {
     expect(otherSizeFrameOf([frame('f'), hoverFrame], comment('1', { interaction: 'hover' }))).toBe('h');
   });
 
+  it('pins a comment of a merged sketch on the part frame, and keeps an unmerged one on its variant', () => {
+    const made = { target: 'components/card', variant: 'a', createdAt: '2026-10-29T09:00:00.000Z' };
+    const merged = comment('7', {
+      sketch: made,
+      addressed: { by: 'agent', reason: 'merge', addressedAt: '2026-10-30T09:00:00.000Z' },
+    });
+    const open = comment('8', { sketch: made });
+
+    expect(pinsOf([frame('f')], [merged]).map((pin) => pin.frameId)).toEqual(['f']);
+    expect(pinsOf([frame('f')], [open])).toEqual([]);
+    expect(pinsOf([frame('f'), frame('g', 'a')], [open]).map((pin) => pin.frameId)).toEqual(['g']);
+  });
+
   it('shows in a sketch only its own comments and those on the pages that use its target', () => {
     const sketch = { createdAt: '2026-10-29T09:00:00.000Z' };
     const pages = new Set(['pages/home']);
