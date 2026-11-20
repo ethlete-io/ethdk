@@ -102,7 +102,7 @@ const results = await withStudio(
     };
     const closeWithEscape = async (selector) => {
       await page.keyboard.press('Escape');
-      await page.waitForSelector(selector, { state: 'detached', timeout: 5000 }).catch(() => undefined);
+      await page.waitForSelector(selector, { state: 'detached', timeout: 5000 });
       await page.waitForTimeout(300);
 
       return page.evaluate(
