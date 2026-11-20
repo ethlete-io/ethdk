@@ -10,6 +10,7 @@ import {
   openFrame,
   sendShot,
 } from './thumb';
+import { withRunSignal } from './run-abort';
 
 const sent: Record<string, unknown>[] = [];
 const goto = vi.fn<(url: string, options?: unknown) => Promise<{ status(): number } | void>>(async () => undefined);
@@ -198,6 +199,25 @@ describe('createThumbnailer', () => {
 });
 
 describe('createDrawQueue', () => {
+  it('leaves no unhandled rejection when a draw nobody awaits is aborted with its run', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const unhandled = vi.fn();
+    const controller = new AbortController();
+
+    process.on('unhandledRejection', unhandled);
+
+    try {
+      controller.abort();
+      await withRunSignal(controller.signal, async () => {
+        void queue.run(async () => undefined);
+      });
+      await new Promise((done) => setTimeout(done, 20));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
+
   it('draws DRAWS_AT_ONCE jobs at once and holds the next until one of them ends', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const started: number[] = [];

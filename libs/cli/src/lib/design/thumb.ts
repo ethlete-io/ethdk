@@ -412,6 +412,7 @@ export const createDrawQueue = (options: {
         };
       });
 
+      drawn.catch(() => undefined);
       entries.set(drawn, entry);
       waiting.push(entry);
       add(entry, typeof want === 'string' ? { priority: want } : want);
