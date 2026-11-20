@@ -1,5 +1,7 @@
 const ARROW_PADDING = 16;
 
+const INSET = ['left', 'right', 'top', 'bottom'];
+
 const anchorOf = (root: HTMLElement, pane: HTMLElement) => {
   const selector = pane.getAttribute('data-et-arrow-anchor') ?? '';
   let anchor: Element | null = null;
@@ -47,6 +49,12 @@ const placePane = (pane: HTMLElement, options: { mover: HTMLElement; anchor: Ele
 
   for (const property of ['translate', 'margin-left', 'margin-top']) mover.style.removeProperty(property);
 
+  const authored = (mover.dataset['etAnchorInset'] ??= JSON.stringify(
+    INSET.map((side) => mover.style.getPropertyValue(side)),
+  ));
+
+  INSET.forEach((side, index) => mover.style.setProperty(side, (JSON.parse(authored) as string[])[index] ?? ''));
+
   const vertical = /^(top|bottom)/u.test(placement);
   const align = placement.endsWith('-end') ? 'end' : placement.includes('-') ? 'start' : 'centre';
   const rect = pane.getBoundingClientRect();
@@ -65,7 +73,19 @@ const placePane = (pane: HTMLElement, options: { mover: HTMLElement; anchor: Ele
   const [shiftX, shiftY] = vertical ? [along - margin, across] : [across, along - margin];
 
   if (margin) mover.style.setProperty(vertical ? 'margin-left' : 'margin-top', `${margin}px`);
-  if (shiftX || shiftY) mover.style.setProperty('translate', `${shiftX}px ${shiftY}px`);
+  if (shiftX || shiftY) {
+    const style = getComputedStyle(mover);
+
+    if (shiftX) {
+      mover.style.setProperty('left', `${parseFloat(style.left) + shiftX}px`);
+      mover.style.setProperty('right', 'auto');
+    }
+
+    if (shiftY) {
+      mover.style.setProperty('top', `${parseFloat(style.top) + shiftY}px`);
+      mover.style.setProperty('bottom', 'auto');
+    }
+  }
 };
 
 const aim = (root: HTMLElement, pane: HTMLElement) => {
