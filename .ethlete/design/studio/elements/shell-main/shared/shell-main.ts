@@ -1,6 +1,7 @@
 import { drawing, forceInteraction, html, interactionRows, slot, type Interaction, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
+import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
 import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import { shellCollapseStyles } from '@system/components/shell-collapse';
 import { SIDE_WIDTH } from '@system/components/shell-resize-handle';
@@ -121,8 +122,13 @@ const bubbleClass = (kind: RailKind, active: boolean, panelHidden: boolean) => {
   return `rounded-control-md text-et-surface-muted ${HOVER_PRESS}`;
 };
 
-const railButton = (markup: string, label: string, force?: RailForce) =>
-  force?.label === label ? forceInteraction(markup, force.interaction) : markup;
+const railButton = (markup: string, label: string, force?: RailForce, tip = false) => {
+  if (force?.label !== label) return markup;
+  const forced = forceInteraction(markup, force.interaction);
+  return tip
+    ? `<span class="relative inline-flex">${forced}<span class="absolute inset-y-0 left-full z-10 ml-2 flex w-max items-center pt-1">${tooltip({ text: label, placement: 'right', anchor: `[aria-label="${label}"]` })}</span></span>`
+    : forced;
+};
 
 const RAIL_ACTIONS: Record<RailKind, string> = {
   section: 'emit:sectionChange',
@@ -143,6 +149,7 @@ const railItem = (
       `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && current && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
       label,
       force,
+      kind === 'product',
     ),
     RAIL_CONTROLS[kind],
   )}</div>`;
@@ -358,7 +365,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
           ${panel === 'hidden' ? '' : system.surface}
         </div>
       </div>`,
-      styles: styles + buttonStyles + loaderStyles + shellCollapseStyles + system.styles + bar.styles,
+      styles: styles + buttonStyles + loaderStyles + shellCollapseStyles + tooltipStyles + system.styles + bar.styles,
     });
   },
 });
