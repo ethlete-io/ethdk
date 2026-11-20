@@ -193,6 +193,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 
 ## C. CLI: Tempo und Ablauf
 
+- Suspect (20.11.): vite fetchModule (dist/libs/components) hängt auf dem Mac unabhängig von der Last, Render läuft nach 60 s in den Timeout. Unmöglich, wenn: eine Render-Anfrage scheitert schnell und nennt das hängende Modul, statt still nach 60 s. Nächster Mac-Versuch: Design-Log behalten, Render-Endpunkt direkt mit curl.
 - Suspect (20.11.): `sleepSync` im Produkt-Lock (2,9 s) steht bei parallelen Sessions im Wettstreit.
 
 ## D. SDK und Libs
