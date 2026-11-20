@@ -6,6 +6,8 @@ export const studioTauriArgs = (args, platform = process.platform) =>
   platform === 'win32' ? ['tauri', ...args] : ['--yes', `--package=${STUDIO_CEF_CLI}`, 'tauri', ...args];
 
 if (import.meta.main) {
+  process.on('SIGINT', () => undefined);
+
   const run = spawnSync('npx', studioTauriArgs(process.argv.slice(2)), {
     stdio: 'inherit',
     shell: process.platform === 'win32',

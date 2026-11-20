@@ -67,6 +67,7 @@
     "studio:classes:check": "nx build cli && node dist/libs/cli/src/index.js design check --product studio --app-classes",
     "studio:e2e": "node apps/ethlete-studio/e2e/canvas.e2e.mjs",
     "studio:e2e:bite": "node ./tools/scripts/studio-e2e-bite.mjs",
+    "studio:e2e:host-signal": "node apps/ethlete-studio/e2e/host-signal.e2e.mjs",
     "studio:e2e:repeat": "node ./tools/scripts/studio-e2e-repeat.mjs",
     "studio:first-listing": "node ./tools/scripts/first-listing-time.mjs",
     "studio:release-smoke": "node ./tools/studio-release-smoke/smoke.mjs",

@@ -6,6 +6,20 @@ mod design_action_log;
 mod design_roots;
 mod design_server;
 mod error;
+#[cfg(unix)]
+mod shutdown;
+#[cfg(not(unix))]
+mod shutdown {
+    pub struct Signals;
+
+    pub fn listen() -> Option<Signals> {
+        None
+    }
+
+    pub fn end_on(_signals: Option<Signals>, _app: &tauri::AppHandle) {}
+
+    pub fn exit_with_signal_code() {}
+}
 mod studio_code;
 mod traffic_lights;
 mod update;
@@ -175,6 +189,7 @@ pub fn run() {
     widen_path();
     child_env::remember();
 
+    let signals = shutdown::listen();
     let builder = tauri::Builder::default();
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     let builder = builder.runtime(cef_runtime());
@@ -190,7 +205,10 @@ pub fn run() {
         .manage(call_status::StatusWatch::default())
         .manage(update::PendingUpdate::default())
         .manage(window_chrome::ChromeWatch::default())
-        .setup(|app| Ok(console_log::start(app.handle())?))
+        .setup(|app| {
+            shutdown::end_on(signals, app.handle());
+            Ok(console_log::start(app.handle())?)
+        })
         .invoke_handler(tauri::generate_handler![
             call_status::design_status_watch,
             design::design_project,
@@ -223,6 +241,7 @@ pub fn run() {
                 handle.state::<window_chrome::ChromeWatch>().stop();
             }
         });
+    shutdown::exit_with_signal_code();
 }
 
 /// The page fetches the design server on a loopback address. Chromium's Local Network Access holds
