@@ -1,15 +1,15 @@
 {
   "components/canvas-viewport": {
-    "hash": "ffde33c0b80300dc",
-    "at": "2026-11-19T03:12:38.972Z",
+    "hash": "a9b83d7082546b7f",
+    "at": "2026-11-20T15:57:25.997Z",
     "states": {
       "canvas": "817390d43b97154e",
       "canvas-focus-visible": "b86902211c3f293e"
     },
     "files": {
       ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "61d833c902ab2771",
-      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "b3e76b1b47b38302",
-      "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "3167bad2b777df9c",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "c679638a8b364d68",
+      "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "e451ae4c854defba",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -28,7 +28,7 @@
     "app": {
       "apps/ethlete-studio/src/app/components/design-canvas/pointer-focus.ts": "a0438bd63e272c1b",
       "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "9d4fe2d96370484c",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "babc32b6734e6424",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "2cc8f112ebebb222",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.ts": "9b2779fdd412f304",
       "libs/components/src/lib/focus-ring/focus-ring.directive.ts": "4d024884f07f2ba0",
@@ -721,8 +721,8 @@
     }
   },
   "components/title-search": {
-    "hash": "6e39a84f7026860a",
-    "at": "2026-11-18T08:22:41.034Z",
+    "hash": "ab5bc2413514211e",
+    "at": "2026-11-20T15:57:39.153Z",
     "states": {
       "long": "54400eb61cf6c843",
       "long-active": "833cba5ab95dfb93",
@@ -753,22 +753,22 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "247795c91d68b8e2",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "app": {
-      "apps/ethlete-studio/src/app/components/command-palette/command-palette-store.ts": "7053334b1e202b81",
-      "apps/ethlete-studio/src/app/components/command-palette/command-palette.component.ts": "f881a60a4e2d8555",
+      "apps/ethlete-studio/src/app/components/command-palette/command-palette-store.ts": "620693e62098d633",
+      "apps/ethlete-studio/src/app/components/command-palette/command-palette.component.ts": "7104085157f952c0",
       "apps/ethlete-studio/src/app/components/title-search/title-search.component.ts": "32c1b5e3f4df3d09",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "240d52aa52b663ed",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "2cc8f112ebebb222",
       "apps/ethlete-studio/src/host/invoke.ts": "17508e99623ccffa",
       "apps/ethlete-studio/src/host/window.ts": "85000a70456058ab",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
       "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
-      "libs/components/src/lib/button/button.component.ts": "13b60f537f489968",
+      "libs/components/src/lib/button/button.component.ts": "43b80edd0899cde2",
       "libs/components/src/lib/button/button.imports.ts": "a332aa92f4996d86",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/fab.component.css": "aeef6f813521203e",
@@ -780,7 +780,7 @@
       "libs/components/src/lib/button/headless/split-button-trigger.directive.ts": "2d748e64b6aa2210",
       "libs/components/src/lib/button/headless/split-button.directive.ts": "b40aaba4d86542c0",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
-      "libs/components/src/lib/button/icon-button.component.ts": "9a28f462f16845da",
+      "libs/components/src/lib/button/icon-button.component.ts": "120f33b383917ac2",
       "libs/components/src/lib/button/split-button.component.css": "df353076be2f4352",
       "libs/components/src/lib/button/split-button.component.ts": "e65a17e4dc5da896",
       "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
@@ -1051,8 +1051,8 @@
     }
   },
   "components/zoom-chip": {
-    "hash": "28ff90f714918132",
-    "at": "2026-11-19T03:13:35.300Z",
+    "hash": "76b12927ace36380",
+    "at": "2026-11-20T15:57:57.403Z",
     "states": {
       "fit": "6b576dcebc6c555e",
       "fit-active": "2d3aae70f8cb6aac",
@@ -1072,7 +1072,7 @@
       "reset-hover": "607876aa1964dd84"
     },
     "files": {
-      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "dcd2824a9eac701c",
+      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "a325e9c839da61a0",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
@@ -1094,12 +1094,12 @@
     },
     "app": {
       "apps/ethlete-studio/src/app/design-parts/zoom-chip/zoom-chip.component.ts": "2db56b016f4012cb",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "babc32b6734e6424",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "2cc8f112ebebb222",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
       "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
-      "libs/components/src/lib/button/button.component.ts": "13b60f537f489968",
+      "libs/components/src/lib/button/button.component.ts": "43b80edd0899cde2",
       "libs/components/src/lib/button/button.imports.ts": "a332aa92f4996d86",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/fab.component.css": "aeef6f813521203e",
@@ -1111,7 +1111,7 @@
       "libs/components/src/lib/button/headless/split-button-trigger.directive.ts": "2d748e64b6aa2210",
       "libs/components/src/lib/button/headless/split-button.directive.ts": "b40aaba4d86542c0",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
-      "libs/components/src/lib/button/icon-button.component.ts": "9a28f462f16845da",
+      "libs/components/src/lib/button/icon-button.component.ts": "120f33b383917ac2",
       "libs/components/src/lib/button/split-button.component.css": "df353076be2f4352",
       "libs/components/src/lib/button/split-button.component.ts": "e65a17e4dc5da896",
       "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
@@ -3706,20 +3706,20 @@
     }
   },
   "pages/start": {
-    "hash": "276908046b2b6799",
-    "at": "2026-11-19T03:14:09.097Z",
+    "hash": "c46f4431638ec151",
+    "at": "2026-11-20T15:58:06.301Z",
     "states": {
       "no-products": "051c266151f3b445",
       "no-repo": "44136fa355b3678a"
     },
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
-      ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
+      ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
       ".ethlete/design/studio/assets/studio-app-icon.svg": "d1927cc46bc95568",
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
-      ".ethlete/design/studio/foundations/logo/logo.ts": "7b41928bfc64e439",
-      ".ethlete/design/studio/pages/start/start.ts": "edd18abc3a4eb6cd",
+      ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
+      ".ethlete/design/studio/pages/start/start.ts": "cce0d2c4caf13ece",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -3738,13 +3738,13 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "app": {
-      "apps/ethlete-studio/src/app/design-parts/start/start.component.ts": "c60155567d750633",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "babc32b6734e6424",
+      "apps/ethlete-studio/src/app/design-parts/start/start.component.ts": "8bed741a914ab0fc",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "2cc8f112ebebb222",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
       "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
-      "libs/components/src/lib/button/button.component.ts": "13b60f537f489968",
+      "libs/components/src/lib/button/button.component.ts": "43b80edd0899cde2",
       "libs/components/src/lib/button/button.imports.ts": "a332aa92f4996d86",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/fab.component.css": "aeef6f813521203e",
@@ -3756,7 +3756,7 @@
       "libs/components/src/lib/button/headless/split-button-trigger.directive.ts": "2d748e64b6aa2210",
       "libs/components/src/lib/button/headless/split-button.directive.ts": "b40aaba4d86542c0",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
-      "libs/components/src/lib/button/icon-button.component.ts": "9a28f462f16845da",
+      "libs/components/src/lib/button/icon-button.component.ts": "120f33b383917ac2",
       "libs/components/src/lib/button/split-button.component.css": "df353076be2f4352",
       "libs/components/src/lib/button/split-button.component.ts": "e65a17e4dc5da896",
       "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
