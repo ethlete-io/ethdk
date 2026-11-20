@@ -159,10 +159,10 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "pages/sketches": {
-    "hash": "befa2f4c915a2442",
-    "variant": "new",
+    "hash": "4bf95f1170fd24f1",
+    "variant": "a",
     "decidedBy": "user",
-    "at": "2026-11-20T14:49:18.703Z"
+    "at": "2026-11-20T21:20:07.189Z"
   },
   "pages/start": {
     "hash": "845cd04839f8e662",

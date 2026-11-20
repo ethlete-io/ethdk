@@ -102,6 +102,7 @@ type Props = {
   errored?: RowKey[];
   skips?: AddedSkips;
   fresh?: boolean;
+  autoMerge?: boolean;
   part?: PartKind;
   comparing?: boolean;
   listError?: string;
@@ -847,6 +848,7 @@ export default definePart<Props>({
     'added-skips': { camera: 'fit', part: 'narrow', skips: ADDED_SKIPS },
     'picked-errored': { camera: 'fit', part: 'narrow', status: 'picked', selected: 'b', errored: ['a'] },
     'new-part': { camera: 'fit', fresh: true },
+    'auto-merge': { camera: 'fit', status: 'drawing', autoMerge: true },
     'narrow-part': { camera: 'fit', part: 'narrow' },
     'sticky-names': { camera: { zoom: 0.8, x: -1700, y: -260 } },
     comparing: { camera: 'fit', comparing: true },
@@ -917,6 +919,8 @@ export default definePart<Props>({
       'Variants that add data-et-skip markers; check one warning line per marker above Übernehmen in that variant head.',
     'picked-errored':
       'Variant b picked while a has a render error; check Variante gewählt and that no row offers Übernehmen.',
+    'auto-merge':
+      'A sketch that sketch ready would merge by itself; check the auto-merge mark beside the status in the header.',
     'new-part': 'A sketch of a new part; check that there is no Aktuell row and the neu badge shows.',
     'narrow-part':
       'A narrow part as one row per variant; check the state grid with its names and the cell widths that follow each measured state.',
@@ -998,6 +1002,7 @@ export default definePart<Props>({
     errored = [],
     skips = {},
     fresh = false,
+    autoMerge = false,
     part: kind = 'wide',
     comparing = false,
     listError,
@@ -1019,6 +1024,11 @@ export default definePart<Props>({
     confirm,
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
+    const autoMark = autoMerge
+      ? html`<span class="flex w-fit" data-et-semantic-color="success" data-sk-auto-merge
+          >${(await badge.render({ badges: [{ label: 'Übernimmt sich selbst', variant: 'tonal', size: 'sm' }] })).body}</span
+        >`
+      : '';
     const reload = await button.render({ label: 'Erneut laden', variant: 'outline', color: 'surface', size: 'sm' });
     const retry = listError ? withAction(reload.body, 'emit:retry') : '';
     const take = await takeButton();
@@ -1098,7 +1108,7 @@ export default definePart<Props>({
       >
         <span class="text-ui-lg font-ui-strong">${multi ? MULTI_PART.title : screen ? SCREEN_KEY : part.key}</span>
         ${fresh ? tags.fresh.body : ''}
-        ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, tags, readyReason)}
+        ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, tags, readyReason)} ${autoMark}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${
