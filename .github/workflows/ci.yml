@@ -535,16 +535,22 @@ jobs:
 
       - run: yarn nx run cli:test-perf
 
-      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium webkit
+      - id: browsers
+        if: ${{ !cancelled() }}
+        run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium webkit
 
-      - run: yarn nx run-many -t build -p cli,components,core
+      - id: build
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        run: yarn nx run-many -t build -p cli,components,core
 
-      - run: yarn studio:e2e --perf
+      - if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: yarn studio:e2e --perf
         timeout-minutes: 10
         env:
           STUDIO_E2E_WORKERS: 1
 
-      - run: yarn studio:e2e --perf --engine webkit --case "ctrl-wheel zoom over 100 cells keeps the frame interval budget"
+      - if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: yarn studio:e2e --perf --engine webkit --case "ctrl-wheel zoom over 100 cells keeps the frame interval budget"
         timeout-minutes: 10
         env:
           STUDIO_E2E_WORKERS: 1
