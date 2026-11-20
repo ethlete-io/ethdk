@@ -22,6 +22,7 @@
     "allow-design-server-restart",
     "allow-design-server-state",
     "allow-design-server-stop",
+    "allow-help-open",
     "allow-update-ready",
     "allow-studio-code-state",
     "allow-studio-quit-for-rebuild",

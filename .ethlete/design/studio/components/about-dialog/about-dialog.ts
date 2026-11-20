@@ -23,6 +23,7 @@ const content = (version: string) =>
     <p class="mt-space-3 text-ui-sm text-et-surface-muted">MIT-Lizenz, © 2025 The Authors</p>`;
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/about-dialog/about-dialog.component.ts',
   note: 'Über Studio aus dem Studio-Menü: ein SDK-Dialog mit Titel und Schließen-Knopf, darin das Studio-Zeichen, der Produktname, die laufende Version aus dem Host und die Lizenz. Keine Fußzeile: Esc, der Schließen-Knopf und ein Klick auf den Hintergrund schließen ihn, der Fokus kehrt zum Studio-Menü zurück.',
   madeBy: ['claude-opus-5-5'],
   widths: [800],

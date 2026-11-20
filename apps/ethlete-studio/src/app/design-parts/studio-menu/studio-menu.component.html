@@ -41,7 +41,7 @@
     }
   </button>
   <ng-template etMenuSurface>
-    <et-menu [attr.aria-label]="LABELS.panel" class="box-border w-62 text-ui-md">
+    <et-menu [attr.aria-label]="LABELS.panel" class="box-border w-62 text-ui-md [--et-menu-max-height:80vh]">
       <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
         <et-menu-group-label>{{ LABELS.project }}</et-menu-group-label>
         @for (name of projects(); track name) {
@@ -60,6 +60,10 @@
           {{ item.label }}
         </button>
       }
+      <et-menu-separator />
+      <button (activate)="showShortcuts.emit()" et-menu-item type="button">{{ LABELS.shortcuts }}</button>
+      <button (activate)="openHelp.emit()" et-menu-item type="button">{{ LABELS.help }}</button>
+      <button (activate)="showAbout.emit()" et-menu-item type="button">{{ LABELS.about }}</button>
     </et-menu>
   </ng-template>
 </div>

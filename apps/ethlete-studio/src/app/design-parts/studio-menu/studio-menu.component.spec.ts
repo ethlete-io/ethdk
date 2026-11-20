@@ -25,6 +25,9 @@ const openMenu = async (options: {
   fixture.componentInstance.projectChange.subscribe((name: string) => events.push(`project:${name}`));
   fixture.componentInstance.openProject.subscribe(() => events.push('openProject'));
   fixture.componentInstance.serverAction.subscribe((action: DesignServerAction) => events.push(`server:${action}`));
+  fixture.componentInstance.showShortcuts.subscribe(() => events.push('showShortcuts'));
+  fixture.componentInstance.openHelp.subscribe(() => events.push('openHelp'));
+  fixture.componentInstance.showAbout.subscribe(() => events.push('showAbout'));
   await fixture.whenStable();
 
   const rows = () =>
@@ -39,7 +42,7 @@ const openMenu = async (options: {
 };
 
 describe('StudioMenuComponent', () => {
-  it('lists the projects and the server actions in design order', async () => {
+  it('lists the projects, the server actions and the help rows in design order', async () => {
     const { rows } = await openMenu({ project: 'b', projects: ['a', 'b', 'c', 'd'] });
 
     expect(rows()).toEqual([
@@ -52,6 +55,9 @@ describe('StudioMenuComponent', () => {
       'Design-Server',
       'Design-Server neu starten',
       'Design-Server stoppen',
+      'Tastenkürzel',
+      'Hilfe',
+      'Über Studio',
     ]);
   });
 
@@ -91,12 +97,27 @@ describe('StudioMenuComponent', () => {
     expect(events).toEqual([]);
   });
 
-  it('hides the rows without a target: no submenu and nothing after the server actions', async () => {
+  it('hides the rows without a target: no submenu, no Einstellungen', async () => {
     const { rows } = await openMenu({ project: 'a', projects: ['a'] });
 
-    expect(rows().slice(-1)).toEqual(['Design-Server stoppen']);
+    expect(rows()).not.toContain('Einstellungen');
+    expect(rows()).not.toContain('Erscheinungsbild');
     expect(document.querySelectorAll('[aria-haspopup="menu"][role="menuitem"]')).toHaveLength(0);
-    expect(document.querySelectorAll('et-menu-separator')).toHaveLength(1);
+    expect(document.querySelectorAll('et-menu-separator')).toHaveLength(2);
+  });
+
+  it('emits each help row, also while an action runs', async () => {
+    const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a'], busy: true });
+
+    for (const label of ['Tastenkürzel', 'Hilfe', 'Über Studio']) {
+      fixture.componentInstance.open.set(true);
+      await fixture.whenStable();
+      expect(row(label)?.getAttribute('aria-disabled')).not.toBe('true');
+      row(label)?.click();
+      await fixture.whenStable();
+    }
+
+    expect(events).toEqual(['showShortcuts', 'openHelp', 'showAbout']);
   });
 
   it('closes with Escape', async () => {

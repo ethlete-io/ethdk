@@ -17,6 +17,7 @@ fn main() {
             "design_server_restart",
             "design_server_state",
             "design_server_stop",
+            "help_open",
             "studio_code_state",
             "studio_quit_for_rebuild",
             "update_ready",

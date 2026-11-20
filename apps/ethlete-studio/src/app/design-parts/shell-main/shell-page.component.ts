@@ -20,6 +20,7 @@ import { UpdateDialogComponent } from '../../components/update-dialog/update-dia
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { injectStudioMenuDialogs } from '../studio-menu/studio-menu-dialogs';
 import { ServerCrash, ShellMainComponent, ShellSection, StartPhase } from './shell-main.component';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
@@ -91,6 +92,9 @@ export const SHELL_SAMPLE: ShellState = {
         (projectChange)="action.emit({ kind: 'project', name: $event })"
         (openProject)="action.emit({ kind: 'openProject' })"
         (serverAction)="action.emit({ kind: 'server', action: $event })"
+        (showShortcuts)="menuDialogs.shortcuts()"
+        (openHelp)="menuDialogs.help()"
+        (showAbout)="menuDialogs.about()"
         shellMainStudio
         bare
       />
@@ -107,6 +111,7 @@ export class ShellPageComponent {
   private overlay = injectOverlayManager();
   protected updateCheck = injectUpdateCheck();
   protected chrome = inject(WINDOW_CHROME);
+  protected menuDialogs = injectStudioMenuDialogs();
 
   public section = input<ShellSection>('System');
 

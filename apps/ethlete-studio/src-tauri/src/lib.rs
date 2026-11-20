@@ -6,6 +6,7 @@ mod design_action_log;
 mod design_roots;
 mod design_server;
 mod error;
+mod help;
 #[cfg(unix)]
 mod shutdown;
 #[cfg(not(unix))]
@@ -222,6 +223,7 @@ pub fn run() {
             design_server::design_server_state,
             design_server::design_server_stop,
             design_server::design_server_restart,
+            help::help_open,
             studio_code::studio_code_state,
             studio_code::studio_quit_for_rebuild,
             update::update_ready,

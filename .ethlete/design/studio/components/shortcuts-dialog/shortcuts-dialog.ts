@@ -56,6 +56,7 @@ const list = () =>
   );
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/shortcuts-dialog/shortcuts-dialog.component.ts',
   note: 'Tastenkürzel aus dem Studio-Menü und mit Strg+/: ein SDK-Dialog mit Titel und Schließen-Knopf, darin die Kürzel, die Studio wirklich hat, nach Allgemein und Canvas gruppiert, jedes mit SDK-Tastenkappe. Keine Fußzeile: Esc, der Schließen-Knopf und ein Klick auf den Hintergrund schließen ihn.',
   madeBy: ['claude-opus-5-5'],
   widths: [800],

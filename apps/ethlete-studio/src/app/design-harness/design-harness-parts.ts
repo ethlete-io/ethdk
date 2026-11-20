@@ -2,6 +2,8 @@
 import { Type } from '@angular/core';
 
 export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> = {
+  'components/about-dialog': () =>
+    import('../design-parts/about-dialog/about-dialog.component').then((m) => m.AboutDialogComponent),
   'components/canvas-viewport': () =>
     import('../design-parts/canvas-viewport/canvas-viewport.component').then((m) => m.CanvasViewportComponent),
   'components/command-palette': () =>
@@ -18,6 +20,8 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/error-toast/error-toast.component').then((m) => m.ErrorToastComponent),
   'components/shell-collapse': () =>
     import('../design-parts/shell-collapse/shell-collapse.component').then((m) => m.ShellCollapseComponent),
+  'components/shortcuts-dialog': () =>
+    import('../design-parts/shortcuts-dialog/shortcuts-dialog.component').then((m) => m.ShortcutsDialogComponent),
   'components/sketch-question': () =>
     import('../design-parts/sketch-question/sketch-question.component').then((m) => m.SketchQuestionComponent),
   'components/title-bar': () => import('../components/title-bar/title-bar.component').then((m) => m.TitleBarComponent),
