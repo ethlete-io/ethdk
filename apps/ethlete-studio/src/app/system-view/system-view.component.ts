@@ -85,6 +85,7 @@ import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
 import { buildReadyStatusOf, openPointGroupsOf } from './open-points';
+import { gatedByPartErrors, partErrorsOf } from './part-errors';
 import { BuildReadyStatus } from '../design-parts/system-page/build-ready-footer.component';
 import { OpenPointGroup, OpenPointTarget } from '../design-parts/system-page/system-page-sample';
 import { partOpenPoints$ } from '../../host/design-open-points';
@@ -265,6 +266,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [selectedComment]="pickedCommentId()"
         [thread]="openThread()"
         [draft]="commentStore.draft() ? commentStore.draftText() : null"
+        [send]="commentStore.sendPhase()"
+        [reason]="commentStore.sendReason()"
         [canvas]="shellCanvas"
         [writer]="commentWriter()"
         [foldedStates]="foldedStates().size"
@@ -863,7 +866,11 @@ export class SystemViewComponent {
   );
 
   protected openPointGroups = computed(() => this.openPointReads()?.items.groups ?? []);
-  protected buildReady = computed(() => this.openPointReads()?.items.buildReady ?? null);
+  protected buildReady = computed(() => {
+    const status = this.openPointReads()?.items.buildReady ?? null;
+
+    return status && gatedByPartErrors(status, partErrorsOf({ problems: this.part()?.listed.problems }));
+  });
 
   protected openExceptions = computed(() => {
     const part = this.part()?.key;
