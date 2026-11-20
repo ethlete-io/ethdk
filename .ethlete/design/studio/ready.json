@@ -1238,16 +1238,16 @@
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9"
     },
-    "app": "6603a851860af432",
+    "app": "38a5c2287ed9d816",
     "embedded": {
-      "components/comment-pin": "1391dc7eb7a07bf2"
+      "components/comment-pin": "bad7bbce026e4135"
     },
     "actions": ["emit:pinToggle"],
     "builder": "designer",
     "at": "2026-11-20T20:06:45.408Z",
-    "by": "sonnet",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 1283728
+    "pid": 1536948
   },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",
