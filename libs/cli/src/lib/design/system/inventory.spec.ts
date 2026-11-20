@@ -251,6 +251,46 @@ describe('inventoryFramesOf', () => {
   });
 });
 
+describe('inventoryFramesOf items', () => {
+  it('numbers assets and overlays per kind and marks the ownerless ones as findings', () => {
+    const item = (kind: 'asset' | 'overlay', y: number, owner: string | null) => ({
+      kind,
+      what: kind === 'asset' ? 'svg' : 'div',
+      path: `main > ${kind}${y}`,
+      label: null,
+      owner,
+      box: { x: 0, y, width: 10, height: 10 },
+    });
+    const frames = inventoryFramesOf({
+      product: 'app-a',
+      part: 'pages/home',
+      controls: undefined,
+      frames: [
+        {
+          state: 'rest',
+          interaction: null,
+          controls: [],
+          surfaces: [],
+          items: [
+            item('overlay', 30, null),
+            item('asset', 20, 'foundations/logo'),
+            item('asset', 10, null),
+            item('overlay', 40, 'components/menu'),
+          ],
+        },
+      ],
+      addresses: [{ state: 'rest', preset: 'desktop', width: null }],
+    });
+
+    expect(frames[0]?.items.map(({ kind, number, status, owner }) => [kind, number, status, owner])).toEqual([
+      ['asset', 1, 'finding', null],
+      ['asset', 2, 'owned', 'foundations/logo'],
+      ['overlay', 1, 'finding', null],
+      ['overlay', 2, 'owned', 'components/menu'],
+    ]);
+  });
+});
+
 describe('inventory endpoints', () => {
   it('answers the inventory of a page without its directory', async () => {
     const { target, dir } = checkout();

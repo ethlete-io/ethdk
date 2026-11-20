@@ -4,6 +4,7 @@ import {
   declaredControlsOf,
   findingKeyOf,
   FoundControl,
+  FoundItem,
   FrameAddress,
   FrameBox,
   inventoryIdsOf,
@@ -46,8 +47,25 @@ export type InventoryControl = {
   covered: boolean;
 };
 
-/** A rest frame of a page, the URL of its picture and the controls it draws, in its pixels. */
-export type InventoryFrame = FrameAddress & { shot: string; controls: InventoryControl[] };
+/**
+ * An inline SVG, an image or an open overlay of a rest frame. `owned` is drawn by the embedded part `owner`
+ * (`foundations/<name>` for an asset, `components/<part>` for an overlay); `finding` has no owner: an inline asset or
+ * a mocked overlay. `number` counts per kind within the frame, top to bottom.
+ */
+export type InventoryItem = {
+  number: number;
+  kind: 'asset' | 'overlay';
+  status: 'owned' | 'finding';
+  what: string;
+  id: string;
+  label: string | null;
+  owner: string | null;
+  box: FrameBox | null;
+  covered: boolean;
+};
+
+/** A rest frame of a page, the URL of its picture, the controls and the assets and overlays it draws, in its pixels. */
+export type InventoryFrame = FrameAddress & { shot: string; controls: InventoryControl[]; items: InventoryItem[] };
 
 /** The control inventory of a page, its part hash, and whether its approval holds. `dir` holds its inventory.json. */
 export type Inventory = {
@@ -82,6 +100,25 @@ const isOwnedOf = (frame: SeenFrame) => (found: FoundControl) =>
   found.kind === 'control' &&
   (found.owner ?? null) !== null &&
   !found.within.some((id) => frame.controls.some((control) => control.id === id));
+
+const itemsOf = (items: FoundItem[]): InventoryItem[] => {
+  const counts = { asset: 0, overlay: 0 };
+
+  return items
+    .map((item) => ({ item, box: item.box ?? null }))
+    .sort(byPlace)
+    .map(({ item }) => ({
+      number: ++counts[item.kind],
+      kind: item.kind,
+      status: item.owner === null ? ('finding' as const) : ('owned' as const),
+      what: item.what,
+      id: item.path,
+      label: item.label ?? null,
+      owner: item.owner,
+      box: item.box ?? null,
+      covered: item.covered ?? false,
+    }));
+};
 
 /** Numbers the declared, owned, undeclared and unclassified controls each rest frame draws, top to bottom. */
 export const inventoryFramesOf = (options: {
@@ -160,6 +197,7 @@ export const inventoryFramesOf = (options: {
               number: numbers.get(key) ?? 0,
               states: counts.get(key) ?? 0,
             })),
+            items: itemsOf(frame.items ?? []),
           },
         ]
       : [];
@@ -196,11 +234,17 @@ export const inventoryOf = async (options: {
   const ids = inventoryIdsOf(sight.seen);
   const approval = readInventory(sight.owner.dir)[part] ?? null;
   const state = inventoryStateOf({ approval: approval ?? undefined, ids, hash: sight.hash });
-  const findings = new Set(
-    frames.flatMap((frame) =>
-      frame.controls.filter((control) => isOpen(control.status)).map((control) => control.number),
-    ),
-  ).size;
+  const findings =
+    new Set(
+      frames.flatMap((frame) =>
+        frame.controls.filter((control) => isOpen(control.status)).map((control) => control.number),
+      ),
+    ).size +
+    new Set(
+      frames.flatMap((frame) =>
+        frame.items.filter((item) => item.status === 'finding').map((item) => `${item.kind} ${item.id} ${item.label}`),
+      ),
+    ).size;
 
   return {
     part,

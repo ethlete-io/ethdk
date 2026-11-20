@@ -28,6 +28,7 @@ import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
 import { optionValuesChecker } from './rules/option-values';
 import { demoBackdropGapsOf, findDemoBackdrop } from './demo-backdrop';
+import { OVERLAY_PANE_SELECTOR } from './see-through';
 import { completenessCodeOf } from '../code-hash';
 import { browserVersionOf, cacheKeyOf } from './compare-cache';
 import {
@@ -70,6 +71,20 @@ export type FoundControl = {
   action?: string | null;
 };
 
+/**
+ * A drawn inline `<svg>`, a rendered `<img>` or an open overlay pane. `owner` is the embedded part that draws it, or
+ * `null` for the frame's own part. `what` is the element's tag and class, `path` its place, `label` its accessible name.
+ */
+export type FoundItem = {
+  kind: 'asset' | 'overlay';
+  what: string;
+  path: string;
+  label?: string | null;
+  owner: string | null;
+  box?: FrameBox | null;
+  covered?: boolean;
+};
+
 /** A rule of the part's own stylesheet that sets `properties` on `path`, an element the embedded part `owner` draws. */
 export type FoundOverride = { owner: string; selector: string; path: string; properties: string[] };
 
@@ -104,6 +119,7 @@ export type SeenFrame = {
   }[];
   surfaces: { id: string; shown: boolean; options?: SeenOption[] }[];
   found?: FoundControl[];
+  items?: FoundItem[];
   overrides?: FoundOverride[];
   backdrop?: { path: string; fill: string } | null;
 };
@@ -1169,6 +1185,23 @@ const discoverControls = `((root) => {
   return found;
 })`;
 
+const discoverItems = `((root) => {
+  const items = [];
+  const panes = ${JSON.stringify(OVERLAY_PANE_SELECTOR)};
+  const visible = (element) => element.getClientRects().length > 0 && getComputedStyle(element).visibility === 'visible';
+  const labelOf = (element) =>
+    (element.getAttribute('aria-label') ?? element.getAttribute('alt') ?? element.innerText ?? '').replace(/\\s+/g, ' ').trim().slice(0, 60) || null;
+  const add = (kind, element) =>
+    items.push({ kind, what: nameOf(element), path: pathOf(element), label: labelOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element), covered: isCovered(element) });
+  for (const element of root.querySelectorAll('svg, img, ' + panes)) {
+    if (!visible(element)) continue;
+    if (element.matches(panes)) {
+      if (!element.parentElement?.closest(panes)) add('overlay', element);
+    } else if (!element.parentElement?.closest('svg')) add('asset', element);
+  }
+  return items;
+})`;
+
 const ROOT_LAYOUT = [
   '^margin',
   '^inset',
@@ -1407,6 +1440,7 @@ export const seeFrame = (options: {
     controls,
     surfaces,
     found: discover ? ${discoverControls}(root) : [],
+    items: discover ? ${discoverItems}(root) : [],
     overrides: discover ? ${findOverrides}(${JSON.stringify(options.ownCss)}) : [],
     backdrop: discover ? ${findDemoBackdrop(options.part)}(root) : null,
   };
@@ -1451,6 +1485,7 @@ type Seen =
       })[];
       surfaces: { id: string; shown: boolean; options: (Tagged & { named: boolean; keyboard: boolean })[] }[];
       found: FoundControl[];
+      items: FoundItem[];
       overrides: FoundOverride[];
       backdrop: { path: string; fill: string } | null;
     };
@@ -1588,6 +1623,7 @@ const seeFrames = async (options: {
         controls,
         surfaces,
         found: found.found,
+        items: found.items,
         overrides: found.overrides,
         backdrop: found.backdrop,
       });
