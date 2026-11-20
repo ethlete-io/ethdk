@@ -12,7 +12,7 @@ import { NormalizedMatchParticipant } from '../match.types';
       style="background: var(--et-surface-background-solid)"
     >
       <et-match-participant [participant]="HOME">
-        <button class="w-full min-w-0" etMatchParticipantEdit et-button type="button" variant="outlined">
+        <button class="w-full min-w-0" etMatchParticipantEdit et-button type="button" variant="outline">
           Change home
         </button>
       </et-match-participant>
@@ -20,7 +20,7 @@ import { NormalizedMatchParticipant } from '../match.types';
       <et-match-scoreline [homeScore]="null" [awayScore]="null" time="18:30" />
 
       <et-match-participant [participant]="null">
-        <button class="w-full min-w-0" etMatchParticipantEdit et-button type="button" variant="outlined">
+        <button class="w-full min-w-0" etMatchParticipantEdit et-button type="button" variant="outline">
           Select away team
         </button>
       </et-match-participant>
@@ -28,7 +28,7 @@ import { NormalizedMatchParticipant } from '../match.types';
 
     <div class="mt-4 max-w-2xl">
       <et-match-participant [participant]="HOME">
-        <button class="w-full min-w-0" etMatchParticipantEdit="beside" et-button type="button" variant="outlined">
+        <button class="w-full min-w-0" etMatchParticipantEdit="beside" et-button type="button" variant="outline">
           Edit
         </button>
       </et-match-participant>
