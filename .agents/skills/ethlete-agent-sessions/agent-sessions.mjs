@@ -40,6 +40,7 @@ const RESTART_DRAFT_NOTICE_MS = Number(process.env.AGENT_RESTART_DRAFT_NOTICE_MS
 const RESTART_CLEAR_WAIT_MS = Number(process.env.AGENT_RESTART_CLEAR_WAIT_MS ?? 60 * 1000);
 const RESTART_EXIT_WAIT_MS = Number(process.env.AGENT_RESTART_EXIT_WAIT_MS ?? 30 * 1000);
 const RESTART_RESUME_WAIT_MS = Number(process.env.AGENT_RESTART_RESUME_WAIT_MS ?? 60 * 1000);
+const RUN_EXIT_CHECK_MS = Number(process.env.AGENT_RUN_EXIT_CHECK_MS ?? 400);
 const RESTART_LOCK_MS = Number(process.env.AGENT_RESTART_LOCK_MS ?? RESTART_WAIT_MS + 10 * 60 * 1000);
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
@@ -162,6 +163,21 @@ const foreignCheckoutsOf = (agent) => [
       .filter(Boolean),
   ),
 ];
+const createRunSession = (session, shellCommand, baseCommand) => {
+  const result = tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
+  if (result.status !== 0) {
+    process.stderr.write(`No agent was started: tmux could not create ${session}: ${result.stderr.trim()}\n`);
+    process.exitCode = 1;
+    return;
+  }
+  tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
+  if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
+  sleep(RUN_EXIT_CHECK_MS);
+  if (!sessionExists(session)) {
+    process.stderr.write(`No agent stayed up: ${session} ended right after the start of ${baseCommand}\n`);
+    process.exitCode = 1;
+  }
+};
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
 const hasTerminal = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 const runsInSession = (agentArgs) => !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
@@ -187,6 +203,23 @@ const withoutPrompt = (words) => {
 const SHELL_WORD = /(?:'[^']*'|\\.|[^\s'\\])+/g;
 const ENV_WORD = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const unquoteWord = (word) => word.replace(/'([^']*)'|\\(.)/g, (_, quoted, escaped) => quoted ?? escaped);
+const hasAgentBinary = (words) => {
+  let index = 0;
+  while (
+    index < words.length &&
+    (ENV_WORD.test(words[index]) ||
+      words[index] === 'env' ||
+      (index > 0 && words.includes('env') && words[index].startsWith('-')))
+  )
+    index++;
+  return index < words.length;
+};
+const healedCommand = (command, agent) => {
+  const words = [...command.matchAll(SHELL_WORD)].map(([word]) => unquoteWord(word));
+  if (hasAgentBinary(words)) return command;
+  const binary = agent.match(/^(claude|codex)/)?.[1];
+  return binary ? `${command} ${quote(binary)}` : null;
+};
 const commandWithoutPrompt = (command) => {
   const tokens = [...command.matchAll(SHELL_WORD)];
   const program = tokens.findIndex(([word]) => !ENV_WORD.test(word));
@@ -605,6 +638,9 @@ if (command === 'send' && sender) {
 } else if (command === 'run' && sender && words.length && role !== undefined && role !== 'builder') {
   process.stderr.write(`Unknown role ${role}. Only builder exists.\n`);
   process.exitCode = 1;
+} else if (command === 'run' && sender && words.length && !hasAgentBinary(words)) {
+  process.stderr.write(`Refused: no agent was started, ${words.join(' ')} has no program to run.\n`);
+  process.exitCode = 1;
 } else if (command === 'run' && sender && words.length && dryRun) {
   process.stdout.write(`${withTempDir([...roleEnvWords(role), ...withRole(words).map(quote)].join(' '))}\n`);
 } else if (command === 'run' && sender && words.length && !runsInSession(words.slice(1))) {
@@ -627,18 +663,10 @@ if (command === 'send' && sender) {
   const shellCommand = withTempDir(`${roleEnv}${withRole(words).map(quote).join(' ')}`);
   const baseCommand = withTempDir(`${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`);
   if (!hasTerminal) {
-    if (!sessionExists(session)) {
-      tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
-      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
-      if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
-    }
-    process.stdout.write(`Started ${session}. Attach with: tmux attach -t ${session}\n`);
+    if (!sessionExists(session)) createRunSession(session, shellCommand, baseCommand);
+    if (!process.exitCode) process.stdout.write(`Started ${session}. Attach with: tmux attach -t ${session}\n`);
   } else if (process.env.TMUX) {
-    if (!sessionExists(session)) {
-      tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
-      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
-      if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
-    }
+    if (!sessionExists(session)) createRunSession(session, shellCommand, baseCommand);
     const callerSession = tmux(
       'display-message',
       '-p',
@@ -649,19 +677,17 @@ if (command === 'send' && sender) {
     const [callerClient] = callerSession
       ? tmux('list-clients', '-t', callerSession, '-F', '#{client_tty}').stdout.split('\n').filter(Boolean)
       : [];
-    process.exitCode = callerClient
+    if (!process.exitCode && !callerClient)
+      process.stdout.write(`Started ${session}. Attach with: tmux attach -t ${session}\n`);
+    process.exitCode ||= callerClient
       ? (spawnSync('tmux', ['switch-client', '-c', callerClient, '-t', `=${session}`], { stdio: 'inherit' }).status ??
         1)
       : 0;
   } else {
-    const created = sessionExists(session)
-      ? []
-      : ['new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand];
-    if (created.length && tmux(...created).status === 0) {
-      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
-      if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
-    }
-    process.exitCode = spawnSync('tmux', ['attach-session', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
+    if (!sessionExists(session)) createRunSession(session, shellCommand, baseCommand);
+    process.exitCode ||= !sessionExists(session)
+      ? 1
+      : (spawnSync('tmux', ['attach-session', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1);
   }
 } else if (command === 'shell-init' || command === 'shell-install') {
   const agents = [sender, ...words].filter(Boolean);
@@ -753,6 +779,15 @@ if (command === 'send' && sender) {
       `Refused: ${session} has no role and another agent session runs in this repo, so the new process could lose the builder rule. Resume a builder-* or doc-agent-* handoff, or pass --role builder or --role none.\n`,
     );
     process.exitCode = 1;
+  } else if (
+    (newProcess || (now && backgroundWorkOf(paneLines(session)) !== null)) &&
+    healedCommand(commandWithoutPrompt(agentCommandOf(session)), sender) === null
+  ) {
+    process.stderr.write(
+      `Refused: the stored command of ${session} has no agent program (${agentCommandOf(session)}), restarting would end the session. Nothing was stopped.\n`,
+    );
+    restartLog(`${session} refused, stored command has no agent program: ${agentCommandOf(session)}`);
+    process.exitCode = 1;
   } else if (dropped.length) {
     process.stderr.write(
       `Refused: ${session} asked the human a ❓ question that no later human message answers, and the handoff does not name it. Put each question verbatim under "Open for the human" in the handoff the prompt resumes (/handoff resume <name>), then restart again:\n${dropped.map((question) => `❓ ${question}`).join('\n')}\n`,
@@ -777,7 +812,12 @@ if (command === 'send' && sender) {
         restartLog(`${session} shows background work (${background}), restart goes through --process`);
       const pane = `=${session}:`;
       const restartRole = restartRoleOf(session, words.join(' '));
-      const stored = commandWithoutPrompt(agentCommandOf(session));
+      const recorded = commandWithoutPrompt(agentCommandOf(session));
+      const stored = healedCommand(recorded, sender);
+      if (stored !== recorded) {
+        tmux('set-option', '-t', pane, COMMAND_OPTION, stored);
+        restartLog(`${session} stored command had no agent program, healed to: ${stored}`);
+      }
       const base = withTempDir(restartRole ? commandWithRole(stored, restartRole) : stored);
       if (restartRole) tmux('set-option', '-t', pane, ROLE_OPTION, restartRole);
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'on');

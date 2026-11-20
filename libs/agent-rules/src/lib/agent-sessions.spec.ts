@@ -1154,6 +1154,71 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
+    'heals a stored command without an agent program before restart --process stops the pane',
+    () => {
+      const agent = `claude-nobin-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const rule = '─'.repeat(40);
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `printf '${rule}\\n❯ \\n${rule}\\n'; read line; exec cat`]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', "'env' 'CLAUDE_CONFIG_DIR=/x'"]);
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
+        });
+
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain("'env' 'CLAUDE_CONFIG_DIR=/x' 'claude'");
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'refuses restart --process when the stored command has no program and none can be inferred',
+    () => {
+      const agent = `gizmo-nobin-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', "'env' 'FOO=1'"]);
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+        });
+
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain('no agent program');
+        expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it('fails run loudly when the words hold no program to start', () => {
+    const result = run(['run', 'claude', 'env', 'CLAUDE_CONFIG_DIR=/x']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('no agent was started');
+  });
+
+  it.skipIf(!hasTmux)('fails run loudly when the started program ends at once', () => {
+    const agent = `claude-dies-${process.pid}`;
+    const result = run(['run', agent, 'false'], undefined, {
+      HOME: dir,
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+      AGENT_RUN_EXIT_CHECK_MS: '800',
+    });
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('No agent stayed up');
+  });
+
+  it.skipIf(!hasTmux)(
     'types the prompt when only the IDE context chip sits on the prompt line',
     async () => {
       const agent = `claude-chip-${process.pid}`;
