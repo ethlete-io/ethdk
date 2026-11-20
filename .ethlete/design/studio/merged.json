@@ -1,10 +1,9 @@
 {
   "components/about-dialog": {
-    "hash": "affc1879ca49d3b1",
-    "variant": "a",
-    "decidedBy": "plan: ADR 0387",
-    "at": "2026-11-20T14:03:08.582Z",
-    "note": "merged without a pick: allowed by ADR 0387"
+    "hash": "2c6aa1afdb7b85c3",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-20T15:24:58.541Z"
   },
   "components/canvas-viewport": {
     "hash": "7d1896bec023c51a",
