@@ -590,7 +590,8 @@ const gridFrameOf = (options: {
   revision?: number;
 }): CanvasFrame => {
   const { grid, width, addressOf, placeOf, idOf, schemes, revision } = options;
-  const base = grid.cells[0]?.state;
+  const [restColumn] = grid.columns;
+  const restOf = new Map(grid.cells.filter((cell) => cell.column === restColumn).map((cell) => [cell.row, cell.state]));
 
   return {
     id: GRID,
@@ -603,6 +604,7 @@ const gridFrameOf = (options: {
       rows: grid.rows,
       cells: grid.cells.map(({ row, column, state }) => {
         const cell = { state, interaction: REST };
+        const base = restOf.get(row);
 
         return {
           id: idOf(cell, width),
@@ -708,9 +710,9 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
   if (!first) return gridFrames;
 
   const diffOf = (cell: Cell) =>
-    cell === first || first.state === undefined
+    cell.interaction === REST || cell.state === undefined
       ? {}
-      : { diff: partStateDiffUrl({ ...addressOf(cell), base: first.state, fill: SHEET_FILL }) };
+      : { diff: partStateDiffUrl({ ...addressOf(cell), base: cell.state, fill: SHEET_FILL }) };
   if (error) return [{ id: key, src: partFrameUrl({ ...addressOf(first), fit: true }), label: part.name, error }];
 
   return [
