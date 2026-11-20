@@ -1,3 +1,4 @@
+import { NgComponentOutlet } from '@angular/common';
 import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, DragHandleDirective, DragMoveEvent } from '@ethlete/core';
@@ -6,6 +7,7 @@ import { injectCodeWatch } from '../../code-watch';
 import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
+import { PRODUCT_LOGOS } from './product-logos';
 import { railLetters } from './rail-letters';
 import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from './side-width';
 
@@ -31,6 +33,7 @@ const HOVER_PRESS_RAISED =
   templateUrl: './shell-main.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [
+    NgComponentOutlet,
     BUTTON_IMPORTS,
     MENU_IMPORTS,
     TOOLTIP_IMPORTS,
@@ -70,6 +73,7 @@ export class ShellMainComponent {
 
   public closeRequest = output();
   protected readonly SECTIONS = SECTIONS;
+  protected readonly PRODUCT_LOGOS_MAP = PRODUCT_LOGOS;
   protected railLabels = computed(() => railLetters(this.products()));
   protected railSection = computed(() => (this.section() === 'Sketches' ? 'System' : this.section()));
 

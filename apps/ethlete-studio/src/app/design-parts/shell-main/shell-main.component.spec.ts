@@ -242,14 +242,13 @@ describe('ShellMainComponent', () => {
       return { ...setupResult, events, button };
     };
 
-    it('gives studio, studio-lab and sdk three different labels', async () => {
+    it('draws the studio logo mark and gives products without a logo part two unique letters', async () => {
       const { button } = await products();
 
-      expect(['studio', 'studio-lab', 'sdk'].map((name) => button(name).textContent?.trim())).toEqual([
-        'St',
-        'Sl',
-        'Sd',
-      ]);
+      expect(button('studio').querySelector('svg')).not.toBeNull();
+      expect(button('studio').textContent?.trim()).toBe('');
+      expect(['studio-lab', 'sdk'].map((name) => button(name).textContent?.trim())).toEqual(['Sl', 'Sd']);
+      expect(button('sdk').querySelector('svg')).toBeNull();
     });
 
     it('keeps the full name as the accessible name and emits it on click', async () => {

@@ -6,6 +6,7 @@ import { shellCollapseStyles } from '@system/components/shell-collapse';
 import { SIDE_WIDTH } from '@system/components/shell-resize-handle';
 import titleBar from '@system/components/title-bar';
 import { icon, type IconName } from '@system/foundations/icons';
+import { studioMarkLine } from '@system/foundations/logo';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -83,6 +84,10 @@ const railLetters = (names: string[]) => {
 
 const RAIL_LETTERS = railLetters(RECENT_PRODUCTS);
 
+const PRODUCT_LOGOS: Record<string, (size: number) => string> = { studio: studioMarkLine };
+
+const railMark = (product: string, index: number) => PRODUCT_LOGOS[product]?.(20) ?? RAIL_LETTERS[index] ?? product;
+
 const ICONS: Record<(typeof SECTIONS)[number], IconName> = {
   System: 'grid',
   Flows: 'flow',
@@ -153,7 +158,7 @@ const rail = (section: Section, product: string, panelHidden: boolean, studio: s
     ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === railSection(section), 'section', panelHidden, force, s === section)).join('')}
     <div class="flex-1"></div>
     ${sep}
-    ${RECENT_PRODUCTS.map((p, index) => railItem(RAIL_LETTERS[index] ?? p, p, p === product, 'product', false, force)).join('')}
+    ${RECENT_PRODUCTS.map((p, index) => railItem(railMark(p, index), p, p === product, 'product', false, force)).join('')}
   </nav>`;
 
 const sidePanel = (side: string, head: string, top: string) =>
