@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B663
+built: 05bc00741
 decided: 2026-11-20
 source: grill session 2026-11-20 (afternoon), state grid screenshots
 ---
