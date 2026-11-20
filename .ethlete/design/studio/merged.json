@@ -98,11 +98,11 @@
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "38eda3ba90a058ea",
-    "variant": "a",
-    "decidedBy": "plan: ADR 0387 #4, ADR 0305; A6 brief (builder picks)",
-    "at": "2026-11-20T13:57:01.433Z",
-    "note": "merged without a pick: allowed by ADR 0387 #4, ADR 0305; A6 brief (builder picks) - merged: A6 Quick switch: two unique letters per rail product, tooltip"
+    "hash": "224cfaf26cb37061",
+    "variant": "new",
+    "decidedBy": "plan: ADR 0305",
+    "at": "2026-11-20T16:01:35.799Z",
+    "note": "merged without a pick: allowed by ADR 0305"
   },
   "elements/studio-menu": {
     "hash": "4f7c69be22a43262",
