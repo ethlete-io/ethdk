@@ -558,7 +558,7 @@
     "pid": 2342738
   },
   "components/title-bar": {
-    "hash": "b3489fc9cd7a694d",
+    "hash": "081d0a4fa5c3791f",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/caption-close.svg": "e3fa41c27351ba40",
@@ -584,15 +584,15 @@
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "9804556e284e44a1",
-      ".ethlete/design/studio/components/title-search/title-search.ts": "71f03fdd0da385e2",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "60db4afff231de50",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "247795c91d68b8e2",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
-      "libs/components/design/notification.ts": "6304c4bcd68d8946",
+      "libs/components/design/notification.ts": "096f9bd0eb0cd93d",
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
       "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
@@ -619,8 +619,9 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
+    "app": "b58e18ff23b45b91",
     "embedded": {
-      "components/title-search": "9bfb8bb747932e89"
+      "components/title-search": "29106985314b4a05"
     },
     "actions": [
       "emit:close",
@@ -632,10 +633,10 @@
       "opens:command-palette"
     ],
     "builder": "designer",
-    "at": "2026-11-18T12:30:58.136Z",
+    "at": "2026-11-20T13:13:03.796Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1083157
+    "pid": 4190581
   },
   "components/title-search": {
     "hash": "6e39a84f7026860a",
