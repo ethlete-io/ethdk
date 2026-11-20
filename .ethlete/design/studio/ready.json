@@ -100,12 +100,12 @@
     "pid": 4159628
   },
   "components/comment-flow": {
-    "hash": "2d88f1078b17c6dc",
+    "hash": "13b02d931056c6e5",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
-      ".ethlete/design/sdk/components/button/button.ts": "ff35558ba85c404f",
-      ".ethlete/design/sdk/components/textarea/textarea.css": "e0a2d2284eeab65d",
-      ".ethlete/design/sdk/components/textarea/textarea.ts": "d8ef7e9a68136852",
+      ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
+      ".ethlete/design/sdk/components/textarea/textarea.css": "1a7a7756d0890a81",
+      ".ethlete/design/sdk/components/textarea/textarea.ts": "e939c255a8098b8b",
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
       ".ethlete/design/studio/assets/agent-deepseek.svg": "6b749b0b6747b9fa",
@@ -134,15 +134,15 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "fc6cdc0150b6a82e",
-      ".ethlete/design/studio/components/comment-flow/comment-flow.ts": "f251d5ec5d6668ba",
-      ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "a5ea5121f68a6653",
+      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "869759984c9a754e",
+      ".ethlete/design/studio/components/comment-flow/comment-flow.ts": "bf8a20770f7b244c",
+      ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
       ".ethlete/design/studio/components/comment-row/comment-row.css": "f82037c1d733d503",
-      ".ethlete/design/studio/components/comment-row/comment-row.ts": "c331ae898b68dffc",
-      ".ethlete/design/studio/components/comment-target/comment-target.ts": "2fc91395119c6fe8",
-      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "4777e8b97f76bac0",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      ".ethlete/design/studio/components/comment-row/comment-row.ts": "ee45b0cc4566f57b",
+      ".ethlete/design/studio/components/comment-target/comment-target.ts": "94d8a48081f1140c",
+      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
@@ -159,7 +159,7 @@
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
-      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "e4f70765b72267ab",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "256c80dd0afd952f",
       "libs/components/src/lib/forms/form-field/form-field-textarea-styles.component.css": "3cdff8e980e47658",
       "libs/components/src/lib/forms/form-field/form-field.component.css": "934d0fc0e7a53ff4",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
@@ -178,8 +178,9 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/comment-pin": "5e1ddbb47cb1ee93",
-      "components/comment-row": "7981ca5ae7989588"
+      "components/comment-draft": "5498d3ab6c57b1ea",
+      "components/comment-pin": "3733f3876a67e612",
+      "components/comment-row": "f739334bac2739a4"
     },
     "actions": [
       "comment-mode",
@@ -195,10 +196,10 @@
       "rest"
     ],
     "builder": "designer",
-    "at": "2026-11-18T10:47:54.103Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 678978
+    "at": "2026-11-20T13:13:17.578Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 4162370
   },
   "components/comment-pin": {
     "hash": "ec112f98e471974c",
