@@ -1359,7 +1359,7 @@
     "pid": 678978
   },
   "pages/inbox": {
-    "hash": "778a51e9ba2dcde1",
+    "hash": "204ae78af33c9661",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -1424,7 +1424,7 @@
       ".ethlete/design/studio/components/title-search/title-search.ts": "247795c91d68b8e2",
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "a325e9c839da61a0",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "bb250924422734e1",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "3e78778508ddb2fa",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "b544584736287f4f",
       ".ethlete/design/studio/elements/canvas-frames/shared/canvas-marks.ts": "819c21b35e20ba2b",
       ".ethlete/design/studio/elements/canvas-frames/shared/diff-grid.ts": "53ae6a26cb305bdb",
       ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "e609059b3de3abd6",
@@ -1504,7 +1504,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "4571e4170e83c4b9",
+    "app": "d7ca9849430a5d4d",
     "embedded": {
       "components/canvas-viewport": "f9108a1090236748",
       "components/comment-draft": "04d565c1ca875cd5",
@@ -1515,7 +1515,7 @@
       "components/title-search": "7b024688fbbe65bb",
       "components/zoom-chip": "f26dab0f4a17568d",
       "elements/canvas-frames": "da1c9551033e14af",
-      "elements/shell-main": "39db2e2c0ae2af94",
+      "elements/shell-main": "73d567c6882bd94b",
       "elements/studio-menu": "d64bbd8d3cd2607a"
     },
     "actions": [
@@ -1542,10 +1542,10 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-20T14:50:17.794Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-20T15:33:20.240Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1724129
+    "pid": 2116548
   },
   "pages/inventory": {
     "hash": "5233152065c56c3e",
