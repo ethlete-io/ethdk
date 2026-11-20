@@ -1,9 +1,21 @@
-import { mkdtempSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
+import { setTimeout as delay } from 'timers/promises';
 import { describe, expect, it } from 'vitest';
-import { changedAtOf, isWatchBuildCurrent, startWatch, WatchState, watchLineOf } from './harness-watch';
+import { gitExec } from '../../git-test-env.fixtures';
+import { harnessBuildKeyOf, harnessCacheDirOf } from './harness-build-cache';
+import { BuildCommandOf } from './harness-server';
+import {
+  changedAtOf,
+  createHarnessWatch,
+  isWatchBuildCurrent,
+  startWatch,
+  WatchState,
+  watchLineOf,
+} from './harness-watch';
 import { HARNESS_PATH } from './part-compare';
+import { ResolvedProduct } from './resolve-product';
 
 describe('watchLineOf', () => {
   it.each([
@@ -147,6 +159,94 @@ describe('startWatch', () => {
     } finally {
       if (typeof watch !== 'string') await watch.stop();
       rmSync(target, { recursive: true, force: true });
+    }
+  });
+});
+
+const NEVER_BUILDS = `console.log('app: ❯ Building...'); setInterval(() => undefined, 1_000);`;
+
+const harnessCheckout = () => {
+  const root = mkdtempSync(join(tmpdir(), 'et-harness-watch-cache-spec-'));
+  const write = (path: string, source: string) => {
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), source);
+  };
+
+  gitExec(['init', '-q'], { cwd: root });
+  write('tsconfig.base.json', JSON.stringify({ compilerOptions: {} }));
+  write(
+    'apps/app/project.json',
+    JSON.stringify({ name: 'app', targets: { build: { options: { browser: 'apps/app/src/main.ts' } } } }),
+  );
+  write('apps/app/src/main.ts', 'export const main = 1;');
+
+  const product = {
+    name: 'app',
+    config: { harness: { app: 'apps/app', map: 'apps/app/src/harness.ts' } },
+  } as unknown as ResolvedProduct;
+  const buildCommandOf: BuildCommandOf = ({ outputPath }) => ({
+    command: 'build',
+    args: [`--outputPath=${outputPath}`],
+  });
+  const cacheDir = join(root, 'cache');
+  const storedDir = () =>
+    join(
+      harnessCacheDirOf({ target: root, project: 'app', base: cacheDir }),
+      harnessBuildKeyOf({ target: root, app: 'apps/app', command: ['build', '--outputPath=<out>'] }) ?? 'none',
+    );
+
+  return { root, product, buildCommandOf, cacheDir, storedDir };
+};
+
+describe('createHarnessWatch', () => {
+  it('serves a stored build of the same inputs while the first watch build runs', async () => {
+    const { root, product, buildCommandOf, cacheDir, storedDir } = harnessCheckout();
+
+    mkdirSync(join(storedDir(), 'browser'), { recursive: true });
+    writeFileSync(join(storedDir(), 'browser', 'index.html'), 'stored');
+
+    const harness = createHarnessWatch({
+      target: root,
+      commandOf: () => ({ command: process.execPath, args: ['-e', NEVER_BUILDS] }),
+      buildCommandOf,
+      cacheDir,
+      timeout: 2_000,
+    });
+
+    try {
+      const served = await harness.current(product);
+
+      if (typeof served === 'string' || served === null) throw new Error(String(served));
+      expect(await (await fetch(`${served.url}${HARNESS_PATH}`)).text()).toBe('stored');
+    } finally {
+      await harness.stop();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('stores an idle watch build for the next start', async () => {
+    const { root, product, buildCommandOf, cacheDir, storedDir } = harnessCheckout();
+    const harness = createHarnessWatch({
+      target: root,
+      commandOf: ({ outputPath }) => ({ command: process.execPath, args: ['-e', ANGULAR_WATCH, outputPath] }),
+      buildCommandOf,
+      cacheDir,
+      timeout: 10_000,
+    });
+
+    try {
+      const served = await harness.current(product);
+
+      if (typeof served === 'string' || served === null) throw new Error(String(served));
+
+      const stored = join(storedDir(), 'browser', 'index.html');
+
+      for (let waited = 0; !existsSync(stored) && waited < 5_000; waited += 50) await delay(50);
+
+      expect(readFileSync(stored, 'utf8')).toBe('<!doctype html>');
+    } finally {
+      await harness.stop();
+      rmSync(root, { recursive: true, force: true });
     }
   });
 });

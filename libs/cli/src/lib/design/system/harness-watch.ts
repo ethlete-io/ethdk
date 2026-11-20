@@ -1,5 +1,7 @@
 import { ChildProcess, spawn } from 'child_process';
+import { randomUUID } from 'crypto';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync } from 'fs';
+import { cp, mkdir, rm } from 'fs/promises';
 import { Server } from 'http';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
@@ -7,7 +9,13 @@ import { setTimeout as delay } from 'timers/promises';
 import { plainEnv } from '../../plain-output';
 import { timedPhase } from '../phase-timing';
 import { durationOf } from '../wait';
-import { harnessBuildKeyOf, harnessInputFilesOf } from './harness-build-cache';
+import {
+  claimHarnessBuild,
+  harnessBuildKeyOf,
+  harnessCacheDirOf,
+  harnessInputFilesOf,
+  storeHarnessBuild,
+} from './harness-build-cache';
 import { restartsWatchBuild } from './harness-inputs';
 import { harnessOf } from './harness-map';
 import {
@@ -137,6 +145,8 @@ type Watch = {
   app: string;
   wait: (inputs: ReadonlyMap<string, string>) => Promise<{ url: string; root: string } | string>;
   dead: () => boolean;
+  idleBuild: () => { output: string; build: WatchBuild } | null;
+  lastBuild: () => WatchBuild | null;
   stop: () => Promise<void>;
 };
 
@@ -331,7 +341,15 @@ export const startWatch = (options: {
     }
   };
 
-  return { key: options.key, app, wait, dead: () => ended !== null, stop };
+  const idleBuild = () =>
+    state.last?.ok &&
+    !state.inFlight &&
+    ended === null &&
+    Date.now() - Math.max(state.last.endedAt, newestChangeOf(outputPath)) >= OUTPUT_QUIET_MS
+      ? { output: outputPath, build: state.last }
+      : null;
+
+  return { key: options.key, app, wait, dead: () => ended !== null, idleBuild, lastBuild: () => state.last, stop };
 };
 
 export type HarnessWatch = {
@@ -343,22 +361,104 @@ export type HarnessWatch = {
  * Keeps the harness app of the requested product built by an incremental watch build and serves its output. `current`
  * resolves once the build shows the inputs as they are now, with the URL or the build error, or `null` when the
  * checkout has no git state to watch; a changed config, root file, dot-folder input or install restarts the build.
+ * Until the first watch build ends, a stored harness build of the same inputs is served instead, and each idle watch
+ * build is stored for the next start.
  */
 export const createHarnessWatch = (options: {
   target: string;
   commandOf?: BuildCommandOf;
+  buildCommandOf?: BuildCommandOf;
+  cacheDir?: string;
   settle?: number;
   timeout?: number;
 }): HarnessWatch => {
   const { target } = options;
   const commandOf = options.commandOf ?? nxWatchCommandOf;
+  const buildCommandOf = options.buildCommandOf ?? nxBuildCommandOf;
   let watch: Watch | null = null;
+  let cached: { key: string; url: string; root: string; server: Server; release: () => void } | null = null;
+  const storing = new Set<string>();
 
-  const stop = async () => {
+  const dropCached = async () => {
+    const dropping = cached;
+
+    cached = null;
+
+    if (!dropping) return;
+
+    const closed = new Promise((done) => dropping.server.close(done));
+
+    dropping.server.closeAllConnections();
+    await closed;
+    dropping.release();
+  };
+
+  const stopWatch = async () => {
     const stopping = watch;
 
     watch = null;
     await stopping?.stop();
+  };
+
+  const stop = async () => {
+    await stopWatch();
+    await dropCached();
+  };
+
+  const cachedBuildOf = async (dir: string, key: string) => {
+    if (cached?.key === key) return { url: cached.url, root: cached.root };
+
+    await dropCached();
+
+    const claimed = claimHarnessBuild(dir, key);
+
+    if (!claimed) return null;
+
+    const browser = join(claimed.dir, 'browser');
+    const root = existsSync(browser) ? browser : claimed.dir;
+
+    try {
+      const port = await freePortOf();
+      const url = `http://127.0.0.1:${port}`;
+      const server = await serveStatic(root, port);
+
+      if (!(await servingOf(url))) {
+        await new Promise((done) => server.close(done));
+        claimed.release();
+
+        return null;
+      }
+
+      cached = { key, url, root, server, release: claimed.release };
+
+      return { url, root };
+    } catch {
+      claimed.release();
+
+      return null;
+    }
+  };
+
+  const storeIdleBuild = ({ dir, key, running }: { dir: string; key: string; running: Watch }) => {
+    const idle = storing.has(key) || existsSync(join(dir, key)) ? null : running.idleBuild();
+
+    if (!idle) return;
+
+    storing.add(key);
+
+    const copy = join(dir, `.copy-${process.pid}-${randomUUID()}`);
+
+    void mkdir(dir, { recursive: true })
+      .then(() => cp(idle.output, copy, { recursive: true }))
+      .then(() => {
+        if (running.lastBuild() === idle.build && running.idleBuild()?.build === idle.build)
+          storeHarnessBuild({ dir, key, outputPath: copy })?.release();
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        storing.delete(key);
+        void rm(copy, { recursive: true, force: true }).catch(() => undefined);
+      });
   };
 
   const current = async (product: ResolvedProduct) => {
@@ -388,7 +488,7 @@ export const createHarnessWatch = (options: {
     if (key === null) return null;
     if (watch && (watch.key !== key || watch.app !== harness.app || watch.dead())) {
       console.error(`restarting the ${found.name} watch build`);
-      await stop();
+      await stopWatch();
     }
 
     if (!watch) {
@@ -411,9 +511,21 @@ export const createHarnessWatch = (options: {
     }
 
     const running = watch;
+    const build = buildCommandOf({ target, project: found.name, outputPath: '<out>' });
+    const buildKey = harnessBuildKeyOf({ target, app: harness.app, command: [build.command, ...build.args], inputs });
+    const cacheDir = harnessCacheDirOf({ target, project: found.name, base: options.cacheDir });
+
+    if (!running.lastBuild() && buildKey !== null) {
+      const reused = await timedPhase('harness-cached-build', () => cachedBuildOf(cacheDir, buildKey));
+
+      if (reused) return reused;
+    }
+
     const result = await timedPhase('harness-watch-wait', () => running.wait(inputs.files));
 
-    if (typeof result === 'string' && running.dead()) await stop();
+    if (typeof result === 'string') {
+      if (running.dead()) await stopWatch();
+    } else if (buildKey !== null) storeIdleBuild({ dir: cacheDir, key: buildKey, running });
 
     return result;
   };
