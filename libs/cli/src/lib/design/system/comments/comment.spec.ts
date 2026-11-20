@@ -116,7 +116,17 @@ describe('the interaction of a comment', () => {
   const onButton = { part: 'components/button', state: 'default', size: 'fitted', text: 'Too dark.' };
 
   it('stores a forced interaction, leaves rest out of the file and reads a file without it as rest', () => {
-    const product = resolveAcme(acme());
+    const target = acme();
+
+    writeFileSync(
+      join(target, '.ethlete/design/acme/components/button/button.ts'),
+      readFileSync(join(target, '.ethlete/design/acme/components/button/button.ts'), 'utf8').replace(
+        '  render:',
+        "  controls: { go: { kind: 'button', input: ['pointer'] } },\n  interactions: ['hover', 'active'],\n  render:",
+      ),
+    );
+
+    const product = resolveAcme(target);
     const hover = createComment({ product, comment: { ...onButton, interaction: 'hover' } }) as DesignComment;
     const rest = createComment({ product, comment: { ...onButton, interaction: 'rest' } }) as DesignComment;
     const old = createComment({ product, comment: onButton }) as DesignComment;

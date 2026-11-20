@@ -514,6 +514,7 @@ describe('the design server for a design system', () => {
       madeBy: [],
       states: ['one'],
       interactions: [],
+      composition: true,
       kitUses: 0,
       usedIn: [],
       usedBy: [],

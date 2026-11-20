@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync } from 'fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -22,6 +22,14 @@ describe('listComments order', () => {
     const target = mkdtempSync(join(tmpdir(), 'cli-design-comment-order-'));
 
     cpSync(join(__dirname, '../__fixtures__'), target, { recursive: true });
+
+    writeFileSync(
+      join(target, '.ethlete/design/acme/components/button/button.ts'),
+      readFileSync(join(target, '.ethlete/design/acme/components/button/button.ts'), 'utf8').replace(
+        '  render:',
+        "  controls: { go: { kind: 'button', input: ['pointer'] } },\n  interactions: ['hover', 'active'],\n  render:",
+      ),
+    );
 
     const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
     const comment = { part: 'components/button', state: 'default', size: 'fitted', text: 'Too dark.' };
