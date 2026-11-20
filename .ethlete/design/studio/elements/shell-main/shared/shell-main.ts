@@ -9,13 +9,10 @@ import { icon, type IconName } from '@system/foundations/icons';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
-export type SystemForce = string;
-
 export type SystemChoice = (props: {
   product: string;
   products: string[];
   open: boolean;
-  force?: SystemForce;
 }) => Promise<{ head: string; top: string; surface: string; styles: string }>;
 
 type Chrome = Pick<Parameters<typeof titleBar.render>[0], 'os' | 'left' | 'right'>;
@@ -33,7 +30,6 @@ type Props = {
   content: string;
   panel?: 'hidden';
   systemPicker?: 'open';
-  systemForce?: SystemForce;
   studio?: string;
   force?: RailForce;
   server?: 'stopped' | 'starting' | 'unanswered' | 'crashed';
@@ -45,7 +41,6 @@ type Props = {
   chrome?: Chrome;
   update?: boolean;
   sideWidth?: number;
-  resizeForce?: RailInteraction;
 };
 
 type StartPhase = 'starting' | 'cli-build' | 'app-build';
@@ -272,23 +267,11 @@ const railRowsOf = <const TRow extends string>(row: TRow, label: string) =>
 const sectionRows = railRowsOf('section', 'Flows');
 const productRows = railRowsOf('product', 'timetrack');
 
-const resizeRows = interactionRows<Props, 'resize', RailInteraction>(
-  { resize: BASE },
-  {
-    interactions: ['hover', 'active', 'focus-visible'],
-    force: (props, interaction) => ({
-      ...props,
-      resizeForce: interaction,
-      ...(interaction === 'active' ? { sideWidth: SIDE_WIDTH.dragging } : {}),
-    }),
-  },
-);
-
-type SystemStates = Record<string, Pick<Props, 'systemPicker' | 'systemForce'>>;
+type SystemStates = Record<string, Pick<Props, 'systemPicker'>>;
 
 export const shellMain = <const TStates extends SystemStates, TControl>(
   styles: string,
-  resizeHandle: (props: { width: number; interaction?: RailInteraction }) => string,
+  resizeHandle: (props: { width: number }) => string,
   choice: SystemChoice,
   system: { states: TStates; control: TControl },
   crashScreen: CrashScreen,
@@ -302,11 +285,10 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     'server-unanswered': { ...BASE, server: 'unanswered', serverUrl: 'http://localhost:4402' },
     'server-crashed': { ...BASE, server: 'crashed', crash: SERVER_CRASH },
     open: BASE,
-    'open-focus-visible': { ...BASE, systemForce: 'focus-visible' },
     hidden: { ...BASE, panel: 'hidden' },
     ...sectionRows.states,
     ...productRows.states,
-    ...resizeRows.states,
+    resize: BASE,
     'resize-min': { ...BASE, sideWidth: SIDE_WIDTH.min },
     'resize-max': { ...BASE, sideWidth: SIDE_WIDTH.max },
     ...(Object.fromEntries(Object.entries(system.states).map(([name, props]) => [name, { ...BASE, ...props }])) as {
@@ -315,7 +297,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
   } satisfies Record<string, Props>,
   grid: {
     columns: sectionRows.grid.columns,
-    rows: { ...sectionRows.grid.rows, ...productRows.grid.rows, ...resizeRows.grid.rows },
+    rows: { ...sectionRows.grid.rows, ...productRows.grid.rows },
   },
   controls: {
     section: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
@@ -332,7 +314,6 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     side,
     panel,
     systemPicker,
-    systemForce,
     studio = '',
     force,
     server,
@@ -344,19 +325,17 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     chrome = LINUX_CHROME,
     update = false,
     sideWidth,
-    resizeForce,
   }: Props) => {
     const bar = await titleBar.render({ ...chrome, update, product, part: '' });
     const system = await choice({
       product,
       products: RECENT_PRODUCTS,
       open: systemPicker === 'open',
-      force: systemForce,
     });
 
     return drawing({
       body: html`<div
-        class="st-shell relative grid overflow-hidden bg-et-surface-bg text-et-surface font-ui text-ui-md${resizeForce === 'active' ? ' cursor-col-resize select-none' : ''}"
+        class="st-shell relative grid overflow-hidden bg-et-surface-bg text-et-surface font-ui text-ui-md"
         data-et-surface
         data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}${sideWidth ? ` style="--st-side-width: ${sideWidth}px"` : ''}
       >
@@ -370,7 +349,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
             ${server ? serverScreen(server, log, serverUrl, crash, crashScreen, phase, phaseMs) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
-          ${panel === 'hidden' ? '' : resizeHandle({ width: sideWidth ?? SIDE_WIDTH.rest, interaction: resizeForce })}
+          ${panel === 'hidden' ? '' : resizeHandle({ width: sideWidth ?? SIDE_WIDTH.rest })}
           ${panel === 'hidden' ? '' : system.surface}
         </div>
       </div>`,
