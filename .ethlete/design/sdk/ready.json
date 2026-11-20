@@ -195,33 +195,33 @@
     "pid": 1954846
   },
   "components/checkbox": {
-    "hash": "96646dc8c2c3db73",
+    "hash": "3335136496830c2f",
     "files": {
-      ".ethlete/design/sdk/components/checkbox/checkbox.css": "253ffe23f4cbbde8",
+      ".ethlete/design/sdk/components/checkbox/checkbox.css": "f562b94d74de5bf6",
       ".ethlete/design/sdk/components/checkbox/checkbox.ts": "e72b6978bda370b1",
       "libs/components/design/checkbox.ts": "e3471aa943b7b829",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
-      "libs/components/src/lib/forms/checkbox/checkbox.component.css": "a6cf189cc5637379",
+      "libs/components/src/lib/forms/checkbox/checkbox.component.css": "85ff80bf1dc52aa3",
       "libs/components/src/lib/forms/choice-field/choice-field-card-styles.component.css": "0b2e289e74176c77",
       "libs/components/src/lib/forms/choice-field/choice-field.component.css": "7c64ce9249466135",
       "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
       "libs/components/src/lib/forms/form-field/form-support-styles.component.css": "0f81cadca44d8370",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
-      "libs/components/src/lib/forms/selection-card-styles.component.css": "fe93518f845ebdb5",
-      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-group-select-all.component.css": "bfdfa636cf5eae85",
+      "libs/components/src/lib/forms/selection-card-styles.component.css": "19b8fafe647e05c8",
+      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-group-select-all.component.css": "e69d52a1fb044ed6",
       "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-group.component.css": "598181b0bea3821a",
-      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-option.component.css": "8c612644d38bfa45",
+      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-option.component.css": "2fa5078ebc6456fc",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-20T10:53:32.771Z",
+    "at": "2026-11-20T19:50:15.163Z",
     "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 2836014
+    "pid": 668405
   },
   "components/chip": {
     "hash": "1a4d90e7c910658f",
