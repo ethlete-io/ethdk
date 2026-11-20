@@ -2,16 +2,31 @@ import { createHash } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { dirname, join, relative, sep } from 'path';
 import { catFilesOf, logNamesOf } from '../git-reader';
-import { linkFieldTextOf, withLinkFieldOf, withoutLinkFieldOf } from './sketch/part-definition';
+import { linkFieldTextOf, withLinkFieldOf, withMadeBy, withoutLinkFieldOf } from './sketch/part-definition';
 
 const mayLink = (file: string, text: string) =>
   file.endsWith('.ts') && text.includes('definePart') && text.includes('implements');
 
-/** The bytes a design hash reads for `file`: its content without the `implements` field of its `definePart`. */
+const mayBeMadeBy = (file: string, text: string) =>
+  file.endsWith('.ts') && text.includes('definePart') && text.includes('madeBy');
+
+const withoutMadeByOf = (text: string) => withMadeBy(text, []) ?? text;
+
+/** The bytes a design hash reads for `file`: its content without the `implements` and `madeBy` fields of its `definePart`. */
 export const linkFreeContentOf = (file: string, bytes: Buffer): Buffer | string => {
   const text = bytes.toString('utf8');
+  const withoutLink = mayLink(file, text) ? withoutLinkFieldOf(text) : text;
+  const stripped = mayBeMadeBy(file, withoutLink) ? withoutMadeByOf(withoutLink) : withoutLink;
 
-  return mayLink(file, text) ? withoutLinkFieldOf(text) : bytes;
+  return stripped === text ? bytes : stripped;
+};
+
+/** The content a design hash read for `file` while it still covered `madeBy`; `null` for a file without one. */
+export const madeByContentOf = (file: string, bytes: Buffer): string | null => {
+  const text = bytes.toString('utf8');
+  const withoutLink = mayLink(file, text) ? withoutLinkFieldOf(text) : text;
+
+  return mayBeMadeBy(file, withoutLink) && withoutMadeByOf(withoutLink) !== withoutLink ? withoutLink : null;
 };
 
 const earlierFields = new Map<string, { digest: string; fields: string[] }>();
@@ -98,13 +113,20 @@ export const primeLinkedContents = (files: string[]) =>
 
 /**
  * The contents a design hash that still covered the `implements` link read for `file`: the current content, and the
- * current content with each other link the file held in git history. `null` for a file without a link.
+ * current content with each other link the file held in git history, and the link-free content with its `madeBy`.
+ * `null` for a file with neither.
  */
-export const linkedContentsOf = (file: string, bytes: Buffer): { current: string; older: string[] } | null => {
+export const linkedContentsOf = (
+  file: string,
+  bytes: Buffer,
+): { current: string; older: string[]; withMadeBy: string | null } | null => {
   const text = bytes.toString('utf8');
   const current = mayLink(file, text) ? linkFieldTextOf(text) : null;
+  const withMadeBy = madeByContentOf(file, bytes);
 
-  if (current === null) return null;
+  if (current === null && withMadeBy === null) return null;
+
+  if (current === null) return { current: text, older: [], withMadeBy };
 
   const digest = digestOf(bytes);
 
@@ -115,5 +137,6 @@ export const linkedContentsOf = (file: string, bytes: Buffer): { current: string
   return {
     current: text,
     older: [...new Set(fields.filter((field) => field !== current).map((field) => withLinkFieldOf(text, field)))],
+    withMadeBy,
   };
 };

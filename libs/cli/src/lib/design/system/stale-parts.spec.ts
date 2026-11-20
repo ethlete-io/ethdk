@@ -357,6 +357,31 @@ describe('implements link', () => {
     expect(hashesOf(target, dir)).toEqual(before);
   });
 
+  const madeByIcon = (dir: string, madeBy: string[]) =>
+    writeFileSync(
+      iconFile(dir),
+      `export default definePart({\n  note: 'icon',\n  madeBy: [${madeBy.map((id) => `'${id}'`).join(', ')}],\n  states: { default: {} },\n});\n`,
+    );
+
+  it('hashes two contents that differ only in madeBy alike, and keeps a record written with the old hash', () => {
+    const { target, dir } = checkout();
+
+    madeByIcon(dir, ['model-a']);
+    const before = hashesOf(target, dir);
+
+    madeByIcon(dir, ['model-a', 'model-b']);
+    const record = withLinkRecordOf(target, ICON);
+
+    expect(hashesOf(target, dir)).toEqual(before);
+    expect(recordHolds(record, designHashOf(partOf(target, ICON)))).toBe(true);
+
+    writeFileSync(
+      iconFile(dir),
+      `export default definePart({\n  note: 'icon',\n  states: { default: {}, hover: {} },\n});\n`,
+    );
+    expect(hashesOf(target, dir).icon).not.toEqual(before.icon);
+  });
+
   it('changes the design hash for any other change in the same file', () => {
     const { target, dir } = checkout();
 

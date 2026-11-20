@@ -65,6 +65,9 @@ const earlierHashesOf = (dir: string, inputs: ReturnType<typeof partInputsOf>) =
   return [
     ...new Set([
       hashOfInputs(withLinks),
+      hashOfInputs(
+        new Map(linked.flatMap(([file, { withMadeBy }]) => (withMadeBy === null ? [] : [[file, withMadeBy]]))),
+      ),
       ...linked.flatMap(([file, { older }]) =>
         older.map((content) => hashOfInputs(new Map([...withLinks, [file, content]]))),
       ),

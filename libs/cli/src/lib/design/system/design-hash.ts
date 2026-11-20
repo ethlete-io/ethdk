@@ -57,7 +57,7 @@ export const fileHashesOf = (root: string, files: Iterable<string>): FileHashes 
 
 const designFileHashesOf = (root: string, files: string[]) => {
   const hashes: FileHashes = {};
-  const linked: Record<string, { current: string; older: string[] }> = {};
+  const linked: Record<string, { current: string; older: string[]; madeBy: string | null }> = {};
 
   for (const [path, file] of [...new Set(files)]
     .map((file) => [relative(root, file).split(sep).join('/'), file] as const)
@@ -74,13 +74,22 @@ const designFileHashesOf = (root: string, files: string[]) => {
 
     const contents = linkedContentsOf(file, bytes);
 
-    if (contents) linked[path] = { current: sha16(contents.current), older: contents.older.map(sha16) };
+    if (contents) {
+      linked[path] = {
+        current: sha16(contents.current),
+        older: contents.older.map(sha16),
+        madeBy: contents.withMadeBy === null ? null : sha16(contents.withMadeBy),
+      };
+    }
   }
 
   return { hashes, linked };
 };
 
-const linkHashesOf = (files: FileHashes, linked: Record<string, { current: string; older: string[] }>) => {
+const linkHashesOf = (
+  files: FileHashes,
+  linked: Record<string, { current: string; older: string[]; madeBy: string | null }>,
+) => {
   const entries = Object.entries(linked);
   const withLinks = { ...files, ...Object.fromEntries(entries.map(([path, { current }]) => [path, current])) };
   const withLinksHash = hashOfFiles(withLinks);
@@ -93,6 +102,10 @@ const linkHashesOf = (files: FileHashes, linked: Record<string, { current: strin
         : [
             ...new Set([
               withLinksHash,
+              hashOfFiles({
+                ...files,
+                ...Object.fromEntries(entries.flatMap(([path, { madeBy }]) => (madeBy ? [[path, madeBy]] : []))),
+              }),
               ...entries.flatMap(([path, { older }]) =>
                 older.map((hash) => hashOfFiles({ ...withLinks, [path]: hash })),
               ),
@@ -142,7 +155,10 @@ export const designHashOf = (options: { product: ResolvedProduct; part: Resolved
     earlier: {
       hashes: links.earlier,
       files: Object.fromEntries(
-        Object.entries(linked).map(([path, { current, older }]) => [path, [current, ...older]]),
+        Object.entries(linked).map(([path, { current, older, madeBy }]) => [
+          path,
+          [current, ...older, ...(madeBy ? [madeBy] : [])],
+        ]),
       ),
       legacy: earlierPartHashesOf({ product: owner, dir }),
     },
