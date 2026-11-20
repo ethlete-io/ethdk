@@ -187,13 +187,17 @@ export const studioHostAnswer = async (command, checkout, designPort) => {
 /**
  * The design server listens on `::1` only, so every address here is `[::1]`: `localhost` and `127.0.0.1` are refused from Node.
  * Builds Studio into a scratch folder, runs a design server and a static server of its own on free ports, and
- * calls `run({ page, studioUrl, designPort, restartDesign })` in headless Chromium with a stubbed desktop shell. Stops only
+ * calls `run({ page, studioUrl, designPort, restartDesign })` in headless Chromium (WebKit with `engine: 'webkit'`) with a
+ * stubbed desktop shell. Stops only
  * what it started. `built` serves an existing Studio build folder instead of building one. `restartDesign(downMs)` stops
  * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
  * `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
  * without it the stubbed shell sends no window chrome and Studio draws no title bar.
  */
-export const withStudio = async (run, { checkout = root, build = true, built, chrome, echoDesign = false } = {}) => {
+export const withStudio = async (
+  run,
+  { checkout = root, build = true, built, chrome, echoDesign = false, engine = 'chromium' } = {},
+) => {
   const startedAt = Date.now();
   const stamp = (phase) => console.log(phaseLine(phase, startedAt));
   const scratch = mkdtempSync(join(tmpdir(), 'studio-headless-'));
@@ -213,11 +217,14 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
     servers.push(app);
     const studioPort = await listen(app);
 
-    stamp('chromium launching');
-    const { chromium } = await import('playwright');
-    browser = await chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks'] });
+    stamp(`${engine} launching`);
+    const { chromium, webkit } = await import('playwright');
+    browser =
+      engine === 'webkit'
+        ? await webkit.launch()
+        : await chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks'] });
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    stamp('chromium launched');
+    stamp(`${engine} launched`);
 
     await page.exposeFunction('__studioHost', (command) => studioHostAnswer(command, checkout, design.port));
     await page.addInitScript((chrome) => {

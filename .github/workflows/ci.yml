@@ -386,7 +386,7 @@ jobs:
         with:
           nx-cache-key: studio-e2e
 
-      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium ${{ matrix.shard == 1 && 'webkit' || '' }}
 
       # The design server answers 503 on /__design/system until the render packages of
       # .ethlete/design/config.json (dist/libs/components, dist/libs/core) exist.
@@ -402,6 +402,10 @@ jobs:
           STUDIO_E2E_WORKERS: 2
           STUDIO_E2E_BUDGET_ENFORCE: 1
           STUDIO_E2E_SHARD: ${{ matrix.shard }}/8
+
+      - if: matrix.shard == 1
+        run: set -o pipefail; yarn studio:e2e --engine webkit --case "ctrl-wheel zoom over 100 cells keeps the frame interval budget" 2>&1 | tee -a "$RUNNER_TEMP/studio-e2e.log"
+        timeout-minutes: 10
 
       - name: Name the failing specs
         if: failure()

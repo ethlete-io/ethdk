@@ -8,6 +8,8 @@ export type FrameZoomOpening = { x: number; y: number; zoom: FrameZoom };
 
 type FrameZoomState = FrameZoomOpening & { moved: boolean };
 
+export type FrameZoomPreview = { x: number; y: number; scale: number; zoom: number };
+
 const samePoint = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
 
 /**
@@ -18,6 +20,14 @@ const samePoint = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
 export const frameZoomCamera = (opening: () => FrameZoomOpening) => {
   const state = linkedSignal<FrameZoomState>(() => ({ ...opening(), moved: false }));
   const room = signal<Point>({ x: 0, y: 0 }, { equal: samePoint });
+  const preview = signal<FrameZoomPreview | null>(null);
+  let settlePreview: (() => void) | null = null;
+  const settleShown = () => {
+    const settle = settlePreview;
+
+    settlePreview = null;
+    settle?.();
+  };
   const zoom = computed(() => state().zoom);
   const pan = computed<Point>(() => {
     const { x, y, moved } = state();
@@ -29,11 +39,29 @@ export const frameZoomCamera = (opening: () => FrameZoomOpening) => {
   return {
     zoom,
     pan,
-    stickyLeft: computed(() => Math.max(0, -pan().x)),
-    transform: computed(() => `translate(${pan().x}px, ${pan().y}px) scale(1)`),
+    preview: preview.asReadonly(),
+    stickyLeft: computed(() => {
+      const shown = preview();
+
+      return shown ? Math.max(0, -shown.x / shown.scale) : Math.max(0, -pan().x);
+    }),
+    transform: computed(() => {
+      const shown = preview();
+
+      return shown
+        ? `translate(${shown.x}px, ${shown.y}px) scale(${shown.scale})`
+        : `translate(${pan().x}px, ${pan().y}px) scale(1)`;
+    }),
+    /** Shows `shown` as a transform without a new layout, or the camera again with `null`; `settle` ends it before any move. */
+    showPreview: (shown: FrameZoomPreview | null, settle: () => void) => {
+      settlePreview = shown ? settle : null;
+      preview.set(shown);
+    },
 
     /** Moves to `camera`; a zoom equal to `shownZoom` keeps `'fit'`. Returns the camera with its zoom clamped. */
     move: (camera: Camera, shownZoom: number): Camera => {
+      settleShown();
+
       const clamped = clampZoom(camera.zoom);
 
       state.set({ x: camera.x, y: camera.y, zoom: clamped === shownZoom ? zoom() : clamped, moved: true });
@@ -41,7 +69,10 @@ export const frameZoomCamera = (opening: () => FrameZoomOpening) => {
       return { ...camera, zoom: clamped };
     },
 
-    fit: () => state.set({ x: 0, y: 0, zoom: 'fit', moved: false }),
+    fit: () => {
+      settleShown();
+      state.set({ x: 0, y: 0, zoom: 'fit', moved: false });
+    },
 
     /** Reads the pan room and the viewport's left edge; call it after every layout change. */
     measure: (viewport: HTMLElement, content: HTMLElement) => {

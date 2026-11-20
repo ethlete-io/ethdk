@@ -34,10 +34,11 @@ const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
 const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
 const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
+const engine = args.includes('--engine') ? args[args.indexOf('--engine') + 1] : 'chromium';
 const pageGroups = args.includes('--page') ? args[args.indexOf('--page') + 1].split('|') : undefined;
 const VIEWS = {
   system: ['System', 'Edited', 'Inbox'],
-  sketches: ['Sketches', 'Wide', 'Merge', 'Discard'],
+  sketches: ['Sketches', 'Wide', 'Zoom', 'Merge', 'Discard'],
   flow: ['Flow'],
 };
 const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
@@ -49,6 +50,11 @@ const coldShots = args.includes('--cold-shots') || process.env['STUDIO_E2E_COLD_
 if (coldShots) process.env['STUDIO_E2E_COLD_SHOTS'] = '1';
 const perfOnly = args.includes('--perf');
 const proofRow = args.includes('--proof') ? args[args.indexOf('--proof') + 1] : undefined;
+
+if (!['chromium', 'webkit'].includes(engine)) {
+  console.error(`unknown --engine ${engine}, one of: chromium, webkit`);
+  process.exit(2);
+}
 
 if (view && !VIEWS[view]) {
   console.error(`unknown --view ${view}, one of: ${Object.keys(VIEWS).join(', ')}`);
@@ -131,6 +137,8 @@ const WIDE_SKETCH = {
   changed: 'push',
 };
 
+const ZOOM_SKETCH = { part: 'pages/system', name: 'zoom-budget', variants: ['a', 'b', 'c', 'd'] };
+
 const EDITED_PART = 'components/disclosure';
 const WAIT_MS = 10000;
 const FULL_COMPARE_MS = 60000;
@@ -194,6 +202,11 @@ const PAGES = [
   {
     name: 'Wide',
     view: { systemProduct: 'studio', systemEntry: `sketch:${WIDE_SKETCH.part}@${WIDE_SKETCH.name}` },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+  },
+  {
+    name: 'Zoom',
+    view: { systemProduct: 'studio', systemEntry: `sketch:${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}` },
     shows: 'ethlete-sketch-view ethlete-sketches',
   },
   {
@@ -392,7 +405,11 @@ const underPanel = (page) =>
   );
 
 const stillInFit = async (page, after) =>
-  (await page.locator('[data-sk-rows][data-sk-fit]').count())
+  (await readUntil(
+    page,
+    () => page.locator('[data-sk-rows][data-sk-fit]').count(),
+    (count) => count === 0,
+  ))
     ? {
         ok: false,
         detail: `precondition not met: the camera is still in Fit after ${after}, so this fixture cannot test it`,
@@ -1097,7 +1114,69 @@ const withEditSketch = async (page, designPort, run) => {
   }
 };
 
+const ZOOM_BUDGET = { cells: 100, steps: 90, deltaY: 20, p50: 20, p95: 33 };
+
+const percentile = (sorted, share) => sorted[Math.max(0, Math.ceil(share * sorted.length) - 1)] ?? Infinity;
+
 const CASES = [
+  {
+    name: 'ctrl-wheel zoom over 100 cells keeps the frame interval budget',
+    pages: ['Zoom'],
+    engines: ['chromium', 'webkit'],
+    run: async (page) => {
+      await settled(page, FRAME);
+
+      const cells = await page.locator(`ethlete-sketch-view ${FRAME}`).count();
+
+      if (cells < ZOOM_BUDGET.cells)
+        return { ok: false, detail: `${cells} cells, the budget needs ${ZOOM_BUDGET.cells}` };
+
+      const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.evaluate((FRAME) => {
+        const stamps = [];
+        const frame = document.querySelector(`ethlete-sketch-view :is(${FRAME})`);
+
+        window.__zoomWidths = [];
+        const record = (now) => {
+          stamps.push(now);
+          window.__zoomWidths.push(frame.getBoundingClientRect().width);
+          window.__zoomFrame = requestAnimationFrame(record);
+        };
+
+        window.__zoomStamps = stamps;
+        window.__zoomFrame = requestAnimationFrame(record);
+      }, FRAME);
+      await page.keyboard.down('Control');
+      for (let step = 0; step < ZOOM_BUDGET.steps; step++) {
+        await page.mouse.wheel(0, step < ZOOM_BUDGET.steps / 2 ? -ZOOM_BUDGET.deltaY : ZOOM_BUDGET.deltaY);
+      }
+      await page.keyboard.up('Control');
+
+      const { stamps, widths } = await page.evaluate(() => {
+        cancelAnimationFrame(window.__zoomFrame);
+
+        return { stamps: window.__zoomStamps, widths: window.__zoomWidths };
+      });
+      const before = Math.round(widths[0]);
+      const zoomedIn = Math.round(Math.max(...widths));
+      const intervals = stamps
+        .slice(1)
+        .map((stamp, index) => stamp - stamps[index])
+        .sort((a, b) => a - b);
+      const p50 = percentile(intervals, 0.5);
+      const p95 = percentile(intervals, 0.95);
+
+      if (zoomedIn <= before * 1.5)
+        return { ok: false, detail: `the wheel did not zoom: frame ${before} -> ${zoomedIn} px` };
+
+      return {
+        ok: p50 <= ZOOM_BUDGET.p50,
+        detail: `${engine}, ${cells} cells, frame ${before} -> ${zoomedIn} px, ${ZOOM_BUDGET.steps} steps: frame interval p50 ${p50.toFixed(1)} ms (<= ${ZOOM_BUDGET.p50}), p95 ${p95.toFixed(1)} ms (target ${ZOOM_BUDGET.p95}, not enforced), ${intervals.length} frames`,
+      };
+    },
+  },
   {
     name: 'a visible edit of a merged design part opens its old/new sketch with nothing folded, picking old restores the design',
     listingMayPend: 'waits for the listing itself (listingAnswered) before the pick',
@@ -4425,6 +4504,39 @@ const prepareCheckout = () => {
     }),
   );
 
+  const zoom = join(
+    dir,
+    '.ethlete/design/studio/sketches',
+    `${ZOOM_SKETCH.part.replace('/', '-')}.${ZOOM_SKETCH.name}`,
+  );
+  const zoomTs = join(ZOOM_SKETCH.part, `${ZOOM_SKETCH.part.split('/')[1]}.ts`);
+
+  ZOOM_SKETCH.variants.forEach((variant, index) => {
+    cpSync(join(root, '.ethlete/design/studio', ZOOM_SKETCH.part), join(zoom, variant, ZOOM_SKETCH.part), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(zoom, variant, zoomTs),
+      readFileSync(join(zoom, variant, zoomTs), 'utf8').replaceAll(
+        'canvasFrameStyles +',
+        `canvasFrameStyles + 'body { opacity: ${0.4 + index * 0.15}; }' +`,
+      ),
+    );
+  });
+  writeFileSync(
+    join(zoom, 'sketch.json'),
+    JSON.stringify({
+      target: `${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}`,
+      targets: [ZOOM_SKETCH.part],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+      variantInfo: Object.fromEntries(
+        ZOOM_SKETCH.variants.map((variant) => [variant, { authors: ['canvas-e2e'], round: 'r1' }]),
+      ),
+    }),
+  );
+
   return dir;
 };
 
@@ -4703,7 +4815,7 @@ const work = async () => {
         process.send({ type: 'result', ok: result.ok, detail: result.detail, ms, ...drawsSince(draws, drawsBefore) });
       }
     },
-    { built, checkout, echoDesign: true },
+    { built, checkout, echoDesign: true, engine },
   ).finally(() => rmSync(checkout, { recursive: true, force: true }));
 
   process.exit(0);
@@ -4784,6 +4896,7 @@ const lead = async () => {
   const queue = PAGES.flatMap((target, targetIndex) =>
     CASES.flatMap((testCase, caseIndex) =>
       !!testCase.perf === perfOnly &&
+      (testCase.engines ?? ['chromium']).includes(engine) &&
       testCase.proof === proofRow &&
       (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
       (!testCase.labels || testCase.labels.includes(target.label)) &&
@@ -4895,7 +5008,7 @@ const lead = async () => {
       fixturesAsked ||= checkFixtures;
       const child = fork(
         fileURLToPath(import.meta.url),
-        ['--worker', '--built', built ?? scratch, ...(checkFixtures ? ['--check-fixtures'] : [])],
+        ['--worker', '--built', built ?? scratch, '--engine', engine, ...(checkFixtures ? ['--check-fixtures'] : [])],
         {
           env: {
             ETHLETE_DESIGN_SLOW_CHECKS: 'off',

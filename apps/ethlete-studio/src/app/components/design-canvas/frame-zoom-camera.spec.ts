@@ -25,6 +25,34 @@ describe('frameZoomCamera', () => {
     expect(camera.pan()).toEqual({ x: 0, y: -300 });
   });
 
+  it('shows a zoom preview as a transform and keeps the sticky labels at the visible left edge', () => {
+    const camera = frameZoomCamera(() => ({ x: 0, y: 0, zoom: 1 }));
+
+    camera.showPreview({ x: -300, y: -40, scale: 1.5, zoom: 1.5 }, () => undefined);
+
+    expect(camera.transform()).toBe('translate(-300px, -40px) scale(1.5)');
+    expect(camera.stickyLeft()).toBe(200);
+    expect(camera.zoom()).toBe(1);
+
+    camera.showPreview(null, () => undefined);
+
+    expect(camera.transform()).toBe('translate(0px, 0px) scale(1)');
+  });
+
+  it('settles a shown preview before a move', () => {
+    const camera = frameZoomCamera(() => ({ x: 0, y: 0, zoom: 1 }));
+    const settled: string[] = [];
+
+    camera.showPreview({ x: -300, y: -40, scale: 1.5, zoom: 1.5 }, () => {
+      settled.push(camera.transform());
+      camera.showPreview(null, () => undefined);
+    });
+    camera.move({ x: 10, y: 20, zoom: 2 }, 1);
+
+    expect(settled).toEqual(['translate(-300px, -40px) scale(1.5)']);
+    expect(camera.transform()).toBe('translate(10px, 20px) scale(1)');
+  });
+
   it('follows the viewport when its left edge moves, past the content edge', () => {
     const camera = frameZoomCamera(() => ({ x: 0, y: 0, zoom: 'fit' }));
     const content = elementAt(0, CONTENT);

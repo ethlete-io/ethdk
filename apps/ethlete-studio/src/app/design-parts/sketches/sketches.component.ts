@@ -509,7 +509,7 @@ export class SketchesComponent {
   protected sameColumn = computed(() => this.changedRows().length + 2);
   protected matrixColumns = computed(() => this.matrixColumnsAt(this.matrixRows().length, this.scale()));
   protected percent = computed(() => {
-    return Math.round(this.shownZoom() * 100);
+    return Math.round((this.canvas.preview()?.zoom ?? this.shownZoom()) * 100);
   });
   constructor() {
     afterRenderEffect(() => {
@@ -529,9 +529,11 @@ export class SketchesComponent {
     afterNextRender(() => {
       const teardown = mountFrameZoomViewport({
         viewport: this.list().nativeElement,
+        content: this.world().nativeElement,
         frameSelector: '[data-sk-frame]',
         camera: () => ({ ...this.canvas.pan(), zoom: this.shownZoom() }),
         move: (camera) => this.move(camera),
+        preview: (shown, settle) => this.canvas.showPreview(shown, settle),
         show: (target, frame) => this.show(target, frame),
         select: (frame) => this.selectedFrame.set(frame.dataset['skFrame'] ?? null),
         afterRender: (write) => afterNextRender({ write }, { injector: this.injector }),
@@ -554,7 +556,8 @@ export class SketchesComponent {
       this.gutters();
 
       // The rows render only once the list is measured; a fit taken before would be 1, and a user zoom would hold it.
-      if (!this.listMeasured()) return;
+      // A fit taken under a zoom preview reads the boxes scaled by its transform.
+      if (!this.listMeasured() || this.canvas.preview()) return;
 
       const list: HTMLElement = this.list().nativeElement;
       const elementsOf = (refs: readonly ElementRef<HTMLElement>[]) => refs.map(({ nativeElement }) => nativeElement);

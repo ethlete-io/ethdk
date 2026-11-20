@@ -220,6 +220,7 @@
           [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
           [class.min-w-full]="!transposed() || screenMode()"
           [style.transform]="canvas.transform()"
+          [style.will-change]="canvas.preview() ? 'transform' : null"
           class="flex origin-top-left flex-col gap-space-2 pb-16"
         >
           @if (transposed()) {
