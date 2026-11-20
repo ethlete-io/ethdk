@@ -84,6 +84,8 @@ export type AgentApproval = {
   result?: unknown;
   /** Why the approved op failed. */
   error?: string;
+  /** The paired machine that queued it first and alone runs it; absent on an item no peer has seen. */
+  ownerMachineId?: string;
 };
 
 export type AgentApiQueued = { status: 'queued'; approvalId: string };
@@ -444,6 +446,7 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
     const decidedAtMs = typeof raw['decidedAtMs'] === 'number' ? raw['decidedAtMs'] : undefined;
     const error = typeof raw['error'] === 'string' ? raw['error'] : undefined;
     const target = typeof raw['target'] === 'string' && raw['target'] ? raw['target'] : undefined;
+    const ownerMachineId = typeof raw['ownerMachineId'] === 'string' ? raw['ownerMachineId'] : undefined;
 
     return [
       {
@@ -462,6 +465,7 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
               ...(error === undefined ? {} : { error }),
             }),
         ...(decidedAtMs === undefined ? {} : { decidedAtMs }),
+        ...(ownerMachineId ? { ownerMachineId } : {}),
       },
     ];
   });

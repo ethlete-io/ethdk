@@ -148,14 +148,20 @@ export type FakeReceivedEvent = { machineId: string; event: CollectedEvent };
 /** The rows of a day a paired machine sent, as this machine holds them after a pull. */
 export type FakeReceivedDayRows = { machineId: string; rows: PeerDayRows };
 
+/** The approval queue a paired machine sent, in its own clock, as this machine holds it after a pull. */
+export type FakeReceivedApprovals = { machineId: string; queue: AgentApproval[]; clockOffsetMs?: number };
+
 /**
  * The machines around this one. `code` is the one the other machine shows, so pairing with any
  * other code fails; `offerExpired` makes every code fail as an expired offer. `received` is read under
  * the name of the paired machine it names, and a machine not paired reads nothing. `repoKeys` holds
  * each paired machine's checkout keys by machine id; `ownRepoKeys` is what this machine last wrote.
  * `dayRows` holds the rows paired machines sent; `ownDayRows` is what this machine last wrote, by day.
+ * `machineId` is the id this machine is paired under; `approvals` holds the queues paired machines sent.
  */
 export type FakePeers = {
+  machineId: string;
+  approvals: FakeReceivedApprovals[];
   paired: FakePairedMachine[];
   discovered: FakeDiscoveredMachine[];
   code: string;
@@ -278,6 +284,9 @@ export const TIMETRACK_E2E_APPROVAL_ATTENTION_KEY = '__timetrackE2eApprovalAtten
 
 /** Where the last report written through the save dialog is published, as `{ suggestedName, text }`. */
 export const TIMETRACK_E2E_REPORT_FILE_KEY = '__timetrackE2eReportFile';
+
+/** Where the approval queue this machine last handed its paired machines is published, in its wire form. */
+export const TIMETRACK_E2E_SHARED_APPROVALS_KEY = '__timetrackE2eSharedApprovals';
 
 /** Where the rows this machine last handed its paired machines are published, by day, in their wire form. */
 export const TIMETRACK_E2E_DAY_ROWS_KEY = '__timetrackE2eDayRows';
@@ -544,6 +553,8 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
     ownRepoKeys: {},
     dayRows: [],
     ownDayRows: {},
+    machineId: 'this-machine',
+    approvals: [],
     ...seed.peers,
   },
   secrets: seed.secrets ?? {},

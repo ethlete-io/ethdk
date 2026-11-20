@@ -219,6 +219,7 @@ pub fn run() {
             peer::peers_forget,
             peer::peers_hello,
             peer::peers_list,
+            peer::peers_machine_id,
             peer::peers_pull,
             peer::peers_rename,
             peer::received_between,

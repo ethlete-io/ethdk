@@ -50,6 +50,7 @@ const COMMANDS: &[&str] = &[
     "peers_forget",
     "peers_hello",
     "peers_list",
+    "peers_machine_id",
     "peers_pull",
     "peers_rename",
     "read_spec",

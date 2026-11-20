@@ -1338,6 +1338,20 @@ impl Peers {
             .await?)
     }
 
+    /// The id this machine is paired under.
+    pub async fn machine_id(&self) -> TimetrackResult<String> {
+        self.0
+            .db
+            .run(|connection| {
+                Ok(
+                    connection.query_row("SELECT machine_id FROM machine WHERE id = 1", [], |row| {
+                        row.get::<_, String>(0)
+                    })?,
+                )
+            })
+            .await
+    }
+
     pub async fn list(&self) -> TimetrackResult<Vec<PairedMachine>> {
         self.0
             .db
@@ -1889,6 +1903,11 @@ pub fn heartbeat(peers: Peers) {
 }
 
 #[tauri::command]
+pub async fn peers_machine_id(peers: tauri::State<'_, Peers>) -> TimetrackResult<String> {
+    peers.machine_id().await
+}
+
+#[tauri::command]
 pub async fn peers_list(peers: tauri::State<'_, Peers>) -> TimetrackResult<Vec<PairedMachine>> {
     peers.list().await
 }
@@ -1984,6 +2003,13 @@ mod tests {
 
     async fn machine_id(peers: &Peers) -> String {
         peers.identity().await.unwrap().machine_id.clone()
+    }
+
+    #[tokio::test]
+    async fn names_the_machine_it_is_paired_under() {
+        let a = instance("a");
+
+        assert_eq!(a.machine_id().await.unwrap(), machine_id(&a).await);
     }
 
     async fn pair(a: &Peers, b: &Peers) {

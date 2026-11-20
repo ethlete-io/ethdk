@@ -1,4 +1,4 @@
-import { AgentApproval, sameAutoModeApply } from '../agent-api/approval-queue';
+import { AgentApproval, parseApprovalQueue, sameAutoModeApply } from '../agent-api/approval-queue';
 import { sameDraftSummary } from './auto-mode';
 
 /** An approval queue item with the machine that queued it first. `final` marks one already carried out on its owner. */
@@ -97,3 +97,54 @@ export const mergeSharedApprovals = (options: {
     .map(({ final, ...item }) => (final ? { ...item, final } : item))
     .sort((left, right) => left.askedAtMs - right.askedAtMs || left.id.localeCompare(right.id));
 };
+
+/**
+ * The `day` a machine's approval queue is stored under beside the day rows. A day key is a date, so this
+ * never names a day, and its start lies past any range a day is read with or retention removes.
+ */
+export const SHARED_APPROVALS_DAY = 'approvals';
+export const SHARED_APPROVALS_DAY_START_MS = Number.MAX_SAFE_INTEGER - 3;
+
+const SHARED_APPROVALS_VERSION = 1;
+
+/** The wire form of a machine's approval queue, stored as its rows of {@link SHARED_APPROVALS_DAY}. */
+export const encodeSharedApprovals = (queue: readonly AgentApproval[]) =>
+  JSON.stringify({ sharedApprovals: SHARED_APPROVALS_VERSION, items: queue });
+
+/** A paired machine's queue from its wire form, a running item still running; `null` when it is not one. */
+export const parseSharedApprovals = (rows: string): AgentApproval[] | null => {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(rows);
+  } catch {
+    return null;
+  }
+
+  const record = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
+
+  if (record['sharedApprovals'] !== SHARED_APPROVALS_VERSION || !Array.isArray(record['items'])) return null;
+
+  return record['items'].flatMap((raw: unknown) => {
+    const running = typeof raw === 'object' && raw !== null && (raw as Record<string, unknown>)['state'] === 'running';
+    const [item] = parseApprovalQueue([running ? { ...(raw as object), state: 'queued' } : raw]);
+
+    if (!item) return [];
+
+    return [running ? { ...item, state: 'running' as const } : item];
+  });
+};
+
+/** A paired machine's queue with its decisions moved into this machine's clock. */
+export const peerApprovalQueue = (options: {
+  machineId: string;
+  queue: readonly AgentApproval[];
+  clockOffsetMs?: number;
+}): SharedApprovalQueue => ({
+  machineId: options.machineId,
+  queue: options.queue.map((item) =>
+    item.decidedAtMs === undefined || !options.clockOffsetMs
+      ? item
+      : { ...item, decidedAtMs: item.decidedAtMs - options.clockOffsetMs },
+  ),
+});

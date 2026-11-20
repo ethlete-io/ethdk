@@ -1,4 +1,5 @@
 import {
+  AgentApproval,
   BRANCH_TIMELINE_DAY,
   BRANCH_TIMELINE_DAY_START_MS,
   CheckoutBranchTimeline,
@@ -6,16 +7,22 @@ import {
   PeerDayRows,
   PeerSharedSettings,
   ReceivedRange,
+  SHARED_APPROVALS_DAY,
+  SHARED_APPROVALS_DAY_START_MS,
   SHARED_SETTINGS_DAY,
   SHARED_SETTINGS_DAY_START_MS,
+  SharedApprovalQueue,
   SharedSettingsEntry,
   ReceivedBranchTimelines,
   encodeBranchTimelines,
   encodePeerDayRows,
+  encodeSharedApprovals,
   encodeSharedSettings,
   mapSharedSettings,
   parseBranchTimelines,
   parsePeerDayRows,
+  parseSharedApprovals,
+  peerApprovalQueue,
   parseSharedSettings,
 } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
@@ -134,6 +141,12 @@ export type TauriPeers = {
   receivedSettings$(): Observable<HostReceivedSettings>;
   /** Replaces the rules and stand-ins of this machine that the next pull from here carries. */
   setSharedSettings$(entries: readonly SharedSettingsEntry[]): Observable<void>;
+  /** The id this machine is paired under. */
+  machineId$(): Observable<string>;
+  /** The approval queue each paired machine last sent, its decisions in this machine's clock. */
+  receivedApprovals$(): Observable<readonly SharedApprovalQueue[]>;
+  /** Replaces the approval queue of this machine that the next pull from here carries. */
+  setSharedApprovals$(queue: readonly AgentApproval[]): Observable<void>;
   /** The branch timelines the paired machines last sent, by repository key. */
   receivedBranchTimelines$(): Observable<readonly ReceivedBranchTimelines[]>;
   /** Replaces the branch timelines of this machine that the next pull from here carries. */
@@ -191,6 +204,30 @@ export const createTauriPeers = (): TauriPeers => ({
   setSharedSettings$: (entries) =>
     invokeHost$<void>('set_day_rows', {
       rows: { day: SHARED_SETTINGS_DAY, dayStartMs: SHARED_SETTINGS_DAY_START_MS, rows: encodeSharedSettings(entries) },
+    }),
+  machineId$: () => invokeHost$<string>('peers_machine_id'),
+  receivedApprovals$: () =>
+    invokeHost$<StoredReceivedRange>('received_between', {
+      fromMs: SHARED_APPROVALS_DAY_START_MS,
+      toMs: SHARED_APPROVALS_DAY_START_MS + 1,
+    }).pipe(
+      map((stored) =>
+        (stored.dayRows ?? []).flatMap((sent) => {
+          const queue = sent.day === SHARED_APPROVALS_DAY ? parseSharedApprovals(sent.rows) : null;
+
+          return queue
+            ? [peerApprovalQueue({ machineId: sent.machineId, queue, clockOffsetMs: sent.clockOffsetMs ?? 0 })]
+            : [];
+        }),
+      ),
+    ),
+  setSharedApprovals$: (queue) =>
+    invokeHost$<void>('set_day_rows', {
+      rows: {
+        day: SHARED_APPROVALS_DAY,
+        dayStartMs: SHARED_APPROVALS_DAY_START_MS,
+        rows: encodeSharedApprovals(queue),
+      },
     }),
   receivedBranchTimelines$: () =>
     invokeHost$<StoredReceivedRange>('received_between', {

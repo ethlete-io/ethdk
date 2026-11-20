@@ -24,6 +24,8 @@ import {
   parseTimetrackSettings,
   dedupeKeyOf,
   encodePeerDayRows,
+  encodeSharedApprovals,
+  peerApprovalQueue,
   localDayKey,
   localDayRange,
   meteredRunner,
@@ -39,6 +41,7 @@ import {
   TIMETRACK_E2E_TRAY_KEY,
   TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
   TIMETRACK_E2E_DAY_ROWS_KEY,
+  TIMETRACK_E2E_SHARED_APPROVALS_KEY,
   cliNotInstalledMessage,
   createFakeWorld,
   isEditorInstallSpec,
@@ -724,6 +727,18 @@ export const createFakePorts = (): HostPorts => {
         ),
       receivedSettings$: () => ok({ ownRepoKeys: {}, peers: [] }),
       setSharedSettings$: () => ok(undefined),
+      machineId$: () => ok(world.peers.machineId),
+      receivedApprovals$: () =>
+        ok(
+          world.peers.approvals
+            .filter(({ machineId }) => paired.some((held) => held.machineId === machineId))
+            .map(peerApprovalQueue),
+        ),
+      setSharedApprovals$: (queue) => {
+        (globalThis as Record<string, unknown>)[TIMETRACK_E2E_SHARED_APPROVALS_KEY] = encodeSharedApprovals(queue);
+
+        return ok(undefined);
+      },
       receivedBranchTimelines$: () => ok([]),
       setBranchTimelines$: () => ok(undefined),
     },

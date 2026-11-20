@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { AgentApproval } from '../agent-api/approval-queue';
 import { AutoModeApplyRequest } from '../agent-api/approval-queue';
-import { isFinalApproval, mayRunSharedApproval, mergeSharedApprovals } from './shared-approvals';
+import {
+  encodeSharedApprovals,
+  isFinalApproval,
+  mayRunSharedApproval,
+  mergeSharedApprovals,
+  parseSharedApprovals,
+  peerApprovalQueue,
+} from './shared-approvals';
 
 const DAY = '2026-11-19';
 
@@ -113,5 +120,34 @@ describe('mergeSharedApprovals', () => {
     const [onA] = merge('A', [createItem('c1', 1)], ['B', [onB!]]);
 
     expect(onA?.ownerMachineId).toBe('A');
+  });
+});
+
+describe('the shared approval wire form', () => {
+  it('round-trips a queue, keeping a running item running and its owner', () => {
+    const queue = [
+      createItem('c1', 1, { state: 'running', decidedAtMs: 5, ownerMachineId: 'B' }),
+      createItem('c2', 2, { state: 'approved', decidedAtMs: 6, result: { issue: { key: 'FIFAGG-9' } } }),
+    ];
+
+    expect(parseSharedApprovals(encodeSharedApprovals(queue))).toEqual([
+      expect.objectContaining({ id: 'c1', state: 'running', ownerMachineId: 'B', decidedAtMs: 5 }),
+      expect.objectContaining({ id: 'c2', state: 'approved', result: { issue: { key: 'FIFAGG-9' } } }),
+    ]);
+  });
+
+  it('reads nothing from rows that are not a shared queue', () => {
+    expect(parseSharedApprovals('not json')).toBeNull();
+    expect(parseSharedApprovals('{"sharedSettings":1,"entries":[]}')).toBeNull();
+  });
+
+  it('moves a peer decision into this clock by the offset', () => {
+    const { queue } = peerApprovalQueue({
+      machineId: 'B',
+      queue: [createItem('c1', 1, { state: 'rejected', decidedAtMs: 10_000 })],
+      clockOffsetMs: 2_000,
+    });
+
+    expect(queue[0]?.decidedAtMs).toBe(8_000);
   });
 });

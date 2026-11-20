@@ -55,6 +55,7 @@
     "allow-peers-forget",
     "allow-peers-hello",
     "allow-peers-list",
+    "allow-peers-machine-id",
     "allow-peers-pull",
     "allow-peers-rename",
     "allow-read-spec",
