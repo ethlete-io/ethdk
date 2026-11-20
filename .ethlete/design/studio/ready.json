@@ -285,13 +285,13 @@
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "a081cbfd0e82b972",
+    "app": "f739334bac2739a4",
     "actions": ["emit:pick"],
     "builder": "designer",
     "at": "2026-11-20T10:48:30.748Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 2680461
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 4170016
   },
   "components/comment-target": {
     "hash": "df6f679fa1607481",
