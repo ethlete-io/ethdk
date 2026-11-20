@@ -134,7 +134,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [restoredCamera]="restoredCamera()"
             [zoomChipClass]="PART_ZOOM_CHIP_CLASS"
             [pointing]="commentStore.active()"
-            [pointingTitle]="EMPTY_LABELS.commentOn"
             [draft]="commentStore.draft()"
             (pinPick)="pickPin($event)"
             (pointPick)="startComment($event)"

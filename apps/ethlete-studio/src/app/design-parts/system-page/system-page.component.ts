@@ -22,6 +22,7 @@ import { SystemEmptyComponent } from './system-empty.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { CommentListComponent } from '../comment-flow/comment-list.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { CommentTargetComponent } from '../comment-target/comment-target.component';
 import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
@@ -253,15 +254,7 @@ export const FRAME_HEAD_CLASS =
                   </div>
                 }
                 @if (commentMode()) {
-                  <div
-                    [etTooltip]="LABELS.commentOn(frame())"
-                    [attr.aria-label]="LABELS.commentOn(frame())"
-                    (click)="draft.set('')"
-                    (keydown.enter)="draft.set('')"
-                    class="absolute inset-0 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
-                    role="button"
-                    tabindex="0"
-                  ></div>
+                  <ethlete-comment-target [frame]="frame()" (comment)="draft.set('')" class="absolute inset-0" />
                   @if (draft() !== null) {
                     @if (comments()) {
                       <span class="absolute top-[42%] left-[38%] z-10 flex -translate-y-full">
@@ -371,6 +364,7 @@ export const FRAME_HEAD_CLASS =
     CommentDraftComponent,
     CommentListComponent,
     CommentPinComponent,
+    CommentTargetComponent,
     DisclosureComponent,
     NgTemplateOutlet,
     OpenPointsChipComponent,

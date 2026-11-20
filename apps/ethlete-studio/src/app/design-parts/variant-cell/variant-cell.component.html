@@ -1,0 +1,84 @@
+<span
+  #labelRow
+  [class.hidden]="labelHidden()"
+  [class.opacity-50]="same()"
+  class="row-start-1 flex w-0 min-w-full flex-wrap items-center gap-x-space-2"
+  data-sk-label
+  ><span
+    #stateLabel
+    [class.text-et-surface]="!same()"
+    [class.text-et-surface-muted]="same()"
+    [style.font-size.px]="labelFont()"
+    class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere"
+    data-sk-label-text
+    ><span [class.hidden]="stateHidden()">{{ state() }}{{ same() ? LABELS.stateSeparator : '' }}</span
+    >{{ same() ? LABELS.unchanged : '' }}</span
+  >
+  @if (first()) {
+    <span class="text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{ LABELS.firstChange }}</span>
+  }
+</span>
+<div [class]="wrapperClass()" class="relative row-start-2 flex min-w-0 flex-col self-start">
+  <ng-content select="[overlay]" />
+  <div
+    #frame
+    [style.width.px]="frameWidth()"
+    [style.height.px]="shownHeight() * scale()"
+    [attr.data-sk-frame]="frameKey()"
+    [attr.data-selected]="selected() ? '' : null"
+    [attr.data-sk-cropped]="crop() ? '' : null"
+    [class]="frameClass()"
+    [class.opacity-50]="same()"
+    class="relative overflow-clip [overflow-clip-margin:8px]"
+  >
+    <div
+      [style.width.px]="width()"
+      [style.height.px]="shownHeight()"
+      [style.transform]="'scale(' + scale() + ')'"
+      [class.overflow-hidden]="!!crop()"
+      class="pointer-events-none origin-top-left"
+      data-sk-fit-inner
+    >
+      <div
+        [style.width.px]="width()"
+        [style.height.px]="height()"
+        [style.transform]="crop()"
+        class="relative origin-top-left"
+      >
+        <ng-content />
+        @if (mark(); as box) {
+          <span
+            [style.left.px]="box.left"
+            [style.top.px]="box.top"
+            [style.width.px]="box.width"
+            [style.height.px]="box.height"
+            class="pointer-events-none absolute rounded-control-sm border-2 border-et-theme"
+            data-sk-crop-mark
+          ></span>
+        }
+      </div>
+    </div>
+    <span
+      [class]="selected() ? SELECTED_RING_CLASS : ''"
+      class="pointer-events-none absolute inset-0"
+      data-frame-border
+    ></span>
+  </div>
+  @if (stacked()) {
+    <div [style.height.px]="STACK_INSETS.length * 20 * scale()"></div>
+    <div
+      [style.width.px]="rowWidth()"
+      [style.transform]="'scale(' + scale() + ')'"
+      class="absolute top-0 left-0 origin-top-left"
+    >
+      <div [style.height.px]="shownHeight()"></div>
+      @for (inset of STACK_INSETS; track inset) {
+        <div
+          [style.margin-inline.px]="inset"
+          class="h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+          data-sk-crop-stack
+        ></div>
+      }
+    </div>
+  }
+</div>

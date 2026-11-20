@@ -241,6 +241,25 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
+  'components/comment-target': ({ action: _action, interaction: _interaction, class: extra, ...props }) => ({
+    ...props,
+    class: `${typeof extra === 'string' ? extra : ''} relative h-30 w-80`,
+  }),
+  'elements/variant-cell': ({
+    shot: _shot,
+    look: _look,
+    loading: _loading,
+    place: _place,
+    sample: _sample,
+    pins: _pins,
+    class: extra,
+    ...props
+  }) => ({
+    scale: 0.5,
+    rowWidth: props['width'],
+    ...props,
+    class: `${typeof extra === 'string' ? extra : ''} w-60`,
+  }),
   'components/hold-trigger': ({ content: _content, reason: _reason, interaction: _interaction, ...props }) => props,
   'components/shell-resize-handle': ({ class: extra, ...props }) => ({
     ...props,

@@ -119,7 +119,10 @@ export class DesignHarnessComponent {
         Object.entries({ ...this.templatesOf(state.part, injector), ...state.props }).forEach(([name, value]) => {
           if (name === 'class') {
             if (typeof value === 'string')
-              this.renderer.addClass(ref.location.nativeElement, ...value.split(/\s+/).filter(Boolean));
+              value
+                .split(/\s+/)
+                .filter(Boolean)
+                .forEach((name) => this.renderer.addClass(ref.location.nativeElement, name));
 
             return;
           }

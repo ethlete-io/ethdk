@@ -28,11 +28,12 @@ const rows = interactionRows<Props, 'rest', TargetInteraction>(
 export default definePart({
   note: 'The comment-mode layer over a canvas frame: a faint accent wash with a crosshair cursor that covers the frame; a click or Enter starts a comment draft on that frame. Hover deepens the wash a step, pressed a step more, and focus-visible draws an inset ring along the frame edge. The host makes the frame `relative`.',
   madeBy: ['claude-opus-5-5'],
+  implements: 'apps/ethlete-studio/src/app/design-parts/comment-target/comment-target.component.ts',
   widths: [320],
   controls: { target: { kind: 'button', input: ['pointer', 'keyboard'] } },
   states: rows.states,
   grid: rows.grid,
-  frame: (body) => html`<div class="relative h-30">${body}</div>`,
+  frame: (body) => html`<div class="relative h-30 w-80">${body}</div>`,
   describe: {
     rest: 'The comment-mode layer over a frame; check that the faint accent wash covers the whole frame and the cursor is a crosshair.',
     'rest-hover': 'The layer hovered; check that the accent wash deepens a step over the whole frame.',

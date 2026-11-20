@@ -137,20 +137,16 @@
   }
 
   @for (target of pointTargets(); track target.frame.id) {
-    <div
+    <ethlete-comment-target
       [style.left.px]="target.x"
       [style.top.px]="target.y"
       [style.width.px]="target.width"
       [style.height.px]="target.height"
-      [etTooltip]="pointingTitle()(target.frame.label)"
-      [attr.aria-label]="pointingTitle()(target.frame.label)"
-      (click)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
-      (keydown.enter)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
-      class="absolute cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
-      role="button"
-      tabindex="0"
+      [frame]="target.frame.label"
+      (comment)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
+      class="absolute"
       data-comment-target
-    ></div>
+    />
   }
 
   @for (placed of placedPins(); track placed.pin.id) {

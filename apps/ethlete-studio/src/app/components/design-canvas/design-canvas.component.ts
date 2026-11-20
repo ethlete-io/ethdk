@@ -59,6 +59,7 @@ import { CanvasFrameComponent } from './partials/canvas-frame.component';
 import { SHOT_FETCH_PRIORITY } from './partials/shot-rank';
 import { canvasLabelScale } from '../../design-parts/canvas-frames/canvas-frames-geometry';
 import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
+import { CommentTargetComponent } from '../../design-parts/comment-target/comment-target.component';
 import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
@@ -180,6 +181,7 @@ const isInteractive = (target: EventTarget | null) => {
     BUTTON_IMPORTS,
     CanvasFrameComponent,
     CommentPinComponent,
+    CommentTargetComponent,
     ZoomChipComponent,
     TOOLTIP_IMPORTS,
   ],
@@ -242,7 +244,6 @@ export class DesignCanvasComponent {
   public pointing = input(false);
 
   /** The title of a target, from the frame's label. */
-  public pointingTitle = input<(label: string) => string>((label) => label);
 
   /** Where the projected `[canvasDraft]` content sits, on a frame; `null` hides it. */
   public draft = input<FramePoint | null>(null);

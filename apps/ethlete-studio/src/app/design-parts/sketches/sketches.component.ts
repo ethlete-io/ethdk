@@ -67,7 +67,9 @@ import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.comp
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { HoldTriggerComponent } from '../hold-trigger/hold-trigger.component';
 import { SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
+import { VariantCellComponent } from '../variant-cell/variant-cell.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { CommentTargetComponent } from '../comment-target/comment-target.component';
 import { CommentListComponent } from '../comment-flow/comment-list.component';
 import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
@@ -208,6 +210,8 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     CanvasViewportComponent,
     SketchQuestionComponent,
     CommentPinComponent,
+    VariantCellComponent,
+    CommentTargetComponent,
     CommentListComponent,
     CommentDraftComponent,
     DisclosureComponent,
@@ -294,13 +298,14 @@ export class SketchesComponent {
   private fold = viewChild('fold', { read: ElementRef<HTMLElement> });
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
-  private frames = viewChildren('frame', { read: ElementRef<HTMLElement> });
+  private cells = viewChildren(VariantCellComponent);
   private takes = viewChildren('take', { read: ElementRef<HTMLElement> });
   private discardAnchor = viewChild('discardAnchor', { read: ElementRef<HTMLElement> });
   private gutters = viewChildren('gutter', { read: ElementRef<HTMLElement> });
   private notes = viewChildren('note', { read: ElementRef<HTMLElement> });
-  private labels = viewChildren('stateLabel', { read: ElementRef<HTMLElement> });
-  private labelRows = viewChildren('labelRow', { read: ElementRef<HTMLElement> });
+  private frames = computed(() => this.cells().flatMap((cell) => cell.frameRef() ?? []));
+  private labels = computed(() => this.cells().flatMap((cell) => cell.stateLabelRef() ?? []));
+  private labelRows = computed(() => this.cells().flatMap((cell) => cell.labelRowRef() ?? []));
   private listSize = signalElementDimensions(this.list);
 
   protected readonly LABELS = STUDIO_LABELS.sketches;
@@ -309,7 +314,7 @@ export class SketchesComponent {
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
   protected readonly FRAME_KEY_OF = frameKeyOf;
-  protected readonly STACK_INSETS = [32, 64];
+  public readonly STACK_INSETS = [32, 64];
 
   protected canvas = frameZoomCamera(() => {
     const camera = this.camera();
