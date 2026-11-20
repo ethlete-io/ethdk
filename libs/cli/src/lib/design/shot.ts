@@ -495,7 +495,8 @@ export const createPartShooter = (options: {
   const board = createShotBoard();
   const drawQueue = options.queue ?? createDrawQueue({ ...options, board });
   const warmPages = createWarmPages();
-  const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
+  const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture>; drawing?: { startedAt: number | null } }>();
+  const drawStarts = new WeakMap<Picture, number>();
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
   const boxes = new Map<string, Promise<ChangedBox[]>>();
   const shown = new Map<string, string>();
@@ -647,7 +648,15 @@ export const createPartShooter = (options: {
     const crop = cropOf(options.params.get('clip')) ?? null;
     const scheme = schemeOf(options.params);
     const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop, scheme]);
-    const kept = options.fresh ? undefined : cache.get(key);
+    const entry = cache.get(key);
+    const kept = !options.fresh || entry?.drawing?.startedAt === null ? entry : undefined;
+
+    if (kept?.drawing && options.fresh) {
+      options.onSource?.('drawn');
+      drawQueue.join(kept.shot, options.want);
+
+      return kept.shot;
+    }
 
     if (kept) {
       recordCache(true);
@@ -680,9 +689,13 @@ export const createPartShooter = (options: {
     if (theme.fill) options.search.set('fill', theme.fill);
 
     const search = options.search.toString();
+    const drawing: { startedAt: number | null } = { startedAt: null };
     const drawHere = () =>
       drawQueue.run((browser) => {
         const gone = options.gone?.();
+        const startedAt = performance.now();
+
+        drawing.startedAt = startedAt;
 
         return gone
           ? Promise.reject(gone)
@@ -698,6 +711,10 @@ export const createPartShooter = (options: {
               checker: options.checker ?? false,
               pan: options.pan ?? null,
               boxes: options.boxes ?? false,
+            }).then((picture) => {
+              drawStarts.set(picture, startedAt);
+
+              return picture;
             });
       }, options.want);
 
@@ -705,26 +722,26 @@ export const createPartShooter = (options: {
     const shared = address && !options.fresh ? store : undefined;
     let held = shared?.claim(key);
     let waited = false;
-    const shot =
-      shared && address && held === null
-        ? shared.waitFor(key, { address, ms: loadScaledMs(DRAW_LIMIT_MS) }).then((answer) => {
-            if ('picture' in answer) {
-              waited = true;
-              ledger?.waited();
+    const waits = !!shared && !!address && held === null;
+    const shot = waits
+      ? shared.waitFor(key, { address, ms: loadScaledMs(DRAW_LIMIT_MS) }).then((answer) => {
+          if ('picture' in answer) {
+            waited = true;
+            ledger?.waited();
 
-              return answer.picture;
-            }
-            if (answer.why === 'too old' || answer.why === 'timeout')
-              console.warn(
-                `design-explore: waited ${answer.waitedMs} ms for another server's draw of ${key}, past the draw limit, drawing it here`,
-              );
-            held = answer.claim;
+            return answer.picture;
+          }
+          if (answer.why === 'too old' || answer.why === 'timeout')
+            console.warn(
+              `design-explore: waited ${answer.waitedMs} ms for another server's draw of ${key}, past the draw limit, drawing it here`,
+            );
+          held = answer.claim;
 
-            return drawHere();
-          })
-        : drawHere();
+          return drawHere();
+        })
+      : drawHere();
 
-    cache.set(key, { drawn: options.drawn, shot });
+    cache.set(key, { drawn: options.drawn, shot, ...(waits ? {} : { drawing }) });
     shot.then(
       (picture) => {
         if (cache.get(key)?.shot === shot) {
@@ -1021,6 +1038,7 @@ export const createPartShooter = (options: {
       return partShotOf({ ...options, want: { priority }, onSource: (from) => (source = from) }).then((picture) => ({
         ...picture,
         source,
+        drawnAt: drawStarts.get(picture) ?? null,
       }));
     },
     /**

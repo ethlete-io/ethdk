@@ -31,7 +31,8 @@ export type CompareRow = {
 export type MergeCompare = { target: string; variant: string; changed: CompareRow[]; unchanged: CompareRow[] };
 
 /** A picture with where it came from; without `source` it may have come from a cache. */
-export type SourcedPicture = Picture & { source?: ShotSource };
+/** `drawnAt`: the `performance.now()` at which this server began drawing the picture, `null` for one read from a store. */
+export type SourcedPicture = Picture & { source?: ShotSource; drawnAt?: number | null };
 
 export type PictureOf = (options: {
   product: string;
@@ -69,19 +70,25 @@ export const looksTheSame = (a: Buffer, b: Buffer) => {
 };
 
 /**
- * Draws a state without and with `merged`. A pair that differs and has a picture that may have come from a cache is
- * drawn once more, bypassing any kept picture, and only that second pair counts, so a stale kept picture is not taken
- * for a change.
+ * Draws a state without and with `merged`. When the pair differs, each picture that may have come from a cache and was
+ * not drawn after the pair was asked is drawn once more, bypassing any kept picture, so a stale kept picture is not
+ * taken for a change.
  */
 export const drawnPair = async (
   draw: (sketch: SketchVariant | null, fresh: boolean) => Promise<SourcedPicture>,
   merged: SketchVariant,
 ) => {
-  const both = (fresh: boolean) => Promise.all([draw(null, fresh), draw(merged, fresh)]);
-  let [now, after] = await both(false);
-  const drawnFresh = now.source === 'drawn' && after.source === 'drawn';
+  const askedAt = performance.now();
+  const kept = await Promise.all([draw(null, false), draw(merged, false)]);
 
-  if (!drawnFresh && !looksTheSame(now.png, after.png)) [now, after] = await both(true);
+  if (looksTheSame(kept[0].png, kept[1].png)) return { now: kept[0], after: kept[1], same: true };
+
+  const current = (picture: SourcedPicture) =>
+    picture.source === 'drawn' || (picture.drawnAt ?? Number.NEGATIVE_INFINITY) >= askedAt;
+  const [now, after] = await Promise.all([
+    current(kept[0]) ? kept[0] : draw(null, true),
+    current(kept[1]) ? kept[1] : draw(merged, true),
+  ]);
 
   return { now, after, same: looksTheSame(now.png, after.png) };
 };

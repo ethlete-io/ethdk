@@ -553,6 +553,31 @@ describe('createPartShooter', () => {
     expect(switchedStates()).toHaveLength(1);
   });
 
+  it('draws two fresh pictures of a state asked at once only once, with the time the draw began', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const askedAt = performance.now();
+
+    await shots.pictureOf(address);
+    const fresh = await Promise.all([
+      shots.pictureOf({ ...address, fresh: true }),
+      shots.pictureOf({ ...address, fresh: true }),
+    ]);
+
+    expect(drawnUrls().length + switchedStates().length).toBe(2);
+    expect(fresh.map(({ source }) => source)).toEqual(['drawn', 'drawn']);
+    expect(fresh[0]?.drawnAt).toBeGreaterThanOrEqual(askedAt);
+  });
+
   it('loads the frame again instead of switching in place after a change to the drawn part', async () => {
     const { shots } = acme();
     const address = {
@@ -1149,8 +1174,20 @@ describe('createPartShooter pictures', () => {
         params: new URLSearchParams(),
       });
 
-    expect(await ask(null)).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>', source: 'drawn' });
-    expect(await ask('phone')).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>', source: 'drawn' });
+    expect(await ask(null)).toEqual({
+      png: Buffer.from('png'),
+      marks,
+      markup: '<p>card</p>',
+      source: 'drawn',
+      drawnAt: expect.any(Number),
+    });
+    expect(await ask('phone')).toEqual({
+      png: Buffer.from('png'),
+      marks,
+      markup: '<p>card</p>',
+      source: 'drawn',
+      drawnAt: expect.any(Number),
+    });
     expect(evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('data-et-part'))).toEqual([
       expect.stringContaining('true ?'),
       expect.stringContaining('false ?'),
