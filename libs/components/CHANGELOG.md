@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.0.0-next.91
+
+### Minor Changes
+
+- Add accordion tokens for the header outset, the hover tint inset, the chevron color and stroke width and the panel's top padding.
+- Add accordion trigger hover and active background tokens, a header end inset token and provideAccordionConfig for an app-wide lastDivider default.
+- `et-button` and `et-icon-button` take a `pressedVariant` input that sets the variant shown while `pressed`; without it the fixed per-flavor swap stays. `variant="outline" pressedVariant="outline"` keeps an outline toggle outlined, with border and text in the `pressedColor` theme.
+- Add `--et-form-field-label-color` and `--et-form-field-label-color-active` to set the form field label colour at rest and when focused or filled.
+- The `icons` generator now resolves Font Awesome alias names (`times`, `cog`, `home`, …), so an icon list written for Font Awesome 7 also generates on Font Awesome 6.
+- Add progress-steps tokens: connector width and colours, an opt-in filled current marker with a dot, done and upcoming label font weights, and the description line height.
+- `et-segmented-button-group` now defaults to `overflow="scroll"`: segments shrink to their full label, then the track scrolls; `'truncate'` keeps the ellipsis look.
+- Add an `overflow` input (`'truncate' | 'scroll'`) to `et-segmented-button-group`: `'scroll'` keeps full labels, scrolls the track and centers the selected segment.
+- Add segmented button group tokens: inactive label colour and weight, track background, stretch track size and column count.
+- Add `etStandingsFormTooltip` to `et-standings`: an `ng-template` that replaces the text tooltip of a labelled form result with your own content, receiving the form entry and the row.
+- Add an optional `strength` (0-1) to `StandingsZone`, exposed as `--et-standings-zone-strength` on the zone band and its legend swatch, so two zones of one type can differ. Unset renders as before.
+
+### Patch Changes
+
+- An anchored dialog with an `arrowAnchor` now grows from and shrinks to that anchor, not the centre of its origin.
+- Fix `et-segmented-button-group` collapsing to its padding as a direct child of an auto-sized `et-scrollable`.
+- Add `--et-progress-step-upcoming-marker-content` and `--et-progress-step-upcoming-marker-background` to style the marker of upcoming progress steps, for example an empty ring.
+- Add `--et-accordion-header-hover-text-decoration` (default `none`) to decorate the accordion title on header hover, for example an underline.
+- Text fields draw a quieter resting frame, about 3:1 against their surface in light and dark, instead of a near-white frame in dark mode.
+- `ButtonComponent.pressedVariant` is the input and reads `undefined` unless set; `ACCORDION_CONFIG_TOKEN` is gone, use `injectAccordionConfig()`.
+- Accordion, progress step and segmented button tokens now put the element or state before the part, e.g. `--et-accordion-header-hover-background`.
+- Text fields draw their hovered frame near 4.5:1 against the surface in light and dark, using the same surface text mix as the resting frame, instead of a near-white frame in dark mode.
+- Checkbox, radio, selection card and OTP borders now rest near 3:1 like text fields, and every control's border hovers in its label's hover colour.
+- Name icon-only controls by aria-label instead of a native title
+- An overflowing `et-nav-tabs` now opens with the active link centered instead of at scroll position 0.
+- A progress step marker stays round when the step's label or description fills the row.
+- A custom `etStandingsFormTooltip` template no longer throws on hover: the form entry's label is passed as the tooltip's accessible description.
+
 ## 1.0.0-next.90
 
 ### Minor Changes

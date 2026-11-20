@@ -1,5 +1,30 @@
 # @ethlete/cli
 
+## 3.0.0-next.37
+
+### Minor Changes
+
+- `sketch check` fails a variant that changes a state its round does not ask in, unless the round note names it.
+- `design shot --states --variants` draws the same frames as the Studio sketch view, folding states no variant changes; `--all-states` draws them all.
+- The design check flags a `data-et-skip` or `checks.skip` entry that suppresses no problem in any state of its part (SKIP-UNUSED), so a skip lives only while it hides something.
+
+### Patch Changes
+
+- A spec pins that `sketch rebase` carries a declaration-only change of a part (`controls: {}`) into every open variant and prints each carried file.
+- `et design check` reports `IMPLEMENTS-UNLINKED` for a part without `implements` whose name matches a component in the harness app.
+- Show an in-progress sketch that draws no visible change as a `NO-VISIBLE-CHANGE` problem on its part. The slow runner draws it and `et design check --slow` and Studio list it with the part's problems.
+- Specs and one warning text use the role "human" instead of a person's name.
+- Fix `design ready`, `design lint` and `sketch ready` failing in git worktrees.
+- The Studio command palette is linked to its design part and takes its `query` model; `et design check` no longer exempts it from `IMPLEMENTS-UNLINKED`.
+- `STATE-NO-SOURCE` counts an `inputBinding` or `twoWayBinding` that opens the component through an overlay as a data source for that input.
+- The design actions check holds infinite animations at the design's frozen frame before its app shot, as the state compare does.
+- `sketch rebase` and the rebase after a merge keep a conflict in a variant that is not the pick of a picked sketch, so only the picked variant needs a port by hand.
+- Design draws no longer fail on components that scroll: the server render shims `Element.scroll`, `scrollTo` and `scrollBy` as no-ops.
+- Close the sketch shot's browser when computing its folded states fails.
+- Fold the sketch shot's unchanged states from the same pictured compare the Studio view runs, so the two frame sets cannot differ.
+- A live sketch frame whose page is scrolled sideways now gives way to its picture, like one scrolled down: the frame page reports its horizontal scroll too.
+- The sketch listing redraws only the kept picture of a differing pair that was drawn before the compare asked, and fresh draws of one state asked at once share one drawing.
+
 ## 3.0.0-next.36
 
 ### Major Changes
