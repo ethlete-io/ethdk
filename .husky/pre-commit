@@ -97,3 +97,9 @@ name_files=$(git diff --cached --name-only --diff-filter=ACM -- 'libs' 'apps' '.
 if [ -n "$name_files" ]; then
   node ./tools/scripts/check-person-names.mjs --staged
 fi
+
+type_files=$(git diff --cached --name-only --diff-filter=ACMR -- 'apps/*.ts' 'apps/*.json' 'libs/*.ts' 'libs/*.json')
+
+if [ -n "$type_files" ]; then
+  node ./tools/scripts/staged-typecheck.mjs
+fi

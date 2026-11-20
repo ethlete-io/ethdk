@@ -22,8 +22,6 @@ import {
   COVERAGE_LIBS,
   coverageLibs,
   stepLine,
-  touchedProjects,
-  withTarget,
 } from './push-suite.mjs';
 
 test('defaults the range to the upstream and reads --only', () => {
@@ -38,7 +36,7 @@ test('--only refuses a step outside the fast set before it takes any lock', asyn
   const lines = [];
 
   assert.equal(await pushSuite({ only: 'lint,e2e', range: 'HEAD..HEAD' }, (line) => lines.push(line)), 1);
-  assert.deepEqual(lines, ['push-suite: blocked unknown step e2e, expected one of lint, typecheck, tools, coverage']);
+  assert.deepEqual(lines, ['push-suite: blocked unknown step e2e, expected one of lint, tools, coverage']);
 });
 
 test('keeps workspace links relative so the export resolves them to its own libs, links the rest to the repo', () => {
@@ -101,21 +99,6 @@ test('push-suite imports no sibling script at load time, so no live gate code ru
   const source = readFileSync(join(import.meta.dirname, 'push-suite.mjs'), 'utf8');
 
   assert.deepEqual(source.match(/^import .* from '\.\/.*';$/gm) ?? [], []);
-});
-
-test('typechecks only the touched projects that have a typecheck target, right after lint', () => {
-  const projects = { 'libs/cli/project.json': 'cli', 'apps/ethlete-studio/project.json': 'ethlete-studio' };
-  const exists = (path) => Object.keys(projects).some((file) => path.endsWith(file));
-  const read = (path) => JSON.stringify({ name: Object.entries(projects).find(([file]) => path.endsWith(file))[1] });
-  const touched = touchedProjects(
-    ['apps/ethlete-studio/src/a.ts', 'libs/cli/src/b.ts', 'libs/cli/c.ts', 'plans/x.md', 'package.json', 'tools/x.mjs'],
-    read,
-    exists,
-  );
-
-  assert.deepEqual(touched, ['cli', 'ethlete-studio']);
-  assert.deepEqual(withTarget(touched, ['core', 'ethlete-studio']), ['ethlete-studio']);
-  assert.deepEqual(STEPS.slice(0, 2), ['lint', 'typecheck']);
 });
 
 test('checks export coverage only for the covered libs the range touches, all of them on a tool change', () => {
@@ -318,7 +301,7 @@ test('push:suite stops at the checks step when a range only a pre-push check ref
     assert.match(output, /pre-push: lint:runner-os failed:/);
     assert.match(output, /Linux-only path outside a Linux branch/);
     assert.match(output, /push-suite: blocked pre-push checks failed \(lint:runner-os\)/);
-    assert.doesNotMatch(output, /push-suite: (exported|lint|typecheck|cli) /);
+    assert.doesNotMatch(output, /push-suite: (exported|lint|cli) /);
   } finally {
     rmSync(repo, { recursive: true, force: true });
     rmSync(lockDir, { recursive: true, force: true });
