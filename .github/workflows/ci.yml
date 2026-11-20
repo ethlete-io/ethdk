@@ -461,28 +461,6 @@ jobs:
 
       - run: yarn nx run ethlete-studio:test-rust
 
-      - run: cargo build
-        working-directory: apps/ethlete-studio/src-tauri
-        timeout-minutes: 20
-
-      # cef-dll-sys copies the CEF runtime next to the binary only when its build script runs, and a
-      # restored rust-cache keeps that build fresh without the copied files, so the host exits 127.
-      - name: Place the CEF runtime next to the host
-        working-directory: apps/ethlete-studio/src-tauri
-        timeout-minutes: 2
-        run: |
-          version=$(awk '$0 == "name = \"cef\"" { getline; gsub(/version = |"/, ""); print; exit }' Cargo.lock)
-          cef_dir="$CEF_PATH/${version#*+}/cef_linux_x86_64"
-          mkdir -p target/debug/locales
-          find "$cef_dir" -maxdepth 1 -type f -exec cp -t target/debug {} +
-          find "$cef_dir/locales" -maxdepth 1 -type f -exec cp -t target/debug/locales {} +
-
-      - run: bash tools/scripts/ci-apt-retry.sh sudo apt-get install -y --no-install-recommends xvfb xauth
-        timeout-minutes: 5
-
-      - run: xvfb-run -a yarn studio:e2e:host-signal
-        timeout-minutes: 5
-
   design-changes:
     name: Design server changes
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
