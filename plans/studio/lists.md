@@ -225,7 +225,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 
 ## D. SDK und Libs
 
-- **D2** Controls der fünf SDK-Teile carousel, scrollable, match, table, bracket.
+- **D2** Controls der fünf SDK-Teile carousel, scrollable, match, table, bracket. Design-Arbeit, keine Prio (Tom, 04.11.): jedes Control braucht gezeichnete Interaktionszustände, das Budget sinkt im selben Commit; match evtl. nur `controls: {}`.
 - **D3** Fokus-Rahmen als API: `focusRingStyles`, öffentliche Tokens (E11).
 - **D5** Eigener Sketch für ein randloses, gedämpftes Select (Q231).
 - **D7** Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
