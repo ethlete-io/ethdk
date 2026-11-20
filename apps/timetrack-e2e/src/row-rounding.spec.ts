@@ -14,6 +14,9 @@ import {
   test,
 } from './support';
 
+/** A box draws this far inside its span (`BOX_GAP_PX` in day-review/lanes.ts). */
+const BOX_GAP_PX = 1;
+
 /** The seeded day's own morning, in the browser's pinned UTC. */
 const at = (clock: string) => new Date(`${E2E_DAY_KEY}T${clock}:00.000Z`);
 
@@ -82,8 +85,8 @@ test.describe('the band a row draws', () => {
     const pxPerHour = ten.y - nine.y;
 
     expect(pxPerHour).toBeGreaterThan(0);
-    expect(Math.abs(band.y - nine.y)).toBeLessThan(1.5);
-    expect(Math.abs(band.y + band.height - (ten.y + pxPerHour / 4))).toBeLessThan(1.5);
+    expect(Math.abs(band.y - BOX_GAP_PX - nine.y)).toBeLessThan(1.5);
+    expect(Math.abs(band.y + band.height + BOX_GAP_PX - (ten.y + pxPerHour / 4))).toBeLessThan(1.5);
   });
 });
 
