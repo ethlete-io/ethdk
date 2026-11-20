@@ -65,6 +65,7 @@ import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { inlineUiInPageProblemsOf, inlineUiInPageWarningsOf } from './rules/inline-ui-in-page';
 import { inlineSvgsOf } from './rules/inline-svg';
 import { ownCanvasesOf } from './rules/own-canvas';
+import { directEditPendingOf } from './rules/direct-edit-pending';
 import { topLevelAwaitsOf } from './rules/top-level-await';
 import { badSkipsOf } from './rules/skips';
 import { badMotionsOf, badUnreachableOf, hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
@@ -90,7 +91,7 @@ import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { listPartsWithoutDataStatesOf } from './rules/data-states';
 import { startVariantTypechecks, typecheckVariant, typecheckVariantAsync, variantKeyOf } from './sketch/check-sketches';
-import { changedOutsideSketchOf, MERGED_FILE } from './sketch/merged-parts';
+import { MERGED_FILE } from './sketch/merged-parts';
 import { keepHeldStampsInFiles, withStampsInMemory } from './stamp-files';
 import { readyUncommittedLinesOf } from '../uncommitted-state';
 import { staleSketchBasesOf } from './sketch/stale-base';
@@ -131,6 +132,7 @@ const RULES = [
   badSvgAssetsOf,
   inlineSvgsOf,
   topLevelAwaitsOf,
+  directEditPendingOf,
   canonicalClassesOf,
   undefinedClassesOf,
   deniedClassesOf,
@@ -428,13 +430,6 @@ const typecheckOpenSketches = (options: {
         }),
   );
 
-const warnChangedOutsideSketch = (product: ResolvedProduct) => {
-  for (const part of changedOutsideSketchOf(product))
-    console.warn(
-      `WARNING ${product.name} ${part} changed outside a sketch - every change to a merged part goes through a sketch, with one variant when there is no choice`,
-    );
-};
-
 const isInBasePart = (product: ResolvedProduct, file: string) =>
   product.parts.some((part) => part.origin === 'base' && !relative(dirname(part.file), file).startsWith('..'));
 
@@ -492,8 +487,6 @@ const reportSystem = (
 
       return { code: 1, fatal: true };
     }
-
-    if (options.warn && !options.part) warnChangedOutsideSketch(product);
 
     const uncommitted = options.warn ? uncommittedDecisionsWarningOf(product) : null;
 
@@ -1089,7 +1082,7 @@ const checkProductTail = async (
 
 /**
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
- * render rule a drawing breaks, also when a static rule failed, and warns of each merged part that changed outside a sketch. A part that does not
+ * render rule a drawing breaks, also when a static rule failed. A part that does not
  * draw, each state that does not draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
  * It then lists the open points of each product's parts, with the missing states
  * of each component part as `design complete` draws them, the blockers `design ready` refuses on; they do not change

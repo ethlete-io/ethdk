@@ -311,6 +311,8 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
   const replaced = entries.map(({ to }) => to);
   const touched = [...new Set([...replaced, ...mergedKeys.map((key) => resolve(rootOf(key), key))])];
   const before = contentsBelow(touched);
+  const dependents =
+    assetFiles.length > 0 || sharedChanges.length > 0 ? unchangedMergedOf({ product, except: mergedKeys }) : [];
 
   replace(entries);
 
@@ -328,6 +330,8 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
 
     carryShared({ sketch, variant, targetDir: resolve(rootOf(key), key), paths, product });
   }
+
+  rerecordChangedMerged({ product, before: dependents });
 
   const checked = [product.name, ...(baseProduct ? [baseProduct.name] : [])];
 
