@@ -1,4 +1,4 @@
-import { firstValueFrom, from, map, race, timer } from 'rxjs';
+import { filter, Subscription, tap, timer } from 'rxjs';
 import { stripVTControlCharacters } from 'util';
 import { AddressInfo } from 'net';
 import { yieldRun } from '../run-yield';
@@ -797,6 +797,7 @@ type Lane = {
   page: Page;
   sdkErrors: ReturnType<typeof watchSdkErrorLines>;
   booted: string | null;
+  requested: ServedRequest[];
   scheme?: ColorScheme | null;
   viewport?: string;
 };
@@ -900,6 +901,148 @@ const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Fram
   });
 };
 
+type DrawingGroup<TGroup, TResult> = {
+  group: TGroup;
+  next: number;
+  left: number;
+  drawn: TResult[];
+  lanes: Set<unknown>;
+  ended: boolean;
+  timedOut: Promise<'timeout'>;
+  timer?: Subscription;
+};
+
+/**
+ * @internal Draws the loads of every group on one pool of at most `width` lanes: a free lane takes the next load of any
+ * group, in group order. A group whose loads do not all finish within `timeoutMs` of its first load answers `null`,
+ * and the lanes still drawing it are closed.
+ */
+export const drawPooled = async <TLane, TLoad, TResult, TGroup extends { loads: TLoad[] }>(options: {
+  width: number;
+  timeoutMs: number;
+  nextGroup: () => Promise<TGroup | null>;
+  openLane: () => Promise<TLane>;
+  closeLane: (lane: TLane) => Promise<unknown>;
+  drawLoad: (drawn: { lane: TLane; load: TLoad; group: TGroup }) => Promise<TResult>;
+  onGroup: (group: TGroup, drawn: TResult[] | null) => Promise<void> | void;
+}) => {
+  const drawing: DrawingGroup<TGroup, TResult>[] = [];
+  let current: DrawingGroup<TGroup, TResult> | null = null;
+  let exhausted = false;
+  let taking: Promise<unknown> = Promise.resolve();
+  let answered: Promise<void> = Promise.resolve();
+  let failed: { error: unknown } | null = null;
+
+  const answer = (entry: DrawingGroup<TGroup, TResult>, drawn: TResult[] | null) => {
+    entry.ended = true;
+    entry.timer?.unsubscribe();
+    answered = answered
+      .then(() => options.onGroup(entry.group, drawn))
+      .catch((error: unknown) => {
+        failed ??= { error };
+      });
+  };
+
+  const started = (group: TGroup) => {
+    let timeOut = () => undefined as void;
+    const entry: DrawingGroup<TGroup, TResult> = {
+      group,
+      next: 0,
+      left: group.loads.length,
+      drawn: [],
+      lanes: new Set(),
+      ended: false,
+      timedOut: new Promise((resolve) => (timeOut = () => resolve('timeout'))),
+    };
+
+    entry.timer = timer(options.timeoutMs)
+      .pipe(
+        filter(() => !entry.ended),
+        tap(() => {
+          answer(entry, null);
+          timeOut();
+
+          for (const lane of entry.lanes) void options.closeLane(lane as TLane);
+        }),
+      )
+      .subscribe();
+    drawing.push(entry);
+
+    return entry;
+  };
+
+  const takeNext = async () => {
+    while (!exhausted) {
+      if (current && !current.ended && current.next < current.group.loads.length)
+        return { entry: current, at: current.next++ };
+
+      const group = await options.nextGroup();
+
+      if (!group) exhausted = true;
+      else if (group.loads.length === 0) answer(started(group), []);
+      else current = started(group);
+    }
+
+    return null;
+  };
+
+  const take = () => {
+    const taken = taking.then(takeNext);
+
+    taking = taken.catch(() => undefined);
+
+    return taken;
+  };
+
+  const workers = Array.from({ length: options.width }, async () => {
+    let lane: TLane | null = null;
+
+    for (let job = await take(); job; job = await take()) {
+      const { entry, at } = job;
+
+      if (entry.ended) continue;
+
+      lane ??= await options.openLane();
+      entry.lanes.add(lane);
+
+      const drawn = options.drawLoad({ lane, load: entry.group.loads[at] as TLoad, group: entry.group });
+
+      drawn.catch(() => undefined);
+
+      const result = await Promise.race([drawn.then((value) => ({ value })), entry.timedOut]);
+
+      entry.lanes.delete(lane);
+
+      if (result === 'timeout' || entry.ended) {
+        lane = null;
+        continue;
+      }
+
+      entry.drawn[at] = result.value;
+
+      if (--entry.left === 0) answer(entry, entry.drawn);
+    }
+  });
+
+  try {
+    await Promise.all(workers);
+  } finally {
+    for (const entry of drawing) entry.timer?.unsubscribe();
+  }
+
+  await answered;
+
+  if (failed) throw (failed as { error: unknown }).error;
+};
+
+type InspectedGroup = {
+  frames: Frame[];
+  key: string | null;
+  started: number;
+  requested: ServedRequest[];
+  loads: number[][];
+};
+
 const inspect = async (options: {
   browser: Browser;
   base: string;
@@ -911,11 +1054,6 @@ const inspect = async (options: {
   const { browser, base, frames, cache } = options;
   const timeoutMs = options.timeoutMs ?? PART_TIMEOUT_MS;
   const context = await browser.newContext();
-  let requested: ServedRequest[] = [];
-
-  if (cache) recordRequests(context, { into: () => requested, served: cache.served });
-
-  const issues: RenderIssue[] = [];
   const groups = new Map<string, Frame[]>();
 
   for (const frame of frames) {
@@ -925,84 +1063,100 @@ const inspect = async (options: {
     groups.set(key, [...(groups.get(key) ?? []), frame]);
   }
 
+  const ordered = [...groups.values()];
+  const issuesOf = new Map<Frame[], RenderIssue[]>();
+  let done = 0;
+  let at = 0;
+
+  const tookOf = new Map<Frame[], number>();
+
+  const finished = (group: Frame[], { issues, started }: { issues: RenderIssue[]; started: number }) => {
+    issuesOf.set(group, issues);
+    tookOf.set(group, Date.now() - started);
+
+    for (let next = ordered[done]; next && issuesOf.has(next); next = ordered[done]) {
+      const first = next[0]?.address;
+
+      done++;
+
+      if (first) options.onPart?.({ done, total: ordered.length, part: first.part, ms: tookOf.get(next) ?? 0 });
+    }
+  };
+
   try {
-    let lanes: Lane[] = [];
-    let done = 0;
+    await drawPooled<Lane, number[], { issues: RenderIssue[][]; lines: string[] }, InspectedGroup>({
+      width: INSPECTS_AT_ONCE,
+      timeoutMs,
+      nextGroup: async () => {
+        while (at < ordered.length) {
+          await yieldRun();
 
-    for (const group of groups.values()) {
-      await yieldRun();
+          const group = ordered[at++] as Frame[];
+          const started = Date.now();
+          const key = cache ? cacheKeyOf([cache.salt, group]) : null;
+          const hit = cache && key ? await servedHitOf(cache, key) : null;
 
-      const started = Date.now();
-      const first = group[0]?.address;
-      const key = cache ? cacheKeyOf([cache.salt, group]) : null;
-      const hit = cache && key ? await servedHitOf(cache, key) : null;
+          if (!hit) return { frames: group, key, started, requested: [], loads: loadsOf(group) };
 
-      if (hit) {
-        issues.push(...hit);
-        done++;
+          finished(group, { issues: hit, started });
+        }
 
-        if (first) options.onPart?.({ done, total: groups.size, part: first.part, ms: Date.now() - started });
-
-        continue;
-      }
-
-      const loads = loadsOf(group);
-      const width = Math.min(INSPECTS_AT_ONCE, loads.length);
-
-      while (lanes.length < width) {
+        return null;
+      },
+      openLane: async () => {
         const page = await context.newPage();
+        const lane: Lane = { page, sdkErrors: watchSdkErrorLines(page), booted: null, requested: [] };
 
-        if (cache) await (await context.newCDPSession(page)).send('Network.setCacheDisabled', { cacheDisabled: true });
+        if (cache) {
+          recordRequests(page, { into: () => lane.requested, served: cache.served });
+          await (await context.newCDPSession(page)).send('Network.setCacheDisabled', { cacheDisabled: true });
+        }
 
-        lanes.push({ page, sdkErrors: watchSdkErrorLines(page), booted: null });
-      }
+        return lane;
+      },
+      closeLane: ({ page }) => page.close().catch(() => undefined),
+      drawLoad: async ({ lane, load, group }) => {
+        lane.requested = group.requested;
 
-      requested = [];
+        const issues = await inspectedLoadOf({ lane, base, frames: load.map((index) => group.frames[index] as Frame) });
 
-      const found: RenderIssue[][] = group.map(() => []);
-      let next = 0;
-      const drawn = Promise.all(
-        lanes.slice(0, width).map(async (lane) => {
-          for (let at = next++; at < loads.length; at = next++) {
-            const load = loads[at] ?? [];
-            const loadIssues = await inspectedLoadOf({
-              lane,
-              base,
-              frames: load.map((index) => group[index] as Frame),
-            });
+        return { issues, lines: lane.sdkErrors.drain() };
+      },
+      onGroup: async (group, drawn) => {
+        const first = group.frames[0]?.address;
 
-            load.forEach((index, of) => (found[index] = loadIssues[of] ?? []));
-          }
-        }),
-      );
+        if (!drawn) {
+          const timedOut: RenderIssue[] = first
+            ? [
+                {
+                  rule: RENDER_TIMEOUT,
+                  product: first.product,
+                  part: first.part,
+                  state: '-',
+                  size: '-',
+                  path: '-',
+                  detail: `drawing the part did not finish within ${Math.round(timeoutMs / 1000)}s`,
+                  sketch: first.sketch,
+                  undrawn: 'part',
+                },
+              ]
+            : [];
 
-      drawn.catch(() => undefined);
+          finished(group.frames, { issues: timedOut, started: group.started });
 
-      const result = await firstValueFrom(
-        race(from(drawn).pipe(map(() => 'drawn' as const)), timer(timeoutMs).pipe(map(() => 'timeout' as const))),
-      );
+          return;
+        }
 
-      if (result === 'timeout') {
-        await Promise.all(lanes.map(({ page }) => page.close().catch(() => undefined)));
-        lanes = [];
+        const found: RenderIssue[][] = group.frames.map(() => []);
 
-        if (first)
-          issues.push({
-            rule: RENDER_TIMEOUT,
-            product: first.product,
-            part: first.part,
-            state: '-',
-            size: '-',
-            path: '-',
-            detail: `drawing the part did not finish within ${Math.round(timeoutMs / 1000)}s`,
-            sketch: first.sketch,
-            undrawn: 'part',
-          });
-      } else {
+        group.loads.forEach((load, of) =>
+          load.forEach((index, inLoad) => (found[index] = drawn[of]?.issues[inLoad] ?? [])),
+        );
+
         const groupIssues = found.flat();
 
         if (first)
-          for (const line of new Set(lanes.flatMap(({ sdkErrors }) => sdkErrors.drain())))
+          for (const line of new Set(drawn.flatMap(({ lines }) => lines)))
             groupIssues.push({
               rule: 'RENDER',
               product: first.product,
@@ -1014,20 +1168,17 @@ const inspect = async (options: {
               sketch: first.sketch,
             });
 
-        issues.push(...groupIssues);
+        if (cache && group.key)
+          await writeServed(cache, { key: group.key, requested: group.requested, value: groupIssues });
 
-        if (cache && key) await writeServed(cache, { key, requested, value: groupIssues });
-      }
-
-      done++;
-
-      if (first) options.onPart?.({ done, total: groups.size, part: first.part, ms: Date.now() - started });
-    }
+        finished(group.frames, { issues: groupIssues, started: group.started });
+      },
+    });
   } finally {
     await context.close();
   }
 
-  return issues;
+  return ordered.flatMap((group) => issuesOf.get(group) ?? []);
 };
 
 /** Loads the module of every drawn part of `products` on the warm design server, in the order `renderIssuesOf` loads them. */

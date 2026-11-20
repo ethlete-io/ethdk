@@ -87,45 +87,52 @@ type Listener = (request: {
 const fakeBrowser = (base: string) => ({
   newContext: async () => {
     const listeners: Listener[] = [];
-    const request = (url: string, post: string | null = null) => {
-      if (post !== null) printed.push(WARNING);
+    const requestOf =
+      (pageListeners: Listener[]) =>
+      (url: string, post: string | null = null) => {
+        if (post !== null) printed.push(WARNING);
 
-      listeners.forEach((listener) =>
-        listener({
-          url: () => `${base}${url}`,
-          headers: () => ({ accept: '*/*' }),
-          method: () => (post === null ? 'GET' : 'POST'),
-          postData: () => post,
-        }),
-      );
-    };
+        [...listeners, ...pageListeners].forEach((listener) =>
+          listener({
+            url: () => `${base}${url}`,
+            headers: () => ({ accept: '*/*' }),
+            method: () => (post === null ? 'GET' : 'POST'),
+            postData: () => post,
+          }),
+        );
+      };
 
     return {
       addInitScript: async () => undefined,
       on: (event: string, listener: Listener) => event === 'request' && listeners.push(listener),
       newCDPSession: async () => ({ send: async () => undefined }),
       close: async () => undefined,
-      newPage: async () => ({
-        on: () => undefined,
-        close: async () => undefined,
-        emulateMedia: async () => undefined,
-        setViewportSize: async () => undefined,
-        evaluate: async () => [[], []],
-        goto: async (url: string) => {
-          const search = new URL(url).searchParams;
-          const part = (search.get('part') ?? '').replace('components/', '');
-          const variant = search.get('variant');
+      newPage: async () => {
+        const pageListeners: Listener[] = [];
+        const request = requestOf(pageListeners);
 
-          draws.drawn('design', `${part} ${search.get('state')}`);
-          request(variant ? `/frame.html?${search}` : '/frame.html');
+        return {
+          on: (event: string, listener: Listener) => event === 'request' && pageListeners.push(listener),
+          close: async () => undefined,
+          emulateMedia: async () => undefined,
+          setViewportSize: async () => undefined,
+          evaluate: async () => [[], []],
+          goto: async (url: string) => {
+            const search = new URL(url).searchParams;
+            const part = (search.get('part') ?? '').replace('components/', '');
+            const variant = search.get('variant');
 
-          if (variant) request(SYSTEM_REGISTRY);
+            draws.drawn('design', `${part} ${search.get('state')}`);
+            request(variant ? `/frame.html?${search}` : '/frame.html');
 
-          (SERVED_BY[part] ?? []).forEach((file) => request(variant ? variantFileOf(variant, file) : file));
+            if (variant) request(SYSTEM_REGISTRY);
 
-          if (part === 'b') request(RENDERED.path, RENDERED.body);
-        },
-      }),
+            (SERVED_BY[part] ?? []).forEach((file) => request(variant ? variantFileOf(variant, file) : file));
+
+            if (part === 'b') request(RENDERED.path, RENDERED.body);
+          },
+        };
+      },
     };
   },
 });

@@ -8,6 +8,7 @@ import { checkSystem } from './check-system';
 import { completenessOf } from './complete';
 import { resolveProduct } from './resolve-product';
 import {
+  drawPooled,
   groupedIssueLinesOf,
   INSPECTS_AT_ONCE,
   renderIssueLineOf,
@@ -1545,5 +1546,108 @@ describe('uniqueIssuesOf', () => {
 
   it('keeps issues whose detail differs', () => {
     expect(uniqueIssuesOf([issue, { ...issue, detail: 'other colour' }])).toHaveLength(2);
+  });
+});
+
+describe('drawPooled', () => {
+  type Group = { name: string; loads: { id: string; ms: number }[]; requested: string[] };
+  type Lane = { id: number; requested: string[]; closed: boolean };
+
+  const groupsOf = (...groups: [string, number[]][]) =>
+    groups.map(([name, loads]): Group => ({
+      name,
+      loads: loads.map((ms, at) => ({ id: `${name}${at}`, ms })),
+      requested: [],
+    }));
+
+  const poolOf = (groups: Group[], options: { width: number; timeoutMs?: number }) => {
+    const lanes: Lane[] = [];
+    const answers: [string, string[] | null][] = [];
+    const started: string[] = [];
+    const queue = [...groups];
+
+    const pooled = drawPooled<Lane, Group['loads'][number], string, Group>({
+      width: options.width,
+      timeoutMs: options.timeoutMs ?? 10_000,
+      nextGroup: async () => queue.shift() ?? null,
+      openLane: async () => {
+        const lane = { id: lanes.length, requested: [], closed: false };
+
+        lanes.push(lane);
+
+        return lane;
+      },
+      closeLane: async (lane) => (lane.closed = true),
+      drawLoad: async ({ lane, load, group }) => {
+        lane.requested = group.requested;
+        started.push(load.id);
+
+        if (load.ms < 0) await new Promise(() => undefined);
+
+        await new Promise((resolve) => setTimeout(resolve, load.ms));
+        lane.requested.push(load.id);
+
+        return load.id;
+      },
+      onGroup: (group, drawn) => void answers.push([group.name, drawn]),
+    });
+
+    return { pooled, lanes, answers, started };
+  };
+
+  it('lets a free lane take the next group while a slow load of an earlier group still draws', async () => {
+    const groups = groupsOf(['a', [60, 5]], ['b', [5, 5]], ['c', [5]]);
+    const { pooled, lanes, answers, started } = poolOf(groups, { width: 2 });
+
+    await pooled;
+
+    expect(lanes).toHaveLength(2);
+    expect(started).toEqual(['a0', 'a1', 'b0', 'b1', 'c0']);
+    expect(answers.map(([name]) => name)).toEqual(['b', 'c', 'a']);
+    expect(answers).toContainEqual(['a', ['a0', 'a1']]);
+    expect(groups.map((group) => [...group.requested].sort())).toEqual([['a0', 'a1'], ['b0', 'b1'], ['c0']]);
+  });
+
+  it('opens no more lanes than there are loads', async () => {
+    const { pooled, lanes } = poolOf(groupsOf(['a', [1]], ['b', [1]]), { width: 8 });
+
+    await pooled;
+
+    expect(lanes).toHaveLength(2);
+  });
+
+  it('times out one group, closes only its lanes, and still draws every other group', async () => {
+    const groups = groupsOf(['a', [5]], ['stuck', [-1, 5]], ['b', [5, 5, 5]]);
+    const { pooled, lanes, answers } = poolOf(groups, { width: 2, timeoutMs: 50 });
+
+    await pooled;
+
+    expect(answers).toContainEqual(['stuck', null]);
+    expect(answers).toContainEqual(['a', ['a0']]);
+    expect(answers).toContainEqual(['b', ['b0', 'b1', 'b2']]);
+    expect(lanes.filter((lane) => lane.closed)).toHaveLength(1);
+    expect(groups[2]?.requested.sort()).toEqual(['b0', 'b1', 'b2']);
+  });
+
+  it('fails when a load fails before its group times out', async () => {
+    const pooled = drawPooled<number, number, number, { loads: number[] }>({
+      width: 2,
+      timeoutMs: 10_000,
+      nextGroup: (() => {
+        let given = false;
+
+        return async () => (given ? null : ((given = true), { loads: [1, 2] }));
+      })(),
+      openLane: async () => 0,
+      closeLane: async () => undefined,
+      drawLoad: async ({ load }) => {
+        if (load === 2) throw new Error('no page');
+
+        return load;
+      },
+      onGroup: () => undefined,
+    });
+
+    await expect(pooled).rejects.toThrow('no page');
   });
 });
