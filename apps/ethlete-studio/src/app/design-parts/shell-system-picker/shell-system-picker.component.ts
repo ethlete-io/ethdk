@@ -42,7 +42,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
         </svg>
       </button>
       <ng-template etMenuSurface>
-        <div class="box-border w-58 [transform:translate3d(0,0,0)] shadow-[0_12px_32px_var(--surface-shadow)]">
+        <div class="box-border w-58 transform-[translate3d(0,0,0)] shadow-[0_12px_32px_var(--surface-shadow)]">
           <et-menu class="box-border w-58 text-ui-md">
             <et-menu-radio-group [value]="product()" (valueChange)="selectProduct($event)">
               <et-menu-group-label>{{ LABELS.designSystem }}</et-menu-group-label>
