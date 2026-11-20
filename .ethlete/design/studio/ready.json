@@ -966,7 +966,7 @@
     "at": "2026-11-20T13:13:44.888Z"
   },
   "elements/studio-menu": {
-    "hash": "48e67687b71e290b",
+    "hash": "c0b953146da874ba",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "9183353168e14ff7",
@@ -975,8 +975,8 @@
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "178aac4a1cdb5a5c",
       ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "d3afeb407b97da7d",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "f881fd001af2a857",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "6cd740beab44c663",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "d7337d9c2b9d8ed0",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "d0416f14deadf5c7",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -1003,13 +1003,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "fbc868557c7a4230",
+    "app": "d64bbd8d3cd2607a",
     "actions": ["closed", "open", "studio-menu.busy", "studio-menu.busy-open"],
     "builder": "designer",
-    "at": "2026-11-20T14:15:52.820Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 662650
+    "at": "2026-11-20T14:49:58.887Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 1711699
   },
   "elements/variant-cell": {
     "hash": "d27bd6b31fee83f0",
