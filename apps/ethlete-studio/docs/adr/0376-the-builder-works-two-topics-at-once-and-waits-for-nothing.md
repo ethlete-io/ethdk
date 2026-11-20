@@ -33,3 +33,16 @@ jetzt auch 4 agents paralel arbeiten gerne". Four topics at once is the limit; a
 Amended 2026-11-20 (doc-agent session): the limit of four holds only until the weekly usage reset on Saturday
 2026-11-21 (German, verbatim): "die regel gilt noch bis samstag zum weeklz reset". From that reset on, the limit is two
 again.
+
+Amended 2026-11-20 (doc-agent session), until the weekly usage reset on Saturday 2026-11-21 14:00. The human (German,
+verbatim): "haben noch gut usage limit frei was wir nun bis morgen aka samstag vor 14 uhr auf den kopf hauen wollen",
+"wir können ja auch agenten nutzen die nur research machen und keinen code verändern. die dinge planen damit einer der
+4 builder dann extrem schnell umsetzen kann", and "ok" on the summary:
+
+1. Up to four code-changing subagents at once, as above.
+2. In addition, up to four research subagents that only read, measure and plan: no code change, no commit, no full
+   suite. Each prepares a coming queue row as a build brief (files and line ranges, Suspect or Cause with its
+   measurement, the bite spec), so that a code-changing subagent builds it at once.
+3. Hard research (a cause with no known reason) runs on opus; the rest on sonnet.
+4. The builder runs through the night without a pause until the reset. From the reset on, the limit is two
+   code-changing topics and no extra research subagents.
