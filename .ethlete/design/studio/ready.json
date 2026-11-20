@@ -1195,7 +1195,7 @@
     "pid": 2953350
   },
   "elements/variant-cell": {
-    "hash": "dea9153ce2f392ac",
+    "hash": "fa0959bbda4330ce",
     "files": {
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
@@ -1228,7 +1228,7 @@
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
       ".ethlete/design/studio/elements/variant-cell/variant-cell.css": "9ea8a222b03e9446",
-      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "1a123186f434cd66",
+      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "ef67c19c563d32cd",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
@@ -1238,16 +1238,16 @@
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9"
     },
-    "app": "b7dc8539a3436cd0",
+    "app": "8010d04c9eb81534",
     "embedded": {
       "components/comment-pin": "4a81b8a796ada4c1"
     },
     "actions": ["emit:pinToggle"],
     "builder": "designer",
-    "at": "2026-11-20T22:39:48.502Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 529254
+    "at": "2026-11-20T23:11:26.079Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 1081971
   },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",
