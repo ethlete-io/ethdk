@@ -6,40 +6,6 @@
   (transitionend)="smooth.set(false)"
   class="absolute top-0 left-0 origin-top-left"
 >
-  @for (head of placedRowHeads(); track head.key) {
-    <div
-      [style.top.px]="head.y"
-      [style.width.px]="head.width"
-      [style.height.px]="head.height"
-      class="absolute left-0 flex items-center overflow-hidden rounded-[0.8rem] border border-dashed border-(--et-surface-border-solid) px-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
-      data-row-head
-    >
-      @if (head.note) {
-        <span
-          [etTooltip]="head.note"
-          class="truncate text-[calc(1.3rem*var(--et-design-canvas-label-scale))] text-text-muted"
-          data-row-head-note
-          >{{ head.note }}</span
-        >
-      }
-    </div>
-    <button
-      [style.top.px]="head.y"
-      [style.transform]="'translateX(-4rem) scale(' + rowHeadScale() + ')'"
-      [etTooltip]="head.title ?? head.label"
-      [attr.aria-expanded]="head.open"
-      (click)="toggleRow(head.key, $event)"
-      class="absolute right-0 origin-top-right whitespace-nowrap"
-      et-button
-      type="button"
-      variant="outline"
-      color="surface"
-      size="sm"
-    >
-      {{ head.label }}
-    </button>
-  }
-
   @for (group of groupHeads(); track group.key) {
     <div
       [style.left.px]="group.x"
@@ -170,17 +136,6 @@
     />
   }
 
-  @for (outline of placedOutlines(); track $index) {
-    <div
-      [style.left.px]="outline.x"
-      [style.top.px]="outline.y"
-      [style.width.px]="outline.width"
-      [style.height.px]="outline.height"
-      class="pointer-events-none absolute rounded-sm outline-2 outline-offset-2 outline-(--et-theme-color-primary-solid) outline-solid"
-      data-part-outline
-    ></div>
-  }
-
   @for (target of pointTargets(); track target.frame.id) {
     <div
       [style.left.px]="target.x"
@@ -247,16 +202,14 @@
   <ng-content />
 </div>
 
-@if (zoomChip()) {
-  <ethlete-zoom-chip
-    [percent]="zoomPercent()"
-    [class]="zoomChipClass()"
-    (zoomOut)="zoomBy(1 / ZOOM_STEP)"
-    (zoomReset)="resetZoom()"
-    (zoomIn)="zoomBy(ZOOM_STEP)"
-    (fit)="fitAll()"
-  />
-}
+<ethlete-zoom-chip
+  [percent]="zoomPercent()"
+  [class]="zoomChipClass()"
+  (zoomOut)="zoomBy(1 / ZOOM_STEP)"
+  (zoomReset)="resetZoom()"
+  (zoomIn)="zoomBy(ZOOM_STEP)"
+  (fit)="fitAll()"
+/>
 <div
   #actionsProbe
   class="pointer-events-none invisible absolute top-0 right-0 h-(--st-canvas-actions-bottom,0px) w-(--st-canvas-actions-reach,0px)"

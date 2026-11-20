@@ -198,7 +198,7 @@ describe('DesignCanvasComponent', () => {
   });
 
   describe('when the canvas width changes', () => {
-    const setup = async ({ opening = 'start' }: { opening?: 'start' | 'all' | 'visible' } = {}) => {
+    const setup = async () => {
       const size = { width: 1200, height: 1000, panel: 320 };
       const resized: (() => void)[] = [];
       let host: unknown = null;
@@ -230,7 +230,6 @@ describe('DesignCanvasComponent', () => {
 
       const fixture = await render([{ ...FITTED, id: 'a', width: 1000, height: 600 }]);
 
-      fixture.componentRef.setInput('opening', opening);
       host = fixture.nativeElement;
       resized.forEach((resize) => resize());
       await fixture.whenStable();
@@ -273,8 +272,9 @@ describe('DesignCanvasComponent', () => {
       expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
     });
 
-    it('keeps the camera of an opening fit when the canvas resizes', async () => {
-      const { canvas, resizeTo, hidePanel } = await setup({ opening: 'all' });
+    it('keeps the opening camera when the canvas resizes', async () => {
+      const { canvas, resizeTo, hidePanel } = await setup();
+
       const opened = canvas.camera();
 
       await resizeTo(600);
@@ -285,7 +285,8 @@ describe('DesignCanvasComponent', () => {
     });
 
     it('shifts the camera by the move of its left edge, so the frames keep their screen position', async () => {
-      const { fixture, canvas, resizeTo } = await setup({ opening: 'all' });
+      const { fixture, canvas, resizeTo } = await setup();
+
       const opened = canvas.camera();
       const left = { value: 0 };
       const host = fixture.nativeElement as HTMLElement;
@@ -300,32 +301,6 @@ describe('DesignCanvasComponent', () => {
       await resizeTo(1200);
 
       expect(canvas.camera()).toEqual(opened);
-    });
-
-    it('opens at 100 % on the frame a fit shows nearest the top centre', async () => {
-      const { canvas, resizeTo } = await setup({ opening: 'visible' });
-      const opened = canvas.camera();
-
-      canvas.fitAll();
-      expect(canvas.camera().zoom).toBeLessThan(1);
-      canvas.show({ kind: 'visible', zoom: 1 });
-
-      expect(opened).toEqual(canvas.camera());
-      expect(opened.zoom).toBe(1);
-
-      await resizeTo(600);
-
-      expect(canvas.camera()).toEqual(opened);
-    });
-
-    it('fits an opening fit again when the frames change', async () => {
-      const { fixture, canvas } = await setup({ opening: 'all' });
-      const opened = canvas.camera().zoom;
-
-      fixture.componentRef.setInput('frames', [{ ...FITTED, id: 'a', width: 2000, height: 600 }]);
-      await fixture.whenStable();
-
-      expect(canvas.camera().zoom).toBeLessThan(opened);
     });
 
     it('fits the view again while it is still fitted', async () => {
@@ -481,52 +456,7 @@ describe('DesignCanvasComponent', () => {
     expect(gapBelow(hover, outline)).toBe(96);
   });
 
-  it('draws a folded row head below the frame rows and an open one above its row, and emits its key on a click', async () => {
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
-    });
-
-    const fixture = TestBed.createComponent(DesignCanvasComponent);
-    const cell = (row: string): CanvasFrame => ({ ...FITTED, id: row, row, column: 'a', width: 200, height: 100 });
-    const toggled: string[] = [];
-
-    fixture.componentInstance.rowToggle.subscribe((key) => toggled.push(key));
-    fixture.componentRef.setInput('frames', [cell('hidden'), cell('inbox')]);
-    fixture.componentRef.setInput('arrangement', 'matrix');
-    fixture.componentRef.setInput('columns', [{ key: 'a', label: 'a' }]);
-    fixture.componentRef.setInput('rowHeads', [
-      { key: 'unchanged inbox', label: 'inbox · unchanged in a', open: true, before: 'inbox' },
-      { key: 'unchanged system', label: 'system · unchanged in a', open: false, before: 'system' },
-    ]);
-    await fixture.whenStable();
-
-    const host = fixture.nativeElement as HTMLElement;
-    const heads = [...host.querySelectorAll<HTMLButtonElement>('button[aria-expanded]')].filter((button) =>
-      button.textContent?.includes('unchanged'),
-    );
-    const [, inbox] = fixture.debugElement
-      .queryAll(By.directive(CanvasFrameComponent))
-      .map((frame) => frame.nativeElement as HTMLElement);
-    const topOf = (element: HTMLElement | undefined) => parseFloat(element?.style.top ?? '');
-
-    expect(heads.map((head) => [head.textContent?.trim(), head.getAttribute('aria-expanded')])).toEqual([
-      ['inbox · unchanged in a', 'true'],
-      ['system · unchanged in a', 'false'],
-    ]);
-    expect(topOf(inbox) - topOf(heads[0])).toBe(48 + 24);
-    expect(topOf(heads[1])).toBeGreaterThan(topOf(inbox));
-
-    fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.16 });
-    await fixture.whenStable();
-
-    expect(heads[1]?.style.transform).toBe('translateX(-4rem) scale(2)');
-
-    heads[1]?.click();
-
-    expect(toggled).toEqual(['unchanged system']);
-  });
-
-  it('stacks matrix sections as bands with their own column heads, and dims a pending frame under its label', async () => {
+  it('dims a pending frame under its label', async () => {
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
     });
@@ -542,39 +472,21 @@ describe('DesignCanvasComponent', () => {
       ...(pending ? { pending } : {}),
     });
 
-    fixture.componentRef.setInput('frames', [cell('c', 'new default', 'Still drawing'), cell('a', 'old default')]);
+    fixture.componentRef.setInput('frames', [cell('c', 'default', 'Still drawing'), cell('a', 'default')]);
     fixture.componentRef.setInput('arrangement', 'matrix');
     fixture.componentRef.setInput('columns', [
-      { key: 'c', label: 'c', section: 'new', group: { key: 'new', label: 'r2' } },
-      { key: 'a', label: 'a', section: 'old', group: { key: 'old', label: 'r1' } },
+      { key: 'c', label: 'c' },
+      { key: 'a', label: 'a' },
     ]);
-    fixture.componentRef.setInput('rowHeads', [
-      { key: 'older', label: 'r0 · x', note: 'Too loud', open: false, section: 'older' },
-    ]);
-    fixture.componentRef.setInput('sections', ['new', 'old', 'older']);
     await fixture.whenStable();
 
-    const host = fixture.nativeElement as HTMLElement;
-    const [drawn, older] = fixture.debugElement
+    const [drawn, other] = fixture.debugElement
       .queryAll(By.directive(CanvasFrameComponent))
       .map((frame) => frame.nativeElement as HTMLElement);
-    const groups = [...host.querySelectorAll<HTMLButtonElement>('button[aria-expanded="true"]')];
-    const head = host.querySelector<HTMLElement>('[data-row-head]');
 
-    expect(drawn?.style.left).toBe('0px');
-    expect(older?.style.left).toBe('0px');
-    expect(parseFloat(older?.style.top ?? '')).toBeGreaterThan(100);
-    expect(
-      groups.map((group) => [group.textContent?.trim(), group.parentElement?.parentElement?.style.marginTop]),
-    ).toEqual([
-      ['r2', '0px'],
-      ['r1', older?.style.top],
-    ]);
-    expect(parseFloat(head?.style.top ?? '')).toBeGreaterThan(parseFloat(older?.style.top ?? ''));
-    expect(head?.textContent?.trim()).toBe('Too loud');
     expect(drawn?.hasAttribute('data-pending')).toBe(true);
     expect(drawn?.querySelector('[data-frame-pending]')?.textContent?.trim()).toBe('Still drawing');
-    expect(older?.querySelector('[data-frame-pending]')).toBeNull();
+    expect(other?.querySelector('[data-frame-pending]')).toBeNull();
   });
 
   it('widens every fitted tile in a matrix column to the widest one, so the right edges line up', async () => {
@@ -650,25 +562,6 @@ describe('DesignCanvasComponent', () => {
     expect(cell?.className).toContain('min(var(--et-design-canvas-label-scale),4)');
   });
 
-  it('draws an outline over a frame at its offset in the frame', async () => {
-    const fixture = await render([{ ...FITTED, id: 'wide', width: 320, height: 200 }]);
-
-    fixture.componentRef.setInput('outlines', [
-      { frameId: 'wide', x: 12, y: 34, width: 56, height: 78 },
-      { frameId: 'gone', x: 0, y: 0, width: 1, height: 1 },
-    ]);
-    await fixture.whenStable();
-
-    const frame = frameElement(fixture).nativeElement as HTMLElement;
-    const outlines = [...fixture.nativeElement.querySelectorAll('[data-part-outline]')] as HTMLElement[];
-
-    expect(outlines).toHaveLength(1);
-    expect(parseFloat(outlines[0]?.style.left ?? '') - parseFloat(frame.style.left)).toBe(12);
-    expect(parseFloat(outlines[0]?.style.top ?? '') - parseFloat(frame.style.top)).toBe(34);
-    expect(outlines[0]?.style.width).toBe('56px');
-    expect(outlines[0]?.style.height).toBe('78px');
-  });
-
   describe('a frame in both colour schemes', () => {
     const PAGE: CanvasFrame = {
       id: 'page',
@@ -733,11 +626,10 @@ describe('DesignCanvasComponent', () => {
       ]);
     });
 
-    it('points pins and outlines at the light scheme', async () => {
+    it('points pins at the light scheme', async () => {
       const fixture = await render([PAGE]);
 
       fixture.componentRef.setInput('pins', [{ id: 'p', frameId: 'page', label: '1', text: 'one' }]);
-      fixture.componentRef.setInput('outlines', [{ frameId: 'page', x: 12, y: 34, width: 56, height: 78 }]);
       await fixture.whenStable();
 
       const host = frameElement(fixture).nativeElement as HTMLElement;
@@ -745,7 +637,6 @@ describe('DesignCanvasComponent', () => {
         parseFloat((element as HTMLElement | null)?.style.left ?? '') - parseFloat(host.style.left);
 
       expect(left(fixture.nativeElement.querySelector('[data-comment-pin]')?.parentElement)).toBe(390);
-      expect(left(fixture.nativeElement.querySelector('[data-part-outline]'))).toBe(12);
     });
 
     it('draws a legacy call shot once, without schemes', async () => {
@@ -936,34 +827,26 @@ describe('DesignCanvasComponent', () => {
       place: { part: 'p', state: 'rest', size: 'fitted' },
     };
 
-    it('places a pin and an outline through the crop, a pin outside it on the small whole page, and hides an outline outside it', async () => {
+    it('places a pin through the crop and a pin outside it on the small whole page', async () => {
       const fixture = await render([cropped]);
 
       fixture.componentRef.setInput('pins', [
         { id: 'in', frameId: 'a', label: '1', text: 'in', point: { x: 110, y: 210 } },
         { id: 'out', frameId: 'a', label: '2', text: 'out', point: { x: 10, y: 10 } },
       ]);
-      fixture.componentRef.setInput('outlines', [
-        { frameId: 'a', x: 110, y: 210, width: 10, height: 5 },
-        { frameId: 'a', x: 10, y: 10, width: 10, height: 5 },
-      ]);
       await fixture.whenStable();
 
       const host = fixture.nativeElement as HTMLElement;
       const frame = frameElement(fixture).nativeElement as HTMLElement;
       const pins = [...host.querySelectorAll<HTMLElement>('[data-comment-pin]')];
-      const outlines = [...host.querySelectorAll<HTMLElement>('[data-part-outline]')];
       const offset = (element: HTMLElement | undefined) => [
         parseFloat(element?.style.left ?? '') - parseFloat(frame.style.left),
         parseFloat(element?.style.top ?? '') - parseFloat(frame.style.top),
       ];
 
       expect(pins).toHaveLength(2);
-      expect(outlines).toHaveLength(1);
       expect(offset(pins[0]?.parentElement ?? undefined)).toEqual([20, 224]);
       expect(offset(pins[1]?.parentElement ?? undefined)).toEqual([2, 2]);
-      expect(offset(outlines[0])).toEqual([20, 224]);
-      expect([outlines[0]?.style.width, outlines[0]?.style.height]).toEqual(['20px', '10px']);
     });
   });
 

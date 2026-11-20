@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   afterRenderEffect,
-  booleanAttribute,
   Component,
   contentChildren,
   ElementRef,
@@ -26,15 +25,7 @@ import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { EMPTY, Subject, buffer, debounceTime, exhaustMap, map, startWith, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrameDirective } from './canvas-frame.directive';
-import {
-  CanvasFrame,
-  FrameCrop,
-  cropPointOf,
-  cropRectOf,
-  pagePointOfCrop,
-  placeableFramesOf,
-  schemeBoxOf,
-} from './canvas-frame';
+import { CanvasFrame, FrameCrop, cropPointOf, pagePointOfCrop, placeableFramesOf, schemeBoxOf } from './canvas-frame';
 import {
   CameraScene,
   CameraTarget,
@@ -45,7 +36,7 @@ import {
   uncoveredCentre,
   UncoveredView,
 } from './canvas-camera';
-import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
+import { CanvasPin, FramePoint } from './canvas-pin';
 import {
   Camera,
   Point,
@@ -58,7 +49,6 @@ import {
   sameRect,
   layoutGrid,
   layoutMatrix,
-  layoutMatrixSections,
   layoutSheet,
   panCamera,
   zoomAtPoint,
@@ -90,20 +80,14 @@ const cellAt = (event: MouseEvent) => {
 
 const FITTED_ROW_GAP = 48;
 const GROUP_GAP_FACTOR = 2;
-const SECTION_GAP_FACTOR = 4;
 const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
 const FIT_PADDING = 64;
 const START_PADDING = { x: 40, y: 48 };
-const ROW_HEAD_GUTTER = 160;
 const CAPTION_ROOM = 40;
 const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
-const ROW_HEAD_HEIGHT = 48;
-const ROW_HEAD_GAP = 24;
-/** A row head label stops growing here: at about 32px high it still fits the head height plus its gap, so heads never overlap. */
-const ROW_HEAD_MAX_SCALE = 2;
 const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
@@ -123,13 +107,6 @@ const ARROWS: Record<string, Point> = {
   ArrowUp: { x: 0, y: ARROW_STEP },
   ArrowDown: { x: 0, y: -ARROW_STEP },
 };
-
-const padded = (rect: Rect, by: number): Rect => ({
-  x: rect.x - by,
-  y: rect.y - by,
-  width: rect.width + by * 2,
-  height: rect.height + by * 2,
-});
 
 const offsetIn = (element: HTMLElement, world: HTMLElement): Rect => {
   let x = 0;
@@ -167,7 +144,7 @@ export type CanvasColumn = {
 };
 
 /**
- * A thin row of a `matrix` without frames, whose label is a button that emits `rowToggle`: above the frame
+ * A thin row of a `matrix` without frames: above the frame
  * row `before` names while `open`, else below every frame row.
  */
 export type CanvasRowHead = {
@@ -237,11 +214,9 @@ const isInteractive = (target: EventTarget | null) => {
   hostDirectives: [FocusRingDirective],
   host: {
     class:
-      'group/canvas relative isolate block h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent',
+      'group/canvas relative isolate block overflow-hidden contain-paint h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent',
     tabindex: '0',
     'aria-label': STUDIO_LABELS.canvas.label,
-    '[class.overflow-hidden]': 'clip()',
-    '[class.contain-paint]': 'clip()',
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',
@@ -271,11 +246,6 @@ export class DesignCanvasComponent {
   /** The columns of a `matrix`, in order. A column without frames still gets its head. */
   public columns = input<CanvasColumn[]>([]);
 
-  public rowHeads = input<CanvasRowHead[]>([]);
-
-  /** Stacks a `matrix` into bands top to bottom, one per key, each with its own column heads; empty for one band. */
-  public sections = input<string[]>([]);
-
   /** Names what the canvas shows. A new key opens the camera at 100 % on the first frames, or restores `restoredCamera`. */
   public cameraKey = input<string | null>(null);
 
@@ -284,28 +254,7 @@ export class DesignCanvasComponent {
 
   public zoomChipClass = input('absolute right-3 bottom-3');
 
-  public zoomChip = input(true, { transform: booleanAttribute });
-
-  public align = input<'center' | 'start'>('center');
-
-  public fitPadding = input(FIT_PADDING);
-
-  /** World pixels kept around each projected frame, so an outline drawn past its edge stays in view. */
-  public frameOutline = input(0);
-
-  /** The camera a new `cameraKey` opens at without a `restoredCamera`: 100 % at the first frames, every frame fitted, or 100 % at the frame the fit shows nearest the top centre. */
-  public opening = input<CanvasOpening>('start');
-
-  /** Whether the shell's side panel floats over the canvas's left edge, so camera commands keep clear of it. */
-  public coveredByShell = input(true, { transform: booleanAttribute });
-
-  public smoothCamera = input(true, { transform: booleanAttribute });
-
-  public clip = input(true, { transform: booleanAttribute });
-
   public pins = input<CanvasPin[]>([]);
-
-  public outlines = input<FrameOutline[]>([]);
 
   /** While on, every frame that has a `place` is a target, and a click on it reports the point through `pointPick`. */
   public pointing = input(false);
@@ -338,8 +287,6 @@ export class DesignCanvasComponent {
   public columnToggle = output<string>();
 
   /** The key of a row head the user clicked. */
-  public rowToggle = output<string>();
-
   /** The key of a column group whose switch the user clicked. */
   public groupSwitch = output<string>();
 
@@ -416,7 +363,7 @@ export class DesignCanvasComponent {
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
   private shellInset = signalElementDimensions(this.shellInsetProbe);
-  private covered = computed(() => (this.coveredByShell() ? (this.shellInset().offset?.width ?? 0) : 0));
+  private covered = computed(() => this.shellInset().offset?.width ?? 0);
   private actionsCover = signalElementDimensions(this.actionsProbe);
 
   /** By grid frame id, the box of each of its cells from the frame's top left corner. */
@@ -429,8 +376,6 @@ export class DesignCanvasComponent {
   });
 
   protected labelScale = computed(() => canvasLabelScale(this.camera().zoom));
-
-  protected rowHeadScale = computed(() => Math.min(this.labelScale(), ROW_HEAD_MAX_SCALE));
 
   private layout = computed(() => {
     const measured = this.measured();
@@ -478,42 +423,23 @@ export class DesignCanvasComponent {
       columnGap: MATRIX_COLUMN_GAP,
       rowGap,
       groupGap: rowGap * GROUP_GAP_FACTOR,
-      headGap: ROW_HEAD_GAP,
+      headGap: 0,
       minRowHeight: MIN_FRAME_ROW_HEIGHT,
       emptyColumnWidth: FALLBACK_WIDTH,
     };
-    const headOf = (head: CanvasRowHead) => ({
-      name: head.key,
-      height: ROW_HEAD_HEIGHT,
-      ...(head.open && head.before !== undefined ? { before: head.before } : {}),
-    });
     const emptyWidths = Object.fromEntries(
       columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
     );
-    const sections = this.sections();
     const matrix =
       arrangement !== 'matrix'
         ? null
-        : sections.length > 0
-          ? layoutMatrixSections({
-              frames: sized,
-              sections: sections.map((section) => ({
-                columns: columns.filter((column) => column.section === section).map((column) => column.key),
-                heads: this.rowHeads()
-                  .filter((head) => head.section === section)
-                  .map(headOf),
-              })),
-              spacing,
-              sectionGap: rowGap * SECTION_GAP_FACTOR,
-              emptyWidths,
-            })
-          : layoutMatrix({
-              frames: sized,
-              columns: columns.map((column) => column.key),
-              spacing,
-              heads: this.rowHeads().map(headOf),
-              emptyWidths,
-            });
+        : layoutMatrix({
+            frames: sized,
+            columns: columns.map((column) => column.key),
+            spacing,
+            heads: [],
+            emptyWidths,
+          });
     const sheet =
       matrix ?? (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : layoutSheet(sized, SPACING));
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
@@ -532,17 +458,9 @@ export class DesignCanvasComponent {
       return [...placed, { ...head.group, x: head.x, y: head.y, width: head.width }];
     }, []);
 
-    const rowHeads = this.rowHeads();
-    const right = Math.max(0, ...heads.map((head) => head.x + head.width));
-
     return {
       heads,
       groups,
-      rowHeads: sheet.rows.flatMap((row) => {
-        const head = row.head ? rowHeads.find((candidate) => candidate.key === row.name) : undefined;
-
-        return head ? [{ ...head, y: row.y, width: right, height: ROW_HEAD_HEIGHT }] : [];
-      }),
       frames: sheet.frames.flatMap((placed) => {
         const frame = byId.get(placed.id);
 
@@ -551,8 +469,6 @@ export class DesignCanvasComponent {
     };
   });
 
-  protected placedRowHeads = computed(() => this.layout().rowHeads);
-
   protected columnHeads = computed(() => this.layout().heads);
 
   protected columnHeadsNoted = computed(() => this.columns().some((column) => column.note && !column.folded));
@@ -560,8 +476,7 @@ export class DesignCanvasComponent {
   protected groupHeads = computed(() => this.layout().groups);
 
   private projectedScene = computed(() => {
-    const outline = this.frameOutline();
-    const rects = this.projectedRects().map((rect) => padded(rect, outline));
+    const rects = this.projectedRects();
     const selected = this.selectedProjected();
     const index = selected ? this.projected().indexOf(selected) : -1;
 
@@ -569,14 +484,12 @@ export class DesignCanvasComponent {
   });
 
   private bounds = computed(() => {
-    if (this.projected().length > 0) return padded(this.projectedWorld(), this.frameOutline());
+    if (this.projected().length > 0) return this.projectedWorld();
 
-    const { frames, heads, rowHeads } = this.layout();
-    const thin = rowHeads.map((head) => ({ x: 0, y: head.y, width: head.width, height: head.height }));
+    const { frames, heads } = this.layout();
 
     return (
-      boundingRect([...frames, ...thin]) ??
-      boundingRect(heads.map((head) => ({ x: head.x, y: 0, width: head.width, height: 1 })))
+      boundingRect(frames) ?? boundingRect(heads.map((head) => ({ x: head.x, y: 0, width: head.width, height: 1 })))
     );
   });
 
@@ -706,18 +619,6 @@ export class DesignCanvasComponent {
     return { x: frame.x + (point?.x ?? frame.width), y: frame.y + (point?.y ?? 0) };
   });
 
-  protected placedOutlines = computed(() => {
-    const byId = this.framesById();
-
-    return this.outlines().flatMap((outline) => {
-      const frame = byId.get(outline.frameId);
-      const crop = frame?.frame.crop;
-      const rect = crop ? cropRectOf(crop, outline) : outline;
-
-      return frame && rect ? [{ ...outline, ...rect, x: frame.x + rect.x, y: frame.y + rect.y }] : [];
-    });
-  });
-
   protected zoomPercent = computed(() => Math.round(this.camera().zoom * 100));
 
   private panStart$ = new Subject<{ event: PointerEvent; threshold: number }>();
@@ -779,11 +680,11 @@ export class DesignCanvasComponent {
 
         this.fittedFor = key;
         this.coveredAtFit = covered;
-        this.following = restored === null ? this.opening() : null;
+        this.following = restored === null ? 'start' : null;
         this.followsResize = false;
         this.followedBounds = bounds;
         if (restored) this.camera.set(restored);
-        else if (bounds) this.camera.set(this.fitted({ bounds, viewport, fit: this.opening() }));
+        else if (bounds) this.camera.set(this.fitted({ bounds, viewport, fit: 'start' }));
       });
     });
 
@@ -887,11 +788,6 @@ export class DesignCanvasComponent {
     };
 
     this.pointPick.emit({ frameId: frame.id, point: frame.crop ? pagePointOfCrop(frame.crop, point) : point });
-  }
-
-  protected toggleRow(key: string, event: MouseEvent) {
-    event.stopPropagation();
-    this.rowToggle.emit(key);
   }
 
   protected toggleColumn(key: string, event: MouseEvent) {
@@ -1192,11 +1088,10 @@ export class DesignCanvasComponent {
       frames: projected?.frames ?? frames,
       focused: projected ? projected.focused : (frames.find((placed) => placed.selected) ?? null),
       bounds,
-      padding: this.fitPadding(),
-      align: this.align(),
+      padding: FIT_PADDING,
       covered: this.covered(),
       inset: {
-        left: layout.rowHeads.length > 0 ? ROW_HEAD_GUTTER : 0,
+        left: 0,
         top: (layout.heads.length > 0 ? COLUMN_HEAD_ROOM : 0) + (layout.groups.length > 0 ? GROUP_HEAD_ROOM : 0),
       },
     };
@@ -1208,7 +1103,7 @@ export class DesignCanvasComponent {
 
   private moveCamera(camera: Camera, smooth = false) {
     this.following = null;
-    this.smooth.set(smooth && this.smoothCamera());
+    this.smooth.set(smooth);
     this.camera.set(camera);
     this.userCamera$.next(camera);
   }
