@@ -4216,19 +4216,12 @@ const CASES = [
 
       if (unzoomed) return unzoomed;
 
-      // A loading badge grows the label row above every frame in its grid row, so one that clears between the two
-      // measurements moves the frames without any camera change.
-      const badgesGone = () =>
-        page.waitForFunction(() => !document.querySelector('[data-loading-badge]'), null, { timeout: WAIT_MS });
-
-      await badgesGone();
       const before = await probe(page);
       const frameBefore = await firstFrame();
       const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
 
       await page.getByRole('button', { name: 'Hide panel' }).first().click();
       await settle(page);
-      await badgesGone();
 
       const after = await probe(page);
       const frameAfter = await firstFrame();
@@ -4246,6 +4239,54 @@ const CASES = [
       return {
         ok: kept,
         detail: `${describe(before, after)} frame ${frameBefore?.x},${frameBefore?.y} -> ${frameAfter?.x},${frameAfter?.y}, canvas left ${frameBefore?.canvasLeft} -> ${frameAfter?.canvasLeft}, head-frame ${headBefore} -> ${headAfter}`,
+      };
+    },
+  },
+  {
+    name: 'the loading badge keeps the frame label row height',
+    pages: ['Sketches'],
+    labels: ['Large', 'Sketches'],
+    delayPictures: false,
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it waits for the badge',
+    run: async (page) => {
+      let release;
+      const held = new Promise((resolve) => (release = resolve));
+      const pictures = /__design\/shot\?|\/frame\.html/;
+      const hold = async (route) => {
+        await held;
+        await route.fallback().catch(() => undefined);
+      };
+      const rowHeights = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll('[data-sk-label]')]
+            .filter((row) => row.querySelector('[data-loading-badge]'))
+            .map((row) => row.getBoundingClientRect().height),
+        );
+      let withBadge;
+      let withoutBadge;
+
+      await page.route(pictures, hold);
+
+      try {
+        await page.reload();
+        await listingAnswered(page);
+        await page.waitForSelector('[data-loading-badge]', { timeout: WAIT_MS });
+        withBadge = await rowHeights();
+        await page.addStyleTag({ content: '[data-loading-badge]{display:none!important}' });
+        withoutBadge = await rowHeights();
+      } finally {
+        release();
+        await page.unroute(pictures, hold);
+      }
+
+      const same =
+        withBadge.length > 0 &&
+        withBadge.length === withoutBadge.length &&
+        withBadge.every((h, i) => near(h, withoutBadge[i]));
+
+      return {
+        ok: same,
+        detail: `label row height with badge ${withBadge.join(',')}, without ${withoutBadge.join(',')}`,
       };
     },
   },

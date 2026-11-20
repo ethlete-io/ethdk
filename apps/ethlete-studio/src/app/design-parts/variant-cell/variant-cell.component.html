@@ -2,7 +2,7 @@
   #labelRow
   [class.hidden]="labelHidden()"
   [class.opacity-50]="same()"
-  class="row-start-1 flex w-0 min-w-full flex-wrap items-center gap-x-space-2"
+  class="relative row-start-1 flex w-0 min-w-full flex-wrap items-center gap-x-space-2"
   data-sk-label
   ><span
     #stateLabel
@@ -25,7 +25,9 @@
     <span class="text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{ LABELS.firstChange }}</span>
   }
   @if (loading()) {
-    <span class="flex shrink-0 items-center gap-space-1 text-ui-xs text-et-surface-muted" data-loading-badge
+    <span
+      class="absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-space-1 text-ui-xs text-et-surface-muted"
+      data-loading-badge
       ><et-spinner [diameter]="14" [strokeWidth]="1.75" />{{ LABELS.loading }}</span
     >
   }
