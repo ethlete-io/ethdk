@@ -632,11 +632,14 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
   rows.forEach((sliver, index) => {
     if (!isSliver(sliver, minBandMs) || taken.has(index)) return;
 
-    const hosts = rows
-      .map((row, at) => ({ row, at }))
-      .filter((entry) => entry.at !== index && !taken.has(entry.at) && foldsInto(sliver, entry.row))
-      .filter((entry) => !isSliver(entry.row, minBandMs))
-      .sort((left, right) => distance(sliver, left.row) - distance(sliver, right.row));
+    const hosts: { row: WorkGroup; at: number }[] = [];
+
+    rows.forEach((row, at) => {
+      if (at !== index && !taken.has(at) && !isSliver(row, minBandMs) && foldsInto(sliver, row))
+        hosts.push({ row, at });
+    });
+
+    hosts.sort((left, right) => distance(sliver, left.row) - distance(sliver, right.row));
 
     for (const host of hosts) {
       const joined = joinFitting({ into: host.row, added: sliver, gap: gapBetween(host.row, sliver), pass });
