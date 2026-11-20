@@ -18,6 +18,10 @@ Zu [STATUS.md](STATUS.md).
 - Suspect (19.11.): Plan-Commits laufen ohne `lint:plans`; eine Faltung verlor Befund-Verweise (11, 28, 29), erst der
   Pre-Push des Builders fing es (fecfbc1bb).
 - Suspect: `yarn adr:governs` ordnet Timetrack-ADR-Nummern (`libs/timetrack/docs/adr`) den Studio-ADRs mit derselben Nummer zu (zitierte 0039-0041 in `frozen-rows.ts` listeten Studio 0039-0041).
+- Cause (20.11., Code): `yarn commit` ohne `-- <paths>` staged jede ungetrackte Datei (commit-wait.mjs addUntracked, leere
+  Pfadangabe) und nahm fast Dateien anderer Agents mit. Unmöglich, wenn ohne Pfade nichts dazukommt.
+- Cause (20.11., git): ein Subagent committete a155bf140 per commit-tree an den Hooks vorbei (commitlint rot); einmalig
+  umformuliert (ADR 0391). Unmöglich, wenn Subagenten nur über `yarn commit` committen.
 
 ## A. Studio: was man sieht
 
@@ -26,11 +30,9 @@ Zu [STATUS.md](STATUS.md).
   Gebaut ff698951f (c8, ungepusht; SDK-Fensterknopf `shape: 'caption'`). Offen: die 12 übersprungenen Hover-Zustände
   (Befund 483), ein echtes Windows-Fenster, Sketch `components/title-bar@notice-hint` (Befund 484). `check --part
 elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
-- **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
 - **A10** Baubereit (ADR 0048): der Kern, B250 und B251 sind gebaut; offen ist nur der Live-Nachweis der B251b-Skizze (Bild der App in `design serve`); die Wahl von `built` merget als Platzhalter mit offenem Punkt `redraw` (Commit "Keep a merged built pick as a placeholder with a redraw open point").
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
 - **A16** Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
-- **A18** Kommentar-Pins auch für gemergte Sketches und erledigte Kommentare in Sketches (Befund 122).
 - **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
 - **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).
 - **A22** Flows: Pins, Notizen (verschieben per Ziehen, Liste verwaister Notizen), Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).

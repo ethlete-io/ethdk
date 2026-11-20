@@ -136,3 +136,5 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - studio checkouts.adding (20.11.): one flag for all folder adds, two adds at once could race (B646). Suspect.
 - compare pages/inventory (20.11.): one HTTP 400 on old code. Suspect.
 - focus stealing (20.11.): windows opened/closed in a loop, stole focus, stopped around the builder restart. Suspect: a builder background run or fifagg Playwright; next time find the process, make it headless.
+- compare shell-main (20.11.): system-picker hover/focus FAIL "no menuitemradio studio-lab", schon vor A6. Suspect: der Harness-Picker kennt studio-lab nicht.
+- full design check (20.11.): 95 Cache-Fehlschläge kosten 75-80 s (0,8 s/Teil), 8 Lanes voll. Suspect: CPU-gebunden auf geteilter Maschine; 16 Lanes erst bei Last < 8 testen.

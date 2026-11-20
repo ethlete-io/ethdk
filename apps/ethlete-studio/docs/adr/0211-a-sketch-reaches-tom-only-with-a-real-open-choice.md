@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B412
+built: 21360c443
 decided: 2026-11-06
 source: doc-agent session 2026-11-06, findings 514-518
 ---
