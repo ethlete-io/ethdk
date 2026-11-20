@@ -1,8 +1,8 @@
 {
-  "elements/list-row": "5ec8e814acee0ef0",
-  "elements/shell-main": "0b17670cb0223d48",
+  "elements/list-row": "214dc690f9b1d2c3",
+  "elements/shell-main": "30a2826c82be4420",
   "pages/film-detail": {
-    "hash": "c85060c029d607e4",
+    "hash": "284ca8319363f85e",
     "variant": "a",
     "decidedBy": "B149 grill decision (ADR 0010 Empfehlung gebaut)",
     "at": "2026-11-17T08:09:06.437Z"

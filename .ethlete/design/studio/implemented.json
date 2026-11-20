@@ -156,8 +156,8 @@
     }
   },
   "components/comment-row": {
-    "hash": "0eabed3d1aa31953",
-    "at": "2026-11-19T03:12:59.130Z",
+    "hash": "cb3ef346603a0c41",
+    "at": "2026-11-20T10:35:00.607Z",
     "states": {
       "agent": "fa30c75348ecfb65",
       "no-replies": "b132f7b832013f40",
@@ -201,9 +201,9 @@
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/comment-row/comment-row.css": "f82037c1d733d503",
-      ".ethlete/design/studio/components/comment-row/comment-row.ts": "c331ae898b68dffc",
-      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "4777e8b97f76bac0",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      ".ethlete/design/studio/components/comment-row/comment-row.ts": "ee45b0cc4566f57b",
+      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
@@ -220,7 +220,7 @@
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
       "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
-      "libs/components/src/lib/button/button.component.ts": "13b60f537f489968",
+      "libs/components/src/lib/button/button.component.ts": "43b80edd0899cde2",
       "libs/components/src/lib/button/button.imports.ts": "a332aa92f4996d86",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/fab.component.css": "aeef6f813521203e",
@@ -232,7 +232,7 @@
       "libs/components/src/lib/button/headless/split-button-trigger.directive.ts": "2d748e64b6aa2210",
       "libs/components/src/lib/button/headless/split-button.directive.ts": "b40aaba4d86542c0",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
-      "libs/components/src/lib/button/icon-button.component.ts": "9a28f462f16845da",
+      "libs/components/src/lib/button/icon-button.component.ts": "120f33b383917ac2",
       "libs/components/src/lib/button/split-button.component.css": "df353076be2f4352",
       "libs/components/src/lib/button/split-button.component.ts": "e65a17e4dc5da896",
       "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
@@ -251,7 +251,7 @@
       "libs/components/src/lib/forms/form-field/form-field-labels.ts": "d0a51ffcaea49b4f",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.ts": "e4bbcaf689929fce",
-      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "e4f70765b72267ab",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "256c80dd0afd952f",
       "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.ts": "fb231870afa64b8b",
       "libs/components/src/lib/forms/form-field/form-field-textarea-styles.component.css": "3cdff8e980e47658",
       "libs/components/src/lib/forms/form-field/form-field-textarea-styles.component.ts": "7bfddc15ece08b75",
@@ -449,8 +449,8 @@
     }
   },
   "components/disclosure": {
-    "hash": "17f459ae69df97ec",
-    "at": "2026-11-18T08:21:28.875Z",
+    "hash": "f18277472cff5ddc",
+    "at": "2026-11-20T10:35:12.280Z",
     "states": {
       "open": "bd8ca6820a762e24",
       "open-active": "388b366347ab38e2",
@@ -486,8 +486,8 @@
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/disclosure/disclosure.css": "e8694c045bf818de",
-      ".ethlete/design/studio/components/disclosure/disclosure.ts": "1e62834b19c423b4",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0"
+      ".ethlete/design/studio/components/disclosure/disclosure.ts": "f7c161f5432f5cf6",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af"
     },
     "app": {
       "apps/ethlete-studio/src/app/design-parts/disclosure/disclosure.component.html": "e656bfd25947cbf0",
@@ -496,7 +496,7 @@
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
       "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
-      "libs/components/src/lib/button/button.component.ts": "13b60f537f489968",
+      "libs/components/src/lib/button/button.component.ts": "43b80edd0899cde2",
       "libs/components/src/lib/button/button.imports.ts": "a332aa92f4996d86",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/fab.component.css": "aeef6f813521203e",
@@ -508,7 +508,7 @@
       "libs/components/src/lib/button/headless/split-button-trigger.directive.ts": "2d748e64b6aa2210",
       "libs/components/src/lib/button/headless/split-button.directive.ts": "b40aaba4d86542c0",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
-      "libs/components/src/lib/button/icon-button.component.ts": "9a28f462f16845da",
+      "libs/components/src/lib/button/icon-button.component.ts": "120f33b383917ac2",
       "libs/components/src/lib/button/split-button.component.css": "df353076be2f4352",
       "libs/components/src/lib/button/split-button.component.ts": "e65a17e4dc5da896",
       "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",

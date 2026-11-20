@@ -195,33 +195,8 @@
     "pid": 1954846
   },
   "components/checkbox": {
-    "hash": "9742cba358b835be",
-    "files": {
-      ".ethlete/design/sdk/components/checkbox/checkbox.css": "253ffe23f4cbbde8",
-      ".ethlete/design/sdk/components/checkbox/checkbox.ts": "9e51c30d3b087477",
-      "libs/components/design/checkbox.ts": "e3471aa943b7b829",
-      "libs/components/design/control.ts": "b0244bc4c0f922a6",
-      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
-      "libs/components/src/lib/forms/checkbox/checkbox.component.css": "1a70555c97fc391f",
-      "libs/components/src/lib/forms/choice-field/choice-field-card-styles.component.css": "4c3b18fe180cb96b",
-      "libs/components/src/lib/forms/choice-field/choice-field.component.css": "7c64ce9249466135",
-      "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
-      "libs/components/src/lib/forms/form-field/form-support-styles.component.css": "0f81cadca44d8370",
-      "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
-      "libs/components/src/lib/forms/selection-card-styles.component.css": "190d2cb203d8058f",
-      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-group-select-all.component.css": "4f4f5c7a5bdeea91",
-      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-group.component.css": "598181b0bea3821a",
-      "libs/components/src/lib/forms/selection-list/checkbox-group/checkbox-option.component.css": "65cb9b4f17584782",
-      "libs/core/design/interactive-styles.ts": "781528322bd34499",
-      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
-      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
-    },
     "actions": [],
-    "builder": "designer",
-    "at": "2026-11-18T14:09:13.893Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 1956826
+    "at": "2026-11-19T17:22:36.094Z"
   },
   "components/chip": {
     "hash": "1a4d90e7c910658f",
