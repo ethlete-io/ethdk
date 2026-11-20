@@ -31,14 +31,14 @@
     "components/card": "b27d4e266a8e0999",
     "components/carousel": "0ce28ec61e49874e",
     "components/chart": "f1053b1b7150c74f",
-    "components/checkbox": "82de2417d7afe015",
+    "components/checkbox": "8a5db649d9ee9401",
     "components/chip": "15785914248607d0",
     "components/command-palette": "c14a08f17a1d66ae",
     "components/comment-draft": "db343dca367a2d7a",
     "components/comment-flow": "52ed99b46fdcd779",
     "components/comment-pin": "2ab98e29552e5130",
     "components/comment-row": "3458789b946fbda0",
-    "components/comment-target": "ac249eeacc02c34e",
+    "components/comment-target": "5ad478cf2fb53cf8",
     "components/copy-button": "e6d257617199bc2d",
     "components/description-list": "7eefd9e4df111936",
     "components/dialog": "7ed7205d177647a6",
@@ -63,7 +63,7 @@
     "components/picture": "a431b18c7e2b6ee7",
     "components/progress-steps": "155927be3d7ede4d",
     "components/query-error": "54533ce8570cb81f",
-    "components/radio-group": "11dfdb022f38e0e2",
+    "components/radio-group": "479c67f0bc561019",
     "components/scheduler": "3897faf73c598b17",
     "components/scrollable": "87824b455dfdb860",
     "components/scrollbar": "ba792b958ff840d9",
@@ -97,7 +97,7 @@
     "elements/part-tree": "5d32e942525b33b8",
     "elements/shell-main": "6c75c5de1493f145",
     "elements/studio-menu": "4f7c69be22a43262",
-    "elements/variant-cell": "3ed959d0d9d452cd",
+    "elements/variant-cell": "336c8ebfeff87080",
     "pages/flows": "5d081458cbd766f3",
     "pages/inbox": "23a38bb14e9c61d3",
     "pages/inventory": "6aa1a186e17b4ea8",
@@ -106,7 +106,7 @@
     "pages/system": "f66ae63ec616b56f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "8963612625577dacb5c58c3066dbb1a653c68f9e",
+  "baselineTree": "9c3adf837a69c06e64e4191695bf7e5a964c7cfd",
   "rounds": [
     {
       "key": "r1",
@@ -129,5 +129,13 @@
   "readyContent": {
     "new": "c165679991474834",
     "old": "a13d6fb9b3d54b31"
+  },
+  "portAfterMerge": {
+    "merged": ["elements/variant-cell"],
+    "parts": ["elements/variant-cell"],
+    "reasons": [
+      "old: IMPLEMENTS-UNLINKED .ethlete/design/studio/sketches/elements-variant-cell.edit/old/elements/variant-cell/variant-cell.ts: elements/variant-cell has no implements, but apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts has its name - link it with implements"
+    ],
+    "at": "2026-11-20T20:06:16.491Z"
   }
 }

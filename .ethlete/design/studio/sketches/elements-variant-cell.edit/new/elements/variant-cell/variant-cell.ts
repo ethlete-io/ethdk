@@ -80,14 +80,15 @@ const frame = ({
       <div
         class="pointer-events-none w-(--w) origin-top-left scale-(--sk-scale) ${look} ${crop ? 'overflow-hidden' : ''}"
         data-sk-fit-inner
+        ${crop ? 'data-et-skip="CLIPPED"' : ''}
         style="--w: ${width}px; ${shown === undefined ? '' : 'height: ' + shown + 'px'}"
       >
         <div
           class="relative origin-top-left"
           style="${height === undefined ? '' : 'height: ' + height + 'px;'} ${crop ? 'transform: ' + crop : ''}"
-          ${slot('shot')}
         >
-          ${loading ? pending : shot}${
+          <div class="contents" ${slot('shot')}>${loading ? pending : shot}</div>
+          ${
             mark
               ? html`<span
                   class="pointer-events-none absolute rounded-control-sm border-2 border-et-theme"
@@ -140,6 +141,7 @@ const demo = html`<div class="flex h-30 items-center justify-center bg-et-surfac
 const base: Props = { state: 'rest', width: 480, shot: demo };
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
   note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height and the label row carries the Lädt mark the canvas frames show in a loading frame head: the SDK spinner at 14 px and Lädt. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; comment pins sit on their point in the shot.',
   madeBy: ['claude-opus-5-5'],
   widths: [240],
@@ -148,7 +150,7 @@ export default definePart({
     first: { ...base, first: true },
     unchanged: { ...base, same: true },
     loading: { ...base, loading: true },
-    selected: { ...base, selected: true },
+    selected: { ...base, height: 120, selected: true },
     cropped: {
       ...base,
       height: 120,
@@ -166,6 +168,7 @@ export default definePart({
     },
     pinned: {
       ...base,
+      height: 120,
       pins: [
         { x: 120, y: 40 },
         { x: 360, y: 90, selected: true },
