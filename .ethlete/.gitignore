@@ -3,3 +3,4 @@ mailbox.cursor.*
 restart.log
 restart.prompt.*
 restart.lock.*
+design/.timings.jsonl
