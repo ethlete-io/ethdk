@@ -1,5 +1,72 @@
 # timetrack-app
 
+## 0.2.0-next.21
+
+### Minor Changes
+
+- Auto mode writes worklog descriptions in a configurable worklog language, German by default, and describes each row of a past day on its own from that row's evidence.
+- Auto mode's new-issue proposal carries the best-fitting existing issue in the same chip; one press books the band there. Where the branch already books an existing issue that day, it leads. A declined create keeps the existing issue.
+- A row written by hand now shows on every paired machine; the later edit or deletion wins by the skew-corrected clock.
+- Renames, cuts, merges, hides and other edits of engine rows now show on every paired machine, the later edit winning by the skew-corrected clock, and a day's rows reach the paired machines whenever its edits are saved.
+- Attribution rules and stand-ins now show on every paired machine, the later change winning; no credential or unmapped machine path travels.
+- The day timeline hangs each subagent on its session: a run of 15 min or more is a thin stripe beside the session band, a shorter one a tick on it. Subagents book nothing.
+- A linked worktree now always takes its main checkout's project link, and the settings project paths list it under its main checkout as a count instead of as its own row.
+
+### Patch Changes
+
+- Auto mode now asks only about a stand-in or context with an attended row today, so a stand-in with no row is no longer asked about.
+- Auto mode queues the new issue it drafts for an unnamed call as a create approval with the existing issue beside it, and names the call with the created key.
+- Draw a band's subagent count line only on an uncascaded band with a free line under its labels, so it never covers another row's label.
+- Draw the unattended rows of one issue in one lane that touch or overlap as one "Nobody was here" band.
+- Session logs are read from every Claude Code config dir (`~/.claude*` and `$CLAUDE_CONFIG_DIR`), not only `~/.claude`.
+- A day only a paired machine booked is no longer frozen on this machine (Timetrack ADR 0038), and a freeze stored from such a day's peer rows alone is dropped, so its rows come back.
+- A checkout window only a paired machine's events fill is named after the branch that machine's timeline says, not after this machine's HEAD.
+- An agent's night on one paired machine now reads unattended on both, and `timetrack day --received` adds the events paired machines sent.
+- The `day.rows` answer carries this machine's checkout keys, so `timetrack rows <day> --json` exports what `--compare` needs to map a paired machine's paths.
+- Naming a suggested meeting row no call was heard over remembers the answer for its calendar series, so the next occurrence is named from it.
+- Count only the worklogs Tempo holds as logged for a day; a row accepted but not booked stays proposed.
+- Where the branch already books an existing issue, the chip's check keeps that issue and the second button files the new one. Before, the check filed the new issue.
+- Timetrack reads the day's ledger again after a sync, so the rows it sends to paired machines carry the booked state instead of the state from before the sync.
+- Paired machines now send each checkout's branch timeline, so a checkout only another machine worked in is named after that machine's branch instead of this machine's.
+- The day timeline draws touching accepted rows of one lane, issue and description as one block with the summed duration. Each row still books its own time.
+- Parallel accepted rows of one ticket stay side by side as cascade cards again; only rows where one ends as the next starts fold into one block.
+- Touching rows of one stand-in in a lane fold into one block, which lists each row's own description once, instead of repeating the stand-in's name card after card.
+- A past day on the day screen no longer rebuilds every few seconds while nothing about it changes.
+- A paired machine's band no longer sits on top of the blocks of its checkout's lane: the lane widens by a sub-column for it.
+- Auto mode asks about a new stand-in of today as soon as it exists, not at the next five-minute pass, while another day is on screen.
+- An approval remembers which machine decided it, so a paired machine's approval holds on its waiting twin.
+- A row shows the subagents of every session of its piece, not only of the piece's first session.
+- Keep the latest stand-in verdict per context and day and print it under `timetrack naming`, so a row that stays "Not yet named" can be explained.
+- A subagent's task now comes from the description Claude Code records beside its log, so a resumed chunk keeps it.
+- Stripes of parallel subagents that start within one title line of each other share the first one's title and a "+N", so their titles no longer draw over each other.
+- An incremental read of an agent session log now stores the same samples as a read from the top. Logs are read again once.
+- Keep a Timetrack day timeline label out of another label's height, hiding it (the hover title still has it) where it would collide, and leave a gap between boxes stacked in one column.
+- The day timeline keeps the last scroll position of a day when the day changes before the scroll settled.
+- The approval dialog lists an item a paired machine approved and has not run yet as "approved on <machine>, runs there", without approve or reject buttons.
+- Draw the app in Jost, bundled as a variable-weight font with the app instead of the system font.
+- Build the day on the page when the day build worker fails to load, so the day screen never waits forever for it.
+- Build the day in a Web Worker, so rebuilding today no longer freezes the Timetrack window for over half a second once a minute.
+- Open the Chrome DevTools protocol on `127.0.0.1:9222` in a debug build on Linux, so the webview can be profiled. A release build is unchanged.
+- Wait for the day built with the epic answer before opening a placeholder for an unnamed checkout, so the epic rung names it again.
+- An approval folded into a paired machine's equivalent item still answers its status by its old id.
+- A Jira create approved while a paired machine is reachable waits for one queue exchange with that machine, so two machines approving the same create file one issue. Until then the agent reads it as still queued.
+- Stop Timetrack from rescanning unmoved repositories and rebuilding today on every collector drain, which froze the window every few seconds.
+- Auto mode waits for the day built from the inputs on hand before it asks, answers or names rows, so it no longer acts on the previous build's rows.
+- An approved Jira create matches an open issue by near summary only while a paired machine shares the approval queue; otherwise the exact summary check holds.
+- Two unsynced paired machines approving the same create now end with one Jira issue.
+- A paired machine no longer echoes this machine's work back as its own, and its bands no longer open a lane of their own.
+- An expired auto mode create asked again for the same subject waits again under its own id, so its draft stays linked and the queue holds one item for it.
+- The approval queue travels between paired machines beside the day rows, each item naming the machine that owns it.
+- Paired machines show one approval queue: a decision on one holds on the other, and only the machine that queued an item runs it.
+- A short day-timeline block with subagents shows a compact "+N" after its title instead of a count line that would sit on its text.
+- The tray readout and the end-of-day reminder share one read of today and build it once per minute or new evidence,
+  instead of each rebuilding it from equal evidence.
+- The tray readout no longer rebuilds today on every collector drain that stored nothing.
+- A stand-in rule scoped to a day now names its band on that day: the stream, the day screen, the agent day, auto mode and the stand-in pass all pass the day they read.
+- `timetrack rules` lists the day a day-scoped attribution rule holds on, in the JSON and in the printed line.
+- A Claude Code session keeps the folder its last tool call worked in after the app restarts, so its next samples land in the same project.
+- An unattended band now reads "Worked on <machine>" only for the part a paired machine was attended; the rest stays unattended with no machine named.
+
 ## 0.2.0-next.20
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.54
+
+### Patch Changes
+
+- The cdk migration knows the et-segmented-button-group-scrollable class from components.
+
 ## 5.0.0-next.53
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.39
+
+### Minor Changes
+
+- `timetrack rows <day> --compare <file>` compares a day's rows with another machine's `rows --json` export, ignoring paths and order, and exits 1 on a difference.
+
+### Patch Changes
+
+- `timetrack rows` marks a row nobody was at the machine for with `unattended`, and `timetrack snapshot --help` prints usage instead of recording a snapshot.
+- `timetrack rows <day> --compare <file>` maps a paired machine's checkout paths onto this machine's by repository key, so one repository under differently named folders compares as the same rows.
+- An agent's night on one paired machine now reads unattended on both, and `timetrack day --received` adds the events paired machines sent.
+- Keep the latest stand-in verdict per context and day and print it under `timetrack naming`, so a row that stays "Not yet named" can be explained.
+- The `status-line` mod shows its band only in a session that ran the `doc-agent` skill (typed `/doc-agent` or called by the model); `builder-agent` hides it again, and every other session never shows it nor polls git and CI for it.
+- `timetrack rules` lists the day a day-scoped attribution rule holds on, in the JSON and in the printed line.
+
 ## 0.1.0-next.38
 
 ### Minor Changes
