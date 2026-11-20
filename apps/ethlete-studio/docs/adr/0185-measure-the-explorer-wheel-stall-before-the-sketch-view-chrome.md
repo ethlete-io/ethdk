@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B365
+built: d979079a0
 decided: 2026-11-04
 source: grill session 2026-11-04
 ---
