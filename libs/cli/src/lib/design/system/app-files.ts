@@ -76,6 +76,20 @@ const MAY_RE_EXPORT = /^\s*export\s+(?:type\s+)?[*{][^;]*?\bfrom\s*['"`]/mu;
 
 type ExportSummary = { names: string[]; reExports: ReExport[]; onlyReExports: boolean };
 
+const reExportChecks = new Map<string, { source: string; may: boolean }>();
+
+const mayReExport = (file: string, source: string) => {
+  const known = reExportChecks.get(file);
+
+  if (known?.source === source) return known.may;
+
+  const may = MAY_RE_EXPORT.test(source);
+
+  reExportChecks.set(file, { source, may });
+
+  return may;
+};
+
 const summaries = new Map<string, { source: string; summary: ExportSummary }>();
 
 const exportSummaryOf = (file: string, source: string): ExportSummary => {
@@ -124,7 +138,7 @@ const reachedFilesOf = (options: { root: string; component: string }) => {
 
     const source = read(file);
 
-    if (!source.includes(name) && !MAY_RE_EXPORT.test(source)) return [];
+    if (!source.includes(name) && !mayReExport(file, source)) return [];
 
     const { names: exportedNames, reExports } = exportSummaryOf(file, source);
     const forwarded = new Set(reExports.flatMap(({ names }) => (names ?? []).map(({ exported }) => exported)));
