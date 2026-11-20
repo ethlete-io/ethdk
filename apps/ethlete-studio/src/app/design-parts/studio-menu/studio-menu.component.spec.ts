@@ -4,7 +4,12 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { DesignServerAction, DesignServerStatus, StudioMenuComponent } from './studio-menu.component';
 
-const openMenu = async (options: { project: string; projects: string[]; server?: DesignServerStatus }) => {
+const openMenu = async (options: {
+  project: string;
+  projects: string[];
+  server?: DesignServerStatus;
+  busy?: boolean;
+}) => {
   TestBed.configureTestingModule({
     providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
   });
@@ -15,6 +20,7 @@ const openMenu = async (options: { project: string; projects: string[]; server?:
   fixture.componentRef.setInput('project', options.project);
   fixture.componentRef.setInput('projects', options.projects);
   fixture.componentRef.setInput('server', options.server ?? 'running');
+  fixture.componentRef.setInput('busy', options.busy ?? false);
   fixture.componentRef.setInput('open', true);
   fixture.componentInstance.projectChange.subscribe((name: string) => events.push(`project:${name}`));
   fixture.componentInstance.openProject.subscribe(() => events.push('openProject'));
@@ -100,5 +106,34 @@ describe('StudioMenuComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.open()).toBe(false);
+  });
+
+  it('shows a spinner in the busy tile and disables every action row', async () => {
+    const { fixture, events, row } = await openMenu({ project: 'b', projects: ['a', 'b', 'c'], busy: true });
+    const root = (fixture.nativeElement as HTMLElement).querySelector('[etMenu]');
+    const trigger = root?.querySelector('button');
+
+    row('a')?.click();
+    row('Projekt öffnen…')?.click();
+    row('Design-Server neu starten')?.click();
+    await fixture.whenStable();
+
+    expect(root?.getAttribute('aria-busy')).toBe('true');
+    expect(trigger?.querySelector('et-spinner')).not.toBeNull();
+    expect(trigger?.querySelector('svg[viewBox="0 0 32 32"]')).toBeNull();
+    expect(row('a')?.getAttribute('aria-disabled')).toBe('true');
+    expect(row('b')?.getAttribute('aria-disabled')).not.toBe('true');
+    expect(row('Projekt öffnen…')?.getAttribute('aria-disabled')).toBe('true');
+    expect(row('Design-Server stoppen')?.getAttribute('aria-disabled')).toBe('true');
+    expect(events).toEqual([]);
+  });
+
+  it('shows the mark and no busy flag while idle', async () => {
+    const { fixture } = await openMenu({ project: 'a', projects: ['a'] });
+    const root = (fixture.nativeElement as HTMLElement).querySelector('[etMenu]');
+    const trigger = root?.querySelector('button');
+
+    expect(root?.hasAttribute('aria-busy')).toBe(false);
+    expect(trigger?.querySelector('et-spinner')).toBeNull();
   });
 });

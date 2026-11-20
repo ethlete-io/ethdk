@@ -1,5 +1,5 @@
 import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
@@ -16,7 +16,7 @@ const SERVER_ACTIONS: Record<DesignServerStatus, DesignServerAction[]> = {
   selector: 'ethlete-studio-menu',
   templateUrl: './studio-menu.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective],
+  imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective, SpinnerComponent],
   host: {
     '[class]': "bare() ? 'block size-10' : 'box-border block h-100 w-3xl p-space-3 font-ui text-ui-md text-et-surface'",
   },
@@ -24,6 +24,7 @@ const SERVER_ACTIONS: Record<DesignServerStatus, DesignServerAction[]> = {
 export class StudioMenuComponent {
   public bare = input(false, { transform: booleanAttribute });
   public open = model(false);
+  public busy = input(false, { transform: booleanAttribute });
   public server = input<DesignServerStatus>('running');
   public project = input('');
   public projects = input<readonly string[]>([]);

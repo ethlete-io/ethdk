@@ -158,6 +158,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     @if (startPage(); as start) {
       <ethlete-start
         [repo]="start.repo"
+        [busy]="busy()"
         (copyPrompt)="copyText(START_LABELS.prompt(start.repo ?? ''))"
         (otherRepo)="openProject.emit()"
         (openRepo)="openProject.emit()"
@@ -378,6 +379,7 @@ export class SystemViewComponent {
   public checkout = input('');
   public project = input('');
   public projects = input<string[]>([]);
+  public busy = input(false);
 
   public projectThemes = input<Record<string, Themes>>({});
   public lists = input(NO_LIST_REVISIONS);
@@ -1119,6 +1121,7 @@ export class SystemViewComponent {
     project: this.project(),
     projects: this.projects(),
     panel: this.panel(),
+    busy: this.busy(),
   }));
 
   private railSection = signal<Exclude<ShellSection, 'Inbox'>>(

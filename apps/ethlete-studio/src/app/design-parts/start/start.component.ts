@@ -1,4 +1,4 @@
-import { Component, input, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
@@ -19,7 +19,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
       <span class="text-et-surface font-ui-strong text-ui-md">{{ LABELS.title }}</span>
       @if (repo(); as name) {
         <span class="text-et-surface-muted text-ui-sm">{{ name }}</span>
-        <button (click)="otherRepo.emit()" et-button type="button" variant="transparent" size="sm">
+        <button [loading]="busy()" (click)="otherRepo.emit()" et-button type="button" variant="transparent" size="sm">
           {{ LABELS.otherRepo }}
         </button>
       }
@@ -47,7 +47,9 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
         } @else {
           <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noRepo }}</p>
           <p class="m-0 text-et-surface-muted">{{ LABELS.repoExplainer }}</p>
-          <button (click)="openRepo.emit()" et-button type="button" variant="filled">{{ LABELS.openRepo }}</button>
+          <button [loading]="busy()" (click)="openRepo.emit()" et-button type="button" variant="filled">
+            {{ LABELS.openRepo }}
+          </button>
         }
       </div>
     </div>
@@ -58,6 +60,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 })
 export class StartComponent {
   public repo = input<string | undefined>();
+  public busy = input(false, { transform: booleanAttribute });
   public openRepo = output();
   public otherRepo = output();
   public copyPrompt = output();

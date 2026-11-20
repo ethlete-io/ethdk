@@ -20,6 +20,7 @@ class SystemViewStubComponent {
   public frameRevisions = input<unknown>(null);
   public project = input('');
   public projects = input<string[]>([]);
+  public busy = input(false);
   public projectChange = output<string>();
   public productNames = signal<string[]>([]);
   public productName = signal('');
@@ -155,6 +156,30 @@ describe('StudioViewComponent', () => {
 
     expect(system(fixture)?.port()).toBe(4402);
     expect(system(fixture)?.checkout()).toBe(CHECKOUT);
+  });
+
+  it('marks the system view busy until the switched project answers', async () => {
+    stubHost({ design_roots: () => ({ search: '', roots: [CHECKOUT, '/other'] }) });
+
+    const fixture = await mount();
+    let answer: (project: unknown) => void = () => undefined;
+
+    expect(system(fixture)?.busy()).toBe(false);
+
+    stubHost({
+      design_roots: () => ({ search: '', roots: [CHECKOUT, '/other'] }),
+      design_project: () => new Promise((resolve) => (answer = resolve)),
+    });
+
+    system(fixture)?.projectChange.emit('other');
+    await settle(fixture);
+
+    expect(system(fixture)?.busy()).toBe(true);
+
+    answer(null);
+    await settle(fixture);
+
+    expect(system(fixture)?.busy()).toBe(false);
   });
 
   it('drops the port of the checkout before when the next one cannot be read', async () => {

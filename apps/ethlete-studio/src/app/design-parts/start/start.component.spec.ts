@@ -2,12 +2,13 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { StartComponent } from './start.component';
 
-const render = async (repo?: string) => {
+const render = async (repo?: string, busy = false) => {
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
 
   const fixture = TestBed.createComponent(StartComponent);
 
   fixture.componentRef.setInput('repo', repo);
+  fixture.componentRef.setInput('busy', busy);
   await fixture.whenStable();
 
   const element = fixture.nativeElement as HTMLElement;
@@ -45,5 +46,32 @@ describe('StartComponent', () => {
     expect(element.textContent).toContain('Lege in mein-monorepo-mit-langem-namen das Produkt shop an');
     expect(button('Repo öffnen')).toBeUndefined();
     expect(emitted).toEqual(['other', 'copy']);
+  });
+
+  it('turns Repo öffnen into a busy button that takes no click while busy', async () => {
+    const { fixture, element } = await render(undefined, true);
+    let opened = 0;
+
+    fixture.componentInstance.openRepo.subscribe(() => opened++);
+    const open = element.querySelector<HTMLButtonElement>('button[variant="filled"]');
+
+    open?.click();
+
+    expect(open?.getAttribute('aria-busy')).toBe('true');
+    expect(open?.querySelector('et-spinner')).not.toBeNull();
+    expect(opened).toBe(0);
+  });
+
+  it('turns Anderes Repo into a busy button while busy', async () => {
+    const { fixture, element } = await render('zweites-repo', true);
+    let other = 0;
+
+    fixture.componentInstance.otherRepo.subscribe(() => other++);
+    const button = element.querySelector<HTMLButtonElement>('header button');
+
+    button?.click();
+
+    expect(button?.getAttribute('aria-busy')).toBe('true');
+    expect(other).toBe(0);
   });
 });

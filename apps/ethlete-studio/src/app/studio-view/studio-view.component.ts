@@ -82,6 +82,7 @@ type ShownProducts = { product: string; products: string[] };
           serverLog: downLog(),
           startPhase: startPhase(),
           serverCrash: serverCrash(),
+          busy: menuBusy(),
         }"
         (action)="runShellAction($event)"
       />
@@ -96,6 +97,7 @@ type ShownProducts = { product: string; products: string[] };
         [frameRevisions]="frameRevisions()"
         [project]="projectName()"
         [projects]="checkouts.names()"
+        [busy]="menuBusy()"
         (projectChange)="checkouts.chooseByName($event)"
         (openProject)="checkouts.openFolder()"
         (serverAction)="runServerAction($event)"
@@ -164,6 +166,12 @@ export class StudioViewComponent {
     remembered: rememberedView().checkout ?? '',
     pick: (checkout) => this.setCheckout(checkout),
   });
+
+  private serverStopping = signal(false);
+  private projectReading = signal(false);
+  protected menuBusy = computed(
+    () => this.serverBusy() || this.serverStopping() || this.projectReading() || this.checkouts.adding(),
+  );
 
   private listeningPort = computed(() => {
     const state = this.server();
@@ -318,13 +326,16 @@ export class StudioViewComponent {
   public stopServer() {
     const checkout = this.checkout();
 
-    if (!checkout) return;
+    if (!checkout || this.serverStopping()) return;
+
+    this.serverStopping.set(true);
 
     designServerStop$(checkout)
       .pipe(
         tap((state) => this.showServer(state)),
         // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
+        finalize(() => this.serverStopping.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
@@ -360,6 +371,8 @@ export class StudioViewComponent {
 
     if (!checkout) return;
 
+    this.projectReading.set(true);
+
     designProject$(checkout)
       .pipe(
         tap((project) => {
@@ -367,6 +380,7 @@ export class StudioViewComponent {
         }),
         // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed project read keeps the last shown project
         catchError(() => of(null)),
+        finalize(() => this.projectReading.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

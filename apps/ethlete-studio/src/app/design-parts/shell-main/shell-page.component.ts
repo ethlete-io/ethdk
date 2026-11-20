@@ -34,6 +34,7 @@ export type ShellState = {
   serverLog?: readonly string[];
   startPhase?: { phase: StartPhase; phaseMs: number } | null;
   serverCrash?: ServerCrash | null;
+  busy?: boolean;
 };
 
 export type ShellAction =
@@ -86,6 +87,7 @@ export const SHELL_SAMPLE: ShellState = {
         [server]="shell().server === 'stopped' || shell().server === 'crashed' ? 'stopped' : 'running'"
         [project]="shell().project"
         [projects]="shell().projects"
+        [busy]="!!shell().busy"
         (projectChange)="action.emit({ kind: 'project', name: $event })"
         (openProject)="action.emit({ kind: 'openProject' })"
         (serverAction)="action.emit({ kind: 'server', action: $event })"

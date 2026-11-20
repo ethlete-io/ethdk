@@ -1,7 +1,7 @@
 import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectNotificationManager } from '@ethlete/components';
-import { EMPTY, catchError, of, switchMap, tap } from 'rxjs';
+import { EMPTY, catchError, finalize, of, switchMap, tap } from 'rxjs';
 import { DesignRoots, designRoots$, designRootsAdd$ } from '../../host/design';
 import { pickFolder$ } from '../../host/dialog';
 import { workspaceRoot$ } from '../../host/workspace';
@@ -23,6 +23,7 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
   const notifications = injectNotificationManager();
   const held = signal<DesignRoots>(NONE);
   const current = signal('');
+  const adding = signal(false);
 
   const choose = (checkout: string) => {
     if (!checkout || checkout === current()) return;
@@ -39,13 +40,17 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
     choose(roots.roots.includes(remembered) ? remembered : (roots.roots[0] ?? ''));
   };
 
-  const keep = (folder: string) =>
-    designRootsAdd$(folder).pipe(
+  const keep = (folder: string) => {
+    adding.set(true);
+
+    return designRootsAdd$(folder).pipe(
       tap((roots) => {
         held.set(roots);
         choose(folder);
       }),
+      finalize(() => adding.set(false)),
     );
+  };
 
   const keepTheHostCheckout = () =>
     workspaceRoot$().pipe(
@@ -66,6 +71,7 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
 
   return {
     current: current.asReadonly(),
+    adding: adding.asReadonly(),
     names: computed(() => held().roots.map(folderNameOf)),
     chooseByName: (name: string) => {
       const checkout = held().roots.find((root) => folderNameOf(root) === name);
