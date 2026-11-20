@@ -202,7 +202,7 @@
     "pid": 4162370
   },
   "components/comment-pin": {
-    "hash": "ec112f98e471974c",
+    "hash": "31f56ef76a14e8e8",
     "files": {
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
@@ -232,19 +232,20 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "a5ea5121f68a6653",
+      ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
-      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "4777e8b97f76bac0",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0",
+      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
+    "app": "3733f3876a67e612",
     "actions": ["emit:pinToggle"],
     "builder": "designer",
-    "at": "2026-11-17T13:28:56.341Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-20T13:12:30.112Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 4165302
   },
   "components/comment-row": {
     "hash": "cb3ef346603a0c41",
