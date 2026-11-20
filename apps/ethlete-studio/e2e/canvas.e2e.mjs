@@ -1663,7 +1663,7 @@ const CASES = [
       if (percent === null) return { ok: false, detail: 'no zoom chip percent' };
 
       await page.reload();
-      await page.waitForSelector('[data-sk-state]');
+      await page.waitForSelector('[data-sk-state]', { timeout: FULL_COMPARE_MS });
       await settled(page, FRAME);
       await page.getByRole('button', { name: 'Einpassen' }).first().click();
       const again = await readUntil(page, shown, (again) => again !== null && Math.abs(again - percent) <= 1);
@@ -2190,7 +2190,7 @@ const CASES = [
   },
   {
     name: 'a comment of a merged sketch pins on the part frame, replied or not, and a resolved sketch comment pins on its variant',
-    pages: ['System', 'Zoom'],
+    pages: ['System', 'Wide'],
     viewport: WIDE,
     run: async (page, _state, target) => {
       const commentsDir = join(checkout, '.ethlete/design/studio/comments');
@@ -2208,14 +2208,15 @@ const CASES = [
       const pinCount = (selector) => page.locator(selector).count();
 
       try {
-        if (target.name === 'Zoom') {
+        if (target.name === 'Wide') {
           const before = await pinCount('ethlete-sketches ethlete-comment-pin [aria-label$="resolved"]');
 
           put('e2e-a18-resolved', {
-            part: ZOOM_SKETCH.part,
+            part: WIDE_SKETCH.part,
+            state: WIDE_SKETCH.changed,
             text: 'A18 e2e resolved',
             sketch: {
-              target: `${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}`,
+              target: `${WIDE_SKETCH.part}@${WIDE_SKETCH.name}`,
               variant: 'a',
               createdAt: '2026-01-01T00:00:00.000Z',
             },
