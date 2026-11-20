@@ -1,6 +1,7 @@
-import { Component, provideZonelessChangeDetection } from '@angular/core';
+import { Component, outputBinding, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideOverlay } from '@ethlete/components';
+import { injectOverlayManager, provideOverlay } from '@ethlete/components';
+import { AboutDialogComponent } from './about-dialog.component';
 import { of } from 'rxjs';
 import { injectStudioMenuDialogs } from '../studio-menu/studio-menu-dialogs';
 
@@ -78,5 +79,26 @@ describe('AboutDialogComponent', () => {
 
     expect(dialog()).toBeNull();
     expect(document.activeElement).toBe(opener);
+  });
+
+  it('emits close from the close button', async () => {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection(), provideOverlay()] });
+
+    const closed = vi.fn();
+    const ref = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open(AboutDialogComponent, {
+        role: 'dialog',
+        ariaLabel: 'x',
+        bindings: [outputBinding('close', closed)],
+      }),
+    );
+
+    await settle();
+    document.querySelector<HTMLButtonElement>('button[aria-label="Schließen"]')?.click();
+
+    expect(closed).toHaveBeenCalledTimes(1);
+
+    ref.close();
+    await settle();
   });
 });

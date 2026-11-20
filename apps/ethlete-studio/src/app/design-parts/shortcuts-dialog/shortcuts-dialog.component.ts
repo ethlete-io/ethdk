@@ -1,6 +1,13 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { KBD_IMPORTS, OVERLAY_CONTENT_IMPORTS, OverlayMainDirective } from '@ethlete/components';
-import { DialogCloseComponent } from '../../components/dialog-close.component';
+import { Component, output, ViewEncapsulation } from '@angular/core';
+import {
+  BUTTON_IMPORTS,
+  ICON_IMPORTS,
+  KBD_IMPORTS,
+  OVERLAY_CONTENT_IMPORTS,
+  OverlayMainDirective,
+  provideIcons,
+  TIMES_ICON,
+} from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 const LABELS = STUDIO_LABELS.shortcutsDialog;
@@ -32,7 +39,16 @@ export const SHORTCUT_GROUPS = [
   template: `
     <div class="flex items-center justify-between gap-space-3" etOverlayHeader>
       <h2 class="m-0 text-[1.8rem] font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
-      <ethlete-dialog-close [label]="LABELS.close" />
+      <button
+        [attr.aria-label]="LABELS.close"
+        (click)="close.emit()"
+        et-icon-button
+        type="button"
+        variant="transparent"
+        size="sm"
+      >
+        <i etIcon="et-times"></i>
+      </button>
     </div>
     <div class="flex flex-col gap-space-4" et-overlay-body>
       @for (group of GROUPS; track group.label) {
@@ -51,10 +67,14 @@ export const SHORTCUT_GROUPS = [
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [KBD_IMPORTS, OVERLAY_CONTENT_IMPORTS, DialogCloseComponent],
+  imports: [KBD_IMPORTS, BUTTON_IMPORTS, ICON_IMPORTS, OVERLAY_CONTENT_IMPORTS],
+  providers: [provideIcons(TIMES_ICON)],
   hostDirectives: [OverlayMainDirective],
 })
 export class ShortcutsDialogComponent {
+  // eslint-disable-next-line @angular-eslint/no-output-native -- the design declares emit:close
+  public close = output();
+
   protected readonly LABELS = LABELS;
   protected readonly GROUPS = SHORTCUT_GROUPS;
 }

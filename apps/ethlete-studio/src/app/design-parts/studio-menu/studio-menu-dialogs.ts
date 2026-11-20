@@ -1,4 +1,4 @@
-import { Binding, DestroyRef, DOCUMENT, inject, inputBinding, Type } from '@angular/core';
+import { Binding, DestroyRef, DOCUMENT, inject, inputBinding, outputBinding, Type } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   dialogOverlayStrategy,
@@ -23,11 +23,11 @@ export const injectStudioMenuDialogs = () => {
   const show = <T extends object>(component: Type<T>, config: { ariaLabel: string; bindings?: Binding[] }) => {
     if (open) return;
 
-    const ref = overlay.open(component, {
+    const ref: OverlayRef<object> = overlay.open(component, {
       role: 'dialog',
       ariaLabel: config.ariaLabel,
       strategies: dialogOverlayStrategy({ width: '40rem', maxWidth: 'calc(100% - var(--space-6))' }),
-      bindings: config.bindings ?? [],
+      bindings: [...(config.bindings ?? []), outputBinding('close', () => ref.close())],
     });
 
     open = ref;

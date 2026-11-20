@@ -1,6 +1,12 @@
-import { Component, input, ViewEncapsulation } from '@angular/core';
-import { OVERLAY_CONTENT_IMPORTS, OverlayMainDirective } from '@ethlete/components';
-import { DialogCloseComponent } from '../../components/dialog-close.component';
+import { Component, output, input, ViewEncapsulation } from '@angular/core';
+import {
+  BUTTON_IMPORTS,
+  ICON_IMPORTS,
+  OVERLAY_CONTENT_IMPORTS,
+  OverlayMainDirective,
+  provideIcons,
+  TIMES_ICON,
+} from '@ethlete/components';
 import { StudioMarkComponent } from '../../components/studio-mark.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
@@ -9,7 +15,16 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
   template: `
     <div class="flex items-center justify-between gap-space-3" etOverlayHeader>
       <h2 class="m-0 text-[1.8rem] font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
-      <ethlete-dialog-close [label]="LABELS.close" />
+      <button
+        [attr.aria-label]="LABELS.close"
+        (click)="close.emit()"
+        et-icon-button
+        type="button"
+        variant="transparent"
+        size="sm"
+      >
+        <i etIcon="et-times"></i>
+      </button>
     </div>
     <div et-overlay-body>
       <div class="flex items-center gap-space-3">
@@ -25,11 +40,15 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [OVERLAY_CONTENT_IMPORTS, StudioMarkComponent, DialogCloseComponent],
+  imports: [BUTTON_IMPORTS, ICON_IMPORTS, OVERLAY_CONTENT_IMPORTS, StudioMarkComponent],
+  providers: [provideIcons(TIMES_ICON)],
   hostDirectives: [OverlayMainDirective],
 })
 export class AboutDialogComponent {
   public version = input('');
+
+  // eslint-disable-next-line @angular-eslint/no-output-native -- the design declares emit:close
+  public close = output();
 
   protected readonly LABELS = STUDIO_LABELS.aboutDialog;
 }

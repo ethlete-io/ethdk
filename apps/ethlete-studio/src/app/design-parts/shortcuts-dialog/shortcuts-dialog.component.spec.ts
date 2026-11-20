@@ -1,6 +1,7 @@
-import { Component, provideZonelessChangeDetection } from '@angular/core';
+import { Component, outputBinding, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideOverlay } from '@ethlete/components';
+import { injectOverlayManager, provideOverlay } from '@ethlete/components';
+import { ShortcutsDialogComponent } from './shortcuts-dialog.component';
 import { injectStudioMenuDialogs } from '../studio-menu/studio-menu-dialogs';
 
 const host = vi.hoisted(() => ({ helpOpened: 0 }));
@@ -126,5 +127,26 @@ describe('ShortcutsDialogComponent', () => {
     await fixture.whenStable();
 
     expect(host.helpOpened).toBe(1);
+  });
+
+  it('emits close from the close button', async () => {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection(), provideOverlay()] });
+
+    const closed = vi.fn();
+    const ref = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open(ShortcutsDialogComponent, {
+        role: 'dialog',
+        ariaLabel: 'x',
+        bindings: [outputBinding('close', closed)],
+      }),
+    );
+
+    await settle();
+    document.querySelector<HTMLButtonElement>('button[aria-label="Schließen"]')?.click();
+
+    expect(closed).toHaveBeenCalledTimes(1);
+
+    ref.close();
+    await settle();
   });
 });
