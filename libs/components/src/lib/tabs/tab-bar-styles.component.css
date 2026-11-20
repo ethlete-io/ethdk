@@ -67,10 +67,16 @@
     gap: 4px;
   }
 
+  .et-tab-group__header-scrollable > .et-scrollable-wrapper,
+  .et-nav-tabs__scrollable > .et-scrollable-wrapper {
+    isolation: isolate;
+  }
+
   .et-tab-group__header-scrollable > .et-scrollable-wrapper::after,
   .et-nav-tabs__scrollable > .et-scrollable-wrapper::after {
     content: '';
     position: absolute;
+    z-index: -1;
     background: var(--et-surface-border-solid, currentColor);
     opacity: var(--et-tab-baseline-opacity);
     pointer-events: none;
