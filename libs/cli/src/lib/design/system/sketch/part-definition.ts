@@ -100,6 +100,22 @@ export const stateSentencesOf = (source: string): 'none' | 'unknown' | Record<st
   return sentences.includes(null) ? 'unknown' : Object.fromEntries(sentences as (readonly [string, string])[]);
 };
 
+/** The source text of each state of `definePart({ states: { … } })`, by state name, read without running it; `null` when the states are not an object literal of plain properties. */
+export const stateSourcesOf = (source: string): Record<string, string> | null => {
+  const { definition, file } = definitionOf(source);
+  const states = definition ? fieldOf(definition, 'states')?.initializer : undefined;
+
+  if (!states || !ts.isObjectLiteralExpression(states)) return null;
+
+  const entries = states.properties.map((property) =>
+    ts.isPropertyAssignment(property) ? ([nameOf(property.name), property.initializer.getText(file)] as const) : null,
+  );
+
+  return entries.some((entry) => !entry || entry[0] === null)
+    ? null
+    : Object.fromEntries(entries as (readonly [string, string])[]);
+};
+
 /** The string literal props each state of `definePart({ states: { … } })` writes, by state name, read without running it. */
 export const stateLiteralPropsOf = (source: string): Record<string, Record<string, string>> => {
   const { definition } = definitionOf(source);

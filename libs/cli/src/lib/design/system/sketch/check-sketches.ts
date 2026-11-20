@@ -10,10 +10,10 @@ import { mergedLayoutProblemsOf } from './merged-layout';
 import { overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
-import { stateNamesOf, withMadeBy, withNote } from './part-definition';
+import { stateNamesOf, stateSourcesOf, withMadeBy, withNote } from './part-definition';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
-import { leftoverSketchFoldersOf, listSketches, Sketch, sketchFolderOf, variantDirOf } from './sketch';
+import { leftoverSketchFoldersOf, listSketches, Sketch, sketchFolderOf, SketchRound, variantDirOf } from './sketch';
 
 /** `problems` are the ones a variant brings in; `before` are the ones the product already has, which do not fail the variant. */
 export type VariantProblems = { sketch: Sketch; variant: string; problems: Problem[]; before: Problem[] };
@@ -43,6 +43,43 @@ const droppedStatesOf = (options: {
               rule: 'STATES',
               file: part.file,
               message: `drops the state${dropped.length === 1 ? '' : 's'} ${dropped.join(', ')} that ${partKeyOf(part)} has in ${product.name} - a variant keeps every state of the part`,
+            },
+          ];
+    });
+};
+
+const changedUntouchedStatesOf = (options: {
+  product: ResolvedProduct;
+  overlaid: SketchedProduct;
+  round: SketchRound | undefined;
+}): Problem[] => {
+  const { product, overlaid, round } = options;
+
+  if (!round?.asks || round.asks.length === 0) return [];
+
+  const named = new Set(round.note.match(/[\w-]+/gu) ?? []);
+  const touched = [...round.asks, ...(round.drops ?? [])];
+
+  return overlaid.parts
+    .filter((part) => overlaid.sketched.includes(partKeyOf(part)))
+    .flatMap((part) => {
+      const own = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(part));
+      const before = own ? stateSourcesOf(own.source) : null;
+      const after = stateSourcesOf(part.source);
+
+      if (before === null || after === null) return [];
+
+      const changed = Object.keys(before).filter(
+        (state) => state in after && after[state] !== before[state] && !touched.includes(state) && !named.has(state),
+      );
+
+      return changed.length === 0
+        ? []
+        : [
+            {
+              rule: 'STATES',
+              file: part.file,
+              message: `changes the state${changed.length === 1 ? '' : 's'} ${changed.join(', ')} of ${partKeyOf(part)} that round ${round.key} does not ask in - restore ${changed.length === 1 ? 'it' : 'them'}, add ${changed.length === 1 ? 'it' : 'them'} to --asks, or name ${changed.length === 1 ? 'it' : 'them'} in the round note`,
             },
           ];
     });
@@ -97,7 +134,10 @@ export const variantProblemsOf = (options: {
         ...metadataProblem,
         ...(isEditSketch(options.sketch) && variant === EDIT_OLD
           ? []
-          : droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] })),
+          : [
+              ...droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] }),
+              ...changedUntouchedStatesOf({ product: options.product, overlaid, round }),
+            ]),
       ],
       before: found.filter(wasThere),
     };

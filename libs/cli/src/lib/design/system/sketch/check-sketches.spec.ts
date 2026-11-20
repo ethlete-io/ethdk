@@ -212,6 +212,51 @@ describe('openSketchProblemsOf', () => {
     expect(messageOf()).toBeUndefined();
   });
 
+  it('fails a variant that changes a state its round does not ask in, unless the note names it', () => {
+    const target = acme();
+    const heroOf = (dir: string) => join(dir, 'elements/hero/hero.ts');
+    const productHero = heroOf(join(target, DESIGN_DIR, 'acme'));
+    const withStates = (source: string, states: string) =>
+      source
+        .replace(/states: \{ default: .*\} \},/u, `states: { ${states} },`)
+        .replace(
+          /describe: \{ default: .*\},/u,
+          `describe: { ${[...states.matchAll(/(?:^|, )(\w+): /g)].map((match) => `${match[1]}: 'a state'`).join(', ')} },`,
+        );
+    const film = 'default: { film: films[0] ?? { title: "" } }';
+
+    writeFileSync(
+      productHero,
+      withStates(readFileSync(productHero, 'utf8'), `${film}, empty: { film: { title: "" } }`),
+    );
+
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+      roundAsks: ['default'],
+    }) as Sketch;
+
+    writeFileSync(
+      heroOf(join(sketch.dir, 'b')),
+      withStates(readFileSync(productHero, 'utf8'), `${film}, empty: { film: { title: "x" } }`),
+    );
+
+    const messageOf = () =>
+      openSketchProblemsOf(product).variants.find(({ variant }) => variant === 'b')?.problems[0]?.message;
+
+    expect(messageOf()).toContain('changes the state empty of elements/hero that round r1 does not ask in');
+
+    const asked = editRound({ sketch, round: 'r1', asks: ['default', 'empty'] }) as Sketch;
+
+    expect(messageOf()).toBeUndefined();
+
+    editRound({ sketch: asked, round: 'r1', asks: ['default'], note: 'the empty state shrinks too' });
+
+    expect(messageOf()).toBeUndefined();
+  });
+
   it("runs the rules over the sketch's shared/ files where the merge puts them", () => {
     const target = acme();
     const product = resolveAcme(target);
