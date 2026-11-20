@@ -10,7 +10,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../design-config';
 import type { TextAmbient } from '../shot';
-import { appShotProblemOf, comparePart, compareWidthOf, designCompare, ShootStates } from './compare-command';
+import { appShotProblemOf, comparePart, compareWidthsOf, designCompare, ShootStates } from './compare-command';
 import { compareFrameOf, harnessShotOf, missingPanesProblemOf } from './harness-shot';
 import { partActionFailuresOf } from './actions-command';
 import { StartHarnessServer } from './harness-server';
@@ -321,11 +321,11 @@ describe('part compare', () => {
     );
   });
 
-  it('compares a part with widths at its first width, a page or a part without them fitted', () => {
-    expect(compareWidthOf({ part: 'components/title-bar', widths: [1440, 900] })).toBe(1440);
-    expect(compareWidthOf({ part: 'components/chip', widths: undefined })).toBeNull();
-    expect(compareWidthOf({ part: 'components/chip', widths: [0] })).toBeNull();
-    expect(compareWidthOf({ part: 'pages/inbox', widths: [1440] })).toBeNull();
+  it('compares a part with widths at every width, a page or a part without them fitted', () => {
+    expect(compareWidthsOf({ part: 'components/title-bar', widths: [1440, 900, 1440] })).toEqual([1440, 900]);
+    expect(compareWidthsOf({ part: 'components/chip', widths: undefined })).toEqual([null]);
+    expect(compareWidthsOf({ part: 'components/chip', widths: [0] })).toEqual([null]);
+    expect(compareWidthsOf({ part: 'pages/inbox', widths: [1440] })).toEqual([null]);
   });
 
   it('decodes every PNG row filter and round-trips its own PNGs', () => {
@@ -441,6 +441,33 @@ describe('part compare', () => {
       }),
     ).toEqual({ green: true, states: { a: {} }, failing: [] });
     expect(lines).toEqual(['a ok']);
+  });
+
+  it('names the width of each shot of a part with several widths, so a diff at the second one is reported', async () => {
+    const target = checkout();
+    const product = resolveProduct({ target, name: 'app-a', config: {} });
+    const lines = output();
+    const same = () => ({ design: pngOf(2, 2, () => RED), app: pngOf(2, 2, () => RED) });
+
+    const result = await comparePart({
+      target,
+      config: {},
+      product,
+      part: 'components/chip',
+      url: 'u',
+      only: null,
+      quiet: true,
+      shoot: async () => ({
+        states: { a: {} },
+        shots: [
+          { state: 'a', width: 1440, ...same() },
+          { state: 'a', width: 900, design: pngOf(2, 2, () => RED), app: pngOf(2, 2, (x) => (x ? BLUE : RED)) },
+        ],
+      }),
+    });
+
+    expect(result).toMatchObject({ green: false, failing: ['a @900px'] });
+    expect(lines).toEqual([]);
   });
 
   it('refuses without a go, and exits 0 only when every state is ok', async () => {

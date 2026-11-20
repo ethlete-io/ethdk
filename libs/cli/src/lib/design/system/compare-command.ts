@@ -85,8 +85,8 @@ export const COMPARE_USAGE =
 /** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
 /** A drawn state; a live one carries the regions both sides measured. */
 export type StateShot =
-  | { state: string; design: Buffer; app: Buffer; regions?: { design: Region[]; app: Region[] } }
-  | { state: string; problem: string; undrivable?: true };
+  | { state: string; width?: number; design: Buffer; app: Buffer; regions?: { design: Region[]; app: Region[] } }
+  | { state: string; width?: number; problem: string; undrivable?: true };
 
 /** A live app shot of one state with its measured regions, or the reason it failed. */
 export type AppShots = Map<string, { app: Buffer; regions: Region[] } | string>;
@@ -183,13 +183,15 @@ export const appShotsOf = async <TDesign extends { png: Buffer }, TOpen>(options
   });
 };
 
-/** The width a non-page part is compared at: the first of the `widths` its design declares, `null` to fit its content. */
-export const compareWidthOf = (options: { part: string; widths: unknown }): number | null => {
-  const first: unknown = Array.isArray(options.widths) ? options.widths[0] : undefined;
+/** The widths a non-page part is compared at: every valid one its design declares, `[null]` to fit its content. */
+export const compareWidthsOf = (options: { part: string; widths: unknown }): (number | null)[] => {
+  const declared = Array.isArray(options.widths)
+    ? options.widths.filter(
+        (width): width is number => typeof width === 'number' && Number.isInteger(width) && width > 0,
+      )
+    : [];
 
-  return !options.part.startsWith('pages/') && typeof first === 'number' && Number.isInteger(first) && first > 0
-    ? first
-    : null;
+  return options.part.startsWith('pages/') || declared.length === 0 ? [null] : [...new Set(declared)];
 };
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
@@ -312,7 +314,7 @@ export const shootStatesWith =
       const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
         default?: { states?: unknown; controls?: unknown; widths?: unknown };
       };
-      const width = compareWidthOf({ part, widths: module.default?.widths });
+      const widths = compareWidthsOf({ part, widths: module.default?.widths });
       const loaded = module.default?.states;
       const drawn = new Set(await drawnStateNamesOf(module.default, resolved?.cssSource ?? null));
       const declared = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? Object.entries(loaded) : [];
@@ -331,117 +333,131 @@ export const shootStatesWith =
 
       const controls = module.default?.controls;
       const pictures = shooter;
-      const designs = new Map<string, Awaited<ReturnType<typeof pictures.pictureOf>>>();
-      const pictureOf = (state: string, emptySlots: boolean) =>
-        pictures.pictureOf({
-          product: product.name,
-          part,
-          state,
-          preset: frame.preset,
-          width,
-          sketch: null,
-          interaction: null,
-          bare: true,
-          emptySlots,
-          checker: true,
-          params: new URLSearchParams(),
+      const shootAt = async (width: number | null): Promise<StateShot[] | string> => {
+        const designs = new Map<string, Awaited<ReturnType<typeof pictures.pictureOf>>>();
+        const pictureOf = (state: string, emptySlots: boolean) =>
+          pictures.pictureOf({
+            product: product.name,
+            part,
+            state,
+            preset: frame.preset,
+            width,
+            sketch: null,
+            interaction: null,
+            bare: true,
+            emptySlots,
+            checker: true,
+            params: new URLSearchParams(),
+          });
+
+        const slotOnly = await timedPhase('compare-design-shots', async () => {
+          const drawn = await inOrderAtOnce({
+            items: Object.keys(states),
+            limit: COMPARE_SHOTS_AT_ONCE,
+            run: (state) => pictureOf(state, true),
+          });
+
+          drawn.forEach((design, at) => designs.set(Object.keys(states)[at] ?? '', design));
+
+          const slotted = [...designs.values()].some((design) => design?.markup?.includes('data-et-projected'));
+
+          return slotted
+            ? await slotOnlyStatesOf({
+                states: Object.keys(states),
+                emptied: new Map([...designs].flatMap(([state, design]) => (design ? [[state, design.png]] : []))),
+                full: async (state) => (await pictureOf(state, false))?.png ?? null,
+              })
+            : new Map<string, string>();
         });
 
-      const slotOnly = await timedPhase('compare-design-shots', async () => {
-        const drawn = await inOrderAtOnce({
-          items: Object.keys(states),
-          limit: COMPARE_SHOTS_AT_ONCE,
-          run: (state) => pictureOf(state, true),
+        onDesignShots?.();
+
+        const opens = pointerOpensOf({
+          states,
+          controls,
+          drawn: Object.fromEntries(
+            [...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')]),
+          ),
         });
+        const sampled = productSampledPropsOf({ target, product, part });
+        const forcing = new Set(
+          [...designs].flatMap(([state, design]) => (forcedElementsOf(design?.markup ?? '').length > 0 ? [state] : [])),
+        );
 
-        drawn.forEach((design, at) => designs.set(Object.keys(states)[at] ?? '', design));
+        const unshot = await timedPhase('compare-app-shots', () =>
+          appShotsOf({
+            states: Object.keys(states).filter((state) => only === null || only.includes(state)),
+            designs,
+            opens,
+            slotOnly: appOnly ? new Map() : slotOnly,
+            shoot: ({ state, design, open }) => {
+              const sent = harnessPropsOf({ states, state, open });
+              const drive = harnessDriveOf({ markup: design.markup ?? '', open });
+              const { forced } = drive;
+              const looks = frameLooksOf(design.markup ?? '');
+              const shot: HarnessShot = {
+                url: harnessUrlOf({
+                  url,
+                  part,
+                  state,
+                  props: sent,
+                  layout: frame.layout,
+                }),
+                size: frame.size,
+                width,
+                ...drive,
+                ...(looks.length > 0 ? { looks } : {}),
+                ...(appOnly
+                  ? {}
+                  : {
+                      props: {
+                        sent,
+                        designOnly: new Set([
+                          ...designOnlyPropsOf({
+                            states,
+                            opens,
+                            state,
+                            forced: forced.map(({ interaction }) => interaction),
+                            forcing,
+                            selected: drawsSelectedOf(design.markup ?? ''),
+                          }),
+                          ...sampled,
+                        ]),
+                      },
+                    }),
+                roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+                frozen: frozenAnimationsOf(design.markup ?? ''),
+                ...(design.ambient ? { ambient: design.ambient } : {}),
+              };
 
-        const slotted = [...designs.values()].some((design) => design?.markup?.includes('data-et-projected'));
-
-        return slotted
-          ? await slotOnlyStatesOf({
-              states: Object.keys(states),
-              emptied: new Map([...designs].flatMap(([state, design]) => (design ? [[state, design.png]] : []))),
-              full: async (state) => (await pictureOf(state, false))?.png ?? null,
-            })
-          : new Map<string, string>();
-      });
-
-      onDesignShots?.();
-
-      const opens = pointerOpensOf({
-        states,
-        controls,
-        drawn: Object.fromEntries([...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')])),
-      });
-      const sampled = productSampledPropsOf({ target, product, part });
-      const forcing = new Set(
-        [...designs].flatMap(([state, design]) => (forcedElementsOf(design?.markup ?? '').length > 0 ? [state] : [])),
-      );
-
-      const unshot = await timedPhase('compare-app-shots', () =>
-        appShotsOf({
-          states: Object.keys(states).filter((state) => only === null || only.includes(state)),
-          designs,
-          opens,
-          slotOnly: appOnly ? new Map() : slotOnly,
-          shoot: ({ state, design, open }) => {
-            const sent = harnessPropsOf({ states, state, open });
-            const drive = harnessDriveOf({ markup: design.markup ?? '', open });
-            const { forced } = drive;
-            const looks = frameLooksOf(design.markup ?? '');
-            const shot: HarnessShot = {
-              url: harnessUrlOf({
-                url,
-                part,
-                state,
-                props: sent,
-                layout: frame.layout,
-              }),
-              size: frame.size,
-              width,
-              ...drive,
-              ...(looks.length > 0 ? { looks } : {}),
-              ...(appOnly
-                ? {}
-                : {
-                    props: {
-                      sent,
-                      designOnly: new Set([
-                        ...designOnlyPropsOf({
-                          states,
-                          opens,
-                          state,
-                          forced: forced.map(({ interaction }) => interaction),
-                          forcing,
-                          selected: drawsSelectedOf(design.markup ?? ''),
-                        }),
-                        ...sampled,
-                      ]),
-                    },
-                  }),
-              roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
-              frozen: frozenAnimationsOf(design.markup ?? ''),
-              ...(design.ambient ? { ambient: design.ambient } : {}),
-            };
-
-            return cachedAppShotOf({
-              cache: caches.app,
-              shot,
-              draw: () =>
-                timedPhase(`compare-app-shot ${state}`, () =>
-                  queue.run((browser) =>
-                    harnessShotOf({ ...shot, browser, phase: `compare-app-shot ${state}` }).then((app) => ({ app })),
+              return cachedAppShotOf({
+                cache: caches.app,
+                shot,
+                draw: () =>
+                  timedPhase(`compare-app-shot ${state}`, () =>
+                    queue.run((browser) =>
+                      harnessShotOf({ ...shot, browser, phase: `compare-app-shot ${state}` }).then((app) => ({ app })),
+                    ),
                   ),
-                ),
-            }).catch(appShotProblemOf);
-          },
-        }),
-      );
+              }).catch(appShotProblemOf);
+            },
+          }),
+        );
 
-      if (typeof unshot === 'string') return unshot;
+        return unshot;
+      };
 
-      return { states, shots: unshot, skipped };
+      const shots: StateShot[] = [];
+
+      for (const width of widths) {
+        const at = await shootAt(width);
+
+        if (typeof at === 'string') return at;
+
+        shots.push(...(width !== null && widths.length > 1 ? at.map((shot) => ({ ...shot, width })) : at));
+      }
+
+      return { states, shots, skipped };
     } catch (error) {
       return messageOf(error);
     } finally {
@@ -491,7 +507,8 @@ export const comparePart = async (
     const failing: string[] = [];
 
     for (const stateShot of shots) {
-      const { state } = stateShot;
+      const { state: plain, width } = stateShot;
+      const state = width === undefined ? plain : `${plain} @${width}px`;
 
       if ('problem' in stateShot) {
         log(`${state} ${failedText(stateShot.problem)}`);
@@ -520,7 +537,7 @@ export const comparePart = async (
         continue;
       }
 
-      const covering = coveringSketchOf({ sketches, part: options.part, state, result });
+      const covering = coveringSketchOf({ sketches, part: options.part, state: plain, result });
 
       if (covering !== null) {
         log(coveredLineOf(line, covering));
