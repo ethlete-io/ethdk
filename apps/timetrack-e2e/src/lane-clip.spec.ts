@@ -4,6 +4,7 @@ import {
   E2E_ISSUE_KEY,
   E2E_REPO,
   FakePairedMachine,
+  defaultSettings,
   tempoWorklogOn,
 } from '@ethlete/timetrack/testing';
 import { Page } from '@playwright/test';
@@ -114,6 +115,52 @@ const expectNoBandOverBlock = async (page: Page) => {
   }
 };
 
+const intersects = (a: Box, b: Box) =>
+  a.x < b.x + b.width - 0.5 && b.x < a.x + a.width - 0.5 && a.y < b.y + b.height && b.y < a.y + a.height;
+
+const textBoxOf = (locator: ReturnType<Page['locator']>) =>
+  locator.evaluate((node) => {
+    const range = document.createRange();
+
+    range.selectNodeContents(node);
+
+    const { x, y, width, height } = range.getBoundingClientRect();
+
+    return { x, y, width, height };
+  });
+
+const expectNoLabelOverLabel = async (page: Page) => {
+  const labels = page.locator(LABELS);
+  const boxes: Box[] = [];
+
+  for (let at = 0; at < (await labels.count()); at++) boxes.push(await textBoxOf(labels.nth(at)));
+
+  expect(boxes.length).toBeGreaterThan(1);
+
+  for (let a = 0; a < boxes.length; a++) {
+    for (let b = a + 1; b < boxes.length; b++) {
+      expect(intersects(boxes[a] as Box, boxes[b] as Box), `label ${a} over label ${b}`).toBe(false);
+    }
+  }
+};
+
+const expectGapBetweenStackedBoxes = async (page: Page) => {
+  const stacked = page.locator('[data-kind="row"], [data-peer-band], [data-behind]');
+  const boxes: Box[] = [];
+
+  for (let at = 0; at < (await stacked.count()); at++) boxes.push(await boxOf(stacked.nth(at)));
+
+  for (let a = 0; a < boxes.length; a++) {
+    for (let b = 0; b < boxes.length; b++) {
+      const first = boxes[a] as Box;
+      const second = boxes[b] as Box;
+      const sharesColumn = first.x < second.x + second.width - 0.5 && second.x < first.x + first.width - 0.5;
+
+      if (a !== b && sharesColumn) expect(Math.abs(second.y - (first.y + first.height))).toBeGreaterThan(0.5);
+    }
+  }
+};
+
 test.describe('a day with two checkouts and a paired machine with a long name', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, {
@@ -186,5 +233,98 @@ test.describe('a day where a worktree worked beside its main checkout', () => {
     await expect(page.locator('[data-lane] [data-kind="row"]').first()).toBeVisible();
 
     await expectLabelsInColumns(page);
+  });
+});
+
+test.describe('a day of short rows, background bands and back-to-back stand-ins', () => {
+  const WORKTREE = '/Users/e2e/dev/fut-frontend-altcha';
+  const FIRST_BRANCH = 'fix/visual-suite';
+  const SECOND_BRANCH = 'fix/combobox-round-2';
+  const THIRD_BRANCH = 'fix/build-slice';
+
+  const standIn = (id: string, name: string, branch: string) => ({
+    id,
+    name,
+    state: 'open' as const,
+    days: [],
+    author: 'user' as const,
+    createdAt: new Date(0),
+    rule: {
+      id: `rule-${id}`,
+      repoPath: E2E_REPO,
+      branch,
+      target: { kind: 'stand-in' as const, standInId: id },
+      author: 'user' as const,
+      createdAt: new Date(0),
+    },
+  });
+
+  const STAND_INS = [
+    standIn('si-1', 'Visual suite slice with a long name', FIRST_BRANCH),
+    standIn('si-2', 'Build slice 7.10a with a long name', SECOND_BRANCH),
+    standIn('si-3', 'Combobox fix round 2 with a long name', THIRD_BRANCH),
+  ];
+
+  const session = (options: { cwd: string; branch: string; from: number; steps: number; title: string }) =>
+    Array.from({ length: options.steps }, (_, step) => ({
+      at: new Date(new Date(`${BOOKED_DAY}T09:00:00.000Z`).getTime() + (options.from + step * 5) * 60_000),
+      source: 'agent-session' as const,
+      kind: 'agent-session' as const,
+      sessionId: `session-${options.cwd}-${options.branch}`,
+      cwd: options.cwd,
+      gitBranch: options.branch,
+      title: options.title,
+    }));
+
+  test('draws no two labels over each other, and leaves a gap between stacked boxes', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...session({ cwd: E2E_REPO, branch: FIRST_BRANCH, from: 0, steps: 4, title: 'Visual suite slice' }),
+        ...session({ cwd: E2E_REPO, branch: SECOND_BRANCH, from: 15, steps: 4, title: 'Build slice 7.10a' }),
+        ...session({ cwd: E2E_REPO, branch: THIRD_BRANCH, from: 30, steps: 4, title: 'Combobox fix round 2' }),
+        ...session({ cwd: WORKTREE, branch: E2E_ISSUE_BRANCH, from: 5, steps: 12, title: 'Parallel work' }),
+        ...session({ cwd: WORKTREE, branch: E2E_ISSUE_BRANCH, from: 50, steps: 4, title: 'Parallel work' }),
+      ],
+      git: { extraRepos: [WORKTREE], worktrees: { [WORKTREE]: E2E_REPO } },
+      tempo: { worklogs: [tempoWorklogOn({ day: BOOKED_DAY, minutes: 60, startTime: '11:00:00', id: 'w-mac' })] },
+      ledger: [
+        {
+          proposalId: `booked@${BOOKED_DAY}`,
+          day: BOOKED_DAY,
+          tempoWorklogId: 'w-mac',
+          contentHash: 'booked',
+          syncedAt: new Date(`${BOOKED_DAY}T16:00:00.000Z`),
+        },
+      ],
+      peers: {
+        paired: [PEER],
+        dayRows: [
+          {
+            machineId: PEER.machineId,
+            rows: {
+              day: BOOKED_DAY,
+              frozen: true,
+              rows: [
+                peerRow(`repo:${E2E_REPO}`, '09:00', '09:15'),
+                peerRow(`repo:${E2E_REPO}`, '09:15', '09:30'),
+                peerRow(`repo:${E2E_REPO}`, '09:30', '09:45'),
+              ],
+            },
+          },
+        ],
+      },
+      settings: {
+        ...defaultSettings(),
+        standIns: STAND_INS.map(({ rule: _rule, ...own }) => own),
+        attributionRules: STAND_INS.map(({ rule }) => rule),
+      },
+    });
+    await page.goto('/day');
+    await page.getByRole('button', { name: 'Previous day' }).click();
+    await expect(page.locator('[data-kind="row"]').first()).toBeVisible();
+
+    await expectNoLabelOverLabel(page);
+    await expectGapBetweenStackedBoxes(page);
   });
 });

@@ -151,6 +151,77 @@ export type DayLane = {
   behind: BehindBand[];
   /** A paired machine's work in this checkout that a frozen day's rows do not hold. */
   peers: PeerLaneBand[];
+  /** Keys of the labels with no free height of their own in this lane: the box keeps its `title`, not a drawn label. */
+  hiddenLabels: ReadonlySet<string>;
+};
+
+const BOX_GAP_PX = 1;
+
+/** The `top` and `height` of a box that leaves a gap above and below it, so boxes stacked in one column never touch. */
+export const gappedTop = (offset: number) => `calc(${offset}% + ${BOX_GAP_PX}px)`;
+export const gappedHeight = (span: number) => `calc(${span}% - ${BOX_GAP_PX * 2}px)`;
+
+export const behindLabelKey = (band: BehindBand) => `behind:${band.offset}`;
+export const peerLabelKey = (placed: PeerLaneBand) => `peer:${placed.band.machineId}:${placed.offset}`;
+
+type LabelClaim = { top: number; bottom: number; left: number; right: number };
+
+const CLAIM_EPSILON = 1e-6;
+
+const meets = (a: LabelClaim, b: LabelClaim) =>
+  a.top < b.bottom - CLAIM_EPSILON &&
+  b.top < a.bottom - CLAIM_EPSILON &&
+  a.left < b.right - CLAIM_EPSILON &&
+  b.left < a.right - CLAIM_EPSILON;
+
+const hiddenLabelsOf = (options: {
+  blocks: readonly LaneBlock[];
+  behind: readonly BehindBand[];
+  peers: readonly PeerLaneBand[];
+  labelSpan: number;
+}) => {
+  const hidden = new Set<string>();
+
+  if (!options.labelSpan) return hidden;
+
+  const claimOf = (box: { offset: number; span: number }, inline = { left: 0, right: 100 }): LabelClaim => ({
+    top: box.offset,
+    bottom: box.offset + Math.min(box.span, options.labelSpan),
+    ...inline,
+  });
+  const shown: LabelClaim[] = [];
+
+  for (const laid of [...options.blocks].sort((a, b) => a.block.offset - b.block.offset)) {
+    const claim = claimOf(laid.block, { left: laid.inlineOffset, right: laid.inlineOffset + laid.inlineSize });
+
+    if (shown.some((other) => meets(claim, other))) hidden.add(laid.key);
+    else shown.push(claim);
+  }
+
+  const peers: LabelClaim[] = [];
+
+  for (const placed of [...options.peers].sort((a, b) => a.offset - b.offset)) {
+    const claim = claimOf(placed);
+
+    if (peers.some((other) => meets(claim, other))) hidden.add(peerLabelKey(placed));
+    else peers.push(claim);
+  }
+
+  const boxes = options.blocks.map(({ block }) => ({
+    top: block.offset,
+    bottom: block.offset + block.span,
+    left: 0,
+    right: 100,
+  }));
+
+  for (const band of [...options.behind].sort((a, b) => a.offset - b.offset)) {
+    const claim = claimOf(band);
+
+    if ([...shown, ...boxes].some((other) => meets(claim, other))) hidden.add(behindLabelKey(band));
+    else shown.push(claim);
+  }
+
+  return hidden;
 };
 
 export const laneKeyOfRow = (row: ReviewedRow) => row.laneKey ?? NO_LANE_KEY;
@@ -374,6 +445,8 @@ export const lanesOf = (options: {
   columnOf?: (laneKey: string) => string;
   /** Lanes to draw even while no block is in them, for a band that previews a row not written yet. */
   openLanes?: readonly string[];
+  /** The height of one label line as a percent of the day. Left out, no label is ever hidden. */
+  labelSpan?: number;
 }): DayLane[] => {
   const columnOf = options.columnOf ?? ((laneKey: string) => laneKey);
   const byLane = new Map<string, SchedulerTimeGridBlock<TimelineEntry>[]>();
@@ -438,21 +511,37 @@ export const lanesOf = (options: {
     )
     .map(([key, laneBlocks]) => {
       const blocks = packLane(laneBlocks);
+      const behind = (behindByLane.get(key) ?? []).map((band) => ({ ...band, carrier: carrierOf(band, blocks) }));
+      const peers = peersByLane.get(key) ?? [];
 
       return {
         key,
         label: peerLabels.get(key) ?? labelOf(key),
         blocks,
         breaks: [],
-        behind: (behindByLane.get(key) ?? []).map((band) => ({ ...band, carrier: carrierOf(band, blocks) })),
-        peers: peersByLane.get(key) ?? [],
+        behind,
+        peers,
+        hiddenLabels: hiddenLabelsOf({
+          blocks,
+          behind: behind.filter((band) => !band.carrier),
+          peers,
+          labelSpan: options.labelSpan ?? 0,
+        }),
       };
     });
 
   if (!work.length) return work;
 
   return [
-    { key: BREAK_LANE_KEY, label: BREAK_LANE_LABEL, blocks: [], breaks: breakBandsOf(options), behind: [], peers: [] },
+    {
+      key: BREAK_LANE_KEY,
+      label: BREAK_LANE_LABEL,
+      blocks: [],
+      breaks: breakBandsOf(options),
+      behind: [],
+      peers: [],
+      hiddenLabels: new Set(),
+    },
     ...work,
   ];
 };

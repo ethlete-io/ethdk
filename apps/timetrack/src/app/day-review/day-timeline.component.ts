@@ -53,10 +53,14 @@ import {
   DayLane,
   LaneBlock,
   NO_LANE_KEY,
+  behindLabelKey,
+  gappedHeight,
+  gappedTop,
   isPeerLaneKey,
   lanesOf,
   laneKeyOfRow,
   peerBandLabel,
+  peerLabelKey,
   worktreeColumnOf,
 } from './lanes';
 import {
@@ -325,14 +329,14 @@ type RowDrag = {
 
                   @for (band of lane.behind; track band.offset) {
                     <div
-                      [style.top.%]="band.offset"
-                      [style.height.%]="band.span"
+                      [style.top]="GAPPED_TOP(band.offset)"
+                      [style.height]="GAPPED_HEIGHT(band.span)"
                       [title]="BEHIND_LABEL_OF(band.stretch)"
                       [attr.data-compact]="compact(band.span) || null"
                       class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-behind
                     >
-                      @if (labelled(band.span) && !band.carrier) {
+                      @if (labelled(band.span) && !band.carrier && !lane.hiddenLabels.has(BEHIND_KEY_OF(band))) {
                         <span class="block truncate">{{ BEHIND_LABEL_OF(band.stretch) }}</span>
                       }
                     </div>
@@ -357,8 +361,8 @@ type RowDrag = {
                       [attr.data-growing]="cutPercentOf(laid) !== null || null"
                       [style.--tt-cut-at]="cutPercentOf(laid)"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
-                      [style.top.%]="laid.block.offset"
-                      [style.height.%]="laid.block.span"
+                      [style.top]="GAPPED_TOP(laid.block.offset)"
+                      [style.height]="GAPPED_HEIGHT(laid.block.span)"
                       [style.zIndex]="laid.layer"
                       [attr.data-cascade]="laid.layer !== null || null"
                       [style.left.%]="laid.inlineOffset"
@@ -464,7 +468,7 @@ type RowDrag = {
                         ></span>
                       }
 
-                      @if (labelled(laid.block.span)) {
+                      @if (labelled(laid.block.span) && !lane.hiddenLabels.has(laid.key)) {
                         <span class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)]" data-label>
                           {{ LABEL_OF(laid.block.node.appointment) }}
                           @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
@@ -722,15 +726,15 @@ type RowDrag = {
                 <ng-template #peerBands let-lane>
                   @for (placed of lane.peers; track placed.band.machineId + placed.offset) {
                     <div
-                      [style.top.%]="placed.offset"
-                      [style.height.%]="placed.span"
+                      [style.top]="GAPPED_TOP(placed.offset)"
+                      [style.height]="GAPPED_HEIGHT(placed.span)"
                       [title]="PEER_LABEL_OF(placed)"
                       [attr.data-compact]="compact(placed.span) || null"
                       [attr.data-booked]="placed.band.booked || null"
                       class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-peer-band
                     >
-                      @if (labelled(placed.span)) {
+                      @if (labelled(placed.span) && !lane.hiddenLabels.has(PEER_KEY_OF(placed))) {
                         <span class="block truncate">{{ PEER_LABEL_OF(placed) }}</span>
                       }
                     </div>
@@ -1000,6 +1004,10 @@ export class DayTimelineComponent {
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
   protected readonly BEHIND_LABEL_OF = behindLabel;
+  protected readonly GAPPED_TOP = gappedTop;
+  protected readonly GAPPED_HEIGHT = gappedHeight;
+  protected readonly BEHIND_KEY_OF = behindLabelKey;
+  protected readonly PEER_KEY_OF = peerLabelKey;
   protected readonly PEER_LABEL_OF = peerBandLabel;
   protected readonly PEER_SIDE_GROW = PEER_SIDE_GROW;
   protected readonly PEER_SIDE_REM = PEER_SIDE_REM;
@@ -1032,6 +1040,7 @@ export class DayTimelineComponent {
       breaks: this.breaks(),
       behind: this.behind(),
       peers: this.peers(),
+      labelSpan: (LINE_REM * 100) / (24 * HOUR_REM),
       dayStart: this.focusedDate(),
       columnOf: this.columnOf(),
       openLanes: this.bandApprovals.previews().length ? [NO_LANE_KEY] : [],

@@ -94,7 +94,7 @@ test.describe('a linked worktree that overlaps its main checkout for part of an 
     const mainBox = await boxOf(main);
     const worktreeBox = await boxOf(worktree);
 
-    expect(worktreeBox.y).toBeCloseTo(mainBox.y + mainBox.height, 0);
+    expect(worktreeBox.y).toBeCloseTo(mainBox.y + mainBox.height + 2, 0);
     expect(worktreeBox.x).toBeCloseTo(mainBox.x, 0);
     expect(worktreeBox.width).toBeCloseTo(mainBox.width, 0);
   });
