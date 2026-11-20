@@ -494,18 +494,8 @@
     "pid": 1615234
   },
   "components/shell-resize-handle": {
-    "hash": "b7b7754eedba1c72",
-    "files": {
-      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.css": "3f6d46121dfa54f6",
-      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "949e3d9317e82ff6",
-      "libs/components/design/control.ts": "b0244bc4c0f922a6"
-    },
     "actions": ["emit:sideWidthChange"],
-    "builder": "designer",
-    "at": "2026-11-17T13:22:08.744Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-17T13:22:08.744Z"
   },
   "components/shell-system-picker": {
     "hash": "2b6c6ec238c35ebc",
