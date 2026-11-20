@@ -172,6 +172,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [showResolved]="commentStore.resolvedShown()"
         [shell]="pageShell()"
         [load]="inboxLoad()"
+        [error]="commentStore.loadError()"
+        [interrupted]="commentStore.interrupted()"
         [canvas]="shellCanvas"
         [thread]="openThread()"
         (showResolvedChange)="commentStore.showResolved($event)"
@@ -949,6 +951,12 @@ export class SystemViewComponent {
     this.commentStore.resolved().filter((comment) => comment.id === this.pickedCommentId()),
   );
 
+  private liveSketches = computed(() => {
+    const listed = this.sketchList();
+
+    return listed ? new Set(listed.map((sketch) => sketch.createdAt)) : undefined;
+  });
+
   private pinnedComments = computed(() => [...this.commentStore.comments(), ...this.pickedResolved()]);
 
   protected foldedStates = computed(() => {
@@ -1134,7 +1142,9 @@ export class SystemViewComponent {
     this.port() && this.section() === 'System' && !this.call() ? (this.reading()?.error ?? null) : null,
   );
 
-  protected partPins = computed(() => pinsOf(this.placeableFrames(), this.pinnedComments()));
+  protected partPins = computed(() =>
+    pinsOf(this.placeableFrames(), { comments: this.pinnedComments(), liveSketches: this.liveSketches() }),
+  );
 
   protected placedComments = computed(() =>
     placedCommentsOf(
@@ -1603,7 +1613,7 @@ export class SystemViewComponent {
 
     if (canvas.pins().some((pin) => pin.id === comment.id)) return canvas.openPin(comment.id);
 
-    const frame = otherSizeFrameOf(this.placeableFrames(), comment);
+    const frame = otherSizeFrameOf(this.placeableFrames(), { ...comment, liveSketches: this.liveSketches() });
 
     if (frame) canvas.focusFrame(frame);
   }

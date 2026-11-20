@@ -66,9 +66,22 @@ describe('comments', () => {
     });
     const open = comment('8', { sketch: made });
 
-    expect(pinsOf([frame('f')], [merged]).map((pin) => pin.frameId)).toEqual(['f']);
-    expect(pinsOf([frame('f')], [open])).toEqual([]);
-    expect(pinsOf([frame('f'), frame('g', 'a')], [open]).map((pin) => pin.frameId)).toEqual(['g']);
+    expect(pinsOf([frame('f')], { comments: [merged] }).map((pin) => pin.frameId)).toEqual(['f']);
+    expect(pinsOf([frame('f')], { comments: [open] })).toEqual([]);
+    expect(pinsOf([frame('f'), frame('g', 'a')], { comments: [open] }).map((pin) => pin.frameId)).toEqual(['g']);
+  });
+
+  it('keeps a merged sketch thread on the part frame after the user replied and cleared the merge flag', () => {
+    const made = { target: 'components/card', variant: 'a', createdAt: '2026-10-29T09:00:00.000Z' };
+    const replied = comment('7', {
+      sketch: made,
+      replies: [{ by: 'user', text: 'one more thing', createdAt: '2026-10-31T09:00:00.000Z' }],
+    });
+    const live = new Set(['2026-10-30T09:00:00.000Z']);
+
+    expect(pinsOf([frame('f')], { comments: [replied], liveSketches: live }).map((pin) => pin.frameId)).toEqual(['f']);
+    expect(pinsOf([frame('f')], { comments: [replied], liveSketches: new Set([made.createdAt]) })).toEqual([]);
+    expect(pinsOf([frame('f')], { comments: [replied] })).toEqual([]);
   });
 
   it('shows in a sketch only its own comments and those on the pages that use its target', () => {
@@ -147,7 +160,7 @@ describe('placedCommentsOf', () => {
     ];
 
     const placed = placedCommentsOf(
-      { frames, pins: pinsOf(frames, comments), comments },
+      { frames, pins: pinsOf(frames, { comments }), comments },
       { now: 0, userName: 'Ada Lovelace' },
     );
 

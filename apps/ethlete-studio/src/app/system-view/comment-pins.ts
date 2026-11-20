@@ -26,8 +26,16 @@ export const resolvedCommentsOf = (comments: ListedComment[]): ResolvedComment[]
 
 const interactionOf = (place: { interaction?: string }) => place.interaction ?? REST;
 
-const isOnPlace = (comment: CommentPlace & Pick<ListedComment, 'addressed'>, place: FramePlace) => {
-  const sketch = comment.addressed?.reason === 'merge' ? undefined : comment.sketch;
+type LiveSketches = { liveSketches?: ReadonlySet<string> };
+
+type PlacedOn = CommentPlace & Pick<ListedComment, 'addressed'> & LiveSketches;
+
+const isOnPlace = (comment: PlacedOn, place: FramePlace) => {
+  const { liveSketches } = comment;
+  const gone =
+    comment.addressed?.reason === 'merge' ||
+    (!!liveSketches && !!comment.sketch?.createdAt && !liveSketches.has(comment.sketch.createdAt));
+  const sketch = gone ? undefined : comment.sketch;
 
   return (
     comment.part === place.part &&
@@ -49,7 +57,7 @@ export const isInSketch = (
  * The frame to move the camera to for a comment: its state and interaction at the size on show, else its state in
  * the interaction on show.
  */
-export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace & Pick<ListedComment, 'addressed'>) => {
+export const otherSizeFrameOf = (frames: CanvasFrame[], comment: PlacedOn) => {
   const placed = frames.filter((frame): frame is CanvasFrame & { place: FramePlace } => !!frame.place);
   const frame =
     placed.find((candidate) => isOnPlace({ ...comment, size: candidate.place.size }, candidate.place)) ??
@@ -60,10 +68,16 @@ export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace & 
   return frame?.id ?? null;
 };
 
-/** One pin per comment that sits on one of `frames`, on the frame `otherSizeFrameOf` picks for it. */
-export const pinsOf = (frames: CanvasFrame[], comments: (ListedComment & { number?: number })[]): CanvasPin[] =>
+/**
+ * One pin per comment that sits on one of `frames`, on the frame `otherSizeFrameOf` picks for it. With `liveSketches`
+ * (the `createdAt` of every sketch still listed) a comment of a sketch not in it pins on the part frame.
+ */
+export const pinsOf = (
+  frames: CanvasFrame[],
+  { comments, liveSketches }: { comments: (ListedComment & { number?: number })[] } & LiveSketches,
+): CanvasPin[] =>
   comments.flatMap((comment) => {
-    const frameId = otherSizeFrameOf(frames, comment);
+    const frameId = otherSizeFrameOf(frames, { ...comment, liveSketches });
     const last = comment.replies.at(-1);
 
     return frameId

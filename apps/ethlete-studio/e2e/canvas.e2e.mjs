@@ -2189,6 +2189,90 @@ const CASES = [
     },
   },
   {
+    name: 'a comment of a merged sketch pins on the part frame, replied or not, and a resolved sketch comment pins on its variant',
+    pages: ['System', 'Zoom'],
+    viewport: WIDE,
+    run: async (page, _state, target) => {
+      const commentsDir = join(checkout, '.ethlete/design/studio/comments');
+      const written = [];
+      const put = (id, comment) => {
+        const file = join(commentsDir, `${id}.json`);
+
+        mkdirSync(commentsDir, { recursive: true });
+        writeFileSync(
+          file,
+          JSON.stringify({ state: 'part', size: 'desktop', createdAt: '2026-11-01T10:00:00.000Z', ...comment }),
+        );
+        written.push(file);
+      };
+      const pinCount = (selector) => page.locator(selector).count();
+
+      try {
+        if (target.name === 'Zoom') {
+          const before = await pinCount('ethlete-sketches ethlete-comment-pin [aria-label$="resolved"]');
+
+          put('e2e-a18-resolved', {
+            part: ZOOM_SKETCH.part,
+            text: 'A18 e2e resolved',
+            sketch: {
+              target: `${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}`,
+              variant: 'a',
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+            resolved: { by: 'user', resolvedAt: '2026-11-02T10:00:00.000Z' },
+          });
+
+          const seen = await page
+            .waitForFunction(
+              (count) =>
+                document.querySelectorAll('ethlete-sketches ethlete-comment-pin [aria-label$="resolved"]').length >
+                count,
+              before,
+              { timeout: WAIT_MS },
+            )
+            .then(
+              () => true,
+              () => false,
+            );
+
+          return { ok: seen, detail: `resolved pin on the variant of the sketch view: ${seen}` };
+        }
+
+        const before = await pinCount('ethlete-comment-pin');
+        const gone = { target: 'pages/system', variant: 'a', createdAt: '2026-01-02T00:00:00.000Z' };
+
+        put('e2e-a18-merged', {
+          part: 'pages/system',
+          text: 'A18 e2e merged',
+          sketch: gone,
+          addressed: { by: 'agent', reason: 'merge', addressedAt: '2026-11-02T10:00:00.000Z' },
+        });
+        put('e2e-a18-replied', {
+          part: 'pages/system',
+          text: 'A18 e2e replied',
+          sketch: gone,
+          replies: [{ by: 'user', text: 'and one more', createdAt: '2026-11-03T10:00:00.000Z' }],
+        });
+
+        const seen = await page
+          .waitForFunction((count) => document.querySelectorAll('ethlete-comment-pin').length >= count + 2, before, {
+            timeout: WAIT_MS,
+          })
+          .then(
+            () => true,
+            () => false,
+          );
+
+        return {
+          ok: seen,
+          detail: `pins on the part frame before ${before}, both merged-sketch comments pinned: ${seen}`,
+        };
+      } finally {
+        for (const file of written) rmSync(file, { force: true });
+      }
+    },
+  },
+  {
     name: 'comment mode: the crosshair with the Esc oder C hint, and C or Esc each leave it',
     pages: ['System'],
     viewport: WIDE,
