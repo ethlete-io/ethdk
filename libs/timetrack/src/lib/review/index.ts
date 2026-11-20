@@ -14,6 +14,7 @@ export * from './now';
 export * from './nudge';
 export * from './off-topic-rest';
 export * from './peer-rows';
+export * from './shared-approvals';
 export * from './shared-rows';
 export * from './shared-stamp';
 export * from './recut';
