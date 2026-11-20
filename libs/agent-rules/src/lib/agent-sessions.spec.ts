@@ -1061,6 +1061,48 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
+    'keeps the agent binary of an env wrapper command that run stores',
+    async () => {
+      const agent = `claude-envbin-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const runner = `runner-${process.pid}`;
+      const dispatch = `dispatch-${process.pid}`;
+      const fakeAgent = join(dir, 'fake-agent');
+      writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
+
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        runner,
+        '-c',
+        dir,
+        '-e',
+        `AGENT_MAILBOX=${join(dir, 'mailbox.jsonl')}`,
+        '-e',
+        `AGENT_MAILBOX_DISPATCH_SESSION=${dispatch}`,
+        '-e',
+        `HOME=${dir}`,
+        `node ${SCRIPT} run ${agent} env CLAUDE_CONFIG_DIR=/x ${fakeAgent}; cat`,
+      ]);
+
+      try {
+        await expect
+          .poll(
+            () =>
+              spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
+                .stdout,
+            { timeout: 5_000, interval: 250 },
+          )
+          .toBe(`CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' 'env' 'CLAUDE_CONFIG_DIR=/x' '${fakeAgent}'\n`);
+      } finally {
+        [runner, scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
     'types the prompt when only the IDE context chip sits on the prompt line',
     async () => {
       const agent = `claude-chip-${process.pid}`;

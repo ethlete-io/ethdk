@@ -170,8 +170,16 @@ const withoutPrompt = (words) => {
   const separator = words.indexOf('--');
   if (separator > 0) return words.slice(0, separator);
   const [previous, last] = words.slice(-2);
+  let binary = 0;
+  while (
+    binary < words.length - 1 &&
+    (ENV_WORD.test(words[binary]) ||
+      words[binary] === 'env' ||
+      (binary > 0 && words[0] === 'env' && words[binary].startsWith('-')))
+  )
+    binary++;
   const isPrompt =
-    words.length > 1 &&
+    words.length - 1 > binary &&
     !last.startsWith('-') &&
     (!previous.startsWith('-') || (/\s/.test(last) && !TEXT_VALUE_FLAGS.has(previous)));
   return isPrompt ? words.slice(0, -1) : words;
