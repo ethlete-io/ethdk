@@ -200,4 +200,25 @@ describe('tabAwayFrom', () => {
     expect(menuKept).toBe(1);
     expect(active).not.toBe('plain');
   });
+
+  it('moves focus off a focused item of an open menu without closing the menu', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    page.setDefaultTimeout(3000);
+    await page.setContent(
+      `<div role="menu" onkeydown="if (event.key === 'Tab') this.remove()"><button id="checked" role="menuitemradio">Checked</button></div>`,
+    );
+    await page.locator('#checked').focus();
+    await tabAwayFrom(page, page.locator('#checked'));
+
+    const menuKept = await page.locator('#checked').count();
+    const active = await page.evaluate(() => document.activeElement?.id);
+
+    await page.close();
+
+    expect(menuKept).toBe(1);
+    expect(active).not.toBe('checked');
+  });
 }, 30_000);

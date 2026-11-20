@@ -167,18 +167,36 @@ export const ringProbeOrNullOf = (locator: Locator) =>
   });
 
 /**
- * Presses Shift so the last input is a key, and Tab only while the element itself holds focus: a Tab from an item of
- * an open menu closes the menu the element sits in.
+ * Presses Shift so the last input is a key, then moves focus off the element: with Tab, except for an element inside
+ * an open menu, dialog or listbox, which is blurred instead because a Tab from there closes the overlay it sits in.
  */
 export const tabAwayFrom = async (page: Page, locator: Locator) => {
   await page.keyboard.press('Shift');
 
   for (let tab = 0; tab < 2; tab++) {
-    const focused = await locator.evaluate((element) => element.ownerDocument.activeElement === element, undefined, {
-      timeout: RING_PROBE_TIMEOUT_MS,
-    });
+    const state = await locator.evaluate(
+      (element) => {
+        let inOverlay = false;
 
-    if (!focused) return;
+        for (let node = element.parentElement; node; node = node.parentElement) {
+          if (['menu', 'dialog', 'listbox'].includes(node.getAttribute('role') ?? '')) inOverlay = true;
+        }
+
+        return { focused: element.ownerDocument.activeElement === element, inOverlay };
+      },
+      undefined,
+      { timeout: RING_PROBE_TIMEOUT_MS },
+    );
+
+    if (!state.focused) return;
+
+    if (state.inOverlay) {
+      await locator.evaluate((element) => (element as HTMLElement).blur(), undefined, {
+        timeout: RING_PROBE_TIMEOUT_MS,
+      });
+
+      return;
+    }
 
     await page.keyboard.press('Tab');
   }
