@@ -32,6 +32,7 @@ import { EDIT_OLD } from './edit-sketch';
 import {
   EDIT_SKETCH,
   forgetMerged,
+  MergeDecision,
   recordMerged,
   rerecordChangedMerged,
   unchangedMergedOf,
@@ -375,6 +376,20 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
   };
 };
 
+const recordMergedSplit = (options: {
+  product: Parameters<typeof recordMerged>[0]['product'];
+  parts: string[];
+  targets: string[];
+  decision: MergeDecision;
+}) => {
+  const { product, parts, targets, decision } = options;
+  const decided = parts.filter((part) => targets.includes(part));
+  const carried = parts.filter((part) => !targets.includes(part));
+
+  if (decided.length > 0) recordMerged({ product, parts: decided, decision });
+  if (carried.length > 0) recordMerged({ product, parts: carried });
+};
+
 const clonedDirsOf = (options: { target: string; product: ResolvedProduct }) => {
   const { product } = options;
   const base = product.base && !isBuiltInBase(product.config.base ?? '') ? [product.base.dir] : [];
@@ -552,10 +567,15 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
 
       const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
 
-      if (productKeys.length > 0) recordMerged({ product, parts: productKeys, decision });
+      recordMergedSplit({ product, parts: productKeys, targets: sketch.targets, decision });
 
       if (product.base && baseKeys.length > 0) {
-        recordMerged({ product: { dir: product.base.dir, base: null }, parts: baseKeys, decision });
+        recordMergedSplit({
+          product: { dir: product.base.dir, base: null },
+          parts: baseKeys,
+          targets: sketch.targets,
+          decision,
+        });
         forgetMerged({ productDir: product.dir, parts: removedKeys });
       }
 

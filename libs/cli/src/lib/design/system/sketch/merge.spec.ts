@@ -19,7 +19,7 @@ import {
 } from '../comments/comment';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch, mergeSketch } from './merge';
-import { changedOutsideSketchOf, readMergeDecision, readMerged, recordMerged } from './merged-parts';
+import { changedOutsideSketchOf, readMergeDecision, readMergeNote, readMerged, recordMerged } from './merged-parts';
 import {
   createSketch,
   decideSketch,
@@ -207,6 +207,33 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
       decidedBy: 'user',
       at,
     });
+  });
+
+  it('keeps the decision and note of an earlier merged part the sketch only carries along', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const earlier = { variant: 'x', decidedBy: 'plan: B7', at: '2026-10-01T00:00:00.000Z' };
+    const ready = readySketch(target);
+
+    writeFileSync(
+      join(productDir, 'merged.json'),
+      JSON.stringify({ 'components/badge': { hash: 'old', ...earlier, note: 'merged: kept' } }),
+    );
+    mkdirSync(join(ready.sketch.dir, 'b/components/badge'), { recursive: true });
+    writeFileSync(join(ready.sketch.dir, 'b/components/badge/badge.ts'), 'export default 1;');
+
+    mergeSketch({
+      target,
+      config: readConfig(target) ?? {},
+      product: resolveAcme(target),
+      sketch: picked(ready.sketch),
+    });
+
+    expect(readMergeDecision(productDir, 'components/badge')).toEqual(earlier);
+    expect(readMergeNote(productDir, 'components/badge')).toBe('merged: kept');
+    expect(readMergeDecision(productDir, 'elements/hero')).toMatchObject({ variant: 'b', decidedBy: 'user' });
   });
 
   it('records who else decided the pick when the merge names them', () => {
