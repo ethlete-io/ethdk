@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: none
+built: bceb0ba9f
 decided: 2026-11-20
 source: grill session 2026-11-20 (evening), list item D5
 ---
