@@ -43,6 +43,28 @@ const regionsOf = (cells: Set<number>, columns: number) => {
 };
 
 /**
+ * `true` when two pictures have the same size and no channel of any pixel differs by more than 8 of 255, so an
+ * anti-alias shift on a rounded edge is no change. A picture that does not decode is the same only byte for byte.
+ */
+export const looksTheSame = (a: Buffer, b: Buffer) => {
+  if (a.equals(b)) return true;
+
+  try {
+    const left = decodePng(a);
+    const right = decodePng(b);
+
+    if (left.width !== right.width || left.height !== right.height) return false;
+
+    for (let at = 0; at + 4 <= left.data.length; at += 4)
+      if (pixelsDiffer(left.data.readUInt32BE(at), right.data.readUInt32BE(at))) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Where two PNG pictures of the same size differ, by the same per-channel tolerance `looksTheSame` uses; `null`
  * when they do not differ, do not decode or differ in size.
  */
@@ -88,4 +110,13 @@ export const changeBoxOf = (before: Buffer, after: Buffer): ChangeBox | null => 
   } catch {
     return null;
   }
+};
+
+export type PixelPair = { same: boolean; change: ChangeBox | null };
+
+/** Whether two PNG pictures look the same (`looksTheSame`) and, when they do not, where they differ (`changeBoxOf`). */
+export const pixelPairOf = (a: Buffer, b: Buffer): PixelPair => {
+  const same = looksTheSame(a, b);
+
+  return { same, change: same ? null : changeBoxOf(a, b) };
 };

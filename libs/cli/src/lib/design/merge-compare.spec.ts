@@ -2,7 +2,8 @@ import { cpSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { compareMerge, drawnPair, looksTheSame, PictureOf } from './merge-compare';
+import { compareMerge, drawnPair, PictureOf } from './merge-compare';
+import { looksTheSame } from './system/sketch/change-box';
 import { encodePng } from './system/part-compare';
 import { readConfig } from './design-config';
 import { resolveProduct } from './system/resolve-product';
@@ -312,5 +313,28 @@ describe('looksTheSame', () => {
       [false, false],
       [true, true],
     ]);
+  });
+
+  it('compares a pair off the calling thread, so a timer due meanwhile runs before the result', async () => {
+    const noiseOf = (seed: number) => {
+      const data = Buffer.alloc(1200 * 1200 * 4);
+
+      for (let at = 0; at < data.length; at++) data[at] = (at * seed) % 251;
+
+      return encodePng({ width: 1200, height: 1200, data });
+    };
+    const now = noiseOf(7);
+    const after = noiseOf(13);
+    const draw = async (sketch: unknown) => ({ png: sketch ? after : now, marks: [], source: 'drawn' as const });
+    const order: string[] = [];
+
+    setTimeout(() => order.push('timer'), 0);
+    const pair = await drawnPair(draw, { target: 'elements/pill', variant: 'a' });
+
+    order.push('compared');
+
+    expect(pair.same).toBe(false);
+    expect(pair.change?.box).toEqual({ x: 0, y: 0, width: 1200, height: 1200 });
+    expect(order).toEqual(['timer', 'compared']);
   });
 });

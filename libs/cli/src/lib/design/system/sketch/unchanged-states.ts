@@ -6,7 +6,7 @@ import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
 import { baselineInTurnsOf, partHashOf } from './baseline';
-import { ChangeBox, changeBoxOf } from './change-box';
+import { ChangeBox } from './change-box';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
 import { overlaySketch } from './overlay';
@@ -135,9 +135,9 @@ const drawsTheSame = async (options: {
             fresh,
           });
 
-        const { now, after, same } = await drawnPair(draw, sketch);
+        const { same, change } = await drawnPair(draw, sketch);
 
-        return same ? null : (changeBoxOf(now.png, after.png) ?? undefined);
+        return same ? null : (change ?? undefined);
       }),
     );
 

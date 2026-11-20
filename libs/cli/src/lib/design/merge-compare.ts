@@ -1,10 +1,9 @@
 import { PartMark, Picture, ShotSource } from './shot';
-import { pixelsDiffer } from './system/anti-alias';
-import { decodePng } from './system/part-compare';
 import { readPartModule } from './system/list-system';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { overlaySketch } from './system/sketch/overlay';
+import { comparePixelPair } from './system/sketch/pixel-pair';
 import { Sketch } from './system/sketch/sketch';
 import { SketchVariant } from './system/system-modules';
 import { DrawPriority } from './thumb';
@@ -48,28 +47,6 @@ export type PictureOf = (options: {
 }) => Promise<SourcedPicture>;
 
 /**
- * `true` when two pictures have the same size and no channel of any pixel differs by more than 8 of 255, so an
- * anti-alias shift on a rounded edge is no change. A picture that does not decode is the same only byte for byte.
- */
-export const looksTheSame = (a: Buffer, b: Buffer) => {
-  if (a.equals(b)) return true;
-
-  try {
-    const left = decodePng(a);
-    const right = decodePng(b);
-
-    if (left.width !== right.width || left.height !== right.height) return false;
-
-    for (let at = 0; at + 4 <= left.data.length; at += 4)
-      if (pixelsDiffer(left.data.readUInt32BE(at), right.data.readUInt32BE(at))) return false;
-
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/**
  * Draws a state without and with `merged`. When the pair differs, each picture that may have come from a cache and was
  * not drawn after the pair was asked is drawn once more, bypassing any kept picture, so a stale kept picture is not
  * taken for a change.
@@ -80,8 +57,9 @@ export const drawnPair = async (
 ) => {
   const askedAt = performance.now();
   const kept = await Promise.all([draw(null, false), draw(merged, false)]);
+  const keptPair = await comparePixelPair(kept[0].png, kept[1].png);
 
-  if (looksTheSame(kept[0].png, kept[1].png)) return { now: kept[0], after: kept[1], same: true };
+  if (keptPair.same) return { now: kept[0], after: kept[1], ...keptPair };
 
   const current = (picture: SourcedPicture) =>
     picture.source === 'drawn' || (picture.drawnAt ?? Number.NEGATIVE_INFINITY) >= askedAt;
@@ -89,8 +67,9 @@ export const drawnPair = async (
     current(kept[0]) ? kept[0] : draw(null, true),
     current(kept[1]) ? kept[1] : draw(merged, true),
   ]);
+  const pair = now === kept[0] && after === kept[1] ? keptPair : await comparePixelPair(now.png, after.png);
 
-  return { now, after, same: looksTheSame(now.png, after.png) };
+  return { now, after, ...pair };
 };
 
 export type PartModuleLoader = (options: {
