@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B662
+built: 64b875ca1
 decided: 2026-11-20
 amends: 0038, 0245
 source: grill session 2026-11-20 (afternoon), after three broken Studio HEADs in one afternoon
