@@ -16,12 +16,11 @@ The German grill/docs session talks with the user and records decisions. Talk En
 4. `yarn et:design status`: `ci: red` blocks feature slices only while its cause is unknown and no fix or
    revert is on `next`. Cause unproven after 15 minutes: revert the suspect (`yarn revert:check <sha>`).
 5. Start building.
-6. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs (parallel runs under CPU load); keep N low on a busy machine.
+6. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs; keep N low on a busy machine.
 
 ## Output
 
-- The user does not read your chat. Write no text between tool calls: no narration of what
-  you saw, what you decide or what an agent does next.
+- The user does not read your chat. Write no text between tool calls: no narration.
 - End each turn with at most one line.
 - A finished subagent gets no chat text. Put its result into the report to the grill session.
 - Every report goes to the grill/docs session with `SendMessage`: short bullets, commits, what you verified and what not,
@@ -33,10 +32,12 @@ The German grill/docs session talks with the user and records decisions. Talk En
 - Lead sonnet subagents, a fresh one per slice; each brief names the files and line ranges.
 - At most four topics at once, in queue order; a CI fix does not count (ADR 0376). Never wait on CI, a
   subagent, a reply or a review: build the next row meanwhile. You coordinate, verify, push and report.
+- Werkzeuglücken-Grenze (B403): investigate only tool gaps that block you; any other goes in one sentence to the doc agent, c0 builds it (ADR 0202).
+- Leere Queue (B661): no startable row means list A (released), then D, then C, and only then a message to the doc agent; never stop (ADR 0388).
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec and changeset; the message holds the as-built
   text, verified and not verified. No plan notes, no per-row `STATUS.md` edit (ADR 0350); a follow-up commit sets
   `built: <sha>` on its ADRs. Fix format, lint and review findings before that commit, not after.
-  Tell each subagent the same. Never rebase.
+  Never rebase.
 - A slice runs only the spec files it touched, and only its own e2e cases (`yarn studio:e2e --case <name>`).
   `--hold-listings <ms>` delays the sketch listings that carry frame targets, so a case that reads frames once
   before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. The bite proof runs only the new specs. `yarn commit`
@@ -46,18 +47,16 @@ The German grill/docs session talks with the user and records decisions. Talk En
   Every slice runs `npx vitest related --run <changed files>` in the dir of each touched vitest project, and `node --test <related specs>` for `tools/**`, before its commit (finding 779, 914); vitest at the repo root refuses to run: a spec
   that mocks a module the slice now imports from fails there, not in CI. Push with `yarn push` once the running CI run on
   `next` has finished; until then commit locally and take the next row (ADR 0357); it pushes HEAD to `next` and releases the push slot. The pre-push hook of `next`
-  first runs checks, lint, typecheck, `yarn test:tools` and export coverage on an export of the pushed range (~30 s); fix what it
-  reports. CI runs the cli specs, quota and e2e; a red CI is fixed first, before new work. A subagent runs no full
-  suite. Tell each subagent the same.
+  runs checks, lint, typecheck, `yarn test:tools` and export coverage on the pushed range (~30 s); fix what it reports. CI runs the cli specs, quota and e2e; a red CI is fixed first, before new work. A subagent runs no full suite.
 - A change that adds or tightens a static design rule runs that rule over every committed sketch and part of every
   product before its commit, and fixes or exempts each finding in the same change (finding 789).
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
   before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
   nothing runs it in pre-push or CI (ADR 0226).
-- A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
+- A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done.
 - Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
-  `cd` lands the commit on `next` in the main checkout. Put the same line in every bite brief.
+  `cd` lands the commit on `next` in the main checkout.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
 - Every subagent brief includes the lines of `subagent-brief.md` next to this skill.
 - You record the pick of your recommended sketch variant yourself (ADR 0305).
@@ -66,12 +65,11 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 Build the queue row to its proof (ADR 0279, 0280, 0281). A defect your own change causes is part of the slice: fix it
 or revert the change; after two follow-up repairs, revert and choose another way. A defect that was there before: one
-sentence to the doc agent, then go on. Do not hunt its cause or build a tool fix. Fix it only when the proof
-of the current row cannot turn green without it; say so in one sentence in the report. That fix belongs to the slice
-and gets no number. A new finding number only on red CI.
+sentence to the doc agent, then go on. Do not hunt its cause. Fix it only when the current row's proof
+cannot turn green without it; say so in one sentence. That fix belongs to the slice and gets no number. A new finding number only on red CI.
 
 Write "Suspect:" for a cause that no bite or measurement has proven, and "Cause:" only after one has.
-Each report names which of the two it is.
+Each report names which one.
 
 
 ## Questions
