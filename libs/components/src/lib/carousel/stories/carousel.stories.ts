@@ -53,6 +53,10 @@ type Story = StoryObj<CarouselStorybookComponent>;
 
 export const Default: Story = {};
 
+export const SingleSlide: Story = {
+  args: { slideCount: 1, autoplay: true },
+};
+
 export const MultipleItems: Story = {
   args: { itemSize: 'half' },
   parameters: {

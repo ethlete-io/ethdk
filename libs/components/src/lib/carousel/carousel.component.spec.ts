@@ -110,6 +110,26 @@ describe('CarouselComponent', () => {
     expect(fixture.componentInstance.carousel().count()).toBe(1);
   });
 
+  it('reports hasMultipleSlides and a single-slide attribute for one slide versus two, looping or not', () => {
+    const fixture = createHost();
+    const carousel = () => fixture.componentInstance.carousel();
+    const el = () => host(fixture).querySelector('et-carousel') as HTMLElement;
+
+    for (const loop of [true, false]) {
+      fixture.componentInstance.loop.set(loop);
+      fixture.componentInstance.slides.set([{ title: 'one' }]);
+      fixture.detectChanges();
+      expect(carousel().hasMultipleSlides()).toBe(false);
+      expect(el().hasAttribute('data-single-slide')).toBe(true);
+      expect(fixture.componentInstance.autoplayDirective().isPlaying()).toBe(false);
+
+      fixture.componentInstance.slides.set([{ title: 'one' }, { title: 'two' }]);
+      fixture.detectChanges();
+      expect(carousel().hasMultipleSlides()).toBe(true);
+      expect(el().hasAttribute('data-single-slide')).toBe(false);
+    }
+  });
+
   it('renders no navigation for fewer than two slides', () => {
     const fixture = createHost();
     const navigation = '.et-carousel-controls, .et-carousel-control, .et-carousel-dot, .et-carousel-play-toggle-corner';

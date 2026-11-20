@@ -101,6 +101,7 @@ const supportsViewTimeline = () =>
     '[attr.data-transition]': 'transition()',
     '[attr.data-transition-driver]': 'resolvedTransitionDriver()',
     '[attr.data-looping]': 'isLooping() ? "" : null',
+    '[attr.data-single-slide]': 'hasMultipleSlides() ? null : ""',
   },
 })
 export class CarouselDirective {
@@ -194,6 +195,9 @@ export class CarouselDirective {
    * which is also immediate, and from the track's children for a hand-built carousel.
    */
   public count = computed(() => this.slideTemplate()?.slides().length ?? this.domCount());
+
+  /** Whether there is more than one real slide - loop clones never count. False with one slide or none. */
+  public hasMultipleSlides = computed(() => this.count() > 1);
 
   private slidesPerView = computed(() => {
     const scrollable = this.scrollable();

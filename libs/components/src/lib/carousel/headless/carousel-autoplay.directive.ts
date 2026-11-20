@@ -162,7 +162,7 @@ export class CarouselAutoplayDirective {
     if (!this.isEnabled()) return 'disabled';
     if (this.isStopped()) return 'stopped';
     if (this.prefersReducedMotion()) return 'reduced-motion';
-    if ((this.carousel?.count() ?? 0) < 2) return 'no-slides';
+    if (!this.carousel?.hasMultipleSlides()) return 'no-slides';
 
     if (this.pauseOnOffScreen()) {
       if (!this.isDocumentVisible()) return 'page-hidden';

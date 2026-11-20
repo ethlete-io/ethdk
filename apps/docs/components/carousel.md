@@ -345,8 +345,10 @@ rotations cost ~139 and ~89, which is within measurement noise of rendering no r
 
 ## One slide
 
-A carousel with fewer than two slides renders no navigation: no arrows, no dots, no control bar and no play control.
-The slide itself still renders.
+A carousel with fewer than two slides renders no navigation: no arrows, no dots, no control bar and no play control. The slide itself still renders.
+
+`CarouselDirective.hasMultipleSlides()` is the same test as a public signal (loop clones never count), and the host carries
+`data-single-slide` while it is false, so a headless carousel can hide its own controls with CSS. Autoplay never runs with one slide.
 
 ## Controls over the slides
 

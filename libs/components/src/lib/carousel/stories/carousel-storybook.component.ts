@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { CAROUSEL_IMPORTS } from '../carousel.imports';
 import { CarouselSlideAlign, CarouselTransition, CarouselTransitionDriver } from '../headless';
@@ -34,7 +34,7 @@ const SLIDES: Slide[] = [
           [transitionDriver]="transitionDriver()"
           style="--et-carousel-slide-gap: 1.6rem"
         >
-          <ng-template [etCarouselSlide]="SLIDES" let-slide let-index="index" let-count="count">
+          <ng-template [etCarouselSlide]="shownSlides()" let-slide let-index="index" let-count="count">
             <div
               [style.background]="'var(--et-surface-background-solid)'"
               [style.min-block-size.px]="200"
@@ -61,6 +61,7 @@ const SLIDES: Slide[] = [
   imports: [CAROUSEL_IMPORTS, ProvideSurfaceDirective],
 })
 export class CarouselStorybookComponent {
+  public slideCount = input(SLIDES.length);
   public surface = input('dark');
   public itemSize = input<ScrollableItemSize>('full');
   public loop = input(true);
@@ -73,8 +74,9 @@ export class CarouselStorybookComponent {
   public transition = input<CarouselTransition>('none');
   public transitionDriver = input<CarouselTransitionDriver>('auto');
   public slideAlign = input<CarouselSlideAlign>('start');
+  protected shownSlides = computed(() => SLIDES.slice(0, this.slideCount()));
 
-  protected readonly SLIDES = SLIDES;
+  public readonly SLIDES = SLIDES;
 }
 
 @Component({
