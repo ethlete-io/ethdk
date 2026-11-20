@@ -58,6 +58,24 @@ describe('focusMarkedOf', () => {
       }),
     ).toBe(false));
   it('rejects nothing drawn', () => expect(focusMarkedOf({ before: none, after: hidden })).toBe(false));
+  it.each([
+    ['border', { border: 'solid 2px rgb(0, 0, 255)' }],
+    ['background', { backgroundColor: 'rgb(0, 0, 255)' }],
+    ['SVG stroke', { stroke: 'rgb(0, 0, 255)' }],
+    ['SVG fill', { fill: 'rgb(0, 0, 255)' }],
+  ])('accepts a changed %s', (_, change) =>
+    expect(focusMarkedOf({ before: none, after: { ...none, ...change } })).toBe(true),
+  );
+  it('rejects an unchanged border, background, stroke and fill', () => {
+    const same = {
+      border: 'none 0px rgb(0, 0, 0)',
+      backgroundColor: 'rgb(1, 1, 1)',
+      stroke: 'none',
+      fill: 'rgb(0, 0, 0)',
+    };
+
+    expect(focusMarkedOf({ before: { ...none, ...same }, after: { ...none, ...same } })).toBe(false);
+  });
 });
 
 describe('pointerFocusVerdictOf', () => {

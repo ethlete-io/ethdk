@@ -4,7 +4,18 @@ type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPa
 type Locator = ReturnType<Page['locator']>;
 
 /** The computed style of an element that draws a focus ring. */
-export type RingStyle = { outlineStyle: string; outlineWidth: string; outlineColor: string; boxShadow: string };
+export type RingStyle = {
+  outlineStyle: string;
+  outlineWidth: string;
+  outlineColor: string;
+  boxShadow: string;
+  border?: string;
+  backgroundColor?: string;
+  stroke?: string;
+  fill?: string;
+};
+
+const FOCUS_STYLE_KEYS = ['border', 'backgroundColor', 'stroke', 'fill'] as const;
 
 /**
  * What a probe reads from an element: its ring style, whether it holds focus, whether it takes text input, and whether
@@ -21,10 +32,14 @@ export const ringVisibleOf = (style: RingStyle) =>
   Number.parseFloat(style.outlineWidth) > 0 &&
   !TRANSPARENT.test(style.outlineColor.trim());
 
-/** Whether focusing moved a ring onto the element: a visible outline, or a box-shadow that differs from the unfocused one. */
+/**
+ * Whether focusing marked the element: a visible outline, a box-shadow, or a border, background, SVG stroke or SVG fill
+ * that differs from the unfocused one.
+ */
 export const focusMarkedOf = (options: { before: RingStyle; after: RingStyle }) =>
   ringVisibleOf(options.after) ||
-  (options.after.boxShadow !== 'none' && options.after.boxShadow !== options.before.boxShadow);
+  (options.after.boxShadow !== 'none' && options.after.boxShadow !== options.before.boxShadow) ||
+  FOCUS_STYLE_KEYS.some((key) => options.after[key] !== undefined && options.after[key] !== options.before[key]);
 
 const ringAfter = (probe: RingProbe | null | undefined): probe is RingProbe =>
   !!probe && !probe.textEntry && probe.focused && ringVisibleOf(probe.style);
@@ -119,6 +134,10 @@ export const readRingProbe = async (locator: Locator, timeout = RING_PROBE_TIMEO
             outlineWidth: style.outlineWidth,
             outlineColor: style.outlineColor,
             boxShadow: style.boxShadow,
+            border: [style.borderTopStyle, style.borderTopWidth, style.borderTopColor].join(' '),
+            backgroundColor: style.backgroundColor,
+            stroke: style.stroke,
+            fill: style.fill,
           },
           focused: element.ownerDocument.activeElement === element,
           textEntry:
