@@ -1,7 +1,7 @@
 ---
 status: accepted
+built: 75bf045c7
 decided: 2026-11-20
-open: B645
 source: grill session 2026-11-20 (day shift), B647
 ---
 
