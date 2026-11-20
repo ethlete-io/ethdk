@@ -1,5 +1,6 @@
 import { Component, ErrorHandler, signal } from '@angular/core';
 import '../../../test-helpers';
+import { provideFloatingActionConfig } from './floating-action-config';
 import { FLOATING_ACTION_ERROR_CODES } from '../floating-action-errors';
 import { FLOATING_ACTION_IMPORTS } from '../floating-action.imports';
 import { FLOATING_ACTION_STATES } from '../floating-action.types';
@@ -210,6 +211,63 @@ describe('FloatingActionDirective', () => {
       driver.floatingAction.scrollToTop();
 
       expect(scrollTo).toHaveBeenCalledWith({ top: 120, behavior: 'smooth' });
+    });
+  });
+
+  describe('scrollToTopOnlyUp', () => {
+    let scrollTo: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      scrollTo = vi.fn();
+      Object.defineProperty(Element.prototype, 'scrollTo', { configurable: true, value: scrollTo, writable: true });
+    });
+
+    const place = (el: HTMLElement | null, top: number, scrollMarginTop = '0px') => {
+      if (!el) throw new Error('missing element');
+      vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ top, height: 20 } as DOMRect);
+      el.style.scrollMarginTop = scrollMarginTop;
+    };
+
+    it('scrolls in both directions by default', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost);
+
+      place(driver.element(), 300);
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not scroll when the anchor lies below the top edge', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost, {}, [
+        provideFloatingActionConfig({ scrollToTopOnlyUp: true }),
+      ]);
+
+      place(driver.element(), 300);
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
+
+    it('scrolls to the target minus its scroll-margin-top when it lies above', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost, {}, [
+        provideFloatingActionConfig({ scrollToTopOnlyUp: true }),
+      ]);
+
+      place(driver.element(), -200, '60px');
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    });
+
+    it('does not scroll when the target sits within its scroll-margin-top', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost, {}, [
+        provideFloatingActionConfig({ scrollToTopOnlyUp: true }),
+      ]);
+
+      place(driver.element(), 60, '60px');
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).not.toHaveBeenCalled();
     });
   });
 

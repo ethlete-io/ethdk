@@ -95,6 +95,23 @@ Smooth-scrolls by default; pass `behavior` and `block` (`ScrollIntoViewOptions`)
 | `isFloating()`    | `Signal<boolean>`                     | Whether the trigger is pinned right now. |
 | `scrollToTop(o?)` | `(o?: ScrollIntoViewOptions) => void` | Scroll back to the top of the region.    |
 
+### Scroll only up
+
+`scrollToTop()` scrolls in both directions by default: a target below the top edge pulls the page down to it. Set
+`scrollToTopOnlyUp` and it does nothing while the target is at or below the top edge of the scroll container, and
+otherwise scrolls to the target minus its `scroll-margin-top`. That is what a paginated list wants: a page change
+returns the reader to the list header only when they have scrolled past it.
+
+```html
+<div #fa="etFloatingAction" etFloatingAction scrollToTopOnlyUp>...</div>
+```
+
+Set it for the whole app with `provideFloatingActionConfig`; an explicit `[scrollToTopOnlyUp]` input still wins.
+
+```ts
+providers: [provideFloatingActionConfig({ scrollToTopOnlyUp: true })];
+```
+
 `disabled` is the escape hatch for turning the behaviour off per breakpoint or per route without unwinding the
 markup - a desktop layout that already shows its filters in a sidebar has nothing to float.
 

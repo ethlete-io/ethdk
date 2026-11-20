@@ -26,6 +26,7 @@ import {
   FloatingActionTopDirective,
   FloatingActionTriggerDirective,
 } from './floating-action-parts.directive';
+import { injectFloatingActionConfig } from './floating-action-config';
 import { FLOATING_ACTION_TOKEN } from './floating-action.tokens';
 
 /**
@@ -56,6 +57,7 @@ import { FLOATING_ACTION_TOKEN } from './floating-action.tokens';
 export class FloatingActionDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private styleManager = injectStyleManager();
+  private config = injectFloatingActionConfig();
 
   /**
    * Keep the trigger in the flow, whatever the scroll position. The escape hatch for turning the behaviour off
@@ -63,6 +65,15 @@ export class FloatingActionDirective {
    * sidebar has nothing to float. @default false
    */
   public disabled = input(false, { transform: booleanAttribute });
+
+  /**
+   * Make `scrollToTop()` scroll only up: it does nothing while the target is already at or below the top edge of
+   * the scroll container, and otherwise stops at the target's `scroll-margin-top`. Falls back to
+   * `provideFloatingActionConfig`, then `false`.
+   */
+  public scrollToTopOnlyUp = input<boolean | undefined, unknown>(undefined, {
+    transform: (v) => (v === undefined || v === null ? undefined : booleanAttribute(v)),
+  });
 
   /** @internal Set by `etFloatingActionAnchor`. Its visibility is what drives the state. */
   public anchor = signal<FloatingActionAnchorDirective | null>(null);
@@ -142,7 +153,7 @@ export class FloatingActionDirective {
   /**
    * Scroll back to the top of the region - what a filter button does after applying filters, so the reader sees
    * the new first result rather than wherever they happened to be. Targets `[etFloatingActionTop]` if there is
-   * one, otherwise this element.
+   * one, otherwise this element. With `scrollToTopOnlyUp` it scrolls only when the target lies above the top edge.
    */
   public scrollToTop(options?: ScrollIntoViewOptions) {
     const target = this.top()?.elementRef.nativeElement ?? this.elementRef.nativeElement;
@@ -154,7 +165,12 @@ export class FloatingActionDirective {
     const containerTop = isDocument ? 0 : container.getBoundingClientRect().top + container.clientTop;
     const viewport = container.clientHeight;
     const { top: targetTop, height } = target.getBoundingClientRect();
-    const start = targetTop - containerTop + container.scrollTop;
+    const onlyUp = this.scrollToTopOnlyUp() ?? this.config.scrollToTopOnlyUp ?? false;
+    const margin = onlyUp ? parseFloat(getComputedStyle(target).scrollMarginTop) || 0 : 0;
+
+    if (onlyUp && targetTop >= containerTop + margin) return;
+
+    const start = targetTop - containerTop + container.scrollTop - margin;
 
     const offsets = {
       start,
