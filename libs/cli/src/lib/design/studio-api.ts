@@ -71,7 +71,7 @@ import {
 } from './system/sketch/sketch';
 import { noChangedStateLinesOf } from './system/sketch/no-visible-change';
 import { partKeyOf } from './system/resolve-product';
-import { keptComparisonOf, unchangedStatesOf } from './system/sketch/unchanged-states';
+import { keptComparisonOf, unchangedForFoldOf } from './system/sketch/unchanged-states';
 import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
@@ -306,7 +306,7 @@ const comparedOf = async (options: {
 }) => {
   if (options.problem) return { unchanged: [] };
 
-  const unchanged = await unchangedStatesOf({ ...options, keepPictures: true });
+  const unchanged = await unchangedForFoldOf(options);
   const kept = await keptComparisonOf({ ...options, pictured: !!options.pictureOf });
 
   return { unchanged, ...(kept ? { crops: kept.changes } : {}) };

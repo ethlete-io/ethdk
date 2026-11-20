@@ -323,3 +323,7 @@ export const unchangedStatesOf = async (options: {
     ? remember(key, { unchanged, drawn: parts, changes })
     : unchanged;
 };
+
+/** The unchanged states the sketch shot and the Studio view both fold by, kept so either one reads the other's compare. */
+export const unchangedForFoldOf = (options: Omit<Parameters<typeof unchangedStatesOf>[0], 'keepPictures'>) =>
+  unchangedStatesOf({ ...options, keepPictures: true });

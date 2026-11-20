@@ -7,7 +7,13 @@ import { resolveProduct } from '../resolve-product';
 import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
 import { PictureOf } from '../../merge-compare';
 import { encodePng } from '../part-compare';
-import { forgetUnchangedStates, keptComparisonOf, SketchPartLoader, unchangedStatesOf } from './unchanged-states';
+import {
+  forgetUnchangedStates,
+  keptComparisonOf,
+  SketchPartLoader,
+  unchangedForFoldOf,
+  unchangedStatesOf,
+} from './unchanged-states';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-unchanged-'));
@@ -126,6 +132,20 @@ describe('unchangedStatesOf', () => {
         pictureOf: pictureOf((variant) => variant ?? 'now'),
       }),
     ).toEqual([]);
+  });
+
+  it('folds a restyled state that draws no pixel change, and keeps the compare for Studio', async () => {
+    const { product, sketch, hero } = acme();
+    const pictureOf: PictureOf = async () => ({ png: Buffer.from('x'), marks: [] });
+
+    writeFileSync(resolve(hero, 'hero.css'), '.acme-hero-empty { color: red; }');
+
+    const folded = await unchangedForFoldOf({ product, sketch, variant: 'a', load: counting().load, pictureOf });
+    const kept = await keptComparisonOf({ product, sketch, variant: 'a', pictured: true });
+
+    expect(folded).toEqual(['default']);
+    expect(kept?.unchanged).toEqual(folded);
+    expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load })).toEqual([]);
   });
 
   describe('when only the markup differs', () => {

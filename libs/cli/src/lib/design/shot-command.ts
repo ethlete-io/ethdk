@@ -15,12 +15,7 @@ import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from '.
 import { noteStep } from './run-deadline';
 import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
 import { shownSketchRowsOf, SketchFrameRow } from './sketch-frame-set';
-import {
-  defaultFrameOf,
-  keptComparisonOf,
-  SketchPartLoader,
-  unchangedStatesOf,
-} from './system/sketch/unchanged-states';
+import { defaultFrameOf, SketchPartLoader, unchangedForFoldOf } from './system/sketch/unchanged-states';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { partsReachedFrom } from './system/imports';
 import { gridOf, ListedGrid } from './system/list-system';
@@ -697,6 +692,13 @@ export const designShot = async (options: {
 
     if (args.values['--crop'] && !cropChanged) params.set('clip', args.values['--crop']);
 
+    const shooter = createPartShooter({
+      target,
+      base: `http://localhost:${port}`,
+      system,
+      ...(warm ? { queue } : {}),
+    });
+
     const folding = states && variants && sketch && asked.length === 0 && !args.flags.has('--all-states');
     let shown = new Map<Axis, Set<string>>();
 
@@ -729,12 +731,9 @@ export const designShot = async (options: {
         if (!axis.sketch) return { axis, names, unchanged: names };
 
         const { variant } = axis.sketch;
-        const kept = resolved
-          ? await keptComparisonOf({ product: resolved, sketch, variant, pictured: true, part })
-          : null;
-        const unchanged =
-          kept?.unchanged ??
-          (resolved ? await unchangedStatesOf({ product: resolved, sketch, variant, load, part }) : []);
+        const unchanged = resolved
+          ? await unchangedForFoldOf({ product: resolved, sketch, variant, load, part, pictureOf: shooter.pictureOf })
+          : [];
 
         return { axis, names, unchanged };
       };
@@ -758,12 +757,6 @@ export const designShot = async (options: {
       states,
       state: asked[0] ?? null,
       only: states && asked.length > 0 ? asked : undefined,
-    });
-    const shooter = createPartShooter({
-      target,
-      base: `http://localhost:${port}`,
-      system,
-      ...(warm ? { queue } : {}),
     });
 
     try {
