@@ -1,5 +1,20 @@
 # @ethlete/cli
 
+## 3.0.0-next.38
+
+### Patch Changes
+
+- A design call right after the resident design process starts serves a stored harness build of unchanged app inputs instead of waiting about 10 s for the first watch build.
+- The `actions` check now warns when it checks nothing because every interactive element comes from an embedded part, instead of reporting that the part has no interactive element.
+- The design hash of a part ignores its `madeBy` field, and a ready mark or merge record written with the old hash stays valid (#3197).
+- `sketch merge` keeps the note and decider of an earlier merged part that the sketch only carries along, instead of overwriting them.
+- The design check no longer warns that a control shows no focus ring when focusing it changes its border, background, SVG stroke or SVG fill.
+- `et design` now adds `.ethlete/design/.timings.jsonl` to `.ethlete/.gitignore` so the timings file no longer shows up untracked.
+- DROPPED-PROP no longer reports a prop that a declared surface's pointer open toggles (#3197).
+- `et design sketch ready` now treats an overflow that merged already shows as old when only its pixel size changed.
+- STATE-UNDESIGNED counts an input a harness sample derives from another design prop as sampled (#3197).
+- `et design sketch ready` and `sketch check` now honour `rule-baseline.json`, so a baselined finding no longer blocks a sketch.
+
 ## 3.0.0-next.37
 
 ### Minor Changes

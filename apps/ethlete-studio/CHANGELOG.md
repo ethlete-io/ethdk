@@ -1,5 +1,12 @@
 # ethlete-studio
 
+## 0.2.0-next.27
+
+### Patch Changes
+
+- The design canvas drops the eleven inputs no caller set (`rowHeads`, `sections`, `zoomChip`, `align`, `fitPadding`, `frameOutline`, `opening`, `coveredByShell`, `smoothCamera`, `clip`, `outlines`) and the row heads, outlines and `rowToggle` output behind them.
+- The sketch matrix no longer builds the row heads and sections the design canvas stopped binding, and `layoutMatrixSections`, `CanvasRowHead` and their labels go with them.
+
 ## 0.2.0-next.26
 
 ### Minor Changes
