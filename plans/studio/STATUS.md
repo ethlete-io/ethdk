@@ -36,9 +36,6 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 5. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Offen: beide Rechner auf neuem Build prüfen, Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
 6. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: Tom löscht `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
 
-7. **Studio-Vorschau ruckelt in Safari (B356)** ⏳ Linux p50 16-17 ms, p95 ~46 ms; Mac WebKit p95 ~170 ms, ssh ausgeschlossen (gemessen), content-visibility brachte nichts. Tom nimmt am Mac eine Safari-Timeline auf (Schritte in agent-results/b356-safari-steps.md, nach dem Push) - Tom, dann Builder
-8. **Abschluss nach grünem CI** ⏳ B658 (Neustart startet das Programm direkt, Live-Beweis 13:02Z), B412 (DIRECT-EDIT-PENDING), B659 (Match-Bearbeitungs-Slot, fifa S27) schließen, wenn CI auf dem Push grün ist; CI 44736963412 auf ae76b7931 rot (Unit-Tests), Ursache offen - Builder
-
 Geparkt: B105, B108, B109, B148, B312, B313.
 
 ## Plan-Dateien

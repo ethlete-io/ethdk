@@ -21,8 +21,7 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 21. **Werkzeuglücken-Grenze (B403)** 🔨 UI-Builder untersucht nur Werkzeuglücken, die ihn blockieren; alle anderen in einem Satz ... - Builder (c8)
 22. **Design-Hintergrundprozess (B404)** 🔨 Design-Hintergrundprozess (Bef. 492, 493): S1 Lib-Build-Sperre, S2 Prozess + Client + ... - Builder (c0)
 23. **Drift-Baseline (B405)** 🔨 Alte Implementierungs-Drift (sketches, system, canvas-frames) in schrumpfende Baseline ... - cb, dann c8
-24. **Merged-Hash-Regel (B412)** 📋 Veralteter merged-Hash: Regel DIRECT-EDIT-PENDING für gemergte Teile, deren Hash ohne ... - c0
-25. **compare schneller (B416)** ⏳ erster Watch-Build nach Neustart nutzt den Harness-Cache (3fc2811e1): compare pages/sketches kalt 13,4 -> 2,5 s, check studio --part kalt 44,6 -> 7,9 s. Offen: lib-build-wait 33,8 s nach HEAD-Wechsel (Suspect), check sdk Rest 7-9 s warm - c0
-26. **WebKit-Zoom-Budget (B356)** ⏳ Einschwingen ohne Fit-Neumessung (5a6c656f2): Linux-WebKit p95 37-43 ms lokal; im CI nur gemessen, ohne GPU (530bdb826); offen: p95 ≤ 33 ms lokal, Mac-Zahl (Tom morgens) - Builder
-27. **GitHub-Issues Design-CLI (B648)** ⏳ #3190, #3191, #3195, #3197 geschlossen, #3194 war behoben; offen: #3196 wartet auf Reporter-Markup - Builder
-28. **Match-Teilnehmer bearbeitbar (B659)** 📋 fifagg S27: Platzhalter-Slot an et-match-participant, Score/Zeit-Layout als eigener Baustein - Builder
+24. **Merged-Hash-Regel (B412)** ⏳ gebaut 21360c443; schließen nach grünem CI auf dem Push - Builder
+25. **WebKit-Zoom-Budget (B356)** ⏳ Linux p95 ~46 ms; Mac WebKit p95 ~170 ms, ssh ausgeschlossen, content-visibility ohne Gewinn (gemessen). Tom nimmt am Mac eine Safari-Timeline auf (agent-results/b356-safari-steps.md, nach dem Push); ADR 0386 - Tom, dann Builder
+26. **GitHub-Issues Design-CLI (B648)** ⏳ #3190, #3191, #3195, #3197 geschlossen, #3194 war behoben; offen: #3196 wartet auf Reporter-Markup - Builder
+27. **Match-Teilnehmer bearbeitbar (B659)** ⏳ gebaut e3d90c8fb, 821fb877a; schließen nach grünem CI, dann fifa S27 Version - Builder
