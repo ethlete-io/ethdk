@@ -1,6 +1,6 @@
 ---
 status: accepted
-built: de642c668
+open: B660
 decided: 2026-11-20
 source: grill session 2026-11-20 (afternoon)
 ---

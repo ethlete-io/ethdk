@@ -33,11 +33,17 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A10** Baubereit (ADR 0048): der Kern, B250 und B251 sind gebaut; offen ist nur der Live-Nachweis der B251b-Skizze (Bild der App in `design serve`); die Wahl von `built` merget als Platzhalter mit offenem Punkt `redraw` (Commit "Keep a merged built pick as a placeholder with a redraw open point").
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
 - **A16** Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
+- **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
 - **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).
 - **A22** Flows: Pins, Notizen (verschieben per Ziehen, Liste verwaister Notizen), Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
 - **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81). Chat zeigt den Zustand des Agenten
   (arbeitet, wartet, unterbrochen, fehlgeschlagen) mit Stopp und Fortsetzen, Anmeldung in Studio, Verweis auf Teil,
   Sketch oder Kommentar (designer-workflow.md, Abschnitt 1).
+- **A26** Studio-Menü, Rest (Q83): Menü und System-Picker gebaut (as built in archive/findings-2026-11.md). Offen, je eine
+  Skizze (ADR 0121): Dialog Einstellungen (Ctrl ,), Dialog Tastenkürzel (Ctrl /), Ziel von Hilfe (Doku-URL, Opener im
+  Host), Dialog Über Studio (Version, Lizenz); Hell und Wie System brauchen ein helles Oberflächen-Theme. Bis dahin
+  stehen die Einträge deaktiviert im Menü.
+- **A27** Server-Status: Neu laden, „veraltet“, Neustart, Stopp (Q88); „Scan“ für Checkouts (Q89).
 - **A28** Popup „Ausnahmen N“ und alte Ansicht für Calls neu gestalten (Q91, Q92).
 - **A29** Inventar überarbeiten: als Canvas, Assets, offene Overlays, Einstieg, Knopf „Alle Produkte“ (Q100, Q101, Q233,
   Q239).
@@ -237,6 +243,8 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Builder baut Empfehlung: menu item-active Kurzbefehl 4.10:1 (volle Textfarbe), chart bar-/pie-empty Umriss (contrast.exceptions). Empfehlung gebaut: menu built bdb5acaf6; chart dropped, check shows CONTRAST-PAIR 0.
   16.11.: pages/inbox und pages/sketches bekommen ihre ready-Marke erst, wenn die offenen Punkte der eingebetteten Teile zu sind (button, select, hold-trigger, comment-draft, comment-row, anchored-dialog; textarea/badge/tooltip nur Motions, B297); damit auch sketch-status-badge, canvas-frames, studio-menu. B520 schließt ohne sie.
 - **D19** Ein JSON-Writer für beide Libs statt zwei Kopien (`libs/agent-rules/src/lib/prettier.ts`, `libs/cli/src/lib/json-file.ts`). Subpath-Exports von agent-rules müssen im Workspace auf gebautes JS auflösen (`@ethlete/agent-rules/prettier` auf TS-Quelle ließ die gebaute CLI abstürzen, zurückgenommen). Danach `part-ready.ts` auf den Writer umstellen (nach A10).
+- **B637** Overlay-Animation im gezoomten Canvas (Studio-Popover „offen“): Ursprung ohne Zoom berechnet (Suspect).
+- **D20** core Head-Store (fifa 7.26, 15.11.): Titel-Teil ohne öffentliche Priorität; Schreiben aus einem Effect, der den Store liest, läuft endlos. [fifagg-sdk-findings-2026-11-15-seo.md](../sdk/fifagg-sdk-findings-2026-11-15-seo.md)
 
 ## E. Fragen und Entwürfe für Tom
 

@@ -142,4 +142,3 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - headless stubs (20.11.): host commands added by A26/A27 had no stubs in verify-studio-headless (ce1e65214). Suspect: a new host command lands without its stub.
 - look claims (20.11.): 08e824394 said the diff-mark ring is not clipped in the app; only a design shot backed it, the app clips it. Suspect: a look commit claims app behaviour from a design shot.
 - mac Studio bundle (20.11.): publish Bundle ethlete-studio (macos-latest) in 44774695508 failed with npm ECOMPROMISED "Lock compromised". Suspect: npm cache lock race on the runner.
-- compare without run deadline (Linux, 20.11., C21): one shell-main compare hung > 25 min; not reproduced in 3 uncached runs (26-35 s). Suspect: compare has no run deadline (RUN_DEADLINES_MS covers shot and check only).
