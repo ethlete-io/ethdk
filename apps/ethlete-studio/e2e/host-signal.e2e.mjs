@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { constants } from 'node:os';
@@ -18,6 +18,7 @@ const READY_TIMEOUT_MS = 60000;
 const READY_HELPERS = 3;
 const EXIT_LIMIT_MS = 5000;
 const POLL_MS = 100;
+const STDERR_TAIL = 2000;
 
 const CASES = [
   { name: 'sigint', signal: 'SIGINT' },
@@ -66,14 +67,18 @@ const launch = (ignoreInterrupt) => {
     XDG_STATE_HOME: join(home, 'state'),
   };
   const [command, commandArgs] = ignoreInterrupt ? ['sh', ['-c', 'trap "" INT; exec "$0"', binary]] : [binary, []];
-  const child = spawn(command, commandArgs, { cwd: root, env, detached: true, stdio: 'ignore' });
+  const stderrFile = join(home, 'stderr.log');
+  const stderrFd = openSync(stderrFile, 'w');
+  const child = spawn(command, commandArgs, { cwd: root, env, detached: true, stdio: ['ignore', 'ignore', stderrFd] });
+  closeSync(stderrFd);
   const exit = new Promise((done) => child.once('exit', (code, signal) => done({ code, signal, at: Date.now() })));
+  const stderrTail = () => readFileSync(stderrFile, 'utf8').slice(-STDERR_TAIL).trim();
 
-  return { child, exit, home };
+  return { child, exit, home, stderrTail };
 };
 
 const runCase = async ({ name, signal, ignoreInterrupt }) => {
-  const { child, exit, home } = launch(ignoreInterrupt);
+  const { child, exit, home, stderrTail } = launch(ignoreInterrupt);
   const pid = child.pid;
 
   try {
@@ -82,7 +87,13 @@ const runCase = async ({ name, signal, ignoreInterrupt }) => {
     while (groupOf(pid).length < READY_HELPERS || !catches(pid, signal)) {
       if (Date.now() > readyBy)
         return { name, ok: false, detail: `the host did not start its helpers or catch ${signal}` };
-      if (child.exitCode !== null) return { name, ok: false, detail: `the host ended on its own (${child.exitCode})` };
+      if (child.exitCode !== null) {
+        return {
+          name,
+          ok: false,
+          detail: `the host ended on its own (${child.exitCode}): ${stderrTail() || 'no stderr'}`,
+        };
+      }
 
       await sleep(POLL_MS);
     }
