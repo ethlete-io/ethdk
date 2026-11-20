@@ -138,3 +138,10 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - focus stealing (20.11.): windows opened/closed in a loop, stole focus, stopped around the builder restart. Suspect: a builder background run or fifagg Playwright; next time find the process, make it headless.
 - compare shell-main (20.11.): system-picker hover/focus FAIL "no menuitemradio studio-lab", schon vor A6. Suspect: der Harness-Picker kennt studio-lab nicht.
 - full design check (20.11.): 95 Cache-Fehlschläge kosten 75-80 s (0,8 s/Teil), 8 Lanes voll. Suspect: CPU-gebunden auf geteilter Maschine; 16 Lanes erst bei Last < 8 testen.
+- machine load (20.11.): second OOM of the day 15:31 (first 01:25), kernel killed timetrack, VS Code and Studio; load 171 on 32 cores, Node 50 GB over 144 processes (sdk ~20 GB, fifagg ~11 GB). Suspect: parallel builder slots and the fifa wave share one box with no memory cap. Joins the CPU-bound full check line.
+- harness copy of the design (20.11.): Cause (bite): ad8d2df72 gave the design rail 5 products, the app harness kept 3; 71fddd356 lets the harness take the design's list. Owner group B572 (ADR 0334, the shot harness gives every product view what the app gives it).
+- product logo (20.11.): product -> logo is a hard-coded registry in shell-main shared and product-logos.ts. Suspect: it belongs in the listed system.
+- composition gap (20.11.): a part whose definePart sits in a shared file is not flagged by the B663 rule. Suspect.
+- headless stubs (20.11.): host commands added by A26/A27 had no stubs in verify-studio-headless (ce1e65214). Suspect: a new host command lands without its stub.
+- look claims (20.11.): 08e824394 said the diff-mark ring is not clipped in the app; only a design shot backed it, the app clips it. Suspect: a look commit claims app behaviour from a design shot.
+- mac Studio bundle (20.11.): publish Bundle ethlete-studio (macos-latest) in 44774695508 failed with npm ECOMPROMISED "Lock compromised". Suspect: npm cache lock race on the runner.
