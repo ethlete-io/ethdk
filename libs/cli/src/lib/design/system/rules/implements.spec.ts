@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { partLinkOf } from '../sketch/part-definition';
-import { badLinksOf } from './implements';
+import { badLinksOf, unlinkedNamesOf } from './implements';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -87,5 +87,36 @@ describe('badLinksOf', () => {
         'acme/foundations/palette/palette.ts': 'LINK',
       }).map((line) => line.split(' ')[0]),
     ).toEqual(['IMPLEMENTS-SHAPE', 'IMPLEMENTS-SHAPE', 'IMPLEMENTS-SHAPE', 'IMPLEMENTS-SHAPE']);
+  });
+});
+
+describe('unlinkedNamesOf', () => {
+  const withApp = (target: string) => {
+    mkdirSync(join(target, 'apps/acme/src/app/hero'), { recursive: true });
+    writeFileSync(join(target, 'apps/acme/src/app/hero/hero.component.ts'), '');
+
+    return resolveProduct({
+      target,
+      name: 'acme',
+      config: {
+        ...readConfig(target)?.products?.['acme'],
+        harness: { app: 'apps/acme', map: 'apps/acme/src/app/design-parts.ts' },
+      },
+    });
+  };
+
+  it('fails a part without implements whose name matches a component of the harness app', () => {
+    expect(unlinkedNamesOf(withApp(acme())).map(({ rule, message }) => `${rule} ${message}`)).toEqual([
+      'IMPLEMENTS-UNLINKED elements/hero has no implements, but apps/acme/src/app/hero/hero.component.ts has its name - link it with implements',
+    ]);
+  });
+
+  it('passes a linked part and a product without a harness app', () => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.ts', part("'apps/acme/src/app/hero/hero.component.ts'"));
+
+    expect(unlinkedNamesOf(withApp(target))).toEqual([]);
+    expect(unlinkedNamesOf(resolveAcme(acme()))).toEqual([]);
   });
 });

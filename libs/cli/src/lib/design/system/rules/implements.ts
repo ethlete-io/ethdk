@@ -1,7 +1,8 @@
-import { existsSync, statSync } from 'fs';
-import { isAbsolute, resolve } from 'path';
+import { existsSync, readdirSync, statSync } from 'fs';
+import { basename, isAbsolute, posix, resolve, sep } from 'path';
 import { Problem } from '../problem';
-import { ResolvedProduct } from '../resolve-product';
+import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { harnessOf } from '../harness-map';
 import { partLinkOf } from '../sketch/part-definition';
 
 const checkoutOf = (product: ResolvedProduct) => resolve(product.configFile, '../../..');
@@ -53,3 +54,45 @@ export const badLinksOf = (product: ResolvedProduct): Problem[] =>
 
     return component(link.path);
   });
+
+// B276: the app palette takes entries and recents, not the drawn state and selected, so a link fails DROPPED-PROP until it is ported.
+const UNLINKED_ON_PURPOSE = ['studio components/command-palette'];
+
+const appComponentsOf = (checkout: string, app: string) => {
+  const dir = resolve(checkout, app, 'src');
+
+  if (!existsSync(dir)) return [];
+
+  return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((path) => path.endsWith('.component.ts') && !path.split(sep).includes('node_modules'))
+    .map((path) => posix.join(app, 'src', ...path.split(sep)));
+};
+
+/**
+ * A product part without `implements` whose name matches a `<name>.component.ts` in its harness app
+ * (`IMPLEMENTS-UNLINKED`): the rules that read the linked component would skip it silently.
+ */
+export const unlinkedNamesOf = (product: ResolvedProduct): Problem[] => {
+  const harness = harnessOf(product);
+
+  if (harness === null || typeof harness === 'string') return [];
+
+  const components = appComponentsOf(checkoutOf(product), harness.app);
+
+  return product.parts
+    .filter(
+      (part) =>
+        part.origin !== 'base' &&
+        partLinkOf(part.source).kind === 'none' &&
+        !UNLINKED_ON_PURPOSE.includes(`${product.name} ${partKeyOf(part)}`),
+    )
+    .flatMap((part) =>
+      components
+        .filter((path) => basename(path) === `${part.name}.component.ts`)
+        .map((path) => ({
+          rule: 'IMPLEMENTS-UNLINKED',
+          file: part.file,
+          message: `${partKeyOf(part)} has no implements, but ${path} has its name - link it with implements`,
+        })),
+    );
+};

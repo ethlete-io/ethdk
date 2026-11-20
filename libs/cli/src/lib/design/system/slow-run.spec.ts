@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -133,6 +133,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
   it('records an unlinked part with its declared actions through the default checks', async () => {
     const { target, dir, config, product } = staleChip();
 
+    rmSync(join(target, 'apps/acme/src/chip.component.ts'));
     writeFileSync(
       join(dir, 'components/chip/chip.ts'),
       "import { definePart } from '@design-system';\nexport default definePart({ controls: {}, describe: {}, states: {} });\n",

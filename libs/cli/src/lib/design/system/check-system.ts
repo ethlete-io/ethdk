@@ -56,7 +56,7 @@ import {
   renderIssuesOf,
 } from './render-check';
 import { flowProblemsOf } from './rules/flow';
-import { badLinksOf } from './rules/implements';
+import { badLinksOf, unlinkedNamesOf } from './rules/implements';
 import { statesNotInComponentOf } from './rules/state-in-component';
 import { partRewritesOf } from './rules/part-rewrite';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
@@ -120,6 +120,7 @@ const RULES = [
   badWidthsOf,
   listPartsWithoutDataStatesOf,
   badLinksOf,
+  unlinkedNamesOf,
   statesNotInComponentOf,
   partRewritesOf,
   unknownInteractionsOf,

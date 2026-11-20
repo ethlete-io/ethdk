@@ -62,6 +62,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
 };
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/system-page/comment-draft.component.ts',
   note: 'Shared comment draft after the system page: a bordered card with a three-row textarea, Abbrechen and a filled Senden, and the send error line. It stacks at z-20 so a canvas frame overlay no longer covers it.',
   madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
   widths: [360],
