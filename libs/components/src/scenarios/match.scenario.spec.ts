@@ -26,6 +26,8 @@ import {
   MatchParticipantComponent,
   MatchScoreChange,
   MatchScoreComponent,
+  MatchScorelineComponent,
+  MatchTimeComponent,
   matchParticipantDisplayName,
   NormalizedMatch,
   NormalizedMatchParticipant,
@@ -193,6 +195,17 @@ class RosterComponent {
     subtitle: 'Club A',
   };
 }
+
+@Component({
+  selector: 'et-scenario-editor-row',
+  imports: [MatchScorelineComponent, MatchTimeComponent],
+  template: `
+    <et-match-scoreline [homeScore]="2" [awayScore]="null" class="row" time="18:30" />
+    <et-match-scoreline [homeScore]="1" [awayScore]="1" class="untimed" separator="-" />
+    <et-match-time class="clock">90:00</et-match-time>
+  `,
+})
+class EditorRowComponent {}
 
 @Component({
   selector: 'et-scenario-stray-score',
@@ -462,6 +475,20 @@ describe('match scenarios', () => {
     expect(matchParticipantDisplayName({ participant: single.home, labels, compact: true })).toBe('TMA');
     expect(matchParticipantDisplayName({ participant: codeOnly, labels })).toBe('TMA');
     expect(matchParticipantDisplayName({ participant: { ...codeOnly, code: null }, labels })).toBe('Open');
+  });
+
+  it('draws a scoreline with a dash for a missing score and the time only when given', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(EditorRowComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    expect(text(host.querySelector('.row .et-match-scoreline-scores'))).toBe('2 : -');
+    expect(text(host.querySelector('.row et-match-time'))).toBe('18:30');
+    expect(text(host.querySelector('.untimed .et-match-scoreline-scores'))).toBe('1 - 1');
+    expect(host.querySelector('.untimed et-match-time')).toBeNull();
+    expect(text(host.querySelector('.clock'))).toBe('90:00');
   });
 
   it('reports a card part placed outside a card', () => {
