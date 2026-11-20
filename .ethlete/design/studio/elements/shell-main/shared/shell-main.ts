@@ -122,10 +122,10 @@ const bubbleClass = (kind: RailKind, active: boolean, panelHidden: boolean) => {
   return `rounded-control-md text-et-surface-muted ${HOVER_PRESS}`;
 };
 
-const railButton = (markup: string, label: string, force?: RailForce, tip = false) => {
-  if (force?.label !== label) return markup;
-  const forced = forceInteraction(markup, force.interaction);
-  return tip
+const railButton = (markup: string, label: string, kind: RailKind, force?: RailForce) => {
+  if (force?.label !== label) return control(markup, RAIL_CONTROLS[kind]);
+  const forced = control(forceInteraction(markup, force.interaction), RAIL_CONTROLS[kind]);
+  return kind === 'product'
     ? `<span class="relative inline-flex">${forced}<span class="absolute inset-y-0 left-full z-10 ml-2 flex w-max items-center pt-1">${tooltip({ text: label, placement: 'right', anchor: `[aria-label="${label}"]` })}</span></span>`
     : forced;
 };
@@ -144,14 +144,11 @@ const railItem = (
   force?: RailForce,
   current = active,
 ) =>
-  `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${control(
-    railButton(
-      `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && current && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
-      label,
-      force,
-      kind === 'product',
-    ),
-    RAIL_CONTROLS[kind],
+  `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${railButton(
+    `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && current && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
+    label,
+    kind,
+    force,
   )}</div>`;
 
 const sep = '<div class="st-shell-sep my-space-2 bg-et-surface-border"></div>';
