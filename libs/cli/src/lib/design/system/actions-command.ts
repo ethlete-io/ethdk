@@ -43,6 +43,7 @@ import {
 } from './actions';
 import { awaitOutput, dropKeyboardFocus, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
 import { compareFrameOf } from './harness-shot';
+import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { componentOutputsOf, modelChangesForOf } from './component-outputs';
 import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
@@ -161,7 +162,7 @@ export const runActionInput = async (options: {
   pick: { key: string; occurrence: number };
   input: ActionInput;
   size: DesignPreset | null;
-  shoot: { room: boolean } | null;
+  shoot: { room: boolean; frozen?: FrozenAnimation[] } | null;
   timeout: number;
   listen?: string[];
   expanded?: boolean;
@@ -236,6 +237,8 @@ export const runActionInput = async (options: {
     const embedded = listened > 0 ? ((await page.evaluate('window.__etEmbeddedEmits')) as string[]) : [];
     const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
     const after = expanded ? await expandedScanOf(page, roots) : null;
+    if (shoot?.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(shoot.frozen));
+
     const app = shoot ? await shotOf({ page, size, room, timeout }) : null;
 
     return { emitted: [...emitted, ...embedded], prevented, app, ...(after && { after }) };
@@ -709,6 +712,7 @@ export const checkActions = async (options: {
                     shoot: goalPicture
                       ? {
                           room: (goalPicture.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+                          frozen: frozenAnimationsOf(goalPicture.markup ?? ''),
                         }
                       : null,
                     timeout: DRAW_TIMEOUT_MS,
