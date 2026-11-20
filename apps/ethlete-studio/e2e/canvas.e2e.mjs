@@ -3906,6 +3906,8 @@ const CASES = [
   },
   {
     name: 'a variant equal to Aktuell keeps its iframes across a quick and a full listing',
+    listingMayPend:
+      'waits for a quick and a full listing of each write itself, and reads iframe identity, not the listing',
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {

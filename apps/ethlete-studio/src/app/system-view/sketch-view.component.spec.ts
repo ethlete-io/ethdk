@@ -354,18 +354,32 @@ describe('SketchViewComponent', () => {
     ]).toEqual(['current y', 'a y', 'b x', 'b y']);
   });
 
-  it('lists the near keys in row order up to the cap', () => {
-    expect(liveShotsOf({ order: ['a 1', 'a 2', 'b 1', 'b 2'], near: new Set(['b 2', 'a 2', 'b 1']), cap: 2 })).toEqual([
-      'a 2',
-      'b 1',
-    ]);
+  it('fills the cap with the near keys closest to the view, row order breaking ties', () => {
+    const live = (distances: [string, number][]) =>
+      liveShotsOf({ order: ['a 1', 'a 2', 'b 1', 'b 2'], near: new Map(distances), cap: 2 });
+
+    expect(
+      live([
+        ['a 1', 900],
+        ['a 2', 700],
+        ['b 1', 100],
+        ['b 2', 300],
+      ]),
+    ).toEqual(['b 1', 'b 2']);
+    expect(
+      live([
+        ['a 1', 0],
+        ['a 2', 0],
+        ['b 1', 0],
+      ]),
+    ).toEqual(['a 1', 'a 2']);
   });
 
   it('keeps the frames of painted cells without a picture ahead of pictured cells', () => {
     expect(
       liveShotsOf({
         order: ['a 1', 'a 2', 'b 1', 'b 2'],
-        near: new Set(['a 1', 'a 2', 'b 1', 'b 2']),
+        near: new Map(['a 1', 'a 2', 'b 1', 'b 2'].map((key) => [key, 0] as const)),
         cap: 2,
         pictured: new Set(['a 1', 'a 2']),
         painted: new Set(['a 1', 'b 2']),
@@ -377,7 +391,7 @@ describe('SketchViewComponent', () => {
     const live = (pictured: string[]) =>
       liveShotsOf({
         order: ['a 1', 'a 2', 'b 1', 'b 2'],
-        near: new Set(['b 1', 'b 2']),
+        near: new Map(['b 1', 'b 2'].map((key) => [key, 0] as const)),
         cap: 2,
         pictured: new Set(pictured),
         painted: new Set(['a 1', 'b 1']),

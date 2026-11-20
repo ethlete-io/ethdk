@@ -122,8 +122,8 @@ const NEAR_MARGIN = '400px';
 const LIVE_SHOT_CAP = 6;
 
 /**
- * The keys that stay live frames: at most `cap` keys of `near`, dropping the frames of `pictured` keys (a picture
- * loaded) first and of `painted` keys last, plus every `painted` key without a picture, near or not, so no cell that
+ * The keys that stay live frames: at most `cap` keys of `near` (key to distance from the view, nearest first within a
+ * rank), dropping the frames of `pictured` keys (a picture loaded) first and of `painted` keys last, plus every `painted` key without a picture, near or not, so no cell that
  * showed its frame goes empty before its picture can take its place.
  */
 export const liveShotsOf = ({
@@ -134,7 +134,7 @@ export const liveShotsOf = ({
   painted = new Set(),
 }: {
   order: readonly string[];
-  near: ReadonlySet<string>;
+  near: ReadonlyMap<string, number>;
   cap?: number;
   pictured?: ReadonlySet<string>;
   painted?: ReadonlySet<string>;
@@ -144,7 +144,7 @@ export const liveShotsOf = ({
   const capped = new Set(
     order
       .filter((key) => near.has(key))
-      .sort((a, b) => rank(a) - rank(b))
+      .sort((a, b) => rank(a) - rank(b) || (near.get(a) ?? 0) - (near.get(b) ?? 0))
       .slice(0, cap),
   );
 
@@ -309,10 +309,16 @@ export class SketchViewComponent {
 
   public nearShots = computed(
     () =>
-      new Set(
+      new Map(
         this.shotCells()
           .filter((entry) => entry.isIntersecting)
-          .map((entry) => (entry.target as HTMLElement).dataset['shot'] ?? ''),
+          .map((entry) => {
+            const rect = entry.target.getBoundingClientRect();
+            const bounds = entry.rootBounds;
+            const distance = bounds ? Math.abs(rect.top + rect.height / 2 - (bounds.top + bounds.height / 2)) : 0;
+
+            return [(entry.target as HTMLElement).dataset['shot'] ?? '', distance] as const;
+          }),
       ),
   );
 
