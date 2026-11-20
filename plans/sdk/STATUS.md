@@ -26,6 +26,15 @@ eine blockierte Sitzung unterbricht sofort.
 - S11 (fifagg, 19.11.): Formfeld-Label-Farbe ohne öffentliches Token, nicht blockiert -> Formfeld-Label-Token (B630), entschieden von mir wie B624.
 - S12 (fifagg NX-11, 19.11.): Fortschritts-Marker „upcoming“: Zahl ausblenden (Prod: leerer Ring) und eigener Hintergrund, nicht blockiert -> Fortschritt-Tokens 2 (B631), entschieden von mir wie B624. B617 und S10 kommen mit dem Prerelease ab 20.11. (ADR 0377, Doc-Agent mergt).
 - S13 (fifagg NX-7, 19.11.): Accordion-Hover als Unterstrich statt Tönungsfläche, nicht blockiert -> Accordion-Unterstrich-Hover (B632), entschieden von mir wie B624.
+- S14 (fifagg, 20.11.): Pip-Rand bei versteckter Titelleiste, blockiert -> Pip-Rand bei versteckter Titelleiste (B649).
+- S15 (fifagg, 20.11.): Scrollable-Buttons app-weit, blockiert -> Scrollable-Buttons app-weit (B650).
+- S16 (fifagg, 20.11.): Sticky-Kind über dem Scroll-Fade, blockiert -> Sticky-Kind über dem Scroll-Fade (B651).
+- S17 (fifagg, 20.11.): Pagination scrollt nur nach oben, blockiert -> Pagination scrollt nur nach oben (B652).
+- S18 (fifagg, 20.11.): Carousel mit einer Folie, nicht blockiert -> Carousel mit einer Folie (B653).
+- S19 (fifagg, 20.11.): Segment-Gruppe im Scrollable, nicht blockiert -> Segment-Gruppe im Scrollable (B654).
+- S20 (fifagg, 20.11.): et-label in et-dropzone, nicht blockiert -> et-label in et-dropzone (B655).
+- S21 (fifagg, 20.11.): Dropzone resolveExisting mit Bild-Varianten, nicht blockiert -> Dropzone resolveExisting mit Bild-Varianten (B656).
+- S22 (fifagg, 19.11.): Tab-Unterstrich in Label-Breite, nicht blockiert -> Tab-Unterstrich in Label-Breite (B657).
 
 ## Offene Plan-Dateien
 
