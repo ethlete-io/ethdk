@@ -484,6 +484,13 @@ const startSession = (name, shellCommand, quiet = false) => {
   if (!quiet) process.stdout.write(`Started ${name}. Attach with: tmux attach -t ${name}\n`);
 };
 
+const ensureDispatch = (quiet = true) =>
+  startSession(
+    DISPATCH_SESSION,
+    `${process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : ''}node ${quote(script)} dispatch`,
+    quiet,
+  );
+
 const IGNORED = ['mailbox.jsonl', 'mailbox.cursor.*', 'restart.log', 'restart.prompt.*', 'restart.lock.*'];
 
 const prepare = () => {
@@ -576,8 +583,7 @@ if (command === 'send' && sender) {
     process.stdout.write(`Sent as ${sender}.\n`);
   }
 } else if (command === 'up') {
-  const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
-  startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`);
+  ensureDispatch(false);
   [sender, ...words].filter(Boolean).forEach((spec) => {
     const [name, ...rest] = spec.split('=');
     startSession(sessionFor(name), rest.join('=') || undefined);
@@ -599,9 +605,7 @@ if (command === 'send' && sender) {
       },
     }).status ?? 1;
 } else if (command === 'run' && sender && words.length) {
-  const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
-  if (!sessionExists(DISPATCH_SESSION))
-    startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`, true);
+  ensureDispatch();
   const session = freeSessionFor(sender);
   const roleEnv = roleEnvWords(role)
     .map((word) => `${word} `)
@@ -712,6 +716,7 @@ if (command === 'send' && sender) {
   const session = localSessionFor(sender) ?? (own === sender ? own : undefined);
   const dropped = session && !now ? droppedQuestions(session, own, words.join(' ')) : [];
   const pending = session ? pendingRestartOf(session) : null;
+  if (session) ensureDispatch();
   if (!session) {
     process.stderr.write(`No tmux session for ${sender}.\n`);
     process.exitCode = 1;

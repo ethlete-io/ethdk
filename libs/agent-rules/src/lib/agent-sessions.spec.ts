@@ -538,6 +538,37 @@ describe('agent-sessions', () => {
     30_000,
   );
 
+  it.skipIf(!hasTmux).each([
+    ['restart', []],
+    ['restart --process', ['--process']],
+  ])(
+    'starts the dispatcher for %s when none runs',
+    (_name, flags) => {
+      const agent = `claude-dispatch-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const dispatchSession = `mailbox-dispatch-restart-${process.pid}`;
+      const fakeAgent = join(dir, 'fakeagent');
+      writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', ...flags, 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          AGENT_MAILBOX_DISPATCH_SESSION: dispatchSession,
+        });
+
+        expect(spawnSync('tmux', ['has-session', '-t', `=${dispatchSession}`]).status).toBe(0);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=${dispatchSession}`]);
+      }
+    },
+    30_000,
+  );
+
   it.skipIf(!hasTmux)('refuses a second restart while one of the same session is pending', () => {
     const agent = `claude-twice-${process.pid}`;
     const scoped = `${agent}@${basename(dir)}`;
