@@ -1624,7 +1624,7 @@ const CASES = [
               for (const row of canvas.querySelectorAll('[data-sk-row]:not([data-sk-matrix] *)')) {
                 const [head, stage] = row.children;
 
-                if (head && stage && head.getBoundingClientRect().right > stage.getBoundingClientRect().left + 0.5)
+                if (head && stage && head.getBoundingClientRect().bottom > stage.getBoundingClientRect().top + 0.5)
                   found.push(`${label}: head overlaps the frames in row ${row.getAttribute('data-sk-row')}`);
               }
 
