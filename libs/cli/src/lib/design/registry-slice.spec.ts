@@ -152,7 +152,7 @@ describe('the hash of an SDK render', () => {
   const hashedAfter = async (url: string, answers: string[]) => {
     const request: ServedRequest = { url, accept: null, post: '{"template":"<et-radio-group />"}' };
     const served = (answer: string) =>
-      createServedHashes('http://[::1]:5173', async () => ({ body: Buffer.from(answer), lines: [] }));
+      createServedHashes('http://[::1]:5173', { fetchServed: async () => ({ body: Buffer.from(answer), lines: [] }) });
     const [input] = await served(answers[0] ?? '').inputsOf([request]);
 
     return served(answers[1] ?? '').unchanged(input ? [input] : []);
@@ -171,7 +171,7 @@ describe('the hash of an SDK render', () => {
 describe('the hash of a served module across a server restart', () => {
   const hashedAfter = async (url: string, answers: [string, string]) => {
     const served = (answer: string) =>
-      createServedHashes('http://[::1]:5173', async () => ({ body: Buffer.from(answer), lines: [] }));
+      createServedHashes('http://[::1]:5173', { fetchServed: async () => ({ body: Buffer.from(answer), lines: [] }) });
     const [input] = await served(answers[0]).inputsOf([{ url, accept: null }]);
 
     return served(answers[1]).unchanged(input ? [input] : []);

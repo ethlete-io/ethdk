@@ -1637,7 +1637,7 @@ const completenessCacheOf = (options: {
   from: string;
 }): CompletenessCache => ({
   store: createServedCache(viteCacheOf(options.target, COMPLETENESS_SIGHTS), COMPLETENESS_SIGHTS_LIMIT),
-  served: createServedHashes(options.base, fetchServedOf(reachableBaseOf(options.address))),
+  served: createServedHashes(options.base, { fetchServed: fetchServedOf(reachableBaseOf(options.address)) }),
   salt: `${completenessCodeOf()} ${browserVersionOf(options.from)}`,
 });
 

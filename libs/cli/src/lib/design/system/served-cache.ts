@@ -1,8 +1,9 @@
 import { createHash } from 'crypto';
 import { readFileSync, utimesSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { writeCacheEntry } from '../cache-entry';
 import { evictOldestPast } from './compare-cache';
+import { assetRoot } from '../package-root';
 import { QUIET_HEADER, RENDER_PATH, SERVED_LINES_HEADER } from '../render';
 import { recordNullHashes } from '../timings';
 
@@ -127,15 +128,28 @@ const servedLinesOf = (header: string | null): string[] => {
   }
 };
 
+/** @internal How served urls and bodies name the folder the cli runs from. */
+export const PACKAGE_ROOT_TOKEN = '/@ethlete-cli';
+
 /**
  * The hashes of what the server at `base` answers now, each url fetched at most once per instance. The server's own
- * host is left out of urls and bodies, so a server on another port answers the same.
+ * host is left out of urls and bodies, and `packageRoot` is held as `PACKAGE_ROOT_TOKEN`, so a server on another port
+ * or a cli run from another folder answers the same.
  */
-export const createServedHashes = (base: string, fetchServed: FetchServed = fetchServedOf(base)) => {
+export const createServedHashes = (
+  base: string,
+  {
+    fetchServed = fetchServedOf(base),
+    packageRoot = dirname(assetRoot()),
+  }: { fetchServed?: FetchServed; packageRoot?: string } = {},
+) => {
   const ownHost = new RegExp(`(?:localhost|127\\.0\\.0\\.1|\\[::1\\]):${new URL(base).port}`, 'g');
   const held = new Map<string, Promise<{ hash: string | null; lines: string[] }>>();
+  const tokenized = (text: string) => text.split(packageRoot).join(PACKAGE_ROOT_TOKEN);
+  const fetchAt = (request: ServedRequest) =>
+    fetchServed({ ...request, url: request.url.split(PACKAGE_ROOT_TOKEN).join(packageRoot) });
   const relativeOf = ({ url, accept, post }: ServedRequest): ServedRequest => ({
-    url: url.startsWith(base) ? url.slice(base.length) || '/' : url,
+    url: tokenized(url.startsWith(base) ? url.slice(base.length) || '/' : url),
     accept,
     ...(typeof post === 'string' ? { post } : {}),
   });
@@ -144,7 +158,9 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
     answer.then((served) => {
       if (!served) recordNullHashes(1);
 
-      const text = served ? withoutStartNoise(request.url, served.body.toString('latin1').replace(ownHost, '')) : null;
+      const text = served
+        ? withoutStartNoise(request.url, tokenized(served.body.toString('latin1').replace(ownHost, '')))
+        : null;
 
       return {
         hash:
@@ -162,7 +178,7 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
 
     if (known) return known;
 
-    const hashed = hashedOf(request, fetchServed(request));
+    const hashed = hashedOf(request, fetchAt(request));
 
     held.set(at, hashed);
 
@@ -180,7 +196,7 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
           at,
           hashedOf(
             relative,
-            answer.then((served) => served ?? fetchServed(relative)),
+            answer.then((served) => served ?? fetchAt(relative)),
           ),
         );
     },

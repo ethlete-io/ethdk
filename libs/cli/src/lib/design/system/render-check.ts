@@ -1104,7 +1104,7 @@ export const renderIssuesOf = async (options: {
     const cache: ServedCacheRun<RenderIssue[]> | undefined = options.cached
       ? {
           store: createServedCache(viteCacheOf(target, RENDER_ISSUES), RENDER_ISSUES_LIMIT),
-          served: createServedHashes(base, fetchServedOf(reachableBaseOf(address))),
+          served: createServedHashes(base, { fetchServed: fetchServedOf(reachableBaseOf(address)) }),
           salt: `${renderInspectCodeOf()} ${browserVersionOf(chromium.from)}`,
         }
       : undefined;

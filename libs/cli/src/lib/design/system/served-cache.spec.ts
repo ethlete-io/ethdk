@@ -34,7 +34,7 @@ describe('served cache inputs', () => {
   it('writes no entry when a response could not be fetched, so a later run draws again', async () => {
     const run = {
       store: createServedCache<string>(join(dir, 'cache'), 1e9),
-      served: createServedHashes(BASE, fetchingAllBut),
+      served: createServedHashes(BASE, { fetchServed: fetchingAllBut }),
       salt: '',
     };
     const requested = [
@@ -54,7 +54,7 @@ describe('served cache inputs', () => {
     const file = join(dir, '.timings.jsonl');
     const hashOnce = (fetchServed: FetchServed) =>
       recordRun({ file, argv: ['check'], env: {}, commitOf: async () => null }, async () => {
-        const served = createServedHashes(BASE, fetchServed);
+        const served = createServedHashes(BASE, { fetchServed });
 
         await served.inputsOf([
           { url: UNFETCHABLE, accept: null },
@@ -77,10 +77,12 @@ describe('served cache inputs', () => {
   });
   it("hashes a render the browser was answered without rendering it again, fetching it when the browser's answer is lost", async () => {
     const fetched: string[] = [];
-    const served = createServedHashes(BASE, async (request) => {
-      fetched.push(request.post ?? '');
+    const served = createServedHashes(BASE, {
+      fetchServed: async (request) => {
+        fetched.push(request.post ?? '');
 
-      return ANSWERED(request);
+        return ANSWERED(request);
+      },
     });
     const renderOf = (post: string) => ({ url: `${BASE}/__design/render`, accept: null, post });
 
@@ -92,6 +94,34 @@ describe('served cache inputs', () => {
     expect(fetched).toEqual(['b']);
     expect(inputs[0]?.hash).toBe(inputs[1]?.hash);
     await expect(served.linesOf([renderOf('a')])).resolves.toEqual(['seen']);
+  });
+
+  it('hits an entry written while the cli ran from another folder, and misses when a cli file it served changed', async () => {
+    const files = new Map([['define-part.ts', 'export const v = 1;']]);
+    const cliServing =
+      (root: string): FetchServed =>
+      async ({ url }) => {
+        const file = url.startsWith(`/@fs${root}/design/`) ? url.slice(`/@fs${root}/design/`.length) : null;
+        const text = file === null ? undefined : files.get(file);
+
+        return text === undefined
+          ? { body: Buffer.from('404\0'), lines: [] }
+          : { body: Buffer.from(`200\0${text}\nimport '/@fs${root}/design/${file}';`), lines: [] };
+      };
+    const runOf = (root: string) => ({
+      store: createServedCache<string>(join(dir, 'cache'), 1e9),
+      served: createServedHashes(BASE, { fetchServed: cliServing(root), packageRoot: root }),
+      salt: '',
+    });
+    const requestedOf = (root: string) => [{ url: `${BASE}/@fs${root}/design/define-part.ts`, accept: null }];
+
+    await writeServed(runOf('/tmp/cli-1'), { key: 'k', requested: requestedOf('/tmp/cli-1'), value: 'drawn' });
+
+    await expect(servedHitOf(runOf('/tmp/cli-2'), 'k')).resolves.toBe('drawn');
+
+    files.set('define-part.ts', 'export const v = 2;');
+
+    await expect(servedHitOf(runOf('/tmp/cli-3'), 'k')).resolves.toBeNull();
   });
 
   it('prints on a hit the warnings the render worker logged while drawing, as the drawn run printed them', async () => {
@@ -112,7 +142,7 @@ describe('served cache inputs', () => {
       const requested = [{ url: `${base}/__design/render`, accept: null, post: '{"call":"components/chip"}' }];
       const runOf = () => ({
         store: createServedCache<string>(join(dir, 'cache'), 1e9),
-        served: createServedHashes(base, fetchServedOf(reachableBaseOf(address))),
+        served: createServedHashes(base, { fetchServed: fetchServedOf(reachableBaseOf(address)) }),
         salt: '',
         print: (line: string) => printed.push(line),
       });
