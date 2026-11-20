@@ -3119,9 +3119,14 @@ const CASES = [
 
       await showAllStates(page);
       await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
-      const top = (await sketchCells(page)).filter((cell) => cell.visible).sort((a, b) => a.top - b.top)[0];
+      let top;
 
-      if (!top) return { ok: false, detail: 'no visible sketch cell' };
+      for (const until = Date.now() + WAIT_MS; !top && Date.now() < until;) {
+        top = (await sketchCells(page)).filter((cell) => cell.visible).sort((a, b) => a.top - b.top)[0];
+        if (!top) await page.waitForTimeout(250);
+      }
+
+      if (!top) return { ok: false, detail: `no visible sketch cell within ${WAIT_MS} ms` };
 
       const before = await loadedCell(top.key, () => true, FULL_COMPARE_MS);
 
