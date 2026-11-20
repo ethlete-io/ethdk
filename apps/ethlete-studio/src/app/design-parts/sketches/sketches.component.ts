@@ -52,6 +52,7 @@ import {
 import {
   ProvideColorDirective,
   injectRenderer,
+  equal,
   injectSemanticColorTheme,
   signalElementDimensions,
 } from '@ethlete/core';
@@ -314,6 +315,7 @@ export class SketchesComponent {
   private confirmRef: { close: () => void } | null = null;
   private confirmOrigin: HTMLElement | null = null;
   private fitAt = signal<{ scale: number; fonts: number } | null>(null);
+  private fitInputs: unknown[] | null = null;
   // fonts.ready resolves before the gutter's mono face loads; without loadingdone the fit keeps the fallback's gutter.
   // Chromium re-fires loadingdone with faces it already loaded whenever new text renders, so only a new face counts:
   // a counted re-fire would re-base the held note fit and move every frame at a user zoom.
@@ -337,17 +339,21 @@ export class SketchesComponent {
     () => this.error() !== null && this.rows().some((row) => row.key === this.selected() && row.key !== SKETCH_CURRENT),
   );
   private isEdit = computed(() => this.part().endsWith('@edit'));
-  private listedRows = computed(() => {
-    const edit = this.isEdit();
-    const rows = this.rows().filter(
-      (row) =>
-        !((this.fresh() || edit) && row.key === SKETCH_CURRENT) && (this.withdrawn() === 'shown' || !isWithdrawn(row)),
-    );
+  private listedRows = computed(
+    () => {
+      const edit = this.isEdit();
+      const rows = this.rows().filter(
+        (row) =>
+          !((this.fresh() || edit) && row.key === SKETCH_CURRENT) &&
+          (this.withdrawn() === 'shown' || !isWithdrawn(row)),
+      );
 
-    return edit ? rows.map((row) => ({ ...row, label: EDIT_ROW_LABELS[row.key] ?? row.label })) : rows;
-  });
+      return edit ? rows.map((row) => ({ ...row, label: EDIT_ROW_LABELS[row.key] ?? row.label })) : rows;
+    },
+    { equal },
+  );
   private hiddenWithdrawnRows = computed(() => (this.withdrawn() === 'shown' ? [] : this.rows().filter(isWithdrawn)), {
-    equal: (a, b) => a === b || (a.length === 0 && b.length === 0),
+    equal,
   });
   protected pendingStates = computed(
     () =>
@@ -426,6 +432,7 @@ export class SketchesComponent {
       (state) => (groups.get(state)?.states[0] ?? state) === state,
     );
   });
+  private atFit = computed(() => this.canvas.zoom() === 'fit');
   private fitScale = computed(() => this.fitAt()?.scale ?? 1);
   protected scale = computed(() => {
     const zoom = this.canvas.zoom();
@@ -559,6 +566,33 @@ export class SketchesComponent {
       // A fit taken under a zoom preview reads the boxes scaled by its transform.
       if (!this.listMeasured() || this.canvas.preview()) return;
 
+      const inputs = [
+        this.fontLoads(),
+        this.listSize(),
+        this.shownRows(),
+        this.matrixRows(),
+        this.sections(),
+        this.stages(),
+        this.frames(),
+        this.notes(),
+        this.labels(),
+        this.labelRows(),
+        this.gutters(),
+        this.transposed(),
+        this.columns(),
+        this.matrix(),
+        this.fold(),
+        this.atFit(),
+      ];
+
+      const fitted = untracked(this.fitAt);
+      // A user zoom holds the fit; a refit there lays every cell out twice, 40 ms per row change on WebKit.
+      const refit =
+        (this.atFit() || fitted?.fonts !== this.fontLoads()) &&
+        !this.fitInputs?.every((input, index) => input === inputs[index]);
+
+      this.fitInputs = inputs;
+
       const list: HTMLElement = this.list().nativeElement;
       const elementsOf = (refs: readonly ElementRef<HTMLElement>[]) => refs.map(({ nativeElement }) => nativeElement);
       const dom: FitDom = {
@@ -576,7 +610,7 @@ export class SketchesComponent {
       };
 
       untracked(() => {
-        this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
+        if (refit) this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
         this.applyScale({ scale: this.scale(), note: this.noteSize(), label: this.labelFont() }, dom);
       });
     });
