@@ -8,6 +8,7 @@ export type OpenPoint =
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | { kind: 'unmerged-sketch'; sketch: string; status: 'in progress' | 'ready'; decision: 'pick' | 'discard' | null }
   | { kind: 'sketch-problem'; sketch: string; variant: string; rule: string; message: string }
+  | { kind: 'stale-sketch-base'; sketch: string; changed: string[] }
   | { kind: 'missing-motion'; from: string; to: string }
   | { kind: 'direct-edit'; sketch: string | null };
 

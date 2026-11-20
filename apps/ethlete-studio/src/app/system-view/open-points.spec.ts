@@ -1,4 +1,4 @@
-import { buildReadyStatusOf, openPointGroupsOf } from './open-points';
+import { buildReadyStatusOf, openPointGroupsOf, sketchPointGroupsOf } from './open-points';
 
 describe('openPointGroupsOf', () => {
   it('groups the points by icon in the popover order, with the texts of the System page design', () => {
@@ -337,5 +337,35 @@ describe('buildReadyStatusOf', () => {
         { kind: 'problem', text: 'click did not run' },
       ],
     });
+  });
+});
+
+describe('sketchPointGroupsOf', () => {
+  it('lists a stale base of a ready sketch as an error that opens the sketch', () => {
+    expect(
+      sketchPointGroupsOf({
+        points: [
+          { kind: 'unmerged-sketch', sketch: 'system', status: 'ready', decision: null },
+          { kind: 'stale-sketch-base', sketch: 'system', changed: ['pages/system'] },
+          { kind: 'missing-state', control: null },
+        ],
+        buildReady: { ready: true },
+      }),
+    ).toEqual([
+      {
+        icon: 'grid',
+        lines: [{ text: 'Sketch noch nicht gemergt', detail: 'sketch', target: { kind: 'sketch', sketch: 'system' } }],
+      },
+      {
+        icon: 'error',
+        lines: [
+          {
+            text: 'Braucht Rebase vor dem Merge: pages/system geändert',
+            detail: 'sketch',
+            target: { kind: 'sketch', sketch: 'system' },
+          },
+        ],
+      },
+    ]);
   });
 });

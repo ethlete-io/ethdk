@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from './design-config';
 import { designStatus } from './status';
 import { inboxOf } from './system/comments/inbox';
+import { openPointsText } from './system/open-points';
+import { readOpenPoints } from './system/read-open-points';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, decideSketch, markSketchReady, Sketch } from './system/sketch/sketch';
 import { originOf } from './system/write-origin';
@@ -99,6 +101,18 @@ describe('a sketch whose base part changed after it was drawn', () => {
     ).toEqual([
       ['elements/hero', ['elements/hero']],
       ['pages/home', ['elements/hero']],
+    ]);
+  });
+
+  it('is an open point on the targets of a ready sketch, not of an open one', () => {
+    const target = acme();
+
+    staleSketches(target);
+
+    const lines = openPointsText('acme', readOpenPoints(resolveAcme(target)));
+
+    expect(lines.filter((line) => line.includes('needs a rebase'))).toEqual([
+      '  pages/home: sketch home is ready, not merged; sketch home needs a rebase before merge (elements/hero changed since its base)',
     ]);
   });
 });

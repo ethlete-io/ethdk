@@ -29,6 +29,7 @@ import {
 } from './sketch/part-definition';
 import { planQuestionsOf } from './adr-parts';
 import { directEditsOf } from './sketch/merged-parts';
+import { rebaseNeededOf } from './sketch/stale-base';
 import { variantProblemsOf } from './sketch/check-sketches';
 import { overlaySketch } from './sketch/overlay';
 import { prefetchClassFactsOf } from './rules/tailwind-classes';
@@ -281,6 +282,13 @@ export const readOpenPoints = (
     sketchProblems: sketchProblems ? sketchProblemsOf({ product, sketches, productRules }) : [],
     directEdits,
     planQuestions: planQuestionsOf(resolve(product.dir, '..', '..', '..')),
+    staleSketchBases: sketches
+      .filter((sketch) => sketch.status === 'ready')
+      .flatMap((sketch) => {
+        const changed = rebaseNeededOf({ product, sketch });
+
+        return changed ? sketch.targets.map((part) => ({ part, sketch: sketch.name, changed })) : [];
+      }),
     ...rendered,
   });
 };

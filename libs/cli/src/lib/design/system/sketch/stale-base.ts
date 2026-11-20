@@ -66,6 +66,20 @@ export const staleBaseOf = (options: { product: ResolvedProduct; sketch: Sketch 
 };
 
 /**
+ * The parts that changed since the base of an undiscarded sketch, `null` when it needs no rebase: its base is current,
+ * it records none, or it is a stale edit sketch (`isStaleEditSketch`), which closes instead.
+ */
+export const rebaseNeededOf = (options: { product: ResolvedProduct; sketch: Sketch }): string[] | null => {
+  const { product, sketch } = options;
+
+  if (sketch.decision?.kind === 'discard') return null;
+
+  const changed = staleBaseOf({ product, sketch });
+
+  return changed?.length && !isStaleEditSketch(product, sketch) ? changed : null;
+};
+
+/**
  * One SKETCH-BASE-STALE problem, with its printed line, per undiscarded sketch (open or picked) whose base changed since it was drawn or
  * rebased, except a stale edit sketch (`isStaleEditSketch`), which closes instead; with `parts`, only the sketches where one of those parts changed; with `targets`, only the sketches on those targets.
  */
@@ -78,13 +92,12 @@ export const staleSketchBasesOf = (options: {
   const { product, invocation, parts, targets } = options;
 
   return listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) => {
-    if (typeof sketch === 'string' || sketch.decision?.kind === 'discard') return [];
+    if (typeof sketch === 'string') return [];
     if (targets && !targets.has(sketch.target)) return [];
 
-    const changed = staleBaseOf({ product, sketch });
+    const changed = rebaseNeededOf({ product, sketch });
 
-    if (!changed?.length || (parts && !changed.some((part) => parts.has(part)))) return [];
-    if (isStaleEditSketch(product, sketch)) return [];
+    if (!changed || (parts && !changed.some((part) => parts.has(part)))) return [];
 
     const copies = staleSharedCopiesOf(product, sketch.sharedBase).map(
       ({ copy, base, commit }) => `; ${copy} is a stale copy of ${base} (${commit})`,

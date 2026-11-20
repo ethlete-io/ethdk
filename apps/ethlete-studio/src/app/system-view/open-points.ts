@@ -20,6 +20,7 @@ const iconOf = (point: ListedPoint): OpenPointIcon => {
     case 'unmerged-sketch':
       return 'grid';
     case 'sketch-problem':
+    case 'stale-sketch-base':
       return 'error';
     case 'open-comment':
       return 'comment';
@@ -60,6 +61,12 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
         text: LABELS.sketchProblem(point.rule),
         detail: point.variant,
         target: { kind: 'sketch', sketch: point.sketch, variant: point.variant },
+      };
+    case 'stale-sketch-base':
+      return {
+        text: LABELS.sketchStaleBase(point.changed),
+        detail: 'sketch',
+        target: { kind: 'sketch', sketch: point.sketch },
       };
     case 'missing-motion':
       return {
@@ -162,7 +169,7 @@ const statusOf = ({ points, buildReady }: PartOpenPoints): BuildReadyStatus => {
   return { state: 'blocked', blockers };
 };
 
-const SKETCH_KINDS = new Set<OpenPoint['kind']>(['unmerged-sketch', 'sketch-problem']);
+const SKETCH_KINDS = new Set<OpenPoint['kind']>(['unmerged-sketch', 'sketch-problem', 'stale-sketch-base']);
 
 /** The open points a sketch brings to its target, grouped like the chip popover lists them. */
 export const sketchPointGroupsOf = ({ points }: PartOpenPoints): OpenPointGroup[] =>
