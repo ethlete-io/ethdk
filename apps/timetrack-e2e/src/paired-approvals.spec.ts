@@ -87,4 +87,31 @@ test.describe('the approval queue of paired machines', () => {
     await expect(page.getByRole('button', { name: 'Review requests' })).toBeHidden();
     expect((await readBackend(page)).jira.created).toEqual([]);
   });
+  test('lists an item the paired machine approved and owns but has not run yet, without actions', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      peers: {
+        paired: [MACBOOK],
+        approvals: [
+          {
+            machineId: 'mac-1',
+            queue: [
+              create('peer-3', 'Xml export', { state: 'approved', decidedAtMs: AT - 1_000, ownerMachineId: 'mac-1' }),
+              create('peer-4', 'Json export'),
+            ],
+          },
+        ],
+      },
+    });
+    await page.goto('/day');
+
+    const dialog = await openApprovals(page);
+    const item = dialog.locator('[data-approval="peer-3"]');
+
+    await expect(item).toContainText('Xml export → new issue in ABC');
+    await expect(item).toContainText('approved on MacBook');
+    await expect(item.getByRole('button', { name: 'Approve' })).toHaveCount(0);
+    await expect(item.getByRole('button', { name: 'Reject' })).toHaveCount(0);
+    await expect(dialog.locator('[data-approval="peer-4"]').getByRole('button', { name: 'Approve' })).toBeVisible();
+  });
 });

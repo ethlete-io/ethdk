@@ -17,6 +17,7 @@ import { injectDayReview } from '../day-review/day-review';
 import { formatClockTime } from '../day-review/format';
 import { injectTimetrackSettings } from '../settings/settings';
 import { STAND_INS_OVERLAY } from '../stand-ins';
+import { injectPeers } from '../peers/peers';
 import { injectTicketDraft } from '../day-review/ticket-draft';
 import { injectApprovalQueue } from './approval-queue';
 
@@ -32,8 +33,21 @@ import { injectApprovalQueue } from './approval-queue';
         <p class="mb-3 text-small text-et-error">{{ failure }}</p>
       }
 
-      @if (queue.waiting().length) {
+      @if (queue.waiting().length || queue.approvedElsewhere().length) {
         <div class="flex flex-col gap-3">
+          @for (item of queue.approvedElsewhere(); track item.id) {
+            <div
+              [attr.data-approval]="item.id"
+              [attr.data-op]="item.request.op"
+              class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3"
+            >
+              <span class="text-base">{{ describe(item) }}</span>
+              <span class="text-small text-et-surface-muted">
+                {{ item.client ?? 'CLI' }} · approved on {{ machineLabel(item) }}, runs there
+              </span>
+            </div>
+          }
+
           @for (item of queue.waiting(); track item.id) {
             <div
               [attr.data-approval]="item.id"
@@ -85,6 +99,7 @@ import { injectApprovalQueue } from './approval-queue';
 })
 export class ApprovalQueueComponent {
   protected queue = injectApprovalQueue();
+  private peers = injectPeers();
   private settings = injectTimetrackSettings();
   private router = inject(Router);
   private placed = injectBandApprovals();
@@ -128,6 +143,10 @@ export class ApprovalQueueComponent {
 
   protected describe(item: AgentApproval) {
     return describeApproval(item.request);
+  }
+
+  protected machineLabel(item: AgentApproval) {
+    return this.peers.paired().find((machine) => machine.machineId === item.ownerMachineId)?.label ?? 'another machine';
   }
 
   protected askedAt(item: AgentApproval) {

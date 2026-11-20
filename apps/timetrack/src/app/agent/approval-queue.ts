@@ -166,11 +166,16 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     approved$.next(item);
   };
 
+  const approvedHere = signal<ReadonlySet<string>>(new Set());
+
   const runsHere = (item: AgentApproval) => !item.ownerMachineId || item.ownerMachineId === machineId();
 
   const approveHere = (item: AgentApproval) => {
     if (runsHere(item)) approveOne(item);
-    else change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now() }));
+    else {
+      approvedHere.update((ids) => new Set(ids).add(item.id));
+      change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now() }));
+    }
   };
 
   return {
@@ -178,6 +183,17 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Whether `items` holds the stored queue yet. Before that it is empty whatever the store holds. */
     isLoaded: loaded.asReadonly(),
     waiting: computed(() => queue().filter((item) => item.state === 'queued' || item.state === 'running')),
+    approvedElsewhere: computed(() =>
+      queue().filter(
+        (item) =>
+          item.state === 'approved' &&
+          !!item.ownerMachineId &&
+          item.ownerMachineId !== machineId() &&
+          !approvedHere().has(item.id) &&
+          item.result === undefined &&
+          item.error === undefined,
+      ),
+    ),
     approvableByAll: computed(() => approvableByAll(queue(), settings.settings().actionClasses)),
     failure: failure.asReadonly(),
     approved$: approved$.asObservable(),
