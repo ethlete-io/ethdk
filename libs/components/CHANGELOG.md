@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-next.92
+
+### Minor Changes
+
+- Add `CarouselDirective.hasMultipleSlides()` and a `data-single-slide` host attribute so a carousel with one slide can hide its controls. Autoplay does not run with one slide.
+- Add `scrollToTopOnlyUp` to `FloatingActionDirective` (input and `provideFloatingActionConfig`): `scrollToTop()` then scrolls only when the target lies above the top edge, stopping at its `scroll-margin-top`. The default is unchanged.
+- Add `provideScrollableConfig` to enable the scrollable's prev/next buttons app-wide, with `enabled` and `position` per breakpoint, and a new `'inline'` button position beside the track. `etScrollableButtons` on an instance overrides the config.
+- Add `--et-scrollable-mask-inset-start` and `--et-scrollable-mask-inset-end` so a sticky child of `et-scrollable` stays fully opaque over the edge fade. Both default to `0px`, which leaves the fade unchanged.
+- `et-segmented-button` registers itself as the active child of a surrounding `et-scrollable`: the checked segment is scrolled into view initially and whenever the selection changes, with no extra attribute.
+- Add `provideTabsConfig` and `activeUnderline` / `underlineWidth` inputs to tab bars, plus the `--et-tab-baseline-color`, `--et-tab-active-color` and `--et-tab-inactive-color` tokens.
+
+### Patch Changes
+
+- Fix the picture-in-picture window background extending below the window while the title bar is hidden.
+- Fix the tab bar baseline painting over the bottom row of the active underline when a tab forms its own stacking context, so a thicker underline next to a thinner baseline shows at full size.
+
 ## 1.0.0-next.91
 
 ### Minor Changes

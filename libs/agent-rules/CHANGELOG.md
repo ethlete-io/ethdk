@@ -1,5 +1,15 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.40
+
+### Patch Changes
+
+- `agent-sessions restart` takes the `--process` path when the pane shows background shells or agents, so their reports no longer start a turn in a cleared session.
+- `restart` heals a stored command without an agent program (written by an older `run`) or refuses before stopping the session, and `run` exits non-zero with a message when it started no agent.
+- `agent-sessions restart` (also with `--process`) starts the mailbox dispatcher when none runs for the checkout, so a session that was restarted into a repo without one still receives messages.
+- `agent-sessions run` inside tmux switches your client to the new session or refuses a duplicate, and keeps one `CLAUDE_CONFIG_DIR` per checkout.
+- Keep the agent binary in the command `agent-sessions run` stores when it follows an `env` wrapper, so `restart --process` starts the agent again.
+
 ## 0.1.0-next.39
 
 ### Minor Changes
