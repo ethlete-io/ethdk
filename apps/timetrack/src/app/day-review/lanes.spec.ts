@@ -25,10 +25,10 @@ describe('a paired machine’s band on the day', () => {
     dayStart: DAY,
   });
 
-  it('never shares a lane with the blocks of a checkout this machine has', () => {
+  it('sits in the lane of its checkout when this machine has one', () => {
     const sdk = lanes.find((lane) => lane.key === SDK);
 
-    expect(sdk?.peers).toEqual([]);
+    expect(sdk?.peers.map((placed) => peerBandLabel(placed))).toEqual(['Worked on MacBook']);
   });
 
   it('opens no lane of its own checkout, and sits in one lane of its machine instead', () => {
@@ -37,10 +37,7 @@ describe('a paired machine’s band on the day', () => {
     const machine = lanes.find((lane) => isPeerLaneKey(lane.key));
 
     expect(machine?.label).toBe('MacBook');
-    expect(machine?.peers.map((placed) => peerBandLabel(placed))).toEqual([
-      'Worked on MacBook',
-      'Worked on MacBook · 3d-projekte',
-    ]);
+    expect(machine?.peers.map((placed) => peerBandLabel(placed))).toEqual(['Worked on MacBook · 3d-projekte']);
     expect(lanes.at(-1)).toBe(machine);
   });
 });

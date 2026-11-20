@@ -52,6 +52,7 @@ const peerRow = (laneKey: string, from: string, to: string) => ({
   worklogId: 'w-mac',
 });
 
+const COLUMNS = '[data-lane], [data-peer-side]';
 const LABELS =
   '[data-label], [data-peer-band] > span, [data-behind] > span, [data-break] > span, [data-carried-behind]';
 
@@ -63,6 +64,54 @@ const boxOf = async (locator: ReturnType<Page['locator']>) => {
   if (!box) throw new Error('no box');
 
   return box;
+};
+
+const expectLabelsInColumns = async (page: Page) => {
+  const columns = page.locator(COLUMNS);
+  const boxes: Box[] = [];
+
+  for (let at = 0; at < (await columns.count()); at++) boxes.push(await boxOf(columns.nth(at)));
+
+  for (let at = 1; at < boxes.length; at++) {
+    const before = boxes[at - 1] as Box;
+    const column = boxes[at] as Box;
+
+    expect(column.x).toBeGreaterThanOrEqual(before.x + before.width - 1);
+  }
+
+  let checked = 0;
+
+  for (let at = 0; at < boxes.length; at++) {
+    const column = boxes[at] as Box;
+    const labels = columns.nth(at).locator(LABELS);
+
+    for (let label = 0; label < (await labels.count()); label++) {
+      const box = await boxOf(labels.nth(label));
+
+      expect(box.x).toBeGreaterThanOrEqual(column.x - 1);
+      expect(box.x + box.width).toBeLessThanOrEqual(column.x + column.width + 1);
+      checked++;
+    }
+  }
+
+  expect(checked).toBeGreaterThan(0);
+};
+
+const expectNoBandOverBlock = async (page: Page) => {
+  const peers = page.locator('[data-peer-band]');
+  const blocks = page.locator('[data-kind="row"]');
+
+  for (let at = 0; at < (await peers.count()); at++) {
+    const peer = await boxOf(peers.nth(at));
+
+    for (let block = 0; block < (await blocks.count()); block++) {
+      const box = await boxOf(blocks.nth(block));
+      const apart = box.x >= peer.x + peer.width - 1 || peer.x >= box.x + box.width - 1;
+      const stacked = box.y >= peer.y + peer.height || peer.y >= box.y + box.height;
+
+      expect(apart || stacked).toBe(true);
+    }
+  }
 };
 
 test.describe('a day with two checkouts and a paired machine with a long name', () => {
@@ -103,55 +152,39 @@ test.describe('a day with two checkouts and a paired machine with a long name', 
     await expect(page.locator('[data-peer-band]').first()).toBeVisible();
   });
 
-  test('keeps every label inside its own lane, and the lanes apart', async ({ page }) => {
-    const lanes = page.locator('[data-lane]');
-
-    expect(await lanes.count()).toBeGreaterThanOrEqual(3);
-
-    const columns: Box[] = [];
-
-    for (let at = 0; at < (await lanes.count()); at++) columns.push(await boxOf(lanes.nth(at)));
-
-    for (let at = 1; at < columns.length; at++) {
-      const before = columns[at - 1] as Box;
-      const column = columns[at] as Box;
-
-      expect(column.x).toBeGreaterThanOrEqual(before.x + before.width - 1);
-    }
-
-    let checked = 0;
-
-    for (let at = 0; at < columns.length; at++) {
-      const labels = lanes.nth(at).locator(LABELS);
-
-      for (let label = 0; label < (await labels.count()); label++) {
-        const box = await boxOf(labels.nth(label));
-
-        const column = columns[at] as Box;
-
-        expect(box.x).toBeGreaterThanOrEqual(column.x - 1);
-        expect(box.x + box.width).toBeLessThanOrEqual(column.x + column.width + 1);
-        checked++;
-      }
-    }
-
-    expect(checked).toBeGreaterThan(2);
+  test('keeps every label inside its own column, and the columns apart', async ({ page }) => {
+    await expectLabelsInColumns(page);
+    expect(await page.locator('[data-peer-side]').count()).toBeGreaterThan(0);
   });
 
-  test('keeps a peer band off the blocks of its lane', async ({ page }) => {
-    const peers = page.locator('[data-lane] [data-peer-band]');
+  test('keeps a peer band off every block', async ({ page }) => {
+    await expectNoBandOverBlock(page);
+  });
+});
 
-    for (let at = 0; at < (await peers.count()); at++) {
-      const peer = await boxOf(peers.nth(at));
-      const blocks = peers.nth(at).locator('xpath=ancestor::*[@data-lane]').locator('[data-kind="row"]');
+test.describe('a day where a worktree worked beside its main checkout', () => {
+  const WORKTREE = '/Users/e2e/dev/fut-frontend-altcha';
 
-      for (let block = 0; block < (await blocks.count()); block++) {
-        const box = await boxOf(blocks.nth(block));
-        const apart = box.x >= peer.x + peer.width - 1 || peer.x >= box.x + box.width - 1;
-        const stacked = box.y >= peer.y + peer.height || peer.y >= box.y + box.height;
+  const sessionIn = (cwd: string, branch: string): CollectedEvent[] =>
+    Array.from({ length: 13 }, (_, step) => ({
+      at: new Date(new Date(`${BOOKED_DAY}T09:00:00.000Z`).getTime() + step * 5 * 60_000),
+      source: 'agent-session',
+      kind: 'agent-session',
+      sessionId: `session-${cwd}`,
+      cwd,
+      gitBranch: branch,
+    }));
 
-        expect(apart || stacked).toBe(true);
-      }
-    }
+  test('keeps the overlapping blocks of one lane inside that lane', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [...sessionIn(E2E_REPO, 'fix/security-audit-general'), ...sessionIn(WORKTREE, 'feat/login-altcha')],
+      git: { extraRepos: [WORKTREE], worktrees: { [WORKTREE]: E2E_REPO } },
+    });
+    await page.goto('/day');
+    await page.getByRole('button', { name: 'Previous day' }).click();
+    await expect(page.locator('[data-lane] [data-kind="row"]').first()).toBeVisible();
+
+    await expectLabelsInColumns(page);
   });
 });

@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -134,6 +135,14 @@ const STRIP_ROW_REM = 2;
  */
 const LANE_MIN_REM = 14;
 const FULL_SPAN = { inlineOffset: 0, inlineSize: 100 };
+
+/**
+ * A lane that holds a paired machine's bands widens by a sub-column for them, in the same proportion as
+ * the minimums, so a band and a block never share horizontal space.
+ */
+const COLUMN_GROW = 2;
+const PEER_SIDE_GROW = 1;
+const PEER_SIDE_REM = LANE_MIN_REM / COLUMN_GROW;
 
 /** How wide the break lane is. It carries no ticket and no gesture, so it stays narrow. */
 const BREAK_LANE_REM = 6;
@@ -282,8 +291,8 @@ type RowDrag = {
                 <div
                   #column
                   [attr.data-drawable]="drawable(lane) || null"
-                  [style.flexGrow]="growOf(lane)"
-                  [style.minWidth.rem]="minRemOf(lane)"
+                  [style.flexGrow]="columnGrowOf(lane)"
+                  [style.minWidth.rem]="columnMinRemOf(lane)"
                   (pointerdown)="startDraw({ event: $event, column, lane })"
                   class="relative basis-0 touch-none border-l border-et-surface-border data-[drawable]:cursor-cell"
                   data-lane
@@ -329,20 +338,8 @@ type RowDrag = {
                     </div>
                   }
 
-                  @for (placed of lane.peers; track placed.band.machineId + placed.offset) {
-                    <div
-                      [style.top.%]="placed.offset"
-                      [style.height.%]="placed.span"
-                      [title]="PEER_LABEL_OF(placed)"
-                      [attr.data-compact]="compact(placed.span) || null"
-                      [attr.data-booked]="placed.band.booked || null"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
-                      data-peer-band
-                    >
-                      @if (labelled(placed.span)) {
-                        <span class="block truncate">{{ PEER_LABEL_OF(placed) }}</span>
-                      }
-                    </div>
+                  @if (!sideOf(lane)) {
+                    <ng-container [ngTemplateOutlet]="peerBands" [ngTemplateOutletContext]="{ $implicit: lane }" />
                   }
 
                   @for (laid of lane.blocks; track laid.key) {
@@ -710,6 +707,35 @@ type RowDrag = {
                     </div>
                   }
                 </div>
+
+                @if (sideOf(lane)) {
+                  <div
+                    [style.flexGrow]="PEER_SIDE_GROW"
+                    [style.minWidth.rem]="PEER_SIDE_REM"
+                    class="relative basis-0 border-l border-et-surface-border"
+                    data-peer-side
+                  >
+                    <ng-container [ngTemplateOutlet]="peerBands" [ngTemplateOutletContext]="{ $implicit: lane }" />
+                  </div>
+                }
+
+                <ng-template #peerBands let-lane>
+                  @for (placed of lane.peers; track placed.band.machineId + placed.offset) {
+                    <div
+                      [style.top.%]="placed.offset"
+                      [style.height.%]="placed.span"
+                      [title]="PEER_LABEL_OF(placed)"
+                      [attr.data-compact]="compact(placed.span) || null"
+                      [attr.data-booked]="placed.band.booked || null"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
+                      data-peer-band
+                    >
+                      @if (labelled(placed.span)) {
+                        <span class="block truncate">{{ PEER_LABEL_OF(placed) }}</span>
+                      }
+                    </div>
+                  }
+                </ng-template>
               }
             </div>
           </div>
@@ -718,7 +744,7 @@ type RowDrag = {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, MENU_IMPORTS, ProvideColorDirective, SCHEDULER_IMPORTS],
+  imports: [BUTTON_IMPORTS, MENU_IMPORTS, NgTemplateOutlet, ProvideColorDirective, SCHEDULER_IMPORTS],
   host: { class: 'flex min-h-0 flex-col select-none', '(keydown.escape)': 'clearMarks()' },
   styles: `
     [data-lane] [data-kind='row'][data-growing] {
@@ -975,6 +1001,8 @@ export class DayTimelineComponent {
   protected readonly LABEL_OF = appointmentLabel;
   protected readonly BEHIND_LABEL_OF = behindLabel;
   protected readonly PEER_LABEL_OF = peerBandLabel;
+  protected readonly PEER_SIDE_GROW = PEER_SIDE_GROW;
+  protected readonly PEER_SIDE_REM = PEER_SIDE_REM;
   protected readonly UNBOOKED_OF = unbookedLabel;
   protected readonly NOT_IN_TEMPO = ' · not in Tempo';
   protected readonly STANDS_IN = isStandInAppointment;
@@ -1424,12 +1452,24 @@ export class DayTimelineComponent {
     return this.drawLane() === lane.key ? this.grid()?.draftBlock() : null;
   }
 
-  protected minRemOf(lane: DayLane) {
+  protected sideOf(lane: DayLane) {
+    return lane.peers.length > 0 && !isPeerLaneKey(lane.key);
+  }
+
+  protected columnMinRemOf(lane: DayLane) {
     return lane.key === BREAK_LANE_KEY ? BREAK_LANE_REM : LANE_MIN_REM;
   }
 
+  protected columnGrowOf(lane: DayLane) {
+    return lane.key === BREAK_LANE_KEY ? 0 : COLUMN_GROW;
+  }
+
+  protected minRemOf(lane: DayLane) {
+    return this.columnMinRemOf(lane) + (this.sideOf(lane) ? PEER_SIDE_REM : 0);
+  }
+
   protected growOf(lane: DayLane) {
-    return lane.key === BREAK_LANE_KEY ? 0 : 1;
+    return this.columnGrowOf(lane) + (this.sideOf(lane) ? PEER_SIDE_GROW : 0);
   }
 
   protected breakLabel(band: BreakBand) {
