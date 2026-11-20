@@ -444,13 +444,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "da6d299010c5dd60",
+    "app": "df2a7e4afb68b5bf",
     "actions": ["emit:collapse"],
     "builder": "designer",
-    "at": "2026-11-20T13:12:13.234Z",
-    "by": "claude-opus-5-5",
+    "at": "2026-11-20T14:58:19.942Z",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 4173897
+    "pid": 1615234
   },
   "components/shell-resize-handle": {
     "hash": "b7b7754eedba1c72",
