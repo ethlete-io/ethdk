@@ -104,6 +104,7 @@ type ShownProducts = { product: string; products: string[] };
         (openProject)="checkouts.openFolder()"
         (scanProjects)="checkouts.scan()"
         (reload)="reload()"
+        (menuOpen)="refreshServer()"
         (serverAction)="runServerAction($event)"
       />
     }
@@ -280,6 +281,7 @@ export class StudioViewComponent {
     if (action.kind === 'openProject') this.checkouts.openFolder();
     if (action.kind === 'scan') this.checkouts.scan();
     if (action.kind === 'reload') this.reload();
+    if (action.kind === 'menuOpened') this.refreshServer();
     if (action.kind === 'server') this.runServerAction(action.action);
   }
 
@@ -359,6 +361,21 @@ export class StudioViewComponent {
     if (action === 'start') this.startServer();
     if (action === 'restart') this.restartServer();
     if (action === 'stop') this.stopServer();
+  }
+
+  protected refreshServer() {
+    const checkout = this.checkout();
+
+    if (!checkout || this.serverBusy()) return;
+
+    designServerState$(checkout, this.server())
+      .pipe(
+        tap((state) => this.showServer(state)),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- the server state is re-read on the next menu open; the foreign watch polls
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   private setCheckout(path: string) {

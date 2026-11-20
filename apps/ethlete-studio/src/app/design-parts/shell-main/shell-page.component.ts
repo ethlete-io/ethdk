@@ -47,6 +47,7 @@ export type ShellAction =
   | { kind: 'openProject' }
   | { kind: 'scan' }
   | { kind: 'reload' }
+  | { kind: 'menuOpened' }
   | { kind: 'server'; action: DesignServerAction };
 
 export const SHELL_SAMPLE: ShellState = {
@@ -87,11 +88,12 @@ export const SHELL_SAMPLE: ShellState = {
       fill
     >
       <ethlete-studio-menu
-        [(open)]="menuOpen"
+        [open]="menuOpen()"
         [server]="menuServer()"
         [project]="shell().project"
         [projects]="shell().projects"
         [busy]="!!shell().busy"
+        (openChange)="setMenuOpen($event)"
         (projectChange)="action.emit({ kind: 'project', name: $event })"
         (openProject)="action.emit({ kind: 'openProject' })"
         (serverAction)="action.emit({ kind: 'server', action: $event })"
@@ -138,11 +140,17 @@ export class ShellPageComponent {
 
     return serverStale ? 'stale' : 'running';
   });
+
   protected screen = computed(() => {
     const server = this.shell().server;
 
     return server === 'running' ? null : (server ?? null);
   });
+  protected setMenuOpen(open: boolean) {
+    this.menuOpen.set(open);
+
+    if (open) this.action.emit({ kind: 'menuOpened' });
+  }
 
   protected setSideWidth(width: number) {
     this.sideWidth.set(width);

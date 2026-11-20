@@ -23,6 +23,7 @@ class SystemViewStubComponent {
   public busy = input(false);
   public serverStale = input(false);
   public reload = output();
+  public menuOpen = output();
   public scanProjects = output();
   public projectChange = output<string>();
   public productNames = signal<string[]>([]);
@@ -167,6 +168,22 @@ describe('StudioViewComponent', () => {
     await settle(fixture);
 
     expect(projectReads()).toBeGreaterThan(before);
+  });
+
+  it('re-reads the server state when the menu opens', async () => {
+    let stale = false;
+
+    stubHost({ design_server_state: () => ({ ...RUNNING, stale }) });
+
+    const fixture = await mount();
+
+    expect(system(fixture)?.serverStale()).toBe(false);
+
+    stale = true;
+    system(fixture)?.menuOpen.emit();
+    await settle(fixture);
+
+    expect(system(fixture)?.serverStale()).toBe(true);
   });
 
   it('hands the system view no stale flag while the server runs the current build', async () => {

@@ -400,6 +400,8 @@ export class SystemViewComponent {
 
   public reload = output();
 
+  public menuOpen = output();
+
   public serverAction = output<DesignServerAction>();
 
   public partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
@@ -1063,6 +1065,7 @@ export class SystemViewComponent {
         (badge) =>
           badge === 'error' ||
           badge === 'needs rebase' ||
+          badge === 'composition' ||
           badge === 'changed since ready' ||
           badge === 'hold target ended' ||
           badge === 'rebase not committed',
@@ -1442,6 +1445,8 @@ export class SystemViewComponent {
         return this.scanProjects.emit();
       case 'reload':
         return this.reload.emit();
+      case 'menuOpened':
+        return this.menuOpen.emit();
       case 'server':
         return this.serverAction.emit(action.action);
     }
