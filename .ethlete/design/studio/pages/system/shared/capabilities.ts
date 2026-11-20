@@ -70,15 +70,15 @@ export const callView = async (transferred: boolean): Promise<Drawn> => {
 
   return {
     body: html`${frames}
-      <header
-        class="absolute inset-x-0 top-0 flex items-center gap-space-3 border-b border-(--et-surface-border-solid) bg-(--et-surface-background-solid) ps-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] pe-space-4 py-space-3"
+      <div
+        class="absolute top-space-3 inset-s-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] min-w-0 max-w-1/2"
       >
-        <div class="min-w-0 flex-1">
-          <span class="font-code text-et-surface-muted text-ui-xs">timetrack/kerbe/03-narrow-lane</span>
-          <h2 class="m-0 truncate text-et-surface font-ui-strong text-ui-md">Schmale Spur für die Wochenansicht</h2>
-        </div>
+        <h2 class="m-0 truncate text-et-surface font-ui-strong text-ui-md">Schmale Spur für die Wochenansicht</h2>
+        <span class="font-code text-et-surface-muted text-ui-xs">timetrack/kerbe/03-narrow-lane</span>
+      </div>
+      <div class="absolute top-space-3 right-space-3 flex items-center gap-space-2">
         ${themes.body}${transferMarkup}
-      </header>`,
+      </div>`,
     styles: themes.styles + transfer.styles,
   };
 };

@@ -171,9 +171,9 @@
     "at": "2026-11-20T06:52:42.718Z"
   },
   "pages/system": {
-    "hash": "1de347b713b1c124",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-20T06:36:25.168Z"
+    "hash": "7e9968798e4b0356",
+    "variant": "float",
+    "decidedBy": "builder",
+    "at": "2026-11-20T22:50:25.340Z"
   }
 }
