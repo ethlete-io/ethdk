@@ -1,10 +1,10 @@
 {
   "components/canvas-viewport": {
-    "hash": "ffde33c0b80300dc",
+    "hash": "a9b83d7082546b7f",
     "files": {
       ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "61d833c902ab2771",
-      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "b3e76b1b47b38302",
-      "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "3167bad2b777df9c",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "c679638a8b364d68",
+      "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "e451ae4c854defba",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -20,12 +20,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
+    "app": "12e97fa796796f8f",
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-17T19:22:19.691Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-20T13:12:10.520Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 4150427
   },
   "components/command-palette": {
     "actions": ["opens:command-palette"],
