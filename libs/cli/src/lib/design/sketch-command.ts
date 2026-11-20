@@ -65,6 +65,7 @@ import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf, editHoldsOf } from './system/sketch/edit-sketch';
 import { isEditSketch, MERGED_FILE, recordMerged, untilSketchOf } from './system/sketch/merged-parts';
 import { noVerdictLineOf } from './system/no-verdict';
+import { renderFindingsOf } from './system/render-findings';
 import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
@@ -1694,6 +1695,16 @@ const unchangedAffectedOf = (options: {
     ),
   );
 
+const unbaselinedIssuesOf = (options: { target: string; product: ResolvedProduct; issues: RenderIssue[] }) => {
+  const { target, product, issues } = options;
+  const found = renderFindingsOf({ target, resolved: [product], issues });
+  const kept = new Set(found.issues);
+
+  found.baselineLines.forEach((line) => console.log(line));
+
+  return issues.filter((issue) => kept.has(issue) || found.isInBase(issue));
+};
+
 const renderedVariantsOf = async ({
   target,
   config,
@@ -1731,7 +1742,7 @@ const renderedVariantsOf = async ({
         `NOTE ${sketch.target} ${sketch.variant}: ${part} draws ${states.length} state${states.length === 1 ? '' : 's'} as merged, not inspected`,
       );
 
-  const rendered = await renderIssuesOf({
+  const drawnIssues = await renderIssuesOf({
     target,
     config,
     warm: drawOn ?? warm,
@@ -1743,6 +1754,11 @@ const renderedVariantsOf = async ({
       part,
     })),
   });
+
+  const rendered =
+    'unavailable' in drawnIssues
+      ? drawnIssues
+      : { ...drawnIssues, issues: unbaselinedIssuesOf({ target, product, issues: drawnIssues.issues }) };
 
   if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
   else {

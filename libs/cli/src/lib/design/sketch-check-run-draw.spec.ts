@@ -143,4 +143,37 @@ describe('sketch check', { timeout: 120_000 }, () => {
 
     expect(calls).toEqual([true, true]);
   });
+
+  it('leaves out a render issue the rule baseline of the product lists, and prints its baseline line', async () => {
+    const target = await sketched();
+    const issue = {
+      rule: 'SCROLLS',
+      product: 'acme',
+      part: 'components/button',
+      state: 'default',
+      size: 'phone',
+      path: 'div.root',
+      detail: 'scrolls',
+      sketch: { target: 'components/button@alt', variant: 'a' },
+    };
+    const baseline = join(target, DESIGN_DIR, 'acme/rule-baseline.json');
+
+    vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [issue], warnings: [], grids: [], drawn: [] });
+
+    await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
+
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('SCROLLS');
+
+    vi.mocked(console.error).mockClear();
+    vi.mocked(console.log).mockClear();
+    writeFileSync(
+      baseline,
+      JSON.stringify({ SCROLLS: { 'components/button: default at phone: div.root': { finding: 'F1', sketch: 'S1' } } }),
+    );
+
+    await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
+
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).not.toContain('SCROLLS');
+    expect(vi.mocked(console.log).mock.calls.flat().join('\n')).toContain('baselined (ADR 0201): SCROLLS');
+  });
 });
