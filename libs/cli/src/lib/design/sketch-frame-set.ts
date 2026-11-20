@@ -25,6 +25,10 @@ export const foldedStatesOf = (rows: readonly SketchFrameRow[]): ReadonlySet<str
   return new Set(folded.length < states.length ? folded : []);
 };
 
+/** The states of `current` that every variant lists as unchanged; none without a variant. */
+export const keptStatesOf = (current: readonly string[], variants: readonly (readonly string[])[]): string[] =>
+  variants.length === 0 ? [] : current.filter((state) => variants.every((unchanged) => unchanged.includes(state)));
+
 /** The states no variant is known to change yet: those still compared (`null`) and those known unchanged. */
 export const unknownStatesOf = (rows: readonly SketchFrameRow[]): ReadonlySet<string> =>
   new Set(

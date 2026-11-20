@@ -1,3 +1,4 @@
+import { keptStatesOf } from '../../sketch-frame-set';
 import { readPartModule } from '../list-system';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { overlaySketch } from './overlay';
@@ -14,8 +15,10 @@ export const aktuellPlaceholderWarningOf = (options: {
   variants: { states: string[]; unchanged: string[] }[];
 }): string | null => {
   const { current, variants } = options;
-  const folded =
-    variants.length === 0 ? [] : current.filter((state) => variants.every((v) => v.unchanged.includes(state)));
+  const folded = keptStatesOf(
+    current,
+    variants.map((variant) => variant.unchanged),
+  );
   const visible = [...new Set([...current, ...variants.flatMap((variant) => variant.states)])].filter(
     (state) => !folded.includes(state),
   );

@@ -17,6 +17,7 @@ import {
   rejectionOf,
   sketchPartOf,
 } from '../../host/design';
+import { keptStatesOf } from '@ethlete/cli/sketch-frames';
 import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { isAnswered, isQuestion } from './comment-pins';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
@@ -1086,10 +1087,10 @@ export const sketchMatrixOf = ({
     };
     const partColumns = columns.map(factsOf);
     const states = [...new Set(partColumns.flatMap((column) => column.states))];
-    const unchanged = (state: string) =>
-      variantColumns.length > 0 &&
-      variantColumns.every((column) => targetOf(column.key, key)?.unchanged?.includes(state) ?? false);
-    const kept = (listed?.states ?? []).filter(unchanged);
+    const kept = keptStatesOf(
+      listed?.states ?? [],
+      variantColumns.map((column) => targetOf(column.key, key)?.unchanged ?? []),
+    );
     const ordered = [...states.filter((state) => !kept.includes(state)), ...kept];
     const drawsCurrent = (state: string) =>
       !kept.includes(state) || openStates[stateKeyOf(state)] === true ? (listed?.states ?? []).includes(state) : false;

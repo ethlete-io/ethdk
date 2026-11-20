@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sketchFrameSetOf, SketchFrameRow } from './sketch-frame-set';
+import { keptStatesOf, sketchFrameSetOf, SketchFrameRow } from './sketch-frame-set';
 import { Axis, ComparedRow, planOf, shownStatesOf } from './shot-command';
 
 const BASE = ['rest', 'hover', 'stale-one', 'stale-many', 'closed'];
@@ -60,5 +60,15 @@ describe('the frame set of a sketch round', () => {
 
     expect(shotSetOf([merged, same])).toEqual(studioSetOf([merged, same]));
     expect(shotSetOf([merged, same])).toHaveLength(BASE.length * 2);
+  });
+});
+
+describe('keptStatesOf', () => {
+  it('keeps the states every variant lists as unchanged', () => {
+    expect(keptStatesOf(['rest', 'hover'], [['rest', 'hover'], ['rest']])).toEqual(['rest']);
+  });
+
+  it('keeps nothing without a variant', () => {
+    expect(keptStatesOf(['rest'], [])).toEqual([]);
   });
 });
