@@ -202,6 +202,13 @@ const withoutPrompt = (words) => {
 };
 const SHELL_WORD = /(?:'[^']*'|\\.|[^\s'\\])+/g;
 const ENV_WORD = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const CONFIG_WORD = 'CLAUDE_CONFIG_DIR=';
+const callerConfigDir = () => resolve(process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'));
+const configDirOf = (words) => words.find((word) => word.startsWith(CONFIG_WORD))?.slice(CONFIG_WORD.length);
+const configMismatch = (words) => {
+  const given = configDirOf(words);
+  return given !== undefined && resolve(given) !== callerConfigDir();
+};
 const unquoteWord = (word) => word.replace(/'([^']*)'|\\(.)/g, (_, quoted, escaped) => quoted ?? escaped);
 const hasAgentBinary = (words) => {
   let index = 0;
@@ -641,6 +648,11 @@ if (command === 'send' && sender) {
 } else if (command === 'run' && sender && words.length && !hasAgentBinary(words)) {
   process.stderr.write(`Refused: no agent was started, ${words.join(' ')} has no program to run.\n`);
   process.exitCode = 1;
+} else if (command === 'run' && sender && words.length && configMismatch(words)) {
+  process.stderr.write(
+    `Refused: no agent was started, the command sets CLAUDE_CONFIG_DIR=${configDirOf(words)} but the caller runs under ${callerConfigDir()}. One checkout keeps one config.\n`,
+  );
+  process.exitCode = 1;
 } else if (command === 'run' && sender && words.length && dryRun) {
   process.stdout.write(`${withTempDir([...roleEnvWords(role), ...withRole(words).map(quote)].join(' '))}\n`);
 } else if (command === 'run' && sender && words.length && !runsInSession(words.slice(1))) {
@@ -657,16 +669,23 @@ if (command === 'send' && sender) {
 } else if (command === 'run' && sender && words.length) {
   ensureDispatch();
   const session = freeSessionFor(sender);
-  const roleEnv = roleEnvWords(role)
+  const roleEnv = [
+    ...(process.env.CLAUDE_CONFIG_DIR && configDirOf(words) === undefined
+      ? [`${CONFIG_WORD}${quote(process.env.CLAUDE_CONFIG_DIR)}`]
+      : []),
+    ...roleEnvWords(role),
+  ]
     .map((word) => `${word} `)
     .join('');
   const shellCommand = withTempDir(`${roleEnv}${withRole(words).map(quote).join(' ')}`);
   const baseCommand = withTempDir(`${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`);
-  if (!hasTerminal) {
-    if (!sessionExists(session)) createRunSession(session, shellCommand, baseCommand);
-    if (!process.exitCode) process.stdout.write(`Started ${session}. Attach with: tmux attach -t ${session}\n`);
-  } else if (process.env.TMUX) {
-    if (!sessionExists(session)) createRunSession(session, shellCommand, baseCommand);
+  if (process.env.TMUX) {
+    if (sessionExists(session)) {
+      process.stderr.write(
+        `Refused: ${session} already exists, no second agent was started. Switch to it with: tmux switch-client -t ${session}\n`,
+      );
+      process.exitCode = 1;
+    } else createRunSession(session, shellCommand, baseCommand);
     const callerSession = tmux(
       'display-message',
       '-p',
@@ -683,6 +702,9 @@ if (command === 'send' && sender) {
       ? (spawnSync('tmux', ['switch-client', '-c', callerClient, '-t', `=${session}`], { stdio: 'inherit' }).status ??
         1)
       : 0;
+  } else if (!hasTerminal) {
+    if (!sessionExists(session)) createRunSession(session, shellCommand, baseCommand);
+    if (!process.exitCode) process.stdout.write(`Started ${session}. Attach with: tmux attach -t ${session}\n`);
   } else {
     if (!sessionExists(session)) createRunSession(session, shellCommand, baseCommand);
     process.exitCode ||= !sessionExists(session)
@@ -814,6 +836,12 @@ if (command === 'send' && sender) {
       const restartRole = restartRoleOf(session, words.join(' '));
       const recorded = commandWithoutPrompt(agentCommandOf(session));
       const stored = healedCommand(recorded, sender);
+      if (configMismatch(stored.split(' ').map((word) => word.replaceAll("'", '')))) {
+        restartNotice(
+          `restart of ${session} refused, its command sets another CLAUDE_CONFIG_DIR than the caller (${callerConfigDir()})`,
+        );
+        process.exit(1);
+      }
       if (stored !== recorded) {
         tmux('set-option', '-t', pane, COMMAND_OPTION, stored);
         restartLog(`${session} stored command had no agent program, healed to: ${stored}`);

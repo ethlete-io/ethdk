@@ -1092,6 +1092,8 @@ describe('agent-sessions', () => {
         `AGENT_MAILBOX_DISPATCH_SESSION=${dispatch}`,
         '-e',
         `HOME=${dir}`,
+        '-e',
+        'CLAUDE_CONFIG_DIR=',
         `node ${SCRIPT} run ${agent} sh ${fakeAgent} --flag value 'do the thing'; cat`,
       ]);
 
@@ -1134,6 +1136,8 @@ describe('agent-sessions', () => {
         `AGENT_MAILBOX_DISPATCH_SESSION=${dispatch}`,
         '-e',
         `HOME=${dir}`,
+        '-e',
+        'CLAUDE_CONFIG_DIR=/x',
         `node ${SCRIPT} run ${agent} env CLAUDE_CONFIG_DIR=/x ${fakeAgent}; cat`,
       ]);
 
@@ -1165,6 +1169,7 @@ describe('agent-sessions', () => {
         run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
           TMUX_PANE: paneOf(scoped),
           SHELL: 'sh',
+          CLAUDE_CONFIG_DIR: '/x',
           AGENT_RESTART_EXIT_WAIT_MS: '1000',
         });
 
@@ -1217,6 +1222,107 @@ describe('agent-sessions', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('No agent stayed up');
   });
+
+  const fakeClientTmux = () => {
+    const bin = join(dir, 'bin');
+    const log = join(dir, 'tmux.log');
+    const real = spawnSync('which', ['tmux'], { encoding: 'utf8' }).stdout.trim();
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(
+      join(bin, 'tmux'),
+      `#!/bin/sh\ncase "$1" in\n  list-clients) [ "$4" = -F ] && echo /dev/fake-client; exit 0;;\n  switch-client) echo "$@" >> '${log}'; exit 0;;\nesac\nunset TMUX\nexec '${real}' "$@"\n`,
+      { mode: 0o755 },
+    );
+    return { log, env: { PATH: `${bin}:${process.env.PATH}`, TMUX: 'fake', HOME: dir } };
+  };
+
+  it.skipIf(!hasTmux)('run inside a tmux pane switches the calling client to the session it created', () => {
+    const agent = `claude-pane-${process.pid}`;
+    const { log, env } = fakeClientTmux();
+    const result = run(['run', agent, 'cat'], undefined, {
+      ...env,
+      TMUX_PANE: paneOf('spec-keepalive'),
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+    });
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+    const switched = existsSync(log) ? readFileSync(log, 'utf8') : '';
+    spawnSync('tmux', ['kill-session', '-t', `=${agent}@${basename(dir)}`]);
+
+    expect(result.status).toBe(0);
+    expect(switched).toContain(`-c /dev/fake-client -t =${agent}@${basename(dir)}`);
+  });
+
+  it.skipIf(!hasTmux)('run inside a tmux pane refuses when the session of that name already exists', () => {
+    const agent = `claude-twice-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const { log, env } = fakeClientTmux();
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+    const result = run(['run', agent, 'cat'], undefined, {
+      ...env,
+      TMUX_PANE: paneOf('spec-keepalive'),
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+    });
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+    spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(scoped);
+    expect(existsSync(log)).toBe(false);
+  });
+
+  it('refuses run when the command sets another CLAUDE_CONFIG_DIR than the caller', () => {
+    const result = run(['run', 'claude', 'env', 'CLAUDE_CONFIG_DIR=/other', 'claude'], undefined, {
+      CLAUDE_CONFIG_DIR: '/mine',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('CLAUDE_CONFIG_DIR=/other');
+  });
+
+  it.skipIf(!hasTmux)('run starts the agent under the caller CLAUDE_CONFIG_DIR', () => {
+    const agent = `claude-cfg-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const result = run(['run', agent, 'cat'], undefined, {
+      HOME: dir,
+      CLAUDE_CONFIG_DIR: '/mine',
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+    });
+    const stored = spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], {
+      encoding: 'utf8',
+    }).stdout;
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+    spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+
+    expect(result.status).toBe(0);
+    expect(stored).toContain("CLAUDE_CONFIG_DIR='/mine'");
+  });
+
+  it.skipIf(!hasTmux)(
+    'refuses restart --process when the stored command sets another CLAUDE_CONFIG_DIR than the caller',
+    () => {
+      const agent = `claude-cfgr-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        "'env' 'CLAUDE_CONFIG_DIR=/second' 'claude'",
+      ]);
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          CLAUDE_CONFIG_DIR: '/first',
+        });
+
+        expect(result.status).toBe(1);
+        expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
 
   it.skipIf(!hasTmux)(
     'types the prompt when only the IDE context chip sits on the prompt line',
