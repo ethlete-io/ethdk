@@ -690,7 +690,7 @@ export default definePart({
     'round-folded':
       'A folded round at 75 %; check the one narrow column with the round note and that the other rounds stay open.',
     'diff-mark':
-      'The hold-trigger frame with the automatic difference mark; check that every state but closed rest outlines the region that differs from closed rest and dims the rest of its cell, and closed rest stays unmarked.',
+      'The hold-trigger frame with the automatic difference mark; check that every state in an interaction outlines the region that differs from the rest state of its row and dims the rest of its cell, and both rest cells stay unmarked.',
   },
   controls: {
     button: { kind: 'button', part: 'components/button' },

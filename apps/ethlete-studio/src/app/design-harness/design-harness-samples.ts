@@ -188,24 +188,22 @@ const roundsOf = (part: string, heads: 'open' | 'folded') => {
   };
 };
 
-const DIFF_CELL_SIZE = { width: 220, height: 96 };
+const DIFF_CELL_SIZE = { width: 196, height: 96 };
 
 const DIFF_INTERACTIONS = ['rest', 'hover', 'active', 'focus-visible'];
 
 const DIFF_BOXES = {
   trigger: { x: 8, y: 8, width: 120, height: 28 },
-  reason: { x: 8, y: 48, width: 150, height: 20 },
-  both: { x: 8, y: 8, width: 150, height: 60 },
+  openTrigger: { x: 8, y: 8, width: 168, height: 28 },
 };
 
 const diffUrlOf = (box: (typeof DIFF_BOXES)[keyof typeof DIFF_BOXES]) =>
   `data:application/json,${encodeURIComponent(JSON.stringify({ box, frame: DIFF_CELL_SIZE }))}`;
 
 const diffBoxOf = (open: boolean, interaction: string) => {
-  if (open && interaction !== 'rest') return DIFF_BOXES.both;
-  if (open) return DIFF_BOXES.reason;
-  if (interaction !== 'rest') return DIFF_BOXES.trigger;
-  return null;
+  if (interaction === 'rest') return null;
+
+  return open ? DIFF_BOXES.openTrigger : DIFF_BOXES.trigger;
 };
 
 const diffFramesOf = (part: string) => [
@@ -246,6 +244,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
+  'elements/shell-main': (props) => ({ products: SHELL_SAMPLE.products, ...props }),
   'elements/studio-menu': (props) => ({
     project: SHELL_SAMPLE.project,
     projects: SHELL_SAMPLE.projects,

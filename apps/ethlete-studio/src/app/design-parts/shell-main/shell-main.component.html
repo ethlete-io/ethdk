@@ -125,7 +125,7 @@
         >
           @let logo = PRODUCT_LOGOS_MAP[name];
           @if (logo) {
-            <ng-container *ngComponentOutlet="logo" />
+            <span class="block size-5"><ng-container *ngComponentOutlet="logo" /></span>
           } @else {
             {{ railLabels()[index] }}
           }

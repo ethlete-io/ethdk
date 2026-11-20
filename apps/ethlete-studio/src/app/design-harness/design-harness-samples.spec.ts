@@ -13,7 +13,7 @@ const sketchesOf = (props: Record<string, unknown>) => {
 };
 
 describe('DESIGN_HARNESS_SAMPLES', () => {
-  it('feeds the diff-mark state the hold-trigger grid whose cells but closed rest carry a state difference', () => {
+  it('feeds the diff-mark state the hold-trigger grid whose interaction cells carry a difference against their row rest', () => {
     const sample = DESIGN_HARNESS_SAMPLES['elements/canvas-frames'];
 
     if (!sample) throw new Error('no elements/canvas-frames sample');
@@ -31,7 +31,16 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(Object.keys(diffs)).toHaveLength(8);
     expect(diffs['closed · rest']).toBeNull();
     expect(diffs['closed · hover']).toMatchObject({ y: 8 });
-    expect(diffs['open · rest']).toMatchObject({ y: 48 });
+    expect(diffs['open · rest']).toBeNull();
+    expect(diffs['open · hover']).toEqual({ x: 8, y: 8, width: 168, height: 28 });
+  });
+
+  it('feeds elements/shell-main the rail products its design draws', () => {
+    const sample = DESIGN_HARNESS_SAMPLES['elements/shell-main'];
+
+    if (!sample) throw new Error('no elements/shell-main sample');
+
+    expect(sample({})['products']).toEqual(['studio', 'studio-lab', 'sdk', 'timetrack', 'docs']);
   });
 
   it('feeds the change-crop states a screen sketch whose variant carries the crop data', () => {

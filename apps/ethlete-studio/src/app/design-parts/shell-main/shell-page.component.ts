@@ -52,7 +52,7 @@ export type ShellAction =
 
 export const SHELL_SAMPLE: ShellState = {
   product: 'studio',
-  products: ['studio', 'timetrack', 'docs'],
+  products: ['studio', 'studio-lab', 'sdk', 'timetrack', 'docs'],
   project: 'ethlete-sdk',
   projects: ['ethlete-sdk', 'fut-frontend', 'design-playground'],
   panel: 'open',
