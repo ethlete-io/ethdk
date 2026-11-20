@@ -10,6 +10,8 @@ import {
   FloatingActionScopeDirective,
   FloatingActionTopDirective,
   FloatingActionTriggerDirective,
+  injectFloatingActionConfig,
+  provideFloatingActionConfig,
 } from '../index';
 import { fakeLayout, fakeResizeObserver } from '../lib/testing/fake-layout';
 import '../test-helpers';
@@ -407,5 +409,34 @@ describe('floating-action scenarios', () => {
         host.querySelector('.no-anchor'),
       ]),
     );
+  });
+});
+
+describe('floating-action config scenarios', () => {
+  const scenario = useScenario({ providers: [provideFloatingActionConfig({ scrollToTopOnlyUp: true })] });
+
+  it('scrolls back to the top only when the target is above, by default from provideFloatingActionConfig', () => {
+    const s = scenario();
+    const scrollTo = vi.fn();
+    const original = Element.prototype.scrollTo;
+
+    Element.prototype.scrollTo = scrollTo;
+
+    try {
+      TestBed.createComponent(BackToTopComponent);
+      settle(s);
+
+      expect(TestBed.runInInjectionContext(() => injectFloatingActionConfig()).scrollToTopOnlyUp).toBe(true);
+
+      vi.spyOn(query('.page'), 'getBoundingClientRect').mockReturnValue({ top: 50, height: 20 } as DOMRect);
+      query('.back').click();
+      expect(scrollTo).not.toHaveBeenCalled();
+
+      vi.spyOn(query('.page'), 'getBoundingClientRect').mockReturnValue({ top: -200, height: 20 } as DOMRect);
+      query('.back').click();
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+    } finally {
+      Element.prototype.scrollTo = original;
+    }
   });
 });

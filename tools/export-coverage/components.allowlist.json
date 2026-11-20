@@ -14,6 +14,7 @@
   "SEGMENTED_BUTTON_GROUP_OVERFLOWS": "constant: value set of the segmented button group overflow input",
   "SELECTION_LIST_ERROR_CODES": "spec: libs/components/src/lib/forms/selection-list/selection-list-errors.spec.ts",
   "TAB_BAR_ALIGNS": "constant: value set of the tab bar align input",
+  "TAB_UNDERLINE_WIDTHS": "constant: value set of the tab bar underlineWidth input",
   "dateTimeRangeOrder": "spec: libs/components/src/lib/forms/date-time/date-time-range-validators.spec.ts",
   "injectFormFieldDefaults": "internal: read by et-form-field and the choice controls, apps set it through provideFormFieldDefaults",
   "injectKbdLabels": "internal: read by et-kbd, apps set it through provideKbdLabels",

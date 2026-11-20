@@ -22,6 +22,8 @@ import {
   ScrollableNavigationDirective,
   ScrollableScrollState,
   ScrollableSnapDirective,
+  injectScrollableConfig,
+  provideScrollableConfig,
 } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import { fakeElementScroll, fakeIntersectionObserver, fakeLayout } from '../lib/testing/fake-layout';
@@ -422,5 +424,35 @@ describe('scrollable scenarios', () => {
     expect(messages.filter((message) => message.startsWith('Error: ET'))).toEqual([
       expect.stringContaining(`ET${SCROLLABLE_ERROR_CODES.MISSING_SCROLL_CONTAINER}`),
     ]);
+  });
+});
+
+describe('scrollable config scenarios', () => {
+  const scenario = useScenario({
+    providers: [
+      provideColorThemes(TEST_COLOR_THEMES),
+      provideScrollableConfig({ buttons: { position: 'inline', size: 'sm' } }),
+    ],
+  });
+
+  it('takes the button position from provideScrollableConfig unless the instance sets one', () => {
+    const s = scenario();
+    overflowingTrack();
+    fakeIntersectionObserver();
+    fakeElementScroll();
+    const fixture = TestBed.createComponent(FixtureStripComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    settle(s);
+
+    const scrollable = query('et-scrollable', host);
+    const buttons = getDebugNode(scrollable)?.injector.get(ScrollableButtonsDirective);
+
+    expect(TestBed.runInInjectionContext(() => injectScrollableConfig()).buttons?.position).toBe('inline');
+    expect(buttons?.position()).toBe('inline');
+    expect(scrollable.classList.contains('et-scrollable--inline-buttons')).toBe(true);
+
+    fixture.destroy();
+    s.frame(2);
   });
 });

@@ -20,6 +20,8 @@ import {
   TabLabelDirective,
   TabPanelDirective,
   TabTriggerDirective,
+  injectTabsConfig,
+  provideTabsConfig,
 } from '../index';
 import { fakeElementScroll } from '../lib/testing/fake-layout';
 import '../test-helpers';
@@ -485,5 +487,35 @@ describe('tabs scenarios', () => {
     expect(custom).toBeInstanceOf(TabLabelDirective);
     expect(custom?.templateRef).toBeTruthy();
     expect(fixture.componentInstance.tabs()[0]?.customLabel()).toBeUndefined();
+  });
+});
+
+describe('tabs config scenarios', () => {
+  const scenario = useScenario({
+    providers: [provideTabsConfig({ activeUnderline: false, underlineWidth: 'label' })],
+  });
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    fakeElementScroll();
+  });
+
+  it('takes the underline defaults of a tab bar from provideTabsConfig', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AccountTabsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    expect(TestBed.runInInjectionContext(() => injectTabsConfig())).toEqual({
+      activeUnderline: false,
+      underlineWidth: 'label',
+    });
+
+    const bar = query('[data-active-underline]', host);
+
+    expect(bar.getAttribute('data-active-underline')).toBe('false');
+    expect(bar.getAttribute('data-underline-width')).toBe('label');
   });
 });
