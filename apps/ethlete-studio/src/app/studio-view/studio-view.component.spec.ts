@@ -21,6 +21,9 @@ class SystemViewStubComponent {
   public project = input('');
   public projects = input<string[]>([]);
   public busy = input(false);
+  public serverStale = input(false);
+  public reload = output();
+  public scanProjects = output();
   public projectChange = output<string>();
   public productNames = signal<string[]>([]);
   public productName = signal('');
@@ -149,6 +152,27 @@ describe('StudioViewComponent', () => {
   afterEach(() => {
     Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
     vi.unstubAllGlobals();
+  });
+
+  it('hands the system view the stale flag of a server that runs an older build, and draws again on reload', async () => {
+    stubHost({ design_server_state: () => ({ ...RUNNING, stale: true }) });
+
+    const fixture = await mount();
+    const projectReads = () => sent.filter((call) => call.command === 'design_project').length;
+    const before = projectReads();
+
+    expect(system(fixture)?.serverStale()).toBe(true);
+
+    system(fixture)?.reload.emit();
+    await settle(fixture);
+
+    expect(projectReads()).toBeGreaterThan(before);
+  });
+
+  it('hands the system view no stale flag while the server runs the current build', async () => {
+    const fixture = await mount();
+
+    expect(system(fixture)?.serverStale()).toBe(false);
   });
 
   it('hands the system view the port and themes of the checkout', async () => {

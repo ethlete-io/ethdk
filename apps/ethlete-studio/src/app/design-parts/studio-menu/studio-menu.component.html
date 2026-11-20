@@ -53,10 +53,13 @@
       <button [disabled]="busy()" (activate)="openProject.emit()" et-menu-item type="button">
         {{ LABELS.openProject }}
       </button>
+      <button [disabled]="busy()" (activate)="scanProjects.emit()" et-menu-item type="button">
+        {{ LABELS.scan }}
+      </button>
       <et-menu-separator />
-      <et-menu-group-label>{{ LABELS.designServer }}</et-menu-group-label>
-      @for (item of items(); track item.action) {
-        <button [disabled]="busy()" (activate)="serverAction.emit(item.action)" et-menu-item type="button">
+      <et-menu-group-label>{{ statusLabel() }}</et-menu-group-label>
+      @for (item of items(); track item.row) {
+        <button [disabled]="busy() && item.row !== 'reload'" (activate)="runRow(item.row)" et-menu-item type="button">
           {{ item.label }}
         </button>
       }

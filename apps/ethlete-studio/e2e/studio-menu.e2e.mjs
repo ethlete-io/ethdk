@@ -142,6 +142,28 @@ const results = await withStudio(
     const calls = await page.evaluate(() => window.__hostCalls);
     check('row Hilfe asks the host to open the docs', calls.includes('help_open'), calls.join(','));
 
+    await page.evaluate(() => {
+      window.__hostCalls = [];
+    });
+    await pick('Neu laden');
+    const reloadCalls = await page.evaluate(() => window.__hostCalls);
+    check(
+      'row Neu laden reads the project and the server again',
+      reloadCalls.includes('design_project'),
+      reloadCalls.join(','),
+    );
+
+    await page.click(TRIGGER);
+    await page.waitForSelector('et-menu[aria-label="Studio"]');
+    const menuRows = await page.getByRole('menuitem').allTextContents();
+    check(
+      'the menu names the server state and offers Checkouts suchen…',
+      menuRows.some((label) => label.trim() === 'Checkouts suchen…') &&
+        (await page.locator('.et-menu-group-label', { hasText: /^Design-Server · (läuft|veraltet)$/ }).count()) === 1,
+      menuRows.join('|'),
+    );
+    await page.keyboard.press('Escape');
+
     await page.mouse.click(600, 400);
     await page.keyboard.press('Control+/');
     await page.waitForTimeout(400);

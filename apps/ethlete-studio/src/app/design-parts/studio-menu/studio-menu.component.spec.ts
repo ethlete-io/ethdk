@@ -25,6 +25,8 @@ const openMenu = async (options: {
   fixture.componentInstance.projectChange.subscribe((name: string) => events.push(`project:${name}`));
   fixture.componentInstance.openProject.subscribe(() => events.push('openProject'));
   fixture.componentInstance.serverAction.subscribe((action: DesignServerAction) => events.push(`server:${action}`));
+  fixture.componentInstance.reload.subscribe(() => events.push('reload'));
+  fixture.componentInstance.scanProjects.subscribe(() => events.push('scanProjects'));
   fixture.componentInstance.showShortcuts.subscribe(() => events.push('showShortcuts'));
   fixture.componentInstance.openHelp.subscribe(() => events.push('openHelp'));
   fixture.componentInstance.showAbout.subscribe(() => events.push('showAbout'));
@@ -52,13 +54,54 @@ describe('StudioMenuComponent', () => {
       'c',
       'd',
       'Projekt öffnen…',
-      'Design-Server',
+      'Checkouts suchen…',
+      'Design-Server · läuft',
+      'Neu laden',
       'Design-Server neu starten',
       'Design-Server stoppen',
       'Tastenkürzel',
       'Hilfe',
       'Über Studio',
     ]);
+  });
+
+  it('names a stale server and offers the restart first', async () => {
+    const { rows } = await openMenu({ project: 'a', projects: ['a'], server: 'stale' });
+
+    expect(rows().slice(-7)).toEqual([
+      'Design-Server · veraltet',
+      'Design-Server neu starten',
+      'Neu laden',
+      'Design-Server stoppen',
+      'Tastenkürzel',
+      'Hilfe',
+      'Über Studio',
+    ]);
+  });
+
+  it('names a stopped server and offers no reload', async () => {
+    const { rows } = await openMenu({ project: 'a', projects: ['a'], server: 'stopped' });
+
+    expect(rows()).toContain('Design-Server · gestoppt');
+    expect(rows()).not.toContain('Neu laden');
+  });
+
+  it('emits the reload and the scan, and keeps the reload enabled while an action runs', async () => {
+    const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a'], busy: true });
+
+    expect(row('Neu laden')?.getAttribute('aria-disabled')).not.toBe('true');
+    expect(row('Checkouts suchen…')?.getAttribute('aria-disabled')).toBe('true');
+    row('Neu laden')?.click();
+    await fixture.whenStable();
+
+    expect(events).toEqual(['reload']);
+
+    fixture.componentRef.setInput('busy', false);
+    fixture.componentInstance.open.set(true);
+    await fixture.whenStable();
+    row('Checkouts suchen…')?.click();
+
+    expect(events).toEqual(['reload', 'scanProjects']);
   });
 
   it('checks the open project', async () => {

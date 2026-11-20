@@ -82,6 +82,7 @@ type ShownProducts = { product: string; products: string[] };
           serverLog: downLog(),
           startPhase: startPhase(),
           serverCrash: serverCrash(),
+          serverStale: serverStale(),
           busy: menuBusy(),
         }"
         (action)="runShellAction($event)"
@@ -98,8 +99,11 @@ type ShownProducts = { product: string; products: string[] };
         [project]="projectName()"
         [projects]="checkouts.names()"
         [busy]="menuBusy()"
+        [serverStale]="serverStale()"
         (projectChange)="checkouts.chooseByName($event)"
         (openProject)="checkouts.openFolder()"
+        (scanProjects)="checkouts.scan()"
+        (reload)="reload()"
         (serverAction)="runServerAction($event)"
       />
     }
@@ -188,6 +192,8 @@ export class StudioViewComponent {
 
   public serverReady = computed(() => this.listeningPort() !== null && this.serverAnswer() === 'answers');
 
+  protected serverStale = computed(() => !!this.server()?.listening && !!this.server()?.stale && !this.serverBusy());
+
   protected serverSilent = computed(() => this.listeningPort() !== null && this.serverAnswer() === 'silent');
 
   protected serverUrl = computed(() => {
@@ -272,6 +278,8 @@ export class StudioViewComponent {
     if (action.kind === 'section') this.serverPanel.set('open');
     if (action.kind === 'project') this.checkouts.chooseByName(action.name);
     if (action.kind === 'openProject') this.checkouts.openFolder();
+    if (action.kind === 'scan') this.checkouts.scan();
+    if (action.kind === 'reload') this.reload();
     if (action.kind === 'server') this.runServerAction(action.action);
   }
 
@@ -321,6 +329,12 @@ export class StudioViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  protected reload() {
+    this.epoch.update((value) => value + 1);
+    this.read();
+    this.readServer();
   }
 
   public stopServer() {

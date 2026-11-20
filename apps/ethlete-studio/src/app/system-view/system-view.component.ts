@@ -385,6 +385,7 @@ export class SystemViewComponent {
   public project = input('');
   public projects = input<string[]>([]);
   public busy = input(false);
+  public serverStale = input(false);
 
   public projectThemes = input<Record<string, Themes>>({});
   public lists = input(NO_LIST_REVISIONS);
@@ -394,6 +395,10 @@ export class SystemViewComponent {
   public projectChange = output<string>();
 
   public openProject = output();
+
+  public scanProjects = output();
+
+  public reload = output();
 
   public serverAction = output<DesignServerAction>();
 
@@ -1137,6 +1142,7 @@ export class SystemViewComponent {
     projects: this.projects(),
     panel: this.panel(),
     busy: this.busy(),
+    serverStale: this.serverStale(),
   }));
 
   private railSection = signal<Exclude<ShellSection, 'Inbox'>>(
@@ -1432,6 +1438,10 @@ export class SystemViewComponent {
         return this.projectChange.emit(action.name);
       case 'openProject':
         return this.openProject.emit();
+      case 'scan':
+        return this.scanProjects.emit();
+      case 'reload':
+        return this.reload.emit();
       case 'server':
         return this.serverAction.emit(action.action);
     }

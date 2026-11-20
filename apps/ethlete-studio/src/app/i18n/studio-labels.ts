@@ -38,7 +38,10 @@ export const STUDIO_LABELS = {
     panel: 'Studio',
     project: 'Projekt',
     openProject: 'Projekt öffnen…',
+    scan: 'Checkouts suchen…',
     designServer: 'Design-Server',
+    reload: 'Neu laden',
+    serverStatus: { running: 'läuft', stale: 'veraltet', stopped: 'gestoppt' },
     shortcuts: 'Tastenkürzel',
     help: 'Hilfe',
     about: 'Über Studio',
@@ -79,6 +82,11 @@ export const STUDIO_LABELS = {
       'SKETCH UNTRACKED': 'Sketch ungetrackt',
       'SKETCH LEFTOVER': 'Sketch übrig',
     } as Record<string, string>,
+  },
+  scanCheckouts: {
+    found: (count: number) => (count === 1 ? '1 Checkout gefunden' : `${count} Checkouts gefunden`),
+    none: 'Keine neuen Checkouts gefunden',
+    failedTitle: 'Checkouts nicht durchsucht',
   },
   openFolder: {
     refusedTitle: 'Ordner nicht geöffnet',

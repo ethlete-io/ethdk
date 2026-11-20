@@ -116,4 +116,77 @@ describe('createCheckouts', () => {
     expect(checkouts.current()).toBe('/dev/alpha');
     expect(picks).toEqual(['/dev/alpha']);
   });
+
+  describe('scan', () => {
+    const scanning = (found: string[], search = '') => {
+      const added: string[] = [];
+      const searched: string[] = [];
+      let roots = ['/dev/alpha'];
+
+      return {
+        added,
+        searched,
+        answers: {
+          design_roots: () => ({ search, roots }),
+          design_roots_search: ({ folder }: Record<string, unknown>) => {
+            searched.push(String(folder));
+
+            return { search: folder, roots };
+          },
+          design_scan: () => found,
+          design_roots_add: ({ checkout }: Record<string, unknown>) => {
+            added.push(String(checkout));
+            roots = [...roots, String(checkout)].sort();
+
+            return { search, roots };
+          },
+        } satisfies Answers,
+      };
+    };
+
+    it('keeps the two checkouts next to the shown one and names the folder it walked', async () => {
+      const { added, searched, answers } = scanning(['/dev/alpha', '/dev/beta', '/dev/gamma']);
+      const { checkouts, picks, manager } = await mount(answers, '');
+
+      checkouts.scan();
+      await settle();
+
+      expect(searched).toEqual(['/dev']);
+      expect(added).toEqual(['/dev/beta', '/dev/gamma']);
+      expect(checkouts.names()).toEqual(['alpha', 'beta', 'gamma']);
+      expect(picks).toEqual(['/dev/alpha']);
+      expect(manager.notifications().map((ref) => ref.entry().config)).toEqual([
+        expect.objectContaining({ status: 'success', title: '2 Checkouts gefunden' }),
+      ]);
+    });
+
+    it('keeps nothing when the walk finds only kept checkouts, and walks the named folder', async () => {
+      const { added, searched, answers } = scanning(['/dev/alpha'], '/work');
+      const { checkouts, manager } = await mount(answers, '');
+
+      checkouts.scan();
+      await settle();
+
+      expect(searched).toEqual([]);
+      expect(added).toEqual([]);
+      expect(manager.notifications().map((ref) => ref.entry().config)).toEqual([
+        expect.objectContaining({ status: 'success', title: 'Keine neuen Checkouts gefunden' }),
+      ]);
+    });
+
+    it('shows the error toast when the walk fails', async () => {
+      const { answers } = scanning([]);
+      const { checkouts, manager } = await mount(
+        { ...answers, design_scan: () => Promise.reject(new Error('not a directory')) },
+        '',
+      );
+
+      checkouts.scan();
+      await settle();
+
+      expect(manager.notifications().map((ref) => ref.entry().config)).toEqual([
+        expect.objectContaining({ status: 'error', title: 'Checkouts nicht durchsucht' }),
+      ]);
+    });
+  });
 });

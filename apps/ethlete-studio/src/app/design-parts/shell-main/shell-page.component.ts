@@ -19,7 +19,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { UpdateDialogComponent } from '../../components/update-dialog/update-dialog.component';
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
-import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { DesignServerAction, DesignServerStatus, StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { injectStudioMenuDialogs } from '../studio-menu/studio-menu-dialogs';
 import { ServerCrash, ShellMainComponent, ShellSection, StartPhase } from './shell-main.component';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
@@ -31,6 +31,7 @@ export type ShellState = {
   projects: string[];
   panel: 'open' | 'hidden';
   server?: 'running' | 'starting' | 'unanswered' | 'stopped' | 'crashed';
+  serverStale?: boolean;
   serverUrl?: string;
   serverLog?: readonly string[];
   startPhase?: { phase: StartPhase; phaseMs: number } | null;
@@ -44,6 +45,8 @@ export type ShellAction =
   | { kind: 'product'; name: string }
   | { kind: 'project'; name: string }
   | { kind: 'openProject' }
+  | { kind: 'scan' }
+  | { kind: 'reload' }
   | { kind: 'server'; action: DesignServerAction };
 
 export const SHELL_SAMPLE: ShellState = {
@@ -85,13 +88,15 @@ export const SHELL_SAMPLE: ShellState = {
     >
       <ethlete-studio-menu
         [(open)]="menuOpen"
-        [server]="shell().server === 'stopped' || shell().server === 'crashed' ? 'stopped' : 'running'"
+        [server]="menuServer()"
         [project]="shell().project"
         [projects]="shell().projects"
         [busy]="!!shell().busy"
         (projectChange)="action.emit({ kind: 'project', name: $event })"
         (openProject)="action.emit({ kind: 'openProject' })"
         (serverAction)="action.emit({ kind: 'server', action: $event })"
+        (reload)="action.emit({ kind: 'reload' })"
+        (scanProjects)="action.emit({ kind: 'scan' })"
         (showShortcuts)="menuDialogs.shortcuts()"
         (openHelp)="menuDialogs.help()"
         (showAbout)="menuDialogs.about()"
@@ -126,6 +131,13 @@ export class ShellPageComponent {
   protected menuOpen = signal(false);
   protected systemPicker = signal<'open' | 'closed'>('closed');
   protected sideWidth = signal(clampSideWidth(rememberedView().sideWidth ?? SIDE_WIDTH.rest));
+  protected menuServer = computed<DesignServerStatus>(() => {
+    const { server, serverStale } = this.shell();
+
+    if (server === 'stopped' || server === 'crashed') return 'stopped';
+
+    return serverStale ? 'stale' : 'running';
+  });
   protected screen = computed(() => {
     const server = this.shell().server;
 

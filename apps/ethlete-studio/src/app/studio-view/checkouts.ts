@@ -1,13 +1,15 @@
 import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectNotificationManager } from '@ethlete/components';
-import { EMPTY, catchError, finalize, of, switchMap, tap } from 'rxjs';
-import { DesignRoots, designRoots$, designRootsAdd$ } from '../../host/design';
+import { EMPTY, catchError, concat, finalize, last, of, switchMap, tap } from 'rxjs';
+import { DesignRoots, designRoots$, designRootsAdd$, designRootsSearch$, designScan$ } from '../../host/design';
 import { pickFolder$ } from '../../host/dialog';
 import { workspaceRoot$ } from '../../host/workspace';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export const folderNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+
+export const parentFolderOf = (path: string) => path.replace(/[\\/]+[^\\/]*[\\/]*$/, '');
 
 const NONE: DesignRoots = { search: '', roots: [] };
 
@@ -77,6 +79,46 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
       const checkout = held().roots.find((root) => folderNameOf(root) === name);
 
       if (checkout) choose(checkout);
+    },
+    /** Keeps every checkout with design work below the search folder, the folder next to the shown checkout until one is named. */
+    scan: () => {
+      const named = held().search;
+      const folder = named || parentFolderOf(current());
+
+      if (!folder || adding()) return;
+
+      adding.set(true);
+
+      (named ? of(held()) : designRootsSearch$(folder))
+        .pipe(
+          switchMap(() => designScan$(folder)),
+          switchMap((found) => {
+            const fresh = found.filter((checkout) => !held().roots.includes(checkout));
+
+            if (!fresh.length) return of(0);
+
+            return concat(...fresh.map((checkout) => designRootsAdd$(checkout))).pipe(
+              last(),
+              tap((roots) => held.set(roots)),
+              switchMap(() => of(fresh.length)),
+            );
+          }),
+          tap((count) =>
+            notifications.open({
+              status: 'success',
+              title: count ? STUDIO_LABELS.scanCheckouts.found(count) : STUDIO_LABELS.scanCheckouts.none,
+            }),
+          ),
+          // eslint-disable-next-line ethlete/no-silent-catch-error -- the user is already notified with the failure title; the cause adds nothing
+          catchError(() => {
+            notifications.open({ status: 'error', title: STUDIO_LABELS.scanCheckouts.failedTitle });
+
+            return EMPTY;
+          }),
+          finalize(() => adding.set(false)),
+          takeUntilDestroyed(destroyRef),
+        )
+        .subscribe();
     },
     /** Opens the OS folder dialog; a folder with design work is kept and becomes the checkout. */
     openFolder: () => {

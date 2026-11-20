@@ -5,10 +5,13 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 export type DesignServerAction = 'start' | 'restart' | 'stop';
 
-export type DesignServerStatus = 'running' | 'stopped';
+export type DesignServerStatus = 'running' | 'stale' | 'stopped';
 
-const SERVER_ACTIONS: Record<DesignServerStatus, DesignServerAction[]> = {
-  running: ['restart', 'stop'],
+type ServerRow = DesignServerAction | 'reload';
+
+const SERVER_ROWS: Record<DesignServerStatus, ServerRow[]> = {
+  running: ['reload', 'restart', 'stop'],
+  stale: ['restart', 'reload', 'stop'],
   stopped: ['start'],
 };
 
@@ -30,6 +33,8 @@ export class StudioMenuComponent {
   public projects = input<readonly string[]>([]);
 
   public serverAction = output<DesignServerAction>();
+  public reload = output();
+  public scanProjects = output();
   public projectChange = output<string>();
   public openProject = output();
   public showShortcuts = output();
@@ -38,9 +43,19 @@ export class StudioMenuComponent {
 
   protected readonly LABELS = STUDIO_LABELS.studioMenu;
 
+  protected statusLabel = computed(() => `${this.LABELS.designServer} · ${this.LABELS.serverStatus[this.server()]}`);
+
   protected items = computed(() =>
-    SERVER_ACTIONS[this.server()].map((action) => ({ action, label: STUDIO_LABELS.designServer[action] })),
+    SERVER_ROWS[this.server()].map((row) => ({
+      row,
+      label: row === 'reload' ? this.LABELS.reload : STUDIO_LABELS.designServer[row],
+    })),
   );
+
+  protected runRow(row: ServerRow) {
+    if (row === 'reload') this.reload.emit();
+    else this.serverAction.emit(row);
+  }
 
   protected selectProject(value: unknown) {
     if (typeof value === 'string' && value !== this.project()) this.projectChange.emit(value);
