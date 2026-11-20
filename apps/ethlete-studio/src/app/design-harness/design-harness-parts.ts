@@ -18,12 +18,18 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/disclosure/disclosure.component').then((m) => m.DisclosureComponent),
   'components/error-toast': () =>
     import('../design-parts/error-toast/error-toast.component').then((m) => m.ErrorToastComponent),
+  'components/hold-trigger': () =>
+    import('../design-parts/hold-trigger/hold-trigger.component').then((m) => m.HoldTriggerComponent),
   'components/shell-collapse': () =>
     import('../design-parts/shell-collapse/shell-collapse.component').then((m) => m.ShellCollapseComponent),
   'components/shortcuts-dialog': () =>
     import('../design-parts/shortcuts-dialog/shortcuts-dialog.component').then((m) => m.ShortcutsDialogComponent),
   'components/sketch-question': () =>
     import('../design-parts/sketch-question/sketch-question.component').then((m) => m.SketchQuestionComponent),
+  'components/sketch-status-badge': () =>
+    import('../design-parts/sketch-status-badge/sketch-status-badge.component').then(
+      (m) => m.SketchStatusBadgeComponent,
+    ),
   'components/title-bar': () => import('../components/title-bar/title-bar.component').then((m) => m.TitleBarComponent),
   'components/title-search': () =>
     import('../components/title-search/title-search.component').then((m) => m.TitleSearchComponent),

@@ -18,6 +18,7 @@ import {
   systemThreadSampleOf,
   THEME_SWITCHES_SAMPLE,
 } from '../design-parts/system-page/system-page-sample';
+import { DesignHarnessHoldTriggerComponent } from './design-harness-hold-trigger.component';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
 import {
   SKETCH_ADDED_STATE,
@@ -240,6 +241,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
+  'components/hold-trigger': ({ content: _content, reason: _reason, interaction: _interaction, ...props }) => props,
   'components/shell-collapse': ({ class: extra, ...props }) => ({
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
@@ -394,6 +396,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
 
 /** Template inputs a part takes, read from `templates()` of a component the harness creates beside it. */
 export const DESIGN_HARNESS_TEMPLATES: Record<string, Type<{ templates: () => Record<string, unknown> }>> = {
+  'components/hold-trigger': DesignHarnessHoldTriggerComponent,
   'pages/sketches': DesignHarnessSketchShotsComponent,
 };
 

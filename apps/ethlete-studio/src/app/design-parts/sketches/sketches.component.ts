@@ -65,6 +65,8 @@ import { SketchQuestionComponent } from '../sketch-question/sketch-question.comp
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
+import { HoldTriggerComponent } from '../hold-trigger/hold-trigger.component';
+import { SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { CommentListComponent } from '../comment-flow/comment-list.component';
 import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
@@ -201,6 +203,8 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     TOOLTIP_IMPORTS,
     NgTemplateOutlet,
     AgentLogoComponent,
+    HoldTriggerComponent,
+    SketchStatusBadgeComponent,
     CanvasViewportComponent,
     SketchQuestionComponent,
     CommentPinComponent,
@@ -828,10 +832,6 @@ export class SketchesComponent {
 
   protected selectRound(value: unknown) {
     if (typeof value === 'string') this.roundChange.emit(value);
-  }
-
-  protected toggleReason() {
-    this.reasonOpen.update((open) => !open);
   }
 
   protected fit() {

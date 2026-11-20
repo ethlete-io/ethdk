@@ -27,37 +27,27 @@
       @switch (shownStatus()) {
         @case ('paused') {
           <span class="flex min-w-0 items-center gap-space-2">
-            <button
-              [attr.aria-expanded]="reasonOpen()"
-              (click)="toggleReason()"
-              class="-m-space-1 flex cursor-pointer rounded-control-sm border-0 bg-transparent p-space-1 [transition:var(--transition-state)] outline-none hover:bg-et-surface-interaction/10 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)] focus-visible:outline-none active:bg-et-surface-interaction/15"
-              type="button"
-              data-sk-hold
-            >
-              <div class="flex flex-wrap items-center">
-                <et-badge variant="tonal" size="sm">{{ LABELS.status.paused }}</et-badge>
-              </div>
-            </button>
-            <span
-              [hidden]="!reasonOpen()"
-              class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
-              data-sk-hold-reason
-            >
-              <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
-              <span>·</span>
-              <span class="inline-flex items-center gap-space-1"
-                ><svg [agent]="hold().by.agent" class="size-3 flex-none" ethlete-agent-logo></svg
-                >{{ hold().by.short }}</span
-              >
-              <span>· {{ hold().since }}</span>
-            </span>
+            <ethlete-hold-trigger
+              [content]="holdContent"
+              [reason]="holdReason"
+              [open]="reasonOpen()"
+              (openChange)="reasonOpen.set($event)"
+            />
           </span>
+          <ng-template #holdContent><ethlete-sketch-status-badge [status]="shownStatus()" /></ng-template>
+          <ng-template #holdReason>
+            <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
+            <span>·</span>
+            <span class="inline-flex items-center gap-space-1"
+              ><svg [agent]="hold().by.agent" class="size-3 flex-none" ethlete-agent-logo></svg
+              >{{ hold().by.short }}</span
+            >
+            <span>· {{ hold().since }}</span>
+          </ng-template>
         }
         @case ('waiting') {
           <span class="flex items-center gap-space-2">
-            <div class="flex flex-wrap items-center">
-              <et-badge variant="tonal" size="sm">{{ LABELS.status.waiting }}</et-badge>
-            </div>
+            <ethlete-sketch-status-badge [status]="shownStatus()" />
             @if (heldMerge(); as held) {
               <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-merge-hold>{{
                 LABELS.mergeHold(held)
@@ -67,18 +57,12 @@
         }
         @case ('picked') {
           <span class="flex items-center gap-space-2">
-            <div class="flex flex-wrap items-center">
-              <et-badge variant="tonal" size="sm" data-sk-picked>{{ LABELS.status.picked }}</et-badge>
-            </div>
+            <ethlete-sketch-status-badge [status]="shownStatus()" data-sk-picked />
           </span>
         }
         @case ('failed') {
           <span class="flex min-w-0 items-center gap-space-2">
-            <span [etProvideColor]="errorTheme()" class="flex w-fit">
-              <div class="flex flex-wrap items-center">
-                <et-badge variant="tonal" size="sm" data-sk-render-error>{{ LABELS.status.failed }}</et-badge>
-              </div>
-            </span>
+            <ethlete-sketch-status-badge [status]="shownStatus()" data-sk-render-error />
             @if (readyReason(); as reason) {
               <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-failed>{{ reason }}</span>
             }
@@ -86,16 +70,12 @@
         }
         @case ('drawing') {
           <span class="flex items-center gap-space-2">
-            <div class="flex flex-wrap items-center">
-              <et-badge variant="tonal" size="sm">{{ LABELS.status.drawing }}</et-badge>
-            </div>
+            <ethlete-sketch-status-badge [status]="shownStatus()" />
           </span>
         }
         @case ('not-ready') {
           <span class="flex items-center gap-space-2">
-            <div class="flex flex-wrap items-center">
-              <et-badge variant="tonal" size="sm">{{ LABELS.status.notReady }}</et-badge>
-            </div>
+            <ethlete-sketch-status-badge [status]="shownStatus()" />
             <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-not-ready
               >{{ readyReason() ?? LABELS.notReadyUnknown }}
               @if (LABELS.lastChange(lastChange().by, lastChange().since); as lastChange) {

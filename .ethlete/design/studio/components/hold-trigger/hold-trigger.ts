@@ -45,6 +45,7 @@ const { states, grid } = interactionRows<Props, 'closed' | 'open', HoldInteracti
 );
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/hold-trigger/hold-trigger.component.ts',
   note: 'The trigger of the sketch hold status with the reason it reveals: the host passes its content, usually the paused badge, and the reason, and a click shows or hides the reason next to it. The trigger keeps its content in place and draws a faint rounded fill on hover and press and an inset ring on keyboard focus. `aria-expanded` follows the reason; `data-sk-hold` is the hook of the prototype setup.',
   madeBy: ['claude-opus-5-5'],
   widths: [320],
