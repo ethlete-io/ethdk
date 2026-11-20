@@ -56,7 +56,7 @@ const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, key
         activeSource: forced === 'focus-visible' ? ('keyboard' as const) : undefined,
         attributes: optionAttributes(
           index === 0
-            ? `${action('project')} data-et-action="closed"`
+            ? `${action('project')} data-et-action="${busy ? 'studio-menu.busy' : 'closed'}"`
             : `${action('project')} data-et-action="emit:projectChange"`,
           forced,
         ),
@@ -91,7 +91,8 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
     typeof location === 'undefined'
       ? { body: '', styles: '' }
       : await studioPanel(server, busy, open ? interaction : undefined, open ? option : undefined);
-  const trigger = studioTrigger(open, open ? undefined : interaction);
+  const target = busy ? (open ? 'studio-menu.busy' : 'studio-menu.busy-open') : undefined;
+  const trigger = studioTrigger(open, open ? undefined : interaction, target);
   return {
     body: html`<div class="relative size-10" data-studio-menu-root>
       ${busy ? busyTrigger(trigger) : trigger}
@@ -126,6 +127,8 @@ export default definePart({
     'studio-menu.option-active': { open: true, option: 'active' },
     'studio-menu.busy': { open: false, busy: true },
     'studio-menu.busy-open': { open: true, busy: true },
+    'studio-menu.busy-focus-visible': { open: false, busy: true, interaction: 'focus-visible' },
+    'studio-menu.busy-open-focus-visible': { open: true, busy: true, interaction: 'focus-visible' },
   },
   describe: {
     closed: 'The neutral logo tile with the menu closed; check that the tile shows no fill or ring and no menu shows.',
@@ -149,6 +152,10 @@ export default definePart({
       'A menu action running (server start, project switch or open); check the SDK spinner in the tile instead of the mark.',
     'studio-menu.busy-open':
       'The menu reopened while an action runs; check the spinner in the tile and that every action row is disabled.',
+    'studio-menu.busy-focus-visible':
+      'The busy tile focused by keyboard after the menu closed; check the focus ring around the tile with the spinner inside.',
+    'studio-menu.busy-open-focus-visible':
+      'The busy menu opened by keyboard; check the keyboard highlight on ethlete-sdk, the only enabled row, and the spinner in the tile.',
   },
   grid: menuRows.grid,
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },

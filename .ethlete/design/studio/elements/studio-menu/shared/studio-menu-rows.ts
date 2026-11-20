@@ -4,7 +4,7 @@ import { studioMark } from '@system/foundations/logo';
 
 export type MenuInteraction = Exclude<Interaction, 'disabled'>;
 
-export const studioTrigger = (open: boolean, interaction?: MenuInteraction) => {
+export const studioTrigger = (open: boolean, interaction?: MenuInteraction, target = open ? 'closed' : 'open') => {
   const markup = withAction(
     button({
       label: studioMark(40),
@@ -16,7 +16,7 @@ export const studioTrigger = (open: boolean, interaction?: MenuInteraction) => {
       /^<button /,
       `<button data-et-control="studio-menu" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
     ),
-    open ? 'closed' : 'open',
+    target,
   );
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
