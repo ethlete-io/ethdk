@@ -1,15 +1,16 @@
 import { NgComponentOutlet } from '@angular/common';
 import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS, SpinnerComponent, TOOLTIP_IMPORTS } from '@ethlete/components';
-import { AutoSurfaceDirective, DragHandleDirective, DragMoveEvent } from '@ethlete/core';
+import { AutoSurfaceDirective } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
 import { injectCodeWatch } from '../../code-watch';
 import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
+import { ShellResizeHandleComponent } from '../shell-resize-handle/shell-resize-handle.component';
 import { PRODUCT_LOGOS } from './product-logos';
 import { railLetters } from './rail-letters';
-import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from './side-width';
+import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
 export type ServerCrash = { time: string; pid: number; port: number; path: string; stack: readonly string[] };
 
@@ -38,8 +39,8 @@ const HOVER_PRESS_RAISED =
     MENU_IMPORTS,
     TOOLTIP_IMPORTS,
     AutoSurfaceDirective,
-    DragHandleDirective,
     ShellCollapseComponent,
+    ShellResizeHandleComponent,
     SpinnerComponent,
     TitleBarComponent,
   ],
@@ -79,10 +80,8 @@ export class ShellMainComponent {
 
   protected readonly LABELS = STUDIO_LABELS.designServer;
   protected readonly SHELL_LABELS = STUDIO_LABELS.shell;
-  protected readonly SIDE_WIDTH = SIDE_WIDTH;
   protected dragWidth = signal<number | null>(null);
   protected shownWidth = computed(() => this.dragWidth() ?? clampSideWidth(this.sideWidth()));
-  private dragFrom: number = SIDE_WIDTH.rest;
   protected codeNoticeText = computed(() => this.codeWatch.notice()?.text ?? null);
   protected codeNoticeAction = computed(() => this.codeWatch.notice()?.action ?? null);
 
@@ -106,31 +105,6 @@ export class ShellMainComponent {
   protected pickSection(section: ShellSection, active: boolean) {
     if (active && this.panel() !== 'hidden') this.collapse.emit();
     else this.sectionChange.emit(section);
-  }
-
-  protected startResize() {
-    this.dragFrom = this.shownWidth();
-  }
-
-  protected moveResize(event: DragMoveEvent) {
-    this.dragWidth.set(clampSideWidth(this.dragFrom + event.totalDx));
-  }
-
-  protected endResize() {
-    const width = this.dragWidth();
-
-    this.dragWidth.set(null);
-
-    if (width !== null) this.sideWidth.set(width);
-  }
-
-  protected resizeByKey(event: KeyboardEvent) {
-    const width = sideWidthForKey(this.shownWidth(), event.key);
-
-    if (width === null) return;
-
-    event.preventDefault();
-    this.sideWidth.set(width);
   }
 
   protected setSystemPicker(open: boolean) {

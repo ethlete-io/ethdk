@@ -295,28 +295,7 @@
           <ng-content select="[shellMainSide]" />
         </div>
       </aside>
-      <div
-        [attr.aria-label]="SHELL_LABELS.sideWidth"
-        [attr.aria-valuemin]="SIDE_WIDTH.min"
-        [attr.aria-valuemax]="SIDE_WIDTH.max"
-        [attr.aria-valuenow]="shownWidth()"
-        [commitThreshold]="0"
-        (dragStarted)="startResize()"
-        (dragMoved)="moveResize($event)"
-        (dragEnded)="endResize()"
-        (dragCancelled)="dragWidth.set(null)"
-        (keydown)="resizeByKey($event)"
-        class="group absolute top-space-3 bottom-space-3 left-[calc(var(--space-3)+var(--st-side-width)-4px)] z-2 w-2 cursor-col-resize outline-none"
-        role="separator"
-        aria-orientation="vertical"
-        tabindex="0"
-        etDragHandle
-        data-side-resize
-      >
-        <span
-          class="absolute top-2.5 bottom-2.5 left-0.75 w-0.5 rounded-full [transition:var(--transition-state)] group-hover:bg-et-theme/50 group-focus-visible:bg-focus-ring group-active:bg-et-theme"
-        ></span>
-      </div>
+      <ethlete-shell-resize-handle [(width)]="sideWidth" (dragWidthChange)="dragWidth.set($event)" class="contents" />
     }
   </div>
 </div>

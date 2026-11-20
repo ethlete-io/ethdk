@@ -242,6 +242,10 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,
   }),
   'components/hold-trigger': ({ content: _content, reason: _reason, interaction: _interaction, ...props }) => props,
+  'components/shell-resize-handle': ({ class: extra, ...props }) => ({
+    ...props,
+    class: `${typeof extra === 'string' ? extra : ''} relative block h-30 w-2 bg-et-surface-bg`,
+  }),
   'components/shell-collapse': ({ class: extra, ...props }) => ({
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} p-space-2`,

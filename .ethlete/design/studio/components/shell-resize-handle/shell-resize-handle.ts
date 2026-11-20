@@ -22,6 +22,7 @@ export const shellResizeHandle = ({ width = SIDE_WIDTH.rest, interaction }: Prop
 export default definePart({
   note: 'The resize handle on the right edge of the shell panel: role separator, col-resize cursor, arrow keys; 248 px by default, 200 to 400 px. At rest it draws nothing; hover draws a 2-px accent line at half opacity, dragging (active) the full accent line, focus-visible the line in --focus-ring, each on --transition-state.',
   madeBy: ['claude-opus-5-5'],
+  implements: 'apps/ethlete-studio/src/app/design-parts/shell-resize-handle/shell-resize-handle.component.ts',
   ...interactionRows<Props, 'resize', ResizeInteraction>(
     { resize: {} },
     {

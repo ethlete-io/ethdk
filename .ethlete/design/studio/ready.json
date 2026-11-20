@@ -1033,7 +1033,7 @@
     "pid": 18614
   },
   "elements/shell-main": {
-    "hash": "816ad41850a0cc0e",
+    "hash": "3f6d66ca3217d82c",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "9183353168e14ff7",
@@ -1086,7 +1086,7 @@
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
       "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
-      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
@@ -1117,11 +1117,12 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "73d567c6882bd94b",
+    "app": "c420142be0ea046b",
     "embedded": {
-      "components/shell-collapse": "df2a7e4afb68b5bf",
-      "components/title-bar": "1ee69ac396981768",
-      "components/title-search": "7b024688fbbe65bb"
+      "components/shell-collapse": "88530ee0e1c1edfc",
+      "components/shell-resize-handle": "66630dba44896bb1",
+      "components/title-bar": "d63a5e4744bf9e70",
+      "components/title-search": "f21ee03f9828f225"
     },
     "actions": [
       "closed",
@@ -1140,10 +1141,10 @@
     "builderReasons": [
       "injects through injectCodeWatch() (apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts)"
     ],
-    "at": "2026-11-20T16:35:22.277Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 2887603
+    "at": "2026-11-20T19:29:10.847Z",
+    "by": "et design check",
+    "cmd": "check",
+    "pid": 473390
   },
   "elements/studio-menu": {
     "hash": "c0b953146da874ba",
