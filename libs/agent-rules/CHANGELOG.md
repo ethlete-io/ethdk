@@ -1,5 +1,12 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.41
+
+### Patch Changes
+
+- `agent-sessions restart --process` starts the agent program itself when the stored command is a `run` of the script, `run` inside the pane of its own session starts the agent in place, and `run --dry-run` shows the caller `CLAUDE_CONFIG_DIR`.
+- `agent-sessions` gives the builder flags to a `claude` that follows `env` and env assignments, as in a stored `env CLAUDE_CONFIG_DIR=... claude`.
+
 ## 0.1.0-next.40
 
 ### Patch Changes
