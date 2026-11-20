@@ -484,6 +484,15 @@ describe('runActionInput', () => {
     }
   });
 
+  it('counts the design elements it leaves to embedded parts', () => {
+    const design = [
+      { ...element({ key: 'button "Own"' }), owners: [] as string[] },
+      { ...element({ key: 'button "Close"' }), owners: ['components/title-bar'] },
+    ];
+
+    expect(ownScopeOf({ design, app: [], hosts: [] }).embedded).toBe(1);
+  });
+
   it('treats an element whose accessible name a declared host carries as that host, whatever its role', () => {
     const hosts = ['DesignCanvas'];
 

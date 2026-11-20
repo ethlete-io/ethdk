@@ -259,7 +259,9 @@ export const checkActions = async (options: {
   appRoot?: string | null;
   /** Settles once another run has drawn the design pictures into the shared store, so this check reads them instead of drawing them twice. */
   designsDrawn?: Promise<unknown>;
-}): Promise<{ lines: Line[]; pictures: string | null; embedders?: string[]; hosts?: string[] } | string> => {
+}): Promise<
+  { lines: Line[]; pictures: string | null; embedders?: string[]; hosts?: string[]; embedded?: number } | string
+> => {
   const { target, config, product, part, url, only, onLine } = options;
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
 
@@ -476,7 +478,7 @@ export const checkActions = async (options: {
     const checkState = async (
       state: string,
       track: (dep: ActionDep, print: string) => void = () => undefined,
-    ): Promise<{ lines: Line[]; hosts: string[]; keep: boolean }> => {
+    ): Promise<{ lines: Line[]; hosts: string[]; keep: boolean; embedded?: number }> => {
       const tracked = async <T>(dep: ActionDep, value: Promise<T>) => {
         const resolved = await value;
 
@@ -798,7 +800,7 @@ export const checkActions = async (options: {
 
       lines.push(...checkedElements.flat());
 
-      return { lines, hosts: scope.skipped, keep: !wrotePictures };
+      return { lines, hosts: scope.skipped, keep: !wrotePictures, embedded: scope.embedded };
     };
 
     const cacheInputs = options.appRoot
@@ -833,6 +835,7 @@ export const checkActions = async (options: {
     };
     const lines: Line[] = [];
     const skippedHosts: string[] = [];
+    let embeddedElements = 0;
     const checked = (only === null ? names : [only]).filter(
       (state) => forcedElementsOf(markups.get(state) ?? '').length === 0,
     );
@@ -871,11 +874,18 @@ export const checkActions = async (options: {
 
       for (const checkedState of batch) {
         lines.push(...checkedState.lines);
+        embeddedElements += checkedState.embedded ?? 0;
         skippedHosts.push(...checkedState.hosts.filter((host) => !skippedHosts.includes(host)));
       }
     }
 
-    return { lines, pictures: dir, embedders: embedders ? await embedders : [], hosts: skippedHosts };
+    return {
+      lines,
+      pictures: dir,
+      embedders: embedders ? await embedders : [],
+      hosts: skippedHosts,
+      embedded: embeddedElements,
+    };
   } catch (error) {
     return messageOf(error);
   } finally {
@@ -1050,7 +1060,9 @@ export const designActions = async (options: {
     console.log(
       checked.embedders?.length
         ? `${part}: exempt - ${checked.embedders.join(', ')} declare(s) the actions of its elements`
-        : `${part} has no interactive element`,
+        : checked.embedded
+          ? `${part}: warning - no action checked: every interactive element comes from an embedded part, which checks its own`
+          : `${part} has no interactive element`,
     );
 
     return 0;

@@ -421,7 +421,7 @@ export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly st
     return false;
   });
 
-  return { design: own, app, skipped: [...skipped] };
+  return { design: own, app, skipped: [...skipped], embedded: options.design.length - own.length };
 };
 
 /** The name a report line gives an element. */
