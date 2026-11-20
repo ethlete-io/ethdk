@@ -738,10 +738,16 @@ export const designShot = async (options: {
         return { axis, names, unchanged };
       };
 
-      shown = shownStatesOf({
-        listed: await Promise.all(rows.map(compared)),
-        hidden: await Promise.all(hidden.map(compared)),
-      });
+      try {
+        shown = shownStatesOf({
+          listed: await Promise.all(rows.map(compared)),
+          hidden: await Promise.all(hidden.map(compared)),
+        });
+      } catch (error) {
+        if (!warm) await shooter.close();
+
+        throw error;
+      }
     }
 
     const plan = planOf({
