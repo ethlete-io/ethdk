@@ -1,0 +1,16 @@
+@layer components {
+  et-form-field[data-text-shell] {
+    --et-form-field-control-border-color: transparent;
+    --et-form-field-control-border-color-hover: transparent;
+    --et-form-field-value-color: var(--et-surface-color-muted-solid, currentColor);
+    --et-form-field-value-color-active: var(--et-surface-color-solid, currentColor);
+
+    .et-form-field-control-frame {
+      background: color-mix(in oklab, var(--et-surface-color-solid, currentColor) 7%, transparent);
+
+      &:hover {
+        background: color-mix(in oklab, var(--et-surface-color-solid, currentColor) 13%, transparent);
+      }
+    }
+  }
+}
