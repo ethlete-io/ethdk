@@ -27,5 +27,5 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 26. **Resident-e2e (B414)** 📋 Resident-e2e-Spec: echter Hintergrundprozess, compare, Part ändern, compare erneut - ... - c0
 27. **compare schneller (B416)** 📋 compare schneller (Bef. 521): App-Shots parallel, S4 Bild-Cache vorziehen, mehrere Parts ... - c0
 28. **WebKit-Zoom-Budget (B356)** ⏳ Einschwingen ohne Fit-Neumessung (5a6c656f2): Linux-WebKit p95 37-43 ms lokal; im CI nur gemessen, ohne GPU (530bdb826); offen: p95 ≤ 33 ms lokal, Mac-Zahl (Tom morgens) - Builder
-29. **Host-Signal-Test im CI (B645)** ⏳ Tagschicht: CEF-Dateien im CI neben das Host-Binary kopieren (Exit 127, libcef.so fehlt), lokalen Fehlschlag mit CEF beheben, dann Schritt wieder rein (zurückgenommen 54d5f1df6) - Builder
-30. **Wartezustand Menü/Start (B646)** 🔨 gebaut 408f57b90, 1e76a00ab, 972df4508 (Studio-Menü: Ladekreis im Logo, Einträge gesperrt; Start: Lade-Knopf); offen: CI auf 530bdb826 grün - Builder
+29. **Host-Signal-Test im CI (B645)** 🔨 gebaut 395a0932f (CEF-Dateien neben das Binary, e2e wartet bis der Host seinen Signal-Handler wieder hat, lokal 75/75); offen: CI auf 395a0932f grün - Builder
+30. **Strg+C beim CEF-Start (B647)** ⏳ Tagschicht: ein echtes Strg+C in den ersten ~400 ms des CEF-Starts geht im Host verloren; Fix in tauri-runtime-cef oder Signalmaske im Host - Builder
