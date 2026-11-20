@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -11,8 +11,38 @@ const MARKER = '.scratch-checkout';
 export const NX_LOCAL_ENV = 'NX_DAEMON=false\n';
 const USAGE = 'usage: yarn scratch:checkout [<dir>] | --remove <dir>';
 
-export const NO_GIT_NOTE =
-  'scratch-checkout: the copy has no git, so `yarn et:design` does not run in it; run `npx nx build cli` there, then `node dist/libs/cli/src/index.js design ...`';
+export const USE_NOTE =
+  'scratch-checkout: the copy is a git repo of its own with one commit of the working tree; run `npx nx build cli` there, then `node dist/libs/cli/src/index.js design ...`';
+
+// Not excluded, renaming one (resident-e2e does) reads as a changed root input and restarts the harness build.
+const OWN_FILES = [MARKER, `${MARKER}.resident-e2e`, '.local.env'];
+
+const ownGitEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+
+/** Makes `dir` a git repo of its own whose one commit holds every copied file, so git-keyed caches work in it. */
+export const commitCopy = (dir) => {
+  const git = (...args) =>
+    spawnSync('git', ['-c', 'core.hooksPath=/dev/null', '-c', 'maintenance.auto=false', '-c', 'gc.auto=0', ...args], {
+      cwd: dir,
+      env: ownGitEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  const init = git('init', '-q');
+  if (init.status !== 0) return { error: `git init in the copy: ${init.stderr.trim()}` };
+  appendFileSync(join(dir, '.git/info/exclude'), `${OWN_FILES.map((name) => `/${name}`).join('\n')}\n`);
+  for (const [step, args] of [
+    ['add', ['add', '--all']],
+    [
+      'commit',
+      ['-c', 'user.name=scratch', '-c', 'user.email=scratch@localhost', 'commit', '-q', '--no-verify', '-m', 'scratch'],
+    ],
+  ]) {
+    const result = git(...args);
+    if (result.status !== 0) return { error: `git ${step} in the copy: ${result.stderr.trim()}` };
+  }
+  return {};
+};
 
 /** The scratch directory a call with no target uses: on the home disk, never in the temp dir. */
 export const defaultScratchDir = (home = homedir(), now = Date.now()) =>
@@ -78,6 +108,8 @@ export const scratchCheckout = (repo, dir) => {
   linkInstalledDependencies(repo, dir);
   writeFileSync(join(dir, '.local.env'), NX_LOCAL_ENV);
   mkdirSync(join(dir, 'node_modules/.design-explore'), { recursive: true });
+  const committed = commitCopy(dir);
+  if (committed.error) return { error: committed.error };
   const escape = storeEscapes(repo, dir);
   if (escape) return { error: escape };
   return { dir };
@@ -104,7 +136,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error(`scratch-checkout: ${result.error}`);
     process.exit(1);
   }
-  console.error(NO_GIT_NOTE);
+  console.error(USE_NOTE);
   console.error(`scratch-checkout: remove it with \`yarn scratch:checkout --remove ${result.dir}\``);
   console.log(result.dir);
 }

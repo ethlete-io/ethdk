@@ -6,6 +6,8 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
+  renameSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -71,6 +73,20 @@ test('scratchCheckout copies uncommitted edits, links dependencies and leaves no
   assert.equal(lstatSync(join(dir, 'node_modules/@types/node')).isSymbolicLink(), true);
   assert.deepEqual(listing(join(repo, 'node_modules')), before);
   assert.deepEqual(scopeSelfLinks(repo), []);
+});
+
+test('scratchCheckout makes the copy its own git repo with a clean tree, so git-keyed harness builds are reused', (t) => {
+  const repo = makeRepo(t);
+  writeFileSync(join(repo, 'a.txt'), 'edited');
+  writeFileSync(join(repo, 'b.txt'), 'untracked');
+  const dir = join(tempFor(t, 'scratch-out-'), 'copy');
+  assert.deepEqual(scratchCheckout(repo, dir), { dir });
+  const git = (...args) => spawnSync('git', args, { cwd: dir, env: gitEnv(), encoding: 'utf8' }).stdout.trim();
+  assert.equal(git('rev-parse', '--show-toplevel'), realpathSync(dir));
+  assert.equal(git('show', 'HEAD:a.txt'), 'edited');
+  assert.equal(git('show', 'HEAD:b.txt'), 'untracked');
+  renameSync(join(dir, '.scratch-checkout'), join(dir, '.scratch-checkout.resident-e2e'));
+  assert.equal(git('status', '--porcelain', '--untracked-files=all'), '');
 });
 
 test('scratchCheckout turns the Nx daemon off in the copy, so no nx@latest install is left in /tmp', (t) => {
