@@ -37,11 +37,13 @@ import {
   FORM_FIELD_FILLS,
   FORM_FIELD_LABEL_MODES,
   FORM_FIELD_LABEL_POSITIONS,
+  FORM_FIELD_VARIANTS,
   FormFieldAppearance,
   FormFieldFill,
   FormFieldLabelMode,
   FormFieldLabelPosition,
   FormFieldSize,
+  FormFieldVariant,
 } from './form-field.variants';
 import {
   FORM_FIELD_CONTROL_TYPES,
@@ -95,6 +97,7 @@ import {
     '[attr.data-has-label]': 'formFieldDir.registeredLabel() ? "" : null',
     '[attr.data-label-mode]': 'formFieldDir.usesTextFieldShell() ? (hasStartLabel() ? "start" : labelMode()) : null',
     '[attr.data-label-position]': 'hasStartLabel() ? "start" : null',
+    '[attr.data-variant]': 'formFieldDir.usesTextFieldShell() && variant() === "ghost" ? "ghost" : null',
     '[attr.data-size]': 'formFieldDir.usesTextFieldShell() ? size() : null',
     '[attr.data-text-shell]': 'formFieldDir.usesTextFieldShell() || null',
     '[style.--_et-form-field-prefix-offset]': 'prefixOffset()',
@@ -116,6 +119,13 @@ export class FormFieldComponent {
   public fill = input<FormFieldFill>(this.defaults.fill);
   public labelMode = input<FormFieldLabelMode>(this.defaults.labelMode);
   public size = input<FormFieldSize>(this.defaults.size);
+
+  /**
+   * `'ghost'` draws no resting border and mutes the value, for toolbars and table cells. Hover and focus
+   * still show the frame. Only applies to text-field controls such as the select.
+   * @default 'default'
+   */
+  public variant = input<FormFieldVariant>(FORM_FIELD_VARIANTS.DEFAULT);
 
   /**
    * `'start'` puts the label outside the control frame, before it and vertically centred, and the control takes

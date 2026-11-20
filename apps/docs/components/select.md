@@ -486,6 +486,16 @@ Clicking anywhere on the form field's control frame - not just the trigger - ope
 
 The trigger inherits the form field's chrome (border, focus ring, sizes, label modes - including floating labels). Colors come from the app-registered [surface/color theme systems](/core/theming); the panel re-applies the trigger location's theme context inside the overlay and elevates the surface one step. The check mark of a selected option and the keyboard-active outline use `--et-theme-color-ink-solid`, so both keep a 3:1 contrast on a light surface. A selected option shows only the check, with no fill.
 
+### Ghost variant
+
+Set `variant="ghost"` on the wrapping `et-form-field` for a select in a toolbar or table cell: no resting border, and a muted value that turns to the full text colour while active. Hover and focus still draw the frame. See the [form field variants](/components/forms#field-shell-variants).
+
+```html
+<et-form-field variant="ghost">
+  <et-select [formField]="form.status" />
+</et-form-field>
+```
+
 The clear button and the chevron render in the form field's [suffix slot](/components/forms#one-suffix-stack), on the shared `.et-input-clear` / `.et-input-picker-trigger` presentation every control's in-field affordances use - ahead of a consumer's own `[etInputSuffix]` and the busy spinner. Their size follows `--et-form-field-affix-icon-size`, so it tracks the field's `size` like every other control.
 
 The panel scrolls under the library [scrollbar](/components/scrollbar) instead of the platform one: it fades in while the options scroll or the pointer is over the panel, and takes the `--et-scrollbar-*` tokens.

@@ -167,6 +167,8 @@ They are now one shared pair in the field's suffix slot - restyle against the ne
 `.et-form-field-suffix`, or by class alone.
 :::
 
+<a id="field-shell-variants"></a>
+
 Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 
 | Input           | Values                                                            | Default         |
@@ -175,6 +177,7 @@ Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 | `fill`          | `'transparent' \| 'filled' \| 'sunken'`                           | `'transparent'` |
 | `labelMode`     | `'static' \| 'inline' \| 'floating-inside' \| 'floating-outside'` | `'static'`      |
 | `size`          | `'sm' \| 'md' \| 'lg'`                                            | `'md'`          |
+| `variant`       | `'default' \| 'ghost'`                                            | `'default'`     |
 | `labelPosition` | `'top' \| 'start'`                                                | `'top'`         |
 
 `labelPosition="start"` moves the label out of the control frame to its start, vertically

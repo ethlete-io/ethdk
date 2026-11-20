@@ -21,6 +21,7 @@ export default {
     appearance: { control: 'select', options: ['box', 'underline'] },
     fill: { control: 'select', options: ['transparent', 'filled', 'sunken'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    variant: { control: 'select', options: ['default', 'ghost'] },
     labelMode: { control: 'select', options: ['static', 'inline', 'floating-inside', 'floating-outside'] },
     labelPosition: { control: 'select', options: ['top', 'start'] },
     label: { control: 'text' },
@@ -47,6 +48,7 @@ export default {
     appearance: 'box',
     fill: 'transparent',
     size: 'md',
+    variant: 'default',
     labelMode: 'static',
     labelPosition: 'top',
     label: 'Fruit',
@@ -73,6 +75,10 @@ export default {
 type Story = StoryObj<FormFieldSelectStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Ghost: Story = {
+  args: { variant: 'ghost' },
+};
 
 export const Preselected: Story = {
   args: { value: 'banana' },

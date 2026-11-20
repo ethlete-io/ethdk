@@ -36,3 +36,10 @@ export const FORM_FIELD_SIZES = {
 } as const;
 
 export type FormFieldSize = (typeof FORM_FIELD_SIZES)[keyof typeof FORM_FIELD_SIZES];
+
+export const FORM_FIELD_VARIANTS = {
+  DEFAULT: 'default',
+  GHOST: 'ghost',
+} as const;
+
+export type FormFieldVariant = (typeof FORM_FIELD_VARIANTS)[keyof typeof FORM_FIELD_VARIANTS];

@@ -10,12 +10,14 @@ import {
   FORM_FIELD_IMPORTS,
   FORM_FIELD_LABEL_MODES,
   FORM_FIELD_SIZES,
+  FORM_FIELD_VARIANTS,
   FormFieldAppearance,
   FormFieldFill,
   FormFieldLabelMode,
   FormFieldLabelPosition,
   FORM_FIELD_LABEL_POSITIONS,
   FormFieldSize,
+  FormFieldVariant,
 } from '../../form-field';
 import { TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { SELECT_IMPORTS } from '../select.imports';
@@ -38,6 +40,7 @@ const FRUIT_OPTIONS = [
         [appearance]="appearance()"
         [fill]="fill()"
         [size]="size()"
+        [variant]="variant()"
         [labelMode]="labelMode()"
         [labelPosition]="labelPosition()"
       >
@@ -88,6 +91,7 @@ export class FormFieldSelectStorybookComponent {
   public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
   public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+  public variant = input<FormFieldVariant>(FORM_FIELD_VARIANTS.DEFAULT);
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
   public labelPosition = input<FormFieldLabelPosition>(FORM_FIELD_LABEL_POSITIONS.TOP);
   public label = input('Fruit');
