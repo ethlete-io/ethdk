@@ -148,10 +148,11 @@
   },
   "pages/flows": "4950706aa3a64d19",
   "pages/inbox": {
-    "hash": "16e1c94710997c38",
+    "hash": "23a38bb14e9c61d3",
     "variant": "a",
-    "decidedBy": "builder",
-    "at": "2026-11-18T06:23:52.170Z"
+    "decidedBy": "plan: ADR 0387",
+    "at": "2026-11-20T14:07:53.240Z",
+    "note": "merged without a pick: allowed by ADR 0387"
   },
   "pages/inventory": {
     "hash": "a5f9ac63fb5969d7",

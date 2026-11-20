@@ -16,6 +16,8 @@ type Props = {
   showResolved: boolean;
   openOn: 'all' | 'active' | 'others' | 'none';
   load?: 'loading' | 'error';
+  error?: string;
+  interrupted?: boolean;
   comments?: Comment[];
   thread?: { id: string; text?: string; phase?: ReplyPhase; reason?: string };
 };
@@ -256,8 +258,11 @@ const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-
 
 const loadingNote = `<p class="m-0 px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-sm)">Kommentare werden geladen…</p>`;
 
-const loadError = (retry: string) =>
-  `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-theme' })}</span><p class="m-0 text-et-surface text-(length:--text-sm)">Kommentare nicht geladen</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">Die Liste kam nicht vom Design-Server an.</p><div class="mt-space-3">${retry}</div></div>`;
+const loadError = (retry: string, reason: string) =>
+  `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-theme' })}</span><p class="m-0 text-et-surface text-(length:--text-sm)">Kommentare nicht geladen</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">${reason || 'Die Liste kam nicht vom Design-Server an.'}</p><div class="mt-space-3">${retry}</div></div>`;
+
+const interruptedNote = (retry: string) =>
+  `<div class="mx-space-2 mt-space-2 flex flex-col items-start gap-space-2 rounded-md border border-et-surface-border px-space-3 py-space-2 text-(length:--text-xs)"><span class="flex items-center gap-space-2 text-et-surface-muted"><span class="contents" data-et-semantic-color="warning">${icon('error', { size: 14, cls: 'size-4 text-et-theme' })}</span>Verbindung unterbrochen. Die Liste ist evtl. nicht aktuell.</span>${retry}</div>`;
 
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string, anchored?: string) => {
   let index = -1;
@@ -291,7 +296,8 @@ export const inbox = definePart<Props>({
     'active-clear': activeClear,
     'all-clear': allClear,
     loading: { ...open, load: 'loading' },
-    'load-error': { ...open, load: 'error' },
+    'load-error': { ...open, load: 'error', error: 'HTTP 500 boom' },
+    interrupted: { ...open, interrupted: true },
     'long-list': { ...open, comments: LONG },
     thread: thread('c1'),
     'thread-own': thread('c3'),
@@ -337,7 +343,15 @@ export const inbox = definePart<Props>({
     'thread-withdraw': { kind: 'button' as const, part: 'components/button' },
     'thread-send': { kind: 'button' as const, part: 'components/button', disabled: true },
   },
-  render: async ({ showResolved, openOn, load, comments: list = COMMENTS, thread: opened }) => {
+  render: async ({
+    showResolved,
+    openOn,
+    load,
+    error = '',
+    interrupted,
+    comments: list = COMMENTS,
+    thread: opened,
+  }) => {
     const selected = opened?.id ?? SELECTED;
     const openComment = opened ? list.find((c) => c.id === opened.id) : undefined;
     const card =
@@ -408,12 +422,13 @@ export const inbox = definePart<Props>({
         <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
         <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}</div>
       </div>
+      ${interrupted ? interruptedNote(retry) : ''}
       <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">
         ${
           load === 'loading'
             ? loadingNote
             : load === 'error'
-              ? loadError(retry)
+              ? loadError(retry, error)
               : visible.length === 0
                 ? empty
                 : activeGroup(
