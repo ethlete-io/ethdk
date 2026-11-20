@@ -18,6 +18,8 @@ const READY_TIMEOUT_MS = 60000;
 const READY_HELPERS = 3;
 const EXIT_LIMIT_MS = 5000;
 const POLL_MS = 100;
+const STABLE_POLL_MS = 20;
+const STABLE_POLLS = 5;
 const STDERR_TAIL = 2000;
 const LOG_TAIL = 4000;
 
@@ -101,12 +103,16 @@ const runCase = async ({ name, signal, ignoreInterrupt }) => {
 
     // Chromium's own handlers also catch the signal while cef::initialize runs; the host's handlers
     // are back once its setup created the console log folder.
-    while (groupOf(pid).length < READY_HELPERS || !catches(pid, signal) || !setUp()) {
+    let stableCatches = 0;
+
+    while (groupOf(pid).length < READY_HELPERS || stableCatches < STABLE_POLLS || !setUp()) {
+      stableCatches = catches(pid, signal) ? stableCatches + 1 : 0;
+
       if (Date.now() > readyBy)
         return {
           name,
           ok: false,
-          detail: `the host did not start its helpers or catch ${signal} (helpers ${groupOf(pid).length}/${READY_HELPERS}, signal caught ${catches(pid, signal)}, setup ${setUp()})\n${diagnostics()}`,
+          detail: `the host did not start its helpers or catch ${signal} (helpers ${groupOf(pid).length}/${READY_HELPERS}, signal caught ${catches(pid, signal)} for ${stableCatches}/${STABLE_POLLS} polls, setup ${setUp()})\n${diagnostics()}`,
         };
       if (child.exitCode !== null) {
         return {
@@ -116,7 +122,7 @@ const runCase = async ({ name, signal, ignoreInterrupt }) => {
         };
       }
 
-      await sleep(POLL_MS);
+      await sleep(STABLE_POLL_MS);
     }
 
     const sentAt = Date.now();
