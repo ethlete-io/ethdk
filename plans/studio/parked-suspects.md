@@ -133,3 +133,5 @@ One line per Suspect without proof (ADR 0276). At its second time the line joins
 - studio e2e "pan beyond every edge" (20.11.): flaky in full run; a far cell is sized from the picture ratio until its live frame reports a taller height; not reproduced 6/6 (B391). Suspect.
 - design check slow pass (20.11.): slow-rule problems (NO-VISIBLE-CHANGE, APP-SPEC, UNCOVERED-REGION) miss the per-rule table and the findings count, exit stays 0. Suspect.
 - studio e2e cold start (20.11.): "a sketch scroll never empties a cell" failed once with "no frame after 60 s", rerun green. Suspect.
+- CI runner speed (20.11.): studio sketch listing 13-26 s on the runner vs 3.6 s locally, serve.perf 262-266 > 200-208 ms. Suspect.
+- studio checkouts.adding (20.11.): one flag for all folder adds, two adds at once could race (B646). Suspect.
