@@ -29,3 +29,7 @@ subagents.
 
 Amended 2026-11-20 (doc-agent session): the human raised the limit in point 1 to four (German, verbatim): "es dürfen
 jetzt auch 4 agents paralel arbeiten gerne". Four topics at once is the limit; a CI fix still does not count.
+
+Amended 2026-11-20 (doc-agent session): the limit of four holds only until the weekly usage reset on Saturday
+2026-11-21 (German, verbatim): "die regel gilt noch bis samstag zum weeklz reset". From that reset on, the limit is two
+again.
