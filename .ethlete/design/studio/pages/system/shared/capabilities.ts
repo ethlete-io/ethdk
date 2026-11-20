@@ -17,32 +17,6 @@ export const buttonExceptions: PartException[] = [
   },
 ];
 
-export const exceptionRows = async (exceptions: PartException[]): Promise<Drawn> => {
-  const approve = await button.render({ label: 'Freigeben', variant: 'filled', size: 'xs' });
-  const rows = exceptions
-    .map(
-      ({ rule, reason, reopened }) =>
-        html`<li class="flex items-start gap-space-3 px-space-3 py-space-2">
-          <span class="flex min-w-0 flex-1 flex-col">
-            <span class="font-code text-et-surface text-ui-xs break-all">${rule}</span>
-            <span class="text-et-surface-muted">${reason}</span>
-            <span class="text-et-surface-muted text-ui-xs"
-              >${reopened ? 'wieder offen - der Teil hat sich geändert' : 'offen'}</span
-            >
-          </span>
-          ${control(withAction(approve.body, 'emit:approveException'), 'exception-approve')}
-        </li>`,
-    )
-    .join('');
-
-  return {
-    body: html`<ul class="m-0 p-0 list-none">
-      ${rows}
-    </ul>`,
-    styles: approve.styles,
-  };
-};
-
 const THEMES = [
   { label: 'Oberflächen-Theme', names: ['light', 'dark'], current: 'light' },
   { label: 'Farb-Theme', names: ['brand', 'danger', 'warning'], current: 'brand' },

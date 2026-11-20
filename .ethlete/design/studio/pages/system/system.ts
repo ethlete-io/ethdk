@@ -1,6 +1,7 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, slot, withAction } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
+import badge from '@system/components/badge';
 import button from '@system/components/button';
 import { canvasFrame, canvasFrameStyles, canvasView, fitTransform, stateGrid } from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
@@ -19,7 +20,7 @@ import {
   type PartOpenPoints,
   type PointGroup,
 } from './shared/open-points';
-import { buttonExceptions, callView, exceptionRows } from './shared/capabilities';
+import { buttonExceptions, callView } from './shared/capabilities';
 import {
   agentOnReadyPart,
   agentSamples,
@@ -182,7 +183,24 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
 };
 
 const exceptionGroup = async () => {
-  const rows = await exceptionRows(buttonExceptions);
+  const approve = await button.render({ label: 'Freigeben', variant: 'outline', size: 'xs' });
+  const open = await badge.render({ badges: [{ label: 'offen', variant: 'outline', size: 'sm' }] });
+  const reopened = await badge.render({ badges: [{ label: 'wieder offen', variant: 'tonal', size: 'sm' }] });
+  const rows = buttonExceptions
+    .map(
+      ({ rule, reason, reopened: again }) =>
+        html`<li class="flex flex-col gap-space-1 px-space-3 py-space-2">
+          <span class="flex items-center gap-space-2">
+            <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface">${rule}</span>
+            ${again ? reopened.body : open.body}
+          </span>
+          <span class="flex items-center gap-space-2">
+            <span class="min-w-0 flex-1 text-et-surface-muted">${reason}</span>
+            ${control(withAction(approve.body, 'emit:approveException'), 'exception-approve')}
+          </span>
+        </li>`,
+    )
+    .join('');
   return {
     body: html`<section class="border-t border-(--et-surface-border-solid) py-space-1">
       <h3
@@ -190,9 +208,11 @@ const exceptionGroup = async () => {
       >
         Ausnahmen<span class="font-code font-normal">${buttonExceptions.length}</span>
       </h3>
-      ${rows.body}
+      <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border-solid)">
+        ${rows}
+      </ul>
     </section>`,
-    styles: rows.styles,
+    styles: approve.styles + open.styles + reopened.styles,
   };
 };
 
