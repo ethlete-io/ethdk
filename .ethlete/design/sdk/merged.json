@@ -143,7 +143,12 @@
     "decidedBy": "plan: finding 325",
     "at": "2026-11-03T16:27:49.935Z"
   },
-  "components/table": "785b34208ceb65a4",
+  "components/table": {
+    "hash": "880c3eddf45ca901",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-20T23:00:26.873Z"
+  },
   "components/tabs": "1c8589a9ab2fdea8",
   "components/textarea": {
     "hash": "742c358ec850abc4",
