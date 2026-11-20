@@ -52,11 +52,10 @@
   "components/carousel": "0ce28ec61e49874e",
   "components/chart": "7484c4d80d418295",
   "components/checkbox": {
-    "hash": "82de2417d7afe015",
+    "hash": "8a5db649d9ee9401",
     "variant": "new",
-    "decidedBy": "plan: B584: fill the missing control states of components/checkbox",
-    "at": "2026-11-18T14:07:36.538Z",
-    "note": "merged without a pick: allowed by B584: fill the missing control states of components/checkbox"
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-20T19:49:14.673Z"
   },
   "components/chip": {
     "hash": "3402ac1cd8173464",
@@ -112,7 +111,12 @@
   "components/picture": "264a88e52f520c13",
   "components/progress-steps": "769f3d13373d699c",
   "components/query-error": "6229941c4f9f6dfa",
-  "components/radio-group": "570be5d0ff8a5f90",
+  "components/radio-group": {
+    "hash": "479c67f0bc561019",
+    "variant": "new",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-20T19:49:14.673Z"
+  },
   "components/scheduler": "3897faf73c598b17",
   "components/scrollable": {
     "hash": "87824b455dfdb860",
