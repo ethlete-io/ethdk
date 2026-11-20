@@ -2,9 +2,9 @@ import { Problem } from '../problem';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { declaresControlsOf, interactionNamesOf } from '../sketch/part-definition';
 
-/** Whether a part file is composition only: no page, and no control of its own, so every control it shows belongs to an embedded part. */
+/** Whether a part file is composition only: a component or element with no control of its own, so every control it shows belongs to an embedded part. */
 export const isCompositionSource = (options: { key: string; source: string }) =>
-  !options.key.startsWith('pages/') && !declaresControlsOf(options.source);
+  !options.key.startsWith('pages/') && !options.key.startsWith('foundations/') && !declaresControlsOf(options.source);
 
 /** A composition part that still declares `interactions`. */
 export const compositionWithInteractionsOf = (product: ResolvedProduct): Problem[] =>

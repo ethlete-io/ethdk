@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
-import { compositionWithInteractionsOf } from './composition';
+import { compositionWithInteractionsOf, isCompositionSource } from './composition';
 
 const acmeWith = (fields: string) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -30,5 +30,11 @@ describe('compositionWithInteractionsOf', () => {
 
     expect(compositionWithInteractionsOf(acmeWith(`${controls} interactions: ['hover'],`))).toEqual([]);
     expect(compositionWithInteractionsOf(acmeWith(''))).toEqual([]);
+  });
+
+  it('never calls a page or a foundations part a composition', () => {
+    expect(isCompositionSource({ key: 'elements/hero', source: '' })).toBe(true);
+    expect(isCompositionSource({ key: 'pages/start', source: '' })).toBe(false);
+    expect(isCompositionSource({ key: 'foundations/palette', source: '' })).toBe(false);
   });
 });
