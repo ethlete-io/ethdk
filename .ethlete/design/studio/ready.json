@@ -815,9 +815,9 @@
     "pid": 678978
   },
   "components/zoom-chip": {
-    "hash": "28ff90f714918132",
+    "hash": "76b12927ace36380",
     "files": {
-      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "dcd2824a9eac701c",
+      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "a325e9c839da61a0",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
@@ -837,12 +837,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
+    "app": "c5ed73a7ed332190",
     "actions": ["emit:fit", "emit:zoomIn", "emit:zoomOut", "emit:zoomReset"],
     "builder": "designer",
-    "at": "2026-11-17T17:55:42.697Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-20T14:20:52.886Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 933805
   },
   "elements/canvas-frames": {
     "hash": "9b50c7d7fbc62848",
