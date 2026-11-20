@@ -664,16 +664,16 @@
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "29106985314b4a05",
+    "app": "7b024688fbbe65bb",
     "actions": ["opens:command-palette"],
     "builder": "developer",
     "builderReasons": [
       "injects through injectCommandPaletteStore() (apps/ethlete-studio/src/app/components/title-search/title-search.component.ts)"
     ],
-    "at": "2026-11-20T13:12:14.616Z",
-    "by": "claude-opus-5-5",
+    "at": "2026-11-20T15:01:37.078Z",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 10152
+    "pid": 1656423
   },
   "components/tree-row": {
     "hash": "54194a38f4ab321d",
