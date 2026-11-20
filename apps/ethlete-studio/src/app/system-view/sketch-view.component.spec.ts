@@ -234,6 +234,37 @@ describe('SketchViewComponent', () => {
     expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(9);
   });
 
+  it('keeps the live frames while a zoom gesture runs and updates them once it rests', async () => {
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(100);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(50);
+
+    const states = ['default', 'hover', 'focus'];
+    const wide = {
+      ...SKETCH,
+      targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [], unchanged: [] })),
+    } satisfies ListedSketch;
+    const { fixture, root } = await render(wide, noComments, { ...CARD, states });
+    const live = () =>
+      [...root.querySelectorAll<HTMLIFrameElement>('iframe[data-state]')].map((frame) => frame.src).sort();
+    const before = live();
+
+    root
+      .querySelector('[data-sk-rows]')!
+      .dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -100, bubbles: true, cancelable: true }));
+    root
+      .querySelectorAll('iframe[data-state]')
+      .forEach((frame) => frame.parentElement!.querySelector('img')!.dispatchEvent(new Event('load')));
+    await settle(fixture);
+
+    expect(before.length).toBe(6);
+    expect(live()).toEqual(before);
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await settle(fixture);
+
+    expect(live()).not.toEqual(before);
+  });
+
   it('shows a live frame over its picture only once its page painted', async () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
     const { fixture, root } = await render(ROUNDED, noComments);

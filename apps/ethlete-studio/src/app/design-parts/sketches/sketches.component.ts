@@ -99,6 +99,8 @@ import {
   SketchStatus,
 } from './sketches-sample';
 
+const MOVE_REST_MS = 200;
+
 export type SketchMergeHold = { reason: string; dirty?: string[] };
 
 export type SketchAddedSkip = { part: string; classes: string };
@@ -274,6 +276,9 @@ export class SketchesComponent {
   public pick = output<string>();
   public expandedChange = output<readonly string[]>();
   public cameraChange = output<Camera | null>();
+
+  /** True while the camera pans or zooms, false once it rested for `MOVE_REST_MS`. */
+  public moving = output<boolean>();
   public listWidthChange = output<number>();
   public openPoint = output<OpenPointTarget>();
   public commentStart = output<SketchCommentPlace>();
@@ -333,6 +338,8 @@ export class SketchesComponent {
     { initialValue: 0 },
   );
   private userCamera$ = new Subject<Camera | null>();
+
+  private gesture$ = new Subject<void>();
   protected commentTargeting = computed(() => this.commentMode() && this.comments() !== null);
   protected withdrawnCount = computed(() => this.rows().filter(isWithdrawn).length);
   protected errorInRow = computed(
@@ -540,7 +547,10 @@ export class SketchesComponent {
         frameSelector: '[data-sk-frame]',
         camera: () => ({ ...this.canvas.pan(), zoom: this.shownZoom() }),
         move: (camera) => this.move(camera),
-        preview: (shown, settle) => this.canvas.showPreview(shown, settle),
+        preview: (shown, settle) => {
+          this.canvas.showPreview(shown, settle);
+          if (shown) this.gesture$.next();
+        },
         show: (target, frame) => this.show(target, frame),
         select: (frame) => this.selectedFrame.set(frame.dataset['skFrame'] ?? null),
         afterRender: (write) => afterNextRender({ write }, { injector: this.injector }),
@@ -626,6 +636,15 @@ export class SketchesComponent {
         this.canvas.measure(this.list().nativeElement, this.world().nativeElement);
       },
     });
+
+    this.gesture$
+      .pipe(
+        switchMap(() => merge([true], timer(MOVE_REST_MS).pipe(map(() => false)))),
+        distinctUntilChanged(),
+        tap((moving) => this.moving.emit(moving)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
 
     this.userCamera$
       .pipe(
@@ -1025,6 +1044,7 @@ export class SketchesComponent {
   }
 
   private move(camera: Camera) {
+    this.gesture$.next();
     this.userCamera$.next(this.canvas.move(camera, this.shownZoom()));
   }
 

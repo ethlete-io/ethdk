@@ -254,6 +254,7 @@ const scrollOf = (data: unknown) =>
       (commentPick)="pickComment($event)"
       (retry)="retry.emit()"
       (cameraChange)="cameraChange.emit($event)"
+      (moving)="moving.set($event)"
       (listWidthChange)="saveListWidth($event)"
       (discard)="discard()"
       (merge)="merge($event)"
@@ -375,6 +376,8 @@ export class SketchViewComponent {
           }),
       ),
   );
+
+  public moving = signal(false);
 
   private pictureRatios = signal<Record<string, number>>({});
 
@@ -890,7 +893,7 @@ export class SketchViewComponent {
     );
   });
 
-  protected liveShots = computed(
+  private currentLiveShots = computed(
     () =>
       new Set(
         this.sketch().targets === undefined && this.listError() === null
@@ -905,6 +908,11 @@ export class SketchViewComponent {
             }),
       ),
   );
+
+  protected liveShots = linkedSignal<{ now: Set<string>; moving: boolean }, Set<string>>({
+    source: () => ({ now: this.currentLiveShots(), moving: this.moving() }),
+    computation: ({ now, moving }, previous) => (moving && previous ? previous.value : now),
+  });
 
   protected startComment({ variant, shot, point }: SketchCommentPlace) {
     const target = this.sketch().target;
