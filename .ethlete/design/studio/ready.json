@@ -239,13 +239,13 @@
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "3733f3876a67e612",
+    "app": "de589aedf4bc0f4d",
     "actions": ["emit:pinToggle"],
     "builder": "designer",
     "at": "2026-11-20T13:12:30.112Z",
-    "by": "claude-opus-5-5",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 4165302
+    "pid": 1583356
   },
   "components/comment-row": {
     "hash": "cb3ef346603a0c41",
