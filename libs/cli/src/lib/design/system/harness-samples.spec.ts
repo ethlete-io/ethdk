@@ -22,6 +22,18 @@ describe('harnessSampledPropsOf', () => {
     expect(harnessSampledPropsOf({ source: SAMPLES, part: 'pages/none' })).toEqual([]);
   });
 
+  it('counts a prop a sample derives from another design prop as sampled, with its source', () => {
+    const derived = `
+export const DESIGN_HARNESS_SAMPLES = {
+  'components/chip': ({ kind }) => ({ variant: kind === 'a' ? 'x' : 'y' }),
+  'components/tab': (props) => ({ tone: props['kind'] === 'a' ? 'x' : 'y' }),
+};
+`;
+
+    expect(harnessSampledPropsOf({ source: derived, part: 'components/chip' })).toEqual(['kind', 'variant']);
+    expect(harnessSampledPropsOf({ source: derived, part: 'components/tab' })).toEqual(['kind', 'tone']);
+  });
+
   it('accepts a prop the samples consume although no input takes it, and still refuses one neither takes', () => {
     const consumed = harnessSampledPropsOf({ source: SAMPLES, part: 'pages/sketches' });
 

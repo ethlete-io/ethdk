@@ -44,9 +44,34 @@ const readPropsOf = (body: ts.Node, parameter: string) => {
   return names;
 };
 
+const derivedPropsOf = (body: ts.Node, reads: (node: ts.Node) => boolean) => {
+  const names: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isPropertyAssignment(node) && (ts.isIdentifier(node.name) || ts.isStringLiteralLike(node.name))) {
+      let read = false;
+      const find = (inner: ts.Node) => {
+        if (reads(inner)) read = true;
+
+        ts.forEachChild(inner, find);
+      };
+
+      find(node.initializer);
+
+      if (read) names.push(node.name.text);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(body);
+
+  return names;
+};
+
 /**
  * The props the harness samples function of `part` consumes: the names its parameter destructures, or reads off it by
- * name, in the `DESIGN_HARNESS_SAMPLES` object a source exports.
+ * name, in the `DESIGN_HARNESS_SAMPLES` object a source exports, and each prop it derives from them (`variant:
+ * kind === 'a' ? 'x' : 'y'`).
  */
 export const harnessSampledPropsOf = (options: { source: string; part: string }): string[] => {
   const samples = samplesObjectOf(options.source);
@@ -63,16 +88,29 @@ export const harnessSampledPropsOf = (options: { source: string; part: string })
   const parameter = sample.parameters[0]?.name;
 
   if (!parameter) return [];
-  if (ts.isIdentifier(parameter)) return [...new Set(readPropsOf(sample.body, parameter.text))];
+  if (ts.isIdentifier(parameter)) {
+    const text = parameter.text;
+    const derived = derivedPropsOf(sample.body, (node) => readPropsOf(node, text).length > 0);
+
+    return [...new Set([...readPropsOf(sample.body, text), ...derived])];
+  }
   if (!ts.isObjectBindingPattern(parameter)) return [];
 
-  return parameter.elements.flatMap((element) => {
+  const locals = new Set(
+    parameter.elements.flatMap((element) =>
+      !element.dotDotDotToken && ts.isIdentifier(element.name) ? [element.name.text] : [],
+    ),
+  );
+  const destructured = parameter.elements.flatMap((element) => {
     if (element.dotDotDotToken) return [];
 
     const name = element.propertyName ?? element.name;
 
     return ts.isIdentifier(name) || ts.isStringLiteralLike(name) ? [name.text] : [];
   });
+  const derived = derivedPropsOf(sample.body, (node) => ts.isIdentifier(node) && locals.has(node.text));
+
+  return [...new Set([...destructured, ...derived])];
 };
 
 /** The source file beside the harness map that exports `DESIGN_HARNESS_SAMPLES`, or `null` without one. */
