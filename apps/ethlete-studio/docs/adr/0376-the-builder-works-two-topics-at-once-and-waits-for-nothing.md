@@ -26,3 +26,6 @@ fortschritt".
 
 The limit of two in point 1 is the doc agent's reading of "ein weiteres thema" under the human's warning against ten
 subagents.
+
+Amended 2026-11-20 (doc-agent session): the human raised the limit in point 1 to four (German, verbatim): "es dürfen
+jetzt auch 4 agents paralel arbeiten gerne". Four topics at once is the limit; a CI fix still does not count.

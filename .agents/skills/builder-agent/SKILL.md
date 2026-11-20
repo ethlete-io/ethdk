@@ -31,7 +31,7 @@ The German grill/docs session talks with the user and records decisions. Talk En
 
 - Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
 - Lead sonnet subagents, a fresh one per slice; each brief names the files and line ranges.
-- At most two topics at once, in queue order; a CI fix does not count (ADR 0376). Never wait on CI, a
+- At most four topics at once, in queue order; a CI fix does not count (ADR 0376). Never wait on CI, a
   subagent, a reply or a review: build the next row meanwhile. You coordinate, verify, push and report.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec and changeset; the message holds the as-built
   text, verified and not verified. No plan notes, no per-row `STATUS.md` edit (ADR 0350); a follow-up commit sets
