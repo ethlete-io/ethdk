@@ -16,22 +16,36 @@ type Props = {
   busy?: boolean;
 };
 
-type Server = 'running' | 'stopped';
+type Server = 'running' | 'stale' | 'stopped';
 
-const SERVER_ACTIONS: Record<Server, { name: string; label: string }[]> = {
+const RESTART = { name: 'restart', label: 'Design-Server neu starten', output: 'serverAction' };
+
+const SERVER_ACTIONS: Record<Server, { name: string; label: string; output: string }[]> = {
   running: [
-    { name: 'restart', label: 'Design-Server neu starten' },
-    { name: 'stop', label: 'Design-Server stoppen' },
+    { name: 'reload', label: 'Neu laden', output: 'reload' },
+    RESTART,
+    { name: 'stop', label: 'Design-Server stoppen', output: 'serverAction' },
   ],
-  stopped: [{ name: 'start', label: 'Design-Server starten' }],
+  stale: [
+    RESTART,
+    { name: 'reload', label: 'Neu laden', output: 'reload' },
+    { name: 'stop', label: 'Design-Server stoppen', output: 'serverAction' },
+  ],
+  stopped: [{ name: 'start', label: 'Design-Server starten', output: 'serverAction' }],
+};
+
+const SERVER_STATUS: Record<Server, string> = {
+  running: 'Design-Server · läuft',
+  stale: 'Design-Server · veraltet',
+  stopped: 'Design-Server · gestoppt',
 };
 
 const serverRows = (server: Server, busy: boolean): MenuMockRow[] => [
-  { kind: 'label', label: 'Design-Server' },
-  ...SERVER_ACTIONS[server].map(({ name, label }) => ({
+  { kind: 'label', label: SERVER_STATUS[server] },
+  ...SERVER_ACTIONS[server].map(({ name, label, output }) => ({
     label,
-    disabled: busy,
-    attributes: `${action(name)} data-et-action="emit:serverAction"`,
+    disabled: busy && name !== 'reload',
+    attributes: `${action(name)} data-et-action="emit:${output}"`,
   })),
 ];
 
@@ -73,6 +87,11 @@ const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, key
     label: 'Projekt öffnen…',
     disabled: busy,
     attributes: `${action('open-project')} data-et-action="emit:openProject"`,
+  },
+  {
+    label: 'Checkouts suchen…',
+    disabled: busy,
+    attributes: `${action('scan')} data-et-action="emit:scanProjects"`,
   },
   { kind: 'separator' },
   ...serverRows(server, busy),
@@ -128,10 +147,11 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, the design server actions the server state allows (restart and stop while it runs, start while it is stopped). Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the SDK spinner instead of the mark; reopened, every action row is disabled until the work answers.',
-  madeBy: ['gpt-6', 'claude-opus-5-5', 'design check'],
+  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, Checkouts suchen… keeps every checkout with design work below the search folder. The Design-Server label names the state (läuft, veraltet, gestoppt) and the rows the state allows: Neu laden, restart and stop while it runs (restart first and the label veraltet when the server runs an older cli build than the checkout), start while it is stopped. Neu laden stays enabled while an action runs. Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the SDK spinner instead of the mark; reopened, every action row is disabled until the work answers.',
+  madeBy: ['gpt-6', 'claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   states: {
     ...menuRows.states,
+    'studio-menu.stale': { open: true, server: 'stale' },
     'studio-menu.stopped': { open: true, server: 'stopped' },
     'studio-menu.option-hover': { open: true, option: 'hover' },
     'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
@@ -151,6 +171,8 @@ export default definePart({
     'open-active': 'The open menu in its press state; check that no row loses its label or check mark.',
     'open-focus-visible':
       'The menu opened by keyboard; check that the keyboard highlight sits on ethlete-sdk, the first row, and the tile shows no ring.',
+    'studio-menu.stale':
+      'The menu with a design server older than the checkout; check the label Design-Server · veraltet and Design-Server neu starten as the first row under it.',
     'studio-menu.stopped':
       'The menu with the design server stopped; check that only Design-Server starten shows under Design-Server.',
     'studio-menu.option-hover':
