@@ -200,6 +200,8 @@ describe('StudioMenuComponent', () => {
 
     expect(root?.hasAttribute('aria-busy')).toBe(false);
     expect(trigger?.querySelector('et-spinner')).toBeNull();
+    expect(trigger?.querySelectorAll('svg path')).toHaveLength(1);
+    expect(trigger?.querySelector('svg path')?.getAttribute('fill-rule')).toBe('evenodd');
     expect(trigger?.querySelector('.motion-safe\\:animate-studio-blink')).toBeNull();
   });
 });
