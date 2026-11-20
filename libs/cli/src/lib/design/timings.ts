@@ -1,8 +1,8 @@
 import { gitLater } from './git-reader';
-import { appendFileSync } from 'fs';
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { loadavg } from 'os';
 import { physicalCoresOf } from './physical-cores';
-import { dirname, join } from 'path';
+import { dirname, join, relative } from 'path';
 import { performance } from 'perf_hooks';
 import { setTimeout as delay } from 'timers/promises';
 
@@ -226,7 +226,21 @@ const sumOf = (phases: TimingPhase[], names: string[]) =>
 
 const COMMIT_WAIT_MS = 2000;
 
-const defaultWrite = (file: string, text: string) => appendFileSync(file, text);
+const ignoreTimingsFile = (file: string) => {
+  const folder = dirname(dirname(file));
+  const ignore = join(folder, '.gitignore');
+  const line = relative(folder, file);
+  const present = existsSync(ignore) ? readFileSync(ignore, 'utf8') : '';
+
+  if (present.split('\n').includes(line)) return;
+
+  writeFileSync(ignore, `${present && !present.endsWith('\n') ? `${present}\n` : present}${line}\n`);
+};
+
+const defaultWrite = (file: string, text: string) => {
+  ignoreTimingsFile(file);
+  appendFileSync(file, text);
+};
 
 /**
  * Runs one `et design` command and appends its timings as one JSON line to `file`, also when it fails or the process

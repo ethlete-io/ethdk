@@ -201,6 +201,16 @@ describe('designCommand timings', () => {
     expect(report).toContain('1 design runs since');
     expect(report).toContain('status');
   });
+
+  it('keeps the timings file out of git through .ethlete/.gitignore, once', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await designCommand({ root, argv: ['status'], invocation: 'et design' });
+    await designCommand({ root, argv: ['status'], invocation: 'et design' });
+    error.mockRestore();
+
+    expect(readFileSync(join(root, '.ethlete/.gitignore'), 'utf8')).toBe('design/.timings.jsonl\n');
+  });
 });
 
 describe('unphasedMsOf', () => {
