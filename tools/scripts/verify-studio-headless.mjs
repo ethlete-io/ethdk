@@ -184,6 +184,87 @@ export const studioHostAnswer = async (command, checkout, designPort) => {
   throw new Error(`verify-studio-headless: host command ${command} is not stubbed`);
 };
 
+const studioShim = (chrome) => {
+  const callbacks = new Map();
+  let lastCallback = 0;
+  window.__TAURI_INTERNALS__ = {
+    invoke: (command, args) => {
+      if (command === 'window_chrome_watch' && chrome) {
+        setTimeout(() => callbacks.get(args.changes.id)?.({ index: 0, message: chrome.value }), chrome.delayMs ?? 0);
+
+        return Promise.resolve(null);
+      }
+
+      return window.__studioHost(command, args);
+    },
+    transformCallback: (callback) => {
+      lastCallback += 1;
+      callbacks.set(lastCallback, callback);
+
+      return lastCallback;
+    },
+    unregisterCallback: (id) => callbacks.delete(id),
+    convertFileSrc: (path) => path,
+    metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
+  };
+};
+
+const SERVE_ONLY_HOST_ROUTE = '/__host';
+
+const serveOnlyScript = (view) =>
+  `window.__studioHost = (command, args) =>
+  fetch('${SERVE_ONLY_HOST_ROUTE}', { method: 'POST', body: JSON.stringify({ command, args }) }).then(async (response) => {
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error);
+    return body.value;
+  });
+(${studioShim})(null);
+${view ? `if (!localStorage.getItem('ethlete-studio.call-view')) localStorage.setItem('ethlete-studio.call-view', ${JSON.stringify(JSON.stringify(view))});` : ''}
+`;
+
+/** Answers the `POST /__host` route and `/__studio-serve-only.js` of a serve-only run; false leaves the request to the static server. */
+export const serveOnlyAnswer = (dir, answer, view) => async (request, response) => {
+  const { pathname } = new URL(request.url, 'http://x');
+
+  if (request.method === 'POST' && pathname === SERVE_ONLY_HOST_ROUTE) {
+    let body = '';
+
+    for await (const chunk of request) body += chunk;
+    response.setHeader('content-type', 'application/json');
+    try {
+      const { command } = JSON.parse(body);
+
+      response.end(JSON.stringify({ value: (await answer(command)) ?? null }));
+    } catch (error) {
+      response.statusCode = 500;
+      response.end(JSON.stringify({ error: String(error?.message ?? error) }));
+    }
+
+    return true;
+  }
+
+  if (request.method === 'GET' && (pathname === '/index.html' || !extname(pathname))) {
+    response.setHeader('content-type', 'text/html');
+    response.end(
+      readFileSync(join(dir, 'index.html'), 'utf8').replace(
+        '<head>',
+        '<head><script src="/__studio-serve-only.js"></script>',
+      ),
+    );
+
+    return true;
+  }
+
+  if (pathname === '/__studio-serve-only.js') {
+    response.setHeader('content-type', 'text/javascript');
+    response.end(serveOnlyScript(view));
+
+    return true;
+  }
+
+  return false;
+};
+
 /**
  * The design server listens on `::1` only, so every address here is `[::1]`: `localhost` and `127.0.0.1` are refused from Node.
  * Builds Studio into a scratch folder, runs a design server and a static server of its own on free ports, and
@@ -191,12 +272,13 @@ export const studioHostAnswer = async (command, checkout, designPort) => {
  * stubbed desktop shell. Stops only
  * what it started. `built` serves an existing Studio build folder instead of building one. `restartDesign(downMs)` stops
  * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
- * `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
+ * `serveOnly: { view }` launches no browser: it serves the Studio build with the same shim, forwarding host commands over `POST /__host`,
+ * and calls `run({ studioUrl, designPort })`. `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
  * without it the stubbed shell sends no window chrome and Studio draws no title bar.
  */
 export const withStudio = async (
   run,
-  { checkout = root, build = true, built, chrome, echoDesign = false, engine = 'chromium' } = {},
+  { checkout = root, build = true, built, chrome, echoDesign = false, engine = 'chromium', serveOnly } = {},
 ) => {
   const startedAt = Date.now();
   const stamp = (phase) => console.log(phaseLine(phase, startedAt));
@@ -213,9 +295,16 @@ export const withStudio = async (
 
     design = await startDesignServer(checkout, stamp, echoDesign);
 
-    const app = serveStatic(join(built ?? scratch, 'browser'));
+    const browserDir = join(built ?? scratch, 'browser');
+    const app = serveStatic(
+      browserDir,
+      serveOnly &&
+        serveOnlyAnswer(browserDir, (command) => studioHostAnswer(command, checkout, design.port), serveOnly.view),
+    );
     servers.push(app);
     const studioPort = await listen(app);
+
+    if (serveOnly) return await run({ studioUrl: `http://[::1]:${studioPort}`, designPort: design.port });
 
     stamp(`${engine} launching`);
     const { chromium, webkit } = await import('playwright');
@@ -227,33 +316,7 @@ export const withStudio = async (
     stamp(`${engine} launched`);
 
     await page.exposeFunction('__studioHost', (command) => studioHostAnswer(command, checkout, design.port));
-    await page.addInitScript((chrome) => {
-      const callbacks = new Map();
-      let lastCallback = 0;
-      window.__TAURI_INTERNALS__ = {
-        invoke: (command, args) => {
-          if (command === 'window_chrome_watch' && chrome) {
-            setTimeout(
-              () => callbacks.get(args.changes.id)?.({ index: 0, message: chrome.value }),
-              chrome.delayMs ?? 0,
-            );
-
-            return Promise.resolve(null);
-          }
-
-          return window.__studioHost(command, args);
-        },
-        transformCallback: (callback) => {
-          lastCallback += 1;
-          callbacks.set(lastCallback, callback);
-
-          return lastCallback;
-        },
-        unregisterCallback: (id) => callbacks.delete(id),
-        convertFileSrc: (path) => path,
-        metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
-      };
-    }, chrome ?? null);
+    await page.addInitScript(studioShim, chrome ?? null);
 
     const restartDesign = async (downMs) => {
       const stopped = design.child;
@@ -281,10 +344,44 @@ export const withStudio = async (
   }
 };
 
+const serveOnlyMain = async (args, value) => {
+  const zoom = args.includes('--zoom-fixture');
+  const prepared = zoom
+    ? execFileSync(process.execPath, [join(root, 'apps/ethlete-studio/e2e/canvas.e2e.mjs'), '--prepare-checkout'], {
+        encoding: 'utf8',
+      })
+        .trim()
+        .split('\n')
+        .pop()
+    : null;
+  const checkout = prepared ?? root;
+  const view = zoom ? { checkout, systemProduct: 'studio', systemEntry: 'sketch:pages/system@zoom-budget' } : null;
+  const built = value('--built', undefined);
+
+  await withStudio(
+    async ({ studioUrl, designPort }) => {
+      console.log(`studio ${studioUrl}, design server http://[::1]:${designPort}`);
+      if (prepared) console.log(`checkout ${prepared}`);
+      await new Promise((done) => {
+        process.once('SIGINT', done);
+        process.once('SIGTERM', done);
+      });
+    },
+    { checkout, built: built && resolve(built), build: !built, serveOnly: { view } },
+  ).finally(() => {
+    if (prepared) rmSync(prepared, { recursive: true, force: true });
+  });
+};
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const value = (flag, fallback) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback);
   const out = resolve(value('--out', join(tmpdir(), 'studio-headless.png')));
+
+  if (args.includes('--serve-only')) {
+    await serveOnlyMain(args, value);
+    process.exit(0);
+  }
 
   await withStudio(async ({ page, studioUrl, designPort }) => {
     console.log(`studio ${studioUrl}, design server http://[::1]:${designPort}`);

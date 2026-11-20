@@ -8,6 +8,7 @@ import { tempDir } from './temp-dir.mjs';
 import {
   designProject,
   missingBuildInputs,
+  serveOnlyAnswer,
   startDesignServer,
   studioHostAnswer,
   WEBKIT_BLIND_EXIT,
@@ -136,4 +137,60 @@ else { console.log('  Local:   http://localhost:' + port + '/'); setInterval(() 
     if (pinned === undefined) delete process.env['DE_PORT'];
     else process.env['DE_PORT'] = pinned;
   }
+});
+
+const withServeOnly = async (answer, run) => {
+  const dir = tempDir('studio-serve-only-');
+  const { createServer } = await import('node:http');
+
+  writeFileSync(join(dir, 'index.html'), '<html><head></head><body></body></html>');
+  const server = createServer(async (request, response) => {
+    if (!(await serveOnlyAnswer(dir, answer, { checkout: '/c' })(request, response))) response.end('static');
+  });
+
+  await new Promise((done) => server.listen(0, '127.0.0.1', done));
+  try {
+    return await run(`http://127.0.0.1:${server.address().port}`);
+  } finally {
+    server.close();
+  }
+};
+
+test('serve-only forwards a host command to the answer and returns its value', async () => {
+  await withServeOnly(
+    async (command) => (command === 'workspace_root' ? '/c' : null),
+    async (url) => {
+      const post = (command) => fetch(`${url}/__host`, { method: 'POST', body: JSON.stringify({ command }) });
+
+      assert.deepEqual(await (await post('workspace_root')).json(), { value: '/c' });
+      assert.deepEqual(await (await post('update_ready')).json(), { value: null });
+    },
+  );
+});
+
+test('serve-only answers 500 with the message when the host command throws', async () => {
+  await withServeOnly(
+    async () => {
+      throw new Error('not stubbed');
+    },
+    async (url) => {
+      const response = await fetch(`${url}/__host`, { method: 'POST', body: JSON.stringify({ command: 'x' }) });
+
+      assert.equal(response.status, 500);
+      assert.deepEqual(await response.json(), { error: 'not stubbed' });
+    },
+  );
+});
+
+test('serve-only injects the shim script into index.html and preselects the view', async () => {
+  await withServeOnly(
+    async () => null,
+    async (url) => {
+      assert.match(await (await fetch(`${url}/some/route`)).text(), /<head><script src="\/__studio-serve-only.js">/);
+      const script = await (await fetch(`${url}/__studio-serve-only.js`)).text();
+
+      assert.match(script, /__TAURI_INTERNALS__/);
+      assert.match(script, /ethlete-studio\.call-view/);
+    },
+  );
 });
