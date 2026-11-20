@@ -619,9 +619,9 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "b58e18ff23b45b91",
+    "app": "1ee69ac396981768",
     "embedded": {
-      "components/title-search": "29106985314b4a05"
+      "components/title-search": "7b024688fbbe65bb"
     },
     "actions": [
       "emit:close",
@@ -633,10 +633,10 @@
       "opens:command-palette"
     ],
     "builder": "designer",
-    "at": "2026-11-20T13:13:03.796Z",
-    "by": "claude-opus-5-5",
+    "at": "2026-11-20T15:00:16.191Z",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 4190581
+    "pid": 1628051
   },
   "components/title-search": {
     "hash": "ab5bc2413514211e",
