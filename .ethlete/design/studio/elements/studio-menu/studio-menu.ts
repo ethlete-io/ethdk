@@ -2,7 +2,9 @@ import { definePart, drawing, html, interactionRows } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
 import { action, type MenuInteraction, studioTrigger } from './shared/studio-menu-rows';
+import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import menu from '@system/components/menu';
+import { studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
 import styles from './studio-menu.css?inline';
 
@@ -11,6 +13,7 @@ type Props = {
   server?: Server;
   interaction?: MenuInteraction;
   option?: MenuInteraction;
+  busy?: boolean;
 };
 
 type Server = 'running' | 'stopped';
@@ -23,10 +26,11 @@ const SERVER_ACTIONS: Record<Server, { name: string; label: string }[]> = {
   stopped: [{ name: 'start', label: 'Design-Server starten' }],
 };
 
-const serverRows = (server: Server): MenuMockRow[] => [
+const serverRows = (server: Server, busy: boolean): MenuMockRow[] => [
   { kind: 'label', label: 'Design-Server' },
   ...SERVER_ACTIONS[server].map(({ name, label }) => ({
     label,
+    disabled: busy,
     attributes: `${action(name)} data-et-action="emit:serverAction"`,
   })),
 ];
@@ -36,7 +40,7 @@ const REPOS = ['ethlete-sdk', 'fut-frontend', 'design-playground'];
 const optionAttributes = (base: string, option?: MenuInteraction) =>
   option ? `${base} data-et-force="${option}"` : base;
 
-const studioRows = (server: Server, option?: MenuInteraction, keyboard = false): MenuMockRow[] => [
+const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, keyboard = false): MenuMockRow[] => [
   {
     kind: 'radio-group',
     label: 'Projekt',
@@ -47,6 +51,7 @@ const studioRows = (server: Server, option?: MenuInteraction, keyboard = false):
         kind: 'radio' as const,
         label: repo,
         checked: index === 0,
+        disabled: busy && index !== 0,
         active: !!forced,
         activeSource: forced === 'focus-visible' ? ('keyboard' as const) : undefined,
         attributes: optionAttributes(
@@ -58,25 +63,38 @@ const studioRows = (server: Server, option?: MenuInteraction, keyboard = false):
       };
     }),
   },
-  { label: 'Projekt öffnen…', attributes: `${action('open-project')} data-et-action="emit:openProject"` },
+  {
+    label: 'Projekt öffnen…',
+    disabled: busy,
+    attributes: `${action('open-project')} data-et-action="emit:openProject"`,
+  },
   { kind: 'separator' },
-  ...serverRows(server),
+  ...serverRows(server, busy),
 ];
 
-const studioPanel = (server: Server, interaction?: MenuInteraction, option?: MenuInteraction) =>
+const studioPanel = (server: Server, busy: boolean, interaction?: MenuInteraction, option?: MenuInteraction) =>
   menu.render({
-    rows: studioRows(server, option, interaction === 'focus-visible'),
+    rows: studioRows(server, busy, option, interaction === 'focus-visible'),
     forced: interaction === 'focus-visible' ? undefined : interaction,
   });
 
-export const studioMenu = async ({ open, server = 'running', interaction, option }: Props) => {
+const busyTrigger = (trigger: string) =>
+  trigger
+    .replace(/^<button /, '<button aria-busy="true" ')
+    .replace(
+      studioMark(40),
+      `<span class="flex size-10 items-center justify-center text-et-surface">${spinner()}</span>`,
+    );
+
+export const studioMenu = async ({ open, server = 'running', interaction, option, busy = false }: Props) => {
   const panel =
     typeof location === 'undefined'
       ? { body: '', styles: '' }
-      : await studioPanel(server, open ? interaction : undefined, open ? option : undefined);
+      : await studioPanel(server, busy, open ? interaction : undefined, open ? option : undefined);
+  const trigger = studioTrigger(open, open ? undefined : interaction);
   return {
     body: html`<div class="relative size-10" data-studio-menu-root>
-      ${studioTrigger(open, open ? undefined : interaction)}
+      ${busy ? busyTrigger(trigger) : trigger}
       <div
         id="studio-menu-surface"
         class="st-studio-menu absolute top-0 left-15 z-20 w-62"
@@ -87,7 +105,7 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
         ${panel.body}
       </div>
     </div>`,
-    styles: styles + buttonStyles + panel.styles,
+    styles: styles + buttonStyles + loaderStyles + panel.styles,
     setup: setupStudioMenu,
   };
 };
@@ -98,7 +116,7 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, the design server actions the server state allows (restart and stop while it runs, start while it is stopped). Rows without a target (Erscheinungsbild, Einstellungen, Tastenkürzel, Hilfe, Über Studio) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot.',
+  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, the design server actions the server state allows (restart and stop while it runs, start while it is stopped). Rows without a target (Erscheinungsbild, Einstellungen, Tastenkürzel, Hilfe, Über Studio) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the SDK spinner instead of the mark; reopened, every action row is disabled until the work answers.',
   madeBy: ['gpt-6', 'claude-opus-5-5', 'design check'],
   states: {
     ...menuRows.states,
@@ -106,6 +124,8 @@ export default definePart({
     'studio-menu.option-hover': { open: true, option: 'hover' },
     'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
     'studio-menu.option-active': { open: true, option: 'active' },
+    'studio-menu.busy': { open: false, busy: true },
+    'studio-menu.busy-open': { open: true, busy: true },
   },
   describe: {
     closed: 'The neutral logo tile with the menu closed; check that the tile shows no fill or ring and no menu shows.',
@@ -125,10 +145,14 @@ export default definePart({
       'fut-frontend focused by keyboard; check its keyboard highlight and that ethlete-sdk keeps its check mark.',
     'studio-menu.option-active':
       'fut-frontend pressed; check its press highlight and that the other rows do not change.',
+    'studio-menu.busy':
+      'A menu action running (server start, project switch or open); check the SDK spinner in the tile instead of the mark.',
+    'studio-menu.busy-open':
+      'The menu reopened while an action runs; check the spinner in the tile and that every action row is disabled.',
   },
   grid: menuRows.grid,
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
-  styles: styles + buttonStyles,
+  styles: styles + buttonStyles + loaderStyles,
   implements: 'apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts',
   render: async (props: Props) => {
     const menu = await studioMenu(props);

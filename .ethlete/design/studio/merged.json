@@ -92,10 +92,10 @@
     "at": "2026-11-19T03:19:23.359Z"
   },
   "elements/studio-menu": {
-    "hash": "111e3adb6a48de0f",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-17T19:57:01.853Z"
+    "hash": "623e9b8681c819dc",
+    "variant": "a",
+    "decidedBy": "builder",
+    "at": "2026-11-20T06:46:58.779Z"
   },
   "elements/variant-cell": {
     "hash": "3711c38f14063686",
