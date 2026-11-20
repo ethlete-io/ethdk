@@ -1,6 +1,6 @@
 import { ListedFlow } from '../../host/design-flows';
 import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
-import { flowFramesOf, flowKeyOf, withFlowGroup } from './flow-frames';
+import { flowFramesOf, flowKeyOf, frameRatioOf, withFlowGroup } from './flow-frames';
 
 const part = (layer: string, name: string, states: string[]): ListedPart => ({
   layer,
@@ -117,5 +117,17 @@ describe('withFlowGroup', () => {
       { key: flowKeyOf('checkout'), badges: [] },
       { key: flowKeyOf('broken'), badges: ['error'] },
     ]);
+  });
+});
+
+describe('frameRatioOf', () => {
+  it('takes the ratio of the preset, so a phone box is taller than wide', () => {
+    expect(frameRatioOf(product.presets['phone'], 0.625)).toBeCloseTo(844 / 390);
+    expect(frameRatioOf(product.presets['desktop'], 0.625)).toBe(0.625);
+  });
+
+  it('falls back when the preset has no height or is unknown', () => {
+    expect(frameRatioOf({ width: 390 }, 0.625)).toBe(0.625);
+    expect(frameRatioOf(undefined, 0.625)).toBe(0.625);
   });
 });

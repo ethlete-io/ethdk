@@ -207,6 +207,7 @@ export class FlowsPageComponent {
   public lines = input(FLOWS_SAMPLE_LINES);
   public preset = input<string>(STUDIO_LABELS.flows.sample.preset);
   public presets = input<FlowsPagePreset[]>([]);
+  public ratio = input(FLOWS_SHOT.height / FLOWS_SHOT.width);
   public shellAction = output<ShellAction>();
 
   public pick = output<string>();
@@ -232,9 +233,9 @@ export class FlowsPageComponent {
   );
 
   protected graph = computed(() => {
-    const { width, height, scale, colGap, rowGap, caption } = FLOWS_SHOT;
+    const { width, scale, colGap, rowGap, caption } = FLOWS_SHOT;
     const w = width * scale;
-    const h = height * scale;
+    const h = w * this.ratio();
     const frames = this.frames();
     const at = (frame: FlowsPageFrame) => ({
       x: frame.col * (w + colGap),

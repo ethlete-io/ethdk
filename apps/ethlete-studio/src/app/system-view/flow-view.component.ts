@@ -14,7 +14,7 @@ import {
 } from '../design-parts/flows-page/flows-page.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { rememberFlowPreset, rememberedView } from '../studio-view/remembered';
-import { flowFramesOf, flowKeyOf } from './flow-frames';
+import { flowFramesOf, flowKeyOf, frameRatioOf } from './flow-frames';
 import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
 import { PageShell, PageShellAction } from './page-shell';
 
@@ -29,6 +29,7 @@ import { PageShell, PageShellAction } from './page-shell';
       [lines]="drawn().lines"
       [preset]="preset()"
       [presets]="presets()"
+      [ratio]="ratio()"
       [frameTemplate]="frame"
       [shell]="shell()"
       (pick)="shellAction.emit({ kind: 'pick', key: flowKey($event) })"
@@ -146,9 +147,13 @@ export class FlowViewComponent {
     };
   });
 
+  protected ratio = computed(() =>
+    frameRatioOf(this.product().presets[this.preset()], FLOWS_SHOT.height / FLOWS_SHOT.width),
+  );
+
   protected sources = computed(() => {
     const boxWidth = FLOWS_SHOT.width * FLOWS_SHOT.scale;
-    const boxHeight = FLOWS_SHOT.height * FLOWS_SHOT.scale;
+    const boxHeight = boxWidth * this.ratio();
 
     return new Map(
       this.source().frames.map((frame) => {

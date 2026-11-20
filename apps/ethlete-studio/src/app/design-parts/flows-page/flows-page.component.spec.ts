@@ -80,4 +80,16 @@ describe('FlowsPageComponent', () => {
 
     expect(world?.style.transform).toBe('translate(0px, 0px) scale(1)');
   });
+
+  it('sizes each frame box by the ratio', async () => {
+    const { fixture, element } = await render();
+    const boxHeight = () => element.querySelector<HTMLElement>('[data-et-projected="shot"]')?.style.height;
+
+    expect(boxHeight()).toBe('162px');
+
+    fixture.componentRef.setInput('ratio', 844 / 390);
+    await fixture.whenStable();
+
+    expect(parseFloat(boxHeight() ?? '0')).toBeCloseTo(259.2 * (844 / 390), 1);
+  });
 });

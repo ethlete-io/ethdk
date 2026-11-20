@@ -8,6 +8,10 @@ import { partErrorsOf } from './part-errors';
 
 export const flowKeyOf = (name: string) => `flow:${name}`;
 
+/** The height-to-width ratio of a flow frame box: the preset's own, or the default box when it has no height. */
+export const frameRatioOf = (size: { width: number; height?: number } | undefined, fallback: number) =>
+  size?.height ? size.height / size.width : fallback;
+
 export const frameIdOf = ({ part, state }: FlowState) => `${part} ${state}`;
 
 /** The tree with a Flows group after the groups of parts, one entry per flow. */

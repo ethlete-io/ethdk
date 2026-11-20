@@ -4149,6 +4149,44 @@ const CASES = [
     },
   },
   {
+    name: 'flow frame boxes follow the aspect ratio of the picked preset',
+    pages: ['Flow'],
+    run: async (page) => {
+      const combobox = page.getByRole('combobox', { name: 'Bildschirmgröße' });
+
+      await combobox.click();
+      await page.getByRole('option').first().waitFor({ timeout: 10000 });
+      const options = await page.getByRole('option').allTextContents();
+      const sized = options.map((text) => ({ text, match: /(\d+) × (\d+)/.exec(text) })).filter(({ match }) => match);
+
+      await page.keyboard.press('Escape');
+
+      if (sized.length === 0) return { ok: false, detail: `no preset with a height in ${options.join(', ')}` };
+
+      const faults = [];
+
+      for (const { text, match } of sized) {
+        await combobox.click();
+        await page.getByRole('option', { name: text }).click();
+        await settle(page);
+        const box = await page.locator('[data-et-projected="shot"]').first().boundingBox();
+        const want = Number(match[2]) / Number(match[1]);
+
+        if (!box || Math.abs(box.height / box.width - want) > 0.02) {
+          faults.push(`${text}: box ${box?.width}x${box?.height}`);
+        }
+
+        if (process.env['STUDIO_E2E_FLOW_SHOTS']) {
+          await page.screenshot({
+            path: join(process.env['STUDIO_E2E_FLOW_SHOTS'], `a22-flow-${match[1]}x${match[2]}.png`),
+          });
+        }
+      }
+
+      return { ok: faults.length === 0, detail: faults.join('; ') || `${sized.length} presets keep their ratio` };
+    },
+  },
+  {
     name: 'hiding the panel keeps the frames',
     pages: ['System', 'Sketches', 'Flow'],
     run: async (page, _state, target) => {
