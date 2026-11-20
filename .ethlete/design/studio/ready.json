@@ -494,8 +494,19 @@
     "pid": 1615234
   },
   "components/shell-resize-handle": {
+    "hash": "af41c9c2726ffea8",
+    "files": {
+      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.css": "3f6d46121dfa54f6",
+      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "607fbfa38c069d4b",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6"
+    },
+    "app": "f454744598cdde7a",
     "actions": ["emit:sideWidthChange"],
-    "at": "2026-11-17T13:22:08.744Z"
+    "builder": "designer",
+    "at": "2026-11-20T19:30:22.642Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 524614
   },
   "components/shell-system-picker": {
     "hash": "2b6c6ec238c35ebc",
