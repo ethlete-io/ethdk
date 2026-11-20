@@ -111,7 +111,6 @@
     "pages/sketches missing-state": 1
   },
   "studio-lab": {
-    "components/button missing-state": 1,
     "components/card missing-state": 1,
     "elements/add-film-dialog missing-state": 1,
     "elements/list-row missing-motion": 2,

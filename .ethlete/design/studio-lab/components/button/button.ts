@@ -16,6 +16,7 @@ export default definePart<Props>({
       'The outlined Cancel button on a transparent fill; check that the accent border stays visible and hover tints the inside.',
   },
   interactions: ['hover', 'focus-visible', 'active', 'disabled'],
+  controls: { button: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true } },
   render: ({ label, variant }) =>
     drawing({
       body: `<button class="lab-button lab-button--${variant} cursor-pointer disabled:cursor-not-allowed ${variant === 'outline' ? 'bg-transparent' : ''}">${label}</button>`,
