@@ -1,5 +1,6 @@
 ---
 open: B616
+built: 8dac8f3f6
 decided: 2026-11-19
 ---
 
