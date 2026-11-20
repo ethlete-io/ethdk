@@ -98,6 +98,17 @@ describe('SketchesComponent', () => {
     configure();
   });
 
+  it('draws every variant head as a row above its frames, never as an opaque column', async () => {
+    const root: HTMLElement = (await render({ rows: ROWS, camera: '100' })).nativeElement;
+    const section = root.querySelector('[data-sk-row="x"]');
+
+    expect(section?.className).toContain('grid-cols-[minmax(0,1fr)]');
+    expect(section?.querySelector('[data-sk-head-row]')).not.toBeNull();
+    expect(
+      root.querySelectorAll('.bg-et-surface-bg[data-sk-gutter], [data-sk-head-row].bg-et-surface-bg'),
+    ).toHaveLength(0);
+  });
+
   it('heads a sketch with the part key, or with its title when it has one', async () => {
     const headOf = (root: HTMLElement) => textOf(root.querySelector('header > span'));
     const plain: HTMLElement = (await render({ camera: '100', rows: ROWS, part: 'elements/variant-cell@x' }))
@@ -700,7 +711,6 @@ describe('SketchesComponent', () => {
     const section = root.querySelector<HTMLElement>('section[data-sk-row="x"]');
 
     expect(section?.hasAttribute('data-sk-head-hidden')).toBe(true);
-    expect(section?.style.gridTemplateColumns).toBe('max-content minmax(0, 1fr)');
   });
 
   it('fits the matrix again when a font loads after the first fit', async () => {
@@ -803,9 +813,6 @@ describe('SketchesComponent', () => {
     ];
 
     expect(sizes()).toEqual(['30px', '26px']);
-    expect(root.querySelector<HTMLElement>('[data-sk-row="x"]')?.style.gridTemplateColumns).toBe(
-      '576px minmax(0, 1fr)',
-    );
 
     fixture.componentRef.setInput('camera', { zoom: 0.25, x: 0, y: 0 });
     await fixture.whenStable();

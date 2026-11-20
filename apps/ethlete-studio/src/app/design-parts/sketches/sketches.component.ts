@@ -136,8 +136,6 @@ const MIN_TEXT = 12;
 
 const NOTE_TEXT = 15;
 
-const HEAD_WIDTH = 288;
-
 const LABEL_TEXT = 13;
 
 const MIN_LABEL = 9;
@@ -458,7 +456,6 @@ export class SketchesComponent {
   });
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
-  protected headColumns = computed(() => this.headColumnsAt(this.noteSize()));
   protected labelFont = computed(() => textAt(LABEL_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected labelSize = computed(() => (this.labelFont() < MIN_LABEL ? null : this.labelFont()));
   protected shownStatus = computed(() =>
@@ -941,10 +938,6 @@ export class SketchesComponent {
     return scale;
   }
 
-  private headColumnsAt(note: number) {
-    return note < MIN_LABEL ? 'max-content minmax(0, 1fr)' : `${(HEAD_WIDTH * note) / NOTE_TEXT}px minmax(0, 1fr)`;
-  }
-
   private matrixColumnsAt(columns: number, scale: number) {
     return `max-content repeat(${columns}, ${this.widest() * scale}px)${this.screenMode() ? '' : ' auto'}`;
   }
@@ -963,7 +956,7 @@ export class SketchesComponent {
 
   private applyScale(
     { scale, note, label }: { scale: number; note: number; label: number },
-    { columns, sections, stages, frames, notes, labels, labelRows, gutters, matrix }: FitDom,
+    { columns, stages, frames, notes, labels, labelRows, gutters, matrix }: FitDom,
   ) {
     const { setStyle } = this.renderer;
 
@@ -974,9 +967,6 @@ export class SketchesComponent {
       });
     }
 
-    for (const section of matrix ? [] : sections) {
-      setStyle(section, { gridTemplateColumns: this.headColumnsAt(note) });
-    }
     for (const element of notes) setStyle(element, { fontSize: `${note}px` });
     for (const element of labels) setStyle(element, { fontSize: `${label}px` });
     for (const row of labelRows) this.renderer.toggleClass(row, 'hidden', label < MIN_LABEL);

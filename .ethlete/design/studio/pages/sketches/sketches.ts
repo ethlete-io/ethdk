@@ -554,14 +554,11 @@ const headOf = (row: Row, view: View) => {
 const gridRow = (part: SketchPart, row: Row, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
   return html`<section
-    class="sk-row grid grid-cols-[var(--sk-head)_minmax(0,1fr)] gap-space-5 rounded-control-md p-space-3 in-data-sk-head-hidden:grid-cols-[max-content_minmax(0,1fr)] in-data-sk-head-hidden:gap-space-2"
+    class="sk-row grid grid-cols-[minmax(0,1fr)] gap-space-5 rounded-control-md p-space-3 in-data-sk-head-hidden:gap-space-2"
     data-sk-row="${row.key}"
     ${row.key === view.selected ? ' data-selected' : ''}
   >
-    <div
-      class="relative z-2 min-w-0 self-stretch bg-et-surface-bg pr-space-3 before:absolute before:inset-y-0 before:right-full before:w-10 before:bg-et-surface-bg before:content-['']"
-      data-sk-sticky-head
-    >
+    <div class="min-w-0" data-sk-head-row>
       <span
         class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
         data-sk-head-tag
@@ -596,7 +593,7 @@ const gutter = (part: SketchPart, top: number) =>
     .map(
       (state, index) =>
         html`<span
-          class="sk-gutter relative z-2 flex items-center self-stretch bg-et-surface-bg pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface in-data-sk-head-hidden:text-transparent"
+          class="flex items-center self-stretch pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface in-data-sk-head-hidden:text-transparent"
           data-sk-gutter
           style="grid-column: 1; grid-row: ${top + 1 + index * 2} / span 2"
           >${state}</span
@@ -714,7 +711,7 @@ const screenGutter = (group: ChangeGroup, line: number, whole: boolean, buttons:
   const [first = ''] = group.states;
   const count = group.states.length;
   return html`<div
-    class="sk-gutter relative z-2 flex w-[calc(var(--sk-note)*15)] flex-col justify-center gap-space-1 self-stretch bg-et-surface-bg pr-space-3 text-(length:--sk-note) leading-[1.35]"
+    class="flex w-[calc(var(--sk-note)*15)] flex-col justify-center gap-space-1 self-stretch pr-space-3 text-(length:--sk-note) leading-[1.35]"
     data-sk-gutter
     style="grid-column: 1; grid-row: ${line} / span 2"
   >
@@ -924,7 +921,7 @@ export default definePart<Props>({
     'narrow-part':
       'A narrow part as one row per variant; check the state grid with its names and the cell widths that follow each measured state.',
     'sticky-names':
-      'A wide part as a matrix panned at 80 %; check that the state-name column stays pinned at the left edge, opaque over the cells.',
+      'A wide part as a matrix panned at 80 %; check that the state names scroll with the cells, with no opaque column behind them.',
     comparing: 'The comparison still running; check vergleicht … in the header and that every frame stays neutral.',
     'comparing-narrow':
       'A narrow part while comparing; check the neutral frames and the folded vergleicht N Zustände … line.',

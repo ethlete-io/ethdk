@@ -230,7 +230,6 @@ export type Zoom = 'fit' | number;
 const GAP = 24;
 const MIN_TEXT = 12;
 const NOTE_TEXT = 15;
-const HEAD_WIDTH = 288;
 const LABEL_TEXT = 13;
 const MIN_LABEL = 9;
 const FIT_PADDING = 16;
@@ -259,7 +258,6 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     world.style.setProperty('--sk-frame', `${width * scale}px`);
     world.style.setProperty('--sk-cols', `${columns}`);
     world.style.setProperty('--sk-note', `${note}px`);
-    world.style.setProperty('--sk-head', `${(HEAD_WIDTH * note) / NOTE_TEXT}px`);
     world.style.setProperty('--sk-label', `${text}px`);
     world.toggleAttribute('data-sk-labels-hidden', text < MIN_LABEL);
     world.toggleAttribute('data-sk-head-hidden', note < MIN_LABEL);
