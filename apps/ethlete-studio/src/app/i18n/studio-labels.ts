@@ -357,7 +357,7 @@ export const STUDIO_LABELS = {
   },
   exceptions: {
     toggle: 'Ausnahmen',
-    reopened: 'wieder offen - der Teil hat sich geändert',
+    reopened: 'wieder offen',
     pending: 'offen',
     approve: 'Freigeben',
   },

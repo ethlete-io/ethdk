@@ -78,7 +78,7 @@ describe('OpenPointsPopoverComponent', () => {
     fixture.componentInstance.approveException.subscribe((rule) => approved.push(rule));
 
     expect(element.querySelector('h3')?.textContent?.replace(/\s+/g, '')).toBe('Ausnahmen3');
-    expect(element.textContent).toContain('wieder offen - der Teil hat sich geändert');
+    expect(element.textContent).toContain('wieder offen');
 
     const buttons = [...element.querySelectorAll<HTMLButtonElement>('button')].filter(
       (button) => button.textContent?.trim() === 'Freigeben',

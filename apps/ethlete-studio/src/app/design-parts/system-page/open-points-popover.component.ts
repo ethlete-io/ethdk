@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BADGE_IMPORTS, BUTTON_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import {
   AgentProgress,
@@ -92,25 +92,29 @@ const SHOWN_LINES = 3;
           >
             {{ EXCEPTION_LABELS.toggle }}<span class="font-code font-normal">{{ exceptions().length }}</span>
           </h3>
-          <ul class="m-0 list-none p-0">
+          <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border-solid)">
             @for (exception of exceptions(); track exception.rule) {
-              <li class="flex items-start gap-space-3 px-space-3 py-space-2">
-                <span class="flex min-w-0 flex-1 flex-col">
-                  <span class="font-code text-ui-xs break-all text-et-surface">{{ exception.rule }}</span>
-                  <span class="text-et-surface-muted">{{ exception.reason }}</span>
-                  <span class="text-ui-xs text-et-surface-muted">
+              <li class="flex flex-col gap-space-1 px-space-3 py-space-2">
+                <span class="flex items-center gap-space-2">
+                  <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface">{{
+                    exception.rule
+                  }}</span>
+                  <et-badge [variant]="exception.reopened ? 'tonal' : 'outline'" size="sm">
                     {{ exception.reopened ? EXCEPTION_LABELS.reopened : EXCEPTION_LABELS.pending }}
-                  </span>
+                  </et-badge>
                 </span>
-                <button
-                  (click)="approveException.emit(exception.rule)"
-                  et-button
-                  type="button"
-                  variant="filled"
-                  size="xs"
-                >
-                  {{ EXCEPTION_LABELS.approve }}
-                </button>
+                <span class="flex items-center gap-space-2">
+                  <span class="min-w-0 flex-1 text-et-surface-muted">{{ exception.reason }}</span>
+                  <button
+                    (click)="approveException.emit(exception.rule)"
+                    et-button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                  >
+                    {{ EXCEPTION_LABELS.approve }}
+                  </button>
+                </span>
               </li>
             }
           </ul>
@@ -169,7 +173,7 @@ const SHOWN_LINES = 3;
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, BuildReadyFooterComponent, NgTemplateOutlet],
+  imports: [BADGE_IMPORTS, BUTTON_IMPORTS, BuildReadyFooterComponent, NgTemplateOutlet],
 })
 export class OpenPointsPopoverComponent {
   public part = input.required<string>();
