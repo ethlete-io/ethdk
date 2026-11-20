@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './design-config';
 import {
   aktuellPlaceholderWarnings,
@@ -68,6 +68,67 @@ vi.mock('./system/read-open-points', async (importOriginal) => ({
   sketchOpenPointsOf: vi.fn(() => ({ added: [], inherited: [] })),
 }));
 
+const realTools = vi.hoisted(() => ({ typecheck: false }));
+
+vi.mock('./typecheck', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./typecheck')>();
+
+  return {
+    ...actual,
+    binaryOf: (options: { target: string; pkg: string; bin: string }) =>
+      options.pkg === 'prettier' && existsSync(join(options.target, '.prettierignore'))
+        ? null
+        : actual.binaryOf(options),
+    typecheck: (options: Parameters<typeof actual.typecheck>[0]) =>
+      realTools.typecheck ? actual.typecheck(options) : { kind: 'ok' },
+    typecheckAsync: async (options: Parameters<typeof actual.typecheckAsync>[0]) =>
+      realTools.typecheck ? actual.typecheckAsync(options) : { kind: 'ok' },
+  };
+});
+
+const sharedBrowsers = vi.hoisted(() => new Map<string, Promise<unknown>>());
+
+vi.mock('./browser', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./browser')>();
+
+  return {
+    ...actual,
+    chromiumOf: async (target: string) => {
+      const found = await actual.chromiumOf(target);
+
+      if (!found) return found;
+
+      return {
+        ...found,
+        chromium: {
+          ...found.chromium,
+          launch: (options?: { args?: string[] }) => {
+            const key = JSON.stringify(options?.args ?? []);
+            const open = (sharedBrowsers.get(key) ?? found.chromium.launch(options)) as ReturnType<
+              typeof found.chromium.launch
+            >;
+
+            sharedBrowsers.set(key, open);
+
+            return open.then(
+              (browser) =>
+                new Proxy(browser, {
+                  get: (inner, name) => (name === 'close' ? async () => undefined : Reflect.get(inner, name)),
+                }),
+            );
+          },
+        },
+      };
+    },
+  };
+});
+
+afterAll(async () => {
+  const open = await Promise.all([...sharedBrowsers.values()]);
+
+  await Promise.all(open.map((browser) => (browser as { close: () => Promise<void> }).close()));
+});
+
 const actualSketchOpenPoints = async () =>
   (await vi.importActual<typeof import('./system/read-open-points')>('./system/read-open-points')).sketchOpenPointsOf;
 
@@ -123,6 +184,7 @@ export default definePart({
 
 describe('designSketch', { timeout: 120_000 }, () => {
   afterEach(() => {
+    realTools.typecheck = false;
     vi.restoreAllMocks();
     vi.mocked(unviewedShotLinesOf).mockReset().mockReturnValue([]);
     vi.mocked(variantChangesShown)
@@ -2070,6 +2132,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
   it.each([{ repo: true }, { repo: false }])(
     'leaves the generated tsconfig out of the format check and still flags a tracked file (git repo $repo)',
     async ({ repo }) => {
+      realTools.typecheck = true;
+
       const target = acme();
       const lines = output();
       const variant = join(target, DESIGN_DIR, 'acme/sketches/components-button/b');
