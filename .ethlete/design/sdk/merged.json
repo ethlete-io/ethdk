@@ -36,11 +36,10 @@
   },
   "components/breadcrumb": "d71ad4a5424d2747",
   "components/button": {
-    "hash": "5faa3a9d373b4bd7",
+    "hash": "746f0d4a76c83eae",
     "variant": "new",
-    "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped loader/disabled fix",
-    "at": "2026-11-07T14:52:06.957Z",
-    "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped loader/disabled fix"
+    "decidedBy": "user",
+    "at": "2026-11-20T19:26:55.265Z"
   },
   "components/calendar": "daa79be9b799f897",
   "components/card": {
