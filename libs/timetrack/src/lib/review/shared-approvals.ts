@@ -104,7 +104,21 @@ export const mergeSharedApprovals = (options: {
     const into = kept[index];
 
     if (!into) kept.push(item);
-    else kept[index] = { ...into, foldedIds: unionOf([into.foldedIds, [item.id], item.foldedIds]) };
+    else {
+      const takesApproval = into.state === 'queued' && item.state === 'approved';
+
+      kept[index] = {
+        ...into,
+        ...(takesApproval
+          ? {
+              state: 'approved' as const,
+              decidedAtMs: item.decidedAtMs,
+              ...(item.decidedBy ? { decidedBy: item.decidedBy } : {}),
+            }
+          : {}),
+        foldedIds: unionOf([into.foldedIds, [item.id], item.foldedIds]),
+      };
+    }
   }
 
   return kept

@@ -114,4 +114,34 @@ test.describe('the approval queue of paired machines', () => {
     await expect(item.getByRole('button', { name: 'Reject' })).toHaveCount(0);
     await expect(dialog.locator('[data-approval="peer-4"]').getByRole('button', { name: 'Approve' })).toBeVisible();
   });
+
+  test('does not list an item this machine approved as approved elsewhere once the app restarted', async ({ page }) => {
+    const approvedHere = create('peer-5', 'Csv export', {
+      state: 'approved',
+      decidedAtMs: AT - 1_000,
+      decidedBy: 'this-machine',
+      ownerMachineId: 'mac-1',
+    });
+
+    await seedWorld(page, {
+      now: E2E_NOW,
+      approvals: [approvedHere],
+      peers: {
+        paired: [MACBOOK],
+        approvals: [
+          {
+            machineId: 'mac-1',
+            queue: [create('peer-5', 'Csv export', { ownerMachineId: 'mac-1' }), create('peer-6', 'Ods export')],
+          },
+        ],
+      },
+    });
+    await page.goto('/day');
+
+    const dialog = await openApprovals(page);
+
+    await expect(dialog.locator('[data-approval="peer-6"]')).toBeVisible();
+    await expect(dialog.locator('[data-approval="peer-5"]')).toHaveCount(0);
+    await expect(dialog).not.toContainText('approved on MacBook');
+  });
 });

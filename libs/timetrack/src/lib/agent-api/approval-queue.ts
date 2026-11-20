@@ -80,6 +80,8 @@ export type AgentApproval = {
   day: string;
   state: AgentApprovalState;
   decidedAtMs?: number;
+  /** The machine whose user approved or rejected it; absent on an item decided before machines were recorded. */
+  decidedBy?: string;
   /** What the op answered, once approved and carried out. */
   result?: unknown;
   /** Why the approved op failed. */
@@ -312,7 +314,8 @@ export const approvableByAll = (queue: readonly AgentApproval[], classes: Action
 
 export const markApproval = (
   queue: readonly AgentApproval[],
-  change: Pick<AgentApproval, 'id' | 'state'> & Partial<Pick<AgentApproval, 'decidedAtMs' | 'result' | 'error'>>,
+  change: Pick<AgentApproval, 'id' | 'state'> &
+    Partial<Pick<AgentApproval, 'decidedAtMs' | 'decidedBy' | 'result' | 'error'>>,
 ): AgentApproval[] => queue.map((item) => (item.id === change.id ? { ...item, ...change } : item));
 
 /** The item `id` names: its own id, or the id of an equivalent item a paired machine's queue folded into it. */
@@ -459,6 +462,7 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
     const error = typeof raw['error'] === 'string' ? raw['error'] : undefined;
     const target = typeof raw['target'] === 'string' && raw['target'] ? raw['target'] : undefined;
     const ownerMachineId = typeof raw['ownerMachineId'] === 'string' ? raw['ownerMachineId'] : undefined;
+    const decidedBy = typeof raw['decidedBy'] === 'string' && raw['decidedBy'] ? raw['decidedBy'] : undefined;
     const foldedIds = Array.isArray(raw['foldedIds'])
       ? raw['foldedIds'].filter((folded): folded is string => typeof folded === 'string')
       : [];
@@ -480,6 +484,7 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
               ...(error === undefined ? {} : { error }),
             }),
         ...(decidedAtMs === undefined ? {} : { decidedAtMs }),
+        ...(decidedBy ? { decidedBy } : {}),
         ...(ownerMachineId ? { ownerMachineId } : {}),
         ...(foldedIds.length ? { foldedIds } : {}),
       },
@@ -594,7 +599,7 @@ export type AgentApprovalRejection = { ok: true; queue: AgentApproval[] } | { ok
 /** Rejects one item that waits for the user's press. Any other item is refused, and the queue stays as it is. */
 export const rejectApproval = (
   queue: readonly AgentApproval[],
-  options: { id: string; decidedAtMs: number },
+  options: { id: string; decidedAtMs: number; decidedBy?: string },
 ): AgentApprovalRejection => {
   const { id } = options;
   const item = queue.find((entry) => entry.id === id);
@@ -607,5 +612,13 @@ export const rejectApproval = (
     return { ok: false, message: `Approval ${id} is ${item.state} already, so it waits for nothing. Nothing changed.` };
   }
 
-  return { ok: true, queue: markApproval(queue, { id, state: 'rejected', decidedAtMs: options.decidedAtMs }) };
+  return {
+    ok: true,
+    queue: markApproval(queue, {
+      id,
+      state: 'rejected',
+      decidedAtMs: options.decidedAtMs,
+      ...(options.decidedBy ? { decidedBy: options.decidedBy } : {}),
+    }),
+  };
 };

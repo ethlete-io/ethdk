@@ -162,12 +162,23 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const find = (id: string) => findApproval(queue(), id);
 
-  const approveOne = (item: AgentApproval) => {
-    change(markApproval(queue(), { id: item.id, state: 'running', decidedAtMs: Date.now() }));
-    approved$.next(item);
+  const decidedByHere = () => {
+    const id = machineId();
+
+    return id ? { decidedBy: id } : {};
   };
 
-  const approvedHere = signal<ReadonlySet<string>>(new Set());
+  const approveOne = (item: AgentApproval, deciding = false) => {
+    change(
+      markApproval(queue(), {
+        id: item.id,
+        state: 'running',
+        decidedAtMs: Date.now(),
+        ...(deciding ? decidedByHere() : {}),
+      }),
+    );
+    approved$.next(item);
+  };
 
   const runsHere = (item: AgentApproval) => !item.ownerMachineId || item.ownerMachineId === machineId();
 
@@ -177,7 +188,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       queue: queue(),
       machines: pairedMachines(),
       nowMs: Date.now(),
-    }).forEach(approveOne);
+    }).forEach((item) => approveOne(item));
 
   const waitsForPeers = (item: AgentApproval) =>
     item.request.op === 'jira.create' &&
@@ -188,12 +199,11 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const approveHere = (item: AgentApproval) => {
     if (runsHere(item) && item.request.op === 'jira.create') {
-      change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now() }));
+      change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now(), ...decidedByHere() }));
       runReadyCreates();
-    } else if (runsHere(item)) approveOne(item);
+    } else if (runsHere(item)) approveOne(item, true);
     else {
-      approvedHere.update((ids) => new Set(ids).add(item.id));
-      change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now() }));
+      change(markApproval(queue(), { id: item.id, state: 'approved', decidedAtMs: Date.now(), ...decidedByHere() }));
     }
   };
 
@@ -210,7 +220,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           item.state === 'approved' &&
           !!item.ownerMachineId &&
           item.ownerMachineId !== machineId() &&
-          !approvedHere().has(item.id) &&
+          item.decidedBy !== machineId() &&
           item.result === undefined &&
           item.error === undefined,
       ),
@@ -245,7 +255,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const merged = mergedApprovalQueue({ machineId: id, own: queue(), peers: state.peers });
 
         revise(() => merged.queue);
-        merged.toRun.filter((item) => item.request.op !== 'jira.create').forEach(approveOne);
+        merged.toRun.filter((item) => item.request.op !== 'jira.create').forEach((item) => approveOne(item));
       }
 
       runReadyCreates();
@@ -307,7 +317,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     reject: (id: string) => {
       settle();
 
-      const rejected = rejectApproval(queue(), { id: find(id)?.id ?? id, decidedAtMs: Date.now() });
+      const rejected = rejectApproval(queue(), { id: find(id)?.id ?? id, decidedAtMs: Date.now(), ...decidedByHere() });
 
       if (rejected.ok) change(rejected.queue);
     },
@@ -326,7 +336,11 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         map(() => {
           settle();
 
-          const rejected = rejectApproval(queue(), { id: find(id)?.id ?? id, decidedAtMs: Date.now() });
+          const rejected = rejectApproval(queue(), {
+            id: find(id)?.id ?? id,
+            decidedAtMs: Date.now(),
+            ...decidedByHere(),
+          });
 
           if (!rejected.ok) throw new Error(rejected.message);
 

@@ -132,6 +132,33 @@ describe('mergeSharedApprovals', () => {
   });
 });
 
+describe('decidedBy', () => {
+  it('survives the merge and the wire form', () => {
+    const decided = createItem('c1', 1, { state: 'approved', decidedAtMs: 5, decidedBy: 'B', ownerMachineId: 'A' });
+    const [onA] = merge('A', [createItem('c1', 1, { ownerMachineId: 'A' })], ['B', [decided]]);
+
+    expect(onA?.decidedBy).toBe('B');
+    expect(parseSharedApprovals(encodeSharedApprovals([decided]))?.[0]?.decidedBy).toBe('B');
+  });
+
+  it('is kept on the waiting item an approved near-same item folds into', () => {
+    const waiting = createItem('b1', 1, { ownerMachineId: 'B' });
+    const approved = createItem('a1', 2, { state: 'approved', decidedAtMs: 9, decidedBy: 'A', ownerMachineId: 'A' });
+    const merged = merge('B', [waiting], ['A', [approved]]);
+
+    expect(merged).toEqual([
+      expect.objectContaining({
+        id: 'b1',
+        state: 'approved',
+        decidedBy: 'A',
+        decidedAtMs: 9,
+        ownerMachineId: 'B',
+        foldedIds: ['a1'],
+      }),
+    ]);
+  });
+});
+
 describe('the shared approval wire form', () => {
   it('round-trips a queue, keeping a running item running and its owner', () => {
     const queue = [

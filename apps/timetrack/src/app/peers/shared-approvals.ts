@@ -27,6 +27,7 @@ const sameDecision = (left: AgentApproval, right: AgentApproval) =>
   left.error === right.error &&
   JSON.stringify(left.result) === JSON.stringify(right.result) &&
   left.ownerMachineId === right.ownerMachineId &&
+  left.decidedBy === right.decidedBy &&
   String(left.foldedIds) === String(right.foldedIds);
 
 /**

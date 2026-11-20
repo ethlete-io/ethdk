@@ -426,3 +426,13 @@ describe('rejectApproval', () => {
     });
   });
 });
+
+describe('decidedBy', () => {
+  it('is set by markApproval and by rejectApproval', () => {
+    const [approved] = markApproval(queueOf(CREATE), { id: 'a0', state: 'approved', decidedBy: 'A' });
+    const rejected = rejectApproval(queueOf(CREATE), { id: 'a0', decidedAtMs: 1, decidedBy: 'A' });
+
+    expect(approved?.decidedBy).toBe('A');
+    expect(rejected.ok && rejected.queue[0]?.decidedBy).toBe('A');
+  });
+});

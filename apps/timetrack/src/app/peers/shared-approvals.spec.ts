@@ -20,6 +20,28 @@ const create = (id: string, over: Partial<AgentApproval> = {}): AgentApproval =>
 });
 
 describe('mergedApprovalQueue', () => {
+  it('keeps the approval of a near-same create that folds into a waiting one and runs it once on its owner', () => {
+    const waiting = create('b1', { ownerMachineId: 'B', askedAtMs: 1_000 });
+    const approved = create('a1', {
+      ownerMachineId: 'A',
+      askedAtMs: 2_000,
+      state: 'approved',
+      decidedAtMs: 7,
+      decidedBy: 'A',
+    });
+    const sameSummary = { op: 'jira.create' as const, projectKey: 'ABC', summary: 'Same', description: '' };
+    waiting.request = sameSummary;
+    approved.request = sameSummary;
+    const { queue, toRun } = mergedApprovalQueue({
+      machineId: 'B',
+      own: [waiting],
+      peers: [{ machineId: 'A', queue: [approved] }],
+    });
+
+    expect(queue).toEqual([expect.objectContaining({ id: 'b1', state: 'approved', decidedBy: 'A' })]);
+    expect(toRun.map((item) => item.id)).toEqual(['b1']);
+  });
+
   it('runs an item this machine owns once the paired machine approved it', () => {
     const own = [create('c1', { ownerMachineId: 'A' })];
     const { queue, toRun } = mergedApprovalQueue({
