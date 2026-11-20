@@ -14,12 +14,12 @@ eine Zeile `S<n>` und bekommt einen Eintrag in der Builder-Warteschlange (ADR 03
 eine blockierte Sitzung unterbricht sofort.
 
 - S1 (fifagg, 18.11.): fünf Tokens/Looks für waagerechtes `et-progress-steps`, gebaut (B617, 209d65db7), kommt mit dem nächsten Prerelease (frühestens 20.11.).
-- S2 (fifagg, 19.11.): Stärke je Zone in `et-standings`, nicht blockiert -> Standings-Zonenstärke (B620).
-- S3 (fifagg, 19.11.): Tooltip der Form-Einträge mit eigenem Inhalt, nicht blockiert -> Standings-Form-Tooltip (B621). Ausblick ohne Anfrage: Status-Slot je Zeile ("Qualified"-Badge), sobald die Gruppentabellen auf `et-standings` wechseln.
+- S2 (fifagg, 19.11.): Stärke je Zone in `et-standings`, nicht blockiert, gebaut (B620, ec0193c71), kommt mit dem nächsten Prerelease.
+- S3 (fifagg, 19.11.): Tooltip der Form-Einträge mit eigenem Inhalt, nicht blockiert, gebaut (B621, c6acf3d7e, 363e70eeb, 568da78b8), kommt mit dem nächsten Prerelease. Ausblick ohne Anfrage: Status-Slot je Zeile ("Qualified"-Badge), sobald die Gruppentabellen auf `et-standings` wechseln.
 - S4 (fifagg, 19.11.): `et-segmented-button-group` direkt in `et-scrollable` (item-size auto) fällt zusammen (Gruppe 6 px, Label 0 px), Umgehung `w-max` in 7 Templates, gebaut (B622, 615a6dab7), kommt mit dem nächsten Prerelease; danach kann fifa `w-max` entfernen.
 - S5 (fifagg B-52/B-53, 19.11.): Look der Segment-Gruppe: inaktive Farbe/Stärke und Spur-Hintergrund, Spaltenbreite bei `stretch` ohne abgeschnittene Namen, 2x2 unter einem Breakpoint; nicht blockiert (Umgehungen) Segment-Gruppe-Tokens gebaut (B623, 2e89fe206), kommt mit dem nächsten Prerelease.
 - S6 (fifagg B-51/B-55, 19.11.): `et-accordion` ohne Hover-Fläche, Chevron-Einzug getrennt vom Label, Trenner unter dem letzten Eintrag app-weit; nicht blockiert Accordion-Tokens und `provideAccordionConfig` gebaut (B624, 8a44517b7), kommt mit dem nächsten Prerelease.
-- S7 (fifagg VD, 19.11.): Filter-Chip soll beim Drücken outline bleiben (Rand + Text in pressedColor), `et-button` macht outline gedrückt zu filled; nicht blockiert -> Button-Druck-Variante (B625), entschieden von mir: Zustand über Inputs (AGENTS.md Styling), Input `pressedVariant`.
+- S7 (fifagg VD, 19.11.): Filter-Chip soll beim Drücken outline bleiben (Rand + Text in pressedColor), `et-button` macht outline gedrückt zu filled; nicht blockiert, gebaut (B625, b164e6139), kommt mit dem nächsten Prerelease, entschieden von mir: Zustand über Inputs (AGENTS.md Styling), Input `pressedVariant`.
 - S8 (fifagg, 19.11.): Segment-Gruppe bei 390 px mit 4 vollen Namen, nicht blockiert (eine gekürzte Zeile) -> Segment-Gruppe Überlauf (B628), entschieden von mir: Input `overflow` truncate | scroll.
 - S9 (fifagg, 19.11.): Accordion: Hover-Fläche breiter als Trenner, Tönungs-Abstand, Chevron-Farbe/Stärke, Panel-Abstand oben; nicht blockiert -> Accordion-Tokens 2 (B629), entschieden von mir wie B624.
 - S10 (fifagg NX-4, 19.11.): Icon-Aliase aus `metadata/icons.yml` im Icon-Generator, blockierte Glyphen, gebaut (d306d3007), kommt mit dem nächsten Prerelease; echte FA6-Installation meldet fifa danach.

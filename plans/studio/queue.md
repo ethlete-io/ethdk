@@ -27,8 +27,5 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 26. **Resident-e2e (B414)** 📋 Resident-e2e-Spec: echter Hintergrundprozess, compare, Part ändern, compare erneut - ... - c0
 27. **compare schneller (B416)** 📋 compare schneller (Bef. 521): App-Shots parallel, S4 Bild-Cache vorziehen, mehrere Parts ... - c0
 28. **WebKit-Zoom-Budget (B356)** ⏳ Einschwingen ohne Fit-Neumessung (5a6c656f2): Linux-WebKit p95 37-43 ms lokal; im CI nur gemessen, ohne GPU (530bdb826); offen: p95 ≤ 33 ms lokal, Mac-Zahl (Tom morgens) - Builder
-29. **Standings-Zonenstärke (B620)** ⏳ SDK (fifagg S2): `StandingsZone.strength` als CSS-Variable am Band, Tagschicht - Builder
-30. **Standings-Form-Tooltip (B621)** ⏳ SDK (fifagg S3): optionales Template für den Form-Tooltip, Tagschicht - Builder
-31. **Button-Druck-Variante (B625)** ⏳ SDK (fifagg S7): Input `pressedVariant`, Standard = heutige Zuordnung - Builder
-32. **Host-Signal-Test im CI (B645)** ⏳ Tagschicht: CEF-Dateien im CI neben das Host-Binary kopieren (Exit 127, libcef.so fehlt), lokalen Fehlschlag mit CEF beheben, dann Schritt wieder rein (zurückgenommen 54d5f1df6) - Builder
-33. **Wartezustand Menü/Start (B646)** 🔨 gebaut 408f57b90, 1e76a00ab, 972df4508 (Studio-Menü: Ladekreis im Logo, Einträge gesperrt; Start: Lade-Knopf); offen: CI auf 530bdb826 grün - Builder
+29. **Host-Signal-Test im CI (B645)** ⏳ Tagschicht: CEF-Dateien im CI neben das Host-Binary kopieren (Exit 127, libcef.so fehlt), lokalen Fehlschlag mit CEF beheben, dann Schritt wieder rein (zurückgenommen 54d5f1df6) - Builder
+30. **Wartezustand Menü/Start (B646)** 🔨 gebaut 408f57b90, 1e76a00ab, 972df4508 (Studio-Menü: Ladekreis im Logo, Einträge gesperrt; Start: Lade-Knopf); offen: CI auf 530bdb826 grün - Builder
