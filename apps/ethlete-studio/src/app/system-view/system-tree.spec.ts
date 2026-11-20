@@ -7,6 +7,7 @@ import {
   CURRENT,
   canPick,
   holdersOf,
+  interactionsOf,
   nestingHostOf,
   partKeyOf,
   isGroupOpen,
@@ -105,6 +106,15 @@ describe('treeOf', () => {
     const [group] = treeOf([part({ name: 'a', changedOutsideSketch: true }), part({ name: 'b' })]);
 
     expect(group?.entries.map((entry) => entry.badges)).toEqual([['changed'], []]);
+  });
+
+  it('labels a composition part and gives it no interaction column', () => {
+    const composed = part({ name: 'a', composition: true, interactions: ['hover'] });
+    const [group] = treeOf([composed, part({ name: 'b', interactions: ['hover'] })]);
+
+    expect(group?.entries.map((entry) => entry.badges)).toEqual([['composition'], []]);
+    expect(group?.entries[0]?.title).toEqual(['nur zusammengesteckt, eher eine Seite']);
+    expect(interactionsOf(composed)).toEqual(['rest']);
   });
 });
 

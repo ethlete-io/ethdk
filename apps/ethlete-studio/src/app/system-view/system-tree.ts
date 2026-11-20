@@ -48,6 +48,7 @@ export type PartBadge =
   | 'from base'
   | 'overridden'
   | 'changed'
+  | 'composition'
   | 'error'
   | 'transferred'
   | 'sketch open'
@@ -107,6 +108,7 @@ const badgesOf = (
   ...(part.origin === 'base' ? (['from base'] as const) : []),
   ...(part.origin === 'overridden' ? (['overridden'] as const) : []),
   ...(part.changedOutsideSketch ? (['changed'] as const) : []),
+  ...(part.composition ? (['composition'] as const) : []),
   ...(sketched.has(partKeyOf(part)) ? (['sketch open'] as const) : []),
   ...commentBadgesOf(partKeyOf(part), marks),
   ...(problems.length > 0 ? (['error'] as const) : []),
@@ -428,7 +430,9 @@ export const treeOf = (
     return {
       key: partKeyOf(part),
       name: part.name,
-      ...(problems.length > 0 ? { title: problemTitleOf(problems) } : {}),
+      ...(problems.length > 0 || part.composition
+        ? { title: [...problemTitleOf(problems), ...(part.composition ? [STUDIO_LABELS.systemTree.composition] : [])] }
+        : {}),
       badges: badgesOf(part, { sketched, marks: partMarks, problems }),
       ...commentsOf(partKeyOf(part), partMarks),
       ...(isWireframe(part) ? { count: part.kitUses } : {}),
@@ -481,7 +485,10 @@ const statesOf = (part: ListedPart, error: string | undefined): (string | undefi
   part.states.length > 0 ? part.states : error ? [undefined] : [];
 
 /** Rest, then each interaction the part declares, in its order. */
-export const interactionsOf = (part: ListedPart): string[] => [REST, ...(part.interactions ?? [])];
+export const interactionsOf = (part: ListedPart): string[] => [
+  REST,
+  ...(part.composition ? [] : (part.interactions ?? [])),
+];
 
 /** The pages of its own product that use a part, in the order the server lists them. */
 const usingPagesOf = (product: ListedProduct, part: ListedPart | null): ListedPart[] =>
@@ -913,7 +920,7 @@ const sketchInteractionsOf = ({ sketch, part }: { sketch: ListedSketch; part: Li
   [
     ...new Set([
       REST,
-      ...(part?.interactions ?? []),
+      ...(part?.composition ? [] : (part?.interactions ?? [])),
       ...(sketch.targets ?? []).flatMap((target) => target.interactions ?? []),
     ]),
   ].sort((a, b) => studioRankOf(a) - studioRankOf(b));
@@ -1005,7 +1012,7 @@ export const sketchMatrixOf = ({
       ...(authors.length > 0 ? { title: STUDIO_LABELS.systemTree.variantBy(variant, authors.join(', ')) } : {}),
       drawing: variant === drawing,
       states: target?.states ?? part?.states ?? [],
-      interactions: [REST, ...(target?.interactions ?? part?.interactions ?? [])],
+      interactions: [REST, ...(target?.interactions ?? (part?.composition ? [] : (part?.interactions ?? [])))],
       error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
     };
   };

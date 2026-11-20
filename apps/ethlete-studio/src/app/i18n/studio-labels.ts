@@ -365,6 +365,7 @@ export const STUDIO_LABELS = {
   },
   systemTree: {
     notUsed: 'Nicht verwendet',
+    composition: 'nur zusammengesteckt, eher eine Seite',
     product: 'Produkt',
     appCode: 'App-Code',
     notUsedIn: (name: string) => `Nicht verwendet in ${name}`,

@@ -60,6 +60,7 @@ import { badLinksOf, unlinkedNamesOf } from './rules/implements';
 import { statesNotInComponentOf } from './rules/state-in-component';
 import { partRewritesOf } from './rules/part-rewrite';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
+import { compositionWithInteractionsOf } from './rules/composition';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { inlineUiInPageProblemsOf, inlineUiInPageWarningsOf } from './rules/inline-ui-in-page';
@@ -125,6 +126,7 @@ const RULES = [
   statesNotInComponentOf,
   partRewritesOf,
   unknownInteractionsOf,
+  compositionWithInteractionsOf,
   kitOutsidePagesOf,
   ownCanvasesOf,
   inlineUiInPageProblemsOf,

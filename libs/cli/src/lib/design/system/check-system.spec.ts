@@ -32,7 +32,13 @@ describe('checkSystem', () => {
     const lines = output();
     const button = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
 
-    writeFileSync(button, readFileSync(button, 'utf8').replace("'active'", "'pressed'"));
+    writeFileSync(
+      button,
+      readFileSync(button, 'utf8').replace(
+        '  states:',
+        "  controls: { go: { kind: 'button', input: ['pointer'] } },\n  interactions: ['hover', 'focus-visible', 'pressed', 'disabled'],\n  states:",
+      ),
+    );
 
     expect(check(target, ['acme'])).toBe(1);
     expect(lines[0]).toBe(

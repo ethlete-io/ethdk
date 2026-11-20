@@ -5,6 +5,7 @@ import { ruleProblemsOf } from './check-system';
 import { partsReachedFrom, partUsersOf } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
+import { isCompositionSource } from './rules/composition';
 import { partKeyOf, PartOrigin, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { openDirectEditPartsOf } from './sketch/merged-parts';
 import { readSlowCache } from './slow-checks';
@@ -34,6 +35,8 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions the part is drawn in besides rest, in the order it declares them. */
   interactions: Interaction[];
+  /** Set on a part that declares no control of its own and is no page: it draws no interaction columns. */
+  composition?: true;
   /** The motions the part declares between its states, without their `play`. */
   motions?: Record<string, ListedMotion>;
   /** The states the part draws as one table in rest, when it declares a `grid` that places any. */
@@ -303,6 +306,9 @@ export const listSystem = async (options: {
                   states,
                   ...layout,
                   interactions,
+                  ...(isCompositionSource({ key: partKeyOf(part), source: part.source })
+                    ? { composition: true as const }
+                    : {}),
                   kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
                   usedIn: usedInOf(part),
                   usedBy: [...(users.get(partKeyOf(part)) ?? [])],

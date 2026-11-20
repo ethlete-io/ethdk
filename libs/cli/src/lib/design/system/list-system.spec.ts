@@ -340,13 +340,16 @@ describe('listSystem', () => {
 
     writeFileSync(
       hero,
-      readFileSync(hero, 'utf8').replace('  states:', "  interactions: ['hover', 'pressed', 'hover'],\n  states:"),
+      readFileSync(hero, 'utf8').replace(
+        '  states:',
+        "  controls: { go: { kind: 'button', input: ['pointer'] } },\n  interactions: ['hover', 'pressed', 'hover'],\n  states:",
+      ),
     );
 
     const [product] = await list(target, ['acme']);
     const partOf = (name: string) => product?.parts.find((part) => part.name === name);
 
-    expect(partOf('button')?.interactions).toEqual(['hover', 'focus-visible', 'active', 'disabled']);
+    expect(partOf('button')?.interactions).toEqual([]);
     expect(partOf('palette')?.interactions).toEqual([]);
     expect(partOf('hero')?.interactions).toEqual(['hover']);
     expect(partOf('hero')?.problems).toEqual([expect.objectContaining({ rule: 'INTERACTIONS' })]);
