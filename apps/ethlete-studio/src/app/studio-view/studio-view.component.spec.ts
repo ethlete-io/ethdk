@@ -182,6 +182,35 @@ describe('StudioViewComponent', () => {
     expect(system(fixture)?.busy()).toBe(false);
   });
 
+  it('stays busy while a later project read runs when an earlier one answers first', async () => {
+    const roots = () => ({ search: '', roots: [CHECKOUT, '/other', '/third'] });
+
+    stubHost({ design_roots: roots });
+
+    const fixture = await mount();
+    const answers: ((project: unknown) => void)[] = [];
+
+    stubHost({
+      design_roots: roots,
+      design_project: () => new Promise((resolve) => answers.push(resolve)),
+    });
+
+    system(fixture)?.projectChange.emit('other');
+    await settle(fixture);
+    system(fixture)?.projectChange.emit('third');
+    await settle(fixture);
+
+    answers[0]?.(null);
+    await settle(fixture);
+
+    expect(system(fixture)?.busy()).toBe(true);
+
+    answers[1]?.(null);
+    await settle(fixture);
+
+    expect(system(fixture)?.busy()).toBe(false);
+  });
+
   it('drops the port of the checkout before when the next one cannot be read', async () => {
     stubHost({ design_roots: () => ({ search: '', roots: [CHECKOUT, '/broken'] }) });
 

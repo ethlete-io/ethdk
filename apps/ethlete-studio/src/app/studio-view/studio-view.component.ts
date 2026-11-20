@@ -168,9 +168,9 @@ export class StudioViewComponent {
   });
 
   private serverStopping = signal(false);
-  private projectReading = signal(false);
+  private projectReads = signal(0);
   protected menuBusy = computed(
-    () => this.serverBusy() || this.serverStopping() || this.projectReading() || this.checkouts.adding(),
+    () => this.serverBusy() || this.serverStopping() || this.projectReads() > 0 || this.checkouts.adding(),
   );
 
   private listeningPort = computed(() => {
@@ -371,7 +371,7 @@ export class StudioViewComponent {
 
     if (!checkout) return;
 
-    this.projectReading.set(true);
+    this.projectReads.update((reads) => reads + 1);
 
     designProject$(checkout)
       .pipe(
@@ -380,7 +380,7 @@ export class StudioViewComponent {
         }),
         // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed project read keeps the last shown project
         catchError(() => of(null)),
-        finalize(() => this.projectReading.set(false)),
+        finalize(() => this.projectReads.update((reads) => reads - 1)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
