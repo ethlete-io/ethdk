@@ -52,11 +52,10 @@
     "note": "merged without a pick: allowed by finding 911 precedent: harness frame correction, component unchanged"
   },
   "components/shortcuts-dialog": {
-    "hash": "4da55209077cdedf",
-    "variant": "a",
-    "decidedBy": "plan: ADR 0387",
-    "at": "2026-11-20T14:03:08.582Z",
-    "note": "merged without a pick: allowed by ADR 0387"
+    "hash": "7e58c1397f472485",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-20T15:25:05.294Z"
   },
   "components/sketch-status-badge": {
     "hash": "0d7cbd781152272a",

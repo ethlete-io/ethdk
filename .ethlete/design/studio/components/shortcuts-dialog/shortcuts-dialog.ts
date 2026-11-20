@@ -1,4 +1,4 @@
-import { definePart, drawing, html, ng } from '@design-system';
+import { definePart, drawing, html, interactionRows, ng } from '@design-system';
 import { dialog, dialogStyles, overlayBackdrop } from '@ethlete/components/design/dialog';
 import styles from './shortcuts-dialog.css?inline';
 
@@ -27,7 +27,10 @@ const GROUPS = [
 ];
 
 const closeAttributes = (close?: Interaction) =>
-  ['aria-label="Schließen" data-et-control="close" data-et-action="emit:close"', close && `data-et-force="${close}"`]
+  [
+    'aria-label="Schließen" data-et-control="close" data-et-action="emit:close" data-can-animate',
+    close && `data-et-force="${close}"`,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -55,27 +58,28 @@ const list = () =>
     { imports: ['KBD_IMPORTS'] },
   );
 
+export const { states, grid } = interactionRows<Props, 'close', Interaction>(
+  { close: {} },
+  { interactions: ['hover', 'active', 'focus-visible'], force: (props, close) => ({ ...props, close }) },
+);
+
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/shortcuts-dialog/shortcuts-dialog.component.ts',
   note: 'Tastenkürzel aus dem Studio-Menü und mit Strg+/: ein SDK-Dialog mit Titel und Schließen-Knopf, darin die Kürzel, die Studio wirklich hat, nach Allgemein und Canvas gruppiert, jedes mit SDK-Tastenkappe. Keine Fußzeile: Esc, der Schließen-Knopf und ein Klick auf den Hintergrund schließen ihn.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'design check'],
   widths: [800],
-  states: {
-    default: {},
-    'close-hover': { close: 'hover' },
-    'close-active': { close: 'active' },
-    'close-focus-visible': { close: 'focus-visible' },
-  },
+  states,
+  grid,
   describe: {
-    default:
+    close:
       'Tastenkürzel offen über dem Hintergrund; check both groups, every label left and its key cap right-aligned.',
     'close-hover': 'Schließen hovered; check its hover fill and that the list does not change.',
     'close-active': 'Schließen pressed; check its press fill.',
     'close-focus-visible': 'Schließen focused by keyboard; check its focus ring, not clipped by the dialog edge.',
   },
   motions: {
-    'close-hover-in': { from: 'default', to: 'close-hover' },
-    'close-hover-out': { from: 'close-hover', to: 'default' },
+    'close-hover-in': { from: 'close', to: 'close-hover' },
+    'close-hover-out': { from: 'close-hover', to: 'close' },
     'close-press': { from: 'close-hover', to: 'close-active' },
     'close-release': { from: 'close-active', to: 'close-hover' },
   },
