@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync, spawn } from 'node:child_process';
-import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
+import { closeSync, existsSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { constants } from 'node:os';
@@ -19,6 +19,7 @@ const READY_HELPERS = 3;
 const EXIT_LIMIT_MS = 5000;
 const POLL_MS = 100;
 const STDERR_TAIL = 2000;
+const LOG_TAIL = 4000;
 
 const CASES = [
   { name: 'sigint', signal: 'SIGINT' },
@@ -77,11 +78,22 @@ const launch = (ignoreInterrupt) => {
 
   const setUp = () => existsSync(join(home, 'setup'));
 
-  return { child, exit, home, setUp, stderrTail };
+  const diagnostics = () => {
+    const setupDir = join(home, 'setup');
+    const logs = existsSync(setupDir)
+      ? readdirSync(setupDir).map(
+          (file) => `${file}:\n${readFileSync(join(setupDir, file), 'utf8').slice(-LOG_TAIL).trim()}`,
+        )
+      : ['setup dir missing'];
+
+    return [`stderr:\n${stderrTail() || 'empty'}`, ...logs.map((log) => `console log ${log}`)].join('\n');
+  };
+
+  return { child, exit, home, setUp, stderrTail, diagnostics };
 };
 
 const runCase = async ({ name, signal, ignoreInterrupt }) => {
-  const { child, exit, home, setUp, stderrTail } = launch(ignoreInterrupt);
+  const { child, exit, home, setUp, stderrTail, diagnostics } = launch(ignoreInterrupt);
   const pid = child.pid;
 
   try {
@@ -91,7 +103,11 @@ const runCase = async ({ name, signal, ignoreInterrupt }) => {
     // are back once its setup created the console log folder.
     while (groupOf(pid).length < READY_HELPERS || !catches(pid, signal) || !setUp()) {
       if (Date.now() > readyBy)
-        return { name, ok: false, detail: `the host did not start its helpers or catch ${signal}` };
+        return {
+          name,
+          ok: false,
+          detail: `the host did not start its helpers or catch ${signal} (helpers ${groupOf(pid).length}/${READY_HELPERS}, signal caught ${catches(pid, signal)}, setup ${setUp()})\n${diagnostics()}`,
+        };
       if (child.exitCode !== null) {
         return {
           name,
