@@ -22,7 +22,6 @@ import {
   sketchMatrixOf,
   sketchRoundsOf,
   sketchRowsOf,
-  stateRowKeyOf,
   TreeEntry,
   treeOf,
 } from './system-tree';
@@ -1008,7 +1007,6 @@ describe('sketches of a part that pages use', () => {
     });
     const context = matrix.frames.filter((frame) => frame.row === 'in context pages/system');
 
-    expect(matrix.sections).toEqual(['sketch', 'in context']);
     expect(context.map((frame) => [frame.column, frame.place])).toEqual([
       ['in context current', { part: 'pages/system', state: 'open', size: 'phone' }],
       [
@@ -1267,22 +1265,12 @@ describe('sketchMatrixOf', () => {
       const matrix = sketchMatrixOf({ ...source, part: shell, sketch: unchanging });
 
       expect(rowsOf(matrix)).toEqual(['hidden', 'inbox']);
-      expect(matrix.rowHeads).toEqual([
-        {
-          key: stateRowKeyOf('system'),
-          label: 'system · unverändert in a b',
-          title: 'system aufklappen: jede gezeigte Variante zeichnet ihn wie current',
-          open: false,
-          before: 'system',
-        },
-      ]);
     });
 
     it('draws an opened state below the changed rows, under its head', () => {
       const matrix = sketchMatrixOf({ ...source, part: shell, sketch: unchanging, openStates: { system: true } });
 
       expect(rowsOf(matrix)).toEqual(['hidden', 'inbox', 'system']);
-      expect(matrix.rowHeads.map((head) => [head.open, head.before])).toEqual([[true, 'system']]);
     });
 
     it('opens the first folded state by default when no visible row draws the current part', () => {
@@ -1291,15 +1279,10 @@ describe('sketchMatrixOf', () => {
       const current = matrix.frames.filter((frame) => frame.column === 'current');
 
       expect(rowsOf(matrix)).toEqual(['hidden', 'inbox', 'system']);
-      expect(matrix.rowHeads.map((head) => head.open)).toEqual([true]);
       expect(current.some((frame) => frame.src !== '' && frame.row === 'system')).toBe(true);
-      expect(
-        sketchMatrixOf({ ...source, part: onlyUnchanged, sketch: unchanging, openStates: { system: false } })
-          .rowHeads[0]?.open,
-      ).toBe(false);
     });
 
-    it('keeps a state one variant changes, and folds nothing for a cli without unchanged states', () => {
+    it('keeps a state one variant changes', () => {
       const changedInB = sketch({
         variants: ['a', 'b'],
         targets: [
@@ -1307,11 +1290,8 @@ describe('sketchMatrixOf', () => {
           { variant: 'b', states: ['system', 'hidden'], unchanged: [] },
         ],
       });
-      const older = sketch({ variants: ['a'], targets: [{ variant: 'a', states: ['system', 'hidden'] }] });
 
       expect(rowsOf(sketchMatrixOf({ ...source, part: shell, sketch: changedInB }))).toEqual(['system', 'hidden']);
-      expect(sketchMatrixOf({ ...source, part: shell, sketch: changedInB }).rowHeads).toEqual([]);
-      expect(sketchMatrixOf({ ...source, part: shell, sketch: older }).rowHeads).toEqual([]);
     });
 
     it('heads the first interaction row of a folded state when every interaction shows', () => {
@@ -1322,7 +1302,6 @@ describe('sketchMatrixOf', () => {
         openStates: { system: true },
       });
 
-      expect(matrix.rowHeads[0]?.before).toBe('system · rest');
       expect(rowsOf(matrix).slice(-2)).toEqual(['system · rest', 'system · hover']);
     });
   });
@@ -1373,10 +1352,7 @@ describe('sketchMatrixOf', () => {
       ]);
     });
 
-    it('folds and opens an unchanged state of a later target by its part and state', () => {
-      expect(matrixOf().rowHeads.map((head) => [head.key, head.label])).toEqual([
-        [stateRowKeyOf('components/card plain'), 'components/card · plain · unverändert in a'],
-      ]);
+    it('opens an unchanged state of a later target by its part and state', () => {
       expect(matrixOf({ 'components/card plain': true }).frames.map((frame) => frame.row)).toContain(
         'components/card plain',
       );
@@ -1425,7 +1401,6 @@ describe('sketchMatrixOf', () => {
     it('shows the open round as its band, and drops an older round with no head', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded });
 
-      expect(matrix.sections).toEqual(['round r2']);
       expect(matrix.columns).toEqual([
         { key: 'current', label: 'current', drawing: false, section: 'round r2' },
         {
@@ -1436,7 +1411,6 @@ describe('sketchMatrixOf', () => {
           section: 'round r2',
         },
       ]);
-      expect(matrix.rowHeads).toEqual([]);
       expect([...new Set(matrix.frames.map((frame) => frame.column))]).toEqual(['current', 'c']);
     });
 
@@ -1464,9 +1438,7 @@ describe('sketchMatrixOf', () => {
     it('puts the current column in a band of its own while no round is open', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: false, r2: false } });
 
-      expect(matrix.sections).toEqual(['current']);
       expect(matrix.columns).toEqual([{ key: 'current', label: 'current', drawing: false, section: 'current' }]);
-      expect(matrix.rowHeads).toEqual([]);
     });
 
     it('marks every frame of the newest round pending until the sketch is ready', () => {
@@ -1512,8 +1484,6 @@ describe('sketchMatrixOf', () => {
         ['a', 'r1 · Pill or square', 'Too round'],
         ['b', 'r1 · Pill or square', 'Too round'],
       ]);
-      expect(matrix.rowHeads).toEqual([]);
-      expect(matrix.sections).toEqual(['round r1']);
       expect(matrix.columns[2]?.label).toBe('b · gpt-5.6-sol');
       expect(sketchRoundsOf(rounded, { openRounds: { r1: false } }).map((round) => round.open)).toEqual([false, true]);
     });

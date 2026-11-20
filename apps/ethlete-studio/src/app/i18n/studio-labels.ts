@@ -350,9 +350,6 @@ export const STUDIO_LABELS = {
         : `${state} ist neu in diesem Sketch. Aktuell gibt es: ${has.join(', ')}`,
     noState: (column: string, state: string | undefined) => `${column} hat keinen Zustand ${state}`,
     noInteraction: (column: string, interaction: string) => `${column} hat keine Interaktion ${interaction}`,
-    unchangedIn: (columns: string) => `unverändert in ${columns}`,
-    foldTitle: (open: boolean, state: string) =>
-      `${state} ${open ? 'einklappen' : 'aufklappen'}: jede gezeigte Variante zeichnet ihn wie current`,
     now: 'jetzt',
     afterMerging: (variant: string) => `nach dem Merge von ${variant}`,
     reasonBy: (by: string) => `, Grund von ${by}`,

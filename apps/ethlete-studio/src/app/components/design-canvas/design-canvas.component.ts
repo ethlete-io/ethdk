@@ -143,22 +143,6 @@ export type CanvasColumn = {
   section?: string;
 };
 
-/**
- * A thin row of a `matrix` without frames: above the frame
- * row `before` names while `open`, else below every frame row.
- */
-export type CanvasRowHead = {
-  key: string;
-  label: string;
-  title?: string;
-  /** A muted line inside the row. */
-  note?: string;
-  open: boolean;
-  before?: string;
-  /** The entry of `sections` the row sits in. */
-  section?: string;
-};
-
 export type CanvasOpening = 'start' | 'all' | 'visible';
 
 type ColumnGroupHead = CanvasColumnGroup & { x: number; y: number; width: number };

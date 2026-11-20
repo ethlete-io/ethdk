@@ -18,7 +18,6 @@ import {
   sketchPartOf,
 } from '../../host/design';
 import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
-import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
 import { isAnswered, isQuestion } from './comment-pins';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
@@ -514,8 +513,6 @@ export const sketchUsingPagesOf = ({
   return [...new Set(pages)].filter((page) => !targets.includes(partKeyOf(page)));
 };
 
-const UNCHANGED_ROW = 'unchanged';
-
 /** The first state of a page at the product's first preset, or fitted when the product has none, to show a part inside it. */
 const pageFrameOf = (options: {
   port: number;
@@ -836,13 +833,6 @@ export const withdrawnVariantsOf = (sketch: Pick<ListedSketch, 'variants' | 'rej
 /** The canvas column or column group key of a round. */
 export const roundColumnKeyOf = (round: string) => `round ${round}`;
 
-/** The canvas row head key of a state no shown variant changes. */
-export const stateRowKeyOf = (state: string) => `${UNCHANGED_ROW} ${state}`;
-
-/** The state a `stateRowKeyOf` row key folds, or `null` for another row key. */
-export const stateOfRowKey = (key: string) =>
-  key.startsWith(`${UNCHANGED_ROW} `) ? key.slice(UNCHANGED_ROW.length + 1) : null;
-
 /** The key a state of one target part of a sketch is opened and folded by: the bare state for the first target. */
 export const sketchStateKeyOf = ({
   sketch,
@@ -873,10 +863,6 @@ export type SketchMatrix = {
   interactions: string[];
   /** A single interaction, or `ALL`. */
   interaction: string;
-  /** One per folded round, and one per state that every shown variant draws as the part is now: folded to its head unless the user opened it. */
-  rowHeads: CanvasRowHead[];
-  /** The canvas bands top to bottom when rounds are shown, one per round, newest first; empty for one band. */
-  sections: string[];
 };
 
 export const CURRENT = 'current';
@@ -995,12 +981,6 @@ export const sketchMatrixOf = ({
   const newestFirst = [...rounds].reverse().filter((round) => round.variants.length > 0);
   const firstOpen = newestFirst.find((round) => round.open);
   const currentSection = !roundsGrouped ? undefined : firstOpen ? roundColumnKeyOf(firstOpen.key) : CURRENT;
-  const sections = !roundsGrouped
-    ? []
-    : [
-        ...(firstOpen ? [] : [CURRENT]),
-        ...newestFirst.filter((round) => round.open).map((round) => roundColumnKeyOf(round.key)),
-      ];
   const pending = new Set(sketch.status === 'in progress' ? (rounds.at(-1)?.variants ?? []) : []);
   const variantColumnOf = (variant: string) => {
     const target = targetOf(variant);
@@ -1115,7 +1095,6 @@ export const sketchMatrixOf = ({
         : undefined;
     const isOpen = (state: string) => openStates[stateKeyOf(state)] === true || state === defaultOpen;
     const rowStates = ordered.filter((state) => !kept.includes(state) || isOpen(state));
-    const named = (label: string) => (several ? `${key} · ${label}` : label);
     const rows: MatrixRow[] =
       states.length === 0
         ? [
@@ -1229,27 +1208,10 @@ export const sketchMatrixOf = ({
       });
     });
 
-    const rowHeads = kept.map((state): CanvasRowHead => {
-      const stateKey = stateKeyOf(state);
-      const open = isOpen(state);
-
-      return {
-        key: stateRowKeyOf(stateKey),
-        label: named(
-          `${state} · ${STUDIO_LABELS.systemTree.unchangedIn(variantColumns.map((column) => column.key).join(' '))}`,
-        ),
-        title: STUDIO_LABELS.systemTree.foldTitle(open, named(state)),
-        open,
-        before: rowKeyIn(currentSection, grouped ? `${stateKey} · ${shownInteractions[0] ?? REST}` : stateKey),
-        ...(currentSection === undefined ? {} : { section: currentSection }),
-      };
-    });
-
-    return { frames, rowHeads };
+    return { frames };
   };
   const blocks = (sketch.targetParts ?? [sketch.target]).map(blockOf);
   const frames = blocks.flatMap((block) => block.frames);
-  const rowHeads = blocks.flatMap((block) => block.rowHeads);
 
   const headOf = ({ key, label, title, note, drawing: isDrawing, group }: MatrixColumn): MatrixColumn => {
     const section = sectionOf(key);
@@ -1306,12 +1268,10 @@ export const sketchMatrixOf = ({
       size,
       interactions,
       interaction,
-      rowHeads: rowHeads,
-      sections,
     };
 
   const inBand = <T extends { section?: string }>(entry: T) =>
-    sections.length > 0 ? entry : { ...entry, section: SKETCH_SECTION };
+    roundsGrouped ? entry : { ...entry, section: SKETCH_SECTION };
 
   return {
     columns: [
@@ -1328,8 +1288,6 @@ export const sketchMatrixOf = ({
     size,
     interactions,
     interaction,
-    rowHeads: rowHeads.map(inBand),
-    sections: [...(sections.length > 0 ? sections : [SKETCH_SECTION]), IN_CONTEXT],
   };
 };
 
