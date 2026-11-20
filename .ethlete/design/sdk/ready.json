@@ -355,28 +355,28 @@
     "pid": 3081054
   },
   "components/radio-group": {
-    "hash": "673d568f7be3bc80",
+    "hash": "f27da594fe33b013",
     "files": {
-      ".ethlete/design/sdk/components/radio-group/radio-group.css": "2ea32ac6ad497550",
-      ".ethlete/design/sdk/components/radio-group/radio-group.ts": "64d35c070c2ab307",
+      ".ethlete/design/sdk/components/radio-group/radio-group.css": "f562b94d74de5bf6",
+      ".ethlete/design/sdk/components/radio-group/radio-group.ts": "5bcfcc3609504182",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/radio-group.ts": "cc349f11ce8a4455",
       "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
       "libs/components/src/lib/forms/form-field/form-support-styles.component.css": "0f81cadca44d8370",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
-      "libs/components/src/lib/forms/selection-card-styles.component.css": "190d2cb203d8058f",
-      "libs/components/src/lib/forms/selection-list/radio-group/radio-group.component.css": "0b70c0dd684dec8a",
-      "libs/components/src/lib/forms/selection-list/radio-group/radio.component.css": "2204bbaa8782a066",
+      "libs/components/src/lib/forms/selection-card-styles.component.css": "19b8fafe647e05c8",
+      "libs/components/src/lib/forms/selection-list/radio-group/radio-group.component.css": "96b2cd846e50df1a",
+      "libs/components/src/lib/forms/selection-list/radio-group/radio.component.css": "8c707bdc573debe6",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T11:18:24.819Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2851297
+    "at": "2026-11-20T19:50:25.413Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 675558
   },
   "components/select": {
     "hash": "2d25e079089eaa58",
