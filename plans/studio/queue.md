@@ -25,18 +25,16 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 24. **Merged-Hash-Regel (B412)** 📋 Veralteter merged-Hash: Regel DIRECT-EDIT-PENDING für gemergte Teile, deren Hash ohne ... - c0
 25. **Zugänglicher-Name-Regel (B413)** 📋 Regel ACCESSIBLE-NAME: zugänglicher Name eines Controls Design vs. App vergleichen; ... - c0
 26. **Resident-e2e (B414)** 📋 Resident-e2e-Spec: echter Hintergrundprozess, compare, Part ändern, compare erneut - ... - c0
-27. **compare schneller (B416)** 📋 compare schneller (Bef. 521): App-Shots parallel, S4 Bild-Cache vorziehen, mehrere Parts ... - c0
+27. **compare schneller (B416)** ⏳ erster Watch-Build nach Neustart nutzt den Harness-Cache (3fc2811e1): compare pages/sketches kalt 13,4 -> 2,5 s, check studio --part kalt 44,6 -> 7,9 s. Offen: lib-build-wait 33,8 s nach HEAD-Wechsel (Suspect), check sdk Rest 7-9 s warm - c0
 28. **WebKit-Zoom-Budget (B356)** ⏳ Einschwingen ohne Fit-Neumessung (5a6c656f2): Linux-WebKit p95 37-43 ms lokal; im CI nur gemessen, ohne GPU (530bdb826); offen: p95 ≤ 33 ms lokal, Mac-Zahl (Tom morgens) - Builder
-29. **GitHub-Issues Design-CLI (B648)** ⏳ Meldungen eines SDK-Nutzers vom 19.11.: ethdk #3190, #3191, #3194, #3195, #3196, #3197; #3190 blockiert (ADR 0377), nach dem laufenden B416-Teil; #3189, #3192, #3193 behoben (8839a3ec5) - Builder
-30. **Pip-Rand bei versteckter Titelleiste (B649)** ⏳ blockiert fifagg: `et-pip-window:after` verschiebt den vollen Hintergrund um die Titelleisten-Höhe nach unten; ohne Hover 32 px ... - Builder
-31. **Scrollable-Buttons app-weit (B650)** ⏳ blockiert fifagg: Provider für `et-scrollable`-Buttons (an je Breakpoint, Position inside/inline an den Zeilenenden) statt `etSc... - Builder
-32. **Sticky-Kind über dem Scroll-Fade (B651)** ⏳ blockiert fifagg: Fade ist mask-image am Scroll-Container, ein sticky Kind (left:0) bleibt im verblassten Bereich. Öffentliches ... - Builder
-33. **Pagination scrollt nur nach oben (B652)** ⏳ blockiert fifagg: `FloatingActionDirective.scrollToTop` scrollt beim Seitenwechsel in beide Richtungen; Option: nur nach oben, w... - Builder
-34. **Tab-Linie und Tab-Label-Tokens (B657)** ⏳ blockiert fifagg: Grundlinie übermalt Unterstrich, Grundlinien-Farbe, Label-Farben, aktiv ohne Unterstrich; plus Unterstrich in Label-Breite - Builder
-35. **Mailbox und Neustart verlieren nichts (B658)** ⏳ Verteiler startet mit jeder Sitzung; restart stoppt Hintergrund-Agents vor /clear (ADR 0384) - Builder
-36. **Host-Signal-Test im CI (B645)** 🔨 127 behoben (395a0932f); unter xvfb startet der Host seine Helfer nicht (CI 44701159109, Suspect: CEF-Start ohne GPU/Sandbox/Libs), Schritte wieder raus (57606a507); nächster Versuch: e2e zeigt Host-stderr, ein CI-Lauf - Builder
-37. **Strg+C beim CEF-Start (B647)** ⏳ Tagschicht: ein echtes Strg+C in den ersten ~400 ms des CEF-Starts geht im Host verloren; Fix in tauri-runtime-cef oder Signalmaske im Host - Builder
-38. **Carousel mit einer Folie (B653)** ⏳ fifagg, nicht blockiert - Builder
-39. **Segment-Gruppe im Scrollable (B654)** ⏳ fifagg, nicht blockiert - Builder
-40. **et-label in et-dropzone (B655)** ⏳ fifagg, nicht blockiert - Builder
-41. **Dropzone resolveExisting mit Bild-Varianten (B656)** ⏳ fifagg, nicht blockiert - Builder
+29. **GitHub-Issues Design-CLI (B648)** ⏳ gebaut (lokal, Push nach CI): #3190 f8bd27c99, #3191 3b69a862a, #3195 1f6782dbe, #3196 Warnung c2d6d8279 (Reporter-Markup erfragt), #3197 Punkte a/b 0c46921a1, 532e47da8, df9e3f69b; #3194 war schon behoben. Offen: #3197 Punkte 1-3 - Builder
+30. **Scrollable-Buttons app-weit (B650)** ⏳ blockiert fifagg: Provider für `et-scrollable`-Buttons (an je Breakpoint, Position inside/inline an den Zeilenenden) statt `etSc... - Builder
+31. **Sticky-Kind über dem Scroll-Fade (B651)** ⏳ blockiert fifagg: Fade ist mask-image am Scroll-Container, ein sticky Kind (left:0) bleibt im verblassten Bereich. Öffentliches ... - Builder
+32. **Tab-Linie und Tab-Label-Tokens (B657)** ⏳ blockiert fifagg: Grundlinie übermalt Unterstrich, Grundlinien-Farbe, Label-Farben, aktiv ohne Unterstrich; plus Unterstrich in Label-Breite - Builder
+33. **Mailbox und Neustart verlieren nichts (B658)** ⏳ Verteiler startet mit jeder Sitzung; restart stoppt Hintergrund-Agents vor /clear (ADR 0384) - Builder
+34. **Host-Signal-Test im CI (B645)** 🔨 127 behoben (395a0932f); unter xvfb startet der Host seine Helfer nicht (CI 44701159109, Suspect: CEF-Start ohne GPU/Sandbox/Libs), Schritte wieder raus (57606a507); nächster Versuch: e2e zeigt Host-stderr, ein CI-Lauf - Builder
+35. **Strg+C beim CEF-Start (B647)** ⏳ Tagschicht: ein echtes Strg+C in den ersten ~400 ms des CEF-Starts geht im Host verloren; Fix in tauri-runtime-cef oder Signalmaske im Host - Builder
+36. **Carousel mit einer Folie (B653)** ⏳ fifagg, nicht blockiert - Builder
+37. **Segment-Gruppe im Scrollable (B654)** ⏳ fifagg, nicht blockiert - Builder
+38. **et-label in et-dropzone (B655)** ⏳ fifagg, nicht blockiert - Builder
+39. **Dropzone resolveExisting mit Bild-Varianten (B656)** ⏳ fifagg, nicht blockiert - Builder
