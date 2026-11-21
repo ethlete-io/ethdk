@@ -69,8 +69,8 @@ const FLOW_THREAD: PlacedThread = {
 const COMMENT_POINT = { x: 520, y: 300 };
 const DRAFT_POINT = { x: 900, y: 520 };
 
-const atOf = (point: { x: number; y: number }, scale: number) =>
-  `left-[${point.x * scale}px] top-[${point.y * scale}px]`;
+const placedAt = (point: { x: number; y: number }, scale: number, body: string) =>
+  `<div class="absolute" style="left: ${point.x * scale}px; top: ${point.y * scale}px">${body}</div>`;
 
 const contentOf = (
   presetPicker: string,
@@ -149,13 +149,15 @@ export default definePart<FlowProps>({
       .join('');
     const comment = await commentButton({ on: commentMode, action: 'emit:commentToggle' });
     const hint = commentMode && draft === undefined ? commentModeHint() : undefined;
-    const written = draft === undefined ? undefined : await commentDraftAt(atOf(DRAFT_POINT, SCALE), { text: draft });
+    const written = draft === undefined ? undefined : await commentDraftAt('left-0 top-0', { text: draft });
     const onShot =
       commentMode || comments
         ? (id: string, shot: { scale: number }) =>
             html`${commentMode ? `<div class="absolute inset-0">${commentLayer(id, 'emit:pointPick')}</div>` : ''}${
-              comments && id === COMMENTED ? commentPins([{ ...FLOW_THREAD, at: atOf(COMMENT_POINT, shot.scale) }]) : ''
-            }${id === COMMENTED ? (written?.body ?? '') : ''}`
+              comments && id === COMMENTED
+                ? placedAt(COMMENT_POINT, shot.scale, commentPins([{ ...FLOW_THREAD, at: 'left-0 top-0' }]))
+                : ''
+            }${id === COMMENTED && written ? placedAt(DRAFT_POINT, shot.scale, written.body) : ''}`
         : undefined;
     const shell = await shellMain.render({
       studio: menu.body,

@@ -374,7 +374,6 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                 et-button
                 type="button"
                 variant="outline"
-                color="surface"
                 size="sm"
               >
                 {{ SYSTEM_LABELS.comment }}
