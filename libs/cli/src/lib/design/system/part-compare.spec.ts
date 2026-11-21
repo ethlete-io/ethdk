@@ -18,6 +18,7 @@ import {
   comparePngs,
   decodePng,
   designOnlyPropsOf,
+  drawsPaneBeforeOf,
   drawsSelectedOf,
   drawnSurfacesOf,
   droppedPropsOf,
@@ -1253,6 +1254,13 @@ describe('dropped design props', () => {
   it('lets the harness drop a prop set to selected in a state whose design draws a selected option', () => {
     expect(droppedOf('option-selected', [], true)).toEqual([]);
     expect(droppedOf('option-selected')).toEqual(['option']);
+  });
+
+  it('reads an overlay pane drawn above or before its anchor from the design markup', () => {
+    expect(drawsPaneBeforeOf('<div class="et-overlay" data-overlay-placement="top">')).toBe(true);
+    expect(drawsPaneBeforeOf('<div class="et-overlay" data-overlay-placement="left-start">')).toBe(true);
+    expect(drawsPaneBeforeOf('<div class="et-overlay" data-overlay-placement="bottom-end">')).toBe(false);
+    expect(drawsPaneBeforeOf('<button aria-label="top"></button>')).toBe(false);
   });
 
   it('reads a selected option from the design markup', () => {

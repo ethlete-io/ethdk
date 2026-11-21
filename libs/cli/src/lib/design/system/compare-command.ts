@@ -47,6 +47,7 @@ import {
   compareLineOf,
   PixelCompare,
   designOnlyPropsOf,
+  drawsPaneBeforeOf,
   drawsSelectedOf,
   drawnSurfacesOf,
   forcedElementsOf,
@@ -425,7 +426,9 @@ export const shootStatesWith =
                         ]),
                       },
                     }),
-                roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+                roomAbove:
+                  (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0 ||
+                  drawsPaneBeforeOf(design.markup ?? ''),
                 frozen: frozenAnimationsOf(design.markup ?? ''),
                 ...(design.ambient ? { ambient: design.ambient } : {}),
               };

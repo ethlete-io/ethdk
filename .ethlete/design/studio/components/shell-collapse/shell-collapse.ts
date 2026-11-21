@@ -10,10 +10,13 @@ import {
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
 import { icon } from '@system/foundations/icons';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type CollapseInteraction = Exclude<Interaction, 'disabled'>;
 
 type Props = { interaction?: CollapseInteraction };
+
+const label = STUDIO_LABELS.shell.hidePanel;
 
 export const shellCollapseStyles = buttonStyles;
 
@@ -27,7 +30,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
       class: 'size-control-sm items-center p-0',
     }).replace(
       /^<button /,
-      '<button data-et-control="collapse" title="Panel ausblenden" aria-label="Panel ausblenden" data-can-animate ',
+      `<button data-et-control="collapse" title="${label}" aria-label="${label}" data-can-animate `,
     ),
     'emit:collapse',
   );
@@ -35,7 +38,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
   const forced = interaction ? forceInteraction(markup, interaction) : markup;
 
   return interaction === 'focus-visible'
-    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2">${tooltip({ text: 'Panel ausblenden', placement: 'top', anchor: '[data-et-control="collapse"]' })}</span></span>`
+    ? `<span class="inline-flex flex-col items-center gap-2"><span class="z-10">${tooltip({ text: label, placement: 'top', anchor: '[data-et-control="collapse"]' })}</span>${forced}</span>`
     : forced;
 };
 
@@ -51,7 +54,7 @@ export default definePart({
     'collapse-hover': 'The panel button hovered; check the SDK hover fill behind the icon.',
     'collapse-active': 'The panel button pressed; check the darker SDK press fill.',
     'collapse-focus-visible':
-      'The panel button focused by keyboard; check the focus ring and the Panel ausblenden tooltip above it, not clipped.',
+      'The panel button focused by keyboard; check the focus ring and the hide-panel tooltip above it, not clipped.',
   },
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-collapse/shell-collapse.component.ts',
   controls: { collapse: { kind: 'button', input: ['pointer', 'keyboard'] } },
@@ -59,7 +62,7 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="inline-flex p-space-2 ${props.interaction === 'focus-visible' ? 'px-13.25 pt-12' : ''} text-et-surface font-ui"
+        class="inline-flex ${props.interaction === 'focus-visible' ? 'min-w-10 justify-center pb-space-2' : 'p-space-2'} text-et-surface font-ui"
       >
         ${shellCollapse(props)}
       </div>`,

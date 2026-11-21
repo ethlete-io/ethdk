@@ -300,6 +300,9 @@ const differingKeysOf = (a: Record<string, unknown>, b: Record<string, unknown>)
 export const drawsSelectedOf = (markup: string) =>
   /\saria-(?:selected|checked|pressed)="true"|\saria-current="(?!false")[^"]*"/.test(markup);
 
+/** Whether a design picture's markup draws an overlay pane above or before its anchor, which the app places so only with room there. */
+export const drawsPaneBeforeOf = (markup: string) => /\sdata-overlay-placement="(?:top|left)/.test(markup);
+
 /** The `data-et-surface` ids a design picture's markup draws; a surface element marked `hidden` draws none. */
 export const drawnSurfacesOf = (markup: string) =>
   [...markup.matchAll(/<[^>]*\sdata-et-surface="([^"]*)"[^>]*>/g)]

@@ -45,7 +45,7 @@
   },
   "components/disclosure": "b97eec377fdf2ec5",
   "components/shell-collapse": {
-    "hash": "61077068268ef800",
+    "hash": "9af27bd13e629973",
     "variant": "rand53",
     "decidedBy": "builder pick, ADR 0305",
     "at": "2026-11-21T02:52:36.165Z"
@@ -70,7 +70,7 @@
     "note": "merged without a pick: allowed by finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves"
   },
   "components/title-search": {
-    "hash": "80164d86570ef1a6",
+    "hash": "967a39e34f6ac22b",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-21T02:21:10.888Z"
