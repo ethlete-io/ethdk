@@ -452,3 +452,45 @@ describe('NO-VISIBLE-CHANGE in the slow run', { timeout: 60_000 }, () => {
     expect(sketch.status).toBe('in progress');
   });
 });
+
+describe('the app specs of a slow run', { timeout: 60_000 }, () => {
+  it('runs them while the harness app starts and compares, and keeps their problems ahead of the compare ones', async () => {
+    const { target, config } = staleChip();
+    const withSpecs = {
+      ...config,
+      products: { acme: { ...config.products.acme, harness: { ...harness, specs: 'apps/acme/vite.config.mts' } } },
+    };
+    const steps: string[] = [];
+    let started: () => void = () => undefined;
+    const harnessStarted = new Promise<void>((done) => (started = done));
+    const results = await runSlowChecks({
+      target,
+      config: withSpecs,
+      product: resolveProduct({ target, name: 'acme', config: withSpecs.products.acme }),
+      runners: {
+        specs: async () => {
+          steps.push('specs started');
+          await Promise.race([harnessStarted, new Promise((done) => setTimeout(done, 2_000))]);
+          steps.push('specs done');
+
+          return 'vitest failed';
+        },
+        start: async () => {
+          steps.push('harness started');
+          started();
+
+          return 'no harness';
+        },
+        live: async () => [],
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        pageStateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
+      },
+    });
+
+    expect(steps).toEqual(['specs started', 'harness started', 'specs done']);
+    expect(results.get('(product)')?.map(({ rule }) => rule)).toEqual(['APP-SPEC', 'COMPARE']);
+  });
+});

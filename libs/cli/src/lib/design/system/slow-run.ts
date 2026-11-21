@@ -269,35 +269,45 @@ export const runSlowChecks = async (options: {
   }
 
   if (harness && keys.length + (whole ? 1 : 0) > 0) {
-    if (harness.specs && (ruled(APP_SPEC_RULE).length > 0 || whole)) {
-      const parts = ruled(APP_SPEC_RULE).map((part) => {
-        const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
-        const component = found ? linkedComponentOf(found) : null;
+    const specsApplied =
+      harness.specs && (ruled(APP_SPEC_RULE).length > 0 || whole)
+        ? (() => {
+            const specsConfig = harness.specs;
+            const parts = ruled(APP_SPEC_RULE).map((part) => {
+              const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
+              const component = found ? linkedComponentOf(found) : null;
 
-        return { part, files: component === null ? [] : Object.keys(appFilesOf({ root, component })) };
-      });
-      const failures = await runners.specs({
-        root,
-        config: harness.specs,
-        files: whole
-          ? [harness.app]
-          : specSeedsOf({
-              root,
-              files: parts.flatMap(({ files }) => files),
-              shared: harness.shared ?? [],
-            }),
-      });
+              return { part, files: component === null ? [] : Object.keys(appFilesOf({ root, component })) };
+            });
 
-      if (typeof failures === 'string')
-        results.set(PRODUCT_PART, [{ rule: APP_SPEC_RULE, file: harness.specs, message: failures }]);
-      else merge(results, appSpecProblemsOf({ parts, failures }));
-    }
+            return runners
+              .specs({
+                root,
+                config: specsConfig,
+                files: whole
+                  ? [harness.app]
+                  : specSeedsOf({
+                      root,
+                      files: parts.flatMap(({ files }) => files),
+                      shared: harness.shared ?? [],
+                    }),
+              })
+              .then((failures) => () => {
+                if (typeof failures === 'string')
+                  results.set(PRODUCT_PART, [{ rule: APP_SPEC_RULE, file: specsConfig, message: failures }]);
+                else merge(results, appSpecProblemsOf({ parts, failures }));
+              });
+          })()
+        : undefined;
 
+    specsApplied?.catch(() => undefined);
+
+    const harnessResults = new Map<string, Problem[]>();
     const server: HarnessServer | string = await runners.start({ target, product });
 
     if (typeof server === 'string') {
       merge(
-        results,
+        harnessResults,
         new Map([
           [
             PRODUCT_PART,
@@ -323,7 +333,7 @@ export const runSlowChecks = async (options: {
           });
 
           merge(
-            results,
+            harnessResults,
             typeof states === 'string'
               ? new Map([[PRODUCT_PART, [{ rule: UNCOVERED_REGION_RULE, file: harness.live, message: states }]]])
               : uncoveredRegionProblemsOf({ product, live: harness.live, states }),
@@ -357,12 +367,15 @@ export const runSlowChecks = async (options: {
             component: componentOf(part),
           });
 
-          if (problems.length > 0) results.set(part, [...(results.get(part) ?? []), ...problems]);
+          if (problems.length > 0) merge(harnessResults, new Map([[part, problems]]));
         }
       } finally {
         await server.stop();
       }
     }
+
+    (await specsApplied)?.();
+    merge(results, harnessResults);
   }
 
   if (!whole) results.delete(PRODUCT_PART);
