@@ -14,7 +14,7 @@ import { ABOUT_DIALOG_LABELS } from '../../i18n/shell-labels';
   selector: 'ethlete-about-dialog',
   template: `
     <div class="flex items-center justify-between gap-space-3" etOverlayHeader>
-      <h2 class="m-0 text-[1.8rem] font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
+      <h2 class="m-0 text-[1.8rem] leading-[1.5] font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
       <button
         [attr.aria-label]="LABELS.close"
         (click)="close.emit()"

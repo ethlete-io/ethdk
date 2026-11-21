@@ -38,7 +38,7 @@ export const SHORTCUT_GROUPS = [
   selector: 'ethlete-shortcuts-dialog',
   template: `
     <div class="flex items-center justify-between gap-space-3" etOverlayHeader>
-      <h2 class="m-0 text-[1.8rem] font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
+      <h2 class="m-0 text-[1.8rem] leading-[1.5] font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
       <button
         [attr.aria-label]="LABELS.close"
         (click)="close.emit()"
@@ -50,20 +50,22 @@ export const SHORTCUT_GROUPS = [
         <i etIcon="et-times"></i>
       </button>
     </div>
-    <div class="flex flex-col gap-space-4" et-overlay-body>
-      @for (group of GROUPS; track group.label) {
-        <section class="flex flex-col gap-space-1">
-          <h3 class="m-0 text-ui-xs font-ui-strong text-et-surface-muted">{{ group.label }}</h3>
-          <dl class="m-0 flex flex-col">
-            @for (row of group.rows; track row.label) {
-              <div class="flex items-center justify-between gap-space-3 py-space-1 text-ui-sm">
-                <dt class="text-et-surface">{{ row.label }}</dt>
-                <dd class="m-0"><et-kbd [keys]="row.keys" /></dd>
-              </div>
-            }
-          </dl>
-        </section>
-      }
+    <div et-overlay-body>
+      <div class="flex flex-col gap-space-4">
+        @for (group of GROUPS; track group.label) {
+          <section class="flex flex-col gap-space-1">
+            <h3 class="m-0 text-ui-xs font-ui-strong text-et-surface-muted">{{ group.label }}</h3>
+            <dl class="m-0 flex flex-col">
+              @for (row of group.rows; track row.label) {
+                <div class="flex items-center justify-between gap-space-3 py-space-1 text-ui-sm">
+                  <dt class="text-et-surface">{{ row.label }}</dt>
+                  <dd class="m-0"><et-kbd [keys]="row.keys" /></dd>
+                </div>
+              }
+            </dl>
+          </section>
+        }
+      </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
