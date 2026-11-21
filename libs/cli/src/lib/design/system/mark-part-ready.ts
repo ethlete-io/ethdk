@@ -7,16 +7,7 @@ import { actionsRerunReasonOf } from './embedded-actions';
 import { isNoVerdict, NoVerdict } from './no-verdict';
 import { OpenPoint } from './open-points';
 import { BuildReadyInputs, decidePartBuildReady } from './part-build-ready';
-import {
-  actionsRerunOf,
-  dropEntryOfRemovedPart,
-  PartReady,
-  READY_FILE,
-  readReady,
-  readReadyEntries,
-  readyMarkOf,
-  readyPartOf,
-} from './part-ready';
+import { actionsRerunOf, PartReady, READY_FILE, readyMarkOf, readyPartOf } from './part-ready';
 import { withProductLock } from './product-lock';
 import { ResolvedProduct } from './resolve-product';
 import { commitOwnFilesSync } from './sketch/merge-commit';
@@ -51,8 +42,8 @@ type MarkOptions = {
  * that names its actor, 404 for an unknown part, 409 when the part changed since `hash`, 503 when `inputsOf` or
  * `actionsOf` have no verdict, 422 for any open point, failed action check or other blocker. A part blocked only by
  * an embedded part keeps the record it got, named on the 422. With `commitIn`, it commits the part's ready.json entry
- * alone in that checkout and only warns when git refuses; an entry it dropped is committed when it differs from HEAD,
- * after dropping it for a part the product no longer has.
+ * alone in that checkout and only warns when git refuses. A refusal without a check record to commit changes no file
+ * and makes no commit.
  */
 export const markPartReady = async (options: MarkOptions): Promise<PartReady | ReadyRefusal> => {
   const marked = await markOf(options);
@@ -62,7 +53,6 @@ export const markPartReady = async (options: MarkOptions): Promise<PartReady | R
 
     if (refused ? marked.record : marked)
       commitReadyFile({ target: options.commitIn, product: options.product, part: options.part, blocked: refused });
-    else commitDroppedEntry({ target: options.commitIn, product: options.product, part: options.part });
   }
 
   return marked;
@@ -170,30 +160,6 @@ const commitOwnEntry = (options: { target: string; dir: string; part: string; sl
       else writeFileSync(file, original);
     }
   });
-
-const commitDroppedEntry = (options: { target: string; product: ResolvedProduct; part: string }) => {
-  const { product, part } = options;
-  const found = readyPartOf({ product, part });
-  const dir = typeof found === 'string' ? product.dir : found.dir;
-
-  dropEntryOfRemovedPart({ product, part });
-
-  const head = headEntriesOf(dir)?.[part];
-  const now = readReadyEntries(dir)[part];
-
-  if (head === undefined || readReady(dir)[part] !== undefined || JSON.stringify(head) === JSON.stringify(now)) return;
-
-  const refused = commitOwnEntry({
-    target: options.target,
-    dir,
-    part,
-    slug: `ready-drop-${part}`,
-    subject: `chore(repo): Drop the ready record of ${part} in ${product.name}`,
-  });
-
-  if (refused !== null)
-    console.warn(`READY UNCOMMITTED ${part}: the record is dropped, but the commit failed: ${refused}`);
-};
 
 const commitReadyFile = (options: { target: string; product: ResolvedProduct; part: string; blocked: boolean }) => {
   const { product, part } = options;

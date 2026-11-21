@@ -345,17 +345,3 @@ export const forgetUnnamedActions = (options: { product: ResolvedProduct; parts:
     });
   }
 };
-
-/** Drops the ready.json entry of a part the product no longer has; the others stay. */
-export const dropEntryOfRemovedPart = (options: { product: ResolvedProduct; part: string }) => {
-  const { product, part } = options;
-
-  if (typeof readyPartOf({ product, part }) !== 'string' || product.parts.length === 0) return;
-
-  withProductLock(product.dir, () => {
-    const existing = readReadyEntries(product.dir);
-
-    if (part in existing)
-      writeReady(product.dir, Object.fromEntries(Object.entries(existing).filter(([key]) => key !== part)));
-  });
-};
