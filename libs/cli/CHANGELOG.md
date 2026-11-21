@@ -1,5 +1,19 @@
 # @ethlete/cli
 
+## 3.0.0-next.42
+
+### Patch Changes
+
+- The design action grammar lives in the lib sources, so the build emits no CommonJS copy next to the frame runtime.
+- COMPOSITION now marks a part as composition only when it embeds at least two other parts and draws no control of its own. Leaves such as a badge, a loader or a single-part wrapper are no longer flagged.
+- The design harness opens dialog parts in a real overlay pane over a viewport-filling host. Compare sizes their viewport to the design picture, and check asserts overlay panes for never-implemented parts.
+- `et design check` fails the new `PRODUCT-LOGO` rule for a product whose declared `logo` is missing, not an svg or png, or outside the folders the Studio rail loads logos from.
+- The design system scan counts a part opened through `withAction(markup, 'opens:<part>')` or its object form as used, like a literal `data-et-action="opens:<part>"`. One action grammar module serves both.
+- `design system` counts a part whose `data-et-action="opens:<part>"` element opens another part as that part's user, so the opened part nests under its opener in the part tree.
+- A product declares its rail logo once as `logo` in `.ethlete/design/config.json`; the design listing sends it and the Studio rail draws it, falling back to the product's initials.
+- `design check` no longer caches or reuses the render result of a state that did not draw, so a fixed import draws again instead of repeating the old failure.
+- The design check reads a bare boolean attribute (`<x empty />`) as a `true` source for STATE-NO-SOURCE, so templates keep the static attribute the lint rule asks for.
+
 ## 3.0.0-next.41
 
 ### Patch Changes
