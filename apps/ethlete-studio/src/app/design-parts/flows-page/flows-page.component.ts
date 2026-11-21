@@ -66,9 +66,18 @@ export const FLOWS_SAMPLE_NOTES: FlowsPageNote[] = [
   { id: 'new', text: '', x: 0, y: 262 },
 ];
 
+export const FLOWS_SAMPLE_ORPHANS: FlowsPageNote[] = [
+  { id: 'lost-1', text: STUDIO_LABELS.flows.sample.orphans[0], x: 1420, y: 60 },
+  { id: 'lost-2', text: STUDIO_LABELS.flows.sample.orphans[1], x: 1420, y: 300 },
+];
+
 const ZOOM_STEP = 1.5;
 
 const NOTE_INSET = 24;
+
+const NOTE_SIZE = { width: 256, height: 96 };
+
+export const ORPHAN_DISTANCE = 320;
 
 const stageStart = (viewport: HTMLElement, stage: HTMLElement) => {
   const from = viewport.getBoundingClientRect();
@@ -88,6 +97,29 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
           <ethlete-tree-row [rows]="rows()" (rowPress)="pick.emit($event.label)" />
         } @else {
           <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+        }
+        @if (flow() === 'open') {
+          <section class="mt-space-4 flex flex-col gap-space-1">
+            <h2 class="m-0 px-space-3 text-ui-xs font-ui-strong text-et-surface-muted">
+              {{ LABELS.orphans }} · {{ orphanNotes().length }}
+            </h2>
+            <div class="flex flex-col items-stretch">
+              @for (note of orphanNotes(); track note.id) {
+                <button
+                  (click)="jumpToNote.emit(note.id)"
+                  et-button
+                  type="button"
+                  variant="transparent"
+                  color="surface"
+                  size="sm"
+                >
+                  {{ note.text }}
+                </button>
+              } @empty {
+                <p class="m-0 px-space-3 text-ui-sm text-et-surface-muted">{{ LABELS.noOrphans }}</p>
+              }
+            </div>
+          </section>
         }
       </div>
       @if (flow() === 'open') {
@@ -318,6 +350,7 @@ export class FlowsPageComponent {
   public noteMove = output<FlowsPageNoteMove>();
   public noteText = output<FlowsPageNoteText>();
   public noteDelete = output<string>();
+  public jumpToNote = output<string>();
 
   public pick = output<string>();
   public copyPrompt = output();
@@ -358,10 +391,10 @@ export class FlowsPageComponent {
   });
 
   protected percent = computed(() => Math.round((this.canvas()?.zoom() ?? 1) * 100));
+
   protected presetOptions = computed(() =>
     this.presets().length ? this.presets() : [{ value: this.preset(), label: this.preset() }],
   );
-
   protected graph = computed(() => {
     const { width, scale, colGap, rowGap, caption } = FLOWS_SHOT;
     const w = width * scale;
@@ -413,6 +446,24 @@ export class FlowsPageComponent {
     };
   });
 
+  protected orphanNotes = computed(() => {
+    const { boxes, w, h } = this.graph();
+    const gap = (a: { at: number; size: number }, b: { at: number; size: number }) =>
+      Math.max(0, b.at - (a.at + a.size), a.at - (b.at + b.size));
+
+    return this.notes().filter(
+      (note) =>
+        note.text &&
+        boxes.every(
+          (box) =>
+            Math.hypot(
+              gap({ at: note.x, size: NOTE_SIZE.width }, { at: box.x, size: w }),
+              gap({ at: note.y, size: NOTE_SIZE.height }, { at: box.y, size: h + FLOWS_SHOT.caption }),
+            ) > ORPHAN_DISTANCE,
+        ),
+    );
+  });
+
   protected rows = computed<TreeRow[]>(() =>
     this.flow() === 'none'
       ? []
@@ -433,6 +484,29 @@ export class FlowsPageComponent {
     const canvas = this.canvas();
 
     canvas?.show({ kind: 'visible', zoom: canvas.camera().zoom * factor });
+  }
+
+  /** Moves the camera so the note with this id is centred on the canvas, keeping the current zoom. */
+  public jumpTo(id: string) {
+    const note = this.notes().find((entry) => entry.id === id);
+    const canvas = this.canvas();
+    const viewport = this.viewport()?.nativeElement;
+    const stage = this.stage()?.nativeElement;
+
+    if (!note || !canvas || !viewport || !stage) return;
+
+    const { zoom } = canvas.camera();
+    const start = stageStart(viewport, stage);
+    const centre = {
+      x: note.x + NOTE_SIZE.width / 2,
+      y: note.y + NOTE_SIZE.height / 2,
+    };
+
+    canvas.reset({
+      x: Math.round(start.x + stage.offsetWidth / 2 - centre.x * zoom),
+      y: Math.round(start.y + stage.offsetHeight / 2 - centre.y * zoom),
+      zoom,
+    });
   }
 
   protected zoomReset() {

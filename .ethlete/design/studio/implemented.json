@@ -2188,12 +2188,13 @@
     }
   },
   "pages/flows": {
-    "hash": "8d92e070ae7035ce",
-    "at": "2026-11-21T01:47:08.777Z",
+    "hash": "68ff88da6979bf48",
+    "at": "2026-11-21T02:42:35.972Z",
     "states": {
       "empty": "807ded15636146c0",
       "flow": "23c74a9dbeee7e53",
-      "new-note": "72534606a64e640f"
+      "new-note": "72534606a64e640f",
+      "orphaned": "45c82b5c74f38ddc"
     },
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
@@ -2254,8 +2255,8 @@
       ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "3510fca8a5b2a0f4",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
-      ".ethlete/design/studio/pages/flows/flows.ts": "f266ea5525b1883d",
-      ".ethlete/design/studio/pages/flows/shared/flow-data.ts": "f3f4d957b30ae317",
+      ".ethlete/design/studio/pages/flows/flows.ts": "d7317cbc9f417091",
+      ".ethlete/design/studio/pages/flows/shared/flow-data.ts": "612e5da3415878a8",
       "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "ad2ef8b293d8db6a",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
@@ -2336,7 +2337,7 @@
       "apps/ethlete-studio/src/app/design-parts/about-dialog/about-dialog.component.ts": "0277a9e239cf6277",
       "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "9d4fe2d96370484c",
       "apps/ethlete-studio/src/app/design-parts/error-toast/error-toast.component.ts": "356b1fc69bf0809a",
-      "apps/ethlete-studio/src/app/design-parts/flows-page/flows-page.component.ts": "ad81b61b20719d15",
+      "apps/ethlete-studio/src/app/design-parts/flows-page/flows-page.component.ts": "a79389ab75947d5e",
       "apps/ethlete-studio/src/app/design-parts/shell-collapse/shell-collapse.component.ts": "8aff44e0f07cccad",
       "apps/ethlete-studio/src/app/design-parts/shell-main/product-logos.ts": "7fa4184776b205e5",
       "apps/ethlete-studio/src/app/design-parts/shell-main/rail-letters.ts": "fe6ff7bfae7d0fa5",
@@ -2353,7 +2354,7 @@
       "apps/ethlete-studio/src/app/design-parts/tree-row/tree-row-item.component.ts": "c0e157126fec6c06",
       "apps/ethlete-studio/src/app/design-parts/tree-row/tree-row.component.ts": "28e7bf8154434d69",
       "apps/ethlete-studio/src/app/design-parts/zoom-chip/zoom-chip.component.ts": "2db56b016f4012cb",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "02ba2d3524a72fe8",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "560118a500c19194",
       "apps/ethlete-studio/src/app/studio-view/remembered.ts": "aba7d46dfc760a04",
       "apps/ethlete-studio/src/app/update-check.ts": "1e9f7196e50b0cc9",
       "apps/ethlete-studio/src/host/about.ts": "201ee6d1c11d96fb",

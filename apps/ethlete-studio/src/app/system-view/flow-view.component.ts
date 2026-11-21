@@ -30,6 +30,7 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
   selector: 'ethlete-flow-view',
   template: `
     <ethlete-flows-page
+      #page
       [flow]="flow() ? 'open' : 'none'"
       [flows]="flowNames()"
       [selected]="flow()?.name ?? ''"
@@ -48,6 +49,7 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
       (noteText)="writeText($event)"
       (noteMove)="move($event)"
       (noteDelete)="remove($event)"
+      (jumpToNote)="page.jumpTo($event)"
       (shellAction)="shellAction.emit($event)"
       class="h-full!"
     />

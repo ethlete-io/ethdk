@@ -160,4 +160,75 @@ describe('FlowsPageComponent', () => {
     expect(deleted).toEqual(['draft', 'other']);
     expect(written).toEqual([]);
   });
+
+  describe('orphan notes', () => {
+    const notes = [
+      { id: 'near', text: 'Nah am Graphen', x: 790, y: 262 },
+      { id: 'edge', text: 'Knapp daneben', x: 1057 + 300, y: 0 },
+      { id: 'far', text: 'Weit weg', x: 1057 + 400, y: 0 },
+      { id: 'below', text: 'Tief unten', x: 100, y: 1200 },
+      { id: 'draft', text: '', x: 5000, y: 5000 },
+    ];
+    const listed = (element: HTMLElement) =>
+      [...element.querySelectorAll<HTMLElement>('section button')].map((button) => button.textContent?.trim());
+
+    it('lists a note farther than 320 px from every frame and skips near ones and an empty draft', async () => {
+      const { fixture, element } = await render();
+
+      fixture.componentRef.setInput('notes', notes);
+      await fixture.whenStable();
+
+      expect(listed(element)).toEqual(['Weit weg', 'Tief unten']);
+      expect(element.querySelector('section h2')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Verwaiste Notizen · 2',
+      );
+    });
+
+    it('shows the empty hint when no note is orphaned', async () => {
+      const { fixture, element } = await render();
+
+      fixture.componentRef.setInput('notes', [notes[0]]);
+      await fixture.whenStable();
+
+      expect(listed(element)).toEqual([]);
+      expect(element.querySelector('section')?.textContent).toContain('Keine');
+    });
+
+    it('measures against the frames: a wider flow makes a far note near', async () => {
+      const { fixture, element } = await render();
+
+      fixture.componentRef.setInput('notes', [notes[2]]);
+      fixture.componentRef.setInput('frames', [
+        ...fixture.componentInstance.frames(),
+        { id: 'wide', title: 'Wide', src: '/x', col: 5, row: 0 },
+      ]);
+      await fixture.whenStable();
+
+      expect(listed(element)).toEqual([]);
+    });
+
+    it('emits the note id on a click of its entry', async () => {
+      const { fixture, element } = await render();
+      const jumped: string[] = [];
+
+      fixture.componentInstance.jumpToNote.subscribe((id) => jumped.push(id));
+      fixture.componentRef.setInput('notes', notes);
+      await fixture.whenStable();
+
+      element.querySelectorAll<HTMLButtonElement>('section button')[1]?.click();
+
+      expect(jumped).toEqual(['below']);
+    });
+
+    it('centres the camera on the note when jumped to', async () => {
+      const { fixture, world } = await render();
+
+      fixture.componentRef.setInput('notes', notes);
+      await fixture.whenStable();
+      fixture.componentInstance.jumpTo('far');
+      await fixture.whenStable();
+
+      expect(world?.style.transform).toBe('translate(' + -(1457 + 128) + 'px, ' + -48 + 'px) scale(1)');
+    });
+  });
 });
