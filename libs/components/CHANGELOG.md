@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.96
+
+### Patch Changes
+
+- Anchored overlay panels (select, tooltip, toggletip, cascader, date picker) slide and fade again on enter and leave. Under `prefers-reduced-motion` they only fade. The select keeps its active option until the panel is gone.
+- A filled scrollable button draws its chevron in the button's ink again; the surface interaction colour applies only to the other variants.
+
 ## 1.0.0-next.95
 
 ### Minor Changes
