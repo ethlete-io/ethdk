@@ -83,7 +83,15 @@ describe('inventoryFramesOf', () => {
       controls: [{ id: 'more', forced: [], box: box(50) }],
       surfaces: [],
       found: [
-        { kind: 'control', what: 'button', path: 'main > button', marked: 'more', within: ['more'], box: box(50) },
+        {
+          kind: 'control',
+          what: 'button',
+          path: 'main > button',
+          label: 'Mehr',
+          marked: 'more',
+          within: ['more'],
+          box: box(50),
+        },
         ...extra,
       ],
     });
@@ -125,7 +133,7 @@ describe('inventoryFramesOf', () => {
         status: 'declared',
         kind: 'disclosure',
         inputs: ['pointer'],
-        label: null,
+        label: 'Mehr',
         surfaces: ['body'],
         owner: null,
         states: 2,
@@ -248,6 +256,46 @@ describe('inventoryFramesOf', () => {
     });
 
     expect(frames[0]?.controls.map(({ id, status }) => [id, status])).toEqual([['picker', 'declared']]);
+  });
+});
+
+describe('inventoryFramesOf declared labels', () => {
+  it('takes the label of a declared control from the element it marks, and none when nothing marked is found', () => {
+    const frames = inventoryFramesOf({
+      product: 'app-a',
+      part: 'pages/home',
+      controls: {
+        'note-add': { kind: 'button', input: ['pointer'], part: 'components/done' },
+        canvas: { kind: 'region', input: [] },
+      },
+      frames: [
+        {
+          state: 'rest',
+          interaction: null,
+          controls: [
+            { id: 'note-add', forced: [] },
+            { id: 'canvas', forced: [] },
+          ],
+          surfaces: [],
+          found: [
+            {
+              kind: 'control',
+              what: 'button',
+              path: 'a',
+              label: 'Notiz anlegen',
+              marked: 'note-add',
+              within: ['note-add'],
+            },
+          ],
+        },
+      ],
+      addresses: [{ state: 'rest', preset: 'desktop', width: null }],
+    });
+
+    expect(frames[0]?.controls.map(({ id, label }) => [id, label])).toEqual([
+      ['note-add', 'Notiz anlegen'],
+      ['canvas', null],
+    ]);
   });
 });
 

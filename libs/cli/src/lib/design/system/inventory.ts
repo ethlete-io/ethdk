@@ -137,10 +137,12 @@ export const inventoryFramesOf = (options: {
       ...frame.controls.map((control) => {
         const known = declared[control.id];
 
+        const marked = (frame.found ?? []).find((found) => found.marked === control.id && found.label);
+
         return {
           key: `declared ${control.id}`,
           id: control.id,
-          label: null,
+          label: marked?.label ?? null,
           status: known ? ('declared' as const) : ('undeclared' as const),
           kind: known?.kind ?? '',
           inputs: known?.input ?? [],
