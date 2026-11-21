@@ -18,6 +18,8 @@ export const enterValue = async (target: Locator, timeout: number) => {
   else if (other !== null) await target.selectOption(other, { timeout });
 };
 
+const ACTIVE_STEP_MS = 1_000;
+
 /**
  * Focuses the element a key press goes to: for an option, the element that controls its listbox, moved onto the option
  * with the arrow keys until its `aria-activedescendant` names it; for any other element, the element itself.
@@ -29,7 +31,8 @@ export const focusKeyTarget = async (options: { page: Page; target: Locator; tim
     (await target.getAttribute('role', { timeout })) === 'option' && (await box.count()) > 0
       ? await box.getAttribute('id', { timeout })
       : null;
-  const owner = listbox ? page.locator(`[aria-controls~="${listbox}"], [aria-owns~="${listbox}"]`).first() : null;
+  const ownerSelector = `[aria-controls~="${listbox}"], [aria-owns~="${listbox}"]`;
+  const owner = listbox ? page.locator(ownerSelector).first() : null;
 
   if (!listbox || !owner || (await owner.count()) === 0) {
     await target.focus({ timeout });
@@ -43,13 +46,22 @@ export const focusKeyTarget = async (options: { page: Page; target: Locator; tim
   await owner.focus({ timeout });
 
   for (let step = 0; step <= steps; step++) {
-    if (id && (await owner.getAttribute('aria-activedescendant', { timeout })) === id) {
+    const active = await owner.getAttribute('aria-activedescendant', { timeout });
+
+    if (id && active === id) {
       await page.evaluate('window.__etPrevented = []; (window.__etDesignEmits ?? []).length = 0;');
 
       return owner;
     }
 
     await page.keyboard.press('ArrowDown');
+    await page
+      .waitForFunction(
+        `document.querySelector(${JSON.stringify(ownerSelector)})?.getAttribute('aria-activedescendant') !== ${JSON.stringify(active)}`,
+        undefined,
+        { timeout: ACTIVE_STEP_MS },
+      )
+      .catch(() => undefined);
   }
 
   throw new Error(`the arrow keys on the owner of its listbox never make option #${id ?? '(no id)'} active`);
