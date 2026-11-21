@@ -8,7 +8,7 @@ const CHAR_WIDTH = 7;
 
 const PADDING = 8;
 
-const GAP = 1;
+const GAP = 4;
 
 const widthOf = (number: string) => number.length * CHAR_WIDTH + PADDING;
 

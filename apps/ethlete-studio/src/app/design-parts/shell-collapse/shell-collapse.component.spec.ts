@@ -17,7 +17,7 @@ describe('ShellCollapseComponent', () => {
     button?.click();
     button?.click();
 
-    expect(button?.getAttribute('aria-label')).toBe('Hide panel');
+    expect(button?.getAttribute('aria-label')).toBe('Panel ausblenden');
     expect(collapsed).toBe(2);
   });
 });

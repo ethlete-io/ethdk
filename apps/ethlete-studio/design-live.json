@@ -129,7 +129,7 @@
               "panel": "hidden"
             }
           },
-          "click": ["Hide panel"]
+          "click": ["Panel ausblenden"]
         },
         "fit": {
           "design": "fit",

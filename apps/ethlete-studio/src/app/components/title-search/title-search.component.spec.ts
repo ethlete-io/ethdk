@@ -28,7 +28,7 @@ describe('TitleSearchComponent', () => {
   it('draws an empty field without a product or part', () => {
     const { button } = render({});
 
-    expect(button?.getAttribute('aria-label')).toBe('Suchen in , ');
+    expect(button?.getAttribute('aria-label')).toBe('Suchen in ');
   });
 
   it('shows the macOS shortcut on macOS and the other one elsewhere', () => {

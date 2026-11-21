@@ -4221,7 +4221,7 @@ const CASES = [
       const frameBefore = await firstFrame();
       const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
 
-      await page.getByRole('button', { name: 'Hide panel' }).first().click();
+      await page.getByRole('button', { name: 'Panel ausblenden' }).first().click();
       await settle(page);
 
       const after = await probe(page);
@@ -4400,7 +4400,7 @@ const CASES = [
       const before = await screenRect();
       const cameraBefore = await probe(page);
 
-      await page.getByRole('button', { name: 'Hide panel' }).first().click();
+      await page.getByRole('button', { name: 'Panel ausblenden' }).first().click();
       await settle(page);
       const after = await screenRect();
       const cameraAfter = await probe(page);

@@ -110,7 +110,7 @@ export const STUDIO_LABELS = {
     fitTooltip: 'Zoom to fit (Shift+1)',
   },
   titleBar: {
-    search: (product: string, part: string) => `Suchen in ${product}, ${part}`,
+    search: (product: string, part: string) => `Suchen in ${[product, part].filter(Boolean).join(', ')}`,
     update: 'Update',
     window: {
       minimize: 'Minimieren',
@@ -357,7 +357,7 @@ export const STUDIO_LABELS = {
     colorTheme: 'Farb-Theme',
     sideWidth: 'Breite der Seitenleiste',
     studio: 'Studio',
-    hidePanel: 'Hide panel',
+    hidePanel: 'Panel ausblenden',
   },
   exceptions: {
     toggle: 'Ausnahmen',

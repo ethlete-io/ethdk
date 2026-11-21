@@ -5,7 +5,26 @@ const FRAME = { width: 360, height: 225 };
 const overlap = (a: ReturnType<typeof placeMarkers>[number], b: ReturnType<typeof placeMarkers>[number]) =>
   a.left < b.left + b.width && b.left < a.left + a.width && a.top < b.top + b.height && b.top < a.top + a.height;
 
+const MIN_GAP = 3;
+
+const closeTogether = (a: ReturnType<typeof placeMarkers>[number], b: ReturnType<typeof placeMarkers>[number]) =>
+  a.left < b.left + b.width + MIN_GAP &&
+  b.left < a.left + a.width + MIN_GAP &&
+  a.top < b.top + b.height + MIN_GAP &&
+  b.top < a.top + a.height + MIN_GAP;
+
 describe('placeMarkers', () => {
+  it('keeps a gap between markers anchored along the frame bottom', () => {
+    const placed = placeMarkers(
+      ['24', '26', '27', '29'].map((number, index) => ({ number, x: 120 + index * 6, y: FRAME.height })),
+      FRAME,
+    );
+
+    for (const [index, a] of placed.entries()) {
+      for (const b of placed.slice(index + 1)) expect(closeTogether(a, b)).toBe(false);
+    }
+  });
+
   it('keeps a lone marker on its anchor', () => {
     const [marker] = placeMarkers([{ number: '1', x: 100, y: 100 }], FRAME);
 
