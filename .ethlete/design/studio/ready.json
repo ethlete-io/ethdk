@@ -1205,7 +1205,7 @@
     "pid": 1197881
   },
   "elements/variant-cell": {
-    "hash": "07440a72e76a4618",
+    "hash": "dbaa78a4789f564a",
     "files": {
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
@@ -1238,9 +1238,10 @@
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
       ".ethlete/design/studio/elements/variant-cell/variant-cell.css": "9ea8a222b03e9446",
-      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "68d375456398a6b9",
+      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "7fc1c32e3d16ae65",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -1248,16 +1249,16 @@
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9"
     },
-    "app": "e3445a8233ee9944",
+    "app": "224bbaf5b9e3d862",
     "embedded": {
-      "components/comment-pin": "78934005211647b4"
+      "components/comment-pin": "e9134e4cac50af91"
     },
     "actions": ["emit:pinToggle"],
     "builder": "designer",
-    "at": "2026-11-21T01:48:50.541Z",
+    "at": "2026-11-21T04:36:31.152Z",
     "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 2259914
+    "pid": 1625887
   },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",
