@@ -84,7 +84,7 @@ export default definePart({
       reason: 'Der Teil components/button existiert nicht mehr.',
     },
   },
-  frame: (body) => html`<div class="relative min-h-40 p-space-3">${body}</div>`,
+  frame: (body) => html`<div class="relative">${body}</div>`,
   describe: {
     empty:
       'An empty comment draft; check the placeholder in the field and that Senden stays disabled beside Abbrechen.',
