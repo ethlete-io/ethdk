@@ -8,7 +8,7 @@
 
 declare module '@ethlete/core' {
   interface EthleteColorThemeNameRegistry {
-    name: 'brand' | 'danger' | 'warning';
+    name: 'brand' | 'danger' | 'success' | 'warning';
   }
 }
 

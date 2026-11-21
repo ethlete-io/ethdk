@@ -51,6 +51,31 @@ export const DANGER_THEME: ColorTheme = {
   },
 };
 
+export const SUCCESS_THEME: ColorTheme = {
+  name: 'success',
+  type: 'success',
+  primary: {
+    color: {
+      default: '144 205 64',
+      hover: '160 222 83',
+      focus: '160 222 83',
+      active: '117 176 21',
+      disabled: '106 128 84',
+    },
+    onColor: {
+      default: '14 26 1',
+      disabled: '31 39 23',
+    },
+    inkColor: {
+      default: '173 225 115',
+      hover: '173 225 115',
+      focus: '173 225 115',
+      active: '173 225 115',
+      disabled: '72 90 54',
+    },
+  },
+};
+
 export const WARNING_THEME: ColorTheme = {
   name: 'warning',
   type: 'warning',
@@ -76,4 +101,4 @@ export const WARNING_THEME: ColorTheme = {
   },
 };
 
-export const THEMES = [BRAND_THEME, DANGER_THEME, WARNING_THEME];
+export const THEMES = [BRAND_THEME, DANGER_THEME, SUCCESS_THEME, WARNING_THEME];
