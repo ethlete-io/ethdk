@@ -1,6 +1,6 @@
 {
   "components/about-dialog": {
-    "hash": "60d2b102e86174ef",
+    "hash": "c779ab2c7de7a5d2",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-20T15:24:58.541Z"
@@ -12,19 +12,19 @@
     "at": "2026-11-07T17:19:30.454Z"
   },
   "components/command-palette": {
-    "hash": "723f22b141311f98",
+    "hash": "28527bc9efb285a5",
     "variant": "new",
     "decidedBy": "builder",
     "at": "2026-11-20T04:00:49.298Z"
   },
   "components/comment-draft": {
-    "hash": "89d4b1474d37d8c3",
+    "hash": "bd54f7ba0afbd319",
     "variant": "raised",
     "decidedBy": "user",
     "at": "2026-11-05T15:36:53.628Z"
   },
   "components/comment-flow": {
-    "hash": "42de391c98c5e529",
+    "hash": "d348ffb0d3494248",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-18T06:23:52.170Z"
@@ -45,79 +45,79 @@
   },
   "components/disclosure": "b97eec377fdf2ec5",
   "components/shell-collapse": {
-    "hash": "9af27bd13e629973",
+    "hash": "93e864a492097752",
     "variant": "rand53",
     "decidedBy": "builder pick, ADR 0305",
     "at": "2026-11-21T02:52:36.165Z"
   },
   "components/shortcuts-dialog": {
-    "hash": "e7a737d3b16d265e",
+    "hash": "dfd91c29cb39b7fd",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-20T15:25:05.294Z"
   },
   "components/sketch-status-badge": {
-    "hash": "3d295d9d14328e70",
+    "hash": "82ad184840368dac",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-15T21:29:49.115Z"
   },
   "components/title-bar": {
-    "hash": "fadf745a7c6a07d0",
+    "hash": "bffc6c9f83e86a60",
     "variant": "a",
     "decidedBy": "plan: finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves",
     "at": "2026-11-16T02:27:51.159Z",
     "note": "merged without a pick: allowed by finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves"
   },
   "components/title-search": {
-    "hash": "967a39e34f6ac22b",
+    "hash": "a5353d773f54d8a1",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-21T02:21:10.888Z"
   },
   "components/tree-row": "bf7bd4857a66660a",
   "components/update-dialog": {
-    "hash": "a1d4ff5a5d11a342",
+    "hash": "63ad322093769a56",
     "variant": "new",
     "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit",
     "at": "2026-11-07T14:50:56.608Z",
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "components/zoom-chip": {
-    "hash": "233f5458a9d5a3b1",
+    "hash": "02661d27585c2eb2",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-17T17:55:04.370Z"
   },
   "elements/canvas-frames": {
-    "hash": "7eab047f9d56f29e",
+    "hash": "80b8417344e01e01",
     "variant": "a",
     "decidedBy": "plan",
     "at": "2026-11-17T15:56:19.710Z",
     "note": "builder: fix of 08e824394 drift"
   },
   "elements/part-tree": {
-    "hash": "88942af98ab13472",
+    "hash": "1f197d3699ffc33b",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "16b88ba20770a57a",
+    "hash": "29c179aede91fa85",
     "variant": "new",
     "decidedBy": "plan: ADR 0305",
     "at": "2026-11-20T16:01:35.799Z",
     "note": "merged without a pick: allowed by ADR 0305"
   },
   "elements/studio-menu": {
-    "hash": "18452b0c0e3da3d2",
+    "hash": "933f29be2edd5014",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-20T23:00:25.593Z",
     "note": "merged: Einziger Entwurf: Inventory als Menüzeile"
   },
   "elements/variant-cell": {
-    "hash": "2264410a0618e6fd",
+    "hash": "2a82936578e888f1",
     "variant": "b",
     "decidedBy": "agent",
     "at": "2026-11-21T01:08:14.616Z"
@@ -150,38 +150,38 @@
     "at": "2026-11-19T10:25:13.055Z"
   },
   "pages/flows": {
-    "hash": "933f064e1d5e1d03",
+    "hash": "5f9d41e1be7d2953",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-21T04:19:29.759Z"
   },
   "pages/inbox": {
-    "hash": "f6d368cf475c0146",
+    "hash": "9fe9d1c9a513990c",
     "variant": "a",
     "decidedBy": "plan: ADR 0387",
     "at": "2026-11-20T14:07:53.240Z",
     "note": "merged without a pick: allowed by ADR 0387"
   },
   "pages/inventory": {
-    "hash": "7252f693b227d39f",
+    "hash": "bb84266858a56467",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-21T03:22:49.823Z"
   },
   "pages/sketches": {
-    "hash": "86d89994fda87436",
+    "hash": "bca808361666b2e6",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-21T05:03:59.360Z"
   },
   "pages/start": {
-    "hash": "3b668624cb1d918f",
+    "hash": "5848f0d35df00eee",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-20T06:52:42.718Z"
   },
   "pages/system": {
-    "hash": "3c2b5aa9242ad442",
+    "hash": "6589872d7374d29c",
     "variant": "float",
     "decidedBy": "builder",
     "at": "2026-11-20T22:50:25.340Z"
