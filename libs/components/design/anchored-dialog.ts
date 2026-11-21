@@ -37,8 +37,11 @@ export const anchoredDialogStyles = /* @__PURE__ */ [
   anchoredDialogStrategy,
   overlayArrow,
   `@layer components.sdk {
+  .et-anchored-dialog-mock,
+  .et-overlay-arrow {
+    --_et-overlay-arrow-pane-border-width: var(--et-overlay-surface-border-width, 0.1rem);
+  }
   .et-anchored-dialog-mock {
-    --_et-overlay-arrow-pane-border-width: var(--et-overlay-surface-border-width);
     inline-size: max-content;
     min-inline-size: 288px;
     max-inline-size: 80vw;
