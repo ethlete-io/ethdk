@@ -1027,6 +1027,30 @@ describe('SystemViewComponent on a merge', () => {
     expect(element.querySelector('nav button[aria-label="System"]')?.getAttribute('aria-current')).toBe('page');
   });
 
+  it('shows the sketches empty state when the product has no open sketch', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-sketches-empty]')).toBeNull();
+
+    fixture.componentInstance.pickSection('Sketches');
+    await settle(fixture);
+
+    expect(element.querySelector('[data-sketches-empty]')).not.toBeNull();
+    expect(element.querySelector('ethlete-system-page')).toBeNull();
+    expect(element.querySelector('ethlete-sketch-view')).toBeNull();
+  });
+
   it('lists the targets of the open sketch with several parts under it in the tree', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating@stars',

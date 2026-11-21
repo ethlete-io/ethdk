@@ -73,6 +73,7 @@ import { foldedStatesOf, lookStatesOf } from '../design-parts/system-page/folded
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
 import { inboxCommentOf, inboxPartOf, inboxThreadOf, writerOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
+import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { FlowRead, flowRead$, keepLastFlows } from './flow-read';
 import { keptRead$ } from './kept-read';
@@ -238,6 +239,15 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         (shellAction)="runShellAction($event)"
         (openPoint)="openPoint(shown.sketch.target, $event)"
       />
+    } @else if (sketchesEmpty()) {
+      <ethlete-sketches
+        [empty]="true"
+        [tree]="pageShell().tree"
+        [shell]="pageShell()"
+        (expandedChange)="rememberOpen($event)"
+        (shellAction)="runShellAction($event)"
+        class="h-full!"
+      />
     } @else if (inventoryPage(); as page) {
       @defer {
         <ethlete-inventory-view
@@ -356,6 +366,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     StartComponent,
     InventoryViewComponent,
     SystemPageComponent,
+    SketchesComponent,
     CommentDraftComponent,
   ],
   providers: [provideCommentStore(), provideCommandPaletteStore()],
@@ -1176,6 +1187,14 @@ export class SystemViewComponent {
     return this.sketchShown();
   });
 
+  protected sketchesEmpty = computed(() => {
+    const read = this.reading();
+
+    if (!read || read.error || read.products.length === 0) return false;
+
+    return this.section() === 'Sketches' && !this.call() && this.sketchList() !== null && this.sketches().length === 0;
+  });
+
   protected startPage = computed(() => {
     if (!this.project()) return { repo: undefined };
 
@@ -1503,6 +1522,7 @@ export class SystemViewComponent {
 
     this.mergingSketch.set(null);
     this.mergedSketches.update((merged) => [...merged, target]);
+    this.railSection.set('System');
     this.picked.set(part);
     rememberView({ systemEntry: part });
   }
