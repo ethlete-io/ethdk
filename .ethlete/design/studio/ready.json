@@ -1322,7 +1322,7 @@
     "pid": 139554
   },
   "pages/flows": {
-    "hash": "fd764acca2e8b53a",
+    "hash": "b68ed36f61ed24b7",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -1399,8 +1399,8 @@
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
-      ".ethlete/design/studio/pages/flows/flows.ts": "971a5fe38d5673c1",
-      ".ethlete/design/studio/pages/flows/shared/flow-data.ts": "bb7918bc308365e7",
+      ".ethlete/design/studio/pages/flows/flows.ts": "55a98e480d3e1ba2",
+      ".ethlete/design/studio/pages/flows/shared/flow-data.ts": "4f7d41eeeacb0c2a",
       "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "ad2ef8b293d8db6a",
       "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
@@ -1468,7 +1468,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "dc4a1a9eb84070ff",
+    "app": "69cf21afb46a30db",
     "embedded": {
       "components/canvas-viewport": "17676867380dc95c",
       "components/comment-draft": "98b2cebd563f1a51",
@@ -1487,29 +1487,39 @@
     },
     "actions": [
       "comment-mode",
+      "comments",
       "emit:addNote",
+      "emit:close",
       "emit:collapse",
       "emit:commentToggle",
       "emit:copyPrompt",
       "emit:deleteNote",
+      "emit:fit",
       "emit:jumpToNote",
+      "emit:maximize",
+      "emit:minimize",
       "emit:pinToggle",
       "emit:pointPick",
       "emit:presetChange",
       "emit:productChange",
+      "emit:resolveThread",
       "emit:rowPress",
       "emit:sectionChange",
       "emit:sendComment",
       "emit:sideWidthChange",
+      "emit:withdrawComment",
+      "emit:zoomIn",
+      "emit:zoomOut",
+      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-21T03:58:56.403Z",
+    "at": "2026-11-21T04:32:12.016Z",
     "by": "et design check",
     "cmd": "check",
-    "pid": 1183470
+    "pid": 1557034
   },
   "pages/inbox": {
     "hash": "58c2e2b0d4e7f40c",

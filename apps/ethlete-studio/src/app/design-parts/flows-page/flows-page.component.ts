@@ -84,6 +84,15 @@ export const FLOWS_SAMPLE_PINS: CanvasPin[] = [
   },
 ];
 
+export const FLOWS_SAMPLE_THREAD: CommentThread = {
+  id: 'flow-pin',
+  place: 'pages/sketches › page-sketch',
+  messages: [
+    { author: 'Hanna', initials: 'H', when: 'vor 2 Std.', text: STUDIO_LABELS.flows.sample.pinText },
+    { author: 'human', initials: 'H', own: true, when: 'vor 1 Std.', text: 'Ich ziehe ihn eine Stufe an.' },
+  ],
+};
+
 export const FLOWS_SAMPLE_LINES: FlowsPageLine[] = [
   { from: 'inbox', to: 'sketch', label: STUDIO_LABELS.flows.sample.lines[0] },
   { from: 'inbox', to: 'resolved', label: STUDIO_LABELS.flows.sample.lines[1] },
@@ -311,7 +320,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                         @if (opened.id === placed.pin.id) {
                           <div
                             (click)="$event.stopPropagation()"
-                            class="absolute top-0 left-full ml-space-3"
+                            class="absolute top-[calc(100%-var(--space-6))] left-[calc(var(--space-6)+var(--space-3))]"
                             role="presentation"
                           >
                             <ethlete-thread-card
@@ -511,7 +520,8 @@ export class FlowsPageComponent {
   protected readonly CAPTION = FLOWS_SHOT.caption;
   protected readonly PIN_TRANSFORM = 'scale(var(--et-design-canvas-label-scale)) translateY(-100%)';
   protected readonly DRAFT_TRANSFORM = 'scale(var(--et-design-canvas-label-scale))';
-  protected openPin = signal<string | null>(null);
+  private threadId = computed(() => this.thread()?.id ?? null);
+  protected openPin = linkedSignal(this.threadId);
 
   protected opened = signal<{ key: string | null; origin: Point } | null>(null, {
     equal: (a, b) => a?.key === b?.key && a?.origin.x === b?.origin.x && a?.origin.y === b?.origin.y,
