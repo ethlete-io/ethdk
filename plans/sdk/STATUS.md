@@ -21,12 +21,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S26 (fifagg, 20.11.): blockiert, = S17 (B652), ausgeliefert in components 1.0.0-next.92; fifagg informiert.
 - S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
 - S28, S29 (fifagg, 21.11.): ausgeliefert in components 1.0.0-next.94 (Scroll-Buttons: Farbe/Variante app-weit, Abstands-Variablen, Eingabe `scrollableButtons`, Breakpoint-Maps blenden unterhalb aus); fifagg informiert.
-- S30 (fifagg, 21.11.): nicht blockiert, `etInputClear` zeigt das x nur mit Fokus (`showClear` verlangt `focused()`), alt immer bei Wert -> Builder-Zeile.
-- S31 (fifagg, 21.11.): nicht blockiert, Match-Card kompakt je Team mit Score rechts + Wappen-Fallback statt Initiale; dichte Zeile gibt es (`size` pinnt sie), Wappen-Fallback fehlt -> Builder-Zeile.
-- S32 (fifagg, 21.11.): nicht blockiert, `et-picture` in einem overflow-hidden Host: kein Weg, nur das `<img>` zu transformieren (Hover-Zoom) -> Builder-Zeile.
-- S33 (fifagg, 21.11.): blockiert (Editor-Karte am Handy), Nachtrag zu S31: Match-Card kompakt braucht TBD-Label je Seite (heim/gast), Startzeit HH:mm auch kompakt, und `auto` wählt bei ~330 px Kartenbreite noch expanded. Entschieden von mir nach ADR 0297 (SDK wächst generisch für den FIFA-Look) -> Builder-Zeile direkt nach Drift-Scheibe 1; fifagg behält solange ihr Grid.
-- S34 (fifagg, 21.11.): nicht blockiert, Länge der Kanten-Ausblendung von et-scrollable: `--mask-size` ist dokumentiert, aber ohne `--et-scrollable-`-Präfix wie die neuen Button-Variablen, und kein App-Default für "wenn Buttons sichtbar" (fifagg: 6rem, je Stelle 5-8rem). Entschieden von mir wie S29 (gleiche Namensform) -> Builder-Zeile nach S30-S32; fifagg setzt solange `--mask-size`.
-- S35 (fifagg, 21.11., OTH-133): blockiert (~15 visuelle Baselines rot), schwebendes Label in et-form-field schwebt nicht, wenn et-select seine Null-Option zeigt (`hasValue` ignoriert `selectsNullOption`) -> Fehler, Builder-Zeile sofort nach S34; fifagg tut solange nichts.
+- S30-S35 (fifagg, 21.11.): gebaut und gepusht (2124afc0e), warten auf das nächste Prerelease, dann fifagg informieren.
 
 ## Offene Plan-Dateien
 
