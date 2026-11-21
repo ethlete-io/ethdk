@@ -526,6 +526,10 @@ an entry without a place. An entry without a place that names its backlog item i
 warning instead, so the list of known gaps can only shrink: a new entry needs a place or a backlog item, and an entry
 that has a place again must drop `missing`.
 
+A product that declares `logo` in `.ethlete/design/config.json` must point at a file the Studio rail can draw: an existing
+svg or png under `.ethlete/design/*/assets/`, `libs/*/assets/`, or a png under `apps/*/src-tauri/icons/`. `et design check`
+fails `PRODUCT-LOGO` otherwise; a product without `logo` shows initials.
+
 A part declares in `coverage` what its design must draw to cover the real inputs, and `et design check` warns on each
 gap:
 

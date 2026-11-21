@@ -4,7 +4,7 @@ import { baseIssuesFileOf, oldRenderIssuesOf } from './base-issues';
 import { designHashOf } from './design-hash';
 import { repoRootOf } from './reachable-files';
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../design-config';
+import { configPathOf, DesignConfig } from '../design-config';
 import { autoAcceptOf, DrawStates } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
@@ -14,6 +14,7 @@ import { pageStateInnerProblemsOf } from './rules/page-state-inner';
 import { refreshHarnessMap } from './harness-map';
 import { runningCliBuildLine, runningCliStaleWarning } from '../stale-cli-dist';
 import { capabilityPlaceOf } from './rules/capability-place';
+import { productLogoOf } from './rules/product-logo';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { contrastPairProblemsOf } from './contrast-pairs';
 import { droppedPropProblemsOf } from './dropped-props';
@@ -1068,6 +1069,11 @@ const checkProductTail = async (
   const problems = [
     ...withoutWaitingUndesigned(resolved, drawn.problems),
     ...capabilities.errors,
+    ...productLogoOf({
+      target: options.target,
+      config: { products: { [name]: entry } },
+      file: configPathOf(options.target),
+    }),
     ...options.problemsOfEdits,
   ].filter(isWanted);
 
