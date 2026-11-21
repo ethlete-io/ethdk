@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.58
+
+### Patch Changes
+
+- The cdk migration class list knows `et-floating-panel` and `et-overlay--date-picker`.
+
 ## 5.0.0-next.57
 
 ### Patch Changes

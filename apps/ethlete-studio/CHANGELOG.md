@@ -1,5 +1,26 @@
 # ethlete-studio
 
+## 0.2.0-next.31
+
+### Patch Changes
+
+- Studio shows the last English texts in German: a failed shot, an undrawn grid cell, the grid group heads, the zoom tooltips and the reason a frame did not load.
+- A part page with many states now wraps its rows into several columns that fit the canvas, so Fit shows most or all frames instead of one tiny tall column.
+- The About and Shortcuts dialog titles use the design's line height, and the shortcuts list sits inside the dialog body, so the pane height matches the design.
+- The design harness opens dialog parts in a real overlay pane over a viewport-filling host. Compare sizes their viewport to the design picture, and check asserts overlay panes for never-implemented parts.
+- Remove the Inventory row from the Studio menu. Inventory now opens from the command palette as the command "Inventory".
+- The about dialog names Braune Digital GmbH as license holder, 2025 to the current year, like the repo LICENSE.
+- The Studio menu and title bar open their own dialogs, and the title bar embeds the error toast, so the parts tree nests dialogs under their openers. The unused list-row design is gone.
+- A product declares its rail logo once as `logo` in `.ethlete/design/config.json`; the design listing sends it and the Studio rail draws it, falling back to the product's initials.
+- "Checkouts suchen" skips git worktrees and `scratch-` folders, so throwaway copies of a checkout no longer land in the project menu.
+- The empty sketches page binds `[empty]="true"`, so the design check sees a source for its no-sketches state.
+- The Sketches matrix of a part with many states wraps its states into blocks laid side by side, each with its own state names and variant heads, instead of one column as tall as the state count.
+- A Sketches matrix with many states now wraps into blocks that fit the list by height as well as width, so Fit shows most or all states.
+- The design check reads a bare boolean attribute (`<x empty />`) as a `true` source for STATE-NO-SOURCE, so templates keep the static attribute the lint rule asks for.
+- Studio menu: the panel stays level with the logo tile instead of sliding 4 px up to keep its arrow clear of the corner.
+- Studio menu: "Projekt entfernen" stops keeping the open project and switches to the first one left. The menu panel now draws its arrow toward the logo tile.
+- Studio's two smallest text steps grow (xs 11 px, sm 12 px), and disclosure bodies and command-palette hints read at the sm step.
+
 ## 0.2.0-next.30
 
 ### Patch Changes
