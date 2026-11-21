@@ -408,6 +408,8 @@ The consequence is for hand-rolled strategies: an overlay that sets a layout `co
 
 `anchoredDialogOverlayStrategy` enters and leaves with the same scale-and-fade the plain dialog uses, but around a `transform-origin` set to the origin element's center - so the pane grows out of its trigger without ever taking the trigger's dimensions. Scaling _to the origin's width and height_ reads as the trigger morphing into the pane, which is what the full-screen dialog does and an anchored dialog does not: it appears beside its origin and stays a separate surface. `applyTransformOrigin` (default `true` for this strategy) is what computes and writes that origin point; set it to `false` to scale from the pane's own center instead.
 
+The anchored panels - [select](/components/select), [tooltip](/components/tooltip), [toggletip](/components/toggletip), [cascader](/components/cascader) and the [date picker](/components/date-time-inputs) - enter and leave with a short slide away from their trigger plus a fade, and drop the slide under `prefers-reduced-motion`.
+
 ### Full-screen animation internals
 
 The full-screen morph helpers (`startFullscreenEnterAnimation`, `startFullscreenLeaveAnimation`, `cleanupFullscreenAnimation`, `cleanupFullscreenAnimationStyles`, `abortFullscreenAnimation` and their state and dependency types) are no longer exported; configure `fullScreenDialogOverlayStrategy` instead. `et update` removes the dropped names from `@ethlete/components` imports and marks each use with a `TODO(ethlete-migration)` comment:

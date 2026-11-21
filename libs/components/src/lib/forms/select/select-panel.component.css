@@ -12,10 +12,9 @@
   }
 
   .et-overlay--select {
-  }
-
-  .et-overlay--select.et-floating-panel[data-overlay-placement].et-animation-leave-to {
-    transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
+    --et-floating-panel-enter-duration: 140ms;
+    --et-floating-panel-leave-duration: 100ms;
+    --et-floating-panel-distance: 0.3rem;
   }
 
   .et-select-panel {
