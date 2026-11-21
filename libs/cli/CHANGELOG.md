@@ -1,5 +1,45 @@
 # @ethlete/cli
 
+## 3.0.0-next.40
+
+### Minor Changes
+
+- List the inline SVGs, images and open overlays of a page in its design inventory, as owned by an embedded part or as a finding.
+
+### Patch Changes
+
+- An ADR with `parts: [<layer>/<name>]` and no `built` puts a plan-question open point on each named part in the design CLI, and `yarn lint:studio-adrs` checks the field.
+- A ready sketch whose base changed in the product (a merge would be refused until a rebase) is a `stale-sketch-base` open point on each of its targets, in `design check` and in the Studio sketch view.
+- Studio lists a `plan-question` open point (an ADR naming the part that is decided but not built) with the comments, and takes its open-point type from the CLI, so a new open-point kind fails Studio's build instead of being dropped.
+- A sketch frame set folds the whole interaction group of a state and keeps its neighbours, so a changed state shows next to the states around it.
+- `sketch ready` prints an auto-merge forecast and records it as `autoMergeForecast` on the sketch file; the Studio API serves it while no variant changed since.
+- `design shot <part>@<sketch> --variants` also draws the sketch in each page that embeds the sketched part, as `--in <page>` does.
+- The system view binds the send phase and the refusal reason of the comment draft on the system page, and the known-unbound list no longer names its comment inputs.
+- A part with no control of its own is flagged as composition: no interaction columns, and `design check` reports its interactions.
+- `design compare` now draws and compares a part at every width its design declares, not only the first; report lines name the width (`state @900px`) when a part has more than one.
+- The identical-variants check of `sketch` names a variant that fails to load as not compared, with its load error, instead of skipping it silently.
+- The design action check finishes an animation that ends within its settle cap instead of waiting it out, so an uncached compare spends about a third less time on actions.
+- `design check` reuses its render and completeness caches when the cli runs from another folder (a working-tree build, a new cli commit, a server snapshot).
+- `design check` now keeps the action check results of a part across runs: it passed no harness app root, so the action cache was never keyed or read.
+- Design check: test a file for a re-export once per changed source instead of on every part, so the open-points phase runs faster.
+- `design check` draws the render inspection of all parts on one shared pool of browser pages, so a free page takes the next frames of any part instead of waiting for the current part to finish.
+- Design pointer-focus check: move focus off a focused item of an open menu, dialog or listbox with blur instead of Tab, so the overlay stays open for the click.
+- A foundations part is never flagged as composition.
+- The states the "Aktuell" matrix folds away are computed by one `keptStatesOf` that the Studio system view and the sketch placeholder warning both use.
+- The design check's app-spec phase runs only the specs that relate to a part: a shared file stands for its own spec, not every spec importing it.
+- Move an anchored design pane onto a whole pixel through its position instead of a fractional `translate`, so its border and text draw as sharp as the real overlay pane.
+- `design`: the sketch listing and the merge preview compare their picture pairs in a pool of worker threads, so a cold listing no longer decodes PNGs on the thread that answers requests.
+- The design server fails a stalled module load after 20 s and names the pending modules, instead of after 60 s.
+- Give a declared control in the inventory the accessible name of the element it marks instead of its id.
+- Regenerate the Studio colour themes and commit them with a merge of foundations/colors into studio.
+- The known-orphan endpoint list no longer carries the flow-note paths, which Studio calls.
+- `et design sketch withdraw` takes back any unpicked variant the calling agent drew, not only one that draws the same pixels as a sibling. It refuses the picked variant and accepts `--reason`.
+- On Linux, a design server runs in its own memory-capped systemd user scope, so an out-of-memory kill hits the server and never the session that started it.
+- A refused `design ready` no longer commits a dropped ready.json entry or changes ready.json.
+- A design lib rebuild through nx run-many is recognised as a running build, and the render waits for it instead of refusing on a missing dist.
+- A frame whose embedded frames never draw now names the requests still open in its timeout message, and the resident design process logs that message for every request it runs.
+- `design compare` gives the app room above and before the part when its design draws an overlay pane placed on top or left, so a tooltip drawn in flow above its anchor opens there in the app too.
+
 ## 3.0.0-next.39
 
 ### Patch Changes

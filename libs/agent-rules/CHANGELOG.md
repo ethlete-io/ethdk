@@ -1,5 +1,14 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.42
+
+### Patch Changes
+
+- The domain-modeling ADR format names the `parts` frontmatter: an ADR with `parts` and no `built` is an open plan question on each part.
+- On Linux, `agent-sessions` starts the agent in its own systemd user scope that systemd-oomd avoids, so a heavy job is killed before the agent.
+- When the checkout has `tools/scripts/own-scope-preload.mjs`, `agent-sessions` registers it through `NODE_OPTIONS` for the agent, so each nx, vitest and tsc run the agent starts leaves the avoided agent scope.
+- Fix `agent-sessions restart --process`: a command a login shell wraps (`zsh -lic '...'`) is rewritten inside the wrapper and keeps the prompt inside it, and the new process takes the role of the target session, not a stale one.
+
 ## 0.1.0-next.41
 
 ### Patch Changes
