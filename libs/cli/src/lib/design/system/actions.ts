@@ -1,4 +1,4 @@
-import { DBLCLICK_PREFIX, OPENS_PREFIX, PART_NAME } from '../../../../design/action-grammar';
+import { DBLCLICK_PREFIX, OPENS_PREFIX, PART_NAME } from './action-grammar';
 
 export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick', 'ArrowRight', 'ArrowLeft', 'type'] as const;
 

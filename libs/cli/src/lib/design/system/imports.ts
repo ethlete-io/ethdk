@@ -8,7 +8,7 @@ import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { importsOf } from './ts-source';
 import { openedPartKeyOf } from './actions';
-import { openedPartNamesOf } from '../../../../design/action-grammar';
+import { openedPartNamesOf } from './action-grammar';
 
 const SYSTEM = '@system/';
 export const FIXTURES_SPECIFIER = '@system/fixtures';
