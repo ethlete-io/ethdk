@@ -95,7 +95,7 @@ export class DateTimeInputComponent {
   /** Labels of the pane tabs shown when the picker mounts as a bottom sheet. */
   public dateTabLabel = input<string | null>(null);
   public timeTabLabel = input<string | null>(null);
-  /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
+  /** Shows a clear (×) control while a value or pending text is set. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
@@ -127,11 +127,7 @@ export class DateTimeInputComponent {
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
   protected showClear = computed(
-    () =>
-      this.clearable() &&
-      this.dateTimeInput.hasValue() &&
-      (this.dateTimeInput.focused() || this.dateTimeInput.pickerOpen()) &&
-      this.dateTimeInput.interactive(),
+    () => this.clearable() && this.dateTimeInput.hasValue() && this.dateTimeInput.interactive(),
   );
 
   protected panes = createPickerPanes(['date', 'time'], this.dateTimeInput.pickerOpen);

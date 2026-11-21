@@ -1,8 +1,11 @@
 import { Component, signal } from '@angular/core';
+import { format } from 'date-fns';
 import '../../../../test-helpers';
 import { DatePickerDriver, mountDatePicker } from '../../testing/date-picker-driver';
 import { DateTimeInputComponent } from './date-time-input.component';
 import { DateTimeInputDirective } from './headless';
+
+const DATE_TIME_WIRE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssxxx";
 
 @Component({
   template: `
@@ -132,5 +135,19 @@ describe('DateTimeInputComponent - zoned bounds', () => {
 
     expect(driver.dayCell('18')?.getAttribute('aria-disabled')).toBe('true');
     expect(driver.dayCell('19')?.getAttribute('aria-disabled')).toBeNull();
+  });
+});
+
+describe('DateTimeInputComponent - clear button', () => {
+  it('shows on an unfocused field that holds a value', async () => {
+    const driver = mountDatePicker(DateTimeInputHost, DateTimeInputDirective);
+
+    driver.host.value.set(format(new Date(2026, 6, 16, 9, 30), DATE_TIME_WIRE_FORMAT));
+    driver.detectChanges();
+
+    expect(driver.query('.et-input-clear')).not.toBeNull();
+
+    driver.closeAndRemovePanes();
+    await driver.settle();
   });
 });

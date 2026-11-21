@@ -111,12 +111,7 @@ export class CascaderComponent {
   protected resolvedSearchPlaceholder = computed(() => this.searchPlaceholder() ?? this.cascaderLabels().search);
 
   protected showClear = computed(
-    () =>
-      this.clearable() &&
-      this.cascader.hasValue() &&
-      this.cascader.focused() &&
-      !this.cascader.disabled() &&
-      !this.cascader.readonly(),
+    () => this.clearable() && this.cascader.hasValue() && !this.cascader.disabled() && !this.cascader.readonly(),
   );
 
   private columnLoading = computed(() => this.cascader.columns().some((column) => column.status === 'loading'));

@@ -93,7 +93,7 @@ export class DateRangeInputComponent {
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
 
-  /** Shows a clear (×) control while a value is set and the field is in use. */
+  /** Shows a clear (×) control while a value is set. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
@@ -111,9 +111,7 @@ export class DateRangeInputComponent {
 
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  protected showClear = computed(
-    () => this.clearable() && this.rangeInput.hasValue() && this.rangeInput.focused() && this.rangeInput.interactive(),
-  );
+  protected showClear = computed(() => this.clearable() && this.rangeInput.hasValue() && this.rangeInput.interactive());
 
   constructor() {
     mountRangeInputShellStyles();

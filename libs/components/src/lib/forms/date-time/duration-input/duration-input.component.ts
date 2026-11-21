@@ -46,7 +46,7 @@ export class DurationInputComponent {
 
   protected durationInput = inject(DurationInputDirective);
 
-  /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
+  /** Shows a clear (×) control while a value or pending text is set. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
@@ -56,7 +56,6 @@ export class DurationInputComponent {
     () =>
       this.clearable() &&
       this.durationInput.hasValue() &&
-      this.durationInput.focused() &&
       !this.durationInput.disabled() &&
       !this.durationInput.readonly(),
   );

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import '../../../test-helpers';
@@ -48,5 +48,24 @@ describe('cascader node focus ring', () => {
     const nodeRule = css.slice(css.indexOf('.et-cascader-node,'), css.indexOf('.et-cascader-node-label'));
 
     expect(nodeRule).not.toMatch(/outline:\s*none/);
+  });
+});
+
+@Component({
+  template: `<et-cascader [(value)]="value" [dataSource]="dataSource" placeholder="Pick a team" />`,
+  imports: [CASCADER_IMPORTS],
+})
+class CascaderClearTestHost {
+  value = signal<string | null>('team-a');
+  dataSource: CascaderDataSource<string> = {
+    loadChildren: (parent) => TREE[parent ? parent.value : '__root__'] ?? [],
+  };
+}
+
+describe('cascader clear button', () => {
+  it('shows on an unfocused field that holds a value', () => {
+    const driver = mountCascader(CascaderClearTestHost);
+
+    expect(driver.query('.et-input-clear')).not.toBeNull();
   });
 });

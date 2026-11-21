@@ -57,7 +57,7 @@ scalar - see below) shares one design:
   numeric soft keyboard (`inputmode="numeric"`). Formats the mask can't represent
   (locale formats like `P`/`p`/`Pp`, variable-width or text tokens) are refused
   with a dev-mode warning and typing stays unmasked.
-- **Clear (×) button.** While the focused field holds a value or pending text, a
+- **Clear (×) button.** While the field holds a value or pending text, a
   pointer-only clear button renders before the picker trigger (label:
   `clearLabel`); disable it with `clearable="false"`. Keyboard users clear by
   erasing the text. Both buttons render in the field's
@@ -377,7 +377,7 @@ top of the [shared contract set](#shared-contract):
 | `pickerOpen`                          | `boolean` (model)                            | `false`                 | The picker overlay's open state.                                                                        |
 | `pickerTriggerLabel`                  | `string \| null`                             | `null` ¹                | `aria-label` of the suffix calendar button.                                                             |
 | `parseErrorMessage`                   | `string \| null`                             | `null` ²                | Message shown below the field when either side's text can't be parsed.                                  |
-| `clearable`                           | `boolean`                                    | `true`                  | Clear (×) button while the field is in use (label: `clearLabel`).                                       |
+| `clearable`                           | `boolean`                                    | `true`                  | Clear (×) button while the field has a value or pending text (label: `clearLabel`).                     |
 | `mask`                                | `boolean`                                    | `false`                 | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.                                  |
 
 The host is a `role="group"` labelled by the field label. The opt-in typing mask applies
@@ -488,7 +488,7 @@ The value is a `string | null`. On `et-time-input` (forwarded from the headless
 | `pickerOpen`          | `boolean` (model)                   | `false`             | The picker overlay's open state.                                                            |
 | `pickerTriggerLabel`  | `string \| null`                    | `null` ¹            | `aria-label` of the suffix clock button.                                                    |
 | `parseErrorMessage`   | `string \| null`                    | `null` ²            | Message shown below the field when typed text can't be parsed.                              |
-| `clearable`           | `boolean`                           | `true`              | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`). |
+| `clearable`           | `boolean`                           | `true`              | Clear (×) button while the field has a value or pending text (label: `clearLabel`).         |
 | `mask`                | `boolean`                           | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`.                      |
 
 Typed text is parsed against `displayFormat` first, then **leniently**: bare
@@ -550,7 +550,7 @@ top of the [shared contract set](#shared-contract):
 | `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                              |
 | `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix clock button.                                                      |
 | `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed.                        |
-| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                             |
+| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field has a value or pending text (label: `clearLabel`).           |
 | `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`.                        |
 
 Each side parses **leniently**, with the single time input's rules (`930` → 09:30,
@@ -628,7 +628,7 @@ The value is a `string | null`. On `et-date-time-input` (forwarded from the head
 | `pickerTriggerLabel`            | `string \| null`                             | `null` ¹                 | `aria-label` of the suffix calendar button.                                                           |
 | `dateTabLabel` / `timeTabLabel` | `string \| null`                             | `null` ³                 | Labels of the pane tabs in the bottom sheet.                                                          |
 | `parseErrorMessage`             | `string \| null`                             | `null` ²                 | Message shown below the field when typed text can't be parsed.                                        |
-| `clearable`                     | `boolean`                                    | `true`                   | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`).           |
+| `clearable`                     | `boolean`                                    | `true`                   | Clear (×) button while the field has a value or pending text (label: `clearLabel`).                   |
 | `mask`                          | `boolean`                                    | `false`                  | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.                     |
 
 Typed text is parsed **strictly** against `displayFormat` first, then leniently:
@@ -718,7 +718,7 @@ directive), on top of the [shared contract set](#shared-contract):
 | `pickerOpen`                          | `boolean` (model)                                           | `false`                  | The picker overlay's open state.                                                                       |
 | `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹                 | `aria-label` of the suffix calendar button.                                                            |
 | `parseErrorMessage`                   | `string \| null`                                            | `null` ²                 | Message shown below the field when either side's text can't be parsed.                                 |
-| `clearable`                           | `boolean`                                                   | `true`                   | Clear (×) button while the field is in use (label: `clearLabel`).                                      |
+| `clearable`                           | `boolean`                                                   | `true`                   | Clear (×) button while the field has a value or pending text (label: `clearLabel`).                    |
 | `mask`                                | `boolean`                                                   | `false`                  | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.                      |
 
 The host is a `role="group"` labelled by the field label. `precision` is absent, as on the
@@ -794,7 +794,7 @@ of the [shared contract set](#shared-contract), minus the `dialogLabel` a picker
 | ------------------- | ---------------- | --------- | --------------------------------------------------------------------------------------------------------------- |
 | `durationFormat`    | `string`         | `'mm:ss'` | Segment layout - runs of `h` (or `H`)/`m`/`s`/`S` (millis) plus separators. Dev mode warns on any other letter. |
 | `parseErrorMessage` | `string \| null` | `null` ²  | Message shown below the field when typed text can't be parsed.                                                  |
-| `clearable`         | `boolean`        | `true`    | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`).                     |
+| `clearable`         | `boolean`        | `true`    | Clear (×) button while the field has a value or pending text (label: `clearLabel`).                             |
 
 The format is any arrangement of unit-token runs and separators: `mm:ss`,
 `hh:mm:ss`, `hh:mm:ss.SSS`, `h m`. Typed text commits on blur/Enter with a

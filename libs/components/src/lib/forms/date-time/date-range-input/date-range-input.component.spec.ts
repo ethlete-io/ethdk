@@ -53,10 +53,7 @@ describe('DateRangeInputComponent', () => {
     expect(driver.host.pickerOpen()).toBe(false);
   });
 
-  it('shows the clear button only while focused with a value, and clears both ends', () => {
-    driver.focusField();
-    driver.detectChanges();
-
+  it('shows the clear button on an unfocused field with a value, and clears both ends', () => {
     expect(clearButton()).toBeNull();
 
     driver.host.value.set({ start: '2026-07-13', end: '2026-07-19' });

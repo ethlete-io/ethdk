@@ -84,7 +84,7 @@ export class TimeRangeInputComponent {
   /** Accessible names of the time picker's two ring handles. */
   public startTimeLabel = input<string | null>(null);
   public endTimeLabel = input<string | null>(null);
-  /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
+  /** Shows a clear (×) control while a value or pending text is set. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
@@ -102,13 +102,7 @@ export class TimeRangeInputComponent {
 
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  protected showClear = computed(
-    () =>
-      this.clearable() &&
-      this.rangeInput.hasValue() &&
-      (this.rangeInput.focused() || this.rangeInput.pickerOpen()) &&
-      this.rangeInput.interactive(),
-  );
+  protected showClear = computed(() => this.clearable() && this.rangeInput.hasValue() && this.rangeInput.interactive());
 
   constructor() {
     mountRangeInputShellStyles();

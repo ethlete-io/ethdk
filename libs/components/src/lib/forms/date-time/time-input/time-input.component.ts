@@ -74,7 +74,7 @@ export class TimeInputComponent {
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: positiveIntegerAttribute });
-  /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
+  /** Shows a clear (×) control while a value or pending text is set. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
@@ -86,13 +86,7 @@ export class TimeInputComponent {
 
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  protected showClear = computed(
-    () =>
-      this.clearable() &&
-      this.timeInput.hasValue() &&
-      (this.timeInput.focused() || this.timeInput.pickerOpen()) &&
-      this.timeInput.interactive(),
-  );
+  protected showClear = computed(() => this.clearable() && this.timeInput.hasValue() && this.timeInput.interactive());
 
   protected handleClearClick(event: Event) {
     // clearing must not bubble into the form field's frame-click handling

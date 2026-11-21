@@ -10,8 +10,6 @@
 
 <ng-template etControlSuffix>
   @if (showClear()) {
-    <!-- mousedown is prevented so the trigger keeps focus: `showClear` reads `focused()`, so a blur
-         would unmount this button before the click could land -->
     <button
       [attr.aria-label]="resolvedClearLabel()"
       (click)="handleClearClick($event)"
