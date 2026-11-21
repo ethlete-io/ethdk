@@ -1553,43 +1553,77 @@ describe('agent-sessions', () => {
     }
   });
 
-  const userScopes =
-    process.platform === 'linux' &&
-    spawnSync('busctl', [
-      '--user',
-      'get-property',
-      'org.freedesktop.systemd1',
-      '/org/freedesktop/systemd1',
-      'org.freedesktop.systemd1.Manager',
-      'Version',
-    ]).status === 0;
+  const inAgentScope = (() => {
+    try {
+      return /\/agent-[^/]*\.scope$/.test(readFileSync('/proc/self/cgroup', 'utf8').trim());
+    } catch {
+      return false;
+    }
+  })();
 
-  it.skipIf(!hasTmux || !userScopes)(
+  const scopeFixture = () => {
+    const agent = `claude-scope-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const preloaded = join(dir, 'preload.log');
+    const { env } = fakeClientTmux();
+    spawnSync('git', ['init', '-q'], { cwd: dir });
+    mkdirSync(join(dir, 'tools/scripts'), { recursive: true });
+    writeFileSync(
+      join(dir, 'tools/scripts/own-scope-preload.mjs'),
+      `import { appendFileSync } from 'node:fs'; appendFileSync(${JSON.stringify(preloaded)}, 'loaded\\n');`,
+    );
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+    const runAgent = (command: string, extraEnv: Record<string, string>) =>
+      run(['run', agent, 'sh', '-c', command], undefined, {
+        ...env,
+        ...extraEnv,
+        TMUX_PANE: paneOf(scoped),
+        AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+      });
+    const cleanup = () => {
+      spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    };
+    return { agent, env, preloaded, runAgent, cleanup };
+  };
+
+  it.skipIf(!hasTmux || process.platform !== 'linux' || inAgentScope)(
     'run starts the agent in its own scope that systemd-oomd avoids, with the own-scope preload',
     () => {
-      const agent = `claude-scope-${process.pid}`;
-      const scoped = `${agent}@${basename(dir)}`;
-      const started = join(dir, 'scope.log');
-      const preloaded = join(dir, 'preload.log');
-      const { env } = fakeClientTmux();
-      spawnSync('git', ['init', '-q'], { cwd: dir });
-      mkdirSync(join(dir, 'tools/scripts'), { recursive: true });
+      const { env, preloaded, runAgent, cleanup } = scopeFixture();
+      const bin = join(dir, 'bin');
+      const argv = join(dir, 'systemd-run.argv');
+      writeFileSync(join(bin, 'busctl'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
       writeFileSync(
-        join(dir, 'tools/scripts/own-scope-preload.mjs'),
-        `import { appendFileSync } from 'node:fs'; appendFileSync(${JSON.stringify(preloaded)}, 'loaded\\n');`,
+        join(bin, 'systemd-run'),
+        `#!/bin/sh\nprintf '%s\\n' "$@" > '${argv}'\nwhile [ "$1" != -- ]; do\n  case "$1" in --setenv=*) kv="\${1#--setenv=}"; export "\${kv%%=*}=\${kv#*=}";; esac\n  shift\ndone\nshift\nexec "$@"\n`,
+        { mode: 0o755 },
       );
-      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
       try {
-        const result = run(
-          [
-            'run',
-            agent,
-            'sh',
-            '-c',
-            `cg=$(cut -d: -f3 /proc/self/cgroup); echo "$cg" > ${started}; systemctl --user show -p ManagedOOMPreference --value "$(basename $cg)" >> ${started}; node -e 0`,
-          ],
-          undefined,
-          { ...env, ...userBus, TMUX_PANE: paneOf(scoped), AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}` },
+        const result = runAgent('node -e 0', {});
+
+        expect(result.status).toBe(0);
+        const words = readFileSync(argv, 'utf8').trim().split('\n');
+        expect(words.slice(0, 4)).toEqual(['--user', '--scope', '--quiet', '--collect']);
+        expect(words[4]).toMatch(new RegExp(`^--unit=agent-claude-scope-${process.pid}-[^/]+$`));
+        expect(words.slice(5, 7)).toEqual(['-p', 'ManagedOOMPreference=avoid']);
+        expect(words.slice(-4)).toEqual(['--', 'sh', '-c', 'node -e 0']);
+        expect(readFileSync(preloaded, 'utf8')).toBe('loaded\n');
+      } finally {
+        cleanup();
+      }
+    },
+  );
+
+  it.skipIf(!hasTmux || !process.env['AGENT_SESSIONS_REAL_SCOPE'] || inAgentScope)(
+    'run starts the agent in a real systemd user scope (local only: AGENT_SESSIONS_REAL_SCOPE=1)',
+    () => {
+      const { preloaded, runAgent, cleanup } = scopeFixture();
+      const started = join(dir, 'scope.log');
+      try {
+        const result = runAgent(
+          `cg=$(cut -d: -f3 /proc/self/cgroup); echo "$cg" > ${started}; systemctl --user show -p ManagedOOMPreference --value "$(basename $cg)" >> ${started}; node -e 0`,
+          userBus,
         );
 
         expect(result.status).toBe(0);
@@ -1598,8 +1632,7 @@ describe('agent-sessions', () => {
         expect(avoid).toBe('avoid');
         expect(readFileSync(preloaded, 'utf8')).toBe('loaded\n');
       } finally {
-        spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
-        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        cleanup();
       }
     },
   );
