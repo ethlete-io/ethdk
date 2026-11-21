@@ -35,13 +35,13 @@
     "pid": 1951112
   },
   "components/anchored-dialog": {
-    "hash": "c2afaae1af5c6bb9",
+    "hash": "9d7f60722dd7d428",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "abec18bb97a9c4d8",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "62a6638e5e6dd289",
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
-      "libs/components/design/anchored-dialog.ts": "459be8e004b757d9",
+      "libs/components/design/anchored-dialog.ts": "b1f1e191d2f6a16c",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/checkbox.ts": "e3471aa943b7b829",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
@@ -77,10 +77,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-21T04:37:42.861Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-21T23:16:55.558Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1637434
+    "pid": 2371538
   },
   "components/badge": {
     "hash": "8ff3db9e1d266277",
