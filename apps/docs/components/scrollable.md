@@ -60,7 +60,7 @@ providers: [
 
 - `'inside'` floats the buttons over the track's edges, `'inline'` puts them beside the track at the row's ends (above and below it when vertical), `'footer'` puts them in a row under the track, flanking the dots when navigation is on.
 - Below the first `enabled` key the buttons stay off.
-- Inputs on an instance win: `[etScrollableButtons]="{ position: 'footer' }"` or `{ enabled: false }` overrides the provider for that scrollable.
+- Inputs on an instance win: `[etScrollableButtons]="{ position: 'footer' }"` or `{ enabled: false }` overrides the provider for that scrollable. An instance `enabled` map with no key at or below the current breakpoint is off, e.g. `{ enabled: { md: true } }` hides the buttons below `md`.
 
 ### Button colour and spacing
 

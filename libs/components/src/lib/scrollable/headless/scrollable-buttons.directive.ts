@@ -25,7 +25,7 @@ export type ScrollableButtonsConfig = {
   variant?: ButtonVariant;
   /**
    * Turn the buttons on or off, optionally per breakpoint. Falls back to `provideScrollableConfig`, and
-   * to `true` when the directive is applied explicitly. @default true
+   * to `true` when the directive is applied explicitly. A breakpoint map without a key for the current breakpoint is off. @default true
    */
   enabled?: ScrollableResponsive<boolean>;
 };
@@ -70,9 +70,9 @@ export class ScrollableButtonsDirective {
   );
   public color = computed(() => (this.colorProvider?.effectiveColor() ? undefined : this.defaults.buttons?.color));
   public enabled = computed(() => {
-    const own = this.resolve(this.resolved().enabled);
+    const instance = this.resolved().enabled;
 
-    if (own !== undefined) return own;
+    if (instance !== undefined) return this.resolve(instance) ?? false;
 
     const provided = this.defaults.buttons?.enabled;
 

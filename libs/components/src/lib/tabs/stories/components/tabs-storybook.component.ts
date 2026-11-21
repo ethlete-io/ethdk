@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation, input } from '@angular/core';
+import { Breakpoint } from '@ethlete/core';
 import { GRID_2X2_ICON, PENCIL_ICON, PLUS_ICON, provideIcons } from '../../../icon';
 import { TAB_SIZES } from '../../tab-sizes';
 import { TabGroupComponent } from '../../tabs/tab-group.component';
@@ -25,6 +26,7 @@ const SIZES = Object.values(TAB_SIZES);
             [sessionMemoryKey]="sessionMemoryKey()"
             [size]="size"
             [color]="color()"
+            [scrollableButtons]="scrollableButtons()"
           >
             <et-tab [disabled]="disabled()" icon="et-grid-2x2" label="First">
               <div class="p-4">Content of the first tab</div>
@@ -73,5 +75,8 @@ export class TabsStorybookComponent {
   public preserveContent = input(true);
   public sessionMemoryKey = input<string | null>(null);
   public color = input<string | null>('brand');
+  public scrollableButtons = input<boolean | { enabled?: boolean | Partial<Record<Breakpoint, boolean>> } | undefined>(
+    undefined,
+  );
   public readonly SIZES = SIZES;
 }

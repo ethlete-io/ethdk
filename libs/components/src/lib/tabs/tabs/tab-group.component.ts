@@ -21,8 +21,8 @@ import { TabComponent } from './tab.component';
       <et-scrollable
         [direction]="tabGroup.tabBar.orientation()"
         [itemSize]="tabGroup.tabBar.fit() === 'fill' ? 'same' : 'auto'"
+        [etScrollableButtons]="tabGroup.tabBar.scrollableButtonsConfig()"
         class="et-tab-group__header-scrollable"
-        etScrollableButtons
         renderMasks="false"
         role="presentation"
         scrollMode="element"
@@ -95,7 +95,16 @@ import { TabComponent } from './tab.component';
     },
     {
       directive: TabBarDirective,
-      inputs: ['orientation', 'fit', 'align', 'divider', 'variant', 'activeUnderline', 'underlineWidth'],
+      inputs: [
+        'orientation',
+        'fit',
+        'align',
+        'divider',
+        'variant',
+        'activeUnderline',
+        'underlineWidth',
+        'scrollableButtons',
+      ],
     },
     {
       directive: TabGroupDirective,

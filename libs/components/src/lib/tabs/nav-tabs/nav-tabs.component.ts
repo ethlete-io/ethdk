@@ -15,8 +15,8 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     <et-scrollable
       [direction]="tabBar.orientation()"
       [itemSize]="tabBar.fit() === 'fill' ? 'same' : 'auto'"
+      [etScrollableButtons]="tabBar.scrollableButtonsConfig()"
       class="et-nav-tabs__scrollable"
-      etScrollableButtons
       renderMasks="false"
       role="presentation"
       scrollMode="element"
@@ -40,7 +40,16 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     },
     {
       directive: TabBarDirective,
-      inputs: ['orientation', 'fit', 'align', 'divider', 'variant', 'activeUnderline', 'underlineWidth'],
+      inputs: [
+        'orientation',
+        'fit',
+        'align',
+        'divider',
+        'variant',
+        'activeUnderline',
+        'underlineWidth',
+        'scrollableButtons',
+      ],
     },
     NavTabsDirective,
   ],

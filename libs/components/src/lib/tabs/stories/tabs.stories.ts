@@ -30,6 +30,7 @@ export default {
     preserveContent: { control: 'boolean' },
     sessionMemoryKey: { control: 'text' },
     color: { control: 'select', options: COLOR_OPTIONS },
+    scrollableButtons: { control: 'object' },
   },
 } as Meta<TabsStorybookComponent>;
 
@@ -58,6 +59,12 @@ export const LazyRendering: Story = {
 export const SessionMemory: Story = {
   args: {
     sessionMemoryKey: 'storybook-tabs-session-memory',
+  },
+};
+
+export const ScrollButtonsFromMd: Story = {
+  args: {
+    scrollableButtons: { enabled: { xs: false, md: true } },
   },
 };
 

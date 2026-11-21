@@ -29,6 +29,7 @@ import { TAB_IMPORTS } from '@ethlete/components';
 - `preserveContent` (default `true`) keeps inactive panels rendered but `hidden` + `inert`; set it to `false` for lazy rendering of only the active panel.
 - `sessionMemoryKey` remembers the selected tab in session storage under that key and restores it on the next mount. Nothing is stored without a key. The stored tab wins over the initial `selectedIndex`, so leave the key unset when the index comes from the URL.
 - The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered. Tabs opt into that scrollable's prev/next buttons for you; they carry none of its other optional chrome.
+- `scrollableButtons` switches those buttons per bar: `[scrollableButtons]="false"`, or `{ enabled: { md: true } }` for one value per breakpoint (a key applies from there up). It also takes the other [`etScrollableButtons`](/components/scrollable) options. It wins over `provideScrollableConfig`; without it the bar follows that provider and shows the buttons otherwise. Nav tabs take the same input.
 
 @example tabs/tabs-default 380px
 

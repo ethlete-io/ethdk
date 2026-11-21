@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap, timer } from 'rxjs';
 import { sortByDomOrder } from '../../internals/dom-order';
+import { ScrollableButtonsConfig } from '../../scrollable/headless/scrollable-buttons.directive';
 import { TabBarTriggerDirective } from './tab-bar-trigger.directive';
 import { TAB_BAR_TOKEN } from './tab-bar.tokens';
 import {
@@ -59,6 +60,19 @@ export class TabBarDirective {
   });
   /** Whether the active underline spans the whole tab or only its label. Falls back to `provideTabsConfig`, then `'tab'`. */
   public underlineWidth = input<TabUnderlineWidth | undefined>(undefined);
+  /**
+   * Shows the scroll buttons of the bar's scrollable. A boolean, or `{ enabled: { md: true } }` for one value
+   * per breakpoint; other `etScrollableButtons` options are accepted too. Wins over `provideScrollableConfig`.
+   */
+  public scrollableButtons = input<boolean | ScrollableButtonsConfig | undefined>(undefined);
+  /** @internal */
+  public scrollableButtonsConfig = computed<ScrollableButtonsConfig | ''>(() => {
+    const value = this.scrollableButtons();
+
+    if (value === undefined) return '';
+
+    return typeof value === 'boolean' ? { enabled: value } : value;
+  });
   /** @internal */
   public activeUnderlineResolved = computed(() => this.activeUnderline() ?? this.config.activeUnderline ?? true);
   /** @internal */
