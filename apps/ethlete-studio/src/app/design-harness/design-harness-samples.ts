@@ -39,7 +39,12 @@ import {
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
 import { SHELL_SAMPLE } from '../design-parts/shell-main/shell-page.component';
-import { FLOWS_SAMPLE_NOTES, FLOWS_SAMPLE_ORPHANS } from '../design-parts/flows-page/flows-page.component';
+import {
+  FLOWS_SAMPLE_DRAFT,
+  FLOWS_SAMPLE_NOTES,
+  FLOWS_SAMPLE_ORPHANS,
+  FLOWS_SAMPLE_PINS,
+} from '../design-parts/flows-page/flows-page.component';
 import { inboxThreadSampleOf } from '../design-parts/inbox/inbox-sample';
 import { CommentSendPhase } from '../design-parts/system-page/comment-draft.component';
 
@@ -238,8 +243,10 @@ const diffFramesOf = (part: string) => [
 
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
-  'pages/flows': ({ notes, orphans, ...props }) => ({
+  'pages/flows': ({ notes, orphans, comments, draft, ...props }) => ({
     ...props,
+    ...(comments ? { pins: FLOWS_SAMPLE_PINS } : {}),
+    ...(draft === undefined ? {} : { draft: FLOWS_SAMPLE_DRAFT, draftText: draft }),
     notes: [
       ...(notes ? FLOWS_SAMPLE_NOTES : FLOWS_SAMPLE_NOTES.filter((note) => note.text)),
       ...(orphans ? FLOWS_SAMPLE_ORPHANS : []),

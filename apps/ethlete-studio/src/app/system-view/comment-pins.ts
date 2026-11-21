@@ -69,6 +69,28 @@ export const otherSizeFrameOf = (frames: CanvasFrame[], comment: PlacedOn) => {
 };
 
 /**
+ * One pin per comment on the place of one of `frames` at its own size and interaction, so a comment made at another
+ * size or interaction gets none.
+ */
+export const pinsOnPlaceOf = (
+  frames: CanvasFrame[],
+  { comments }: { comments: (ListedComment & { number?: number })[] },
+) =>
+  pinsOf(frames, {
+    comments: comments.filter((comment) => frames.some((frame) => frame.place && isOnPlace(comment, frame.place))),
+  });
+
+/** How many of `comments` are on the state of `frame` at another size. */
+export const otherSizeCountOf = (frame: CanvasFrame, comments: ListedComment[]) => {
+  const place = frame.place;
+
+  return place
+    ? comments.filter((comment) => comment.size !== place.size && isOnPlace({ ...comment, size: place.size }, place))
+        .length
+    : 0;
+};
+
+/**
  * One pin per comment that sits on one of `frames`, on the frame `otherSizeFrameOf` picks for it. With `liveSketches`
  * (the `createdAt` of every sketch still listed) a comment of a sketch not in it pins on the part frame.
  */

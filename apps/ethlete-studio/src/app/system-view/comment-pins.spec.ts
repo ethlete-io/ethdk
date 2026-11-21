@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ListedComment } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
-import { isInSketch, isQuestion, numberedCommentsOf, otherSizeFrameOf, pinsOf, placedCommentsOf } from './comment-pins';
+import {
+  isInSketch,
+  isQuestion,
+  numberedCommentsOf,
+  otherSizeCountOf,
+  otherSizeFrameOf,
+  pinsOf,
+  pinsOnPlaceOf,
+  placedCommentsOf,
+} from './comment-pins';
 import { treeOf } from './system-tree';
 
 const comment = (id: string, rest: Partial<ListedComment>): ListedComment => ({
@@ -147,6 +156,26 @@ describe('comments', () => {
     const tree = treeOf([part], { comments: answered });
 
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['answered']);
+  });
+});
+
+describe('flow comments', () => {
+  it('pins only a comment of the frame size and interaction', () => {
+    const same = comment('1', {});
+    const wider = comment('2', { size: 520 });
+    const hovered = comment('3', { interaction: 'hover' });
+    const elsewhere = comment('4', { state: 'filled' });
+
+    expect(pinsOnPlaceOf([frame('f')], { comments: [same, wider, hovered, elsewhere] }).map((pin) => pin.id)).toEqual([
+      '1',
+    ]);
+  });
+
+  it('counts the comments of the state at another size', () => {
+    const comments = [comment('1', {}), comment('2', { size: 520 }), comment('3', { size: 'fitted' })];
+
+    expect(otherSizeCountOf(frame('f'), comments)).toBe(2);
+    expect(otherSizeCountOf({ ...frame('f'), place: undefined }, comments)).toBe(0);
   });
 });
 

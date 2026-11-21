@@ -5,6 +5,7 @@ import {
   ElementRef,
   input,
   linkedSignal,
+  model,
   output,
   signal,
   TemplateRef,
@@ -16,22 +17,35 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
   BUTTON_IMPORTS,
   FORM_FIELD_IMPORTS,
+  KBD_IMPORTS,
   SELECT_IMPORTS,
   TEXTAREA_IMPORTS,
   TextareaComponent,
 } from '@ethlete/components';
 import { CanvasDragDirective } from '../../components/design-canvas/canvas-drag.directive';
 import { CanvasFrameDirective } from '../../components/design-canvas/canvas-frame.directive';
+import { CanvasPin, FramePoint } from '../../components/design-canvas/canvas-pin';
 import { Point } from '../../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../../components/design-canvas/design-canvas.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
+import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
+import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { CommentTargetComponent } from '../comment-target/comment-target.component';
 import { TreeRow } from '../tree-row/tree-row-item.component';
 import { TreeRowComponent } from '../tree-row/tree-row.component';
 
 export const FLOWS_SAMPLE: string[] = [...STUDIO_LABELS.flows.sample.names];
 
-export type FlowsPageFrame = { id: string; title: string; src: string; col: number; row: number };
+export type FlowsPageFrame = {
+  id: string;
+  title: string;
+  src: string;
+  col: number;
+  row: number;
+  /** The page's width in CSS pixels; the pins and the draft of the frame count their points in it. */
+  width?: number;
+};
 
 export type FlowsPageLine = { from: string; to: string; label: string };
 
@@ -52,6 +66,21 @@ export const FLOWS_SAMPLE_FRAMES: FlowsPageFrame[] = [
   { id: 'sketch', title: 'Sketches · page-sketch', src: frameSrc('sketches', 'page-sketch'), col: 1, row: 0 },
   { id: 'resolved', title: 'Inbox · with-resolved', src: frameSrc('inbox', 'with-resolved'), col: 1, row: 1 },
   { id: 'system', title: 'System · part', src: frameSrc('system', 'part'), col: 2, row: 0 },
+];
+
+export const FLOWS_SAMPLE_DRAFT: FramePoint = { frameId: 'sketch', point: { x: 900, y: 520 } };
+
+export const FLOWS_SAMPLE_PINS: CanvasPin[] = [
+  {
+    id: 'flow-pin',
+    frameId: 'sketch',
+    label: '1',
+    text: STUDIO_LABELS.flows.sample.pinText,
+    author: 'Hanna',
+    initials: 'H',
+    count: 1,
+    point: { x: 520, y: 300 },
+  },
 ];
 
 export const FLOWS_SAMPLE_LINES: FlowsPageLine[] = [
@@ -243,6 +272,68 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                     </div>
                   </div>
                 }
+                @if (commentMode()) {
+                  @for (box of graph().boxes; track box.id) {
+                    <ethlete-comment-target
+                      [style.left.px]="box.x"
+                      [style.top.px]="box.y + CAPTION"
+                      [style.width.px]="graph().w"
+                      [style.height.px]="graph().h"
+                      [frame]="box.title"
+                      (comment)="pickPoint(box, $event)"
+                      class="absolute"
+                      data-comment-target
+                    />
+                  }
+                }
+                @for (placed of placedPins(); track placed.pin.id) {
+                  <div
+                    [style.left.px]="placed.x"
+                    [style.top.px]="placed.y"
+                    [style.transform]="PIN_TRANSFORM"
+                    [class]="placed.pin.id === openPin() ? 'z-4' : 'z-3'"
+                    class="absolute origin-top-left"
+                  >
+                    <ethlete-comment-pin
+                      [author]="placed.pin.author"
+                      [initials]="placed.pin.initials"
+                      [agent]="placed.pin.agent"
+                      [count]="placed.pin.count"
+                      [selected]="placed.pin.id === openPin()"
+                      [resolved]="!!placed.pin.resolved"
+                      (pinToggle)="togglePin(placed.pin.id)"
+                      (click)="$event.stopPropagation()"
+                      data-comment-pin
+                    />
+                    @if (placed.pin.id === openPin()) {
+                      <div
+                        class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 text-[1.3rem] text-text shadow-lg"
+                        data-comment-text
+                      >
+                        <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
+                      </div>
+                    }
+                  </div>
+                }
+                @if (placedDraft(); as placed) {
+                  <div
+                    [style.left.px]="placed.x"
+                    [style.top.px]="placed.y"
+                    [style.transform]="DRAFT_TRANSFORM"
+                    (click)="$event.stopPropagation()"
+                    class="absolute z-4 origin-top-left"
+                    role="presentation"
+                    data-comment-draft
+                  >
+                    <ethlete-comment-draft
+                      [(text)]="draftText"
+                      [phase]="sendPhase()"
+                      [reason]="sendReason()"
+                      (send)="send.emit($event)"
+                      (discard)="discard.emit()"
+                    />
+                  </div>
+                }
               </div>
             </ethlete-design-canvas>
           </div>
@@ -252,6 +343,13 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
             <header class="flex h-(--control-md) flex-none items-center gap-space-3 *:pointer-events-auto">
               <span class="text-ui-lg font-ui-strong">{{ selected() }}</span>
               <span class="flex-1"></span>
+              @if (commentMode() && draft() === null) {
+                <span
+                  class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-muted"
+                  ><et-kbd keys="esc" /> {{ SYSTEM_LABELS.commentModeOr }} <et-kbd keys="c" />
+                  {{ SYSTEM_LABELS.commentModeEnds }}</span
+                >
+              }
               <button (click)="requestNote()" et-button type="button" variant="outline" color="surface" size="sm">
                 <svg
                   width="14"
@@ -269,6 +367,17 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                   <path d="m9 4.5 2.5 2.5" />
                 </svg>
                 {{ LABELS.addNote }}
+              </button>
+              <button
+                [pressed]="commentMode()"
+                (click)="commentToggle.emit()"
+                et-button
+                type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
+              >
+                {{ SYSTEM_LABELS.comment }}
               </button>
               <div class="w-60">
                 <et-form-field size="sm">
@@ -314,8 +423,12 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
     BUTTON_IMPORTS,
     CanvasDragDirective,
     CanvasFrameDirective,
+    CommentDraftComponent,
+    CommentPinComponent,
+    CommentTargetComponent,
     DesignCanvasComponent,
     FORM_FIELD_IMPORTS,
+    KBD_IMPORTS,
     SELECT_IMPORTS,
     TEXTAREA_IMPORTS,
     ShellPageComponent,
@@ -335,6 +448,12 @@ export class FlowsPageComponent {
   public presets = input<FlowsPagePreset[]>([]);
   public ratio = input(FLOWS_SHOT.height / FLOWS_SHOT.width);
   public notes = input<FlowsPageNote[]>([]);
+  public commentMode = input(false);
+  public pins = input<CanvasPin[]>([]);
+  public draft = input<FramePoint | null>(null);
+  public draftText = model('');
+  public sendPhase = input<CommentSendPhase | null>(null);
+  public sendReason = input('');
   public shellAction = output<ShellAction>();
 
   public addNote = output<{ x: number; y: number }>();
@@ -342,6 +461,10 @@ export class FlowsPageComponent {
   public noteText = output<FlowsPageNoteText>();
   public noteDelete = output<string>();
   public jumpToNote = output<string>();
+  public commentToggle = output();
+  public pointPick = output<FramePoint>();
+  public send = output<string>();
+  public discard = output();
 
   public pick = output<string>();
   public copyPrompt = output();
@@ -354,6 +477,11 @@ export class FlowsPageComponent {
 
   private stage = viewChild<ElementRef<HTMLElement>>('stage');
   protected readonly LABELS = STUDIO_LABELS.flows;
+  protected readonly SYSTEM_LABELS = STUDIO_LABELS.system;
+  protected readonly CAPTION = FLOWS_SHOT.caption;
+  protected readonly PIN_TRANSFORM = 'scale(var(--et-design-canvas-label-scale)) translateY(-100%)';
+  protected readonly DRAFT_TRANSFORM = 'scale(var(--et-design-canvas-label-scale))';
+  protected openPin = signal<string | null>(null);
 
   protected opened = signal<{ key: string | null; origin: Point } | null>(null, {
     equal: (a, b) => a?.key === b?.key && a?.origin.x === b?.origin.x && a?.origin.y === b?.origin.y,
@@ -433,6 +561,20 @@ export class FlowsPageComponent {
     };
   });
 
+  protected placedPins = computed(() =>
+    this.pins().flatMap((pin) => {
+      const at = this.pointAt(pin.frameId, pin.point ?? null);
+
+      return at ? [{ pin, ...at }] : [];
+    }),
+  );
+
+  protected placedDraft = computed(() => {
+    const draft = this.draft();
+
+    return draft ? this.pointAt(draft.frameId, draft.point) : null;
+  });
+
   protected orphanNotes = computed(() => {
     const { boxes, w, h } = this.graph();
     const gap = (a: { at: number; size: number }, b: { at: number; size: number }) =>
@@ -483,6 +625,32 @@ export class FlowsPageComponent {
       x: Math.round(start.x + stage.offsetWidth / 2 - centre.x * zoom),
       y: Math.round(start.y + stage.offsetHeight / 2 - centre.y * zoom),
       zoom,
+    });
+  }
+
+  protected togglePin(id: string) {
+    this.openPin.update((open) => (open === id ? null : id));
+  }
+
+  protected pickPoint(box: FlowsPageFrame, event: Event) {
+    event.stopPropagation();
+    if (this.canvas()?.consumeSwallowedClick()) return;
+
+    if (!(event instanceof MouseEvent)) {
+      this.pointPick.emit({ frameId: box.id, point: null });
+
+      return;
+    }
+
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const scale = rect.width / (box.width ?? FLOWS_SHOT.width);
+
+    this.pointPick.emit({
+      frameId: box.id,
+      point: {
+        x: Math.max(0, (event.clientX - rect.left) / scale),
+        y: Math.max(0, (event.clientY - rect.top) / scale),
+      },
     });
   }
 
@@ -538,6 +706,19 @@ export class FlowsPageComponent {
 
   protected pickPreset(value: unknown) {
     if (typeof value === 'string') this.presetChange.emit(value);
+  }
+
+  private pointAt(frameId: string, point: { x: number; y: number } | null) {
+    const box = this.graph().boxes.find((candidate) => candidate.id === frameId);
+
+    if (!box) return null;
+
+    const scale = this.graph().w / (box.width ?? FLOWS_SHOT.width);
+
+    return {
+      x: box.x + (point ? point.x * scale : this.graph().w),
+      y: box.y + FLOWS_SHOT.caption + (point ? point.y * scale : 0),
+    };
   }
 
   private focusEditedNote() {

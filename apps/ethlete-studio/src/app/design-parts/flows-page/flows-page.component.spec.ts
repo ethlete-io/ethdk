@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { FlowsPageComponent } from './flows-page.component';
+import { FLOWS_SAMPLE_DRAFT, FLOWS_SAMPLE_PINS, FlowsPageComponent } from './flows-page.component';
 
 class SilentResizeObserver {
   public observe() {
@@ -258,6 +258,48 @@ describe('FlowsPageComponent', () => {
       await fixture.whenStable();
 
       expect(world?.style.transform).toBe('translate(' + -(1457 + 128) + 'px, ' + -25 + 'px) scale(1)');
+    });
+  });
+
+  describe('comments', () => {
+    it('lays a target over each frame in comment mode and reports the point in page pixels', async () => {
+      const { fixture, element } = await render();
+      const picks: unknown[] = [];
+
+      fixture.componentInstance.pointPick.subscribe((pick) => picks.push(pick));
+      expect(element.querySelector('[data-comment-target]')).toBeNull();
+      fixture.componentRef.setInput('commentMode', true);
+      await fixture.whenStable();
+
+      const targets = element.querySelectorAll<HTMLElement>('[data-comment-target]');
+      const sketch = targets[1] as HTMLElement;
+
+      vi.spyOn(sketch, 'getBoundingClientRect').mockReturnValue({ left: 100, top: 50, width: 259.2 } as DOMRect);
+      sketch.dispatchEvent(new MouseEvent('click', { clientX: 100 + 259.2 / 2, clientY: 50 + 18, bubbles: true }));
+
+      expect(targets).toHaveLength(4);
+      expect(picks).toEqual([{ frameId: 'sketch', point: { x: 720, y: 100 } }]);
+    });
+
+    it('places a pin and the draft on their point of the frame and opens the pin text on a click', async () => {
+      const { fixture, element } = await render();
+
+      fixture.componentRef.setInput('pins', FLOWS_SAMPLE_PINS);
+      fixture.componentRef.setInput('draft', FLOWS_SAMPLE_DRAFT);
+      await fixture.whenStable();
+
+      const pin = element.querySelector<HTMLElement>('[data-comment-pin]')?.parentElement;
+      const draft = element.querySelector<HTMLElement>('[data-comment-draft]');
+
+      expect(pin?.style.left).toBe(`${259.2 + 140 + 520 * 0.18}px`);
+      expect(pin?.style.top).toBe(`${20 + 300 * 0.18}px`);
+      expect(draft?.style.left).toBe(`${259.2 + 140 + 900 * 0.18}px`);
+      expect(element.querySelector('[data-comment-text]')).toBeNull();
+
+      element.querySelector<HTMLElement>('[data-comment-pin] button')?.click();
+      await fixture.whenStable();
+
+      expect(element.querySelector('[data-comment-text]')?.textContent).toContain('Merge-Knopf');
     });
   });
 });

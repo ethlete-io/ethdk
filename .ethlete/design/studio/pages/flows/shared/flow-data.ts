@@ -5,7 +5,14 @@ import textarea from '@system/components/textarea';
 import treeRow from '@system/components/tree-row';
 import { icon } from '@system/foundations/icons';
 
-export type FlowProps = { flow: 'open' | 'none'; notes?: boolean; orphans?: boolean };
+export type FlowProps = {
+  flow: 'open' | 'none';
+  notes?: boolean;
+  orphans?: boolean;
+  commentMode?: boolean;
+  comments?: boolean;
+  draft?: string;
+};
 
 export type FlowNoteSample = { id: string; text: string; x: number; y: number };
 
@@ -161,7 +168,12 @@ const EDGES = [
 
 const CAPTION = 20;
 
-export const flowGraph = (scale: number, colGap: number, overlay = '') => {
+export const flowGraph = (
+  scale: number,
+  colGap: number,
+  overlay = '',
+  onShot?: (id: string, shot: { scale: number }) => string,
+) => {
   const rowGap = 56;
   const w = 1440 * scale;
   const h = 900 * scale;
@@ -176,6 +188,13 @@ export const flowGraph = (scale: number, colGap: number, overlay = '') => {
     const { x, y } = at(node);
     return `<figure class="absolute m-0 flex flex-col gap-space-1" style="left:${x}px;top:${y}px">${caption(node.step.title)}<div class="rounded-sm outline outline-et-surface-border"><div class="overflow-hidden" style="width:${w}px;height:${h}px" ${slot('shot')}>${shot(node.step, scale)}</div></div></figure>`;
   }).join('');
+
+  const onShots = onShot
+    ? NODES.map((node) => {
+        const { x, y } = at(node);
+        return `<div class="absolute" style="left:${x}px;top:${y + CAPTION}px;width:${w}px;height:${h}px">${onShot(node.id, { scale })}</div>`;
+      }).join('')
+    : '';
 
   const edges = EDGES.flatMap((edge) => {
     const from = byId.get(edge.from);
@@ -196,6 +215,6 @@ export const flowGraph = (scale: number, colGap: number, overlay = '') => {
   const svg = `<svg data-et-drawing class="absolute inset-0 overflow-visible text-et-surface-muted" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
 
   return html`<div class="relative flex-none" style="width:${width}px;height:${height}px">
-    ${svg}${frames}${edges.map((edge) => edge.label).join('')}${overlay}
+    ${svg}${frames}${edges.map((edge) => edge.label).join('')}${overlay}${onShots}
   </div>`;
 };

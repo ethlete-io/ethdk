@@ -413,12 +413,15 @@ export const STUDIO_LABELS = {
     deleteNote: 'Notiz löschen',
     orphans: 'Verwaiste Notizen',
     noOrphans: 'Keine',
+    otherSize: (count: number) =>
+      count === 1 ? '1 Kommentar bei anderer Größe' : `${count} Kommentare bei anderer Größe`,
     presetLabel: (name: string, { width, height }: { width: number; height?: number }) =>
       height === undefined ? `${name} · ${width}` : `${name} · ${width} × ${height}`,
     sample: {
       names: ['Sketch prüfen', 'Kommentar beantworten', 'Produkt anlegen'],
       lines: ["Nutzer klickt 'Sketches' in der Leiste", "Nutzer klickt 'Erledigte zeigen'", "Nutzer klickt 'Merge'"],
       preset: 'Desktop · 1440 × 900',
+      pinText: 'Der Merge-Knopf ist hier zu leise.',
       notes: ['Hier fehlt noch der Weg, wenn der Nutzer den Sketch verwirft.'],
       orphans: ['Rückweg nach Verwerfen', 'Merge-Knopf klären'],
     },

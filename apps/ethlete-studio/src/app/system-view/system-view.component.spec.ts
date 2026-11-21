@@ -1613,7 +1613,10 @@ describe('SystemViewComponent on a flow', () => {
 
     expect(fixture.componentInstance['section']()).toBe('Flows');
     expect(root.querySelector('[role="treeitem"]')?.textContent?.trim()).toBe('sign-in');
-    expect(frames.map((frame) => frame.title)).toEqual(['pages/library · empty', 'pages/library · one']);
+    expect(frames.map((frame) => frame.title)).toEqual([
+      'pages/library · empty',
+      'pages/library · one · 1 Kommentar bei anderer Größe',
+    ]);
     expect(frames[0]?.src).toContain('/frame.html?');
   });
 

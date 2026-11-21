@@ -1014,6 +1014,14 @@ export class DesignCanvasComponent {
     this.zoomTo(this.camera().zoom * factor);
   }
 
+  public consumeSwallowedClick() {
+    const swallow = this.swallowNextClick;
+
+    this.swallowNextClick = false;
+
+    return swallow;
+  }
+
   private storeMeasure(id: string, size: FrameSize) {
     const known = this.measured()[id];
     const key = this.cameraKey();
@@ -1106,13 +1114,5 @@ export class DesignCanvasComponent {
     return target instanceof Node
       ? (this.projected().find((frame) => frame.elementRef.nativeElement.contains(target)) ?? null)
       : null;
-  }
-
-  private consumeSwallowedClick() {
-    const swallow = this.swallowNextClick;
-
-    this.swallowNextClick = false;
-
-    return swallow;
   }
 }

@@ -18,6 +18,9 @@ import {
 } from '../design-parts/flows-page/flows-page.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { rememberFlowPreset, rememberedView } from '../studio-view/remembered';
+import { FramePoint } from '../components/design-canvas/canvas-pin';
+import { commentDraftOf, otherSizeCountOf, pinsOnPlaceOf } from './comment-pins';
+import { injectCommentStore } from './comment-store';
 import { flowFramesOf, flowKeyOf, frameRatioOf } from './flow-frames';
 import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
 import { PageShell, PageShellAction } from './page-shell';
@@ -31,6 +34,7 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
   template: `
     <ethlete-flows-page
       #page
+      [(draftText)]="commentStore.draftText"
       [flow]="flow() ? 'open' : 'none'"
       [flows]="flowNames()"
       [selected]="flow()?.name ?? ''"
@@ -40,6 +44,11 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
       [presets]="presets()"
       [ratio]="ratio()"
       [notes]="notes()"
+      [commentMode]="commentStore.active()"
+      [pins]="pins()"
+      [draft]="flowDraft()"
+      [sendPhase]="commentStore.sendPhase()"
+      [sendReason]="commentStore.sendReason()"
       [frameTemplate]="frame"
       [shell]="shell()"
       (pick)="shellAction.emit({ kind: 'pick', key: flowKey($event) })"
@@ -50,6 +59,10 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
       (noteMove)="move($event)"
       (noteDelete)="remove($event)"
       (jumpToNote)="page.jumpTo($event)"
+      (commentToggle)="commentStore.toggle()"
+      (pointPick)="startComment($event)"
+      (send)="commentStore.send($event)"
+      (discard)="commentStore.cancel()"
       (shellAction)="shellAction.emit($event)"
       class="h-full!"
     />
@@ -78,6 +91,7 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
 export class FlowViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
+  protected commentStore = injectCommentStore();
 
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
@@ -176,10 +190,29 @@ export class FlowViewComponent {
 
         rowsTaken.set(col, row + 1);
 
-        return { id: frame.id, title: frame.label, src: frame.src, col, row };
+        const elsewhere = otherSizeCountOf(frame, this.commentStore.comments());
+
+        return {
+          id: frame.id,
+          title: elsewhere > 0 ? `${frame.label} · ${STUDIO_LABELS.flows.otherSize(elsewhere)}` : frame.label,
+          src: frame.src,
+          col,
+          row,
+          width: frame.width ?? FLOWS_SHOT.width,
+        };
       }),
       lines: lines.map((line) => ({ from: line.from, to: line.to, label: line.label ?? '' })),
     };
+  });
+
+  protected pins = computed(() => pinsOnPlaceOf(this.source().frames, { comments: this.commentStore.comments() }));
+
+  protected flowDraft = computed(() => {
+    const draft = this.commentStore.draft();
+
+    return draft && this.source().frames.some((frame) => frame.id === draft.frameId)
+      ? { frameId: draft.frameId, point: draft.point }
+      : null;
   });
 
   protected ratio = computed(() =>
@@ -207,6 +240,12 @@ export class FlowViewComponent {
       }),
     );
   });
+
+  protected startComment(pick: FramePoint) {
+    const draft = commentDraftOf(this.source().frames, pick);
+
+    if (draft) this.commentStore.start(draft);
+  }
 
   protected writeText({ id, text }: FlowsPageNoteText) {
     const draft = this.draft();
