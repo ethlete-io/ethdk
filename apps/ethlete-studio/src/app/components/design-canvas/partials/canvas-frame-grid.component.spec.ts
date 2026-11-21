@@ -202,7 +202,7 @@ describe('CanvasFrameGridComponent', () => {
   it('splits a sheet into the rows that use more than rest and the rest-only rows, packed a line per column count', async () => {
     const host = await renderGrid({ columns, rows, cells, sheet: 'groups' });
 
-    expect(textsOf(host, '[data-grid-group]')).toEqual(['States by interaction', 'Rest only']);
+    expect(textsOf(host, '[data-grid-group]')).toEqual(['Zustände nach Interaktion', 'Nur Ruhezustand']);
     expect(textsOf(host, '[data-grid-column]')).toEqual(columns);
     expect(textsOf(host, '[data-grid-row]')).toEqual(rows);
     expect(host.querySelectorAll('[data-grid-cell]')).toHaveLength(2 * columns.length + 4);
@@ -214,13 +214,13 @@ describe('CanvasFrameGridComponent', () => {
   it('leaves out a group no row falls into', async () => {
     const host = await renderGrid({ columns, rows: ['inert'], cells: [cellAt('inert', 'rest')], sheet: 'groups' });
 
-    expect(textsOf(host, '[data-grid-group]')).toEqual(['Rest only']);
+    expect(textsOf(host, '[data-grid-group]')).toEqual(['Nur Ruhezustand']);
   });
 
   it('keeps every row of a table sheet in the interaction table, each cell centred', async () => {
     const host = await renderGrid({ columns, rows, cells, sheet: 'table' });
 
-    expect(textsOf(host, '[data-grid-group]')).toEqual(['States by interaction']);
+    expect(textsOf(host, '[data-grid-group]')).toEqual(['Zustände nach Interaktion']);
     expect(textsOf(host, '[data-grid-row]')).toEqual(rows);
     expect(host.querySelectorAll('[data-grid-cell]')).toHaveLength(rows.length * columns.length);
     expect(host.querySelector('[data-grid-cell]')?.classList).toContain('place-items-center');
@@ -246,7 +246,7 @@ describe('CanvasFrameGridComponent', () => {
     const host = await renderGrid({ columns, rows: [...rows, 'unused'], cells, sheet: 'table' });
 
     expect(host.querySelectorAll('[data-grid-empty]')).toHaveLength(rows.length * columns.length - cells.length);
-    expect(textsOf(host, '[data-grid-empty]').every((text) => text === 'not drawn')).toBe(true);
+    expect(textsOf(host, '[data-grid-empty]').every((text) => text === 'nicht gezeichnet')).toBe(true);
   });
 
   it('marks the empty cells of the interaction table in a groups sheet only', async () => {
@@ -459,7 +459,7 @@ describe('CanvasFrameGridComponent', () => {
 
       const failed = host.querySelectorAll('ethlete-canvas-frame-cell')[1];
 
-      expect(failed?.querySelector('[data-shot-failed]')?.textContent).toContain('Render failed');
+      expect(failed?.querySelector('[data-shot-failed]')?.textContent).toContain('Zeichnen fehlgeschlagen');
       expect(host.querySelectorAll('[data-shot-failed]').length).toBe(1);
     });
 

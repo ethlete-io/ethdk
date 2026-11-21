@@ -133,7 +133,7 @@ describe('InventoryViewComponent', () => {
     element.querySelector('img')?.dispatchEvent(new Event('error'));
     await settle(fixture);
 
-    expect(element.querySelector('figure [data-shot-failed]')?.textContent).toContain('Render failed');
+    expect(element.querySelector('figure [data-shot-failed]')?.textContent).toContain('Zeichnen fehlgeschlagen');
   });
 
   it('lists a covered control, with no outline or badge on the shot', async () => {

@@ -103,13 +103,13 @@ const designServerOf = (src: string) => (URL.canParse(src) ? new URL(src) : null
 export const failedLoadReason$ = (src: string): Observable<string> => {
   const url = designServerOf(src);
 
-  if (!url) return of('The page sent no frame message.');
+  if (!url) return of(CANVAS_LABELS.noFrameMessage);
 
   return defer(() => fetch(url, { cache: 'no-store' })).pipe(
     map((response) =>
       response.ok
-        ? 'The page loaded but sent no frame message.'
-        : `The design server answered ${response.status} ${response.statusText}`.trim() + '.',
+        ? CANVAS_LABELS.loadedWithoutFrameMessage
+        : CANVAS_LABELS.serverAnswered(response.status, response.statusText),
     ),
     // eslint-disable-next-line ethlete/no-silent-catch-error -- a refused fetch is the reason the banner names
     catchError(() => of(CANVAS_LABELS.unanswered)),

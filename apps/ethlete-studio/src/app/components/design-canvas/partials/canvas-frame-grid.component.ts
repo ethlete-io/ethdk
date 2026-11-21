@@ -41,6 +41,8 @@ import {
   frameMessageOf,
   withScheme,
 } from '../canvas-frame';
+import { CANVAS_LABELS } from '../../../i18n/canvas-labels';
+import { SYSTEM_LABELS } from '../../../i18n/system-labels';
 import { stateDiff$ } from '../../../../host/design';
 import { Rect, Size } from '../canvas-math';
 import { diffMarkOf } from './diff-mark';
@@ -282,7 +284,7 @@ export class CanvasFrameCellComponent {
           <span
             class="col-span-full mb-2 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em] text-text-subtle"
             data-grid-group
-            >States by interaction</span
+            >{{ SYSTEM_LABELS.statesByInteraction }}</span
           >
           <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-2' }" />
           <span></span>
@@ -320,7 +322,7 @@ export class CanvasFrameCellComponent {
                       (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
                     />
                   } @else if (drawnRows().has(row)) {
-                    <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
+                    <span class="font-code text-text-muted italic" data-grid-empty>{{ LABELS.notDrawn }}</span>
                   }
                 </div>
               }
@@ -331,7 +333,7 @@ export class CanvasFrameCellComponent {
           <span
             class="col-span-full mb-2 mt-6 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em] first:mt-0"
             data-grid-group
-            >Rest only</span
+            >{{ LABELS.restOnly }}</span
           >
           <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-2' }" />
           @for (line of sheet.packed; track $index; let firstLine = $first) {
@@ -416,7 +418,7 @@ export class CanvasFrameCellComponent {
                   (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
                 />
               } @else if (drawnRows().has(row)) {
-                <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
+                <span class="font-code text-text-muted italic" data-grid-empty>{{ LABELS.notDrawn }}</span>
               } @else {
                 <span></span>
               }
@@ -465,17 +467,21 @@ export class CanvasFrameCellComponent {
 })
 export class CanvasFrameGridComponent {
   public grid = input.required<FrameGrid>();
+
   public live = input(false);
+
   /** The cells that go live while `live`; `null` makes every cell live. */
   public liveCells = input<ReadonlySet<string> | null>(null);
-
   public sizeChange = output<Size>();
   /** Each cell's box in CSS pixels from the grid's top left corner, by cell id. */
   public cellsChange = output<Record<string, Rect>>();
 
   private table = viewChild<ElementRef<HTMLElement>>('table');
   private cells = viewChildren('cell', { read: ElementRef<HTMLElement> });
+
   private cellViews = viewChildren(CanvasFrameCellComponent);
+  protected readonly LABELS = CANVAS_LABELS;
+  protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
 
   private cellAt = computed(
     () => new Map<string, FrameCell>(this.grid().cells.map((cell) => [cellKeyOf(cell.row, cell.column), cell])),

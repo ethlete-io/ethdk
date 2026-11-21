@@ -31,18 +31,22 @@ export const isWireframe = (part: Pick<ListedPart, 'layer' | 'kitUses'>) =>
 const onLayer = (layer: string) => (part: ListedPart) => part.layer === layer && !part.unusedInProduct;
 
 export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds: (part: ListedPart) => boolean }[] = [
-  { key: 'foundations', label: 'Foundations', holds: onLayer('foundations') },
-  { key: 'elements', label: 'Elements', holds: onLayer('elements') },
-  { key: 'components', label: 'Components', holds: onLayer('components') },
+  { key: 'foundations', label: SYSTEM_TREE_LABELS.foundations, holds: onLayer('foundations') },
+  { key: 'elements', label: SYSTEM_TREE_LABELS.elements, holds: onLayer('elements') },
+  { key: 'components', label: SYSTEM_TREE_LABELS.components, holds: onLayer('components') },
   {
     key: 'pages',
-    label: 'Pages',
+    label: SYSTEM_TREE_LABELS.pages,
     holds: (part) => part.layer === 'pages' && !isWireframe(part) && !part.unusedInProduct,
   },
-  { key: 'wireframes', label: 'Wireframes', holds: (part) => isWireframe(part) && !part.unusedInProduct },
+  {
+    key: 'wireframes',
+    label: SYSTEM_TREE_LABELS.wireframes,
+    holds: (part) => isWireframe(part) && !part.unusedInProduct,
+  },
   { key: 'unused', label: SYSTEM_TREE_LABELS.notUsed, holds: (part) => part.unusedInProduct === true },
-  { key: 'sketches', label: 'Sketches', holds: () => false },
-  { key: 'legacy', label: 'Legacy', holds: () => false },
+  { key: 'sketches', label: SYSTEM_TREE_LABELS.sketches, holds: () => false },
+  { key: 'legacy', label: SYSTEM_TREE_LABELS.legacy, holds: () => false },
 ];
 
 export type PartBadge =

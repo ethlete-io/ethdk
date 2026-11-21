@@ -187,14 +187,16 @@ describe('failedLoadReason$', () => {
     vi.stubGlobal('fetch', async () => new Response('', { status: 503, statusText: 'Service Unavailable' }));
 
     expect(await reasonOf('http://localhost:4402/frame.html')).toBe(
-      'The design server answered 503 Service Unavailable.',
+      'Der Design-Server antwortete 503 Service Unavailable.',
     );
   });
 
   it('names a page that loads but never reports', async () => {
     vi.stubGlobal('fetch', async () => new Response('<html></html>'));
 
-    expect(await reasonOf('http://localhost:4402/frame.html')).toBe('The page loaded but sent no frame message.');
+    expect(await reasonOf('http://localhost:4402/frame.html')).toBe(
+      'Die Seite wurde geladen, hat aber keine Frame-Nachricht gesendet.',
+    );
   });
 });
 

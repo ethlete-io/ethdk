@@ -257,7 +257,7 @@ describe('CanvasFrameComponent shot states', () => {
     shotOf('light').dispatchEvent(new Event('load'));
     await flush(20);
 
-    expect(copy('dark').querySelector('[data-shot-failed]')?.textContent).toContain('Render failed');
+    expect(copy('dark').querySelector('[data-shot-failed]')?.textContent).toContain('Zeichnen fehlgeschlagen');
     expect(copy('light').querySelector('[data-shot-failed]')).toBeNull();
   });
 
@@ -463,6 +463,6 @@ describe('CanvasFrameComponent failed crop thumb', () => {
     thumb.querySelector('img')?.dispatchEvent(new Event('error'));
     await fixture.whenStable();
 
-    expect(thumb.querySelector('[data-shot-failed]')?.textContent).toContain('Render failed');
+    expect(thumb.querySelector('[data-shot-failed]')?.textContent).toContain('Zeichnen fehlgeschlagen');
   });
 });

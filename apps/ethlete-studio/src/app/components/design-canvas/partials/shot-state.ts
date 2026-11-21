@@ -1,6 +1,7 @@
 import { Component, Directive, ViewEncapsulation, computed, effect, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ProvideColorDirective, defineRootProvider, injectSemanticColorTheme, toInjectFn } from '@ethlete/core';
+import { CANVAS_LABELS } from '../../../i18n/canvas-labels';
 import { map, switchMap, tap, timer } from 'rxjs';
 
 export type ShotState = 'loading' | 'slow' | 'loaded' | 'failed';
@@ -62,7 +63,7 @@ export class ShotStateDirective {
         role="alert"
         data-shot-failed
       >
-        Render failed
+        {{ LABELS.renderFailed }}
       </div>
     } @else if (state() === 'slow') {
       <span
@@ -82,4 +83,6 @@ export class ShotStateComponent {
   protected errorTheme = injectSemanticColorTheme('error');
 
   public state = input.required<ShotState>();
+
+  protected readonly LABELS = CANVAS_LABELS;
 }
