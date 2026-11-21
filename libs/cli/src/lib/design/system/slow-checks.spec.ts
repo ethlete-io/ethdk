@@ -1,12 +1,12 @@
-import { appendFileSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { StateShot } from './compare-command';
 import { designHashOf } from './design-hash';
-import { partKeyOf, resolveProduct } from './resolve-product';
-import { RULE_BASELINE_FILE } from './rule-baseline';
+import { Problem } from './problem';
+import { partKeyOf, resolveProduct, type ResolvedProduct } from './resolve-product';
 import {
   readSlowCache,
   slowCacheFileOf,
@@ -62,36 +62,75 @@ describe('slow cache of worktrees sharing node_modules', () => {
     const part = 'components/chip';
     const hashes = { [part]: 'h' };
 
-    writeSlowResults({ product: first.product(), hashes, results: new Map([[part, [problem]]]) });
-    writeSlowResults({ product: second.product(), hashes, results: new Map() });
+    writeSlowResults({ product: first.product(), hashes, results: new Map() });
+    writeSlowResults({ product: second.product(), hashes, results: new Map([[part, [problem]]]) });
 
     expect(slowCacheFileOf(first.product())).not.toBe(slowCacheFileOf(second.product()));
-    expect(readSlowCache(first.product())[part]?.problems).toEqual([problem]);
+    expect(readSlowCache(first.product())[part]?.hash).toBe('h');
+    expect(readSlowCache(second.product())[part]).toBeUndefined();
   });
 });
 
 describe('slowProblemsOf', { timeout: 30_000 }, () => {
-  it('is pending without a result, answers the stored problems, and is pending again once an input changes', () => {
-    const { target, product } = acme();
-
-    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
-
+  const storeAll = (product: () => ResolvedProduct, results: Map<string, Problem[]>) =>
     writeSlowResults({
       product: product(),
       hashes: Object.fromEntries(
         Object.entries(slowInputsOf({ product: product() })).map(([part, { hash }]) => [part, hash]),
       ),
-      results: new Map([['components/chip', [problem]]]),
+      results,
     });
 
-    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([problem]);
-    expect(slowProblemsOf({ product: product(), part: '(product)' })).toEqual([]);
+  it('is pending without a result, answers a stored pass, and is pending again once an input changes', () => {
+    const { target, product } = acme();
+
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
+
+    storeAll(product, new Map());
+
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([]);
     expect(staleSlowPartsOf(product())).toEqual([]);
 
     appendFileSync(join(target, 'apps/acme/src/chip.component.ts'), '// changed\n');
 
     expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
     expect(staleSlowPartsOf(product())).toEqual(['components/chip', '(product)']);
+  });
+
+  it('does not keep a failure: it stays pending, so the next run reruns it and a pass is then stored', () => {
+    const { product } = acme();
+
+    storeAll(product, new Map([['components/chip', [problem]]]));
+
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
+    expect(staleSlowPartsOf(product())).toEqual(['components/chip']);
+
+    storeAll(product, new Map());
+
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([]);
+  });
+
+  it('drops a stored pass when the same inputs then fail', () => {
+    const { product } = acme();
+
+    storeAll(product, new Map());
+    storeAll(product, new Map([['components/chip', [problem]]]));
+
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
+  });
+
+  it('ignores a failure an older run stored', () => {
+    const { product } = acme();
+
+    storeAll(product, new Map());
+
+    const file = slowCacheFileOf(product());
+    const cache = JSON.parse(readFileSync(file, 'utf8'));
+
+    cache['components/chip'].problems = [problem];
+    writeFileSync(file, JSON.stringify(cache));
+
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
   });
 
   it('answers no problems for a part no slow rule checks', () => {
@@ -164,8 +203,8 @@ describe('the draw rules in the slow set', { timeout: 30_000 }, () => {
     expect(productHash()).not.toBe(before);
   });
 
-  it('runs the draw rules without a harness, stores them per part, and build-ready skips a baselined hit', async () => {
-    const { target, dir, product, chipFile } = drawable();
+  it('runs the draw rules without a harness, and keeps no failing result', async () => {
+    const { target, product, chipFile } = drawable();
     const hit = (at: string) => ({ rule: 'CONTROL-STATE', file: chipFile, message: `control "${at}" is drawn`, at });
     const results = await runSlowChecks({
       target,
@@ -180,16 +219,7 @@ describe('the draw rules in the slow set', { timeout: 30_000 }, () => {
     });
 
     expect(results.get('components/chip')?.map((problem) => problem.at)).toEqual(['section', 'product']);
-    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toHaveLength(2);
-
-    writeFileSync(
-      join(dir, RULE_BASELINE_FILE),
-      JSON.stringify({ 'CONTROL-STATE': { 'components/chip: section': { finding: '489', sketch: 'x' } } }),
-    );
-
-    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([
-      { ...hit('product'), file: '.ethlete/design/acme/components/chip/chip.ts' },
-    ]);
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
   });
 });
 
@@ -271,7 +301,6 @@ describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
       product: product(),
       parts: ['components/chip'],
       runners: runners([
-        { state: 'direct-edit', problem: 'no "Gründe" trigger', undrivable: true },
         { state: 'open', problem: 'the app opens no overlay pane' },
         { state: 'default', design: Buffer.from('a'), app: Buffer.from('b') },
       ]),
@@ -280,7 +309,6 @@ describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
     const warnings = () => unjudgedStateWarningsOf({ product: product(), parts: ['components/chip'] });
 
     expect(warnings()).toEqual([
-      'WARNING acme components/chip: state direct-edit cannot be judged - no "Gründe" trigger',
       'WARNING acme components/chip: state open cannot be judged - the app opens no overlay pane',
     ]);
     expect(warnings()).toEqual(warnings());

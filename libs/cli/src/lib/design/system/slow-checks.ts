@@ -79,13 +79,15 @@ export const readSlowCache = (product: ResolvedProduct): SlowCache => {
   try {
     const parsed = JSON.parse(readFileSync(slowCacheFileOf(product), 'utf8')) as unknown;
 
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as SlowCache) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+
+    return Object.fromEntries(Object.entries(parsed as SlowCache).filter(([, entry]) => entry.problems.length === 0));
   } catch {
     return {};
   }
 };
 
-/** Stores `results` at `hashes`; every part in `hashes` without a result is stored clean. */
+/** Stores the passing parts of `hashes` and drops the failing ones, so a failure is run again instead of replayed. */
 export const writeSlowResults = (options: {
   product: ResolvedProduct;
   hashes: Record<string, string>;
@@ -99,7 +101,12 @@ export const writeSlowResults = (options: {
   for (const [part, hash] of Object.entries(options.hashes)) {
     const unjudged = options.unjudged?.get(part) ?? [];
 
-    cache[part] = { hash, problems: options.results.get(part) ?? [], at, ...(unjudged.length > 0 ? { unjudged } : {}) };
+    if ((options.results.get(part) ?? []).length > 0) {
+      delete cache[part];
+      continue;
+    }
+
+    cache[part] = { hash, problems: [], at, ...(unjudged.length > 0 ? { unjudged } : {}) };
   }
 
   mkdirSync(dirname(file), { recursive: true });

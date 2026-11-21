@@ -96,7 +96,7 @@ describe('CONTRAST-PAIR in the slow set', { timeout: 30_000 }, () => {
     };
   };
 
-  it('draws only a part that measures its token pairs, and stores what it finds', async () => {
+  it('draws only a part that measures its token pairs, and keeps no failure', async () => {
     const { target, file, product } = colorsProduct();
 
     expect(slowInputsOf({ product: product() })['foundations/colors']?.rules).toEqual(['CONTRAST-PAIR']);
@@ -109,7 +109,7 @@ describe('CONTRAST-PAIR in the slow set', { timeout: 30_000 }, () => {
       at: '--text-muted --surface',
     };
 
-    await runSlowChecks({
+    const results = await runSlowChecks({
       target,
       config: readConfig(target) ?? {},
       product: product(),
@@ -123,8 +123,7 @@ describe('CONTRAST-PAIR in the slow set', { timeout: 30_000 }, () => {
       },
     });
 
-    expect(slowProblemsOf({ product: product(), part: 'foundations/colors' })).toEqual([
-      { ...hit, file: '.ethlete/design/acme/foundations/colors/colors.ts' },
-    ]);
+    expect(results.get('foundations/colors')?.map((found) => found.rule)).toEqual(['CONTRAST-PAIR']);
+    expect(slowProblemsOf({ product: product(), part: 'foundations/colors' })).toBe('pending');
   });
 });
