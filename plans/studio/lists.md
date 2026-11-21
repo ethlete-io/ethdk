@@ -42,8 +42,8 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   Seitenpanel-Liste, Klick zentriert die Kamera (4f14cfb33, 5db381f84; Sprung im Browser ungeprüft); Start-Kamera (Cause gemessen: `offsetWithin`
   addierte den Seitenversatz, 4a564a541) und fokussierte neue Notiz (d4320a8bf, 8ef3a3470); `--verify` pages/flows grün.
   Suspect: veraltetes `KNOWN_ORPHAN_ENDPOINTS` (flow-note*); die Liste muss an einem Aufrufer scheitern.
-  Kommentar-Pins: der Zustand `pinned` von elements/variant-cell ist gezeichnet, die App zeichnet keine Pins (Cause
-  gemessen, DIFF 1255 px, vor A32).
+  Kommentar-Pins: die App zeichnet sie schon im `[overlay]`-Slot der Zelle (Klick, Agent, Anzahl, erledigt); der
+  Entwurf `pinned` nimmt dagegen eine `pins`-Eigenschaft. Nächster Schritt: Entwurf zeichnet über den Overlay-Slot.
 - **A29** Inventar als Canvas: ein Frame je Seite mit nummerierten Controls und Freigabe (ADR 0081, 0082, 0129),
   Assets- und Overlay-Listen in der App, Einstieg im Titelleisten-Menü (Q100, Q233, Q239). Canvas gebaut 5e9a7bcd2;
   Erfolgsfarbe gebaut 76f75766d (Limette Hue 130, SUCCESS_THEME Typ success, Inventar-Zeilen ok grün).
