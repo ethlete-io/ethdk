@@ -716,8 +716,42 @@
     "pid": 1823511
   },
   "components/title-search": {
+    "hash": "139ad3a2e8b7dd17",
+    "files": {
+      ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
+      ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
+      ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
+      ".ethlete/design/studio/assets/icons/chevron-right.svg": "1a04df114a80da2e",
+      ".ethlete/design/studio/assets/icons/close.svg": "7c9d7c7b0369ac38",
+      ".ethlete/design/studio/assets/icons/comment.svg": "fb680460d7117789",
+      ".ethlete/design/studio/assets/icons/error.svg": "2d3285675d3b2d19",
+      ".ethlete/design/studio/assets/icons/flow.svg": "453c012e8a063e82",
+      ".ethlete/design/studio/assets/icons/grid.svg": "0325b982baf41f85",
+      ".ethlete/design/studio/assets/icons/inbox.svg": "e661f5cf4c65c1c9",
+      ".ethlete/design/studio/assets/icons/maximize.svg": "743f8061df8f16f7",
+      ".ethlete/design/studio/assets/icons/minimize.svg": "1bc111272e357d8d",
+      ".ethlete/design/studio/assets/icons/more.svg": "c899b8912231575e",
+      ".ethlete/design/studio/assets/icons/panel.svg": "05c325920c46d969",
+      ".ethlete/design/studio/assets/icons/pencil.svg": "61f6ed00cf70bfc1",
+      ".ethlete/design/studio/assets/icons/reply.svg": "34c9698a4d28d7b0",
+      ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
+      ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
+      ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "2580fc7e7a5a8ff3",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6"
+    },
+    "app": "5de5ea156d1f9a03",
     "actions": ["opens:command-palette"],
-    "at": "2026-11-21T19:31:18.835Z"
+    "builder": "developer",
+    "builderReasons": [
+      "injects through injectCommandPaletteStore() (apps/ethlete-studio/src/app/components/title-search/title-search.component.ts)"
+    ],
+    "at": "2026-11-21T20:40:13.142Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1834445
   },
   "components/tree-row": {
     "hash": "54194a38f4ab321d",
