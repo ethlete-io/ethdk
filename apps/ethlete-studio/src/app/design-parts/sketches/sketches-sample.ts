@@ -247,6 +247,29 @@ export const SKETCH_DRAWN_AS: Record<string, string> = {
   [SKETCH_WIDE_STATE.state]: WIDE_DRAWN_AS,
 };
 
+const [CURRENT_ROW, VARIANT_A_ROW, VARIANT_B_ROW] = SKETCH_NARROW_SAMPLE.rows as [SketchRow, SketchRow, SketchRow];
+
+export const SKETCH_NEIGHBOURS_SAMPLE = {
+  ...SKETCH_NARROW_SAMPLE,
+  rows: [
+    CURRENT_ROW,
+    {
+      ...VARIANT_A_ROW,
+      note: 'Die Prozentzahl färbt sich beim Überfahren des Reset-Knopfs.',
+      shots: chipShotsOf(['reset-hover']),
+    },
+    {
+      ...VARIANT_B_ROW,
+      note: 'Der Einpassen-Knopf zeigt beim Drücken und beim Fokus einen Rand.',
+      shots: chipShotsOf(['fit-active', 'fit-focus-visible']),
+    },
+  ] satisfies SketchRow[],
+  looks: {
+    a: '[&_[data-camera-reset]_button]:text-et-theme',
+    b: '[&_[data-camera-fit]_button]:rounded-full',
+  } as Record<string, string>,
+};
+
 export const SKETCH_EDIT_SAMPLE = {
   ...SKETCH_NARROW_SAMPLE,
   part: 'components/zoom-chip@edit',

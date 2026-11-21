@@ -26,6 +26,7 @@ import {
   SKETCH_AGENT_RUNS,
   SKETCH_CURRENT,
   SKETCH_EDIT_SAMPLE,
+  SKETCH_NEIGHBOURS_SAMPLE,
   SKETCH_MERGE_PORTS,
   SKETCH_COMMENT_DRAFT_SAMPLE,
   SKETCH_COMMENT_DRAFT_TEXT,
@@ -107,6 +108,7 @@ const SKETCH_PART_SAMPLES: Record<string, { rows: SketchRow[]; looks: Record<str
   wide: { rows: SKETCH_ROWS, looks: {} },
   narrow: SKETCH_NARROW_SAMPLE,
   edit: SKETCH_EDIT_SAMPLE,
+  neighbours: SKETCH_NEIGHBOURS_SAMPLE,
 };
 
 type FrameSize = { width: number; height: number };
