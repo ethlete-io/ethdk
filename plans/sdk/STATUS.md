@@ -22,6 +22,8 @@ eine blockierte Sitzung unterbricht sofort.
 - S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
 - S28 (fifagg, 21.11.): nicht blockiert, gebaut lokal 1299a62ab (SCROLLTAB): Eingabe `scrollableButtons` an tab-group/nav-tabs (`{ enabled: { md: true } }`), Instanz schlägt Config; Verhaltensänderung: `enabled`-Map ohne Schlüssel bei/unter dem Breakpoint = aus (mobile-first); S28 und S29 an fifagg mit der Prerelease-Version melden, inkl. dieser Zeile; Nachstellen: game-title-tab-bar bei 390 px mit `provideScrollableConfig({buttons:{enabled:true}})` zeigt Pfeile (master: `et-scrollable [renderButtons]=isAboveMd()`, next.92); fifagg tut solange nichts.
 - S29 (fifagg, 21.11.): blockiert, gebaut lokal 031dcfb23 (`provideScrollableConfig({buttons:{color,variant}})`, `--et-scrollable-buttons-offset`, `--et-scrollable-buttons-end-space`, Docs, Story, Changeset); wartet auf Prerelease, danach fifagg informieren; `--mask-size` war schon öffentlich (beantwortet).
+- S30 (fifagg, 21.11.): nicht blockiert, `etInputClear` zeigt das x nur mit Fokus (`showClear` verlangt `focused()`), alt immer bei Wert -> Builder-Zeile.
+- S31 (fifagg, 21.11.): nicht blockiert, Match-Card kompakt je Team mit Score rechts + Wappen-Fallback statt Initiale; dichte Zeile gibt es (`size` pinnt sie), Wappen-Fallback fehlt -> Builder-Zeile.
 
 ## Offene Plan-Dateien
 
