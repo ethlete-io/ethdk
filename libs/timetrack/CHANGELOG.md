@@ -1,5 +1,17 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.18
+
+### Patch Changes
+
+- Building a Timetrack day is faster: merging rows checks the cheap sliver test before the fold test (a heavy day dropped from 740 to 410 ms).
+- Draw agent work after the day's last presence as unattended rows when the stretch is longer than 3 h, or when a finished day ends with the user away and it is at least 15 min.
+- Count a commit once per day however many checkouts or cherry-picks carry it, keeping the original copy.
+- Build a day's rows from every copy of a cherry-picked or rebased commit, then keep each commit in the rows of one copy only, so no commit loses its row to the copy that was dropped.
+- Drop a row whose evidence is only commit copies kept in another row, so a cherry-picked commit's minutes count once.
+- A linked git worktree, also a deleted one, is read as its main repository: one lane, no naming offer of its own. `repoRootOf` now takes `CheckoutRoots`.
+- Draw agent work before the day's first presence as unattended rows, when the day opens with the user's return or the stretch is longer than a break, instead of dropping it and attaching its commits to the first attended row.
+
 ## 0.1.0-next.17
 
 ### Minor Changes

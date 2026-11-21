@@ -1,5 +1,64 @@
 # ethlete-studio
 
+## 0.2.0-next.29
+
+### Minor Changes
+
+- Inventory in the studio menu shows the Inventory of every page of a product on one canvas; the Inventory toggle on a page is gone.
+
+### Patch Changes
+
+- A ready sketch whose base changed in the product (a merge would be refused until a rebase) is a `stale-sketch-base` open point on each of its targets, in `design check` and in the Studio sketch view.
+- A comment made in a merged sketch now has a pin on the part frame, and the resolved comments of a sketch keep their pins in the Sketches view.
+- A comment thread of a merged sketch keeps its pin on the part frame after the user replied to it.
+- The inbox shows the server's own message when the list fails to load, and a notice with Erneut laden above the kept list when the live connection is interrupted.
+- List the flow notes that lie far from every frame as orphan notes in the flows side panel and jump the canvas to one on click.
+- Show free notes on the flow canvas: add one with Notiz, write it in place, drag it to move it and delete it, each change written to the flow file.
+- Studio lists a `plan-question` open point (an ADR naming the part that is decided but not built) with the comments, and takes its open-point type from the CLI, so a new open-point kind fails Studio's build instead of being dropped.
+- Start the Flows page camera at the stage's top left inside the viewport, so the flow graph no longer sits 64 px right and 32 px down of the design.
+- Add Tastenkürzel, Hilfe and Über Studio to the Studio menu: Tastenkürzel and Über Studio open dialogs, Hilfe opens the Studio docs in the system browser, and Ctrl+/ (⌘/) opens Tastenkürzel.
+- Show the design server state in the Studio menu (läuft, veraltet, gestoppt) with Neu laden and Checkouts suchen…, and put the restart first when the server runs an older build.
+- A legacy call on the System page has no header bar any more: its headline and slug sit top left on the canvas, and the theme switches with Als übertragen markieren float top right, like the part view's actions.
+- Redesign the "Ausnahmen" group in the open-points popup: one compact row per exception with a status badge and an outline Freigeben button.
+- The sketch view folds a changed control's whole interaction group and marks the changed cell with a geändert chip; the Sketches page tree lists each component once.
+- The rail product buttons show two letters that are unique within the rail (St, Sl, Sd) and name the full product in an SDK tooltip.
+- The Studio quick switch draws a product's logo mark when the product has a foundations/logo part (studio today) and keeps the two unique letters for the others.
+- Mark sketches that `sketch ready` would merge by itself: the CLI records the forecast on the sketch and the sketch page header shows "Übernimmt sich selbst".
+- The system view binds the send phase and the refusal reason of the comment draft on the system page, and the known-unbound list no longer names its comment inputs.
+- Block the build-ready pick of a part that reports a load error, through one shared part-errors function.
+- The Sketches canvas keeps its live frames while a zoom or pan gesture runs and recomputes them once the camera rested, so a gesture no longer mounts new live iframes.
+- A part with no control of its own is flagged as composition: no interaction columns, and `design check` reports its interactions.
+- Draw the Lädt badge of a sketch cell in its empty frame instead of in the label row, so a long state label no longer runs under it and the label lays out the same loading or not.
+- The states the "Aktuell" matrix folds away are computed by one `keptStatesOf` that the Studio system view and the sketch placeholder warning both use.
+- The sketch hold trigger and the sketch status badge are app components of their design parts; the sketches page uses them instead of its own copies.
+- The shell panel resize handle is its own app component, linked to the components/shell-resize-handle design part.
+- Build the design-system picker of the shell panel head as an app component.
+- Build the sketch variant cell as an app component and draw its selected, cropped, stacked and pinned states in the design.
+- Build the comment target as one app component and use it in the design canvas, sketches and the system page, with hover and pressed wash steps and an inset focus ring.
+- The sketch matrix cell shows an empty busy box and a Lädt badge while its shot has not loaded.
+- The About and Shortcuts dialogs expose a `close` output on their close button, closed by the menu call site.
+- Keep the Inventory panel title clear of the reload button and draw marker numbers in the on-colour.
+- Place the Inventory canvas markers without overlap, nearest their control and inside the frame.
+- Name the title search without a trailing comma when no part is open, label the panel button in German, and keep a gap between the Inventory canvas markers.
+- Draw the Studio menu tile mark with real eye cut-outs so the pressed tile shows the eyes like the design.
+- The orphan note jump in the flows page now centres the note on its rendered height instead of an assumed one (it ended 23 px above the stage centre). An e2e case measures it.
+- Draw the Studio rail logo mark at 20 px and feed the design harness the rail products and diff-mark boxes its designs draw.
+- Draw every sketch variant head as a row above its frames and drop the opaque sticky name column (B664).
+- The sketch matrix mounts a live frame for every cell inside the canvas viewport, taken from the camera and the cell geometry, up to a measured cap.
+- The sketch view reads the canvas viewport from the sketches component instead of a DOM query.
+- Debug builds of Studio open the CEF remote debugging port named by `ETHLETE_STUDIO_CDP_PORT` and add the checkout named by `ETHLETE_STUDIO_OPEN_ROOT` to the roots at start. Release builds compile neither in.
+- The canvas-frames design draws its state grid columns at the same width as the app render.
+- Pad each state grid cell by 12 px and draw the difference mark outside the changed box with a lighter scrim, so a ring at a cell edge is neither clipped nor glued to the cell
+- Flow frame boxes on the flows page take the height-to-width ratio of the picked device preset, so a phone page is no longer clipped to its top.
+- Show the Flows page on the shared design canvas, so it pans, zooms and fits like System
+- The Studio menu tile keeps its rest background while a menu action runs and the mark blinks instead of a spinner.
+- The Studio menu re-reads the design server state when it opens.
+- Fit, camera and the canvas projection share one tested offset helper that walks the offsetParent chain.
+- The debug-only open-root variable keeps only the given checkout, so the app serves it.
+- Mark a state grid cell against the rest cell of its own row, so the rest column shows each state unmarked
+- Add a success colour to the Studio colours and show declared inventory rows in it.
+- The loading badge in a sketch cell no longer grows the label row, so the frames stay put when it clears.
+
 ## 0.2.0-next.28
 
 ### Patch Changes
