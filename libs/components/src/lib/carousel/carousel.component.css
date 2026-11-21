@@ -195,6 +195,13 @@
       );
     }
 
+    &:active::before {
+      background: var(
+        --et-carousel-dot-pressed-color,
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 85%, transparent)
+      );
+    }
+
     &:where([data-active])::before {
       background: var(
         --et-carousel-dot-active-color,
@@ -202,9 +209,8 @@
       );
     }
 
-    /* Spelled out because the plain `:hover` above outranks a `:where()`-flattened selector, so without this
-       the accent dot went grey under the pointer — the one dot that must never look unselected. */
-    &:where([data-active]):hover::before {
+    /* `:hover`/`:active` above outrank the `:where()` rule, so the selected dot needs its own state selector. */
+    &:where([data-active]):is(:hover, :active)::before {
       background: var(
         --et-carousel-dot-active-color,
         light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))

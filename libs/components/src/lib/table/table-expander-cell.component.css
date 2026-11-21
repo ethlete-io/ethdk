@@ -29,11 +29,16 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 120ms var(--ease-3, ease-out);
   }
 
   .et-table-expander:hover,
   .et-table-expander:focus-visible {
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  .et-table-expander:active {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 24%, transparent);
   }
 
   /* The shared `et-chevron` points up, and the expander wants it pointing at what it opens: right
@@ -51,6 +56,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .et-table-expander,
     .et-table-expander-icon {
       transition: none;
     }
