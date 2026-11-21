@@ -11,7 +11,7 @@ import {
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = (() => {
   try {
@@ -423,6 +423,18 @@ const userScopesWork = () =>
  * Runs the agent in its own systemd user scope that systemd-oomd only picks when no other candidate is left, so a heavy
  * job in the same tmux pane is killed first. `avoid`, not `omit`: a runaway agent must stay killable.
  */
+const OWN_SCOPE_PRELOAD = 'tools/scripts/own-scope-preload.mjs';
+// A missing preload file must not break every node process of the agent: the data: import swallows the failure.
+// The main checkout's copy outlives a worktree.
+const ownScopePreloadWords = () => {
+  const common = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { encoding: 'utf8' });
+  if (common.status !== 0) return [];
+  const preload = join(dirname(common.stdout.trim()), OWN_SCOPE_PRELOAD);
+  if (!existsSync(preload)) return [];
+  const source = `await import(${JSON.stringify(pathToFileURL(preload).href)}).catch(() => {});`;
+  const option = `--import=data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+  return [`--setenv=NODE_OPTIONS=${[process.env['NODE_OPTIONS'], option].filter(Boolean).join(' ')}`];
+};
 const agentScopeWords = (session) =>
   userScopesWork()
     ? [
@@ -434,12 +446,14 @@ const agentScopeWords = (session) =>
         `--unit=agent-${session.replace(/[^A-Za-z0-9_-]/g, '-')}-${Date.now()}`,
         '-p',
         'ManagedOOMPreference=avoid',
+        ...ownScopePreloadWords(),
         '--',
       ]
     : [];
+const shellWord = (word) => (/^[\w@%+=:,./-]+$/.test(word) ? word : quote(word));
 const inAgentScopeCommand = (command, session, unscoped = (plain) => plain) => {
   const words = agentScopeWords(session);
-  return words.length ? command.replace(LEADING_ENV_WORDS, `$1${words.join(' ')} `) : unscoped(command);
+  return words.length ? command.replace(LEADING_ENV_WORDS, `$1${words.map(shellWord).join(' ')} `) : unscoped(command);
 };
 const EXIT_DIALOG_JOBS = /will stop when you exit/i;
 const EXIT_AND_STOP = /exit and stop/i;

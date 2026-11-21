@@ -1450,34 +1450,45 @@ describe('agent-sessions', () => {
       'Version',
     ]).status === 0;
 
-  it.skipIf(!hasTmux || !userScopes)('run starts the agent in its own scope that systemd-oomd avoids', () => {
-    const agent = `claude-scope-${process.pid}`;
-    const scoped = `${agent}@${basename(dir)}`;
-    const started = join(dir, 'scope.log');
-    const { env } = fakeClientTmux();
-    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
-    try {
-      const result = run(
-        [
-          'run',
-          agent,
-          'sh',
-          '-c',
-          `cg=$(cut -d: -f3 /proc/self/cgroup); echo "$cg" > ${started}; getfattr --only-values -n user.oomd_avoid /sys/fs/cgroup$cg >> ${started}`,
-        ],
-        undefined,
-        { ...env, TMUX_PANE: paneOf(scoped), AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}` },
+  it.skipIf(!hasTmux || !userScopes)(
+    'run starts the agent in its own scope that systemd-oomd avoids, with the own-scope preload',
+    () => {
+      const agent = `claude-scope-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'scope.log');
+      const preloaded = join(dir, 'preload.log');
+      const { env } = fakeClientTmux();
+      spawnSync('git', ['init', '-q'], { cwd: dir });
+      mkdirSync(join(dir, 'tools/scripts'), { recursive: true });
+      writeFileSync(
+        join(dir, 'tools/scripts/own-scope-preload.mjs'),
+        `import { appendFileSync } from 'node:fs'; appendFileSync(${JSON.stringify(preloaded)}, 'loaded\\n');`,
       );
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+      try {
+        const result = run(
+          [
+            'run',
+            agent,
+            'sh',
+            '-c',
+            `cg=$(cut -d: -f3 /proc/self/cgroup); echo "$cg" > ${started}; getfattr --only-values -n user.oomd_avoid /sys/fs/cgroup$cg >> ${started}; node -e 0`,
+          ],
+          undefined,
+          { ...env, TMUX_PANE: paneOf(scoped), AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}` },
+        );
 
-      expect(result.status).toBe(0);
-      const [cgroup, avoid] = readFileSync(started, 'utf8').split('\n');
-      expect(cgroup).toMatch(new RegExp(`/agent-claude-scope-${process.pid}-[^/]+\\.scope$`));
-      expect(avoid).toBe('1');
-    } finally {
-      spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
-      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
-    }
-  });
+        expect(result.status).toBe(0);
+        const [cgroup, avoid] = readFileSync(started, 'utf8').split('\n');
+        expect(cgroup).toMatch(new RegExp(`/agent-claude-scope-${process.pid}-[^/]+\\.scope$`));
+        expect(avoid).toBe('1');
+        expect(readFileSync(preloaded, 'utf8')).toBe('loaded\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+  );
 
   it('shows the caller CLAUDE_CONFIG_DIR in a dry run', () => {
     const result = run(['run', 'claude', 'claude', '--dry-run'], undefined, { HOME: dir, CLAUDE_CONFIG_DIR: '/mine' });
