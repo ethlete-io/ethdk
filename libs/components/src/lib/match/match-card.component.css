@@ -187,6 +187,13 @@
     border-radius: inherit;
   }
 
+  /* Brings back the kick-off alone: the meta row returns, but its label and badges stay out. */
+  .et-match-card:where([data-show-start-time]) .et-match-card-content {
+    --_et-match-card-meta-display: flex;
+    --_et-match-card-time-display: block;
+    --_et-match-card-badges-display: none;
+  }
+
   /* Past the first threshold the card is the featured one; past the second the two sides stop stacking
      and face each other across the middle. The thresholds are constants, not tokens: a container query
      condition may not contain `var()`, so there is nothing to point a custom property at. Pin the layout
@@ -220,6 +227,7 @@
       --_et-match-card-label-display: block;
       --_et-match-card-meta-display: flex;
       --_et-match-card-time-display: block;
+      --_et-match-card-badges-display: flex;
     }
   }
 
@@ -250,6 +258,7 @@
     --_et-match-card-label-display: block;
     --_et-match-card-meta-display: flex;
     --_et-match-card-time-display: block;
+    --_et-match-card-badges-display: flex;
   }
 
   /* The dense row is two rows and nothing else — its round is named by the column it sits in and its
@@ -293,7 +302,7 @@
   }
 
   .et-match-card-badges {
-    display: flex;
+    display: var(--_et-match-card-badges-display, flex);
     flex: none;
     align-items: center;
     gap: 4px;

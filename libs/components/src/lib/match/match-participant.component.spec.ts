@@ -21,6 +21,8 @@ const TEAM: NormalizedMatchParticipant = {
       [compact]="compact()"
       [showSeed]="showSeed()"
       [loading]="loading()"
+      [side]="side()"
+      [labels]="{ tbdHome: 'Select Home Team' }"
     />
   `,
   imports: [MatchParticipantComponent],
@@ -30,6 +32,7 @@ class HostComponent {
   public compact = signal(false);
   public showSeed = signal(false);
   public loading = signal(false);
+  public side = signal<'home' | 'away' | null>(null);
 }
 
 @Component({
@@ -119,6 +122,18 @@ describe('MatchParticipantComponent', () => {
 
       return fixture;
     };
+
+    it('uses the side label when the side is known, and tbd otherwise', () => {
+      const fixture = tbd();
+
+      fixture.componentInstance.side.set('home');
+      fixture.detectChanges();
+      expect(name(fixture)).toBe('Select Home Team');
+
+      fixture.componentInstance.side.set('away');
+      fixture.detectChanges();
+      expect(name(fixture)).toBe('TBD');
+    });
 
     it('names itself rather than rendering blank', () => {
       expect(name(tbd())).toBe('TBD');

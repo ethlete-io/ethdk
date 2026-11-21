@@ -8,6 +8,8 @@ export type MatchParticipantDisplayNameOptions = {
   labels: MatchLabels;
   /** Prefer the short `code` over the full name, for a narrow column. @default false */
   compact?: boolean;
+  /** Which side of the match this is, when known. An empty slot then prefers `tbdHome` / `tbdAway` over `tbd`. */
+  side?: 'home' | 'away' | null;
 };
 
 /**
@@ -19,13 +21,20 @@ export type MatchParticipantDisplayNameOptions = {
  * be readable in a narrow column. Non-compact does the reverse - a name is what a participant is
  * called, and the code is what's left when the API hasn't sent one.
  */
-export const matchParticipantDisplayName = ({ participant, labels, compact }: MatchParticipantDisplayNameOptions) => {
-  if (!participant) return labels.tbd;
+export const matchParticipantDisplayName = ({
+  participant,
+  labels,
+  compact,
+  side,
+}: MatchParticipantDisplayNameOptions) => {
+  const tbd = (side === 'home' ? labels.tbdHome : side === 'away' ? labels.tbdAway : undefined) ?? labels.tbd;
+
+  if (!participant) return tbd;
 
   const name = nonBlank(participant.name);
   const code = nonBlank(participant.code);
 
-  return (compact ? (code ?? name) : (name ?? code)) ?? labels.tbd;
+  return (compact ? (code ?? name) : (name ?? code)) ?? tbd;
 };
 
 const nonBlank = (value: string | null | undefined) => (value?.trim() ? value : null);

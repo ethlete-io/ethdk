@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import '../../test-helpers';
 import { MatchCardSize, MatchScoreChange } from './headless';
-import { provideMatchLabels } from './match-labels';
+import { MatchLabels, provideMatchLabels } from './match-labels';
 import { MATCH_CARD_IMPORTS } from './match.imports';
 import { NormalizedMatch } from './match.types';
 import { MatchCardDriver, mountMatchCard } from './testing/match-card-driver';
@@ -46,6 +46,8 @@ const FINISHED: NormalizedMatch = {
       [showSeeds]="showSeeds()"
       [hideNames]="hideNames()"
       [startTimeFormat]="startTimeFormat()"
+      [showStartTime]="showStartTime()"
+      [labels]="labels()"
       (scoreChange)="changes.push($event)"
     />
   `,
@@ -56,6 +58,8 @@ class HostComponent {
   public size = signal<MatchCardSize>('auto');
   public showSeeds = signal(false);
   public hideNames = signal(false);
+  public showStartTime = signal(false);
+  public labels = signal<Partial<MatchLabels> | null>(null);
   public changes: MatchScoreChange[] = [];
   // Year only: every other date-fns token moves with the runner's timezone.
   public startTimeFormat = signal<string | null>('yyyy');
@@ -128,6 +132,50 @@ describe('MatchCardComponent', () => {
     driver.detectChanges();
 
     expect(driver.queryAll('.et-match-card-score')).toHaveLength(0);
+  });
+
+  describe('per-side TBD labels', () => {
+    const emptyAway = () => {
+      const driver = create();
+
+      driver.host.match.set({ ...FINISHED, away: null, homeScore: null, awayScore: null });
+      driver.host.labels.set({ tbd: 'TBD', tbdAway: 'Select Away Team' });
+      driver.detectChanges();
+
+      return driver;
+    };
+
+    it('draws an empty slot with its side label, falling back to tbd', () => {
+      const driver = emptyAway();
+
+      driver.host.match.update((match) => ({ ...match, home: null }));
+      driver.detectChanges();
+
+      const names = driver.queryAll('.et-match-participant-name').map((element) => element.textContent?.trim());
+
+      expect(names).toEqual(['TBD', 'Select Away Team']);
+    });
+
+    it('names the empty slot by its side label in the accessible name', () => {
+      expect(emptyAway().card().getAttribute('aria-label')).toBe(
+        'Match 3: FC Berlin vs Select Away Team, 2026, Finished',
+      );
+    });
+  });
+
+  describe('showStartTime', () => {
+    it('is off by default and carries no attribute', () => {
+      expect(create().card().hasAttribute('data-show-start-time')).toBe(false);
+    });
+
+    it('marks the card, so the compact row keeps its kick-off', () => {
+      const driver = create();
+
+      driver.host.showStartTime.set(true);
+      driver.detectChanges();
+
+      expect(driver.card().hasAttribute('data-show-start-time')).toBe(true);
+    });
   });
 
   describe('the composed name', () => {

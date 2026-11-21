@@ -148,6 +148,9 @@ export class MatchParticipantComponent {
   /** Override this instance's strings - see {@link provideMatchLabels} for the app-wide version. */
   public labels = input<Partial<MatchLabels> | null>(null);
 
+  /** Which side of the match this participant is on, for the per-side TBD label. The card sets it. */
+  public side = input<'home' | 'away' | null>(null);
+
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<MatchLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
@@ -176,6 +179,7 @@ export class MatchParticipantComponent {
       participant: this.participant(),
       labels: this.resolvedLabels(),
       compact: this.compact(),
+      side: this.side(),
     }),
   );
 

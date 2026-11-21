@@ -16,6 +16,9 @@ export default {
     longNames: false,
     showSeeds: false,
     hideNames: false,
+    showStartTime: false,
+    startTimeFormat: null,
+    sideLabels: false,
     animateScoreChanges: true,
     interactive: true,
     rtl: false,
@@ -31,6 +34,9 @@ export default {
     longNames: { control: 'boolean' },
     showSeeds: { control: 'boolean' },
     hideNames: { control: 'boolean' },
+    showStartTime: { control: 'boolean' },
+    startTimeFormat: { control: 'text' },
+    sideLabels: { control: 'boolean' },
     animateScoreChanges: { control: 'boolean' },
     interactive: { control: 'boolean' },
     rtl: { control: 'boolean' },
@@ -50,6 +56,27 @@ export const Compact: Story = {
           'Narrow enough for the container query to land on the dense row - the shape a bracket column or a ' +
           'results list wants. `size="compact"` fixes it there regardless of width, and is the only setting that ' +
           "also swaps participant names for their short codes (a text change can't come out of a container query).",
+      },
+    },
+  },
+};
+
+export const CompactEditor: Story = {
+  args: {
+    width: 330,
+    size: 'compact',
+    status: 'scheduled',
+    tbd: true,
+    sideLabels: true,
+    showStartTime: true,
+    startTimeFormat: 'HH:mm',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A phone match-center editor card: pinned to `compact`, the kick-off kept with `showStartTime` and ' +
+          '`startTimeFormat="HH:mm"`, and an empty away slot named by `tbdAway` instead of the shared `tbd`.',
       },
     },
   },

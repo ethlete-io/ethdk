@@ -150,6 +150,12 @@ drops the names too, leaving emblems and results.
 | `'expanded'` | Always the featured card                                                                |
 | `'wide'`     | Always the wide row                                                                     |
 
+::: tip A phone editor pins `size="compact"`
+The `auto` thresholds (150px, 320px, 560px) are constants, not tokens: a container query condition cannot read
+`var()`. A card of about 330px on a 390px phone therefore lands on the featured card under `auto`. A layout that
+has to stay the dense row at that width pins `size="compact"`, and adds `showStartTime` to keep the kick-off.
+:::
+
 ::: tip Only an explicit `compact` swaps names for codes
 Swapping "Neon Esports" for "NEO" is a text change, and a container query can only change styles. So `auto`
 keeps full names and lets them ellipsize; a bracket cell that wants codes sets `size="compact"`.
@@ -276,18 +282,19 @@ wired to an [overlay opener](/components/overlay-openers) with its own `role` an
 
 `et-match-card` (element or attribute, `[et-match-card]`), plus the `(scoreChange)` output:
 
-| Input                 | Type                                             | Default  | What it does                                                                                           |
-| --------------------- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
-| `match`               | `NormalizedMatch \| null`                        | `null`   | The match to draw. `null` while it has not arrived (pair it with `loading`).                           |
-| `loading`             | `boolean`                                        | `false`  | Draw the skeleton card; see [Loading](#loading).                                                       |
-| `size`                | `'auto' \| 'compact' \| 'expanded' \| 'wide'`    | `'auto'` | Layout; see above.                                                                                     |
-| `showSeeds`           | `boolean`                                        | `false`  | Draw each participant's seeding position when they have one.                                           |
-| `hideNames`           | `boolean`                                        | `false`  | Emblems and results only, no names. The names stay in the accessible name.                             |
-| `startTimeFormat`     | `string \| null`                                 | `null`   | date-fns format for the kick-off. `null` uses `'P p'` - a rail of today's matches usually wants `'p'`. |
-| `interactive`         | `boolean \| null`                                | `null`   | `null` infers it from the host tag (`<a>` / `<button>`).                                               |
-| `labels`              | `Partial<MatchLabels> \| null`                   | `null`   | Per-instance string overrides.                                                                         |
-| `liveColor`           | `RegisteredColorThemeName \| ColorTheme \| null` | `null`   | The live badge's color theme. `null` uses the app's `type: 'error'` theme.                             |
-| `animateScoreChanges` | `boolean`                                        | `true`   | Roll a live match's values when they change. Never animates while the match is not live.               |
+| Input                 | Type                                             | Default  | What it does                                                                                               |
+| --------------------- | ------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `match`               | `NormalizedMatch \| null`                        | `null`   | The match to draw. `null` while it has not arrived (pair it with `loading`).                               |
+| `loading`             | `boolean`                                        | `false`  | Draw the skeleton card; see [Loading](#loading).                                                           |
+| `size`                | `'auto' \| 'compact' \| 'expanded' \| 'wide'`    | `'auto'` | Layout; see above.                                                                                         |
+| `showSeeds`           | `boolean`                                        | `false`  | Draw each participant's seeding position when they have one.                                               |
+| `hideNames`           | `boolean`                                        | `false`  | Emblems and results only, no names. The names stay in the accessible name.                                 |
+| `startTimeFormat`     | `string \| null`                                 | `null`   | date-fns format for the kick-off. `null` uses `'P p'` - a rail of today's matches usually wants `'p'`.     |
+| `showStartTime`       | `boolean`                                        | `false`  | Keep the kick-off in the dense `compact` row (and the minimal one) - only the time, never label or badges. |
+| `interactive`         | `boolean \| null`                                | `null`   | `null` infers it from the host tag (`<a>` / `<button>`).                                                   |
+| `labels`              | `Partial<MatchLabels> \| null`                   | `null`   | Per-instance string overrides.                                                                             |
+| `liveColor`           | `RegisteredColorThemeName \| ColorTheme \| null` | `null`   | The live badge's color theme. `null` uses the app's `type: 'error'` theme.                                 |
+| `animateScoreChanges` | `boolean`                                        | `true`   | Roll a live match's values when they change. Never animates while the match is not live.                   |
 
 The kick-off is formatted with [date-fns](https://date-fns.org/docs/format) in the app's `DATE_LOCALE` - an app
 that calls `provideLocale('de')` should call `provideDateLocale(de)` next to it, or dates stay en-US.
@@ -316,6 +323,7 @@ other way.
 | Input         | Type                                 | Default | What it does                                                          |
 | ------------- | ------------------------------------ | ------- | --------------------------------------------------------------------- |
 | `participant` | `NormalizedMatchParticipant \| null` | `null`  | `null` renders the `tbd` label against an empty emblem frame.         |
+| `side`        | `'home' \| 'away' \| null`           | `null`  | Which side this is; an empty slot then uses `tbdHome` / `tbdAway`.    |
 | `compact`     | `boolean`                            | `false` | Prefer the short `code` over the full name, and drop the subtitle.    |
 | `showSeed`    | `boolean`                            | `false` | Show the seeding position beside the name.                            |
 | `loading`     | `boolean`                            | `false` | Draw [skeleton](/components/skeleton) bones instead of an empty slot. |
@@ -383,7 +391,7 @@ A participant's `subtitle` renders as a quieter second line under the name - the
 the club behind a squad. It is dropped in a dense row (and by `compact`), where a second line would double
 every row's height.
 
-`matchParticipantDisplayName({ participant, labels, compact })` is exported as well: it is the fallback chain
+`matchParticipantDisplayName({ participant, labels, compact, side })` is exported as well: it is the fallback chain
 (name → code → `tbd`, reversed for compact, skipping a blank string) that both the primitive and the card's accessible name use, and it
 is the right thing to call when you compose a name of your own.
 
@@ -403,6 +411,8 @@ provideMatchLabels({
 | Label            | Default                     | Where it shows                                             |
 | ---------------- | --------------------------- | ---------------------------------------------------------- |
 | `tbd`            | `'TBD'`                     | An undecided participant slot                              |
+| `tbdHome`        | `tbd`                       | An empty home slot (optional; falls back to `tbd`)         |
+| `tbdAway`        | `tbd`                       | An empty away slot (optional; falls back to `tbd`)         |
 | `live`           | `'Live'`                    | The live badge                                             |
 | `finished`       | `'Finished'`                | The finished state, where a status word is drawn           |
 | `scheduled`      | `'Scheduled'`               | The not-started state                                      |

@@ -29,6 +29,9 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
               [size]="size()"
               [showSeeds]="showSeeds()"
               [hideNames]="hideNames()"
+              [showStartTime]="showStartTime()"
+              [startTimeFormat]="startTimeFormat()"
+              [labels]="labels()"
               [animateScoreChanges]="animateScoreChanges()"
               (scoreChange)="lastChange.set($event)"
               (click)="stayHere($event)"
@@ -36,7 +39,15 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
               href="#"
             ></a>
           } @else {
-            <et-match-card [match]="match()" [size]="size()" [showSeeds]="showSeeds()" [hideNames]="hideNames()" />
+            <et-match-card
+              [match]="match()"
+              [size]="size()"
+              [showSeeds]="showSeeds()"
+              [hideNames]="hideNames()"
+              [showStartTime]="showStartTime()"
+              [startTimeFormat]="startTimeFormat()"
+              [labels]="labels()"
+            />
           }
         </div>
 
@@ -81,9 +92,16 @@ export class MatchCardStorybookComponent {
   public longNames = input(false);
   public showSeeds = input(false);
   public hideNames = input(false);
+  public showStartTime = input(false);
+  public startTimeFormat = input<string | null>(null);
+  public sideLabels = input(false);
   public interactive = input(true);
   public rtl = input(false);
   public animateScoreChanges = input(true);
+
+  protected labels = computed(() =>
+    this.sideLabels() ? { tbdHome: 'Select Home Team', tbdAway: 'Select Away Team' } : null,
+  );
 
   protected lastChange = signal<MatchScoreChange | null>(null);
 

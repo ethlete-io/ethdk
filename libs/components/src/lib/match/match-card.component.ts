@@ -55,6 +55,7 @@ import { MatchTimeComponent } from './match-time.component';
         'showSeeds',
         'hideNames',
         'startTimeFormat',
+        'showStartTime',
         'interactive',
         'labels',
         'animateScoreChanges',

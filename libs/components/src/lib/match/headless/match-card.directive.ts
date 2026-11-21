@@ -110,6 +110,7 @@ const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): Match
     '[attr.data-winner]': 'isCancelled() ? null : match().winnerSide',
     '[attr.data-interactive]': 'isInteractive() ? "" : null',
     '[attr.data-hide-names]': 'hideNames() ? "" : null',
+    '[attr.data-show-start-time]': 'showStartTime() ? "" : null',
     '[attr.data-loading]': 'loading() ? "" : null',
     '[attr.aria-busy]': 'loading() ? "true" : null',
     '[attr.aria-label]': 'accessibleName()',
@@ -164,6 +165,13 @@ export class MatchCardDirective {
    * {@link DEFAULT_MATCH_CARD_START_TIME_FORMAT}; a rail of today's matches usually wants just `'p'`.
    */
   public startTimeFormat = input<string | null>(null);
+
+  /**
+   * Keep the kick-off visible in the dense `compact` row, which otherwise drops the meta row. Only the
+   * time comes back - the label and badges stay hidden. Uses `startTimeFormat`, so `'HH:mm'` works. Also
+   * shown in the minimal (under 150px) density. @default false
+   */
+  public showStartTime = input(false, { transform: booleanAttribute });
 
   /**
    * Whether this card is a click target. `null` (the default) infers it from the host element, which is
@@ -232,12 +240,12 @@ export class MatchCardDirective {
 
   /** The home side's name as it is announced: the full name, even where the card draws a code. */
   public homeName = computed(() =>
-    matchParticipantDisplayName({ participant: this.match().home, labels: this.resolvedLabels() }),
+    matchParticipantDisplayName({ participant: this.match().home, side: 'home', labels: this.resolvedLabels() }),
   );
 
   /** The away side's name as it is announced. */
   public awayName = computed(() =>
-    matchParticipantDisplayName({ participant: this.match().away, labels: this.resolvedLabels() }),
+    matchParticipantDisplayName({ participant: this.match().away, side: 'away', labels: this.resolvedLabels() }),
   );
 
   /** Whether the result is reported as W/L/D rather than as a pair of values. */

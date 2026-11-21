@@ -19,9 +19,9 @@ export type MatchResultNameContext = {
 
 /** What a match card announces about itself, once composed. */
 export type MatchCardNameContext = {
-  /** The home side's display name, or the `tbd` label when the slot is empty. */
+  /** The home side's display name, or the home TBD label (`tbdHome`, else `tbd`) when the slot is empty. */
   home: string;
-  /** The away side's display name, or the `tbd` label. */
+  /** The away side's display name, or the away TBD label (`tbdAway`, else `tbd`). */
   away: string;
   /**
    * How it stands, as the `resultName` label phrased it (`'2 : 1'`, `'FC Berlin won'`), or `null`
@@ -51,6 +51,10 @@ export type MatchCardNameContext = {
 export type MatchLabels = {
   /** Stands in for a participant that isn't decided yet. */
   tbd: string;
+  /** Stands in for an empty home slot, where the side is known. Falls back to `tbd`. */
+  tbdHome?: string;
+  /** Stands in for an empty away slot, where the side is known. Falls back to `tbd`. */
+  tbdAway?: string;
   /** The live badge's text. */
   live: string;
   /** Announced for a finished match, and shown where a status word is drawn. */

@@ -46,3 +46,17 @@ describe('match-card.component.css participant country line', () => {
     expect(side).toContain('text-align: start;');
   });
 });
+
+describe('match-card.component.css showStartTime', () => {
+  it('brings back the meta row and the time, but hides the badges', () => {
+    const body = css.match(/\[data-show-start-time\]\) \.et-match-card-content \{([^}]*)\}/)?.[1] ?? '';
+
+    expect(body).toContain('--_et-match-card-meta-display: flex;');
+    expect(body).toContain('--_et-match-card-time-display: block;');
+    expect(body).toContain('--_et-match-card-badges-display: none;');
+  });
+
+  it('restores the badges wherever the expanded layout applies', () => {
+    expect(css.match(/--_et-match-card-badges-display: flex;/g)).toHaveLength(2);
+  });
+});
