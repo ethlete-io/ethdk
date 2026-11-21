@@ -279,7 +279,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                       [style.top.px]="box.y + CAPTION"
                       [style.width.px]="graph().w"
                       [style.height.px]="graph().h"
-                      [frame]="box.title"
+                      [frame]="box.id"
                       (comment)="pickPoint(box, $event)"
                       class="absolute"
                       data-comment-target

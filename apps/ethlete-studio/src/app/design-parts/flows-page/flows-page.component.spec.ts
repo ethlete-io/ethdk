@@ -278,6 +278,7 @@ describe('FlowsPageComponent', () => {
       sketch.dispatchEvent(new MouseEvent('click', { clientX: 100 + 259.2 / 2, clientY: 50 + 18, bubbles: true }));
 
       expect(targets).toHaveLength(4);
+      expect(sketch.getAttribute('aria-label')).toBe('Kommentar zu sketch');
       expect(picks).toEqual([{ frameId: 'sketch', point: { x: 720, y: 100 } }]);
     });
 
