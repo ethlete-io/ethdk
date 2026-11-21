@@ -4150,6 +4150,56 @@ const CASES = [
     },
   },
   {
+    name: 'an orphan note listed in the side panel is centred in the stage by a click',
+    pages: ['Flow'],
+    run: async (page, _state, _target, context) => {
+      const text = 'verwaiste notiz e2e';
+      const query = new URLSearchParams({ product: 'studio-lab', flow: 'sign-in' }).toString();
+      const added = await fetch(`http://[::1]:${context.designPort}/__design/flow-note?${query}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text, at: { x: 3200, y: 2400 } }),
+      });
+
+      if (!added.ok) return { ok: false, detail: `flow-note answered ${added.status}` };
+
+      const entry = page.getByRole('button', { name: text });
+
+      await entry.waitFor({ timeout: 15000 });
+      await settle(page);
+
+      const shots = process.env['STUDIO_E2E_FLOW_SHOTS'];
+
+      if (shots) await page.screenshot({ path: join(shots, 'notesfix-orphan-before.png') });
+
+      await entry.click();
+      await settle(page);
+
+      if (shots) await page.screenshot({ path: join(shots, 'notesfix-orphan-after.png') });
+
+      const offset = await page.evaluate((label) => {
+        const stage = document.querySelector('[data-flow-stage]')?.getBoundingClientRect();
+        const note = [...document.querySelectorAll('[data-flow-note]')]
+          .find((element) => element.textContent?.includes(label))
+          ?.getBoundingClientRect();
+
+        if (!stage || !note) return null;
+
+        return {
+          x: note.left + note.width / 2 - (stage.left + stage.width / 2),
+          y: note.top + note.height / 2 - (stage.top + stage.height / 2),
+        };
+      }, text);
+
+      if (!offset) return { ok: false, detail: 'stage or note not found after the click' };
+
+      return {
+        ok: Math.abs(offset.x) <= 2 && Math.abs(offset.y) <= 2,
+        detail: `note centre is ${offset.x.toFixed(1)} px right and ${offset.y.toFixed(1)} px below the stage centre`,
+      };
+    },
+  },
+  {
     name: 'flow frame boxes follow the aspect ratio of the picked preset',
     pages: ['Flow'],
     run: async (page) => {

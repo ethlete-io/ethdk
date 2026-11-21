@@ -230,5 +230,19 @@ describe('FlowsPageComponent', () => {
 
       expect(world?.style.transform).toBe('translate(' + -(1457 + 128) + 'px, ' + -48 + 'px) scale(1)');
     });
+
+    it('centres on the rendered height of the note, not the assumed one', async () => {
+      const { fixture, world } = await render();
+
+      fixture.componentRef.setInput('notes', notes);
+      await fixture.whenStable();
+      vi.spyOn(world?.querySelector('[data-flow-note="far"]') as HTMLElement, 'offsetHeight', 'get').mockReturnValue(
+        50,
+      );
+      fixture.componentInstance.jumpTo('far');
+      await fixture.whenStable();
+
+      expect(world?.style.transform).toBe('translate(' + -(1457 + 128) + 'px, ' + -25 + 'px) scale(1)');
+    });
   });
 });

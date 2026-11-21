@@ -10,6 +10,7 @@ import {
   TemplateRef,
   untracked,
   viewChild,
+  viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
@@ -187,15 +188,16 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
               }
               @for (note of shownNotes(); track note.id) {
                 <div
+                  #noteBox
                   [style.left.px]="note.x"
                   [style.top.px]="note.y"
                   [ethleteCanvasDrag]="note"
                   [canvasDragZoom]="zoom()"
+                  [attr.data-flow-note]="note.id"
                   (canvasDragMove)="dragged.set({ id: note.id, x: $event.x, y: $event.y })"
                   (canvasDragEnd)="noteMove.emit({ id: note.id, x: $event.x, y: $event.y })"
                   (dblclick)="edit(note)"
                   class="absolute box-border w-64 cursor-grab rounded-md border border-et-surface-border bg-et-surface-bg p-space-3 text-ui-md text-et-surface shadow-lg"
-                  data-flow-note
                 >
                   <div class="flex items-start gap-space-1">
                     @if (editing() !== note.id) {
@@ -278,7 +280,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                 </et-form-field>
               </div>
             </header>
-            <div #stage class="min-h-0 flex-1"></div>
+            <div #stage class="min-h-0 flex-1" data-flow-stage></div>
           </div>
           <div
             #shellInsetProbe
@@ -359,6 +361,7 @@ export class FlowsPageComponent {
   private noteField = viewChild(TextareaComponent);
   private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
   private world = viewChild<ElementRef<HTMLElement>>('world');
+  private noteBoxes = viewChildren<ElementRef<HTMLElement>>('noteBox');
 
   private shellInsetProbe = viewChild<ElementRef<HTMLElement>>('shellInsetProbe');
   private stage = viewChild<ElementRef<HTMLElement>>('stage');
@@ -497,9 +500,10 @@ export class FlowsPageComponent {
 
     const { zoom } = canvas.camera();
     const start = stageStart(viewport, stage);
+    const shown = this.noteBoxes().find((box) => box.nativeElement.dataset['flowNote'] === id)?.nativeElement;
     const centre = {
       x: note.x + NOTE_SIZE.width / 2,
-      y: note.y + NOTE_SIZE.height / 2,
+      y: note.y + (shown?.offsetHeight || NOTE_SIZE.height) / 2,
     };
 
     canvas.reset({
