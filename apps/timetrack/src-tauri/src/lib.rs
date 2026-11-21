@@ -6,6 +6,8 @@ mod calls;
 mod calls_linux;
 #[cfg(target_os = "macos")]
 mod calls_macos;
+#[cfg(target_os = "linux")]
+mod cef_pump;
 mod child_env;
 mod db;
 mod decorations;
@@ -96,6 +98,9 @@ pub fn run() {
         .manage(update::PendingUpdate::default())
         .manage(oauth::PendingAuthorization::default())
         .setup(|app| {
+            #[cfg(target_os = "linux")]
+            cef_pump::stop_busy_polling();
+
             // Before the database: the window is declared invisible so its stored size and position
             // can be applied before it is drawn, and a keychain that asks for a password must not be
             // what the window waits on to appear at all.
