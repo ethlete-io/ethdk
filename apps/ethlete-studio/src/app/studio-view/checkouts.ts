@@ -2,7 +2,14 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectNotificationManager } from '@ethlete/components';
 import { EMPTY, catchError, concat, finalize, last, of, switchMap, tap } from 'rxjs';
-import { DesignRoots, designRoots$, designRootsAdd$, designRootsSearch$, designScan$ } from '../../host/design';
+import {
+  DesignRoots,
+  designRoots$,
+  designRootsAdd$,
+  designRootsForget$,
+  designRootsSearch$,
+  designScan$,
+} from '../../host/design';
 import { pickFolder$ } from '../../host/dialog';
 import { workspaceRoot$ } from '../../host/workspace';
 import { SCAN_CHECKOUTS_LABELS, OPEN_FOLDER_LABELS } from '../i18n/shell-labels';
@@ -116,6 +123,24 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
             return EMPTY;
           }),
           finalize(() => adding.set(false)),
+          takeUntilDestroyed(destroyRef),
+        )
+        .subscribe();
+    },
+    /** Stops keeping the shown checkout and shows the first one left. Does nothing while only one is kept. */
+    forget: () => {
+      const checkout = current();
+
+      if (!checkout || held().roots.length < 2) return;
+
+      designRootsForget$(checkout)
+        .pipe(
+          tap((roots) => {
+            held.set(roots);
+            choose(roots.roots[0] ?? '');
+          }),
+          // eslint-disable-next-line ethlete/no-silent-catch-error -- the kept list stays as it was; the menu shows the checkout unchanged
+          catchError(() => EMPTY),
           takeUntilDestroyed(destroyRef),
         )
         .subscribe();

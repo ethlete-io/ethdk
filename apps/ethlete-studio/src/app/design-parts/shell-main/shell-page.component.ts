@@ -45,6 +45,7 @@ export type ShellAction =
   | { kind: 'project'; name: string }
   | { kind: 'openProject' }
   | { kind: 'scan' }
+  | { kind: 'remove-project' }
   | { kind: 'inventory' }
   | { kind: 'reload' }
   | { kind: 'menuOpened' }
@@ -99,6 +100,7 @@ export const SHELL_SAMPLE: ShellState = {
         (serverAction)="action.emit({ kind: 'server', action: $event })"
         (reload)="action.emit({ kind: 'reload' })"
         (scanProjects)="action.emit({ kind: 'scan' })"
+        (removeProject)="action.emit({ kind: 'remove-project' })"
         (openInventory)="action.emit({ kind: 'inventory' })"
         (showShortcuts)="menuDialogs.shortcuts()"
         (openHelp)="menuDialogs.help()"

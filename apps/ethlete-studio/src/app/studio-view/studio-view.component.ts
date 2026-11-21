@@ -103,6 +103,7 @@ type ShownProducts = { product: string; products: string[] };
         (projectChange)="checkouts.chooseByName($event)"
         (openProject)="checkouts.openFolder()"
         (scanProjects)="checkouts.scan()"
+        (removeProject)="checkouts.forget()"
         (reload)="reload()"
         (menuOpen)="refreshServer()"
         (serverAction)="runServerAction($event)"
@@ -280,6 +281,7 @@ export class StudioViewComponent {
     if (action.kind === 'project') this.checkouts.chooseByName(action.name);
     if (action.kind === 'openProject') this.checkouts.openFolder();
     if (action.kind === 'scan') this.checkouts.scan();
+    if (action.kind === 'remove-project') this.checkouts.forget();
     if (action.kind === 'reload') this.reload();
     if (action.kind === 'menuOpened') this.refreshServer();
     if (action.kind === 'server') this.runServerAction(action.action);

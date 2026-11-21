@@ -117,6 +117,48 @@ describe('createCheckouts', () => {
     expect(picks).toEqual(['/dev/alpha']);
   });
 
+  describe('forget', () => {
+    const forgetting = (roots: string[]) => {
+      const forgotten: string[] = [];
+
+      return {
+        forgotten,
+        answers: {
+          design_roots: () => ({ search: '', roots }),
+          design_roots_forget: ({ checkout }: Record<string, unknown>) => {
+            forgotten.push(String(checkout));
+
+            return { search: '', roots: roots.filter((root) => root !== checkout) };
+          },
+        } satisfies Answers,
+      };
+    };
+
+    it('forgets the shown checkout and shows the first one left', async () => {
+      const { forgotten, answers } = forgetting(['/dev/alpha', '/dev/beta', '/dev/gamma']);
+      const { checkouts, picks } = await mount(answers, '/dev/beta');
+
+      checkouts.forget();
+      await settle();
+
+      expect(forgotten).toEqual(['/dev/beta']);
+      expect(checkouts.names()).toEqual(['alpha', 'gamma']);
+      expect(checkouts.current()).toBe('/dev/alpha');
+      expect(picks).toEqual(['/dev/beta', '/dev/alpha']);
+    });
+
+    it('keeps the only checkout', async () => {
+      const { forgotten, answers } = forgetting(['/dev/alpha']);
+      const { checkouts } = await mount(answers, '');
+
+      checkouts.forget();
+      await settle();
+
+      expect(forgotten).toEqual([]);
+      expect(checkouts.current()).toBe('/dev/alpha');
+    });
+  });
+
   describe('scan', () => {
     const scanning = (found: string[], search = '') => {
       const added: string[] = [];

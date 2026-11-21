@@ -25,6 +25,7 @@ class SystemViewStubComponent {
   public reload = output();
   public menuOpen = output();
   public scanProjects = output();
+  public removeProject = output();
   public projectChange = output<string>();
   public productNames = signal<string[]>([]);
   public productName = signal('');

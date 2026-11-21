@@ -1,11 +1,10 @@
 <div
   [open]="open()"
   [attr.aria-busy]="busy() || null"
-  [offset]="{ mainAxis: 20, crossAxis: 0 }"
+  [offset]="{ mainAxis: 16, crossAxis: 0 }"
   (openChange)="open.set($event)"
   class="relative size-10"
   etMenu
-  arrow="false"
   placement="right-start"
 >
   <button
@@ -72,6 +71,9 @@
       </button>
       <button [disabled]="busy()" (activate)="scanProjects.emit()" et-menu-item type="button">
         {{ LABELS.scan }}
+      </button>
+      <button [disabled]="busy() || projects().length < 2" (activate)="removeProject.emit()" et-menu-item type="button">
+        {{ LABELS.removeProject }}
       </button>
       <et-menu-separator />
       <button (activate)="openInventory.emit()" et-menu-item type="button">{{ LABELS.inventory }}</button>

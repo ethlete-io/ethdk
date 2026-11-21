@@ -2,6 +2,7 @@ import { definePart, drawing, html, interactionRows } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
 import { action, type MenuInteraction, studioTrigger } from './shared/studio-menu-rows';
+import anchoredDialog from '@system/components/anchored-dialog';
 import menu from '@system/components/menu';
 import { studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
@@ -93,6 +94,11 @@ const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, key
     disabled: busy,
     attributes: `${action('scan')} data-et-action="emit:scanProjects"`,
   },
+  {
+    label: STUDIO_MENU_LABELS.removeProject,
+    disabled: busy,
+    attributes: `${action('remove-project')} data-et-action="emit:removeProject"`,
+  },
   { kind: 'separator' },
   {
     label: STUDIO_MENU_LABELS.inventory,
@@ -130,6 +136,14 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
     typeof location === 'undefined'
       ? { body: '', styles: '' }
       : await studioPanel(server, busy, open ? interaction : undefined, open ? option : undefined);
+  const arrow =
+    typeof location === 'undefined'
+      ? { body: '', styles: '' }
+      : await anchoredDialog.render({ content: '', placement: 'bottom-start', modal: false });
+  const arrowMarkup = (arrow.body.match(/<div class="et-overlay-arrow"[^>]*><\/div>/u)?.[0] ?? '').replace(
+    '<div ',
+    '<div style="top: 10px" ',
+  );
   const target = busy ? (open ? 'studio-menu.busy' : 'studio-menu.busy-open') : undefined;
   const trigger = studioTrigger(open, open ? undefined : interaction, target);
   return {
@@ -137,15 +151,16 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
       ${busy ? busyTrigger(trigger) : trigger}
       <div
         id="studio-menu-surface"
-        class="st-studio-menu absolute top-0 left-15 z-20 w-62"
+        class="st-studio-menu absolute top-0 left-14 z-20 w-62"
+        data-overlay-placement="right-start"
         data-studio-menu
         data-et-surface="studio-menu.open"
         ${open ? '' : ' hidden'}
       >
-        ${panel.body}
+        ${panel.body} ${arrowMarkup}
       </div>
     </div>`,
-    styles: styles + buttonStyles + panel.styles,
+    styles: arrow.styles + styles + buttonStyles + panel.styles,
     setup: setupStudioMenu,
   };
 };
@@ -156,7 +171,7 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, Checkouts suchen… keeps every checkout with design work below the search folder. Below a separator Inventory opens pages/inventory, the inventory of every page of the product; it stays enabled while an action runs. The Design-Server label names the state (läuft, veraltet, gestoppt) and the rows the state allows: Neu laden, restart and stop while it runs (restart first and the label veraltet when the server runs an older cli build than the checkout), start while it is stopped. Neu laden stays enabled while an action runs. Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the mark with blinking eyes on the unchanged tile background instead of the static mark; reopened, every action row is disabled until the work answers.',
+  note: 'Studio-wide actions behind the neutral logo tile: the project (repository) switch with the open one checked, Projekt öffnen…, Checkouts suchen… keeps every checkout with design work below the search folder, Projekt entfernen stops keeping the open project and shows the first one left (disabled while an action runs; the app also disables it when only one project is kept). The panel draws the SDK arrow toward the logo tile. Below a separator Inventory opens pages/inventory, the inventory of every page of the product; it stays enabled while an action runs. The Design-Server label names the state (läuft, veraltet, gestoppt) and the rows the state allows: Neu laden, restart and stop while it runs (restart first and the label veraltet when the server runs an older cli build than the checkout), start while it is stopped. Neu laden stays enabled while an action runs. Below a separator Tastenkürzel opens components/shortcuts-dialog, Hilfe opens the Studio docs in the system browser and Über Studio opens components/about-dialog; they stay enabled while an action runs. Rows without a target (Erscheinungsbild, Einstellungen) stay hidden until a row builds their target (ADR 0337). The option states draw the second project. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. While a menu action runs (server start, restart or stop, project switch, Projekt öffnen…) the menu closes as usual and the tile is aria-busy and shows the mark with blinking eyes on the unchanged tile background instead of the static mark; reopened, every action row is disabled until the work answers.',
   madeBy: ['gpt-6', 'claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   states: {
     ...menuRows.states,

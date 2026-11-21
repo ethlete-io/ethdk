@@ -30,6 +30,7 @@ export const STUDIO_MENU_LABELS = {
   project: 'Projekt',
   openProject: 'Projekt öffnen…',
   scan: 'Checkouts suchen…',
+  removeProject: 'Projekt entfernen',
   inventory: 'Inventory',
   designServer: 'Design-Server',
   reload: 'Neu laden',

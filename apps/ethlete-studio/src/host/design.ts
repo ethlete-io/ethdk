@@ -217,6 +217,10 @@ export const designRoots$ = (): Observable<DesignRoots> => invokeHost$<DesignRoo
 export const designRootsAdd$ = (checkout: string): Observable<DesignRoots> =>
   invokeHost$<DesignRoots>('design_roots_add', { checkout });
 
+/** Stops keeping a checkout. The checkout itself stays on disk. */
+export const designRootsForget$ = (checkout: string): Observable<DesignRoots> =>
+  invokeHost$<DesignRoots>('design_roots_forget', { checkout });
+
 /** Names the folder a scan walks. An empty name drops it again. */
 export const designRootsSearch$ = (folder: string): Observable<DesignRoots> =>
   invokeHost$<DesignRoots>('design_roots_search', { folder });

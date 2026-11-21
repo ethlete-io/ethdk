@@ -404,6 +404,8 @@ export class SystemViewComponent {
 
   public scanProjects = output();
 
+  public removeProject = output();
+
   public reload = output();
 
   public menuOpen = output();
@@ -1466,6 +1468,8 @@ export class SystemViewComponent {
         return this.openProject.emit();
       case 'scan':
         return this.scanProjects.emit();
+      case 'remove-project':
+        return this.removeProject.emit();
       case 'inventory':
         this.pickSection('System');
 

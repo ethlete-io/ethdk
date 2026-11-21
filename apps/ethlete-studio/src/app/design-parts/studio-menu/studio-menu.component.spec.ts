@@ -27,6 +27,7 @@ const openMenu = async (options: {
   fixture.componentInstance.serverAction.subscribe((action: DesignServerAction) => events.push(`server:${action}`));
   fixture.componentInstance.reload.subscribe(() => events.push('reload'));
   fixture.componentInstance.scanProjects.subscribe(() => events.push('scanProjects'));
+  fixture.componentInstance.removeProject.subscribe(() => events.push('removeProject'));
   fixture.componentInstance.openInventory.subscribe(() => events.push('openInventory'));
   fixture.componentInstance.showShortcuts.subscribe(() => events.push('showShortcuts'));
   fixture.componentInstance.openHelp.subscribe(() => events.push('openHelp'));
@@ -56,6 +57,7 @@ describe('StudioMenuComponent', () => {
       'd',
       'Projekt öffnen…',
       'Checkouts suchen…',
+      'Projekt entfernen',
       'Inventory',
       'Design-Server · läuft',
       'Neu laden',
@@ -104,6 +106,27 @@ describe('StudioMenuComponent', () => {
     row('Checkouts suchen…')?.click();
 
     expect(events).toEqual(['reload', 'scanProjects']);
+  });
+
+  it('disables the removal for the last project', async () => {
+    const { row } = await openMenu({ project: 'a', projects: ['a'] });
+
+    expect(row('Projekt entfernen')?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('disables the removal while an action runs', async () => {
+    const { row } = await openMenu({ project: 'a', projects: ['a', 'b'], busy: true });
+
+    expect(row('Projekt entfernen')?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('emits the removal of the open project', async () => {
+    const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a', 'b'] });
+
+    row('Projekt entfernen')?.click();
+    await fixture.whenStable();
+
+    expect(events).toEqual(['removeProject']);
   });
 
   it('checks the open project', async () => {
