@@ -1376,7 +1376,7 @@
     "pid": 139554
   },
   "pages/flows": {
-    "hash": "dba0365e58796f08",
+    "hash": "3135a54b40465e8b",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -1433,7 +1433,7 @@
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "178aac4a1cdb5a5c",
       ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "d3afeb407b97da7d",
       ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "d7337d9c2b9d8ed0",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "d0416f14deadf5c7",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "3510fca8a5b2a0f4",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
       ".ethlete/design/studio/pages/flows/flows.ts": "f266ea5525b1883d",
@@ -1501,18 +1501,18 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "190296c56a284249",
+    "app": "e808f284a15376f7",
     "embedded": {
-      "components/canvas-viewport": "bce166a6e1502379",
-      "components/shell-collapse": "1de146452de25631",
-      "components/shell-resize-handle": "292e18845696c191",
-      "components/shell-system-picker": "7745234fdb274cad",
-      "components/title-bar": "610af4e846741d65",
-      "components/title-search": "aab249e12d02bea9",
-      "components/tree-row": "009899ca0cfcf3fe",
-      "components/zoom-chip": "2567901340b1d3e1",
-      "elements/shell-main": "bfdd935561e8197a",
-      "elements/studio-menu": "8a7eb371329d8035"
+      "components/canvas-viewport": "382f787e51fcce7b",
+      "components/shell-collapse": "05ee7bd11cf7432a",
+      "components/shell-resize-handle": "4c4b3051b58730ac",
+      "components/shell-system-picker": "ffe1318fe83a7746",
+      "components/title-bar": "1d133b8e301a026e",
+      "components/title-search": "b5d1d9dc1441ffc8",
+      "components/tree-row": "d1ee50d32803659e",
+      "components/zoom-chip": "67c710cfa8be4bf7",
+      "elements/shell-main": "91fb1aa58dc4cdc1",
+      "elements/studio-menu": "669ca646f394ce94"
     },
     "actions": [
       "emit:addNote",
@@ -1536,10 +1536,10 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-21T00:40:12.809Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 1390810
+    "at": "2026-11-21T01:33:19.923Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 1880120
   },
   "pages/inbox": {
     "hash": "58c2e2b0d4e7f40c",
