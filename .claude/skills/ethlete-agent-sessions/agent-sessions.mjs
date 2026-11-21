@@ -91,7 +91,7 @@ Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>
                                                       (type the clear command and then the prompt into the tmux session of <name>;
                                                        a long wait on a draft and a give-up go to <name> and each --notify agent;
                                                        --process ends the agent and starts it again in the same pane with the prompt;
-                                                       it keeps the role, else takes it from a builder-* handoff name, and refuses
+                                                       it takes --role, else the role a builder-*/doc-agent-* handoff names, else keeps the role, and refuses
                                                        a session with no role while another agent session runs in the repo;
                                                        refuses while a ❓ question of a claude session has no later human message
                                                        and the resumed handoff does not name it under "Open for the human")
@@ -268,7 +268,25 @@ const healedCommand = (command, agent) => {
   const binary = agent.match(/^(claude|codex)/)?.[1];
   return binary ? `${command} ${quote(binary)}` : null;
 };
+const SHELL_WRAP =
+  /^((?:[A-Za-z_][A-Za-z0-9_]*=(?:'[^']*'|\S*)\s+)*)'?((?:\S*\/)?(?:sh|bash|zsh|dash))'?\s+'?(-[a-z]*c)'?\s+(.+)$/s;
+const wrapOf = (command) => {
+  const found = command.match(SHELL_WRAP);
+  if (!found) return null;
+  const [, head, shell, flag, rest] = found;
+  const single = rest.match(/^'((?:[^']|'\\'')*)'$/s);
+  const double = rest.match(/^"((?:[^"\\]|\\.)*)"$/s);
+  const inner = single ? single[1].replaceAll("'\\''", "'") : double ? double[1].replace(/\\(["\\$`])/g, '$1') : rest;
+  return { head, shell, flag, inner };
+};
+const rewrapped = (wrap, head, inner) => `${head}${wrap.shell} ${wrap.flag} ${quote(inner)}`;
 const commandWithoutPrompt = (command) => {
+  const wrap = wrapOf(command);
+  if (wrap) {
+    const innerRole = wrap.inner.match(/(?:^|\s)ETHLETE_AGENT_ROLE=(\w+)/)?.[1];
+    const bare = commandWithoutPrompt(commandWithRole(wrap.inner, null));
+    return rewrapped(wrap, wrap.head, innerRole ? commandWithRole(bare, innerRole) : bare);
+  }
   const tokens = [...command.matchAll(SHELL_WORD)];
   const program = tokens.findIndex(([word]) => !ENV_WORD.test(word));
   if (program < 0) return command;
@@ -280,7 +298,7 @@ const HANDOFF_ROLE = /^\/handoff\s+resume\s+(builder|doc-agent)-/;
 const handoffRoleOf = (prompt) => prompt.match(HANDOFF_ROLE)?.[1] ?? null;
 const restartRoleOf = (session, prompt) => {
   if (role === 'none') return null;
-  const found = role ?? roleOf(session) ?? handoffRoleOf(prompt);
+  const found = role ?? handoffRoleOf(prompt) ?? roleOf(session);
   return found === 'doc-agent' ? null : found;
 };
 const claudeDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
@@ -378,7 +396,17 @@ const hasUnknownRole = (session, prompt) => {
     .filter((name) => name.endsWith(`@${repoSlug}`) && name !== session && name !== DISPATCH_SESSION);
   return peers.length > 0 && !peers.some((name) => roleOf(name) === 'builder');
 };
+const ROLE_ENV_WORD = /^(ETHLETE_AGENT_ROLE|CLAUDE_CODE_SILENT_TURN_REMINDER)=/;
 const commandWithRole = (command, agentRole) => {
+  const wrap = wrapOf(command);
+  if (wrap) {
+    const head = wrap.head
+      .split(/\s+(?=[A-Za-z_][A-Za-z0-9_]*=)/)
+      .filter((word) => word && !ROLE_ENV_WORD.test(word.trim()))
+      .map((word) => `${word.trim()} `)
+      .join('');
+    return rewrapped(wrap, head, commandWithRole(wrap.inner, agentRole));
+  }
   const tokens = [...command.matchAll(SHELL_WORD)].map(([word]) => word);
   const program = tokens.findIndex((word) => !ENV_WORD.test(word));
   const env = program < 0 ? tokens : tokens.slice(0, program);
@@ -391,7 +419,7 @@ const commandWithRole = (command, agentRole) => {
   );
   const rule = agentRole === 'builder' && basename(programOf(kept) ?? '') === 'claude' ? builderFlags() : [];
   return [
-    ...env.filter((word) => !/^(ETHLETE_AGENT_ROLE|CLAUDE_CODE_SILENT_TURN_REMINDER)=/.test(word)),
+    ...env.filter((word) => !ROLE_ENV_WORD.test(word)),
     ...roleEnvWords(agentRole),
     ...[...kept, ...rule].map(quote),
   ].join(' ');
@@ -961,8 +989,11 @@ if (command === 'send' && sender) {
         tmux('set-option', '-t', pane, COMMAND_OPTION, stored);
         restartLog(`${session} stored command could not restart, healed to: ${stored}`);
       }
-      const base = withTempDir(restartRole ? commandWithRole(stored, restartRole) : stored);
+      const staleRole =
+        !restartRole && (roleOf(session) !== null || role === 'none' || handoffRoleOf(words.join(' ')) === 'doc-agent');
+      const base = withTempDir(restartRole || staleRole ? commandWithRole(stored, restartRole) : stored);
       if (restartRole) tmux('set-option', '-t', pane, ROLE_OPTION, restartRole);
+      else if (staleRole) tmux('set-option', '-u', '-t', pane, ROLE_OPTION);
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'on');
       type('-l', sender.startsWith('codex') ? '/quit' : '/exit');
       sleep(ENTER_DELAY_MS);
@@ -995,17 +1026,18 @@ if (command === 'send' && sender) {
       }
       if (!dead()) restartLog(`${session} did not exit ${RESTART_EXIT_WAIT_MS / 1000}s after the exit command, killed`);
       const shell = process.env.SHELL || 'sh';
-      tmux(
-        'respawn-pane',
-        '-k',
-        '-t',
-        pane,
-        '-c',
-        root,
-        shell,
-        '-lic',
-        `${inAgentScopeCommand(base, session, bypassingShellFunction)} ${quote(restartPrompt(words))}`,
-      );
+      const baseWrap = wrapOf(base);
+      const launch = baseWrap
+        ? inAgentScopeCommand(
+            rewrapped(
+              baseWrap,
+              baseWrap.head,
+              `${bypassingShellFunction(baseWrap.inner)} ${quote(restartPrompt(words))}`,
+            ),
+            session,
+          )
+        : `${inAgentScopeCommand(base, session, bypassingShellFunction)} ${quote(restartPrompt(words))}`;
+      tmux('respawn-pane', '-k', '-t', pane, '-c', root, shell, '-lic', launch);
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'off');
       tmux('set-option', '-t', pane, COMMAND_OPTION, base);
       restartLog(`${session} started a new process: ${base}`);
