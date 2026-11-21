@@ -145,11 +145,11 @@
     "at": "2026-11-19T10:25:13.055Z"
   },
   "pages/flows": {
-    "hash": "62ce91a00355570f",
+    "hash": "700564379eefc755",
     "variant": "a",
     "decidedBy": "builder",
-    "at": "2026-11-21T00:32:43.627Z",
-    "note": "merged: Karte lesbar getrennt von Frames und Linien-Labels, bestes Ziel zum Ziehen"
+    "at": "2026-11-21T01:45:03.632Z",
+    "note": "merged: Fokussiertes Feld der neuen Notiz, picked by the builder (ADR 0305): the app focuses it on purpose when the page opens."
   },
   "pages/inbox": {
     "hash": "23a38bb14e9c61d3",

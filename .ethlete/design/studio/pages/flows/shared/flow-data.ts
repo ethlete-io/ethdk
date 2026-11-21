@@ -40,7 +40,16 @@ export const noteDeleteButton = async () => {
 };
 
 export const noteField = (id: string) =>
-  textarea.render({ field: { id: `flow-note-${id}`, placeholder: 'Notiz schreiben', rows: 3, ariaLabel: 'Notiz' } });
+  textarea.render({
+    field: {
+      id: `flow-note-${id}`,
+      placeholder: 'Notiz schreiben',
+      rows: 3,
+      ariaLabel: 'Notiz',
+      focused: true,
+      force: 'focus-visible',
+    },
+  });
 
 type Step = { page: `pages/${string}`; state: string; title: string; via?: string };
 
