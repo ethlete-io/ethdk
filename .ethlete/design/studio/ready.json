@@ -81,7 +81,7 @@
     "at": "2026-11-21T18:32:42.951Z"
   },
   "components/comment-draft": {
-    "hash": "ecadf087fe7f56ee",
+    "hash": "b3745d713cd6a194",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -106,7 +106,7 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "89f125f94d8c2c8a",
+      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "02a52781b8dd2c37",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "apps/ethlete-studio/src/app/i18n/comments-labels.ts": "0ad3ac839fd4455f",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
@@ -143,10 +143,10 @@
     "app": "070b17aa95c2c416",
     "actions": ["comment-mode", "emit:sendComment"],
     "builder": "designer",
-    "at": "2026-11-21T05:30:28.497Z",
+    "at": "2026-11-21T23:55:05.791Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2109714
+    "pid": 2595881
   },
   "components/comment-flow": {
     "hash": "80970a880ffc05b3",
