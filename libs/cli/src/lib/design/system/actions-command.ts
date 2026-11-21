@@ -41,7 +41,15 @@ import {
   resolveActionOf,
   targetStateOf,
 } from './actions';
-import { awaitOutput, dropKeyboardFocus, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
+import {
+  awaitOutput,
+  dropKeyboardFocus,
+  enterValue,
+  INIT_SCRIPT,
+  OVERLAY_ROOTS,
+  settle,
+  watchMutations,
+} from './action-press';
 import { compareFrameOf } from './harness-shot';
 import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { componentOutputsOf, modelChangesForOf } from './component-outputs';
@@ -220,7 +228,7 @@ export const runActionInput = async (options: {
       await (input === 'click' ? target.click({ timeout }) : target.dblclick({ timeout }));
       await page.mouse.move(-1, -1);
     } else if (input === 'type') {
-      await target.fill('a', { timeout });
+      await enterValue(target, timeout);
     } else {
       await page.keyboard.press('Shift');
       await target.focus({ timeout });

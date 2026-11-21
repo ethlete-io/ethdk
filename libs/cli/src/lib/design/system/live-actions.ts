@@ -18,7 +18,7 @@ import {
   openedPartKeyOf,
   parseAction,
 } from './actions';
-import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
+import { awaitOutput, enterValue, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
 import { BOX_ATTRIBUTE } from './dom-boxes';
 import { compareFrameOf } from './harness-shot';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
@@ -663,7 +663,7 @@ export const checkLiveActions = async (options: {
             await page.mouse.move(-1, -1);
           } else if (options.input === 'type') {
             await watchMutations(page);
-            await control.fill('a', { timeout: DRAW_TIMEOUT_MS });
+            await enterValue(control, DRAW_TIMEOUT_MS);
           } else {
             const before: RingStyle | undefined = (await ringProbeOrNullOf(control))?.style;
 

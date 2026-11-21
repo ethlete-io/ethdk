@@ -390,6 +390,7 @@ describe('runActionInput', () => {
         <button aria-label="Hide" onclick="__etDesignEmits.push({ output: 'hide' })">Hide</button>
         <button aria-label="Off" disabled>Off</button>
         <input role="combobox" aria-label="Search" oninput="__etDesignEmits.push({ output: 'queryChange' })" />
+        <select aria-label="Size" onchange="__etDesignEmits.push({ output: 'sizeChange' })"><option>S</option><option>M</option></select>
         <app-part-a><button aria-label="Pick" onclick="__etDesignEmits.push({ output: 'pageAction' }); listeners.forEach((listener) => listener())">Pick</button></app-part-a>
       </div>
       <script>
@@ -439,6 +440,13 @@ describe('runActionInput', () => {
     expect(inputs.length).toBeGreaterThan(0);
 
     for (const input of inputs) expect((await press('combobox "Search"', input)).emitted).toEqual(['queryChange']);
+  });
+
+  it('picks another option of a native select that declares an emit, since it takes no text', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    for (const input of actionInputsOf('combobox "Size"', { kind: 'emit', output: 'sizeChange' }))
+      expect((await press('combobox "Size"', input)).emitted).toEqual(['sizeChange']);
   });
 
   it('sees a Space whose keydown default the app prevents, so it fires nothing', async (context) => {

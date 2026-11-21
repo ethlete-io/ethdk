@@ -3,6 +3,21 @@ import { playwrightTimeoutOf } from '../wait';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
+type Locator = ReturnType<Page['locator']>;
+
+/** Types into a text-entry control; a native `<select>` takes no text, so it picks an option other than the current one. */
+export const enterValue = async (target: Locator, timeout: number) => {
+  const other = await target.evaluate((element) =>
+    element instanceof HTMLSelectElement
+      ? ([...element.options].find((option) => !option.disabled && option.index !== element.selectedIndex)?.value ??
+        null)
+      : undefined,
+  );
+
+  if (other === undefined) await target.fill('a', { timeout });
+  else if (other !== null) await target.selectOption(other, { timeout });
+};
+
 export const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
 
 export const EMIT_WAIT_MS = 400;
