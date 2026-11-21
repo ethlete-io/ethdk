@@ -556,8 +556,33 @@
     "pid": 2351485
   },
   "components/textarea": {
+    "hash": "4636f13b0558fcd2",
+    "files": {
+      ".ethlete/design/sdk/components/textarea/textarea.css": "1a7a7756d0890a81",
+      ".ethlete/design/sdk/components/textarea/textarea.ts": "e939c255a8098b8b",
+      "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
+      "libs/components/design/textarea.ts": "d111b478450a84d9",
+      "libs/components/src/lib/forms/description/description.component.css": "3d19c0933b5da17b",
+      "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "256c80dd0afd952f",
+      "libs/components/src/lib/forms/form-field/form-field-textarea-styles.component.css": "3cdff8e980e47658",
+      "libs/components/src/lib/forms/form-field/form-field.component.css": "902055c00d5921a8",
+      "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
+      "libs/components/src/lib/forms/form-field/hint.component.css": "b1531941f843c188",
+      "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
+      "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "5b69cdc878fe83fc",
+      "libs/components/src/lib/forms/textarea/textarea.component.css": "0983f19962cc1c64",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
     "actions": [],
-    "at": "2026-11-19T12:19:10.115Z"
+    "builder": "designer",
+    "at": "2026-11-21T04:55:05.367Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 1826594
   },
   "foundations/colors": {
     "hash": "5dce981a59c816ce",
