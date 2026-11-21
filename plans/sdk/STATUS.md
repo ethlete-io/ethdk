@@ -21,7 +21,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S26 (fifagg, 20.11.): blockiert, = S17 (B652), ausgeliefert in components 1.0.0-next.92; fifagg informiert.
 - S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
 - S28, S29 (fifagg, 21.11.): ausgeliefert in components 1.0.0-next.94 (Scroll-Buttons: Farbe/Variante app-weit, Abstands-Variablen, Eingabe `scrollableButtons`, Breakpoint-Maps blenden unterhalb aus); fifagg informiert.
-- S30-S36 (fifagg, 21.11.): gebaut und gepusht (b1b26d7f9), warten auf das nächste Prerelease, dann fifagg informieren.
+- S30-S36 (fifagg, 21.11.): ausgeliefert in @ethlete/components 1.0.0-next.95; fifagg informiert.
 
 ## Offene Plan-Dateien
 
