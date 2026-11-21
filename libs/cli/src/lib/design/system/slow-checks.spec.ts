@@ -6,6 +6,7 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { StateShot } from './compare-command';
 import { designHashOf } from './design-hash';
 import { Problem } from './problem';
+import { RULE_BASELINE_FILE } from './rule-baseline';
 import { partKeyOf, resolveProduct, type ResolvedProduct } from './resolve-product';
 import {
   readSlowCache,
@@ -131,6 +132,24 @@ describe('slowProblemsOf', { timeout: 30_000 }, () => {
     writeFileSync(file, JSON.stringify(cache));
 
     expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
+  });
+
+  it('stores a part whose only problems are baselined, so it is not pending forever', () => {
+    const { target, product } = acme();
+    const baselined: Problem = {
+      rule: 'CONTROL-STATE',
+      file: join(DESIGN_DIR, 'acme/components/chip/chip.ts'),
+      message: 'section has no control state',
+      at: 'section',
+    };
+
+    writeFileSync(
+      join(target, DESIGN_DIR, 'acme', RULE_BASELINE_FILE),
+      JSON.stringify({ 'CONTROL-STATE': { 'components/chip: section': { finding: '489', sketch: 'components/x' } } }),
+    );
+    storeAll(product, new Map([['components/chip', [baselined]]]));
+
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([]);
   });
 
   it('answers no problems for a part no slow rule checks', () => {

@@ -75,19 +75,26 @@ export const slowCacheFileOf = (product: ResolvedProduct) => {
   return join(root, 'node_modules', '.cache', 'ethlete-design', product.name, sha16(root), 'slow-checks.json');
 };
 
+const blockingSlowProblemsOf = (product: ResolvedProduct, problems: Problem[]) =>
+  withoutWaitingUndesigned(product, unbaselinedProblemsOf(product, problems));
+
 export const readSlowCache = (product: ResolvedProduct): SlowCache => {
   try {
     const parsed = JSON.parse(readFileSync(slowCacheFileOf(product), 'utf8')) as unknown;
 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
 
-    return Object.fromEntries(Object.entries(parsed as SlowCache).filter(([, entry]) => entry.problems.length === 0));
+    return Object.fromEntries(
+      Object.entries(parsed as SlowCache).filter(
+        ([, entry]) => blockingSlowProblemsOf(product, entry.problems).length === 0,
+      ),
+    );
   } catch {
     return {};
   }
 };
 
-/** Stores the passing parts of `hashes` and drops the failing ones, so a failure is run again instead of replayed. */
+/** Stores the passing parts of `hashes` and drops the failing ones, so a failure is run again instead of replayed; baselined and waiting problems do not fail a part. */
 export const writeSlowResults = (options: {
   product: ResolvedProduct;
   hashes: Record<string, string>;
@@ -101,12 +108,14 @@ export const writeSlowResults = (options: {
   for (const [part, hash] of Object.entries(options.hashes)) {
     const unjudged = options.unjudged?.get(part) ?? [];
 
-    if ((options.results.get(part) ?? []).length > 0) {
+    const problems = options.results.get(part) ?? [];
+
+    if (blockingSlowProblemsOf(options.product, problems).length > 0) {
       delete cache[part];
       continue;
     }
 
-    cache[part] = { hash, problems: [], at, ...(unjudged.length > 0 ? { unjudged } : {}) };
+    cache[part] = { hash, problems, at, ...(unjudged.length > 0 ? { unjudged } : {}) };
   }
 
   mkdirSync(dirname(file), { recursive: true });
@@ -333,7 +342,7 @@ export const slowProblemsOf: SlowProblemsOf = ({ product, part }) => {
   if (entry === null) return [];
   if (entry === 'pending') return 'pending';
 
-  return withoutWaitingUndesigned(product, unbaselinedProblemsOf(product, entry.problems));
+  return blockingSlowProblemsOf(product, entry.problems);
 };
 
 /** One warning line per state of `parts` whose current slow result could not judge it, naming the product, part, state and why. */
