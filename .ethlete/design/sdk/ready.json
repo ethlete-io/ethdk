@@ -420,14 +420,14 @@
     "pid": 675558
   },
   "components/select": {
-    "hash": "49da3d96477c85a9",
+    "hash": "a8808e797dc3144a",
     "files": {
       ".ethlete/design/sdk/components/select/select.css": "0d33198d1e90fb42",
       ".ethlete/design/sdk/components/select/select.ts": "f9d4735087a09035",
       ".ethlete/design/sdk/components/select/shared/select-part.ts": "cb3acc9d89219613",
       "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
       "libs/components/design/icon.ts": "829a95253b948ba9",
-      "libs/components/design/select.ts": "d9dba51f6cbeb2df",
+      "libs/components/design/select.ts": "97420e3a72aefea5",
       "libs/components/src/lib/forms/form-field/form-field-control-suffix-styles.component.css": "c92cd543be49692a",
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
       "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "256c80dd0afd952f",
@@ -437,8 +437,8 @@
       "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
       "libs/components/src/lib/forms/select/select-all-option.component.css": "04b669797ac4e5e1",
       "libs/components/src/lib/forms/select/select-option-group.component.css": "b7acd6c2e423929c",
-      "libs/components/src/lib/forms/select/select-option-styles.component.css": "b9a577d5608b2a3a",
-      "libs/components/src/lib/forms/select/select-panel.component.css": "b0413b687ba5612c",
+      "libs/components/src/lib/forms/select/select-option-styles.component.css": "3e2482c34ad0df78",
+      "libs/components/src/lib/forms/select/select-panel.component.css": "c1d2d2be645e0c22",
       "libs/components/src/lib/forms/select/select.component.css": "5f0c0249084d3635",
       "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "5b69cdc878fe83fc",
       "libs/components/src/lib/forms/textarea/textarea.component.css": "0983f19962cc1c64",
@@ -453,10 +453,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-21T05:01:09.980Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-21T21:44:22.183Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1942356
+    "pid": 2108055
   },
   "components/select-panel": {
     "hash": "6048a2282eaa4525",
