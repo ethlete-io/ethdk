@@ -413,20 +413,6 @@
     "cmd": "ready",
     "pid": 420891
   },
-  "components/list-row": {
-    "hash": "3f3e833b07feb3f6",
-    "files": {
-      ".ethlete/design/studio/components/list-row/list-row.css": "602cd1dc7f0f2fd3",
-      ".ethlete/design/studio/components/list-row/list-row.ts": "c56eec28b9611570",
-      "libs/components/design/control.ts": "b0244bc4c0f922a6"
-    },
-    "actions": ["emit:pick"],
-    "builder": "designer",
-    "at": "2026-11-21T05:33:12.524Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 2132677
-  },
   "components/shell-collapse": {
     "hash": "8b0274661cebb9f0",
     "files": {
