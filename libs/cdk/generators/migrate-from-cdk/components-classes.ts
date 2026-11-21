@@ -495,6 +495,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-match-participant-names',
   'et-match-participant-picture',
   'et-match-participant-seed',
+  'et-match-participant-shield',
   'et-match-participant-subtitle',
   'et-match-score',
   'et-match-score-digit',

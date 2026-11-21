@@ -507,14 +507,12 @@ test.describe('select / pointer', () => {
     await expect(page.getByRole('listbox')).toHaveCount(0);
   });
 
-  test('the clear button shows on a filled focused field and clears the value without moving focus', async ({
-    page,
-  }) => {
+  test('the clear button shows on a filled field and clears the value without moving focus', async ({ page }) => {
     const root = await openStory(page, PRESELECTED_STORY_ID);
     const trigger = root.getByRole('combobox');
     const clear = root.locator('.et-input-clear');
 
-    await expect(clear).toHaveCount(0);
+    await expect(clear).toBeVisible();
 
     await pressKey(page, 'Tab');
     await expect(trigger).toBeFocused();

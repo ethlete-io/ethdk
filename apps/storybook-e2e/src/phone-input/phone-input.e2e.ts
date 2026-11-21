@@ -375,25 +375,24 @@ async function expectClearedAndFocused(root: Locator): Promise<void> {
   await expectFormValue(root, '');
 }
 
-const CLEAR_ENTER = { name: 'et-input-clear-in', duration: 150, easing: 'ease', fill: 'none' };
 const CLEAR_LEAVE = { name: 'et-input-clear-out', duration: 120, easing: 'ease', fill: 'forwards' };
 
 test.describe('phone-input / clear animation', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: the clear button is clicked');
 
-  test('the clear button fades in, and a click fades it out, empties the number and keeps the field focused', async ({
+  test('the clear button shows on a filled field, and a click fades it out, empties the number and keeps the field focused', async ({
     page,
   }) => {
     const root = await openStory(page, PREFILLED_STORY_ID);
+    await expect(root.locator('.et-input-clear')).toBeVisible();
     await recordClearAnimations(page);
 
     await numberField(root).click();
     await expect(root.locator('.et-input-clear')).toBeVisible();
-    await expect.poll(() => recordedClearAnimations(page)).toEqual([CLEAR_ENTER]);
 
     await root.locator('.et-input-clear').click();
 
-    await expect.poll(() => recordedClearAnimations(page)).toEqual([CLEAR_ENTER, CLEAR_LEAVE]);
+    await expect.poll(async () => (await recordedClearAnimations(page)).at(-1)).toEqual(CLEAR_LEAVE);
     await expectClearedAndFocused(root);
   });
 
@@ -417,6 +416,7 @@ test.describe('phone-input / clear animation on touch', () => {
 
   test('a tap on the clear button fades it out, empties the number and keeps the field focused', async ({ page }) => {
     const root = await openStory(page, PREFILLED_STORY_ID);
+    await expect(root.locator('.et-input-clear')).toBeVisible();
     await recordClearAnimations(page);
 
     await tap(numberField(root));
@@ -424,7 +424,7 @@ test.describe('phone-input / clear animation on touch', () => {
 
     await tap(root.locator('.et-input-clear'));
 
-    await expect.poll(() => recordedClearAnimations(page)).toEqual([CLEAR_ENTER, CLEAR_LEAVE]);
+    await expect.poll(async () => (await recordedClearAnimations(page)).at(-1)).toEqual(CLEAR_LEAVE);
     await expectClearedAndFocused(root);
   });
 });
