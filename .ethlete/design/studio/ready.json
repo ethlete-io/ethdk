@@ -734,7 +734,7 @@
     "pid": 2158275
   },
   "components/title-search": {
-    "hash": "2e25b66b7675ea49",
+    "hash": "7d86e5b04f9af3e8",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -755,21 +755,21 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/title-search/title-search.ts": "8532b07e27da2ece",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "2580fc7e7a5a8ff3",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "bcab7b399e6abba8",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "498e3fefb1dc10e9",
+    "app": "69d084a5fa8d9775",
     "actions": ["opens:command-palette"],
     "builder": "developer",
     "builderReasons": [
       "injects through injectCommandPaletteStore() (apps/ethlete-studio/src/app/components/title-search/title-search.component.ts)"
     ],
-    "at": "2026-11-21T04:33:48.342Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-21T05:36:56.572Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1584924
+    "pid": 2169577
   },
   "components/tree-row": {
     "hash": "54194a38f4ab321d",
