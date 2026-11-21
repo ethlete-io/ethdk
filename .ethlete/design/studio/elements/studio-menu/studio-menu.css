@@ -24,6 +24,12 @@
     transform: translate3d(0, 0, 0);
   }
 
+  .st-studio-menu .st-studio-menu-arrow {
+    top: 10px;
+    --et-surface-background-solid: initial;
+    --_et-overlay-arrow-pane-border-width: 1px;
+  }
+
   .st-studio-trigger path {
     transform: scale(0.72);
     transform-origin: center;

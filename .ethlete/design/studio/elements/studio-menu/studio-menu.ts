@@ -143,8 +143,8 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
       ? { body: '', styles: '' }
       : await anchoredDialog.render({ content: '', placement: 'bottom-start', modal: false });
   const arrowMarkup = (arrow.body.match(/<div class="et-overlay-arrow"[^>]*><\/div>/u)?.[0] ?? '').replace(
-    '<div ',
-    '<div style="top: 10px; --et-surface-background-solid: initial; --_et-overlay-arrow-pane-border-width: 1px; --_et-overlay-arrow-pane-border-color: rgb(56 56 56)" ',
+    'et-overlay-arrow',
+    'et-overlay-arrow st-studio-menu-arrow',
   );
   const target = busy ? (open ? 'studio-menu.busy' : 'studio-menu.busy-open') : undefined;
   const trigger = studioTrigger(open, open ? undefined : interaction, target);
