@@ -286,6 +286,24 @@ export const dialogFrameOf = (options: { markup: string; png: Buffer; open: unkn
 };
 
 const FORCED_POLL_MS = 50;
+const FORCED_QUIET_MS = 1000;
+
+const DOM_QUIET_SCRIPT = `(() => {
+  const state = (window.__designDomQuiet ??= (() => {
+    const created = { at: performance.now() };
+
+    new MutationObserver(() => (created.at = performance.now())).observe(document.documentElement, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    });
+
+    return created;
+  })());
+
+  return performance.now() - state.at;
+})()`;
 
 type HostBox = { x: number; y: number; width: number; height: number };
 
@@ -339,6 +357,8 @@ const forcedTargetOf = async (options: {
     ).filter({ visible: true });
   const deadline = Date.now() + timeout;
 
+  await page.evaluate(DOM_QUIET_SCRIPT);
+
   for (;;) {
     for (const scope of [host, page.locator(OVERLAY_ROOTS)]) {
       const matches = matchesIn(scope);
@@ -349,7 +369,7 @@ const forcedTargetOf = async (options: {
         throw new UndrivableError(`the harness page ${url} has ${count} elements with ${named} to ${doing}`);
     }
 
-    if (Date.now() > deadline)
+    if (Date.now() > deadline || ((await page.evaluate(DOM_QUIET_SCRIPT)) as number) >= FORCED_QUIET_MS)
       throw new UndrivableError(`the harness page ${url} has no element with ${named} to ${doing}`);
 
     await page.waitForTimeout(FORCED_POLL_MS);
