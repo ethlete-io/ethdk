@@ -25,6 +25,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S31 (fifagg, 21.11.): nicht blockiert, Match-Card kompakt je Team mit Score rechts + Wappen-Fallback statt Initiale; dichte Zeile gibt es (`size` pinnt sie), Wappen-Fallback fehlt -> Builder-Zeile.
 - S32 (fifagg, 21.11.): nicht blockiert, `et-picture` in einem overflow-hidden Host: kein Weg, nur das `<img>` zu transformieren (Hover-Zoom) -> Builder-Zeile.
 - S33 (fifagg, 21.11.): blockiert (Editor-Karte am Handy), Nachtrag zu S31: Match-Card kompakt braucht TBD-Label je Seite (heim/gast), Startzeit HH:mm auch kompakt, und `auto` wählt bei ~330 px Kartenbreite noch expanded. Entschieden von mir nach ADR 0297 (SDK wächst generisch für den FIFA-Look) -> Builder-Zeile direkt nach Drift-Scheibe 1; fifagg behält solange ihr Grid.
+- S34 (fifagg, 21.11.): nicht blockiert, Länge der Kanten-Ausblendung von et-scrollable: `--mask-size` ist dokumentiert, aber ohne `--et-scrollable-`-Präfix wie die neuen Button-Variablen, und kein App-Default für "wenn Buttons sichtbar" (fifagg: 6rem, je Stelle 5-8rem). Entschieden von mir wie S29 (gleiche Namensform) -> Builder-Zeile nach S30-S32; fifagg setzt solange `--mask-size`.
 
 ## Offene Plan-Dateien
 
