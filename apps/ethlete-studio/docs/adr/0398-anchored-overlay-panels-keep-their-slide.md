@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B664
+built: 6fa237035
 decided: 2026-11-21
 source: doc-agent session 2026-11-21 (evening), question when the slide animations went away
 ---
