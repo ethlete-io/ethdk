@@ -5,7 +5,7 @@ import { ruleProblemsOf } from './check-system';
 import { partsReachedFrom, partUsersOf } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
-import { isCompositionSource } from './rules/composition';
+import { isCompositionPart } from './rules/composition';
 import { partKeyOf, PartOrigin, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { openDirectEditPartsOf } from './sketch/merged-parts';
 import { readSlowCache } from './slow-checks';
@@ -306,9 +306,7 @@ export const listSystem = async (options: {
                   states,
                   ...layout,
                   interactions,
-                  ...(isCompositionSource({ key: partKeyOf(part), source: part.source })
-                    ? { composition: true as const }
-                    : {}),
+                  ...(isCompositionPart(part) ? { composition: true as const } : {}),
                   kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
                   usedIn: usedInOf(part),
                   usedBy: [...(users.get(partKeyOf(part)) ?? [])],
