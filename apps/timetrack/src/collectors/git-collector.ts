@@ -49,6 +49,16 @@ export const GIT_WATCH_POLL_INTERVAL_MS = 5_000;
 /** How often every repository is scanned regardless of the watch, so a missed notification heals. */
 export const GIT_RECONCILE_INTERVAL_MS = 10 * 60_000;
 
+/** The pause between two checkout groups of the reconcile sweep, so ~55 repositories are never read back to back. */
+export const GIT_RECONCILE_GAP_MS = 1_000;
+
+/**
+ * How soon a checkout group, the main checkout and its linked worktrees, is rescanned after a move.
+ * A move is reported for every worktree sharing the refs, so a run of commits would otherwise rescan the
+ * whole group on every poll.
+ */
+export const GIT_GROUP_RESCAN_GAP_MS = 20_000;
+
 /** How often the machine is walked again, so a repository cloned since the app started is picked up. */
 export const GIT_DISCOVER_INTERVAL_MS = 60 * 60_000;
 
@@ -191,11 +201,53 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
+  const groupOf = (path: string) => worktrees()[path] ?? path;
+
+  const groupsOf = (paths: readonly string[]): string[][] => {
+    const groups = new Map<string, string[]>();
+
+    for (const path of paths) groups.set(groupOf(path), [...(groups.get(groupOf(path)) ?? []), path]);
+
+    return [...groups.values()];
+  };
+
+  const pendingMoves = new Set<string>();
+  const groupScannedAt = new Map<string, number>();
+
+  const scanGroup$ = (paths: string[]): Observable<unknown> => {
+    groupScannedAt.set(groupOf(paths[0] ?? ''), Date.now());
+
+    return scan$(paths);
+  };
+
   const moved$ = (): Observable<unknown> =>
     ports.git.changes$(afterSeq).pipe(
-      tap((changes) => (afterSeq = changes.seq)),
-      concatMap((changes) => (changes.repos.length ? scan$(changes.repos) : EMPTY)),
+      tap((changes) => {
+        afterSeq = changes.seq;
+
+        for (const repo of changes.repos) pendingMoves.add(repo);
+      }),
+      concatMap(() => {
+        const now = Date.now();
+        const due = groupsOf([...pendingMoves]).filter(
+          (paths) => now - (groupScannedAt.get(groupOf(paths[0] ?? '')) ?? 0) >= GIT_GROUP_RESCAN_GAP_MS,
+        );
+
+        for (const path of due.flat()) pendingMoves.delete(path);
+
+        return from(due).pipe(concatMap(scanGroup$));
+      }),
     );
+
+  const reconcile$ = (): Observable<unknown> => {
+    pendingMoves.clear();
+
+    return from(groupsOf(repos.map((repo) => repo.path))).pipe(
+      concatMap((paths, index) =>
+        timer(index === 0 ? 0 : GIT_RECONCILE_GAP_MS).pipe(concatMap(() => scanGroup$(paths))),
+      ),
+    );
+  };
 
   /**
    * Nothing is discovered before the settings have been read, and a change to the roots discovers again
@@ -224,7 +276,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
               ? writeRepoKeys$(repos).pipe(ignoreElements(), endWith(repos))
               : of(repos);
 
-          return discovered$.pipe(concatMap(() => (reconciling ? scan$(repos.map((repo) => repo.path)) : moved$())));
+          return discovered$.pipe(concatMap(() => (reconciling ? reconcile$() : moved$())));
         }),
         catchError((error: unknown) => {
           failure.set(error instanceof Error ? error.message : String(error));
