@@ -767,13 +767,13 @@
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "31af25b6fa2d2b10",
+    "app": "3b03de39e3311fda",
     "actions": ["emit:rowPress"],
     "builder": "designer",
     "at": "2026-11-20T13:12:25.613Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2171948
+    "pid": 2109862
   },
   "components/update-dialog": {
     "hash": "26001fd23ea75060",
