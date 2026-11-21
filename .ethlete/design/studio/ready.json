@@ -1138,7 +1138,7 @@
     "at": "2026-11-21T05:42:16.864Z"
   },
   "elements/variant-cell": {
-    "hash": "a486e0f9c0413f2e",
+    "hash": "86b4ee0fb3755bf9",
     "files": {
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
@@ -1171,10 +1171,10 @@
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
       ".ethlete/design/studio/elements/variant-cell/variant-cell.css": "9ea8a222b03e9446",
-      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "c55dfc92a26ab1d5",
+      ".ethlete/design/studio/elements/variant-cell/variant-cell.ts": "5ddebf4c5c95212d",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/canvas-labels.ts": "c9bface24f0678a8",
+      "apps/ethlete-studio/src/app/i18n/canvas-labels.ts": "e973529bfd653257",
       "apps/ethlete-studio/src/app/i18n/sketches-labels.ts": "9a7f9f5d9eedd074",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
@@ -1183,16 +1183,16 @@
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9"
     },
-    "app": "be8e33e2667a8551",
+    "app": "e4063d50089999d2",
     "embedded": {
       "components/comment-pin": "3b7e8a256db57a11"
     },
     "actions": ["emit:pinToggle"],
     "builder": "designer",
-    "at": "2026-11-21T05:42:50.226Z",
-    "by": "claude-opus-5-5",
+    "at": "2026-11-21T22:35:13.663Z",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 2218799
+    "pid": 2255739
   },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",
