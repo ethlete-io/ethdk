@@ -444,7 +444,7 @@
     "pid": 2026945
   },
   "components/shell-collapse": {
-    "hash": "4ece83a759fc96e9",
+    "hash": "560a0ee16abf3951",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -465,7 +465,7 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "4a99664827de4ad8",
+      ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "c1ae4c14d982b3a9",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -489,7 +489,7 @@
     "app": "fa5f397232bdc457",
     "actions": ["emit:collapse"],
     "builder": "designer",
-    "at": "2026-11-21T02:25:00.896Z",
+    "at": "2026-11-21T02:54:14.490Z",
     "by": "et design check",
     "cmd": "check",
     "pid": 2951160
