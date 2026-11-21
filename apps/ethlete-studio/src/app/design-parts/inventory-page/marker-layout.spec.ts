@@ -45,7 +45,7 @@ describe('placeMarkers', () => {
     }
   });
 
-  it('stays inside the frame for anchors on the edges', () => {
+  it('keeps the marker gap from the frame edges for anchors on the edges', () => {
     const placed = placeMarkers(
       ['1', '25', 'A3', 'O10'].flatMap((number) => [
         { number, x: 0, y: 0 },
@@ -55,10 +55,10 @@ describe('placeMarkers', () => {
     );
 
     for (const marker of placed) {
-      expect(marker.left).toBeGreaterThanOrEqual(0);
-      expect(marker.top).toBeGreaterThanOrEqual(0);
-      expect(marker.left + marker.width).toBeLessThanOrEqual(FRAME.width);
-      expect(marker.top + marker.height).toBeLessThanOrEqual(FRAME.height);
+      expect(marker.left).toBeGreaterThanOrEqual(MIN_GAP);
+      expect(marker.top).toBeGreaterThanOrEqual(MIN_GAP);
+      expect(marker.left + marker.width).toBeLessThanOrEqual(FRAME.width - MIN_GAP);
+      expect(marker.top + marker.height).toBeLessThanOrEqual(FRAME.height - MIN_GAP);
     }
   });
 

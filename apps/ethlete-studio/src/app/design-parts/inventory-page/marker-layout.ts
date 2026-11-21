@@ -18,11 +18,12 @@ const overlaps = (a: PlacedMarker, b: PlacedMarker) =>
   a.top < b.top + b.height + GAP &&
   b.top < a.top + a.height + GAP;
 
-const clamp = (value: number, max: number) => Math.max(0, Math.min(value, max));
+const clamp = (value: number, max: number) =>
+  max < 2 * GAP ? Math.max(0, Math.min(value, max)) : Math.max(GAP, Math.min(value, max - GAP));
 
 /**
  * Places one marker per anchor, in order, as near its anchor (a box's top-left corner, in frame pixels) as a free
- * slot allows: a marker never overlaps an earlier one and stays inside the frame.
+ * slot allows: a marker never overlaps an earlier one and keeps the marker gap from the frame edges.
  */
 export const placeMarkers = (anchors: MarkerAnchor[], frame: { width: number; height: number }): PlacedMarker[] => {
   const placed: PlacedMarker[] = [];
