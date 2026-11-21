@@ -873,10 +873,10 @@
     "pid": 2178669
   },
   "components/zoom-chip": {
-    "hash": "d2d4799fbf196519",
+    "hash": "28498156fbcccc53",
     "files": {
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "3ed3cd0df06ad08b",
-      "apps/ethlete-studio/src/app/i18n/canvas-labels.ts": "c9bface24f0678a8",
+      "apps/ethlete-studio/src/app/i18n/canvas-labels.ts": "e973529bfd653257",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
@@ -888,7 +888,7 @@
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
-      "libs/components/src/lib/overlay/floating-tip-styles.component.css": "68dd131cb9133beb",
+      "libs/components/src/lib/overlay/floating-tip-styles.component.css": "3cbc9929b4432ad8",
       "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
       "libs/components/src/lib/overlay/strategies/overlay-arrow-styles.component.css": "072cf01f3393af28",
       "libs/components/src/lib/tooltip/tooltip.component.css": "50e163741bd6a713",
@@ -896,13 +896,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "b1d324f667aa81ff",
+    "app": "a12b6c2fb13710fc",
     "actions": ["emit:fit", "emit:zoomIn", "emit:zoomOut", "emit:zoomReset"],
     "builder": "designer",
-    "at": "2026-11-21T05:38:57.166Z",
+    "at": "2026-11-21T21:45:29.784Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2183583
+    "pid": 2115502
   },
   "elements/canvas-frames": {
     "hash": "2dbf0f8967a8232d",
