@@ -1,6 +1,7 @@
 import { NgTemplateOutlet, PlatformLocation } from '@angular/common';
 import { Component, input, output, provideZonelessChangeDetection, TemplateRef, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { dialogOverlayStrategy, provideOverlay } from '@ethlete/components';
 import { DesignHarnessComponent } from './design-harness.component';
 
 @Component({
@@ -42,6 +43,7 @@ vi.mock('./design-harness-parts', () => ({
     'components/chip': () => Promise.resolve(FakeChipComponent),
     'pages/frame': () => Promise.resolve(FakeFrameComponent),
     'pages/bad': () => Promise.resolve(FakeChipComponent),
+    'components/chip-dialog': () => Promise.resolve(FakeChipComponent),
   },
 }));
 
@@ -52,6 +54,9 @@ vi.mock('./design-harness-samples', () => ({
     },
   },
   DESIGN_HARNESS_PROVIDERS: {},
+  DESIGN_HARNESS_DIALOGS: {
+    'components/chip-dialog': { config: () => ({ role: 'dialog', strategies: dialogOverlayStrategy() }) },
+  },
   get DESIGN_HARNESS_TEMPLATES() {
     return { 'pages/frame': FakeFrameShotsComponent };
   },
@@ -59,7 +64,11 @@ vi.mock('./design-harness-samples', () => ({
 
 const render = async (search: string) => {
   TestBed.configureTestingModule({
-    providers: [provideZonelessChangeDetection(), { provide: PlatformLocation, useValue: { search } }],
+    providers: [
+      provideZonelessChangeDetection(),
+      provideOverlay(),
+      { provide: PlatformLocation, useValue: { search } },
+    ],
   });
 
   const fixture = TestBed.createComponent(DesignHarnessComponent);
@@ -73,6 +82,27 @@ const render = async (search: string) => {
 };
 
 describe('DesignHarnessComponent', () => {
+  afterEach(() => document.querySelectorAll('.et-overlay-runtime-root').forEach((root) => root.remove()));
+
+  it('opens a dialog part in an overlay pane over a host that fills the viewport, and records its emits', async () => {
+    const props = encodeURIComponent(JSON.stringify({ label: 'Tag', removable: true, close: 'hover' }));
+    const element = await render(`?part=components%2Fchip-dialog&state=a&props=${props}`);
+    const host = element.querySelector('[data-design-harness-host]');
+    const chip = document.querySelector<HTMLElement>('.et-overlay-runtime-pane ethlete-fake-chip');
+
+    expect(host?.className).toBe('bg-et-surface-bg block h-screen w-screen');
+    expect(host?.children).toHaveLength(1);
+    expect(host?.querySelector('ethlete-fake-chip')).toBeNull();
+    expect(chip?.textContent).toBe('Tag x');
+    expect(chip?.hasAttribute('data-design-harness-mounted')).toBe(true);
+
+    chip?.click();
+
+    expect((window as Window & { __etDesignEmits?: unknown }).__etDesignEmits).toEqual([
+      { output: 'remove', value: 'Tag' },
+    ]);
+  });
+
   it('mounts the part component inside the host element with the props as inputs', async () => {
     const props = encodeURIComponent(JSON.stringify({ label: 'Tag', removable: true }));
     const element = await render(`?part=components%2Fchip&state=removable&props=${props}`);

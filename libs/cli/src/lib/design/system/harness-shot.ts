@@ -139,7 +139,9 @@ export const lookMissProblemOf = ({ look, selector, part }: FrameLook) =>
   `the look "${look}" targets "${selector}" in ${part}, but no element inside the app's element with that look matches it`;
 
 const MOUNTED_INPUTS_SCRIPT = `(() => {
-  const mounted = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})?.firstElementChild;
+  const mounted =
+    document.querySelector('[data-design-harness-mounted]') ??
+    document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})?.firstElementChild;
   const ng = window.ng;
 
   if (!mounted || !ng?.getComponent || !ng.getDirectiveMetadata) return null;
@@ -235,9 +237,11 @@ const VOID_TAGS = new Set([
  * `hidden` element draws none, nor does one inside a framed drawing (a part root inside a `slot()` region): it is frame
  * content, which the app draws inside the frame, not in an overlay root.
  */
-export const drawnPaneCountOf = (markup: string) => {
+export const drawnPaneCountOf = (markup: string) => drawnPanesOf(markup).length;
+
+const drawnPanesOf = (markup: string) => {
   const open: { tag: string; hidden: boolean; projected: boolean; inRegion: boolean; framed: boolean }[] = [];
-  let count = 0;
+  const panes: string[] = [];
 
   for (const [whole, closing, tag = '', attributes = ''] of markup.matchAll(/<(\/?)([a-zA-Z][\w-]*)(\s[^>]*)?>/g)) {
     if (closing) {
@@ -259,13 +263,26 @@ export const drawnPaneCountOf = (markup: string) => {
       (['et-overlay-container', 'et-menu', 'et-select-panel'].includes(tag) ||
         /\sclass="(?:[^"]*\s)?et-overlay-runtime-pane[\s"]/.test(attributes))
     )
-      count++;
+      panes.push(attributes);
 
     if (!VOID_TAGS.has(tag.toLowerCase()) && !whole.endsWith('/>'))
       open.push({ tag, hidden, projected: /\sdata-et-projected="/.test(attributes), inRegion, framed });
   }
 
-  return count;
+  return panes;
+};
+
+/**
+ * The viewport the app opens a dialog part in: the size of its design `png`, when the design `markup` draws a dialog
+ * pane at rest that neither a trigger click nor a hover opens, as the frame of such a design stands for the viewport.
+ */
+export const dialogFrameOf = (options: { markup: string; png: Buffer; open: unknown }): DesignPreset | null => {
+  const { markup, png } = options;
+  const dialog = drawnPanesOf(markup).some((attributes) => /\srole="(?:alert)?dialog"/.test(attributes));
+
+  return dialog && !options.open && openedByElementsOf(markup).length === 0
+    ? { width: png.readUInt32BE(16), height: png.readUInt32BE(20) }
+    : null;
 };
 
 const FORCED_POLL_MS = 50;

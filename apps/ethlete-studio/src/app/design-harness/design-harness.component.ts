@@ -1,14 +1,19 @@
 import { DOCUMENT, PlatformLocation } from '@angular/common';
 import {
+  afterNextRender,
   ApplicationRef,
+  Binding,
   Component,
   ComponentRef,
   createComponent,
+  Directive,
   effect,
   EnvironmentInjector,
   inject,
+  inputBinding,
   Injector,
   OutputRef,
+  outputBinding,
   reflectComponentType,
   Type,
   signal,
@@ -18,12 +23,18 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { outputToObservable, toSignal } from '@angular/core/rxjs-interop';
-import { OVERLAY_REF, OverlayRef } from '@ethlete/components';
+import { injectOverlayManager, OVERLAY_REF, OverlayRef } from '@ethlete/components';
 import { injectRenderer } from '@ethlete/core';
 import { catchError, from, map, Observable, of, tap } from 'rxjs';
 import { WINDOW_CHROME, WindowChrome } from '../../host/window';
 import { DESIGN_HARNESS_PARTS } from './design-harness-parts';
-import { DESIGN_HARNESS_PROVIDERS, DESIGN_HARNESS_SAMPLES, DESIGN_HARNESS_TEMPLATES } from './design-harness-samples';
+import {
+  DESIGN_HARNESS_DIALOGS,
+  DESIGN_HARNESS_PROVIDERS,
+  DESIGN_HARNESS_SAMPLES,
+  DESIGN_HARNESS_TEMPLATES,
+  DesignHarnessDialog,
+} from './design-harness-samples';
 
 /** Each output a mounted part emits, in order, for `et design actions` to read. */
 export type HarnessEmits = { output: string; value: unknown }[];
@@ -36,6 +47,9 @@ const LINUX_CHROME: WindowChrome = {
 };
 
 type HarnessState = { part: string; component: Type<unknown>; props: Record<string, unknown> } | { error: string };
+
+@Directive({ selector: '[ethleteDesignHarnessMounted]', host: { 'data-design-harness-mounted': '' } })
+export class DesignHarnessMountedDirective {}
 
 const stateOf$ = (search: string): Observable<HarnessState> => {
   const params = new URLSearchParams(search);
@@ -64,6 +78,12 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
   );
 };
 
+const dialogOf = (search: string) => {
+  const part = new URLSearchParams(search).get('part') ?? '';
+
+  return Object.hasOwn(DESIGN_HARNESS_DIALOGS, part) ? DESIGN_HARNESS_DIALOGS[part] : undefined;
+};
+
 @Component({
   selector: 'ethlete-root',
   template: `
@@ -72,7 +92,10 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
     @if (current && 'error' in current) {
       <p data-design-harness-error>{{ current.error }}</p>
     } @else if (current) {
-      <div [class]="page ? 'block min-h-screen w-screen' : 'flow-root w-fit'" data-design-harness-host>
+      <div [class]="hostClass" data-design-harness-host>
+        @if (dialog && !dialog.stage) {
+          <div class="size-full"></div>
+        }
         <ng-container #outlet />
       </div>
     }
@@ -86,10 +109,17 @@ export class DesignHarnessComponent {
   private injector = inject(Injector);
   private appRef = inject(ApplicationRef);
   private environmentInjector = inject(EnvironmentInjector);
+  private overlay = injectOverlayManager();
   private outlet = viewChild('outlet', { read: ViewContainerRef });
   private templatesRef: ComponentRef<{ templates: () => Record<string, unknown> }> | null = null;
+  private dialogRef: OverlayRef<object> | null = null;
   protected state = toSignal(stateOf$(this.platformLocation.search));
-  protected page = new URLSearchParams(this.platformLocation.search).get('layout') === 'page';
+  protected dialog = dialogOf(this.platformLocation.search);
+  protected hostClass = this.dialog
+    ? 'block h-screen w-screen bg-et-surface-bg'
+    : new URLSearchParams(this.platformLocation.search).get('layout') === 'page'
+      ? 'block min-h-screen w-screen'
+      : 'flow-root w-fit';
 
   constructor() {
     effect(() => {
@@ -102,21 +132,36 @@ export class DesignHarnessComponent {
         outlet.clear();
         this.templatesRef?.destroy();
         this.templatesRef = null;
+        this.dialogRef?.close();
+        this.dialogRef = null;
 
         const injector = Injector.create({
           parent: this.injector,
           providers: [
-            {
-              provide: OVERLAY_REF,
-              useValue: { close: () => undefined, busy: signal(false) } as unknown as OverlayRef,
-            },
+            ...(this.dialog
+              ? []
+              : [
+                  {
+                    provide: OVERLAY_REF,
+                    useValue: { close: () => undefined, busy: signal(false) } as unknown as OverlayRef,
+                  },
+                ]),
             { provide: WINDOW_CHROME, useValue: signal(LINUX_CHROME).asReadonly() },
             ...((Object.hasOwn(DESIGN_HARNESS_PROVIDERS, state.part) && DESIGN_HARNESS_PROVIDERS[state.part]) || []),
           ],
         });
+        const inputs = Object.entries({ ...this.templatesOf(state.part, injector), ...state.props });
+        const emits = this.recordedEmits();
+
+        if (this.dialog) {
+          this.openDialog({ dialog: this.dialog, outlet, injector, component: state.component, inputs, emits });
+
+          return;
+        }
+
         const ref = outlet.createComponent(state.component, { injector });
 
-        Object.entries({ ...this.templatesOf(state.part, injector), ...state.props }).forEach(([name, value]) => {
+        inputs.forEach(([name, value]) => {
           if (name === 'class') {
             if (typeof value === 'string')
               value
@@ -130,9 +175,51 @@ export class DesignHarnessComponent {
           ref.setInput(name, value);
         });
 
-        this.recordOutputs(state.component, ref.instance as Record<string, unknown>);
+        this.recordOutputs({ component: state.component, instance: ref.instance as Record<string, unknown>, emits });
       });
     });
+  }
+
+  private openDialog(options: {
+    dialog: DesignHarnessDialog;
+    outlet: ViewContainerRef;
+    injector: Injector;
+    component: Type<unknown>;
+    inputs: [string, unknown][];
+    emits: HarnessEmits;
+  }) {
+    const { dialog, outlet, injector, component, inputs, emits } = options;
+    const stage = dialog.stage ? outlet.createComponent(dialog.stage, { injector }) : null;
+
+    const mirror = reflectComponentType(component);
+    const declared = new Set(mirror?.inputs.map(({ templateName }) => templateName));
+    const bindings: Binding[] = [
+      ...inputs.filter(([name]) => declared.has(name)).map(([name, value]) => inputBinding(name, () => value)),
+      ...(mirror?.outputs ?? []).map(({ templateName }) =>
+        outputBinding<unknown>(templateName, (value) => emits.push({ output: templateName, value })),
+      ),
+    ];
+
+    afterNextRender(
+      () => {
+        this.dialogRef = this.overlay.open(component as Type<object>, {
+          ...dialog.config(stage?.instance.origin() ?? null),
+          autoFocus: false,
+          injector,
+          bindings,
+          directives: [DesignHarnessMountedDirective],
+        });
+      },
+      { injector: this.injector },
+    );
+  }
+
+  private recordedEmits() {
+    const emits: HarnessEmits = [];
+
+    if (this.document.defaultView) Reflect.set(this.document.defaultView, '__etDesignEmits', emits);
+
+    return emits;
   }
 
   private templatesOf(part: string, elementInjector: Injector) {
@@ -150,10 +237,8 @@ export class DesignHarnessComponent {
     return this.templatesRef.instance.templates();
   }
 
-  private recordOutputs(component: Type<unknown>, instance: Record<string, unknown>) {
-    const emits: HarnessEmits = [];
-
-    if (this.document.defaultView) Reflect.set(this.document.defaultView, '__etDesignEmits', emits);
+  private recordOutputs(options: { component: Type<unknown>; instance: Record<string, unknown>; emits: HarnessEmits }) {
+    const { component, instance, emits } = options;
 
     for (const { propName, templateName } of reflectComponentType(component)?.outputs ?? []) {
       const output = instance[propName] as OutputRef<unknown> | undefined;

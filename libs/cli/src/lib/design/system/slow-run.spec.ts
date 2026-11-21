@@ -75,6 +75,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         droppedProps: async () => [],
         actionLost: async () => [],
         pageStateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
       },
       record: (request) =>
         recordSettledBuildReady({ ...request, actionsOf: async () => [], declaredActionsOf: async () => ['open'] }),
@@ -114,6 +115,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         droppedProps: async () => [],
         actionLost: async () => [],
         pageStateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
       },
       record: (request) =>
         recordSettledBuildReady({ ...request, actionsOf: async () => [], declaredActionsOf: async () => ['open'] }),
@@ -433,6 +435,7 @@ describe('NO-VISIBLE-CHANGE in the slow run', { timeout: 60_000 }, () => {
           droppedProps: async () => [],
           actionLost: async () => [],
           pageStateInner: async () => [],
+          shoot: async () => ({ states: {}, shots: [] }),
           noVisibleChange: async ({ sketches }) =>
             sketches.map((entry) => {
               seen.push(entry.target);

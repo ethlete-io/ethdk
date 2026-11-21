@@ -1,6 +1,18 @@
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, OverlayCloseDirective } from '@ethlete/components';
+import {
+  anchoredDialogOverlayStrategy,
+  BUTTON_IMPORTS,
+  OverlayCloseDirective,
+  OverlayConfig,
+} from '@ethlete/components';
 import { UPDATE_DIALOG_LABELS } from '../../i18n/shell-labels';
+
+export const updateDialogConfigOf = (origin: Element | Event | null): OverlayConfig => ({
+  origin,
+  role: 'dialog',
+  ariaLabel: UPDATE_DIALOG_LABELS.label,
+  strategies: anchoredDialogOverlayStrategy(),
+});
 
 export const displayVersion = (version: string) => version.split('+')[0] ?? version;
 

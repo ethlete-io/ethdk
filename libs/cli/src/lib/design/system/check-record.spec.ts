@@ -18,6 +18,7 @@ const runners: Partial<SlowRunners> = {
   droppedProps: async () => [],
   actionLost: async () => [],
   pageStateInner: async () => [],
+  shoot: async () => ({ states: {}, shots: [] }),
 };
 
 const staleChip = () => {

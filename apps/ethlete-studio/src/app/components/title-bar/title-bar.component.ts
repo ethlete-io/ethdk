@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
+import { Component, computed, ElementRef, input, output, viewChild, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   BADGE_IMPORTS,
@@ -123,7 +123,15 @@ const uncommittedEntryOf = (line: string) => {
           </button>
         }
         @if (update()) {
-          <button (click)="updatePress.emit($event)" et-button type="button" variant="filled" color="brand" size="xs">
+          <button
+            #updateButton
+            (click)="updatePress.emit($event)"
+            et-button
+            type="button"
+            variant="filled"
+            color="brand"
+            size="xs"
+          >
             {{ LABELS.update }}
           </button>
         }
@@ -359,6 +367,8 @@ export class TitleBarComponent {
 
   // eslint-disable-next-line @angular-eslint/no-output-native -- the design declares emit:close
   public close = output();
+  public updateButton = viewChild('updateButton', { read: ElementRef<HTMLElement> });
+
   protected readonly LABELS = TITLE_BAR_LABELS;
   protected readonly CODE_LABELS = CODE_LABELS;
   protected readonly CAPTION_SHAPE = WINDOW_CONTROL_BUTTON_SHAPES.CAPTION;

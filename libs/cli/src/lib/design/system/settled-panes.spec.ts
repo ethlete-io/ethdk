@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { settle } from './action-press';
-import { drawnPaneCountOf, missingPanesProblemOf } from './harness-shot';
+import { dialogFrameOf, drawnPaneCountOf, missingPanesProblemOf } from './harness-shot';
 import { PANE_COUNT_TIMEOUT_MS, settledPanesOf, settledPanesScript } from './settled-panes';
 
 type Page = Parameters<typeof settledPanesOf>[0]['page'];
@@ -146,5 +146,31 @@ describe('drawnPaneCountOf', () => {
       ),
     ).toBe(0);
     expect(drawnPaneCountOf(`<div data-et-projected="shot">${tip}</div>${chip}`)).toBe(2);
+  });
+});
+
+describe('dialogFrameOf', () => {
+  const png = Buffer.alloc(24);
+
+  png.writeUInt32BE(800, 16);
+  png.writeUInt32BE(245, 20);
+
+  const dialog =
+    '<div><et-overlay-container role="dialog" class="et-overlay-runtime-pane"></et-overlay-container></div>';
+
+  it('sizes the viewport as the design picture of a dialog pane drawn at rest', () => {
+    expect(dialogFrameOf({ markup: dialog, png, open: undefined })).toEqual({ width: 800, height: 245 });
+  });
+
+  it('leaves a menu pane, a dialog a trigger opens and a framed dialog to the fitted frame', () => {
+    expect(dialogFrameOf({ markup: '<et-menu></et-menu>', png, open: undefined })).toBeNull();
+    expect(dialogFrameOf({ markup: dialog, png, open: { control: 'open' } })).toBeNull();
+    expect(
+      dialogFrameOf({
+        markup: `<div data-et-projected=""><div data-et-part="x">${dialog}</div></div>`,
+        png,
+        open: undefined,
+      }),
+    ).toBeNull();
   });
 });

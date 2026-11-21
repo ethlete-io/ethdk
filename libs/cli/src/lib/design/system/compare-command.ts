@@ -34,6 +34,7 @@ import { HarnessServer, startHarnessServer, StartHarnessServer, withHarnessUrl }
 import { baseCheckoutOf, baseCommitOf, gitOrNull } from './base-checkout';
 import {
   compareFrameOf,
+  dialogFrameOf,
   DroppedPropsError,
   harnessDriveOf,
   harnessPropsOf,
@@ -87,7 +88,7 @@ export const COMPARE_USAGE =
 /** A drawn state; a live one carries the regions both sides measured. */
 export type StateShot =
   | { state: string; width?: number; design: Buffer; app: Buffer; regions?: { design: Region[]; app: Region[] } }
-  | { state: string; width?: number; problem: string; undrivable?: true };
+  | { state: string; width?: number; problem: string; undrivable?: true; missingPanes?: true };
 
 /** A live app shot of one state with its measured regions, or the reason it failed. */
 export type AppShots = Map<string, { app: Buffer; regions: Region[] } | string>;
@@ -131,16 +132,12 @@ export const COMPARE_SHOTS_AT_ONCE = 8;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-type AppShot = { app: Buffer } | { problem: string; undrivable?: true };
+type AppShot = { app: Buffer } | { problem: string; undrivable?: true; missingPanes?: true };
 
 /** @internal The failed state a harness shot's error stands for; rethrows any error that fails the whole compare. */
 export const appShotProblemOf = (error: unknown): AppShot => {
-  if (
-    error instanceof DroppedPropsError ||
-    error instanceof MissingPanesError ||
-    error instanceof LookMissError ||
-    error instanceof AppFontError
-  )
+  if (error instanceof MissingPanesError) return { problem: error.message, missingPanes: true };
+  if (error instanceof DroppedPropsError || error instanceof LookMissError || error instanceof AppFontError)
     return { problem: error.message };
   if (error instanceof UndrivableError) return { problem: error.message, undrivable: true };
 
@@ -404,7 +401,7 @@ export const shootStatesWith =
                   props: sent,
                   layout: frame.layout,
                 }),
-                size: frame.size,
+                size: frame.size ?? dialogFrameOf({ markup: design.markup ?? '', png: design.png, open }),
                 width,
                 ...drive,
                 ...(looks.length > 0 ? { looks } : {}),

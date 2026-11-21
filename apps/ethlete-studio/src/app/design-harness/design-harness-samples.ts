@@ -1,4 +1,8 @@
 import { StaticProvider, Type } from '@angular/core';
+import { OverlayConfig } from '@ethlete/components';
+import { studioDialogConfigOf } from '../design-parts/studio-menu/studio-menu-dialogs';
+import { updateDialogConfigOf } from '../components/update-dialog/update-dialog.component';
+import { ABOUT_DIALOG_LABELS, SHORTCUTS_DIALOG_LABELS } from '../i18n/shell-labels';
 import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { SHELL_LABELS } from '../i18n/shell-labels';
 import { CANVAS_LIVE_REST_MS } from '../components/design-canvas/design-canvas.component';
@@ -21,6 +25,7 @@ import {
 } from '../design-parts/system-page/system-page-sample';
 import { DesignHarnessHoldTriggerComponent } from './design-harness-hold-trigger.component';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
+import { DesignHarnessUpdateStageComponent } from './design-harness-update-stage.component';
 import {
   SKETCH_ADDED_STATE,
   SKETCH_AGENT_RUNS,
@@ -453,4 +458,18 @@ export const DESIGN_HARNESS_PROVIDERS: Record<string, StaticProvider[]> = {
     { provide: FRAME_UNREPORTED_PAINT_MS, useValue: 0 },
     { provide: CANVAS_LIVE_REST_MS, useValue: 0 },
   ],
+};
+
+export type DesignHarnessDialog = {
+  config: (origin: Element | null) => OverlayConfig;
+  stage?: Type<{ origin: () => Element | null }>;
+};
+
+export const DESIGN_HARNESS_DIALOGS: Record<string, DesignHarnessDialog> = {
+  'components/about-dialog': { config: () => studioDialogConfigOf(ABOUT_DIALOG_LABELS.title) },
+  'components/shortcuts-dialog': { config: () => studioDialogConfigOf(SHORTCUTS_DIALOG_LABELS.title) },
+  'components/update-dialog': {
+    config: (origin) => updateDialogConfigOf(origin),
+    stage: DesignHarnessUpdateStageComponent,
+  },
 };

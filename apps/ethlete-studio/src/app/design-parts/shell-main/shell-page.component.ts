@@ -11,12 +11,11 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { anchoredDialogOverlayStrategy, injectOverlayManager } from '@ethlete/components';
+import { injectOverlayManager } from '@ethlete/components';
 import { catchError, EMPTY, Observable } from 'rxjs';
 import { closeWindow$, minimizeWindow$, toggleMaximizeWindow$, WINDOW_CHROME } from '../../../host/window';
 import { restartForUpdate$ } from '../../../host/update';
-import { UPDATE_DIALOG_LABELS } from '../../i18n/shell-labels';
-import { UpdateDialogComponent } from '../../components/update-dialog/update-dialog.component';
+import { UpdateDialogComponent, updateDialogConfigOf } from '../../components/update-dialog/update-dialog.component';
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, DesignServerStatus, StudioMenuComponent } from '../studio-menu/studio-menu.component';
@@ -165,10 +164,7 @@ export class ShellPageComponent {
     if (!version) return;
 
     this.overlay.open(UpdateDialogComponent, {
-      origin: event,
-      role: 'dialog',
-      ariaLabel: UPDATE_DIALOG_LABELS.label,
-      strategies: anchoredDialogOverlayStrategy(),
+      ...updateDialogConfigOf(event),
       bindings: [inputBinding('version', () => version), outputBinding('restart', () => this.run(restartForUpdate$()))],
     });
   }

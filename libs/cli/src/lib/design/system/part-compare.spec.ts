@@ -1176,6 +1176,7 @@ describe('harnessShotOf', () => {
     await expect(harnessShotOf({ browser, url: target })).resolves.toBeInstanceOf(Buffer);
     expect(await harnessShotOf({ browser, url: target, panes: 1 }).catch(appShotProblemOf)).toEqual({
       problem: missingPanesProblemOf({ drawn: 1, opened: 0 }),
+      missingPanes: true,
     });
   });
 

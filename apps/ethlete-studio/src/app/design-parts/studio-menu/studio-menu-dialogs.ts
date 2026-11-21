@@ -5,6 +5,7 @@ import {
   injectOverlayManager,
   KBD_PLATFORM,
   matchesKbdChord,
+  OverlayConfig,
   OverlayRef,
 } from '@ethlete/components';
 import { catchError, EMPTY, filter, fromEvent, Observable, of, tap } from 'rxjs';
@@ -12,6 +13,12 @@ import { openHelp$, studioVersion$ } from '../../../host/about';
 import { SHORTCUTS_DIALOG_LABELS, ABOUT_DIALOG_LABELS } from '../../i18n/shell-labels';
 import { AboutDialogComponent } from '../about-dialog/about-dialog.component';
 import { SHORTCUTS_KEY, ShortcutsDialogComponent } from '../shortcuts-dialog/shortcuts-dialog.component';
+
+export const studioDialogConfigOf = (ariaLabel: string): OverlayConfig => ({
+  role: 'dialog',
+  ariaLabel,
+  strategies: dialogOverlayStrategy({ width: '40rem', maxWidth: 'calc(100% - var(--space-6))' }),
+});
 
 /** Opens the dialogs and the help page behind the Studio menu, and Tastenkürzel on Ctrl+/ / ⌘/. */
 export const injectStudioMenuDialogs = () => {
@@ -24,9 +31,7 @@ export const injectStudioMenuDialogs = () => {
     if (open) return;
 
     const ref: OverlayRef<object> = overlay.open(component, {
-      role: 'dialog',
-      ariaLabel: config.ariaLabel,
-      strategies: dialogOverlayStrategy({ width: '40rem', maxWidth: 'calc(100% - var(--space-6))' }),
+      ...studioDialogConfigOf(config.ariaLabel),
       bindings: [...(config.bindings ?? []), outputBinding('close', () => ref.close())],
     });
 

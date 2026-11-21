@@ -130,6 +130,7 @@ const comparedProblemsOf = async (options: {
   url: string;
   shoot: ShootStates;
   designOnly?: boolean;
+  panesOnly?: boolean;
   component?: string | null;
 }): Promise<Problem[]> => {
   const shot = await options.shoot({ ...options, only: null });
@@ -141,16 +142,19 @@ const comparedProblemsOf = async (options: {
 
   if (typeof shot === 'string') return [problemOf(shot)];
 
-  if (options.designOnly)
-    return shot.shots.flatMap((state): Problem[] =>
-      'problem' in state && state.undrivable
+  if (options.designOnly || options.panesOnly)
+    return shot.shots.flatMap((state): Problem[] => {
+      if (!('problem' in state)) return [];
+      if (state.missingPanes) return [problemOf(`${state.state}: ${state.problem}`)];
+
+      return options.designOnly && state.undrivable
         ? [
             problemOf(
               `${state.state}: ${state.problem} - the design changed and the app cannot drive this state; build its trigger in ${options.component ?? 'the app component'}`,
             ),
           ]
-        : [],
-    );
+        : [];
+    });
 
   return shot.shots.flatMap((state): Problem[] => {
     if ('problem' in state) return [problemOf(`${state.state}: ${state.problem}`)];
@@ -349,6 +353,7 @@ export const runSlowChecks = async (options: {
             url: server.url,
             shoot,
             designOnly: inputs[part]?.designOnly === true,
+            panesOnly: inputs[part]?.panesOnly === true,
             component: componentOf(part),
           });
 

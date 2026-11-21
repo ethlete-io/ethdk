@@ -142,7 +142,7 @@ const livePagesOf = (root: string, live: string | undefined) => {
 };
 
 /** What a part's slow result depends on, and the rules that check it; no rules means it has no slow result. */
-export type SlowInputs = { rules: string[]; hash: string; designOnly?: true };
+export type SlowInputs = { rules: string[]; hash: string; designOnly?: true; panesOnly?: true };
 
 type PartContext = {
   product: ResolvedProduct;
@@ -212,6 +212,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const implemented = readImplemented(product.dir)[key]?.hash;
   const current = typeof implemented === 'string' && designHolds(implemented, design);
   const designOnly = component !== null && implemented !== undefined && !current;
+  const panesOnly = component !== null && implemented === undefined;
   const app = linked === null ? {} : appFilesOf({ root, component: linked });
   const sketch = context.judged.get(key);
   const rules = [
@@ -224,7 +225,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
     ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
-    ...(designOnly ? [COMPARE_RULE] : []),
+    ...(designOnly || panesOnly ? [COMPARE_RULE] : []),
     ...(context.judged.has(key) ? [NO_VISIBLE_CHANGE_RULE] : []),
   ];
 
@@ -255,6 +256,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
       ].join('\0'),
     ),
     ...(designOnly ? { designOnly: true as const } : {}),
+    ...(panesOnly ? { panesOnly: true as const } : {}),
   };
 };
 

@@ -280,10 +280,28 @@ describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
     expect(same?.designOnly).toBeUndefined();
   });
 
-  it('does not compare a part that was never implemented', () => {
-    const { product } = acme();
+  it('compares a part that was never implemented for its overlay panes only', async () => {
+    const { target, product } = acme();
+    const inputs = slowInputsOf({ product: product() })['components/chip'];
 
-    expect(slowInputsOf({ product: product() })['components/chip']?.rules).not.toContain('COMPARE');
+    expect(inputs?.rules).toContain('COMPARE');
+    expect(inputs?.panesOnly).toBe(true);
+
+    const results = await runSlowChecks({
+      target,
+      config: readConfig(target) ?? {},
+      product: product(),
+      parts: ['components/chip'],
+      runners: runners([
+        { state: 'open', problem: 'the design draws 1 overlay pane, the app opened 0', missingPanes: true },
+        { state: 'direct-edit', problem: 'no "Gründe" trigger', undrivable: true },
+        { state: 'default', design: Buffer.from('a'), app: Buffer.from('b') },
+      ]),
+    });
+
+    expect((results.get('components/chip') ?? []).map(({ rule, message }) => [rule, message])).toEqual([
+      ['COMPARE', 'open: the design draws 1 overlay pane, the app opened 0'],
+    ]);
   });
 
   it('fails a state the app cannot drive and names the app component, and ignores a pixel difference', async () => {
