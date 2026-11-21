@@ -1,3 +1,4 @@
+import config from '../../../../config.json';
 import { drawing, forceInteraction, html, interactionRows, slot, type Interaction, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
@@ -7,7 +8,6 @@ import { shellCollapseStyles } from '@system/components/shell-collapse';
 import { SIDE_WIDTH } from '@system/components/shell-resize-handle';
 import titleBar from '@system/components/title-bar';
 import { icon, type IconName } from '@system/foundations/icons';
-import { studioMarkLine } from '@system/foundations/logo';
 import {
   DESIGN_SERVER_LABELS,
   STUDIO_MENU_LABELS,
@@ -47,6 +47,7 @@ type Props = {
   chrome?: Chrome;
   update?: boolean;
   sideWidth?: number;
+  logos?: Record<string, string>;
 };
 
 type StartPhase = 'starting' | 'cli-build' | 'app-build';
@@ -89,9 +90,31 @@ const railLetters = (names: string[]) => {
 
 const RAIL_LETTERS = railLetters(RECENT_PRODUCTS);
 
-const PRODUCT_LOGOS: Record<string, (size: number) => string> = { studio: studioMarkLine };
+const LOGO_FILES = import.meta.glob<string>(
+  [
+    '../../../../*/assets/*.{svg,png}',
+    '../../../../../../apps/*/src-tauri/icons/*.png',
+    '../../../../../../libs/*/assets/*.{svg,png}',
+  ],
+  { query: '?inline', import: 'default', eager: true },
+);
 
-const railMark = (product: string, index: number) => PRODUCT_LOGOS[product]?.(20) ?? RAIL_LETTERS[index] ?? product;
+const RAIL_LOGOS: Record<string, string> = Object.fromEntries(
+  RECENT_PRODUCTS.flatMap((name) => {
+    const logo = (config.products as Record<string, { logo?: string }>)[name]?.logo;
+    const key = logo
+      ? Object.keys(LOGO_FILES).find((candidate) => new URL(candidate, import.meta.url).pathname.endsWith(`/${logo}`))
+      : undefined;
+    const file = key ? LOGO_FILES[key] : undefined;
+
+    return file ? [[name, file]] : [];
+  }),
+);
+
+const railMark = (logos: Record<string, string>, product: string, index: number) =>
+  logos[product]
+    ? `<img src="${logos[product]}" alt="" class="block size-5 object-contain pointer-events-none">`
+    : (RAIL_LETTERS[index] ?? product);
 
 const ICONS: Record<(typeof SECTIONS)[number], IconName> = {
   System: 'grid',
@@ -159,14 +182,21 @@ const sep = '<div class="st-shell-sep my-space-2 bg-et-surface-border"></div>';
 
 const railSection = (section: Section) => (section === 'Sketches' ? 'System' : section);
 
-const rail = (section: Section, product: string, panelHidden: boolean, studio: string, force?: RailForce) =>
+const rail = (
+  section: Section,
+  product: string,
+  panelHidden: boolean,
+  studio: string,
+  logos: Record<string, string>,
+  force?: RailForce,
+) =>
   html`<nav class="st-shell-rail row-start-2 flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-bg">
     <div class="st-shell-slot relative flex justify-center w-full min-h-10" data-kind="logo">${studio}</div>
     ${sep}
     ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === railSection(section), 'section', panelHidden, force, s === section)).join('')}
     <div class="flex-1"></div>
     ${sep}
-    ${RECENT_PRODUCTS.map((p, index) => railItem(railMark(p, index), p, p === product, 'product', false, force)).join('')}
+    ${RECENT_PRODUCTS.map((p, index) => railItem(railMark(logos, p, index), p, p === product, 'product', false, force)).join('')}
   </nav>`;
 
 const sidePanel = (side: string, head: string, top: string) =>
@@ -269,6 +299,7 @@ const BASE: Props = {
   content: '',
   chrome: LINUX_CHROME,
   update: false,
+  logos: RAIL_LOGOS,
 };
 
 const railRowsOf = <const TRow extends string>(row: TRow, label: string) =>
@@ -338,6 +369,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     chrome = LINUX_CHROME,
     update = false,
     sideWidth,
+    logos = RAIL_LOGOS,
   }: Props) => {
     const bar = await titleBar.render({ ...chrome, update, product, part: '' });
     const system = await choice({
@@ -353,7 +385,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
         data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}${sideWidth ? ` style="--st-side-width: ${sideWidth}px"` : ''}
       >
         <div class="col-span-full">${bar.body}</div>
-        ${rail(section, product, panel === 'hidden', studio, force)}
+        ${rail(section, product, panel === 'hidden', studio, logos, force)}
         <div class="st-shell-stage relative row-start-2 min-w-0">
           <main
             class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"

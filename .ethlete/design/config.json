@@ -63,6 +63,7 @@
       }
     },
     "studio": {
+      "logo": ".ethlete/design/studio/assets/studio-app-icon.svg",
       "noteLanguage": "de",
       "schemes": ["dark"],
       "commandText": "deny",
@@ -120,6 +121,7 @@
       ]
     },
     "timetrack": {
+      "logo": "apps/timetrack/src-tauri/icons/128x128.png",
       "styles": [".ethlete/design/timetrack/styles.css"],
       "head": ".ethlete/design/calls/timetrack/head.html",
       "base": "@ethlete/components",

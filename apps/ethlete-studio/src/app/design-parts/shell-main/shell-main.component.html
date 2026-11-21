@@ -122,9 +122,9 @@
           color="surface"
           size="sm"
         >
-          @let logo = PRODUCT_LOGOS_MAP[name];
+          @let logo = logos()[name];
           @if (logo) {
-            <span class="block size-5"><ng-container *ngComponentOutlet="logo" /></span>
+            <img [src]="logo" class="pointer-events-none block size-5 object-contain" alt="" />
           } @else {
             {{ railLabels()[index] }}
           }

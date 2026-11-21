@@ -523,6 +523,7 @@ export class SystemViewComponent {
   });
 
   public productNames = computed(() => this.products().map((listed) => listed.name));
+  public productLogos = computed(() => Object.fromEntries(this.products().map((listed) => [listed.name, listed.logo])));
 
   public productName = computed(() => this.product()?.name ?? '');
 
@@ -1152,6 +1153,7 @@ export class SystemViewComponent {
     tree: this.partTree(),
     product: this.product()?.name ?? '',
     products: this.productNames(),
+    logos: this.productLogos(),
     project: this.project(),
     projects: this.projects(),
     panel: this.panel(),

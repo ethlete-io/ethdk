@@ -281,6 +281,8 @@ export type ListedPart = {
 export type ListedProduct = {
   name: string;
   base: string | null;
+  /** The declared logo as a data URL; missing from an `@ethlete/cli` older than product logos. */
+  logo?: string | null;
   presets: Record<string, SystemPreset>;
   /** The colour schemes the product draws; missing from an `@ethlete/cli` older than product schemes. */
   schemes?: ('light' | 'dark')[];

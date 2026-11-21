@@ -1,4 +1,5 @@
-import { dirname, relative, resolve, sep } from 'path';
+import { existsSync, readFileSync } from 'fs';
+import { dirname, extname, relative, resolve, sep } from 'path';
 import { Interaction, INTERACTIONS } from '../force-interactions';
 import { DesignColorScheme, DesignPreset } from '../design-config';
 import { ruleProblemsOf } from './check-system';
@@ -67,11 +68,24 @@ export type PageUse = { product: string; part: string };
 export type ListedProduct = {
   name: string;
   base: string | null;
+  /** The product's declared logo as a data URL; null when it declares none or the file is unreadable. */
+  logo: string | null;
   presets: Record<string, DesignPreset>;
   schemes: DesignColorScheme[];
   themes: { surface: string[]; color: string[] };
   parts: ListedPart[];
   problems: Problem[];
+};
+
+const LOGO_TYPES: Record<string, string> = { '.svg': 'image/svg+xml', '.png': 'image/png' };
+
+const logoOf = (target: string, logo: string | undefined) => {
+  const type = logo ? LOGO_TYPES[extname(logo).toLowerCase()] : undefined;
+  const file = logo ? resolve(target, logo) : '';
+
+  if (!logo || !type || !existsSync(file)) return null;
+
+  return `data:${type};base64,${readFileSync(file).toString('base64')}`;
 };
 
 /** Answers with the module of a part file as one product draws it. */
@@ -281,6 +295,7 @@ export const listSystem = async (options: {
           return {
             name,
             base: product.config.base ?? null,
+            logo: logoOf(target, product.config.logo),
             presets: product.presets,
             schemes: product.schemes,
             themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },

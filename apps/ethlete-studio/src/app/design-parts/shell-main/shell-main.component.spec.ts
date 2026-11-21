@@ -233,6 +233,7 @@ describe('ShellMainComponent', () => {
       const events: string[] = [];
 
       setupResult.fixture.componentRef.setInput('products', ['studio', 'studio-lab', 'sdk']);
+      setupResult.fixture.componentRef.setInput('logos', { studio: 'data:image/svg+xml;base64,PHN2Zy8+', sdk: null });
       setupResult.fixture.componentInstance.productChange.subscribe((product: string) => events.push(product));
       await setupResult.fixture.whenStable();
 
@@ -242,13 +243,15 @@ describe('ShellMainComponent', () => {
       return { ...setupResult, events, button };
     };
 
-    it('draws the studio logo mark and gives products without a logo part two unique letters', async () => {
+    it('draws the declared logo as an image and gives products without one two unique letters', async () => {
       const { button } = await products();
+      const image = button('studio').querySelector('img');
 
-      expect(button('studio').querySelector('svg')).not.toBeNull();
+      expect(image?.getAttribute('src')).toBe('data:image/svg+xml;base64,PHN2Zy8+');
+      expect(image?.getAttribute('alt')).toBe('');
       expect(button('studio').textContent?.trim()).toBe('');
       expect(['studio-lab', 'sdk'].map((name) => button(name).textContent?.trim())).toEqual(['Sl', 'Sd']);
-      expect(button('sdk').querySelector('svg')).toBeNull();
+      expect(button('sdk').querySelector('img')).toBeNull();
     });
 
     it('keeps the full name as the accessible name and emits it on click', async () => {

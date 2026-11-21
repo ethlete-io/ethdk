@@ -64,7 +64,7 @@ export type StartPhaseReading = { phase: NonNullable<ServerState['phase']>; phas
 const messageLinesOf = (error: unknown) =>
   (error instanceof Error ? error.message : typeof error === 'string' ? error : String(error)).split('\n');
 
-type ShownProducts = { product: string; products: string[] };
+type ShownProducts = { product: string; products: string[]; logos: Record<string, string | null | undefined> };
 
 @Component({
   selector: 'ethlete-studio-view',
@@ -74,6 +74,7 @@ type ShownProducts = { product: string; products: string[] };
         [shell]="{
           product: shownProducts().product,
           products: shownProducts().products,
+          logos: shownProducts().logos,
           project: projectName(),
           projects: checkouts.names(),
           panel: serverPanel(),
@@ -137,10 +138,10 @@ export class StudioViewComponent {
       computed(() => {
         const view = this.systemView();
 
-        return view ? { product: view.productName(), products: view.productNames() } : null;
+        return view ? { product: view.productName(), products: view.productNames(), logos: view.productLogos() } : null;
       }),
     ).pipe(filter((shown): shown is ShownProducts => !!shown && shown.products.length > 0)),
-    { initialValue: { product: '', products: [] } as ShownProducts },
+    { initialValue: { product: '', products: [], logos: {} } as ShownProducts },
   );
 
   public startPhase = toSignal(

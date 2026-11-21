@@ -28,6 +28,7 @@ class SystemViewStubComponent {
   public removeProject = output();
   public projectChange = output<string>();
   public productNames = signal<string[]>([]);
+  public productLogos = signal<Record<string, string | null>>({});
   public productName = signal('');
 }
 

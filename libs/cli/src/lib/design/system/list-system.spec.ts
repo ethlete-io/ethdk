@@ -170,6 +170,34 @@ describe('listSystem', () => {
     ]);
   });
 
+  it('lists a declared logo as a data URL, and null when none is declared or the file is missing', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+
+    writeFileSync(join(target, 'mark.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+    writeFileSync(
+      join(target, DESIGN_DIR, 'config.json'),
+      JSON.stringify({
+        ...config,
+        products: {
+          ...config.products,
+          acme: { ...config.products?.['acme'], logo: 'mark.svg' },
+          'acme-base': { ...config.products?.['acme-base'], logo: 'missing.png' },
+        },
+      }),
+    );
+
+    const products = await list(target, ['acme', 'acme-base']);
+
+    expect(products.map(({ name, logo }) => [name, logo])).toEqual([
+      [
+        'acme',
+        `data:image/svg+xml;base64,${Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>').toString('base64')}`,
+      ],
+      ['acme-base', null],
+    ]);
+  });
+
   it('puts a rule problem and a load error on the part they belong to', async () => {
     const target = acme();
 

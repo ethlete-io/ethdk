@@ -1,4 +1,3 @@
-import { NgComponentOutlet } from '@angular/common';
 import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SpinnerComponent, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
@@ -9,7 +8,6 @@ import { DESIGN_SERVER_LABELS, SHELL_LABELS } from '../../i18n/shell-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 import { ShellResizeHandleComponent } from '../shell-resize-handle/shell-resize-handle.component';
 import { ShellSystemPickerComponent } from '../shell-system-picker/shell-system-picker.component';
-import { PRODUCT_LOGOS } from './product-logos';
 import { railLetters } from './rail-letters';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
@@ -35,7 +33,6 @@ const HOVER_PRESS_RAISED =
   templateUrl: './shell-main.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    NgComponentOutlet,
     BUTTON_IMPORTS,
     TOOLTIP_IMPORTS,
     AutoSurfaceDirective,
@@ -53,6 +50,7 @@ export class ShellMainComponent {
   public section = input<ShellSection>('System');
   public product = input('studio');
   public products = input(['studio', 'timetrack', 'docs']);
+  public logos = input<Record<string, string | null | undefined>>({});
   public panel = input<'open' | 'hidden'>('open');
   public systemPicker = model<'open' | 'closed'>('closed');
   public server = input<'stopped' | 'starting' | 'unanswered' | 'crashed' | null>(null);
@@ -74,7 +72,6 @@ export class ShellMainComponent {
 
   public closeRequest = output();
   protected readonly SECTIONS = SECTIONS;
-  protected readonly PRODUCT_LOGOS_MAP = PRODUCT_LOGOS;
   protected railLabels = computed(() => railLetters(this.products()));
   protected railSection = computed(() => (this.section() === 'Sketches' ? 'System' : this.section()));
 

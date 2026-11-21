@@ -12,6 +12,7 @@ import { clampSideWidth, SIDE_WIDTH } from './side-width';
 export type ShellState = {
   product: string;
   products: string[];
+  logos?: Record<string, string | null | undefined>;
   project: string;
   projects: string[];
   panel: 'open' | 'hidden';
@@ -52,6 +53,7 @@ export const SHELL_SAMPLE: ShellState = {
       [section]="section()"
       [product]="shell().product"
       [products]="shell().products"
+      [logos]="shell().logos ?? {}"
       [panel]="shell().panel"
       [server]="screen()"
       [phase]="shell().startPhase?.phase ?? 'starting'"
