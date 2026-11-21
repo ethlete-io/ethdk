@@ -166,6 +166,10 @@ export const firstListingStep = async (
 };
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  // macOS Maintenance Sleep freezes every process mid-run and reads as a design server stall.
+  if (process.platform === 'darwin')
+    spawn('caffeinate', ['-i', '-s', '-w', String(process.pid)], { detached: true, stdio: 'ignore' }).unref();
+
   const args = process.argv.slice(2);
   const valueOf = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
   const flagValues = new Set([valueOf('--limit-ms'), valueOf('--base')]);

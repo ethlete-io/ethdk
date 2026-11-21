@@ -377,6 +377,10 @@ const serveOnlyMain = async (args, value) => {
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  // macOS Maintenance Sleep freezes every process mid-run and reads as a design server stall.
+  if (process.platform === 'darwin')
+    spawn('caffeinate', ['-i', '-s', '-w', String(process.pid)], { detached: true, stdio: 'ignore' }).unref();
+
   const args = process.argv.slice(2);
   const value = (flag, fallback) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback);
   const out = resolve(value('--out', join(tmpdir(), 'studio-headless.png')));
