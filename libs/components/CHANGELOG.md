@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.0-next.95
+
+### Minor Changes
+
+- Match card: `showStartTime` keeps the kick-off in the compact row, and `MatchLabels` gains `tbdHome` / `tbdAway` for per-side empty-slot labels (`et-match-participant` takes a `side` input).
+- Add `emblemFallback` (`'initial' | 'shield'`) to `et-match-participant` and `et-match-card`, plus `provideMatchDefaults`. `'shield'` replaces the initial's circle with a neutral crest outline holding the initial.
+- Add `--et-picture-img-transform` and `--et-picture-img-transition` to `et-picture`, so a hover zoom can transform only the inner image while the picture clips it.
+- Add the `--et-scrollable-mask-size` custom property for the et-scrollable edge fade, with the legacy `--mask-size` as fallback, and a `buttons.maskSize` default in `provideScrollableConfig`.
+- Add the `--et-scrollable-buttons-extent` custom property to size the et-scrollable button box independently of the fill. Fix `--et-scrollable-buttons-end-space` applying always: it now applies only while the list can scroll and is not at the end.
+
+### Patch Changes
+
+- The clear (×) button of `etInputClear`, select, phone, date, time, date-time, date-range, time-range, date-time-range, duration and cascader inputs now shows whenever the field has a value and is interactive, not only while focused.
+- Float the form-field label while a single et-select shows its null option. The clear button stays hidden for it.
+
 ## 1.0.0-next.94
 
 ### Minor Changes

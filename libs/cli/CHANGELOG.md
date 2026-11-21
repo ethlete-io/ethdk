@@ -1,5 +1,20 @@
 # @ethlete/cli
 
+## 3.0.0-next.41
+
+### Patch Changes
+
+- `design check` writes only dropped ready marks and dropped direct-edit records into the tracked `ready.json` and `merged.json`; new or refreshed records stay in the gitignored stamp cache until `design ready` or `sketch merge`.
+- The design server's late-timer line now says the server was suspended, with its CPU use, when the machine slept, instead of calling a sleep a blocked event loop.
+- The design check and actions now fail at once with the harness's error text when a part has no sample for a prop, instead of timing out.
+- The design action check only clicks an option; its listbox or combobox handles Enter and Space.
+- The design action check presses Enter for an option on the element that controls its listbox, after moving its active option there with the arrow keys.
+- The design action check picks another option of a native `<select>` that declares an emit, instead of typing into it.
+- A slow check whose only problems are baselined or waiting on a sketch is stored as passing again, so `design ready` no longer reports the part as pending forever.
+- `design check` stores only passing slow-check results. A failed APP-SPEC, UNCOVERED-REGION, compare or action result reruns on the next check instead of replaying until the inputs change, so one flaky failure no longer blocks a part.
+- The design action check types into a text-entry control (combobox, textbox) that declares an emit action instead of clicking and pressing Enter, so `emit:queryChange` on a search input passes.
+- Share one warm-page pool across part shooters, so a resident design process keeps at most eight idle browser contexts per browser instead of eight more per `sketch check` run.
+
 ## 3.0.0-next.40
 
 ### Minor Changes
