@@ -1,7 +1,7 @@
 import { Component, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, OverlayCloseDirective } from '@ethlete/components';
 import { injectSemanticColorTheme } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
 export type SketchConfirmText = { question: string; note: string; confirm: string };
 
@@ -50,5 +50,5 @@ export class SketchConfirmComponent {
   public destructive = input(false);
 
   public confirm = output();
-  protected readonly LABELS = STUDIO_LABELS.sketches.confirm;
+  protected readonly LABELS = SKETCHES_LABELS.confirm;
 }

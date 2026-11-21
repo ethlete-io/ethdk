@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { BUTTON_IMPORTS, KBD_IMPORTS } from '@ethlete/components';
 import { WindowChrome } from '../../../host/window';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { TITLE_BAR_LABELS } from '../../i18n/shell-labels';
 import { injectCommandPaletteStore } from '../command-palette/command-palette-store';
 
 @Component({
@@ -67,7 +67,7 @@ export class TitleSearchComponent {
 
   private field = viewChild.required('field', { read: ElementRef<HTMLButtonElement> });
 
-  protected readonly LABELS = STUDIO_LABELS.titleBar;
+  protected readonly LABELS = TITLE_BAR_LABELS;
 
   protected platform = computed(() => (this.os() === 'macos' ? 'apple' : 'other'));
 

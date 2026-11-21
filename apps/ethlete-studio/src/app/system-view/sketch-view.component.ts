@@ -64,7 +64,7 @@ import {
   SketchStatus,
   SketchWithdrawn,
 } from '../design-parts/sketches/sketches-sample';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { SKETCHES_LABELS, MERGE_LABELS } from '../i18n/sketches-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
@@ -453,7 +453,7 @@ export class SketchViewComponent {
       .filter(({ round }) => round.variants.length > 0)
       .map(({ round, index }) => ({
         value: round.key,
-        label: STUDIO_LABELS.sketches.round(index + 1, round.title),
+        label: SKETCHES_LABELS.round(index + 1, round.title),
         note: round.note,
       })),
   );
@@ -717,7 +717,7 @@ export class SketchViewComponent {
 
     return {
       by: author ? modelNameOf(author) : '',
-      since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)),
+      since: Number.isNaN(at) ? '' : SKETCHES_LABELS.since(minutesSince(at)),
     };
   });
 
@@ -729,7 +729,7 @@ export class SketchViewComponent {
     return {
       until: hold?.until ?? '',
       by: sketchModelOf(by),
-      since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)),
+      since: Number.isNaN(at) ? '' : SKETCHES_LABELS.since(minutesSince(at)),
     };
   });
 
@@ -748,14 +748,14 @@ export class SketchViewComponent {
     const at = report ? Date.parse(report.updatedAt) : NaN;
     const minutes = Number.isNaN(at) ? null : minutesSince(at);
     const drawn = this.drawnVariant();
-    const labels = STUDIO_LABELS.sketches.agentRun;
+    const labels = SKETCHES_LABELS.agentRun;
 
     if (report && drawn !== null)
       return {
         by: sketchModelOf(report.author ?? ''),
         task: report.message,
-        step: STUDIO_LABELS.sketches.variant(report.variant ?? drawn),
-        since: minutes === null ? '' : STUDIO_LABELS.sketches.since(minutes),
+        step: SKETCHES_LABELS.variant(report.variant ?? drawn),
+        since: minutes === null ? '' : SKETCHES_LABELS.since(minutes),
       };
 
     const errored = this.erroredVariants();
@@ -780,12 +780,12 @@ export class SketchViewComponent {
 
     const at = Date.parse(mark.at);
 
-    return { merged: mark.merged, since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)) };
+    return { merged: mark.merged, since: Number.isNaN(at) ? '' : SKETCHES_LABELS.since(minutesSince(at)) };
   });
 
   protected readyReason = computed(() =>
     this.renderState().state === 'failed'
-      ? STUDIO_LABELS.sketches.agentRun.errors(this.renderState().errors)
+      ? SKETCHES_LABELS.agentRun.errors(this.renderState().errors)
       : (this.sketch().readyRefusal?.lines[0] ?? null),
   );
 
@@ -1015,9 +1015,7 @@ export class SketchViewComponent {
         tap(() => this.mergeComplete.emit(address.sketch)),
         catchError((error: unknown) => {
           this.mergeError.set(
-            error instanceof MergeNeedsRebaseError
-              ? STUDIO_LABELS.merge.needsRebase(error.changed)
-              : refusalMessageOf(error),
+            error instanceof MergeNeedsRebaseError ? MERGE_LABELS.needsRebase(error.changed) : refusalMessageOf(error),
           );
 
           return of(null);

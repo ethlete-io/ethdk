@@ -1,6 +1,6 @@
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, OverlayCloseDirective } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { UPDATE_DIALOG_LABELS } from '../../i18n/shell-labels';
 
 export const displayVersion = (version: string) => version.split('+')[0] ?? version;
 
@@ -31,7 +31,7 @@ export class UpdateDialogComponent {
   public later = output();
   public restart = output();
 
-  protected readonly LABELS = STUDIO_LABELS.updateDialog;
+  protected readonly LABELS = UPDATE_DIALOG_LABELS;
 
   protected question = computed(() => this.LABELS.question(displayVersion(this.version())));
 }

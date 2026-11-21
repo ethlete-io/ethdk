@@ -7,7 +7,9 @@ import { ListedFlow } from '../../host/design-flows';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { START_LABELS } from '../i18n/start-labels';
+import { SHELL_LABELS } from '../i18n/shell-labels';
+import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
@@ -775,7 +777,7 @@ describe('SystemViewComponent on a product without parts or without products', (
     const start = fixture.nativeElement.querySelector('ethlete-start');
 
     expect(start).not.toBeNull();
-    expect(start?.textContent).toContain(STUDIO_LABELS.start.noRepo);
+    expect(start?.textContent).toContain(START_LABELS.noRepo);
     expect(start?.querySelector('.outline-et-surface-border')).toBeNull();
     expect(fixture.nativeElement.querySelector('ethlete-shell-main')).toBeNull();
   });
@@ -2007,7 +2009,7 @@ describe('SystemViewComponent on a tree pick', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'legacy:web/start' });
     const page: HTMLElement | null = (fixture.nativeElement as HTMLElement).querySelector('ethlete-system-page');
     const transfer = [...(page?.querySelectorAll<HTMLButtonElement>('button') ?? [])].find(
-      (button) => button.textContent?.trim() === STUDIO_LABELS.shell.markTransferred,
+      (button) => button.textContent?.trim() === SHELL_LABELS.markTransferred,
     );
 
     expect(page?.querySelector('h2')?.textContent?.trim()).toBe('A start page for the web app');
@@ -2024,9 +2026,7 @@ describe('SystemViewComponent on a tree pick', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/gone' });
     const element: HTMLElement = fixture.nativeElement;
 
-    expect(element.querySelector('[data-sketch-missing]')?.textContent?.trim()).toBe(
-      STUDIO_LABELS.system.sketchMissing,
-    );
+    expect(element.querySelector('[data-sketch-missing]')?.textContent?.trim()).toBe(SYSTEM_LABELS.sketchMissing);
     expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
   });
 
@@ -2070,13 +2070,13 @@ describe('SystemViewComponent on a part with many states', () => {
     const bar = () => element.querySelector<HTMLElement>('[data-folded-states]');
 
     expect(view.frames().map((frame) => frame.row)).toEqual(['not-4']);
-    expect(bar()?.textContent).toContain(STUDIO_LABELS.system.foldedStates(11));
+    expect(bar()?.textContent).toContain(SYSTEM_LABELS.foldedStates(11));
 
     bar()?.querySelector('button')?.click();
     await settle(fixture);
 
     expect(view.frames().map((frame) => frame.row)).toEqual(states);
-    expect(bar()?.textContent).not.toContain(STUDIO_LABELS.system.foldedStates(11));
+    expect(bar()?.textContent).not.toContain(SYSTEM_LABELS.foldedStates(11));
   });
 
   it('also opens on the states with a problem and the states changed since the last merge', async () => {
@@ -2086,7 +2086,7 @@ describe('SystemViewComponent on a part with many states', () => {
     const element: HTMLElement = fixture.nativeElement;
 
     expect(fixture.componentInstance.frames().map((frame) => frame.row)).toEqual(['not-1', 'not-4', 'not-7']);
-    expect(element.querySelector('[data-folded-states]')?.textContent).toContain(STUDIO_LABELS.system.foldedStates(9));
+    expect(element.querySelector('[data-folded-states]')?.textContent).toContain(SYSTEM_LABELS.foldedStates(9));
   });
 });
 

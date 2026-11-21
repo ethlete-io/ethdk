@@ -9,7 +9,7 @@ import {
 } from '@ethlete/components';
 import { catchError, EMPTY, filter, fromEvent, Observable, of, tap } from 'rxjs';
 import { openHelp$, studioVersion$ } from '../../../host/about';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SHORTCUTS_DIALOG_LABELS, ABOUT_DIALOG_LABELS } from '../../i18n/shell-labels';
 import { AboutDialogComponent } from '../about-dialog/about-dialog.component';
 import { SHORTCUTS_KEY, ShortcutsDialogComponent } from '../shortcuts-dialog/shortcuts-dialog.component';
 
@@ -51,7 +51,7 @@ export const injectStudioMenuDialogs = () => {
       )
       .subscribe();
 
-  const shortcuts = () => show(ShortcutsDialogComponent, { ariaLabel: STUDIO_LABELS.shortcutsDialog.title });
+  const shortcuts = () => show(ShortcutsDialogComponent, { ariaLabel: SHORTCUTS_DIALOG_LABELS.title });
 
   const about = () =>
     run(
@@ -60,7 +60,7 @@ export const injectStudioMenuDialogs = () => {
         catchError(() => of('')),
         tap((version) =>
           show(AboutDialogComponent, {
-            ariaLabel: STUDIO_LABELS.aboutDialog.title,
+            ariaLabel: ABOUT_DIALOG_LABELS.title,
             bindings: [inputBinding('version', () => version)],
           }),
         ),

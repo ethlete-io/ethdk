@@ -5,9 +5,9 @@ import {
   BuildReadyStatus,
 } from '../design-parts/system-page/build-ready-footer.component';
 import { OpenPointGroup, OpenPointIcon, OpenPointLine } from '../design-parts/system-page/system-page-sample';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../i18n/system-labels';
 
-const LABELS = STUDIO_LABELS.system;
+const LABELS = SYSTEM_LABELS;
 
 const ICONS: OpenPointIcon[] = ['grid', 'comment', 'error', 'flow'];
 

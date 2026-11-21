@@ -3,7 +3,7 @@ import { ListedSketch, partFrameUrl, partShotUrl } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { CanvasLine } from '../components/design-canvas/flow-layout';
 import { FramesSource, TreeGroup, partKeyOf, schemesOf } from './system-tree';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { FLOW_FRAMES_LABELS } from '../i18n/flows-labels';
 import { partErrorsOf } from './part-errors';
 
 export const flowKeyOf = (name: string) => `flow:${name}`;
@@ -20,7 +20,7 @@ export const withFlowGroup = (tree: TreeGroup[], flows: ListedFlow[]): TreeGroup
 
   const group: TreeGroup = {
     key: 'flows',
-    label: STUDIO_LABELS.flowFrames.group,
+    label: FLOW_FRAMES_LABELS.group,
     entries: flows.map((flow) => ({
       key: flowKeyOf(flow.name),
       name: flow.name,
@@ -73,9 +73,9 @@ export const flowFramesOf = (source: FlowFramesSource): { frames: CanvasFrame[];
     };
     const known = part ?? sketched;
     const error = !known
-      ? STUDIO_LABELS.flowFrames.noPart(key)
+      ? FLOW_FRAMES_LABELS.noPart(key)
       : !known.states.includes(state)
-        ? STUDIO_LABELS.flowFrames.noState(key, state)
+        ? FLOW_FRAMES_LABELS.noState(key, state)
         : part
           ? partErrorsOf({ problems: part.problems })[0]
           : sketched?.error;

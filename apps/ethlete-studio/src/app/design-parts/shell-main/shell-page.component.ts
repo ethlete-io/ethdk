@@ -15,7 +15,7 @@ import { anchoredDialogOverlayStrategy, injectOverlayManager } from '@ethlete/co
 import { catchError, EMPTY, Observable } from 'rxjs';
 import { closeWindow$, minimizeWindow$, toggleMaximizeWindow$, WINDOW_CHROME } from '../../../host/window';
 import { restartForUpdate$ } from '../../../host/update';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { UPDATE_DIALOG_LABELS } from '../../i18n/shell-labels';
 import { UpdateDialogComponent } from '../../components/update-dialog/update-dialog.component';
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
@@ -167,7 +167,7 @@ export class ShellPageComponent {
     this.overlay.open(UpdateDialogComponent, {
       origin: event,
       role: 'dialog',
-      ariaLabel: STUDIO_LABELS.updateDialog.label,
+      ariaLabel: UPDATE_DIALOG_LABELS.label,
       strategies: anchoredDialogOverlayStrategy(),
       bindings: [inputBinding('version', () => version), outputBinding('restart', () => this.run(restartForUpdate$()))],
     });

@@ -1,6 +1,6 @@
 import { html } from '@design-system';
 import { type Row, type RowKey } from './sketch-rows';
-import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SYSTEM_TREE_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 export type Withdrawn = 'hidden' | 'shown' | 'menu';
 
@@ -20,5 +20,5 @@ export const withdrawnCount = (rows: Row[], withdrawn?: Withdrawn) =>
 export const withdrawnMark = html`<span
   class="text-(length:--sk-note) leading-[1.35] text-et-surface-muted italic wrap-anywhere"
   data-sk-withdrawn
-  >${STUDIO_LABELS.systemTree.withdrawnLabel}: ${WITHDRAWN.reason}</span
+  >${SYSTEM_TREE_LABELS.withdrawnLabel}: ${WITHDRAWN.reason}</span
 >`;

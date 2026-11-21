@@ -62,7 +62,7 @@ import { canvasLabelScale } from '../../design-parts/canvas-frames/canvas-frames
 import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
 import { CommentTargetComponent } from '../../design-parts/comment-target/comment-target.component';
 import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { CANVAS_LABELS } from '../../i18n/canvas-labels';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
 const MATRIX_COLUMN_GAP = 80;
@@ -195,7 +195,7 @@ const isInteractive = (target: EventTarget | null) => {
     class:
       'group/canvas relative isolate block overflow-hidden contain-paint h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent',
     tabindex: '0',
-    'aria-label': STUDIO_LABELS.canvas.label,
+    'aria-label': CANVAS_LABELS.label,
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',

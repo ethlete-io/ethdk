@@ -1,11 +1,11 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { BADGE_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
 export type SketchBadgeStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle' | 'not-ready' | 'failed';
 
-const LABELS = STUDIO_LABELS.sketches.status;
+const LABELS = SKETCHES_LABELS.status;
 
 @Component({
   selector: 'ethlete-sketch-status-badge',

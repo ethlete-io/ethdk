@@ -1,6 +1,6 @@
 import { Component, computed, model, output, signal, ViewEncapsulation } from '@angular/core';
 import { DragHandleDirective, DragMoveEvent } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SHELL_LABELS } from '../../i18n/shell-labels';
 import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from '../shell-main/side-width';
 
 @Component({
@@ -36,7 +36,7 @@ export class ShellResizeHandleComponent {
   public width = model<number>(SIDE_WIDTH.rest);
   public dragWidthChange = output<number | null>();
 
-  protected readonly LABELS = STUDIO_LABELS.shell;
+  protected readonly LABELS = SHELL_LABELS;
   protected readonly SIDE_WIDTH = SIDE_WIDTH;
 
   private dragWidth = signal<number | null>(null);

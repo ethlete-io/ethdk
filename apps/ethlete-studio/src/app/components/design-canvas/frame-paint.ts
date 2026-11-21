@@ -19,7 +19,7 @@ import {
   timer,
 } from 'rxjs';
 import { DESIGN_STAMP_PATH } from '../../../host/design-server-pid';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { CANVAS_LABELS } from '../../i18n/canvas-labels';
 import { FrameMessage, frameMessageOf } from './canvas-frame';
 
 export const UNREPORTED_PAINT_MS = 1000;
@@ -112,7 +112,7 @@ export const failedLoadReason$ = (src: string): Observable<string> => {
         : `The design server answered ${response.status} ${response.statusText}`.trim() + '.',
     ),
     // eslint-disable-next-line ethlete/no-silent-catch-error -- a refused fetch is the reason the banner names
-    catchError(() => of(STUDIO_LABELS.canvas.unanswered)),
+    catchError(() => of(CANVAS_LABELS.unanswered)),
   );
 };
 

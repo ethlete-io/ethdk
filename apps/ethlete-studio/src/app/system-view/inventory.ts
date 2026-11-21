@@ -5,9 +5,9 @@ import {
   InventoryPageRow,
   InventoryPageTone,
 } from '../design-parts/inventory-page/inventory-page.component';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { INVENTORY_LABELS } from '../i18n/inventory-labels';
 
-const LABELS = STUDIO_LABELS.inventory;
+const LABELS = INVENTORY_LABELS;
 
 /** The author Studio writes for its user, as in a sketch verdict. */
 export const INVENTORY_APPROVER = 'designer';

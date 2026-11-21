@@ -1,5 +1,6 @@
 import { StaticProvider, Type } from '@angular/core';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../i18n/system-labels';
+import { SHELL_LABELS } from '../i18n/shell-labels';
 import { CANVAS_LIVE_REST_MS } from '../components/design-canvas/design-canvas.component';
 import { FRAME_UNREPORTED_PAINT_MS } from '../components/design-canvas/frame-paint';
 import {
@@ -412,8 +413,8 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(props['noted']
         ? {
             tree: { layers: [] },
-            noteTitle: props['sketchMissing'] ? STUDIO_LABELS.system.sketchMissing : STUDIO_LABELS.system.serverDown,
-            noteHint: props['sketchMissing'] ? '' : STUDIO_LABELS.shell.startServer,
+            noteTitle: props['sketchMissing'] ? SYSTEM_LABELS.sketchMissing : SYSTEM_LABELS.serverDown,
+            noteHint: props['sketchMissing'] ? '' : SHELL_LABELS.startServer,
           }
         : {}),
       ...(comments

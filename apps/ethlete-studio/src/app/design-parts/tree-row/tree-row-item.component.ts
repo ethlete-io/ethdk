@@ -1,7 +1,7 @@
 import { TOOLTIP_IMPORTS } from '@ethlete/components';
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { injectSemanticColorTheme, ProvideColorDirective, SurfaceInteractiveDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { TREE_ROW_LABELS } from '../../i18n/system-labels';
 
 export type TreeRowStatus = 'in-progress' | 'ready';
 
@@ -19,8 +19,8 @@ export type TreeRow = {
 };
 
 const STATUS_TITLE: Record<TreeRowStatus, string> = {
-  'in-progress': STUDIO_LABELS.treeRow.sketchInProgress,
-  ready: STUDIO_LABELS.treeRow.sketchReady,
+  'in-progress': TREE_ROW_LABELS.sketchInProgress,
+  ready: TREE_ROW_LABELS.sketchReady,
 };
 
 const STATUS_CLASS: Record<TreeRowStatus, string> = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
@@ -158,7 +158,7 @@ export class TreeRowItemComponent {
 
   protected readonly STATUS_TITLE = STATUS_TITLE;
   protected readonly STATUS_CLASS = STATUS_CLASS;
-  protected readonly OPEN_COMMENTS_LABEL = STUDIO_LABELS.treeRow.openComments;
+  protected readonly OPEN_COMMENTS_LABEL = TREE_ROW_LABELS.openComments;
 
   protected accentClass = computed(() => (this.item().selected ? 'text-et-theme-ink' : 'text-et-surface-muted'));
 

@@ -1,7 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
+import { EXCEPTIONS_LABELS } from '../../i18n/shell-labels';
 import {
   AgentProgress,
   BuildBlocker,
@@ -188,8 +189,8 @@ export class OpenPointsPopoverComponent {
   public approveException = output<string>();
   public openPoint = output<OpenPointTarget>();
 
-  protected readonly LABELS = STUDIO_LABELS.system;
-  protected readonly EXCEPTION_LABELS = STUDIO_LABELS.exceptions;
+  protected readonly LABELS = SYSTEM_LABELS;
+  protected readonly EXCEPTION_LABELS = EXCEPTIONS_LABELS;
 
   protected shown = computed(() =>
     this.groups().map(({ icon, lines }) => ({

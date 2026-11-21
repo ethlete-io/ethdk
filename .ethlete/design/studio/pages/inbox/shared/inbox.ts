@@ -11,7 +11,7 @@ import type { Agent } from '@system/foundations/agent-logos';
 import { icon } from '@system/foundations/icons';
 import styles from './inbox.css?inline';
 import { type ReplyPhase, threadCard, type ThreadMessage } from '@system/components/comment-flow';
-import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { INBOX_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/inbox-labels';
 
 type Props = {
   showResolved: boolean;
@@ -255,15 +255,15 @@ const activeGroup = (comments: Comment[], selected = SELECTED) =>
     ? `${groupHead(ACTIVE_PART, 0)}<p class="m-0 pt-space-1 px-space-2 pb-space-2 text-et-surface-muted text-(length:--text-sm)">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
     : group(ACTIVE_PART, comments, selected);
 
-const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}<p class="m-0 text-et-surface text-(length:--text-sm)">${STUDIO_LABELS.inbox.emptyTitle}</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">${STUDIO_LABELS.inbox.emptyText}</p></div>`;
+const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}<p class="m-0 text-et-surface text-(length:--text-sm)">${INBOX_LABELS.emptyTitle}</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">${INBOX_LABELS.emptyText}</p></div>`;
 
-const loadingNote = `<p class="m-0 px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-sm)">${STUDIO_LABELS.inbox.loading}</p>`;
+const loadingNote = `<p class="m-0 px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-sm)">${INBOX_LABELS.loading}</p>`;
 
 const loadError = (retry: string, reason: string) =>
-  `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-theme' })}</span><p class="m-0 text-et-surface text-(length:--text-sm)">${STUDIO_LABELS.inbox.errorTitle}</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">${reason || STUDIO_LABELS.inbox.errorText}</p><div class="mt-space-3">${retry}</div></div>`;
+  `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-theme' })}</span><p class="m-0 text-et-surface text-(length:--text-sm)">${INBOX_LABELS.errorTitle}</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">${reason || INBOX_LABELS.errorText}</p><div class="mt-space-3">${retry}</div></div>`;
 
 const interruptedNote = (retry: string) =>
-  `<div class="mx-space-2 mt-space-2 flex flex-col items-start gap-space-2 rounded-md border border-et-surface-border px-space-3 py-space-2 text-(length:--text-xs)"><span class="flex items-center gap-space-2 text-et-surface-muted"><span class="contents" data-et-semantic-color="warning">${icon('error', { size: 14, cls: 'size-4 text-et-theme' })}</span>${STUDIO_LABELS.inbox.interrupted}</span>${retry}</div>`;
+  `<div class="mx-space-2 mt-space-2 flex flex-col items-start gap-space-2 rounded-md border border-et-surface-border px-space-3 py-space-2 text-(length:--text-xs)"><span class="flex items-center gap-space-2 text-et-surface-muted"><span class="contents" data-et-semantic-color="warning">${icon('error', { size: 14, cls: 'size-4 text-et-theme' })}</span>${INBOX_LABELS.interrupted}</span>${retry}</div>`;
 
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string, anchored?: string) => {
   let index = -1;

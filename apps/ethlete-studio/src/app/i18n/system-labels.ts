@@ -1,0 +1,112 @@
+export const TREE_ROW_LABELS = {
+  sketchInProgress: 'Entwurf in Arbeit',
+  sketchReady: 'Entwurf fertig',
+  sketchNeedsRebase: (parts: readonly string[]) =>
+    parts.length === 0 ? 'Braucht Rebase: keine Baseline' : `Braucht Rebase: ${parts.join(', ')} geändert`,
+  sketchRebaseUncommitted: (commit: string) => `Rebase nach ${commit} nicht committet`,
+  sketchChangedSinceReady: (variants: readonly string[]) => `Seit Freigabe geändert: ${variants.join(', ')}`,
+  sketchHoldTargetEnded: (target: string, end: 'merged' | 'discarded') =>
+    `Pausiert auf ${target}, das ${end === 'merged' ? 'übernommen' : 'verworfen'} ist: Pause aufheben`,
+  openComments: (count: number) => (count === 1 ? '1 offener Kommentar' : `${count} offene Kommentare`),
+} as const;
+
+export const SYSTEM_LABELS = {
+  none: 'Noch keine Teile.',
+  sketchMissing: 'Sketch nicht gefunden',
+  serverDown: 'Design-Server läuft nicht',
+  readFailed: 'Lesefehler',
+  foldedStates: (count: number) =>
+    count === 1 ? '1 weiterer Zustand eingeklappt' : `${count} weitere Zustände eingeklappt`,
+  showAllStates: 'Alle Zustände zeigen',
+  listingFailed: 'Auflistung fehlgeschlagen',
+  reload: 'Erneut laden',
+  emptyTitle: 'Noch keine Teile',
+  emptyExplainer:
+    'Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:',
+  emptyPrompt: (product: string) => `Lege die Foundations für ${product} an: Farben, Schrift und Abstände.`,
+  copyPrompt: 'Prompt kopieren',
+  statesByInteraction: 'States by interaction',
+  openCount: (count: number) => `${count} offen`,
+  nothingOpen: 'Nichts offen',
+  shotsMissing: (count: number) => (count === 1 ? '1 Bild fehlt' : `${count} Bilder fehlen`),
+  openPoints: 'Offene Punkte',
+  more: (count: number) => `+${count} weitere`,
+  allDone: 'Jeder Zustand ist gezeichnet, verknüpft und besprochen.',
+  noControls: 'Keine Controls deklariert',
+  controlUndrawn: (control: string) => `${control} hat keinen gezeichneten Zustand`,
+  dataStateUndrawn: (state: 'loading' | 'error' | 'empty') =>
+    `Daten-Part ohne Zustand ${{ loading: 'Laden', error: 'Fehler', empty: 'Leer' }[state]}`,
+  builtPlaceholder: 'Bild der App als Platzhalter - im Sketch neu zeichnen',
+  commentAnswered: 'Beantwortet, wartet auf dich',
+  commentWaiting: 'Wartet auf den Agenten',
+  sketchPicked: 'Sketch gewählt, noch nicht gemergt',
+  sketchOpen: 'Sketch noch nicht gemergt',
+  sketchProblem: (rule: string) => `Sketch-Regel verletzt: ${rule}`,
+  sketchStaleBase: (parts: readonly string[]) => `Braucht Rebase vor dem Merge: ${parts.join(', ')} geändert`,
+  planQuestion: (adr: string) => `ADR ${adr} ist entschieden, aber noch nicht gebaut`,
+  recordStale: 'Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen',
+  slowChecksPending: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen',
+  noHarness: 'Kein Harness - ohne Harness in config.json laufen die App-Prüfungen nie',
+  embeddedNotReady: (part: string) => `${part} ist noch nicht baubereit`,
+  directEdit: 'Bild ohne Sketch geändert',
+  comment: 'Kommentar',
+  commentOn: (frame: string) => `Kommentar zu ${frame}`,
+  commentModeOr: 'oder',
+  commentModeEnds: 'beendet',
+  frameGrid: 'grid',
+  frameTree: 'tree',
+} as const;
+
+export const BUILD_READY_LABELS = {
+  ready: 'Baubereit',
+  checking: 'Wird geprüft',
+  developer: 'Entwickler-Part',
+  blocked: (count: number) => `Nicht baubereit (${count})`,
+  reasons: 'Gründe',
+  openEditSketch: 'Sketch öffnen',
+  agent: {
+    working: (doing: string) => `Agent ${doing}`,
+    waiting: 'Agent wartet',
+    interrupted: 'Agent unterbrochen',
+    failed: 'Agent fehlgeschlagen',
+  },
+  groups: {
+    'direct-edit': 'Direkte Änderung',
+    'open-point': 'Offene Punkte',
+    embedded: 'Eingebettete Teile',
+    problem: 'Regeln',
+    compare: 'Vergleich mit der App',
+    'sdk-error': 'SDK-Fehler',
+    'stale-record': 'Prüfstand',
+  },
+} as const;
+
+export const SYSTEM_TREE_LABELS = {
+  notUsed: 'Nicht verwendet',
+  composition: 'nur zusammengesteckt, eher eine Seite',
+  product: 'Produkt',
+  appCode: 'App-Code',
+  notUsedIn: (name: string) => `Nicht verwendet in ${name}`,
+  legacy: 'Legacy',
+  sketches: 'Sketches',
+  pending: 'Agent zeichnet noch',
+  rejected: 'abgelehnt',
+  withdrawn: 'vom Agent zurückgezogen',
+  noReport: 'Seit 30 Minuten kein Bericht',
+  drawing: 'wird gezeichnet …',
+  variantBy: (variant: string, authors: string) => `${variant} von ${authors}`,
+  newInSketch: (state: string | undefined, has: string[]) =>
+    state === undefined || has.length === 0
+      ? 'neu in diesem Sketch'
+      : `${state} ist neu in diesem Sketch. Aktuell gibt es: ${has.join(', ')}`,
+  noState: (column: string, state: string | undefined) => `${column} hat keinen Zustand ${state}`,
+  noInteraction: (column: string, interaction: string) => `${column} hat keine Interaktion ${interaction}`,
+  now: 'jetzt',
+  afterMerging: (variant: string) => `nach dem Merge von ${variant}`,
+  reasonBy: (by: string) => `, Grund von ${by}`,
+  rejectedWith: (reason: string) => `Abgelehnt: ${reason}`,
+  rejectedLabel: 'Abgelehnt',
+  withdrawnWith: (reason: string) => `Vom Agent zurückgezogen: ${reason}`,
+  withdrawnLabel: 'Vom Agent zurückgezogen',
+  rejectedBy: (by: string, reasonBy: string) => `von ${by}${reasonBy}`,
+} as const;

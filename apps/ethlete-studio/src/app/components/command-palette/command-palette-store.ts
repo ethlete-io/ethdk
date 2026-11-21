@@ -19,7 +19,7 @@ import {
 } from '@ethlete/components';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { filter, fromEvent, tap } from 'rxjs';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { COMMAND_PALETTE_LABELS } from '../../i18n/shell-labels';
 import { CommandPaletteComponent, PaletteEntry } from './command-palette.component';
 
 const SHORTCUT = 'mod+k';
@@ -94,7 +94,7 @@ export class CommandPaletteStore {
         containerClass: ['mt-16', 'self-start', 'rounded-control-lg', 'border-0', 'shadow-lg'],
         backdropClass: ['top-8', 'bg-et-surface-bg/60'],
       }),
-      ariaLabel: STUDIO_LABELS.commandPalette.label,
+      ariaLabel: COMMAND_PALETTE_LABELS.label,
       autoFocus: 'input',
       restoreFocus: false,
       bindings: [

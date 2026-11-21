@@ -9,7 +9,11 @@ import { commentTarget } from '@system/components/comment-target';
 import textarea from '@system/components/textarea';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 import { icon } from '@system/foundations/icons';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import {
+  COMMENT_THREAD_LABELS,
+  COMMENT_DRAFT_LABELS,
+  COMMENT_LIST_LABELS,
+} from '../../../../../apps/ethlete-studio/src/app/i18n/comments-labels';
 
 export type CommentPhase = 'listed' | 'mode' | 'draft' | 'thread';
 
@@ -107,20 +111,20 @@ export const threadCard = async ({ place, messages, closeTo, text = '', phase, r
   const close = await button.render({
     iconOnly: true,
     icon: icon('close', { size: 14 }),
-    ariaLabel: STUDIO_LABELS.commentThread.close,
+    ariaLabel: COMMENT_THREAD_LABELS.close,
     variant: 'transparent',
     color: 'surface',
     size: 'xs',
   });
   const resolve = await button.render({
-    label: STUDIO_LABELS.commentThread.resolve,
+    label: COMMENT_THREAD_LABELS.resolve,
     icon: icon('check', { size: 14 }),
     variant: 'outline',
     color: 'surface',
     size: 'xs',
   });
   const withdraw = await button.render({
-    label: STUDIO_LABELS.commentThread.withdraw,
+    label: COMMENT_THREAD_LABELS.withdraw,
     variant: 'transparent',
     color: 'surface',
     size: 'xs',
@@ -128,7 +132,7 @@ export const threadCard = async ({ place, messages, closeTo, text = '', phase, r
   const field = await textarea.render({
     field: {
       id: 'thread-reply',
-      placeholder: STUDIO_LABELS.commentThread.placeholder,
+      placeholder: COMMENT_THREAD_LABELS.placeholder,
       rows: 2,
       ariaLabel: 'Antwort',
       disabled: busy,
@@ -137,7 +141,7 @@ export const threadCard = async ({ place, messages, closeTo, text = '', phase, r
     },
   });
   const send = await button.render({
-    label: phase === 'error' ? STUDIO_LABELS.commentDraft.sendAgain : 'Antworten',
+    label: phase === 'error' ? COMMENT_DRAFT_LABELS.sendAgain : 'Antworten',
     variant: 'filled',
     size: 'xs',
     disabled: !text,
@@ -164,7 +168,7 @@ export const threadCard = async ({ place, messages, closeTo, text = '', phase, r
       class="relative z-20 flex flex-col w-80 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) shadow-lg"
       data-et-auto-surface
       role="dialog"
-      aria-label="${STUDIO_LABELS.commentThread.dialog}"
+      aria-label="${COMMENT_THREAD_LABELS.dialog}"
     >
       <div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2">
         <span
@@ -180,7 +184,7 @@ export const threadCard = async ({ place, messages, closeTo, text = '', phase, r
         ${messages.map(message).join('')}
       </ol>
       <div class="flex flex-col gap-space-2 border-t border-et-surface-border p-space-3">
-        ${field.body}${phase === 'error' ? problem(STUDIO_LABELS.commentDraft.notSent) : phase === 'rejected' ? problem(reason) : ''}
+        ${field.body}${phase === 'error' ? problem(COMMENT_DRAFT_LABELS.notSent) : phase === 'rejected' ? problem(reason) : ''}
         <div class="flex items-center justify-between gap-space-2">
           <span class="flex items-center gap-space-1 text-ui-xs text-et-surface-muted"
             >${kbd({ keys: ['Esc'] })} schließt</span
@@ -201,13 +205,13 @@ export const threadCardAt = async (at: string, props: ThreadCardProps) => {
 
 const listHead = (count: number) =>
   html`<div class="flex items-center gap-space-2 px-space-2 py-space-1">
-    <span class="text-ui-sm font-ui-strong text-et-surface">${STUDIO_LABELS.commentList.title}</span>
+    <span class="text-ui-sm font-ui-strong text-et-surface">${COMMENT_LIST_LABELS.title}</span>
     <span class="text-ui-xs text-et-surface-muted">${count} offen</span>
   </div>`;
 
 /** The open comments of a view; `selected` is the index of the selected row, -1 for none. */
 export const commentList = (threads: Thread[], selected = -1) => ({
-  body: html`<section class="flex flex-col gap-space-1" aria-label="${STUDIO_LABELS.commentList.title}">
+  body: html`<section class="flex flex-col gap-space-1" aria-label="${COMMENT_LIST_LABELS.title}">
     ${listHead(threads.length)}
     ${threads.map((thread, index) => commentRow({ thread, selected: index === selected })).join('')}
   </section>`,

@@ -62,7 +62,8 @@ import { FrameZoom, frameZoomCamera } from '../../components/design-canvas/frame
 import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { SketchQuestionComponent } from '../sketch-question/sketch-question.component';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
+import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { HoldTriggerComponent } from '../hold-trigger/hold-trigger.component';
@@ -118,8 +119,8 @@ const statesOf = (rows: readonly SketchRow[]) => [
 ];
 
 const EDIT_ROW_LABELS: Record<string, string> = {
-  old: STUDIO_LABELS.sketches.editOld,
-  new: STUDIO_LABELS.sketches.editNew,
+  old: SKETCHES_LABELS.editOld,
+  new: SKETCHES_LABELS.editNew,
 };
 
 const isBaseRow = (row: SketchRow) => row.key === SKETCH_CURRENT || row.key === 'old' || row.key === 'new';
@@ -311,8 +312,8 @@ export class SketchesComponent {
   private labelRows = computed(() => this.cells().flatMap((cell) => cell.labelRowRef() ?? []));
   private listSize = signalElementDimensions(this.list);
 
-  protected readonly LABELS = STUDIO_LABELS.sketches;
-  protected readonly SYSTEM_LABELS = STUDIO_LABELS.system;
+  protected readonly LABELS = SKETCHES_LABELS;
+  protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
   protected readonly IS_WITHDRAWN = isWithdrawn;
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
@@ -754,7 +755,7 @@ export class SketchesComponent {
   }
 
   protected withdrawnMarkOf(reason: string) {
-    return reason ? STUDIO_LABELS.systemTree.withdrawnWith(reason) : STUDIO_LABELS.systemTree.withdrawnLabel;
+    return reason ? SYSTEM_TREE_LABELS.withdrawnWith(reason) : SYSTEM_TREE_LABELS.withdrawnLabel;
   }
 
   protected isSame(row: SketchRow, unchanged: boolean | null) {

@@ -1,6 +1,6 @@
 import { definePart, drawing, interactionRows } from '@design-system';
 import { notification, notificationStack, notificationStyles } from '@ethlete/components/design/notification';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { OPEN_FOLDER_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type CloseInteraction = 'hover' | 'active' | 'focus-visible';
 
@@ -25,8 +25,8 @@ const READABLE = `@layer utilities {
 export const { states, grid } = interactionRows<Props, 'close', CloseInteraction>(
   {
     close: {
-      heading: STUDIO_LABELS.openFolder.refusedTitle,
-      message: STUDIO_LABELS.openFolder.refusedMessage,
+      heading: OPEN_FOLDER_LABELS.refusedTitle,
+      message: OPEN_FOLDER_LABELS.refusedMessage,
     },
   },
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },

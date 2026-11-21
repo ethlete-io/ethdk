@@ -26,7 +26,11 @@ import {
   type WindowButton,
 } from './shared/chrome';
 import styles from './title-bar.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import {
+  CODE_LABELS,
+  DESIGN_SERVER_LABELS,
+  TITLE_BAR_LABELS,
+} from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 const captionGlyphs: Record<WindowButton, string> = {
   minimize: captionMinimize,
@@ -94,8 +98,8 @@ const failedToast = ({ restart }: Props) =>
         notification({
           status: 'error',
           color: 'danger',
-          title: STUDIO_LABELS.code.restartFailedTitle,
-          message: STUDIO_LABELS.code.restartFailedMessage,
+          title: CODE_LABELS.restartFailedTitle,
+          message: CODE_LABELS.restartFailedMessage,
           attributes: 'data-et-surface-fill',
           dismissAttributes: 'data-et-control="dismiss" data-et-action="emit:dismiss"',
         }),
@@ -111,7 +115,7 @@ const notice = async (props: Props) =>
       titleBarControl(
         restartButton(
           button({
-            label: STUDIO_LABELS.designServer.restartButton,
+            label: DESIGN_SERVER_LABELS.restartButton,
             variant: 'tonal',
             color: 'brand',
             size: 'xs',
@@ -140,7 +144,7 @@ export default definePart({
     {
       platform: 'Windows 11',
       states: ['windows', 'windows-update'],
-      target: `[aria-label="${STUDIO_LABELS.titleBar.window.minimize}"]`,
+      target: `[aria-label="${TITLE_BAR_LABELS.window.minimize}"]`,
       width: 46,
       height: 32,
       inset: { edge: '.st-title-bar', top: 0 },
@@ -149,7 +153,7 @@ export default definePart({
     {
       platform: 'Windows 11',
       states: ['windows', 'windows-update'],
-      target: `[aria-label="${STUDIO_LABELS.titleBar.window.maximize}"]`,
+      target: `[aria-label="${TITLE_BAR_LABELS.window.maximize}"]`,
       width: 46,
       height: 32,
       inset: { edge: '.st-title-bar', top: 0 },
@@ -158,7 +162,7 @@ export default definePart({
     {
       platform: 'Windows 11',
       states: ['windows', 'windows-update'],
-      target: `[aria-label="${STUDIO_LABELS.titleBar.window.close}"]`,
+      target: `[aria-label="${TITLE_BAR_LABELS.window.close}"]`,
       width: 46,
       height: 32,
       inset: { edge: '.st-title-bar', top: 0, right: 0 },

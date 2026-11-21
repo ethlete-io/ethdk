@@ -21,7 +21,7 @@ import {
 } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sample';
@@ -101,7 +101,7 @@ export class OpenPointsChipComponent {
   public openPoint = output<OpenPointTarget>();
 
   private chip = viewChild.required('chip', { read: ElementRef<HTMLElement> });
-  public readonly LABELS = STUDIO_LABELS.system;
+  public readonly LABELS = SYSTEM_LABELS;
 
   protected count = computed(() =>
     this.groups().reduce((sum, group) => sum + group.lines.length, this.exceptions().length),

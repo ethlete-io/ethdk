@@ -48,7 +48,8 @@ import {
   type ThreadMessage,
   withCommentList,
 } from '@system/components/comment-flow';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
+import { EXCEPTIONS_LABELS, SHELL_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 
@@ -56,7 +57,7 @@ const emptyCanvasOf = (copy: string) =>
   html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
     <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
       <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">${ghostBox}${ghostBox}${ghostBox}${ghostBox}</div>
-      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${STUDIO_LABELS.system.emptyTitle}</p>
+      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${SYSTEM_LABELS.emptyTitle}</p>
       <p class="m-0 text-et-surface-muted">
         Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent
         zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:
@@ -72,7 +73,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, acting: boolean, exc
   const count = open.points.length + exceptions;
   const drawn = await button.render(
     {
-      label: count ? `${count} offen` : STUDIO_LABELS.system.nothingOpen,
+      label: count ? `${count} offen` : SYSTEM_LABELS.nothingOpen,
       icon: count
         ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-theme' })}</span>`
         : checkIcon(14),
@@ -184,10 +185,10 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
 };
 
 const exceptionGroup = async () => {
-  const approve = await button.render({ label: STUDIO_LABELS.exceptions.approve, variant: 'outline', size: 'xs' });
+  const approve = await button.render({ label: EXCEPTIONS_LABELS.approve, variant: 'outline', size: 'xs' });
   const open = await badge.render({ badges: [{ label: 'offen', variant: 'outline', size: 'sm' }] });
   const reopened = await badge.render({
-    badges: [{ label: STUDIO_LABELS.exceptions.reopened, variant: 'tonal', size: 'sm' }],
+    badges: [{ label: EXCEPTIONS_LABELS.reopened, variant: 'tonal', size: 'sm' }],
   });
   const rows = buttonExceptions
     .map(
@@ -209,7 +210,7 @@ const exceptionGroup = async () => {
       <h3
         class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-muted"
       >
-        ${STUDIO_LABELS.exceptions.toggle}<span class="font-code font-normal">${buttonExceptions.length}</span>
+        ${EXCEPTIONS_LABELS.toggle}<span class="font-code font-normal">${buttonExceptions.length}</span>
       </h3>
       <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border-solid)">
         ${rows}
@@ -235,10 +236,10 @@ const popover = async (
         ${groups.map((group) => `<li><ul class="m-0 p-0 py-space-1 list-none">${pointLines(group)}</ul></li>`).join('')}
       </ul>`
     : html`<div class="flex items-center gap-space-2 px-space-3 py-space-4">
-        ${checkIcon()}<span class="text-(--et-surface-color-muted-solid)">${STUDIO_LABELS.system.allDone}</span>
+        ${checkIcon()}<span class="text-(--et-surface-color-muted-solid)">${SYSTEM_LABELS.allDone}</span>
       </div>`;
   const dialog = await anchoredDialog.render({
-    label: STUDIO_LABELS.system.openPoints,
+    label: SYSTEM_LABELS.openPoints,
     modal: false,
     anchor: '[data-et-control="open-points"]',
     content: html`<div class="w-96 text-ui-sm">
@@ -246,7 +247,7 @@ const popover = async (
         class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
       >
         <span class="text-(--et-surface-color-solid) font-ui-strong"
-          >${groups.length ? STUDIO_LABELS.system.openPoints : STUDIO_LABELS.system.nothingOpen}</span
+          >${groups.length ? SYSTEM_LABELS.openPoints : SYSTEM_LABELS.nothingOpen}</span
         >
         <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
       </header>
@@ -306,11 +307,9 @@ const buttonGrid = async () => {
   return stateGrid({ columns: [...interactions], rows }, { cellWidth: '120px', place: 'center' });
 };
 
-const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">
-  ${STUDIO_LABELS.system.none}
-</p>`;
+const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">${SYSTEM_LABELS.none}</p>`;
 
-const CANVAS_NOTE = STUDIO_LABELS.shell.startServer;
+const CANVAS_NOTE = SHELL_LABELS.startServer;
 
 export default definePart<{
   empty?: boolean;
@@ -508,7 +507,7 @@ export default definePart<{
     }
 
     if (listingError) {
-      const reload = await button.render({ label: STUDIO_LABELS.system.reload, variant: 'outline', size: 'sm' });
+      const reload = await button.render({ label: SYSTEM_LABELS.reload, variant: 'outline', size: 'sm' });
       const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
         studio: menu.body,
@@ -520,7 +519,7 @@ export default definePart<{
             <span class="contents" data-et-semantic-color="error"
               >${icon('error', { size: 24, cls: 'text-et-theme' })}</span
             >
-            <p class="m-0 text-et-surface font-ui-strong text-ui-md">${STUDIO_LABELS.system.listingFailed}</p>
+            <p class="m-0 text-et-surface font-ui-strong text-ui-md">${SYSTEM_LABELS.listingFailed}</p>
             <p class="m-0 text-et-surface-muted">missing build: pages/system</p>
             ${control(withAction(reload.body, 'emit:reload'), 'reload')}
           </div>
@@ -541,7 +540,7 @@ export default definePart<{
           <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
             ${icon('warning', { size: 24, cls: 'text-et-surface-muted' })}
             <p class="m-0 text-et-surface font-ui-strong text-ui-md">
-              ${sketchMissing ? STUDIO_LABELS.system.sketchMissing : STUDIO_LABELS.system.serverDown}
+              ${sketchMissing ? SYSTEM_LABELS.sketchMissing : SYSTEM_LABELS.serverDown}
             </p>
             ${noteHint ? html`<p class="m-0 text-et-surface-muted">${noteHint}</p>` : ''}
           </div>
@@ -552,7 +551,7 @@ export default definePart<{
     }
 
     if (empty) {
-      const copy = await button.render({ label: STUDIO_LABELS.system.copyPrompt, variant: 'outline', size: 'sm' });
+      const copy = await button.render({ label: SYSTEM_LABELS.copyPrompt, variant: 'outline', size: 'sm' });
       const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
         studio: menu.body,

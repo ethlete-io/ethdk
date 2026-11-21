@@ -8,7 +8,10 @@ import { SIDE_WIDTH } from '@system/components/shell-resize-handle';
 import titleBar from '@system/components/title-bar';
 import { icon, type IconName } from '@system/foundations/icons';
 import { studioMarkLine } from '@system/foundations/logo';
-import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import {
+  DESIGN_SERVER_LABELS,
+  STUDIO_MENU_LABELS,
+} from '../../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -49,9 +52,9 @@ type Props = {
 type StartPhase = 'starting' | 'cli-build' | 'app-build';
 
 const PHASE_HEADINGS: Record<StartPhase, string> = {
-  starting: STUDIO_LABELS.designServer.starting,
-  'cli-build': STUDIO_LABELS.designServer.startPhase['cli-build'],
-  'app-build': STUDIO_LABELS.designServer.startPhase['app-build'],
+  starting: DESIGN_SERVER_LABELS.starting,
+  'cli-build': DESIGN_SERVER_LABELS.startPhase['cli-build'],
+  'app-build': DESIGN_SERVER_LABELS.startPhase['app-build'],
 };
 
 const elapsedLabel = (ms: number) => {
@@ -197,7 +200,7 @@ const SERVER_CRASH: Crash = {
 
 export const restartButton = withAction(
   button({
-    label: STUDIO_LABELS.designServer.restartButton,
+    label: DESIGN_SERVER_LABELS.restartButton,
     variant: 'outline',
     color: 'surface',
     size: 'sm',
@@ -230,14 +233,12 @@ const serverScreen = (
                         <h3 class="m-0 text-ui-lg font-ui-strong">${PHASE_HEADINGS[phase]}</h3>
                       </div>
                       <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">${elapsedLabel(phaseMs)}</p>`
-                  : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">
-                      ${STUDIO_LABELS.designServer.stopped}
-                    </h3>`
+                  : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${DESIGN_SERVER_LABELS.stopped}</h3>`
               }
               ${
                 server === 'unanswered'
                   ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
-                        ${STUDIO_LABELS.studioMenu.designServer} antwortet nicht: ${serverUrl}
+                        ${STUDIO_MENU_LABELS.designServer} antwortet nicht: ${serverUrl}
                       </p>
                       <div class="mt-space-3">${restartButton}</div>`
                   : ''
@@ -247,7 +248,7 @@ const serverScreen = (
               class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
               role="alert"
             >
-              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${STUDIO_LABELS.designServer.stopped}</h3>
+              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${DESIGN_SERVER_LABELS.stopped}</h3>
               ${
                 log.length
                   ? html`<pre

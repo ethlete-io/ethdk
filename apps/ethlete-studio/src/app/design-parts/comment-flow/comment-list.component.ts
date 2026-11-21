@@ -1,5 +1,5 @@
 import { Component, input, output, ViewEncapsulation } from '@angular/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
 import { InboxComment } from '../inbox/inbox-sample';
 import { CommentRowComponent } from './comment-row.component';
 
@@ -30,5 +30,5 @@ export class CommentListComponent {
 
   public pick = output<string>();
 
-  protected readonly LABELS = STUDIO_LABELS.commentList;
+  protected readonly LABELS = COMMENT_LIST_LABELS;
 }

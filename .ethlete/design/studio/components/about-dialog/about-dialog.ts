@@ -2,7 +2,7 @@ import { definePart, drawing, html, interactionRows } from '@design-system';
 import { dialog, dialogStyles, overlayBackdrop } from '@ethlete/components/design/dialog';
 import { studioMark } from '@system/foundations/logo';
 import styles from './about-dialog.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { ABOUT_DIALOG_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type Interaction = 'hover' | 'active' | 'focus-visible';
 
@@ -10,7 +10,7 @@ type Props = { version: string; close?: Interaction };
 
 const closeAttributes = (close?: Interaction) =>
   [
-    `aria-label="${STUDIO_LABELS.aboutDialog.close}" data-et-control="close" data-et-action="emit:close" data-can-animate`,
+    `aria-label="${ABOUT_DIALOG_LABELS.close}" data-et-control="close" data-et-action="emit:close" data-can-animate`,
     close && `data-et-force="${close}"`,
   ]
     .filter(Boolean)
@@ -20,11 +20,11 @@ const content = (version: string) =>
   html`<div class="flex items-center gap-space-3">
       ${studioMark(48)}
       <div class="flex min-w-0 flex-col gap-space-1">
-        <span class="font-ui-strong text-ui-md text-et-surface">${STUDIO_LABELS.aboutDialog.product}</span>
+        <span class="font-ui-strong text-ui-md text-et-surface">${ABOUT_DIALOG_LABELS.product}</span>
         <span class="ad-wrap text-ui-sm text-et-surface-muted">Version ${version}</span>
       </div>
     </div>
-    <p class="mt-space-3 text-ui-sm text-et-surface-muted">${STUDIO_LABELS.aboutDialog.license}</p>`;
+    <p class="mt-space-3 text-ui-sm text-et-surface-muted">${ABOUT_DIALOG_LABELS.license}</p>`;
 
 export const { states, grid } = interactionRows<Props, 'close', Interaction>(
   { close: { version: '0.2.0-next.27' } },
@@ -59,7 +59,7 @@ export default definePart({
       body: overlayBackdrop(
         dialog({
           id: 'about',
-          title: STUDIO_LABELS.aboutDialog.title,
+          title: ABOUT_DIALOG_LABELS.title,
           body: content(version),
           close: closeAttributes(close),
           attributes: 'data-et-surface-fill',

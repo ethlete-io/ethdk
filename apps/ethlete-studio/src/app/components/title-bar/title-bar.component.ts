@@ -12,7 +12,7 @@ import {
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { catchError, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
 import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/window';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { CODE_LABELS, TITLE_BAR_LABELS } from '../../i18n/shell-labels';
 import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.component';
 import { TitleSearchComponent } from '../title-search/title-search.component';
 
@@ -23,7 +23,7 @@ const UNCOMMITTED_LINE = /^(\S+ \S+) \S+ ([^:]+):/;
 const uncommittedEntryOf = (line: string) => {
   const [, kind = line, what = ''] = UNCOMMITTED_LINE.exec(line) ?? [];
 
-  return { kind: STUDIO_LABELS.code.uncommittedKinds[kind] ?? kind, what };
+  return { kind: CODE_LABELS.uncommittedKinds[kind] ?? kind, what };
 };
 
 @Component({
@@ -359,8 +359,8 @@ export class TitleBarComponent {
 
   // eslint-disable-next-line @angular-eslint/no-output-native -- the design declares emit:close
   public close = output();
-  protected readonly LABELS = STUDIO_LABELS.titleBar;
-  protected readonly CODE_LABELS = STUDIO_LABELS.code;
+  protected readonly LABELS = TITLE_BAR_LABELS;
+  protected readonly CODE_LABELS = CODE_LABELS;
   protected readonly CAPTION_SHAPE = WINDOW_CONTROL_BUTTON_SHAPES.CAPTION;
 
   protected readonly SIZE = WINDOW_CONTROL_BUTTON_SIZES.MD;

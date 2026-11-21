@@ -10,13 +10,13 @@ import {
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
 import { icon } from '@system/foundations/icons';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SHELL_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type CollapseInteraction = Exclude<Interaction, 'disabled'>;
 
 type Props = { interaction?: CollapseInteraction };
 
-const label = STUDIO_LABELS.shell.hidePanel;
+const label = SHELL_LABELS.hidePanel;
 
 export const shellCollapseStyles = buttonStyles;
 

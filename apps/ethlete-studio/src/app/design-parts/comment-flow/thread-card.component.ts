@@ -16,7 +16,7 @@ import {
   TextareaComponent,
 } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { COMMENT_THREAD_LABELS, COMMENT_DRAFT_LABELS } from '../../i18n/comments-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { AgentLogoName } from '../../icons/agent-logos';
 import { CommentSendPhase } from '../system-page/comment-draft.component';
@@ -213,8 +213,8 @@ export class ThreadCardComponent {
 
   private field = viewChild(TextareaComponent);
 
-  protected readonly LABELS = STUDIO_LABELS.commentThread;
-  protected readonly SEND_LABELS = STUDIO_LABELS.commentDraft;
+  protected readonly LABELS = COMMENT_THREAD_LABELS;
+  protected readonly SEND_LABELS = COMMENT_DRAFT_LABELS;
 
   protected busy = computed(() => this.phase() === 'busy');
 

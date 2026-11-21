@@ -12,7 +12,8 @@ import {
 } from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, KBD_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective, signalElementDimensions } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
+import { SHELL_LABELS } from '../../i18n/shell-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { ShellSection } from '../shell-main/shell-main.component';
@@ -455,8 +456,8 @@ export class SystemPageComponent {
       : null;
   });
 
-  protected readonly LABELS = STUDIO_LABELS.system;
-  protected readonly SHELL_LABELS = STUDIO_LABELS.shell;
+  protected readonly LABELS = SYSTEM_LABELS;
+  protected readonly SHELL_LABELS = SHELL_LABELS;
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
 

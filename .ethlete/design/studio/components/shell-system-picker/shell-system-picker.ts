@@ -12,7 +12,7 @@ import type { MenuMockRow } from '@ethlete/components/design/menu';
 import menu from '@system/components/menu';
 import { icon } from '@system/foundations/icons';
 import styles from './shell-system-picker.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SHELL_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type PickerInteraction = Exclude<Interaction, 'disabled'>;
 
@@ -51,7 +51,7 @@ const systemRows = (product: string, products: string[], option?: Props['option'
   return [
     {
       kind: 'radio-group',
-      label: STUDIO_LABELS.shell.designSystem,
+      label: SHELL_LABELS.designSystem,
       items: products.map((name, index) => {
         const current = name === product;
         const forced = index === 1 ? hovered : current && keyboard ? 'focus-visible' : undefined;

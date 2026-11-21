@@ -1,6 +1,6 @@
 import { Component, computed, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
 import { SpinnerComponent } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
 export type VariantCellMark = { left: number; top: number; width: number; height: number };
 
@@ -50,7 +50,7 @@ export class VariantCellComponent {
   public labelRowRef = viewChild<ElementRef<HTMLElement>>('labelRow');
   public stateLabelRef = viewChild<ElementRef<HTMLElement>>('stateLabel');
 
-  protected readonly LABELS = STUDIO_LABELS.sketches;
+  protected readonly LABELS = SKETCHES_LABELS;
   protected readonly STACK_INSETS = [32, 64];
   protected readonly SELECTED_RING_CLASS = SELECTED_RING;
 

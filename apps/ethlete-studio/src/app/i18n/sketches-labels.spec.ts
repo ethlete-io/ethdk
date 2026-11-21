@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { STUDIO_LABELS } from './studio-labels';
+import { SKETCHES_LABELS } from './sketches-labels';
 
-describe('STUDIO_LABELS', () => {
+describe('SKETCHES_LABELS', () => {
   it('labels the Sketches variant button and its confirm Übernehmen', () => {
-    expect(STUDIO_LABELS.sketches.merge).toBe('Übernehmen');
-    expect(STUDIO_LABELS.sketches.mergeConfirm.confirm).toBe('Übernehmen');
+    expect(SKETCHES_LABELS.merge).toBe('Übernehmen');
+    expect(SKETCHES_LABELS.mergeConfirm.confirm).toBe('Übernehmen');
   });
 
   it('names a span in minutes, then hours, then days', () => {
-    const { since, agentRun } = STUDIO_LABELS.sketches;
+    const { since, agentRun } = SKETCHES_LABELS;
 
     expect([since(59), since(60), since(1439), since(1440), since(2 * 1440 + 30)]).toEqual([
       'seit 59 Min',

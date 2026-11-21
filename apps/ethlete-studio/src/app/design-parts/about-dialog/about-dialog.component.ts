@@ -8,7 +8,7 @@ import {
   TIMES_ICON,
 } from '@ethlete/components';
 import { StudioMarkComponent } from '../../components/studio-mark.component';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { ABOUT_DIALOG_LABELS } from '../../i18n/shell-labels';
 
 @Component({
   selector: 'ethlete-about-dialog',
@@ -50,5 +50,5 @@ export class AboutDialogComponent {
   // eslint-disable-next-line @angular-eslint/no-output-native -- the design declares emit:close
   public close = output();
 
-  protected readonly LABELS = STUDIO_LABELS.aboutDialog;
+  protected readonly LABELS = ABOUT_DIALOG_LABELS;
 }

@@ -2,10 +2,12 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
+import { COMMENT_THREAD_LABELS, COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
+import { SHELL_LABELS } from '../../i18n/shell-labels';
 import { SystemPageComponent } from './system-page.component';
 
-const LABELS = STUDIO_LABELS.system;
+const LABELS = SYSTEM_LABELS;
 
 const render = async (inputs: Record<string, unknown>) => {
   TestBed.configureTestingModule({
@@ -69,7 +71,7 @@ describe('SystemPageComponent', () => {
     expect(card?.textContent).toContain('card › rest');
     expect((card?.parentElement as HTMLElement).style.left).toBe('calc(10% + var(--space-6))');
     [...(card?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
-      .find((button) => button.textContent?.trim() === STUDIO_LABELS.commentThread.withdraw)
+      .find((button) => button.textContent?.trim() === COMMENT_THREAD_LABELS.withdraw)
       ?.click();
     card?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
@@ -135,7 +137,7 @@ describe('SystemPageComponent', () => {
 
     expect(pins).toHaveLength(3);
     expect(pins[1]?.parentElement?.style.left).toBe('90%');
-    expect(root.querySelector('[data-comment-list]')?.textContent).toContain(STUDIO_LABELS.commentList.open(3));
+    expect(root.querySelector('[data-comment-list]')?.textContent).toContain(COMMENT_LIST_LABELS.open(3));
   });
 
   it('pins the draft of the writer only beside listed comments', async () => {
@@ -190,7 +192,7 @@ describe('SystemPageComponent legacy call', () => {
     expect(root.textContent).toContain('shop/basket/07-long-name');
 
     const transfer = [...root.querySelectorAll('button')].find(
-      (button) => button.textContent?.trim() === STUDIO_LABELS.shell.markTransferred,
+      (button) => button.textContent?.trim() === SHELL_LABELS.markTransferred,
     );
 
     transfer?.click();
@@ -204,6 +206,6 @@ describe('SystemPageComponent legacy call', () => {
     });
     await fixture.whenStable();
 
-    expect(root.querySelector('et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.shell.transferred);
+    expect(root.querySelector('et-badge')?.textContent?.trim()).toBe(SHELL_LABELS.transferred);
   });
 });

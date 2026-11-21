@@ -14,7 +14,7 @@ import {
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { INVENTORY_LABELS } from '../../i18n/inventory-labels';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
@@ -249,7 +249,7 @@ export class InventoryPageComponent {
   private canvas = signal<CanvasViewport | null>(null);
   private mounted: HTMLElement | null = null;
 
-  protected readonly LABELS = STUDIO_LABELS.inventory;
+  protected readonly LABELS = INVENTORY_LABELS;
   protected readonly FRAME = FRAME;
   protected readonly ZOOM_STEP = ZOOM_STEP;
   protected readonly PERCENT_OF = percentOf;

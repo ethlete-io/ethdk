@@ -2,7 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SketchBadgeStatus, SketchStatusBadgeComponent } from './sketch-status-badge.component';
 
 const render = async (status: SketchBadgeStatus) => {
@@ -20,9 +20,9 @@ const render = async (status: SketchBadgeStatus) => {
 
 describe('SketchStatusBadgeComponent', () => {
   it.each([
-    ['drawing', STUDIO_LABELS.sketches.status.drawing],
-    ['not-ready', STUDIO_LABELS.sketches.status.notReady],
-    ['idle', STUDIO_LABELS.sketches.status.idle],
+    ['drawing', SKETCHES_LABELS.status.drawing],
+    ['not-ready', SKETCHES_LABELS.status.notReady],
+    ['idle', SKETCHES_LABELS.status.idle],
   ] as const)('names the %s status', async (status, label) => {
     const host = await render(status);
 
@@ -37,7 +37,7 @@ describe('SketchStatusBadgeComponent', () => {
 
     const waiting = await render('waiting');
 
-    expect(failed.querySelector('et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.failed);
+    expect(failed.querySelector('et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.failed);
     expect(failedStyle).not.toBe(waiting.querySelector('span')?.className);
   });
 });

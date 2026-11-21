@@ -1,8 +1,8 @@
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { INVENTORY_LABELS } from '../../i18n/inventory-labels';
 import { PartTree } from '../part-tree/part-tree.component';
 import { InventoryPageEntry, InventoryPageRow, InventoryPageState } from './inventory-page.component';
 
-const LABELS = STUDIO_LABELS.inventory;
+const LABELS = INVENTORY_LABELS;
 const NAMES = LABELS.sample;
 
 export const INVENTORY_PAGE_TREE: PartTree = {

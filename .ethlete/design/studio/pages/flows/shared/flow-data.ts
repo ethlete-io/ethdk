@@ -4,7 +4,7 @@ import select from '@system/components/select';
 import textarea from '@system/components/textarea';
 import treeRow from '@system/components/tree-row';
 import { icon } from '@system/foundations/icons';
-import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { FLOWS_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/flows-labels';
 
 export type FlowProps = {
   flow: 'open' | 'none';
@@ -28,7 +28,7 @@ export const ORPHAN_NOTES: FlowNoteSample[] = [
   { id: 'lost-2', text: 'Merge-Knopf klären', x: 1420, y: 300 },
 ];
 
-export const ORPHAN_TITLE = STUDIO_LABELS.flows.orphans;
+export const ORPHAN_TITLE = FLOWS_LABELS.orphans;
 
 export const orphanButtons = async () =>
   Promise.all(
@@ -41,7 +41,7 @@ export const orphanButtons = async () =>
 
 export const addNoteButton = async () => {
   const add = await button.render({
-    label: STUDIO_LABELS.flows.addNote,
+    label: FLOWS_LABELS.addNote,
     icon: icon('pencil', { size: 14 }),
     variant: 'outline',
     color: 'surface',
@@ -55,7 +55,7 @@ export const noteDeleteButton = async () => {
   const remove = await button.render({
     iconOnly: true,
     icon: icon('close', { size: 14 }),
-    ariaLabel: STUDIO_LABELS.flows.deleteNote,
+    ariaLabel: FLOWS_LABELS.deleteNote,
     variant: 'transparent',
     color: 'surface',
     size: 'xs',
@@ -68,9 +68,9 @@ export const noteField = (id: string) =>
   textarea.render({
     field: {
       id: `flow-note-${id}`,
-      placeholder: STUDIO_LABELS.flows.notePlaceholder,
+      placeholder: FLOWS_LABELS.notePlaceholder,
       rows: 3,
-      ariaLabel: STUDIO_LABELS.flows.addNote,
+      ariaLabel: FLOWS_LABELS.addNote,
       focused: true,
       force: 'focus-visible',
     },
@@ -88,7 +88,7 @@ const shot = (step: Step, scale: number) =>
 export const presetPickerOf = async () => {
   const picker = await select.render({
     label: '',
-    ariaLabel: STUDIO_LABELS.flows.presetAria,
+    ariaLabel: FLOWS_LABELS.presetAria,
     size: 'sm',
     value: 'desktop',
     options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }],
@@ -99,11 +99,10 @@ export const presetPickerOf = async () => {
 
 const caption = (text: string) => html`<span class="text-et-surface-muted text-ui-sm">${text}</span>`;
 
-export const copyButton = () =>
-  button.render({ label: STUDIO_LABELS.flows.copyPrompt, variant: 'outline', size: 'sm' });
+export const copyButton = () => button.render({ label: FLOWS_LABELS.copyPrompt, variant: 'outline', size: 'sm' });
 
 const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
-  ${STUDIO_LABELS.flows.emptyPrompt}
+  ${FLOWS_LABELS.emptyPrompt}
 </p>`;
 const ghostBox = '<span class="block w-24 h-15 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 const ghostLine = '<span class="block w-10 h-px bg-et-surface-border"></span>';
@@ -114,7 +113,7 @@ export const emptyCanvasOf = (copy: string) =>
       <div class="flex items-center gap-space-2" aria-hidden="true">
         ${ghostBox}${ghostLine}${ghostBox}${ghostLine}${ghostBox}
       </div>
-      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${STUDIO_LABELS.flows.emptyTitle}</p>
+      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${FLOWS_LABELS.emptyTitle}</p>
       <p class="m-0 text-et-surface-muted">
         Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt
         ihn an. Bitte ihn zum Beispiel so:
@@ -124,7 +123,7 @@ export const emptyCanvasOf = (copy: string) =>
   </div>`;
 
 export const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">
-  ${STUDIO_LABELS.flows.none}
+  ${FLOWS_LABELS.none}
 </p>`;
 
 export const flatFlowList = () =>

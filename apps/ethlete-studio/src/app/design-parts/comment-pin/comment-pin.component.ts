@@ -3,7 +3,7 @@ import { Component, computed, input, output, ViewEncapsulation } from '@angular/
 import { AutoSurfaceDirective, SurfaceInteractiveDirective } from '@ethlete/core';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { AgentLogoName } from '../../icons/agent-logos';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { COMMENT_PIN_LABELS } from '../../i18n/comments-labels';
 
 export type CommentPinAgent = AgentLogoName;
 
@@ -48,7 +48,7 @@ export class CommentPinComponent {
   public pinToggle = output();
 
   protected label = computed(() =>
-    STUDIO_LABELS.commentPin.label({ author: this.author(), count: this.count(), resolved: this.resolved() }),
+    COMMENT_PIN_LABELS.label({ author: this.author(), count: this.count(), resolved: this.resolved() }),
   );
 
   protected filled = computed(() => this.selected() && !this.agent() && !this.resolved());

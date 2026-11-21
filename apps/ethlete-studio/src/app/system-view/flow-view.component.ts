@@ -28,7 +28,7 @@ import {
   FlowsPagePreset,
 } from '../design-parts/flows-page/flows-page.component';
 import { CommentThread } from '../design-parts/comment-flow/thread-card.component';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { FLOWS_LABELS } from '../i18n/flows-labels';
 import { rememberFlowPreset, rememberedView } from '../studio-view/remembered';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { commentDraftOf, otherSizeCountOf, pinsOnPlaceOf } from './comment-pins';
@@ -170,7 +170,7 @@ export class FlowViewComponent {
   protected presets = computed<FlowsPagePreset[]>(() =>
     Object.entries(this.product().presets).map(([name, size]) => ({
       value: name,
-      label: STUDIO_LABELS.flows.presetLabel(name, size),
+      label: FLOWS_LABELS.presetLabel(name, size),
     })),
   );
 
@@ -222,7 +222,7 @@ export class FlowViewComponent {
 
         return {
           id: frame.id,
-          title: elsewhere > 0 ? `${frame.label} · ${STUDIO_LABELS.flows.otherSize(elsewhere)}` : frame.label,
+          title: elsewhere > 0 ? `${frame.label} · ${FLOWS_LABELS.otherSize(elsewhere)}` : frame.label,
           src: frame.src,
           col,
           row,
@@ -320,7 +320,7 @@ export class FlowViewComponent {
   }
 
   protected copyPrompt() {
-    from(navigator.clipboard.writeText(STUDIO_LABELS.flows.emptyPrompt))
+    from(navigator.clipboard.writeText(FLOWS_LABELS.emptyPrompt))
       .pipe(
         // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),

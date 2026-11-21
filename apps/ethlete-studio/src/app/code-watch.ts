@@ -4,7 +4,7 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { EMPTY, Subject, catchError, exhaustMap, tap, timer } from 'rxjs';
 import { TitleBarPush } from './components/title-bar/title-bar.component';
 import { PushState, StudioCodeState, quitForRebuild$, studioCodeState$ } from '../host/studio-code';
-import { STUDIO_LABELS } from './i18n/studio-labels';
+import { CODE_LABELS } from './i18n/shell-labels';
 
 export const CODE_WATCH_INTERVAL_MS = 10_000;
 
@@ -22,7 +22,7 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
   if (!state) return null;
 
   const { host, cli, frontend } = state;
-  const labels = STUDIO_LABELS.code;
+  const labels = CODE_LABELS;
 
   if (host.running && host.latest && host.running !== host.latest) {
     return { text: labels.host, action: 'restartStudio' };
@@ -46,7 +46,7 @@ export const pushNoticeOf = (push: PushState | null | undefined): TitleBarPush |
 
   return {
     unpushed: push.unpushed,
-    age: STUDIO_LABELS.code.pushAge(HOURS.format(push.oldestAgeHours ?? 0)),
+    age: CODE_LABELS.pushAge(HOURS.format(push.oldestAgeHours ?? 0)),
   };
 };
 

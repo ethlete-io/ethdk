@@ -14,7 +14,7 @@ import {
   type AgentProgress,
   type BuildReady,
 } from './shared/build-ready';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { BUILD_READY_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 const check = SDK_ICONS.find((each) => each.name === 'et-check');
 
@@ -91,7 +91,7 @@ const openEditSketch = async (status: BuildReady) => {
   if (status.state !== 'blocked' || !status.blockers.some(({ kind }) => kind === 'direct-edit')) {
     return { body: '', styles: '' };
   }
-  const open = await button.render({ label: STUDIO_LABELS.buildReady.openEditSketch, variant: 'outline', size: 'xs' });
+  const open = await button.render({ label: BUILD_READY_LABELS.openEditSketch, variant: 'outline', size: 'xs' });
   return { body: control(withAction(open.body, 'emit:openEditSketch'), 'open-edit-sketch'), styles: open.styles };
 };
 
@@ -109,7 +109,7 @@ export const buildReadyView = async (
   const reasons =
     status.state === 'blocked'
       ? disclosure({
-          label: STUDIO_LABELS.buildReady.reasons,
+          label: BUILD_READY_LABELS.reasons,
           body: list.body,
           open,
           size: 'sm',

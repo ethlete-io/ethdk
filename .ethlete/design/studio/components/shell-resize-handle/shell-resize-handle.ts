@@ -1,7 +1,7 @@
 import { definePart, drawing, forceInteraction, html, interactionRows, type Interaction } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import styles from './shell-resize-handle.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SHELL_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type ResizeInteraction = Exclude<Interaction, 'disabled'>;
 
@@ -15,7 +15,7 @@ const LINE =
 export const shellResizeHandleStyles = styles;
 
 export const shellResizeHandle = ({ width = SIDE_WIDTH.rest, interaction }: Props = {}) => {
-  const markup = `<div class="st-shell-resize group absolute top-space-3 bottom-space-3 w-2 cursor-col-resize outline-none" role="separator" aria-orientation="vertical" aria-label="${STUDIO_LABELS.shell.sideWidth}" aria-valuemin="${SIDE_WIDTH.min}" aria-valuemax="${SIDE_WIDTH.max}" aria-valuenow="${width}" tabindex="0" data-et-action="emit:sideWidthChange">${LINE}</div>`;
+  const markup = `<div class="st-shell-resize group absolute top-space-3 bottom-space-3 w-2 cursor-col-resize outline-none" role="separator" aria-orientation="vertical" aria-label="${SHELL_LABELS.sideWidth}" aria-valuemin="${SIDE_WIDTH.min}" aria-valuemax="${SIDE_WIDTH.max}" aria-valuenow="${width}" tabindex="0" data-et-action="emit:sideWidthChange">${LINE}</div>`;
 
   return control(interaction ? forceInteraction(markup, interaction) : markup, 'resize');
 };

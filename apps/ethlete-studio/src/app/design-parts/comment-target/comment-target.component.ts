@@ -1,5 +1,5 @@
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
 
 @Component({
   selector: 'ethlete-comment-target',
@@ -21,5 +21,5 @@ export class CommentTargetComponent {
 
   public comment = output<Event>();
 
-  protected label = computed(() => STUDIO_LABELS.system.commentOn(this.frame()));
+  protected label = computed(() => SYSTEM_LABELS.commentOn(this.frame()));
 }

@@ -27,7 +27,8 @@ import { CanvasFrameDirective } from '../../components/design-canvas/canvas-fram
 import { CanvasPin, FramePoint } from '../../components/design-canvas/canvas-pin';
 import { Point } from '../../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../../components/design-canvas/design-canvas.component';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { FLOWS_LABELS } from '../../i18n/flows-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
@@ -36,7 +37,7 @@ import { CommentTargetComponent } from '../comment-target/comment-target.compone
 import { TreeRow } from '../tree-row/tree-row-item.component';
 import { TreeRowComponent } from '../tree-row/tree-row.component';
 
-export const FLOWS_SAMPLE: string[] = [...STUDIO_LABELS.flows.sample.names];
+export const FLOWS_SAMPLE: string[] = [...FLOWS_LABELS.sample.names];
 
 export type FlowsPageFrame = {
   id: string;
@@ -76,7 +77,7 @@ export const FLOWS_SAMPLE_PINS: CanvasPin[] = [
     id: 'flow-pin',
     frameId: 'sketch',
     label: '1',
-    text: STUDIO_LABELS.flows.sample.pinText,
+    text: FLOWS_LABELS.sample.pinText,
     author: 'Hanna',
     initials: 'H',
     count: 1,
@@ -88,25 +89,25 @@ export const FLOWS_SAMPLE_THREAD: CommentThread = {
   id: 'flow-pin',
   place: 'pages/sketches › page-sketch',
   messages: [
-    { author: 'Hanna', initials: 'H', when: 'vor 2 Std.', text: STUDIO_LABELS.flows.sample.pinText },
+    { author: 'Hanna', initials: 'H', when: 'vor 2 Std.', text: FLOWS_LABELS.sample.pinText },
     { author: 'human', initials: 'H', own: true, when: 'vor 1 Std.', text: 'Ich ziehe ihn eine Stufe an.' },
   ],
 };
 
 export const FLOWS_SAMPLE_LINES: FlowsPageLine[] = [
-  { from: 'inbox', to: 'sketch', label: STUDIO_LABELS.flows.sample.lines[0] },
-  { from: 'inbox', to: 'resolved', label: STUDIO_LABELS.flows.sample.lines[1] },
-  { from: 'sketch', to: 'system', label: STUDIO_LABELS.flows.sample.lines[2] },
+  { from: 'inbox', to: 'sketch', label: FLOWS_LABELS.sample.lines[0] },
+  { from: 'inbox', to: 'resolved', label: FLOWS_LABELS.sample.lines[1] },
+  { from: 'sketch', to: 'system', label: FLOWS_LABELS.sample.lines[2] },
 ];
 
 export const FLOWS_SAMPLE_NOTES: FlowsPageNote[] = [
-  { id: 'gap', text: STUDIO_LABELS.flows.sample.notes[0], x: 790, y: 262 },
+  { id: 'gap', text: FLOWS_LABELS.sample.notes[0], x: 790, y: 262 },
   { id: 'new', text: '', x: 0, y: 262 },
 ];
 
 export const FLOWS_SAMPLE_ORPHANS: FlowsPageNote[] = [
-  { id: 'lost-1', text: STUDIO_LABELS.flows.sample.orphans[0], x: 1420, y: 60 },
-  { id: 'lost-2', text: STUDIO_LABELS.flows.sample.orphans[1], x: 1420, y: 300 },
+  { id: 'lost-1', text: FLOWS_LABELS.sample.orphans[0], x: 1420, y: 60 },
+  { id: 'lost-2', text: FLOWS_LABELS.sample.orphans[1], x: 1420, y: 300 },
 ];
 
 const NOTE_INSET = 24;
@@ -476,7 +477,7 @@ export class FlowsPageComponent {
   public selected = input(FLOWS_SAMPLE[0]);
   public frames = input(FLOWS_SAMPLE_FRAMES);
   public lines = input(FLOWS_SAMPLE_LINES);
-  public preset = input<string>(STUDIO_LABELS.flows.sample.preset);
+  public preset = input<string>(FLOWS_LABELS.sample.preset);
   public presets = input<FlowsPagePreset[]>([]);
   public ratio = input(FLOWS_SHOT.height / FLOWS_SHOT.width);
   public notes = input<FlowsPageNote[]>([]);
@@ -515,8 +516,8 @@ export class FlowsPageComponent {
   private noteBoxes = viewChildren<ElementRef<HTMLElement>>('noteBox');
 
   private stage = viewChild<ElementRef<HTMLElement>>('stage');
-  protected readonly LABELS = STUDIO_LABELS.flows;
-  protected readonly SYSTEM_LABELS = STUDIO_LABELS.system;
+  protected readonly LABELS = FLOWS_LABELS;
+  protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
   protected readonly CAPTION = FLOWS_SHOT.caption;
   protected readonly PIN_TRANSFORM = 'scale(var(--et-design-canvas-label-scale)) translateY(-100%)';
   protected readonly DRAFT_TRANSFORM = 'scale(var(--et-design-canvas-label-scale))';

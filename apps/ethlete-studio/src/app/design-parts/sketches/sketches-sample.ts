@@ -1,6 +1,6 @@
 import { SketchChange } from '../../../host/design';
 import { AgentLogoName } from '../../icons/agent-logos';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { PartTree } from '../part-tree/part-tree.component';
 import { InboxComment } from '../inbox/inbox-sample';
 import { OpenPointGroup } from '../system-page/system-page-sample';
@@ -302,12 +302,12 @@ export const sketchMultiSampleOf = (count: 'three' | 'many') => ({
 });
 
 export const SKETCH_POINTS_SAMPLE: OpenPointGroup[] = [
-  { icon: 'grid', lines: [{ text: STUDIO_LABELS.system.sketchPicked, detail: 'sketch' }] },
+  { icon: 'grid', lines: [{ text: SYSTEM_LABELS.sketchPicked, detail: 'sketch' }] },
   {
     icon: 'error',
     lines: [
-      { text: STUDIO_LABELS.system.sketchProblem('UTILITY-CSS'), detail: 'b' },
-      { text: STUDIO_LABELS.system.sketchProblem('UTILITY-CSS'), detail: 'b' },
+      { text: SYSTEM_LABELS.sketchProblem('UTILITY-CSS'), detail: 'b' },
+      { text: SYSTEM_LABELS.sketchProblem('UTILITY-CSS'), detail: 'b' },
     ],
   },
 ];

@@ -8,9 +8,9 @@ import {
   provideIcons,
   TIMES_ICON,
 } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SHORTCUTS_DIALOG_LABELS } from '../../i18n/shell-labels';
 
-const LABELS = STUDIO_LABELS.shortcutsDialog;
+const LABELS = SHORTCUTS_DIALOG_LABELS;
 
 export const SHORTCUTS_KEY = 'mod+/';
 

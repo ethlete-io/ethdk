@@ -9,10 +9,10 @@ import {
   TOOLTIP_IMPORTS,
 } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { BUILD_READY_LABELS } from '../../i18n/system-labels';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
 
-export type BuildBlockerKind = keyof typeof STUDIO_LABELS.buildReady.groups;
+export type BuildBlockerKind = keyof typeof BUILD_READY_LABELS.groups;
 
 export type BuildBlocker = { kind: BuildBlockerKind; text: string; part?: string };
 
@@ -193,7 +193,7 @@ export class BuildReadyFooterComponent {
   public blockersOpen = model(false);
 
   public openEditSketch = output<BuildBlocker>();
-  protected readonly LABELS = STUDIO_LABELS.buildReady;
+  protected readonly LABELS = BUILD_READY_LABELS;
 
   protected blockerCount = computed(() => {
     const status = this.status();

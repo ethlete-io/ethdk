@@ -7,13 +7,13 @@ import {
   provideCommandPaletteRegistry,
   registerCommands,
 } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { COMMAND_PALETTE_LABELS } from '../../i18n/shell-labels';
 
 export type PaletteKind = 'part' | 'page' | 'sketch' | 'command';
 
 export type PaletteEntry = { kind: PaletteKind; key: string; label: string };
 
-const LABELS = STUDIO_LABELS.commandPalette;
+const LABELS = COMMAND_PALETTE_LABELS;
 
 @Component({
   selector: 'ethlete-command-palette',

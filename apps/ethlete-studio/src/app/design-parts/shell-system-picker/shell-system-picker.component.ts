@@ -1,6 +1,6 @@
 import { Component, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SHELL_LABELS } from '../../i18n/shell-labels';
 
 @Component({
   selector: 'ethlete-shell-system-picker',
@@ -64,7 +64,7 @@ export class ShellSystemPickerComponent {
   public open = model(false);
   public productChange = output<string>();
 
-  protected readonly LABELS = STUDIO_LABELS.shell;
+  protected readonly LABELS = SHELL_LABELS;
 
   protected selectProduct(value: unknown) {
     if (typeof value === 'string' && value !== this.product()) this.productChange.emit(value);

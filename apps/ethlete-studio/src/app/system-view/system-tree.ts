@@ -20,7 +20,7 @@ import {
 import { keptStatesOf } from '@ethlete/cli/sketch-frames';
 import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { isAnswered, isQuestion } from './comment-pins';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { SYSTEM_TREE_LABELS, TREE_ROW_LABELS } from '../i18n/system-labels';
 
 export type SystemGroupKey =
   'foundations' | 'components' | 'elements' | 'pages' | 'wireframes' | 'unused' | 'sketches' | 'legacy';
@@ -40,7 +40,7 @@ export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds
     holds: (part) => part.layer === 'pages' && !isWireframe(part) && !part.unusedInProduct,
   },
   { key: 'wireframes', label: 'Wireframes', holds: (part) => isWireframe(part) && !part.unusedInProduct },
-  { key: 'unused', label: STUDIO_LABELS.systemTree.notUsed, holds: (part) => part.unusedInProduct === true },
+  { key: 'unused', label: SYSTEM_TREE_LABELS.notUsed, holds: (part) => part.unusedInProduct === true },
   { key: 'sketches', label: 'Sketches', holds: () => false },
   { key: 'legacy', label: 'Legacy', holds: () => false },
 ];
@@ -156,7 +156,7 @@ const productProblemGroupsOf = (product: string, unowned: SystemProblem[]): Tree
       ? [
           {
             key: PRODUCT_KEY,
-            label: STUDIO_LABELS.systemTree.product,
+            label: SYSTEM_TREE_LABELS.product,
             entries: [
               {
                 key: `${PRODUCT_KEY}:${product}`,
@@ -172,7 +172,7 @@ const productProblemGroupsOf = (product: string, unowned: SystemProblem[]): Tree
       ? [
           {
             key: APP_CODE_KEY,
-            label: STUDIO_LABELS.systemTree.appCode,
+            label: SYSTEM_TREE_LABELS.appCode,
             entries: [...new Set(app.map((problem) => problem.file))].map((file) => ({
               key: `${APP_CODE_KEY}:${file}`,
               name: file,
@@ -209,15 +209,11 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
       ...(sketch.problems ?? []).flatMap(({ variant, problems }) =>
         problems.map((found) => `${variant}: ${found.rule}: ${found.message}`),
       ),
-      ...(sketch.staleBase ? [STUDIO_LABELS.treeRow.sketchNeedsRebase(sketch.staleBase)] : []),
-      ...(sketch.changedSinceReady?.length
-        ? [STUDIO_LABELS.treeRow.sketchChangedSinceReady(sketch.changedSinceReady)]
-        : []),
-      ...(sketch.rebaseUncommitted
-        ? [STUDIO_LABELS.treeRow.sketchRebaseUncommitted(sketch.rebaseUncommitted.commit)]
-        : []),
+      ...(sketch.staleBase ? [TREE_ROW_LABELS.sketchNeedsRebase(sketch.staleBase)] : []),
+      ...(sketch.changedSinceReady?.length ? [TREE_ROW_LABELS.sketchChangedSinceReady(sketch.changedSinceReady)] : []),
+      ...(sketch.rebaseUncommitted ? [TREE_ROW_LABELS.sketchRebaseUncommitted(sketch.rebaseUncommitted.commit)] : []),
       ...(sketch.hold?.untilSketch && sketch.holdTargetEnd
-        ? [STUDIO_LABELS.treeRow.sketchHoldTargetEnded(sketch.hold.untilSketch.target, sketch.holdTargetEnd)]
+        ? [TREE_ROW_LABELS.sketchHoldTargetEnded(sketch.hold.untilSketch.target, sketch.holdTargetEnd)]
         : []),
     ],
     sketch.target,
@@ -258,7 +254,7 @@ export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
     : [
         {
           key: 'legacy',
-          label: STUDIO_LABELS.systemTree.legacy,
+          label: SYSTEM_TREE_LABELS.legacy,
           entries: [],
           sections: projects.map((project) => ({
             key: `legacy/${project}`,
@@ -323,7 +319,7 @@ const unusedGroupOf = (
 
   return {
     key: UNUSED_KEY,
-    label: name ? STUDIO_LABELS.systemTree.notUsedIn(name) : STUDIO_LABELS.systemTree.notUsed,
+    label: name ? SYSTEM_TREE_LABELS.notUsedIn(name) : SYSTEM_TREE_LABELS.notUsed,
     entries: [],
     sections: [...new Set(parts.map((part) => part.layer))].map((layer) => {
       const onLayer = parts.filter((part) => part.layer === layer);
@@ -432,7 +428,7 @@ export const treeOf = (
       key: partKeyOf(part),
       name: part.name,
       ...(problems.length > 0 || part.composition
-        ? { title: [...problemTitleOf(problems), ...(part.composition ? [STUDIO_LABELS.systemTree.composition] : [])] }
+        ? { title: [...problemTitleOf(problems), ...(part.composition ? [SYSTEM_TREE_LABELS.composition] : [])] }
         : {}),
       badges: badgesOf(part, { sketched, marks: partMarks, problems }),
       ...commentsOf(partKeyOf(part), partMarks),
@@ -856,7 +852,7 @@ export const sketchStateKeyOf = ({
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
 /** The label over each frame of a variant the agent may still change. */
-export const PENDING_LABEL = STUDIO_LABELS.systemTree.pending;
+export const PENDING_LABEL = SYSTEM_TREE_LABELS.pending;
 
 /** The first author and "+N" for the rest, or `null` without authors. */
 export const authorsLabelOf = (authors: string[]) =>
@@ -1001,16 +997,16 @@ export const sketchMatrixOf = ({
     const note = [
       rejected && `${rejected.text} (${rejected.by})`,
       sketch.variantInfo?.[variant]?.note,
-      silent && variant === reported && STUDIO_LABELS.systemTree.noReport,
+      silent && variant === reported && SYSTEM_TREE_LABELS.noReport,
     ]
       .filter(Boolean)
       .join('\n\n');
 
     return {
       key: variant,
-      label: variant === drawing ? `${named} · ${STUDIO_LABELS.systemTree.drawing}` : named,
+      label: variant === drawing ? `${named} · ${SYSTEM_TREE_LABELS.drawing}` : named,
       ...(note === '' ? {} : { note }),
-      ...(authors.length > 0 ? { title: STUDIO_LABELS.systemTree.variantBy(variant, authors.join(', ')) } : {}),
+      ...(authors.length > 0 ? { title: SYSTEM_TREE_LABELS.variantBy(variant, authors.join(', ')) } : {}),
       drawing: variant === drawing,
       states: target?.states ?? part?.states ?? [],
       interactions: [REST, ...(target?.interactions ?? (part?.composition ? [] : (part?.interactions ?? [])))],
@@ -1195,9 +1191,9 @@ export const sketchMatrixOf = ({
 
         const missing =
           row.state === undefined || !column.states.includes(row.state)
-            ? STUDIO_LABELS.systemTree.noState(column.key, row.state)
+            ? SYSTEM_TREE_LABELS.noState(column.key, row.state)
             : !column.interactions.includes(row.interaction)
-              ? STUDIO_LABELS.systemTree.noInteraction(column.key, row.interaction)
+              ? SYSTEM_TREE_LABELS.noInteraction(column.key, row.interaction)
               : null;
 
         if (missing === null) return [frameOf(column, row)];
@@ -1211,7 +1207,7 @@ export const sketchMatrixOf = ({
             label: cell.label,
             ...rowOf(row, column.key),
             column: column.key,
-            empty: column.key === CURRENT ? STUDIO_LABELS.systemTree.newInSketch(row.state, column.states) : missing,
+            empty: column.key === CURRENT ? SYSTEM_TREE_LABELS.newInSketch(row.state, column.states) : missing,
           },
         ];
       });
@@ -1320,24 +1316,20 @@ const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: stri
 
   if (rejection.status === 'withdrawn')
     return {
-      tag: STUDIO_LABELS.systemTree.withdrawn,
-      text: rejection.reason
-        ? STUDIO_LABELS.systemTree.withdrawnWith(rejection.reason)
-        : STUDIO_LABELS.systemTree.withdrawnLabel,
-      by: STUDIO_LABELS.systemTree.rejectedBy(rejection.withdrawnBy ?? rejection.by, ''),
+      tag: SYSTEM_TREE_LABELS.withdrawn,
+      text: rejection.reason ? SYSTEM_TREE_LABELS.withdrawnWith(rejection.reason) : SYSTEM_TREE_LABELS.withdrawnLabel,
+      by: SYSTEM_TREE_LABELS.rejectedBy(rejection.withdrawnBy ?? rejection.by, ''),
     };
 
   const reasonBy =
     rejection.reason && rejection.reasonBy && rejection.reasonBy !== rejection.by
-      ? STUDIO_LABELS.systemTree.reasonBy(rejection.reasonBy)
+      ? SYSTEM_TREE_LABELS.reasonBy(rejection.reasonBy)
       : '';
 
   return {
-    tag: STUDIO_LABELS.systemTree.rejected,
-    text: rejection.reason
-      ? STUDIO_LABELS.systemTree.rejectedWith(rejection.reason)
-      : STUDIO_LABELS.systemTree.rejectedLabel,
-    by: STUDIO_LABELS.systemTree.rejectedBy(rejection.by, reasonBy),
+    tag: SYSTEM_TREE_LABELS.rejected,
+    text: rejection.reason ? SYSTEM_TREE_LABELS.rejectedWith(rejection.reason) : SYSTEM_TREE_LABELS.rejectedLabel,
+    by: SYSTEM_TREE_LABELS.rejectedBy(rejection.by, reasonBy),
   };
 };
 

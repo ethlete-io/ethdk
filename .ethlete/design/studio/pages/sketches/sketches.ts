@@ -83,7 +83,8 @@ import {
   screenOf,
   zoomTextOf,
 } from './shared/change-crop';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
+import { BUILD_READY_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 type MergePort = 'one' | 'two';
 
@@ -153,7 +154,7 @@ const LIST_WIDTH = 1100;
 
 const LIST_ERROR = 'missing build: pages/sketches';
 const NOT_READY_REASON = 'components/title-bar b: SHOT-NOT-VIEWED default draws a pixel diff nobody viewed';
-const NOT_READY_UNKNOWN = STUDIO_LABELS.sketches.notReadyUnknown;
+const NOT_READY_UNKNOWN = SKETCHES_LABELS.notReadyUnknown;
 const FAILED_REASON = 'b · default: boom is not defined';
 const ADDED_SKIPS: AddedSkips = {
   a: [{ part: 'components/zoom-chip', classes: 'WRAP' }],
@@ -173,8 +174,8 @@ const skipLines = (skips: AddedSkip[] | undefined) =>
                 <span class="contents" data-et-semantic-color="warning"
                   >${icon('warning', { size: 14, cls: 'mt-px flex-none text-et-theme' })}</span
                 ><span class="min-w-0 wrap-anywhere"
-                  >${STUDIO_LABELS.sketches.addedSkip} <code class="font-code text-et-surface">${classes}</code> in
-                  ${part} - stellt eine Prüfung stumm</span
+                  >${SKETCHES_LABELS.addedSkip} <code class="font-code text-et-surface">${classes}</code> in ${part} -
+                  stellt eine Prüfung stumm</span
                 >
               </li>`,
           )
@@ -246,7 +247,7 @@ const missingCell = (row: Row, state: string) =>
     <div
       class="row-start-2 box-border flex w-(--sk-frame) items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
     >
-      ${row.key === 'current' ? STUDIO_LABELS.sketches.newInSketch : STUDIO_LABELS.sketches.missingInVariant}
+      ${row.key === 'current' ? SKETCHES_LABELS.newInSketch : SKETCHES_LABELS.missingInVariant}
     </div>
   </div>`;
 
@@ -325,7 +326,7 @@ const tag = async (label: string) =>
   (await badge.render({ badges: [{ label, variant: 'tonal', size: 'sm' }] })) as { body: string; styles: string };
 const controlsOf = async () => ({
   discard: await button.render({
-    label: STUDIO_LABELS.sketches.discard,
+    label: SKETCHES_LABELS.discard,
     variant: 'transparent',
     size: 'sm',
     color: 'danger',
@@ -335,7 +336,7 @@ const controlsOf = async () => ({
     wide: await pickerOf('Runde 1 · Suche und Update'),
     narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
     neighbours: await pickerOf('Runde 3 · Nachbarschaft einer Änderung'),
-    edit: await pickerOf(STUDIO_LABELS.buildReady.groups['direct-edit']),
+    edit: await pickerOf(BUILD_READY_LABELS.groups['direct-edit']),
     screen: await pickerOf('Runde 2 · Port nach dem Merge'),
   },
   tags: {
@@ -383,7 +384,7 @@ const statusMarkup = (status: SketchStatus, tags: Tags, readyReason?: string) =>
 
 const drawingMark = html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
   ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
-  >${STUDIO_LABELS.sketches.drawingMark}</span
+  >${SKETCHES_LABELS.drawingMark}</span
 >`;
 
 const drawingStage = (row: Row, place = '') =>
@@ -482,14 +483,14 @@ const pointsPopover = async (part: string) => {
 const confirmDialog = async (kind: ConfirmKind, part: string, variant: string) => {
   const merge = kind === 'merge';
   const cancel = await button.render({
-    label: STUDIO_LABELS.sketches.confirm.cancel,
+    label: SKETCHES_LABELS.confirm.cancel,
     variant: 'outline',
     color: 'surface',
     size: 'xs',
     interaction: 'focus-visible',
   });
   const confirm = await button.render({
-    label: merge ? STUDIO_LABELS.sketches.mergeConfirm.confirm : STUDIO_LABELS.sketches.discard,
+    label: merge ? SKETCHES_LABELS.mergeConfirm.confirm : SKETCHES_LABELS.discard,
     variant: 'filled',
     size: 'xs',
     ...(merge ? {} : { color: 'danger' as const }),
@@ -503,20 +504,20 @@ const confirmDialog = async (kind: ConfirmKind, part: string, variant: string) =
         >${merge ? `${variant} in ${part} übernehmen?` : `Skizze ${part} verwerfen?`}</span
       >
       <span class="text-et-surface-muted"
-        >${merge ? STUDIO_LABELS.sketches.mergeConfirm.note : STUDIO_LABELS.sketches.discardConfirm.note}</span
+        >${merge ? SKETCHES_LABELS.mergeConfirm.note : SKETCHES_LABELS.discardConfirm.note}</span
       >
     </div>
     <div class="flex justify-end gap-space-2">${cancel.body}${confirm.body}</div>
   </div>`;
   const dialog = merge
     ? await anchoredDialog.render({
-        label: STUDIO_LABELS.sketches.mergeConfirm.label,
+        label: SKETCHES_LABELS.mergeConfirm.label,
         placement: 'bottom-start',
         anchor: '[data-sk-take] > :first-child',
         content,
       })
     : await anchoredDialog.render({
-        label: STUDIO_LABELS.sketches.discardConfirm.label,
+        label: SKETCHES_LABELS.discardConfirm.label,
         anchor: '[data-sk-discard]',
         content,
       });
@@ -574,7 +575,7 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
       <span
         class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
         data-sk-head-tag
-        >${row.label ?? (row.key === 'current' ? STUDIO_LABELS.sketches.current : row.key)}</span
+        >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
       >
       <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
     </div>
@@ -624,7 +625,7 @@ const column = (part: SketchPart, row: Row, at: number, top: number, view: View)
     <span
       class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
       data-sk-head-tag
-      >${row.label ?? (row.key === 'current' ? STUDIO_LABELS.sketches.current : row.key)}</span
+      >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
     >
     <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
   </section>`;
@@ -679,7 +680,7 @@ const screenHead = (row: Row, at: number, view: View) =>
     <span
       class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
       data-sk-head-tag
-      >${row.label ?? (row.key === 'current' ? STUDIO_LABELS.sketches.current : row.key)}</span
+      >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
     >
     <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
   </section>`;
@@ -714,8 +715,8 @@ const buttonsOf = async () => {
       'emit:screenToggle',
     );
   return {
-    wholeButton: await toggleOf(STUDIO_LABELS.sketches.wholeScreen),
-    cropButton: await toggleOf(STUDIO_LABELS.sketches.cropScreen),
+    wholeButton: await toggleOf(SKETCHES_LABELS.wholeScreen),
+    cropButton: await toggleOf(SKETCHES_LABELS.cropScreen),
   };
 };
 
@@ -1050,15 +1051,13 @@ export default definePart<Props>({
         studio: menu.body,
         section: 'Sketches',
         product: 'studio',
-        side: html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">
-          ${STUDIO_LABELS.sketches.none}
-        </p>`,
+        side: html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">${SKETCHES_LABELS.none}</p>`,
         content: html`<div
           class="h-full flex flex-col items-center justify-center gap-space-1 text-center ps-(--st-shell-inset-left)"
         >
           ${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}
-          <p class="m-0 text-et-surface text-(length:--text-sm)">${STUDIO_LABELS.sketches.emptyTitle}</p>
-          <p class="m-0 text-et-surface-muted text-(length:--text-xs)">${STUDIO_LABELS.sketches.emptyText}</p>
+          <p class="m-0 text-et-surface text-(length:--text-sm)">${SKETCHES_LABELS.emptyTitle}</p>
+          <p class="m-0 text-et-surface-muted text-(length:--text-xs)">${SKETCHES_LABELS.emptyText}</p>
         </div>`,
       });
       return drawing({ body: shell.body, setup: [menu.setup], styles: shell.styles + menu.styles });
@@ -1066,11 +1065,11 @@ export default definePart<Props>({
     const { discard, chip, pickers, tags } = await controlsOf();
     const autoMark = autoMerge
       ? html`<span class="flex w-fit" data-et-semantic-color="success" data-sk-auto-merge
-          >${(await badge.render({ badges: [{ label: STUDIO_LABELS.sketches.autoMerge, variant: 'tonal', size: 'sm' }] })).body}</span
+          >${(await badge.render({ badges: [{ label: SKETCHES_LABELS.autoMerge, variant: 'tonal', size: 'sm' }] })).body}</span
         >`
       : '';
     const reload = await button.render({
-      label: STUDIO_LABELS.sketches.reload,
+      label: SKETCHES_LABELS.reload,
       variant: 'outline',
       color: 'surface',
       size: 'sm',
@@ -1159,7 +1158,7 @@ export default definePart<Props>({
         ${
           kind === 'edit' && !screen
             ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
-                >${STUDIO_LABELS.sketches.editHint}</span
+                >${SKETCHES_LABELS.editHint}</span
               >`
             : (commentToggle?.body ?? '') +
               retry +
@@ -1207,7 +1206,7 @@ export default definePart<Props>({
                     data-sk-folded
                     ${pending.length > 0 ? 'data-sk-pending' : ''}
                   >
-                    ${html`<span class="flex items-center gap-space-3" style="transform: translateX(var(--sk-pan-x, 0px))"><span class="text-ui-sm text-et-surface-muted">${pending.length > 0 ? (listError ? pendingFailedLabel(folded) : pendingLabel(folded)) : foldedLabel(folded)}</span>${disclosure({ label: STUDIO_LABELS.sketches.showAllStates, body: '', open: false, size: 'xs', hug: true, action: 'emit:statesToggle' })}</span>`}
+                    ${html`<span class="flex items-center gap-space-3" style="transform: translateX(var(--sk-pan-x, 0px))"><span class="text-ui-sm text-et-surface-muted">${pending.length > 0 ? (listError ? pendingFailedLabel(folded) : pendingLabel(folded)) : foldedLabel(folded)}</span>${disclosure({ label: SKETCHES_LABELS.showAllStates, body: '', open: false, size: 'xs', hug: true, action: 'emit:statesToggle' })}</span>`}
                   </section>`
                 : ''
             }

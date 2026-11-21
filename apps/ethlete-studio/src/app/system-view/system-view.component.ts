@@ -80,7 +80,9 @@ import { SketchRead, sketchRead$ } from './sketch-read';
 import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
 import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
+import { START_LABELS } from '../i18n/start-labels';
+import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
@@ -412,9 +414,9 @@ export class SystemViewComponent {
 
   protected readonly PART_ZOOM_CHIP_CLASS = PART_ZOOM_CHIP_CLASS;
 
-  protected readonly LABELS = STUDIO_LABELS.shell;
-  protected readonly START_LABELS = STUDIO_LABELS.start;
-  protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
+  protected readonly LABELS = SHELL_LABELS;
+  protected readonly START_LABELS = START_LABELS;
+  protected readonly EMPTY_LABELS = SYSTEM_LABELS;
 
   private listingReloads = signal(0);
 
@@ -737,8 +739,8 @@ export class SystemViewComponent {
     if (!themes) return [];
 
     return [
-      { kind: 'surface' as const, label: STUDIO_LABELS.shell.surfaceTheme, ...themes.surface },
-      { kind: 'color' as const, label: STUDIO_LABELS.shell.colorTheme, ...themes.color },
+      { kind: 'surface' as const, label: SHELL_LABELS.surfaceTheme, ...themes.surface },
+      { kind: 'color' as const, label: SHELL_LABELS.colorTheme, ...themes.color },
     ].flatMap(({ current, ...theme }) =>
       current !== undefined && theme.names.length > 1 ? [{ ...theme, current }] : [],
     );
@@ -1246,7 +1248,7 @@ export class SystemViewComponent {
     ...PALETTE_SERVER_ACTIONS.map((action) => ({
       kind: 'command' as const,
       key: action,
-      label: STUDIO_LABELS.designServer[action],
+      label: DESIGN_SERVER_LABELS[action],
     })),
   ]);
 

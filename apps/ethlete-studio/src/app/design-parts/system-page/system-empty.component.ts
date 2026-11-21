@@ -1,6 +1,6 @@
 import { booleanAttribute, Component, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
 
 @Component({
   selector: 'ethlete-system-empty',
@@ -32,6 +32,6 @@ export class SystemEmptyComponent {
   public flush = input(false, { transform: booleanAttribute });
   public copyPrompt = output();
 
-  protected readonly LABELS = STUDIO_LABELS.system;
+  protected readonly LABELS = SYSTEM_LABELS;
   protected readonly GHOST_BOXES = [0, 1, 2, 3];
 }

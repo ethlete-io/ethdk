@@ -2,7 +2,8 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { SKETCHES_LABELS, MERGE_LABELS } from '../i18n/sketches-labels';
+import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent, frameFitsCell, liveShotsOf, nearShotsOf } from './sketch-view.component';
@@ -130,7 +131,7 @@ const discardConfirmed = (root: HTMLElement, fixture: ComponentFixture<unknown>)
 
 const mergeButtons = (root: HTMLElement) =>
   [...root.querySelectorAll<HTMLButtonElement>('button')].filter(
-    (button) => button.textContent?.trim() === STUDIO_LABELS.sketches.merge,
+    (button) => button.textContent?.trim() === SKETCHES_LABELS.merge,
   );
 
 const LIST_WIDTH = 10000;
@@ -561,9 +562,7 @@ describe('SketchViewComponent', () => {
 
     const dialog = [...document.querySelectorAll('[role="alertdialog"]')].at(-1);
 
-    expect(dialog?.textContent).toContain(
-      STUDIO_LABELS.sketches.mergeConfirm.question('Variante b', 'components/card'),
-    );
+    expect(dialog?.textContent).toContain(SKETCHES_LABELS.mergeConfirm.question('Variante b', 'components/card'));
     expect(root.querySelector('ethlete-sketches')).not.toBeNull();
 
     dialog?.querySelector<HTMLElement>('[data-sk-confirm-cancel]')?.click();
@@ -622,7 +621,7 @@ describe('SketchViewComponent', () => {
 
     await merge();
 
-    expect(errorText()).toBe(STUDIO_LABELS.merge.needsRebase(['components/card']));
+    expect(errorText()).toBe(MERGE_LABELS.needsRebase(['components/card']));
 
     refusal = {
       status: 422,
@@ -659,11 +658,11 @@ describe('SketchViewComponent', () => {
     };
     const { root } = await render(refused, noComments);
 
-    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.notReady);
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.notReady);
     expect(root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
       'pages/system b: SHOT-NOT-VIEWED listing-error',
     );
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
     expect(waitsForPick(refused)).toBe(false);
   });
 
@@ -675,7 +674,7 @@ describe('SketchViewComponent', () => {
 
     expect(
       badge((await render({ ...drawing, autoMergeForecast: forecast(true), mergeHold: held }, noComments)).root),
-    ).toBe(STUDIO_LABELS.sketches.autoMerge);
+    ).toBe(SKETCHES_LABELS.autoMerge);
     expect(badge((await render({ ...drawing, autoMergeForecast: forecast(false) }, noComments)).root)).toBeNull();
     expect(badge((await render({ ...drawing, autoMergeForecast: null }, noComments)).root)).toBeNull();
   });
@@ -694,9 +693,7 @@ describe('SketchViewComponent', () => {
       [...root.querySelectorAll('[data-sk-row="b"] [data-sk-added-skip]')].map((line) =>
         line.textContent?.replace(/\s+/g, ' ').trim(),
       ),
-    ).toEqual([
-      `${STUDIO_LABELS.sketches.addedSkip} WRAP CLIPPED ${STUDIO_LABELS.sketches.addedSkipIn('components/card')}`,
-    ]);
+    ).toEqual([`${SKETCHES_LABELS.addedSkip} WRAP CLIPPED ${SKETCHES_LABELS.addedSkipIn('components/card')}`]);
     expect(root.querySelector('[data-sk-row="a"] [data-sk-added-skip]')).toBeNull();
   });
 
@@ -714,11 +711,11 @@ describe('SketchViewComponent', () => {
     };
     const { root } = await render(changed, noComments);
 
-    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.notReady);
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.notReady);
     expect(root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
       'pages/sketches is picked (variant a) and a changed since sketch ready judged it',
     );
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
   });
 
   it('derives the head badge from the drawing report and readiness, never from the sketch status alone', async () => {
@@ -726,7 +723,7 @@ describe('SketchViewComponent', () => {
     const fresh = new Date(Date.now() - 5 * 60_000).toISOString();
     const stale = new Date(Date.now() - 40 * 60_000).toISOString();
     const open = { ...SKETCH, status: 'in progress' as const, decision: undefined };
-    const status = STUDIO_LABELS.sketches.status;
+    const status = SKETCHES_LABELS.status;
 
     const drawing = await render(
       { ...open, report: { message: 'zeichnet', updatedAt: fresh, variant: 'b', author: 'claude-opus-5-5' } },
@@ -734,7 +731,7 @@ describe('SketchViewComponent', () => {
     );
 
     expect(badgeOf(drawing.root)).toBe(status.drawing);
-    expect(buttonNamed(drawing.root, STUDIO_LABELS.sketches.merge)?.disabled).toBe(true);
+    expect(buttonNamed(drawing.root, SKETCHES_LABELS.merge)?.disabled).toBe(true);
     drawing.fixture.destroy();
 
     const stalled = await render(
@@ -744,7 +741,7 @@ describe('SketchViewComponent', () => {
 
     expect(badgeOf(stalled.root)).toBe(status.notReady);
     expect(stalled.root.querySelector('[data-sk-not-ready]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      `${STUDIO_LABELS.sketches.notReadyUnknown} · Letzte Änderung von Opus 5.5 · seit 40 Min`,
+      `${SKETCHES_LABELS.notReadyUnknown} · Letzte Änderung von Opus 5.5 · seit 40 Min`,
     );
     stalled.fixture.destroy();
 
@@ -758,13 +755,13 @@ describe('SketchViewComponent', () => {
     );
 
     expect(badgeOf(silent.root)).toBe(status.notReady);
-    expect(buttonNamed(silent.root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(buttonNamed(silent.root, SKETCHES_LABELS.merge)).toBeUndefined();
     silent.fixture.destroy();
 
     const ready = await render({ ...SKETCH, decision: undefined }, noComments);
 
     expect(badgeOf(ready.root)).toBe(status.waiting);
-    expect(buttonNamed(ready.root, STUDIO_LABELS.sketches.merge)).toBeDefined();
+    expect(buttonNamed(ready.root, SKETCHES_LABELS.merge)).toBeDefined();
   });
 
   it('shows the agent line from the drawing report: who, its message, the variant and since when', async () => {
@@ -780,7 +777,7 @@ describe('SketchViewComponent', () => {
     );
     const parts = [...(root.querySelector('[data-sk-agent]')?.children ?? [])].map((part) => part.textContent?.trim());
 
-    expect(parts).toEqual(['', 'Sonnet 5.5', 'baut Runde 3', `· Variante b · ${STUDIO_LABELS.sketches.since(7)}`]);
+    expect(parts).toEqual(['', 'Sonnet 5.5', 'baut Runde 3', `· Variante b · ${SKETCHES_LABELS.since(7)}`]);
   });
 
   it('shows the variant step of a report that names a state, and no agent line once the report stalls', async () => {
@@ -833,22 +830,22 @@ describe('SketchViewComponent', () => {
       noComments,
     );
     const line = root.querySelector('[data-sk-agent]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-    const labels = STUDIO_LABELS.sketches.agentRun;
+    const labels = SKETCHES_LABELS.agentRun;
 
     expect(line).toContain('Opus 5.5');
     expect(line).toContain(labels.errors(['a: tsc failed', 'b: tsc failed']));
     expect(line).toContain(labels.ago(50));
     expect(line).toMatch(/Runde (\d+ )?fehlgeschlagen/);
-    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.failed);
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.failed);
     expect(root.querySelector('header [data-sk-failed]')?.textContent?.trim()).toBe('a: tsc failed (+1)');
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
   });
 
   it('waits for a pick only once every live frame drew, and names the error of a frame that failed', async () => {
     const { fixture, root } = await render({ ...ROUNDED, decision: undefined, report: null }, noComments);
     const frames = [...root.querySelectorAll<HTMLIFrameElement>('iframe[data-state]')];
     const failing = frames.at(-1)!;
-    const status = STUDIO_LABELS.sketches.status;
+    const status = SKETCHES_LABELS.status;
     const badge = () => root.querySelector('header et-badge')?.textContent?.trim();
     const report = async (frame: HTMLIFrameElement, extra: object = {}) => {
       window.dispatchEvent(
@@ -862,7 +859,7 @@ describe('SketchViewComponent', () => {
 
     expect(frames.length).toBeGreaterThan(0);
     expect(badge()).toBe(status.drawing);
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)?.disabled).toBe(true);
+    expect(buttonNamed(root, SKETCHES_LABELS.merge)?.disabled).toBe(true);
 
     for (const frame of frames.slice(0, -1)) await report(frame);
     await report(failing, { errored: true, error: 'design-explore: state "default" failed\nboom is not defined' });
@@ -874,12 +871,12 @@ describe('SketchViewComponent', () => {
       `${variant} · default: boom is not defined`,
     );
     expect(root.querySelector('[data-sk-agent]')?.textContent).toContain(`${variant} · default: boom is not defined`);
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
 
     await report(failing);
 
     expect(badge()).toBe(status.waiting);
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)?.disabled).toBe(false);
+    expect(buttonNamed(root, SKETCHES_LABELS.merge)?.disabled).toBe(false);
   });
 
   it('shows no agent line while nothing draws and every variant rendered', async () => {
@@ -905,8 +902,8 @@ describe('SketchViewComponent', () => {
 
     expect(parts).toEqual([
       '',
-      STUDIO_LABELS.sketches.mergePort(['elements/hero', 'elements/card']),
-      `· ${STUDIO_LABELS.sketches.since(4)}`,
+      SKETCHES_LABELS.mergePort(['elements/hero', 'elements/card']),
+      `· ${SKETCHES_LABELS.since(4)}`,
     ]);
   });
 
@@ -948,10 +945,10 @@ describe('SketchViewComponent', () => {
 
     const badges = [...root.querySelectorAll('header et-badge')].map((badge) => badge.textContent?.trim());
 
-    expect(badges).toContain(STUDIO_LABELS.sketches.status.picked);
-    expect(badges).not.toContain(STUDIO_LABELS.sketches.status.waiting);
+    expect(badges).toContain(SKETCHES_LABELS.status.picked);
+    expect(badges).not.toContain(SKETCHES_LABELS.status.waiting);
     expect(asked).toEqual(['elements/rating']);
-    expect(chip?.textContent?.trim()).toBe(STUDIO_LABELS.system.openCount(3));
+    expect(chip?.textContent?.trim()).toBe(SYSTEM_LABELS.openCount(3));
     expect(root.querySelectorAll('[data-sk-points]')).toHaveLength(1);
     expect(chip?.closest('[data-sk-points]')?.parentElement?.querySelector('[data-sk-merge]')).not.toBeNull();
   });
@@ -969,17 +966,17 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.paused);
-    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.paused);
+    expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
 
     root.querySelector<HTMLButtonElement>('[data-sk-hold]')?.click();
     await new Promise((done) => setTimeout(done));
 
     const reason = root.querySelector('[data-sk-hold-reason]')?.textContent ?? '';
 
-    expect(reason).toContain(STUDIO_LABELS.sketches.holdUntil('B99 und B100'));
+    expect(reason).toContain(SKETCHES_LABELS.holdUntil('B99 und B100'));
     expect(reason).toContain('Sonnet 5.5');
-    expect(reason).toContain(STUDIO_LABELS.sketches.since(7));
+    expect(reason).toContain(SKETCHES_LABELS.since(7));
   });
 
   it('discards the sketch from Verwerfen', async () => {

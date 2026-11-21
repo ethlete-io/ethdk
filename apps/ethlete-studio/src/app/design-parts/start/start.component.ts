@@ -1,6 +1,6 @@
 import { booleanAttribute, Component, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { START_LABELS } from '../../i18n/start-labels';
 
 @Component({
   selector: 'ethlete-start',
@@ -65,5 +65,5 @@ export class StartComponent {
   public otherRepo = output();
   public copyPrompt = output();
 
-  protected readonly LABELS = STUDIO_LABELS.start;
+  protected readonly LABELS = START_LABELS;
 }

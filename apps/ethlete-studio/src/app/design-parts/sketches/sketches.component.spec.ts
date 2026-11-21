@@ -3,7 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { sketchFrameSetOf } from '@ethlete/cli/sketch-frames';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
+import { COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { SketchesComponent, foldedStatesOf } from './sketches.component';
 import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchComment, SketchRow } from './sketches-sample';
 
@@ -14,7 +16,7 @@ const withTooltip = (root: Element | null | undefined, text: string) =>
       .some((id) => document.getElementById(id)?.textContent?.trim() === text),
   ) ?? null;
 
-const LABELS = STUDIO_LABELS.sketches;
+const LABELS = SKETCHES_LABELS;
 
 const ROWS: SketchRow[] = [
   {
@@ -489,7 +491,7 @@ describe('SketchesComponent', () => {
 
     fixture.componentInstance.commentPick.subscribe((id) => picked.push(id));
 
-    expect(textOf(root.querySelector('[data-comment-list]'))).toContain(STUDIO_LABELS.commentList.open(3));
+    expect(textOf(root.querySelector('[data-comment-list]'))).toContain(COMMENT_LIST_LABELS.open(3));
     expect(root.querySelectorAll('[data-comment-list] ethlete-comment-row')).toHaveLength(3);
     expect(root.querySelectorAll('[data-sk-row="x"] ethlete-comment-pin')).toHaveLength(3);
 
@@ -504,7 +506,7 @@ describe('SketchesComponent', () => {
 
     fixture.componentInstance.commentStart.subscribe((place) => started.push(place));
     [...root.querySelectorAll<HTMLElement>('header button')]
-      .find((button) => textOf(button) === STUDIO_LABELS.system.comment)
+      .find((button) => textOf(button) === SYSTEM_LABELS.comment)
       ?.click();
     await fixture.whenStable();
 
@@ -1085,7 +1087,7 @@ describe('SketchesComponent', () => {
 
   it('keeps Übernehmen after a pick and opens the sketch points from the chip in the head of the picked variant only', async () => {
     const y = { ...ROWS[1], key: 'y', note: 'Variante y' } as SketchRow;
-    const groups = [{ icon: 'error', lines: [{ text: STUDIO_LABELS.system.sketchProblem('NO-HEX'), detail: 'y' }] }];
+    const groups = [{ icon: 'error', lines: [{ text: SYSTEM_LABELS.sketchProblem('NO-HEX'), detail: 'y' }] }];
     const fixture = await render({
       camera: '100',
       status: 'picked',
@@ -1101,13 +1103,13 @@ describe('SketchesComponent', () => {
     expect(textOf(root.querySelector('header [data-sk-picked]'))).toBe(LABELS.status.picked);
     expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge]'))).toBe(LABELS.merge);
     expect(root.querySelector('[data-sk-row="x"] [data-open-points-chip]')).toBeNull();
-    expect(textOf(chip)).toBe(STUDIO_LABELS.system.openCount(1));
+    expect(textOf(chip)).toBe(SYSTEM_LABELS.openCount(1));
 
     chip?.click();
     await fixture.whenStable();
 
     expect(fixture.componentInstance.pointsClosed()).toBe(false);
-    expect(textOf(document.querySelector('[role="dialog"]'))).toContain(STUDIO_LABELS.system.sketchProblem('NO-HEX'));
+    expect(textOf(document.querySelector('[role="dialog"]'))).toContain(SYSTEM_LABELS.sketchProblem('NO-HEX'));
     expect(document.querySelector('[role="dialog"] ul')?.classList.contains('divide-y')).toBe(false);
   });
 

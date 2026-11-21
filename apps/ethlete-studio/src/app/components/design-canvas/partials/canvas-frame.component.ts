@@ -55,7 +55,7 @@ import {
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { FRAME_UNREPORTED_PAINT_MS, FrameLoad, designServerBack$, failedLoadReason$, frameLoad$ } from '../frame-paint';
-import { STUDIO_LABELS } from '../../../i18n/studio-labels';
+import { CANVAS_LABELS } from '../../../i18n/canvas-labels';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameBorderComponent } from './canvas-frame-border.component';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
@@ -393,7 +393,7 @@ export class CanvasFrameComponent {
   private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
   private gridView = viewChild(CanvasFrameGridComponent);
 
-  protected readonly LABELS = STUDIO_LABELS.canvas;
+  protected readonly LABELS = CANVAS_LABELS;
 
   protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
   public bordered = computed(() => this.selected() || this.frame().empty === undefined);

@@ -1,7 +1,7 @@
 import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { STUDIO_MENU_LABELS, DESIGN_SERVER_LABELS } from '../../i18n/shell-labels';
 
 export type DesignServerAction = 'start' | 'restart' | 'stop';
 
@@ -42,14 +42,14 @@ export class StudioMenuComponent {
   public openHelp = output();
   public showAbout = output();
 
-  protected readonly LABELS = STUDIO_LABELS.studioMenu;
+  protected readonly LABELS = STUDIO_MENU_LABELS;
 
   protected statusLabel = computed(() => `${this.LABELS.designServer} · ${this.LABELS.serverStatus[this.server()]}`);
 
   protected items = computed(() =>
     SERVER_ROWS[this.server()].map((row) => ({
       row,
-      label: row === 'reload' ? this.LABELS.reload : STUDIO_LABELS.designServer[row],
+      label: row === 'reload' ? this.LABELS.reload : DESIGN_SERVER_LABELS[row],
     })),
   );
 

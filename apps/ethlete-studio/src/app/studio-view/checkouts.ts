@@ -5,7 +5,7 @@ import { EMPTY, catchError, concat, finalize, last, of, switchMap, tap } from 'r
 import { DesignRoots, designRoots$, designRootsAdd$, designRootsSearch$, designScan$ } from '../../host/design';
 import { pickFolder$ } from '../../host/dialog';
 import { workspaceRoot$ } from '../../host/workspace';
-import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { SCAN_CHECKOUTS_LABELS, OPEN_FOLDER_LABELS } from '../i18n/shell-labels';
 
 export const folderNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
@@ -106,12 +106,12 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
           tap((count) =>
             notifications.open({
               status: 'success',
-              title: count ? STUDIO_LABELS.scanCheckouts.found(count) : STUDIO_LABELS.scanCheckouts.none,
+              title: count ? SCAN_CHECKOUTS_LABELS.found(count) : SCAN_CHECKOUTS_LABELS.none,
             }),
           ),
           // eslint-disable-next-line ethlete/no-silent-catch-error -- the user is already notified with the failure title; the cause adds nothing
           catchError(() => {
-            notifications.open({ status: 'error', title: STUDIO_LABELS.scanCheckouts.failedTitle });
+            notifications.open({ status: 'error', title: SCAN_CHECKOUTS_LABELS.failedTitle });
 
             return EMPTY;
           }),
@@ -129,8 +129,8 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
           catchError(() => {
             notifications.open({
               status: 'error',
-              title: STUDIO_LABELS.openFolder.refusedTitle,
-              message: STUDIO_LABELS.openFolder.refusedMessage,
+              title: OPEN_FOLDER_LABELS.refusedTitle,
+              message: OPEN_FOLDER_LABELS.refusedMessage,
             });
 
             return EMPTY;

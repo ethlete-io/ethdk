@@ -3,7 +3,7 @@ import { definePart, drawing, forceInteraction, html, interactionRows, ng } from
 import { icon } from '@system/foundations/icons';
 import titleBar from '@system/components/title-bar';
 import styles from './command-palette.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { COMMAND_PALETTE_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type RowInteraction = 'hover' | 'active' | 'focus-visible';
 
@@ -13,21 +13,21 @@ type Entry = { kind: Kind; key: string; label: string };
 type Props = { entries: Entry[]; recents: Entry[]; query?: string; interaction?: RowInteraction };
 
 const GROUPS: Record<Kind, string> = {
-  part: STUDIO_LABELS.commandPalette.groups.part,
-  page: STUDIO_LABELS.commandPalette.groups.page,
-  sketch: STUDIO_LABELS.commandPalette.groups.sketch,
-  command: STUDIO_LABELS.commandPalette.groups.command,
+  part: COMMAND_PALETTE_LABELS.groups.part,
+  page: COMMAND_PALETTE_LABELS.groups.page,
+  sketch: COMMAND_PALETTE_LABELS.groups.sketch,
+  command: COMMAND_PALETTE_LABELS.groups.command,
 };
 const HINTS: Record<Kind, string> = {
-  part: STUDIO_LABELS.commandPalette.hints.part,
-  page: STUDIO_LABELS.commandPalette.hints.page,
-  sketch: STUDIO_LABELS.commandPalette.hints.sketch,
-  command: STUDIO_LABELS.commandPalette.hints.command,
+  part: COMMAND_PALETTE_LABELS.hints.part,
+  page: COMMAND_PALETTE_LABELS.hints.page,
+  sketch: COMMAND_PALETTE_LABELS.hints.sketch,
+  command: COMMAND_PALETTE_LABELS.hints.command,
 };
-const RECENT_GROUP = STUDIO_LABELS.commandPalette.recent;
+const RECENT_GROUP = COMMAND_PALETTE_LABELS.recent;
 
 const TITLE_BAR: Entry = { kind: 'part', key: 'components/title-bar', label: 'Title bar' };
-const SKIZZEN: Entry = { kind: 'page', key: 'pages/sketches', label: STUDIO_LABELS.commandPalette.groups.sketch };
+const SKIZZEN: Entry = { kind: 'page', key: 'pages/sketches', label: COMMAND_PALETTE_LABELS.groups.sketch };
 const UPDATE_DIALOG: Entry = { kind: 'part', key: 'components/update-dialog', label: 'update-dialog' };
 
 const ENTRIES: Entry[] = [
@@ -65,7 +65,7 @@ const itemsOf = ({ entries, recents, query = '' }: Props): Item[] =>
           .map((entry) => ({ label: entry.label, hint: HINTS[entry.kind], group: GROUPS[kind] })),
       );
 
-const start = `<div class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-muted"><span>${STUDIO_LABELS.commandPalette.start}</span><span class="flex items-center gap-space-1 text-(length:--text-xs)"><et-kbd class="[--et-kbd-color:currentColor]" keys="mod+k" platform="other" /> ${STUDIO_LABELS.commandPalette.startShortcut}</span></div>`;
+const start = `<div class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-muted"><span>${COMMAND_PALETTE_LABELS.start}</span><span class="flex items-center gap-space-1 text-(length:--text-xs)"><et-kbd class="[--et-kbd-color:currentColor]" keys="mod+k" platform="other" /> ${COMMAND_PALETTE_LABELS.startShortcut}</span></div>`;
 
 const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
   const markup = control(
@@ -83,12 +83,12 @@ const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
 const field = (query: string) =>
   `<div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2 text-ui-sm">
     <span class="text-et-surface-muted">${icon('search', { size: 14 })}</span>
-    ${query.trim() === '' ? `<span class="flex-1 text-et-surface-muted">${STUDIO_LABELS.commandPalette.placeholder}</span>` : `<span class="flex-1 text-et-surface">${query}<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface"></span></span>`}
+    ${query.trim() === '' ? `<span class="flex-1 text-et-surface-muted">${COMMAND_PALETTE_LABELS.placeholder}</span>` : `<span class="flex-1 text-et-surface">${query}<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface"></span></span>`}
     <et-kbd keys="esc" />
   </div>`;
 
 const empty = (query: string) =>
-  `<div class="flex flex-col items-center gap-space-1 px-space-3 py-space-6 text-ui-sm"><span class="text-et-surface font-ui-strong">${STUDIO_LABELS.commandPalette.none}</span><span class="text-et-surface-muted">Für „${query}“ gibt es keinen ${STUDIO_LABELS.commandPalette.hints.part}, keine ${STUDIO_LABELS.commandPalette.hints.page} und keine ${STUDIO_LABELS.commandPalette.hints.sketch}.</span></div>`;
+  `<div class="flex flex-col items-center gap-space-1 px-space-3 py-space-6 text-ui-sm"><span class="text-et-surface font-ui-strong">${COMMAND_PALETTE_LABELS.none}</span><span class="text-et-surface-muted">Für „${query}“ gibt es keinen ${COMMAND_PALETTE_LABELS.hints.part}, keine ${COMMAND_PALETTE_LABELS.hints.page} und keine ${COMMAND_PALETTE_LABELS.hints.sketch}.</span></div>`;
 
 const window = async (overlay: string, scrim: boolean) => {
   const bar = await titleBar.render({
@@ -133,7 +133,7 @@ const body = (props: Props) => {
                   .join('')}</div>`,
             )
             .join('');
-  return `<div class="absolute top-16 left-1/2 w-3xl -translate-x-1/2 overflow-hidden rounded-control-lg bg-et-surface-bg shadow-lg" data-et-auto-surface role="dialog" aria-modal="true" aria-label="${STUDIO_LABELS.commandPalette.label}">${field(query)}<div class="max-h-64 overflow-auto">${list}</div><div class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-et-surface-muted text-(length:--text-xs)"><span>${STUDIO_LABELS.commandPalette.select}</span><span>${STUDIO_LABELS.commandPalette.open}</span><span class="flex-1"></span><span>${STUDIO_LABELS.commandPalette.close}</span></div></div>`;
+  return `<div class="absolute top-16 left-1/2 w-3xl -translate-x-1/2 overflow-hidden rounded-control-lg bg-et-surface-bg shadow-lg" data-et-auto-surface role="dialog" aria-modal="true" aria-label="${COMMAND_PALETTE_LABELS.label}">${field(query)}<div class="max-h-64 overflow-auto">${list}</div><div class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-et-surface-muted text-(length:--text-xs)"><span>${COMMAND_PALETTE_LABELS.select}</span><span>${COMMAND_PALETTE_LABELS.open}</span><span class="flex-1"></span><span>${COMMAND_PALETTE_LABELS.close}</span></div></div>`;
 };
 
 const FOUND = { entries: ENTRIES, recents: [], query: 'tit' } satisfies Props;

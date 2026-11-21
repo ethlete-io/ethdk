@@ -2,7 +2,8 @@ import { definePart, drawing, html, slot } from '@design-system';
 import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import { commentPinMark } from '@system/components/comment-pin';
 import styles from './variant-cell.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { CANVAS_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/canvas-labels';
+import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
 type Props = {
   state: string;
@@ -32,7 +33,7 @@ export const variantCellStyles = styles + loaderStyles;
 const loadingBadge = html`<span
   class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted"
   data-loading-badge
-  >${spinner({ diameter: 14, strokeWidth: 1.75 })}${STUDIO_LABELS.canvas.loading}</span
+  >${spinner({ diameter: 14, strokeWidth: 1.75 })}${CANVAS_LABELS.loading}</span
 >`;
 
 const pending = html`<div class="h-30" aria-busy="true" data-loading></div>`;
@@ -130,8 +131,8 @@ export const variantCell = (props: Props) => {
           same ? 'text-et-surface-muted' : 'text-et-surface'
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span
-        >${same ? STUDIO_LABELS.sketches.unchanged : ''}</span
-      >${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">${STUDIO_LABELS.sketches.firstChange}</span>` : ''}</span
+        >${same ? SKETCHES_LABELS.unchanged : ''}</span
+      >${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">${SKETCHES_LABELS.firstChange}</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;

@@ -1,7 +1,7 @@
 import { definePart, drawing, forceInteraction, html, interactionRows, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { ZOOM_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/canvas-labels';
 
 type ZoomControl = 'out' | 'reset' | 'in' | 'fit';
 
@@ -10,15 +10,15 @@ type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
 type Props = { percent: number; class?: string; target?: ZoomControl; interaction?: ZoomInteraction };
 
 const ARIA_LABEL: Record<ZoomControl, string> = {
-  out: STUDIO_LABELS.zoom.out,
-  reset: STUDIO_LABELS.zoom.reset,
-  in: STUDIO_LABELS.zoom.in,
+  out: ZOOM_LABELS.out,
+  reset: ZOOM_LABELS.reset,
+  in: ZOOM_LABELS.in,
   fit: 'Einpassen',
 };
 
 const TITLE: Partial<Record<ZoomControl, string>> = {
-  reset: STUDIO_LABELS.zoom.resetTooltip,
-  fit: STUDIO_LABELS.zoom.fitTooltip,
+  reset: ZOOM_LABELS.resetTooltip,
+  fit: ZOOM_LABELS.fitTooltip,
 };
 
 const tooltipOpen = ({ target, interaction }: Props) =>

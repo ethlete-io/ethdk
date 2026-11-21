@@ -1,6 +1,6 @@
 import { Component, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SHELL_LABELS } from '../../i18n/shell-labels';
 
 @Component({
   selector: 'ethlete-shell-collapse',
@@ -39,5 +39,5 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 export class ShellCollapseComponent {
   public collapse = output();
 
-  protected readonly LABELS = STUDIO_LABELS.shell;
+  protected readonly LABELS = SHELL_LABELS;
 }

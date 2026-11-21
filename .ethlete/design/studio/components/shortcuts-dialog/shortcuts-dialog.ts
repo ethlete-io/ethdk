@@ -1,7 +1,7 @@
 import { definePart, drawing, html, interactionRows, ng } from '@design-system';
 import { dialog, dialogStyles, overlayBackdrop } from '@ethlete/components/design/dialog';
 import styles from './shortcuts-dialog.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SHORTCUTS_DIALOG_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 type Interaction = 'hover' | 'active' | 'focus-visible';
 
@@ -9,27 +9,27 @@ type Props = { close?: Interaction };
 
 const GROUPS = [
   {
-    label: STUDIO_LABELS.shortcutsDialog.general,
+    label: SHORTCUTS_DIALOG_LABELS.general,
     rows: [
-      { label: STUDIO_LABELS.shortcutsDialog.palette, keys: 'mod+k' },
-      { label: STUDIO_LABELS.shortcutsDialog.title, keys: 'mod+/' },
+      { label: SHORTCUTS_DIALOG_LABELS.palette, keys: 'mod+k' },
+      { label: SHORTCUTS_DIALOG_LABELS.title, keys: 'mod+/' },
     ],
   },
   {
     label: 'Canvas',
     rows: [
-      { label: STUDIO_LABELS.shortcutsDialog.fitAll, keys: 'shift+1' },
-      { label: STUDIO_LABELS.shortcutsDialog.fitFocused, keys: 'shift+2' },
-      { label: STUDIO_LABELS.shortcutsDialog.actualSize, keys: 'shift+0' },
-      { label: STUDIO_LABELS.shortcutsDialog.pan, keys: 'space' },
-      { label: STUDIO_LABELS.shortcutsDialog.deselect, keys: 'esc' },
+      { label: SHORTCUTS_DIALOG_LABELS.fitAll, keys: 'shift+1' },
+      { label: SHORTCUTS_DIALOG_LABELS.fitFocused, keys: 'shift+2' },
+      { label: SHORTCUTS_DIALOG_LABELS.actualSize, keys: 'shift+0' },
+      { label: SHORTCUTS_DIALOG_LABELS.pan, keys: 'space' },
+      { label: SHORTCUTS_DIALOG_LABELS.deselect, keys: 'esc' },
     ],
   },
 ];
 
 const closeAttributes = (close?: Interaction) =>
   [
-    `aria-label="${STUDIO_LABELS.shortcutsDialog.close}" data-et-control="close" data-et-action="emit:close" data-can-animate`,
+    `aria-label="${SHORTCUTS_DIALOG_LABELS.close}" data-et-control="close" data-et-action="emit:close" data-can-animate`,
     close && `data-et-force="${close}"`,
   ]
     .filter(Boolean)
@@ -91,7 +91,7 @@ export default definePart({
       body: overlayBackdrop(
         dialog({
           id: 'shortcuts',
-          title: STUDIO_LABELS.shortcutsDialog.title,
+          title: SHORTCUTS_DIALOG_LABELS.title,
           body: await list(),
           close: closeAttributes(close),
           attributes: 'data-et-surface-fill',

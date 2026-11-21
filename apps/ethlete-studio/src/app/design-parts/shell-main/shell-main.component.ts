@@ -5,7 +5,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
 import { injectCodeWatch } from '../../code-watch';
 import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { DESIGN_SERVER_LABELS, SHELL_LABELS } from '../../i18n/shell-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 import { ShellResizeHandleComponent } from '../shell-resize-handle/shell-resize-handle.component';
 import { ShellSystemPickerComponent } from '../shell-system-picker/shell-system-picker.component';
@@ -79,8 +79,8 @@ export class ShellMainComponent {
   protected railLabels = computed(() => railLetters(this.products()));
   protected railSection = computed(() => (this.section() === 'Sketches' ? 'System' : this.section()));
 
-  protected readonly LABELS = STUDIO_LABELS.designServer;
-  protected readonly SHELL_LABELS = STUDIO_LABELS.shell;
+  protected readonly LABELS = DESIGN_SERVER_LABELS;
+  protected readonly SHELL_LABELS = SHELL_LABELS;
   protected dragWidth = signal<number | null>(null);
   protected shownWidth = computed(() => this.dragWidth() ?? clampSideWidth(this.sideWidth()));
   protected codeNoticeText = computed(() => this.codeWatch.notice()?.text ?? null);

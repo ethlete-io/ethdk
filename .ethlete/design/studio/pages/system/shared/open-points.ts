@@ -1,5 +1,5 @@
 import { icon, type IconName } from '@system/foundations/icons';
-import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SYSTEM_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 type OpenPoint =
   | { kind: 'missing-state'; control: string | null }
@@ -47,12 +47,12 @@ const lineOf = (point: OpenPoint): PointLine => {
     case 'missing-state':
       return point.control
         ? { text: `${point.control} hat keinen gezeichneten Zustand`, detail: point.control }
-        : { text: STUDIO_LABELS.system.noControls, detail: 'controls' };
+        : { text: SYSTEM_LABELS.noControls, detail: 'controls' };
     case 'contrast':
       return { text: `${point.path} liegt unter der Kontrastregel`, detail: point.state };
     case 'open-comment':
       return {
-        text: point.answered ? STUDIO_LABELS.system.commentAnswered : STUDIO_LABELS.system.commentWaiting,
+        text: point.answered ? SYSTEM_LABELS.commentAnswered : SYSTEM_LABELS.commentWaiting,
         detail: point.state,
       };
     case 'unlinked':

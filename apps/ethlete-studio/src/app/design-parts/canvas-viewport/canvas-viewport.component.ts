@@ -1,7 +1,7 @@
 import { Component, ElementRef, inject, ViewEncapsulation } from '@angular/core';
 import { FocusRingDirective } from '@ethlete/components';
 import { trackPointerFocus } from '../../components/design-canvas/pointer-focus';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { CANVAS_LABELS } from '../../i18n/canvas-labels';
 
 @Component({
   selector: 'ethlete-canvas-viewport',
@@ -12,7 +12,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
     class:
       'block cursor-grab touch-none transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) [--et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent active:cursor-grabbing',
     tabindex: '0',
-    'aria-label': STUDIO_LABELS.canvas.label,
+    'aria-label': CANVAS_LABELS.label,
   },
 })
 export class CanvasViewportComponent {

@@ -1,6 +1,6 @@
 import { Component, computed, input, linkedSignal, output, viewChild, ViewEncapsulation } from '@angular/core';
 import { TREE_IMPORTS, TreeDataSource, TreeDirective, TreeNode } from '@ethlete/components';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { TreeRow, TreeRowItemComponent, TreeRowStatus } from '../tree-row/tree-row-item.component';
 
 type Marks = {
@@ -127,11 +127,11 @@ export class PartTreeComponent {
     };
 
     const sketchGroup = (group: PartTreeSketches) => {
-      const value = group.key ?? STUDIO_LABELS.systemTree.sketches;
+      const value = group.key ?? SYSTEM_TREE_LABELS.sketches;
 
       return add({
         value,
-        label: STUDIO_LABELS.systemTree.sketches,
+        label: SYSTEM_TREE_LABELS.sketches,
         mark: markOf('group'),
         open: group.open,
         nodes: group.items.map((item) => {
@@ -151,11 +151,11 @@ export class PartTreeComponent {
     };
 
     const legacyGroup = (group: PartTreeLegacy) => {
-      const value = group.key ?? STUDIO_LABELS.systemTree.legacy;
+      const value = group.key ?? SYSTEM_TREE_LABELS.legacy;
 
       return add({
         value,
-        label: STUDIO_LABELS.systemTree.legacy,
+        label: SYSTEM_TREE_LABELS.legacy,
         mark: markOf('group'),
         open: group.open,
         nodes: group.projects.map((project) => {

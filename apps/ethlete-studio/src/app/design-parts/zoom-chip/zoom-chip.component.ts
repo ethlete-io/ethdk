@@ -1,7 +1,7 @@
 import { Component, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { ZOOM_LABELS } from '../../i18n/canvas-labels';
 
 export type ZoomControl = 'out' | 'reset' | 'in' | 'fit';
 
@@ -89,7 +89,7 @@ export class ZoomChipComponent {
   public zoomReset = output();
   public zoomIn = output();
   public fit = output();
-  protected readonly LABELS = STUDIO_LABELS.zoom;
+  protected readonly LABELS = ZOOM_LABELS;
 
   protected forcedOn(control: ZoomControl) {
     return this.target() === control ? this.interaction() : null;

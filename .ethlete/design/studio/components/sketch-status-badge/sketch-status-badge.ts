@@ -1,6 +1,6 @@
 import { definePart } from '@design-system';
 import badge from '@system/components/badge';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
 export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle' | 'not-ready';
 
@@ -9,13 +9,13 @@ export type SketchBadgeStatus = SketchStatus | 'failed';
 type Props = { status: SketchBadgeStatus };
 
 const LABEL: Record<SketchBadgeStatus, string> = {
-  drawing: STUDIO_LABELS.sketches.status.drawing,
-  waiting: STUDIO_LABELS.sketches.status.waiting,
-  picked: STUDIO_LABELS.sketches.status.picked,
+  drawing: SKETCHES_LABELS.status.drawing,
+  waiting: SKETCHES_LABELS.status.waiting,
+  picked: SKETCHES_LABELS.status.picked,
   paused: 'Pausiert',
-  idle: STUDIO_LABELS.sketches.status.idle,
-  'not-ready': STUDIO_LABELS.sketches.status.notReady,
-  failed: STUDIO_LABELS.sketches.status.failed,
+  idle: SKETCHES_LABELS.status.idle,
+  'not-ready': SKETCHES_LABELS.status.notReady,
+  failed: SKETCHES_LABELS.status.failed,
 };
 
 export const sketchStatusBadge = async (status: SketchBadgeStatus) => {

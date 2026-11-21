@@ -1,7 +1,7 @@
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { COMMENT_DRAFT_LABELS } from '../../i18n/comments-labels';
 
 export type CommentSendPhase = 'busy' | 'error' | 'rejected';
 
@@ -94,7 +94,7 @@ export class CommentDraftComponent {
   public send = output<string>();
   public discard = output();
 
-  protected readonly LABELS = STUDIO_LABELS.commentDraft;
+  protected readonly LABELS = COMMENT_DRAFT_LABELS;
 
   protected busy = computed(() => this.phase() === 'busy');
 

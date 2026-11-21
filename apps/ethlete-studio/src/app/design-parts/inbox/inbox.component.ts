@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SWITCH_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { INBOX_LABELS } from '../../i18n/inbox-labels';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { FRAME_CLASS, FRAME_HEAD_CLASS } from '../system-page/system-page.component';
@@ -54,7 +54,7 @@ export class InboxComponent {
   public resolveThread = output();
   public withdrawComment = output<number>();
   public closeThread = output();
-  protected readonly LABELS = STUDIO_LABELS.inbox;
+  protected readonly LABELS = INBOX_LABELS;
 
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;

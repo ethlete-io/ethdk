@@ -2,7 +2,7 @@ import { definePart, drawing, html, ng } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
 import { controls, grid, mark, QUESTION, RESTART_NOTE, states, studioWindow, type Props } from './shared/window';
 import styles from './update-dialog.css?inline';
-import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
+import { UPDATE_DIALOG_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/update-dialog/update-dialog.component.ts',
@@ -29,7 +29,7 @@ export default definePart({
   controls,
   render: async (props: Props) => {
     const dialog = await anchoredDialog.render({
-      label: STUDIO_LABELS.updateDialog.label,
+      label: UPDATE_DIALOG_LABELS.label,
       anchor: '[data-et-control="update"]',
       placement: 'bottom-end',
       content: await ng(
@@ -39,8 +39,8 @@ export default definePart({
             <span class="text-et-surface-muted">${RESTART_NOTE}</span>
           </div>
           <div class="flex justify-end gap-space-2">
-            ${mark('later', `<button et-button type="button" data-et-action="emit:later" variant="outline" color="surface" size="xs">${STUDIO_LABELS.updateDialog.later}</button>`, props)}
-            ${mark('restart', `<button et-button type="button" data-et-action="emit:restart" variant="filled" color="brand" size="xs">${STUDIO_LABELS.updateDialog.restart}</button>`, props)}
+            ${mark('later', `<button et-button type="button" data-et-action="emit:later" variant="outline" color="surface" size="xs">${UPDATE_DIALOG_LABELS.later}</button>`, props)}
+            ${mark('restart', `<button et-button type="button" data-et-action="emit:restart" variant="filled" color="brand" size="xs">${UPDATE_DIALOG_LABELS.restart}</button>`, props)}
           </div>
         </div>`,
         { imports: ['BUTTON_IMPORTS'] },
