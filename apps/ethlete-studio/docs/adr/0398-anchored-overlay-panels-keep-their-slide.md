@@ -13,3 +13,9 @@ gewollt dass das gleiten und co bleibt".
 
 - The panels get their slide-and-fade enter and leave back, as before b4b3d23c3.
 - A fix that a slide got in the way of keeps its effect without dropping the slide.
+
+The human, on the suspicion that Studio capture problems caused the removal: "animationen nicht erlauben ist ja ne
+quatsch lösung".
+
+- A Studio or design-tool problem with motion is fixed in the tool (wait for or hold the animation), never by dropping
+  or shortening the product's motion.
