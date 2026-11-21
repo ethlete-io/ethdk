@@ -1,7 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { provideMatchDefaults } from './match-defaults';
 import { provideMatchLabels } from './match-labels';
+import { MatchEmblemFallback } from './match-defaults';
 import { MatchParticipantComponent } from './match-participant.component';
 import { NormalizedMatchParticipant } from './match.types';
 
@@ -22,6 +24,7 @@ const TEAM: NormalizedMatchParticipant = {
       [showSeed]="showSeed()"
       [loading]="loading()"
       [side]="side()"
+      [emblemFallback]="emblemFallback()"
       [labels]="{ tbdHome: 'Select Home Team' }"
     />
   `,
@@ -33,6 +36,7 @@ class HostComponent {
   public showSeed = signal(false);
   public loading = signal(false);
   public side = signal<'home' | 'away' | null>(null);
+  public emblemFallback = signal<MatchEmblemFallback | null>(null);
 }
 
 @Component({
@@ -170,6 +174,61 @@ describe('MatchParticipantComponent', () => {
       fixture.detectChanges();
 
       expect(mark(fixture)).toBe('F');
+    });
+
+    describe('the shield fallback', () => {
+      const shield = (fixture: ComponentFixture<HostComponent>) =>
+        host(fixture).querySelector('.et-match-participant-emblem-mark svg.et-match-participant-shield');
+
+      it('draws no shield by default', () => {
+        const fixture = create();
+
+        fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+        fixture.detectChanges();
+
+        expect(shield(fixture)).toBeNull();
+        expect(host(fixture).querySelector('.et-match-participant-emblem-mark')?.hasAttribute('data-fallback')).toBe(
+          false,
+        );
+      });
+
+      it('draws a shield around the initial when asked to', () => {
+        const fixture = create();
+
+        fixture.componentInstance.emblemFallback.set('shield');
+        fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+        fixture.detectChanges();
+
+        expect(shield(fixture)).not.toBeNull();
+        expect(mark(fixture)).toBe('F');
+      });
+
+      it('draws it when the file fails to load', () => {
+        const fixture = create();
+
+        fixture.componentInstance.emblemFallback.set('shield');
+        fixture.detectChanges();
+        host(fixture).querySelector('img')?.dispatchEvent(new Event('error'));
+        fixture.detectChanges();
+
+        expect(shield(fixture)).not.toBeNull();
+      });
+
+      it('takes the app-wide default, which the input overrides', () => {
+        TestBed.configureTestingModule({ providers: [provideMatchDefaults({ emblemFallback: 'shield' })] });
+
+        const fixture = create();
+
+        fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+        fixture.detectChanges();
+
+        expect(shield(fixture)).not.toBeNull();
+
+        fixture.componentInstance.emblemFallback.set('initial');
+        fixture.detectChanges();
+
+        expect(shield(fixture)).toBeNull();
+      });
     });
 
     it('takes a whole emoji, not half of its surrogate pair', () => {

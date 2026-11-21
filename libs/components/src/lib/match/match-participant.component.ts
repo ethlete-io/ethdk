@@ -1,8 +1,10 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { booleanAttribute, Component, computed, ElementRef, inject, input, ViewEncapsulation } from '@angular/core';
 import { mountVisuallyHidden, optionalBooleanAttribute } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { PICTURE_IMPORTS } from '../picture';
 import { SKELETON_IMPORTS } from '../skeleton';
+import { injectMatchDefaults, MatchEmblemFallback } from './match-defaults';
 import { isNativelyInteractiveElement } from './match-interactive';
 import { injectMatchLabels, MatchLabels } from './match-labels';
 import { matchParticipantDisplayName } from './match-participant-name';
@@ -58,15 +60,30 @@ import { NormalizedMatchParticipant } from './match.types';
           fit="contain"
         >
           <ng-template etPictureError>
-            <span [attr.data-mark]="emblemMark()" class="et-match-participant-emblem-mark" aria-hidden="true"></span>
+            <ng-container [ngTemplateOutlet]="fallbackMark" />
           </ng-template>
         </et-picture>
       } @else if (loading()) {
         <et-skeleton-item class="et-match-participant-bone" shape="circle" />
       } @else if (participant()) {
-        <span [attr.data-mark]="emblemMark()" class="et-match-participant-emblem-mark" aria-hidden="true"></span>
+        <ng-container [ngTemplateOutlet]="fallbackMark" />
       }
     </span>
+
+    <ng-template #fallbackMark>
+      <span
+        [attr.data-mark]="emblemMark()"
+        [attr.data-fallback]="resolvedEmblemFallback() === 'shield' ? 'shield' : null"
+        class="et-match-participant-emblem-mark"
+        aria-hidden="true"
+      >
+        @if (resolvedEmblemFallback() === 'shield') {
+          <svg class="et-match-participant-shield" viewBox="0 0 24 28" focusable="false">
+            <path d="M12 1.5 21.5 4.5v8.2c0 6-4 10.4-9.5 13.8C6.5 23.1 2.5 18.7 2.5 12.7V4.5z" />
+          </svg>
+        }
+      </span>
+    </ng-template>
 
     @if (loading() && !participant()) {
       <et-skeleton-item class="et-match-participant-name-bone" shape="text" />
@@ -108,7 +125,7 @@ import { NormalizedMatchParticipant } from './match.types';
   `,
   styleUrl: './match-participant.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [PICTURE_IMPORTS, SKELETON_IMPORTS],
+  imports: [PICTURE_IMPORTS, SKELETON_IMPORTS, NgTemplateOutlet],
   hostDirectives: [FocusRingDirective],
   host: {
     class: 'et-match-participant',
@@ -122,6 +139,7 @@ import { NormalizedMatchParticipant } from './match.types';
 export class MatchParticipantComponent {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private injectedLabels = injectMatchLabels();
+  private defaults = injectMatchDefaults();
 
   /** The side to draw. `null` is a TBD slot - see the component's docs. */
   public participant = input<NormalizedMatchParticipant | null>(null);
@@ -148,6 +166,13 @@ export class MatchParticipantComponent {
   /** Override this instance's strings - see {@link provideMatchLabels} for the app-wide version. */
   public labels = input<Partial<MatchLabels> | null>(null);
 
+  /**
+   * What stands in for a missing or failed emblem: the participant's initial in a circle (`'initial'`), or a
+   * neutral shield outline with the initial inside it (`'shield'`). `null` (the default) takes the app-wide
+   * value from {@link provideMatchDefaults}.
+   */
+  public emblemFallback = input<MatchEmblemFallback | null>(null);
+
   /** Which side of the match this participant is on, for the per-side TBD label. The card sets it. */
   public side = input<'home' | 'away' | null>(null);
 
@@ -158,6 +183,8 @@ export class MatchParticipantComponent {
 
   /** Whether this acts as a click target, and should therefore look and feel like one. */
   public isInteractive = computed(() => this.interactive() ?? this.IS_NATIVELY_INTERACTIVE);
+
+  protected resolvedEmblemFallback = computed(() => this.emblemFallback() ?? this.defaults.emblemFallback);
 
   protected emblem = computed(() => this.participant()?.emblem ?? null);
 

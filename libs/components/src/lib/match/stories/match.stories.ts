@@ -21,6 +21,8 @@ export default {
     sideLabels: false,
     animateScoreChanges: true,
     interactive: true,
+    emblemFallback: 'initial',
+    emblems: 'image',
     rtl: false,
   },
   argTypes: {
@@ -39,6 +41,8 @@ export default {
     sideLabels: { control: 'boolean' },
     animateScoreChanges: { control: 'boolean' },
     interactive: { control: 'boolean' },
+    emblemFallback: { control: 'radio', options: ['initial', 'shield'] },
+    emblems: { control: 'radio', options: ['image', 'none', 'broken'] },
     rtl: { control: 'boolean' },
   },
 } as Meta<MatchCardStorybookComponent>;
@@ -90,6 +94,19 @@ export const HiddenNames: Story = {
         story:
           'The densest cell there is: emblems and results, nothing else. `hideNames` drops the names from the ' +
           "drawing only - they stay in the card's accessible name and in each emblem's alt text.",
+      },
+    },
+  },
+};
+
+export const ShieldFallback: Story = {
+  args: { emblemFallback: 'shield', emblems: 'none' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With no emblem, or one that fails to load (`emblems: broken`), `emblemFallback="shield"` draws a neutral ' +
+          'crest outline with the initial inside it, in the surface tokens. `provideMatchDefaults` sets it app-wide.',
       },
     },
   },

@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import '../../test-helpers';
 import { MatchCardSize, MatchScoreChange } from './headless';
+import { MatchEmblemFallback } from './match-defaults';
 import { MatchLabels, provideMatchLabels } from './match-labels';
 import { MATCH_CARD_IMPORTS } from './match.imports';
 import { NormalizedMatch } from './match.types';
@@ -48,6 +49,7 @@ const FINISHED: NormalizedMatch = {
       [startTimeFormat]="startTimeFormat()"
       [showStartTime]="showStartTime()"
       [labels]="labels()"
+      [emblemFallback]="emblemFallback()"
       (scoreChange)="changes.push($event)"
     />
   `,
@@ -60,6 +62,7 @@ class HostComponent {
   public hideNames = signal(false);
   public showStartTime = signal(false);
   public labels = signal<Partial<MatchLabels> | null>(null);
+  public emblemFallback = signal<MatchEmblemFallback | null>(null);
   public changes: MatchScoreChange[] = [];
   // Year only: every other date-fns token moves with the runner's timezone.
   public startTimeFormat = signal<string | null>('yyyy');
@@ -684,5 +687,19 @@ describe('MatchCardComponent', () => {
     expect(
       driver.queryAll('.et-match-participant-seed [aria-hidden]').map((element) => element.textContent?.trim()),
     ).toEqual(['1', '4']);
+  });
+
+  it('passes the emblem fallback to both sides', () => {
+    const driver = create();
+
+    driver.host.match.set({
+      ...FINISHED,
+      home: { ...FINISHED.home!, emblem: null },
+      away: { ...FINISHED.away!, emblem: null },
+    });
+    driver.host.emblemFallback.set('shield');
+    driver.detectChanges();
+
+    expect(driver.queryAll('.et-match-participant-shield')).toHaveLength(2);
   });
 });

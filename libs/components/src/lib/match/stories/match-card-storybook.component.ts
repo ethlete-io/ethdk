@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, computed, input, signal } from '@angular/
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../button';
 import { MATCH_CARD_IMPORTS } from '../match.imports';
+import { MatchEmblemFallback } from '../match-defaults';
 import { MatchCardSize, MatchScoreChange } from '../headless';
 import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind } from '../match.types';
 
@@ -32,6 +33,7 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
               [showStartTime]="showStartTime()"
               [startTimeFormat]="startTimeFormat()"
               [labels]="labels()"
+              [emblemFallback]="emblemFallback()"
               [animateScoreChanges]="animateScoreChanges()"
               (scoreChange)="lastChange.set($event)"
               (click)="stayHere($event)"
@@ -47,6 +49,7 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
               [showStartTime]="showStartTime()"
               [startTimeFormat]="startTimeFormat()"
               [labels]="labels()"
+              [emblemFallback]="emblemFallback()"
             />
           }
         </div>
@@ -95,6 +98,8 @@ export class MatchCardStorybookComponent {
   public showStartTime = input(false);
   public startTimeFormat = input<string | null>(null);
   public sideLabels = input(false);
+  public emblemFallback = input<MatchEmblemFallback>('initial');
+  public emblems = input<'image' | 'none' | 'broken'>('image');
   public interactive = input(true);
   public rtl = input(false);
   public animateScoreChanges = input(true);
@@ -117,12 +122,18 @@ export class MatchCardStorybookComponent {
     // control. `outcome` needs no values at all: the card derives W/L/D from `winnerSide`.
     const values = kind === 'points' ? { home: 3, away: 0 } : null;
 
+    const emblems = this.emblems();
+    const withEmblem = (participant: NormalizedMatchParticipant | null) =>
+      participant && emblems !== 'image'
+        ? { ...participant, emblem: emblems === 'none' ? null : { defaultSrc: '/story-missing-emblem.png' } }
+        : participant;
+
     return {
       id: 'm-1',
       status,
       startTime: KICK_OFF,
-      home: this.longNames() ? LONG_HOME : HOME,
-      away: this.tbd() ? null : this.longNames() ? LONG_AWAY : AWAY,
+      home: withEmblem(this.longNames() ? LONG_HOME : HOME),
+      away: this.tbd() ? null : withEmblem(this.longNames() ? LONG_AWAY : AWAY),
       homeScore: scheduled ? null : (values?.home ?? 2 + extra.home),
       awayScore: scheduled ? null : (values?.away ?? 1 + extra.away),
       resultKind: kind,

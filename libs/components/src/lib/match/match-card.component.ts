@@ -58,6 +58,7 @@ import { MatchTimeComponent } from './match-time.component';
         'showStartTime',
         'interactive',
         'labels',
+        'emblemFallback',
         'animateScoreChanges',
         'loading',
       ],

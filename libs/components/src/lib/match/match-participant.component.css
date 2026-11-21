@@ -107,6 +107,42 @@
     content: attr(data-mark);
   }
 
+  .et-match-participant-emblem:has(> .et-match-participant-emblem-mark[data-fallback='shield']),
+  .et-match-participant-emblem:has(
+    > .et-match-participant-picture .et-match-participant-emblem-mark[data-fallback='shield']
+  ) {
+    border-color: transparent;
+    background: none;
+    border-radius: 0;
+  }
+
+  .et-match-participant-emblem-mark[data-fallback='shield'] {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    block-size: 100%;
+    padding-block-end: 6%;
+    box-sizing: border-box;
+    font-size: calc(var(--et-match-participant-emblem-size) * 0.38);
+  }
+
+  .et-match-participant-shield {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+    fill: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
+    stroke: var(--et-surface-border-solid, currentColor);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+
+  .et-match-participant-emblem-mark[data-fallback='shield']::before {
+    position: relative;
+  }
+
   .et-match-participant:has(> [etMatchParticipantEdit]:not([etMatchParticipantEdit='beside']))
     .et-match-participant-names,
   .et-match-participant:has(> [etMatchParticipantEdit]:not([etMatchParticipantEdit='beside']))

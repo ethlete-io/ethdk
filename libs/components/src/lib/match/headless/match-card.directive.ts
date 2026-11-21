@@ -15,6 +15,7 @@ import { optionalBooleanAttribute } from '@ethlete/core';
 import { format, isValid } from 'date-fns';
 import { injectDateLocaleSignal } from '../../forms/date-time/date-time-formats';
 import { isNativelyInteractiveElement } from '../match-interactive';
+import { MatchEmblemFallback } from '../match-defaults';
 import { injectMatchLabels, MatchLabels } from '../match-labels';
 import { matchParticipantDisplayName } from '../match-participant-name';
 import { NormalizedGameScore, NormalizedMatch } from '../match.types';
@@ -188,6 +189,9 @@ export class MatchCardDirective {
    * @default true
    */
   public animateScoreChanges = input(true, { transform: booleanAttribute });
+
+  /** What stands in for a missing or failed emblem on both sides - see `MatchParticipantComponent.emblemFallback`. `null` takes the app-wide default. */
+  public emblemFallback = input<MatchEmblemFallback | null>(null);
 
   /** Override this instance's strings - see {@link provideMatchLabels} for the app-wide version. */
   public labels = input<Partial<MatchLabels> | null>(null);

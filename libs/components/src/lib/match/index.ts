@@ -1,6 +1,7 @@
 export * from './headless';
 export * from './integrations';
 export * from './match-card.component';
+export * from './match-defaults';
 export * from './match-errors';
 export * from './match-labels';
 export * from './match-participant-name';

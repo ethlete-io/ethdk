@@ -293,6 +293,7 @@ wired to an [overlay opener](/components/overlay-openers) with its own `role` an
 | `showStartTime`       | `boolean`                                        | `false`  | Keep the kick-off in the dense `compact` row (and the minimal one) - only the time, never label or badges. |
 | `interactive`         | `boolean \| null`                                | `null`   | `null` infers it from the host tag (`<a>` / `<button>`).                                                   |
 | `labels`              | `Partial<MatchLabels> \| null`                   | `null`   | Per-instance string overrides.                                                                             |
+| `emblemFallback`      | `'initial' \| 'shield' \| null`                  | `null`   | What stands in for a missing emblem; see [below](#the-shield-fallback). `null` takes the app-wide default. |
 | `liveColor`           | `RegisteredColorThemeName \| ColorTheme \| null` | `null`   | The live badge's color theme. `null` uses the app's `type: 'error'` theme.                                 |
 | `animateScoreChanges` | `boolean`                                        | `true`   | Roll a live match's values when they change. Never animates while the match is not live.                   |
 
@@ -320,15 +321,16 @@ link reads "FC Berlin emblem FC Berlin"), takes the shared [focus ring](/compone
 its name on hover, and loses the button chrome. `interactive` forces it for a host that is a click target some
 other way.
 
-| Input         | Type                                 | Default | What it does                                                          |
-| ------------- | ------------------------------------ | ------- | --------------------------------------------------------------------- |
-| `participant` | `NormalizedMatchParticipant \| null` | `null`  | `null` renders the `tbd` label against an empty emblem frame.         |
-| `side`        | `'home' \| 'away' \| null`           | `null`  | Which side this is; an empty slot then uses `tbdHome` / `tbdAway`.    |
-| `compact`     | `boolean`                            | `false` | Prefer the short `code` over the full name, and drop the subtitle.    |
-| `showSeed`    | `boolean`                            | `false` | Show the seeding position beside the name.                            |
-| `loading`     | `boolean`                            | `false` | Draw [skeleton](/components/skeleton) bones instead of an empty slot. |
-| `interactive` | `boolean \| null`                    | `null`  | `null` infers it from the host tag (`<a>` / `<button>`).              |
-| `labels`      | `Partial<MatchLabels> \| null`       | `null`  | Per-instance string overrides.                                        |
+| Input            | Type                                 | Default | What it does                                                                                     |
+| ---------------- | ------------------------------------ | ------- | ------------------------------------------------------------------------------------------------ |
+| `participant`    | `NormalizedMatchParticipant \| null` | `null`  | `null` renders the `tbd` label against an empty emblem frame.                                    |
+| `side`           | `'home' \| 'away' \| null`           | `null`  | Which side this is; an empty slot then uses `tbdHome` / `tbdAway`.                               |
+| `compact`        | `boolean`                            | `false` | Prefer the short `code` over the full name, and drop the subtitle.                               |
+| `showSeed`       | `boolean`                            | `false` | Show the seeding position beside the name.                                                       |
+| `loading`        | `boolean`                            | `false` | Draw [skeleton](/components/skeleton) bones instead of an empty slot.                            |
+| `interactive`    | `boolean \| null`                    | `null`  | `null` infers it from the host tag (`<a>` / `<button>`).                                         |
+| `labels`         | `Partial<MatchLabels> \| null`       | `null`  | Per-instance string overrides.                                                                   |
+| `emblemFallback` | `'initial' \| 'shield' \| null`      | `null`  | `'initial'` or `'shield'`; see [below](#the-shield-fallback). `null` takes the app-wide default. |
 
 ### An edit slot
 
@@ -378,6 +380,23 @@ it is nobody yet, so the frame stays blank and keeps the row's height.
 Nothing is needed on the consumer's side: `<et-picture>` already reports the failure (`data-state`,
 `imageError`, the `etPictureError` slot), and the participant supplies the fallback for it - so an `(error)`
 handler and a remembered broken `src` in application code can go.
+
+### The shield fallback
+
+`emblemFallback="shield"` swaps the circle for a neutral crest outline - no team art, just a shield stroked in
+the surface border color over a faint surface tint - with the participant's initial kept inside it. It is
+sized off the emblem size, so the dense row and the featured card scale it, and it follows the surface (light or
+dark) like the circle does. It applies to a missing emblem and to a failed one alike, and never to a real
+image. The minimal layout hides emblems, shield included. `et-match-card` takes the same input and passes it to
+both sides.
+
+Set it once for the app instead of on every card:
+
+```ts
+provideMatchDefaults({ emblemFallback: 'shield' });
+```
+
+An `emblemFallback` input on a component wins over the provider; the default is `'initial'`.
 
 The emblem is drawn with `fit="contain"`, so a logo that is not square is letterboxed inside the round frame
 rather than cropped by it.
