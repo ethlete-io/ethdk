@@ -1388,7 +1388,7 @@
     "pid": 139554
   },
   "pages/flows": {
-    "hash": "b350f85f5855ec67",
+    "hash": "ea66b15e94e5bd60",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "abec18bb97a9c4d8",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "62a6638e5e6dd289",
@@ -1463,8 +1463,8 @@
       ".ethlete/design/studio/elements/shell-main/shell-main.ts": "84cb55aa6fa5c1c8",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "178aac4a1cdb5a5c",
       ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "3f70df901a125036",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "d7337d9c2b9d8ed0",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "eef741566616dac2",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "7d21510f93c8139d",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "2afa67f768bc3852",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
@@ -1476,7 +1476,7 @@
       "apps/ethlete-studio/src/app/i18n/flows-labels.ts": "05dbbe252431994c",
       "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
-      "libs/components/design/anchored-dialog.ts": "459be8e004b757d9",
+      "libs/components/design/anchored-dialog.ts": "b1f1e191d2f6a16c",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/checkbox.ts": "e3471aa943b7b829",
@@ -1552,7 +1552,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "7eb7de79352eea80",
+    "app": "0633b2bda25903df",
     "embedded": {
       "components/canvas-viewport": "193484d55b7df4cf",
       "components/comment-draft": "070b17aa95c2c416",
@@ -1568,7 +1568,7 @@
       "components/tree-row": "3b03de39e3311fda",
       "components/zoom-chip": "a12b6c2fb13710fc",
       "elements/shell-main": "b9d73e990bba31b2",
-      "elements/studio-menu": "f5228f5502043bea"
+      "elements/studio-menu": "eb021e6fca4a8430"
     },
     "actions": [
       "comment-mode",
@@ -1601,10 +1601,10 @@
       "system-picker"
     ],
     "builder": "designer",
-    "at": "2026-11-21T21:41:12.150Z",
+    "at": "2026-11-21T23:19:15.683Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2083597
+    "pid": 2376003
   },
   "pages/inbox": {
     "hash": "1117ca42fe038b01",
