@@ -621,11 +621,12 @@
     "pid": 3572771
   },
   "components/sketch-status-badge": {
-    "hash": "1e61002cc2f9c778",
+    "hash": "c2d9d8863df03f9d",
     "files": {
       ".ethlete/design/sdk/components/badge/badge.css": "1d9a7aa65576198e",
       ".ethlete/design/sdk/components/badge/badge.ts": "48ee47d24fef537a",
-      ".ethlete/design/studio/components/sketch-status-badge/sketch-status-badge.ts": "97c0e7f9173db69a",
+      ".ethlete/design/studio/components/sketch-status-badge/sketch-status-badge.ts": "9e1ef8f9a60283de",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -633,13 +634,13 @@
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
       "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b"
     },
-    "app": "0ba51c903d5d49d6",
+    "app": "e13f0e1276a84cc4",
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-20T19:21:00.338Z",
-    "by": "claude-opus-5-5",
+    "at": "2026-11-21T04:56:04.765Z",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 423192
+    "pid": 1853984
   },
   "components/title-bar": {
     "hash": "624b43ec3a179863",
