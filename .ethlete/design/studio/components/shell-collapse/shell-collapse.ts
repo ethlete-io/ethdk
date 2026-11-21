@@ -35,7 +35,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
   const forced = interaction ? forceInteraction(markup, interaction) : markup;
 
   return interaction === 'focus-visible'
-    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-0 z-10 mb-2 w-max">${tooltip({ text: 'Panel ausblenden', placement: 'top', anchor: '[data-et-control="collapse"]' })}</span></span>`
+    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2">${tooltip({ text: 'Panel ausblenden', placement: 'top', anchor: '[data-et-control="collapse"]' })}</span></span>`
     : forced;
 };
 
@@ -59,7 +59,7 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="inline-flex p-space-2 ${props.interaction === 'focus-visible' ? 'px-11.25 pt-12' : ''} text-et-surface font-ui"
+        class="inline-flex p-space-2 ${props.interaction === 'focus-visible' ? 'px-12.75 pt-12' : ''} text-et-surface font-ui"
       >
         ${shellCollapse(props)}
       </div>`,

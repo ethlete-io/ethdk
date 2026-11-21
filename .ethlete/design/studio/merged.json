@@ -45,10 +45,10 @@
   },
   "components/disclosure": "b97eec377fdf2ec5",
   "components/shell-collapse": {
-    "hash": "cc6c6a9b7263ea28",
-    "variant": "wide",
+    "hash": "46611efda2e8faf1",
+    "variant": "centred",
     "decidedBy": "builder pick, ADR 0305",
-    "at": "2026-11-21T02:39:52.035Z"
+    "at": "2026-11-21T02:44:18.996Z"
   },
   "components/shortcuts-dialog": {
     "hash": "7e58c1397f472485",
