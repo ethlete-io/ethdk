@@ -141,9 +141,9 @@
     "pid": 1910259
   },
   "components/comment-flow": {
-    "hash": "13b02d931056c6e5",
+    "hash": "0b5b482edde26286",
     "files": {
-      ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
+      ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
       ".ethlete/design/sdk/components/textarea/textarea.css": "1a7a7756d0890a81",
       ".ethlete/design/sdk/components/textarea/textarea.ts": "e939c255a8098b8b",
@@ -175,15 +175,16 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "869759984c9a754e",
-      ".ethlete/design/studio/components/comment-flow/comment-flow.ts": "bf8a20770f7b244c",
+      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "4ce727965dc1d954",
+      ".ethlete/design/studio/components/comment-flow/comment-flow.ts": "5fb061671c197220",
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
       ".ethlete/design/studio/components/comment-row/comment-row.css": "f82037c1d733d503",
       ".ethlete/design/studio/components/comment-row/comment-row.ts": "ee45b0cc4566f57b",
-      ".ethlete/design/studio/components/comment-target/comment-target.ts": "94d8a48081f1140c",
+      ".ethlete/design/studio/components/comment-target/comment-target.ts": "522835896447fe12",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
@@ -194,7 +195,7 @@
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/textarea.ts": "d111b478450a84d9",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
-      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
@@ -202,7 +203,7 @@
       "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "02d9835f3a282213",
       "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "256c80dd0afd952f",
       "libs/components/src/lib/forms/form-field/form-field-textarea-styles.component.css": "3cdff8e980e47658",
-      "libs/components/src/lib/forms/form-field/form-field.component.css": "934d0fc0e7a53ff4",
+      "libs/components/src/lib/forms/form-field/form-field.component.css": "902055c00d5921a8",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
       "libs/components/src/lib/forms/form-field/hint.component.css": "b1531941f843c188",
       "libs/components/src/lib/forms/input/input.component.css": "fb9a4e64341faf2a",
@@ -219,9 +220,10 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/comment-draft": "34f092cd8ef843ff",
-      "components/comment-pin": "f9588f173f02ecd1",
-      "components/comment-row": "1e74e9048beb5d0f"
+      "components/comment-draft": "98b2cebd563f1a51",
+      "components/comment-pin": "e9134e4cac50af91",
+      "components/comment-row": "7f59cae267728a57",
+      "components/comment-target": "faeffebc1431c71f"
     },
     "actions": [
       "comment-mode",
@@ -237,10 +239,10 @@
       "rest"
     ],
     "builder": "designer",
-    "at": "2026-11-20T13:13:17.578Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 579889
+    "at": "2026-11-21T04:58:26.542Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 1917047
   },
   "components/comment-pin": {
     "hash": "31f56ef76a14e8e8",
