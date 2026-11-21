@@ -163,10 +163,10 @@
     "note": "merged without a pick: allowed by ADR 0387"
   },
   "pages/inventory": {
-    "hash": "6185ddf801947c63",
-    "variant": "a",
-    "decidedBy": "builder",
-    "at": "2026-11-21T01:30:58.335Z"
+    "hash": "f45b74e975cffdde",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-21T03:22:49.823Z"
   },
   "pages/sketches": {
     "hash": "09e067be00fec0e3",
