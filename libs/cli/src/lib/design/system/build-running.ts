@@ -39,11 +39,16 @@ const realProcesses = (): RunningProcess[] => {
 const isNxBuildOf = (process: RunningProcess, name: string) => {
   const nx = process.args.findIndex((arg) => /(^|[\\/])nx(\.js)?$/.test(arg));
 
-  return nx !== -1 && process.args[nx + 1] === 'build' && process.args[nx + 2] === name;
+  if (nx === -1) return false;
+  if (process.args[nx + 1] === 'build') return process.args[nx + 2] === name;
+
+  const projects = process.args.indexOf('-p', nx);
+
+  return process.args[nx + 1] === 'run-many' && projects !== -1 && process.args[projects + 1] === name;
 };
 
 /**
- * Whether an `nx build <name>` runs for the build folder `dir`. A process with a known working folder counts only
+ * Whether an `nx build <name>` or `nx run-many ... -p <name>` runs for the build folder `dir`. A process with a known working folder counts only
  * when `dir` lies inside it, so a build in a sibling worktree does not.
  */
 export const isBuildRunning = (options: { dir: string; name: string; processes?: () => RunningProcess[] }) => {

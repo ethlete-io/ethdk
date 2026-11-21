@@ -115,16 +115,39 @@ const exportOf = (exports: Record<string, ExportTarget>, subpath: string) => {
   return null;
 };
 
+const BUILD_WAIT_MS = 120_000;
+const BUILD_POLL_MS = 250;
+
+const buildRunningOf = (options: { dir: string; manifestPath: string; waitMs: number }) => {
+  const { dir, manifestPath, waitMs } = options;
+  const deadline = Date.now() + waitMs;
+  const pause = new Int32Array(new SharedArrayBuffer(4));
+  let running = isBuildRunning({ dir, name: basename(dir) });
+
+  while (running && !existsSync(manifestPath) && Date.now() < deadline) {
+    Atomics.wait(pause, 0, 0, BUILD_POLL_MS);
+    running = isBuildRunning({ dir, name: basename(dir) });
+  }
+
+  return running;
+};
+
 /** The file a mapped package exports at its subpath, read from its own `package.json` exports. */
-export const entryOf = (mapped: MappedPackage) => {
+export const entryOf = (mapped: MappedPackage, options: { waitMs?: number } = {}): string => {
   const { dir, subpath } = mapped;
   const manifestPath = resolve(dir, 'package.json');
 
   if (!existsSync(manifestPath)) {
+    const running = isInstalled(mapped)
+      ? false
+      : buildRunningOf({ dir, manifestPath, waitMs: options.waitMs ?? BUILD_WAIT_MS });
+
+    if (existsSync(manifestPath)) return entryOf(mapped, options);
+
     throw new Error(
       isInstalled(mapped)
         ? `design-explore: ${dir} has no package.json - build the package first.`
-        : isBuildRunning({ dir, name: basename(dir) })
+        : running
           ? `design-explore: ${BUILDING_MESSAGE} (nx build ${basename(dir)})`
           : `design-explore: ${dir} missing, run \`nx build ${basename(dir)}\`.`,
     );

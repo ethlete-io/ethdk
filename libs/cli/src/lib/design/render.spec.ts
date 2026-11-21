@@ -89,7 +89,9 @@ describe('a missing dist', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'dist/libs/core');
     vi.mocked(isBuildRunning).mockReturnValueOnce(true);
 
-    expect(() => entryOf({ dir, subpath: '.' })).toThrow('design-explore: wird gebaut … (nx build core)');
+    expect(() => entryOf({ dir, subpath: '.' }, { waitMs: 0 })).toThrow(
+      'design-explore: wird gebaut … (nx build core)',
+    );
     expect(isBuildRunning).toHaveBeenLastCalledWith({ dir, name: 'core' });
   });
 

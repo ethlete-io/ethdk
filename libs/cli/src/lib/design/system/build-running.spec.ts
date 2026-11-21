@@ -13,6 +13,16 @@ describe('isBuildRunning', () => {
     expect(isBuildRunning({ dir, name: 'core', processes: () => [nx('core', '/repo')] })).toBe(true);
   });
 
+  it('is true while the stale-build rebuild of the lib runs through nx run-many', () => {
+    const rebuild: RunningProcess = {
+      args: ['node', '/repo/node_modules/.bin/nx', 'run-many', '-t', 'build', '-p', 'core', '--skip-nx-cache'],
+      cwd: '/repo',
+    };
+
+    expect(isBuildRunning({ dir, name: 'core', processes: () => [rebuild] })).toBe(true);
+    expect(isBuildRunning({ dir, name: 'query', processes: () => [rebuild] })).toBe(false);
+  });
+
   it('is true when the working folder of the process is unknown', () => {
     expect(isBuildRunning({ dir, name: 'core', processes: () => [nx('core', null)] })).toBe(true);
   });
