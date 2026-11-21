@@ -25,7 +25,7 @@ Zu [STATUS.md](STATUS.md).
 - Cause (20.11., Code): pre-push läuft weder `studio:classes:check` (eigener CI-Schritt, kein eslint) noch die Unit-Specs der Libs; die cdk-Spec components-classes liest das CSS von der Platte, daher findet `vitest related` sie nicht (rotes CI 44806835681). Unmöglich, wenn die Regel `canonical-class` ein eslint-Lauf ist und die Spec das CSS importiert, das sie liest.
 - Cause (20.11.): Agent-Isolation `worktree` schneidet von main und löscht sich selbst; bei zwei Subagenten fiel ein fehlgeschlagenes `cd` auf den Haupt-Checkout zurück und `git checkout -B` lief dort (kurz verschoben, wiederhergestellt). Unmöglich, wenn Builder-Slices `git worktree add` auf origin/next nutzen und jeder Aufruf mit `cd <wt>` beginnt.
 - Cause (21.11., gemessen per `design check` TYPE-ERROR): ein Subagent meldete `design check` sauber, obwohl 85bf110d6 einen TS-Fehler hinterließ.
-- Cause (21.11.): rules/capability-place.spec runs its live-data case only with dist/libs/components; CI's unit job has none, so it skips silently and hides a real B278 finding.
+- Cause (21.11.): rules/capability-place.spec runs its live-data case only with dist/libs/components; CI's unit job has none, so it skips silently; it hid 4 stale places of our own (update-open, inventory-toggle, server-start/-stop), fixed 6d6f79f4e, not B278.
 
 ## A. Studio: was man sieht
 
@@ -194,7 +194,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - Suspect (19.11.): der Mac-post-merge-Hook findet `node` nicht über nicht-Login-SSH; Mac-Vergleich braucht `zsh -lc`.
 - Lücke (19.11.): kein Weg, die Tauri-Dev-Webview zu fotografieren; kein Szenario-Ordner in `libs/timetrack`.
 - Cause (19.11., gebaut 4c1c3fae5): im Weg-Modus erreichte die Rechtefrage eines fable-Cross-Checks Tom und schaltete den Weg-Modus aus.
-- Suspect (20.11.): `capability-place.spec` „confirmed studio list ... warnings“ scheitert lokal (zweites Mal gesehen: D10, C4d/D9c); Ursache unbekannt. 21.11.: auf .ethlete/design/studio/capabilities.json (pages/inventory ohne Aktion emit:toggleInventory); nicht dd1ef49e5 allein, das war in grünem CI e1056ede7.
 - Suspect (20.11.): der Design-Harness kann Inhalt (Pins) nicht in einen Part projizieren, daher weicht `compare` bei `pinned` ab (D9d).
 
 ## C. CLI: Tempo und Ablauf
