@@ -535,6 +535,14 @@ const liveFrameFaultsOf = async (page, frame) => {
   return { wrong, gap: `${frame.key} ${(gap.share * 100).toFixed(1)}% of ${gap.width}x${gap.height}` };
 };
 
+const zoomSketchTo100 = async (page) => {
+  const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await page.keyboard.press('Shift+Digit0');
+  await settle(page);
+};
+
 const wheelCanvas = async (page, deltaY) => {
   const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
 
@@ -2667,6 +2675,7 @@ const CASES = [
       let reread = 0;
 
       await showAllStates(page);
+      await zoomSketchTo100(page);
 
       let first = await sketchCells(page);
 
