@@ -20,11 +20,11 @@ eine blockierte Sitzung unterbricht sofort.
 - S20, S21 (fifagg, 20.11.): kein SDK-Code: cdk-Label statt components (B655), Bild-Varianten gehören zu fifagg (B656); fifagg informiert.
 - S26 (fifagg, 20.11.): blockiert, = S17 (B652), ausgeliefert in components 1.0.0-next.92; fifagg informiert.
 - S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
-- S28 (fifagg, 21.11.): nicht blockiert, gebaut lokal 1299a62ab (SCROLLTAB): Eingabe `scrollableButtons` an tab-group/nav-tabs (`{ enabled: { md: true } }`), Instanz schlägt Config; Verhaltensänderung: `enabled`-Map ohne Schlüssel bei/unter dem Breakpoint = aus (mobile-first); S28 und S29 an fifagg mit der Prerelease-Version melden, inkl. dieser Zeile; Nachstellen: game-title-tab-bar bei 390 px mit `provideScrollableConfig({buttons:{enabled:true}})` zeigt Pfeile (master: `et-scrollable [renderButtons]=isAboveMd()`, next.92); fifagg tut solange nichts.
-- S29 (fifagg, 21.11.): blockiert, gebaut lokal 031dcfb23 (`provideScrollableConfig({buttons:{color,variant}})`, `--et-scrollable-buttons-offset`, `--et-scrollable-buttons-end-space`, Docs, Story, Changeset); wartet auf Prerelease, danach fifagg informieren; `--mask-size` war schon öffentlich (beantwortet).
+- S28, S29 (fifagg, 21.11.): ausgeliefert in components 1.0.0-next.94 (Scroll-Buttons: Farbe/Variante app-weit, Abstands-Variablen, Eingabe `scrollableButtons`, Breakpoint-Maps blenden unterhalb aus); fifagg informiert.
 - S30 (fifagg, 21.11.): nicht blockiert, `etInputClear` zeigt das x nur mit Fokus (`showClear` verlangt `focused()`), alt immer bei Wert -> Builder-Zeile.
 - S31 (fifagg, 21.11.): nicht blockiert, Match-Card kompakt je Team mit Score rechts + Wappen-Fallback statt Initiale; dichte Zeile gibt es (`size` pinnt sie), Wappen-Fallback fehlt -> Builder-Zeile.
 - S32 (fifagg, 21.11.): nicht blockiert, `et-picture` in einem overflow-hidden Host: kein Weg, nur das `<img>` zu transformieren (Hover-Zoom) -> Builder-Zeile.
+- S33 (fifagg, 21.11.): blockiert (Editor-Karte am Handy), Nachtrag zu S31: Match-Card kompakt braucht TBD-Label je Seite (heim/gast), Startzeit HH:mm auch kompakt, und `auto` wählt bei ~330 px Kartenbreite noch expanded. Entschieden von mir nach ADR 0297 (SDK wächst generisch für den FIFA-Look) -> Builder-Zeile direkt nach Drift-Scheibe 1; fifagg behält solange ihr Grid.
 
 ## Offene Plan-Dateien
 
