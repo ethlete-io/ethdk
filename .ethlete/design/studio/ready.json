@@ -496,7 +496,7 @@
     "pid": 1816523
   },
   "components/shell-system-picker": {
-    "hash": "28655bb890d8f2ef",
+    "hash": "d8b21c867b4bd0df",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "9183353168e14ff7",
@@ -522,7 +522,7 @@
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.css": "e575c402800900cd",
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "26d041fea06fc78d",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "bcab7b399e6abba8",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -548,13 +548,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "c2ae9e739ec4f54d",
+    "app": "36e05b581954b8a9",
     "actions": ["closed", "emit:productChange", "open"],
     "builder": "designer",
-    "at": "2026-11-21T05:34:40.455Z",
+    "at": "2026-11-21T20:39:17.703Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2145537
+    "pid": 1818731
   },
   "components/shortcuts-dialog": {
     "hash": "22075035c01905d2",
