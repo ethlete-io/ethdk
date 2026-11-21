@@ -1172,7 +1172,7 @@
     "pid": 2196024
   },
   "elements/studio-menu": {
-    "hash": "08dba7c2a6519c5e",
+    "hash": "2f80133173dcbaa9",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "9183353168e14ff7",
@@ -1180,11 +1180,11 @@
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "178aac4a1cdb5a5c",
-      ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "ede78ea98d1cd7ba",
+      ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "3f70df901a125036",
       ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "d7337d9c2b9d8ed0",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "b03d3e22fff21d09",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "ae8c5264c7b0ce3f",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "bcab7b399e6abba8",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -1210,13 +1210,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "46ca7c54be163690",
+    "app": "2b6bead8bb434723",
     "actions": ["closed", "open", "studio-menu.busy", "studio-menu.busy-open"],
     "builder": "designer",
-    "at": "2026-11-21T04:56:30.137Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-21T05:42:16.864Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1858848
+    "pid": 2211098
   },
   "elements/variant-cell": {
     "hash": "dbaa78a4789f564a",
