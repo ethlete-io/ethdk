@@ -139,6 +139,7 @@ import { startSlowRunnerInWorker } from './system/slow-run-host';
 import { stopOpenPointsWorkers, warmOpenPointsOf } from './system/open-points-runner';
 import { oneProductOf } from './system/sketch/cli-args';
 import { timedPhase } from './phase-timing';
+import { watchModuleFetches } from './fetch-watch';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -1328,6 +1329,8 @@ export const createDesignServer = async (options: {
       },
     }),
   );
+  watchModuleFetches(server.environments['ssr']);
+
   const forgetDrawn = () => {
     drawnSince = Date.now();
     system.forget();

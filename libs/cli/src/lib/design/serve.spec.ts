@@ -73,6 +73,7 @@ vi.mock('vite', () => ({
       close: async () => {
         closes += 1;
       },
+      environments: { ssr: { fetchModule: async () => ({}) } },
     };
   },
 }));

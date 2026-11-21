@@ -25,6 +25,7 @@ vi.mock('vite', () => ({
     listen: async () => undefined,
     printUrls: () => undefined,
     close: async () => undefined,
+    environments: { ssr: { fetchModule: async () => ({}) } },
   }),
 }));
 
