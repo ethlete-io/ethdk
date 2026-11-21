@@ -275,7 +275,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     look: _look,
     place: _place,
     sample: _sample,
-    pins: _pins,
+    overlay: _overlay,
     class: extra,
     ...props
   }) => ({

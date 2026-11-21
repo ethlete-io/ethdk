@@ -22,7 +22,7 @@ type Props = {
   mark?: { left: number; top: number; width: number; height: number };
   stacked?: boolean;
   selected?: boolean;
-  pins?: { x: number; y: number; initials?: string; selected?: boolean }[];
+  overlay?: string;
 };
 
 const STACK_INSETS = [32, 64];
@@ -38,7 +38,7 @@ const loadingBadge = html`<span
 
 const pending = html`<div class="h-30" aria-busy="true" data-loading></div>`;
 
-const pinAt = (pin: NonNullable<Props['pins']>[number]) =>
+const pinAt = (pin: { x: number; y: number; initials?: string; selected?: boolean }) =>
   html`<span
     class="absolute z-10 flex -translate-y-full"
     style="left: calc(${pin.x}px * var(--sk-scale)); top: calc(${pin.y}px * var(--sk-scale))"
@@ -58,7 +58,7 @@ const frame = ({
   stacked = false,
   selected = false,
   same = false,
-  pins = [],
+  overlay = '',
 }: Props) => {
   const sized = shown === undefined ? '' : `--sk-shown: ${shown}px`;
   const stackBars = STACK_INSETS.map(
@@ -70,7 +70,8 @@ const frame = ({
       ></div>`,
   ).join('');
   return html`<div class="relative row-start-2 flex min-w-0 flex-col self-start ${stacked ? 'sk-fit' : ''}">
-    ${pins.map(pinAt).join('')}${loading ? loadingBadge : ''}
+    <div class="contents" ${slot('overlay')}>${overlay}</div>
+    ${loading ? loadingBadge : ''}
     <div
       class="relative w-(--sk-frame) overflow-clip [overflow-clip-margin:8px] ${stacked ? 'z-1' : 'sk-fit'} ${
         shown === undefined ? '' : 'h-[calc(var(--sk-shown)*var(--sk-scale))]'
@@ -146,7 +147,7 @@ const base: Props = { state: 'rest', width: 480, shot: demo };
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; comment pins sit on their point in the shot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {
@@ -174,10 +175,12 @@ export default definePart({
     pinned: {
       ...base,
       height: 120,
-      pins: [
+      overlay: [
         { x: 120, y: 40 },
         { x: 360, y: 90, selected: true },
-      ],
+      ]
+        .map(pinAt)
+        .join(''),
     },
   },
   describe: {
