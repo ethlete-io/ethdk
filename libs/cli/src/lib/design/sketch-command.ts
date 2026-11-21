@@ -147,7 +147,7 @@ export const SKETCH_USAGE = [
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
-  'sketch withdraw <layer>/<name> --variant <key> --by <model id> [--product <name>]',
+  'sketch withdraw <layer>/<name> --variant <key> [--reason <text>] --by <model id> [--product <name>]',
 ];
 
 const FLAG_HELP: Record<string, string> = {
@@ -2283,16 +2283,15 @@ const withdrawn = (context: Context) => {
   return withdrawnVariant(context, found);
 };
 
-const withdrawnVariant = async (
-  context: Context,
-  { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
-) => {
+const withdrawnVariant = (context: Context, { sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
   const { positional, values } = context.args;
   const variant = values['--variant'];
   const by = authorOf(context.args) ?? '';
 
   if (positional.length !== 1 || !variant)
-    return fail('usage: sketch withdraw <layer>/<name> --variant <key> --by <model id> [--product <name>]');
+    return fail(
+      'usage: sketch withdraw <layer>/<name> --variant <key> [--reason <text>] --by <model id> [--product <name>]',
+    );
   if (by === 'designer')
     return fail('sketch withdraw is for the agent that drew the variant: --by must be a model id, not designer');
 
@@ -2306,25 +2305,12 @@ const withdrawnVariant = async (
       `${sketch.target} variant ${variant} was not drawn by ${by} - only the agent that drew it withdraws it`,
     );
 
-  const identical = await identicalRenders({
-    target: context.target,
-    config: context.config,
-    product,
-    sketch,
-    warm: context.warm,
-  });
-  const twin = identical.find((render) => render.variant === variant && render.sibling !== null);
-
-  if (!twin)
-    return fail(
-      `${sketch.target} variant ${variant} does not draw the same pixels as a sibling variant in its first changed state - redraw it or ask for a reject`,
-    );
-
-  const result = withdrawVariant({ sketch, variant, by, reason: `identisch mit ${twin.sibling}` });
+  const reason = values['--reason']?.trim() || 'zurückgezogen';
+  const result = withdrawVariant({ sketch, variant, by, reason });
 
   if (typeof result === 'string') return fail(result);
 
-  console.log(`withdrew ${sketch.target} variant ${variant} (identisch mit ${twin.sibling})`);
+  console.log(`withdrew ${sketch.target} variant ${variant} (${reason})`);
 
   return 0;
 };

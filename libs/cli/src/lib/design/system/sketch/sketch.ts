@@ -1558,7 +1558,7 @@ const withVerdict = (sketch: Sketch, verdict: SketchVariantVerdict): Sketch | st
 
 /**
  * Takes a variant out of the open set as `withdrawn` by the agent `by`, with `reason`; refused when `by` did not draw
- * the variant or it is rejected already. Writes sketch.json.
+ * the variant, it is rejected already or it is the picked variant. Writes sketch.json.
  */
 export const withdrawVariant = (options: {
   sketch: Sketch;
@@ -1571,6 +1571,8 @@ export const withdrawVariant = (options: {
   if (!sketch.variants.includes(variant))
     return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
   if (rejectionOf(sketch, variant)) return `${sketch.target} variant ${variant} is rejected or withdrawn already`;
+  if (sketch.decision?.kind === 'pick' && sketch.decision.variant === variant)
+    return `${sketch.target} variant ${variant} is the picked variant - it cannot be withdrawn`;
   if (!authorsOf(sketch, variant).includes(by))
     return `${sketch.target} variant ${variant} was not drawn by ${by}${drawerNote(sketch, variant)} - only its author withdraws it`;
 

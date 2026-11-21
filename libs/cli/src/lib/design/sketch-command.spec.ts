@@ -1577,23 +1577,40 @@ describe('designSketch', { timeout: 120_000 }, () => {
       expect(sketchOf(target).rejections).toBeUndefined();
     });
 
-    it('refuses a variant that does not draw like a sibling', async () => {
+    it('withdraws a variant that draws unlike every sibling, with the reason given', async () => {
       const { target, lines } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([]);
 
-      expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(1);
-      expect(lines.at(-1)).toContain('does not draw the same pixels as a sibling');
-      expect(sketchOf(target).rejections).toBeUndefined();
+      expect(await withdraw(target, '--by', 'claude-opus-5-5', '--reason', 'ersetzt durch c')).toBe(0);
+      expect(lines.at(-1)).toBe('withdrew components/button variant b (ersetzt durch c)');
+      expect(sketchOf(target).rejections?.['b']).toEqual([
+        expect.objectContaining({ status: 'withdrawn', reason: 'ersetzt durch c', withdrawnBy: 'claude-opus-5-5' }),
+      ]);
     });
 
-    it('refuses a variant that draws like the product only', async () => {
-      const { target, lines } = await opened();
+    it('withdraws a variant that draws like the product only', async () => {
+      const { target } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([{ ...twinOfA, sibling: null }]);
 
+      expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(0);
+      expect(sketchOf(target).rejections?.['b']?.[0]?.reason).toBe('zurückgezogen');
+    });
+
+    it('refuses the picked variant', async () => {
+      const { target, lines } = await opened();
+      const file = join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json');
+      const written = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+
+      writeFileSync(
+        file,
+        JSON.stringify({ ...written, status: 'ready', decision: { kind: 'pick', variant: 'b', decidedAt: 'now' } }),
+      );
+
       expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(1);
-      expect(lines.at(-1)).toContain('does not draw the same pixels as a sibling');
+      expect(lines.at(-1)).toContain('is the picked variant');
+      expect(sketchOf(target).rejections).toBeUndefined();
     });
 
     it('withdraws the variant, so ready stops refusing on it', async () => {
@@ -1607,12 +1624,12 @@ describe('designSketch', { timeout: 120_000 }, () => {
       expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
       expect(lines.at(-1)).toContain('draws variants alike');
       expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(0);
-      expect(lines.at(-1)).toBe('withdrew components/button variant b (identisch mit a)');
+      expect(lines.at(-1)).toBe('withdrew components/button variant b (zurückgezogen)');
       expect(sketchOf(target).rejections?.['b']).toEqual([
         {
           by: 'agent',
           decidedAt: expect.any(String),
-          reason: 'identisch mit a',
+          reason: 'zurückgezogen',
           reasonBy: 'agent',
           status: 'withdrawn',
           withdrawnBy: 'claude-opus-5-5',
