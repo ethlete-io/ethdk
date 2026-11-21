@@ -16,6 +16,7 @@ import {
   OVERLAY_PANES,
   PointerOpen,
 } from './part-compare';
+import { HarnessRefusedError, waitForHarnessHost } from './harness-host-wait';
 import { watchSdkErrors } from './sdk-errors';
 import { PANE_COUNT_TIMEOUT_MS, settledPanesOf } from './settled-panes';
 import { FrozenAnimation, freezeAnimationsScriptOf } from './frozen-animations';
@@ -398,7 +399,9 @@ const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHar
         throw new HarnessError(`the harness page ${url} did not load: ${messageOf(error).split('\n')[0] ?? ''}`);
       });
 
-      await host.waitFor({ state: 'visible', timeout }).catch(() => {
+      await waitForHarnessHost(page, timeout).catch((error: unknown) => {
+        if (error instanceof HarnessRefusedError) throw new HarnessError(error.message);
+
         throw new HarnessError(
           `the harness page ${url} showed no ${HARNESS_HOST_SELECTOR} element within ${timeout} ms - does the app serve the design harness route?`,
         );

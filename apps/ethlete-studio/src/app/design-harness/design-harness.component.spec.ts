@@ -41,11 +41,16 @@ vi.mock('./design-harness-parts', () => ({
   DESIGN_HARNESS_PARTS: {
     'components/chip': () => Promise.resolve(FakeChipComponent),
     'pages/frame': () => Promise.resolve(FakeFrameComponent),
+    'pages/bad': () => Promise.resolve(FakeChipComponent),
   },
 }));
 
 vi.mock('./design-harness-samples', () => ({
-  DESIGN_HARNESS_SAMPLES: {},
+  DESIGN_HARNESS_SAMPLES: {
+    'pages/bad': () => {
+      throw new Error('no sample for prop part=x of part pages/bad');
+    },
+  },
   DESIGN_HARNESS_PROVIDERS: {},
   get DESIGN_HARNESS_TEMPLATES() {
     return { 'pages/frame': FakeFrameShotsComponent };
@@ -120,5 +125,13 @@ describe('DesignHarnessComponent', () => {
 
     expect(element.querySelector('[data-design-harness-host]')).toBeNull();
     expect(element.textContent?.trim()).toBe('Unknown design part "x".');
+  });
+
+  it('marks the error text with the error attribute when a sample refuses the props', async () => {
+    const element = await render('?part=pages%2Fbad&state=y&props=%7B%7D');
+    const marker = element.querySelector('[data-design-harness-error]');
+
+    expect(element.querySelector('[data-design-harness-host]')).toBeNull();
+    expect(marker?.textContent).toContain('no sample for prop part=x of part pages/bad');
   });
 });

@@ -51,6 +51,7 @@ import {
   settle,
   watchMutations,
 } from './action-press';
+import { waitForHarnessHost } from './harness-host-wait';
 import { compareFrameOf } from './harness-shot';
 import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { componentOutputsOf, modelChangesForOf } from './component-outputs';
@@ -122,7 +123,7 @@ const probeOf = (probe: number) => `[data-et-action-probe="${probe}"]`;
  * lazily loaded part renders into it.
  */
 const harnessMountedOf = async (page: Page, timeout: number) => {
-  await page.locator(HARNESS_HOST_SELECTOR).first().waitFor({ state: 'visible', timeout });
+  await waitForHarnessHost(page, timeout);
   await page.locator(`${HARNESS_HOST_SELECTOR} > *`).first().waitFor({ state: 'attached', timeout });
 };
 

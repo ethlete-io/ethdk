@@ -30,7 +30,10 @@ const fakePage = () => ({
   setContent: async () => undefined,
   evaluate: async () => [],
   mouse: { move: async () => undefined },
-  locator: () => ({ first: () => ({ waitFor: async () => undefined }), waitFor: async () => undefined }),
+  locator: () => ({
+    first: () => ({ waitFor: async () => undefined, count: async () => 0 }),
+    waitFor: async () => undefined,
+  }),
 });
 
 vi.mock('../shot', async (importOriginal) => ({
