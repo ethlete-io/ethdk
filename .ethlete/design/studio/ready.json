@@ -945,7 +945,7 @@
     "pid": 2183583
   },
   "elements/canvas-frames": {
-    "hash": "5d05ccdc8a06e170",
+    "hash": "2dbf0f8967a8232d",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -953,14 +953,15 @@
       ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "c679638a8b364d68",
       ".ethlete/design/studio/components/hold-trigger/hold-trigger.css": "58922d213e30d6be",
       ".ethlete/design/studio/components/hold-trigger/hold-trigger.ts": "5e3c9d89d3a9998c",
-      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "1d17a457e6d3c365",
+      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "3ed3cd0df06ad08b",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "5969029e682ff5d9",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "756e0b1b2a41c938",
-      ".ethlete/design/studio/elements/canvas-frames/shared/canvas-marks.ts": "5f537f8268d7af9f",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "d228a2b1d2722e6c",
+      ".ethlete/design/studio/elements/canvas-frames/shared/canvas-marks.ts": "b16f37a6727487cc",
       ".ethlete/design/studio/elements/canvas-frames/shared/diff-grid.ts": "abcdf1a3c0edb6ab",
       "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "ad2ef8b293d8db6a",
       "apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry.ts": "b6a23bfac763fb58",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
+      "apps/ethlete-studio/src/app/i18n/canvas-labels.ts": "c9bface24f0678a8",
+      "apps/ethlete-studio/src/app/i18n/system-labels.ts": "74ce6232071bd10b",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
@@ -984,11 +985,11 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "867b04308b9ac8bc",
+    "app": "bec6e1dc3c41aad2",
     "embedded": {
-      "components/canvas-viewport": "17676867380dc95c",
+      "components/canvas-viewport": "c9da5989b85522f8",
       "components/hold-trigger": "4e25491c5b82b2d0",
-      "components/zoom-chip": "3cb2af64d58dbe69"
+      "components/zoom-chip": "b1d324f667aa81ff"
     },
     "actions": [
       "active",
@@ -1007,10 +1008,10 @@
       "injects the service DesignCanvasComponent (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)",
       "injects the service CANVAS_LIVE_REST_MS (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)"
     ],
-    "at": "2026-11-21T04:35:24.050Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-21T05:39:42.604Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1614044
+    "pid": 2188576
   },
   "elements/part-tree": {
     "hash": "16f2515b548a07d8",
