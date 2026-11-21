@@ -187,7 +187,7 @@ export default definePart<FlowProps>({
                     commentPins([{ ...FLOW_THREAD, at: 'left-0 top-0' }], thread ? 0 : -1),
                   )
                 : ''
-            }${comments && id === COMMENTED && card ? placedAt(COMMENT_POINT, shot.scale, `<div class="absolute" style="left:var(--space-6);top:calc(var(--space-6) * -1)">${card.body}</div>`) : ''}${id === COMMENTED && written ? placedAt(DRAFT_POINT, shot.scale, written.body) : ''}`
+            }${comments && id === COMMENTED && card ? placedAt(COMMENT_POINT, shot.scale, `<div class="absolute" style="left:calc(var(--space-6) + var(--space-3));top:calc(var(--space-6) * -1)">${card.body}</div>`) : ''}${id === COMMENTED && written ? placedAt(DRAFT_POINT, shot.scale, written.body) : ''}`
         : undefined;
     const shell = await shellMain.render({
       studio: menu.body,
