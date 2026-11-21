@@ -2,6 +2,7 @@ import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { reportEmbedStall } from '../embed-stall';
 import { runsInResident } from './client';
 import { createWarmRuns } from './resident-process';
 
@@ -13,6 +14,7 @@ const checkDesign = vi.hoisted(() => vi.fn());
 const readFreshDist = vi.hoisted(() => vi.fn());
 const current = vi.hoisted(() => vi.fn());
 const startHarnessServer = vi.hoisted(() => vi.fn());
+const closeServer = vi.hoisted(() => vi.fn());
 
 vi.mock('../sketch-command', () => ({ designSketch }));
 vi.mock('../shot-command', () => ({ designShot }));
@@ -28,7 +30,7 @@ vi.mock('../system/stale-dist', () => ({
 }));
 vi.mock('../design-config', () => ({ readConfig: () => ({}) }));
 vi.mock('../serve', () => ({
-  createDesignServer: async () => ({ listen: async () => undefined, close: async () => undefined, forgetDrawn }),
+  createDesignServer: async () => ({ listen: async () => undefined, close: closeServer, forgetDrawn }),
 }));
 vi.mock('../thumb', () => ({
   INSPECT_BROWSER_ARGS: [],
@@ -147,5 +149,51 @@ describe('the resident design process', () => {
     expect(await start({ target: '/elsewhere', product })).toEqual({ url: 'http://base', stop: expect.any(Function) });
     expect(startHarnessServer).toHaveBeenCalledWith({ target: '/elsewhere', product });
     expect(current).not.toHaveBeenCalled();
+  });
+
+  it('closes its warm design server and Chromium and runs a request once more after embedded frames never drew', async () => {
+    const runs = runsIn();
+    const stall =
+      'design-explore: /frame.html did not draw its embedded frames within 15000 ms - requests still open: /x.ts (15000 ms)';
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    designSketch.mockImplementationOnce(async () => {
+      reportEmbedStall(stall);
+
+      return 1;
+    });
+
+    await runs.warmUp();
+
+    expect(await runs.run({ argv: ['sketch', 'check', 'pages/start'], invocation: 'et design', env: {} })).toBe(0);
+    expect(designSketch).toHaveBeenCalledTimes(2);
+    expect(closeServer).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledWith(`resident: ${stall}`);
+    logged.mockRestore();
+  });
+
+  it('runs a request that failed once more only once', async () => {
+    const runs = runsIn();
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    designSketch.mockImplementation(async () => {
+      reportEmbedStall('design-explore: /frame.html did not draw its embedded frames within 15000 ms');
+
+      return 1;
+    });
+
+    expect(await runs.run({ argv: ['sketch', 'check', 'pages/start'], invocation: 'et design', env: {} })).toBe(1);
+    expect(designSketch).toHaveBeenCalledTimes(2);
+    logged.mockRestore();
+  });
+
+  it('does not run a request again that failed without a stalled embed', async () => {
+    const runs = runsIn();
+
+    designSketch.mockResolvedValueOnce(1);
+
+    expect(await runs.run({ argv: ['sketch', 'check', 'pages/start'], invocation: 'et design', env: {} })).toBe(1);
+    expect(designSketch).toHaveBeenCalledTimes(1);
+    expect(closeServer).not.toHaveBeenCalled();
   });
 });

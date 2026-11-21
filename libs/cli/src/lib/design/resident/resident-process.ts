@@ -17,6 +17,7 @@ import { runSignal, unlessAborted, withRunSignal } from '../run-abort';
 import { withRunYield } from '../run-yield';
 import { recordPhase, recordRun, timingsFileOf } from '../timings';
 import { WarmDraw } from '../warm-draw';
+import { watchEmbedStalls } from '../embed-stall';
 import { checkoutGoneOf, watchCheckout } from './checkout-gone';
 import { ResidentClient, runsInResident, takeResidentForServe } from './client';
 import { removeDiscovery, writeDiscovery } from './discovery';
@@ -117,6 +118,22 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
     (await server?.catch(() => null))?.forgetDrawn();
   };
 
+  const dispatch = async ({ argv, invocation }: { argv: string[]; invocation: string }) => {
+    const rest = argv.slice(1);
+
+    if (argv[0] === 'sketch') return designSketch({ target, argv: rest, invocation, warm });
+    if (argv[0] === 'check') return checkDesign({ target, argv: rest, invocation, warm });
+    if (argv[0] === 'shot') return designShot({ target, argv: rest, invocation, warm });
+
+    return designCompare({
+      target,
+      argv: rest,
+      invocation,
+      start,
+      ...(rest.includes('--live') ? {} : { shoot: shootStatesWith(warm) }),
+    });
+  };
+
   const runIn = async ({ argv, invocation }: { argv: string[]; invocation: string }) => {
     if (!runsInResident(argv)) {
       console.error(
@@ -137,22 +154,26 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
     active++;
 
     try {
-      if (inside) (await server?.catch(() => null))?.forgetDrawn();
-      else await refresh(config);
+      if (inside) {
+        (await server?.catch(() => null))?.forgetDrawn();
 
-      const rest = argv.slice(1);
+        return await dispatch({ argv, invocation });
+      }
 
-      if (argv[0] === 'sketch') return await designSketch({ target, argv: rest, invocation, warm });
-      if (argv[0] === 'check') return await checkDesign({ target, argv: rest, invocation, warm });
-      if (argv[0] === 'shot') return await designShot({ target, argv: rest, invocation, warm });
+      await refresh(config);
 
-      return await designCompare({
-        target,
-        argv: rest,
-        invocation,
-        start,
-        ...(rest.includes('--live') ? {} : { shoot: shootStatesWith(warm) }),
-      });
+      const { result, stalls } = await watchEmbedStalls(() => dispatch({ argv, invocation }));
+
+      stalls.forEach((stall) => console.error(`resident: ${stall}`));
+
+      if (result === 0 || stalls.length === 0 || shared || runSignal()?.aborted) return result;
+
+      console.error(
+        `resident: closing the warm design server and Chromium after embedded frames that never drew, then running \`${argv.join(' ')}\` once more`,
+      );
+      await closeDraw();
+
+      return await dispatch({ argv, invocation });
     } finally {
       active--;
       read.release();

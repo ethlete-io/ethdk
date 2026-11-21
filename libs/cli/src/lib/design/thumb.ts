@@ -11,6 +11,8 @@ import { ShotBoard } from './shot-board';
 import { recordCache, recordDrawWait } from './timings';
 import { withinLimit } from './wait';
 import { loadScaledMs } from './system/no-verdict';
+import { pendingRequestsLineOf, trackPendingRequests } from './pending-requests';
+import { reportEmbedStall } from './embed-stall';
 
 export const THUMB_PATH = '/__design/thumb';
 
@@ -86,6 +88,12 @@ const drawnOnLoadedFontsOf = (options: { state: string; switching: boolean }) =>
   return drawn();
 })(${JSON.stringify(options)})`;
 
+const stalled = (error: ShotTimeoutError) => {
+  reportEmbedStall(error.message);
+
+  return error;
+};
+
 /**
  * Opens a frame and waits until it drew its content or its error, then for its embedded frames. Each wait is
  * `DRAW_TIMEOUT_MS` stretched by the machine load. A frame that draws nothing after one reload throws a
@@ -93,7 +101,11 @@ const drawnOnLoadedFontsOf = (options: { state: string; switching: boolean }) =>
  */
 export const openFrame = async (page: Page, url: string) => {
   const timeout = loadScaledMs(DRAW_TIMEOUT_MS);
-  const never = (what: string) => new ShotTimeoutError(`design-explore: ${url} did not ${what} within ${timeout} ms`);
+  const never = (what: string, open = '') =>
+    new ShotTimeoutError(`design-explore: ${url} did not ${what} within ${timeout} ms${open}`);
+
+  await trackPendingRequests(page);
+
   const drawn = async () => {
     assertServed(await page.goto(url, { waitUntil: 'domcontentloaded' }), url);
     // Headless Chromium's pointer starts at 0,0 on a new page and draws a real :hover on whatever fills the
@@ -117,8 +129,8 @@ export const openFrame = async (page: Page, url: string) => {
     .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
     .first()
     .waitFor({ state: 'detached', timeout })
-    .catch(() => {
-      throw never('draw its embedded frames');
+    .catch(async () => {
+      throw stalled(never('draw its embedded frames', await pendingRequestsLineOf(page)));
     });
 };
 
@@ -146,8 +158,12 @@ export const switchFrame = async (page: Page, state: string) => {
     .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
     .first()
     .waitFor({ state: 'detached', timeout })
-    .catch(() => {
-      throw new ShotTimeoutError(`design-explore: ${page.url()} did not draw its embedded frames within ${timeout} ms`);
+    .catch(async () => {
+      throw stalled(
+        new ShotTimeoutError(
+          `design-explore: ${page.url()} did not draw its embedded frames within ${timeout} ms${await pendingRequestsLineOf(page)}`,
+        ),
+      );
     });
 
   return true;
