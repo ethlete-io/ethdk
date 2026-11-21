@@ -22,7 +22,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
 - S28, S29 (fifagg, 21.11.): ausgeliefert in components 1.0.0-next.94 (Scroll-Buttons: Farbe/Variante app-weit, Abstands-Variablen, Eingabe `scrollableButtons`, Breakpoint-Maps blenden unterhalb aus); fifagg informiert.
 - S30-S36 (fifagg, 21.11.): ausgeliefert in @ethlete/components 1.0.0-next.95; fifagg informiert.
-- S37 (fifagg, 21.11.): blockiert (88 visuelle Rots): der Pfeil im gefüllten Scroll-Button nimmt `--et-surface-interaction-solid` statt der Tinte des Buttons (grau statt weiß auf fifa-dark); Fix im SDK: gefüllter Button zeichnet das Icon in seiner Tinte -> Builder sofort, Prerelease danach (ADR 0377).
+- S37 (fifagg, 21.11.): ausgeliefert in @ethlete/components 1.0.0-next.96 (cf03fdca1, 22.11.), fifa informiert; war blockiert (88 visuelle Rots): der Pfeil im gefüllten Scroll-Button nimmt `--et-surface-interaction-solid` statt der Tinte des Buttons (grau statt weiß auf fifa-dark); Fix im SDK: gefüllter Button zeichnet das Icon in seiner Tinte -> Builder sofort, Prerelease danach (ADR 0377).
 - Dialog (Studio, 21.11.): die Dialog-Overlay-Strategie zentriert die Pane auf Bruchpixeln (302,5 px hoch -> top 40,25), was Textzeilen abwechselnd rundet (shortcuts-dialog 1694 px, die echte App zeigt es auch); Suspect bis zum Biss; Fix: ganzzahlige Zentrierung in der Strategie.
 
 ## Offene Plan-Dateien
