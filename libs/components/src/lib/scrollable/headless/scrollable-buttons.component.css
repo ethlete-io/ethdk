@@ -74,7 +74,7 @@
       }
     }
 
-    & .et-scrollable-button {
+    & .et-scrollable-button:where(:not([data-variant='filled'])) {
       color: var(--et-surface-interaction-solid, currentColor);
     }
 
