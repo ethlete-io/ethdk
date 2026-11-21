@@ -150,38 +150,38 @@
     "at": "2026-11-19T10:25:13.055Z"
   },
   "pages/flows": {
-    "hash": "939b4a439bb15e6a",
+    "hash": "933f064e1d5e1d03",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-21T04:19:29.759Z"
   },
   "pages/inbox": {
-    "hash": "23a38bb14e9c61d3",
+    "hash": "f6d368cf475c0146",
     "variant": "a",
     "decidedBy": "plan: ADR 0387",
     "at": "2026-11-20T14:07:53.240Z",
     "note": "merged without a pick: allowed by ADR 0387"
   },
   "pages/inventory": {
-    "hash": "f45b74e975cffdde",
+    "hash": "7252f693b227d39f",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-21T03:22:49.823Z"
   },
   "pages/sketches": {
-    "hash": "09e067be00fec0e3",
+    "hash": "1a99644c67a21762",
     "variant": "c",
     "decidedBy": "user",
     "at": "2026-11-20T22:25:21.277Z"
   },
   "pages/start": {
-    "hash": "845cd04839f8e662",
+    "hash": "3b668624cb1d918f",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-20T06:52:42.718Z"
   },
   "pages/system": {
-    "hash": "7e9968798e4b0356",
+    "hash": "3c2b5aa9242ad442",
     "variant": "float",
     "decidedBy": "builder",
     "at": "2026-11-20T22:50:25.340Z"

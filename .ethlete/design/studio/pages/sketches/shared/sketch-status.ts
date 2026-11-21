@@ -1,5 +1,6 @@
 import { html } from '@design-system';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Model = { name: string; agent: Agent };
 
@@ -21,9 +22,9 @@ export const drawingPlaceholder = (model: Model) =>
   >
     <span class="flex items-center gap-space-2 text-ui-lg font-ui-medium">
       <span class="size-2 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
-      ${modelName(model)} zeichnet diese Variante
+      ${modelName(model)} ${STUDIO_LABELS.sketches.drawingVariant}
     </span>
-    <span class="text-ui-sm">Der Rahmen füllt sich, sobald die erste Ansicht steht.</span>
+    <span class="text-ui-sm">${STUDIO_LABELS.sketches.drawingHint}</span>
   </div>`;
 
 export const toggleHold = (root: HTMLElement) => {

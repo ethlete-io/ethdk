@@ -1,5 +1,6 @@
 import { html } from '@design-system';
 import { disclosure } from '@system/components/disclosure';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 export const FOLDED_SAMPLE = 13;
 
@@ -10,7 +11,7 @@ export const foldedStatesPill = (count: number) =>
   >
     <span class="text-ui-sm text-et-surface-muted">${String(count)} weitere Zustände eingeklappt</span>
     ${disclosure({
-      label: 'Alle Zustände zeigen',
+      label: STUDIO_LABELS.system.showAllStates,
       body: '',
       open: false,
       size: 'xs',

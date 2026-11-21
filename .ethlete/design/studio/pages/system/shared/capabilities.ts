@@ -3,6 +3,7 @@ import { html, slot, withAction } from '@design-system';
 import badge from '@system/components/badge';
 import button from '@system/components/button';
 import { canvasFrame, canvasView } from '@system/elements/canvas-frames';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Drawn = { body: string; styles: string };
 
@@ -18,8 +19,8 @@ export const buttonExceptions: PartException[] = [
 ];
 
 const THEMES = [
-  { label: 'Oberflächen-Theme', names: ['light', 'dark'], current: 'light' },
-  { label: 'Farb-Theme', names: ['brand', 'danger', 'warning'], current: 'brand' },
+  { label: STUDIO_LABELS.shell.surfaceTheme, names: ['light', 'dark'], current: 'light' },
+  { label: STUDIO_LABELS.shell.colorTheme, names: ['brand', 'danger', 'warning'], current: 'brand' },
 ];
 
 const themeSwitch = async (): Promise<Drawn> => {
@@ -55,8 +56,13 @@ const themeSwitch = async (): Promise<Drawn> => {
 export const callView = async (transferred: boolean): Promise<Drawn> => {
   const themes = await themeSwitch();
   const transfer = transferred
-    ? await badge.render({ badges: [{ label: 'übertragen', variant: 'tonal', size: 'sm' }] })
-    : await button.render({ label: 'Als übertragen markieren', variant: 'outline', color: 'surface', size: 'sm' });
+    ? await badge.render({ badges: [{ label: STUDIO_LABELS.shell.transferred, variant: 'tonal', size: 'sm' }] })
+    : await button.render({
+        label: STUDIO_LABELS.shell.markTransferred,
+        variant: 'outline',
+        color: 'surface',
+        size: 'sm',
+      });
   const transferMarkup = transferred
     ? transfer.body
     : control(withAction(transfer.body, 'emit:markTransferred'), 'transfer');

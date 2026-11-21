@@ -1,4 +1,5 @@
 import { icon, type IconName } from '@system/foundations/icons';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type BlockerKind = 'direct-edit' | 'open-point' | 'embedded' | 'problem' | 'compare' | 'sdk-error' | 'stale-record';
 
@@ -10,13 +11,13 @@ export type BuildReady =
 type BlockerGroup = { kind: BlockerKind; title: string; icon: IconName; blockers: Blocker[] };
 
 const KINDS: { kind: BlockerKind; title: string; icon: IconName }[] = [
-  { kind: 'direct-edit', title: 'Direkte Änderung', icon: 'pencil' },
-  { kind: 'open-point', title: 'Offene Punkte', icon: 'warning' },
-  { kind: 'embedded', title: 'Eingebettete Teile', icon: 'grid' },
-  { kind: 'problem', title: 'Regeln', icon: 'error' },
-  { kind: 'compare', title: 'Vergleich mit der App', icon: 'flow' },
-  { kind: 'sdk-error', title: 'SDK-Fehler', icon: 'error' },
-  { kind: 'stale-record', title: 'Prüfstand', icon: 'up-down' },
+  { kind: 'direct-edit', title: STUDIO_LABELS.buildReady.groups['direct-edit'], icon: 'pencil' },
+  { kind: 'open-point', title: STUDIO_LABELS.system.openPoints, icon: 'warning' },
+  { kind: 'embedded', title: STUDIO_LABELS.buildReady.groups.embedded, icon: 'grid' },
+  { kind: 'problem', title: STUDIO_LABELS.buildReady.groups.problem, icon: 'error' },
+  { kind: 'compare', title: STUDIO_LABELS.buildReady.groups.compare, icon: 'flow' },
+  { kind: 'sdk-error', title: STUDIO_LABELS.buildReady.groups['sdk-error'], icon: 'error' },
+  { kind: 'stale-record', title: STUDIO_LABELS.buildReady.groups['stale-record'], icon: 'up-down' },
 ];
 
 export const blockerGroupsOf = (blockers: Blocker[]): BlockerGroup[] =>
@@ -45,16 +46,16 @@ export const manyBlockers = (openCount: number): Blocker[] => [
 
 export const directEditBlocker: Blocker = {
   kind: 'direct-edit',
-  text: 'Bild ohne Sketch geändert',
+  text: STUDIO_LABELS.system.directEdit,
 };
 
 export const slowRules = ['APP-SPEC', 'UNCOVERED-REGION', 'VISIBLE-CHANGE'];
 
 export const statusLabel = (status: BuildReady) =>
   status.state === 'ready'
-    ? 'Baubereit'
+    ? STUDIO_LABELS.buildReady.ready
     : status.state === 'checking'
-      ? 'Wird geprüft'
+      ? STUDIO_LABELS.buildReady.checking
       : `Nicht baubereit (${status.blockers.length})`;
 
 export const blockerIcon = (name: IconName) =>
@@ -65,7 +66,7 @@ export const developerReasons = [
   'routet: nutzt routerLink (title-search.component.html)',
 ];
 
-export const developerLabel = 'Entwickler-Part';
+export const developerLabel = STUDIO_LABELS.buildReady.developer;
 
 export type AgentProgress =
   | { state: 'working'; doing: string; detail: string }
@@ -86,10 +87,10 @@ export const agentLabel = (progress: AgentProgress) =>
   progress.state === 'working'
     ? `Agent ${progress.doing}`
     : progress.state === 'waiting'
-      ? 'Agent wartet'
+      ? STUDIO_LABELS.buildReady.agent.waiting
       : progress.state === 'interrupted'
-        ? 'Agent unterbrochen'
-        : 'Agent fehlgeschlagen';
+        ? STUDIO_LABELS.buildReady.agent.interrupted
+        : STUDIO_LABELS.buildReady.agent.failed;
 
 export const agentOnReadyPart: AgentProgress = {
   state: 'working',

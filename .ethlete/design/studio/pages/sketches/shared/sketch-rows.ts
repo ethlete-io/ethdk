@@ -5,6 +5,7 @@ import titleBar from '@system/components/title-bar';
 import zoomChip from '@system/components/zoom-chip';
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 export type RowKey = 'current' | 'old' | 'new' | 'a' | 'b' | 'c';
 
@@ -99,10 +100,16 @@ export const PARTS: Record<PartKind, SketchPart> = {
     ...narrowPart(),
     key: 'components/zoom-chip@edit',
     rows: [
-      { key: 'old', label: 'Zuletzt gemergter Stand', note: 'Stand vor der direkten Änderung', changed: [], look: '' },
+      {
+        key: 'old',
+        label: STUDIO_LABELS.sketches.editOld,
+        note: 'Stand vor der direkten Änderung',
+        changed: [],
+        look: '',
+      },
       {
         key: 'new',
-        label: 'Änderung behalten',
+        label: STUDIO_LABELS.sketches.editNew,
         note: 'Direkte Änderung: Prozentzahl in Halbfett.',
         changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
         look: '',
@@ -180,7 +187,8 @@ export const unchangedStates = (part: SketchPart) => {
   return unchanged.length < part.states.length ? unchanged : [];
 };
 
-const rowName = (row: Row) => row.label ?? (row.key === 'current' ? 'Aktuell' : `Variante ${row.key}`);
+const rowName = (row: Row) =>
+  row.label ?? (row.key === 'current' ? STUDIO_LABELS.sketches.current : `Variante ${row.key}`);
 
 export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map(rowName).join(', ')}`;
 
@@ -225,12 +233,12 @@ export const wrapColumns = (part: SketchPart) =>
   Math.max(1, Math.min(4, part.states.length, Math.floor(1440 / part.width)));
 
 export const takeButton = (disabled = false) =>
-  button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm', disabled });
+  button.render({ label: STUDIO_LABELS.sketches.mergeConfirm.confirm, variant: 'outline', size: 'sm', disabled });
 
 export const takeAction = (take: string) => html`<span class="flex">${withAction(take, 'emit:merge')}</span>`;
 
 export const comparingMark = html`<span class="text-ui-xs text-et-surface-muted whitespace-nowrap" data-sk-comparing
-  >vergleicht …</span
+  >${STUDIO_LABELS.sketches.comparing}</span
 >`;
 
 export const rowHead = (row: Row, action: string, mark = '') =>

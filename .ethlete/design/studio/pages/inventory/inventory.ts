@@ -16,6 +16,7 @@ import {
   pageList,
   pagesOf,
 } from './shared/inventory-sample';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 const COLUMNS = 2;
 
@@ -60,9 +61,14 @@ export default definePart<Props>({
     const loading = inventory === 'loading';
     const pages = pagesOf(inventory);
     const selected = pages[0];
-    const reload = await button.render({ label: 'Neu laden', variant: 'outline', size: 'sm', disabled: loading });
+    const reload = await button.render({
+      label: STUDIO_LABELS.inventory.reload,
+      variant: 'outline',
+      size: 'sm',
+      disabled: loading,
+    });
     const approve = await button.render({
-      label: 'Inventory freigeben',
+      label: STUDIO_LABELS.inventory.approve,
       variant: 'filled',
       size: 'sm',
       disabled: loading || selected?.approval !== 'approvable',
@@ -103,7 +109,7 @@ export default definePart<Props>({
             class="flex flex-wrap items-center gap-space-3 border-b border-et-surface-border px-space-4 py-space-3"
           >
             <div class="flex min-w-24 flex-1 basis-0 flex-col">
-              <span class="truncate text-ui-sm text-et-surface-muted">Inventory</span>
+              <span class="truncate text-ui-sm text-et-surface-muted">${STUDIO_LABELS.inventory.title}</span>
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">${loading ? '' : (selected?.part ?? '')}</h2>
             </div>
             ${control(withAction(reload.body, 'emit:reloadInventory'), 'reload')}

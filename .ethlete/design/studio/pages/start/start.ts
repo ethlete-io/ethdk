@@ -1,13 +1,14 @@
 import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import { studioMark } from '@system/foundations/logo';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Props = { repo?: string; busy?: boolean };
 
 const header = (other: string, repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
     ${studioMark(24)}
-    <span class="text-et-surface font-ui-strong text-ui-md">Ethlete Studio</span>
+    <span class="text-et-surface font-ui-strong text-ui-md">${STUDIO_LABELS.start.title}</span>
     ${repo ? html`<span class="text-et-surface-muted text-ui-sm">${repo}</span>${withAction(other, 'emit:otherRepo')}` : ''}
   </header>`;
 
@@ -21,7 +22,7 @@ const card = (inner: string) =>
 
 const noRepo = (open: string) =>
   card(
-    html`<p class="m-0 text-et-surface font-ui-strong text-ui-md">Kein Repo geöffnet</p>
+    html`<p class="m-0 text-et-surface font-ui-strong text-ui-md">${STUDIO_LABELS.start.noRepo}</p>
       <p class="m-0 text-et-surface-muted">
         Studio liest das Design-System aus einem Git-Checkout. Öffne den Ordner eines Repos, in dem die Produkte liegen
         oder entstehen sollen.
@@ -34,7 +35,7 @@ const noProducts = (copy: string, repo: string) =>
     html`<div class="flex items-center gap-space-2" aria-hidden="true">
         ${ghostProduct}${ghostProduct}${ghostProduct}
       </div>
-      <p class="m-0 text-et-surface font-ui-strong text-ui-md">Noch keine Produkte</p>
+      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${STUDIO_LABELS.start.noProducts}</p>
       <p class="m-0 text-et-surface-muted">
         Ein Produkt ist ein eigenes Design-System, zum Beispiel für eine App, mit Teilen, Sketches und Flows. Dein Agent
         legt es an. Bitte ihn zum Beispiel so:
@@ -44,7 +45,7 @@ const noProducts = (copy: string, repo: string) =>
       </p>
       ${withAction(copy, 'emit:copyPrompt')}
       <p class="m-0 text-et-surface-muted">
-        Oder im Terminal: <code class="font-code">et design product new shop</code>
+        ${STUDIO_LABELS.start.orTerminal} <code class="font-code">${STUDIO_LABELS.start.command}</code>
       </p>`,
   );
 
@@ -64,9 +65,14 @@ export default definePart<Props>({
       'A repo without products; check the repo name in the header, Noch keine Produkte with the et design product new shop prompt and Prompt kopieren.',
   },
   render: async ({ repo, busy }) => {
-    const open = await button.render({ label: 'Repo öffnen', variant: 'filled', loading: busy });
-    const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
-    const other = await button.render({ label: 'Anderes Repo', variant: 'transparent', size: 'sm', loading: busy });
+    const open = await button.render({ label: STUDIO_LABELS.start.openRepo, variant: 'filled', loading: busy });
+    const copy = await button.render({ label: STUDIO_LABELS.start.copyPrompt, variant: 'outline', size: 'sm' });
+    const other = await button.render({
+      label: STUDIO_LABELS.start.otherRepo,
+      variant: 'transparent',
+      size: 'sm',
+      loading: busy,
+    });
 
     return drawing({
       body: html`<div class="h-full min-h-225 flex flex-col bg-et-surface-bg">
