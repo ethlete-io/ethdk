@@ -109,6 +109,11 @@ describe('actions', () => {
     expect(actionInputsOf('menuitemcheckbox "Raster"')).toEqual(['click', 'Enter', 'Space']);
   });
 
+  it('clicks an option only, since its listbox or combobox takes the keys', () => {
+    expect(actionInputsOf('option "TitlebarPart"', parseAction('emit:choose', []))).toEqual(['click']);
+    expect(actionInputsOf('option "Hell"')).toEqual(['click']);
+  });
+
   it('moves a focusable separator or slider with the arrow keys instead of pressing it', () => {
     const emit = parseAction('emit:sideWidthChange', []);
 

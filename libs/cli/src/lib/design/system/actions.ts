@@ -12,7 +12,8 @@ const TEXT_ENTRY_ROLES = ['combobox', 'textbox', 'input-text', 'input-search'];
 
 /**
  * The inputs that press an element of `key`: a checkable control toggles on Space like a native checkbox, not on Enter;
- * a focusable separator or slider moves on the arrow keys and takes no press; a text-entry control that emits is typed into.
+ * a focusable separator or slider moves on the arrow keys and takes no press; a text-entry control that emits is typed into;
+ * an option is only clicked, its listbox or combobox handles the keys.
  */
 export const actionInputsOf = (key: string, action?: DeclaredAction | string | null): readonly ActionInput[] => {
   if (typeof action === 'object' && action?.gesture === 'dblclick') return ['dblclick'];
@@ -22,6 +23,8 @@ export const actionInputsOf = (key: string, action?: DeclaredAction | string | n
   if (ARROW_ROLES.includes(role)) return ['ArrowRight', 'ArrowLeft'];
 
   if (typeof action === 'object' && action?.kind === 'emit' && TEXT_ENTRY_ROLES.includes(role)) return ['type'];
+
+  if (role === 'option') return ['click'];
 
   return SPACE_ONLY_ROLES.includes(role) ? ['click', 'Space'] : ['click', 'Enter', 'Space'];
 };
