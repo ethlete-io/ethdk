@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
-import { classifyImport, importProblemsOf, sharedFileOf } from './imports';
+import { classifyImport, importProblemsOf, partUsersOf, sharedFileOf } from './imports';
 import { resolveProduct } from './resolve-product';
 
 const acme = () => {
@@ -209,5 +209,22 @@ describe('importProblemsOf', () => {
     expect(importProblemsOf(product)).toEqual([
       expect.objectContaining({ message: '@system/fixtures resolves to no fixtures.ts' }),
     ]);
+  });
+});
+
+describe('partUsersOf', () => {
+  it('counts a part whose element opens another part as its user, like an import', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      part('const html = `<button data-et-action="opens:home">Go</button><a data-et-action="opens:nowhere">x</a>`;'),
+    );
+
+    const users = partUsersOf(resolveAcme(target));
+
+    expect([...(users.get('pages/home') ?? [])]).toContain('elements/hero');
+    expect(users.has('nowhere')).toBe(false);
   });
 });

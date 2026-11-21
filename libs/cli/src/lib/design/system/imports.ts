@@ -7,6 +7,7 @@ import { matchesPattern } from './harness-config';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { importsOf } from './ts-source';
+import { openedPartKeyOf } from './actions';
 
 const SYSTEM = '@system/';
 export const FIXTURES_SPECIFIER = '@system/fixtures';
@@ -269,14 +270,29 @@ export const importProblemsOf = (product: ResolvedProduct & SharedDirs & { asset
   ]);
 };
 
-/** The keys of the product's parts that import each part directly, by the imported part's key. */
+const OPENS_ACTION = /data-et-action="(?:dblclick:)?\s*opens:([a-z][\w-]*(?:\/[a-z][\w-]*)?)"/gu;
+
+const openedPartsOf = (part: ResolvedPart, keys: readonly string[]) =>
+  [part, ...folderModulesOf(part)].flatMap((module) =>
+    [...module.source.matchAll(OPENS_ACTION)].flatMap(([, named = '']) => {
+      const key = openedPartKeyOf({ part: named, keys });
+
+      return keys.includes(key) ? [key] : [];
+    }),
+  );
+
+/**
+ * The keys of the product's parts that use each part directly, by the used part's key: a part uses what it imports
+ * and what one of its `data-et-action="opens:<part>"` elements opens.
+ */
 export const partUsersOf = (product: ResolvedProduct) => {
   const users = new Map<string, Set<string>>();
+  const keys = product.parts.map(partKeyOf);
 
   for (const part of product.parts) {
-    for (const dependency of partDependenciesOf(part)) {
-      const key = partKeyOf(dependency);
+    const used = [...partDependenciesOf(part).map(partKeyOf), ...openedPartsOf(part, keys)];
 
+    for (const key of used) {
       if (key !== partKeyOf(part)) users.set(key, (users.get(key) ?? new Set()).add(partKeyOf(part)));
     }
   }
