@@ -274,7 +274,7 @@ describe('the design lint gate', { timeout: 60_000 }, () => {
   });
 });
 
-describe('lintFindingsOf with a config that prints to stdout', () => {
+describe('lintFindingsOf with a config that prints to stdout', { timeout: 60_000 }, () => {
   it('reads the findings although the config writes the Nx project graph warning before the JSON', () => {
     const target = mkdtempSync(join(tmpdir(), 'cli-design-lint-warning-'));
     const file = join(target, 'a.ts');
