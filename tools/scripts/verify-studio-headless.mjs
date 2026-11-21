@@ -164,7 +164,12 @@ const IDLE_HOST_COMMANDS = [
 ];
 
 export const studioHostAnswer = async (command, checkout, designPort) => {
-  if (command === 'design_roots' || command === 'design_roots_add' || command === 'design_roots_search')
+  if (
+    command === 'design_roots' ||
+    command === 'design_roots_add' ||
+    command === 'design_roots_search' ||
+    command === 'design_roots_forget'
+  )
     return { search: '', roots: [checkout] };
   if (command === 'design_scan') return [];
   if (command === 'design_project') return designProject(checkout, designPort);
