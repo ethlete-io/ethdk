@@ -11,6 +11,7 @@ import {
   drawPooled,
   groupedIssueLinesOf,
   INSPECTS_AT_ONCE,
+  isCacheableRender,
   renderIssueLineOf,
   renderIssuesOf,
   uniqueIssuesOf,
@@ -1649,5 +1650,30 @@ describe('drawPooled', () => {
     });
 
     await expect(pooled).rejects.toThrow('no page');
+  });
+});
+
+describe('isCacheableRender', () => {
+  const issue = {
+    rule: 'RENDER',
+    product: 'studio',
+    part: 'pages/sketches',
+    state: 'a',
+    size: 'desktop',
+    path: '#root',
+    detail: '-',
+    sketch: null,
+  };
+
+  it('caches a drawing whose states all drew', () => {
+    expect(isCacheableRender([issue])).toBe(true);
+  });
+
+  it('never caches a state that did not draw, whose failed module is not among the cached inputs', () => {
+    expect(isCacheableRender([issue, { ...issue, undrawn: 'state' as const }])).toBe(false);
+  });
+
+  it('never caches a render timeout', () => {
+    expect(isCacheableRender([{ ...issue, rule: 'RENDER-TIMEOUT' }])).toBe(false);
   });
 });

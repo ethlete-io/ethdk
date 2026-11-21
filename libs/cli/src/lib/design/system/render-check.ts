@@ -759,6 +759,13 @@ export const RENDER_ISSUES = 'render-issues';
 
 const RENDER_ISSUES_LIMIT = 64 * 1024 * 1024;
 
+/**
+ * Whether the render issues of a drawing may be cached. A state that did not draw never loaded the
+ * module that failed, so no edit of that module would invalidate the entry.
+ */
+export const isCacheableRender = (issues: RenderIssue[]) =>
+  !issues.some((issue) => issue.undrawn || issue.rule === RENDER_TIMEOUT);
+
 const embedControlsOf = (controls: unknown) =>
   typeof controls === 'object' && controls !== null
     ? Object.entries(controls)
@@ -1096,7 +1103,8 @@ const inspect = async (options: {
           const key = cache ? cacheKeyOf([cache.salt, group]) : null;
           const hit = cache && key ? await servedHitOf(cache, key) : null;
 
-          if (!hit) return { frames: group, key, started, requested: [], loads: loadsOf(group) };
+          if (!hit || !isCacheableRender(hit))
+            return { frames: group, key, started, requested: [], loads: loadsOf(group) };
 
           finished(group, { issues: hit, started });
         }
@@ -1168,7 +1176,7 @@ const inspect = async (options: {
               sketch: first.sketch,
             });
 
-        if (cache && group.key)
+        if (cache && group.key && isCacheableRender(groupIssues))
           await writeServed(cache, { key: group.key, requested: group.requested, value: groupIssues });
 
         finished(group.frames, { issues: groupIssues, started: group.started });
