@@ -10,7 +10,7 @@ test('vitest related refuses the rest of a shell chain before it runs', () => {
   const run = spawnSync(
     process.execPath,
     [resolve(root, 'node_modules/vitest/vitest.mjs'), 'related', '--run', 'vitest.config.mts', '&&', 'cd', '../cli'],
-    { cwd: project, encoding: 'utf8', timeout: 120_000 },
+    { cwd: project, encoding: 'utf8', timeout: 120_000, env: { ...process.env, NODE_OPTIONS: '' } },
   );
 
   assert.equal(run.status, 2);
