@@ -1947,7 +1947,9 @@ pub async fn received_between(
     from_ms: i64,
     to_ms: i64,
 ) -> TimetrackResult<ReceivedRange> {
-    peers.received_between(from_ms, to_ms).await
+    let range = peers.received_between(from_ms, to_ms).await?;
+    crate::heap::release_after(range.events.len());
+    Ok(range)
 }
 
 #[tauri::command]

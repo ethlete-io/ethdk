@@ -15,6 +15,7 @@ mod discovery;
 mod error;
 mod git;
 mod google_client;
+mod heap;
 mod http;
 mod ingest;
 mod keychain;

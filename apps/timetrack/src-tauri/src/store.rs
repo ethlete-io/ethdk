@@ -80,8 +80,11 @@ fn placeholders(count: usize) -> String {
 
 #[tauri::command]
 pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<StoredEvent>> {
-    db.run(move |connection| read_events_between(connection, from_ms, to_ms))
-        .await
+    let events = db
+        .run(move |connection| read_events_between(connection, from_ms, to_ms))
+        .await?;
+    crate::heap::release_after(events.len());
+    Ok(events)
 }
 
 pub fn read_events_between(connection: &Connection, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<StoredEvent>> {
@@ -133,16 +136,20 @@ pub async fn events_append(
     calendar_window: Option<CalendarWindow>,
     replaced_sessions: Option<Vec<ReplacedSession>>,
 ) -> TimetrackResult<i64> {
-    db.run(move |connection| {
-        append_replacing(
-            connection,
-            &events,
-            &cursors,
-            calendar_window.as_ref(),
-            replaced_sessions.as_deref().unwrap_or_default(),
-        )
-    })
-    .await
+    let batch = events.len();
+    let stored = db
+        .run(move |connection| {
+            append_replacing(
+                connection,
+                &events,
+                &cursors,
+                calendar_window.as_ref(),
+                replaced_sessions.as_deref().unwrap_or_default(),
+            )
+        })
+        .await?;
+    crate::heap::release_after(batch);
+    Ok(stored)
 }
 
 #[cfg(test)]
