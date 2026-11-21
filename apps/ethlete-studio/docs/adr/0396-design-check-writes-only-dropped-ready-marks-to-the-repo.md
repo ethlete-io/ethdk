@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B665
+built: 19c788581
 decided: 2026-11-21
 source: doc-agent session 2026-11-21, morning round after the night shift; supersedes ADR 0300
 ---
