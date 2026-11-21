@@ -100,6 +100,24 @@ describe('SketchesComponent', () => {
     configure();
   });
 
+  it('shows the empty state and no part tree when the product has no open sketches', async () => {
+    const root: HTMLElement = (await render({ empty: true })).nativeElement;
+    const empty = root.querySelector<HTMLElement>('[data-sketches-empty]');
+
+    expect(empty?.textContent).toContain(SKETCHES_LABELS.emptyTitle);
+    expect(empty?.textContent).toContain(SKETCHES_LABELS.emptyText);
+    expect(root.textContent).toContain(SKETCHES_LABELS.none);
+    expect(root.querySelector('ethlete-part-tree')).toBeNull();
+    expect(root.querySelector('[data-sketches-page]')?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('shows no empty state while sketches are open', async () => {
+    const root: HTMLElement = (await render({})).nativeElement;
+
+    expect(root.querySelector('[data-sketches-empty]')).toBeNull();
+    expect(root.textContent).not.toContain(SKETCHES_LABELS.emptyTitle);
+  });
+
   it('draws every variant head as a row above its frames, never as an opaque column', async () => {
     const root: HTMLElement = (await render({ rows: ROWS, camera: '100' })).nativeElement;
     const section = root.querySelector('[data-sk-row="x"]');

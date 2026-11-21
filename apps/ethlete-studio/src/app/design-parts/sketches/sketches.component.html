@@ -1,17 +1,49 @@
 <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Sketches">
   <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
-    <ethlete-part-tree
-      [layers]="tree().layers"
-      [sketches]="tree().sketches"
-      [legacy]="tree().legacy"
-      (expandedChange)="expandedChange.emit($event)"
-      (activate)="pick.emit($event)"
-    />
-    @if (comments(); as comments) {
-      <ethlete-comment-list [comments]="comments" [selectedId]="selectedComment()" (pick)="commentPick.emit($event)" />
+    @if (empty()) {
+      <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+    } @else {
+      <ethlete-part-tree
+        [layers]="tree().layers"
+        [sketches]="tree().sketches"
+        [legacy]="tree().legacy"
+        (expandedChange)="expandedChange.emit($event)"
+        (activate)="pick.emit($event)"
+      />
+      @if (comments(); as comments) {
+        <ethlete-comment-list
+          [comments]="comments"
+          [selectedId]="selectedComment()"
+          (pick)="commentPick.emit($event)"
+        />
+      }
     }
   </div>
+  @if (empty()) {
+    <div
+      class="flex h-full flex-col items-center justify-center gap-space-1 ps-(--st-shell-inset-left) text-center"
+      data-sketches-empty
+    >
+      <svg
+        class="mb-space-2 size-5 text-et-theme-ink"
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m3.5 8.5 3 3 6-7" />
+      </svg>
+      <p class="m-0 text-(length:--text-sm) text-et-surface">{{ LABELS.emptyTitle }}</p>
+      <p class="m-0 text-(length:--text-xs) text-et-surface-muted">{{ LABELS.emptyText }}</p>
+    </div>
+  }
   <div
+    [class.hidden]="empty()"
     class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
     data-sketches-page
   >
