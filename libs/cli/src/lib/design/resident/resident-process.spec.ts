@@ -151,7 +151,7 @@ describe('the resident design process', () => {
     expect(current).not.toHaveBeenCalled();
   });
 
-  it('closes its warm design server and Chromium and runs a request once more after embedded frames never drew', async () => {
+  it('logs each embed stall with its open requests and does not run the request again', async () => {
     const runs = runsIn();
     const stall =
       'design-explore: /frame.html did not draw its embedded frames within 15000 ms - requests still open: /x.ts (15000 ms)';
@@ -163,37 +163,10 @@ describe('the resident design process', () => {
       return 1;
     });
 
-    await runs.warmUp();
-
-    expect(await runs.run({ argv: ['sketch', 'check', 'pages/start'], invocation: 'et design', env: {} })).toBe(0);
-    expect(designSketch).toHaveBeenCalledTimes(2);
-    expect(closeServer).toHaveBeenCalledTimes(1);
-    expect(logged).toHaveBeenCalledWith(`resident: ${stall}`);
-    logged.mockRestore();
-  });
-
-  it('runs a request that failed once more only once', async () => {
-    const runs = runsIn();
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    designSketch.mockImplementation(async () => {
-      reportEmbedStall('design-explore: /frame.html did not draw its embedded frames within 15000 ms');
-
-      return 1;
-    });
-
-    expect(await runs.run({ argv: ['sketch', 'check', 'pages/start'], invocation: 'et design', env: {} })).toBe(1);
-    expect(designSketch).toHaveBeenCalledTimes(2);
-    logged.mockRestore();
-  });
-
-  it('does not run a request again that failed without a stalled embed', async () => {
-    const runs = runsIn();
-
-    designSketch.mockResolvedValueOnce(1);
-
     expect(await runs.run({ argv: ['sketch', 'check', 'pages/start'], invocation: 'et design', env: {} })).toBe(1);
     expect(designSketch).toHaveBeenCalledTimes(1);
     expect(closeServer).not.toHaveBeenCalled();
+    expect(logged).toHaveBeenCalledWith(`resident: ${stall}`);
+    logged.mockRestore();
   });
 });

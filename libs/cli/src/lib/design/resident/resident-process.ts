@@ -154,26 +154,14 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
     active++;
 
     try {
-      if (inside) {
-        (await server?.catch(() => null))?.forgetDrawn();
-
-        return await dispatch({ argv, invocation });
-      }
-
-      await refresh(config);
+      if (inside) (await server?.catch(() => null))?.forgetDrawn();
+      else await refresh(config);
 
       const { result, stalls } = await watchEmbedStalls(() => dispatch({ argv, invocation }));
 
       stalls.forEach((stall) => console.error(`resident: ${stall}`));
 
-      if (result === 0 || stalls.length === 0 || shared || runSignal()?.aborted) return result;
-
-      console.error(
-        `resident: closing the warm design server and Chromium after embedded frames that never drew, then running \`${argv.join(' ')}\` once more`,
-      );
-      await closeDraw();
-
-      return await dispatch({ argv, invocation });
+      return result;
     } finally {
       active--;
       read.release();
