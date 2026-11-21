@@ -38,7 +38,7 @@ export const SHORTCUT_GROUPS = [
   selector: 'ethlete-shortcuts-dialog',
   template: `
     <div class="flex items-center justify-between gap-space-3" etOverlayHeader>
-      <h2 class="m-0 text-[1.8rem] leading-[1.5] font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
+      <h2 class="m-0 text-[1.8rem] leading-normal font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
       <button
         [attr.aria-label]="LABELS.close"
         (click)="close.emit()"
