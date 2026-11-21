@@ -195,7 +195,7 @@
     "pid": 1954846
   },
   "components/carousel": {
-    "hash": "9180643d9e39cdc8",
+    "hash": "a0d0ef4e426ca300",
     "files": {
       ".ethlete/design/sdk/components/carousel/carousel.css": "b93eef3199066999",
       ".ethlete/design/sdk/components/carousel/carousel.ts": "eee6934a7f1cb6a8",
@@ -209,7 +209,7 @@
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/carousel/carousel-autoplay-styles.component.css": "cdce7926368a8b63",
-      "libs/components/src/lib/carousel/carousel.component.css": "4165ac64e0b02c01",
+      "libs/components/src/lib/carousel/carousel.component.css": "e1adcf2345f55845",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
       "libs/components/src/lib/icon/headless/chevron-icon.ts": "d2c88d30d687a8bf",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
@@ -219,7 +219,7 @@
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
-      "libs/components/src/lib/scrollable/headless/scrollable-buttons.component.css": "413e8be78eaada49",
+      "libs/components/src/lib/scrollable/headless/scrollable-buttons.component.css": "842420fdd10c7e83",
       "libs/components/src/lib/scrollable/headless/scrollable-footer.css": "7ba2ff125099cba9",
       "libs/components/src/lib/scrollable/headless/scrollable-masks.component.css": "c988ba893e2c11da",
       "libs/components/src/lib/scrollable/headless/scrollable-navigation.component.css": "2f25326afc07f091",
@@ -230,10 +230,10 @@
     },
     "actions": ["autoplay-paused", "autoplay-playing", "emit:activeIndexChange"],
     "builder": "designer",
-    "at": "2026-11-20T22:54:15.909Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 732407
+    "at": "2026-11-21T01:49:32.095Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 2306138
   },
   "components/checkbox": {
     "hash": "3335136496830c2f",
