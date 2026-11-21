@@ -7,6 +7,7 @@ import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { SketchesComponent, foldedStatesOf } from './sketches.component';
+import { MATRIX_MIN_COLUMN, matrixBlocksOf } from './matrix-blocks';
 import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchComment, SketchRow } from './sketches-sample';
 
 const withTooltip = (root: Element | null | undefined, text: string) =>
@@ -684,6 +685,12 @@ describe('SketchesComponent', () => {
   });
 
   describe('matrix blocks', () => {
+    beforeEach(() => {
+      vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-sk-rows') ? 800 : 0;
+      });
+    });
+
     const manyOf = (count: number, height: number) =>
       ROWS.map((row) => ({
         ...row,
@@ -710,9 +717,21 @@ describe('SketchesComponent', () => {
       expect(textOf(root.querySelector('[data-sk-gutter]'))).toBe('state-0');
     });
 
+    it('picks the block count with the largest fitted scale and keeps every column as wide as a head', () => {
+      const viewport = { width: 1500, height: 800 };
+      const many = matrixBlocksOf(Array(30).fill(900), { columns: 3, frameWidth: 1440, viewport });
+      const few = matrixBlocksOf(Array(3).fill(900), { columns: 3, frameWidth: 1440, viewport });
+      const fitWidth = (blocks: number) => (viewport.width - blocks * (110 + 3 * 24) - 16) / (blocks * 3 * 1440);
+
+      expect(many.length).toBeGreaterThan(1);
+      expect(many.reduce((sum, size) => sum + size, 0)).toBe(30);
+      expect(fitWidth(many.length) * 1440).toBeGreaterThanOrEqual(MATRIX_MIN_COLUMN);
+      expect(few).toEqual([3]);
+    });
+
     it('keeps few states in one block', async () => {
-      const root: HTMLElement = (await render({ rows: manyOf(30, 40), camera: 'fit' })).nativeElement;
-      const few: HTMLElement = (await render({ rows: manyOf(3, 900), camera: 'fit' })).nativeElement;
+      const root: HTMLElement = (await render({ rows: manyOf(5, 40), camera: 'fit' })).nativeElement;
+      const few: HTMLElement = (await render({ rows: manyOf(3, 100), camera: 'fit' })).nativeElement;
 
       expect(new Set(gutterBlocks(root))).toEqual(new Set(['0']));
       expect(new Set(gutterBlocks(few))).toEqual(new Set(['0']));
@@ -1541,7 +1560,7 @@ describe('SketchesComponent', () => {
     width = 1200;
     observers.forEach((notify) => notify());
     await fixture.whenStable();
-    expect(before).toContain('33');
+    expect(before).toContain('40');
     expect(chip()).toContain('100');
   });
   it.each([

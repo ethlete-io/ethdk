@@ -80,7 +80,7 @@ import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../sh
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { OpenPointsChipComponent } from '../system-page/open-points-chip.component';
 import { OpenPointGroup, OpenPointTarget } from '../system-page/system-page-sample';
-import { MATRIX_COLUMN_GAP, matrixBlocksOf } from './matrix-blocks';
+import { MATRIX_COLUMN_GAP, MATRIX_MIN_COLUMN, matrixBlocksOf } from './matrix-blocks';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
 import {
   SKETCH_CURRENT,
@@ -546,7 +546,11 @@ export class SketchesComponent {
     );
     let start = 0;
 
-    return matrixBlocksOf(heights, { columns: rows.length, frameWidth: this.widest() }).map((size) => {
+    return matrixBlocksOf(heights, {
+      columns: rows.length,
+      frameWidth: this.widest(),
+      viewport: { width: this.listWidth(), height: this.listSize().client?.height ?? 0 },
+    }).map((size) => {
       const states = this.matrixStates().slice(start, start + size);
 
       start += size;
@@ -1004,11 +1008,11 @@ export class SketchesComponent {
 
     const later = [...widths].reduce((sum, [block, width]) => sum + (block === '0' ? 0 : width + COLUMN_GAP * 2), 0);
 
-    return Math.min(
-      1,
+    const fit =
       (list.clientWidth - lead - later - foldWidth - blocks * (shown - 1) * COLUMN_GAP - FIT_PADDING) /
-        (blocks * shown * this.widest()),
-    );
+      (blocks * shown * this.widest());
+
+    return Math.min(1, Math.max(fit, MATRIX_MIN_COLUMN / this.widest()));
   }
 
   private applyScale(

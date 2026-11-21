@@ -152,6 +152,8 @@ type View = {
 const DRAWN: RowKey = 'b';
 
 const LIST_WIDTH = 1100;
+const LIST_HEIGHT = 720;
+const LIST_VIEWPORT = { width: LIST_WIDTH, height: LIST_HEIGHT };
 
 const LIST_ERROR = 'missing build: pages/sketches';
 const NOT_READY_REASON = 'components/title-bar b: SHOT-NOT-VIEWED default draws a pixel diff nobody viewed';
@@ -646,7 +648,7 @@ const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: b
   const top = same.length > 0 && open ? 2 : 1;
   const all = open ? [...shown, ...same] : shown;
   const stride = all.length + 1;
-  const sizes = blockSizesOf(part, all.length);
+  const sizes = blockSizesOf(part, all.length, LIST_VIEWPORT);
   const blocks = sizes.map((size, index) => ({
     states: part.states.slice(
       sizes.slice(0, index).reduce((sum, count) => sum + count, 0),
@@ -1032,7 +1034,7 @@ export default definePart<Props>({
     'change-crop-whole':
       'The same round showing the whole screen; check that the full frame fits each cell without cutting it.',
     'many-states-wrap':
-      'A part with 30 wide states; check that the matrix wraps into blocks side by side, each with its own state names and variant heads, in state order.',
+      'A part with 30 wide states; check that no column is narrower than its variant head (no letter-by-letter wrap, Übernehmen stays inside its column) and that the states stay in order, wrapped into blocks side by side only where the list is wide enough.',
     'multi-part': 'A sketch over three parts; check that each part shows its own block of state rows with its name.',
     'multi-part-many':
       'A sketch over many parts; check that the part blocks stay readable and the list stays inside the canvas.',
@@ -1226,7 +1228,7 @@ export default definePart<Props>({
             data-sk-rows-world
             data-w="${screen ? SCREEN_WIDTH : part.width}"
             data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
-            data-blocks="${screen || !transposed ? 1 : blockSizesOf(part, columns).length}"
+            data-blocks="${screen || !transposed ? 1 : blockSizesOf(part, columns, LIST_VIEWPORT).length}"
           >
             ${world}
             ${

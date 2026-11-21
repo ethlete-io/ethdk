@@ -5,7 +5,10 @@ import titleBar from '@system/components/title-bar';
 import zoomChip from '@system/components/zoom-chip';
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
-import { matrixBlocksOf } from '../../../../../../apps/ethlete-studio/src/app/design-parts/sketches/matrix-blocks';
+import {
+  MATRIX_MIN_COLUMN,
+  matrixBlocksOf,
+} from '../../../../../../apps/ethlete-studio/src/app/design-parts/sketches/matrix-blocks';
 import { SKETCHES_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
 export type RowKey = 'current' | 'old' | 'new' | 'a' | 'b' | 'c';
@@ -232,10 +235,10 @@ export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map(rowName).joi
 
 const PART_HEIGHT = 48;
 
-export const blockSizesOf = (part: SketchPart, columns: number) =>
+export const blockSizesOf = (part: SketchPart, columns: number, viewport: { width: number; height: number }) =>
   matrixBlocksOf(
     part.states.map(() => part.height ?? PART_HEIGHT),
-    { columns, frameWidth: part.width },
+    { columns, frameWidth: part.width, viewport },
   );
 
 export const isTransposed = (part: SketchPart, viewWidth: number) => part.width > viewWidth / 4;
@@ -318,6 +321,7 @@ const NOTE_TEXT = 15;
 const LABEL_TEXT = 13;
 const MIN_LABEL = 9;
 const FIT_PADDING = 16;
+const MIN_COLUMN = MATRIX_MIN_COLUMN;
 
 export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) => {
   const list = root.querySelector<HTMLElement>('[data-sk-rows]');
@@ -368,11 +372,10 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
       widths.set(block, Math.max(widths.get(block) ?? 0, gutter.offsetWidth));
     });
     const later = [...widths].reduce((sum, [block, size]) => sum + (block === '0' ? 0 : size + GAP * 2), 0);
-    return Math.min(
-      1,
+    const fit =
       (list.clientWidth - lead - later - foldWidth - blocks * (columns - 1) * GAP - FIT_PADDING) /
-        (blocks * columns * width),
-    );
+      (blocks * columns * width);
+    return Math.min(1, Math.max(fit, MIN_COLUMN / width));
   };
 
   const gridFit = (scale: number) => {
