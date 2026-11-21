@@ -24,6 +24,19 @@ describe('statesWithoutSourceOf', () => {
     expect(of(['<app-row [hold]="x" reason="late" />']).size).toBe(0);
   });
 
+  it('reads a bare attribute as true, and a name inside an attribute value as no binding', () => {
+    const restOnly = new Map([['rest', ['hold']]]);
+
+    expect(of(['<app-row hold [reason]="r" />'])).toEqual(restOnly);
+    expect(of(['<app-row\n  [reason]="r"\n  hold\n>'])).toEqual(restOnly);
+    expect(of(['<app-row class="x hold y" [reason]="r" />'])).toEqual(
+      new Map([
+        ['rest', ['hold']],
+        ['paused', ['hold']],
+      ]),
+    );
+  });
+
   it('reports a prop bound only to a constant the state does not set', () => {
     expect(of(['<app-row [hold]="false" [reason]="r" />'])).toEqual(new Map([['paused', ['hold']]]));
   });

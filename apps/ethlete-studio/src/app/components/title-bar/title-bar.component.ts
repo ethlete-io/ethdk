@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, ElementRef, input, output, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  output,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   BADGE_IMPORTS,
@@ -348,7 +357,7 @@ export class TitleBarComponent {
   public os = input.required<WindowChrome['os']>();
   public left = input<WindowButton[]>([]);
   public right = input<WindowButton[]>([]);
-  public update = input(false);
+  public update = input(false, { transform: booleanAttribute });
   public notice = input(false);
   public noticeText = input<string | null>(null);
   public restart = input<'pending' | 'failed' | null>(null);

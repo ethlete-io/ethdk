@@ -6,7 +6,7 @@ import { TitleBarComponent } from '../components/title-bar/title-bar.component';
   template: `
     <ethlete-title-bar
       [right]="['minimize', 'maximize', 'close']"
-      [update]="true"
+      update
       os="linux"
       product="studio"
       part="Title bar"

@@ -30,8 +30,15 @@ const tagsOf = (selector: string, texts: string[]): string[] => {
   return texts.flatMap((text) => [...text.matchAll(tag)].map((match) => match[1] as string));
 };
 
+const isBare = (name: string, attributes: string) =>
+  new RegExp(`(?<=\\s)${name}(?=\\s*(?:/|$)|\\s+[^\\s=])`, 'u').test(attributes.replace(/"[^"]*"|'[^']*'/gu, '""'));
+
 const isBound = (name: string, tags: string[]) =>
-  tags.some((attributes) => new RegExp(`(?:\\[\\(?${name}\\)?\\]|(?<![\\w\\[(-])${name}\\s*=)`, 'u').test(attributes));
+  tags.some(
+    (attributes) =>
+      new RegExp(`(?:\\[\\(?${name}\\)?\\]|(?<![\\w\\[(-])${name}\\s*=)`, 'u').test(attributes) ||
+      isBare(name, attributes),
+  );
 
 const classNameOf = (source: string) => source.match(/export\s+class\s+(\w+)/u)?.[1] ?? null;
 
@@ -287,7 +294,9 @@ const bindingOf = (name: string, attributes: string): Binding | null => {
 
   if (bound) return { expression: (bound[1] ?? bound[2] ?? '').trim(), fixed: false };
 
-  return fixed ? { expression: fixed[1] ?? fixed[2] ?? '', fixed: true } : null;
+  if (fixed) return { expression: fixed[1] ?? fixed[2] ?? '', fixed: true };
+
+  return isBare(name, attributes) ? { expression: '', fixed: true } : null;
 };
 
 const constantOf = (binding: Binding): string | null => {
@@ -335,7 +344,12 @@ export const statesWithoutSourceOf = (options: {
           return binding ? constantOf(binding) : (defaults[key] ?? null);
         });
 
-        return constants.length > 0 && constants.every((constant) => constant !== null && constant !== String(value));
+        return (
+          constants.length > 0 &&
+          constants.every(
+            (constant) => constant !== null && constant !== String(value) && !(constant === '' && value === true),
+          )
+        );
       })
       .map(([key]) => key);
 
