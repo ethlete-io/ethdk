@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GitCommitEvent } from '../model/event';
-import { withoutCherryPicks } from './cherry-picks';
+import { cherryPickCopies, withoutCherryPicks } from './cherry-picks';
 
 const commit = (options: Omit<Partial<GitCommitEvent>, 'at'> & { sha: string; at: string }): GitCommitEvent => ({
   source: 'git',
@@ -64,9 +64,9 @@ describe('withoutCherryPicks', () => {
     const worktree = commit({ sha: 'wt', at: '2026-11-21T00:00:00Z', repoPath: '/home/human/dev/ethlete-sdk-wt1' });
     const main = commit({ sha: 'main', at: '2026-11-21T00:00:00Z' });
 
-    expect(withoutCherryPicks([worktree, main], ['/home/human/dev/ethlete-sdk']).map((event) => event.sha)).toEqual([
-      'main',
-    ]);
+    expect(
+      withoutCherryPicks([worktree, main], { repoRoots: ['/home/human/dev/ethlete-sdk'] }).map((event) => event.sha),
+    ).toEqual(['main']);
   });
 
   it('keeps a pulled commit, which stands for the pull', () => {
@@ -76,5 +76,26 @@ describe('withoutCherryPicks', () => {
         commit({ sha: 'b', at: '2026-11-21T02:00:00Z', patchId: 'p', authoredAt: new Date('2026-11-21T00:00:00Z') }),
       ]),
     ).toEqual(['a', 'b']);
+  });
+
+  it('keeps a preferred copy over the ranked one', () => {
+    const original = commit({ sha: 'orig', at: '2026-11-21T00:00:00Z', committedAt: new Date('2026-11-21T00:00:00Z') });
+    const pick = commit({ sha: 'pick', at: '2026-11-21T00:00:00Z', committedAt: new Date('2026-11-21T03:00:00Z') });
+
+    expect(withoutCherryPicks([original, pick], { prefer: new Set([pick]) }).map((event) => event.sha)).toEqual([
+      'pick',
+    ]);
+  });
+});
+
+describe('cherryPickCopies', () => {
+  it('lists the copies of each commit, the kept one first, and leaves a lone commit out', () => {
+    const copies = cherryPickCopies([
+      commit({ sha: 'a', at: '2026-11-21T00:00:00Z', repoPath: '/home/human/dev/ethlete-sdk-wt1' }),
+      commit({ sha: 'b', at: '2026-11-21T00:00:00Z' }),
+      commit({ sha: 'c', at: '2026-11-21T00:05:00Z', subject: 'fix(app): Other' }),
+    ]);
+
+    expect(copies.map((group) => group.map((event) => event.sha))).toEqual([['a', 'b']]);
   });
 });

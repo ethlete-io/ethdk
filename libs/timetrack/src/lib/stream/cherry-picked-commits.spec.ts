@@ -25,4 +25,10 @@ describe('a day of cherry-picks between worktrees, captured 2026-11-21', () => {
   it('keeps a row for a change whose main checkout copy a worktree copy tied with on author time', () => {
     expect(committed).toContain('fix(app): Change 9');
   });
+
+  it('moves a change to the copy that has a row when its kept copy lands where no row is', () => {
+    expect(committed).toEqual(
+      expect.arrayContaining(['fix(app): Change 17', 'fix(app): Change 19', 'fix(app): Change 20']),
+    );
+  });
 });

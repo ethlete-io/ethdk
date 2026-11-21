@@ -254,7 +254,7 @@ const verdictOf = (
 
   if (
     drawnMsOf({ group, unattributed: options.unattributed }) < (options.minDrawnMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS) &&
-    !hasStrongEvidence({ group, events: withoutCherryPicks(options.events ?? [], roots) })
+    !hasStrongEvidence({ group, events: withoutCherryPicks(options.events ?? [], { repoRoots: roots }) })
   )
     return { verdict: 'below-floor' as const };
   const dayScoped = base.has(branch) && !workPath;

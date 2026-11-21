@@ -33,7 +33,7 @@ import {
 } from './breaks';
 import { HeardChunk, classifyCalls, lastHostSampleAt, oneCallAcrossMachines } from './calls';
 import { promptOriginReader } from './prompt-origin';
-import { withoutCherryPicks } from './cherry-picks';
+import { cherryPickCopies, withoutCherryPicks } from './cherry-picks';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 import { sessionWork } from './session-work';
@@ -2173,14 +2173,18 @@ const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => 
  * checkout an event named inside `repoStickinessMs`, else to the folded line. An agent session is not,
  * so a checkout an agent ran in books its time whether or not a window ever showed it.
  */
-export const streamDay = (options: {
+const streamDayKeeping = (options: {
   events: readonly (CollectedEvent | OriginEvent)[];
   options?: Partial<StreamDayOptions>;
+  prefer?: ReadonlySet<CollectedEvent | OriginEvent>;
+  dedupe?: boolean;
 }): StreamDay => {
   const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
   const byOrigin = new Map<string, CollectedEvent[]>([['local', []]]);
 
-  for (const event of withoutCherryPicks(options.events, config.repoRoots)) {
+  for (const event of options.dedupe === false
+    ? options.events
+    : withoutCherryPicks(options.events, { repoRoots: config.repoRoots, prefer: options.prefer })) {
     const ofOrigin = byOrigin.get(originIdOf(event));
 
     if (ofOrigin) ofOrigin.push(event);
@@ -2240,4 +2244,86 @@ export const streamDay = (options: {
     peerLanes,
     ownLanes: lanesOf(local.blocks),
   };
+};
+
+const MAX_REHOME_RUNS = 16;
+
+const committedRows = (day: StreamDay) =>
+  [...day.rows.proposals, ...day.rows.unnamed].map((row) => ({
+    laneKey: row.laneKey,
+    shas: new Set(row.evidence.flatMap((entry) => (entry.kind === 'commit' ? [entry.detail.slice(0, 7)] : []))),
+  }));
+
+/**
+ * `streamDayKeeping` with a commit that has copies moved to a copy that has a row, when its kept copy lands
+ * where no row is. Where rows lie is read off a day built with every copy: a row there needs the
+ * commits around it too, so the copies in that row's checkout that it holds move together. A move stays
+ * only if no commit loses its row for it, and at most `MAX_REHOME_RUNS` further days are built to find them.
+ */
+export const streamDay = (options: {
+  events: readonly (CollectedEvent | OriginEvent)[];
+  options?: Partial<StreamDayOptions>;
+}): StreamDay => {
+  const groups = cherryPickCopies(options.events, { repoRoots: options.options?.repoRoots });
+  let day = streamDayKeeping(options);
+
+  if (!groups.length) return day;
+
+  const shaOf = (copy: { sha: string }) => copy.sha.slice(0, 7);
+  const groupOfSha = new Map(groups.flatMap((group) => group.map((copy) => [shaOf(copy), group] as const)));
+  const rowedOf = (rows: ReturnType<typeof committedRows>) =>
+    new Set(rows.flatMap((row) => [...row.shas].map((sha) => groupOfSha.get(sha) ?? sha)));
+  let rowed = rowedOf(committedRows(day));
+  const pending = new Set(groups.filter((group) => !rowed.has(group)));
+
+  if (!pending.size) return day;
+
+  const prefer = new Set<CollectedEvent | OriginEvent>();
+  const moved = new Set<(typeof groups)[number]>();
+  const clusters = committedRows(streamDayKeeping({ ...options, dedupe: false }))
+    .filter((row) => row.laneKey && [...row.shas].some((sha) => pending.has(groupOfSha.get(sha) as never)))
+    .map((row) =>
+      groups.flatMap((group) =>
+        group
+          .slice(1)
+          .flatMap((copy) =>
+            row.laneKey === `repo:${copy.repoPath}` && row.shas.has(shaOf(copy)) ? [{ group, copy }] : [],
+          ),
+      ),
+    )
+    .filter((cluster) => cluster.length)
+    .sort((left, right) => right.length - left.length);
+  let runs = 0;
+
+  for (const cluster of clusters) {
+    const open = cluster.filter((entry) => !moved.has(entry.group));
+
+    for (const tried of [open, open.filter((entry) => pending.has(entry.group))]) {
+      if (!tried.some((entry) => pending.has(entry.group)) || runs >= MAX_REHOME_RUNS) break;
+
+      runs++;
+
+      const candidate = streamDayKeeping({
+        ...options,
+        prefer: new Set([...prefer, ...tried.map((entry) => entry.copy)]),
+      });
+      const candidateRowed = rowedOf(committedRows(candidate));
+      const gained = tried.filter((entry) => pending.has(entry.group) && candidateRowed.has(entry.group));
+
+      if (!gained.length || ![...rowed].every((entry) => candidateRowed.has(entry))) continue;
+
+      for (const entry of tried) {
+        prefer.add(entry.copy);
+        moved.add(entry.group);
+      }
+
+      for (const entry of gained) pending.delete(entry.group);
+
+      day = candidate;
+      rowed = candidateRowed;
+      break;
+    }
+  }
+
+  return day;
 };
