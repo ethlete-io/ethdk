@@ -10,13 +10,7 @@ type RowInteraction = 'hover' | 'active' | 'focus-visible';
 type Kind = 'part' | 'page' | 'sketch' | 'command';
 type Entry = { kind: Kind; key: string; label: string };
 
-type Props = {
-  entries: Entry[];
-  recents: Entry[];
-  query?: string;
-  interaction?: RowInteraction;
-  fieldInteraction?: 'focus-visible';
-};
+type Props = { entries: Entry[]; recents: Entry[]; query?: string; interaction?: RowInteraction };
 
 const GROUPS: Record<Kind, string> = {
   part: COMMAND_PALETTE_LABELS.groups.part,
@@ -75,7 +69,7 @@ const start = `<div class="flex flex-col items-center gap-space-2 px-space-3 py-
 
 const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
   const markup = control(
-    `<div role="option" data-et-action="emit:choose" aria-label="${item.label} ${item.hint}" class="st-cprow flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm outline-none text-et-surface ${selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15" ${selected ? 'data-selected aria-selected="true"' : ''}>
+    `<div class="st-cprow flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm outline-none text-et-surface ${selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15" ${selected ? 'data-selected aria-selected="true"' : ''}>
     <span class="text-et-surface-muted">${icon('search', { size: 14 })}</span>
     <span class="min-w-0 flex-1 truncate">${item.label}</span>
     <span class="text-et-surface-muted text-(length:--text-xs)">${item.hint}</span>
@@ -86,14 +80,12 @@ const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-const field = (query: string, interaction?: 'focus-visible') => {
-  const markup = `<div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2 text-ui-sm">
+const field = (query: string) =>
+  `<div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2 text-ui-sm">
     <span class="text-et-surface-muted">${icon('search', { size: 14 })}</span>
-    <span class="flex min-w-0 flex-1 items-center">${control(`<input role="combobox" aria-expanded="true" aria-controls="cp-list" data-et-action="emit:queryChange" aria-label="${COMMAND_PALETTE_LABELS.placeholder}" placeholder="${COMMAND_PALETTE_LABELS.placeholder}" value="${query}" class="${query.trim() === '' ? 'min-w-0 flex-1' : 'min-w-0 field-sizing-content'} bg-transparent text-et-surface outline-none placeholder:text-et-surface-muted" />`, 'field')}${query.trim() === '' ? '' : '<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface"></span>'}</span>
+    ${query.trim() === '' ? `<span class="flex-1 text-et-surface-muted">${COMMAND_PALETTE_LABELS.placeholder}</span>` : `<span class="flex-1 text-et-surface">${query}<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface"></span></span>`}
     <et-kbd keys="esc" />
   </div>`;
-  return interaction ? forceInteraction(markup, interaction) : markup;
-};
 
 const empty = (query: string) =>
   `<div class="flex flex-col items-center gap-space-1 px-space-3 py-space-6 text-ui-sm"><span class="text-et-surface font-ui-strong">${COMMAND_PALETTE_LABELS.none}</span><span class="text-et-surface-muted">Für „${query}“ gibt es keinen ${COMMAND_PALETTE_LABELS.hints.part}, keine ${COMMAND_PALETTE_LABELS.hints.page} und keine ${COMMAND_PALETTE_LABELS.hints.sketch}.</span></div>`;
@@ -132,7 +124,7 @@ const body = (props: Props) => {
         : groups(items)
             .map(
               (g) =>
-                `<div role="group" aria-label="${g}" class="flex flex-col gap-0.5 p-space-1"><div aria-hidden="true" class="px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-xs)">${g}</div>${items
+                `<div class="flex flex-col gap-0.5 p-space-1"><div class="px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-xs)">${g}</div>${items
                   .filter((i) => i.group === g)
                   .map((i) => {
                     n++;
@@ -141,15 +133,10 @@ const body = (props: Props) => {
                   .join('')}</div>`,
             )
             .join('');
-  return `<div class="absolute top-16 left-1/2 w-3xl -translate-x-1/2 overflow-hidden rounded-control-lg bg-et-surface-bg shadow-lg" data-et-auto-surface role="dialog" aria-modal="true" aria-label="${COMMAND_PALETTE_LABELS.label}">${field(query, props.fieldInteraction)}<div id="cp-list" role="listbox" aria-label="${COMMAND_PALETTE_LABELS.label}" class="max-h-64 overflow-auto">${list}</div><div class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-et-surface-muted text-(length:--text-xs)"><span>${COMMAND_PALETTE_LABELS.select}</span><span>${COMMAND_PALETTE_LABELS.open}</span><span class="flex-1"></span><span>${COMMAND_PALETTE_LABELS.close}</span></div></div>`;
+  return `<div class="absolute top-16 left-1/2 w-3xl -translate-x-1/2 overflow-hidden rounded-control-lg bg-et-surface-bg shadow-lg" data-et-auto-surface role="dialog" aria-modal="true" aria-label="${COMMAND_PALETTE_LABELS.label}">${field(query)}<div class="max-h-64 overflow-auto">${list}</div><div class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-et-surface-muted text-(length:--text-xs)"><span>${COMMAND_PALETTE_LABELS.select}</span><span>${COMMAND_PALETTE_LABELS.open}</span><span class="flex-1"></span><span>${COMMAND_PALETTE_LABELS.close}</span></div></div>`;
 };
 
 const FOUND = { entries: ENTRIES, recents: [], query: 'tit' } satisfies Props;
-
-const fieldRows = interactionRows<Props, 'field', 'focus-visible'>(
-  { field: FOUND },
-  { interactions: ['focus-visible'], force: (props, interaction) => ({ ...props, fieldInteraction: interaction }) },
-);
 
 const rows = interactionRows<Props, 'results', RowInteraction>(
   { results: FOUND },
@@ -161,12 +148,11 @@ export default definePart({
   note: 'Befehlsrahmen als zentriertes modales Fenster mit Scrim: breiter als das Titelfeld, Treffer nach Gruppen (Parts, Seiten, Skizzen, Befehle) mit Gruppenkopf, unten eine Tastenleiste. Ohne Eingabe und ohne zuletzt Geöffnetes steht ein gedämpfter Hinweis, was man suchen kann, und dass Ctrl K die Suche überall öffnet.',
   madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5', 'design check'],
   widths: [1440],
-  controls: { field: { kind: 'field', input: ['keyboard'] }, row: { kind: 'row', input: ['pointer', 'keyboard'] } },
+  controls: { row: { kind: 'row', input: ['pointer', 'keyboard'] } },
   states: {
     start: { entries: ENTRIES, recents: [] },
     empty: { entries: ENTRIES, recents: RECENT },
     ...rows.states,
-    ...fieldRows.states,
     none: { entries: ENTRIES, recents: [], query: 'xyz' },
   } satisfies Record<string, Props>,
   grid: rows.grid,
@@ -177,9 +163,6 @@ export default definePart({
       'The palette before typing; check the placeholder and the Zuletzt geöffnet group with its three rows and their kind hints.',
     results:
       'Results for tit grouped into Parts, Seiten and Befehle; check each group heading and that only the first row shows the selected tint.',
-    field: 'The search field with the typed tit and its caret; check the field and the results below.',
-    'field-focus-visible':
-      'The search field focused by keyboard; check the field shows no extra ring beyond the dialog.',
     'results-hover': 'The selected result hovered; check that the hover fill lies over the accent tint.',
     'results-active': 'The selected result pressed; check the press fill over the accent tint.',
     'results-focus-visible':
