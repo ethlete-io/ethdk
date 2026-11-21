@@ -2180,7 +2180,7 @@ export const streamDay = (options: {
   const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
   const byOrigin = new Map<string, CollectedEvent[]>([['local', []]]);
 
-  for (const event of withoutCherryPicks(options.events)) {
+  for (const event of withoutCherryPicks(options.events, config.repoRoots)) {
     const ofOrigin = byOrigin.get(originIdOf(event));
 
     if (ofOrigin) ofOrigin.push(event);

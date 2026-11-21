@@ -80,6 +80,11 @@ export type GitCommitEvent = CollectedEventBase<'git', 'git-commit'> & {
    * under a new `sha`, so the day counts the two once by it. Absent on a commit stored before it was read.
    */
   patchId?: string;
+  /**
+   * When the commit was committed. A cherry-pick keeps the author time of its original and gets a later
+   * committer time, so the copy whose two times agree is the original. Absent on a commit stored before it was read.
+   */
+  committedAt?: Date;
 };
 
 /**

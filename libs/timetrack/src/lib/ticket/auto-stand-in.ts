@@ -1,5 +1,6 @@
 import { GitFlowConfig, stripRefPrefix } from '@ethlete/agent-rules/git-flow';
 import { WorkGroup } from '../rows/merge';
+import { withoutCherryPicks } from '../stream/cherry-picks';
 import { AttributionRule, UnnamedContext, rulesForDay } from '../model/attribution';
 import { ActivityBlock, blockDurationMs, contextKey } from '../model/block';
 import { repoRootOf } from '../model/context';
@@ -253,7 +254,7 @@ const verdictOf = (
 
   if (
     drawnMsOf({ group, unattributed: options.unattributed }) < (options.minDrawnMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS) &&
-    !hasStrongEvidence({ group, events: options.events ?? [] })
+    !hasStrongEvidence({ group, events: withoutCherryPicks(options.events ?? [], roots) })
   )
     return { verdict: 'below-floor' as const };
   const dayScoped = base.has(branch) && !workPath;

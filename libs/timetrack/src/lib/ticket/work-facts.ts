@@ -7,6 +7,7 @@ import { pathIsUnder } from '../model/project-link';
 import { StandIn } from '../model/stand-in';
 import { TimeWindow } from '../model/time-window';
 import { issueKeyInText } from '../rows/attribute';
+import { withoutCherryPicks } from '../stream/cherry-picks';
 
 /** One agent session behind a stretch of work: its title where it reads as words, and whether it wrote a file. */
 export type WorkSession = { sessionId: string; title?: string; wroteFiles: boolean };
@@ -191,8 +192,10 @@ const nearestMergeRequest = (
   };
 };
 
-const stretchFacts = (stretch: Stretch | null, options: FactsOptions): WorkFacts => {
+const stretchFacts = (stretch: Stretch | null, input: FactsOptions): WorkFacts => {
   if (!stretch || !stretch.windows.length) return { sessions: [] };
+
+  const options = { ...input, events: withoutCherryPicks(input.events) };
 
   const sessions = sessionsOf(stretch, options.events);
 

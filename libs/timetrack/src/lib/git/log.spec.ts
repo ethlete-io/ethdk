@@ -16,6 +16,15 @@ const line = (options: { sha?: string; authored?: string; ref?: string; subject?
 const parse = (lines: string[]) => parseGitLog({ repoPath: REPO, output: lines.join('\n') });
 
 describe('parseGitLog', () => {
+  it('reads the committer time that ends a header, and leaves a subject without one whole', () => {
+    const committed = [line({}), '2026-08-12T10:00:00+02:00'].join(GIT_FIELD_SEPARATOR);
+    const [event] = parse([committed]);
+
+    expect(event?.subject).toBe('feat(platform): Prefer a common name over a last name');
+    expect(event?.committedAt).toEqual(new Date('2026-08-12T10:00:00+02:00'));
+    expect(parse([line({})])[0]?.committedAt).toBeUndefined();
+  });
+
   it('reads the paths that follow a commit', () => {
     const events = parse([line({}), '', 'src/one.ts', 'src/two.ts']);
 

@@ -106,13 +106,14 @@ const toStored = (event: CollectedEvent): StoredEvent => ({
 });
 
 export const reviveEvent = (stored: StoredEvent): CollectedEvent => {
-  const { at, until, authoredAt, ...rest } = stored.payload;
+  const { at, until, authoredAt, committedAt, ...rest } = stored.payload;
 
   return {
     ...rest,
     at: new Date(at as string),
     ...(typeof until === 'string' ? { until: new Date(until) } : {}),
     ...(typeof authoredAt === 'string' ? { authoredAt: new Date(authoredAt) } : {}),
+    ...(typeof committedAt === 'string' ? { committedAt: new Date(committedAt) } : {}),
   } as CollectedEvent;
 };
 

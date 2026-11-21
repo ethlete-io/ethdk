@@ -51,6 +51,24 @@ describe('withoutCherryPicks', () => {
     ).toEqual(['a']);
   });
 
+  it('keeps the copy whose committer time equals its author time, whatever the event order', () => {
+    expect(
+      shas([
+        commit({ sha: 'pick', at: '2026-11-21T00:00:00Z', committedAt: new Date('2026-11-21T03:00:00Z') }),
+        commit({ sha: 'orig', at: '2026-11-21T00:00:00Z', committedAt: new Date('2026-11-21T00:00:00Z') }),
+      ]),
+    ).toEqual(['orig']);
+  });
+
+  it('keeps the copy in a repo root over one in a worktree when no committer time is stored', () => {
+    const worktree = commit({ sha: 'wt', at: '2026-11-21T00:00:00Z', repoPath: '/home/human/dev/ethlete-sdk-wt1' });
+    const main = commit({ sha: 'main', at: '2026-11-21T00:00:00Z' });
+
+    expect(withoutCherryPicks([worktree, main], ['/home/human/dev/ethlete-sdk']).map((event) => event.sha)).toEqual([
+      'main',
+    ]);
+  });
+
   it('keeps a pulled commit, which stands for the pull', () => {
     expect(
       shas([

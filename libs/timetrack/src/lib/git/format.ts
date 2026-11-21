@@ -12,7 +12,7 @@ export const GIT_REFLOG_FORMAT = `%gd${GIT_FIELD_SEPARATOR}%gs${GIT_FIELD_SEPARA
  * branch a commit belongs to. It is filled in from the refs given on the command line, so the query has
  * to keep passing `--branches`.
  */
-export const GIT_LOG_FORMAT = `%H${GIT_FIELD_SEPARATOR}%aI${GIT_FIELD_SEPARATOR}%S${GIT_FIELD_SEPARATOR}%s`;
+export const GIT_LOG_FORMAT = `%H${GIT_FIELD_SEPARATOR}%aI${GIT_FIELD_SEPARATOR}%S${GIT_FIELD_SEPARATOR}%s${GIT_FIELD_SEPARATOR}%cI`;
 
 /**
  * Whether the line is the header of a commit rather than one of the paths that follow it.

@@ -343,6 +343,21 @@ describe('autoStandIns', () => {
       expect(opensWith([{ ...own, branch: 'feature/other' }])).toBe(0);
     });
 
+    it('does not open for the copy of a commit made on another branch before', () => {
+      const commit = (options: { at: Date; repoPath: string; branch: string; sha: string }): CollectedEvent => ({
+        source: 'git',
+        kind: 'git-commit',
+        subject: 'feat: Reward list',
+        patchId: 'same-patch',
+        ...options,
+      });
+      const original = commit({ at: new Date('2026-09-14T09:00:00Z'), repoPath: FIFAGG, branch: 'main', sha: 'aaa' });
+      const pick = commit({ at, repoPath: FIFAGG, branch, sha: 'bbb' });
+
+      expect(opensWith([pick])).toBe(1);
+      expect(opensWith([original, pick])).toBe(0);
+    });
+
     it('opens for merge request activity on the branch, a push included', () => {
       const push: CollectedEvent = {
         at,

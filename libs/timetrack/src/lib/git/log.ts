@@ -13,6 +13,8 @@ const branchOf = (ref: string) => {
   return FOREIGN_REF.test(trimmed) ? undefined : trimmed.replace(/^refs\/heads\//, '') || undefined;
 };
 
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:\d{2})$/;
+
 /**
  * Reads commits out of `git log` output formatted with `GIT_LOG_FORMAT`. A commit reachable from
  * several branches is reported once, under the first ref that reached it.
@@ -66,6 +68,7 @@ export const parseGitLog = (options: {
 
     const [sha, authored, ref, ...rest] = line.split(GIT_FIELD_SEPARATOR);
     const branch = ref ? branchOf(ref) : undefined;
+    const committed = rest.length > 1 && ISO_INSTANT.test(rest[rest.length - 1] ?? '') ? rest.pop() : undefined;
     const subject = rest.join(GIT_FIELD_SEPARATOR).trim();
 
     if (!sha || !authored || !branch || !subject || seen.has(sha)) continue;
@@ -84,6 +87,7 @@ export const parseGitLog = (options: {
     const owner = options.owners?.get(branch);
     const worktree = owner ? undefined : options.worktrees?.get(branch);
     const patchId = options.patchIds?.get(sha);
+    const committedAt = committed ? new Date(committed) : undefined;
 
     current = {
       at,
@@ -96,6 +100,7 @@ export const parseGitLog = (options: {
       ...(worktree ? { worktree } : {}),
       ...(arrivedAt ? { authoredAt } : {}),
       ...(patchId ? { patchId } : {}),
+      ...(committedAt && !Number.isNaN(committedAt.getTime()) ? { committedAt } : {}),
     };
     events.push(current);
   }

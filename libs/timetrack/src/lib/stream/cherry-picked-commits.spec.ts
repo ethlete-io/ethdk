@@ -21,4 +21,8 @@ describe('a day of cherry-picks between worktrees, captured 2026-11-21', () => {
     expect(committed.length).toBeGreaterThan(0);
     expect(committed.filter((subject, index) => committed.indexOf(subject) !== index)).toEqual([]);
   });
+
+  it('keeps a row for a change whose main checkout copy a worktree copy tied with on author time', () => {
+    expect(committed).toContain('fix(app): Change 9');
+  });
 });

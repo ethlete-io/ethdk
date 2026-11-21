@@ -96,6 +96,24 @@ describe('contextWorkFacts', () => {
     });
   });
 
+  it('does not read the copy of a commit made elsewhere before as a change in the checkout', () => {
+    const commit = (options: { clock: string; repoPath: string; sha: string }): CollectedEvent => ({
+      at: at(options.clock),
+      source: 'git',
+      kind: 'git-commit',
+      repoPath: options.repoPath,
+      branch: 'main',
+      sha: options.sha,
+      subject: 'fix(hub): Restore game code order downloads on main',
+      patchId: 'same-patch',
+    });
+    const original = commit({ clock: '08:40', repoPath: '/home/human/dev/other', sha: 'aaa' });
+    const pick = commit({ clock: '08:46', repoPath: REPO, sha: 'bbb' });
+
+    expect(factsOf([...BUG_HUNT, RESTORE, pick]).mergeRequest).toBeUndefined();
+    expect(factsOf([...BUG_HUNT, RESTORE, original, pick]).mergeRequest).toBeDefined();
+  });
+
   it('hands it a merge request that names no issue as well, so auto mode can leave the stretch unnamed', () => {
     const keyless = activity({ clock: '09:21', iid: '1095', title: 'fix(hub): Restore game code order downloads' });
 

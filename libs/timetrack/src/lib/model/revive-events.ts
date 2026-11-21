@@ -1,6 +1,6 @@
 import { CollectedEvent } from './event';
 
-const DATE_FIELDS = ['at', 'authoredAt', 'until'] as const;
+const DATE_FIELDS = ['at', 'authoredAt', 'committedAt', 'until'] as const;
 
 /** Turns events read back from `timetrack day --out` JSON, where every Date is an ISO string, into events again. */
 export const reviveCollectedEvents = (parsed: readonly unknown[]): CollectedEvent[] =>
