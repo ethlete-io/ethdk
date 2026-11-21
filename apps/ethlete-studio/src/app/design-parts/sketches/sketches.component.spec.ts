@@ -7,7 +7,7 @@ import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { SketchesComponent, foldedStatesOf } from './sketches.component';
-import { MATRIX_MIN_COLUMN, matrixBlocksOf } from './matrix-blocks';
+import { matrixBlocksOf } from './matrix-blocks';
 import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchComment, SketchRow } from './sketches-sample';
 
 const withTooltip = (root: Element | null | undefined, text: string) =>
@@ -717,16 +717,32 @@ describe('SketchesComponent', () => {
       expect(textOf(root.querySelector('[data-sk-gutter]'))).toBe('state-0');
     });
 
-    it('picks the block count with the largest fitted scale and keeps every column as wide as a head', () => {
-      const viewport = { width: 1500, height: 800 };
-      const many = matrixBlocksOf(Array(30).fill(900), { columns: 3, frameWidth: 1440, viewport });
-      const few = matrixBlocksOf(Array(3).fill(900), { columns: 3, frameWidth: 1440, viewport });
-      const fitWidth = (blocks: number) => (viewport.width - blocks * (110 + 3 * 24) - 16) / (blocks * 3 * 1440);
+    it('wraps 30 tall states into blocks that fit the viewport by height and width, and keeps few states in one block', () => {
+      const options = { columns: 3, frameWidth: 1440 };
+      const many = matrixBlocksOf(Array(30).fill(900), { ...options, viewport: { width: 1100, height: 720 } });
+      const wider = matrixBlocksOf(Array(30).fill(900), { ...options, viewport: { width: 1570, height: 740 } });
+      const few = matrixBlocksOf(Array(3).fill(900), { ...options, viewport: { width: 1100, height: 720 } });
+      const unmeasured = matrixBlocksOf(Array(30).fill(900), { ...options, viewport: { width: 0, height: 0 } });
 
-      expect(many.length).toBeGreaterThan(1);
-      expect(many.reduce((sum, size) => sum + size, 0)).toBe(30);
-      expect(fitWidth(many.length) * 1440).toBeGreaterThanOrEqual(MATRIX_MIN_COLUMN);
+      expect(many).toEqual([10, 10, 10]);
+      expect(wider.length).toBeGreaterThan(many.length);
+      expect(wider.reduce((sum, size) => sum + size, 0)).toBe(30);
       expect(few).toEqual([3]);
+      expect(unmeasured).toEqual([30]);
+    });
+
+    it('keeps the full head over the first block only and a name tag over the later ones', async () => {
+      const root: HTMLElement = (await render({ rows: manyOf(30, 900), camera: 'fit' })).nativeElement;
+      const sections = [...root.querySelectorAll<HTMLElement>('[data-sk-matrix] [data-sk-row]')];
+      const first = sections.filter((section) => section.querySelector('[data-sk-note]'));
+
+      expect(first.length).toBeGreaterThan(0);
+      expect(first.length).toBeLessThan(sections.length);
+      expect(
+        sections.every(
+          (section) => section.querySelector('[data-sk-head-tag]') || section.querySelector('[data-sk-note]'),
+        ),
+      ).toBe(true);
     });
 
     it('keeps few states in one block', async () => {
@@ -757,7 +773,7 @@ describe('SketchesComponent', () => {
     const without = await columnsAt(0);
     const withFold = await columnsAt(144);
     const widthOf = (columns: string | undefined) =>
-      parseFloat(columns?.match(/repeat\(\d+, ([\d.]+)px\)/)?.[1] ?? '0');
+      parseFloat(columns?.match(/repeat\(\d+, (?:max\()?([\d.]+)px/)?.[1] ?? '0');
 
     expect(widthOf(withFold)).toBeGreaterThan(0);
     expect(widthOf(withFold)).toBeLessThan(widthOf(without));
@@ -768,7 +784,7 @@ describe('SketchesComponent', () => {
     const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
     const root: HTMLElement = (await render({ rows: wide, camera: 'fit' })).nativeElement;
     const columns = root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns;
-    const width = parseFloat(columns?.match(/repeat\(4, ([\d.]+)px\)/)?.[1] ?? '0');
+    const width = parseFloat(columns?.match(/repeat\(4, (?:max\()?([\d.]+)px/)?.[1] ?? '0');
 
     expect(width).toBeGreaterThan(0);
     expect(width * 4 + 24 * 3 + 16).toBeLessThanOrEqual(LIST_WIDTH + 1);
@@ -1516,7 +1532,7 @@ describe('SketchesComponent', () => {
       parseFloat(
         root
           ?.querySelector<HTMLElement>('[data-sk-matrix]')
-          ?.style.gridTemplateColumns.match(/repeat\(4, ([\d.]+)px\)/)?.[1] ?? '0',
+          ?.style.gridTemplateColumns.match(/repeat\(4, (?:max\()?([\d.]+)px/)?.[1] ?? '0',
       );
     const before = columnWidth();
 
@@ -1560,7 +1576,7 @@ describe('SketchesComponent', () => {
     width = 1200;
     observers.forEach((notify) => notify());
     await fixture.whenStable();
-    expect(before).toContain('40');
+    expect(before).toContain('33');
     expect(chip()).toContain('100');
   });
   it.each([

@@ -1,14 +1,42 @@
 export const MATRIX_COLUMN_GAP = 24;
 
-export const MATRIX_MIN_COLUMN = 160;
+export const MATRIX_MIN_COLUMN = 28;
 
-const MATRIX_LINE_CHROME = 40;
+export const MATRIX_HEAD_MIN = 120;
 
-const MATRIX_HEAD_HEIGHT = 120;
+export const MATRIX_LABEL_MIN = 64;
+
+const MATRIX_LINE_CHROME = 64;
+
+const MATRIX_LINE_CHROME_BARE = 42;
+
+const MATRIX_HEAD_HEIGHT = 170;
 
 const MATRIX_GUTTER_ESTIMATE = 110;
 
 const MATRIX_PADDING = 16;
+
+/**
+ * The frame scale at which `blocks` blocks of `columns` columns fill `room` px of width. The first block's columns never
+ * get narrower than a head, so below that width they stay fixed and only the later blocks shrink.
+ */
+export const matrixWidthFit = ({
+  room,
+  columns,
+  blocks,
+  frameWidth,
+}: {
+  room: number;
+  columns: number;
+  blocks: number;
+  frameWidth: number;
+}) => {
+  const even = room / (blocks * columns * frameWidth);
+
+  if (even * frameWidth >= MATRIX_HEAD_MIN || blocks === 1) return even;
+
+  return (room - columns * MATRIX_HEAD_MIN) / ((blocks - 1) * columns * frameWidth);
+};
 
 type MatrixViewport = { width: number; height: number };
 
@@ -36,26 +64,35 @@ const scaleOf = ({
   viewport: MatrixViewport;
 }) => {
   const blocks = sizes.length;
-  const widthFit =
-    (viewport.width - blocks * (MATRIX_GUTTER_ESTIMATE + columns * MATRIX_COLUMN_GAP) - MATRIX_PADDING) /
-    (blocks * columns * frameWidth);
-  let start = 0;
-  let heightFit = Infinity;
+  const widthFit = matrixWidthFit({
+    room: viewport.width - blocks * (MATRIX_GUTTER_ESTIMATE + columns * MATRIX_COLUMN_GAP) - MATRIX_PADDING,
+    columns,
+    blocks,
+    frameWidth,
+  });
+  const heightFitWith = (chrome: number) => {
+    let start = 0;
+    let fit = Infinity;
 
-  for (const size of sizes) {
-    const frames = heights.slice(start, start + size).reduce((sum, height) => sum + height, 0);
-    const room = Math.max(viewport.height - MATRIX_HEAD_HEIGHT - size * MATRIX_LINE_CHROME, viewport.height / 2);
+    for (const size of sizes) {
+      const frames = heights.slice(start, start + size).reduce((sum, height) => sum + height, 0);
+      const room = viewport.height - MATRIX_HEAD_HEIGHT - size * chrome;
 
-    heightFit = Math.min(heightFit, room / frames);
-    start += size;
-  }
+      fit = Math.min(fit, room / frames);
+      start += size;
+    }
+
+    return fit;
+  };
+  const bare = heightFitWith(MATRIX_LINE_CHROME_BARE);
+  const heightFit = Math.min(widthFit, bare) * frameWidth < MATRIX_LABEL_MIN ? bare : heightFitWith(MATRIX_LINE_CHROME);
 
   return { scale: Math.min(1, widthFit, heightFit), widthFit };
 };
 
 /**
  * Splits the states of a matrix into consecutive blocks laid side by side. Picks the block count with the largest frame
- * scale in the viewport, ties to fewer blocks, and never one whose columns would be narrower than a variant head.
+ * scale in the viewport, ties to fewer blocks, and never one whose frames would be narrower than the column floor.
  * Returns the block sizes in state order.
  */
 export const matrixBlocksOf = (
@@ -63,6 +100,9 @@ export const matrixBlocksOf = (
   { columns, frameWidth, viewport }: { columns: number; frameWidth: number; viewport: MatrixViewport },
 ) => {
   const count = heights.length;
+
+  if (viewport.width <= 0 || viewport.height <= 0) return [count];
+
   let best = [count];
   let bestScale = -Infinity;
 

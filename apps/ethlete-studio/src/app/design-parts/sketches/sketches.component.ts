@@ -80,7 +80,14 @@ import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../sh
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { OpenPointsChipComponent } from '../system-page/open-points-chip.component';
 import { OpenPointGroup, OpenPointTarget } from '../system-page/system-page-sample';
-import { MATRIX_COLUMN_GAP, MATRIX_MIN_COLUMN, matrixBlocksOf } from './matrix-blocks';
+import {
+  MATRIX_COLUMN_GAP,
+  MATRIX_HEAD_MIN,
+  MATRIX_LABEL_MIN,
+  MATRIX_MIN_COLUMN,
+  matrixBlocksOf,
+  matrixWidthFit,
+} from './matrix-blocks';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
 import {
   SKETCH_CURRENT,
@@ -474,7 +481,11 @@ export class SketchesComponent {
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
   protected labelFont = computed(() => textAt(LABEL_TEXT, { scale: this.scale(), fit: this.noteFit() }));
-  protected labelSize = computed(() => (this.labelFont() < MIN_LABEL ? null : this.labelFont()));
+  protected labelSize = computed(() =>
+    this.labelFont() < MIN_LABEL || (this.transposed() && this.widest() * this.scale() < MATRIX_LABEL_MIN)
+      ? null
+      : this.labelFont(),
+  );
   protected shownStatus = computed(() =>
     (this.agent() && !this.agent()?.failed) || this.port()
       ? 'drawing'
@@ -977,7 +988,7 @@ export class SketchesComponent {
         dom,
       );
 
-      const next = dom.matrix ? this.matrixFit(dom.matrix, dom) : this.gridFit(scale, dom);
+      const next = dom.matrix ? this.matrixFit({ matrix: dom.matrix, scale }, dom) : this.gridFit(scale, dom);
 
       if (Math.abs(next - scale) <= FIT_SETTLED) break;
 
@@ -988,12 +999,30 @@ export class SketchesComponent {
   }
 
   private matrixColumnsAt({ columns, blocks }: { columns: number; blocks: number }, scale: number) {
-    const block = `max-content repeat(${columns}, ${this.widest() * scale}px)`;
+    const frame = `${this.widest() * scale}px`;
+    const first = `max-content repeat(${columns}, max(${frame}, ${MATRIX_HEAD_MIN}px))`;
+    const later = `max-content repeat(${columns}, ${frame})`;
 
-    return `${Array.from({ length: blocks }, () => block).join(' ')}${this.screenMode() ? '' : ' auto'}`;
+    return `${[first, ...Array.from({ length: blocks - 1 }, () => later)].join(' ')}${this.screenMode() ? '' : ' auto'}`;
   }
 
-  private matrixFit(matrix: HTMLElement, { columns, blocks, list, sections, gutters, fold }: FitDom) {
+  private matrixHeightFit({ matrix, scale }: { matrix: HTMLElement; scale: number }, { gutters, list }: FitDom) {
+    const lines = new Map<string, number>();
+
+    for (const gutter of gutters) {
+      const block = gutter.dataset['skBlock'] ?? '0';
+
+      lines.set(block, (lines.get(block) ?? 0) + gutter.offsetHeight);
+    }
+
+    const tallest = Math.max(0, ...lines.values());
+    const room = list.clientHeight - FIT_PADDING - (matrix.offsetHeight - tallest);
+
+    return tallest > 0 && room > 0 ? (room * scale) / tallest : Infinity;
+  }
+
+  private matrixFit({ matrix, scale }: { matrix: HTMLElement; scale: number }, dom: FitDom) {
+    const { columns, blocks, list, sections, gutters, fold } = dom;
     const first = sections[0];
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
     const shown = Math.max(1, columns);
@@ -1008,11 +1037,15 @@ export class SketchesComponent {
 
     const later = [...widths].reduce((sum, [block, width]) => sum + (block === '0' ? 0 : width + COLUMN_GAP * 2), 0);
 
-    const fit =
-      (list.clientWidth - lead - later - foldWidth - blocks * (shown - 1) * COLUMN_GAP - FIT_PADDING) /
-      (blocks * shown * this.widest());
+    const widthFit = matrixWidthFit({
+      room: list.clientWidth - lead - later - foldWidth - blocks * (shown - 1) * COLUMN_GAP - FIT_PADDING,
+      columns: shown,
+      blocks,
+      frameWidth: this.widest(),
+    });
+    const heightFit = this.matrixHeightFit({ matrix, scale }, dom);
 
-    return Math.min(1, Math.max(fit, MATRIX_MIN_COLUMN / this.widest()));
+    return Math.min(1, Math.max(Math.min(widthFit, heightFit), MATRIX_MIN_COLUMN / this.widest()));
   }
 
   private applyScale(

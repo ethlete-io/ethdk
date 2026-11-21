@@ -321,7 +321,15 @@
                     [style.grid-row]="matrixTop()"
                     class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
                   >
-                    <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
+                    @if (blockIndex === 0) {
+                      <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
+                    } @else {
+                      <span
+                        class="inline-flex max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                        data-sk-head-tag
+                        >{{ row.label ?? (row.key === CURRENT ? LABELS.current : row.key) }}</span
+                      >
+                    }
                   </section>
                   @if (row.key === drawnKey()) {
                     <div

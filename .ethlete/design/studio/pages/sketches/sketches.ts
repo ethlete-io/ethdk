@@ -619,7 +619,7 @@ const gutter = (states: string[], top: number, block: number, offset: number) =>
     )
     .join('');
 
-const column = (part: SketchPart, states: string[], row: Row, at: number, top: number, view: View) => {
+const column = (part: SketchPart, states: string[], row: Row, at: number, top: number, view: View, block = 0) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
   const head = html`<section
     class="sk-row relative w-0 min-w-full rounded-control-md p-space-2"
@@ -628,11 +628,11 @@ const column = (part: SketchPart, states: string[], row: Row, at: number, top: n
     ${row.key === view.selected ? ' data-selected' : ''}
   >
     <span
-      class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
+      class="${block > 0 ? 'inline-flex' : 'hidden in-data-sk-head-hidden:inline-flex'} max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
       data-sk-head-tag
       >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
     >
-    <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
+    ${block > 0 ? '' : html`<div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>`}
   </section>`;
   const cells = drawn
     ? drawingStage(row, `grid-column: ${at}; grid-row: ${top + 1} / span ${states.length * 2}`)
@@ -683,16 +683,18 @@ const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: b
           >
             ${sameToggle(same, false)}
           </div>`;
-  const track = 'max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))';
+  const first = 'max-content repeat(var(--sk-cols), minmax(max(var(--sk-frame), 120px), max-content))';
+  const later = 'max-content repeat(var(--sk-cols), minmax(var(--sk-frame), max-content))';
   return html`<div
-    class="grid w-max grid-cols-[${Array.from({ length: blocks.length }, () => track).join('_')}_auto] gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
+    class="grid w-max gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
+    style="grid-template-columns: ${[first, ...Array.from({ length: blocks.length - 1 }, () => later)].join(' ')} auto"
     data-sk-matrix
   >
     ${blocks
       .map(
         ({ states, offset }, index) =>
           gutter(states, top, index, offset) +
-          all.map((row, at) => column(part, states, row, offset + at + 2, top, view)).join(''),
+          all.map((row, at) => column(part, states, row, offset + at + 2, top, view, index)).join(''),
       )
       .join('')}
     ${group}
@@ -706,11 +708,11 @@ const screenHead = (row: Row, at: number, view: View) =>
     style="grid-column: ${at}; grid-row: 1"
   >
     <span
-      class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
+      class="${block > 0 ? 'inline-flex' : 'hidden in-data-sk-head-hidden:inline-flex'} max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
       data-sk-head-tag
       >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
     >
-    <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
+    ${block > 0 ? '' : html`<div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>`}
   </section>`;
 
 const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
@@ -1034,7 +1036,7 @@ export default definePart<Props>({
     'change-crop-whole':
       'The same round showing the whole screen; check that the full frame fits each cell without cutting it.',
     'many-states-wrap':
-      'A part with 30 wide states; check that no column is narrower than its variant head (no letter-by-letter wrap, Übernehmen stays inside its column) and that the states stay in order, wrapped into blocks side by side only where the list is wide enough.',
+      'A part with 30 wide states in a 1100 px list; check that Einpassen shows all 30 states in 3 blocks side by side, in state order, with the full variant heads and Übernehmen only over the first block (no letter-by-letter wrap), a one-line name tag over each later block, and the cell labels hidden because the frames are too small for them.',
     'multi-part': 'A sketch over three parts; check that each part shows its own block of state rows with its name.',
     'multi-part-many':
       'A sketch over many parts; check that the part blocks stay readable and the list stays inside the canvas.',

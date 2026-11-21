@@ -6,8 +6,10 @@ import zoomChip from '@system/components/zoom-chip';
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 import {
+  MATRIX_LABEL_MIN,
   MATRIX_MIN_COLUMN,
   matrixBlocksOf,
+  matrixWidthFit,
 } from '../../../../../../apps/ethlete-studio/src/app/design-parts/sketches/matrix-blocks';
 import { SKETCHES_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
@@ -349,7 +351,10 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     world.style.setProperty('--sk-cols', `${columns}`);
     world.style.setProperty('--sk-note', `${note}px`);
     world.style.setProperty('--sk-label', `${text}px`);
-    world.toggleAttribute('data-sk-labels-hidden', text < MIN_LABEL);
+    world.toggleAttribute(
+      'data-sk-labels-hidden',
+      text < MIN_LABEL || (!!world.querySelector('[data-sk-matrix]') && width * scale < MATRIX_LABEL_MIN),
+    );
     world.toggleAttribute('data-sk-head-hidden', note < MIN_LABEL);
     world.querySelectorAll<HTMLElement>('[data-sk-pin]').forEach((pin) => (pin.hidden = note < MIN_LABEL));
     world.querySelectorAll<HTMLElement>('[data-sk-head-full]').forEach((head) => (head.hidden = note < MIN_LABEL));
@@ -361,7 +366,18 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     });
   };
 
-  const matrixFit = (matrix: HTMLElement) => {
+  const matrixHeightFit = (matrix: HTMLElement, scale: number) => {
+    const lines = new Map<string, number>();
+    matrix.querySelectorAll<HTMLElement>('[data-sk-gutter]').forEach((gutter) => {
+      const block = gutter.dataset['skBlock'] ?? '0';
+      lines.set(block, (lines.get(block) ?? 0) + gutter.offsetHeight);
+    });
+    const tallest = Math.max(0, ...lines.values());
+    const room = list.clientHeight - FIT_PADDING - (matrix.offsetHeight - tallest);
+    return tallest > 0 && room > 0 ? (room * scale) / tallest : Infinity;
+  };
+
+  const matrixFit = (matrix: HTMLElement, scale: number) => {
     const first = matrix.querySelector<HTMLElement>('[data-sk-row]');
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
     const fold = matrix.querySelector<HTMLElement>('[data-sk-same]:not([data-open])');
@@ -372,10 +388,13 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
       widths.set(block, Math.max(widths.get(block) ?? 0, gutter.offsetWidth));
     });
     const later = [...widths].reduce((sum, [block, size]) => sum + (block === '0' ? 0 : size + GAP * 2), 0);
-    const fit =
-      (list.clientWidth - lead - later - foldWidth - blocks * (columns - 1) * GAP - FIT_PADDING) /
-      (blocks * columns * width);
-    return Math.min(1, Math.max(fit, MIN_COLUMN / width));
+    const widthFit = matrixWidthFit({
+      room: list.clientWidth - lead - later - foldWidth - blocks * (columns - 1) * GAP - FIT_PADDING,
+      columns,
+      blocks,
+      frameWidth: width,
+    });
+    return Math.min(1, Math.max(Math.min(widthFit, matrixHeightFit(matrix, scale)), MIN_COLUMN / width));
   };
 
   const gridFit = (scale: number) => {
@@ -405,7 +424,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     let scale = 1;
     for (let pass = 0; pass < 6; pass++) {
       apply(scale);
-      const next = matrix ? matrixFit(matrix) : gridFit(scale);
+      const next = matrix ? matrixFit(matrix, scale) : gridFit(scale);
       if (Math.abs(next - scale) <= 0.002) break;
       scale = next;
     }
