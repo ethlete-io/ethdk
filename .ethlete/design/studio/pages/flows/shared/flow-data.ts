@@ -5,7 +5,7 @@ import textarea from '@system/components/textarea';
 import treeRow from '@system/components/tree-row';
 import { icon } from '@system/foundations/icons';
 
-export type FlowProps = { flow: 'open' | 'none'; notes?: boolean };
+export type FlowProps = { flow: 'open' | 'none'; notes?: boolean; orphans?: boolean };
 
 export type FlowNoteSample = { id: string; text: string; x: number; y: number };
 
@@ -13,6 +13,22 @@ export const FLOW_NOTES: FlowNoteSample[] = [
   { id: 'gap', text: 'Hier fehlt noch der Weg, wenn der Nutzer den Sketch verwirft.', x: 790, y: 262 },
   { id: 'new', text: '', x: 0, y: 262 },
 ];
+
+export const ORPHAN_NOTES: FlowNoteSample[] = [
+  { id: 'lost-1', text: 'Rückweg nach Verwerfen', x: 1420, y: 60 },
+  { id: 'lost-2', text: 'Merge-Knopf klären', x: 1420, y: 300 },
+];
+
+export const ORPHAN_TITLE = 'Verwaiste Notizen';
+
+export const orphanButtons = async (variant: 'transparent' | 'outline' = 'transparent') =>
+  Promise.all(
+    ORPHAN_NOTES.map(async (note) => {
+      const entry = await button.render({ label: note.text, variant, color: 'surface', size: 'sm' });
+
+      return { ...entry, body: withAction(entry.body, 'emit:jumpToNote') };
+    }),
+  );
 
 export const addNoteButton = async () => {
   const add = await button.render({

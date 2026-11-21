@@ -150,11 +150,10 @@
     "at": "2026-11-19T10:25:13.055Z"
   },
   "pages/flows": {
-    "hash": "700564379eefc755",
+    "hash": "7fee31fcc8eb4d9d",
     "variant": "a",
-    "decidedBy": "builder",
-    "at": "2026-11-21T01:45:03.632Z",
-    "note": "merged: Fokussiertes Feld der neuen Notiz, picked by the builder (ADR 0305): the app focuses it on purpose when the page opens."
+    "decidedBy": "user",
+    "at": "2026-11-21T02:40:14.692Z"
   },
   "pages/inbox": {
     "hash": "23a38bb14e9c61d3",
