@@ -1983,7 +1983,7 @@
     "at": "2026-11-18T11:41:56.977Z"
   },
   "pages/start": {
-    "hash": "ec1b5a6f684fec2c",
+    "hash": "9b9f8eb0fa83c826",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -1991,7 +1991,8 @@
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
-      ".ethlete/design/studio/pages/start/start.ts": "cce0d2c4caf13ece",
+      ".ethlete/design/studio/pages/start/start.ts": "2c7073e57be8787c",
+      "apps/ethlete-studio/src/app/i18n/start-labels.ts": "43fc3d8609cea544",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -2009,13 +2010,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "75af4af0d67ed484",
+    "app": "afa0cd68296aa1e9",
     "actions": ["emit:copyPrompt", "emit:openRepo", "emit:otherRepo"],
     "builder": "designer",
-    "at": "2026-11-21T03:25:42.217Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3549047
+    "at": "2026-11-21T05:46:08.018Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 2234079
   },
   "pages/system": {
     "hash": "6bdb7d0ca15bbcf3",
