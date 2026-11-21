@@ -497,14 +497,14 @@
     "pid": 2851297
   },
   "components/switch": {
-    "hash": "c34268cf88fe215f",
+    "hash": "29a609b69b436ad7",
     "files": {
-      ".ethlete/design/sdk/components/switch/switch.ts": "d70fc1043010bbd1",
+      ".ethlete/design/sdk/components/switch/switch.ts": "245f277459ed7e90",
       "libs/components/design/switch.ts": "a91a9e4b9c826d0d",
-      "libs/components/src/lib/forms/choice-field/choice-field-card-styles.component.css": "4c3b18fe180cb96b",
+      "libs/components/src/lib/forms/choice-field/choice-field-card-styles.component.css": "0b2e289e74176c77",
       "libs/components/src/lib/forms/choice-field/choice-field.component.css": "7c64ce9249466135",
       "libs/components/src/lib/forms/form-field/headless/label.directive.css": "9aceda0d26b46524",
-      "libs/components/src/lib/forms/selection-card-styles.component.css": "190d2cb203d8058f",
+      "libs/components/src/lib/forms/selection-card-styles.component.css": "19b8fafe647e05c8",
       "libs/components/src/lib/forms/switch/switch.component.css": "470d1898cf1097a3",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
@@ -512,10 +512,10 @@
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-19T01:57:33.876Z",
-    "by": "claude-opus-5-5",
+    "at": "2026-11-21T04:55:21.536Z",
+    "by": "claude-sonnet-5-5",
     "cmd": "ready",
-    "pid": 3133782
+    "pid": 1834543
   },
   "components/table": {
     "hash": "bd4efe35d479687e",
