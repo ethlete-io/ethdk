@@ -18,6 +18,43 @@ export const enterValue = async (target: Locator, timeout: number) => {
   else if (other !== null) await target.selectOption(other, { timeout });
 };
 
+/**
+ * Focuses the element a key press goes to: for an option, the element that controls its listbox, moved onto the option
+ * with the arrow keys until its `aria-activedescendant` names it; for any other element, the element itself.
+ */
+export const focusKeyTarget = async (options: { page: Page; target: Locator; timeout: number }): Promise<Locator> => {
+  const { page, target, timeout } = options;
+  const box = target.locator('xpath=ancestor::*[@role="listbox"][1]');
+  const listbox =
+    (await target.getAttribute('role', { timeout })) === 'option' && (await box.count()) > 0
+      ? await box.getAttribute('id', { timeout })
+      : null;
+  const owner = listbox ? page.locator(`[aria-controls~="${listbox}"], [aria-owns~="${listbox}"]`).first() : null;
+
+  if (!listbox || !owner || (await owner.count()) === 0) {
+    await target.focus({ timeout });
+
+    return target;
+  }
+
+  const id = await target.getAttribute('id', { timeout });
+  const steps = (await page.locator(`[id="${listbox}"] [role="option"]`).count()) + 1;
+
+  await owner.focus({ timeout });
+
+  for (let step = 0; step <= steps; step++) {
+    if (id && (await owner.getAttribute('aria-activedescendant', { timeout })) === id) {
+      await page.evaluate('window.__etPrevented = []; (window.__etDesignEmits ?? []).length = 0;');
+
+      return owner;
+    }
+
+    await page.keyboard.press('ArrowDown');
+  }
+
+  throw new Error(`the arrow keys on the owner of its listbox never make option #${id ?? '(no id)'} active`);
+};
+
 export const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
 
 export const EMIT_WAIT_MS = 400;

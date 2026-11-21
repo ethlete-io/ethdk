@@ -109,9 +109,9 @@ describe('actions', () => {
     expect(actionInputsOf('menuitemcheckbox "Raster"')).toEqual(['click', 'Enter', 'Space']);
   });
 
-  it('clicks an option only, since its listbox or combobox takes the keys', () => {
-    expect(actionInputsOf('option "TitlebarPart"', parseAction('emit:choose', []))).toEqual(['click']);
-    expect(actionInputsOf('option "Hell"')).toEqual(['click']);
+  it('presses an option with click and Enter only, since Space types into the combobox that owns it', () => {
+    expect(actionInputsOf('option "TitlebarPart"', parseAction('emit:choose', []))).toEqual(['click', 'Enter']);
+    expect(actionInputsOf('option "Hell"')).toEqual(['click', 'Enter']);
   });
 
   it('moves a focusable separator or slider with the arrow keys instead of pressing it', () => {
@@ -395,6 +395,8 @@ describe('runActionInput', () => {
         <button aria-label="Hide" onclick="__etDesignEmits.push({ output: 'hide' })">Hide</button>
         <button aria-label="Off" disabled>Off</button>
         <input role="combobox" aria-label="Search" oninput="__etDesignEmits.push({ output: 'queryChange' })" />
+        <input role="combobox" aria-label="Find" aria-controls="find-list" onkeydown="if (event.key === 'ArrowDown') this.setAttribute('aria-activedescendant', this.getAttribute('aria-activedescendant') === 'find-a' ? 'find-b' : 'find-a'); if (event.key === 'Enter') __etDesignEmits.push({ output: 'choose:' + this.getAttribute('aria-activedescendant') })" />
+        <div id="find-list" role="listbox"><div id="find-a" role="option" aria-label="A">A</div><div id="find-b" role="option" aria-label="B">B</div></div>
         <select aria-label="Size" onchange="__etDesignEmits.push({ output: 'sizeChange' })"><option>S</option><option>M</option></select>
         <app-part-a><button aria-label="Pick" onclick="__etDesignEmits.push({ output: 'pageAction' }); listeners.forEach((listener) => listener())">Pick</button></app-part-a>
       </div>
@@ -445,6 +447,12 @@ describe('runActionInput', () => {
     expect(inputs.length).toBeGreaterThan(0);
 
     for (const input of inputs) expect((await press('combobox "Search"', input)).emitted).toEqual(['queryChange']);
+  });
+
+  it('presses Enter for an option on the combobox that owns its listbox, once the option is active there', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    expect((await press('option "B"', 'Enter')).emitted).toEqual(['choose:find-b']);
   });
 
   it('picks another option of a native select that declares an emit, since it takes no text', async (context) => {

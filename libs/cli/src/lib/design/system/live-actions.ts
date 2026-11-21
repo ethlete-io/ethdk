@@ -18,7 +18,15 @@ import {
   openedPartKeyOf,
   parseAction,
 } from './actions';
-import { awaitOutput, enterValue, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
+import {
+  awaitOutput,
+  enterValue,
+  focusKeyTarget,
+  INIT_SCRIPT,
+  OVERLAY_ROOTS,
+  settle,
+  watchMutations,
+} from './action-press';
 import { BOX_ATTRIBUTE } from './dom-boxes';
 import { compareFrameOf } from './harness-shot';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
@@ -668,7 +676,7 @@ export const checkLiveActions = async (options: {
             const before: RingStyle | undefined = (await ringProbeOrNullOf(control))?.style;
 
             await page.keyboard.press('Shift');
-            await control.focus({ timeout: DRAW_TIMEOUT_MS });
+            await focusKeyTarget({ page, target: control, timeout: DRAW_TIMEOUT_MS });
 
             if (options.input === 'Enter') {
               await settle(page, DRAW_TIMEOUT_MS);

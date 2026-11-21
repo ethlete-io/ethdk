@@ -45,6 +45,7 @@ import {
   awaitOutput,
   dropKeyboardFocus,
   enterValue,
+  focusKeyTarget,
   INIT_SCRIPT,
   OVERLAY_ROOTS,
   settle,
@@ -231,7 +232,7 @@ export const runActionInput = async (options: {
       await enterValue(target, timeout);
     } else {
       await page.keyboard.press('Shift');
-      await target.focus({ timeout });
+      await focusKeyTarget({ page, target, timeout });
       await page.keyboard.press(input);
     }
 
