@@ -19,20 +19,23 @@ type Props = {
 
 type Server = 'running' | 'stale' | 'stopped';
 
-const RESTART = { name: 'restart', label: DESIGN_SERVER_LABELS.restart, output: 'serverAction' };
+const SERVER_ACTION = ' data-et-action="emit:serverAction"';
+const RELOAD_ACTION = ' data-et-action="emit:reload"';
 
-const SERVER_ACTIONS: Record<Server, { name: string; label: string; output: string }[]> = {
+const RESTART = { name: 'restart', label: DESIGN_SERVER_LABELS.restart, declared: SERVER_ACTION };
+
+const SERVER_ACTIONS: Record<Server, { name: string; label: string; declared: string }[]> = {
   running: [
-    { name: 'reload', label: STUDIO_MENU_LABELS.reload, output: 'reload' },
+    { name: 'reload', label: STUDIO_MENU_LABELS.reload, declared: RELOAD_ACTION },
     RESTART,
-    { name: 'stop', label: DESIGN_SERVER_LABELS.stop, output: 'serverAction' },
+    { name: 'stop', label: DESIGN_SERVER_LABELS.stop, declared: SERVER_ACTION },
   ],
   stale: [
     RESTART,
-    { name: 'reload', label: STUDIO_MENU_LABELS.reload, output: 'reload' },
-    { name: 'stop', label: DESIGN_SERVER_LABELS.stop, output: 'serverAction' },
+    { name: 'reload', label: STUDIO_MENU_LABELS.reload, declared: RELOAD_ACTION },
+    { name: 'stop', label: DESIGN_SERVER_LABELS.stop, declared: SERVER_ACTION },
   ],
-  stopped: [{ name: 'start', label: DESIGN_SERVER_LABELS.start, output: 'serverAction' }],
+  stopped: [{ name: 'start', label: DESIGN_SERVER_LABELS.start, declared: SERVER_ACTION }],
 };
 
 const SERVER_STATUS: Record<Server, string> = {
@@ -43,10 +46,10 @@ const SERVER_STATUS: Record<Server, string> = {
 
 const serverRows = (server: Server, busy: boolean): MenuMockRow[] => [
   { kind: 'label', label: SERVER_STATUS[server] },
-  ...SERVER_ACTIONS[server].map(({ name, label, output }) => ({
+  ...SERVER_ACTIONS[server].map(({ name, label, declared }) => ({
     label,
     disabled: busy && name !== 'reload',
-    attributes: `${action(name)} data-et-action="emit:${output}"`,
+    attributes: `${action(name)}${declared}`,
   })),
 ];
 

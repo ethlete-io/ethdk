@@ -116,7 +116,7 @@
     {
       "id": "inventory-toggle",
       "label": "Inventory ein- und ausblenden",
-      "place": { "part": "pages/inventory", "action": "emit:toggleInventory" },
+      "place": { "part": "components/command-palette", "action": "emit:choose" },
       "confirmed": true
     },
     {
@@ -471,7 +471,7 @@
       "label": "Update öffnen",
       "place": {
         "part": "components/title-bar",
-        "action": "emit:update"
+        "action": "opens:components/update-dialog"
       },
       "confirmed": true
     },
