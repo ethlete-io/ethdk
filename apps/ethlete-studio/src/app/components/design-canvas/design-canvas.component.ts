@@ -50,6 +50,8 @@ import {
   layoutGrid,
   layoutMatrix,
   layoutSheet,
+  wrapSheet,
+  SheetFrame,
   offsetWithin,
   panCamera,
   zoomAtPoint,
@@ -86,6 +88,7 @@ const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
 const FIT_PADDING = 64;
+const SHEET_BLOCK_GAP_FACTOR = 3;
 const START_PADDING = { x: 40, y: 48 };
 const CAPTION_ROOM = 40;
 const COLUMN_HEAD_ROOM = 64;
@@ -420,7 +423,7 @@ export class DesignCanvasComponent {
             emptyWidths,
           });
     const sheet =
-      matrix ?? (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : layoutSheet(sized, SPACING));
+      matrix ?? (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : this.sheetOf(sized));
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
       const column = columns.find((candidate) => candidate.key === placed.name);
 
@@ -1071,6 +1074,18 @@ export class DesignCanvasComponent {
       x: this.covered() + (inset?.left ?? 0) + START_PADDING.x - bounds.x,
       y: (inset?.top ?? 0) + START_PADDING.y - bounds.y,
     };
+  }
+
+  private sheetOf(sized: (SheetFrame & { unsized: boolean })[]) {
+    const sheet = layoutSheet(sized, SPACING);
+    const { width, height } = this.viewport();
+
+    if (sized.some((frame) => frame.unsized)) return sheet;
+
+    return wrapSheet(sheet, {
+      room: { width: width - this.covered() - 2 * FIT_PADDING, height: height - 2 * FIT_PADDING },
+      blockGap: SPACING.columnGap * SHEET_BLOCK_GAP_FACTOR,
+    });
   }
 
   private scene(bounds: Rect | null, viewport: Size): CameraScene {

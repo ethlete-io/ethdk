@@ -10,6 +10,7 @@ import {
   layoutGrid,
   layoutMatrix,
   layoutSheet,
+  wrapSheet,
   offsetWithin,
   rectsIntersect,
   screenToWorld,
@@ -191,6 +192,48 @@ describe('canvas math', () => {
       { id: 'a-1280', x: 415, y: 0 },
       { id: 'b-375', x: 0, y: 380 },
     ]);
+  });
+
+  describe('wrapSheet', () => {
+    const tall = (rows: number) =>
+      layoutSheet(
+        Array.from({ length: rows }, (_, index) => ({ id: `s${index}`, width: 1440, height: 900, row: `s${index}` })),
+        { columnGap: 40, rowGap: 120 },
+      );
+    const room = { width: 1376, height: 900 };
+
+    it('keeps a short sheet as one column of rows', () => {
+      const sheet = tall(2);
+
+      expect(wrapSheet(sheet, { room, blockGap: 120 })).toBe(sheet);
+    });
+
+    it('keeps the sheet while the room is unmeasured', () => {
+      const sheet = tall(30);
+
+      expect(wrapSheet(sheet, { room: { width: 0, height: 0 }, blockGap: 120 })).toBe(sheet);
+    });
+
+    it('wraps a tall sheet into blocks side by side that fit the aspect of the room', () => {
+      const wrapped = wrapSheet(tall(30), { room, blockGap: 120 });
+      const columns = new Set(wrapped.frames.map((frame) => frame.x));
+      const right = Math.max(...wrapped.frames.map((frame) => frame.x + frame.width));
+      const bottom = Math.max(...wrapped.frames.map((frame) => frame.y + frame.height));
+
+      expect(columns.size).toBeGreaterThan(3);
+      expect(wrapped.frames).toHaveLength(30);
+      expect(Math.min(room.width / right, room.height / bottom)).toBeGreaterThan(0.1);
+      expect(wrapped.frames.filter((frame) => frame.x === 0)[0]?.y).toBe(0);
+    });
+
+    it('splits the rows into consecutive blocks of near equal size, each starting at the top', () => {
+      const wrapped = wrapSheet(tall(30), { room, blockGap: 120 });
+      const firstOfBlock = wrapped.frames.filter((frame) => frame.y === 0).map((frame) => frame.id);
+
+      expect(firstOfBlock[0]).toBe('s0');
+      expect(Number(firstOfBlock[1]?.slice(1))).toBeGreaterThan(1);
+      expect(wrapped.rows.map((row) => row.name)).toEqual(tall(30).rows.map((row) => row.name));
+    });
   });
 
   it('lays tiles out in lines that wrap before the line width', () => {

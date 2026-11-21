@@ -519,6 +519,35 @@ describe('DesignCanvasComponent', () => {
     expect(rightEdges).toEqual([140, 140]);
   });
 
+  it('wraps the rows of a tall sheet into several columns, and keeps a short sheet in one', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1440);
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(900);
+
+    const column = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        ...FITTED,
+        id: `state-${index}`,
+        row: `state-${index}`,
+        width: 1440,
+        height: 900,
+      }));
+    const lefts = async (count: number) => {
+      const fixture = await render(column(count));
+
+      return new Set(
+        fixture.debugElement
+          .queryAll(By.directive(CanvasFrameComponent))
+          .map(({ nativeElement }) => nativeElement.style.left),
+      );
+    };
+
+    expect((await lefts(30)).size).toBeGreaterThan(3);
+
+    TestBed.resetTestingModule();
+
+    expect((await lefts(2)).size).toBe(1);
+  });
+
   it('draws no border on a fitted frame, but keeps it on a frame at a width', async () => {
     const fixture = await render([FITTED, { ...FITTED, id: 'wide', width: 320, height: 200 }]);
     const [fitted, wide] = fixture.debugElement
