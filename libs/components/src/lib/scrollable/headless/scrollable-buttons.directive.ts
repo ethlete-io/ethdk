@@ -1,6 +1,6 @@
 import { Directive, computed, effect, inject, input } from '@angular/core';
-import { BREAKPOINT_ORDER, Breakpoint, injectCurrentBreakpoint } from '@ethlete/core';
-import { BUTTON_SIZES, ButtonSize } from '../../button/button.types';
+import { BREAKPOINT_ORDER, Breakpoint, ProvideColorDirective, injectCurrentBreakpoint } from '@ethlete/core';
+import { BUTTON_SIZES, BUTTON_VARIANTS, ButtonSize, ButtonVariant } from '../../button/button.types';
 import { ScrollableButtonsComponent } from './scrollable-buttons.component';
 import { ScrollableResponsive, injectScrollableConfig } from './scrollable-config';
 import { ScrollableDirective } from './scrollable.directive';
@@ -21,6 +21,8 @@ export type ScrollableButtonsConfig = {
   sticky?: boolean;
   /** Size of the two icon buttons. @default 'xs' */
   size?: ButtonSize;
+  /** Button variant. `'filled'` gives the buttons a `color` fill. Falls back to `provideScrollableConfig`. @default 'transparent' */
+  variant?: ButtonVariant;
   /**
    * Turn the buttons on or off, optionally per breakpoint. Falls back to `provideScrollableConfig`, and
    * to `true` when the directive is applied explicitly. @default true
@@ -48,6 +50,7 @@ export class ScrollableButtonsDirective {
 
   private defaults = injectScrollableConfig();
   private currentBreakpoint = injectCurrentBreakpoint();
+  private colorProvider = inject(ProvideColorDirective, { optional: true, self: true });
 
   public config = input<ScrollableButtonsConfig | '' | null>(null, { alias: 'etScrollableButtons' });
 
@@ -62,6 +65,10 @@ export class ScrollableButtonsDirective {
   );
   public sticky = computed(() => this.resolved().sticky ?? this.defaults.buttons?.sticky ?? false);
   public size = computed(() => this.resolved().size ?? this.defaults.buttons?.size ?? BUTTON_SIZES.XS);
+  public variant = computed(
+    () => this.resolved().variant ?? this.defaults.buttons?.variant ?? BUTTON_VARIANTS.TRANSPARENT,
+  );
+  public color = computed(() => (this.colorProvider?.effectiveColor() ? undefined : this.defaults.buttons?.color));
   public enabled = computed(() => {
     const own = this.resolve(this.resolved().enabled);
 
@@ -84,7 +91,12 @@ export class ScrollableButtonsDirective {
       key: 'buttons',
       slot: computed(() => (this.position() === 'footer' ? 'footer' : 'overlay')),
       component: ScrollableButtonsComponent,
-      inputs: computed(() => ({ position: this.position(), size: this.size() })),
+      inputs: computed(() => ({
+        position: this.position(),
+        size: this.size(),
+        variant: this.variant(),
+        color: this.color(),
+      })),
       enabled: this.enabled,
       order: 0,
     });

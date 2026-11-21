@@ -1,5 +1,6 @@
 import { Component, inject, input, ViewEncapsulation } from '@angular/core';
-import { BUTTON_SIZES, ButtonSize } from '../../button/button.types';
+import { ProvideColorDirective } from '@ethlete/core';
+import { BUTTON_SIZES, BUTTON_VARIANTS, ButtonSize, ButtonVariant } from '../../button/button.types';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import { CHEVRON_ICON } from '../../icon/headless/chevron-icon';
 import { provideIcons } from '../../icon/headless/icon-provider';
@@ -14,6 +15,7 @@ import { ScrollableButtonPosition } from './scrollable.types';
     <button
       [disabled]="scrollable.isAtStart()"
       [size]="size()"
+      [variant]="variant()"
       (click)="scrollable.scrollToStartDirection()"
       class="et-scrollable-button et-scrollable-button--start"
       et-icon-button
@@ -26,6 +28,7 @@ import { ScrollableButtonPosition } from './scrollable.types';
     <button
       [disabled]="scrollable.isAtEnd()"
       [size]="size()"
+      [variant]="variant()"
       (click)="scrollable.scrollToEndDirection()"
       class="et-scrollable-button et-scrollable-button--end"
       et-icon-button
@@ -40,6 +43,7 @@ import { ScrollableButtonPosition } from './scrollable.types';
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective, IconButtonComponent],
   providers: [provideIcons(CHEVRON_ICON)],
+  hostDirectives: [{ directive: ProvideColorDirective, inputs: ['etProvideColor:color'] }],
   host: {
     class: 'et-scrollable-buttons',
     '[class.et-scrollable-buttons--inside]': 'position() === "inside"',
@@ -52,6 +56,7 @@ export class ScrollableButtonsComponent {
 
   public position = input<ScrollableButtonPosition>('inside');
   public size = input<ButtonSize>(BUTTON_SIZES.XS);
+  public variant = input<ButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
 
   constructor() {
     mountScrollableFooterStyles();

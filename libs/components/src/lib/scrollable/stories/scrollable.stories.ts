@@ -156,6 +156,50 @@ export const ProvidedButtons: Story = {
   }),
 };
 
+export const ProvidedButtonColor: Story = {
+  decorators: [
+    applicationConfig({
+      providers: [
+        provideScrollableConfig({
+          buttons: { enabled: true, color: 'success', variant: 'filled' },
+        }),
+      ],
+    }),
+    moduleMetadata({ imports: [SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS] }),
+  ],
+  render: () => ({
+    template: `
+      <div class="w-full max-w-xl flex flex-col gap-8">
+        <et-scrollable data-testid="config-color" class="block">
+          <div class="flex gap-2">
+            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
+              <div class="shrink-0 w-32 h-16 bg-gray-200 flex items-center justify-center">{{ i }}</div>
+            }
+          </div>
+        </et-scrollable>
+        <et-scrollable data-testid="input-color" color="danger" class="block">
+          <div class="flex gap-2">
+            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
+              <div class="shrink-0 w-32 h-16 bg-gray-200 flex items-center justify-center">{{ i }}</div>
+            }
+          </div>
+        </et-scrollable>
+        <et-scrollable
+          data-testid="tokens"
+          class="block"
+          style="--et-scrollable-buttons-offset: 1rem; --et-scrollable-buttons-end-space: 4rem"
+        >
+          <div class="flex gap-2">
+            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; track i) {
+              <div class="shrink-0 w-32 h-16 bg-gray-200 flex items-center justify-center">{{ i }}</div>
+            }
+          </div>
+        </et-scrollable>
+      </div>
+    `,
+  }),
+};
+
 export const StickyChild: Story = {
   decorators: [moduleMetadata({ imports: [SCROLLABLE_IMPORTS] })],
   render: () => ({

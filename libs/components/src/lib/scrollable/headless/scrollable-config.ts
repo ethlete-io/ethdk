@@ -1,5 +1,5 @@
-import { Breakpoint, defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import { ButtonSize } from '../../button/button.types';
+import { Breakpoint, ColorThemeInput, defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+import { ButtonSize, ButtonVariant } from '../../button/button.types';
 import { ScrollableButtonPosition } from './scrollable.types';
 
 /** A value, or one per breakpoint. A breakpoint key applies from that breakpoint up until the next key. */
@@ -21,6 +21,13 @@ export type ScrollableButtonsDefaults = {
   sticky?: boolean;
   /** Size of the two icon buttons. @default 'xs' */
   size?: ButtonSize;
+  /**
+   * Colour theme of the buttons, resolved by the colour-theme tokens. The `color` input on the
+   * `<et-scrollable>` wins. @default the surrounding colour scope
+   */
+  color?: ColorThemeInput;
+  /** Button variant. `'filled'` gives the buttons a `color` fill. @default 'transparent' */
+  variant?: ButtonVariant;
 };
 
 export type ScrollableConfig = {
