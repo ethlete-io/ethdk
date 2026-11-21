@@ -11,6 +11,11 @@
     initial-value: 0px;
   }
 
+  @property --et-scrollable-buttons-extent {
+    syntax: '*';
+    inherits: true;
+  }
+
   .et-scrollable-buttons {
     grid-row: 1 / 1;
     grid-column: 1 / 1;
@@ -18,7 +23,7 @@
 
     .et-scrollable-button {
       position: absolute;
-      --_et-scrollable-button-extent: calc(var(--_et-icon-button-size) + 0.4rem);
+      --_et-scrollable-button-extent: var(--et-scrollable-buttons-extent, calc(var(--_et-icon-button-size) + 0.4rem));
       opacity: 0;
     }
   }
@@ -97,7 +102,7 @@
       }
     }
 
-    &:has(.et-scrollable-buttons--inside) {
+    &.et-scrollable--can-scroll:not(.et-scrollable--is-at-end):has(.et-scrollable-buttons--inside) {
       &[direction='horizontal'] > .et-scrollable-wrapper > .et-scrollable-container,
       &:not([direction]) > .et-scrollable-wrapper > .et-scrollable-container {
         padding-inline-end: var(--et-scrollable-buttons-end-space);

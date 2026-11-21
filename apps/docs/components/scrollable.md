@@ -70,12 +70,15 @@ providers: [
 provideScrollableConfig({ buttons: { enabled: true, color: 'brand', variant: 'filled' } });
 ```
 
-Two CSS custom properties (both `<length>`, default `0`) tune the `'inside'` buttons. Set them on the scrollable or any ancestor:
+Three CSS custom properties tune the `'inside'` buttons. Set them on the scrollable or any ancestor:
 
 | Property                            | Effect                                                                                  |
 | ----------------------------------- | --------------------------------------------------------------------------------------- |
 | `--et-scrollable-buttons-offset`    | Distance of the buttons from the scroller's start and end edges                         |
 | `--et-scrollable-buttons-end-space` | Space left at the end of the track, so the last items are not covered by the end button |
+| `--et-scrollable-buttons-extent`    | Box size the buttons are positioned by (default: icon button size + `0.4rem`)           |
+
+`offset` and `end-space` are `<length>` and default to `0`. `end-space` applies only while the list can scroll and is not at its end. Set `extent` to the button size (for example `30px` for a filled button) so the offset is measured from the visible fill.
 
 ## Live demo
 
