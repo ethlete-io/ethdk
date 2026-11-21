@@ -21,8 +21,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S26 (fifagg, 20.11.): blockiert, = S17 (B652), ausgeliefert in components 1.0.0-next.92; fifagg informiert.
 - S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
 - S28, S29 (fifagg, 21.11.): ausgeliefert in components 1.0.0-next.94 (Scroll-Buttons: Farbe/Variante app-weit, Abstands-Variablen, Eingabe `scrollableButtons`, Breakpoint-Maps blenden unterhalb aus); fifagg informiert.
-- S30-S35 (fifagg, 21.11.): gebaut und gepusht (2124afc0e), warten auf das nächste Prerelease, dann fifagg informieren.
-- S36 (fifagg, 21.11.): blockiert (fix/scrollable-sdk94 bleibt von next weg), Scroll-Buttons aus next.94: (1) Button-Fläche = Icon-Button-Größe + 0.4rem (34 px) bei 30 px Füllung, kein Token setzt Fläche/Inline-Versatz getrennt von der Füllung; (2) `--et-scrollable-buttons-end-space` wirkt immer statt nur solange scrollbar und nicht am Ende (Fehler). Entschieden von mir wie S29 -> Builder-Zeile als Nächstes.
+- S30-S36 (fifagg, 21.11.): gebaut und gepusht (b1b26d7f9), warten auf das nächste Prerelease, dann fifagg informieren.
 
 ## Offene Plan-Dateien
 
