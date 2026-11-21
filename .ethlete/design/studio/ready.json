@@ -428,7 +428,7 @@
     "pid": 2132677
   },
   "components/shell-collapse": {
-    "hash": "af0ecfd3e21fe4e8",
+    "hash": "8b0274661cebb9f0",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -451,7 +451,7 @@
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "8a5afa5ec5665e33",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "bcab7b399e6abba8",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
@@ -463,7 +463,7 @@
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
-      "libs/components/src/lib/overlay/floating-tip-styles.component.css": "68dd131cb9133beb",
+      "libs/components/src/lib/overlay/floating-tip-styles.component.css": "3cbc9929b4432ad8",
       "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
       "libs/components/src/lib/overlay/strategies/overlay-arrow-styles.component.css": "072cf01f3393af28",
       "libs/components/src/lib/tooltip/tooltip.component.css": "50e163741bd6a713",
@@ -471,13 +471,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "c700637cf217f8d5",
+    "app": "d20573209002ca4d",
     "actions": ["emit:collapse"],
     "builder": "designer",
-    "at": "2026-11-21T05:33:40.555Z",
+    "at": "2026-11-21T20:38:50.196Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2134230
+    "pid": 1814315
   },
   "components/shell-resize-handle": {
     "hash": "9275e5182938c980",
