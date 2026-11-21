@@ -75,6 +75,14 @@ describe('InventoryPageComponent', () => {
     expect(element.querySelectorAll<HTMLElement>('figure')[1]?.style.left).toBe('448px');
   });
 
+  it('tints declared rows with the success theme and the others with their own', async () => {
+    const { element } = await render({});
+
+    const rows = [...element.querySelectorAll<HTMLElement>('aside li')];
+
+    expect(rows.map((row) => row.classList.contains('et-color--success'))).toEqual([false, true, true]);
+  });
+
   it('lists the first page in three sections when nothing is selected', async () => {
     const { element, text } = await render({});
 

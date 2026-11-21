@@ -220,6 +220,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
 })
 export class InventoryPageComponent {
   protected errorTheme = injectSemanticColorTheme('error');
+  private successTheme = injectSemanticColorTheme('success');
   private warningTheme = injectSemanticColorTheme('warning');
   public shell = input<ShellState>(SHELL_SAMPLE);
   public inventory = input<InventoryPageState>('open');
@@ -280,7 +281,7 @@ export class InventoryPageComponent {
   }
 
   protected themeOf(tone: InventoryPageTone) {
-    return tone === 'error' ? this.errorTheme() : tone === 'warning' ? this.warningTheme() : undefined;
+    return tone === 'error' ? this.errorTheme() : tone === 'warning' ? this.warningTheme() : this.successTheme();
   }
 
   protected zoomBy(factor: number) {
