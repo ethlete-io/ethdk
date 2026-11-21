@@ -1,9 +1,11 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { injectOverlayManager, OverlayRef } from '@ethlete/components';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { of } from 'rxjs';
 import { WindowChrome } from '../../../host/window';
 import { THEMES } from '../../../themes';
+import { UpdateDialogComponent } from '../update-dialog/update-dialog.component';
 import { TitleBarComponent, TitleBarPush } from './title-bar.component';
 
 vi.mock('../../../host/window', () => ({ isWindowMaximized$: () => of(false) }));
@@ -104,14 +106,20 @@ describe('TitleBarComponent', () => {
     expect(fired).toEqual(['close', 'minimize', 'maximize']);
   });
 
-  it('fires the update output with the click from the update button', () => {
+  it('opens the update dialog from the click on the update button', () => {
     const { fixture, bar } = render({ ...linux([], []), update: true });
-    const events: MouseEvent[] = [];
+    const open = vi
+      .spyOn(
+        TestBed.runInInjectionContext(() => injectOverlayManager()),
+        'open',
+      )
+      .mockReturnValue({} as OverlayRef<object>);
 
-    fixture.componentInstance.updatePress.subscribe((event) => events.push(event));
     bar?.lastElementChild?.querySelector<HTMLElement>('button')?.click();
 
-    expect(events).toHaveLength(1);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open.mock.calls[0]?.[0]).toBe(UpdateDialogComponent);
+    fixture.destroy();
   });
 
   it('draws the push badge before Update, tonal', () => {

@@ -1,7 +1,11 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { injectOverlayManager } from '@ethlete/components';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
+import { of } from 'rxjs';
 import { THEMES } from '../../../themes';
+import { AboutDialogComponent } from '../about-dialog/about-dialog.component';
+import { ShortcutsDialogComponent } from '../shortcuts-dialog/shortcuts-dialog.component';
 import { DesignServerAction, DesignServerStatus, StudioMenuComponent } from './studio-menu.component';
 
 const openMenu = async (options: {
@@ -17,6 +21,16 @@ const openMenu = async (options: {
   const fixture = TestBed.createComponent(StudioMenuComponent);
   const events: string[] = [];
 
+  const manager = TestBed.runInInjectionContext(() => injectOverlayManager());
+  const open = manager.open.bind(manager);
+
+  vi.spyOn(manager, 'open').mockImplementation(((component: Type<object>, config?: object) => {
+    if (component !== ShortcutsDialogComponent && component !== AboutDialogComponent) return open(component, config);
+
+    events.push(`opens:${component.name}`);
+    return { afterClosed: () => of(undefined), close: () => undefined };
+  }) as typeof manager.open);
+
   fixture.componentRef.setInput('project', options.project);
   fixture.componentRef.setInput('projects', options.projects);
   fixture.componentRef.setInput('server', options.server ?? 'running');
@@ -29,9 +43,7 @@ const openMenu = async (options: {
   fixture.componentInstance.scanProjects.subscribe(() => events.push('scanProjects'));
   fixture.componentInstance.removeProject.subscribe(() => events.push('removeProject'));
   fixture.componentInstance.openInventory.subscribe(() => events.push('openInventory'));
-  fixture.componentInstance.showShortcuts.subscribe(() => events.push('showShortcuts'));
   fixture.componentInstance.openHelp.subscribe(() => events.push('openHelp'));
-  fixture.componentInstance.showAbout.subscribe(() => events.push('showAbout'));
   await fixture.whenStable();
 
   const rows = () =>
@@ -184,7 +196,7 @@ describe('StudioMenuComponent', () => {
     expect(events).toEqual(['openInventory']);
   });
 
-  it('emits each help row, also while an action runs', async () => {
+  it('opens the dialogs and emits help, also while an action runs', async () => {
     const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a'], busy: true });
 
     for (const label of ['Tastenkürzel', 'Hilfe', 'Über Studio']) {
@@ -195,7 +207,9 @@ describe('StudioMenuComponent', () => {
       await fixture.whenStable();
     }
 
-    expect(events).toEqual(['showShortcuts', 'openHelp', 'showAbout']);
+    await vi.waitFor(() =>
+      expect(events).toEqual(['opens:ShortcutsDialogComponent', 'openHelp', 'opens:AboutDialogComponent']),
+    );
   });
 
   it('closes with Escape', async () => {

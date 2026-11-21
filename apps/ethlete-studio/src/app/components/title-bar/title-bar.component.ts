@@ -3,16 +3,21 @@ import {
   booleanAttribute,
   Component,
   computed,
+  DestroyRef,
   ElementRef,
+  inject,
   input,
+  inputBinding,
   output,
+  outputBinding,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   BADGE_IMPORTS,
   BUTTON_IMPORTS,
+  injectOverlayManager,
   TOOLTIP_IMPORTS,
   WINDOW_CONTROL_BUTTON_KINDS,
   WINDOW_CONTROL_BUTTON_SHAPES,
@@ -20,6 +25,9 @@ import {
 } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { catchError, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
+import { restartForUpdate$ } from '../../../host/update';
+import { injectUpdateCheck } from '../../update-check';
+import { UpdateDialogComponent, updateDialogConfigOf } from '../update-dialog/update-dialog.component';
 import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/window';
 import { CODE_LABELS, TITLE_BAR_LABELS } from '../../i18n/shell-labels';
 import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.component';
@@ -134,7 +142,7 @@ const uncommittedEntryOf = (line: string) => {
         @if (update()) {
           <button
             #updateButton
-            (click)="updatePress.emit($event)"
+            (click)="openUpdateDialog($event)"
             et-button
             type="button"
             variant="filled"
@@ -354,6 +362,9 @@ const uncommittedEntryOf = (line: string) => {
 })
 export class TitleBarComponent {
   protected errorTheme = injectSemanticColorTheme('error');
+  private destroyRef = inject(DestroyRef);
+  private overlay = injectOverlayManager();
+  private updateCheck = injectUpdateCheck();
   public os = input.required<WindowChrome['os']>();
   public left = input<WindowButton[]>([]);
   public right = input<WindowButton[]>([]);
@@ -366,8 +377,6 @@ export class TitleBarComponent {
   public product = input('');
 
   public part = input('');
-  // eslint-disable-next-line @angular-eslint/no-output-rename -- the design's update output shares its name with the update input
-  public updatePress = output<MouseEvent>({ alias: 'update' });
   // eslint-disable-next-line @angular-eslint/no-output-rename -- the design's restart output shares its name with the restart input
   public restartPress = output({ alias: 'restart' });
   public dismiss = output();
@@ -410,4 +419,24 @@ export class TitleBarComponent {
     ),
     { initialValue: false },
   );
+
+  protected openUpdateDialog(event: MouseEvent) {
+    const version = this.updateCheck.version() ?? '';
+
+    this.overlay.open(UpdateDialogComponent, {
+      ...updateDialogConfigOf(event),
+      bindings: [
+        inputBinding('version', () => version),
+        outputBinding('restart', () => {
+          restartForUpdate$()
+            .pipe(
+              // eslint-disable-next-line ethlete/no-silent-catch-error -- a refused restart has nothing to recover or show
+              catchError(() => EMPTY),
+              takeUntilDestroyed(this.destroyRef),
+            )
+            .subscribe();
+        }),
+      ],
+    });
+  }
 }

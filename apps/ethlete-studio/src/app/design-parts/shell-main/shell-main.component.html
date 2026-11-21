@@ -14,7 +14,6 @@
       [uncommitted]="codeWatch.uncommitted()"
       [product]="product()"
       [restart]="codeWatch.restart()"
-      (update)="updateRequest.emit($event)"
       (restart)="restartCode()"
       (dismiss)="codeWatch.dismissRestart()"
       (minimize)="minimizeRequest.emit()"

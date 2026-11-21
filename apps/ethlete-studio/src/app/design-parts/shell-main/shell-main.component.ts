@@ -69,7 +69,6 @@ export class ShellMainComponent {
   public productChange = output<string>();
   public collapse = output();
   public restartServer = output();
-  public updateRequest = output<MouseEvent>();
   public minimizeRequest = output();
   public maximizeRequest = output();
 

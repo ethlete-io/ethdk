@@ -2,6 +2,7 @@ import { booleanAttribute, Component, computed, input, model, output, ViewEncaps
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { STUDIO_MENU_LABELS, DESIGN_SERVER_LABELS } from '../../i18n/shell-labels';
+import { injectStudioMenuDialogs } from './studio-menu-dialogs';
 
 export type DesignServerAction = 'start' | 'restart' | 'stop';
 
@@ -25,8 +26,10 @@ const SERVER_ROWS: Record<DesignServerStatus, ServerRow[]> = {
   },
 })
 export class StudioMenuComponent {
+  protected dialogs = injectStudioMenuDialogs();
   public bare = input(false, { transform: booleanAttribute });
   public open = model(false);
+
   public busy = input(false, { transform: booleanAttribute });
   public server = input<DesignServerStatus>('running');
   public project = input('');
@@ -39,9 +42,7 @@ export class StudioMenuComponent {
   public openInventory = output();
   public projectChange = output<string>();
   public openProject = output();
-  public showShortcuts = output();
   public openHelp = output();
-  public showAbout = output();
 
   protected readonly LABELS = STUDIO_MENU_LABELS;
 

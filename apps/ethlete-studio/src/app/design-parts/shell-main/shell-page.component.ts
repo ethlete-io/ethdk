@@ -1,25 +1,11 @@
-import {
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  input,
-  inputBinding,
-  output,
-  outputBinding,
-  signal,
-  ViewEncapsulation,
-} from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, output, signal, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { injectOverlayManager } from '@ethlete/components';
 import { catchError, EMPTY, Observable } from 'rxjs';
 import { closeWindow$, minimizeWindow$, toggleMaximizeWindow$, WINDOW_CHROME } from '../../../host/window';
-import { restartForUpdate$ } from '../../../host/update';
-import { UpdateDialogComponent, updateDialogConfigOf } from '../../components/update-dialog/update-dialog.component';
+import { openHelp$ } from '../../../host/about';
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, DesignServerStatus, StudioMenuComponent } from '../studio-menu/studio-menu.component';
-import { injectStudioMenuDialogs } from '../studio-menu/studio-menu-dialogs';
 import { ServerCrash, ShellMainComponent, ShellSection, StartPhase } from './shell-main.component';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
@@ -82,7 +68,6 @@ export const SHELL_SAMPLE: ShellState = {
       (sectionChange)="action.emit({ kind: 'section', section: $event })"
       (productChange)="action.emit({ kind: 'product', name: $event })"
       (restartServer)="action.emit({ kind: 'server', action: 'restart' })"
-      (updateRequest)="openUpdateDialog($event)"
       (minimizeRequest)="run(minimizeWindow$())"
       (maximizeRequest)="run(toggleMaximizeWindow$())"
       (closeRequest)="run(closeWindow$())"
@@ -102,9 +87,7 @@ export const SHELL_SAMPLE: ShellState = {
         (scanProjects)="action.emit({ kind: 'scan' })"
         (removeProject)="action.emit({ kind: 'remove-project' })"
         (openInventory)="action.emit({ kind: 'inventory' })"
-        (showShortcuts)="menuDialogs.shortcuts()"
-        (openHelp)="menuDialogs.help()"
-        (showAbout)="menuDialogs.about()"
+        (openHelp)="openHelp()"
         shellMainStudio
         bare
       />
@@ -118,10 +101,8 @@ export const SHELL_SAMPLE: ShellState = {
 })
 export class ShellPageComponent {
   private destroyRef = inject(DestroyRef);
-  private overlay = injectOverlayManager();
   protected updateCheck = injectUpdateCheck();
   protected chrome = inject(WINDOW_CHROME);
-  protected menuDialogs = injectStudioMenuDialogs();
 
   public section = input<ShellSection>('System');
 
@@ -160,15 +141,8 @@ export class ShellPageComponent {
     rememberView({ sideWidth: width });
   }
 
-  protected openUpdateDialog(event: MouseEvent) {
-    const version = this.updateCheck.version();
-
-    if (!version) return;
-
-    this.overlay.open(UpdateDialogComponent, {
-      ...updateDialogConfigOf(event),
-      bindings: [inputBinding('version', () => version), outputBinding('restart', () => this.run(restartForUpdate$()))],
-    });
+  protected openHelp() {
+    this.run(openHelp$());
   }
 
   protected run(action$: Observable<void>) {

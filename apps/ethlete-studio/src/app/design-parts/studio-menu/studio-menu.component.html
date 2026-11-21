@@ -85,9 +85,9 @@
         </button>
       }
       <et-menu-separator />
-      <button (activate)="showShortcuts.emit()" et-menu-item type="button">{{ LABELS.shortcuts }}</button>
+      <button (activate)="dialogs.shortcuts()" et-menu-item type="button">{{ LABELS.shortcuts }}</button>
       <button (activate)="openHelp.emit()" et-menu-item type="button">{{ LABELS.help }}</button>
-      <button (activate)="showAbout.emit()" et-menu-item type="button">{{ LABELS.about }}</button>
+      <button (activate)="dialogs.about()" et-menu-item type="button">{{ LABELS.about }}</button>
     </et-menu>
   </ng-template>
 </div>

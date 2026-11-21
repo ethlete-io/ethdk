@@ -51,9 +51,13 @@ const serverRows = (server: Server, busy: boolean): MenuMockRow[] => [
 ];
 
 const HELP_ROWS = [
-  { name: 'shortcuts', label: STUDIO_MENU_LABELS.shortcuts, output: 'showShortcuts' },
-  { name: 'help', label: STUDIO_MENU_LABELS.help, output: 'openHelp' },
-  { name: 'about', label: STUDIO_MENU_LABELS.about, output: 'showAbout' },
+  {
+    name: 'shortcuts',
+    label: STUDIO_MENU_LABELS.shortcuts,
+    declared: 'data-et-action="opens:components/shortcuts-dialog"',
+  },
+  { name: 'help', label: STUDIO_MENU_LABELS.help, declared: 'data-et-action="emit:openHelp"' },
+  { name: 'about', label: STUDIO_MENU_LABELS.about, declared: 'data-et-action="opens:components/about-dialog"' },
 ];
 
 const REPOS = ['ethlete-sdk', 'fut-frontend', 'design-playground'];
@@ -107,9 +111,9 @@ const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, key
   { kind: 'separator' },
   ...serverRows(server, busy),
   { kind: 'separator' },
-  ...HELP_ROWS.map(({ name, label, output }) => ({
+  ...HELP_ROWS.map(({ name, label, declared }) => ({
     label,
-    attributes: `${action(name)} data-et-action="emit:${output}"`,
+    attributes: `${action(name)} ${declared}`,
   })),
 ];
 

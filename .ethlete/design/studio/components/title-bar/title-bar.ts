@@ -6,8 +6,9 @@ import { button } from '@ethlete/components/design/button';
 import { badge, badgeStyles } from '@ethlete/components/design/badge';
 import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
 import { loaderStyles } from '@ethlete/components/design/loader';
-import { notification, notificationStack, notificationStyles } from '@ethlete/components/design/notification';
+import { notificationStyles } from '@ethlete/components/design/notification';
 import { icon } from '@system/foundations/icons';
+import errorToastPart from '@system/components/error-toast';
 import titleSearchPart from '@system/components/title-search';
 import {
   controls,
@@ -58,7 +59,10 @@ const sideControls = (props: Props, buttons: WindowButton[]) =>
 
 const update = (props: Props) =>
   titleBarControl(
-    withAction(button({ label: 'Update', variant: 'filled', color: 'brand', size: 'xs' }), 'emit:update'),
+    button({ label: 'Update', variant: 'filled', color: 'brand', size: 'xs' }).replace(
+      '<button',
+      '<button data-et-action="opens:components/update-dialog"',
+    ),
     'update',
     props,
   );
@@ -92,18 +96,16 @@ const uncommittedState = (props: Props) =>
       )
     : '';
 
-const failedToast = ({ restart }: Props) =>
+const failedToast = async ({ restart }: Props) =>
   restart === 'failed'
-    ? `<div class="flex justify-end px-space-3 pt-space-3">${notificationStack([
-        notification({
-          status: 'error',
-          color: 'danger',
-          title: CODE_LABELS.restartFailedTitle,
-          message: CODE_LABELS.restartFailedMessage,
-          attributes: 'data-et-surface-fill',
-          dismissAttributes: 'data-et-control="dismiss" data-et-action="emit:dismiss"',
-        }),
-      ])}</div>`
+    ? `<div class="flex justify-end px-space-3 pt-space-3">${
+        (
+          await errorToastPart.render({
+            heading: CODE_LABELS.restartFailedTitle,
+            message: CODE_LABELS.restartFailedMessage,
+          })
+        ).body
+      }</div>`
     : '';
 
 const restartButton = (markup: string, { restart }: Props) =>
@@ -276,7 +278,7 @@ export default definePart({
             </div>
           </div>
         </div>
-        ${failedToast(props)}`,
+        ${await failedToast(props)}`,
       styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\n'),
     });
   },
