@@ -743,6 +743,11 @@ describe('SketchesComponent', () => {
           (section) => section.querySelector('[data-sk-head-tag]') || section.querySelector('[data-sk-note]'),
         ),
       ).toBe(true);
+      expect(
+        sections
+          .filter((section) => !section.querySelector('[data-sk-note]'))
+          .every((section) => (section.querySelector('[data-sk-head-tag]')?.textContent?.trim().length ?? 0) <= 3),
+      ).toBe(true);
     });
 
     it('keeps few states in one block', async () => {

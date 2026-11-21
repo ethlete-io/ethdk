@@ -120,3 +120,9 @@ export const matrixBlocksOf = (
 
   return best;
 };
+
+export const shortLabelOf = (label: string) =>
+  label
+    .split(/\s+/)
+    .map((word) => (/^\d+$/.test(word) ? word : word.charAt(0)))
+    .join('');

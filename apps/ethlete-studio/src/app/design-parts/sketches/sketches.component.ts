@@ -87,6 +87,7 @@ import {
   MATRIX_MIN_COLUMN,
   matrixBlocksOf,
   matrixWidthFit,
+  shortLabelOf,
 } from './matrix-blocks';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
 import {
@@ -329,6 +330,7 @@ export class SketchesComponent {
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
   protected readonly FRAME_KEY_OF = frameKeyOf;
+  protected readonly SHORT_LABEL_OF = shortLabelOf;
   public readonly STACK_INSETS = [32, 64];
 
   protected canvas = frameZoomCamera(() => {
