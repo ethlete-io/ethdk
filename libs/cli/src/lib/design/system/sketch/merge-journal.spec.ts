@@ -28,6 +28,8 @@ const checkoutCase = () => {
   cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
   writeFileSync(join(target, '.prettierrc'), '{ "singleQuote": true }');
   git('init', '-q');
+  git('config', 'maintenance.auto', 'false');
+  git('config', 'gc.auto', '0');
   git('add', '.');
   git('commit', '-qm', 'base');
 
