@@ -124,10 +124,10 @@
     "at": "2026-11-05T22:45:06.717Z"
   },
   "foundations/colors": {
-    "hash": "75d0e5ed22ee5f15",
-    "variant": "c",
-    "decidedBy": "user",
-    "at": "2026-11-13T11:02:29.793Z"
+    "hash": "092a26ee3a8b57ac",
+    "variant": "lime",
+    "decidedBy": "builder",
+    "at": "2026-11-21T01:27:24.435Z"
   },
   "foundations/icons": "809d48ca497cdfb9",
   "foundations/logo": {

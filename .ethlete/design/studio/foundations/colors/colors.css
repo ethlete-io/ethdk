@@ -30,6 +30,17 @@ body {
 }
 
 :root {
+  --success: oklch(0.78 0.18 130);
+  --success-hover: oklch(0.83 0.18 130);
+  --success-text: oklch(0.85 0.15 130);
+  --on-success: oklch(0.2 0.05 130);
+  --success-subtle: oklch(0.78 0.18 130 / 0.16);
+  --success-active: oklch(0.69 0.18 130);
+  --success-disabled: oklch(0.57 0.07 130);
+  --on-success-disabled: oklch(0.26 0.03 130);
+}
+
+:root {
   --warning: oklch(0.78 0.15 75);
   --warning-hover: oklch(0.83 0.15 75);
   --warning-text: oklch(0.85 0.12 82);

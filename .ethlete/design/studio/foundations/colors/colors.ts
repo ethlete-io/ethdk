@@ -1,7 +1,7 @@
 import { definePart, html, measureContrastPairs, tokenSheet } from '@design-system';
 import tokens from './colors.css?inline';
 
-type Group = 'surfaces' | 'accent' | 'warning' | 'error';
+type Group = 'surfaces' | 'accent' | 'success' | 'warning' | 'error';
 
 const groups: Record<Group, { title: string; owns: (name: string) => boolean }> = {
   surfaces: {
@@ -9,6 +9,7 @@ const groups: Record<Group, { title: string; owns: (name: string) => boolean }> 
     owns: (name) => /^(on-)?surface(-|$)/.test(name) || /^text(-muted|-subtle)?$/.test(name),
   },
   accent: { title: 'Accent', owns: (name) => /^(accent|on-accent|focus-ring)/.test(name) },
+  success: { title: 'Success', owns: (name) => /^(on-)?success/.test(name) },
   warning: { title: 'Warning', owns: (name) => /^(on-)?warning/.test(name) },
   error: { title: 'Error', owns: (name) => /^(on-)?danger/.test(name) },
 };
@@ -20,12 +21,12 @@ const surfaceTokens = surfaces.map((name) => `--${name}`);
 const fillsOf = (kind: string) => [`--${kind}`, `--${kind}-hover`, `--${kind}-active`];
 
 const ratiosOf = (name: string): { on: string[]; needs: number | null; ink: boolean } | null => {
-  if (/^surface(-dark-elevated(-2)?|-shadow)?$/.test(name) || /^(accent|warning|danger)-subtle$/.test(name))
+  if (/^surface(-dark-elevated(-2)?|-shadow)?$/.test(name) || /^(accent|success|warning|danger)-subtle$/.test(name))
     return null;
   if (name === 'on-surface-disabled') return { on: ['--surface-disabled'], needs: 3, ink: true };
-  const onDisabled = /^on-(accent|warning|danger)-disabled$/.exec(name);
+  const onDisabled = /^on-(accent|success|warning|danger)-disabled$/.exec(name);
   if (onDisabled) return { on: [`--${onDisabled[1]}-disabled`], needs: 3, ink: true };
-  const onFill = /^on-(accent|warning|danger)$/.exec(name);
+  const onFill = /^on-(accent|success|warning|danger)$/.exec(name);
   if (onFill) return { on: fillsOf(onFill[1] ?? ''), needs: 4.5, ink: true };
   if (name === 'surface-border' || name.endsWith('-disabled')) return { on: surfaceTokens, needs: null, ink: false };
   const ink = /^text(-|$)/.test(name) || name.endsWith('-text');
@@ -72,13 +73,14 @@ const swatchOf = (name: string) => {
   if (name === 'focus-ring') return html`<span class="co-ring">Focus</span>`;
   if (name === 'on-surface-disabled')
     return html`<span class="co-fill co-fill--surface co-fill--disabled" aria-disabled="true">Disabled</span>`;
-  const stateFill = /^on-(accent|warning|danger)-disabled$/.exec(name);
+  const stateFill = /^on-(accent|success|warning|danger)-disabled$/.exec(name);
   if (stateFill)
     return html`<span class="co-fill co-fill--${stateFill[1]} co-fill--disabled" aria-disabled="true">Disabled</span>`;
   if (name === 'text-subtle') return html`<span class="co-subtle-text">Subtle text</span>`;
-  if (/^(accent|warning|danger)-active$/.test(name))
+  if (/^(accent|success|warning|danger)-active$/.test(name))
     return html`<span class="co-swatch" style="background: var(--${name})"></span>`;
   if (name === 'on-accent') return html`<span class="co-fill">Merge</span>`;
+  if (name === 'on-success') return html`<span class="co-fill co-fill--success">Merged</span>`;
   if (name === 'on-warning') return html`<span class="co-fill co-fill--warning">Check again</span>`;
   if (name === 'on-danger') return html`<span class="co-fill co-fill--danger">Discard sketch</span>`;
 
@@ -127,6 +129,7 @@ const mark = (paths: string) =>
 
 const marks = {
   ready: mark('<path d="m3.5 8.5 3 3 6-7"/>'),
+  success: mark('<circle cx="8" cy="8" r="5.5"/><path d="m5.5 8.25 1.75 1.75 3.25-3.5"/>'),
   error: mark('<circle cx="8" cy="8" r="5.5"/><path d="m6 6 4 4m0-4-4 4"/>'),
   warning: mark('<path d="M8 2.5 14 13H2z"/><path d="M8 6.5v3"/><path d="M8 11.25v.01"/>'),
 };
@@ -139,6 +142,22 @@ const markRow = (label: string, kind: keyof typeof marks) =>
 const markRows = html`<span class="co-trows">
   ${markRow('button', 'ready')}${markRow('select', 'warning')}${markRow('dialog', 'error')}
 </span>`;
+
+const successCard = (surface: string) =>
+  html`<div class="co-surface" style="background: var(--${surface})">
+    <span class="co-surface-name">${surface}</span>
+    ${markRows}
+    <span class="co-cluster"
+      ><span class="co-fill co-fill--success">Merged</span
+      ><span class="co-fill co-fill--success co-fill--hover">Hover</span
+      ><span class="co-fill co-fill--success co-fill--active">Active</span
+      ><span class="co-fill co-fill--success co-fill--disabled" aria-disabled="true">Disabled</span></span
+    >
+    <span class="co-success-ink">Render check: ok</span>
+    <span class="co-success-note"
+      ><span class="co-mark co-mark--success">${marks.success}</span>The sketch was merged into the product.</span
+    >
+  </div>`;
 
 const warningCard = (surface: string) =>
   html`<div class="co-surface" style="background: var(--${surface})">
@@ -176,16 +195,18 @@ const sampleOf = (name: string) => `${swatchOf(name)}${ratioChips(name)}`;
 const cards: Record<Group, (surface: string) => string> = {
   surfaces: surfaceCard,
   accent: accentCard,
+  success: successCard,
   warning: warningCard,
   error: errorCard,
 };
 
 export default definePart<{ group: Group }>({
-  note: 'The Studio surfaces, accent, warning and error colours. The source of the Studio SDK themes: `yarn studio:themes` generates them from this part.',
+  note: 'The Studio surfaces, accent, success, warning and error colours. The source of the Studio SDK themes: `yarn studio:themes` generates them from this part.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5'],
   states: {
     surfaces: { group: 'surfaces' },
     accent: { group: 'accent' },
+    success: { group: 'success' },
     warning: { group: 'warning' },
     error: { group: 'error' },
   },
@@ -194,6 +215,8 @@ export default definePart<{ group: Group }>({
       'The surface, border and text tokens with a card per dark surface; check that every contrast ratio meets its need and no ratio shows red.',
     accent:
       'The accent and focus-ring tokens on each surface with fills in every interaction and a focus ring; check the ratios and that disabled reads faded.',
+    success:
+      'The success tokens on each surface with fills in every interaction, ink and a subtle note; check the ratios and that the success ink stays readable on its tint.',
     warning:
       'The warning tokens on each surface with fills, ink and a subtle note; check the ratios and that the warning ink stays readable on its tint.',
     error:
@@ -224,12 +247,16 @@ export default definePart<{ group: Group }>({
         .co-muted { color: var(--text-muted); }
         .co-fill { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-3); border-radius: var(--radius-control-md); background: var(--accent); color: var(--on-accent); font-weight: var(--weight-medium); }
         .co-fill--hover { background: var(--accent-hover); }
+        .co-fill--success { background: var(--success); color: var(--on-success); }
         .co-fill--warning { background: var(--warning); color: var(--on-warning); }
         .co-fill--danger { background: var(--danger); color: var(--on-danger); }
         .co-fill--active { background: var(--accent-active); }
+        .co-fill--success.co-fill--hover { background: var(--success-hover); }
+        .co-fill--success.co-fill--active { background: var(--success-active); }
         .co-fill--warning.co-fill--active { background: var(--warning-active); }
         .co-fill--danger.co-fill--active { background: var(--danger-active); }
         .co-fill--disabled { background: var(--accent-disabled); color: var(--on-accent-disabled); }
+        .co-fill--success.co-fill--disabled { background: var(--success-disabled); color: var(--on-success-disabled); }
         .co-fill--warning.co-fill--disabled { background: var(--warning-disabled); color: var(--on-warning-disabled); }
         .co-fill--danger.co-fill--disabled { background: var(--danger-disabled); color: var(--on-danger-disabled); }
         .co-fill--surface { background: var(--text-muted); color: var(--surface); }
@@ -241,8 +268,11 @@ export default definePart<{ group: Group }>({
         .co-mark { display: flex; flex: none; }
         .co-mark--ready { color: var(--accent); }
         .co-mark--error { color: var(--danger); }
+        .co-mark--success { color: var(--success); }
         .co-mark--warning { color: var(--warning); }
+        .co-success-ink { color: var(--success-text); font-weight: var(--weight-medium); }
         .co-warning-ink { color: var(--warning-text); font-weight: var(--weight-medium); }
+        .co-success-note { align-self: stretch; display: flex; align-items: center; gap: var(--space-2); min-height: var(--row); padding: var(--space-1) var(--space-2); border-radius: var(--radius-control-sm); background: var(--success-subtle); }
         .co-warning-note { align-self: stretch; display: flex; align-items: center; gap: var(--space-2); min-height: var(--row); padding: var(--space-1) var(--space-2); border-radius: var(--radius-control-sm); background: var(--warning-subtle); }
         .co-danger-ink { color: var(--danger-text); font-weight: var(--weight-medium); }
         .co-danger-note { align-self: stretch; display: flex; align-items: center; gap: var(--space-2); min-height: var(--row); padding: var(--space-1) var(--space-2); border-radius: var(--radius-control-sm); background: var(--danger-subtle); }
