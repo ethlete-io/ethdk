@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.57
+
+### Patch Changes
+
+- The cdk migration's list of components classes includes `et-color-interactive-container`.
+
 ## 5.0.0-next.56
 
 ### Patch Changes

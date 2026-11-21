@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.0-next.94
+
+### Minor Changes
+
+- Export `FocusRingStylesComponent` from the public API and document the `--et-focus-ring-color`, `--et-focus-ring-offset` and `--et-focus-ring-width` tokens on it.
+- `et-form-field` has a `variant` input. `variant="ghost"` draws a select (and other text controls) without a resting border and with a muted value, for toolbars and table cells.
+- `provideScrollableConfig` takes `buttons.color` and `buttons.variant` as app-wide defaults for the scroll buttons (the `color` input still wins), and the `'inside'` buttons expose `--et-scrollable-buttons-offset` and `--et-scrollable-buttons-end-space` custom properties.
+- Add a per-instance `scrollableButtons` input to tab groups and nav tabs; `[etScrollableButtons]` breakpoint maps now hide the buttons below their lowest breakpoint instead of showing them.
+
+### Patch Changes
+
+- Carousel dots get a pressed look and the selected dot keeps its accent under hover and press. The table expander fades its background and gets a pressed look.
+- Filled buttons now press near their rest colour.
+- Checkbox, radio, checkbox group and selection cards now draw their focus ring, checked border and checked hover with the ink colour.
+
 ## 1.0.0-next.93
 
 ### Minor Changes

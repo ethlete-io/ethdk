@@ -1,5 +1,17 @@
 # timetrack-app
 
+## 0.2.0-next.23
+
+### Patch Changes
+
+- Building a Timetrack day is faster: merging rows checks the cheap sliver test before the fold test (a heavy day dropped from 740 to 410 ms).
+- Timetrack spawns far fewer git processes while idle: a run of commits rescans a repository group once per 20 seconds, and the 10-minute sweep paces itself.
+- Count a commit once per day however many checkouts or cherry-picks carry it, keeping the original copy.
+- Build a day's rows from every copy of a cherry-picked or rebased commit, then keep each commit in the rows of one copy only, so no commit loses its row to the copy that was dropped.
+- Stop Timetrack's main thread from spinning a full CPU core while idle on Linux.
+- A linked git worktree, also a deleted one, is read as its main repository: one lane, no naming offer of its own. `repoRootOf` now takes `CheckoutRoots`.
+- Return the heap a large batch of events left behind to the OS on Linux, so the app no longer keeps its largest IPC body resident for good.
+
 ## 0.2.0-next.22
 
 ### Patch Changes
