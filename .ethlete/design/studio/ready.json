@@ -617,16 +617,17 @@
     "pid": 2150109
   },
   "components/sketch-question": {
-    "hash": "00929200d33aa85b",
+    "hash": "d0f087f184b46b69",
     "files": {
-      ".ethlete/design/studio/components/sketch-question/sketch-question.ts": "b76b4f61ac6237a3"
+      ".ethlete/design/studio/components/sketch-question/sketch-question.ts": "e8e64652ef545b50"
     },
+    "app": "d91e1fc66985e515",
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-18T10:47:05.049Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 3572771
+    "at": "2026-11-21T05:35:33.029Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 2152842
   },
   "components/sketch-status-badge": {
     "hash": "c2d9d8863df03f9d",
