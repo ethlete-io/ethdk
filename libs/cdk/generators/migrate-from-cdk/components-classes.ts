@@ -891,6 +891,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-scrollable-button--end',
   'et-scrollable-button--start',
   'et-scrollable-buttons',
+  'et-scrollable-buttons--inside',
   'et-scrollable-container',
   'et-scrollable-dots-container',
   'et-scrollable-footer',
