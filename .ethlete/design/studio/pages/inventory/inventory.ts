@@ -31,7 +31,7 @@ const worldOf = (pages: InventoryPage[]) =>
 
 export default definePart<Props>({
   note: 'The Inventory of every page of the product, opened from Inventory in the studio menu: a canvas with the rest frame of each page (pan by wheel and drag, zoom with the zoom chip), each frame headed by its page and how many entries are open, a numbered box on every control, asset and overlay. A page picked in the part tree is selected and its frame outlined; the column at the right shows that page with its approval state, Neu laden and Inventory freigeben, and its entries in three sections: Bedienelemente, Assets (A1, A2 …) and Overlays (O1 …), each row with its name and what it belongs to. An undeclared control, an inline asset or a mocked overlay is red, an unclassified control amber; Approve stays off while either is left.',
-  madeBy: ['claude-opus-5-5', 'design check'],
+  madeBy: ['claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   implements: {
     route: '/',
     component: 'apps/ethlete-studio/src/app/design-parts/inventory-page/inventory-page.component.ts',

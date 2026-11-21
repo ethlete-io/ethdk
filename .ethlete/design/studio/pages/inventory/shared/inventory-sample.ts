@@ -139,7 +139,7 @@ export const pagesOf = (inventory: Props['inventory']): InventoryPage[] => [
 ];
 
 const TONE: Record<Tone, string> = {
-  ok: '',
+  ok: ' data-et-semantic-color="success"',
   error: ' data-et-semantic-color="error"',
   warning: ' data-et-semantic-color="warning"',
 };
