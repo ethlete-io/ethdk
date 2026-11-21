@@ -352,7 +352,7 @@
     "pid": 2123565
   },
   "components/disclosure": {
-    "hash": "17f459ae69df97ec",
+    "hash": "f18277472cff5ddc",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -374,15 +374,16 @@
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/disclosure/disclosure.css": "e8694c045bf818de",
-      ".ethlete/design/studio/components/disclosure/disclosure.ts": "1e62834b19c423b4",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "0c436106ceb490e0"
+      ".ethlete/design/studio/components/disclosure/disclosure.ts": "f7c161f5432f5cf6",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af"
     },
+    "app": "e44a0395c81c64f9",
     "actions": ["emit:openChange", "open", "rest"],
     "builder": "designer",
-    "at": "2026-11-17T13:28:32.149Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-21T05:32:17.410Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 2125409
   },
   "components/error-toast": {
     "hash": "ede6976bb7e79b35",
