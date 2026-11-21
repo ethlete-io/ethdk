@@ -26,6 +26,7 @@ import {
   type WindowButton,
 } from './shared/chrome';
 import styles from './title-bar.css?inline';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 const captionGlyphs: Record<WindowButton, string> = {
   minimize: captionMinimize,
@@ -93,8 +94,8 @@ const failedToast = ({ restart }: Props) =>
         notification({
           status: 'error',
           color: 'danger',
-          title: 'Neustart fehlgeschlagen',
-          message: 'Der Design-Server antwortet nicht. Das Log steht im Studio-Menü.',
+          title: STUDIO_LABELS.code.restartFailedTitle,
+          message: STUDIO_LABELS.code.restartFailedMessage,
           attributes: 'data-et-surface-fill',
           dismissAttributes: 'data-et-control="dismiss" data-et-action="emit:dismiss"',
         }),
@@ -110,7 +111,7 @@ const notice = async (props: Props) =>
       titleBarControl(
         restartButton(
           button({
-            label: 'Neu starten',
+            label: STUDIO_LABELS.designServer.restartButton,
             variant: 'tonal',
             color: 'brand',
             size: 'xs',
@@ -139,7 +140,7 @@ export default definePart({
     {
       platform: 'Windows 11',
       states: ['windows', 'windows-update'],
-      target: '[aria-label="Minimieren"]',
+      target: `[aria-label="${STUDIO_LABELS.titleBar.window.minimize}"]`,
       width: 46,
       height: 32,
       inset: { edge: '.st-title-bar', top: 0 },
@@ -148,7 +149,7 @@ export default definePart({
     {
       platform: 'Windows 11',
       states: ['windows', 'windows-update'],
-      target: '[aria-label="Maximieren"]',
+      target: `[aria-label="${STUDIO_LABELS.titleBar.window.maximize}"]`,
       width: 46,
       height: 32,
       inset: { edge: '.st-title-bar', top: 0 },
@@ -157,7 +158,7 @@ export default definePart({
     {
       platform: 'Windows 11',
       states: ['windows', 'windows-update'],
-      target: '[aria-label="Schließen"]',
+      target: `[aria-label="${STUDIO_LABELS.titleBar.window.close}"]`,
       width: 46,
       height: 32,
       inset: { edge: '.st-title-bar', top: 0, right: 0 },

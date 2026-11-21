@@ -1,6 +1,7 @@
 import { definePart, drawing, html, interactionRows, ng } from '@design-system';
 import { dialog, dialogStyles, overlayBackdrop } from '@ethlete/components/design/dialog';
 import styles from './shortcuts-dialog.css?inline';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Interaction = 'hover' | 'active' | 'focus-visible';
 
@@ -8,27 +9,27 @@ type Props = { close?: Interaction };
 
 const GROUPS = [
   {
-    label: 'Allgemein',
+    label: STUDIO_LABELS.shortcutsDialog.general,
     rows: [
-      { label: 'Suche und Befehle', keys: 'mod+k' },
-      { label: 'Tastenkürzel', keys: 'mod+/' },
+      { label: STUDIO_LABELS.shortcutsDialog.palette, keys: 'mod+k' },
+      { label: STUDIO_LABELS.shortcutsDialog.title, keys: 'mod+/' },
     ],
   },
   {
     label: 'Canvas',
     rows: [
-      { label: 'Alle Frames zeigen', keys: 'shift+1' },
-      { label: 'Gewählten Frame zeigen', keys: 'shift+2' },
-      { label: 'Auf 100 % zoomen', keys: 'shift+0' },
-      { label: 'Verschieben beim Ziehen', keys: 'space' },
-      { label: 'Auswahl aufheben', keys: 'esc' },
+      { label: STUDIO_LABELS.shortcutsDialog.fitAll, keys: 'shift+1' },
+      { label: STUDIO_LABELS.shortcutsDialog.fitFocused, keys: 'shift+2' },
+      { label: STUDIO_LABELS.shortcutsDialog.actualSize, keys: 'shift+0' },
+      { label: STUDIO_LABELS.shortcutsDialog.pan, keys: 'space' },
+      { label: STUDIO_LABELS.shortcutsDialog.deselect, keys: 'esc' },
     ],
   },
 ];
 
 const closeAttributes = (close?: Interaction) =>
   [
-    'aria-label="Schließen" data-et-control="close" data-et-action="emit:close" data-can-animate',
+    `aria-label="${STUDIO_LABELS.shortcutsDialog.close}" data-et-control="close" data-et-action="emit:close" data-can-animate`,
     close && `data-et-force="${close}"`,
   ]
     .filter(Boolean)
@@ -90,7 +91,7 @@ export default definePart({
       body: overlayBackdrop(
         dialog({
           id: 'shortcuts',
-          title: 'Tastenkürzel',
+          title: STUDIO_LABELS.shortcutsDialog.title,
           body: await list(),
           close: closeAttributes(close),
           attributes: 'data-et-surface-fill',

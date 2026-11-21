@@ -1,6 +1,7 @@
 import { forceInteraction, html, interactionRows } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import titleBar from '@system/components/title-bar';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Control = 'restart' | 'later';
 type Interaction = 'hover' | 'active' | 'focus-visible';
@@ -40,7 +41,7 @@ export const controls = {
 const displayVersion = (version: string) => version.split('+')[0] ?? version;
 
 export const QUESTION = (version: string) => `Update auf v${displayVersion(version)} installieren?`;
-export const RESTART_NOTE = 'Studio startet dafür neu.';
+export const RESTART_NOTE = STUDIO_LABELS.updateDialog.note;
 
 export const mark = (name: Control, markup: string, { force }: Props) => {
   const drawn = control(markup, name);

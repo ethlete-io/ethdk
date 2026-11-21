@@ -721,6 +721,78 @@
       "libs/core/src/lib/utils/runtime-error.ts": "33d4175880c8b353"
     }
   },
+  "components/shell-resize-handle": {
+    "hash": "54112ded24b07fd5",
+    "at": "2026-11-21T03:51:10.585Z",
+    "states": {
+      "resize": "44136fa355b3678a",
+      "resize-active": "4ca2898fbaebd775",
+      "resize-focus-visible": "c4e5e28159e35ce1",
+      "resize-hover": "12b1b358429b1df5"
+    },
+    "files": {
+      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.css": "3f6d46121dfa54f6",
+      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "3edab293be84daf2",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6"
+    },
+    "app": {
+      "apps/ethlete-studio/src/app/design-parts/shell-main/side-width.ts": "e9ec05dbcddbf305",
+      "apps/ethlete-studio/src/app/design-parts/shell-resize-handle/shell-resize-handle.component.ts": "3191fe56aa7f17e4",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
+      "libs/core/src/lib/drag-handle/drag-gesture.ts": "65e016a4233b47dc",
+      "libs/core/src/lib/drag-handle/drag-handle.directive.ts": "0748b55b6f2913ef",
+      "libs/core/src/lib/utils/angular/component-id.ts": "f8d11de09b1c89d1",
+      "libs/core/src/lib/utils/angular/di.ts": "6b1df0313619e870",
+      "libs/core/src/lib/utils/angular/host-listener.ts": "6d17becd7831d9ad",
+      "libs/core/src/lib/utils/object.ts": "094625e147452a91",
+      "libs/core/src/lib/utils/text-selection.ts": "fa25b2171e70d338"
+    }
+  },
+  "components/sketch-status-badge": {
+    "hash": "dc6e177eabc3b009",
+    "at": "2026-11-21T03:52:50.268Z",
+    "states": {
+      "drawing": "a9779e95b82b8117",
+      "failed": "759315d5ae8c3113",
+      "idle": "adcdf212c7b960f5",
+      "not-ready": "ec5d0dc153853046",
+      "paused": "d9f037e74d8b8051",
+      "picked": "162a46c737c659c0",
+      "waiting": "2835e7f278bd4491"
+    },
+    "files": {
+      ".ethlete/design/sdk/components/badge/badge.css": "1d9a7aa65576198e",
+      ".ethlete/design/sdk/components/badge/badge.ts": "48ee47d24fef537a",
+      ".ethlete/design/studio/components/sketch-status-badge/sketch-status-badge.ts": "9e1ef8f9a60283de",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
+      "libs/components/design/badge.ts": "ae6d1b71fa14a024",
+      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b"
+    },
+    "app": {
+      "apps/ethlete-studio/src/app/design-parts/sketch-status-badge/sketch-status-badge.component.ts": "ad658f068cc0de1c",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
+      "libs/components/src/lib/badge/badge.component.css": "e2bfc2314f98ff53",
+      "libs/components/src/lib/badge/badge.component.ts": "8ed1027bb0e673f8",
+      "libs/components/src/lib/badge/badge.imports.ts": "6fbef33b221a0ce2",
+      "libs/core/src/lib/providers/breakpoint-observer.ts": "cda08dc65e6f915c",
+      "libs/core/src/lib/theming/color-scheme-type.token.ts": "5160375fd2167ae7",
+      "libs/core/src/lib/theming/color-scheme.ts": "6b992b77025e2734",
+      "libs/core/src/lib/theming/color-theme-variant.ts": "9a08bab747f65814",
+      "libs/core/src/lib/theming/color-theme.util.ts": "a3a76e3b669d8b94",
+      "libs/core/src/lib/theming/provide-surface.directive.ts": "b866b31e3cedc875",
+      "libs/core/src/lib/theming/root-font-size-check.ts": "62960943cbc968ab",
+      "libs/core/src/lib/theming/semantic-color-theme.ts": "b19ef61560e28161",
+      "libs/core/src/lib/theming/surface-theme.util.ts": "935456055c636472",
+      "libs/core/src/lib/utils/angular/component-id.ts": "f8d11de09b1c89d1",
+      "libs/core/src/lib/utils/angular/di.ts": "6b1df0313619e870",
+      "libs/core/src/lib/utils/object.ts": "094625e147452a91"
+    }
+  },
   "components/title-search": {
     "hash": "29aacc776501aa63",
     "at": "2026-11-21T03:12:02.450Z",
@@ -1053,8 +1125,8 @@
     }
   },
   "components/zoom-chip": {
-    "hash": "76b12927ace36380",
-    "at": "2026-11-20T15:57:57.403Z",
+    "hash": "9f3c316a1115d5d5",
+    "at": "2026-11-21T03:55:59.968Z",
     "states": {
       "fit": "6b576dcebc6c555e",
       "fit-active": "2d3aae70f8cb6aac",
@@ -1074,12 +1146,13 @@
       "reset-hover": "607876aa1964dd84"
     },
     "files": {
-      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "a325e9c839da61a0",
+      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "1d17a457e6d3c365",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
       "libs/components/design/tooltip.ts": "1288fd3f374f7801",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
-      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
@@ -1096,11 +1169,11 @@
     },
     "app": {
       "apps/ethlete-studio/src/app/design-parts/zoom-chip/zoom-chip.component.ts": "2db56b016f4012cb",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "2cc8f112ebebb222",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",
-      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
       "libs/components/src/lib/button/button.component.ts": "43b80edd0899cde2",
       "libs/components/src/lib/button/button.imports.ts": "a332aa92f4996d86",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
@@ -1121,7 +1194,7 @@
       "libs/components/src/lib/button/window-control-button.component.css": "637ec94eacde4ba5",
       "libs/components/src/lib/button/window-control-button.component.ts": "6105c886c4a71735",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
-      "libs/components/src/lib/focus-ring/focus-ring-styles.component.ts": "9b2779fdd412f304",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.ts": "c95f9f8d8d98b330",
       "libs/components/src/lib/focus-ring/focus-ring.directive.ts": "4d024884f07f2ba0",
       "libs/components/src/lib/internals/id-factory.ts": "5f0e611a0df139ba",
       "libs/components/src/lib/loader/clamp-progress.ts": "55e667d03b5674e8",

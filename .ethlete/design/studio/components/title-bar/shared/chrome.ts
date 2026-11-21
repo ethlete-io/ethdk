@@ -2,6 +2,7 @@ import { forceInteraction, interactionRows, slot } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import { icon } from '@system/foundations/icons';
 import { tooltip } from '@ethlete/components/design/tooltip';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 export type WindowButton = 'minimize' | 'maximize' | 'close';
 
@@ -66,7 +67,7 @@ const MACOS: Props = { os: 'macos', left: [], right: [], update: false, ...WHERE
 const INTERACTIONS = ['hover', 'active', 'focus-visible'] as const;
 
 const CONTENTS = {
-  notice: { update: true, notice: true, noticeText: 'CLI geändert - neu starten' },
+  notice: { update: true, notice: true, noticeText: STUDIO_LABELS.code.cli },
   'cli-dirty': { noticeText: 'CLI hat uncommittete Änderungen, Studio läuft auf Stand 5dbc7ca' },
   update: { update: true },
   rest: {},
@@ -175,9 +176,9 @@ const TRAFFIC_LIGHTS = '<span class="size-3 rounded-full bg-et-surface-border" a
 export const MAC_RESERVE = `<div class="flex w-19.5 shrink-0 items-center gap-2 pl-1.75" data-tauri-drag-region ${slot('traffic-lights')}>${TRAFFIC_LIGHTS}</div>`;
 
 export const LABELS: Record<WindowButton, string> = {
-  minimize: 'Minimieren',
-  maximize: 'Maximieren',
-  close: 'Schließen',
+  minimize: STUDIO_LABELS.titleBar.window.minimize,
+  maximize: STUDIO_LABELS.titleBar.window.maximize,
+  close: STUDIO_LABELS.titleBar.window.close,
 };
 
 /** The window buttons of one side as an Angular template for `ng()`: round on Linux, square tiles on Windows. */

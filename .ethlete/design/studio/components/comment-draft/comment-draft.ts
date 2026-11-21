@@ -3,6 +3,7 @@ import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import textarea from '@system/components/textarea';
 import { icon } from '@system/foundations/icons';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Phase = 'busy' | 'error' | 'rejected';
 
@@ -22,7 +23,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
   const field = await textarea.render({
     field: {
       id: 'comment-draft',
-      placeholder: 'Enter sendet, Umschalt+Enter macht einen Zeilenumbruch',
+      placeholder: STUDIO_LABELS.commentDraft.placeholder,
       rows: 3,
       ariaLabel: 'Kommentar',
       disabled: busy,
@@ -30,7 +31,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
     },
   });
   const send = await button.render({
-    label: phase === 'error' ? 'Erneut senden' : 'Senden',
+    label: phase === 'error' ? STUDIO_LABELS.commentDraft.sendAgain : STUDIO_LABELS.commentDraft.send,
     variant: 'filled',
     size: 'xs',
     disabled: !text,
@@ -38,7 +39,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
   });
   const sendMarkup = busy || !text ? send.body : withAction(send.body, 'emit:sendComment');
   const cancel = await button.render({
-    label: 'Abbrechen',
+    label: STUDIO_LABELS.commentDraft.cancel,
     variant: 'transparent',
     color: 'surface',
     size: 'xs',
@@ -50,9 +51,9 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
       class="relative z-20 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
       data-et-auto-surface
       role="dialog"
-      aria-label="Kommentar schreiben"
+      aria-label="${STUDIO_LABELS.commentDraft.dialog}"
     >
-      ${field.body}${phase === 'error' ? problem('Kommentar nicht gesendet. Erneut versuchen.') : phase === 'rejected' ? problem(reason) : ''}
+      ${field.body}${phase === 'error' ? problem(STUDIO_LABELS.commentDraft.notSent) : phase === 'rejected' ? problem(reason) : ''}
       <div class="flex justify-end gap-space-2">
         ${control(cancelMarkup, 'comment-cancel')}${control(sendMarkup, 'comment-send')}
       </div>

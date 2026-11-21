@@ -1,6 +1,6 @@
 {
   "components/about-dialog": {
-    "hash": "2c6aa1afdb7b85c3",
+    "hash": "60d2b102e86174ef",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-20T15:24:58.541Z"
@@ -12,19 +12,19 @@
     "at": "2026-11-07T17:19:30.454Z"
   },
   "components/command-palette": {
-    "hash": "8a1e79be772ad516",
+    "hash": "723f22b141311f98",
     "variant": "new",
     "decidedBy": "builder",
     "at": "2026-11-20T04:00:49.298Z"
   },
   "components/comment-draft": {
-    "hash": "d0426a5b4fe8ca4e",
+    "hash": "89d4b1474d37d8c3",
     "variant": "raised",
     "decidedBy": "user",
     "at": "2026-11-05T15:36:53.628Z"
   },
   "components/comment-flow": {
-    "hash": "4960b1e73f297e4e",
+    "hash": "42de391c98c5e529",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-18T06:23:52.170Z"
@@ -51,19 +51,19 @@
     "at": "2026-11-21T02:52:36.165Z"
   },
   "components/shortcuts-dialog": {
-    "hash": "7e58c1397f472485",
+    "hash": "e7a737d3b16d265e",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-20T15:25:05.294Z"
   },
   "components/sketch-status-badge": {
-    "hash": "0d7cbd781152272a",
+    "hash": "3d295d9d14328e70",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-15T21:29:49.115Z"
   },
   "components/title-bar": {
-    "hash": "fa1e41f845cce4b7",
+    "hash": "fadf745a7c6a07d0",
     "variant": "a",
     "decidedBy": "plan: finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves",
     "at": "2026-11-16T02:27:51.159Z",
@@ -77,14 +77,14 @@
   },
   "components/tree-row": "bf7bd4857a66660a",
   "components/update-dialog": {
-    "hash": "14c58fcf3b495646",
+    "hash": "a1d4ff5a5d11a342",
     "variant": "new",
     "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit",
     "at": "2026-11-07T14:50:56.608Z",
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "components/zoom-chip": {
-    "hash": "cab5790575c62dd4",
+    "hash": "233f5458a9d5a3b1",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-17T17:55:04.370Z"
