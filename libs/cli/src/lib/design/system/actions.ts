@@ -1,4 +1,4 @@
-export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick', 'ArrowRight', 'ArrowLeft'] as const;
+export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick', 'ArrowRight', 'ArrowLeft', 'type'] as const;
 
 export const DBLCLICK_PREFIX = 'dblclick:';
 
@@ -8,9 +8,11 @@ const SPACE_ONLY_ROLES = ['switch', 'checkbox', 'radio', 'input-checkbox', 'inpu
 
 const ARROW_ROLES = ['separator', 'slider', 'input-range'];
 
+const TEXT_ENTRY_ROLES = ['combobox', 'textbox', 'input-text', 'input-search'];
+
 /**
  * The inputs that press an element of `key`: a checkable control toggles on Space like a native checkbox, not on Enter;
- * a focusable separator or slider moves on the arrow keys and takes no press.
+ * a focusable separator or slider moves on the arrow keys and takes no press; a text-entry control that emits is typed into.
  */
 export const actionInputsOf = (key: string, action?: DeclaredAction | string | null): readonly ActionInput[] => {
   if (typeof action === 'object' && action?.gesture === 'dblclick') return ['dblclick'];
@@ -18,6 +20,8 @@ export const actionInputsOf = (key: string, action?: DeclaredAction | string | n
   const role = key.slice(0, key.indexOf(' '));
 
   if (ARROW_ROLES.includes(role)) return ['ArrowRight', 'ArrowLeft'];
+
+  if (typeof action === 'object' && action?.kind === 'emit' && TEXT_ENTRY_ROLES.includes(role)) return ['type'];
 
   return SPACE_ONLY_ROLES.includes(role) ? ['click', 'Space'] : ['click', 'Enter', 'Space'];
 };

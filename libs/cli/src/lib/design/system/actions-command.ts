@@ -219,6 +219,8 @@ export const runActionInput = async (options: {
     if (input === 'click' || input === 'dblclick') {
       await (input === 'click' ? target.click({ timeout }) : target.dblclick({ timeout }));
       await page.mouse.move(-1, -1);
+    } else if (input === 'type') {
+      await target.fill('a', { timeout });
     } else {
       await page.keyboard.press('Shift');
       await target.focus({ timeout });
@@ -228,7 +230,7 @@ export const runActionInput = async (options: {
     await awaitOutput(page, options.output ?? null);
     await settle(page, timeout);
 
-    if (shoot && input !== 'click' && input !== 'dblclick' && !options.focused) {
+    if (shoot && input !== 'click' && input !== 'dblclick' && input !== 'type' && !options.focused) {
       await dropKeyboardFocus(page);
       await settle(page, timeout);
     }

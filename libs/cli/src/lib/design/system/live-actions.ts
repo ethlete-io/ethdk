@@ -661,6 +661,9 @@ export const checkLiveActions = async (options: {
               });
             }
             await page.mouse.move(-1, -1);
+          } else if (options.input === 'type') {
+            await watchMutations(page);
+            await control.fill('a', { timeout: DRAW_TIMEOUT_MS });
           } else {
             const before: RingStyle | undefined = (await ringProbeOrNullOf(control))?.style;
 

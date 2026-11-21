@@ -9,6 +9,7 @@ import { DESIGN_DIR } from '../design-config';
 import {
   actionFailureOf,
   actionInputsOf,
+  type ActionInput,
   ActionElement,
   actionScanScriptOf,
   componentSelectorOf,
@@ -388,6 +389,7 @@ describe('runActionInput', () => {
         <button aria-label="Go" onclick="__etDesignEmits.push({ output: 'go' })">Go</button>
         <button aria-label="Hide" onclick="__etDesignEmits.push({ output: 'hide' })">Hide</button>
         <button aria-label="Off" disabled>Off</button>
+        <input role="combobox" aria-label="Search" oninput="__etDesignEmits.push({ output: 'queryChange' })" />
         <app-part-a><button aria-label="Pick" onclick="__etDesignEmits.push({ output: 'pageAction' }); listeners.forEach((listener) => listener())">Pick</button></app-part-a>
       </div>
       <script>
@@ -410,7 +412,7 @@ describe('runActionInput', () => {
     await new Promise((resolve) => server.close(resolve));
   });
 
-  const press = (key: string, input: 'click' | 'Enter' | 'Space') =>
+  const press = (key: string, input: ActionInput) =>
     runActionInput({
       browser: browser as Browser,
       url,
@@ -427,6 +429,16 @@ describe('runActionInput', () => {
 
     for (const input of ['click', 'Enter', 'Space'] as const)
       expect(await press('button "Go"', input)).toEqual({ emitted: ['go'], prevented: false, app: null });
+  });
+
+  it('types into a text-entry control that declares an emit and records the output', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const inputs = actionInputsOf('combobox "Search"', { kind: 'emit', output: 'queryChange' });
+
+    expect(inputs.length).toBeGreaterThan(0);
+
+    for (const input of inputs) expect((await press('combobox "Search"', input)).emitted).toEqual(['queryChange']);
   });
 
   it('sees a Space whose keydown default the app prevents, so it fires nothing', async (context) => {
