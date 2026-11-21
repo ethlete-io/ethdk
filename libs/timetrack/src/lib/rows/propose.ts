@@ -427,7 +427,10 @@ export const propose = (options: {
   breaks?: readonly TimeWindow[];
   /** The stretches no break may cover: a call the user attended and a run they timed — see ADR 0030. */
   presence?: readonly TimeWindow[];
-  /** Evidence no row carries: the commit copies `surplusCommitCopies` found in another row too. */
+  /**
+   * Evidence no row carries: the commit copies `surplusCommitCopies` found in another row too. A row
+   * whose every piece of evidence is surplus is dropped, so a copy's minutes count once.
+   */
   surplus?: ReadonlySet<Evidence>;
 }): ProposeResult => {
   const sessionBlocks = options.sessionBlocks ?? [];
@@ -495,10 +498,11 @@ export const propose = (options: {
   });
   const surplus = options.surplus;
   const counted = surplus?.size
-    ? booked.map((row) => ({
-        ...row,
-        group: { ...row.group, evidence: row.group.evidence.filter((entry) => !surplus.has(entry)) },
-      }))
+    ? booked.flatMap((row) => {
+        const evidence = row.group.evidence.filter((entry) => !surplus.has(entry));
+
+        return evidence.length || !row.group.evidence.length ? [{ ...row, group: { ...row.group, evidence } }] : [];
+      })
     : booked;
   const attributed = counted.filter(isAttributedRow);
   const idGroupOf = <T extends WorkGroup>(row: { group: T; idFrom?: Date }): T =>
