@@ -125,7 +125,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                               class="pointer-events-none absolute border-2 border-et-theme"
                             >
                               <span
-                                class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-theme-ink"
+                                class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-on-theme"
                                 >{{ row.number }}</span
                               >
                             </div>
@@ -151,8 +151,8 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
           <header
             class="flex flex-wrap items-center gap-space-3 border-b border-et-surface-border px-space-4 py-space-3"
           >
-            <div class="flex min-w-0 flex-1 flex-col">
-              <span class="text-ui-sm text-et-surface-muted">{{ LABELS.title }}</span>
+            <div class="flex min-w-24 flex-1 basis-0 flex-col">
+              <span class="truncate text-ui-sm text-et-surface-muted">{{ LABELS.title }}</span>
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">{{ loading() ? '' : (current()?.part ?? '') }}</h2>
             </div>
             <button [disabled]="loading()" (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
@@ -183,7 +183,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                     <ol class="m-0 flex list-none flex-col gap-space-2 p-0">
                       @for (row of section.rows; track row.number) {
                         <li [etProvideColor]="themeOf(row.tone)" class="flex gap-space-2 text-ui-sm">
-                          <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-theme-ink">{{
+                          <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-on-theme">{{
                             row.number
                           }}</span>
                           <span class="flex min-w-0 flex-col">
