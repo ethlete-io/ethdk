@@ -422,5 +422,6 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
 };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
+  if (!INNER_EXPORT) (await import('./own-scope.mjs')).enterOwnScope('push-suite');
   process.exit(await pushSuite(parseArgs(process.argv.slice(2))));
 }

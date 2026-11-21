@@ -20,6 +20,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { holderLine, takeHeavyLock } from '../../../tools/scripts/heavy-run-lock.mjs';
+import { enterOwnScope } from '../../../tools/scripts/own-scope.mjs';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
@@ -5309,6 +5310,7 @@ const workerCount = () => {
 
 const lead = async () => {
   if (!listOnly) {
+    enterOwnScope('studio-e2e');
     const lock = await takeHeavyLock('studio:e2e', { wait: waitForLock });
 
     if (!lock.ok) {

@@ -12,6 +12,7 @@ import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { designProduct } from './product-command';
 import { serveDesign } from './serve';
+import { enterDesignServerScope } from './system/own-scope';
 import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
 import { designShot, SHOT_USAGE } from './shot-command';
 import { COMMIT_HUNKS_USAGE, designCommitHunks } from './commit-hunks';
@@ -463,7 +464,11 @@ const runDesign = async (options: { root: string; argv: string[]; invocation: st
   if (argv[0] === RESIDENT_SERVE || argv[0] === 'stop' || runsInResident(argv)) {
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
-    if (argv[0] === RESIDENT_SERVE) return serveResident({ target });
+    if (argv[0] === RESIDENT_SERVE) {
+      enterDesignServerScope();
+
+      return serveResident({ target });
+    }
 
     const client = realResidentClient(buildStampOf().build);
 
@@ -672,6 +677,8 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
   }
 
   const served = positional ? realOf(resolve(root, positional)) : target;
+
+  enterDesignServerScope();
 
   return serveDesign({
     target: served,

@@ -6,6 +6,7 @@ import { join, sep } from 'node:path';
 import { selectE2eFolders, readIndex, ALL } from '../../apps/storybook-e2e/affected.mjs';
 import { linkNodeModules } from './link-node-modules.mjs';
 import { mapChanged, suiteInvocation } from './e2e-map.mjs';
+import { enterOwnScope } from './own-scope.mjs';
 
 const SUITE_TIMEOUT_MS = 15 * 60 * 1000;
 
@@ -178,6 +179,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
   const dry = args.includes('--list');
   const commit = args.find((arg) => !arg.startsWith('--'));
+  if (!dry) enterOwnScope('storybook-e2e');
 
   if (!commit) {
     console.error('usage: e2e-check.mjs <commit> [--list]');

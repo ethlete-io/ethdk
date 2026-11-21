@@ -2,6 +2,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, posix, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { enterOwnScope } from '../../tools/scripts/own-scope.mjs';
 
 export const ALL = 'ALL';
 
@@ -264,6 +265,7 @@ const main = () => {
     return;
   }
 
+  enterOwnScope('storybook-e2e');
   const folders = selection === ALL ? [] : selection.map((folder) => `${E2E_SRC}/${folder}/`);
   console.log(`Running ${selection === ALL ? 'every suite' : selection.join(', ')}`);
   const result = spawnSync(

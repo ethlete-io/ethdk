@@ -165,7 +165,15 @@ const foreignCheckoutsOf = (agent) => [
   ),
 ];
 const createRunSession = (session, shellCommand, baseCommand) => {
-  const result = tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
+  const result = tmux(
+    'new-session',
+    '-d',
+    '-s',
+    session,
+    '-c',
+    process.cwd(),
+    inAgentScopeCommand(shellCommand, session),
+  );
   if (result.status !== 0) {
     process.stderr.write(`No agent was started: tmux could not create ${session}: ${result.stderr.trim()}\n`);
     process.exitCode = 1;
@@ -388,7 +396,51 @@ const commandWithRole = (command, agentRole) => {
     ...[...kept, ...rule].map(quote),
   ].join(' ');
 };
-const bypassingShellFunction = (base) => base.replace(/^((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)/, '$1command ');
+const LEADING_ENV_WORDS = /^((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)/;
+const bypassingShellFunction = (base) => base.replace(LEADING_ENV_WORDS, '$1command ');
+const inAgentScope = () => {
+  try {
+    return /\/agent-[^/]*\.scope$/.test(readFileSync('/proc/self/cgroup', 'utf8').trim());
+  } catch {
+    return false;
+  }
+};
+const userScopesWork = () =>
+  process.platform === 'linux' &&
+  spawnSync(
+    'busctl',
+    [
+      '--user',
+      'get-property',
+      'org.freedesktop.systemd1',
+      '/org/freedesktop/systemd1',
+      'org.freedesktop.systemd1.Manager',
+      'Version',
+    ],
+    { stdio: 'ignore', timeout: 5000 },
+  ).status === 0;
+/**
+ * Runs the agent in its own systemd user scope that systemd-oomd only picks when no other candidate is left, so a heavy
+ * job in the same tmux pane is killed first. `avoid`, not `omit`: a runaway agent must stay killable.
+ */
+const agentScopeWords = (session) =>
+  userScopesWork()
+    ? [
+        'systemd-run',
+        '--user',
+        '--scope',
+        '--quiet',
+        '--collect',
+        `--unit=agent-${session.replace(/[^A-Za-z0-9_-]/g, '-')}-${Date.now()}`,
+        '-p',
+        'ManagedOOMPreference=avoid',
+        '--',
+      ]
+    : [];
+const inAgentScopeCommand = (command, session, unscoped = (plain) => plain) => {
+  const words = agentScopeWords(session);
+  return words.length ? command.replace(LEADING_ENV_WORDS, `$1${words.join(' ')} `) : unscoped(command);
+};
 const EXIT_DIALOG_JOBS = /will stop when you exit/i;
 const EXIT_AND_STOP = /exit and stop/i;
 const BACKGROUND_FOOTER = /\b\d+ (?:shells?|agents?)\b|↓ to manage/i;
@@ -709,7 +761,10 @@ if (command === 'send' && sender) {
     );
     if (role) tmux('set-option', '-t', own, ROLE_OPTION, role);
   }
-  const [program, ...programArgs] = withRole(words);
+  const [program, ...programArgs] = [
+    ...(inAgentScope() ? [] : agentScopeWords(ownSession() ?? sender)),
+    ...withRole(words),
+  ];
   process.exitCode =
     spawnSync(program, programArgs, {
       stdio: 'inherit',
@@ -935,7 +990,7 @@ if (command === 'send' && sender) {
         root,
         shell,
         '-lic',
-        `${bypassingShellFunction(base)} ${quote(restartPrompt(words))}`,
+        `${inAgentScopeCommand(base, session, bypassingShellFunction)} ${quote(restartPrompt(words))}`,
       );
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'off');
       tmux('set-option', '-t', pane, COMMAND_OPTION, base);
