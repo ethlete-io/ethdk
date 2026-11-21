@@ -972,6 +972,9 @@ const discardScene = (page) =>
         hit: hit && hit.outerHTML.slice(0, 120),
         sketchView: !!document.querySelector('ethlete-sketch-view'),
         dialogs: document.querySelectorAll('[role="alertdialog"]').length,
+        dialogTexts: [...document.querySelectorAll('[role="alertdialog"], [role="dialog"]')].map((dialog) =>
+          dialog.textContent.replace(/\s+/g, ' ').trim().slice(0, 80),
+        ),
         active: document.activeElement?.outerHTML.slice(0, 120) ?? 'none',
       });
     })
@@ -984,7 +987,11 @@ const openDiscardConfirm = async (page) => {
     .click()
     .then(
       () => null,
-      (error) => error.message.split('\n').slice(0, 6).join(' '),
+      (error) => {
+        const lines = error.message.split('\n');
+
+        return [...lines.slice(0, 2), '...', ...lines.slice(-6)].join(' ');
+      },
     );
 
   if (clicked) return { ok: false, detail: `Verwerfen not clicked: ${clicked}, scene ${await discardScene(page)}` };
