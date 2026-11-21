@@ -642,7 +642,7 @@
     "pid": 423192
   },
   "components/title-bar": {
-    "hash": "256185bb26e4eea6",
+    "hash": "624b43ec3a179863",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/caption-close.svg": "e3fa41c27351ba40",
@@ -666,11 +666,12 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "ef1428a5dbd6b4f6",
+      ".ethlete/design/studio/components/title-bar/shared/chrome.ts": "5169faa950d40159",
       ".ethlete/design/studio/components/title-bar/title-bar.css": "26c6cb39dbe6b21e",
-      ".ethlete/design/studio/components/title-bar/title-bar.ts": "60db4afff231de50",
-      ".ethlete/design/studio/components/title-search/title-search.ts": "247795c91d68b8e2",
+      ".ethlete/design/studio/components/title-bar/title-bar.ts": "62d71eca8f375996",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "8532b07e27da2ece",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "libs/components/design/badge.ts": "ae6d1b71fa14a024",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
@@ -703,9 +704,9 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "2827c9fe1bbe175d",
+    "app": "9eb6d4a91525c233",
     "embedded": {
-      "components/title-search": "5ac97669d32e3a16"
+      "components/title-search": "498e3fefb1dc10e9"
     },
     "actions": [
       "emit:close",
@@ -717,10 +718,10 @@
       "opens:command-palette"
     ],
     "builder": "designer",
-    "at": "2026-11-21T00:33:48.181Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 1197881
+    "at": "2026-11-21T04:34:40.504Z",
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 1592736
   },
   "components/title-search": {
     "hash": "2e25b66b7675ea49",
