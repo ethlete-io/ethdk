@@ -39,7 +39,6 @@ export class StudioMenuComponent {
   public reload = output();
   public scanProjects = output();
   public removeProject = output();
-  public openInventory = output();
   public projectChange = output<string>();
   public openProject = output();
   public openHelp = output();

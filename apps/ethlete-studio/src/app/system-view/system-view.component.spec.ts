@@ -1,3 +1,4 @@
+import type { PaletteEntry } from '../components/command-palette/command-palette.component';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -2138,17 +2139,18 @@ describe('SystemViewComponent with the inventory', () => {
     localStorage.clear();
   });
 
-  it('opens the inventory of every page from the studio menu, selects a picked page and closes on another pick', async () => {
+  it('opens the inventory of every page from the command palette, selects a picked page and closes on another pick', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const view = fixture.componentInstance as unknown as {
       runShellAction: (action: PageShellAction) => void;
+      openPaletteEntry: (entry: PaletteEntry) => void;
       activate: (key: string) => void;
       inventoryPage: () => { pages: string[]; selected: string | null } | null;
     };
 
     expect(view.inventoryPage()).toBeNull();
 
-    view.runShellAction({ kind: 'inventory' });
+    view.openPaletteEntry({ kind: 'command', key: 'inventory', label: 'Inventory' });
     expect(view.inventoryPage()).toMatchObject({ pages: ['pages/checkout', 'pages/home'], selected: null });
 
     view.activate('pages/home');
@@ -2162,10 +2164,11 @@ describe('SystemViewComponent with the inventory', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'pages/checkout' });
     const view = fixture.componentInstance as unknown as {
       runShellAction: (action: PageShellAction) => void;
+      openPaletteEntry: (entry: PaletteEntry) => void;
       inventoryPage: () => { selected: string | null } | null;
     };
 
-    view.runShellAction({ kind: 'inventory' });
+    view.openPaletteEntry({ kind: 'command', key: 'inventory', label: 'Inventory' });
     expect(view.inventoryPage()).toMatchObject({ selected: 'pages/checkout' });
 
     view.runShellAction({ kind: 'section', section: 'Flows' });

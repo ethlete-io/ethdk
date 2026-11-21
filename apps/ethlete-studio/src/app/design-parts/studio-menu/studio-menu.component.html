@@ -76,8 +76,6 @@
         {{ LABELS.removeProject }}
       </button>
       <et-menu-separator />
-      <button (activate)="openInventory.emit()" et-menu-item type="button">{{ LABELS.inventory }}</button>
-      <et-menu-separator />
       <et-menu-group-label>{{ statusLabel() }}</et-menu-group-label>
       @for (item of items(); track item.row) {
         <button [disabled]="busy() && item.row !== 'reload'" (activate)="runRow(item.row)" et-menu-item type="button">

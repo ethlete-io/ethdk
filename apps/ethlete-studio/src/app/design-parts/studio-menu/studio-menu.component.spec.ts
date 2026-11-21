@@ -42,7 +42,6 @@ const openMenu = async (options: {
   fixture.componentInstance.reload.subscribe(() => events.push('reload'));
   fixture.componentInstance.scanProjects.subscribe(() => events.push('scanProjects'));
   fixture.componentInstance.removeProject.subscribe(() => events.push('removeProject'));
-  fixture.componentInstance.openInventory.subscribe(() => events.push('openInventory'));
   fixture.componentInstance.openHelp.subscribe(() => events.push('openHelp'));
   await fixture.whenStable();
 
@@ -70,7 +69,6 @@ describe('StudioMenuComponent', () => {
       'Projekt öffnen…',
       'Checkouts suchen…',
       'Projekt entfernen',
-      'Inventory',
       'Design-Server · läuft',
       'Neu laden',
       'Design-Server neu starten',
@@ -183,17 +181,7 @@ describe('StudioMenuComponent', () => {
     expect(rows()).not.toContain('Einstellungen');
     expect(rows()).not.toContain('Erscheinungsbild');
     expect(document.querySelectorAll('[aria-haspopup="menu"][role="menuitem"]')).toHaveLength(0);
-    expect(document.querySelectorAll('et-menu-separator')).toHaveLength(3);
-  });
-
-  it('emits openInventory from the Inventory row, also while an action runs', async () => {
-    const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a'], busy: true });
-
-    expect(row('Inventory')?.getAttribute('aria-disabled')).not.toBe('true');
-    row('Inventory')?.click();
-    await fixture.whenStable();
-
-    expect(events).toEqual(['openInventory']);
+    expect(document.querySelectorAll('et-menu-separator')).toHaveLength(2);
   });
 
   it('opens the dialogs and emits help, also while an action runs', async () => {

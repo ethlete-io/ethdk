@@ -31,7 +31,6 @@ export const STUDIO_MENU_LABELS = {
   openProject: 'Projekt öffnen…',
   scan: 'Checkouts suchen…',
   removeProject: 'Projekt entfernen',
-  inventory: 'Inventory',
   designServer: 'Design-Server',
   reload: 'Neu laden',
   serverStatus: { running: 'läuft', stale: 'veraltet', stopped: 'gestoppt' },
@@ -104,6 +103,7 @@ export const TITLE_BAR_LABELS = {
 
 export const COMMAND_PALETTE_LABELS = {
   label: 'Befehlsrahmen',
+  inventory: 'Inventory',
   placeholder: 'Parts, Seiten, Skizzen und Befehle suchen',
   recent: 'Zuletzt geöffnet',
   groups: { part: 'Parts', page: 'Seiten', sketch: 'Skizzen', command: 'Befehle' },

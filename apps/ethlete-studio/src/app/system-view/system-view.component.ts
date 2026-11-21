@@ -81,7 +81,7 @@ import { SketchRead, sketchRead$ } from './sketch-read';
 import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
 import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
-import { SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
+import { COMMAND_PALETTE_LABELS, SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
 import { START_LABELS } from '../i18n/start-labels';
 import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { PageShell, PageShellAction } from './page-shell';
@@ -117,6 +117,8 @@ const NO_OPEN_POINTS: { groups: OpenPointGroup[]; buildReady: BuildReadyStatus |
 };
 
 const PART_ZOOM_CHIP_CLASS = 'absolute right-space-3 bottom-space-3';
+
+const PALETTE_INVENTORY_KEY = 'inventory';
 
 const PALETTE_SERVER_ACTIONS: readonly DesignServerAction[] = ['restart', 'stop'];
 
@@ -1266,6 +1268,7 @@ export class SystemViewComponent {
       key: sketchKeyOf(sketch.target),
       label: sketch.name,
     })),
+    { kind: 'command' as const, key: PALETTE_INVENTORY_KEY, label: COMMAND_PALETTE_LABELS.inventory },
     ...PALETTE_SERVER_ACTIONS.map((action) => ({
       kind: 'command' as const,
       key: action,
@@ -1470,10 +1473,6 @@ export class SystemViewComponent {
         return this.scanProjects.emit();
       case 'remove-project':
         return this.removeProject.emit();
-      case 'inventory':
-        this.pickSection('System');
-
-        return this.showInventory(true);
       case 'reload':
         return this.reload.emit();
       case 'menuOpened':
@@ -1586,6 +1585,11 @@ export class SystemViewComponent {
     const action = PALETTE_SERVER_ACTIONS.find((candidate) => candidate === entry.key);
 
     if (entry.kind === 'command') {
+      if (entry.key === PALETTE_INVENTORY_KEY) {
+        this.pickSection('System');
+        this.showInventory(true);
+      }
+
       if (action) this.serverAction.emit(action);
 
       return;

@@ -32,7 +32,6 @@ export type ShellAction =
   | { kind: 'openProject' }
   | { kind: 'scan' }
   | { kind: 'remove-project' }
-  | { kind: 'inventory' }
   | { kind: 'reload' }
   | { kind: 'menuOpened' }
   | { kind: 'server'; action: DesignServerAction };
@@ -86,7 +85,6 @@ export const SHELL_SAMPLE: ShellState = {
         (reload)="action.emit({ kind: 'reload' })"
         (scanProjects)="action.emit({ kind: 'scan' })"
         (removeProject)="action.emit({ kind: 'remove-project' })"
-        (openInventory)="action.emit({ kind: 'inventory' })"
         (openHelp)="openHelp()"
         shellMainStudio
         bare
