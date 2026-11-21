@@ -45,7 +45,7 @@ export const ABOUT_DIALOG_LABELS = {
   close: 'Schließen',
   product: 'Ethlete Studio',
   version: (version: string) => `Version ${version}`,
-  license: 'MIT-Lizenz, © 2025 The Authors',
+  license: (endYear: number) => `MIT-Lizenz, © 2025–${endYear} Braune Digital GmbH`,
 } as const;
 
 export const SHORTCUTS_DIALOG_LABELS = {

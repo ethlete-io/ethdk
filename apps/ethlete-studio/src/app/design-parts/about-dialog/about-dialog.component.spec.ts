@@ -50,7 +50,7 @@ describe('AboutDialogComponent', () => {
     expect(text).toContain('Über Studio');
     expect(text).toContain('Ethlete Studio');
     expect(text).toContain(`Version ${host.version}`);
-    expect(text).toContain('MIT-Lizenz, © 2025 The Authors');
+    expect(text).toContain(`MIT-Lizenz, © 2025–${new Date().getFullYear()} Braune Digital GmbH`);
     expect(dialog()?.querySelector('footer, [etOverlayFooter]')).toBeNull();
   });
 

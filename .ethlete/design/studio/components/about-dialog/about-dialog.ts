@@ -24,7 +24,9 @@ const content = (version: string) =>
         <span class="ad-wrap text-ui-sm text-et-surface-muted">Version ${version}</span>
       </div>
     </div>
-    <p class="mt-space-3 text-ui-sm text-et-surface-muted">${ABOUT_DIALOG_LABELS.license}</p>`;
+    <p class="mt-space-3 text-ui-sm text-et-surface-muted">
+      ${ABOUT_DIALOG_LABELS.license(new Date().getFullYear())}
+    </p>`;
 
 export const { states, grid } = interactionRows<Props, 'close', Interaction>(
   { close: { version: '0.2.0-next.27' } },

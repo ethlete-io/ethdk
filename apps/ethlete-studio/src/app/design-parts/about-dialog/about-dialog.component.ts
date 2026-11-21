@@ -36,7 +36,7 @@ import { ABOUT_DIALOG_LABELS } from '../../i18n/shell-labels';
           }
         </div>
       </div>
-      <p class="mt-space-3 mb-0 text-ui-sm text-et-surface-muted">{{ LABELS.license }}</p>
+      <p class="mt-space-3 mb-0 text-ui-sm text-et-surface-muted">{{ license }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -51,4 +51,5 @@ export class AboutDialogComponent {
   public close = output();
 
   protected readonly LABELS = ABOUT_DIALOG_LABELS;
+  protected readonly license = ABOUT_DIALOG_LABELS.license(new Date().getFullYear());
 }
