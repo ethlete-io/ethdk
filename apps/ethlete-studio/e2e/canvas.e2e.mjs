@@ -144,6 +144,8 @@ const ZOOM_SKETCH = { part: 'pages/system', name: 'zoom-budget', variants: ['a',
 
 const EDITED_PART = 'components/disclosure';
 const WAIT_MS = 10000;
+// Workaround: a reload on a loaded CI runner (load ~16 on 4 cores) takes 8.8-18.3 s until its first cell.
+const RELOAD_WAIT_MS = 30000;
 const FULL_COMPARE_MS = 60000;
 // Playwright's API request agent ignores the server's `Keep-Alive: timeout=5` hint, so reusing an idle socket races the
 // design server's idle close and resets (ECONNRESET under load). Each API request opens its own connection.
@@ -2332,7 +2334,7 @@ const CASES = [
         }),
       );
       await page.reload();
-      await page.locator('[data-open-points-chip]').first().click();
+      await page.locator('[data-open-points-chip]').first().click({ timeout: RELOAD_WAIT_MS });
 
       const open = page.locator('[role="dialog"] button', { hasText: 'Sketch öffnen' });
       const status = page.locator('ethlete-build-ready-footer et-badge').first();
@@ -2365,7 +2367,7 @@ const CASES = [
         }),
       );
       await page.reload();
-      await page.locator('[data-open-points-chip]').first().click();
+      await page.locator('[data-open-points-chip]').first().click({ timeout: RELOAD_WAIT_MS });
 
       const row = page.locator('[role="dialog"] [data-open-point-target]', { hasText: part });
 
@@ -2971,7 +2973,7 @@ const CASES = [
       page.on('request', count);
       try {
         await page.reload();
-        await page.waitForSelector('ethlete-sketch-view [data-shot]');
+        await page.waitForSelector('ethlete-sketch-view [data-shot]', { timeout: RELOAD_WAIT_MS });
       } finally {
         page.off('request', count);
       }
