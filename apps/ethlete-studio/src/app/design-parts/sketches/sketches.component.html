@@ -250,109 +250,122 @@
               class="grid gap-y-space-3"
               data-sk-matrix
             >
-              @for (state of matrixStates(); track state; let line = $index) {
-                @let group = headHidden() ? undefined : groupOfState().get(state);
-                <div
-                  #gutter
-                  [style.font-size.px]="noteSize()"
-                  [style.width.px]="group ? noteSize() * 15 : null"
-                  [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
-                  [class]="headHidden() ? 'text-transparent' : 'text-et-surface'"
-                  class="col-start-1 flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
-                  data-sk-gutter
-                >
-                  <span class="font-code">{{ state }}</span>
-                  @if (group) {
-                    @let whole = !croppedOf(state);
-                    @if (group.states.length > 1) {
-                      <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
-                    }
-                    @for (reason of group.reasons; track $index; let last = $last) {
-                      <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
-                        >{{ reasonTextOf(reason)
-                        }}{{ whole || !last ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
-                      >
-                    }
-                    <span class="mt-space-1 flex items-end gap-space-2">
-                      @let locator = locatorOf(group);
-                      <span
-                        [style.width.px]="noteSize() * 9"
-                        [style.aspect-ratio]="locator.ratio"
-                        class="relative block rounded-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
-                        data-sk-crop-locator
-                      >
-                        <span
-                          class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border-solid)]"
-                        ></span>
-                        <span
-                          [style.left]="locator.left"
-                          [style.top]="locator.top"
-                          [style.width]="locator.width"
-                          [style.height]="locator.height"
-                          class="absolute rounded-[2px] border-2 border-et-theme"
-                        ></span>
-                      </span>
-                      <button
-                        (click)="toggleScreen(state)"
-                        et-button
-                        type="button"
-                        variant="transparent"
-                        size="sm"
-                        data-sk-screen-toggle
-                      >
-                        {{ whole ? LABELS.cropScreen : LABELS.wholeScreen }}
-                      </button>
-                    </span>
-                  }
-                </div>
-              }
-              @for (row of matrixRows(); track row.key; let column = $index) {
-                <section
-                  #section
-                  [attr.data-sk-row]="row.key"
-                  [attr.data-sk-unsized]="row.sized === false ? '' : null"
-                  [attr.data-selected]="row.key === selected() ? '' : null"
-                  [style.grid-column]="column + 2"
-                  [style.grid-row]="matrixTop()"
-                  class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
-                >
-                  <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
-                </section>
-                @if (row.key === drawnKey()) {
+              @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
+                @let offset = blockIndex * matrixStride();
+                @for (state of block.states; track state; let line = $index) {
+                  @let group = headHidden() ? undefined : groupOfState().get(state);
                   <div
-                    [style.grid-column]="column + 2"
-                    [style.grid-row]="matrixTop() + 1 + ' / span ' + matrixStates().length * 2"
+                    #gutter
+                    [style.font-size.px]="noteSize()"
+                    [style.width.px]="group ? noteSize() * 15 : null"
+                    [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
+                    [style.grid-column]="offset + 1"
+                    [style.padding-left.px]="blockIndex > 0 ? COLUMN_GAP : null"
+                    [attr.data-sk-block]="blockIndex"
+                    [class]="headHidden() ? 'text-transparent' : 'text-et-surface'"
+                    class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
+                    data-sk-gutter
                   >
-                    <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
+                    <span class="font-code">{{ state }}</span>
+                    @if (group) {
+                      @let whole = !croppedOf(state);
+                      @if (group.states.length > 1) {
+                        <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
+                      }
+                      @for (reason of group.reasons; track $index; let last = $last) {
+                        <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
+                          >{{ reasonTextOf(reason)
+                          }}{{ whole || !last ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
+                        >
+                      }
+                      <span class="mt-space-1 flex items-end gap-space-2">
+                        @let locator = locatorOf(group);
+                        <span
+                          [style.width.px]="noteSize() * 9"
+                          [style.aspect-ratio]="locator.ratio"
+                          class="relative block rounded-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                          data-sk-crop-locator
+                        >
+                          <span
+                            class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border-solid)]"
+                          ></span>
+                          <span
+                            [style.left]="locator.left"
+                            [style.top]="locator.top"
+                            [style.width]="locator.width"
+                            [style.height]="locator.height"
+                            class="absolute rounded-[2px] border-2 border-et-theme"
+                          ></span>
+                        </span>
+                        <button
+                          (click)="toggleScreen(state)"
+                          et-button
+                          type="button"
+                          variant="transparent"
+                          size="sm"
+                          data-sk-screen-toggle
+                        >
+                          {{ whole ? LABELS.cropScreen : LABELS.wholeScreen }}
+                        </button>
+                      </span>
+                    }
                   </div>
-                } @else {
-                  @for (item of row.shots; track item.state) {
-                    @if (matrixStates().includes(item.state)) {
-                      <ng-container
-                        *ngTemplateOutlet="
-                          cellTemplate;
-                          context: { $implicit: row, item, column: column + 2, line: matrixLineOf(item.state) }
-                        "
-                      />
+                }
+                @for (row of matrixRows(); track row.key; let column = $index) {
+                  <section
+                    #section
+                    [attr.data-sk-row]="row.key"
+                    [attr.data-sk-unsized]="row.sized === false ? '' : null"
+                    [attr.data-selected]="row.key === selected() ? '' : null"
+                    [style.grid-column]="offset + column + 2"
+                    [style.grid-row]="matrixTop()"
+                    class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
+                  >
+                    <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
+                  </section>
+                  @if (row.key === drawnKey()) {
+                    <div
+                      [style.grid-column]="offset + column + 2"
+                      [style.grid-row]="matrixTop() + 1 + ' / span ' + block.states.length * 2"
+                    >
+                      <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
+                    </div>
+                  } @else {
+                    @for (item of row.shots; track item.state) {
+                      @if (block.states.includes(item.state)) {
+                        <ng-container
+                          *ngTemplateOutlet="
+                            cellTemplate;
+                            context: {
+                              $implicit: row,
+                              item,
+                              column: offset + column + 2,
+                              line: matrixLineOf(block.states, item.state),
+                            }
+                          "
+                        />
+                      }
                     }
                   }
                 }
               }
               @if (sameRows().length > 0) {
                 @if (sameOpen()) {
-                  <div
-                    [style.grid-column]="sameColumn() + ' / span ' + sameRows().length"
-                    class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
-                    data-sk-same
-                    data-open
-                  >
-                    <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
-                  </div>
+                  @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
+                    <div
+                      [style.grid-column]="blockIndex * matrixStride() + sameColumn() + ' / span ' + sameRows().length"
+                      class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                      data-sk-same
+                      data-open
+                    >
+                      <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
+                    </div>
+                  }
                 } @else {
                   <div
                     #fold
-                    [style.grid-column]="sameColumn()"
-                    [style.grid-row]="'1 / span ' + (matrixStates().length * 2 + 1)"
+                    [style.grid-column]="matrixFoldColumn()"
+                    [style.grid-row]="'1 / span ' + (matrixTallest() * 2 + 1)"
                     class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
                     data-sk-same
                   >

@@ -5,6 +5,7 @@ import titleBar from '@system/components/title-bar';
 import zoomChip from '@system/components/zoom-chip';
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
+import { matrixBlocksOf } from '../../../../../../apps/ethlete-studio/src/app/design-parts/sketches/matrix-blocks';
 import { SKETCHES_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
 export type RowKey = 'current' | 'old' | 'new' | 'a' | 'b' | 'c';
@@ -26,12 +27,13 @@ export type SketchPart = {
   key: string;
   sample?: string;
   width: number;
+  height?: number;
   states: string[];
   rows: Row[];
   render: (state: string) => Promise<Render>;
 };
 
-export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours';
+export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours' | 'many';
 
 const OPUS: Omit<Model, 'when'> = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' };
 const SOL: Omit<Model, 'when'> = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' };
@@ -62,7 +64,44 @@ const narrowPart = (): SketchPart => ({
   rows: [],
 });
 
+const MANY_STATES = Array.from({ length: 30 }, (_, index) => `state-${String(index + 1).padStart(2, '0')}`);
+
+const manyPage = async (state: string): Promise<Render> => ({
+  body: html`<div
+    class="box-border flex h-225 w-360 items-center justify-center bg-et-surface-bg font-code text-ui-lg text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+  >
+    ${state}
+  </div>`,
+  styles: '',
+});
+
 export const PARTS: Record<PartKind, SketchPart> = {
+  many: {
+    key: 'components/many-states',
+    width: 1440,
+    height: 900,
+    states: MANY_STATES,
+    render: manyPage,
+    rows: [
+      { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
+      {
+        key: 'a',
+        label: 'Entwurf 1',
+        note: 'Gerade Zustände ändern sich.',
+        model: { ...OPUS, when: '02.11. 11:02' },
+        changed: MANY_STATES.filter((_, index) => index % 2 === 1),
+        look: '[&_div]:text-et-theme',
+      },
+      {
+        key: 'b',
+        label: 'Entwurf 2',
+        note: 'Ungerade Zustände ändern sich.',
+        model: { ...SOL, when: '02.11. 11:09' },
+        changed: MANY_STATES.filter((_, index) => index % 2 === 0),
+        look: '[&_div]:font-ui-strong',
+      },
+    ],
+  },
   wide: {
     key: 'components/title-bar',
     width: 1440,
@@ -191,6 +230,14 @@ const rowName = (row: Row) => row.label ?? (row.key === 'current' ? SKETCHES_LAB
 
 export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map(rowName).join(', ')}`;
 
+const PART_HEIGHT = 48;
+
+export const blockSizesOf = (part: SketchPart, columns: number) =>
+  matrixBlocksOf(
+    part.states.map(() => part.height ?? PART_HEIGHT),
+    { columns, frameWidth: part.width },
+  );
+
 export const isTransposed = (part: SketchPart, viewWidth: number) => part.width > viewWidth / 4;
 
 const shot: Record<string, string> = {};
@@ -280,6 +327,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   const label = chip?.querySelector('[data-camera-reset] button') ?? null;
   const width = Number(world.dataset['w']);
   const columns = Number(world.dataset['cols']);
+  const blocks = Number(world.dataset['blocks'] ?? 1);
   let mode = zoom;
   let fitAt = 0;
 
@@ -314,7 +362,17 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
     const fold = matrix.querySelector<HTMLElement>('[data-sk-same]:not([data-open])');
     const foldWidth = fold ? fold.offsetWidth + GAP : 0;
-    return Math.min(1, (list.clientWidth - lead - foldWidth - (columns - 1) * GAP - FIT_PADDING) / (columns * width));
+    const widths = new Map<string, number>();
+    matrix.querySelectorAll<HTMLElement>('[data-sk-gutter]').forEach((gutter) => {
+      const block = gutter.dataset['skBlock'] ?? '0';
+      widths.set(block, Math.max(widths.get(block) ?? 0, gutter.offsetWidth));
+    });
+    const later = [...widths].reduce((sum, [block, size]) => sum + (block === '0' ? 0 : size + GAP * 2), 0);
+    return Math.min(
+      1,
+      (list.clientWidth - lead - later - foldWidth - blocks * (columns - 1) * GAP - FIT_PADDING) /
+        (blocks * columns * width),
+    );
   };
 
   const gridFit = (scale: number) => {

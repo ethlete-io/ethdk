@@ -80,6 +80,7 @@ import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../sh
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { OpenPointsChipComponent } from '../system-page/open-points-chip.component';
 import { OpenPointGroup, OpenPointTarget } from '../system-page/system-page-sample';
+import { MATRIX_COLUMN_GAP, matrixBlocksOf } from './matrix-blocks';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
 import {
   SKETCH_CURRENT,
@@ -134,7 +135,7 @@ const MAX_COLUMNS = 4;
 
 const TRANSPOSE_SHARE = 4;
 
-const COLUMN_GAP = 24;
+const COLUMN_GAP = MATRIX_COLUMN_GAP;
 
 const FOCUS_PADDING = 24;
 
@@ -154,6 +155,7 @@ const FIT_SETTLED = 0.002;
 
 type FitDom = {
   columns: number;
+  blocks: number;
   list: HTMLElement;
   sections: HTMLElement[];
   stages: HTMLElement[];
@@ -445,7 +447,7 @@ export class SketchesComponent {
   protected groupOfState = computed(
     () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),
   );
-  protected matrixStates = computed(() => {
+  private matrixStates = computed(() => {
     const groups = this.groupOfState();
 
     return [...new Set(this.shownRows().flatMap((row) => row.shots.map((shot) => shot.state)))].filter(
@@ -532,8 +534,33 @@ export class SketchesComponent {
     this.sameOpen() ? [...this.changedRows(), ...this.sameRows()] : this.changedRows(),
   );
   protected matrixTop = computed(() => (this.sameRows().length > 0 && this.sameOpen() ? 2 : 1));
+  protected matrixBlocks = computed(() => {
+    const rows = this.matrixRows();
+    const heights = this.matrixStates().map((state) =>
+      Math.max(
+        0,
+        ...rows.flatMap((row) =>
+          row.shots.filter((shot) => shot.state === state).map((shot) => this.shownHeightOf(row, shot)),
+        ),
+      ),
+    );
+    let start = 0;
+
+    return matrixBlocksOf(heights, { columns: rows.length, frameWidth: this.widest() }).map((size) => {
+      const states = this.matrixStates().slice(start, start + size);
+
+      start += size;
+
+      return { states };
+    });
+  });
   protected sameColumn = computed(() => this.changedRows().length + 2);
-  protected matrixColumns = computed(() => this.matrixColumnsAt(this.matrixRows().length, this.scale()));
+  protected matrixStride = computed(() => this.matrixRows().length + 1);
+  protected matrixTallest = computed(() => Math.max(0, ...this.matrixBlocks().map((block) => block.states.length)));
+  protected matrixFoldColumn = computed(() => this.matrixBlocks().length * this.matrixStride() + 1);
+  protected matrixColumns = computed(() =>
+    this.matrixColumnsAt({ columns: this.matrixRows().length, blocks: this.matrixBlocks().length }, this.scale()),
+  );
   protected percent = computed(() => {
     return Math.round((this.canvas.preview()?.zoom ?? this.shownZoom()) * 100);
   });
@@ -593,6 +620,7 @@ export class SketchesComponent {
         this.listSize(),
         this.shownRows(),
         this.matrixRows(),
+        this.matrixBlocks().length,
         this.sections(),
         this.stages(),
         this.frames(),
@@ -619,6 +647,7 @@ export class SketchesComponent {
       const elementsOf = (refs: readonly ElementRef<HTMLElement>[]) => refs.map(({ nativeElement }) => nativeElement);
       const dom: FitDom = {
         columns: this.transposed() ? this.matrixRows().length : this.columns(),
+        blocks: this.transposed() ? this.matrixBlocks().length : 1,
         list,
         sections: elementsOf(this.sections()),
         stages: elementsOf(this.stages()),
@@ -685,8 +714,8 @@ export class SketchesComponent {
     return row.shots.find((shot) => shot.state === state) ?? null;
   }
 
-  protected matrixLineOf(state: string) {
-    return `${this.matrixTop() + 1 + this.matrixStates().indexOf(state) * 2} / span 2`;
+  protected matrixLineOf(states: readonly string[], state: string) {
+    return `${this.matrixTop() + 1 + states.indexOf(state) * 2} / span 2`;
   }
 
   protected croppedOf(state: string) {
@@ -954,32 +983,44 @@ export class SketchesComponent {
     return scale;
   }
 
-  private matrixColumnsAt(columns: number, scale: number) {
-    return `max-content repeat(${columns}, ${this.widest() * scale}px)${this.screenMode() ? '' : ' auto'}`;
+  private matrixColumnsAt({ columns, blocks }: { columns: number; blocks: number }, scale: number) {
+    const block = `max-content repeat(${columns}, ${this.widest() * scale}px)`;
+
+    return `${Array.from({ length: blocks }, () => block).join(' ')}${this.screenMode() ? '' : ' auto'}`;
   }
 
-  private matrixFit(matrix: HTMLElement, { columns, list, sections, fold }: FitDom) {
+  private matrixFit(matrix: HTMLElement, { columns, blocks, list, sections, gutters, fold }: FitDom) {
     const first = sections[0];
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
     const shown = Math.max(1, columns);
     const foldWidth = fold ? fold.offsetWidth + COLUMN_GAP : 0;
+    const widths = new Map<string, number>();
+
+    for (const gutter of gutters) {
+      const block = gutter.dataset['skBlock'] ?? '0';
+
+      widths.set(block, Math.max(widths.get(block) ?? 0, gutter.offsetWidth));
+    }
+
+    const later = [...widths].reduce((sum, [block, width]) => sum + (block === '0' ? 0 : width + COLUMN_GAP * 2), 0);
 
     return Math.min(
       1,
-      (list.clientWidth - lead - foldWidth - (shown - 1) * COLUMN_GAP - FIT_PADDING) / (shown * this.widest()),
+      (list.clientWidth - lead - later - foldWidth - blocks * (shown - 1) * COLUMN_GAP - FIT_PADDING) /
+        (blocks * shown * this.widest()),
     );
   }
 
   private applyScale(
     { scale, note, label }: { scale: number; note: number; label: number },
-    { columns, stages, frames, notes, labels, labelRows, gutters, matrix }: FitDom,
+    { columns, blocks, stages, frames, notes, labels, labelRows, gutters, matrix }: FitDom,
   ) {
     const { setStyle } = this.renderer;
 
     for (const gutter of gutters) setStyle(gutter, { fontSize: `${note}px` });
     if (matrix) {
       setStyle(matrix, {
-        gridTemplateColumns: this.matrixColumnsAt(columns, scale),
+        gridTemplateColumns: this.matrixColumnsAt({ columns, blocks }, scale),
       });
     }
 

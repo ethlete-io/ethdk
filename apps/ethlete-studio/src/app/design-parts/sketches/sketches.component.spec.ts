@@ -683,6 +683,42 @@ describe('SketchesComponent', () => {
     expect(world?.classList.contains('min-w-full')).toBe(false);
   });
 
+  describe('matrix blocks', () => {
+    const manyOf = (count: number, height: number) =>
+      ROWS.map((row) => ({
+        ...row,
+        width: 4000,
+        shots: Array.from({ length: count }, (_, index) => ({
+          state: `state-${index}`,
+          changed: row.key === 'x' ? true : false,
+          height,
+        })),
+      }));
+    const gutterBlocks = (root: HTMLElement) =>
+      [...root.querySelectorAll<HTMLElement>('[data-sk-gutter]')].map((gutter) => gutter.dataset['skBlock']);
+
+    it('lays the states of a matrix taller than wide in consecutive blocks side by side', async () => {
+      const root: HTMLElement = (await render({ rows: manyOf(30, 900), camera: 'fit' })).nativeElement;
+      const blocks = gutterBlocks(root);
+      const columns = root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns ?? '';
+
+      expect(new Set(blocks).size).toBeGreaterThan(1);
+      expect(blocks.slice(0, 3)).toEqual(['0', '0', '0']);
+      expect(blocks).toEqual([...blocks].sort());
+      expect(root.querySelectorAll('[data-sk-matrix] [data-sk-row="x"]')).toHaveLength(new Set(blocks).size);
+      expect(columns.match(/repeat\(2,/g)).toHaveLength(new Set(blocks).size);
+      expect(textOf(root.querySelector('[data-sk-gutter]'))).toBe('state-0');
+    });
+
+    it('keeps few states in one block', async () => {
+      const root: HTMLElement = (await render({ rows: manyOf(30, 40), camera: 'fit' })).nativeElement;
+      const few: HTMLElement = (await render({ rows: manyOf(3, 900), camera: 'fit' })).nativeElement;
+
+      expect(new Set(gutterBlocks(root))).toEqual(new Set(['0']));
+      expect(new Set(gutterBlocks(few))).toEqual(new Set(['0']));
+    });
+  });
+
   it('keeps a variant name in the fold label on one line so no letter is left alone', () => {
     const label = LABELS.sameVariants(['Variante a', 'Variante b']);
 

@@ -53,6 +53,7 @@ import {
   isSame,
   isTransposed,
   mountFit,
+  blockSizesOf,
   prepareShots,
   rowHead,
   rowsOf,
@@ -337,6 +338,7 @@ const controlsOf = async () => ({
     narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
     neighbours: await pickerOf('Runde 3 · Nachbarschaft einer Änderung'),
     edit: await pickerOf(BUILD_READY_LABELS.groups['direct-edit']),
+    many: await pickerOf('Runde 1 · Viele Zustände'),
     screen: await pickerOf('Runde 2 · Port nach dem Merge'),
   },
   tags: {
@@ -601,20 +603,21 @@ const sameRows = (part: SketchPart, rows: Row[], view: View, open: boolean) =>
         )}
       </section>`;
 
-const gutter = (part: SketchPart, top: number) =>
-  part.states
+const gutter = (states: string[], top: number, block: number, offset: number) =>
+  states
     .map(
       (state, index) =>
         html`<span
           class="flex items-center self-stretch pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface in-data-sk-head-hidden:text-transparent"
           data-sk-gutter
-          style="grid-column: 1; grid-row: ${top + 1 + index * 2} / span 2"
+          data-sk-block="${block}"
+          style="grid-column: ${offset + 1}; grid-row: ${top + 1 + index * 2} / span 2${block > 0 ? '; padding-left: 24px' : ''}"
           >${state}</span
         >`,
     )
     .join('');
 
-const column = (part: SketchPart, row: Row, at: number, top: number, view: View) => {
+const column = (part: SketchPart, states: string[], row: Row, at: number, top: number, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
   const head = html`<section
     class="sk-row relative w-0 min-w-full rounded-control-md p-space-2"
@@ -630,8 +633,8 @@ const column = (part: SketchPart, row: Row, at: number, top: number, view: View)
     <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
   </section>`;
   const cells = drawn
-    ? drawingStage(row, `grid-column: ${at}; grid-row: ${top + 1} / span ${part.states.length * 2}`)
-    : part.states
+    ? drawingStage(row, `grid-column: ${at}; grid-row: ${top + 1} / span ${states.length * 2}`)
+    : states
         .map((state, index) =>
           cell(part, row, state, `grid-column: ${at}; grid-row: ${top + 1 + index * 2} / span 2`, view.comparing),
         )
@@ -641,33 +644,56 @@ const column = (part: SketchPart, row: Row, at: number, top: number, view: View)
 
 const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: boolean) => {
   const top = same.length > 0 && open ? 2 : 1;
-  const after = shown.length + 2;
+  const all = open ? [...shown, ...same] : shown;
+  const stride = all.length + 1;
+  const sizes = blockSizesOf(part, all.length);
+  const blocks = sizes.map((size, index) => ({
+    states: part.states.slice(
+      sizes.slice(0, index).reduce((sum, count) => sum + count, 0),
+      sizes.slice(0, index + 1).reduce((sum, count) => sum + count, 0),
+    ),
+    offset: index * stride,
+  }));
+  const tallest = Math.max(0, ...sizes);
+  const after = blocks.length * stride + 1;
   const group =
     same.length === 0
       ? ''
       : open
-        ? html`<div
-            class="sk-same self-end rounded-control-md"
-            data-sk-same
-            data-open
-            style="grid-column: ${after} / span ${same.length}; grid-row: 1"
-          >
-            ${sameToggle(same, true)}
-          </div>`
+        ? blocks
+            .map(
+              ({ offset }) =>
+                html`<div
+                  class="sk-same self-end rounded-control-md"
+                  data-sk-same
+                  data-open
+                  style="grid-column: ${offset + shown.length + 2} / span ${same.length}; grid-row: 1"
+                >
+                  ${sameToggle(same, true)}
+                </div>`,
+            )
+            .join('')
         : html`<div
             class="sk-same w-36 rounded-control-md p-space-1"
             data-sk-same
             data-et-skip="WRAP"
-            style="grid-column: ${after}; grid-row: 1 / span ${part.states.length * 2 + 1}"
+            style="grid-column: ${after}; grid-row: 1 / span ${tallest * 2 + 1}"
           >
             ${sameToggle(same, false)}
           </div>`;
-  const all = open ? [...shown, ...same] : shown;
+  const track = 'max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))';
   return html`<div
-    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))_auto] gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
+    class="grid w-max grid-cols-[${Array.from({ length: blocks.length }, () => track).join('_')}_auto] gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
     data-sk-matrix
   >
-    ${gutter(part, top)} ${all.map((row, index) => column(part, row, index + 2, top, view)).join('')} ${group}
+    ${blocks
+      .map(
+        ({ states, offset }, index) =>
+          gutter(states, top, index, offset) +
+          all.map((row, at) => column(part, states, row, offset + at + 2, top, view)).join(''),
+      )
+      .join('')}
+    ${group}
   </div>`;
 };
 
@@ -909,6 +935,7 @@ export default definePart<Props>({
     'edit-sketch': { camera: 'fit', part: 'edit' },
     'change-crop': { camera: 'fit', part: 'narrow', screen: 'crop' },
     'change-crop-whole': { camera: 'fit', part: 'narrow', screen: 'whole' },
+    'many-states-wrap': { camera: 'fit', part: 'many' },
     'multi-part': { camera: 'fit', part: 'narrow', multi: 'three' },
     'multi-part-many': { camera: 'fit', part: 'narrow', multi: 'many' },
     comments: { camera: 'fit', part: 'narrow', comments: 'listed' },
@@ -1004,6 +1031,8 @@ export default definePart<Props>({
       'A round showing a cropped screen; check the Runde 2 · Port nach dem Merge picker and the cropped cells.',
     'change-crop-whole':
       'The same round showing the whole screen; check that the full frame fits each cell without cutting it.',
+    'many-states-wrap':
+      'A part with 30 wide states; check that the matrix wraps into blocks side by side, each with its own state names and variant heads, in state order.',
     'multi-part': 'A sketch over three parts; check that each part shows its own block of state rows with its name.',
     'multi-part-many':
       'A sketch over many parts; check that the part blocks stay readable and the list stays inside the canvas.',
@@ -1197,6 +1226,7 @@ export default definePart<Props>({
             data-sk-rows-world
             data-w="${screen ? SCREEN_WIDTH : part.width}"
             data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
+            data-blocks="${screen || !transposed ? 1 : blockSizesOf(part, columns).length}"
           >
             ${world}
             ${
