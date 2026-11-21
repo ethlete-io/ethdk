@@ -128,6 +128,7 @@ function* commitFlow(options: {
   variant: string;
   before: Map<string, string> | null;
   sketchDirs?: string[];
+  extraFiles?: string[];
 }): GitFlow<boolean> {
   const { product, sketch, before } = options;
   const after = yield* dirtyFilesFlow(product);
@@ -145,6 +146,8 @@ function* commitFlow(options: {
     .filter((file) => !below(file, sketches) || held.some((dir) => below(file, dir)));
 
   if (files.length === 0) return true;
+
+  const extra = (options.extraFiles ?? []).filter((file) => !files.includes(file));
 
   const restore: { file: string; text: string }[] = [];
 
@@ -171,7 +174,7 @@ function* commitFlow(options: {
   }
 
   const committed = yield* commitFilesFlow({
-    files,
+    files: [...files, ...extra],
     slug: `${sketch.target}-${options.variant}`,
     subject: `feat(repo): Merge ${sketch.target} variant ${options.variant} into ${product.name}`,
   });
@@ -191,6 +194,7 @@ type CommitOptions = {
   variant: string;
   before: Map<string, string> | null;
   sketchDirs?: string[];
+  extraFiles?: string[];
 };
 
 /** The dirty files of the product's folders by absolute path, each with a hash of its content; `null` outside a git checkout. */

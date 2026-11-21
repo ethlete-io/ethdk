@@ -11,6 +11,7 @@ import { embedderCheckAroundMerge } from './merge-embedders';
 import { SketchRebases } from './after-merge';
 import { openJournal } from '../write-journal';
 import { appGatedMergeOf } from './merge-app-gate';
+import { regenerateStudioThemesOf } from './merge-studio-themes';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch, writeSketchFile } from './sketch';
@@ -89,7 +90,9 @@ export const mergeAndRecord = (options: {
           for (const part of sketch.targets)
             recordMergeReason({ product, part, planRef: allowed?.planRef.trim(), reason });
 
-        commitMergeResultSync({ target, product, sketch, variant, before, sketchDirs });
+        const extraFiles = regenerateStudioThemesOf({ target, product, parts: sketch.targets });
+
+        commitMergeResultSync({ target, product, sketch, variant, before, sketchDirs, extraFiles });
       },
     }),
   );
