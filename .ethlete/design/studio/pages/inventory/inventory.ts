@@ -102,8 +102,8 @@ export default definePart<Props>({
           <header
             class="flex flex-wrap items-center gap-space-3 border-b border-et-surface-border px-space-4 py-space-3"
           >
-            <div class="flex min-w-0 flex-1 flex-col">
-              <span class="text-ui-sm text-et-surface-muted">Inventory</span>
+            <div class="flex min-w-24 flex-1 basis-0 flex-col">
+              <span class="truncate text-ui-sm text-et-surface-muted">Inventory</span>
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">${loading ? '' : (selected?.part ?? '')}</h2>
             </div>
             ${control(withAction(reload.body, 'emit:reloadInventory'), 'reload')}

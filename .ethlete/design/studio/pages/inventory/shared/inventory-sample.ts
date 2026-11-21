@@ -1,4 +1,5 @@
 import { html } from '@design-system';
+import { placeMarkers } from '../../../../../../apps/ethlete-studio/src/app/design-parts/inventory-page/marker-layout';
 
 export type Props = { inventory: 'open' | 'approvable' | 'approved' | 'loading' };
 
@@ -169,13 +170,32 @@ const markOf = (row: Row) =>
         class="pointer-events-none absolute border-2 border-et-theme"
         style="left:${percent(row.box.x, SHOT.width)};top:${percent(row.box.y, SHOT.height)};width:${percent(row.box.width, SHOT.width)};height:${percent(row.box.height, SHOT.height)}"
         ${TONE[row.tone]}
-      >
-        <span
-          class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-theme-ink"
-          >${row.number}</span
-        >
-      </div>`
+      ></div>`
     : '';
+
+const markersOf = (rows: Row[]) => {
+  const boxed = rows.filter((row) => row.box);
+  const placed = placeMarkers(
+    boxed.map((row) => ({
+      number: row.number,
+      x: ((row.box?.x ?? 0) / SHOT.width) * FRAME.width,
+      y: ((row.box?.y ?? 0) / SHOT.height) * FRAME.height,
+    })),
+    FRAME,
+  );
+
+  return placed
+    .map(
+      (marker, index) =>
+        html`<span
+          class="pointer-events-none absolute rounded-full bg-et-theme text-center font-code text-ui-xs leading-4 text-et-on-theme"
+          style="left:${marker.left}px;top:${marker.top}px;width:${marker.width}px;height:${marker.height}px"
+          ${TONE[boxed[index]?.tone ?? 'ok']}
+          >${marker.number}</span
+        >`,
+    )
+    .join('');
+};
 
 /** A page's rest frame on the canvas: its name and status above, the shot with a numbered box on every entry. */
 export const pageFrame = (page: InventoryPage, selected: boolean, at: { x: number; y: number }) =>
@@ -189,12 +209,13 @@ export const pageFrame = (page: InventoryPage, selected: boolean, at: { x: numbe
       style="width:${FRAME.width}px;height:${FRAME.height}px"
     >
       ${page.sections.flatMap((section) => section.rows.map(markOf)).join('')}
+      ${markersOf(page.sections.flatMap((section) => section.rows))}
     </div>
   </figure>`;
 
 const rowOf = (row: Row) =>
   html`<li class="flex gap-space-2 text-ui-sm" ${TONE[row.tone]}>
-    <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-theme-ink">${row.number}</span>
+    <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-on-theme">${row.number}</span>
     <span class="flex min-w-0 flex-col">
       <span class="text-et-surface">${row.name}</span>
       <span class="${row.tone === 'ok' ? 'text-et-surface-muted' : 'text-et-theme'}">${row.detail}</span>
