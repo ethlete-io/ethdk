@@ -31,12 +31,15 @@ const SELECTED_RING = 'outline-2 -outline-offset-2 outline-(--et-theme-color-pri
 export const variantCellStyles = styles + loaderStyles;
 
 const loadingBadge = html`<span
-  class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted"
+  class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted [@container(height<14px)]:hidden"
   data-loading-badge
-  >${spinner({ diameter: 14, strokeWidth: 1.75 })}${CANVAS_LABELS.loading}</span
+  >${spinner({ diameter: 14, strokeWidth: 1.75 })}<span class="[@container(height<18px)]:hidden"
+    >${CANVAS_LABELS.loading}</span
+  ></span
 >`;
 
-const pending = html`<div class="h-30" aria-busy="true" data-loading></div>`;
+const pending = (height?: number) =>
+  html`<div class="${height === undefined ? 'h-30' : 'h-full'}" aria-busy="true" data-loading></div>`;
 
 const pinAt = (pin: { x: number; y: number; initials?: string; selected?: boolean }) =>
   html`<span
@@ -71,9 +74,8 @@ const frame = ({
   ).join('');
   return html`<div class="relative row-start-2 flex min-w-0 flex-col self-start ${stacked ? 'sk-fit' : ''}">
     <div class="contents" ${slot('overlay')}>${overlay}</div>
-    ${loading ? loadingBadge : ''}
     <div
-      class="relative w-(--sk-frame) overflow-clip [overflow-clip-margin:8px] ${stacked ? 'z-1' : 'sk-fit'} ${
+      class="relative w-(--sk-frame) overflow-clip ${shown === undefined ? '' : '@container-size'} [overflow-clip-margin:8px] ${stacked ? 'z-1' : 'sk-fit'} ${
         shown === undefined ? '' : 'h-[calc(var(--sk-shown)*var(--sk-scale))]'
       } ${same ? 'opacity-50' : ''}"
       style="${sized}"
@@ -91,7 +93,7 @@ const frame = ({
           class="relative origin-top-left"
           style="${height === undefined ? '' : 'height: ' + height + 'px;'} ${crop ? 'transform: ' + crop : ''}"
         >
-          <div class="contents" ${slot('shot')}>${loading ? pending : shot}</div>
+          <div class="contents" ${slot('shot')}>${loading ? pending(height) : shot}</div>
           ${
             mark
               ? html`<span
@@ -103,6 +105,7 @@ const frame = ({
           }
         </div>
       </div>
+      ${loading ? loadingBadge : ''}
       <span class="pointer-events-none absolute inset-0 ${selected ? SELECTED_RING : ''}" data-frame-border></span>
     </div>
     ${
@@ -147,7 +150,7 @@ const base: Props = { state: 'rest', width: 480, shot: demo };
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; the host places comment pins on their point in the shot through the overlay slot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {
@@ -155,7 +158,8 @@ export default definePart({
     first: { ...base, first: true },
     marked: { ...base, marked: true },
     unchanged: { ...base, same: true },
-    loading: { ...base, loading: true },
+    loading: { ...base, loading: true, height: 120, shown: 120 },
+    'loading-small': { ...base, loading: true, height: 24, shown: 24 },
     selected: { ...base, height: 120, selected: true },
     cropped: {
       ...base,
@@ -197,10 +201,15 @@ export default definePart({
       'A cropped cell standing for a group of states; check the two shorter bars under the frame that read as a stack.',
     pinned:
       'A cell with two comment pins; check that each pin point sits on its spot in the shot and the selected pin shows the accent fill.',
+    'loading-small':
+      'A loading cell whose frame is 12px tall; check that only the spinner shows, with no Lädt text, and nothing leaves the frame.',
     loading:
       'A cell whose shot still loads; check the spinner with Lädt centered in the empty busy frame and the label row unchanged.',
   },
-  motions: { loading: { from: 'loading', to: 'loading' } },
+  motions: {
+    loading: { from: 'loading', to: 'loading' },
+    'loading-small': { from: 'loading-small', to: 'loading-small' },
+  },
   controls: {},
   sample: { id: 'sample', marks: ['look', 'same', 'first'] },
   instant: 'A cell dims or gains its mark at once when the comparison ends.',

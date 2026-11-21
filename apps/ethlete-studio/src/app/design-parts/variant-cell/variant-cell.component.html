@@ -36,7 +36,7 @@
     [attr.data-sk-cropped]="crop() ? '' : null"
     [class]="frameClass()"
     [class.opacity-50]="same()"
-    class="relative overflow-clip [overflow-clip-margin:8px]"
+    class="relative overflow-clip @container-size [overflow-clip-margin:8px]"
   >
     <div
       [style.width.px]="width()"
@@ -53,7 +53,7 @@
         class="relative origin-top-left"
       >
         @if (loading()) {
-          <div class="h-30" aria-busy="true" data-loading></div>
+          <div [class]="height() === undefined ? 'h-30' : 'h-full'" aria-busy="true" data-loading></div>
         }
         <div [class]="loading() ? 'invisible absolute inset-x-0 top-0' : 'contents'">
           <ng-content />
@@ -72,9 +72,11 @@
     </div>
     @if (loading()) {
       <span
-        class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted"
+        class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted [@container(height<14px)]:hidden"
         data-loading-badge
-        ><et-spinner [diameter]="14" [strokeWidth]="1.75" />{{ LABELS.loading }}</span
+        ><et-spinner [diameter]="14" [strokeWidth]="1.75" /><span class="[@container(height<18px)]:hidden">{{
+          LABELS.loading
+        }}</span></span
       >
     }
     <span
