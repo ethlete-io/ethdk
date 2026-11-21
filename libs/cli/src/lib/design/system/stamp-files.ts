@@ -164,12 +164,16 @@ const withoutAt = (entry: unknown) => {
   return rest;
 };
 
+const hasHash = (entry: unknown) => !!entry && typeof entry === 'object' && 'hash' in entry;
+
+const isDrop = (before: unknown, after: unknown) => hasHash(before) && !hasHash(after);
+
 /**
- * Writes the entries of `keys` (or every entry with `'all'`) that the current `withStampsInMemory` run changed in each
- * stamp file named `name` into the tracked file, onto the entries the tracked file holds now, so a write by another
- * process during the run stays and no cached stamp entry reaches the tracked file.
+ * Keeps the entries of `keys` (or every entry with `'all'`) that the current `withStampsInMemory` run changed in each
+ * stamp file named `name`: an entry the run removed or stripped of its `hash` goes into the tracked file, a new or changed one only into the product's
+ * gitignored cache, each onto what the file holds now, so a write by another process during the run stays.
  */
-export const keepHeldStampsInFiles = (name: string, keys: readonly string[] | 'all') => {
+export const keepHeldStamps = (name: string, keys: readonly string[] | 'all') => {
   const asked = (key: string) => keys === 'all' || keys.includes(key);
 
   for (const [file, held] of inMemory.getStore() ?? []) {
@@ -179,17 +183,26 @@ export const keepHeldStampsInFiles = (name: string, keys: readonly string[] | 'a
 
     withProductLock(dirname(file), () => {
       const tracked = trackedTextOf(file);
-      const next = entriesOf(tracked);
+      const [inTracked, onDisk] = [entriesOf(tracked), entriesOf(diskStampTextOf(file))];
+      let dropped = false;
 
       for (const key of new Set([...Object.keys(base), ...Object.keys(run)])) {
         if (!asked(key) || JSON.stringify(withoutAt(base[key])) === JSON.stringify(withoutAt(run[key]))) continue;
-        if (run[key] === undefined) delete next[key];
-        else next[key] = run[key];
+
+        if (run[key] === undefined) delete onDisk[key];
+        else onDisk[key] = run[key];
+
+        if (!isDrop(base[key], run[key]) || !(key in inTracked)) continue;
+
+        if (run[key] === undefined) delete inTracked[key];
+        else inTracked[key] = run[key];
+
+        dropped = true;
       }
 
-      const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)));
+      if (dropped) writeJsonFile({ file, value: JSON.parse(sortedTextOf(inTracked)) });
 
-      if (!sameJson(tracked, sorted)) writeJsonFile({ file, value: sorted });
+      writeCachedStamp(file, JSON.parse(sortedTextOf(onDisk)));
     });
   }
 };

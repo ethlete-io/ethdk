@@ -7,6 +7,7 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { renderIssuesOf } from './render-check';
+import { readStampText } from './stamp-files';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 
@@ -103,7 +104,7 @@ describe('a design check and the tracked stamp files', () => {
   );
 
   it.each([undefined, 'elements/hero'])(
-    'writes the hash of a direct edit HEAD holds into merged.json uncommitted (part %s)',
+    'keeps the hash of a direct edit HEAD holds in the stamp cache, not in merged.json (part %s)',
     async (part) => {
       const { target, dir } = committedAcme();
 
@@ -126,10 +127,10 @@ describe('a design check and the tracked stamp files', () => {
         drawPictures: async ({ parts }) => new Map(parts.map((name) => [name, 'not drawn in this spec'])),
       });
 
-      expect(JSON.parse(readFileSync(join(dir, 'merged.json'), 'utf8'))).toEqual({
+      expect(git(target, 'status', '--porcelain', '--', join(dir, 'merged.json'))).toBe('');
+      expect(JSON.parse(readStampText(join(dir, 'merged.json')) ?? '{}')).toEqual({
         'elements/hero': partHashOf({ product, dir: dirname(hero?.file ?? '') }),
       });
-      expect(git(target, 'rev-list', '--count', 'HEAD')).toBe('1');
     },
     120_000,
   );
