@@ -490,9 +490,9 @@
     "actions": ["emit:collapse"],
     "builder": "designer",
     "at": "2026-11-21T02:54:14.490Z",
-    "by": "et design check",
-    "cmd": "check",
-    "pid": 2951160
+    "by": "claude-sonnet-5-5",
+    "cmd": "ready",
+    "pid": 3169800
   },
   "components/shell-resize-handle": {
     "hash": "af41c9c2726ffea8",
