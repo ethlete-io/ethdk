@@ -2,4 +2,4 @@
 '@ethlete/components': minor
 ---
 
-Add a `scrollableButtons` input to `et-tab-group` and `et-nav-tabs` that shows or hides the scroll buttons per instance, optionally per breakpoint, and wins over `provideScrollableConfig`.
+Add a per-instance `scrollableButtons` input to tab groups and nav tabs; `[etScrollableButtons]` breakpoint maps now hide the buttons below their lowest breakpoint instead of showing them.
