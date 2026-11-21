@@ -241,12 +241,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       />
     } @else if (sketchesEmpty()) {
       <ethlete-sketches
-        [empty]="true"
         [tree]="pageShell().tree"
         [shell]="pageShell()"
         (expandedChange)="rememberOpen($event)"
         (shellAction)="runShellAction($event)"
         class="h-full!"
+        empty
       />
     } @else if (inventoryPage(); as page) {
       @defer {

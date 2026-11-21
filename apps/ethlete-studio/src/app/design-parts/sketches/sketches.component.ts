@@ -1,6 +1,7 @@
 import { foldedStatesOf, shownSketchRowsOf } from '@ethlete/cli/sketch-frames';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
+  booleanAttribute,
   afterNextRender,
   afterRenderEffect,
   Component,
@@ -239,7 +240,7 @@ export class SketchesComponent {
   public heading = input<string | null>(null);
   public rows = input<SketchRow[]>(SKETCH_ROWS);
   public fresh = input(false);
-  public empty = input(false);
+  public empty = input(false, { transform: booleanAttribute });
   public autoMerge = input(false);
   public status = input<SketchStatus>('waiting');
   public openPoints = input<OpenPointGroup[]>([]);
