@@ -10,6 +10,7 @@ import { InputComponent } from './input.component';
       [(value)]="value"
       [etInputClear]="clearable()"
       [readonly]="readonly()"
+      [disabled]="disabled()"
       (valueChange)="changes.push($event)"
       aria-label="Search"
     />
@@ -20,6 +21,7 @@ class InputHost {
   value = signal('kickoff');
   clearable = signal(true);
   readonly = signal(false);
+  disabled = signal(false);
   changes: string[] = [];
 }
 
@@ -40,10 +42,10 @@ describe('InputClearDirective', () => {
     return { fixture, native, clearButton, focus };
   };
 
-  it('shows only while the input is focused and holds a value', () => {
+  it('shows while the input holds a value, focused or not', () => {
     const { fixture, clearButton, focus } = mount();
 
-    expect(clearButton()).toBeNull();
+    expect(clearButton()).not.toBeNull();
 
     focus();
     expect(clearButton()).not.toBeNull();
@@ -54,19 +56,28 @@ describe('InputClearDirective', () => {
   });
 
   it('is absent without clearable', () => {
-    const { fixture, clearButton, focus } = mount();
+    const { fixture, clearButton } = mount();
 
     fixture.componentInstance.clearable.set(false);
-    focus();
+    TestBed.tick();
+
+    expect(clearButton()).toBeNull();
+  });
+
+  it('is absent while disabled', () => {
+    const { fixture, clearButton } = mount();
+
+    fixture.componentInstance.disabled.set(true);
+    TestBed.tick();
 
     expect(clearButton()).toBeNull();
   });
 
   it('is absent while readonly', () => {
-    const { fixture, clearButton, focus } = mount();
+    const { fixture, clearButton } = mount();
 
     fixture.componentInstance.readonly.set(true);
-    focus();
+    TestBed.tick();
 
     expect(clearButton()).toBeNull();
   });

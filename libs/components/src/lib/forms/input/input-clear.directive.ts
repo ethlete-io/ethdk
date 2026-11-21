@@ -18,7 +18,7 @@ import { InputDirective } from './headless';
 import { InputComponent } from './input.component';
 
 /**
- * Adds a clear (×) button to an `et-input`'s suffix stack while the focused input holds a value. Clearing empties
+ * Adds a clear (×) button to an `et-input`'s suffix stack while the input holds a value. Clearing empties
  * the value, emits `valueChange` and keeps focus in the input.
  *
  * @example
@@ -41,12 +41,7 @@ export class InputClearDirective {
 
   /** @internal */
   public showClear = computed(
-    () =>
-      this.etInputClear() &&
-      this.inputDir.hasValue() &&
-      this.inputDir.focused() &&
-      !this.inputDir.disabled() &&
-      !this.inputDir.readonly(),
+    () => this.etInputClear() && this.inputDir.hasValue() && !this.inputDir.disabled() && !this.inputDir.readonly(),
   );
 
   constructor() {

@@ -71,7 +71,7 @@ export class PhoneInputComponent {
 
   /** Leads the country trigger's accessible name, ahead of the active country and its dial code. */
   public countryLabel = input<string | null>(null);
-  /** Shows a clear (×) control while a number is set and the field is in use. */
+  /** Shows a clear (×) control while a number is set. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
@@ -85,10 +85,7 @@ export class PhoneInputComponent {
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  // only while the field is in use - mirrors the select's clear affordance
-  protected showClear = computed(
-    () => this.clearable() && this.phone.hasValue() && this.phone.focused() && this.phone.interactive(),
-  );
+  protected showClear = computed(() => this.clearable() && this.phone.hasValue() && this.phone.interactive());
 
   protected countries = computed(() => {
     const locale = this.locale.currentLocale();

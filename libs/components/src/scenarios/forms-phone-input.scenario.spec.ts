@@ -153,7 +153,7 @@ describe('forms phone input scenarios', { timeout: 15_000 }, () => {
     s.flush();
     expect(field.value).toBe('171 234 567 8');
     expect(app.contact.phone().touched()).toBe(true);
-    expect(host.querySelector('.et-input-clear')).toBeNull();
+    expect(host.querySelector('.et-input-clear')).not.toBeNull();
 
     trigger.click();
     s.tick();

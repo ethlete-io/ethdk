@@ -50,8 +50,7 @@
 <ng-template etControlSuffix>
   @if (showClear()) {
     <!-- pointer-only, out of the tab order — keyboard users clear via Backspace / erasing.
-         mousedown is prevented so the trigger keeps focus: `showClear` reads `focused()`, so a
-         blur would unmount this button before the click could land -->
+         mousedown is prevented so the trigger keeps focus -->
     <button
       [attr.aria-label]="resolvedClearLabel()"
       (click)="handleClearClick($event)"

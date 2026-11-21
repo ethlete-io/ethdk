@@ -79,7 +79,7 @@ export class DateInputComponent {
 
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
-  /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
+  /** Shows a clear (×) control while a value or pending text is set. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
 
@@ -91,13 +91,7 @@ export class DateInputComponent {
 
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  protected showClear = computed(
-    () =>
-      this.clearable() &&
-      this.dateInput.hasValue() &&
-      (this.dateInput.focused() || this.dateInput.pickerOpen()) &&
-      this.dateInput.interactive(),
-  );
+  protected showClear = computed(() => this.clearable() && this.dateInput.hasValue() && this.dateInput.interactive());
 
   protected handleClearClick(event: Event) {
     // clearing must not bubble into the form field's frame-click handling

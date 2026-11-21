@@ -35,8 +35,8 @@ describe('DateInputComponent - clear button', () => {
     await driver.settle();
   });
 
-  it('shows only while the field is focused and holds a value', () => {
-    expect(clearButton()).toBeNull();
+  it('shows while the field holds a value, focused or not', () => {
+    expect(clearButton()).not.toBeNull();
 
     driver.focusField();
     driver.detectChanges();

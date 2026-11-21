@@ -49,7 +49,7 @@ export type SelectMockOptions = {
   placeholder?: string;
   /** The `value` of the option the keyboard points at while the panel is open. */
   active?: string;
-  /** Shows the clear button while the field has focus and a value. Defaults to `true`. */
+  /** Shows the clear button while the field has a value. Defaults to `true`. */
   clearable?: boolean;
   clearLabel?: string;
   /** The app's default color theme name: the panel provides it to the options. */
@@ -181,7 +181,7 @@ export const select = (options: SelectMockOptions): FormFieldControlMock => {
     },
     suffix: (state) => {
       const clear =
-        (options.clearable ?? true) && selected && state.focused && !state.disabled && !state.readonly
+        (options.clearable ?? true) && selected && !state.disabled && !state.readonly
           ? `<button aria-label="${options.clearLabel ?? 'Clear'}" class="et-input-clear" tabindex="-1" type="button">${iconMarkup(TIMES_ICON)}</button>`
           : '';
 

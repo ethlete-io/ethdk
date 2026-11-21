@@ -56,7 +56,7 @@ affix gap:
 browser's native clear button.
 
 `etInputClear` (from `INPUT_CLEAR_IMPORTS`) adds a clear (×) button to the
-suffix stack while the focused input holds a value. It empties the value, emits
+suffix stack while the input holds a value, focused or not (never while `disabled` or `readonly`). It empties the value, emits
 the change and keeps focus in the input; `clearLabel` overrides its accessible
 name (the shared `clear` label from `provideFormFieldLabels`). It is a separate
 import so a plain `et-input` does not ship the button. `clear()` on `et-input`
@@ -575,7 +575,7 @@ regional-indicator emoji.
 | `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none, case-insensitive. A late change (a locale or geo lookup that resolves after the first render) still applies, as long as the country has not been picked or derived from the value since. |
 | `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown, case-insensitive.                                                                                                                                                                                        |
 | `countryLabel`       | `string \| null` | `null` ¹ | Leads the country trigger's accessible name, followed by the active country and its dial code (`Select country Germany +49`).                                                                                                                   |
-| `clearable`          | `boolean`        | `true`   | Shows a clear (×) button while a number is set and the field is in use.                                                                                                                                                                         |
+| `clearable`          | `boolean`        | `true`   | Shows a clear (×) button while a number is set.                                                                                                                                                                                                 |
 | `clearLabel`         | `string \| null` | `null` ² | Accessible name of the clear button.                                                                                                                                                                                                            |
 
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).

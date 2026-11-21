@@ -197,7 +197,7 @@ The value is a `string | null`. On `et-date-input` (forwarded from the headless
 | `pickerOpen`          | `boolean` (model)                            | `false`                 | The picker overlay's open state.                                                                        |
 | `pickerTriggerLabel`  | `string \| null`                             | `null` ¹                | `aria-label` of the suffix calendar button.                                                             |
 | `parseErrorMessage`   | `string \| null`                             | `null` ²                | Message shown below the field when typed text can't be parsed.                                          |
-| `clearable`           | `boolean`                                    | `true`                  | Clear (×) button while the focused field has a value (label: `clearLabel`).                             |
+| `clearable`           | `boolean`                                    | `true`                  | Clear (×) button while the field has a value (label: `clearLabel`).                                     |
 | `mask`                | `boolean`                                    | `false`                 | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.                                  |
 
 ¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls), which `provideDateTimeLabels({ … })` overrides for a whole subtree.

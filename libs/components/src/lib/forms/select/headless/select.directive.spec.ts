@@ -1985,11 +1985,7 @@ describe('SelectDirective (searchable custom value)', () => {
     expect(driver.host.value()).toBe('de');
   });
 
-  it('renders a clear control while focused that clears the selection', () => {
-    expect(driver.query('.et-input-clear')).toBeNull();
-
-    focusEvent(driver.searchInput(), 'focus');
-
+  it('renders a clear control, focused or not, that clears the selection', () => {
     const clear = driver.query<HTMLButtonElement>('.et-input-clear')!;
 
     expect(clear).not.toBeNull();
