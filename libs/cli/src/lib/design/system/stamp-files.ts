@@ -166,10 +166,10 @@ const withoutAt = (entry: unknown) => {
 
 /**
  * Writes the entries of `keys` (or every entry with `'all'`) that the current `withStampsInMemory` run changed in each
- * stamp file named `name` into the tracked file, onto the entries the tracked file holds now, so a write by another
- * process during the run stays and no cached stamp entry reaches the tracked file.
+ * stamp file named `name` into the product's gitignored cache, onto the entries the file holds now, so a write by
+ * another process during the run stays and the tracked file is never written.
  */
-export const keepHeldStampsInFiles = (name: string, keys: readonly string[] | 'all') => {
+export const keepHeldStampsInCache = (name: string, keys: readonly string[] | 'all') => {
   const asked = (key: string) => keys === 'all' || keys.includes(key);
 
   for (const [file, held] of inMemory.getStore() ?? []) {
@@ -178,8 +178,8 @@ export const keepHeldStampsInFiles = (name: string, keys: readonly string[] | 'a
     const [base, run] = [entriesOf(held.base), entriesOf(held.text)];
 
     withProductLock(dirname(file), () => {
-      const tracked = trackedTextOf(file);
-      const next = entriesOf(tracked);
+      const current = diskStampTextOf(file);
+      const next = entriesOf(current);
 
       for (const key of new Set([...Object.keys(base), ...Object.keys(run)])) {
         if (!asked(key) || JSON.stringify(withoutAt(base[key])) === JSON.stringify(withoutAt(run[key]))) continue;
@@ -189,7 +189,7 @@ export const keepHeldStampsInFiles = (name: string, keys: readonly string[] | 'a
 
       const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)));
 
-      if (!sameJson(tracked, sorted)) writeJsonFile({ file, value: sorted });
+      if (!sameJson(current, sorted)) writeCachedStamp(file, sorted);
     });
   }
 };

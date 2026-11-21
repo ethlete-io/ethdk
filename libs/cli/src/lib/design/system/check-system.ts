@@ -93,7 +93,7 @@ import { badWidthsOf } from './rules/widths';
 import { listPartsWithoutDataStatesOf } from './rules/data-states';
 import { startVariantTypechecks, typecheckVariant, typecheckVariantAsync, variantKeyOf } from './sketch/check-sketches';
 import { MERGED_FILE } from './sketch/merged-parts';
-import { keepHeldStampsInFiles, withStampsInMemory } from './stamp-files';
+import { keepHeldStampsInCache, withStampsInMemory } from './stamp-files';
 import { readyUncommittedLinesOf } from '../uncommitted-state';
 import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
@@ -1120,8 +1120,8 @@ export const checkSystemRendered = async (
 
       const checked = options.parts ?? (options.part ? [options.part] : 'all');
 
-      keepHeldStampsInFiles(READY_FILE, checked);
-      keepHeldStampsInFiles(MERGED_FILE, checked);
+      keepHeldStampsInCache(READY_FILE, checked);
+      keepHeldStampsInCache(MERGED_FILE, checked);
 
       for (const name of options.products) {
         const entry = options.config.products?.[name];
