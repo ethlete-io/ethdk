@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GIT_FIELD_SEPARATOR } from './format';
-import { parseGitLog } from './log';
+import { parseGitLog, parseGitPatchIds } from './log';
 
 const REPO = '/home/human/dev/fut-frontend';
 const SHA = 'b39d77c350735b4ec158869ff238ac9e076ae105';
@@ -135,5 +135,28 @@ describe('parseGitLog', () => {
     const events = parse(['', 'only-a-sha', line({ authored: 'not a date', sha: 'bad' }), line({ sha: 'good' })]);
 
     expect(events.map((event) => event.sha)).toEqual(['good']);
+  });
+});
+
+describe('parseGitPatchIds', () => {
+  it('reads the patch id of each commit `git patch-id --stable` printed', () => {
+    const output = [
+      'ab8bff729ae09dd5cd78f5eb6118fe16013a7606 3c96703bb5dbf1adc7470ace8049266795c642b5',
+      '5e215222eb7c82867005cde15e63fc6ab944dec8 8bd590d8130d2463b609cd7b1a8286f7a471de08',
+      '',
+    ].join('\n');
+
+    expect(parseGitPatchIds(output)).toEqual(
+      new Map([
+        ['3c96703bb5dbf1adc7470ace8049266795c642b5', 'ab8bff729ae09dd5cd78f5eb6118fe16013a7606'],
+        ['8bd590d8130d2463b609cd7b1a8286f7a471de08', '5e215222eb7c82867005cde15e63fc6ab944dec8'],
+      ]),
+    );
+  });
+
+  it('puts the patch id on the commit it names', () => {
+    const events = parseGitLog({ repoPath: REPO, output: line({}), patchIds: new Map([[SHA, 'p1']]) });
+
+    expect(events[0]?.patchId).toBe('p1');
   });
 });

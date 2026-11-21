@@ -198,7 +198,7 @@ describe('collectGitEvents$', () => {
             : { stdout: '' },
     });
 
-    expect(specs.filter((spec) => spec.args[0] === 'log')).toHaveLength(1);
+    expect(specs.filter((spec) => spec.args[0] === 'log' && !spec.args.includes('--patch'))).toHaveLength(1);
     expect(result?.events.map((event) => (event.kind === 'git-commit' ? event.repoPath : null))).toEqual([
       REPO,
       worktree,
@@ -288,7 +288,7 @@ describe('collectGitEvents$', () => {
       outputs: (spec) => (spec.args[0] === 'worktree' ? { code: 1, stderr: 'unknown subcommand' } : byCommand(spec)),
     });
 
-    expect(specs.filter((spec) => spec.args[0] === 'log')).toHaveLength(1);
+    expect(specs.filter((spec) => spec.args[0] === 'log' && !spec.args.includes('--patch'))).toHaveLength(1);
     expect(result?.events.map((event) => event.kind)).toEqual(['git-checkout', 'git-commit']);
     expect(result?.failures.map((failure) => failure.args[0])).toEqual(['worktree']);
   });
@@ -351,5 +351,24 @@ describe('collectGitEvents$', () => {
     collectGitEvents$({ processes, repos: REPOS }).subscribe((value) => (result = value));
 
     expect(result?.events.filter((event) => event.kind === 'git-commit')).toHaveLength(1);
+  });
+
+  it('reads the patch id of each commit from its diff, so a cherry-pick can be told from new work', () => {
+    const patchIds = 'ab8bff729ae09dd5cd78f5eb6118fe16013a7606 sha1\n';
+    const { result, specs } = scan({
+      repos: REPOS,
+      outputs: (spec) =>
+        spec.args[0] === 'patch-id'
+          ? { stdout: spec.stdin === 'commit sha1\n\ndiff --git a/x b/x\n' ? patchIds : '' }
+          : spec.args.includes('--patch')
+            ? { stdout: 'commit sha1\n\ndiff --git a/x b/x\n' }
+            : byCommand(spec),
+    });
+
+    expect(specs.find((spec) => spec.args.includes('--patch'))?.args).toContain(`--since=${WINDOW.from.toISOString()}`);
+    expect(result?.events.find((event) => event.kind === 'git-commit')).toMatchObject({
+      sha: 'sha1',
+      patchId: 'ab8bff729ae09dd5cd78f5eb6118fe16013a7606',
+    });
   });
 });

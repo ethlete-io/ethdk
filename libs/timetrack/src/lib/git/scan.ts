@@ -3,7 +3,7 @@ import { CollectedEvent } from '../model/event';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { GitArrival, gitArrivalArgs, gitArrivalsOf, gitArrivedAt } from './arrival';
 import { GIT_LOG_FORMAT, GIT_REFLOG_FORMAT, GitScanWindow } from './format';
-import { parseGitLog } from './log';
+import { parseGitLog, parseGitPatchIds } from './log';
 import { parseGitBranchReflog, parseGitReflog } from './reflog';
 import { gitWorktreeArgs, parseGitWorktrees } from './worktree';
 
@@ -61,6 +61,20 @@ const gitLogArgs = (repo: GitRepoScan) => [
   '--name-only',
   `--since=${repo.window.from.toISOString()}`,
   `--format=${GIT_LOG_FORMAT}`,
+  ...(repo.author ? ['--fixed-strings', `--author=${repo.author}`] : []),
+];
+
+/** The same commits as `gitLogArgs`, each with its diff, as `git patch-id` reads them. */
+const gitPatchLogArgs = (repo: GitRepoScan) => [
+  'log',
+  '--branches',
+  '--no-merges',
+  '--patch',
+  '--no-color',
+  '--no-ext-diff',
+  '--no-textconv',
+  `--since=${repo.window.from.toISOString()}`,
+  '--format=commit %H',
   ...(repo.author ? ['--fixed-strings', `--author=${repo.author}`] : []),
 ];
 
@@ -165,8 +179,13 @@ const probeScanOf = (probe: RepoProbe): GitScanResult => ({
   ].filter((failure): failure is GitScanFailure => !!failure),
 });
 
-const logScanOf = (options: { group: RepoGroup; log: GitRun; arrived: ReadonlyMap<string, Date> }): GitScanResult => {
-  const { group, log, arrived } = options;
+const logScanOf = (options: {
+  group: RepoGroup;
+  log: GitRun;
+  arrived: ReadonlyMap<string, Date>;
+  patchIds: ReadonlyMap<string, string>;
+}): GitScanResult => {
+  const { group, log, arrived, patchIds } = options;
   const repo = group.scanner.repo;
   const failure = failureOf({ repoPath: repo.path, run: log });
   const { owners, worktrees } = holdersOf(group);
@@ -182,6 +201,7 @@ const logScanOf = (options: { group: RepoGroup; log: GitRun; arrived: ReadonlyMa
             owners,
             worktrees,
             arrived,
+            patchIds,
           })
         : []),
       ...(reflog.code === 0
@@ -224,6 +244,28 @@ const arrivedOf$ = (options: {
   );
 };
 
+/** The patch id of each commit `gitLogArgs` lists. A failed run leaves the commits without one. */
+const patchIdsOf$ = (options: {
+  processes: TimetrackProcessRunner;
+  repo: GitRepoScan;
+}): Observable<Map<string, string>> => {
+  const { processes, repo } = options;
+
+  return run$({ processes, spec: gitSpec({ repoPath: repo.path, args: gitPatchLogArgs(repo) }) }).pipe(
+    concatMap((log) =>
+      log.result.code === 0 && log.result.stdout.trim()
+        ? run$({
+            processes,
+            spec: { ...gitSpec({ repoPath: repo.path, args: ['patch-id', '--stable'] }), stdin: log.result.stdout },
+          }).pipe(
+            map((ids) => (ids.result.code === 0 ? parseGitPatchIds(ids.result.stdout) : new Map<string, string>())),
+          )
+        : of(new Map<string, string>()),
+    ),
+    catchError(() => of(new Map<string, string>())),
+  );
+};
+
 const merged = (scans: GitScanResult[]): GitScanResult => ({
   events: scans.flatMap((scan) => scan.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
   failures: scans.flatMap((scan) => scan.failures),
@@ -255,7 +297,8 @@ export const collectGitEvents$ = (options: {
               spec: gitSpec({ repoPath: group.scanner.repo.path, args: gitLogArgs(group.scanner.repo) }),
             }),
             arrived: arrivedOf$({ processes: options.processes, group }),
-          }).pipe(map(({ log, arrived }) => logScanOf({ group, log, arrived }))),
+            patchIds: patchIdsOf$({ processes: options.processes, repo: group.scanner.repo }),
+          }).pipe(map(({ log, arrived, patchIds }) => logScanOf({ group, log, arrived, patchIds }))),
         ),
         toArray(),
         map((logs) => merged([...probes.map(probeScanOf), ...logs])),

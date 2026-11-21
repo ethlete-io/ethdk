@@ -33,6 +33,7 @@ import {
 } from './breaks';
 import { HeardChunk, classifyCalls, lastHostSampleAt, oneCallAcrossMachines } from './calls';
 import { promptOriginReader } from './prompt-origin';
+import { withoutCherryPicks } from './cherry-picks';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 import { sessionWork } from './session-work';
@@ -1773,7 +1774,7 @@ const streamOrigin = (options: {
         within: mergeWindows([
           ...presence,
           ...gaps,
-          ...longAbsences({ presence, events, minBreakMs: config.minBreakMs }),
+          ...longAbsences({ presence, events, minBreakMs: config.minBreakMs, now: config.now }),
         ]),
       }),
       // A session silent until the prompt that ended a break waited through it rather than worked.
@@ -2062,7 +2063,12 @@ const rowsOf = (options: {
     calls: day.calls,
     breaks: day.breaks,
     gaps: day.gaps,
-    absences: longAbsences({ presence: day.presence, events: options.events, minBreakMs: config.minBreakMs }),
+    absences: longAbsences({
+      presence: day.presence,
+      events: options.events,
+      minBreakMs: config.minBreakMs,
+      now: config.now,
+    }),
     remoteWork: day.remoteWork,
     bookedRemote: day.bookedRemote,
     seen: options.seen,
@@ -2174,7 +2180,7 @@ export const streamDay = (options: {
   const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
   const byOrigin = new Map<string, CollectedEvent[]>([['local', []]]);
 
-  for (const event of options.events) {
+  for (const event of withoutCherryPicks(options.events)) {
     const ofOrigin = byOrigin.get(originIdOf(event));
 
     if (ofOrigin) ofOrigin.push(event);

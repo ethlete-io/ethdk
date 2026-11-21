@@ -35,6 +35,8 @@ const branchOf = (ref: string) => {
  * `gitArrivedAt`). Such a commit is dated by its arrival, which is the only moment this machine took
  * part in it, and keeps its author date as `authoredAt`.
  *
+ * `patchIds` names the `git patch-id --stable` of each commit (see `parseGitPatchIds`).
+ *
  * The paths `--name-only` prints follow their own commit's header, so a commit this drops has to stay
  * the current one until the next header arrives. Otherwise its files join the commit before it.
  */
@@ -45,6 +47,7 @@ export const parseGitLog = (options: {
   owners?: ReadonlyMap<string, string>;
   worktrees?: ReadonlyMap<string, string>;
   arrived?: ReadonlyMap<string, Date>;
+  patchIds?: ReadonlyMap<string, string>;
 }): GitCommitEvent[] => {
   const events: GitCommitEvent[] = [];
   const seen = new Set<string>();
@@ -80,6 +83,7 @@ export const parseGitLog = (options: {
 
     const owner = options.owners?.get(branch);
     const worktree = owner ? undefined : options.worktrees?.get(branch);
+    const patchId = options.patchIds?.get(sha);
 
     current = {
       at,
@@ -91,9 +95,20 @@ export const parseGitLog = (options: {
       subject,
       ...(worktree ? { worktree } : {}),
       ...(arrivedAt ? { authoredAt } : {}),
+      ...(patchId ? { patchId } : {}),
     };
     events.push(current);
   }
 
   return events.sort((a, b) => a.at.getTime() - b.at.getTime());
 };
+
+/** Reads the `<patch-id> <sha>` lines `git patch-id --stable` prints into the patch id of each commit. */
+export const parseGitPatchIds = (output: string): Map<string, string> =>
+  new Map(
+    output.split('\n').flatMap((line) => {
+      const [patchId, sha] = line.trim().split(/\s+/);
+
+      return patchId && sha ? [[sha, patchId] as const] : [];
+    }),
+  );

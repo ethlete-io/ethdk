@@ -150,15 +150,27 @@ export const breakGaps = (options: {
 const LEAVING_KINDS: ReadonlySet<string> = new Set(['idle-start', 'lock']);
 const RETURNING_KINDS: ReadonlySet<string> = new Set(['idle-end', 'unlock']);
 
+const idleTransitions = (events: readonly CollectedEvent[]) =>
+  events.filter(
+    (event) => event.source === 'idle' && (LEAVING_KINDS.has(event.kind) || RETURNING_KINDS.has(event.kind)),
+  );
+
 const opensAway = (events: readonly CollectedEvent[]) => {
-  const first = events
-    .filter((event) => event.source === 'idle' && (LEAVING_KINDS.has(event.kind) || RETURNING_KINDS.has(event.kind)))
-    .reduce<CollectedEvent | undefined>(
-      (earliest, event) => (!earliest || event.at < earliest.at ? event : earliest),
-      undefined,
-    );
+  const first = idleTransitions(events).reduce<CollectedEvent | undefined>(
+    (earliest, event) => (!earliest || event.at < earliest.at ? event : earliest),
+    undefined,
+  );
 
   return !!first && RETURNING_KINDS.has(first.kind);
+};
+
+const closesAway = (events: readonly CollectedEvent[], lastPresenceEnd: Date) => {
+  const last = idleTransitions(events).reduce<CollectedEvent | undefined>(
+    (latest, event) => (!latest || event.at >= latest.at ? event : latest),
+    undefined,
+  );
+
+  return !!last && LEAVING_KINDS.has(last.kind) && last.at >= lastPresenceEnd;
 };
 
 /**
@@ -167,13 +179,16 @@ const opensAway = (events: readonly CollectedEvent[]) => {
  *
  * Given the day's `events`, the stretch from its first event to its first presence is one too when it
  * is that long, or when the day opens with the user's return and it is long enough to be a break: they
- * left on the day before.
+ * left on the day before. The stretch from the last presence to the day's last event mirrors it: one
+ * when it is that long, or when a day that is over (no `now`) ends with the user leaving and it is long
+ * enough to be a break. A day still being collected may yet see them back, which makes it a break.
  */
 export const longAbsences = (options: {
   presence: readonly TimeWindow[];
   events?: readonly CollectedEvent[];
   minBreakMs?: number;
   maxBreakMs?: number;
+  now?: Date;
 }): TimeWindow[] => {
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
   const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
@@ -186,17 +201,26 @@ export const longAbsences = (options: {
     return [{ from: earlier.to, to: later.from }];
   });
   const firstPresence = ordered[0];
+  const lastPresence = ordered.at(-1);
   const events = options.events ?? [];
-  const since = events.reduce<Date | undefined>(
-    (earliest, event) => (!earliest || event.at < earliest ? event.at : earliest),
-    undefined,
-  );
-  const leadingMs = firstPresence && since ? firstPresence.from.getTime() - since.getTime() : 0;
 
-  if (!firstPresence || !since || leadingMs < minBreakMs) return between;
-  if (leadingMs <= maxBreakMs && !opensAway(events)) return between;
+  const [first] = events;
 
-  return [{ from: since, to: firstPresence.from }, ...between];
+  if (!firstPresence || !lastPresence || !first) return between;
+
+  const since = events.reduce((earliest, event) => (event.at < earliest ? event.at : earliest), first.at);
+  const until = events.reduce((latest, event) => (event.at > latest ? event.at : latest), first.at);
+  const leadingMs = firstPresence.from.getTime() - since.getTime();
+  const trailingMs = until.getTime() - lastPresence.to.getTime();
+  const isAbsence = (ms: number, away: () => boolean) => ms >= minBreakMs && (ms > maxBreakMs || away());
+
+  return [
+    ...(isAbsence(leadingMs, () => opensAway(events)) ? [{ from: since, to: firstPresence.from }] : []),
+    ...between,
+    ...(isAbsence(trailingMs, () => !options.now && closesAway(events, lastPresence.to))
+      ? [{ from: lastPresence.to, to: until }]
+      : []),
+  ];
 };
 
 /**

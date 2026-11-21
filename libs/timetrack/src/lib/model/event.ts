@@ -75,6 +75,11 @@ export type GitCommitEvent = CollectedEventBase<'git', 'git-commit'> & {
    * when it arrived here, and this is when it was written elsewhere.
    */
   authoredAt?: Date;
+  /**
+   * `git patch-id --stable` of the commit's diff. A cherry-pick carries the patch of the commit it copies
+   * under a new `sha`, so the day counts the two once by it. Absent on a commit stored before it was read.
+   */
+  patchId?: string;
 };
 
 /**
