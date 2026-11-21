@@ -407,12 +407,17 @@ export const STUDIO_LABELS = {
     emptyPrompt: 'Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.',
     copyPrompt: 'Prompt kopieren',
     presetAria: 'Bildschirmgröße',
+    addNote: 'Notiz',
+    note: 'Notiz',
+    notePlaceholder: 'Notiz schreiben',
+    deleteNote: 'Notiz löschen',
     presetLabel: (name: string, { width, height }: { width: number; height?: number }) =>
       height === undefined ? `${name} · ${width}` : `${name} · ${width} × ${height}`,
     sample: {
       names: ['Sketch prüfen', 'Kommentar beantworten', 'Produkt anlegen'],
       lines: ["Nutzer klickt 'Sketches' in der Leiste", "Nutzer klickt 'Erledigte zeigen'", "Nutzer klickt 'Merge'"],
       preset: 'Desktop · 1440 × 900',
+      notes: ['Hier fehlt noch der Weg, wenn der Nutzer den Sketch verwirft.'],
     },
   },
   inventory: {

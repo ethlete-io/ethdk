@@ -92,4 +92,53 @@ describe('FlowsPageComponent', () => {
 
     expect(parseFloat(boxHeight() ?? '0')).toBeCloseTo(259.2 * (844 / 390), 1);
   });
+
+  it('draws each note at its canvas point and deletes one by its button', async () => {
+    const { fixture, element } = await render();
+    const deleted: string[] = [];
+
+    fixture.componentInstance.noteDelete.subscribe((id) => deleted.push(id));
+    fixture.componentRef.setInput('notes', [
+      { id: 'a', text: 'Eine sehr lange Notiz über den fehlenden Rückweg aus dem System', x: 12, y: 340 },
+      { id: 'b', text: 'Zweite', x: -200, y: 0 },
+      { id: 'c', text: 'Dritte', x: 900, y: 40 },
+    ]);
+    await fixture.whenStable();
+
+    const notes = [...element.querySelectorAll<HTMLElement>('[data-flow-note]')];
+
+    expect(notes.map((note) => note.querySelector('p')?.textContent?.trim())).toEqual([
+      'Eine sehr lange Notiz über den fehlenden Rückweg aus dem System',
+      'Zweite',
+      'Dritte',
+    ]);
+    expect(notes[1]?.style.left).toBe('-200px');
+
+    notes[2]?.querySelector<HTMLButtonElement>('button[aria-label="Notiz löschen"]')?.click();
+
+    expect(deleted).toEqual(['c']);
+  });
+
+  it('opens a new note with its empty field and drops it on Enter or Escape while empty', async () => {
+    const { fixture, element } = await render();
+    const written: unknown[] = [];
+    const deleted: string[] = [];
+
+    fixture.componentInstance.noteText.subscribe((text) => written.push(text));
+    fixture.componentInstance.noteDelete.subscribe((id) => deleted.push(id));
+    fixture.componentRef.setInput('notes', [{ id: 'draft', text: '', x: 0, y: 0 }]);
+    await fixture.whenStable();
+
+    const field = () => element.querySelector<HTMLTextAreaElement>('[data-flow-note] textarea');
+
+    expect(field()?.getAttribute('placeholder')).toBe('Notiz schreiben');
+
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.componentRef.setInput('notes', [{ id: 'other', text: '', x: 0, y: 0 }]);
+    await fixture.whenStable();
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(deleted).toEqual(['draft', 'other']);
+    expect(written).toEqual([]);
+  });
 });

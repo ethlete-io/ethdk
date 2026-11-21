@@ -1,15 +1,19 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { catchError, from, of } from 'rxjs';
+import { EMPTY, Observable, catchError, from, of, tap } from 'rxjs';
 import { ListedProduct, ListedSketch } from '../../host/design';
 import { ListedFlow } from '../../host/design-flows';
+import { FlowAddress, addFlowNote$, changeFlowNote$, deleteFlowNote$ } from '../../host/design-notes';
 import { flowColumnsOf } from '../components/design-canvas/flow-layout';
 import {
   FLOWS_SHOT,
   FlowsPageComponent,
   FlowsPageFrame,
   FlowsPageLine,
+  FlowsPageNote,
+  FlowsPageNoteMove,
+  FlowsPageNoteText,
   FlowsPagePreset,
 } from '../design-parts/flows-page/flows-page.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
@@ -17,6 +21,10 @@ import { rememberFlowPreset, rememberedView } from '../studio-view/remembered';
 import { flowFramesOf, flowKeyOf, frameRatioOf } from './flow-frames';
 import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
 import { PageShell, PageShellAction } from './page-shell';
+
+const NEW_NOTE = 'new';
+
+const UNPLACED_NOTE = { x: -320, step: 140 };
 
 @Component({
   selector: 'ethlete-flow-view',
@@ -30,11 +38,16 @@ import { PageShell, PageShellAction } from './page-shell';
       [preset]="preset()"
       [presets]="presets()"
       [ratio]="ratio()"
+      [notes]="notes()"
       [frameTemplate]="frame"
       [shell]="shell()"
       (pick)="shellAction.emit({ kind: 'pick', key: flowKey($event) })"
       (presetChange)="pickPreset($event)"
       (copyPrompt)="copyPrompt()"
+      (addNote)="draft.set({ id: NEW_NOTE, text: '', x: $event.x, y: $event.y })"
+      (noteText)="writeText($event)"
+      (noteMove)="move($event)"
+      (noteDelete)="remove($event)"
       (shellAction)="shellAction.emit($event)"
       class="h-full!"
     />
@@ -77,6 +90,26 @@ export class FlowViewComponent {
   public shellAction = output<PageShellAction>();
 
   private safeUrls = new Map<string, SafeResourceUrl>();
+
+  protected readonly NEW_NOTE = NEW_NOTE;
+
+  private flowName = computed(() => this.flow()?.name ?? null);
+
+  protected draft = linkedSignal<string | null, FlowsPageNote | null>({
+    source: this.flowName,
+    computation: () => null,
+  });
+
+  protected notes = computed<FlowsPageNote[]>(() => {
+    const draft = this.draft();
+    const placed = (this.flow()?.notes ?? []).map((note, index) => ({
+      id: note.id,
+      text: note.text,
+      ...(note.at ?? { x: UNPLACED_NOTE.x, y: index * UNPLACED_NOTE.step }),
+    }));
+
+    return draft ? [...placed, draft] : placed;
+  });
 
   protected flowNames = computed(() => this.flows().map((listed) => listed.name));
 
@@ -173,6 +206,34 @@ export class FlowViewComponent {
     );
   });
 
+  protected writeText({ id, text }: FlowsPageNoteText) {
+    const draft = this.draft();
+
+    if (id !== NEW_NOTE || !draft) {
+      this.write((address) => changeFlowNote$(address, { id, text }));
+
+      return;
+    }
+
+    this.draft.set({ ...draft, text });
+    this.write(
+      (address) => addFlowNote$(address, { text, at: { x: draft.x, y: draft.y } }),
+      () => this.draft.set(null),
+    );
+  }
+
+  protected move({ id, x, y }: FlowsPageNoteMove) {
+    const draft = this.draft();
+
+    if (id === NEW_NOTE && draft) this.draft.set({ ...draft, x, y });
+    else this.write((address) => changeFlowNote$(address, { id, at: { x, y } }));
+  }
+
+  protected remove(id: string) {
+    if (id === NEW_NOTE) this.draft.set(null);
+    else this.write((address) => deleteFlowNote$(address, id));
+  }
+
   protected pickPreset(name: string) {
     const key = this.presetKey();
 
@@ -185,6 +246,21 @@ export class FlowViewComponent {
       .pipe(
         // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private write<T>(request: (address: FlowAddress) => Observable<T>, done?: () => void) {
+    const flow = this.flow();
+
+    if (!flow) return;
+
+    request({ port: this.port(), product: this.product().name, flow: flow.name })
+      .pipe(
+        tap(() => done?.()),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- designAnswer$ logs the refusal; not surfaced yet, finding 145
+        catchError(() => EMPTY),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

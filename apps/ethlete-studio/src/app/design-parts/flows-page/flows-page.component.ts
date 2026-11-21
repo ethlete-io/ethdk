@@ -4,6 +4,7 @@ import {
   computed,
   ElementRef,
   input,
+  linkedSignal,
   output,
   signal,
   TemplateRef,
@@ -12,8 +13,15 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
+import {
+  BUTTON_IMPORTS,
+  FORM_FIELD_IMPORTS,
+  SELECT_IMPORTS,
+  TEXTAREA_IMPORTS,
+  TextareaComponent,
+} from '@ethlete/components';
 import { signalElementDimensions } from '@ethlete/core';
+import { CanvasDragDirective } from '../../components/design-canvas/canvas-drag.directive';
 import { offsetWithin } from '../../components/design-canvas/canvas-math';
 import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
@@ -31,6 +39,13 @@ export type FlowsPageLine = { from: string; to: string; label: string };
 
 export type FlowsPagePreset = { value: string; label: string };
 
+/** A free note at its top left corner on the flow canvas; an empty `text` is a new note still being written. */
+export type FlowsPageNote = { id: string; text: string; x: number; y: number };
+
+export type FlowsPageNoteMove = { id: string; x: number; y: number };
+
+export type FlowsPageNoteText = { id: string; text: string };
+
 const frameSrc = (part: string, state: string) =>
   '/frame.html?' + new URLSearchParams({ product: 'studio', part: 'pages/' + part, state }).toString();
 
@@ -47,7 +62,14 @@ export const FLOWS_SAMPLE_LINES: FlowsPageLine[] = [
   { from: 'sketch', to: 'system', label: STUDIO_LABELS.flows.sample.lines[2] },
 ];
 
+export const FLOWS_SAMPLE_NOTES: FlowsPageNote[] = [
+  { id: 'gap', text: STUDIO_LABELS.flows.sample.notes[0], x: 790, y: 262 },
+  { id: 'new', text: '', x: 0, y: 262 },
+];
+
 const ZOOM_STEP = 1.5;
+
+const NOTE_INSET = 24;
 
 export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, caption: 20 };
 
@@ -125,6 +147,61 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                   {{ edge.label }}
                 </span>
               }
+              @for (note of shownNotes(); track note.id) {
+                <div
+                  [style.left.px]="note.x"
+                  [style.top.px]="note.y"
+                  [ethleteCanvasDrag]="note"
+                  [canvasDragZoom]="zoom()"
+                  (canvasDragMove)="dragged.set({ id: note.id, x: $event.x, y: $event.y })"
+                  (canvasDragEnd)="noteMove.emit({ id: note.id, x: $event.x, y: $event.y })"
+                  (dblclick)="edit(note)"
+                  class="absolute box-border w-64 cursor-grab rounded-md border border-et-surface-border bg-et-surface-bg p-space-3 text-ui-md text-et-surface shadow-lg"
+                  data-flow-note
+                >
+                  <div class="flex items-start gap-space-1">
+                    @if (editing() !== note.id) {
+                      <p class="m-0 flex-1 whitespace-pre-wrap">{{ note.text }}</p>
+                    } @else {
+                      <div (focusout)="commit(note)" (pointerdown)="$event.stopPropagation()" class="flex-1">
+                        <et-form-field>
+                          <et-textarea
+                            [(value)]="written"
+                            [aria-label]="LABELS.note"
+                            [placeholder]="LABELS.notePlaceholder"
+                            (keydown)="handleNoteKey($event, note)"
+                            rows="3"
+                          />
+                        </et-form-field>
+                      </div>
+                    }
+                    <button
+                      [attr.aria-label]="LABELS.deleteNote"
+                      (pointerdown)="$event.stopPropagation()"
+                      (click)="noteDelete.emit(note.id)"
+                      et-icon-button
+                      type="button"
+                      variant="transparent"
+                      color="surface"
+                      size="xs"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                        stroke-linecap="round"
+                        aria-hidden="true"
+                        etIcon
+                      >
+                        <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           </ethlete-canvas-viewport>
           <div
@@ -133,6 +210,24 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
             <header class="flex h-(--control-md) flex-none items-center gap-space-3 *:pointer-events-auto">
               <span class="text-ui-lg font-ui-strong">{{ selected() }}</span>
               <span class="flex-1"></span>
+              <button (click)="requestNote()" et-button type="button" variant="outline" color="surface" size="sm">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  etIcon
+                >
+                  <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />
+                  <path d="m9 4.5 2.5 2.5" />
+                </svg>
+                {{ LABELS.addNote }}
+              </button>
               <div class="w-60">
                 <et-form-field size="sm">
                   <et-select [value]="preset()" [aria-label]="LABELS.presetAria" (valueChange)="pickPreset($event)">
@@ -188,9 +283,11 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
   imports: [
     NgTemplateOutlet,
     BUTTON_IMPORTS,
+    CanvasDragDirective,
     CanvasViewportComponent,
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
+    TEXTAREA_IMPORTS,
     ShellPageComponent,
     TreeRowComponent,
     ZoomChipComponent,
@@ -208,12 +305,19 @@ export class FlowsPageComponent {
   public preset = input<string>(STUDIO_LABELS.flows.sample.preset);
   public presets = input<FlowsPagePreset[]>([]);
   public ratio = input(FLOWS_SHOT.height / FLOWS_SHOT.width);
+  public notes = input<FlowsPageNote[]>([]);
   public shellAction = output<ShellAction>();
+
+  public addNote = output<{ x: number; y: number }>();
+  public noteMove = output<FlowsPageNoteMove>();
+  public noteText = output<FlowsPageNoteText>();
+  public noteDelete = output<string>();
 
   public pick = output<string>();
   public copyPrompt = output();
   public presetChange = output<string>();
 
+  private noteField = viewChild(TextareaComponent);
   private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
   private world = viewChild<ElementRef<HTMLElement>>('world');
 
@@ -226,6 +330,26 @@ export class FlowsPageComponent {
   protected readonly ZOOM_STEP = ZOOM_STEP;
   private canvas = signal<CanvasViewport | null>(null);
   private mounted: HTMLElement | null = null;
+
+  private shownSource = computed(() => this.notes());
+  protected zoom = computed(() => this.canvas()?.zoom() ?? 1);
+  protected editing = linkedSignal<FlowsPageNote[], string | null>({
+    source: this.shownSource,
+    computation: (notes, previous) =>
+      notes.find((note) => !note.text)?.id ??
+      (previous?.value && notes.some((note) => note.id === previous.value) ? previous.value : null),
+  });
+  protected written = signal('');
+  protected dragged = linkedSignal<FlowsPageNote[], FlowsPageNoteMove | null>({
+    source: this.shownSource,
+    computation: () => null,
+  });
+
+  protected shownNotes = computed(() => {
+    const dragged = this.dragged();
+
+    return this.notes().map((note) => (dragged?.id === note.id ? { ...note, x: dragged.x, y: dragged.y } : note));
+  });
 
   protected percent = computed(() => Math.round((this.canvas()?.zoom() ?? 1) * 100));
   protected presetOptions = computed(() =>
@@ -296,6 +420,7 @@ export class FlowsPageComponent {
       untracked(() => this.canvas())?.refresh();
     });
     afterRenderEffect(() => this.resetOnPick());
+    afterRenderEffect(() => this.focusEditedNote());
   }
 
   public zoomBy(factor: number) {
@@ -312,8 +437,64 @@ export class FlowsPageComponent {
     this.canvas()?.show({ kind: 'all' });
   }
 
+  protected requestNote() {
+    const canvas = this.canvas();
+    const viewport = this.viewport()?.nativeElement;
+    const stage = this.stage()?.nativeElement;
+
+    if (!canvas || !viewport || !stage) return;
+
+    const { x, y, zoom } = canvas.camera();
+    const from = viewport.getBoundingClientRect();
+    const to = stage.getBoundingClientRect();
+
+    this.addNote.emit({
+      x: Math.round((to.left - from.left + NOTE_INSET - x) / zoom),
+      y: Math.round((to.top - from.top + NOTE_INSET - y) / zoom),
+    });
+  }
+
+  protected edit(note: FlowsPageNote) {
+    this.written.set(note.text);
+    this.editing.set(note.id);
+  }
+
+  protected handleNoteKey(event: KeyboardEvent, note: FlowsPageNote) {
+    event.stopPropagation();
+
+    if (event.key === 'Escape') {
+      this.editing.set(null);
+      this.written.set('');
+      if (!note.text) this.noteDelete.emit(note.id);
+    } else if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.commit(note);
+    }
+  }
+
+  protected commit(note: FlowsPageNote) {
+    if (this.editing() !== note.id) return;
+
+    const text = this.written().trim();
+
+    this.editing.set(null);
+    this.written.set('');
+
+    if (!text) {
+      if (!note.text) this.noteDelete.emit(note.id);
+    } else if (text !== note.text) {
+      this.noteText.emit({ id: note.id, text });
+    }
+  }
+
   protected pickPreset(value: unknown) {
     if (typeof value === 'string') this.presetChange.emit(value);
+  }
+
+  private focusEditedNote() {
+    if (this.editing() === null) return;
+
+    this.noteField()?.focus();
   }
 
   private resetOnPick() {

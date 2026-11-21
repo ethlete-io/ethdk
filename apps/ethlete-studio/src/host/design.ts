@@ -642,7 +642,7 @@ export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observa
   );
 
 // A string body goes as text/plain, a simple request: the design server answers no CORS preflight.
-const postJson = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
+export const postJson = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
 
 export type ShownShots = { view: number; shown: string[]; active: string[] };
 
