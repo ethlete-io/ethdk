@@ -142,7 +142,7 @@
     "pid": 2109714
   },
   "components/comment-flow": {
-    "hash": "0b5b482edde26286",
+    "hash": "80970a880ffc05b3",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -176,8 +176,8 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "4ce727965dc1d954",
-      ".ethlete/design/studio/components/comment-flow/comment-flow.ts": "5fb061671c197220",
+      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "89f125f94d8c2c8a",
+      ".ethlete/design/studio/components/comment-flow/comment-flow.ts": "7f1fcc2500d279ed",
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
       ".ethlete/design/studio/components/comment-row/comment-row.css": "f82037c1d733d503",
@@ -185,7 +185,7 @@
       ".ethlete/design/studio/components/comment-target/comment-target.ts": "522835896447fe12",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
+      "apps/ethlete-studio/src/app/i18n/comments-labels.ts": "0ad3ac839fd4455f",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
@@ -221,10 +221,10 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
     "embedded": {
-      "components/comment-draft": "98b2cebd563f1a51",
-      "components/comment-pin": "e9134e4cac50af91",
-      "components/comment-row": "7f59cae267728a57",
-      "components/comment-target": "faeffebc1431c71f"
+      "components/comment-draft": "070b17aa95c2c416",
+      "components/comment-pin": "3b7e8a256db57a11",
+      "components/comment-row": "79f379432607f7a9",
+      "components/comment-target": "5c19877d30eb77dc"
     },
     "actions": [
       "comment-mode",
@@ -240,10 +240,10 @@
       "rest"
     ],
     "builder": "designer",
-    "at": "2026-11-21T04:58:26.542Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-21T05:31:04.646Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1917047
+    "pid": 2112616
   },
   "components/comment-pin": {
     "hash": "31f56ef76a14e8e8",
