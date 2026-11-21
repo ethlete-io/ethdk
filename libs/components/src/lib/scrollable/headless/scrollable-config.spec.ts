@@ -23,6 +23,7 @@ const setup = (providers: ReturnType<typeof provideScrollableConfig> = []) => {
 
   return (id: string) => ({
     inline: host.querySelector(`#${id}`)?.classList.contains('et-scrollable--inline-buttons') ?? false,
+    maskSize: (host.querySelector(`#${id}`) as HTMLElement).style.getPropertyValue('--_et-scrollable-config-mask-size'),
   });
 };
 
@@ -49,5 +50,16 @@ describe('provideScrollableConfig', () => {
     const at = setup(provideScrollableConfig({ buttons: { enabled: { '2xl': true }, position: 'inline' } }));
 
     expect(at('plain').inline).toBe(false);
+  });
+
+  it('hands the configured mask size to scrollables whose buttons render', () => {
+    const at = setup(provideScrollableConfig({ buttons: { enabled: true, maskSize: '6rem' } }));
+
+    expect(at('plain').maskSize).toBe('6rem');
+    expect(at('off').maskSize).toBe('');
+  });
+
+  it('sets no mask size without the config key', () => {
+    expect(setup(provideScrollableConfig({ buttons: { enabled: true } }))('plain').maskSize).toBe('');
   });
 });

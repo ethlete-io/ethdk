@@ -1,4 +1,9 @@
 @layer components.sdk {
+  @property --et-scrollable-mask-size {
+    syntax: '*';
+    inherits: true;
+  }
+
   @property --_et-scrollable-mask-start {
     syntax: '<length>';
     inherits: false;
@@ -9,6 +14,13 @@
     syntax: '<length>';
     inherits: false;
     initial-value: 0px;
+  }
+
+  :where(.et-scrollable) {
+    --_et-scrollable-mask-length: var(
+      --et-scrollable-mask-size,
+      var(--mask-size, var(--_et-scrollable-config-mask-size, 25px))
+    );
   }
 
   .et-scrollable-masks {
@@ -81,7 +93,7 @@
 
   .et-scrollable.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-start) {
     & > .et-scrollable-wrapper > .et-scrollable-container {
-      --_et-scrollable-mask-start: var(--mask-size);
+      --_et-scrollable-mask-start: var(--_et-scrollable-mask-length);
     }
 
     & > .et-scrollable-wrapper > .et-scrollable-masks .et-scrollable-mask--start {
@@ -91,7 +103,7 @@
 
   .et-scrollable.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-end) {
     & > .et-scrollable-wrapper > .et-scrollable-container {
-      --_et-scrollable-mask-end: var(--mask-size);
+      --_et-scrollable-mask-end: var(--_et-scrollable-mask-length);
     }
 
     & > .et-scrollable-wrapper > .et-scrollable-masks .et-scrollable-mask--end {
@@ -112,7 +124,10 @@
   }
 
   .et-scrollable[mask-variant='border'] {
-    --mask-size: 32px;
+    --_et-scrollable-mask-length: var(
+      --et-scrollable-mask-size,
+      var(--mask-size, var(--_et-scrollable-config-mask-size, 32px))
+    );
 
     &[direction='horizontal'],
     &:not([direction]) {

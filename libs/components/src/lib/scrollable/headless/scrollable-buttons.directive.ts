@@ -43,6 +43,7 @@ export type ScrollableButtonsConfig = {
   host: {
     '[class.et-scrollable--sticky-buttons]': 'enabled() && sticky() && position() === "inside"',
     '[class.et-scrollable--inline-buttons]': 'enabled() && position() === "inline"',
+    '[style.--_et-scrollable-config-mask-size]': 'enabled() ? maskSize() : null',
   },
 })
 export class ScrollableButtonsDirective {
@@ -68,6 +69,7 @@ export class ScrollableButtonsDirective {
   public variant = computed(
     () => this.resolved().variant ?? this.defaults.buttons?.variant ?? BUTTON_VARIANTS.TRANSPARENT,
   );
+  public maskSize = computed(() => this.defaults.buttons?.maskSize ?? null);
   public color = computed(() => (this.colorProvider?.effectiveColor() ? undefined : this.defaults.buttons?.color));
   public enabled = computed(() => {
     const instance = this.resolved().enabled;

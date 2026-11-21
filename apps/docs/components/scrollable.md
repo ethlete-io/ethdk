@@ -97,7 +97,7 @@ Two CSS custom properties (both `<length>`, default `0`) tune the `'inside'` but
 | `scrollableClass`         | -              | Extra class(es) on the scroll container                                                                       |
 | `color`                   | -              | App-registered color theme for buttons/dots                                                                   |
 
-The edge fade is a CSS `mask-image` on the scroll container, so the faded edge shows whatever is behind the track - a card's class background or a background image - instead of a painted colour. Only an edge that can scroll further fades. The fade is `--mask-size` wide on the `<et-scrollable>` (`25px` for the gradient variant, `32px` for the border variant, which also draws a line on that edge). The native scrollbar (`renderScrollbars`) is not faded.
+The edge fade is a CSS `mask-image` on the scroll container, so the faded edge shows whatever is behind the track - a card's class background or a background image - instead of a painted colour. Only an edge that can scroll further fades. The fade is `--et-scrollable-mask-size` wide on the `<et-scrollable>` or any ancestor (`25px` for the gradient variant, `32px` for the border variant, which also draws a line on that edge). The legacy unprefixed `--mask-size` still works as a fallback. `buttons.maskSize` in `provideScrollableConfig` (for example `'6rem'`) sets an app-wide length while the buttons render; either CSS variable on an instance wins over it. The native scrollbar (`renderScrollbars`) is not faded.
 
 ### Sticky children over the fade
 

@@ -28,6 +28,11 @@ export type ScrollableButtonsDefaults = {
   color?: ColorThemeInput;
   /** Button variant. `'filled'` gives the buttons a `color` fill. @default 'transparent' */
   variant?: ButtonVariant;
+  /**
+   * Length of the edge fade while the buttons render. A `--et-scrollable-mask-size` (or the legacy
+   * `--mask-size`) set in CSS wins. @example '6rem'
+   */
+  maskSize?: string;
 };
 
 export type ScrollableConfig = {
