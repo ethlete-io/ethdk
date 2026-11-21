@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const LABELS_PATH = ':(glob)apps/ethlete-studio/src/app/i18n/*labels.ts';
+const LABELS_DIR = 'apps/ethlete-studio/src/app/i18n/';
+const LABELS_PATH = `:(glob)${LABELS_DIR}*labels.ts`;
 const SPEC_GLOB = 'apps/ethlete-studio/**/*.spec.ts';
 const MIN_LENGTH = 6;
 const LITERAL = /'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\\n]|\\.)*)`/g;
@@ -15,7 +16,7 @@ const upstreamOrHead = () => {
 const labelsTextOf = (paths, prefix) =>
   paths
     .split('\n')
-    .filter(Boolean)
+    .filter((path) => /labels\.ts$/.test(path))
     .map((path) => git('show', `${prefix}${path}`).stdout ?? '')
     .join('\n');
 
@@ -44,7 +45,7 @@ const pushedRange = () => {
   if (!base) return null;
   return {
     diff: git('diff', '-U0', base, head, '--', LABELS_PATH).stdout ?? '',
-    labelsText: () => labelsTextOf(git('ls-tree', '-r', '--name-only', head, '--', LABELS_PATH).stdout, `${head}:`),
+    labelsText: () => labelsTextOf(git('ls-tree', '-r', '--name-only', head, '--', LABELS_DIR).stdout, `${head}:`),
     grep: (literal) =>
       git('grep', '-n', '-F', '-e', literal, head, '--', SPEC_GLOB)
         .stdout.split('\n')
@@ -55,7 +56,7 @@ const pushedRange = () => {
 
 const stagedIndex = () => ({
   diff: git('diff', '--cached', '-U0', upstreamOrHead(), '--', LABELS_PATH).stdout ?? '',
-  labelsText: () => labelsTextOf(git('ls-files', '--', LABELS_PATH).stdout, ':'),
+  labelsText: () => labelsTextOf(git('ls-files', '--', LABELS_DIR).stdout, ':'),
   grep: (literal) =>
     git('grep', '--cached', '-n', '-F', '-e', literal, '--', SPEC_GLOB).stdout.split('\n').filter(Boolean),
 });
