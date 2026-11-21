@@ -12,10 +12,10 @@
     "at": "2026-11-07T17:19:30.454Z"
   },
   "components/command-palette": {
-    "hash": "28527bc9efb285a5",
+    "hash": "45260e5e8ab4d909",
     "variant": "new",
-    "decidedBy": "builder",
-    "at": "2026-11-20T04:00:49.298Z"
+    "decidedBy": "user",
+    "at": "2026-11-21T14:47:44.273Z"
   },
   "components/comment-draft": {
     "hash": "bd54f7ba0afbd319",
