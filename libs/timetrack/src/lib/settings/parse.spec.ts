@@ -52,6 +52,7 @@ describe('parseTimetrackSettings', () => {
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
       repoAliases: { '/home/you/dev/sdk': 'ethlete-sdk' },
+      knownWorktrees: { '/home/you/dev/sdk-wt-a1/': '/home/you/dev/sdk' },
       display: { dateStyle: 'iso', clock: '12h' },
     });
 
@@ -92,6 +93,7 @@ describe('parseTimetrackSettings', () => {
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
       repoAliases: { '/home/you/dev/sdk': 'ethlete-sdk' },
+      knownWorktrees: { '/home/you/dev/sdk-wt-a1': '/home/you/dev/sdk' },
       favoriteProjects: [],
       backgroundProjects: [],
       meetingNamings: [],
@@ -180,6 +182,7 @@ describe('parseTimetrackSettings', () => {
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
       repoAliases: {},
+      knownWorktrees: {},
       favoriteProjects: [],
       backgroundProjects: [],
       meetingNamings: [],

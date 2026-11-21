@@ -5,7 +5,7 @@ import { agentTurnsOf, agentUsageWithin } from './row-agent-usage';
 
 const SDK = '/home/human/dev/ethlete-sdk';
 const FUT = '/home/human/dev/fut-frontend';
-const ROOTS = [SDK, FUT];
+const ROOTS = { paths: [SDK, FUT], worktrees: {} };
 
 const AT = (minutes: number) => new Date(new Date(2026, 7, 12, 9, 0, 0).getTime() + minutes * 60_000);
 

@@ -1,4 +1,4 @@
-import { repoRootOf } from '../model/context';
+import { CheckoutRoots, repoRootOf } from '../model/context';
 import { streamKeyRepoPath } from '../model/block';
 import { AgentSessionEvent, CollectedEvent } from '../model/event';
 import { fileAgentEventsByWork } from './worked-in';
@@ -16,7 +16,7 @@ export const isSubagentStripe = (subagent: Pick<RowSubagent, 'from' | 'to'>) =>
 /** The agent session samples of the day, each filed under the checkout its work touched. */
 export const agentSamplesOf = (options: {
   events: readonly CollectedEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
 }): AgentSessionEvent[] =>
   fileAgentEventsByWork(options).filter((event): event is AgentSessionEvent => event.kind === 'agent-session');
 
@@ -27,7 +27,7 @@ export const agentSamplesOf = (options: {
  */
 export const subagentsWithin = (options: {
   samples: readonly AgentSessionEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
   laneKey: string | undefined;
   from: Date;
   to: Date;

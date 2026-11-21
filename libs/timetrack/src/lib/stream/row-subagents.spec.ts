@@ -4,7 +4,7 @@ import { agentSamplesOf, isSubagentStripe, subagentsWithin } from './row-subagen
 
 const API = '/home/human/dev/billing-api';
 const SITE = '/home/human/dev/marketing-site';
-const ROOTS = [API, SITE];
+const ROOTS = { paths: [API, SITE], worktrees: {} };
 
 const AT = (minutes: number) => new Date(new Date(2026, 2, 3, 13, 0, 0).getTime() + minutes * 60_000);
 

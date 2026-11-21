@@ -1,13 +1,10 @@
-import { repoRootOf } from '../model/context';
+import { CheckoutRoots, repoRootOf } from '../model/context';
 import { streamKeyRepoPath } from '../model/block';
 import { AgentUsageEvent, CollectedEvent, TIMETRACK_PROVIDER, TokenUsage } from '../model/event';
 import { fileAgentEventsByWork } from './worked-in';
 
 /** The turns of the user's coding agents, each filed under the checkout its work touched. */
-export const agentTurnsOf = (options: {
-  events: readonly CollectedEvent[];
-  roots: readonly string[];
-}): AgentUsageEvent[] =>
+export const agentTurnsOf = (options: { events: readonly CollectedEvent[]; roots: CheckoutRoots }): AgentUsageEvent[] =>
   fileAgentEventsByWork(options).filter(
     (event): event is AgentUsageEvent => event.kind === 'agent-usage' && event.provider !== TIMETRACK_PROVIDER,
   );
@@ -18,7 +15,7 @@ export const agentTurnsOf = (options: {
  */
 export const agentUsageWithin = (options: {
   turns: readonly AgentUsageEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
   laneKey: string | undefined;
   from: Date;
   to: Date;

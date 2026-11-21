@@ -1,5 +1,5 @@
 import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, CollectedEvent } from '../model/event';
-import { repoRootOf } from '../model/context';
+import { CheckoutRoots, repoRootOf } from '../model/context';
 
 const isAgentRecord = (event: CollectedEvent): event is AgentSessionEvent | AgentUsageEvent | AgentPromptEvent =>
   event.kind === 'agent-session' || event.kind === 'agent-usage' || event.kind === 'agent-prompt';
@@ -34,16 +34,16 @@ const placedFrom = (events: readonly CollectedEvent[]) => {
  */
 export const fileAgentEventsByWork = (options: {
   events: readonly CollectedEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
 }): CollectedEvent[] => {
-  const known = new Set(options.roots);
+  const known = new Set(options.roots.paths);
 
   for (const event of options.events) {
     if (event.kind === 'git-commit' || event.kind === 'git-checkout') known.add(event.repoPath);
     if (event.kind === 'editor-heartbeat' && event.repoPath) known.add(event.repoPath);
   }
 
-  const checkouts = [...known];
+  const checkouts: CheckoutRoots = { paths: [...known], worktrees: options.roots.worktrees };
   const placed = placedFrom(options.events);
 
   return options.events.flatMap((event): CollectedEvent[] => {

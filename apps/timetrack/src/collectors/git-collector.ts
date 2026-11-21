@@ -1,16 +1,19 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   CheckoutKeys,
+  CollectedEvent,
   GitRepoScan,
   GitScanFailure,
   collectGitEvents$,
+  gitHasCommitArgs,
   gitWorktreeArgs,
   linkedWorktreesOf,
   parseGitWorktrees,
   readRepoKey$,
   resolveLocalOrigins,
+  unknownCommitCheckoutsOf,
   withRepoAliases,
 } from '@ethlete/timetrack';
 import {
@@ -32,6 +35,9 @@ import {
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { GitRepoDiscovery, injectHostPorts } from '../host';
+
+const sameWorktrees = (a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>) =>
+  Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([path, main]) => b[path] === main);
 
 /**
  * How often the host is asked which repositories moved. This is not the scan interval — it is how
@@ -86,7 +92,13 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const lastRun = signal<GitCollectorRun | null>(null);
   const failure = signal<string | null>(null);
   const discovery = signal<GitRepoDiscovery | null>(null);
-  const worktrees = signal<Readonly<Record<string, string>>>({});
+  const liveWorktrees = signal<Readonly<Record<string, string>>>({});
+  /** Every linked worktree mapped to its main checkout: the live ones and every one this machine saw before. */
+  const worktrees = computed<Readonly<Record<string, string>>>(
+    () => ({ ...settings.settings().knownWorktrees, ...liveWorktrees() }),
+    { equal: sameWorktrees },
+  );
+  const probed = new Set<string>();
   /** Each checkout's key read from its remote, before an alias the user set replaces it. */
   const remoteKeys = signal<CheckoutKeys>({});
 
@@ -141,7 +153,9 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
           // A reader that sees the repositories before their worktrees would file a worktree nowhere, or
           // under a root link, and an automatic stand-in opened then keeps that project.
           tap((linked) => {
-            worktrees.set(Object.assign({}, ...linked));
+            const live: Record<string, string> = Object.assign({}, ...linked);
+            liveWorktrees.set(live);
+            settings.rememberWorktrees(live);
             discovery.set(found);
           }),
           concatMap(() => from(found.repos).pipe(concatMap(author$), toArray())),
@@ -249,7 +263,53 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  return { lastRun, failure, discovery, worktrees, remoteKeys: remoteKeys.asReadonly() };
+  const hasCommit$ = (repo: string, sha: string) =>
+    ports.processes.run$({ command: 'git', args: gitHasCommitArgs(sha), cwd: repo }).pipe(
+      map((result) => result.code === 0),
+      catchError(() => of(false)),
+    );
+
+  /**
+   * Files a checkout that stored commits name but that no longer exists under the one discovered
+   * repository holding those commits. A commit two repositories hold leaves the checkout unfiled.
+   */
+  const learnDeletedWorktrees = (events: readonly CollectedEvent[]) => {
+    const found = discovery();
+    if (!found) return;
+
+    const linked = worktrees();
+    const mains = found.repos.filter((repo) => linked[repo] === undefined);
+    const known = new Set([...found.repos, ...Object.keys(linked), ...probed]);
+    const unknown = [...unknownCommitCheckoutsOf({ events, known })];
+
+    if (!unknown.length) return;
+
+    for (const [checkout] of unknown) probed.add(checkout);
+
+    from(unknown)
+      .pipe(
+        concatMap(([checkout, sha]) =>
+          from(mains).pipe(
+            concatMap((main) => hasCommit$(main, sha).pipe(map((held) => (held ? main : null)))),
+            toArray(),
+            map((holders) => holders.filter((main): main is string => !!main)),
+            map((holders) => (holders.length === 1 ? { [checkout]: holders[0] } : {})),
+          ),
+        ),
+        toArray(),
+        tap((filed) => settings.rememberWorktrees(Object.assign({}, ...filed))),
+      )
+      .subscribe();
+  };
+
+  return {
+    lastRun,
+    failure,
+    discovery,
+    worktrees,
+    learnDeletedWorktrees,
+    remoteKeys: remoteKeys.asReadonly(),
+  };
 });
 
 export const injectGitCollector = /* @__PURE__ */ toInjectFn(GIT_COLLECTOR_DEF);

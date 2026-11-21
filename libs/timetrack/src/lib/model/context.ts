@@ -1,32 +1,51 @@
-// Keyed by the roots array itself: a caller must not mutate a roots array it has already passed.
-const rootsResolved = new WeakMap<readonly string[], Map<string, string>>();
+import { createWorktreeFold } from '../git/worktree';
+
+/**
+ * The checkouts discovery found, and each linked worktree mapped to its main checkout
+ * (`linkedWorktreesOf`, or a remembered superset of it).
+ */
+export type CheckoutRoots = { paths: readonly string[]; worktrees: Readonly<Record<string, string>> };
+
+// Keyed by the roots object itself: a caller must not mutate one it has already passed.
+const rootsResolved = new WeakMap<
+  CheckoutRoots,
+  { fold: (path: string) => string; paths: readonly string[]; known: Map<string, string> }
+>();
 
 /**
  * The checkout a directory belongs to, or the directory itself when no known root contains it.
+ *
+ * A path inside a linked worktree is read as the same place in its main checkout first, so a worktree
+ * is never a checkout of its own.
  *
  * Longest root wins, so a repository checked out inside another one keeps its own identity. Keeping
  * the directory when nothing matches is deliberate: an agent session run somewhere the discovery never
  * walked is still context, and dropping it would lose the branch it reported with it.
  */
-export const repoRootOf = (options: { path: string; roots: readonly string[] }) => {
-  const known = rootsResolved.get(options.roots) ?? new Map<string, string>();
-  const cached = known.get(options.path);
+export const repoRootOf = (options: { path: string; roots: CheckoutRoots }) => {
+  const resolved = rootsResolved.get(options.roots) ?? {
+    fold: createWorktreeFold(options.roots.worktrees),
+    paths: [...options.roots.paths, ...Object.values(options.roots.worktrees)],
+    known: new Map<string, string>(),
+  };
+  const cached = resolved.known.get(options.path);
 
   if (cached !== undefined) return cached;
 
+  const path = resolved.fold(options.path);
   let found: string | undefined;
 
-  for (const root of options.roots) {
-    if (options.path !== root && !options.path.startsWith(`${root}/`)) continue;
+  for (const root of resolved.paths) {
+    if (path !== root && !path.startsWith(`${root}/`)) continue;
     if (found && found.length >= root.length) continue;
 
     found = root;
   }
 
-  known.set(options.path, found ?? options.path);
-  rootsResolved.set(options.roots, known);
+  resolved.known.set(options.path, found ?? path);
+  rootsResolved.set(options.roots, resolved);
 
-  return found ?? options.path;
+  return found ?? path;
 };
 
 /**

@@ -1,4 +1,4 @@
-import { DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, equal, toInjectFn } from '@ethlete/core';
 import {
@@ -100,6 +100,7 @@ import {
   unnamedContexts,
   windowsMs,
   ledgerEntriesForRange$,
+  foldWorktreePaths,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -416,6 +417,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const evidence = computed(() => evidenceLoad()?.value ?? null, { equal: sameEvidence });
 
+  effect(() => {
+    const events = evidenceLoad()?.value?.events;
+
+    if (events) untracked(() => git.learnDeletedWorktrees(events));
+  });
+
   const evidenceReady = computed(() => {
     const load = evidenceLoad();
 
@@ -439,7 +446,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       : [];
   });
   const edits = computed(() => {
-    const held = local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS;
+    const held = foldWorktreePaths(local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS, git.worktrees());
     const received = evidence()?.received;
 
     return pinnedOntoDay({
@@ -794,8 +801,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const rows = computed(() => review()?.rows ?? []);
 
+  const checkoutRoots = computed(() => ({ paths: git.discovery()?.repos ?? [], worktrees: git.worktrees() }));
+
   const agentUsageByRow = computed(() => {
-    const roots = git.discovery()?.repos ?? [];
+    const roots = checkoutRoots();
     const turns = agentTurnsOf({ events: evidence()?.events ?? [], roots });
     const found = new Map<string, TokenUsage & { turns: number }>();
 
@@ -808,7 +817,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return found;
   });
   const subagentsByRow = computed(() => {
-    const roots = git.discovery()?.repos ?? [];
+    const roots = checkoutRoots();
     const samples = agentSamplesOf({ events: evidence()?.events ?? [], roots });
     const pieceSessions = streamed()?.pieceSessions ?? {};
     const found = new Map<string, RowSubagent[]>();

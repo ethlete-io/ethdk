@@ -7,6 +7,7 @@ import {
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   EpicOptions,
+  foldWorktreePaths,
   PeerDayRows,
   RecurringPattern,
   StreamDay,
@@ -125,7 +126,9 @@ export const readDay$ = (options: DayReadOptions & { day: string; memo?: DayRead
 
     const evidence$ = combineLatest({
       events: ports.events.eventsBetween$(from, to),
-      edits: ports.review.editsFor$(key),
+      edits: ports.review
+        .editsFor$(key)
+        .pipe(map((edits) => (edits ? foldWorktreePaths(edits, options.worktrees) : edits))),
       runs: ports.timers.runsBetween$(from, to),
       coverage: ports.coverage.forDay$(key),
       received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of(NOTHING_RECEIVED))),

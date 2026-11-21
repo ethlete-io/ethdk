@@ -412,6 +412,18 @@ const asReasoning = (value: unknown): TimetrackReasoningSettings => {
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
+const asKnownWorktrees = (value: unknown): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(Array.isArray(value) ? {} : asRecord(value)).flatMap(([path, main]) => {
+      const worktree = path.trim().replace(/(?<=.)[\\/]+$/, '');
+      const checkout = asText(main)
+        .trim()
+        .replace(/(?<=.)[\\/]+$/, '');
+
+      return worktree && checkout && worktree !== checkout ? [[worktree, checkout]] : [];
+    }),
+  );
+
 const asRepoAliases = (value: unknown): Record<string, string> =>
   Object.fromEntries(
     Object.entries(Array.isArray(value) ? {} : asRecord(value)).flatMap(([path, key]) => {
@@ -559,6 +571,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
     repoAliases: asRepoAliases(document['repoAliases']),
+    knownWorktrees: asKnownWorktrees(document['knownWorktrees']),
     favoriteProjects: asFavoriteProjects(document),
     backgroundProjects: [...new Set(asTextList(document['backgroundProjects']).map((key) => key.toUpperCase()))],
     meetingNamings: asMeetingNamings(document['meetingNamings']),

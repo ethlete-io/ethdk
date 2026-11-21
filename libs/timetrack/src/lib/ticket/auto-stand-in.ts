@@ -129,8 +129,10 @@ const groupByWork = (contexts: readonly UnnamedContext[]) => {
  * a project link covers every path under it — so without this a subdirectory qualifies and opens a
  * second placeholder for work the checkout's own placeholder already holds.
  */
+const NO_WORKTREES = {};
+
 const isCheckout = (options: { repoPath: string; roots: readonly string[] }) =>
-  repoRootOf({ path: options.repoPath, roots: options.roots }) === options.repoPath;
+  repoRootOf({ path: options.repoPath, roots: { paths: options.roots, worktrees: NO_WORKTREES } }) === options.repoPath;
 
 /**
  * An answer that already stands for the branch, whether or not this day's contexts show it.

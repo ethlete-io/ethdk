@@ -494,6 +494,13 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       patch({ repoAliases: key ? { ...rest, [path]: key } : rest });
     },
+    /** Adds worktrees to `knownWorktrees`; writes nothing when every one is already known. */
+    rememberWorktrees: (found: Readonly<Record<string, string>>) => {
+      const known = settings().knownWorktrees;
+      const added = Object.entries(found).filter(([worktree, main]) => known[worktree] !== main);
+
+      if (added.length) patch({ knownWorktrees: { ...known, ...Object.fromEntries(added) } });
+    },
 
     saveJiraToken: (token: string) => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: token.trim() }),
     saveTempoToken: (token: string) =>

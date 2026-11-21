@@ -333,6 +333,12 @@ export type TimetrackSettings = {
    */
   repoAliases: Record<string, string>;
   /**
+   * Every linked worktree this machine has seen, mapped to its main checkout. The git collector adds to
+   * it and never removes from it, so the work done in a worktree that was deleted since still folds into
+   * its repository.
+   */
+  knownWorktrees: Record<string, string>;
+  /**
    * The Jira projects this machine works in, picked from the instance.
    *
    * They are the app's whole notion of "your projects": the keys a branch name or a window title may
@@ -464,6 +470,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
   repoAliases: {},
+  knownWorktrees: {},
   favoriteProjects: [],
   backgroundProjects: [],
   meetingNamings: [],

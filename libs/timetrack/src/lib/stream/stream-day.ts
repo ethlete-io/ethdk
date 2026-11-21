@@ -1,6 +1,6 @@
 import { ActivityBlock, ActivityContext, contextKey, streamKey } from '../model/block';
 import { CallWindow } from '../model/call';
-import { branchOf, repoRootOf } from '../model/context';
+import { CheckoutRoots, branchOf, repoRootOf } from '../model/context';
 import {
   ActivityEvent,
   AgentPromptEvent,
@@ -509,11 +509,15 @@ const addEvidence = (draft: StreamDraft, evidence: Evidence | null) => {
   draft.evidence.push(evidence);
 };
 
-const repoStateFor = (sample: ActivityEvent, roots: readonly string[]): RepoState | null => {
+const repoStateFor = (sample: ActivityEvent, roots: CheckoutRoots): RepoState | null => {
   switch (sample.kind) {
     case 'git-checkout':
+      // A linked worktree's checkout moves the worktree's own HEAD, never its main checkout's branch.
+      return repoRootOf({ path: sample.repoPath, roots }) === sample.repoPath
+        ? { repoPath: sample.repoPath, branch: branchOf(sample.branch) }
+        : null;
     case 'git-commit':
-      return { repoPath: sample.repoPath, branch: branchOf(sample.branch) };
+      return { repoPath: repoRootOf({ path: sample.repoPath, roots }), branch: branchOf(sample.branch) };
     case 'agent-session':
       return { repoPath: repoRootOf({ path: sample.cwd, roots }), branch: branchOf(sample.gitBranch) };
     case 'editor-heartbeat':
@@ -539,7 +543,7 @@ const repoStateFor = (sample: ActivityEvent, roots: readonly string[]): RepoStat
  */
 const firstBranches = (options: {
   samples: readonly ActivityEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
   nested: readonly string[];
 }) => {
   const found = new Map<string, string | undefined>();
@@ -666,7 +670,7 @@ type SessionRun = { sessionId: string; from: Date; to: Date; paths: string[]; br
 const sessionRuns = (options: {
   samples: readonly ActivityEvent[];
   turns: readonly AgentUsageEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
 }) => {
   const { samples, turns, roots } = options;
   const held = new Map<string, Map<string, SessionRun>>();
@@ -767,7 +771,7 @@ const withoutLaterSession = (options: {
  */
 const nestedWorktreesOf = (options: {
   worktrees: Readonly<Record<string, string>> | undefined;
-  roots: readonly string[];
+  roots: CheckoutRoots;
 }) => Object.keys(options.worktrees ?? {}).filter((path) => repoRootOf({ path, roots: options.roots }) !== path);
 
 const within = (path: string | undefined, directories: readonly string[]) =>
@@ -779,7 +783,7 @@ const samplePathOf = (sample: ActivityEvent) =>
     : sample.kind === 'editor-heartbeat'
       ? sample.repoPath
       : sample.kind === 'git-commit'
-        ? sample.worktree
+        ? (sample.worktree ?? sample.repoPath)
         : undefined;
 
 /** One `git-checkout`'s answer to which branch a checkout was moved onto, at the instant it moved. */
@@ -791,7 +795,7 @@ type BranchMark = { at: Date; branch: string };
  * Only a `git-checkout` answers this. Every other fact reports the branch a checkout is already on,
  * which says nothing about when it got there.
  */
-const branchMarks = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+const branchMarks = (samples: readonly ActivityEvent[], roots: CheckoutRoots) => {
   const found = new Map<string, BranchMark[]>();
 
   for (const sample of samples) {
@@ -818,7 +822,7 @@ const branchMarks = (samples: readonly ActivityEvent[], roots: readonly string[]
  */
 const witnessedBranches = (options: {
   samples: readonly ActivityEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
   nested: readonly string[];
 }) => {
   const found = new Map<string, BranchMark[]>();
@@ -905,10 +909,10 @@ const ambiguousNamedIn = (options: { title: string; ambiguous: ReadonlySet<strin
  * A name two of them share is dropped rather than resolved: guessing which `api` an editor is showing
  * would attribute one project's time to another, and no attribution is the better failure.
  */
-const reposByName = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+const reposByName = (samples: readonly ActivityEvent[], roots: CheckoutRoots) => {
   const byName = new Map<string, string>();
   const ambiguous = new Set<string>();
-  const paths = [...roots, ...samples.map((sample) => repoStateFor(sample, roots)?.repoPath)];
+  const paths = [...roots.paths, ...samples.map((sample) => repoStateFor(sample, roots)?.repoPath)];
 
   for (const repoPath of paths) {
     const name = repoPath?.split('/').filter(Boolean).pop();
@@ -936,7 +940,7 @@ const isPrivate = (options: { repoPath: string; links: readonly TimetrackProject
  */
 const privateNames = (options: {
   samples: readonly ActivityEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
   links: readonly TimetrackProjectLink[];
 }) => {
   const paths = options.samples
@@ -968,13 +972,14 @@ const privateNames = (options: {
  */
 const checkoutNamer = (options: {
   samples: readonly ActivityEvent[];
-  roots: readonly string[];
+  roots: CheckoutRoots;
   links: readonly TimetrackProjectLink[];
 }) => {
-  const known = new Set(options.roots);
+  const known = new Set(options.roots.paths);
 
   for (const sample of options.samples) {
-    if (sample.kind === 'git-commit' || sample.kind === 'git-checkout') known.add(sample.repoPath);
+    if (sample.kind === 'git-commit' || sample.kind === 'git-checkout')
+      known.add(repoRootOf({ path: sample.repoPath, roots: options.roots }));
     // A reporter names the checkout it found with git, so it names one as well as a git event does —
     // and it is the only source for a repository the user only ever opens in an editor.
     if (sample.kind === 'editor-heartbeat' && sample.repoPath) known.add(sample.repoPath);
@@ -1121,7 +1126,7 @@ const streamOrigin = (options: {
   elsewhere?: readonly (readonly CollectedEvent[])[];
 }): OriginDay => {
   const { config } = options;
-  const roots = config.repoRoots ?? [];
+  const roots: CheckoutRoots = { paths: config.repoRoots ?? [], worktrees: config.rows?.worktrees ?? {} };
   const links = config.links ?? [];
   const events = fileAgentEventsByWork({ events: options.events, roots });
   const ownAppIds = new Set((config.ownAppIds ?? []).map((id) => id.toLowerCase()));
