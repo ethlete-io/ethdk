@@ -35,7 +35,10 @@ import {
   normalizeEthleteMatchStatus,
   normalizeEthleteMedia,
   normalizeEthleteParticipant,
+  provideMatchDefaults,
   provideMatchLabels,
+  injectMatchDefaults,
+  DEFAULT_MATCH_DEFAULTS,
   resolveNormalizedMatchSideState,
 } from '../index';
 import '../test-helpers';
@@ -218,6 +221,20 @@ class EditorRowComponent {}
   `,
 })
 class StrayScoreComponent {}
+
+@Component({
+  selector: 'et-scenario-shield-roster',
+  imports: [MATCH_PARTICIPANT_IMPORTS],
+  providers: [provideMatchDefaults({ emblemFallback: 'shield' })],
+  template: `
+    <et-match-participant [participant]="team" class="app-default" />
+    <et-match-participant [participant]="team" class="pinned" emblemFallback="initial" />
+  `,
+})
+class ShieldRosterComponent {
+  defaults = injectMatchDefaults();
+  team: NormalizedMatchParticipant = normalizeEthleteParticipant(team('team-b'));
+}
 
 const takeErrorContext = (s: Scenario) => {
   s.tick(1);
@@ -489,6 +506,21 @@ describe('match scenarios', () => {
     expect(text(host.querySelector('.untimed .et-match-scoreline-scores'))).toBe('1 - 1');
     expect(host.querySelector('.untimed et-match-time')).toBeNull();
     expect(text(host.querySelector('.clock'))).toBe('90:00');
+  });
+
+  it('draws the app-wide shield fallback for a participant without emblem, unless the instance pins one', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ShieldRosterComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    expect(DEFAULT_MATCH_DEFAULTS.emblemFallback).toBe('initial');
+    expect(fixture.componentInstance.defaults.emblemFallback).toBe('shield');
+    expect(host.querySelector('.app-default .et-match-participant-emblem-mark')?.getAttribute('data-fallback')).toBe(
+      'shield',
+    );
+    expect(host.querySelector('.pinned .et-match-participant-emblem-mark')?.hasAttribute('data-fallback')).toBe(false);
   });
 
   it('reports a card part placed outside a card', () => {
