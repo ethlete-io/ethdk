@@ -363,8 +363,41 @@
     "at": "2026-11-21T05:32:17.410Z"
   },
   "components/error-toast": {
+    "hash": "b032b8b04e5963f7",
+    "files": {
+      ".ethlete/design/studio/components/error-toast/error-toast.ts": "d593efd5d2edaf85",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/design/notification.ts": "096f9bd0eb0cd93d",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
+      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
+      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
+      "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
+      "libs/components/src/lib/icon/headless/circle-check-icon.ts": "a120b0cfbd95a3dc",
+      "libs/components/src/lib/icon/headless/circle-info-icon.ts": "b1958f06984def38",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
+      "libs/components/src/lib/icon/headless/triangle-exclamation-icon.ts": "2ddf3400138f653a",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/components/src/lib/notification/notification.component.css": "829a7ae0d86c0826",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
+    },
+    "app": "c866d29b02b80731",
     "actions": ["emit:dismiss"],
-    "at": "2026-11-21T20:05:04.570Z"
+    "builder": "designer",
+    "at": "2026-11-21T20:38:40.991Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 1812266
   },
   "components/hold-trigger": {
     "hash": "547e43ae4395cdf7",
