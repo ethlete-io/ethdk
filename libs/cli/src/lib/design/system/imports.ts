@@ -8,6 +8,7 @@ import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { importsOf } from './ts-source';
 import { openedPartKeyOf } from './actions';
+import { openedPartNamesOf } from '../../../../design/action-grammar';
 
 const SYSTEM = '@system/';
 export const FIXTURES_SPECIFIER = '@system/fixtures';
@@ -270,11 +271,9 @@ export const importProblemsOf = (product: ResolvedProduct & SharedDirs & { asset
   ]);
 };
 
-const OPENS_ACTION = /data-et-action="(?:dblclick:)?\s*opens:([a-z][\w-]*(?:\/[a-z][\w-]*)?)"/gu;
-
 const openedPartsOf = (part: ResolvedPart, keys: readonly string[]) =>
   [part, ...folderModulesOf(part)].flatMap((module) =>
-    [...module.source.matchAll(OPENS_ACTION)].flatMap(([, named = '']) => {
+    openedPartNamesOf(module.source).flatMap((named) => {
       const key = openedPartKeyOf({ part: named, keys });
 
       return keys.includes(key) ? [key] : [];

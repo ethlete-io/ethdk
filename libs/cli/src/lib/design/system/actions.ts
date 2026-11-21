@@ -1,6 +1,6 @@
-export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick', 'ArrowRight', 'ArrowLeft', 'type'] as const;
+import { DBLCLICK_PREFIX, OPENS_PREFIX, PART_NAME } from '../../../../design/action-grammar';
 
-export const DBLCLICK_PREFIX = 'dblclick:';
+export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick', 'ArrowRight', 'ArrowLeft', 'type'] as const;
 
 export type ActionInput = (typeof ACTION_INPUTS)[number];
 
@@ -35,8 +35,6 @@ export type DeclaredAction = (
 ) & {
   gesture?: 'dblclick';
 };
-
-const OPENS_PREFIX = 'opens:';
 
 const isPageWideAction = (bare: string) => bare.startsWith('emit:') || bare.startsWith(OPENS_PREFIX);
 
@@ -126,7 +124,7 @@ export const parseAction = (value: string | null, states: readonly string[]): De
   if (bare.startsWith(OPENS_PREFIX)) {
     const part = bare.slice(OPENS_PREFIX.length);
 
-    return /^[a-z][\w-]*(?:\/[a-z][\w-]*)?$/.test(part)
+    return new RegExp(`^${PART_NAME}$`, 'u').test(part)
       ? { kind: 'opens', part, ...gesture }
       : `data-et-action="${value}" names no part`;
   }

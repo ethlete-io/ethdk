@@ -227,4 +227,25 @@ describe('partUsersOf', () => {
     expect([...(users.get('pages/home') ?? [])]).toContain('elements/hero');
     expect(users.has('nowhere')).toBe(false);
   });
+
+  it.each([
+    ['a literal attribute', '`<button data-et-action="opens:home">Go</button>`'],
+    ['a withAction string', "withAction('<button>Go</button>', 'opens:home')"],
+    ['a withAction object', "withAction(`<a class=\"go\">Go</a>`, { action: 'opens:home', on: '.go' })"],
+    ['a dblclick prefix', "withAction('<button>Go</button>', 'dblclick:opens:home')"],
+  ])('counts %s as an open of the part', (_, source) => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.ts', part(`const html = ${source};`));
+
+    expect([...(partUsersOf(resolveAcme(target)).get('pages/home') ?? [])]).toContain('elements/hero');
+  });
+
+  it('ignores a withAction whose action is not a string literal', () => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.ts', part("const html = withAction('<button>Go</button>', action);"));
+
+    expect(partUsersOf(resolveAcme(target)).has('pages/home')).toBe(false);
+  });
 });
