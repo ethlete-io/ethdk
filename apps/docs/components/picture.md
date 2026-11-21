@@ -250,6 +250,22 @@ stylesheet and they will keep working:
 
 Per state, use `.et-picture[data-state='error']`; with `fit`, the host also carries `data-fit`.
 
+### Zoom the image on hover
+
+Transforming the host scales whatever clips it, too. To move only the image, set `--et-picture-img-transform`
+(default `none`) and `--et-picture-img-transition` (default `none`) on the host or any ancestor. The `<picture>`
+clips the scaled image, so the box keeps its size:
+
+```css
+.card:hover et-picture {
+  --et-picture-img-transform: scale(1.08);
+}
+
+.card et-picture {
+  --et-picture-img-transition: transform 300ms ease;
+}
+```
+
 ### Coming from `@ethlete/cdk`
 
 The cdk predecessor took `imgClass`, `figureClass`, `pictureClass` and `figcaptionClass` inputs. They are gone

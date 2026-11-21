@@ -1,4 +1,16 @@
 @layer components.sdk {
+  @property --et-picture-img-transform {
+    syntax: '*';
+    inherits: true;
+    initial-value: none;
+  }
+
+  @property --et-picture-img-transition {
+    syntax: '*';
+    inherits: true;
+    initial-value: none;
+  }
+
   .et-picture {
     display: block;
 
@@ -12,6 +24,7 @@
       display: block;
       /* The containing block for the placeholder / error slots. */
       position: relative;
+      overflow: hidden;
     }
 
     .et-picture-img {
@@ -19,6 +32,8 @@
       max-inline-size: 100%;
       /* Given `width`/`height` for CLS, the intrinsic ratio has to be kept once CSS resizes the box. */
       block-size: auto;
+      transform: var(--et-picture-img-transform);
+      transition: var(--et-picture-img-transition);
     }
 
     &:where([data-aspect-ratio]) {

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PictureComponent } from './picture.component';
 
@@ -36,6 +38,17 @@ describe('PictureComponent', () => {
     fixture.componentRef.setInput('alt', 'A test');
     fixture.componentRef.setInput('defaultSrc', 'first.jpg');
     fixture.detectChanges();
+  });
+
+  describe('img transform hook', () => {
+    it('registers both properties and wires them onto the img in the stylesheet', () => {
+      const css = readFileSync(resolve(__dirname, 'picture.component.css'), 'utf8');
+
+      expect(css).toContain('@property --et-picture-img-transform');
+      expect(css).toContain('@property --et-picture-img-transition');
+      expect(css).toMatch(/\.et-picture-img\s*{[^}]*transform: var\(--et-picture-img-transform\)/);
+      expect(css).toMatch(/\.et-picture-img\s*{[^}]*transition: var\(--et-picture-img-transition\)/);
+    });
   });
 
   describe('fit', () => {

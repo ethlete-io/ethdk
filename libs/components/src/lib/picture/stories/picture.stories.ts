@@ -1,4 +1,5 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { PictureComponent } from '../picture.component';
 import { PictureFitStorybookComponent } from './picture-fit-storybook.component';
 import { PictureFormatsStorybookComponent } from './picture-formats-storybook.component';
 import { PictureStorybookComponent } from './picture-storybook.component';
@@ -65,6 +66,32 @@ export const NoAspectRatio: Story = {
         story:
           'Without `aspectRatio` (and without `width`/`height`) the box has no size until the image arrives, ' +
           'so the page shifts when it does. Worth seeing once, then never shipping.',
+      },
+    },
+  },
+};
+
+export const HoverZoom: StoryObj = {
+  decorators: [moduleMetadata({ imports: [PictureComponent] })],
+  render: () => ({
+    template: `
+      <div class="group max-w-[520px] p-8">
+        <et-picture
+          data-testid="zoom-host"
+          class="block [--et-picture-img-transform:none] [--et-picture-img-transition:transform_300ms_ease] group-hover:[--et-picture-img-transform:scale(1.15)]"
+          defaultSrc="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360'%3E%3Crect width='640' height='360' fill='%23557'/%3E%3Ccircle cx='320' cy='180' r='90' fill='%23fc6'/%3E%3C/svg%3E"
+          [aspectRatio]="16 / 9"
+          alt="A coloured block"
+        />
+      </div>
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Set `--et-picture-img-transform` and `--et-picture-img-transition` to zoom only the image; ' +
+          'the picture clips it and the box keeps its size.',
       },
     },
   },
