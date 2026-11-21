@@ -231,6 +231,9 @@ export class DesignCanvasComponent {
   /** The camera to show instead of the opening view, read when `cameraKey` changes. */
   public restoredCamera = input<Camera | null>(null);
 
+  /** Where the world's top left corner opens at 100 %, in canvas pixels; `null` opens the first frames past the covered edge. */
+  public origin = input<Point | null>(null);
+
   public zoomChipClass = input('absolute right-3 bottom-3');
 
   public pins = input<CanvasPin[]>([]);
@@ -990,6 +993,11 @@ export class DesignCanvasComponent {
     if (camera) this.moveCamera(camera, true);
   }
 
+  /** Moves the camera there at once, as a user move does. */
+  public moveTo(camera: Camera) {
+    this.moveCamera(camera);
+  }
+
   public zoomTo(zoom: number) {
     const point = uncoveredCentre({ viewport: this.viewport(), covered: this.covered() });
 
@@ -1044,6 +1052,10 @@ export class DesignCanvasComponent {
   }
 
   private openingCamera(bounds: Rect): Camera {
+    const origin = this.origin();
+
+    if (origin) return { zoom: 1, x: origin.x - bounds.x, y: origin.y - bounds.y };
+
     const { inset } = this.scene(bounds, this.viewport());
 
     return {

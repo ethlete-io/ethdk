@@ -22,6 +22,8 @@ const render = async () => {
     configurable: true,
     value: Object.assign(new EventTarget(), { ready: Promise.resolve() }),
   });
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1200);
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800);
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
 
   const fixture = TestBed.createComponent(FlowsPageComponent);
@@ -29,7 +31,7 @@ const render = async () => {
   await fixture.whenStable();
 
   const element = fixture.nativeElement as HTMLElement;
-  const viewport = element.querySelector<HTMLElement>('ethlete-canvas-viewport');
+  const viewport = element.querySelector<HTMLElement>('ethlete-design-canvas');
   const world = viewport?.firstElementChild as HTMLElement | null;
 
   return { fixture, element, viewport, world };
@@ -53,7 +55,7 @@ describe('FlowsPageComponent', () => {
     const original = Element.prototype.getBoundingClientRect;
 
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-      if (this.tagName === 'ETHLETE-CANVAS-VIEWPORT') return rectOf(300, 40) as DOMRect;
+      if (this.tagName === 'ETHLETE-DESIGN-CANVAS') return rectOf(300, 40) as DOMRect;
       if (this.classList.contains('min-h-0') && this.classList.contains('flex-1')) return rectOf(364, 72) as DOMRect;
 
       return original.call(this);
@@ -65,9 +67,10 @@ describe('FlowsPageComponent', () => {
   });
 
   it('pans the flow by the wheel', async () => {
-    const { viewport, world } = await render();
+    const { fixture, viewport, world } = await render();
 
     viewport?.dispatchEvent(new WheelEvent('wheel', { deltaX: 300, deltaY: 40, cancelable: true }));
+    await fixture.whenStable();
 
     expect(world?.style.transform).toBe('translate(-300px, -40px) scale(1)');
   });
@@ -82,6 +85,17 @@ describe('FlowsPageComponent', () => {
     expect(element.querySelector('[aria-label="Auf 100 % zoomen"]')?.textContent?.trim()).toBe('150 %');
   });
 
+  it('returns to the stage start at 100 % from the zoom chip', async () => {
+    const { fixture, element, viewport, world } = await render();
+
+    viewport?.dispatchEvent(new WheelEvent('wheel', { deltaX: 300, deltaY: 40, cancelable: true }));
+    element.querySelector<HTMLButtonElement>('[aria-label="Vergrößern"]')?.click();
+    element.querySelector<HTMLButtonElement>('[aria-label="Auf 100 % zoomen"]')?.click();
+    await fixture.whenStable();
+
+    expect(world?.style.transform).toBe('translate(0px, 0px) scale(1)');
+  });
+
   it('names the preset select', async () => {
     const { element } = await render();
 
@@ -92,6 +106,7 @@ describe('FlowsPageComponent', () => {
     const { fixture, viewport, world } = await render();
 
     viewport?.dispatchEvent(new WheelEvent('wheel', { deltaX: 300, deltaY: 40, cancelable: true }));
+    await fixture.whenStable();
     expect(world?.style.transform).toBe('translate(-300px, -40px) scale(1)');
 
     fixture.componentRef.setInput('selected', 'Kommentar beantworten');

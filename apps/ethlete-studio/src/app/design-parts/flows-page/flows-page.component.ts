@@ -8,7 +8,6 @@ import {
   output,
   signal,
   TemplateRef,
-  untracked,
   viewChild,
   viewChildren,
   ViewEncapsulation,
@@ -21,15 +20,14 @@ import {
   TEXTAREA_IMPORTS,
   TextareaComponent,
 } from '@ethlete/components';
-import { signalElementDimensions } from '@ethlete/core';
 import { CanvasDragDirective } from '../../components/design-canvas/canvas-drag.directive';
-import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
+import { CanvasFrameDirective } from '../../components/design-canvas/canvas-frame.directive';
+import { Point } from '../../components/design-canvas/canvas-math';
+import { DesignCanvasComponent } from '../../components/design-canvas/design-canvas.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { TreeRow } from '../tree-row/tree-row-item.component';
 import { TreeRowComponent } from '../tree-row/tree-row.component';
-import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 
 export const FLOWS_SAMPLE: string[] = [...STUDIO_LABELS.flows.sample.names];
 
@@ -71,8 +69,6 @@ export const FLOWS_SAMPLE_ORPHANS: FlowsPageNote[] = [
   { id: 'lost-1', text: STUDIO_LABELS.flows.sample.orphans[0], x: 1420, y: 60 },
   { id: 'lost-2', text: STUDIO_LABELS.flows.sample.orphans[1], x: 1420, y: 300 },
 ];
-
-const ZOOM_STEP = 1.5;
 
 const NOTE_INSET = 24;
 
@@ -125,125 +121,131 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
       </div>
       @if (flow() === 'open') {
         <div class="relative h-full overflow-hidden">
-          <ethlete-canvas-viewport class="absolute inset-0 overflow-hidden">
-            <div
-              #world
-              [style.width.px]="graph().width"
-              [style.height.px]="graph().height"
-              class="absolute top-0 left-0 origin-top-left"
+          <div class="absolute inset-0">
+            <ethlete-design-canvas
+              [origin]="opened()?.origin ?? null"
+              [cameraKey]="opened()?.key ?? null"
+              zoomChipClass="absolute right-space-3 bottom-space-3 z-3"
             >
-              <svg
-                [attr.width]="graph().width"
-                [attr.height]="graph().height"
-                class="absolute inset-0 overflow-visible text-et-surface-muted"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                aria-hidden="true"
-              >
-                <defs>
-                  <marker
-                    id="flow-arrow"
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="7"
-                    markerHeight="7"
-                    orient="auto"
-                  >
-                    <path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5" />
-                  </marker>
-                </defs>
-                @for (edge of graph().edges; track edge.id) {
-                  <path [attr.d]="edge.path" marker-end="url(#flow-arrow)" />
-                }
-              </svg>
-              @for (box of graph().boxes; track box.id) {
-                <figure [style.left.px]="box.x" [style.top.px]="box.y" class="absolute m-0 flex flex-col gap-space-1">
-                  <span class="text-ui-sm text-et-surface-muted">{{ box.title }}</span>
-                  <div class="rounded-sm outline outline-et-surface-border">
-                    <div
-                      [style.width.px]="graph().w"
-                      [style.height.px]="graph().h"
-                      class="pointer-events-none overflow-hidden"
-                      data-et-projected="shot"
+              <div [style.width.px]="graph().width" [style.height.px]="graph().height" class="relative">
+                <svg
+                  [attr.width]="graph().width"
+                  [attr.height]="graph().height"
+                  class="absolute inset-0 overflow-visible text-et-surface-muted"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <marker
+                      id="flow-arrow"
+                      viewBox="0 0 10 10"
+                      refX="9"
+                      refY="5"
+                      markerWidth="7"
+                      markerHeight="7"
+                      orient="auto"
                     >
-                      <ng-container
-                        [ngTemplateOutlet]="frameTemplate()"
-                        [ngTemplateOutletContext]="{ $implicit: box }"
-                      />
+                      <path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    </marker>
+                  </defs>
+                  @for (edge of graph().edges; track edge.id) {
+                    <path [attr.d]="edge.path" marker-end="url(#flow-arrow)" />
+                  }
+                </svg>
+                @for (box of graph().boxes; track box.id) {
+                  <figure
+                    [style.left.px]="box.x"
+                    [style.top.px]="box.y"
+                    class="absolute m-0 flex flex-col gap-space-1"
+                    ethleteCanvasFrame
+                  >
+                    <span class="text-ui-sm text-et-surface-muted">{{ box.title }}</span>
+                    <div class="rounded-sm outline outline-et-surface-border">
+                      <div
+                        [style.width.px]="graph().w"
+                        [style.height.px]="graph().h"
+                        class="pointer-events-none overflow-hidden"
+                        data-et-projected="shot"
+                      >
+                        <ng-container
+                          [ngTemplateOutlet]="frameTemplate()"
+                          [ngTemplateOutletContext]="{ $implicit: box }"
+                        />
+                      </div>
+                    </div>
+                  </figure>
+                }
+                @for (edge of graph().edges; track edge.id) {
+                  <span
+                    [style.left.px]="edge.labelX"
+                    [style.top.px]="edge.labelY"
+                    [style.width.px]="edge.labelWidth"
+                    class="absolute -translate-y-full pb-space-1 text-center text-ui-xs text-et-surface-muted"
+                  >
+                    {{ edge.label }}
+                  </span>
+                }
+                @for (note of shownNotes(); track note.id) {
+                  <div
+                    #noteBox
+                    [style.left.px]="note.x"
+                    [style.top.px]="note.y"
+                    [ethleteCanvasDrag]="note"
+                    [canvasDragZoom]="zoom()"
+                    [attr.data-flow-note]="note.id"
+                    (canvasDragMove)="dragged.set({ id: note.id, x: $event.x, y: $event.y })"
+                    (canvasDragEnd)="noteMove.emit({ id: note.id, x: $event.x, y: $event.y })"
+                    (dblclick)="edit(note)"
+                    class="absolute box-border w-64 cursor-grab rounded-md border border-et-surface-border bg-et-surface-bg p-space-3 text-ui-md text-et-surface shadow-lg"
+                  >
+                    <div class="flex items-start gap-space-1">
+                      @if (editing() !== note.id) {
+                        <p class="m-0 flex-1 whitespace-pre-wrap">{{ note.text }}</p>
+                      } @else {
+                        <div (focusout)="commit(note)" (pointerdown)="$event.stopPropagation()" class="flex-1">
+                          <et-form-field>
+                            <et-textarea
+                              [(value)]="written"
+                              [aria-label]="LABELS.note"
+                              [placeholder]="LABELS.notePlaceholder"
+                              (keydown)="handleNoteKey($event, note)"
+                              rows="3"
+                            />
+                          </et-form-field>
+                        </div>
+                      }
+                      <button
+                        [attr.aria-label]="LABELS.deleteNote"
+                        (pointerdown)="$event.stopPropagation()"
+                        (click)="noteDelete.emit(note.id)"
+                        et-icon-button
+                        type="button"
+                        variant="transparent"
+                        color="surface"
+                        size="xs"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.3"
+                          stroke-linecap="round"
+                          aria-hidden="true"
+                          etIcon
+                        >
+                          <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                </figure>
-              }
-              @for (edge of graph().edges; track edge.id) {
-                <span
-                  [style.left.px]="edge.labelX"
-                  [style.top.px]="edge.labelY"
-                  [style.width.px]="edge.labelWidth"
-                  class="absolute -translate-y-full pb-space-1 text-center text-ui-xs text-et-surface-muted"
-                >
-                  {{ edge.label }}
-                </span>
-              }
-              @for (note of shownNotes(); track note.id) {
-                <div
-                  #noteBox
-                  [style.left.px]="note.x"
-                  [style.top.px]="note.y"
-                  [ethleteCanvasDrag]="note"
-                  [canvasDragZoom]="zoom()"
-                  [attr.data-flow-note]="note.id"
-                  (canvasDragMove)="dragged.set({ id: note.id, x: $event.x, y: $event.y })"
-                  (canvasDragEnd)="noteMove.emit({ id: note.id, x: $event.x, y: $event.y })"
-                  (dblclick)="edit(note)"
-                  class="absolute box-border w-64 cursor-grab rounded-md border border-et-surface-border bg-et-surface-bg p-space-3 text-ui-md text-et-surface shadow-lg"
-                >
-                  <div class="flex items-start gap-space-1">
-                    @if (editing() !== note.id) {
-                      <p class="m-0 flex-1 whitespace-pre-wrap">{{ note.text }}</p>
-                    } @else {
-                      <div (focusout)="commit(note)" (pointerdown)="$event.stopPropagation()" class="flex-1">
-                        <et-form-field>
-                          <et-textarea
-                            [(value)]="written"
-                            [aria-label]="LABELS.note"
-                            [placeholder]="LABELS.notePlaceholder"
-                            (keydown)="handleNoteKey($event, note)"
-                            rows="3"
-                          />
-                        </et-form-field>
-                      </div>
-                    }
-                    <button
-                      [attr.aria-label]="LABELS.deleteNote"
-                      (pointerdown)="$event.stopPropagation()"
-                      (click)="noteDelete.emit(note.id)"
-                      et-icon-button
-                      type="button"
-                      variant="transparent"
-                      color="surface"
-                      size="xs"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round"
-                        aria-hidden="true"
-                        etIcon
-                      >
-                        <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          </ethlete-canvas-viewport>
+                }
+              </div>
+            </ethlete-design-canvas>
+          </div>
           <div
             class="pointer-events-none relative box-border flex h-full flex-col gap-space-4 p-space-5 ps-[calc(var(--st-shell-inset-left)+var(--space-5))]"
           >
@@ -282,19 +284,6 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
             </header>
             <div #stage class="min-h-0 flex-1" data-flow-stage></div>
           </div>
-          <div
-            #shellInsetProbe
-            class="pointer-events-none invisible absolute top-0 left-0 h-0 w-(--st-shell-inset-left,0px)"
-            aria-hidden="true"
-          ></div>
-          <ethlete-zoom-chip
-            [percent]="percent()"
-            (zoomOut)="zoomBy(1 / ZOOM_STEP)"
-            (zoomIn)="zoomBy(ZOOM_STEP)"
-            (zoomReset)="zoomReset()"
-            (fit)="fit()"
-            class="absolute right-space-3 bottom-space-3 z-3"
-          />
         </div>
       } @else {
         <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)">
@@ -324,13 +313,13 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
     NgTemplateOutlet,
     BUTTON_IMPORTS,
     CanvasDragDirective,
-    CanvasViewportComponent,
+    CanvasFrameDirective,
+    DesignCanvasComponent,
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
     TEXTAREA_IMPORTS,
     ShellPageComponent,
     TreeRowComponent,
-    ZoomChipComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
@@ -359,22 +348,19 @@ export class FlowsPageComponent {
   public presetChange = output<string>();
 
   private noteField = viewChild(TextareaComponent);
-  private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
-  private world = viewChild<ElementRef<HTMLElement>>('world');
+  private canvas = viewChild(DesignCanvasComponent);
+  private viewport = viewChild(DesignCanvasComponent, { read: ElementRef });
   private noteBoxes = viewChildren<ElementRef<HTMLElement>>('noteBox');
 
-  private shellInsetProbe = viewChild<ElementRef<HTMLElement>>('shellInsetProbe');
   private stage = viewChild<ElementRef<HTMLElement>>('stage');
-  private shellInset = signalElementDimensions(this.shellInsetProbe);
-  private covered = computed(() => this.shellInset().offset?.width ?? 0);
-  private pickedFlow: string | null = null;
   protected readonly LABELS = STUDIO_LABELS.flows;
-  protected readonly ZOOM_STEP = ZOOM_STEP;
-  private canvas = signal<CanvasViewport | null>(null);
-  private mounted: HTMLElement | null = null;
+
+  protected opened = signal<{ key: string | null; origin: Point } | null>(null, {
+    equal: (a, b) => a?.key === b?.key && a?.origin.x === b?.origin.x && a?.origin.y === b?.origin.y,
+  });
 
   private shownSource = computed(() => this.notes());
-  protected zoom = computed(() => this.canvas()?.zoom() ?? 1);
+  protected zoom = computed(() => this.canvas()?.camera().zoom ?? 1);
   protected editing = linkedSignal<FlowsPageNote[], string | null>({
     source: this.shownSource,
     computation: (notes, previous) =>
@@ -392,8 +378,6 @@ export class FlowsPageComponent {
 
     return this.notes().map((note) => (dragged?.id === note.id ? { ...note, x: dragged.x, y: dragged.y } : note));
   });
-
-  protected percent = computed(() => Math.round((this.canvas()?.zoom() ?? 1) * 100));
 
   protected presetOptions = computed(() =>
     this.presets().length ? this.presets() : [{ value: this.preset(), label: this.preset() }],
@@ -474,19 +458,8 @@ export class FlowsPageComponent {
   );
 
   public constructor() {
-    afterRenderEffect(() => this.mountCamera());
-    afterRenderEffect(() => {
-      this.covered();
-      untracked(() => this.canvas())?.refresh();
-    });
-    afterRenderEffect(() => this.resetOnPick());
+    afterRenderEffect(() => this.openOnPick());
     afterRenderEffect(() => this.focusEditedNote());
-  }
-
-  public zoomBy(factor: number) {
-    const canvas = this.canvas();
-
-    canvas?.show({ kind: 'visible', zoom: canvas.camera().zoom * factor });
   }
 
   /** Moves the camera so the note with this id is centred on the canvas, keeping the current zoom. */
@@ -506,19 +479,11 @@ export class FlowsPageComponent {
       y: note.y + (shown?.offsetHeight || NOTE_SIZE.height) / 2,
     };
 
-    canvas.reset({
+    canvas.moveTo({
       x: Math.round(start.x + stage.offsetWidth / 2 - centre.x * zoom),
       y: Math.round(start.y + stage.offsetHeight / 2 - centre.y * zoom),
       zoom,
     });
-  }
-
-  protected zoomReset() {
-    this.canvas()?.show({ kind: 'visible', zoom: 1 });
-  }
-
-  protected fit() {
-    this.canvas()?.show({ kind: 'all' });
   }
 
   protected requestNote() {
@@ -581,37 +546,13 @@ export class FlowsPageComponent {
     this.noteField()?.focus();
   }
 
-  private resetOnPick() {
-    const selected = this.selected();
+  private openOnPick() {
+    const key = this.selected() ?? null;
     const viewport = this.viewport()?.nativeElement;
     const stage = this.stage()?.nativeElement;
-    const previous = this.pickedFlow;
-    const canvas = untracked(() => this.canvas());
 
-    this.pickedFlow = selected ?? null;
+    if (!viewport || !stage) return;
 
-    if (previous === null || previous === selected || !canvas || !stage || !viewport) return;
-
-    canvas.reset({ ...stageStart(viewport, stage), zoom: 1 });
-  }
-
-  private mountCamera() {
-    const viewport: HTMLElement | undefined = this.viewport()?.nativeElement;
-    const world = this.world()?.nativeElement;
-    const stage = this.stage()?.nativeElement;
-
-    if (!viewport || !world || !stage || viewport === this.mounted) return;
-
-    this.mounted = viewport;
-    this.canvas.set(
-      mountCanvasViewport({
-        viewport,
-        world,
-        frameSelector: 'figure',
-        padding: 24,
-        covered: () => this.covered(),
-        start: { ...stageStart(viewport, stage), zoom: 1 },
-      }),
-    );
+    this.opened.set({ key, origin: stageStart(viewport, stage) });
   }
 }
