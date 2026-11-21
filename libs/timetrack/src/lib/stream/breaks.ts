@@ -147,21 +147,56 @@ export const breakGaps = (options: {
   return breaks;
 };
 
+const LEAVING_KINDS: ReadonlySet<string> = new Set(['idle-start', 'lock']);
+const RETURNING_KINDS: ReadonlySet<string> = new Set(['idle-end', 'unlock']);
+
+const opensAway = (events: readonly CollectedEvent[]) => {
+  const first = events
+    .filter((event) => event.source === 'idle' && (LEAVING_KINDS.has(event.kind) || RETURNING_KINDS.has(event.kind)))
+    .reduce<CollectedEvent | undefined>(
+      (earliest, event) => (!earliest || event.at < earliest.at ? event : earliest),
+      undefined,
+    );
+
+  return !!first && RETURNING_KINDS.has(first.kind);
+};
+
 /**
  * The gaps between two stretches of presence that are too long to be a break: the night, a day away.
  * An agent that ran in one still draws a band, which `markAttendance` finds nobody attended.
+ *
+ * Given the day's `events`, the stretch from its first event to its first presence is one too when it
+ * is that long, or when the day opens with the user's return and it is long enough to be a break: they
+ * left on the day before.
  */
-export const longAbsences = (options: { presence: readonly TimeWindow[]; maxBreakMs?: number }): TimeWindow[] => {
+export const longAbsences = (options: {
+  presence: readonly TimeWindow[];
+  events?: readonly CollectedEvent[];
+  minBreakMs?: number;
+  maxBreakMs?: number;
+}): TimeWindow[] => {
+  const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
   const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
   const ordered = mergeWindows([...options.presence]);
-
-  return ordered.flatMap((earlier, index) => {
+  const between = ordered.flatMap((earlier, index) => {
     const later = ordered[index + 1];
 
     if (!later || later.from.getTime() - earlier.to.getTime() <= maxBreakMs) return [];
 
     return [{ from: earlier.to, to: later.from }];
   });
+  const firstPresence = ordered[0];
+  const events = options.events ?? [];
+  const since = events.reduce<Date | undefined>(
+    (earliest, event) => (!earliest || event.at < earliest ? event.at : earliest),
+    undefined,
+  );
+  const leadingMs = firstPresence && since ? firstPresence.from.getTime() - since.getTime() : 0;
+
+  if (!firstPresence || !since || leadingMs < minBreakMs) return between;
+  if (leadingMs <= maxBreakMs && !opensAway(events)) return between;
+
+  return [{ from: since, to: firstPresence.from }, ...between];
 };
 
 /**

@@ -1770,7 +1770,11 @@ const streamOrigin = (options: {
       ...clipSpans({ spans: focusSpans, within: seen }),
       ...clipSpans({
         spans: agentSpans.filter((span) => !waitingSpans.has(span)),
-        within: mergeWindows([...presence, ...gaps, ...longAbsences({ presence })]),
+        within: mergeWindows([
+          ...presence,
+          ...gaps,
+          ...longAbsences({ presence, events, minBreakMs: config.minBreakMs }),
+        ]),
       }),
       // A session silent until the prompt that ended a break waited through it rather than worked.
       ...clipSpans({
@@ -2058,7 +2062,7 @@ const rowsOf = (options: {
     calls: day.calls,
     breaks: day.breaks,
     gaps: day.gaps,
-    absences: longAbsences({ presence: day.presence }),
+    absences: longAbsences({ presence: day.presence, events: options.events, minBreakMs: config.minBreakMs }),
     remoteWork: day.remoteWork,
     bookedRemote: day.bookedRemote,
     seen: options.seen,
