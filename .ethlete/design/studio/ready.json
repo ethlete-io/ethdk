@@ -1510,20 +1510,13 @@
       "elements/studio-menu": "c86d74f2fc663bc5"
     },
     "actions": [
-      "emit:close",
       "emit:collapse",
       "emit:copyPrompt",
-      "emit:fit",
-      "emit:maximize",
-      "emit:minimize",
       "emit:presetChange",
       "emit:productChange",
       "emit:rowPress",
       "emit:sectionChange",
       "emit:sideWidthChange",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "system-picker"

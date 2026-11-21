@@ -1,9 +1,46 @@
 import { embedPage, html, slot, withAction } from '@design-system';
 import button from '@system/components/button';
 import select from '@system/components/select';
+import textarea from '@system/components/textarea';
 import treeRow from '@system/components/tree-row';
+import { icon } from '@system/foundations/icons';
 
-export type FlowProps = { flow: 'open' | 'none' };
+export type FlowProps = { flow: 'open' | 'none'; notes?: boolean };
+
+export type FlowNoteSample = { id: string; text: string; x: number; y: number };
+
+export const FLOW_NOTES: FlowNoteSample[] = [
+  { id: 'gap', text: 'Hier fehlt noch der Weg, wenn der Nutzer den Sketch verwirft.', x: 790, y: 262 },
+  { id: 'new', text: '', x: 0, y: 262 },
+];
+
+export const addNoteButton = async () => {
+  const add = await button.render({
+    label: 'Notiz',
+    icon: icon('pencil', { size: 14 }),
+    variant: 'outline',
+    color: 'surface',
+    size: 'sm',
+  });
+
+  return { ...add, body: withAction(add.body, 'emit:addNote') };
+};
+
+export const noteDeleteButton = async () => {
+  const remove = await button.render({
+    iconOnly: true,
+    icon: icon('close', { size: 14 }),
+    ariaLabel: 'Notiz löschen',
+    variant: 'transparent',
+    color: 'surface',
+    size: 'xs',
+  });
+
+  return { ...remove, body: withAction(remove.body, 'emit:deleteNote') };
+};
+
+export const noteField = (id: string) =>
+  textarea.render({ field: { id: `flow-note-${id}`, placeholder: 'Notiz schreiben', rows: 3, ariaLabel: 'Notiz' } });
 
 type Step = { page: `pages/${string}`; state: string; title: string; via?: string };
 
@@ -99,7 +136,7 @@ const EDGES = [
 
 const CAPTION = 20;
 
-export const flowGraph = (scale: number, colGap: number) => {
+export const flowGraph = (scale: number, colGap: number, overlay = '') => {
   const rowGap = 56;
   const w = 1440 * scale;
   const h = 900 * scale;
@@ -134,6 +171,6 @@ export const flowGraph = (scale: number, colGap: number) => {
   const svg = `<svg data-et-drawing class="absolute inset-0 overflow-visible text-et-surface-muted" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
 
   return html`<div class="relative flex-none" style="width:${width}px;height:${height}px">
-    ${svg}${frames}${edges.map((edge) => edge.label).join('')}
+    ${svg}${frames}${edges.map((edge) => edge.label).join('')}${overlay}
   </div>`;
 };
