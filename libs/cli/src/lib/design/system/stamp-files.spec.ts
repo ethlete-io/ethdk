@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  keepHeldStampsInCache,
+  keepHeldStampsInFiles,
   readStampText,
   withStampsInCache,
   withStampsInMemory,
@@ -105,47 +105,56 @@ describe('withStampsInMemory', () => {
   });
 });
 
-describe('keepHeldStampsInCache', () => {
-  it('keeps the entries the run changed in the cache, never in the tracked file, and keeps a write made during the run', async () => {
-    const { file } = productReadyFile();
+describe('keepHeldStampsInFiles', () => {
+  it('writes the entries the run changed into the tracked file and keeps a write made during the run', async () => {
+    const file = readyFile();
 
     writeFileSync(file, '{"a":1,"b":1}\n');
 
     await withStampsInMemory(async () => {
       writeStampFile(file, { a: 2 });
       writeFileSync(file, '{"a":1,"b":1,"c":3}\n');
-      keepHeldStampsInCache('ready.json', 'all');
+      keepHeldStampsInFiles('ready.json', 'all');
     });
 
-    expect(readFileSync(file, 'utf8')).toBe('{"a":1,"b":1,"c":3}\n');
-    expect(JSON.parse(readStampText(file) ?? '')).toEqual({ a: 2, c: 3 });
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 2, c: 3 });
   });
 
-  it('keeps only the entries of the asked keys', async () => {
-    const { file } = productReadyFile();
+  it('writes only the entries of the asked keys', async () => {
+    const file = readyFile();
 
     await withStampsInMemory(async () => {
       writeStampFile(file, { a: 2, b: 2 });
-      keepHeldStampsInCache('ready.json', ['b']);
+      keepHeldStampsInFiles('ready.json', ['b']);
     });
 
-    expect(readFileSync(file, 'utf8')).toBe('{"a":1}\n');
-    expect(JSON.parse(readStampText(file) ?? '')).toEqual({ a: 1, b: 2 });
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 1, b: 2 });
   });
 
-  it('writes no cache entry when the run changed only the `at` of an entry', async () => {
-    const { root, file } = productReadyFile();
+  it('leaves the tracked file byte-identical when the run changed only the `at` of an entry', async () => {
+    const file = readyFile();
     const tracked = '{"a":{"actions":[],"at":"2026-11-14T17:21:52.883Z"}}\n';
 
     writeFileSync(file, tracked);
 
     await withStampsInMemory(async () => {
       writeStampFile(file, { a: { actions: [], at: '2026-11-18T08:45:28.168Z' } });
-      keepHeldStampsInCache('ready.json', 'all');
+      keepHeldStampsInFiles('ready.json', 'all');
     });
 
     expect(readFileSync(file, 'utf8')).toBe(tracked);
-    expect(existsSync(join(root, '.ethlete/cache/acme/stamps/ready.json'))).toBe(false);
+  });
+
+  it('never carries an entry of the stamp cache into the tracked file', async () => {
+    const { file } = productReadyFile();
+
+    await withStampsInCache(async () => writeStampFile(file, { a: 1, serve: 9 }));
+    await withStampsInMemory(async () => {
+      writeStampFile(file, { ...JSON.parse(readStampText(file) ?? '{}'), asked: 1 });
+      keepHeldStampsInFiles('ready.json', ['asked']);
+    });
+
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 1, asked: 1 });
   });
 });
 

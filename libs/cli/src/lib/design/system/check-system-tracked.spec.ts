@@ -1,4 +1,4 @@
-import { appendFileSync, cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -7,7 +7,6 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { renderIssuesOf } from './render-check';
-import { readStampText } from './stamp-files';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 
@@ -70,7 +69,7 @@ describe('a design check and the tracked stamp files', () => {
   });
 
   it.each([undefined, 'elements/hero'])(
-    'drops the record in the stamp cache, reports it and leaves the tracked files unchanged (part %s)',
+    'drops the record in ready.json uncommitted and reports it (part %s)',
     async (part) => {
       const { target, dir } = committedAcme();
 
@@ -94,15 +93,17 @@ describe('a design check and the tracked stamp files', () => {
       });
 
       expect(lines).toContainEqual(expect.stringMatching(/^RECORD DROPPED acme elements\/hero: open-point/));
-      expect(git(target, 'status', '--porcelain', '--untracked-files=no')).toBe('');
-      expect(JSON.parse(readStampText(join(dir, 'ready.json')) ?? '{}')).not.toHaveProperty(['elements/hero', 'hash']);
-      expect(lines.join('\n')).not.toContain('READY UNCOMMITTED');
+      expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))).not.toHaveProperty(['elements/hero', 'hash']);
+      expect(git(target, 'rev-list', '--count', 'HEAD')).toBe('1');
+      expect(lines.slice(lines.findIndex((line) => line.startsWith('check complete')) + 1)).toContainEqual(
+        expect.stringMatching(/^READY UNCOMMITTED acme elements\/hero: the mark HEAD holds is gone/u),
+      );
     },
     120_000,
   );
 
   it.each([undefined, 'elements/hero'])(
-    'keeps the hash of a direct edit HEAD holds in the stamp cache, not in merged.json (part %s)',
+    'writes the hash of a direct edit HEAD holds into merged.json uncommitted (part %s)',
     async (part) => {
       const { target, dir } = committedAcme();
 
@@ -125,10 +126,10 @@ describe('a design check and the tracked stamp files', () => {
         drawPictures: async ({ parts }) => new Map(parts.map((name) => [name, 'not drawn in this spec'])),
       });
 
-      expect(git(target, 'status', '--porcelain', '--untracked-files=no')).toBe('');
-      expect(JSON.parse(readStampText(join(dir, 'merged.json')) ?? '{}')).toEqual({
+      expect(JSON.parse(readFileSync(join(dir, 'merged.json'), 'utf8'))).toEqual({
         'elements/hero': partHashOf({ product, dir: dirname(hero?.file ?? '') }),
       });
+      expect(git(target, 'rev-list', '--count', 'HEAD')).toBe('1');
     },
     120_000,
   );
