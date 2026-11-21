@@ -519,7 +519,7 @@
     "pid": 2138659
   },
   "components/shell-system-picker": {
-    "hash": "e111b19310a6bedf",
+    "hash": "28655bb890d8f2ef",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "9183353168e14ff7",
@@ -543,9 +543,9 @@
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.css": "e575c402800900cd",
-      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "5ece59037edb3886",
+      ".ethlete/design/studio/components/shell-system-picker/shell-system-picker.ts": "26d041fea06fc78d",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "bcab7b399e6abba8",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -571,13 +571,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "8d7a0bfd8526afba",
+    "app": "c2ae9e739ec4f54d",
     "actions": ["closed", "emit:productChange", "open"],
     "builder": "designer",
-    "at": "2026-11-21T04:33:31.189Z",
-    "by": "claude-sonnet-5-5",
+    "at": "2026-11-21T05:34:40.455Z",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1579606
+    "pid": 2145537
   },
   "components/shortcuts-dialog": {
     "hash": "8b06a7ea9ade5735",
