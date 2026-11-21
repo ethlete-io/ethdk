@@ -98,6 +98,8 @@ describe('VariantCellComponent', () => {
     expect(cell.querySelector('[data-loading][aria-busy="true"]')).not.toBeNull();
     expect(cell.querySelector('[data-loading-badge] et-spinner')).not.toBeNull();
     expect(cell.querySelector('[data-loading-badge]')?.textContent).toContain('Lädt');
+    expect(cell.querySelector('[data-sk-label] [data-loading-badge]')).toBeNull();
+    expect(cell.querySelector('[data-sk-frame]')?.contains(cell.querySelector('[data-loading-badge]'))).toBe(true);
     expect(cell.querySelector('[data-shot]')).not.toBeNull();
     expect(cell.querySelector('[data-shot]')?.parentElement?.classList.contains('invisible')).toBe(true);
   });

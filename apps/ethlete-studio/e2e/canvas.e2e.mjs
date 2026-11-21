@@ -4244,7 +4244,7 @@ const CASES = [
     },
   },
   {
-    name: 'the loading badge keeps the frame label row height',
+    name: 'the loading badge never overlaps a long label and load end moves no row or frame',
     pages: ['Sketches'],
     labels: ['Large', 'Sketches'],
     delayPictures: false,
@@ -4257,14 +4257,59 @@ const CASES = [
         await held;
         await route.fallback().catch(() => undefined);
       };
-      const rowHeights = () =>
-        page.evaluate(() =>
-          [...document.querySelectorAll('[data-sk-label]')]
-            .filter((row) => row.querySelector('[data-loading-badge]'))
-            .map((row) => row.getBoundingClientRect().height),
+      const WIDTHS = [120, 160, 220];
+      const LONG_LABEL = 'linux-full-notice-pending';
+      const measure = (width) =>
+        page.evaluate(
+          ({ width, LONG_LABEL }) => {
+            const cell = document.querySelector('[data-probe-cell]');
+            const text = cell?.querySelector('[data-sk-label-text]');
+            const frame = cell?.querySelector('[data-sk-frame]');
+            const row = cell?.querySelector('[data-sk-label]');
+
+            if (!cell || !text || !frame || !row) return null;
+
+            cell.style.width = `${width}px`;
+            cell.style.maxWidth = `${width}px`;
+            text.style.fontSize = '13px';
+
+            const name = text.firstElementChild;
+
+            name?.classList.remove('hidden');
+
+            if (name) name.textContent = LONG_LABEL;
+
+            const range = document.createRange();
+
+            range.selectNodeContents(text);
+
+            const badge = cell.querySelector('[data-loading-badge]');
+            const b = badge?.getBoundingClientRect();
+            const overlap = b
+              ? Math.max(
+                  0,
+                  ...[...range.getClientRects()].map((r) => {
+                    const x = Math.min(r.right, b.right) - Math.max(r.left, b.left);
+                    const y = Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top);
+
+                    return x > 0 && y > 0 ? Math.min(x, y) : 0;
+                  }),
+                )
+              : 0;
+            const top = cell.getBoundingClientRect().top;
+
+            return {
+              badge: !!badge,
+              overlap,
+              rowTop: row.getBoundingClientRect().top - top,
+              rowHeight: row.getBoundingClientRect().height,
+              frameTop: frame.getBoundingClientRect().top - top,
+            };
+          },
+          { width, LONG_LABEL },
         );
-      let withBadge;
-      let withoutBadge;
+      const before = [];
+      const after = [];
 
       await page.route(pictures, hold);
 
@@ -4272,22 +4317,40 @@ const CASES = [
         await page.reload();
         await listingAnswered(page);
         await page.waitForSelector('[data-loading-badge]', { timeout: WAIT_MS });
-        withBadge = await rowHeights();
-        await page.addStyleTag({ content: '[data-loading-badge]{display:none!important}' });
-        withoutBadge = await rowHeights();
+        await page.evaluate(() => {
+          document
+            .querySelector('[data-loading-badge]')
+            ?.closest('[data-sk-state]')
+            ?.setAttribute('data-probe-cell', '');
+        });
+
+        for (const width of WIDTHS) before.push(await measure(width));
       } finally {
         release();
         await page.unroute(pictures, hold);
       }
 
-      const same =
-        withBadge.length > 0 &&
-        withBadge.length === withoutBadge.length &&
-        withBadge.every((h, i) => near(h, withoutBadge[i]));
+      await page.waitForFunction(() => !document.querySelector('[data-probe-cell] [data-loading-badge]'), undefined, {
+        timeout: WAIT_MS,
+      });
+
+      for (const width of WIDTHS) after.push(await measure(width));
+
+      const complete = before.every(Boolean) && after.every(Boolean);
+      const overlap = complete ? Math.max(...before.map((m) => m.overlap)) : Number.NaN;
+      const moved = complete
+        ? Math.max(
+            ...before.flatMap((m, i) => [
+              Math.abs(m.rowTop - after[i].rowTop),
+              Math.abs(m.rowHeight - after[i].rowHeight),
+              Math.abs(m.frameTop - after[i].frameTop),
+            ]),
+          )
+        : Number.NaN;
 
       return {
-        ok: same,
-        detail: `label row height with badge ${withBadge.join(',')}, without ${withoutBadge.join(',')}`,
+        ok: complete && before.every((m) => m.badge) && overlap <= 0.5 && moved <= 0.5,
+        detail: `widths ${WIDTHS.join('/')}: overlap while loading ${before.map((m) => m?.overlap.toFixed(1)).join('/')} px, row top/height and frame top moved at load end by at most ${moved.toFixed(1)} px, frame top ${before.map((m) => m?.frameTop.toFixed(1)).join('/')} -> ${after.map((m) => m?.frameTop.toFixed(1)).join('/')}`,
       };
     },
   },

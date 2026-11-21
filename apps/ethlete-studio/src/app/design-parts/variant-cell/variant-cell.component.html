@@ -24,13 +24,6 @@
   @if (first()) {
     <span class="text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{ LABELS.firstChange }}</span>
   }
-  @if (loading()) {
-    <span
-      class="absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-space-1 text-ui-xs text-et-surface-muted"
-      data-loading-badge
-      ><et-spinner [diameter]="14" [strokeWidth]="1.75" />{{ LABELS.loading }}</span
-    >
-  }
 </span>
 <div [class]="wrapperClass()" class="relative row-start-2 flex min-w-0 flex-col self-start">
   <ng-content select="[overlay]" />
@@ -77,6 +70,13 @@
         }
       </div>
     </div>
+    @if (loading()) {
+      <span
+        class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted"
+        data-loading-badge
+        ><et-spinner [diameter]="14" [strokeWidth]="1.75" />{{ LABELS.loading }}</span
+      >
+    }
     <span
       [class]="selected() ? SELECTED_RING_CLASS : ''"
       class="pointer-events-none absolute inset-0"
