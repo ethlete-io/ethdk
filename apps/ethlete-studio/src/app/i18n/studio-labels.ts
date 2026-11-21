@@ -141,6 +141,9 @@ export const STUDIO_LABELS = {
     restart: 'Neu starten',
   },
   sketches: {
+    none: 'Noch keine Skizzen.',
+    emptyTitle: 'Keine offenen Skizzen',
+    emptyText: 'Skizzen deines Agenten erscheinen hier, sobald er einen Entwurf zeichnet.',
     loading: 'Lädt',
     discard: 'Verwerfen',
     editHint: 'Kein Verwerfen: wähle eine der beiden Zeilen',

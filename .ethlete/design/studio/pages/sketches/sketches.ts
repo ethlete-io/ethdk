@@ -107,6 +107,7 @@ type Props = {
   part?: PartKind;
   comparing?: boolean;
   listError?: string;
+  empty?: boolean;
   known?: string[];
   added?: boolean;
   wideState?: boolean;
@@ -866,6 +867,7 @@ export default definePart<Props>({
     'sticky-names': { camera: { zoom: 0.8, x: -1700, y: -260 } },
     comparing: { camera: 'fit', comparing: true },
     'comparing-narrow': { camera: 'fit', part: 'narrow', comparing: true },
+    'no-sketches': { camera: 'fit', empty: true },
     'list-error': { camera: 'fit', part: 'narrow', comparing: true, listError: LIST_ERROR },
     'compare-pending': { camera: 'fit', part: 'narrow', comparing: true, known: [...RESET_STATES] },
     'compare-answered': { camera: 'fit', part: 'narrow' },
@@ -943,6 +945,8 @@ export default definePart<Props>({
     comparing: 'The comparison still running; check vergleicht … in the header and that every frame stays neutral.',
     'comparing-narrow':
       'A narrow part while comparing; check the neutral frames and the folded vergleicht N Zustände … line.',
+    'no-sketches':
+      'A product without open sketches; check the empty side panel and the centred check icon with the empty message on the page.',
     'list-error':
       'The sketch listing failed while comparing; check Erneut laden before Verwerfen and Vergleich fehlgeschlagen with the reason in the error colour.',
     'compare-pending':
@@ -1022,6 +1026,7 @@ export default definePart<Props>({
     part: kind = 'wide',
     comparing = false,
     listError,
+    empty = false,
     known = [],
     added = false,
     wideState = false,
@@ -1039,6 +1044,25 @@ export default definePart<Props>({
     comments,
     confirm,
   }) => {
+    if (empty) {
+      const menu = await studioMenu({ open: false });
+      const shell = await shellMain.render({
+        studio: menu.body,
+        section: 'Sketches',
+        product: 'studio',
+        side: html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">
+          ${STUDIO_LABELS.sketches.none}
+        </p>`,
+        content: html`<div
+          class="h-full flex flex-col items-center justify-center gap-space-1 text-center ps-(--st-shell-inset-left)"
+        >
+          ${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}
+          <p class="m-0 text-et-surface text-(length:--text-sm)">${STUDIO_LABELS.sketches.emptyTitle}</p>
+          <p class="m-0 text-et-surface-muted text-(length:--text-xs)">${STUDIO_LABELS.sketches.emptyText}</p>
+        </div>`,
+      });
+      return drawing({ body: shell.body, setup: [menu.setup], styles: shell.styles + menu.styles });
+    }
     const { discard, chip, pickers, tags } = await controlsOf();
     const autoMark = autoMerge
       ? html`<span class="flex w-fit" data-et-semantic-color="success" data-sk-auto-merge

@@ -91,8 +91,7 @@
     "components/stream missing-motion": 9,
     "components/timeline missing-state": 1,
     "components/toolbar missing-motion": 12,
-    "components/tooltip missing-state": 1,
-    "pages/sketches missing-state": 1
+    "components/tooltip missing-state": 1
   },
   "studio-lab": {
     "components/card missing-state": 1,
