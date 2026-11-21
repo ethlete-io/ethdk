@@ -11,6 +11,7 @@ export type FlowProps = {
   orphans?: boolean;
   commentMode?: boolean;
   comments?: boolean;
+  thread?: boolean;
   draft?: string;
 };
 
@@ -28,10 +29,10 @@ export const ORPHAN_NOTES: FlowNoteSample[] = [
 
 export const ORPHAN_TITLE = 'Verwaiste Notizen';
 
-export const orphanButtons = async (variant: 'transparent' | 'outline' = 'transparent') =>
+export const orphanButtons = async () =>
   Promise.all(
     ORPHAN_NOTES.map(async (note) => {
-      const entry = await button.render({ label: note.text, variant, color: 'surface', size: 'sm' });
+      const entry = await button.render({ label: note.text, variant: 'transparent', color: 'surface', size: 'sm' });
 
       return { ...entry, body: withAction(entry.body, 'emit:jumpToNote') };
     }),

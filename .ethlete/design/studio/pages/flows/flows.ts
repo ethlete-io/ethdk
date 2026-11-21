@@ -7,7 +7,10 @@ import {
   commentModeHint,
   commentPins,
   type PlacedThread,
+  threadCard,
+  type ThreadMessage,
 } from '@system/components/comment-flow';
+import { commentRowStyles } from '@system/components/comment-row';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
@@ -66,7 +69,12 @@ const FLOW_THREAD: PlacedThread = {
   at: '',
 };
 
-const COMMENT_POINT = { x: 520, y: 300 };
+const FLOW_MESSAGES: ThreadMessage[] = [
+  { author: 'Hanna', initials: 'H', when: 'vor 2 Std.', text: FLOW_THREAD.text },
+  { author: 'human', initials: 'H', own: true, when: 'vor 1 Std.', text: 'Ich ziehe ihn eine Stufe an.' },
+];
+
+const COMMENT_POINT = { x: 520, y: 301 };
 const DRAFT_POINT = { x: 900, y: 520 };
 
 const placedAt = (point: { x: number; y: number }, scale: number, body: string) =>
@@ -102,6 +110,7 @@ export default definePart<FlowProps>({
     empty: { flow: 'none' },
     'comment-mode': { flow: 'open', commentMode: true },
     comments: { flow: 'open', comments: true },
+    thread: { flow: 'open', comments: true, thread: true },
     'comment-draft': { flow: 'open', commentMode: true, draft: '' },
     'comments-draft': { flow: 'open', comments: true, commentMode: true, draft: 'Hier fehlt der Rückweg.' },
   },
@@ -117,6 +126,8 @@ export default definePart<FlowProps>({
       'Comment mode on an open flow; check the pressed Kommentar button with its Esc or C hint and the faint accent wash over every frame.',
     comments:
       'A comment pin on one frame; check that it sits on its point in the shot, above the frame, and not on the other frames.',
+    thread:
+      'Der Faden eines Pins auf der Flow-Fläche; prüfe, dass die Karte rechts neben dem Pin auf dessen Höhe sitzt, mit Ort, Erledigen, Schließen, den Nachrichten und dem Antwortfeld.',
     'comment-draft':
       'An empty comment draft on a frame; check the text field, Abbrechen and Senden at the clicked point, and no hint beside the button.',
     'comments-draft': 'A typed draft beside an existing pin; check that the draft card does not cover the pin.',
@@ -131,7 +142,15 @@ export default definePart<FlowProps>({
     'comment-send': { kind: 'button', part: 'components/button' },
     'comment-target': { kind: 'button', part: 'components/comment-target' },
   },
-  render: async ({ flow, notes = false, orphans = false, commentMode = false, comments = false, draft }) => {
+  render: async ({
+    flow,
+    notes = false,
+    orphans = false,
+    commentMode = false,
+    comments = false,
+    thread = false,
+    draft,
+  }) => {
     const picker = await presetPickerOf();
     const copy = await copyButton();
     const add = await addNoteButton();
@@ -147,6 +166,13 @@ export default definePart<FlowProps>({
     ]
       .map((note) => noteOf(note, remove.body, field.body))
       .join('');
+    const card = thread
+      ? await threadCard({
+          place: `${FLOW_THREAD.part} › ${FLOW_THREAD.state}`,
+          messages: FLOW_MESSAGES,
+          closeTo: 'comments',
+        })
+      : undefined;
     const comment = await commentButton({ on: commentMode, action: 'emit:commentToggle' });
     const hint = commentMode && draft === undefined ? commentModeHint() : undefined;
     const written = draft === undefined ? undefined : await commentDraftAt('left-0 top-0', { text: draft });
@@ -155,9 +181,13 @@ export default definePart<FlowProps>({
         ? (id: string, shot: { scale: number }) =>
             html`${commentMode ? `<div class="absolute inset-0">${commentLayer(id, 'emit:pointPick')}</div>` : ''}${
               comments && id === COMMENTED
-                ? placedAt(COMMENT_POINT, shot.scale, commentPins([{ ...FLOW_THREAD, at: 'left-0 top-0' }]))
+                ? placedAt(
+                    COMMENT_POINT,
+                    shot.scale,
+                    commentPins([{ ...FLOW_THREAD, at: 'left-0 top-0' }], thread ? 0 : -1),
+                  )
                 : ''
-            }${id === COMMENTED && written ? placedAt(DRAFT_POINT, shot.scale, written.body) : ''}`
+            }${comments && id === COMMENTED && card ? placedAt(COMMENT_POINT, shot.scale, `<div class="absolute" style="left:var(--space-6);top:calc(var(--space-6) * -1)">${card.body}</div>`) : ''}${id === COMMENTED && written ? placedAt(DRAFT_POINT, shot.scale, written.body) : ''}`
         : undefined;
     const shell = await shellMain.render({
       studio: menu.body,
@@ -190,6 +220,7 @@ export default definePart<FlowProps>({
         add.styles +
         comment.styles +
         (written?.styles ?? '') +
+        (card ? card.styles + commentRowStyles : '') +
         (hint?.styles ?? '') +
         remove.styles +
         field.styles +
