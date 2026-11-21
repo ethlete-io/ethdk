@@ -386,15 +386,16 @@
     "pid": 2125409
   },
   "components/error-toast": {
-    "hash": "ede6976bb7e79b35",
+    "hash": "50d8ec33cf657b13",
     "files": {
-      ".ethlete/design/studio/components/error-toast/error-toast.ts": "1a306adf7075c3eb",
+      ".ethlete/design/studio/components/error-toast/error-toast.ts": "914c275867368cbe",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "bcab7b399e6abba8",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
-      "libs/components/design/notification.ts": "6304c4bcd68d8946",
+      "libs/components/design/notification.ts": "096f9bd0eb0cd93d",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
-      "libs/components/src/lib/button/button.component.css": "1e1a9b20ad656180",
+      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
       "libs/components/src/lib/button/text-button.component.css": "315be26e93ac47ca",
@@ -413,12 +414,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
+    "app": "c866d29b02b80731",
     "actions": ["emit:dismiss"],
     "builder": "designer",
-    "at": "2026-11-17T13:34:25.438Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-21T05:32:45.320Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 2128690
   },
   "components/hold-trigger": {
     "hash": "547e43ae4395cdf7",
