@@ -26,9 +26,18 @@ describe('a day of cherry-picks between worktrees, captured 2026-11-21', () => {
     expect(committed).toContain('fix(app): Change 9');
   });
 
-  it('moves a change to the copy that has a row when its kept copy lands where no row is', () => {
-    expect(committed).toEqual(
-      expect.arrayContaining(['fix(app): Change 17', 'fix(app): Change 19', 'fix(app): Change 20']),
+  it('keeps every change in a row that a row holds when no copy is recognised as one', () => {
+    const unrecognised = events.map((event) =>
+      event.kind === 'git-commit'
+        ? { ...event, subject: `${event.subject}#${event.repoPath}#${event.sha}`, patchId: undefined }
+        : event,
     );
+    const everyCopy = streamDay({ events: unrecognised, options: { repoRoots: [SDK, CLIENT] } });
+    const held = [...everyCopy.rows.proposals, ...everyCopy.rows.unnamed].flatMap((row) =>
+      row.evidence.flatMap((entry) => (entry.kind === 'commit' ? [entry.detail.slice(8).split('#')[0]] : [])),
+    );
+
+    expect(held).toEqual(expect.arrayContaining(['fix(app): Change 17', 'fix(app): Change 19', 'fix(app): Change 20']));
+    expect(new Set(committed)).toEqual(new Set(held));
   });
 });

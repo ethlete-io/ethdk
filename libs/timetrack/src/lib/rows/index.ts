@@ -4,6 +4,7 @@ export * from './build-rows';
 export * from './calls';
 export * from './consumer-ticket';
 export * from './cut';
+export * from './commit-copies';
 export * from './describe';
 export * from './donate';
 export * from './epic-sibling';

@@ -1,5 +1,6 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock, blockDurationMs, dominantContext, streamKey } from '../model/block';
+import { Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
 import {
   TimeWindow,
@@ -426,6 +427,8 @@ export const propose = (options: {
   breaks?: readonly TimeWindow[];
   /** The stretches no break may cover: a call the user attended and a run they timed — see ADR 0030. */
   presence?: readonly TimeWindow[];
+  /** Evidence no row carries: the commit copies `surplusCommitCopies` found in another row too. */
+  surplus?: ReadonlySet<Evidence>;
 }): ProposeResult => {
   const sessionBlocks = options.sessionBlocks ?? [];
   const presence = options.presence ?? [];
@@ -490,10 +493,17 @@ export const propose = (options: {
       stretches: shared ? mergeWindows(row.group.blocks) : stretchesOf(row.group.blocks),
     };
   });
-  const attributed = booked.filter(isAttributedRow);
+  const surplus = options.surplus;
+  const counted = surplus?.size
+    ? booked.map((row) => ({
+        ...row,
+        group: { ...row.group, evidence: row.group.evidence.filter((entry) => !surplus.has(entry)) },
+      }))
+    : booked;
+  const attributed = counted.filter(isAttributedRow);
   const idGroupOf = <T extends WorkGroup>(row: { group: T; idFrom?: Date }): T =>
     row.idFrom ? { ...row.group, from: row.idFrom } : row.group;
-  const unnamedRows = booked.filter((row) => !isAttributedRow(row));
+  const unnamedRows = counted.filter((row) => !isAttributedRow(row));
   const unnamedIds = rowIds(unnamedRows.map(idGroupOf), unnamedBaseId);
   const unnamed = unnamedRows.map((row, index) => ({ ...row, group: { ...row.group, rowId: unnamedIds[index] } }));
   const unattributed = unnamed.filter((row) => !row.group.standInId);

@@ -4,6 +4,7 @@ import { CheckoutDependencies } from '../git/dependencies';
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
 import { CollectedEvent, isLocalEvent } from '../model/event';
+import { Evidence } from '../model/evidence';
 import { ReceivedEvent } from '../model/received-event';
 import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
@@ -22,6 +23,7 @@ import {
   joinTouching,
   meetLaneRows,
 } from './cut';
+import { CommitCopy, surplusCommitCopies } from './commit-copies';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
@@ -135,6 +137,12 @@ export type BuildRowsOptions = {
    * A band is attended where a person was at the machine whose block of the same lane it holds.
    */
   peerLanes?: Readonly<Record<string, Readonly<Record<string, readonly TimeWindow[]>>>>;
+  /**
+   * The copies of each commit the day holds more than once (a cherry-pick, a rebase, a sha in two
+   * checkouts), the one to keep first. Rows are built from every copy; then each commit stays in the rows
+   * of one copy only - see `surplusCommitCopies`.
+   */
+  commitCopies?: readonly (readonly CommitCopy[])[];
 };
 
 export type DayRows = {
@@ -361,27 +369,36 @@ export const buildRows = (
     breaks: options.breaks,
     presence: [...(options.calls ?? []).filter((call) => call.isPresence), ...(options.timerRuns ?? [])],
   };
-  const day = propose({
-    groups: disputeOtherBranches({
-      groups,
-      events: options.events,
-      rules,
-      standIns: options.standIns,
-      worktrees: options.worktrees,
-    }),
-    ...proposing,
+  const disputed = disputeOtherBranches({
+    groups,
+    events: options.events,
+    rules,
+    standIns: options.standIns,
+    worktrees: options.worktrees,
   });
-  const givenBack = propose({
-    groups: giveBackUnattended({
-      groups: marked,
-      lost: cut.lost,
-      rows: [...day.proposals, ...day.unnamed],
-      breaks: options.breaks,
-      mark: (given) => markAttendance({ groups: given, ...attendance }),
-      merge: options.merge,
-    }),
-    ...proposing,
-  }).unnamed.filter((row) => row.unattended);
+  const proposeDay = (surplus?: ReadonlySet<Evidence>) => {
+    const day = propose({ groups: disputed, ...proposing, surplus });
+    const givenBack = propose({
+      groups: giveBackUnattended({
+        groups: marked,
+        lost: cut.lost,
+        rows: [...day.proposals, ...day.unnamed],
+        breaks: options.breaks,
+        mark: (given) => markAttendance({ groups: given, ...attendance }),
+        merge: options.merge,
+      }),
+      ...proposing,
+      surplus,
+    }).unnamed.filter((row) => row.unattended);
+
+    return { day, givenBack };
+  };
+  const everyCopy = proposeDay();
+  const surplus = surplusCommitCopies({
+    rows: [...everyCopy.day.proposals, ...everyCopy.day.unnamed, ...everyCopy.givenBack],
+    copies: options.commitCopies ?? [],
+  });
+  const { day, givenBack } = surplus.size ? proposeDay(surplus) : everyCopy;
   const { proposals, unattributed } = day;
   const unnamed = [...day.unnamed, ...givenBack];
   const secludedTime = privateTime({ blocks: secluded });

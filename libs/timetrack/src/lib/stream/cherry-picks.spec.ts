@@ -77,15 +77,6 @@ describe('withoutCherryPicks', () => {
       ]),
     ).toEqual(['a', 'b']);
   });
-
-  it('keeps a preferred copy over the ranked one', () => {
-    const original = commit({ sha: 'orig', at: '2026-11-21T00:00:00Z', committedAt: new Date('2026-11-21T00:00:00Z') });
-    const pick = commit({ sha: 'pick', at: '2026-11-21T00:00:00Z', committedAt: new Date('2026-11-21T03:00:00Z') });
-
-    expect(withoutCherryPicks([original, pick], { prefer: new Set([pick]) }).map((event) => event.sha)).toEqual([
-      'pick',
-    ]);
-  });
 });
 
 describe('cherryPickCopies', () => {
