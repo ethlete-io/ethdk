@@ -2,9 +2,9 @@ import { definePart, drawing, interactionRows } from '@design-system';
 import { notification, notificationStack, notificationStyles } from '@ethlete/components/design/notification';
 import { OPEN_FOLDER_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
-type CloseInteraction = 'hover' | 'active' | 'focus-visible';
+type DismissInteraction = 'hover' | 'active' | 'focus-visible';
 
-type Props = { heading: string; message: string; interaction?: CloseInteraction };
+type Props = { heading: string; message: string; interaction?: DismissInteraction };
 
 const READABLE = `@layer utilities {
   .et-notification {
@@ -22,9 +22,9 @@ const READABLE = `@layer utilities {
   }
 }`;
 
-export const { states, grid } = interactionRows<Props, 'close', CloseInteraction>(
+export const { states, grid } = interactionRows<Props, 'dismiss', DismissInteraction>(
   {
-    close: {
+    dismiss: {
       heading: OPEN_FOLDER_LABELS.refusedTitle,
       message: OPEN_FOLDER_LABELS.refusedMessage,
     },
@@ -39,13 +39,13 @@ export default definePart({
   states,
   grid,
   widths: [480],
-  controls: { close: { kind: 'button', input: ['pointer', 'keyboard'] } },
+  controls: { dismiss: { kind: 'button', input: ['pointer', 'keyboard'] } },
   describe: {
-    close:
+    dismiss:
       'The error toast Ordner nicht geöffnet with its message on the danger theme; check the readable message and the faded dismiss button.',
-    'close-hover': 'The dismiss button hovered; check that it brightens a step and the toast itself does not change.',
-    'close-active': 'The dismiss button pressed; check its press look and that the toast stays put.',
-    'close-focus-visible':
+    'dismiss-hover': 'The dismiss button hovered; check that it brightens a step and the toast itself does not change.',
+    'dismiss-active': 'The dismiss button pressed; check its press look and that the toast stays put.',
+    'dismiss-focus-visible':
       'The dismiss button focused by keyboard; check that the focus ring shows clearly on the danger fill.',
   },
   render: ({ heading, message, interaction }: Props) =>
@@ -58,7 +58,7 @@ export default definePart({
           message,
           attributes: 'data-et-surface-fill',
           dismissAttributes: [
-            'data-et-control="close" data-et-action="emit:dismiss" data-can-animate',
+            'data-et-control="dismiss" data-et-action="emit:dismiss" data-can-animate',
             interaction && `data-et-force="${interaction}"`,
           ]
             .filter(Boolean)
