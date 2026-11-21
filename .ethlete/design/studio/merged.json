@@ -112,10 +112,10 @@
     "note": "merged: Einziger Entwurf: Inventory als Menüzeile"
   },
   "elements/variant-cell": {
-    "hash": "f4a2744ceb83f78c",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-20T23:10:10.262Z"
+    "hash": "0953e9c13640a619",
+    "variant": "b",
+    "decidedBy": "agent",
+    "at": "2026-11-21T01:08:14.616Z"
   },
   "foundations/agent-logos": {
     "hash": "a7da916151a12f97",

@@ -29,7 +29,7 @@ const SELECTED_RING = 'outline-2 -outline-offset-2 outline-(--et-theme-color-pri
 export const variantCellStyles = styles + loaderStyles;
 
 const loadingBadge = html`<span
-  class="absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-space-1 text-ui-xs text-et-surface-muted"
+  class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted"
   data-loading-badge
   >${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span
 >`;
@@ -68,7 +68,7 @@ const frame = ({
       ></div>`,
   ).join('');
   return html`<div class="relative row-start-2 flex min-w-0 flex-col self-start ${stacked ? 'sk-fit' : ''}">
-    ${pins.map(pinAt).join('')}
+    ${pins.map(pinAt).join('')}${loading ? loadingBadge : ''}
     <div
       class="relative w-(--sk-frame) overflow-clip [overflow-clip-margin:8px] ${stacked ? 'z-1' : 'sk-fit'} ${
         shown === undefined ? '' : 'h-[calc(var(--sk-shown)*var(--sk-scale))]'
@@ -115,21 +115,21 @@ const frame = ({
 };
 
 export const variantCell = (props: Props) => {
-  const { state, same = false, first = false, marked = false, place = '', loading = false } = props;
+  const { state, same = false, first = false, marked = false, place = '' } = props;
   return html`<div
     class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
     data-sk-state="${state}"
     style="${place}"
   >
     <span
-      class="relative row-start-1 flex w-0 min-w-full flex-wrap items-center gap-x-space-2 in-data-sk-labels-hidden:hidden ${same ? 'opacity-50' : ''} ${loading ? 'pr-14' : ''}"
+      class="relative row-start-1 flex w-0 min-w-full flex-wrap items-center gap-x-space-2 in-data-sk-labels-hidden:hidden ${same ? 'opacity-50' : ''}"
       data-sk-label
       ><span
-        class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] ${loading ? 'truncate' : 'wrap-anywhere'} ${
+        class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere ${
           same ? 'text-et-surface-muted' : 'text-et-surface'
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span>${same ? 'unverändert' : ''}</span
-      >${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''}${loading ? loadingBadge : ''}</span
+      >${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;
@@ -143,7 +143,7 @@ const base: Props = { state: 'rest', width: 480, shot: demo };
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height and the label row carries the Lädt mark the canvas frames show in a loading frame head: the SDK spinner at 14 px and Lädt. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; comment pins sit on their point in the shot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; comment pins sit on their point in the shot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {
@@ -192,7 +192,7 @@ export default definePart({
     pinned:
       'A cell with two comment pins; check that each pin point sits on its spot in the shot and the selected pin shows the accent fill.',
     loading:
-      'A cell whose shot still loads; check the spinner with Lädt beside the label and the empty busy frame below.',
+      'A cell whose shot still loads; check the spinner with Lädt centered in the empty busy frame and the label row unchanged.',
   },
   motions: { loading: { from: 'loading', to: 'loading' } },
   controls: {},
