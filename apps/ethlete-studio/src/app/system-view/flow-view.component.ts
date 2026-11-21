@@ -1,4 +1,15 @@
-import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  model,
+  output,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { EMPTY, Observable, catchError, from, of, tap } from 'rxjs';
@@ -16,6 +27,7 @@ import {
   FlowsPageNoteText,
   FlowsPagePreset,
 } from '../design-parts/flows-page/flows-page.component';
+import { CommentThread } from '../design-parts/comment-flow/thread-card.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { rememberFlowPreset, rememberedView } from '../studio-view/remembered';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
@@ -35,6 +47,7 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
     <ethlete-flows-page
       #page
       [(draftText)]="commentStore.draftText"
+      [(replyText)]="replyText"
       [flow]="flow() ? 'open' : 'none'"
       [flows]="flowNames()"
       [selected]="flow()?.name ?? ''"
@@ -47,6 +60,7 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
       [commentMode]="commentStore.active()"
       [pins]="pins()"
       [draft]="flowDraft()"
+      [thread]="thread()"
       [sendPhase]="commentStore.sendPhase()"
       [sendReason]="commentStore.sendReason()"
       [frameTemplate]="frame"
@@ -63,6 +77,11 @@ const UNPLACED_NOTE = { x: -320, step: 140 };
       (pointPick)="startComment($event)"
       (send)="commentStore.send($event)"
       (discard)="commentStore.cancel()"
+      (pinPick)="pinPick.emit($event)"
+      (replyComment)="replyComment.emit($event)"
+      (resolveThread)="resolveThread.emit()"
+      (withdrawComment)="withdrawComment.emit($event)"
+      (closeThread)="closeThread.emit()"
       (shellAction)="shellAction.emit($event)"
       class="h-full!"
     />
@@ -103,7 +122,16 @@ export class FlowViewComponent {
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public shell = input.required<PageShell>();
+  public thread = input<CommentThread | null>(null);
+  public replyText = model('');
   public shellAction = output<PageShellAction>();
+  public pinPick = output<string | null>();
+  public replyComment = output<string>();
+  public resolveThread = output();
+  public withdrawComment = output<number>();
+  public closeThread = output();
+
+  private flowsPage = viewChild.required(FlowsPageComponent);
 
   private safeUrls = new Map<string, SafeResourceUrl>();
 
@@ -240,6 +268,15 @@ export class FlowViewComponent {
       }),
     );
   });
+
+  /** Opens the pin of the comment `id` when a frame of the shown flow carries it; `false` otherwise. */
+  public openPin(id: string) {
+    if (!this.pins().some((pin) => pin.id === id)) return false;
+
+    this.flowsPage().openPinById(id);
+
+    return true;
+  }
 
   protected startComment(pick: FramePoint) {
     const draft = commentDraftOf(this.source().frames, pick);

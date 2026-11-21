@@ -31,6 +31,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
 import { CommentTargetComponent } from '../comment-target/comment-target.component';
 import { TreeRow } from '../tree-row/tree-row-item.component';
 import { TreeRowComponent } from '../tree-row/tree-row.component';
@@ -306,12 +307,34 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                       data-comment-pin
                     />
                     @if (placed.pin.id === openPin()) {
-                      <div
-                        class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 text-[1.3rem] text-text shadow-lg"
-                        data-comment-text
-                      >
-                        <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
-                      </div>
+                      @if (thread(); as opened) {
+                        @if (opened.id === placed.pin.id) {
+                          <div
+                            (click)="$event.stopPropagation()"
+                            class="absolute top-0 left-full ml-space-3"
+                            role="presentation"
+                          >
+                            <ethlete-thread-card
+                              [(text)]="replyText"
+                              [place]="opened.place"
+                              [messages]="opened.messages"
+                              [phase]="opened.phase ?? null"
+                              [reason]="opened.reason ?? ''"
+                              (replyComment)="replyComment.emit($event)"
+                              (resolveThread)="resolveThread.emit()"
+                              (withdrawComment)="withdrawComment.emit($event)"
+                              (dismiss)="closeThread.emit()"
+                            />
+                          </div>
+                        }
+                      } @else {
+                        <div
+                          class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 text-[1.3rem] text-text shadow-lg"
+                          data-comment-text
+                        >
+                          <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
+                        </div>
+                      }
                     }
                   </div>
                 }
@@ -424,6 +447,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
     CanvasFrameDirective,
     CommentDraftComponent,
     CommentPinComponent,
+    ThreadCardComponent,
     CommentTargetComponent,
     DesignCanvasComponent,
     FORM_FIELD_IMPORTS,
@@ -450,6 +474,8 @@ export class FlowsPageComponent {
   public commentMode = input(false);
   public pins = input<CanvasPin[]>([]);
   public draft = input<FramePoint | null>(null);
+  public thread = input<CommentThread | null>(null);
+  public replyText = model('');
   public draftText = model('');
   public sendPhase = input<CommentSendPhase | null>(null);
   public sendReason = input('');
@@ -464,6 +490,11 @@ export class FlowsPageComponent {
   public pointPick = output<FramePoint>();
   public send = output<string>();
   public discard = output();
+  public replyComment = output<string>();
+  public resolveThread = output();
+  public withdrawComment = output<number>();
+  public closeThread = output();
+  public pinPick = output<string | null>();
 
   public pick = output<string>();
   public copyPrompt = output();
@@ -628,7 +659,31 @@ export class FlowsPageComponent {
   }
 
   protected togglePin(id: string) {
-    this.openPin.update((open) => (open === id ? null : id));
+    const next = this.openPin() === id ? null : id;
+
+    this.openPin.set(next);
+    this.pinPick.emit(next);
+  }
+
+  /** Opens the pin with this id and centres the camera on it, keeping the current zoom. */
+  public openPinById(id: string) {
+    const placed = this.placedPins().find((entry) => entry.pin.id === id);
+    const canvas = this.canvas();
+    const viewport = this.viewport()?.nativeElement;
+    const stage = this.stage()?.nativeElement;
+
+    if (!placed || !canvas || !viewport || !stage) return;
+
+    const { zoom } = canvas.camera();
+    const start = stageStart(viewport, stage);
+
+    canvas.moveTo({
+      x: Math.round(start.x + stage.offsetWidth / 2 - placed.x * zoom),
+      y: Math.round(start.y + stage.offsetHeight / 2 - placed.y * zoom),
+      zoom,
+    });
+    this.openPin.set(id);
+    this.pinPick.emit(id);
   }
 
   protected pickPoint(box: FlowsPageFrame, event: Event) {

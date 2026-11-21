@@ -188,6 +188,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       />
     } @else if (flowsPage(); as page) {
       <ethlete-flow-view
+        #flowView
+        [(replyText)]="commentStore.replyText"
         [port]="page.port"
         [product]="page.product"
         [flows]="page.flows"
@@ -198,6 +200,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [surface]="surface()"
         [color]="color()"
         [shell]="pageShell()"
+        [thread]="openThread()"
+        (pinPick)="pickPin($event)"
+        (replyComment)="replyToThread($event)"
+        (resolveThread)="resolveThread()"
+        (withdrawComment)="withdrawFromThread($event)"
+        (closeThread)="closeThread()"
         (shellAction)="runShellAction($event)"
       />
     } @else if (sketchPage(); as shown) {
@@ -392,6 +400,8 @@ export class SystemViewComponent {
   public partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
 
   private sketchView = viewChild<SketchViewComponent>('sketchView');
+
+  private flowView = viewChild<FlowViewComponent>('flowView');
 
   private productsRevision = computed(() => this.lists().products);
 
@@ -1282,6 +1292,8 @@ export class SystemViewComponent {
 
   /** Shows the part or sketch a comment sits on, moves the camera to its pin and opens it. */
   public jumpTo(comment: ListedComment) {
+    if (this.flowView()?.openPin(comment.id)) return;
+
     const sketchKey = sketchKeyOf(comment.part);
     const key = comment.sketch && this.nodes().entries.has(sketchKey) ? sketchKey : comment.part;
 

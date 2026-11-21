@@ -1644,6 +1644,39 @@ describe('SystemViewComponent on a flow', () => {
     expect(fixture.componentInstance['flowShown']()).toBeNull();
   });
 
+  it('opens the thread card of a comment on a frame of the shown flow when the sidebar jumps to it', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+
+    flowViewOf(fixture)['pickPreset']('desktop');
+    await settle(fixture);
+    fixture.componentInstance['jumpToComment'](comment.id);
+    await settle(fixture);
+
+    expect(fixture.componentInstance['selectedKey']()).toBe('flow:sign-in');
+    expect(fixture.nativeElement.querySelector('ethlete-flows-page ethlete-thread-card')).not.toBeNull();
+  });
+
+  it('opens the part when the sidebar jumps to a comment outside the shown flow', async () => {
+    const other: ListedPart = { ...part('pages', 'other'), states: ['one'] };
+    const outside: ListedComment = { ...comment, id: '2', part: 'pages/other', state: 'one' };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([{ ...flowProduct, parts: [library, other] }]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/flows')) return json({ flows: [flow], unreadable: [] });
+      if (url.includes('/__design/comments')) return json({ comments: [outside], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+
+    fixture.componentInstance['jumpToComment']('2');
+    await settle(fixture);
+
+    expect(fixture.componentInstance['selectedKey']()).toBe('pages/other');
+  });
+
   it('remembers the picked preset per flow for the next start', async () => {
     const first = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
 
