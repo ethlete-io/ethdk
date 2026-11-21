@@ -20,7 +20,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S20, S21 (fifagg, 20.11.): kein SDK-Code: cdk-Label statt components (B655), Bild-Varianten gehören zu fifagg (B656); fifagg informiert.
 - S26 (fifagg, 20.11.): blockiert, = S17 (B652), ausgeliefert in components 1.0.0-next.92; fifagg informiert.
 - S27 (fifagg, 20.11.): nicht blockiert, Match-Teilnehmer bearbeitbar + Score/Zeit-Baustein -> B659.
-- S28 (fifagg, 21.11.): nicht blockiert, offen: `et-tab-group`/TabBar brauchen ein Eingabefeld für Scroll-Pfeile je Instanz, responsiv (`{ enabled: { md: true } }`); Nachstellen: game-title-tab-bar bei 390 px mit `provideScrollableConfig({buttons:{enabled:true}})` zeigt Pfeile (master: `et-scrollable [renderButtons]=isAboveMd()`, next.92); fifagg tut solange nichts.
+- S28 (fifagg, 21.11.): nicht blockiert, in Arbeit (SCROLLTAB): `et-tab-group`/TabBar brauchen ein Eingabefeld für Scroll-Pfeile je Instanz, responsiv (`{ enabled: { md: true } }`); Nachstellen: game-title-tab-bar bei 390 px mit `provideScrollableConfig({buttons:{enabled:true}})` zeigt Pfeile (master: `et-scrollable [renderButtons]=isAboveMd()`, next.92); fifagg tut solange nichts.
 - S29 (fifagg, 21.11.): blockiert, gebaut lokal 031dcfb23 (`provideScrollableConfig({buttons:{color,variant}})`, `--et-scrollable-buttons-offset`, `--et-scrollable-buttons-end-space`, Docs, Story, Changeset); wartet auf Prerelease, danach fifagg informieren; `--mask-size` war schon öffentlich (beantwortet).
 
 ## Offene Plan-Dateien
