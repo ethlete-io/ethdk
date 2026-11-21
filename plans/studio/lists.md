@@ -25,6 +25,7 @@ Zu [STATUS.md](STATUS.md).
 - Cause (20.11., Code): pre-push läuft weder `studio:classes:check` (eigener CI-Schritt, kein eslint) noch die Unit-Specs der Libs; die cdk-Spec components-classes liest das CSS von der Platte, daher findet `vitest related` sie nicht (rotes CI 44806835681). Unmöglich, wenn die Regel `canonical-class` ein eslint-Lauf ist und die Spec das CSS importiert, das sie liest.
 - Cause (20.11.): Agent-Isolation `worktree` schneidet von main und löscht sich selbst; bei zwei Subagenten fiel ein fehlgeschlagenes `cd` auf den Haupt-Checkout zurück und `git checkout -B` lief dort (kurz verschoben, wiederhergestellt). Unmöglich, wenn Builder-Slices `git worktree add` auf origin/next nutzen und jeder Aufruf mit `cd <wt>` beginnt.
 - Cause (21.11., gemessen per `design check` TYPE-ERROR): ein Subagent meldete `design check` sauber, obwohl 85bf110d6 einen TS-Fehler hinterließ.
+- Cause (21.11.): rules/capability-place.spec runs its live-data case only with dist/libs/components; CI's unit job has none, so it skips silently and hides a real B278 finding.
 
 ## A. Studio: was man sieht
 
