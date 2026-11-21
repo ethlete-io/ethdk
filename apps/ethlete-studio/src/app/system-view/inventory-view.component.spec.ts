@@ -104,7 +104,9 @@ const buttonNamed = (element: HTMLElement, name: string) =>
 
 const approveButton = (element: HTMLElement) => buttonNamed(element, 'Inventory freigeben') as HTMLButtonElement;
 
-const marksOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('figure .absolute.border-2')];
+const marksOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('figure span.rounded-full')];
+
+const outlinesOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('figure .absolute.border-2')];
 
 const leafTextOf = (node: Element) =>
   [...node.querySelectorAll('span:not(:has(span))')].map((span) => span.textContent?.trim()).join(' ');
@@ -153,10 +155,11 @@ describe('InventoryViewComponent', () => {
     );
 
     const boxes = marksOf(element);
+    const outlines = outlinesOf(element);
 
     expect(boxes.map((box) => box.textContent?.trim())).toEqual(['1', '2', '3']);
-    expect(boxes[1]?.style.left).toBe('20%');
-    expect(boxes[1]?.style.width).toBe('5%');
+    expect(outlines[1]?.style.left).toBe('20%');
+    expect(outlines[1]?.style.width).toBe('5%');
     expect(themeClassesOf(boxes[0])).not.toMatch(/danger|warning/);
     expect(themeClassesOf(boxes[1])).toContain('danger');
     expect(themeClassesOf(boxes[2])).toContain('warning');

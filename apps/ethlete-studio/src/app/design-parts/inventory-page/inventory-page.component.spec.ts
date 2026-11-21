@@ -68,10 +68,11 @@ describe('InventoryPageComponent', () => {
       'pages/a-very-long-page-name-that-keeps-going bereit zur Freigabe',
     ]);
 
-    const marks = [...element.querySelectorAll<HTMLElement>('figure .absolute.border-2')];
+    const boxes = [...element.querySelectorAll<HTMLElement>('figure .absolute.border-2')];
+    const marks = [...element.querySelectorAll<HTMLElement>('figure span.rounded-full')];
 
     expect(marks.map((mark) => mark.textContent?.trim())).toEqual(['1']);
-    expect(marks[0]?.style.left).toBe('25%');
+    expect(boxes[0]?.style.left).toBe('25%');
     expect(element.querySelectorAll<HTMLElement>('figure')[1]?.style.left).toBe('448px');
   });
 

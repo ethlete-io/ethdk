@@ -19,6 +19,7 @@ import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.comp
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
+import { placeMarkers } from './marker-layout';
 import { INVENTORY_PAGE_TREE, inventoryPageSampleOf } from './inventory-page-sample';
 
 export type InventoryPageState = 'open' | 'approvable' | 'approved' | 'loading';
@@ -123,13 +124,19 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                               [style.width]="PERCENT_OF(box.width, size.width)"
                               [style.height]="PERCENT_OF(box.height, size.height)"
                               class="pointer-events-none absolute border-2 border-et-theme"
-                            >
-                              <span
-                                class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-on-theme"
-                                >{{ row.number }}</span
-                              >
-                            </div>
+                            ></div>
                           }
+                        }
+                        @for (marker of frame.markers; track marker.number) {
+                          <span
+                            [etProvideColor]="marker.theme"
+                            [style.left.px]="marker.left"
+                            [style.top.px]="marker.top"
+                            [style.width.px]="marker.width"
+                            [style.height.px]="marker.height"
+                            class="pointer-events-none absolute rounded-full bg-et-theme text-center font-code text-ui-xs leading-4 text-et-on-theme"
+                            >{{ marker.number }}</span
+                          >
                         }
                       }
                     </div>
@@ -259,6 +266,7 @@ export class InventoryPageComponent {
   protected frames = computed(() =>
     this.shown().map((page, index) => ({
       page,
+      markers: this.markersOf(page),
       selected: page === this.current(),
       open: openCountOf(page),
       rows: rowsOf(page),
@@ -296,6 +304,24 @@ export class InventoryPageComponent {
 
   protected fit() {
     this.canvas()?.show({ kind: 'all' });
+  }
+
+  private markersOf(page: InventoryPageEntry) {
+    const { size } = page;
+
+    if (!size) return [];
+
+    const rows = rowsOf(page).filter((row) => row.box);
+    const placed = placeMarkers(
+      rows.map((row) => ({
+        number: row.number,
+        x: ((row.box?.x ?? 0) / size.width) * FRAME.width,
+        y: ((row.box?.y ?? 0) / size.height) * FRAME.height,
+      })),
+      FRAME,
+    );
+
+    return placed.map((marker, index) => ({ ...marker, theme: this.themeOf(rows[index]?.tone ?? 'ok') }));
   }
 
   private mountCamera() {
