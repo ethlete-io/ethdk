@@ -24,6 +24,7 @@ Zu [STATUS.md](STATUS.md).
   umformuliert (ADR 0391). Unmöglich, wenn Subagenten nur über `yarn commit` committen.
 - Cause (20.11., Code): pre-push läuft weder `studio:classes:check` (eigener CI-Schritt, kein eslint) noch die Unit-Specs der Libs; die cdk-Spec components-classes liest das CSS von der Platte, daher findet `vitest related` sie nicht (rotes CI 44806835681). Unmöglich, wenn die Regel `canonical-class` ein eslint-Lauf ist und die Spec das CSS importiert, das sie liest.
 - Cause (20.11.): Agent-Isolation `worktree` schneidet von main und löscht sich selbst; bei zwei Subagenten fiel ein fehlgeschlagenes `cd` auf den Haupt-Checkout zurück und `git checkout -B` lief dort (kurz verschoben, wiederhergestellt). Unmöglich, wenn Builder-Slices `git worktree add` auf origin/next nutzen und jeder Aufruf mit `cd <wt>` beginnt.
+- Cause (21.11., gemessen per `design check` TYPE-ERROR): ein Subagent meldete `design check` sauber, obwohl 85bf110d6 einen TS-Fehler hinterließ.
 
 ## A. Studio: was man sieht
 
@@ -89,6 +90,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   statt leerem „Aktuell“; E2E mit kurzem und neuem Teil (Befund 136).
 - **B37** `sketch check`/`sketch ready`: Notizen an Varianten und Teilen sind deutsch, kurz genug ohne Abschneiden und
   ohne technische Werte (dl 02.11.).
+  Suspect (21.11.): Sketch elements/studio-menu@edit lässt sich nach `pick new` + rebase nicht schließen: `sketch ready` verweigert „variants alike", `sketch discard` „pick contradicts HEAD" (ausgelöst durch `design check` auf dem Part-Edit eines Subagenten).
 - **B38** Kopf einer Variante zeigt den kurzen Modellnamen statt „Claude“, Tooltip mit vollem Namen und Zeit
   (neue sichtbare Oberfläche: erst Sketch, dann Bau; dl 02.11., Befund 143).
 - **B39** Wechselt eine Ansicht auf einen Design-Teil, muss jeder gelöschte Test entweder in der Liste „was das Design
