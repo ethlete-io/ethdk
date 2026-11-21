@@ -233,9 +233,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         <ethlete-inventory-view
           [port]="page.port"
           [product]="product()?.name ?? ''"
-          [part]="page.part"
+          [pages]="page.pages"
+          [selected]="page.selected"
           [shell]="pageShell()"
-          (inventoryToggle)="toggleInventory()"
           (expandedChange)="rememberOpen($event)"
           (shellAction)="runShellAction($event)"
         />
@@ -329,20 +329,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               >{{ message }}</span
             >
           }
-          @if (partShown?.listed?.layer === 'pages') {
-            <button
-              [pressed]="inventoryShown()"
-              (click)="toggleInventory()"
-              et-button
-              type="button"
-              variant="outline"
-              color="surface"
-              size="sm"
-              data-inventory-toggle
-            >
-              {{ INVENTORY_LABELS.toggle }}
-            </button>
-          }
         </div>
       </ethlete-system-page>
     }
@@ -417,7 +403,6 @@ export class SystemViewComponent {
   protected readonly PART_ZOOM_CHIP_CLASS = PART_ZOOM_CHIP_CLASS;
 
   protected readonly LABELS = STUDIO_LABELS.shell;
-  protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
   protected readonly START_LABELS = STUDIO_LABELS.start;
   protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
 
@@ -495,7 +480,7 @@ export class SystemViewComponent {
 
   protected transferError = signal('');
 
-  protected inventoryShown = signal(rememberedView().inventoryShown ?? false);
+  public inventoryShown = signal(rememberedView().inventoryShown ?? false);
 
   protected product = computed(() => {
     const products = this.products();
@@ -1208,11 +1193,15 @@ export class SystemViewComponent {
     const part = this.part();
     const read = this.reading();
 
-    if (!port || !part || !read || read.error || read.products.length === 0) return null;
+    if (!port || !read || read.error || read.products.length === 0) return null;
     if (this.section() !== 'System' || this.call() || this.awaitingPicked()) return null;
     if (this.sketchShown() || this.flowShown()) return null;
 
-    return this.inventoryShown() && part.listed.layer === 'pages' ? { port, part: part.key } : null;
+    if (!this.inventoryShown()) return null;
+
+    const pages = (this.product()?.parts ?? []).filter((listed) => listed.layer === 'pages').map(partKeyOf);
+
+    return { port, pages, selected: part?.listed.layer === 'pages' ? part.key : null };
   });
 
   protected inboxLoad = computed<InboxLoad>(() => {
@@ -1304,6 +1293,7 @@ export class SystemViewComponent {
   }
 
   public pickSection(section: ShellSection) {
+    this.showInventory(false);
     this.panel.set('open');
     this.commentStore.showPanel(section === 'Inbox');
 
@@ -1419,6 +1409,7 @@ export class SystemViewComponent {
     this.picked.set(key);
     if (key.startsWith(flowKeyOf(''))) this.railSection.set('Flows');
     rememberView({ systemEntry: key });
+    if (this.part()?.listed.layer !== 'pages') this.showInventory(false);
   }
 
   public pickProduct(systemProduct: string) {
@@ -1442,6 +1433,10 @@ export class SystemViewComponent {
         return this.openProject.emit();
       case 'scan':
         return this.scanProjects.emit();
+      case 'inventory':
+        this.pickSection('System');
+
+        return this.showInventory(true);
       case 'reload':
         return this.reload.emit();
       case 'menuOpened':
@@ -1449,13 +1444,6 @@ export class SystemViewComponent {
       case 'server':
         return this.serverAction.emit(action.action);
     }
-  }
-
-  protected toggleInventory() {
-    const inventoryShown = !this.inventoryShown();
-
-    this.inventoryShown.set(inventoryShown);
-    rememberView({ inventoryShown });
   }
 
   protected pickTheme(kind: keyof ThemePick, name: string) {
@@ -1644,5 +1632,12 @@ export class SystemViewComponent {
       target === this.host.nativeElement.ownerDocument.body ||
       (target instanceof Node && this.host.nativeElement.contains(target))
     );
+  }
+
+  private showInventory(inventoryShown: boolean) {
+    if (this.inventoryShown() === inventoryShown) return;
+
+    this.inventoryShown.set(inventoryShown);
+    rememberView({ inventoryShown });
   }
 }

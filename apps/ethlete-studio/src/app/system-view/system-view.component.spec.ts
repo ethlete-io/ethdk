@@ -13,6 +13,7 @@ import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
+import { PageShellAction } from './page-shell';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 
@@ -2050,5 +2051,65 @@ describe('SystemViewComponent on a part with many states', () => {
 
     expect(fixture.componentInstance.frames().map((frame) => frame.row)).toEqual(['not-1', 'not-4', 'not-7']);
     expect(element.querySelector('[data-folded-states]')?.textContent).toContain(STUDIO_LABELS.system.foldedStates(9));
+  });
+});
+
+describe('SystemViewComponent with the inventory', () => {
+  const WITH_PAGES: ListedProduct = {
+    ...PRODUCT,
+    parts: [...PRODUCT.parts, part('pages', 'checkout'), part('pages', 'home')],
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([WITH_PAGES]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+    vi.stubGlobal('EventSource', SilentEventSource);
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('opens the inventory of every page from the studio menu, selects a picked page and closes on another pick', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const view = fixture.componentInstance as unknown as {
+      runShellAction: (action: PageShellAction) => void;
+      activate: (key: string) => void;
+      inventoryPage: () => { pages: string[]; selected: string | null } | null;
+    };
+
+    expect(view.inventoryPage()).toBeNull();
+
+    view.runShellAction({ kind: 'inventory' });
+    expect(view.inventoryPage()).toMatchObject({ pages: ['pages/checkout', 'pages/home'], selected: null });
+
+    view.activate('pages/home');
+    expect(view.inventoryPage()).toMatchObject({ selected: 'pages/home' });
+
+    view.activate('elements/rating');
+    expect(view.inventoryPage()).toBeNull();
+  });
+
+  it('closes the inventory on a section change', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'pages/checkout' });
+    const view = fixture.componentInstance as unknown as {
+      runShellAction: (action: PageShellAction) => void;
+      inventoryPage: () => { selected: string | null } | null;
+    };
+
+    view.runShellAction({ kind: 'inventory' });
+    expect(view.inventoryPage()).toMatchObject({ selected: 'pages/checkout' });
+
+    view.runShellAction({ kind: 'section', section: 'Flows' });
+    view.runShellAction({ kind: 'section', section: 'System' });
+    expect(view.inventoryPage()).toBeNull();
   });
 });

@@ -10,58 +10,57 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, catchError, finalize, map, of, startWith, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  finalize,
+  from,
+  map,
+  mergeMap,
+  of,
+  scan,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { ShotStateComponent, ShotStateDirective } from '../components/design-canvas/partials/shot-state';
-import { Inventory, InventoryFrame, approveInventory$, inventory$ } from '../../host/design-inventory';
-import {
-  InventoryPageComponent,
-  InventoryPageEntry,
-  InventoryPageFrame,
-} from '../design-parts/inventory-page/inventory-page.component';
-import {
-  INVENTORY_APPROVER,
-  approvalLabelOf,
-  canApprove,
-  frameLabelOf,
-  inventoryControlsOf,
-  refusalMessageOf,
-} from './inventory';
+import { Inventory, approveInventory$, inventory$ } from '../../host/design-inventory';
+import { InventoryPageComponent, InventoryPageEntry } from '../design-parts/inventory-page/inventory-page.component';
+import { INVENTORY_APPROVER, approvalLabelOf, canApprove, inventoryPageOf, refusalMessageOf } from './inventory';
 import { PageShell, PageShellAction } from './page-shell';
 
-type Reading = { inventory: Inventory | null; error: string | null; loading: boolean };
+type PageReading = { inventory: Inventory | null; error: string | null };
 
 type ShotSize = { width: number; height: number };
 
-const LOADING: Reading = { inventory: null, error: null, loading: true };
+const CONCURRENT_READS = 3;
 
 @Component({
   selector: 'ethlete-inventory-view',
   template: `
     <ethlete-inventory-page
-      [inventory]="reading().loading ? 'loading' : 'open'"
+      [inventory]="loading() ? 'loading' : 'open'"
       [tree]="shell().tree"
       [shell]="shell()"
-      [part]="part()"
-      [approval]="approval()"
-      [approvable]="approvable()"
-      [entries]="entries()"
-      [frames]="frames()"
+      [pages]="entries()"
+      [selected]="selected()"
+      [approving]="busy()"
       [shotTemplate]="shot"
       (reload)="reload()"
       (approve)="approve()"
-      (inventoryToggle)="inventoryToggle.emit()"
       (expandedChange)="expandedChange.emit($event)"
       (pick)="shellAction.emit({ kind: 'pick', key: $event })"
       (shellAction)="shellAction.emit($event)"
       class="h-full!"
     />
 
-    <ng-template #shot let-frame>
+    <ng-template #shot let-page>
       <img
         #shotState="ethleteShot"
-        [src]="shotUrl(frame.key)"
-        (load)="measure(frame.key, $event)"
-        class="block h-auto max-w-full data-[shot-state=failed]:h-40 data-[shot-state=failed]:w-80"
+        [src]="shotUrl(page.shot)"
+        (load)="measure(page.shot, $event)"
+        class="block size-full"
         ethleteShot
         alt=""
       />
@@ -76,68 +75,93 @@ export class InventoryViewComponent {
   private destroyRef = inject(DestroyRef);
   public port = input.required<number>();
   public product = input.required<string>();
-  public part = input.required<string>();
+  public pages = input.required<readonly string[]>();
+  public selected = input<string | null>(null);
   public shell = input.required<PageShell>();
-  public inventoryToggle = output();
   public expandedChange = output<readonly string[]>();
   public shellAction = output<PageShellAction>();
 
   private reloads = signal(0);
 
-  protected reading = toSignal(
+  private readings = toSignal(
     toObservable(
-      computed(() => ({ port: this.port(), product: this.product(), part: this.part(), reloads: this.reloads() })),
+      computed(() => ({ port: this.port(), product: this.product(), pages: this.pages(), reloads: this.reloads() })),
     ).pipe(
-      switchMap((address): Observable<Reading> =>
-        inventory$(address).pipe(
-          map((inventory) => ({ inventory, error: null, loading: false })),
-          catchError((error: unknown) => of({ inventory: null, error: refusalMessageOf(error), loading: false })),
-          startWith(LOADING),
+      switchMap(({ port, product, pages }) =>
+        from(pages).pipe(
+          mergeMap(
+            (part): Observable<[string, PageReading]> =>
+              inventory$({ port, product, part }).pipe(
+                map((inventory): [string, PageReading] => [part, { inventory, error: null }]),
+                catchError((error: unknown) =>
+                  of<[string, PageReading]>([part, { inventory: null, error: refusalMessageOf(error) }]),
+                ),
+              ),
+            CONCURRENT_READS,
+          ),
+          scan((readings, [part, reading]) => ({ ...readings, [part]: reading }), {} as Record<string, PageReading>),
+          startWith({} as Record<string, PageReading>),
         ),
       ),
     ),
-    { initialValue: LOADING },
+    { initialValue: {} as Record<string, PageReading> },
   );
 
-  private inventory = linkedSignal(() => this.reading().inventory);
+  private approved = linkedSignal<Record<string, PageReading>, Record<string, Inventory>>({
+    source: this.readings,
+    computation: () => ({}),
+  });
 
-  private approveError = linkedSignal<Reading, string | null>({ source: this.reading, computation: () => null });
+  private approveErrors = linkedSignal<Record<string, PageReading>, Record<string, string>>({
+    source: this.readings,
+    computation: () => ({}),
+  });
 
-  private busy = signal(false);
+  protected busy = signal(false);
 
   private sizes = signal<Record<string, ShotSize>>({});
 
-  protected approval = computed(() => {
-    const inventory = this.inventory();
-    const error = this.approveError() ?? this.reading().error;
+  protected loading = computed(() => this.pages().length > 0 && Object.keys(this.readings()).length === 0);
 
-    return error ?? (inventory ? approvalLabelOf(inventory) : null);
+  private shownPart = computed(() => {
+    const pages = this.pages();
+    const selected = this.selected();
+
+    return selected !== null && pages.includes(selected) ? selected : (pages[0] ?? null);
   });
 
-  protected approvable = computed(() => {
-    const inventory = this.inventory();
+  protected entries = computed<InventoryPageEntry[]>(() =>
+    this.pages().flatMap((part) => {
+      const reading = this.readings()[part];
 
-    return !this.busy() && inventory !== null && canApprove(inventory);
-  });
+      if (!reading) return [];
 
-  protected entries = computed<InventoryPageEntry[]>(() => {
-    const inventory = this.inventory();
+      const inventory = this.approved()[part] ?? reading.inventory;
+      const error = this.approveErrors()[part] ?? reading.error;
 
-    return inventory
-      ? inventoryControlsOf(inventory).map((control) => ({
-          number: control.number,
-          id: control.id,
-          ...(control.label ? { label: control.label } : {}),
-          status: control.status,
-          ...(control.owner ? { owner: control.owner } : {}),
-          kind: control.kind,
-          states: control.states,
-        }))
-      : [];
-  });
+      if (!inventory)
+        return [
+          {
+            part,
+            approval: 'open' as const,
+            approvalLabel: error ?? '',
+            controls: [],
+            assets: [],
+            overlays: [],
+            shot: null,
+            size: null,
+          },
+        ];
 
-  protected frames = computed<InventoryPageFrame[]>(() =>
-    (this.inventory()?.frames ?? []).map((frame) => this.frameOf(frame)),
+      const shot = inventory.frames[0]?.shot;
+
+      return [
+        inventoryPageOf(inventory, {
+          approvalLabel: error ?? approvalLabelOf(inventory),
+          size: (shot && this.sizes()[shot]) || null,
+        }),
+      ];
+    }),
   );
 
   protected shotUrl(shot: string) {
@@ -157,20 +181,21 @@ export class InventoryViewComponent {
   }
 
   protected approve() {
-    const inventory = this.inventory();
+    const part = this.shownPart();
+    const inventory = part === null ? null : (this.approved()[part] ?? this.readings()[part]?.inventory ?? null);
 
     if (!inventory || this.busy() || !canApprove(inventory)) return;
 
     this.busy.set(true);
-    this.approveError.set(null);
+    this.approveErrors.update(({ [inventory.part]: _dropped, ...rest }) => rest);
     approveInventory$(
       { port: this.port(), product: this.product() },
       { part: inventory.part, hash: inventory.hash, by: INVENTORY_APPROVER },
     )
       .pipe(
-        tap((approved) => this.inventory.set(approved)),
+        tap((approved) => this.approved.update((all) => ({ ...all, [approved.part]: approved }))),
         catchError((error: unknown) => {
-          this.approveError.set(refusalMessageOf(error));
+          this.approveErrors.update((all) => ({ ...all, [inventory.part]: refusalMessageOf(error) }));
 
           return EMPTY;
         }),
@@ -178,23 +203,5 @@ export class InventoryViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
-  }
-
-  private frameOf(frame: InventoryFrame): InventoryPageFrame {
-    const size = this.sizes()[frame.shot];
-
-    return {
-      key: frame.shot,
-      label: frameLabelOf(frame),
-      width: size?.width ?? 1,
-      height: size?.height ?? 1,
-      marks: size
-        ? frame.controls.flatMap((control) =>
-            control.box && !control.covered
-              ? [{ number: control.number, status: control.status, box: control.box }]
-              : [],
-          )
-        : [],
-    };
   }
 }

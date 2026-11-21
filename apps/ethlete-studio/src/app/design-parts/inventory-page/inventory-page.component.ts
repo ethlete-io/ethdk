@@ -1,97 +1,65 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, output, TemplateRef, ViewEncapsulation } from '@angular/core';
+import {
+  afterRenderEffect,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  output,
+  signal,
+  TemplateRef,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
+import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { PartTree, PartTreeComponent } from '../part-tree/part-tree.component';
+import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
+import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
+import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
+import { INVENTORY_PAGE_TREE, inventoryPageSampleOf } from './inventory-page-sample';
 
 export type InventoryPageState = 'open' | 'approvable' | 'approved' | 'loading';
 
-export const INVENTORY_PAGE_TREE: PartTree = {
-  layers: [
-    { title: 'Foundations', open: false, parts: [] },
-    { title: 'Elements', open: false, parts: [] },
-    { title: 'Components', open: false, parts: [] },
-    {
-      title: 'Pages',
-      open: true,
-      parts: [{ name: 'flows', selected: true }, { name: 'inbox' }, { name: 'system' }],
-    },
-  ],
-};
-
-export type InventoryPageStatus = 'declared' | 'owned' | 'undeclared' | 'unclassified';
+export type InventoryPageTone = 'ok' | 'error' | 'warning';
 
 export type InventoryPageBox = { x: number; y: number; width: number; height: number };
 
+/** `box` is in the pixels of the page's `size`; a row without one draws no mark on the frame. */
+export type InventoryPageRow = {
+  number: string;
+  name: string;
+  detail: string;
+  tone: InventoryPageTone;
+  box: InventoryPageBox | null;
+};
+
+export type InventoryPageApproval = 'open' | 'approvable' | 'approved';
+
 export type InventoryPageEntry = {
-  number?: number;
-  id: string;
-  label?: string;
-  status: InventoryPageStatus;
-  owner?: string;
-  kind: string;
-  states: number;
-  box?: InventoryPageBox;
+  part: string;
+  approval: InventoryPageApproval;
+  approvalLabel: string;
+  controls: InventoryPageRow[];
+  assets: InventoryPageRow[];
+  overlays: InventoryPageRow[];
+  shot: string | null;
+  size: { width: number; height: number } | null;
 };
 
-export type InventoryPageMark = { number: number; status: InventoryPageStatus; box: InventoryPageBox };
+const FRAME = { width: 360, height: 225 };
 
-export type InventoryPageFrame = {
-  key: string;
-  label: string;
-  width: number;
-  height: number;
-  marks: InventoryPageMark[];
-};
+const COLUMNS = 2;
 
-export const INVENTORY_PAGE_ENTRIES: InventoryPageEntry[] = [
-  {
-    id: 'studio-menu',
-    label: 'Studio',
-    status: 'undeclared',
-    kind: 'button',
-    states: 1,
-    box: { x: 12, y: 12, width: 40, height: 40 },
-  },
-  {
-    id: 'rail.system',
-    label: 'System',
-    status: 'owned',
-    owner: 'elements/shell-main',
-    kind: 'button',
-    states: 2,
-    box: { x: 12, y: 72, width: 40, height: 40 },
-  },
-  {
-    id: 'rail.flows',
-    label: 'Flows',
-    status: 'owned',
-    owner: 'elements/shell-main',
-    kind: 'button',
-    states: 2,
-    box: { x: 12, y: 120, width: 40, height: 40 },
-  },
-  {
-    id: 'flow-row',
-    label: 'Sketch prüfen',
-    status: 'declared',
-    kind: 'row',
-    states: 2,
-    box: { x: 72, y: 72, width: 216, height: 28 },
-  },
-  {
-    id: 'preset-picker',
-    label: 'Desktop · 1440 × 900',
-    status: 'unclassified',
-    kind: 'select',
-    states: 1,
-    box: { x: 1172, y: 20, width: 240, height: 36 },
-  },
-];
+const ZOOM_STEP = 1.5;
 
-const FRAME_SCALE = 0.5;
+const percentOf = (value: number, of: number) => String((value / of) * 100) + '%';
+
+const rowsOf = (page: InventoryPageEntry) => [...page.controls, ...page.assets, ...page.overlays];
+
+const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => row.tone !== 'ok').length;
 
 @Component({
   selector: 'ethlete-inventory-page',
@@ -106,23 +74,87 @@ const FRAME_SCALE = 0.5;
           (activate)="pick.emit($event)"
         />
       </div>
-      <div class="box-border flex h-full flex-col ps-(--st-shell-inset-left)">
-        <div class="flex h-14 flex-none items-center gap-space-3 px-space-4">
-          <span class="text-ui-lg font-ui-strong">{{ part() }}</span>
-          <span class="flex-1"></span>
-          <button (click)="inventoryToggle.emit()" pressed et-button type="button" variant="outline" size="sm">
-            {{ LABELS.toggle }}
-          </button>
+      <div class="grid h-full grid-cols-[minmax(0,1fr)_28rem]">
+        <div class="relative min-h-0 overflow-hidden">
+          @if (loading()) {
+            <p
+              class="m-0 p-space-4 ps-[calc(var(--st-shell-inset-left)+var(--space-4))] text-ui-sm text-et-surface-muted"
+            >
+              {{ LABELS.drawing }}
+            </p>
+          } @else {
+            <ethlete-canvas-viewport class="absolute inset-0 overflow-hidden">
+              <div #world class="absolute top-0 left-(--st-shell-inset-left) origin-top-left">
+                @for (frame of frames(); track frame.page.part) {
+                  <figure
+                    [style.left.px]="frame.x"
+                    [style.top.px]="frame.y"
+                    class="absolute m-0 flex flex-col gap-space-1"
+                  >
+                    <figcaption class="flex items-center gap-space-2 text-ui-sm whitespace-nowrap">
+                      <span [class.font-ui-strong]="frame.selected" class="text-et-surface">{{ frame.page.part }}</span>
+                      @if (frame.open) {
+                        <span [etProvideColor]="errorTheme()" class="text-et-theme">{{ LABELS.open(frame.open) }}</span>
+                      } @else {
+                        <span class="text-et-surface-muted">{{
+                          frame.page.approval === 'approved' ? LABELS.approvedShort : LABELS.readyToApprove
+                        }}</span>
+                      }
+                    </figcaption>
+                    <div
+                      [class.outline-2]="frame.selected"
+                      [class.outline]="!frame.selected"
+                      [style.width.px]="FRAME.width"
+                      [style.height.px]="FRAME.height"
+                      class="relative bg-et-surface-bg outline-et-surface-border"
+                    >
+                      @if (frame.page.shot) {
+                        @if (shotTemplate(); as template) {
+                          <ng-container *ngTemplateOutlet="template; context: { $implicit: frame.page }" />
+                        }
+                      }
+                      @if (frame.page.size; as size) {
+                        @for (row of frame.rows; track row.number) {
+                          @if (row.box; as box) {
+                            <div
+                              [etProvideColor]="themeOf(row.tone)"
+                              [style.left]="PERCENT_OF(box.x, size.width)"
+                              [style.top]="PERCENT_OF(box.y, size.height)"
+                              [style.width]="PERCENT_OF(box.width, size.width)"
+                              [style.height]="PERCENT_OF(box.height, size.height)"
+                              class="pointer-events-none absolute border-2 border-et-theme"
+                            >
+                              <span
+                                class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-theme-ink"
+                                >{{ row.number }}</span
+                              >
+                            </div>
+                          }
+                        }
+                      }
+                    </div>
+                  </figure>
+                }
+              </div>
+            </ethlete-canvas-viewport>
+            <ethlete-zoom-chip
+              [percent]="percent()"
+              (zoomOut)="zoomBy(1 / ZOOM_STEP)"
+              (zoomIn)="zoomBy(ZOOM_STEP)"
+              (zoomReset)="zoomReset()"
+              (fit)="fit()"
+              class="absolute right-space-3 bottom-space-3 z-3"
+            />
+          }
         </div>
-        <div class="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-et-surface-bg">
+        <aside class="flex min-h-0 flex-col border-l border-et-surface-border bg-et-surface-bg">
           <header
             class="flex flex-wrap items-center gap-space-3 border-b border-et-surface-border px-space-4 py-space-3"
           >
-            <h2 class="m-0 text-ui-lg font-ui-strong">{{ LABELS.title }}</h2>
-            @if (!loading()) {
-              <span class="text-ui-sm text-et-surface-muted">{{ approvalShown() }}</span>
-            }
-            <span class="flex-1"></span>
+            <div class="flex min-w-0 flex-1 flex-col">
+              <span class="text-ui-sm text-et-surface-muted">{{ LABELS.title }}</span>
+              <h2 class="m-0 truncate text-ui-lg font-ui-strong">{{ loading() ? '' : (current()?.part ?? '') }}</h2>
+            </div>
             <button [disabled]="loading()" (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
               {{ LABELS.reload }}
             </button>
@@ -136,131 +168,144 @@ const FRAME_SCALE = 0.5;
             >
               {{ LABELS.approve }}
             </button>
+            @if (!loading() && current(); as page) {
+              <p class="m-0 w-full text-ui-sm whitespace-pre-line text-et-surface-muted">{{ page.approvalLabel }}</p>
+            }
           </header>
-          @if (loading()) {
-            <p class="m-0 p-space-4 text-ui-sm text-et-surface-muted">{{ LABELS.drawing }}</p>
-          } @else {
-            <div class="grid min-h-0 grid-cols-[minmax(0,1fr)_32rem]">
-              <div class="flex min-h-0 flex-col gap-space-6 overflow-auto p-space-4">
-                @for (frame of framesShown(); track frame.key) {
-                  <figure class="m-0 flex flex-col gap-space-2">
-                    <figcaption class="font-code text-ui-sm text-et-surface-muted">{{ frame.label }}</figcaption>
-                    <div class="relative self-start border border-et-surface-border">
-                      @if (shotTemplate(); as shot) {
-                        <ng-container *ngTemplateOutlet="shot; context: { $implicit: frame }" />
-                      } @else {
-                        <div
-                          [style.width.px]="frame.width * SCALE"
-                          [style.height.px]="frame.height * SCALE"
-                          class="bg-et-surface-bg"
-                        ></div>
+          @if (!loading() && current(); as page) {
+            <div class="flex min-h-0 flex-col gap-space-5 overflow-auto p-space-4">
+              @for (section of sectionsOf(page); track section.title) {
+                <section class="flex flex-col gap-space-2">
+                  <h3 class="m-0 text-ui-sm font-ui-strong text-et-surface">
+                    {{ section.title }} <span class="font-ui text-et-surface-muted">{{ section.rows.length }}</span>
+                  </h3>
+                  @if (section.rows.length) {
+                    <ol class="m-0 flex list-none flex-col gap-space-2 p-0">
+                      @for (row of section.rows; track row.number) {
+                        <li [etProvideColor]="themeOf(row.tone)" class="flex gap-space-2 text-ui-sm">
+                          <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-theme-ink">{{
+                            row.number
+                          }}</span>
+                          <span class="flex min-w-0 flex-col">
+                            <span class="text-et-surface">{{ row.name }}</span>
+                            <span [class]="row.tone === 'ok' ? 'text-et-surface-muted' : 'text-et-theme'">{{
+                              row.detail
+                            }}</span>
+                          </span>
+                        </li>
                       }
-                      @for (mark of frame.marks; track mark.number) {
-                        <div
-                          [etProvideColor]="themeOf(mark.status)"
-                          [style.left]="PERCENT_OF(mark.box.x, frame.width)"
-                          [style.top]="PERCENT_OF(mark.box.y, frame.height)"
-                          [style.width]="PERCENT_OF(mark.box.width, frame.width)"
-                          [style.height]="PERCENT_OF(mark.box.height, frame.height)"
-                          class="pointer-events-none absolute border-2 border-et-theme"
-                        >
-                          <span
-                            class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-theme-ink"
-                            >{{ mark.number }}</span
-                          >
-                        </div>
-                      }
-                    </div>
-                  </figure>
-                }
-              </div>
-              <ol
-                class="m-0 flex min-h-0 list-none flex-col gap-space-2 overflow-auto border-l border-et-surface-border p-space-4"
-              >
-                @for (entry of shown(); track entry.id; let index = $index) {
-                  <li [etProvideColor]="themeOf(entry.status)" class="flex gap-space-2 text-ui-sm">
-                    <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-theme-ink">{{
-                      entry.number ?? index
-                    }}</span>
-                    <span class="flex min-w-0 flex-col">
-                      @if (entry.label) {
-                        <span class="text-et-surface">{{ entry.label }}</span>
-                      }
-                      <span class="font-code break-all text-et-surface">{{ entry.id }}</span>
-                      <span class="text-et-surface-muted"
-                        >{{ entry.owner ? LABELS.ownedBy(entry.owner) : LABELS.status[entry.status] }} ·
-                        {{ entry.kind }} · {{ entry.states }} {{ LABELS.states(entry.states) }}</span
-                      >
-                    </span>
-                  </li>
-                }
-              </ol>
+                    </ol>
+                  } @else {
+                    <p class="m-0 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+                  }
+                </section>
+              }
             </div>
           }
-        </div>
+        </aside>
       </div>
     </ethlete-shell-page>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, ShellPageComponent, PartTreeComponent, BUTTON_IMPORTS, ProvideColorDirective],
+  imports: [
+    NgTemplateOutlet,
+    BUTTON_IMPORTS,
+    CanvasViewportComponent,
+    PartTreeComponent,
+    ProvideColorDirective,
+    ShellPageComponent,
+    ZoomChipComponent,
+  ],
   host: { class: 'block h-screen w-full' },
 })
 export class InventoryPageComponent {
-  private errorTheme = injectSemanticColorTheme('error');
+  protected errorTheme = injectSemanticColorTheme('error');
   private warningTheme = injectSemanticColorTheme('warning');
   public shell = input<ShellState>(SHELL_SAMPLE);
   public inventory = input<InventoryPageState>('open');
   public tree = input(INVENTORY_PAGE_TREE);
-  public entries = input(INVENTORY_PAGE_ENTRIES);
-
-  public part = input('pages/flows');
-  public approval = input<string | null>(null);
-  public approvable = input<boolean | null>(null);
-  public frames = input<InventoryPageFrame[] | null>(null);
-  public shotTemplate = input<TemplateRef<{ $implicit: InventoryPageFrame }> | null>(null);
+  public pages = input<InventoryPageEntry[] | null>(null);
+  public selected = input<string | null>(null);
+  public approving = input(false);
+  public shotTemplate = input<TemplateRef<{ $implicit: InventoryPageEntry }> | null>(null);
   public shellAction = output<ShellAction>();
 
   public reload = output();
   public approve = output();
-  public inventoryToggle = output();
 
   public pick = output<string>();
   public expandedChange = output<readonly string[]>();
 
+  private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
+  private world = viewChild<ElementRef<HTMLElement>>('world');
+  private canvas = signal<CanvasViewport | null>(null);
+  private mounted: HTMLElement | null = null;
+
   protected readonly LABELS = STUDIO_LABELS.inventory;
-  protected readonly SCALE = FRAME_SCALE;
+  protected readonly FRAME = FRAME;
+  protected readonly ZOOM_STEP = ZOOM_STEP;
   protected readonly PERCENT_OF = percentOf;
   protected loading = computed(() => this.inventory() === 'loading');
-  protected approvalShown = computed(
-    () => this.approval() ?? (this.inventory() === 'approved' ? this.LABELS.approvedBy : this.LABELS.notApproved),
+  public shown = computed(() => this.pages() ?? inventoryPageSampleOf(this.inventory()));
+  protected current = computed(() => {
+    const pages = this.shown();
+
+    return pages.find((page) => page.part === this.selected()) ?? pages[0] ?? null;
+  });
+  protected approveBlocked = computed(
+    () => this.loading() || this.approving() || this.current()?.approval !== 'approvable',
   );
-  protected approveBlocked = computed(() => !(this.approvable() ?? this.inventory() === 'approvable'));
-  protected shown = computed(() =>
-    this.inventory() === 'open'
-      ? this.entries()
-      : this.entries().map((entry) =>
-          entry.status === 'undeclared' || entry.status === 'unclassified'
-            ? { ...entry, status: 'declared' as const }
-            : entry,
-        ),
+  protected frames = computed(() =>
+    this.shown().map((page, index) => ({
+      page,
+      selected: page === this.current(),
+      open: openCountOf(page),
+      rows: rowsOf(page),
+      x: 40 + (index % COLUMNS) * (FRAME.width + 48),
+      y: 48 + Math.floor(index / COLUMNS) * (FRAME.height + 80),
+    })),
   );
-  protected framesShown = computed<InventoryPageFrame[]>(
-    () =>
-      this.frames() ?? [
-        {
-          key: 'sample',
-          label: this.LABELS.frame,
-          width: 1440,
-          height: 900,
-          marks: this.shown().flatMap((entry, index) =>
-            entry.box ? [{ number: index, status: entry.status, box: entry.box }] : [],
-          ),
-        },
-      ],
-  );
-  protected themeOf(status: InventoryPageStatus) {
-    return status === 'undeclared' ? this.errorTheme() : status === 'unclassified' ? this.warningTheme() : undefined;
+  protected percent = computed(() => Math.round((this.canvas()?.zoom() ?? 1) * 100));
+
+  public constructor() {
+    afterRenderEffect(() => this.mountCamera());
+  }
+
+  protected sectionsOf(page: InventoryPageEntry) {
+    return [
+      { title: this.LABELS.controls, rows: page.controls },
+      { title: this.LABELS.assets, rows: page.assets },
+      { title: this.LABELS.overlays, rows: page.overlays },
+    ];
+  }
+
+  protected themeOf(tone: InventoryPageTone) {
+    return tone === 'error' ? this.errorTheme() : tone === 'warning' ? this.warningTheme() : undefined;
+  }
+
+  protected zoomBy(factor: number) {
+    const canvas = this.canvas();
+
+    canvas?.show({ kind: 'visible', zoom: canvas.camera().zoom * factor });
+  }
+
+  protected zoomReset() {
+    this.canvas()?.show({ kind: 'visible', zoom: 1 });
+  }
+
+  protected fit() {
+    this.canvas()?.show({ kind: 'all' });
+  }
+
+  private mountCamera() {
+    const viewport: HTMLElement | undefined = this.viewport()?.nativeElement;
+    const world = this.world()?.nativeElement;
+
+    if (!viewport || !world || viewport === this.mounted) return;
+
+    this.mounted = viewport;
+    this.canvas.set(
+      mountCanvasViewport({ viewport, world, frameSelector: 'figure', padding: 24, start: { x: 0, y: 0, zoom: 1 } }),
+    );
   }
 }
-
-const percentOf = (value: number, of: number) => `${(value / of) * 100}%`;

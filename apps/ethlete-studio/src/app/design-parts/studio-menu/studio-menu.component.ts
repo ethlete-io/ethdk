@@ -35,6 +35,7 @@ export class StudioMenuComponent {
   public serverAction = output<DesignServerAction>();
   public reload = output();
   public scanProjects = output();
+  public openInventory = output();
   public projectChange = output<string>();
   public openProject = output();
   public showShortcuts = output();

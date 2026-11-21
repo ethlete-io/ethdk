@@ -1,5 +1,10 @@
 import { DesignRefusalError } from '../../host/design';
-import { Inventory, InventoryControl, InventoryRefusal } from '../../host/design-inventory';
+import { Inventory, InventoryControl, InventoryItem, InventoryRefusal } from '../../host/design-inventory';
+import {
+  InventoryPageEntry,
+  InventoryPageRow,
+  InventoryPageTone,
+} from '../design-parts/inventory-page/inventory-page.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 const LABELS = STUDIO_LABELS.inventory;
@@ -23,12 +28,84 @@ export const inventoryControlsOf = (inventory: Inventory): InventoryControl[] =>
   return [...byNumber.values()].sort((a, b) => a.number - b.number);
 };
 
+export const inventoryItemsOf = (inventory: Inventory): InventoryItem[] => {
+  const byKey = new Map<string, InventoryItem>();
+
+  for (const frame of inventory.frames) {
+    for (const item of [...frame.items].sort((a, b) => a.number - b.number)) {
+      const key = `${item.kind} ${item.id}`;
+      const known = byKey.get(key);
+
+      if (!known) byKey.set(key, item);
+      else if (known.covered && !item.covered) byKey.set(key, { ...known, covered: false });
+    }
+  }
+
+  const counts = { asset: 0, overlay: 0 };
+
+  return [...byKey.values()].map((item) => ({ ...item, number: ++counts[item.kind] }));
+};
+
+const isOpen = (status: InventoryControl['status']) => status === 'undeclared' || status === 'unclassified';
+
+const toneOf = (status: InventoryControl['status']): InventoryPageTone =>
+  status === 'undeclared' ? 'error' : status === 'unclassified' ? 'warning' : 'ok';
+
+const firstFrameBoxOf = (
+  inventory: Inventory,
+  has: (frame: Inventory['frames'][number]) => { box: InventoryControl['box']; covered: boolean } | undefined,
+) => {
+  const first = inventory.frames[0];
+  const found = first ? has(first) : undefined;
+
+  return found && !found.covered ? found.box : null;
+};
+
+export const inventoryPageOf = (
+  inventory: Inventory,
+  shown: Pick<InventoryPageEntry, 'approvalLabel' | 'size'>,
+): InventoryPageEntry => {
+  const controls = inventoryControlsOf(inventory);
+  const items = inventoryItemsOf(inventory);
+  const itemRow = (item: InventoryItem, prefix: string): InventoryPageRow => ({
+    number: `${prefix}${item.number}`,
+    name: item.label ?? item.what,
+    detail: item.owner
+      ? LABELS.ownedBy(item.owner)
+      : item.kind === 'asset'
+        ? LABELS.assetFinding
+        : LABELS.overlayFinding,
+    tone: item.status === 'finding' ? 'error' : 'ok',
+    box: firstFrameBoxOf(inventory, (frame) =>
+      frame.items.find((candidate) => candidate.kind === item.kind && candidate.id === item.id),
+    ),
+  });
+
+  return {
+    part: inventory.part,
+    approval: inventory.state.state === 'approved' ? 'approved' : canApprove(inventory) ? 'approvable' : 'open',
+    approvalLabel: shown.approvalLabel,
+    controls: controls.map((control) => ({
+      number: String(control.number),
+      name: control.label ?? control.id,
+      detail: control.owner ? LABELS.ownedBy(control.owner) : LABELS.status[control.status],
+      tone: toneOf(control.status),
+      box: firstFrameBoxOf(inventory, (frame) =>
+        frame.controls.find((candidate) => candidate.number === control.number),
+      ),
+    })),
+    assets: items.filter((item) => item.kind === 'asset').map((item) => itemRow(item, 'A')),
+    overlays: items.filter((item) => item.kind === 'overlay').map((item) => itemRow(item, 'O')),
+    shot: inventory.frames[0]?.shot ?? null,
+    size: shown.size,
+  };
+};
+
 export const canApprove = (inventory: Inventory) =>
   inventory.state.state !== 'approved' &&
   inventory.findings === 0 &&
-  !inventoryControlsOf(inventory).some(
-    (control) => control.status === 'undeclared' || control.status === 'unclassified',
-  );
+  !inventoryControlsOf(inventory).some((control) => isOpen(control.status)) &&
+  !inventoryItemsOf(inventory).some((item) => item.status === 'finding');
 
 const dateOf = (at: string) => {
   const date = new Date(at);
@@ -61,6 +138,3 @@ export const refusalMessageOf = (error: unknown) => {
 
   return message;
 };
-
-export const frameLabelOf = (frame: { state: string; preset: string | null; width: number | null }) =>
-  [frame.state, frame.preset ?? (frame.width === null ? null : `${frame.width}px`)].filter(Boolean).join(' · ');

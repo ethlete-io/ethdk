@@ -26,6 +26,22 @@ export type InventoryControl = {
   covered: boolean;
 };
 
+/**
+ * An inline SVG, an image or an open overlay of a rest frame. `owned` is drawn by the embedded part `owner`;
+ * `finding` has no owner. `number` counts per kind within its frame only.
+ */
+export type InventoryItem = {
+  number: number;
+  kind: 'asset' | 'overlay';
+  status: 'owned' | 'finding';
+  what: string;
+  id: string;
+  label: string | null;
+  owner: string | null;
+  box: InventoryBox | null;
+  covered: boolean;
+};
+
 /** A rest frame of a page; `shot` is a server path to its picture. */
 export type InventoryFrame = {
   state: string;
@@ -33,6 +49,7 @@ export type InventoryFrame = {
   width: number | null;
   shot: string;
   controls: InventoryControl[];
+  items: InventoryItem[];
 };
 
 export type InventoryApproval = { ids: string[]; hash: string; by: string; at: string };
