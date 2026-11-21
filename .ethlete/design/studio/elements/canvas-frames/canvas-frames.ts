@@ -22,6 +22,7 @@ import {
 } from './shared/canvas-marks';
 import { diffGrid, diffGridStyles } from './shared/diff-grid';
 import styles from './canvas-frames.css?inline';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 export type GridRow = { label: string; description?: string; cells: (string | undefined)[] };
 export type StateGridDrawing = { columns: string[]; rows: GridRow[] };
@@ -79,7 +80,7 @@ export const stateGrid = (
   const rest = rows.filter(restOnly);
   const interactionGroup = interactive.length
     ? `<div class="st-sgrid-group grid items-stretch gap-px">
-        <span class="st-sgrid-head col-span-full mb-2 border-b border-et-surface-border pb-1 uppercase">States by interaction</span>
+        <span class="st-sgrid-head col-span-full mb-2 border-b border-et-surface-border pb-1 uppercase">${STUDIO_LABELS.system.statesByInteraction}</span>
         <span></span>
         ${columns.map((column) => label(column)).join('')} ${interactive.map(tableRow(place)).join('')}
       </div>`
@@ -194,7 +195,7 @@ const gridBody = slotted(944, 224);
 
 const roundBody = slotted(556, 132);
 
-const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span>`;
+const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}${STUDIO_LABELS.canvas.loading}</span>`;
 
 const markedFrame = async (name: string, body: string, mark?: FrameMark) => {
   const action = MARK_ACTION[mark ?? 'rest'];

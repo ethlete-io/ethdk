@@ -90,34 +90,34 @@
     "at": "2026-11-17T17:55:04.370Z"
   },
   "elements/canvas-frames": {
-    "hash": "e13a79eb20f608a3",
+    "hash": "7eab047f9d56f29e",
     "variant": "a",
     "decidedBy": "plan",
     "at": "2026-11-17T15:56:19.710Z",
     "note": "builder: fix of 08e824394 drift"
   },
   "elements/part-tree": {
-    "hash": "8cfdc85c3fa08ebf",
+    "hash": "88942af98ab13472",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "6c75c5de1493f145",
+    "hash": "16b88ba20770a57a",
     "variant": "new",
     "decidedBy": "plan: ADR 0305",
     "at": "2026-11-20T16:01:35.799Z",
     "note": "merged without a pick: allowed by ADR 0305"
   },
   "elements/studio-menu": {
-    "hash": "4a2a718deec6497b",
+    "hash": "18452b0c0e3da3d2",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-20T23:00:25.593Z",
     "note": "merged: Einziger Entwurf: Inventory als Menüzeile"
   },
   "elements/variant-cell": {
-    "hash": "0953e9c13640a619",
+    "hash": "2264410a0618e6fd",
     "variant": "b",
     "decidedBy": "agent",
     "at": "2026-11-21T01:08:14.616Z"

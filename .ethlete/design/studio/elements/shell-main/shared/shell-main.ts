@@ -8,6 +8,7 @@ import { SIDE_WIDTH } from '@system/components/shell-resize-handle';
 import titleBar from '@system/components/title-bar';
 import { icon, type IconName } from '@system/foundations/icons';
 import { studioMarkLine } from '@system/foundations/logo';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -48,9 +49,9 @@ type Props = {
 type StartPhase = 'starting' | 'cli-build' | 'app-build';
 
 const PHASE_HEADINGS: Record<StartPhase, string> = {
-  starting: 'Design-Server startet',
-  'cli-build': 'CLI wird gebaut',
-  'app-build': 'Oberfläche wird gebaut',
+  starting: STUDIO_LABELS.designServer.starting,
+  'cli-build': STUDIO_LABELS.designServer.startPhase['cli-build'],
+  'app-build': STUDIO_LABELS.designServer.startPhase['app-build'],
 };
 
 const elapsedLabel = (ms: number) => {
@@ -196,7 +197,7 @@ const SERVER_CRASH: Crash = {
 
 export const restartButton = withAction(
   button({
-    label: 'Neu starten',
+    label: STUDIO_LABELS.designServer.restartButton,
     variant: 'outline',
     color: 'surface',
     size: 'sm',
@@ -229,12 +230,14 @@ const serverScreen = (
                         <h3 class="m-0 text-ui-lg font-ui-strong">${PHASE_HEADINGS[phase]}</h3>
                       </div>
                       <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">${elapsedLabel(phaseMs)}</p>`
-                  : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server gestoppt</h3>`
+                  : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">
+                      ${STUDIO_LABELS.designServer.stopped}
+                    </h3>`
               }
               ${
                 server === 'unanswered'
                   ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
-                        Design-Server antwortet nicht: ${serverUrl}
+                        ${STUDIO_LABELS.studioMenu.designServer} antwortet nicht: ${serverUrl}
                       </p>
                       <div class="mt-space-3">${restartButton}</div>`
                   : ''
@@ -244,7 +247,7 @@ const serverScreen = (
               class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
               role="alert"
             >
-              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server gestoppt</h3>
+              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${STUDIO_LABELS.designServer.stopped}</h3>
               ${
                 log.length
                   ? html`<pre

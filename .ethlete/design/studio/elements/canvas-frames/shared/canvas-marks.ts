@@ -1,4 +1,5 @@
 import { html, ng } from '@design-system';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 export type FrameMark = 'selected' | 'active' | 'failed' | 'loading';
 export type GridHeads = 'open' | 'folded';
@@ -29,9 +30,9 @@ export const failureBanner = async (reason: string) =>
     data-et-semantic-color="error"
     role="alert"
   >
-    <span class="min-w-0 flex-1">Laden fehlgeschlagen. ${reason}</span>
+    <span class="min-w-0 flex-1">${STUDIO_LABELS.canvas.loadFailed} ${reason}</span>
     ${await ng(
-      '<button et-button type="button" variant="outline" size="xs" data-et-control="reload" data-et-action="emit:reload">Neu laden</button>',
+      `<button et-button type="button" variant="outline" size="xs" data-et-control="reload" data-et-action="emit:reload">${STUDIO_LABELS.canvas.reload}</button>`,
       BUTTON_IMPORTS,
     )}
   </div>`;
@@ -108,4 +109,4 @@ export const ROUNDS: Record<'first' | 'second', RoundSample> = {
   },
 };
 
-export const FAILURE_REASON = 'Der Design-Server antwortet nicht.';
+export const FAILURE_REASON = STUDIO_LABELS.canvas.unanswered;

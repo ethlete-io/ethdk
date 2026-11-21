@@ -5,6 +5,7 @@ import { shellSystemPicker, shellSystemPickerMenu } from '@system/components/she
 import { studioMarkLine } from '@system/foundations/logo';
 import { restartButton, shellMain, type CrashScreen, type SystemChoice } from './shared/shell-main';
 import styles from './shell-main.css?inline';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 const systemChoice: SystemChoice = async ({ product, products, open }) => {
   const panel = open ? await shellSystemPickerMenu({ product, products }) : null;
@@ -25,14 +26,16 @@ const crashScreen: CrashScreen = ({ time, pid, port, path, stack }) =>
     role="alert"
   >
     <div class="flex flex-col gap-space-1">
-      <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server abgestürzt</h3>
+      <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${STUDIO_LABELS.designServer.crashed}</h3>
       <p class="m-0">Abgestürzt am ${time} (PID ${pid}, Port ${port})</p>
     </div>
     <pre
       class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
     >
 ${stack.join('\n')}</pre>
-    <p class="m-0">Ganzes Log: <span class="font-code break-all text-et-surface">${path}</span></p>
+    <p class="m-0">
+      ${STUDIO_LABELS.designServer.crashLog} <span class="font-code break-all text-et-surface">${path}</span>
+    </p>
     ${restartButton}
   </div>`;
 

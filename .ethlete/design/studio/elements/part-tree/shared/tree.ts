@@ -1,5 +1,6 @@
 import { interactionRows, type Interaction } from '@design-system';
 import type { Row } from '@system/components/tree-row';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type RowInteraction = Extract<Interaction, 'hover' | 'active' | 'focus-visible'>;
 
@@ -65,7 +66,7 @@ const layerRows = (layer: TreeLayer): Row[] => [
 ];
 
 const legacyRows = ({ open, projects }: NonNullable<Props['legacy']>): Row[] => [
-  group('Legacy', open),
+  group(STUDIO_LABELS.systemTree.legacy, open),
   ...(open
     ? projects.flatMap((project): Row[] => [
         {

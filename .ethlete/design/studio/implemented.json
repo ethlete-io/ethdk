@@ -1495,8 +1495,8 @@
     }
   },
   "elements/part-tree": {
-    "hash": "a079c595928375fd",
-    "at": "2026-11-21T03:24:15.644Z",
+    "hash": "16f2515b548a07d8",
+    "at": "2026-11-21T04:27:30.936Z",
     "states": {
       "components-open": "621f8d59d6c4f341",
       "cross-layer": "ea107ce4aa644d62",
@@ -1531,14 +1531,15 @@
       ".ethlete/design/studio/components/tree-row/tree-row.css": "799459ba9916614e",
       ".ethlete/design/studio/components/tree-row/tree-row.ts": "ab34ce543b8e3652",
       ".ethlete/design/studio/elements/part-tree/part-tree.ts": "cac27f8ffda99432",
-      ".ethlete/design/studio/elements/part-tree/shared/tree.ts": "c27c991fc8912441",
+      ".ethlete/design/studio/elements/part-tree/shared/tree.ts": "6d3e4587b586152f",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
     "app": {
       "apps/ethlete-studio/src/app/design-parts/part-tree/part-tree.component.ts": "503b62fcf6166674",
       "apps/ethlete-studio/src/app/design-parts/tree-row/tree-row-item.component.ts": "c0e157126fec6c06",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "libs/components/src/lib/icon/headless/chevron-icon.ts": "d2c88d30d687a8bf",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
       "libs/components/src/lib/icon/headless/icon-errors.ts": "cbfefc2a636787b8",
@@ -2020,8 +2021,8 @@
     }
   },
   "elements/studio-menu": {
-    "hash": "fc08570697a51c1c",
-    "at": "2026-11-21T03:24:38.142Z",
+    "hash": "08dba7c2a6519c5e",
+    "at": "2026-11-21T04:27:21.750Z",
     "states": {
       "closed": "5cbc2772c1f9aa12",
       "closed-active": "f0330652bc0e1d79",
@@ -2048,10 +2049,11 @@
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "178aac4a1cdb5a5c",
-      ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "d3afeb407b97da7d",
+      ".ethlete/design/studio/elements/studio-menu/shared/studio-menu-rows.ts": "ede78ea98d1cd7ba",
       ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "d7337d9c2b9d8ed0",
-      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "3510fca8a5b2a0f4",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "b03d3e22fff21d09",
       ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/design/loader.ts": "e05586c3d6f1de74",
@@ -2080,7 +2082,7 @@
     "app": {
       "apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.html": "71eda48423a3fb97",
       "apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts": "cb802dd640c2c4ae",
-      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "98011b0726f4cc6e",
+      "apps/ethlete-studio/src/app/i18n/studio-labels.ts": "f63ca1e64567668f",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button-properties-styles.component.ts": "19cbea9713283c41",
       "libs/components/src/lib/button/button-styles.directive.ts": "2e41ccd4d6a812a1",

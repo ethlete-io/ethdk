@@ -6,6 +6,7 @@ import menu from '@system/components/menu';
 import { studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
 import styles from './studio-menu.css?inline';
+import { STUDIO_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 type Props = {
   open: boolean;
@@ -17,20 +18,20 @@ type Props = {
 
 type Server = 'running' | 'stale' | 'stopped';
 
-const RESTART = { name: 'restart', label: 'Design-Server neu starten', output: 'serverAction' };
+const RESTART = { name: 'restart', label: STUDIO_LABELS.designServer.restart, output: 'serverAction' };
 
 const SERVER_ACTIONS: Record<Server, { name: string; label: string; output: string }[]> = {
   running: [
-    { name: 'reload', label: 'Neu laden', output: 'reload' },
+    { name: 'reload', label: STUDIO_LABELS.studioMenu.reload, output: 'reload' },
     RESTART,
-    { name: 'stop', label: 'Design-Server stoppen', output: 'serverAction' },
+    { name: 'stop', label: STUDIO_LABELS.designServer.stop, output: 'serverAction' },
   ],
   stale: [
     RESTART,
-    { name: 'reload', label: 'Neu laden', output: 'reload' },
-    { name: 'stop', label: 'Design-Server stoppen', output: 'serverAction' },
+    { name: 'reload', label: STUDIO_LABELS.studioMenu.reload, output: 'reload' },
+    { name: 'stop', label: STUDIO_LABELS.designServer.stop, output: 'serverAction' },
   ],
-  stopped: [{ name: 'start', label: 'Design-Server starten', output: 'serverAction' }],
+  stopped: [{ name: 'start', label: STUDIO_LABELS.designServer.start, output: 'serverAction' }],
 };
 
 const SERVER_STATUS: Record<Server, string> = {
@@ -49,9 +50,9 @@ const serverRows = (server: Server, busy: boolean): MenuMockRow[] => [
 ];
 
 const HELP_ROWS = [
-  { name: 'shortcuts', label: 'Tastenkürzel', output: 'showShortcuts' },
-  { name: 'help', label: 'Hilfe', output: 'openHelp' },
-  { name: 'about', label: 'Über Studio', output: 'showAbout' },
+  { name: 'shortcuts', label: STUDIO_LABELS.studioMenu.shortcuts, output: 'showShortcuts' },
+  { name: 'help', label: STUDIO_LABELS.studioMenu.help, output: 'openHelp' },
+  { name: 'about', label: STUDIO_LABELS.studioMenu.about, output: 'showAbout' },
 ];
 
 const REPOS = ['ethlete-sdk', 'fut-frontend', 'design-playground'];
@@ -83,17 +84,20 @@ const studioRows = (server: Server, busy: boolean, option?: MenuInteraction, key
     }),
   },
   {
-    label: 'Projekt öffnen…',
+    label: STUDIO_LABELS.studioMenu.openProject,
     disabled: busy,
     attributes: `${action('open-project')} data-et-action="emit:openProject"`,
   },
   {
-    label: 'Checkouts suchen…',
+    label: STUDIO_LABELS.studioMenu.scan,
     disabled: busy,
     attributes: `${action('scan')} data-et-action="emit:scanProjects"`,
   },
   { kind: 'separator' },
-  { label: 'Inventory', attributes: `${action('inventory')} data-et-action="emit:openInventory"` },
+  {
+    label: STUDIO_LABELS.studioMenu.inventory,
+    attributes: `${action('inventory')} data-et-action="emit:openInventory"`,
+  },
   { kind: 'separator' },
   ...serverRows(server, busy),
   { kind: 'separator' },

@@ -1,6 +1,7 @@
 import { forceInteraction, type Interaction, withAction } from '@design-system';
 import { button } from '@ethlete/components/design/button';
 import { studioMark } from '@system/foundations/logo';
+import { STUDIO_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/studio-labels';
 
 export type MenuInteraction = Exclude<Interaction, 'disabled'>;
 
@@ -14,7 +15,7 @@ export const studioTrigger = (open: boolean, interaction?: MenuInteraction, targ
       class: 'st-studio-trigger p-0 [--et-button-border-radius:var(--radius-control-lg)] [--et-button-border-width:0]',
     }).replace(
       /^<button /,
-      `<button data-et-control="studio-menu" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
+      `<button data-et-control="studio-menu" data-studio-trigger data-et-auto-surface aria-label="${STUDIO_LABELS.studioMenu.trigger}" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
     ),
     target,
   );
