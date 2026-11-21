@@ -471,6 +471,10 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
   };
 };
 
+/** Shared by every shooter, so the idle pages per browser stay within the pool's limit across resident runs. */
+const warmPages = createWarmPages();
+let shooters = 0;
+
 /**
  * Draws one state of a part at one preset, at one container width, or fitted to its content, or one
  * variant of a call at a given width, at full height, into a PNG. Each picture is kept per frame, size
@@ -494,7 +498,7 @@ export const createPartShooter = (options: {
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const board = createShotBoard();
   const drawQueue = options.queue ?? createDrawQueue({ ...options, board });
-  const warmPages = createWarmPages();
+  const shooter = shooters++;
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture>; drawing?: { startedAt: number | null } }>();
   const drawStarts = new WeakMap<Picture, number>();
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
@@ -520,7 +524,8 @@ export const createPartShooter = (options: {
           ...(frame.scheme ? { colorScheme: frame.scheme } : {}),
         },
         limit: { ms: loadScaledMs(DRAW_LIMIT_MS), what: `the draw of frame.html?${frame.search}` },
-        ...(frame.checker ? {} : { boot: `${edits} ${bootKeyOf(frame.search)}` }),
+        // The shooter number keeps a page another shooter left on its drawing, of another server or edit, from being lent as booted.
+        ...(frame.checker ? {} : { boot: `${shooter}.${edits} ${bootKeyOf(frame.search)}` }),
       },
       async (page, booted) => {
         const state = new URLSearchParams(frame.search).get('state');

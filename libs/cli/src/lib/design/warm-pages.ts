@@ -22,7 +22,6 @@ const BLANK = 'about:blank';
  */
 export const createWarmPages = (options: { idleLimit?: number; parkLimitMs?: number } = {}) => {
   const idleLimit = options.idleLimit ?? IDLE_LIMIT;
-  const parkLimitMs = options.parkLimitMs ?? loadScaledMs(DRAW_TIMEOUT_MS);
   const idleByBrowser = new WeakMap<Browser, Idle[]>();
 
   const idleOf = (browser: Browser) => {
@@ -56,7 +55,7 @@ export const createWarmPages = (options: { idleLimit?: number; parkLimitMs?: num
         .catch(() => undefined)
         .then(() => warm.context.clearCookies())
         .then(() => (warm.booted === null ? warm.page.goto(BLANK) : undefined)),
-      { ms: parkLimitMs, what: 'parking a page' },
+      { ms: options.parkLimitMs ?? loadScaledMs(DRAW_TIMEOUT_MS), what: 'parking a page' },
     ).then(
       () => true,
       () => {

@@ -10,7 +10,7 @@ import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
 import { createShotStore } from './shot-store';
-import { DRAWS_AT_ONCE, ShotUnprocessableError } from './thumb';
+import { createDrawQueue, DRAWS_AT_ONCE, ShotUnprocessableError } from './thumb';
 import { createSketch, parseTarget } from './system/sketch/sketch';
 import { unviewedShotLinesOf } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
@@ -1083,6 +1083,34 @@ describe('createPartShooter', () => {
       status: 422,
       body: expect.stringContaining('Timeout 15000ms exceeded'),
     });
+  });
+
+  it('keeps at most eight idle pages open on a shared queue however many shooters draw on it, each drawing afresh', async () => {
+    const { target, system } = acme();
+    const queue = createDrawQueue({ target, chromiumOf: withBrowser });
+    const open = new Set<unknown>();
+    const opening = newContext.getMockImplementation();
+
+    closing.push(() => queue.close());
+    onTestFinished(() => void newContext.mockImplementation(opening as never));
+    newContext.mockImplementation(async (options) => {
+      const context = { ...((await opening?.(options)) as object), close: async () => void open.delete(context) };
+
+      open.add(context);
+
+      return context;
+    });
+
+    for (let run = 0; run < 12; run++) {
+      const shots = createPartShooter({ target, base: 'http://localhost:1', system, queue });
+
+      expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+        status: 200,
+      });
+    }
+
+    expect(open.size).toBeLessThanOrEqual(8);
+    expect(drawnUrls()).toHaveLength(12);
   });
 });
 
