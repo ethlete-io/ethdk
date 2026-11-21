@@ -1,5 +1,16 @@
 # ethlete-studio
 
+## 0.2.0-next.30
+
+### Patch Changes
+
+- An open comment thread on the Flows page shows its card on the pin from the first render, placed where the design draws it.
+- The design check and actions now fail at once with the harness's error text when a part has no sample for a prop, instead of timing out.
+- The Studio sketches page gets an `empty` input that draws the no-sketches state from the design: an empty side panel note and a centred check with the empty title and text.
+- Add the neighbours sample to the design harness so the sketches page renders its neighbourhood state.
+- A pin on the Flows page opens the comment thread card, and a sidebar jump to a flow comment opens its pin in the shown flow, or the part when the comment sits outside that flow.
+- Flows show comment pins and the comment draft: the Kommentar button turns on comment mode, a click on a frame opens a draft, and a frame shows only comments of its size and interaction.
+
 ## 0.2.0-next.29
 
 ### Minor Changes
