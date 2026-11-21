@@ -13,6 +13,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { copyPart } from './copy-part.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -44,9 +45,7 @@ rmSync(join(checkout, '.ethlete/design/studio/sketches'), { recursive: true, for
 const sketchFolder = join(checkout, '.ethlete/design/studio/sketches', SKETCH_TARGET.replace('/', '-'));
 
 mkdirSync(join(sketchFolder, 'a', dirname(SKETCH_TARGET)), { recursive: true });
-cpSync(join(root, '.ethlete/design/studio', SKETCH_TARGET), join(sketchFolder, 'a', SKETCH_TARGET), {
-  recursive: true,
-});
+copyPart(join(root, '.ethlete/design/studio', SKETCH_TARGET), join(sketchFolder, 'a', SKETCH_TARGET));
 const variantFile = join(sketchFolder, 'a', SKETCH_TARGET, 'zoom-chip.ts');
 
 writeFileSync(variantFile, readFileSync(variantFile, 'utf8').replace('${props.percent} %', '${props.percent} pct'));
@@ -65,9 +64,7 @@ writeFileSync(
 const pageSketchFolder = join(checkout, '.ethlete/design/studio/sketches', PAGE_TARGET.replace('/', '-'));
 
 for (const variant of PAGE_VARIANTS) {
-  cpSync(join(root, '.ethlete/design/studio', PAGE_TARGET), join(pageSketchFolder, variant, PAGE_TARGET), {
-    recursive: true,
-  });
+  copyPart(join(root, '.ethlete/design/studio', PAGE_TARGET), join(pageSketchFolder, variant, PAGE_TARGET));
 
   const pageFile = join(pageSketchFolder, variant, PAGE_TARGET, 'sketches.ts');
 
