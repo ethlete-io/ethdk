@@ -67,17 +67,52 @@ describe('watchModuleFetches', () => {
     const lines: string[] = [];
     const environment = fetcherOf(() => new Promise((settle) => (finish = settle)));
 
-    watchModuleFetches(environment, { stallMs: 1000, now: () => clock, report: (line) => lines.push(line) });
+    let cpu = 0;
+
+    watchModuleFetches(environment, {
+      stallMs: 1000,
+      now: () => clock,
+      cpuMs: () => cpu,
+      report: (line) => lines.push(line),
+    });
 
     const blocked = environment.fetchModule('/blocked.ts');
 
     clock += 30_000;
+    cpu += 30_000;
     await vi.advanceTimersByTimeAsync(1000);
     finish('done');
 
     await expect(blocked).resolves.toBe('done');
     expect(lines).toEqual([
       "design-explore: the design server's event loop was blocked for 30.0 s; pending vite module fetches: /blocked.ts (30.0 s)",
+    ]);
+  });
+
+  it('reports a suspended process, not a blocked loop, when the late timer used almost no CPU', async () => {
+    vi.useFakeTimers();
+
+    let clock = 0;
+    let finish: (value: unknown) => void = () => undefined;
+    const lines: string[] = [];
+    const environment = fetcherOf(() => new Promise((settle) => (finish = settle)));
+
+    watchModuleFetches(environment, {
+      stallMs: 1000,
+      now: () => clock,
+      cpuMs: () => 0,
+      report: (line) => lines.push(line),
+    });
+
+    const slept = environment.fetchModule('/slept.ts');
+
+    clock += 195_000;
+    await vi.advanceTimersByTimeAsync(1000);
+    finish('done');
+
+    await expect(slept).resolves.toBe('done');
+    expect(lines).toEqual([
+      'design-explore: the design server was suspended for 195.0 s (it used 0.0 s of CPU: the machine slept or the process was stopped); pending vite module fetches: /slept.ts (195.0 s)',
     ]);
   });
 

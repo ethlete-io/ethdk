@@ -5422,6 +5422,10 @@ const workerCount = () => {
 };
 
 const lead = async () => {
+  // macOS Maintenance Sleep freezes every process mid-run and reads as a design server stall.
+  if (process.platform === 'darwin')
+    spawn('caffeinate', ['-i', '-s', '-w', String(process.pid)], { detached: true, stdio: 'ignore' }).unref();
+
   if (!listOnly) {
     enterOwnScope('studio-e2e');
     const lock = await takeHeavyLock('studio:e2e', { wait: waitForLock });

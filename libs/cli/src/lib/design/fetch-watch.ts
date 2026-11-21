@@ -11,18 +11,26 @@ type Fetch = { id: string; started: number };
 
 const secondsOf = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 
+const processCpuMs = () => {
+  const { user, system } = process.cpuUsage();
+
+  return (user + system) / 1000;
+};
+
 /**
  * Fails every vite module fetch of `environment` once no fetch settled for `stallMs`, with an error that names
  * each fetch still pending and how long it waits; a later fetch of a module whose fetch never settled fails at once.
- * A blocked event loop is reported instead of counted as a stall, and each failure is reported (stderr by default). Returns a function that removes the watch.
+ * A blocked event loop is reported instead of counted as a stall, as a suspended process when it used under a quarter of
+ * that time in CPU (the machine slept), and each failure is reported (stderr by default). Returns a function that removes the watch.
  */
 export const watchModuleFetches = (
   environment: ModuleFetcher,
-  options: { stallMs?: number; now?: () => number; report?: (line: string) => void } = {},
+  options: { stallMs?: number; now?: () => number; cpuMs?: () => number; report?: (line: string) => void } = {},
 ) => {
   const {
     stallMs = FETCH_STALL_MS,
     now = Date.now,
+    cpuMs = processCpuMs,
     report = (line: string) => void process.stderr.write(`${line}\n`),
   } = options;
   const original = environment.fetchModule;
@@ -75,16 +83,25 @@ export const watchModuleFetches = (
       settledAt = now();
     });
     const stalled = new Promise<never>((_, reject) => {
-      const wait = (ms: number, due = now() + ms) =>
-        (check = timer(ms)
+      const wait = (ms: number) => {
+        const due = now() + ms;
+        const cpuAt = cpuMs();
+
+        check = timer(ms)
           .pipe(
             tap(() => {
               const at = now();
 
               if (at - due >= stallMs && unblockedAt < due) {
                 unblockedAt = at;
+
+                const late = at - due + ms;
+                const used = cpuMs() - cpuAt;
+
                 report(
-                  `design-explore: the design server's event loop was blocked for ${secondsOf(at - due + ms)}; pending vite module fetches: ${waitingAt(at)}`,
+                  used < late / 4
+                    ? `design-explore: the design server was suspended for ${secondsOf(late)} (it used ${secondsOf(used)} of CPU: the machine slept or the process was stopped); pending vite module fetches: ${waitingAt(at)}`
+                    : `design-explore: the design server's event loop was blocked for ${secondsOf(late)}; pending vite module fetches: ${waitingAt(at)}`,
                 );
               }
 
@@ -94,7 +111,8 @@ export const watchModuleFetches = (
               else reject(stall(fetching, quiet));
             }),
           )
-          .subscribe());
+          .subscribe();
+      };
 
       wait(stallMs);
     });
