@@ -60,6 +60,9 @@ const FRUIT_OPTIONS = [
           @if (withSearch()) {
             <input etSelectSearch placeholder="Search fruits" />
           }
+          @if (nullOptionLabel()) {
+            <et-select-option [value]="null">{{ nullOptionLabel() }}</et-select-option>
+          }
           @for (fruit of FRUITS; track fruit.value) {
             <et-select-option [value]="fruit.value" [disabled]="fruit.value === disabledOption()">
               {{ fruit.label }}
@@ -113,6 +116,7 @@ export class FormFieldSelectStorybookComponent {
   public required = input(false);
   public disabledOption = input('elderberry');
   public longOption = input('');
+  public nullOptionLabel = input('');
   public color = input('brand');
 
   protected readonly FRUITS = FRUIT_OPTIONS;

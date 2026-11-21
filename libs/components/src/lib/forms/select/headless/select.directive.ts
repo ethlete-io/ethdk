@@ -299,23 +299,24 @@ export class SelectDirective<TValue = unknown>
     return Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
   });
 
-  public hasValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
+  public hasSelectedValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
 
   public describedBy = signal<string | null>(null);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECT);
+
   /** @internal */
   public triggerFocused = signal(false);
-
   public focused = computed(() => this.triggerFocused() || this.open());
+
   /** @internal */
   public expanded = computed(() => this.open());
-
   /** @internal */
   public registeredTrigger = signal<SelectTriggerDirective | null>(null);
 
   /** @internal */
   public registeredSurface = signal<SelectSurfaceDirective | null>(null);
+
   /** @internal */
   public registeredListbox = signal<SelectListboxDirective | null>(null);
   /** @internal */
@@ -344,14 +345,14 @@ export class SelectDirective<TValue = unknown>
     disabled: this.disabled,
     compareWith: this.valuesMatch,
   });
-
   public activeId = computed(() => this.activeItem()?.id() ?? null);
 
   public listboxId = computed(() => this.registeredListbox()?.id ?? null);
+
   /** @internal */
   public overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
-
   public isMounted = computed(() => this.overlayRef() !== null);
+
   private panel = createAnchoredPanelController({
     canOpen: computed(() => !this.disabled()),
     open: this.open,
@@ -422,10 +423,10 @@ export class SelectDirective<TValue = unknown>
     },
     onDocumentKeydown: (event) => this.handlePanelKeydown(event),
   });
-
   private dataItems = signal<SelectItem[]>([]);
 
   private dataItemRegistry = new Map<unknown, SelectDataItemEntry>();
+
   private dataItemRegistryIdentity: ((value: unknown) => unknown) | null = null;
   public sortedItems = computed(() => {
     const dataItems = this.dataItems();
@@ -442,7 +443,6 @@ export class SelectDirective<TValue = unknown>
 
     return dataItems.length ? [...dataItems, ...sortedProjected] : sortedProjected;
   });
-
   private selectsNullOption = computed(
     () =>
       !this.multiple() &&
@@ -451,6 +451,8 @@ export class SelectDirective<TValue = unknown>
       this.value() === null &&
       this.sortedItems().some((item) => item.value() === null),
   );
+
+  public hasValue = computed(() => this.hasSelectedValue() || this.selectsNullOption());
   /** The current search query (empty string when no search is registered). */
   public query = computed(() => this.registeredSearch()?.query() ?? '');
 

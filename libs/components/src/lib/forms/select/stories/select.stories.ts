@@ -39,6 +39,7 @@ export default {
     maxSelection: { control: 'number' },
     selectAll: { control: 'boolean' },
     longOption: { control: 'text' },
+    nullOptionLabel: { control: 'text' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -65,6 +66,7 @@ export default {
     commitCustomValueOnClose: false,
     selectAll: false,
     longOption: '',
+    nullOptionLabel: '',
     disabled: false,
     readonly: false,
     required: false,
@@ -92,6 +94,10 @@ export const Mixed: Story = {
     showMixedState: true,
     hint: 'The raw value stays intact until a user commits a new selection; Mixed shows the live presentation state.',
   },
+};
+
+export const NullOptionFloatingLabel: Story = {
+  args: { labelMode: 'floating-inside', label: 'Fruit', nullOptionLabel: 'All fruits', value: null },
 };
 
 export const Required: Story = {

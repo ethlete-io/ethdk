@@ -145,7 +145,7 @@ export class SelectComponent {
   protected mixedLabelId = createComponentId('et-select-mixed-label');
 
   protected showClear = computed(
-    () => this.clearable() && this.select.hasValue() && !this.select.disabled() && !this.select.readonly(),
+    () => this.clearable() && this.select.hasSelectedValue() && !this.select.disabled() && !this.select.readonly(),
   );
 
   public hasSearch = computed(() => !!this.select.registeredSearch());

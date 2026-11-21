@@ -80,6 +80,23 @@ class LegacyTeamFormComponent {
 }
 
 @Component({
+  selector: 'et-scenario-null-option-form',
+  imports: [FORM_FIELD_IMPORTS, SelectComponent, SelectOptionComponent, ReactiveFormsModule],
+  template: `
+    <et-form-field labelMode="floating-inside">
+      <et-label>Gametitle</et-label>
+      <et-select [formControl]="ctrl" clearable>
+        <et-select-option [value]="null">All Games</et-select-option>
+        <et-select-option value="fc">FC</et-select-option>
+      </et-select>
+    </et-form-field>
+  `,
+})
+class NullOptionFormComponent {
+  ctrl = new FormControl<string | null>(null);
+}
+
+@Component({
   selector: 'et-scenario-country-search',
   imports: [SelectComponent, SelectOptionComponent, SelectSearchDirective, SelectValueDirective],
   template: `
@@ -557,6 +574,24 @@ describe('forms select scenarios', () => {
     open(s, query('[role="combobox"]', host));
     expect(document.querySelector(`.et-icon--${DEFAULT_SELECT_ICONS.check}`)).not.toBeNull();
     closeAll(s);
+  });
+
+  it('floats the label while a single select shows its null option and keeps the clear button hidden', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NullOptionFormComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const formField = query('et-form-field', host);
+
+    s.tick();
+    s.flush();
+    expect(formField.hasAttribute('data-label-floated')).toBe(true);
+    expect(host.querySelector('.et-input-clear')).toBeNull();
+
+    fixture.componentInstance.ctrl.setValue('fc');
+    s.tick();
+    s.flush();
+    expect(formField.hasAttribute('data-label-floated')).toBe(true);
+    expect(host.querySelector('.et-input-clear')).not.toBeNull();
   });
 
   it('closes an open panel without writing to the destroyed select', () => {

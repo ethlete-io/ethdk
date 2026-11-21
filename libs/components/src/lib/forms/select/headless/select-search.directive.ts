@@ -237,7 +237,7 @@ export class SelectSearchDirective {
     this.query.set(value);
     select?.queryChange.emit(value);
 
-    if (!value && select && !select.multiple() && select.hasValue() && this.isInlineInTrigger()) {
+    if (!value && select && !select.multiple() && select.hasSelectedValue() && this.isInlineInTrigger()) {
       if (select.mixed()) {
         select.clearValue();
       } else {
