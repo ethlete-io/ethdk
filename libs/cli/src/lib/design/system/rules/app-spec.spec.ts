@@ -1,7 +1,8 @@
-import { readFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { appSpecProblemsOf, specFailuresOf } from './app-spec';
+import { appSpecProblemsOf, specFailuresOf, specSeedsOf } from './app-spec';
 
 const report = readFileSync(join(__dirname, 'app-spec.vitest-related.json'), 'utf8');
 
@@ -36,5 +37,24 @@ describe('appSpecProblemsOf', () => {
     const problems = appSpecProblemsOf({ parts: [{ part: 'components/chip', files: ['src/chip.ts'] }], failures });
 
     expect(problems.get('(product)')?.map((problem) => problem.file)).toEqual(['src/tag.spec.ts']);
+  });
+});
+
+describe('specSeedsOf', () => {
+  const root = mkdtempSync(join(tmpdir(), 'spec-seeds-'));
+
+  mkdirSync(join(root, 'app/i18n'), { recursive: true });
+  writeFileSync(join(root, 'app/i18n/labels.ts'), '');
+  writeFileSync(join(root, 'app/i18n/labels.spec.ts'), '');
+  writeFileSync(join(root, 'app/i18n/plain.ts'), '');
+
+  it('keeps part files and swaps a shared file for its own spec', () => {
+    expect(
+      specSeedsOf({
+        root,
+        files: ['app/part/part.ts', 'app/i18n/labels.ts', 'app/i18n/plain.ts'],
+        shared: ['app/i18n/**'],
+      }),
+    ).toEqual(['app/part/part.ts', 'app/i18n/labels.spec.ts']);
   });
 });

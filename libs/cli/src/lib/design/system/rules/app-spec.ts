@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, relative, resolve, sep } from 'path';
+import { matchesPattern } from '../harness-config';
 import { Problem } from '../problem';
 
 export const APP_SPEC_RULE = 'APP-SPEC';
@@ -88,6 +89,27 @@ export const runRelatedSpecs: RunRelatedSpecs = ({ root, config, files }) => {
       }
     });
   });
+};
+
+/**
+ * The files to run related specs for: the app files of the parts, where a shared file (`harness.shared`) stands for its
+ * own spec only, since every spec importing a shared file would otherwise count as related to every part.
+ */
+export const specSeedsOf = (options: { root: string; files: string[]; shared: string[] }): string[] => {
+  const seeds = new Set<string>();
+
+  for (const file of options.files) {
+    if (!options.shared.some((pattern) => matchesPattern(file, pattern))) {
+      seeds.add(file);
+      continue;
+    }
+
+    const own = file.replace(/\.[cm]?tsx?$/u, '.spec.ts');
+
+    if (own !== file && existsSync(resolve(options.root, own))) seeds.add(own);
+  }
+
+  return [...seeds];
 };
 
 const subjectsOf = (spec: string) => {

@@ -31,7 +31,7 @@ import { RecordSettledRequest, recordSettledBuildReady } from './record-settled'
 import { withStampsInCache } from './stamp-files';
 import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolve-product';
 import { ruleBaselineOf } from './rule-baseline';
-import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
+import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs, specSeedsOf } from './rules/app-spec';
 import { isJudgedForVisibleChange, NO_VISIBLE_CHANGE_RULE } from './rules/no-visible-change';
 import { listSketches, Sketch } from './sketch/sketch';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
@@ -275,7 +275,13 @@ export const runSlowChecks = async (options: {
       const failures = await runners.specs({
         root,
         config: harness.specs,
-        files: whole ? [harness.app] : [...new Set(parts.flatMap(({ files }) => files))],
+        files: whole
+          ? [harness.app]
+          : specSeedsOf({
+              root,
+              files: parts.flatMap(({ files }) => files),
+              shared: harness.shared ?? [],
+            }),
       });
 
       if (typeof failures === 'string')
