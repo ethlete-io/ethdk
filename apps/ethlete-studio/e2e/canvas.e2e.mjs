@@ -4973,7 +4973,7 @@ const addZoomFixture = (dir) => {
   const zoomTs = join(ZOOM_SKETCH.part, `${ZOOM_SKETCH.part.split('/')[1]}.ts`);
 
   ZOOM_SKETCH.variants.forEach((variant, index) => {
-    copyPart(join(root, '.ethlete/design/studio', ZOOM_SKETCH.part), join(zoom, variant, ZOOM_SKETCH.part));
+    copyPart(join(dir, '.ethlete/design/studio', ZOOM_SKETCH.part), join(zoom, variant, ZOOM_SKETCH.part));
     writeFileSync(
       join(zoom, variant, zoomTs),
       readFileSync(join(zoom, variant, zoomTs), 'utf8').replaceAll(
@@ -5034,7 +5034,7 @@ const prepareCheckout = () => {
     const folder = join(dir, '.ethlete/design/studio/sketches', target.replace('/', '-'));
 
     mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
-    copyPart(join(root, '.ethlete/design/studio', target), join(folder, 'a', target));
+    copyPart(join(dir, '.ethlete/design/studio', target), join(folder, 'a', target));
 
     const { file, change } = SKETCH_CHANGES[target] ?? {};
 
@@ -5064,7 +5064,7 @@ const prepareCheckout = () => {
   const wideTs = join(WIDE_SKETCH.part, `${WIDE_SKETCH.part.split('/')[1]}.ts`);
 
   WIDE_SKETCH.variants.forEach((variant, index) => {
-    copyPart(join(root, '.ethlete/design/studio', WIDE_SKETCH.part), join(wide, variant, WIDE_SKETCH.part));
+    copyPart(join(dir, '.ethlete/design/studio', WIDE_SKETCH.part), join(wide, variant, WIDE_SKETCH.part));
     writeFileSync(
       join(wide, variant, wideTs),
       replaceOnce(

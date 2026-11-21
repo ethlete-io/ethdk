@@ -45,7 +45,7 @@ rmSync(join(checkout, '.ethlete/design/studio/sketches'), { recursive: true, for
 const sketchFolder = join(checkout, '.ethlete/design/studio/sketches', SKETCH_TARGET.replace('/', '-'));
 
 mkdirSync(join(sketchFolder, 'a', dirname(SKETCH_TARGET)), { recursive: true });
-copyPart(join(root, '.ethlete/design/studio', SKETCH_TARGET), join(sketchFolder, 'a', SKETCH_TARGET));
+copyPart(join(checkout, '.ethlete/design/studio', SKETCH_TARGET), join(sketchFolder, 'a', SKETCH_TARGET));
 const variantFile = join(sketchFolder, 'a', SKETCH_TARGET, 'zoom-chip.ts');
 
 writeFileSync(variantFile, readFileSync(variantFile, 'utf8').replace('${props.percent} %', '${props.percent} pct'));
@@ -64,7 +64,7 @@ writeFileSync(
 const pageSketchFolder = join(checkout, '.ethlete/design/studio/sketches', PAGE_TARGET.replace('/', '-'));
 
 for (const variant of PAGE_VARIANTS) {
-  copyPart(join(root, '.ethlete/design/studio', PAGE_TARGET), join(pageSketchFolder, variant, PAGE_TARGET));
+  copyPart(join(checkout, '.ethlete/design/studio', PAGE_TARGET), join(pageSketchFolder, variant, PAGE_TARGET));
 
   const pageFile = join(pageSketchFolder, variant, PAGE_TARGET, 'sketches.ts');
 
