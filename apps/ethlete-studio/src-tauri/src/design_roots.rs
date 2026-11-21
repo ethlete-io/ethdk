@@ -100,7 +100,18 @@ fn set_search(store: &Path, folder: &str) -> StudioResult<DesignRoots> {
     write(store, &held)
 }
 
+fn is_throwaway(folder: &Path) -> bool {
+    folder.join(".git").is_file()
+        || folder
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().starts_with("scratch-"))
+}
+
 fn walk(folder: &Path, depth: usize, found: &mut Vec<String>) {
+    if is_throwaway(folder) {
+        return;
+    }
+
     if holds_design(folder) {
         found.push(folder.to_string_lossy().into_owned());
 
@@ -360,6 +371,18 @@ mod tests {
         assert_eq!(found, vec![deep, near]);
 
         fs::remove_dir_all(ground).expect("a clean ground");
+    }
+
+    #[test]
+    fn a_scan_skips_a_worktree_and_a_scratch_folder() {
+        let ground = a_ground("throwaway");
+        let kept = a_checkout(&ground, "app");
+        let worktree = a_checkout(&ground, "app-wt-fix");
+
+        a_checkout(&ground, "scratch-check");
+        fs::write(Path::new(&worktree).join(".git"), "gitdir: /elsewhere\n").expect("a worktree marker");
+
+        assert_eq!(scan(&ground.to_string_lossy()).expect("a scan"), vec![kept]);
     }
 
     #[test]
