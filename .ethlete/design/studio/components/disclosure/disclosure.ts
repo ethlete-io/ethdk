@@ -17,7 +17,7 @@ export type Props = {
 const CHEVRON = icon('chevron-right', { size: 14, cls: 'flex-none' });
 
 export const disclosureBodyClass =
-  'st-disclosure-body flex flex-col gap-space-1 m-0 text-et-surface-muted text-(length:--text-xs) *:flex *:gap-space-2';
+  'st-disclosure-body flex flex-col gap-space-1 m-0 text-et-surface-muted text-(length:--text-sm) *:flex *:gap-space-2';
 
 export const disclosure = ({ label, body, open, size = 'sm', hug = false, interaction, action }: Props) => {
   const toggle = html`<button

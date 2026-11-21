@@ -83,7 +83,7 @@ const LABELS = COMMAND_PALETTE_LABELS;
                   </svg>
                 </span>
                 <span class="min-w-0 flex-1 truncate">{{ result.command.label }}</span>
-                <span class="text-(length:--text-xs) text-et-surface-muted">{{ result.command.description }}</span>
+                <span class="text-(length:--text-sm) text-et-surface-muted">{{ result.command.description }}</span>
               </div>
             }
           </div>

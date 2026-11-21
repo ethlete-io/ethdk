@@ -13,9 +13,9 @@ body {
 :root {
   --font-ui: 'Source Sans 3', system-ui, sans-serif;
   --font-code: 'Source Code Pro', ui-monospace, monospace;
-  --text-xs: 1rem;
-  --text-xs-line: 1.4rem;
-  --text-sm: 1.15rem;
+  --text-xs: 1.1rem;
+  --text-xs-line: 1.5rem;
+  --text-sm: 1.2rem;
   --text-sm-line: 1.6rem;
   --text-md: 1.3rem;
   --text-md-line: 1.8rem;

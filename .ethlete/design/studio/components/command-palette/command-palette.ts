@@ -72,7 +72,7 @@ const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
     `<div role="option" data-et-action="emit:choose" aria-label="${item.label} ${item.hint}" class="st-cprow flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm outline-none text-et-surface ${selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15" ${selected ? 'data-selected aria-selected="true"' : ''}>
     <span class="text-et-surface-muted">${icon('search', { size: 14 })}</span>
     <span class="min-w-0 flex-1 truncate">${item.label}</span>
-    <span class="text-et-surface-muted text-(length:--text-xs)">${item.hint}</span>
+    <span class="text-et-surface-muted text-(length:--text-sm)">${item.hint}</span>
   </div>`,
     'row',
   );
