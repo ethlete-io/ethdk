@@ -110,7 +110,7 @@
     "note": "merged without a pick: allowed by ADR 0305"
   },
   "elements/studio-menu": {
-    "hash": "933f29be2edd5014",
+    "hash": "2fd0472abf2831bd",
     "variant": "a",
     "decidedBy": "builder",
     "at": "2026-11-20T23:00:25.593Z",
