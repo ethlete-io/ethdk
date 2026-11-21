@@ -24,6 +24,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S29 (fifagg, 21.11.): blockiert, gebaut lokal 031dcfb23 (`provideScrollableConfig({buttons:{color,variant}})`, `--et-scrollable-buttons-offset`, `--et-scrollable-buttons-end-space`, Docs, Story, Changeset); wartet auf Prerelease, danach fifagg informieren; `--mask-size` war schon öffentlich (beantwortet).
 - S30 (fifagg, 21.11.): nicht blockiert, `etInputClear` zeigt das x nur mit Fokus (`showClear` verlangt `focused()`), alt immer bei Wert -> Builder-Zeile.
 - S31 (fifagg, 21.11.): nicht blockiert, Match-Card kompakt je Team mit Score rechts + Wappen-Fallback statt Initiale; dichte Zeile gibt es (`size` pinnt sie), Wappen-Fallback fehlt -> Builder-Zeile.
+- S32 (fifagg, 21.11.): nicht blockiert, `et-picture` in einem overflow-hidden Host: kein Weg, nur das `<img>` zu transformieren (Hover-Zoom) -> Builder-Zeile.
 
 ## Offene Plan-Dateien
 
