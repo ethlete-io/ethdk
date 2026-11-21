@@ -36,13 +36,32 @@ const render = async () => {
 };
 
 describe('FlowsPageComponent', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
 
   it('starts at 100 % instead of fitting the flow', async () => {
     const { element, world } = await render();
 
     expect(world?.style.transform).toBe('translate(0px, 0px) scale(1)');
     expect(element.querySelector('[aria-label="Auf 100 % zoomen"]')?.textContent?.trim()).toBe('100 %');
+  });
+
+  it('starts the flow at the top left of the stage below the header, not at its page offset', async () => {
+    const rectOf = (left: number, top: number) => ({ left, top, right: left, bottom: top, width: 0, height: 0 });
+    const original = Element.prototype.getBoundingClientRect;
+
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      if (this.tagName === 'ETHLETE-CANVAS-VIEWPORT') return rectOf(300, 40) as DOMRect;
+      if (this.classList.contains('min-h-0') && this.classList.contains('flex-1')) return rectOf(364, 72) as DOMRect;
+
+      return original.call(this);
+    });
+
+    const { world } = await render();
+
+    expect(world?.style.transform).toBe('translate(64px, 32px) scale(1)');
   });
 
   it('pans the flow by the wheel', async () => {

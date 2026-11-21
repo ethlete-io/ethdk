@@ -22,7 +22,6 @@ import {
 } from '@ethlete/components';
 import { signalElementDimensions } from '@ethlete/core';
 import { CanvasDragDirective } from '../../components/design-canvas/canvas-drag.directive';
-import { offsetWithin } from '../../components/design-canvas/canvas-math';
 import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
@@ -70,6 +69,13 @@ export const FLOWS_SAMPLE_NOTES: FlowsPageNote[] = [
 const ZOOM_STEP = 1.5;
 
 const NOTE_INSET = 24;
+
+const stageStart = (viewport: HTMLElement, stage: HTMLElement) => {
+  const from = viewport.getBoundingClientRect();
+  const to = stage.getBoundingClientRect();
+
+  return { x: Math.round(to.left - from.left), y: Math.round(to.top - from.top) };
+};
 
 export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, caption: 20 };
 
@@ -499,16 +505,16 @@ export class FlowsPageComponent {
 
   private resetOnPick() {
     const selected = this.selected();
+    const viewport = this.viewport()?.nativeElement;
     const stage = this.stage()?.nativeElement;
-    const world = this.world()?.nativeElement;
     const previous = this.pickedFlow;
     const canvas = untracked(() => this.canvas());
 
     this.pickedFlow = selected ?? null;
 
-    if (previous === null || previous === selected || !canvas || !stage || !world) return;
+    if (previous === null || previous === selected || !canvas || !stage || !viewport) return;
 
-    canvas.reset({ ...offsetWithin(stage, world), zoom: 1 });
+    canvas.reset({ ...stageStart(viewport, stage), zoom: 1 });
   }
 
   private mountCamera() {
@@ -526,7 +532,7 @@ export class FlowsPageComponent {
         frameSelector: 'figure',
         padding: 24,
         covered: () => this.covered(),
-        start: { ...offsetWithin(stage, world), zoom: 1 },
+        start: { ...stageStart(viewport, stage), zoom: 1 },
       }),
     );
   }
