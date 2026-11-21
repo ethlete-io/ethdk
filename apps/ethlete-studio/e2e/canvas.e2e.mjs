@@ -1593,6 +1593,11 @@ const CASES = [
 
       for (const [label, zoom] of zooms) {
         await zoom();
+        await page.waitForFunction(
+          (CANVAS) => [...document.querySelectorAll(CANVAS)].every((c) => !c.querySelector('[data-loading-badge]')),
+          CANVAS,
+          { timeout: 20000 },
+        );
         faults.push(
           ...(await page.evaluate(
             ({ CANVAS, label }) => {
