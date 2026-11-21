@@ -27,7 +27,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
       class: 'size-control-sm items-center p-0',
     }).replace(
       /^<button /,
-      '<button data-et-control="collapse" title="Hide panel" aria-label="Hide panel" data-can-animate ',
+      '<button data-et-control="collapse" title="Panel ausblenden" aria-label="Panel ausblenden" data-can-animate ',
     ),
     'emit:collapse',
   );
@@ -35,7 +35,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
   const forced = interaction ? forceInteraction(markup, interaction) : markup;
 
   return interaction === 'focus-visible'
-    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-0 z-10 mb-2 w-max">${tooltip({ text: 'Hide panel', placement: 'top', anchor: '[data-et-control="collapse"]' })}</span></span>`
+    ? `<span class="relative inline-flex">${forced}<span class="absolute bottom-full left-0 z-10 mb-2 w-max">${tooltip({ text: 'Panel ausblenden', placement: 'top', anchor: '[data-et-control="collapse"]' })}</span></span>`
     : forced;
 };
 
@@ -51,7 +51,7 @@ export default definePart({
     'collapse-hover': 'The panel button hovered; check the SDK hover fill behind the icon.',
     'collapse-active': 'The panel button pressed; check the darker SDK press fill.',
     'collapse-focus-visible':
-      'The panel button focused by keyboard; check the focus ring and the Hide panel tooltip above it, not clipped.',
+      'The panel button focused by keyboard; check the focus ring and the Panel ausblenden tooltip above it, not clipped.',
   },
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-collapse/shell-collapse.component.ts',
   controls: { collapse: { kind: 'button', input: ['pointer', 'keyboard'] } },

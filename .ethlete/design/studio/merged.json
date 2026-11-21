@@ -45,11 +45,10 @@
   },
   "components/disclosure": "b97eec377fdf2ec5",
   "components/shell-collapse": {
-    "hash": "f97c35d1f518dd79",
+    "hash": "53d64c460947d252",
     "variant": "a",
-    "decidedBy": "plan: finding 911 precedent: harness frame correction, component unchanged",
-    "at": "2026-11-16T01:22:41.594Z",
-    "note": "merged without a pick: allowed by finding 911 precedent: harness frame correction, component unchanged"
+    "decidedBy": "user",
+    "at": "2026-11-21T02:21:10.888Z"
   },
   "components/shortcuts-dialog": {
     "hash": "7e58c1397f472485",
@@ -69,6 +68,12 @@
     "decidedBy": "plan: finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves",
     "at": "2026-11-16T02:27:51.159Z",
     "note": "merged without a pick: allowed by finding 911 precedent: completes arrow-padding (55175bcbc); Cause (live DOM): the wider hint box moved the 50cqi arrow 1.5 px off the trigger centre; shot: only the arrow moves"
+  },
+  "components/title-search": {
+    "hash": "80164d86570ef1a6",
+    "variant": "a",
+    "decidedBy": "user",
+    "at": "2026-11-21T02:21:10.888Z"
   },
   "components/tree-row": "bf7bd4857a66660a",
   "components/update-dialog": {
