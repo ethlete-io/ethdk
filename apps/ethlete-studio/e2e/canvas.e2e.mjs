@@ -5426,19 +5426,6 @@ const lead = async () => {
   if (process.platform === 'darwin')
     spawn('caffeinate', ['-i', '-s', '-w', String(process.pid)], { detached: true, stdio: 'ignore' }).unref();
 
-  if (!listOnly) {
-    enterOwnScope('studio-e2e');
-    const lock = await takeHeavyLock('studio:e2e', { wait: waitForLock });
-
-    if (!lock.ok) {
-      console.error(`[canvas-e2e] ${holderLine(lock.holder)}`);
-      process.exit(2);
-    }
-    await startRunLoad(busyLoops);
-  }
-
-  const runStartedAt = performance.now();
-  const loadAtStart = loadavg()[0];
   const noReason = CASES.filter(
     (testCase) =>
       'listingMayPend' in testCase && (typeof testCase.listingMayPend !== 'string' || !testCase.listingMayPend.trim()),
@@ -5489,6 +5476,19 @@ const lead = async () => {
     );
     process.exit(2);
   }
+  if (!listOnly) {
+    enterOwnScope('studio-e2e');
+    const lock = await takeHeavyLock('studio:e2e', { wait: waitForLock });
+
+    if (!lock.ok) {
+      console.error(`[canvas-e2e] ${holderLine(lock.holder)}`);
+      process.exit(2);
+    }
+    await startRunLoad(busyLoops);
+  }
+
+  const runStartedAt = performance.now();
+  const loadAtStart = loadavg()[0];
   const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 
   if (shard) queue.splice(0, queue.length, ...shardShareOf(queue, shard, keyOf));
