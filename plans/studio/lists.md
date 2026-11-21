@@ -32,7 +32,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A22** Flows: Pins, Entwürfe; der eine Canvas (Q66, Q125). Notizen (Liste verwaister Notizen, Ziehen, `jumpTo`)
   gehören zu A25 (ADR 0120). Rest geteilt (ADR 0367, Impl Q125): A22a Flows-Seite auf ethlete-design-canvas (0 px),
   A22b Pin und Entwurfszustände in pages/flows mit Kommentar-Store nach ADR 0367, A22c Sprung aus der Seitenleiste
-  zu einem Flow-Kommentar öffnet den Teil (NOTESFIX läuft).
+  zu einem Flow-Kommentar öffnet den Teil. A22a gebaut 03d391284 (compare 0 px, 4 Zustände, canvas e2e 9/9); A22b/c auf next grün (vitest 731, e2e flow 9/9), Push wartet auf A22C2 (Thread-Karte, 2x STATE-UNDESIGNED). NOTESFIX eadf2dadb, 32a6ee8c3 (Cause gemessen: `jumpTo` nahm 96 px Notizhöhe an, gerendert ~50).
 - **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81). Chat zeigt den Zustand des Agenten
   (arbeitet, wartet, unterbrochen, fehlgeschlagen) mit Stopp und Fortsetzen, Anmeldung in Studio, Verweis auf Teil,
   Sketch oder Kommentar (designer-workflow.md, Abschnitt 1).
@@ -59,7 +59,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
   (existing-code-import.md; offene Entscheidungen dort).
 
-- Suspect (21.11., SHELLCOL): shell-collapse `--verify` rot (focus-visible 114x88 Design gegen 130x88 App; vermutlich längerer deutscher Tooltip, Design auf altes Label bemessen).
+- Gruppe Design-Drift (vor 15cb74b16, COMPAREAFF f4d681652, f25c5da16): shell-main Rail-Tooltip vom Design gezeichnet, vom App-compare nie geöffnet; canvas-frames 2 px bei x=575; `task --verify` offen für canvas-viewport, zoom-chip, pages/inbox: eine Folge-Slice. SHELLCOL/2 zu (e2dcdb13b..a49d032c3, ca324119d; Cause gemessen: Capture-Box = Knopf + Tooltip, compare gab der App Platz nur bei Part-Wurzel unter y 0). Offen: LABELSWEEP (27 Parts kopieren STUDIO_LABELS-Texte), `design check` darf keine getrackten Dateien schreiben (READY UNCOMMITTED sdk).
 
 ## B. Design-CLI: neue Prüfungen
 
@@ -196,10 +196,11 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 
 ## C. CLI: Tempo und Ablauf
 
-- Suspect (20.11.): vite fetchModule (dist/libs/components) hängt auf dem Mac unabhängig von der Last, Render läuft nach 60 s in den Timeout. Unmöglich, wenn: eine Render-Anfrage scheitert schnell und nennt das hängende Modul, statt still nach 60 s. Nächster Mac-Versuch: Design-Log behalten, Render-Endpunkt direkt mit curl.
-- Suspect (20.11.): `sleepSync` im Produkt-Lock (2,9 s) steht bei parallelen Sessions im Wettstreit.
-- Suspect (21.11.): voller `design check --part elements/variant-cell` lief in der App-Spec-Phase in das 1200-s-Limit (Ursache offen, nicht reproduziert; 562c389c7 senkte die verwandten App-Specs 53 -> 7, Slice DCHECK).
-- Suspect (21.11.): ein veralteter residenter Design-Prozess meldet bei `sketch check` „did not draw its embedded frames“ bis `et:design stop`.
+- Cause (20.11., gemessen, zu 40bf18228 + 396f40278): Mac-Maintenance-Sleep suspendiert den Design-Server, kein Fetch-Hänger (pmset-Log, 164 s = Sleep 04:05:28); fetch-watch benennt einen suspendierten Server, canvas.e2e startet auf macOS caffeinate; `/__design/sketches` 227,6 -> 53,3 s. Suspect: `--cpu-prof` über Sleep verklemmt den builtin-loader-rwlock.
+- Suspect (20.11.): lange Halter im Produkt-Lock (`git commit` unter dem Lock in merge-commit.ts l.210, merge.ts l.569/645); `sleepSync`-Polling widerlegt (gemessen, <= 3 %).
+- Cause (21.11., gemessen, nichts gebaut): `design check --part elements/variant-cell` kalt 81 s, `--slow` 28 s, APP-SPEC <= 13 s; das 1200-s-Limit waren 53 verwandte Specs, 562c389c7 schnitt sie auf 7.
+- Gruppe c0/B403 (SLOWFAIL 4a3dc7efa, lokal): slow-checks.json cachte einen fehlgeschlagenen Slow-Check bis zur Eingabeänderung; der Cache speichert nur noch Treffer (Bite 5 Specs rot -> grün); ein alter Fehlschlag steht als „pending“, bis der nächste Check ihn neu fährt.
+- Suspect (21.11.): warmer Resident meldet nach 4-7 `sketch check` „did not draw its embedded frames“ (50-110 s je Lauf danach; kein veralteter Build); Suspect: Event-Loop des warmen vite-Design-Servers blockiert, kein einzelner hängender URL (d6d3b1f7b, 819840906 loggt offene Requests); Retry auf wt-resident2 17642aa5d bis ein Bite kommt.
 
 ## D. SDK und Libs
 
