@@ -343,13 +343,13 @@
       ".ethlete/design/studio/components/comment-target/comment-target.ts": "522835896447fe12",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "faeffebc1431c71f",
+    "app": "5c19877d30eb77dc",
     "actions": ["emit:comment"],
     "builder": "designer",
     "at": "2026-11-20T20:04:04.979Z",
-    "by": "claude-sonnet-5-5",
+    "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1841035
+    "pid": 2123565
   },
   "components/disclosure": {
     "hash": "17f459ae69df97ec",
