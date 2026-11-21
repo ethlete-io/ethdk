@@ -67,7 +67,7 @@ test.describe('a linked worktree that worked beside its main checkout', () => {
   });
 });
 
-/** The worktree starts half an hour into the main checkout's hour, so the two overlap from 09:30 to 10:00. */
+/** The worktree starts half an hour into the main checkout's hour, so the two overlap from 09:30 to 10:00 and together cover 09:00 to 10:30. */
 test.describe('a linked worktree that overlaps its main checkout for part of an hour', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, {
@@ -79,24 +79,21 @@ test.describe('a linked worktree that overlaps its main checkout for part of an 
       git: { extraRepos: [WORKTREE], worktrees: { [WORKTREE]: E2E_REPO } },
     });
     await page.goto('/day');
-    await expect(page.locator('[data-lane] [data-kind="row"]')).toHaveCount(2);
+    await expect(page.locator('[data-lane] [data-kind="row"]')).toHaveCount(1);
   });
 
-  test('keeps only the minutes its main checkout did not hold, below it and across the lane', async ({ page }) => {
+  test('books the union of the two once, as one row across the lane', async ({ page }) => {
     const titles = await headers(page).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('title')));
     const lane = page.locator('[data-lane]').nth(titles.indexOf(`repo:${E2E_REPO}`));
-    const main = lane.locator('[data-kind="row"]').first();
-    const worktree = lane.locator('[data-kind="row"]').last();
+    const rows = lane.locator('[data-kind="row"]');
 
-    await expect(main).toHaveAttribute('title', /1h 0m$/);
-    await expect(worktree).toHaveAttribute('title', /30m$/);
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toHaveAttribute('title', /1h 30m$/);
 
-    const mainBox = await boxOf(main);
-    const worktreeBox = await boxOf(worktree);
+    const laneBox = await boxOf(lane);
+    const rowBox = await boxOf(rows);
 
-    expect(worktreeBox.y).toBeCloseTo(mainBox.y + mainBox.height + 2, 0);
-    expect(worktreeBox.x).toBeCloseTo(mainBox.x, 0);
-    expect(worktreeBox.width).toBeCloseTo(mainBox.width, 0);
+    expect(rowBox.width).toBeGreaterThan(laneBox.width - 2);
   });
 });
 
