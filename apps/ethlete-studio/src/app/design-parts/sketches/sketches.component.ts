@@ -237,6 +237,7 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   protected warningTheme = injectSemanticColorTheme('warning');
+  protected successTheme = injectSemanticColorTheme('success');
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private injector = inject(Injector);

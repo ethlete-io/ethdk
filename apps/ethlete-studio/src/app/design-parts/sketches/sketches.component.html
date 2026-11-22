@@ -118,7 +118,7 @@
         }
       }
       @if (autoMerge()) {
-        <span class="flex w-fit" data-sk-auto-merge>
+        <span [etProvideColor]="successTheme()" class="flex w-fit" data-sk-auto-merge>
           <div class="flex flex-wrap items-center">
             <et-badge variant="tonal" size="sm">{{ LABELS.autoMerge }}</et-badge>
           </div>
