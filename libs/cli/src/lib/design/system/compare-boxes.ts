@@ -5,7 +5,8 @@ export type PictureBox = { x: number; y: number; width: number; height: number }
 export type CompareBoxes = { root: PictureBox; panes: PictureBox[] };
 
 /** The overlay pane mocks a design picture draws, as `drawnPaneCountOf` counts them. */
-export const DRAWN_PANES = '.et-overlay-runtime-pane, et-overlay-container, et-menu, et-select-panel';
+export const DRAWN_PANES =
+  '.et-overlay-runtime-pane, et-overlay-container, et-menu, et-select-panel, [data-overlay-placement]';
 
 /** A pane mock inside a part root a `slot()` region frames is frame content, not a pane of the part. */
 const FRAMED_PANE = '[data-et-projected] [data-et-part]';
