@@ -21,6 +21,7 @@ import { ImplementedRefusals, implementedRefusalsOf } from './implemented-proof'
 import {
   AppShotCache,
   browserVersionOf,
+  CachedAppShot,
   builtAppHashOf,
   cacheKeyOf,
   COMPARE_APP_SHOTS,
@@ -39,14 +40,20 @@ import {
   harnessDriveOf,
   harnessPropsOf,
   harnessShotOf,
+  boxedHarnessShotOf,
   AppFontError,
   LookMissError,
   MissingPanesError,
   UndrivableError,
 } from './harness-shot';
+import { CompareBoxes } from './compare-boxes';
 import {
   compareLineOf,
   PixelCompare,
+  paneLinesOf,
+  StateCompare,
+  stateCompareLinesOf,
+  stateCompareOf,
   designOnlyPropsOf,
   drawsPaneBeforeOf,
   drawsSelectedOf,
@@ -87,7 +94,14 @@ export const COMPARE_USAGE =
 /** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
 /** A drawn state; a live one carries the regions both sides measured. */
 export type StateShot =
-  | { state: string; width?: number; design: Buffer; app: Buffer; regions?: { design: Region[]; app: Region[] } }
+  | {
+      state: string;
+      width?: number;
+      design: Buffer;
+      app: Buffer;
+      regions?: { design: Region[]; app: Region[] };
+      boxes?: { design: CompareBoxes; app: CompareBoxes };
+    }
   | { state: string; width?: number; problem: string; undrivable?: true; missingPanes?: true };
 
 /** A live app shot of one state with its measured regions, or the reason it failed. */
@@ -132,7 +146,7 @@ export const COMPARE_SHOTS_AT_ONCE = 8;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-type AppShot = { app: Buffer } | { problem: string; undrivable?: true; missingPanes?: true };
+type AppShot = { app: Buffer; boxes?: CompareBoxes } | { problem: string; undrivable?: true; missingPanes?: true };
 
 /** @internal The failed state a harness shot's error stands for; rethrows any error that fails the whole compare. */
 export const appShotProblemOf = (error: unknown): AppShot => {
@@ -148,7 +162,7 @@ export const appShotProblemOf = (error: unknown): AppShot => {
  * @internal Shoots the app picture of each state that has a design, at most `COMPARE_SHOTS_AT_ONCE` at once, and returns
  * the shots in state order; a state whose pointer open is a string aborts with it before any shot.
  */
-export const appShotsOf = async <TDesign extends { png: Buffer }, TOpen>(options: {
+export const appShotsOf = async <TDesign extends { png: Buffer; boxes?: CompareBoxes }, TOpen>(options: {
   states: string[];
   designs: ReadonlyMap<string, TDesign | undefined>;
   opens: Readonly<Record<string, TOpen | string | undefined>>;
@@ -176,7 +190,16 @@ export const appShotsOf = async <TDesign extends { png: Buffer }, TOpen>(options
 
       const app = await options.shoot({ state, design, open: opens[state] as TOpen | undefined });
 
-      return 'app' in app ? { state, design: design.png, ...app } : { state, ...app };
+      if (!('app' in app)) return { state, ...app };
+
+      const { boxes, ...shot } = app;
+
+      return {
+        state,
+        design: design.png,
+        ...shot,
+        ...(boxes && design.boxes ? { boxes: { design: design.boxes, app: boxes } } : {}),
+      };
     },
   });
 };
@@ -242,7 +265,7 @@ export const compareCachesOf = (options: {
 export const cachedAppShotOf = async (options: {
   cache: { salt: string; built: string; cache: AppShotCache } | null;
   shot: HarnessShot;
-  draw: () => Promise<{ app: Buffer }>;
+  draw: () => Promise<CachedAppShot>;
 }) => {
   const { cache } = options;
   const key = cache ? appShotKeyOf({ salt: cache.salt, app: cache.built, shot: options.shot }) : null;
@@ -436,7 +459,12 @@ export const shootStatesWith =
                 draw: () =>
                   timedPhase(`compare-app-shot ${state}`, () =>
                     queue.run((browser) =>
-                      harnessShotOf({ ...shot, browser, phase: `compare-app-shot ${state}` }).then((app) => ({ app })),
+                      boxedHarnessShotOf({ ...shot, browser, phase: `compare-app-shot ${state}` }).then(
+                        ({ png, boxes }) => ({
+                          app: png,
+                          ...(boxes ? { boxes } : {}),
+                        }),
+                      ),
                     ),
                   ),
               }).catch(appShotProblemOf);
@@ -516,36 +544,45 @@ export const comparePart = async (
         continue;
       }
 
-      const { design, app } = stateShot;
+      const compare = (pictures: { design: Buffer; app: Buffer }) => {
+        const compared = cachedComparePngs({ ...cache, ...pictures });
+
+        recordCache(compared.hit);
+
+        return compared.result;
+      };
+      let boxed: StateCompare | null;
       let result: PixelCompare;
 
       try {
-        const compared = cachedComparePngs({ ...cache, design, app });
-
-        recordCache(compared.hit);
-        result = compared.result;
+        boxed = stateShot.boxes
+          ? stateCompareOf({ design: stateShot.design, app: stateShot.app, boxes: stateShot.boxes, compare })
+          : null;
+        result = boxed ? boxed.root.result : compare(stateShot);
       } catch (error) {
         return `the pictures of ${state} cannot be compared: ${messageOf(error)}`;
       }
 
-      const line = compareLineOf(state, result);
+      const { design, app } = boxed?.root ?? stateShot;
+      const lines = boxed ? stateCompareLinesOf(state, boxed) : [compareLineOf(state, result)];
+      const panesOk = !boxed || paneLinesOf(state, boxed).length === 0;
       const regionLines = stateShot.regions ? regionDeltasOf(stateShot.regions).map(regionDeltaLineOf) : [];
       const logRegions = () => regionLines.forEach((regionLine) => log(`  ${regionLine}`));
 
-      if (result.kind === 'ok' && regionLines.length === 0) {
-        log(line);
+      if (result.kind === 'ok' && panesOk && regionLines.length === 0) {
+        lines.forEach(log);
         continue;
       }
 
-      const covering = coveringSketchOf({ sketches, part: options.part, state: plain, result });
+      const covering = panesOk ? coveringSketchOf({ sketches, part: options.part, state: plain, result }) : null;
 
       if (covering !== null) {
-        log(coveredLineOf(line, covering));
+        log(coveredLineOf(compareLineOf(state, result), covering));
         logRegions();
         continue;
       }
 
-      log(line);
+      lines.forEach(log);
       logRegions();
       failing.push(state);
 
@@ -555,6 +592,14 @@ export const comparePart = async (
       writeDesignFile(join(dir, `${fileNameOf(state)}.design.png`), design);
       writeDesignFile(join(dir, `${fileNameOf(state)}.app.png`), app);
       if (result.kind !== 'ok') writeDesignFile(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
+
+      boxed?.panes.forEach((pane, at) => {
+        const name = `${fileNameOf(state)}.pane-${at + 1}`;
+
+        writeDesignFile(join(dir as string, `${name}.design.png`), pane.design);
+        writeDesignFile(join(dir as string, `${name}.app.png`), pane.app);
+        if (pane.result.kind !== 'ok') writeDesignFile(join(dir as string, `${name}.diff.png`), pane.result.diff);
+      });
     }
 
     if (dir !== null) log(`pictures: ${dir}`);

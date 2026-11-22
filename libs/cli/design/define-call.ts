@@ -274,7 +274,7 @@ export const placeOverlays = (root: HTMLElement) => {
 
 const setStyle = (
   element: HTMLElement,
-  write: { property: 'paddingTop' | 'minHeight' | 'minWidth'; value: string },
+  write: { property: 'paddingTop' | 'paddingLeft' | 'minHeight' | 'minWidth'; value: string },
 ) => {
   const { property, value } = write;
 
@@ -283,12 +283,14 @@ const setStyle = (
 
 const fitPaddingTops = new WeakMap<HTMLElement, string>();
 
+const fitPaddingLefts = new WeakMap<HTMLElement, string>();
+
 /**
  * Grows `root` to cover every absolutely or fixed positioned element inside it, such as an open
  * overlay pane, so a frame measured or shot from `root` shows them. Skips a fixed element on all four
  * edges of the viewport, such as a backdrop, and counts an absolute element only as far as the
- * overflow boxes that clip it. Grows sideways and up too with `sideways`, up by a top padding that
- * moves the content below an element drawn above it. Safe to run again.
+ * overflow boxes that clip it. Grows sideways, up and left too with `sideways`, by a top or left padding
+ * that moves the content past an element drawn above or before it. Safe to run again.
  */
 export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) => {
   const view = root.ownerDocument.defaultView;
@@ -345,6 +347,20 @@ export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) 
       fitPaddingTops.set(root, root.style.paddingTop);
       setStyle(root, { property: 'paddingTop', value: `${Math.ceil(2 * padding + rootTop - top)}px` });
     } else fitPaddingTops.delete(root);
+
+    const fittedLeft = fitPaddingLefts.get(root);
+
+    if (fittedLeft !== undefined) setStyle(root, { property: 'paddingLeft', value: fittedLeft });
+
+    const left = Math.min(...outOfFlowOf().map((rect) => rect.left));
+    const rootLeft = root.getBoundingClientRect().left;
+
+    if (left < rootLeft) {
+      const padding = parseFloat(view.getComputedStyle(root).paddingLeft) || 0;
+
+      fitPaddingLefts.set(root, root.style.paddingLeft);
+      setStyle(root, { property: 'paddingLeft', value: `${Math.ceil(2 * padding + rootLeft - left)}px` });
+    } else fitPaddingLefts.delete(root);
   }
 
   const box = root.getBoundingClientRect();

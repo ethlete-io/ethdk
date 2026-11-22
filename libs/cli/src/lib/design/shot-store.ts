@@ -17,6 +17,7 @@ import { setTimeout as delay } from 'timers/promises';
 import { writeCacheEntry } from './cache-entry';
 import { isRunning } from './is-running';
 import { PartAddress, PartMark, Picture, TextAmbient } from './shot';
+import { CompareBoxes } from './system/compare-boxes';
 
 /** The part of a shot address that decides which files a shot draws from. */
 export type StoredAddress = Pick<PartAddress, 'product' | 'part' | 'sketch' | 'props'>;
@@ -49,6 +50,7 @@ type Entry = {
   inputs: [string, string | null][];
   png: string;
   marks: PartMark[];
+  boxes?: CompareBoxes;
   markup?: string;
   ambient?: TextAmbient;
 };
@@ -270,6 +272,7 @@ export const createShotStore = (options: {
       return {
         png: Buffer.from(entry.png, 'base64'),
         marks: entry.marks,
+        ...(entry.boxes ? { boxes: entry.boxes } : {}),
         ...(typeof entry.markup === 'string' ? { markup: entry.markup } : {}),
         ...(entry.ambient ? { ambient: entry.ambient } : {}),
       };
@@ -365,6 +368,7 @@ export const createShotStore = (options: {
           inputs,
           png: picture.png.toString('base64'),
           marks: picture.marks,
+          ...(picture.boxes === undefined ? {} : { boxes: picture.boxes }),
           ...(picture.markup === undefined ? {} : { markup: picture.markup }),
           ...(picture.ambient === undefined ? {} : { ambient: picture.ambient }),
         };

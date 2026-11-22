@@ -2,8 +2,9 @@ import { createHash } from 'crypto';
 import { Dirent, readdirSync, readFileSync, rmSync, statSync, utimesSync } from 'fs';
 import { dirname, join, relative } from 'path';
 import { writeCacheEntry } from '../cache-entry';
+import { CompareBoxes } from './compare-boxes';
 
-export type CachedAppShot = { app: Buffer };
+export type CachedAppShot = { app: Buffer; boxes?: CompareBoxes };
 
 /** App pictures of compare on disk, each under the hash of every input that draws it. */
 export type AppShotCache = {
@@ -84,7 +85,7 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
       const path = join(dir, `${key}${ENTRY_SUFFIX}`);
 
       try {
-        const entry = JSON.parse(readFileSync(path, 'utf8')) as { key?: unknown; app?: unknown };
+        const entry = JSON.parse(readFileSync(path, 'utf8')) as { key?: unknown; app?: unknown; boxes?: CompareBoxes };
 
         if (entry.key !== key || typeof entry.app !== 'string') return null;
 
@@ -92,7 +93,7 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
 
         utimesSync(path, now, now);
 
-        return { app: Buffer.from(entry.app, 'base64') };
+        return { app: Buffer.from(entry.app, 'base64'), ...(entry.boxes ? { boxes: entry.boxes } : {}) };
       } catch {
         return null;
       }
@@ -101,7 +102,7 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
       if (
         writeCacheEntry(dir, {
           name: `${key}${ENTRY_SUFFIX}`,
-          text: JSON.stringify({ key, app: shot.app.toString('base64') }),
+          text: JSON.stringify({ key, app: shot.app.toString('base64'), ...(shot.boxes ? { boxes: shot.boxes } : {}) }),
         })
       )
         evict();

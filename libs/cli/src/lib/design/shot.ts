@@ -10,6 +10,7 @@ import { DesignPreset } from './design-config';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import { boxedMarkupScriptOf } from './system/dom-boxes';
+import { CompareBoxes, compareBoxesIn, compareBoxesScriptOf, designRootOf, DRAWN_PANES } from './system/compare-boxes';
 import { REGION_OF_SCRIPT } from './system/region-geometry';
 import { sketchIdOfName } from './system/sketch/sketch';
 import { recordShotViewed } from './system/sketch/viewed-shots';
@@ -188,7 +189,15 @@ export const TEXT_AMBIENT_PROPERTIES = [
 /** The inherited text style the frame root hands to a part: font family, size, weight, style, line height and letter spacing. */
 export type TextAmbient = Record<(typeof TEXT_AMBIENT_PROPERTIES)[number], string>;
 
-export type Picture = { png: Buffer; marks: PartMark[]; markup?: string; ambient?: TextAmbient; note?: string };
+export type Picture = {
+  png: Buffer;
+  marks: PartMark[];
+  markup?: string;
+  ambient?: TextAmbient;
+  note?: string;
+  /** The part root and each drawn overlay pane in a fitted, uncropped picture. */
+  boxes?: CompareBoxes;
+};
 
 const CLIP_OUTSIDE = 'Clipped area is either empty or outside';
 
@@ -572,6 +581,19 @@ export const createPartShooter = (options: {
         const shotOptions = frame.checker ? { ...SHOT_OPTIONS, omitBackground: false } : SHOT_OPTIONS;
         const clip = crop ? crop : rootBox ? pixelBoxOf(rootBox) : null;
 
+        const boxes =
+          clip && !crop
+            ? compareBoxesIn(
+                await page.evaluate(
+                  compareBoxesScriptOf({
+                    root: designRootOf(new URLSearchParams(frame.search).get('part')),
+                    panes: DRAWN_PANES,
+                  }),
+                ),
+                clip,
+              )
+            : null;
+
         if (frame.checker) await page.evaluate(checkerScriptOf({ x: clip?.x ?? 0, y: clip?.y ?? 0 }));
 
         let note: string | undefined;
@@ -618,6 +640,7 @@ export const createPartShooter = (options: {
           png,
           ...(note ? { note } : {}),
           marks: Array.isArray(marks) ? (marks as PartMark[]) : [],
+          ...(boxes ? { boxes } : {}),
           ...(typeof markup === 'string' ? { markup } : {}),
           ...(ambient && typeof ambient === 'object' ? { ambient: ambient as TextAmbient } : {}),
         };

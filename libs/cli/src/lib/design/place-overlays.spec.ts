@@ -265,6 +265,41 @@ describe('fitOutOfFlow', () => {
     expect(root.style.paddingTop).toBe('');
   });
 
+  const before = () => {
+    const root = mount(
+      `${field}<div class="et-overlay-runtime-root">` +
+        `<div class="et-overlay-runtime-entry" id="panel" style="position: absolute">Panel</div></div>`,
+    );
+
+    rect(root, { top: 0, left: 300, width: 40, height: 40 });
+    rect(root.querySelector('#panel'), { top: 0, left: 100, width: 184, height: 40 });
+
+    return root;
+  };
+
+  it('pads a fitted root on the left over a panel drawn before it, keeping its own padding beside the panel', () => {
+    const root = before();
+
+    root.style.padding = '16px';
+    fitOutOfFlow(root, { sideways: true });
+
+    expect([root.style.paddingLeft, root.style.paddingRight]).toEqual(['232px', '16px']);
+  });
+
+  it('pads the root on the left only once when it runs again, and drops the padding once the panel is gone', () => {
+    const root = before();
+
+    fitOutOfFlow(root, { sideways: true });
+    fitOutOfFlow(root, { sideways: true });
+
+    expect(root.style.paddingLeft).toBe('200px');
+
+    root.querySelector('.et-overlay-runtime-root')?.remove();
+    fitOutOfFlow(root, { sideways: true });
+
+    expect(root.style.paddingLeft).toBe('');
+  });
+
   it('leaves the top of a root that is not fitted', () => {
     const root = above();
 

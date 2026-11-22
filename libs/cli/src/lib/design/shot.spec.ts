@@ -1216,10 +1216,11 @@ describe('createPartShooter pictures', () => {
       source: 'drawn',
       drawnAt: expect.any(Number),
     });
-    expect(evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('data-et-part'))).toEqual([
-      expect.stringContaining('true ?'),
-      expect.stringContaining('false ?'),
-    ]);
+    expect(
+      evaluate.mock.calls
+        .map(([script]) => script)
+        .filter((script) => script.includes("querySelectorAll('[data-et-part]')")),
+    ).toEqual([expect.stringContaining('true ?'), expect.stringContaining('false ?')]);
   });
   it('reads the markup with each element box only when asked for boxes, as a picture of its own', async () => {
     const { shots } = acme();

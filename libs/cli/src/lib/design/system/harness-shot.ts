@@ -4,6 +4,7 @@ import { checkerScriptOf, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, DRAW_TIMEOUT_MS } from '../thumb';
 import { forcedSelectorOf } from '../force-interactions';
 import { boxedMarkupScriptOf } from './dom-boxes';
+import { CompareBoxes, compareBoxesIn, compareBoxesScriptOf } from './compare-boxes';
 import {
   ForcedElement,
   forcedElementsOf,
@@ -538,7 +539,18 @@ const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHar
  * an overlay that opens above neither flips below nor shifts off the viewport edge, and the shot grows up as well.
  * Without `size`, a `width` sets the viewport and the host to that width, as a design frame draws a part with `widths`.
  */
-export const harnessShotOf = (options: HarnessDrive) =>
+export const harnessShotOf = (options: HarnessDrive) => boxedHarnessShotOf(options).then(({ png }) => png);
+
+const APP_BOXES_SCRIPT = compareBoxesScriptOf({
+  root: `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})`,
+  panes: OVERLAY_PANES,
+});
+
+/**
+ * `harnessShotOf` with the harness host and each open overlay pane in the picture, for a fitted host; a host shot at
+ * a `size` without panes has none.
+ */
+export const boxedHarnessShotOf = (options: HarnessDrive): Promise<{ png: Buffer; boxes: CompareBoxes | null }> =>
   drivenHarnessOf(options, async ({ page, host, room, timeout, step, sdkErrors, forcedTargets }) => {
     const { url } = options;
 
@@ -557,7 +569,7 @@ export const harnessShotOf = (options: HarnessDrive) =>
 
       if (sdkProblem) throw new HarnessError(sdkProblem);
 
-      return png;
+      return { png, boxes: null };
     }
 
     // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.
@@ -582,6 +594,8 @@ export const harnessShotOf = (options: HarnessDrive) =>
       clip = await boxNow();
     }
 
+    const boxes = options.size ? null : compareBoxesIn(await page.evaluate(APP_BOXES_SCRIPT), clip);
+
     await page.evaluate(checkerScriptOf(clip));
 
     const png = await step('screenshot', () =>
@@ -598,7 +612,7 @@ export const harnessShotOf = (options: HarnessDrive) =>
 
     if (sdkProblem) throw new HarnessError(sdkProblem);
 
-    return png;
+    return { png, boxes };
   });
 
 /**

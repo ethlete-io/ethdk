@@ -1,6 +1,7 @@
 import { crc32, deflateSync, inflateSync } from 'zlib';
 import { OVERLAY_ROOTS } from './action-press';
 import { isolatedAntiAlias, pixelsDiffer } from './anti-alias';
+import { CompareBoxes, PictureBox } from './compare-boxes';
 
 export const HARNESS_PATH = '/__design-harness';
 
@@ -581,6 +582,97 @@ export const compareLineOf = (state: string, result: PixelCompare) =>
     : result.kind === 'diff'
       ? `${state} DIFF ${result.pixels} px`
       : `${state} SIZE ${result.design.width}x${result.design.height} vs ${result.app.width}x${result.app.height}`;
+
+const cropOf = (pixels: Pixels, box: PictureBox) => {
+  const width = Math.max(0, Math.min(box.width, pixels.width - box.x));
+  const height = Math.max(0, Math.min(box.height, pixels.height - box.y));
+  const data = Buffer.alloc(width * height * 4);
+
+  for (let y = 0; y < height; y++)
+    pixels.data.copy(
+      data,
+      y * width * 4,
+      ((box.y + y) * pixels.width + box.x) * 4,
+      ((box.y + y) * pixels.width + box.x + width) * 4,
+    );
+
+  return encodePng({ width, height, data });
+};
+
+/** One box of a state compared: the cut of it from each picture and how they match. */
+export type BoxCompare = { design: Buffer; app: Buffer; result: PixelCompare };
+
+/** A state compared box by box: its root, each overlay pane both sides open, and the pane count and offsets. */
+export type StateCompare = {
+  root: BoxCompare;
+  panes: (BoxCompare & { offset: { design: Offset; app: Offset } })[];
+  paneCount: { design: number; app: number };
+};
+
+type Offset = { x: number; y: number };
+
+/**
+ * Compares the root box of the design and app pictures of a state, and each overlay pane by its place in top to
+ * bottom, then left to right order: its pixels, and its offset from the root box.
+ */
+export const stateCompareOf = (options: {
+  design: Buffer;
+  app: Buffer;
+  boxes: { design: CompareBoxes; app: CompareBoxes };
+  compare?: (pictures: { design: Buffer; app: Buffer }) => PixelCompare;
+}): StateCompare => {
+  const { boxes, compare = comparePngs } = options;
+  const design = decodePng(options.design);
+  const app = decodePng(options.app);
+  const boxCompareOf = (cut: { design: PictureBox; app: PictureBox }): BoxCompare => {
+    const pictures = { design: cropOf(design, cut.design), app: cropOf(app, cut.app) };
+
+    return { ...pictures, result: compare(pictures) };
+  };
+  const offsetOf = (pane: PictureBox, root: PictureBox) => ({ x: pane.x - root.x, y: pane.y - root.y });
+
+  return {
+    root: boxCompareOf({ design: boxes.design.root, app: boxes.app.root }),
+    panes: boxes.design.panes.slice(0, boxes.app.panes.length).map((pane, at) => {
+      const appPane = boxes.app.panes[at] as PictureBox;
+
+      return {
+        ...boxCompareOf({ design: pane, app: appPane }),
+        offset: { design: offsetOf(pane, boxes.design.root), app: offsetOf(appPane, boxes.app.root) },
+      };
+    }),
+    paneCount: { design: boxes.design.panes.length, app: boxes.app.panes.length },
+  };
+};
+
+/** The lines `design compare` prints for the overlay panes of a state compared box by box, none when they all match. */
+export const paneLinesOf = (state: string, compared: StateCompare) => {
+  const { panes, paneCount } = compared;
+
+  return [
+    ...(paneCount.design === paneCount.app ? [] : [`${state} PANES ${paneCount.design} vs ${paneCount.app}`]),
+    ...panes.flatMap(({ result, offset }, at) => {
+      const name = `${state} pane ${at + 1}`;
+      const { design, app } = offset;
+
+      return [
+        ...(result.kind === 'ok' ? [] : [compareLineOf(name, result)]),
+        ...(design.x === app.x && design.y === app.y
+          ? []
+          : [`${name} OFFSET ${design.x},${design.y} vs ${app.x},${app.y}`]),
+      ];
+    }),
+  ];
+};
+
+/** The lines `design compare` prints for a state compared box by box: `<state> ok` only when every box matches. */
+export const stateCompareLinesOf = (state: string, compared: StateCompare) => {
+  const paneLines = paneLinesOf(state, compared);
+
+  return compared.root.result.kind === 'ok' && paneLines.length > 0
+    ? paneLines
+    : [compareLineOf(state, compared.root.result), ...paneLines];
+};
 
 /**
  * The props of `state` that compare reproduces without a component input, so the harness may drop them: `class`,

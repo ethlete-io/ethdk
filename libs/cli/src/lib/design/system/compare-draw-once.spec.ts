@@ -82,17 +82,22 @@ vi.mock('../thumb', async (importOriginal) => ({
       job({ newContext: async () => ({ newPage: async () => fakePage(), close: async () => undefined }) }),
   }),
 }));
-vi.mock('./harness-shot', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./harness-shot')>()),
-  harnessShotOf: async ({ url }: { url: string }) => {
+vi.mock('./harness-shot', async (importOriginal) => {
+  const appShotOf = async ({ url }: { url: string }) => {
     const { searchParams } = new URL(url);
 
     draws.drawn('app', `${searchParams.get('part')} ${searchParams.get('state')}`);
     await tick();
 
     return PNG;
-  },
-}));
+  };
+
+  return {
+    ...(await importOriginal<typeof import('./harness-shot')>()),
+    harnessShotOf: appShotOf,
+    boxedHarnessShotOf: async (options: { url: string }) => ({ png: await appShotOf(options), boxes: null }),
+  };
+});
 vi.mock('./pointer-focus', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./pointer-focus')>()),
   probePointerFocus: async () => null,

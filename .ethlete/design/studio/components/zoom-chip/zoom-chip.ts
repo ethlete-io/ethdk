@@ -21,9 +21,6 @@ const TITLE: Partial<Record<ZoomControl, string>> = {
   fit: ZOOM_LABELS.fitTooltip,
 };
 
-const tooltipOpen = ({ target, interaction }: Props) =>
-  interaction === 'focus-visible' && target !== undefined && TITLE[target] !== undefined;
-
 const tooltipPane = (id: ZoomControl, text: string) => {
   const anchor = `[data-et-control="${id}"]`;
 
@@ -102,20 +99,18 @@ export default definePart({
   controls: { out: BUTTON, reset: BUTTON, in: BUTTON, fit: BUTTON },
   render: (props: Props) =>
     drawing({
-      body: html`<div class="${tooltipOpen(props) ? (props.target === 'fit' ? 'pt-13 pr-1' : 'pt-13 pl-4.75') : ''}">
-        <div
-          class="inline-flex rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16)) bg-et-surface-bg ${
-            props.class ?? ''
-          }"
-          data-et-auto-surface
-          data-canvas-zoom
-        >
-          ${chipButton('out', '−', props)}${chipButton('reset', `${props.percent} %`, props)}${chipButton(
-            'in',
-            '+',
-            props,
-          )}${chipButton('fit', 'Fit', props)}
-        </div>
+      body: html`<div
+        class="inline-flex rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16)) bg-et-surface-bg ${
+          props.class ?? ''
+        }"
+        data-et-auto-surface
+        data-canvas-zoom
+      >
+        ${chipButton('out', '−', props)}${chipButton('reset', `${props.percent} %`, props)}${chipButton(
+          'in',
+          '+',
+          props,
+        )}${chipButton('fit', 'Fit', props)}
       </div>`,
       styles: [buttonStyles, tooltipStyles].join('\n'),
     }),
