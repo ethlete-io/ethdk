@@ -37,17 +37,19 @@ elrond pulls (ADR 0346): `apps-release` uploads `latest-elrond.json` next to `la
 rewritten to `$MIRROR_BASE/<app>/<tag>/<file>`; elrond mirrors those files and serves it as `<app>/latest.json`.
 `MIRROR_BASE` in publish.yml and the second endpoint change together.
 
-On Linux both apps, and on macOS Studio, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
-branch (ADR 0249); Timetrack on macOS and both apps on Windows run on wry. The Studio macOS bundle is
-built by `@tauri-apps/cli-cef` too and is about 147 MiB larger. Studio's `tauri`, `tauri:dev` and `tauri:build` targets go through
-`tools/scripts/studio-tauri.mjs`, which picks cli-cef off Windows: the plain CLI starts a bare binary
-that cannot find the CEF framework. The branch's `tauri` has no runtime of its own, so `lib.rs` names one per platform, and
+Studio on every OS, and Timetrack on Linux, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
+branch (ADR 0249, 0400); Timetrack on macOS and Windows runs on wry. The Studio macOS and Windows bundles
+are built by `@tauri-apps/cli-cef` too: the dmg is about 147 MiB larger, the NSIS installer is about 142 MiB.
+On Windows, cef-dll-sys needs CMake and Ninja on `PATH`; `publish.yml` takes both from the Visual Studio install.
+Studio's `tauri`, `tauri:dev` and `tauri:build` targets go through `tools/scripts/studio-tauri.mjs`, which
+always picks cli-cef: the plain CLI starts a bare binary that cannot find the CEF framework. The branch's `tauri` has no runtime of its own, so each app's `lib.rs` names its runtime, and
 a plugin whose crates.io release asks for tauri's `wry` feature is patched to plugins-workspace's
 `feat/cef` branch. Building needs the GTK 4
 headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first build downloads CEF
 (~1.8 GB unpacked) into `src-tauri/target/cef`. Studio appends every console error of its window to `console.log` in its app log
 directory (`~/Library/Logs/io.ethlete.studio/` on macOS; `ETHLETE_STUDIO_CONSOLE_LOG` overrides the path), and
-`yarn studio:release-smoke` reads that file, so a shipped bundle needs no debug port.
+`yarn studio:release-smoke` reads that file, so a shipped bundle needs no debug port. It builds on macOS only; on
+Windows, install the NSIS bundle and pass `--app <install dir>\ethlete-studio.exe`.
 
 ## Private switch
 

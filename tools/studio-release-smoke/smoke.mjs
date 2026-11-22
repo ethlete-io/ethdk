@@ -26,7 +26,8 @@ Starts a Studio release bundle once, opens a sketch and fails on a CSP refusal o
 bundle writes to its console log (ETHLETE_STUDIO_CONSOLE_LOG). Without --app it builds a bundle first from HEAD
 in a git worktree, not from the working tree (macOS, CEF, a few minutes when warm).
 
-  --app <path>        a Studio bundle, e.g. dist/studio-release-smoke/<label>/Ethlete Studio.app
+  --app <path>        a Studio bundle, e.g. dist/studio-release-smoke/<label>/Ethlete Studio.app, or on
+                      Windows the ethlete-studio.exe the NSIS installer installed
   --csp-from <rev>    build with the app.security block of tauri.conf.json at <rev> (the bite)
   --build-only        build, print the bundle path, do not run it
   --checkout <dir>    design checkout Studio opens (default: this repo)
@@ -93,7 +94,7 @@ const securityPatch = (rev) => {
 };
 
 const build = () => {
-  if (process.platform !== 'darwin') throw new Error('the build step knows the macOS CEF bundle only');
+  if (process.platform !== 'darwin') throw new Error('the build step knows the macOS CEF bundle only: pass --app');
 
   const label = cspFrom ? `csp-${cspFrom.replace(/[^\w.-]/g, '_')}` : 'head';
   const out = join(root, 'dist/studio-release-smoke', label);
@@ -165,6 +166,18 @@ const descendants = (pid) => {
 };
 
 const stop = async (pid) => {
+  if (process.platform === 'win32') {
+    try {
+      execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore' });
+    } catch {
+      // Already gone.
+    }
+
+    await sleep(3000);
+
+    return;
+  }
+
   const all = descendants(pid);
 
   for (const signal of ['SIGTERM', 'SIGKILL']) {
@@ -189,7 +202,7 @@ const screenLocked = () =>
 const readLog = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : '');
 
 const smoke = async (app) => {
-  const binary = join(app, 'Contents/MacOS/ethlete-studio');
+  const binary = app.endsWith('.exe') ? app : join(app, 'Contents/MacOS/ethlete-studio');
 
   if (!existsSync(binary)) throw new Error(`no Studio binary at ${binary}`);
 

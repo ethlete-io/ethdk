@@ -194,10 +194,7 @@ pub fn run() {
 
     let signals = shutdown::listen();
     let builder = tauri::Builder::default();
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
     let builder = builder.runtime(cef_runtime());
-    #[cfg(target_os = "windows")]
-    let builder = builder.runtime(tauri_runtime_wry::Wry::default());
     #[cfg(target_os = "macos")]
     let builder = builder.on_web_content_process_terminate(webview_rebuild::on_terminate);
 
@@ -253,7 +250,6 @@ pub fn run() {
 /// The page fetches the design server on a loopback address. Chromium's Local Network Access holds
 /// that request until a permission prompt is answered, and on Windows CEF shows none, so the fetch
 /// never settles.
-#[cfg(any(target_os = "linux", target_os = "macos"))]
 fn cef_runtime() -> tauri_runtime_cef::Cef {
     use tauri_runtime_cef::cef::{ContentSettingTypes, ContentSettingValues};
 
@@ -322,7 +318,6 @@ mod tests {
         );
     }
 
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
     #[test]
     fn the_page_may_reach_the_design_server_on_loopback_without_a_prompt() {
         let runtime = format!("{:?}", cef_runtime());

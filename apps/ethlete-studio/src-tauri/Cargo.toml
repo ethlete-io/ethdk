@@ -24,6 +24,9 @@ tauri = { version = "2.11.5", features = [] }
 # GTK 3 cannot start in the GTK 4 process of the CEF runtime, so Linux dialogs go through the portal.
 tauri-plugin-dialog = { version = "2", default-features = false, features = ["xdg-portal"] }
 tauri-plugin-updater = "2.12.0"
+# Frame pictures and design checks run in Chromium, so every platform renders through CEF (ADR 0249, 0400).
+# The CEF runtime lives on Tauri's feat/cef branch only.
+tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1", features = ["devtools"] }
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 
@@ -31,20 +34,12 @@ tokio = { version = "1.53.1", features = ["io-util", "macros", "net", "process",
 # Stopping the design server means signalling the process group the package manager leads.
 libc = "0.2.189"
 
-[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
-# WebKitGTK 2.54 drops animation frames, and frame pictures and design checks run in Chromium, so Linux
-# and macOS render through CEF (ADR 0249). The CEF runtime lives on Tauri's feat/cef branch only.
-tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1", features = ["devtools"] }
-
 [target.'cfg(target_os = "linux")'.dependencies]
 wayland-client = "0.31.15"
 wayland-protocols = { version = "0.32.13", features = ["client", "unstable"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2-app-kit = { version = "0.3", default-features = false, features = ["NSButton", "NSControl", "NSResponder", "NSView", "NSWindow", "objc2-core-foundation"] }
-
-[target.'cfg(target_os = "windows")'.dependencies]
-tauri-runtime-wry = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
 
 [patch.crates-io]
 tauri = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }

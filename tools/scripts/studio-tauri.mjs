@@ -2,8 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 export const STUDIO_CEF_CLI = '@tauri-apps/cli-cef@3.0.0-alpha.27';
 
-export const studioTauriArgs = (args, platform = process.platform) =>
-  platform === 'win32' ? ['tauri', ...args] : ['--yes', `--package=${STUDIO_CEF_CLI}`, 'tauri', ...args];
+export const studioTauriArgs = (args) => ['--yes', `--package=${STUDIO_CEF_CLI}`, 'tauri', ...args];
 
 if (import.meta.main) {
   process.on('SIGINT', () => undefined);

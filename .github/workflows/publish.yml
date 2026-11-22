@@ -134,7 +134,7 @@ jobs:
         with:
           workspaces: ${{ matrix.app.dir }}/src-tauri -> target
 
-      - if: runner.os == 'Linux' || (runner.os == 'macOS' && matrix.app.project == 'ethlete-studio')
+      - if: runner.os == 'Linux' || matrix.app.project == 'ethlete-studio'
         uses: ./.github/actions/cef
 
       # A keychain item's "Always Allow" names the signing certificate. An ad-hoc build has a new
@@ -183,11 +183,18 @@ jobs:
             (cd ${{ matrix.app.dir }}/src-tauri && cargo clean --release -p whisper-rs-sys)
           fi
           echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
-          # Both apps link CEF on Linux and Studio on macOS, which only the CEF CLI bundles. A CEF AppImage is
+          # cef-dll-sys builds its wrapper with CMake and Ninja, which Visual Studio ships off PATH.
+          if [ "$RUNNER_OS" = Windows ] && [ "${{ matrix.app.project }}" = ethlete-studio ]; then
+            vs=$(cygpath -u "$("/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -property installationPath | tr -d '\r')")
+            export PATH="$vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin:$vs/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja:$PATH"
+          fi
+          # Both apps link CEF on Linux and Studio on every OS, which only the CEF CLI bundles. A CEF AppImage is
           # broken upstream: https://github.com/tauri-apps/tauri/issues/16204
           build() {
-            if [ "$RUNNER_OS" = macOS ] && [ "${{ matrix.app.project }}" = ethlete-studio ]; then
-              (cd ${{ matrix.app.dir }} && npx --yes --package=@tauri-apps/cli-cef@3.0.0-alpha.27 tauri build --bundles app,dmg "$@")
+            if [ "$RUNNER_OS" != Linux ] && [ "${{ matrix.app.project }}" = ethlete-studio ]; then
+              bundles=app,dmg
+              [ "$RUNNER_OS" = Windows ] && bundles=nsis
+              (cd ${{ matrix.app.dir }} && npx --yes --package=@tauri-apps/cli-cef@3.0.0-alpha.27 tauri build --bundles "$bundles" "$@")
             elif [ "$RUNNER_OS" = Linux ]; then
               features=()
               [ "${{ matrix.app.project }}" = timetrack-app ] && features=(--features transcribe)

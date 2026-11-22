@@ -12,19 +12,11 @@ const MAX_LOG_BYTES: u64 = 1024 * 1024;
 const SMOKE_PAINT_TIMEOUT_MS: u32 = 110_000;
 const SMOKE_MARKER: &str = "[studio-release-smoke]";
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
 pub trait ConsoleRuntime: Runtime<RuntimeWebviewAttributes: tauri_runtime_cef::AsCefWebviewAttributes> {}
-#[cfg(any(target_os = "linux", target_os = "macos"))]
 impl<R: Runtime<RuntimeWebviewAttributes: tauri_runtime_cef::AsCefWebviewAttributes>> ConsoleRuntime for R {}
-
-#[cfg(target_os = "windows")]
-pub trait ConsoleRuntime: Runtime {}
-#[cfg(target_os = "windows")]
-impl<R: Runtime> ConsoleRuntime for R {}
 
 /// The smoke starts the bundle with its own `HOME`, where an unsigned bundle finds no keychain and the
 /// keychain prompt blocks the page before it paints.
-#[cfg(any(target_os = "linux", target_os = "macos"))]
 pub fn secret_storage() -> tauri_runtime_cef::SecretStorage {
     match std::env::var_os(SMOKE_VIEW_ENV) {
         Some(_) => tauri_runtime_cef::SecretStorage::Mock,
@@ -73,7 +65,6 @@ fn prepare(log: &Path) {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
 fn with_console_log<'a, R: ConsoleRuntime, M: Manager<R>>(
     builder: WebviewWindowBuilder<'a, R, M>,
     log: Option<PathBuf>,
@@ -94,15 +85,6 @@ fn with_console_log<'a, R: ConsoleRuntime, M: Manager<R>>(
     })
 }
 
-#[cfg(target_os = "windows")]
-fn with_console_log<'a, R: ConsoleRuntime, M: Manager<R>>(
-    builder: WebviewWindowBuilder<'a, R, M>,
-    _log: Option<PathBuf>,
-) -> WebviewWindowBuilder<'a, R, M> {
-    builder
-}
-
-#[cfg_attr(target_os = "windows", allow(dead_code))]
 fn unix_millis() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -110,7 +92,6 @@ fn unix_millis() -> u128 {
         .unwrap_or_default()
 }
 
-#[cfg_attr(target_os = "windows", allow(dead_code))]
 fn line(millis: u128, source: &str, line: i32, message: &str) -> String {
     let at = match (source.is_empty(), line) {
         (true, _) => String::new(),
@@ -124,7 +105,6 @@ fn line(millis: u128, source: &str, line: i32, message: &str) -> String {
     )
 }
 
-#[cfg_attr(target_os = "windows", allow(dead_code))]
 fn append(log: &Path, line: &str) {
     if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(log) {
         let _ = file.write_all(line.as_bytes());
