@@ -153,7 +153,7 @@ const railButton = (markup: string, label: string, kind: RailKind, force?: RailF
   if (force?.label !== label) return control(markup, RAIL_CONTROLS[kind]);
   const forced = control(forceInteraction(markup, force.interaction), RAIL_CONTROLS[kind]);
   return kind === 'product'
-    ? `<span class="relative inline-flex">${forced}<span class="absolute inset-y-0 left-full z-10 ml-2 flex w-max items-center pt-1">${tooltip({ text: label, placement: 'right', anchor: `[aria-label="${label}"]` })}</span></span>`
+    ? `<span class="relative inline-flex">${forced}<span data-et-auto-surface class="absolute inset-y-0 left-full z-10 ml-2 flex w-max items-center">${tooltip({ text: label, placement: 'right', anchor: `[aria-label="${label}"]` })}</span></span>`
     : forced;
 };
 
