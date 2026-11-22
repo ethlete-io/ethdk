@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, typecheckAsync, TypecheckResult } from '../typecheck';
 import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
-import { editorAssetRootOf, installedAssetRoot } from '../package-root';
+import { assetRoot as servedAssetRoot, editorAssetRootOf, installedAssetRoot } from '../package-root';
 import { readConfig } from '../design-config';
 import { workRootOf } from '../work-root';
 import { renderPackagesOf, typePathsOf } from '../render-packages';
@@ -152,16 +152,25 @@ const systemTsconfigOf = (options: {
   include?: string[];
 }) => {
   const { target, product, assetRoot = installedAssetRoot(), include = [] } = options;
+  const fileOf = (file: string) => {
+    const inServed = relative(servedAssetRoot(), file);
+
+    return options.assetRoot && !inServed.startsWith('..') && !isAbsolute(inServed)
+      ? resolve(assetRoot, inServed)
+      : file;
+  };
   const defineCall = resolve(assetRoot, 'define-call.ts');
   const definePart = resolve(assetRoot, 'define-part.ts');
   const inlineCss = resolve(assetRoot, 'css-inline.d.ts');
   const assets = resolve(assetRoot, 'assets.d.ts');
   const kit = resolve(assetRoot, 'wireframe-kit.ts');
   const typePaths = typePathsOf({ packages: renderPackagesOf({ target, config: readConfig(target) }), target });
-  const partPaths = Object.fromEntries(product.parts.map((part) => [partSpecifierOf(part), [part.file]]));
-  const fixtures = product.fixtures ? [product.fixtures] : [];
+  const partPaths = Object.fromEntries(product.parts.map((part) => [partSpecifierOf(part), [fileOf(part.file)]]));
+  const fixtures = product.fixtures ? [fileOf(product.fixtures)] : [];
   const productShared = productSharedDirsOf(product);
-  const sharedDirs = sharedDirsOf(product).filter((dir) => !productShared.includes(dir) || existsSync(dir));
+  const sharedDirs = sharedDirsOf(product)
+    .filter((dir) => !productShared.includes(dir) || existsSync(dir))
+    .map(fileOf);
   const shared = sharedDirs.map((dir) => resolve(dir, '**/*.ts'));
 
   const config = {
@@ -170,7 +179,7 @@ const systemTsconfigOf = (options: {
       paths: {
         ...typePaths,
         ...partPaths,
-        ...(product.fixtures ? { [FIXTURES_SPECIFIER]: [product.fixtures] } : {}),
+        ...(fixtures.length > 0 ? { [FIXTURES_SPECIFIER]: fixtures } : {}),
         [DESIGN_SYSTEM_SPECIFIER]: [definePart],
         [KIT_SPECIFIER]: [kit],
         ...(sharedDirs.length > 0 ? { [`${SHARED_PREFIX}*`]: sharedDirs.map((dir) => resolve(dir, '*')) } : {}),
@@ -178,7 +187,7 @@ const systemTsconfigOf = (options: {
     },
     include: [
       ...include.map((dir) => resolve(dir, '**/*.ts')),
-      ...product.parts.map((part) => part.file),
+      ...product.parts.map((part) => fileOf(part.file)),
       ...fixtures,
       ...shared,
       definePart,

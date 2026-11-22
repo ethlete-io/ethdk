@@ -16,12 +16,13 @@ import { basename, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { writeCallsTsconfig } from '../calls-tsconfig';
 import { DESIGN_DIR, readConfig } from '../design-config';
+import { installedAssetRoot } from '../package-root';
 import { resolveProduct } from './resolve-product';
 import { formatProblemsOf, formatSketch } from './sketch/check-format';
 import { createSketch, Sketch } from './sketch/sketch';
 import { repairEditorTsconfigs, writeEditorTsconfig, writeSystemTsconfig } from './system-tsconfig';
 
-const running = vi.hoisted(() => ({ root: null as string | null, spawns: 0 }));
+const running = vi.hoisted(() => ({ root: null as string | null, served: null as string | null, spawns: 0 }));
 
 vi.mock('child_process', async (original) => {
   const actual = await original<typeof import('child_process')>();
@@ -47,6 +48,7 @@ vi.mock('../package-root', async (original) => {
 
   return {
     ...actual,
+    assetRoot: () => running.served ?? actual.assetRoot(),
     installedAssetRoot: () => running.root ?? actual.installedAssetRoot(),
     editorAssetRootOf: (target: string) => actual.editorAssetRootOf(target, running.root ?? undefined),
   };
@@ -272,5 +274,38 @@ describe('editor tsconfigs', () => {
       join(sketch.dir, 'shared/*'),
     ]);
     expect(existsSync(configOf('b').compilerOptions.paths['@design-system'][0])).toBe(true);
+  });
+
+  it('writes the same editor tsconfig from two servers that each serve their own package snapshot', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'app');
+    const snapshotOf = (server: string) => {
+      const dir = join(target, 'node_modules/.design-explore', server, 'design');
+
+      cpSync(installedAssetRoot(), dir, { recursive: true });
+
+      return dir;
+    };
+    const servers = [snapshotOf('server-1'), snapshotOf('server-2')];
+
+    mkdirSync(productDir, { recursive: true });
+    const texts = servers.map((served) => {
+      running.served = served;
+
+      try {
+        writeEditorTsconfig({
+          target,
+          product: resolveProduct({ target, name: 'app', config: { base: '@ethlete/components' } }),
+        });
+      } finally {
+        running.served = null;
+      }
+
+      return readFileSync(join(productDir, 'tsconfig.json'), 'utf8');
+    });
+
+    expect(texts[1]).toBe(texts[0]);
+    expect(texts[0]).not.toContain('.design-explore');
+    expect(texts[0]).toContain(join(installedAssetRoot(), 'systems/ethlete-components'));
   });
 });
