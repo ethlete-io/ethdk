@@ -1,5 +1,11 @@
 # ethlete-studio
 
+## 0.2.0-next.33
+
+### Patch Changes
+
+- Update the Rust `url` crate to 2.5.9 to fix RUSTSEC-2026-0592 (stack overflow in `Url::origin()` on nested `blob:` URLs).
+
 ## 0.2.0-next.32
 
 ### Patch Changes
