@@ -9,6 +9,7 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf, FIXTURES_KEY, partHashOf } from './baseline';
 import {
   changedSinceReadyOf,
+  orphanedPickOf,
   SHARED_FOLDER,
   sharedDirOf,
   rebaseSketch,
@@ -346,12 +347,25 @@ const readyWithdrawnLinesOf = (sketch: Sketch, ported: PortedFile[]) =>
         `READY WITHDRAWN ${sketch.target} ${variant}: the rebase ported ${part} (${relative(part, file)}) - run sketch ready ${sketch.target} to check it again`,
     );
 
+const judgedPickOf = (options: { product: ResolvedProduct; sketch: Sketch; handPorted: Set<string> }) => {
+  const { product, sketch, handPorted } = options;
+  const decision = sketch.decision;
+
+  if (sketch.status !== 'ready' || decision?.kind !== 'pick' || orphanedPickOf(sketch, product.name)) return null;
+
+  return handPorted.has(decision.variant) || !changedSinceReadyOf(sketch).includes(decision.variant)
+    ? decision.variant
+    : null;
+};
+
 /**
  * Ports the base changes into the sketch's variants (see `portBaseChanges`) and records its new baseline as one
  * journaled step under the product lock: a throw or a kill leaves the variants and `sketch.json` as they were. Without
  * a kept conflict, a conflict writes nothing and answers without `rebased`. A ready sketch keeps its ready mark when
  * each variant changed since ready is named in `ported` (a pure port by hand) and the port changed only its `shared/`
- * copies or those variants; otherwise `withdrawn` names each variant file the port changed.
+ * copies or those variants; otherwise `withdrawn` names each variant file the port changed. The picked variant of a
+ * ready sketch whose pick the rebase keeps stays judged when it was unchanged since ready or is named in `ported`: a
+ * clean port takes only product hunks into it, and `sketch merge` checks the result.
  */
 export const journaledRebaseOf = (options: {
   target: string;
@@ -367,12 +381,20 @@ export const journaledRebaseOf = (options: {
     withProductLock(product.dir, () => {
       const judged =
         sketch.status === 'ready' && changedSinceReadyOf(sketch).every((variant) => handPorted.has(variant));
+      const pick = judgedPickOf({ product, sketch, handPorted });
       const port = portBaseChanges(options);
 
       if (!allKept(port.conflicts, options.keepConflicts)) return port;
 
-      const rehashReady = judged && port.ported.every((file) => isSharedCopy(file) || handPorted.has(file.variant));
-      const withdrawn = judged && !rehashReady ? readyWithdrawnLinesOf(sketch, port.ported) : [];
+      const rehashAll = judged && port.ported.every((file) => isSharedCopy(file) || handPorted.has(file.variant));
+      const rehashReady = rehashAll || (pick !== null && [pick]);
+      const withdrawn =
+        judged && !rehashAll
+          ? readyWithdrawnLinesOf(
+              sketch,
+              port.ported.filter((file) => file.variant !== pick),
+            )
+          : [];
 
       return { ...port, withdrawn, rebased: rebaseSketch({ product, sketch, rehashReady }) };
     }),

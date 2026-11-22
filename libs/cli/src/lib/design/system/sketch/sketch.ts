@@ -1660,12 +1660,25 @@ export const orphanedPickOf = (sketch: Sketch, product: string) => {
   return log.status === 0 && log.stdout.trim() !== '' ? null : decision;
 };
 
+const rehashedReadyOf = (sketch: Sketch, variants: true | readonly string[]) =>
+  variants === true
+    ? readyContentOf(sketch)
+    : {
+        ...sketch.readyContent,
+        ...Object.fromEntries(variants.map((variant) => [variant, variantContentHashOf(sketch, variant)])),
+      };
+
 /**
  * Records the product as it is now as the sketch's baseline, once the agent has brought each variant
  * up to date with the parts that changed in the product since the sketch was created. Drops a pick whose merge never
- * reached git (`orphanedPickOf`). With `rehashReady`, a ready sketch keeps its ready mark with fresh hashes.
+ * reached git (`orphanedPickOf`). With `rehashReady`, a ready sketch keeps its ready mark with fresh hashes, of every
+ * variant or of the variants it names.
  */
-export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch; rehashReady?: boolean }): Sketch => {
+export const rebaseSketch = (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  rehashReady?: boolean | readonly string[];
+}): Sketch => {
   const { portAfterMerge: _ported, ...ported } = options.sketch;
   const { decision: _decision, ...undecided } = ported;
   const sketch = orphanedPickOf(options.sketch, options.product.name) ? undecided : ported;
@@ -1675,7 +1688,9 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
     baseline: baselineOf(options.product),
     ...baselineTreeFieldOf({ product: options.product, sketchDir: options.sketch.dir }),
     ...(sketch.sharedBase ? { sharedBase: sharedBaseNowOf(options.product, sketch.sharedBase) } : {}),
-    ...(options.rehashReady && sketch.readyContent ? { readyContent: readyContentOf(sketch) } : {}),
+    ...(options.rehashReady && sketch.readyContent
+      ? { readyContent: rehashedReadyOf(sketch, options.rehashReady) }
+      : {}),
   };
 
   writeSketchFile(rebased, { base: options.sketch });

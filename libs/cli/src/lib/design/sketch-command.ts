@@ -106,6 +106,7 @@ import {
   orphanedPickOf,
   authorsOf,
   rejectionOf,
+  staleReadyRefusalOf,
   releaseSketch,
   reportSketch,
   runningRoundOf,
@@ -1599,8 +1600,15 @@ const rebased = (context: Context) =>
 
     console.log(`${sketch.target} now compares with the product as it is`);
 
+    const pick = rebased.decision?.kind === 'pick' ? rebased.decision.variant : null;
+    const pickKept =
+      pick !== null && ported.some(({ variant }) => variant === pick) && staleReadyRefusalOf(rebased) === null;
+
+    if (pickKept)
+      console.log(`${sketch.target} stays picked and ready - the port took only product changes into ${pick}`);
+
     if (withdrawn && withdrawn.length > 0) withdrawn.forEach((line) => console.log(line));
-    else if ((ported.length > 0 || named.length > 0) && sketch.status === 'ready')
+    else if (!pickKept && (ported.length > 0 || named.length > 0) && sketch.status === 'ready')
       console.log(
         rebased.readyContent !== sketch.readyContent
           ? `${sketch.target} stays ready - ${named.length > 0 ? `${named.join(', ')} ported by hand` : 'the port changed only its shared/ copies'}`

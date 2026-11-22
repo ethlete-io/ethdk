@@ -803,9 +803,10 @@ A merge commits what it wrote as `feat(repo): Merge <target> variant <key> into 
 `.changeset` folder and a merged file lies in a workspace package, the commit also holds a changeset that names each
 such package with the level `none`.
 
-A merge refuses a picked variant whose files changed since `sketch ready` judged them, for example after a
-`sketch rebase` ported a product change into it. `sketch ready` then takes the sketch back to in progress, judges it
-again and keeps the pick.
+A merge refuses a picked variant whose files changed since `sketch ready` judged them. A `sketch rebase` that keeps
+the pick does not count as such a change: when the picked variant was unchanged since `sketch ready` (or is named in
+`--ported`), the rebase keeps it judged and prints `<target> stays picked and ready`, and the merge goes on. The merge
+checks the result as for any pick. A picked variant edited after `sketch ready` stays stale through a rebase.
 
 `sketch merge` prints `REUSED the pick of variant <key> by <model> from <time>` when it merges a pick an agent
 recorded before this merge, for example in a merge that was refused. `sketch rebase` drops such a pick when no

@@ -4,11 +4,21 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
 import { git } from '../git-repo.fixtures';
+import { originOf } from '../write-origin';
 import { resolveProduct } from '../resolve-product';
 import { journaledRebaseOf, keptByPortedOf, portBaseChanges } from './rebase-port';
 import { staleSketchBasesOf } from './stale-base';
 import { baselineTreeRefOf } from './baseline-tree';
-import { changedSinceReadyOf, createSketch, markSketchReady, rebaseSketch, removeSketchDir, Sketch } from './sketch';
+import {
+  changedSinceReadyOf,
+  createSketch,
+  decideSketch,
+  markSketchReady,
+  rebaseSketch,
+  removeSketchDir,
+  Sketch,
+  staleReadyRefusalOf,
+} from './sketch';
 
 const reads = vi.hoisted(() => ({ hook: null as ((path: string) => void) | null }));
 
@@ -401,6 +411,44 @@ describe('a base change of a shared copy', () => {
     expect(pure.withdrawn).toEqual([]);
     expect(changedSinceReadyOf(rebaseOf(['a']).rebased as Sketch)).toEqual(['a', 'b']);
     expect(changedSinceReadyOf(rebaseOf().rebased as Sketch)).toEqual(['a', 'b']);
+  });
+
+  it('keeps the pick of a picked sketch mergeable when the port changed the picked variant', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+    const picked = decideSketch({
+      sketch: ready,
+      decision: { kind: 'pick', variant: 'a', ...originOf('designer') },
+    }) as Sketch;
+
+    changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+
+    const { rebased, withdrawn } = journaledRebaseOf({ target, product: resolveAcme(target), sketch: picked });
+
+    expect(readFileSync(variantFile(sketch, 'a', 'hero.ts'), 'utf8')).toContain('The featured film');
+    expect(rebased?.status).toBe('ready');
+    expect(rebased?.decision).toMatchObject({ kind: 'pick', variant: 'a' });
+    expect(staleReadyRefusalOf(rebased as Sketch)).toBeNull();
+    expect(changedSinceReadyOf(rebased as Sketch)).toEqual(['b']);
+    expect(withdrawn).toEqual([
+      'READY WITHDRAWN elements/hero b: the rebase ported elements/hero (hero.ts) - run sketch ready elements/hero to check it again',
+    ]);
+  });
+
+  it('leaves a picked variant that changed after sketch ready stale through a port', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+    const picked = decideSketch({
+      sketch: ready,
+      decision: { kind: 'pick', variant: 'a', ...originOf('designer') },
+    }) as Sketch;
+
+    edit(variantFile(sketch, 'a', 'hero.css'), 'background', 'background-color');
+    changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+
+    const { rebased } = journaledRebaseOf({ target, product: resolveAcme(target), sketch: picked });
+
+    expect(staleReadyRefusalOf(rebased as Sketch)).not.toBeNull();
   });
 
   it('names no withdrawal when the port changed only shared copies', () => {
