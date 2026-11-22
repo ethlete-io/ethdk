@@ -728,7 +728,7 @@
       "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "5de5ea156d1f9a03",
+    "app": "f3deb42a01158619",
     "actions": ["opens:command-palette"],
     "builder": "developer",
     "builderReasons": [
@@ -737,7 +737,7 @@
     "at": "2026-11-21T20:40:13.142Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1834445
+    "pid": 2030204
   },
   "components/tree-row": {
     "hash": "54194a38f4ab321d",
