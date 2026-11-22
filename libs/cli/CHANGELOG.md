@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 3.0.0-next.44
+
+### Patch Changes
+
+- Design compare takes a drawn wrapper with `data-overlay-placement` as the overlay pane, so an arrow beside a menu counts.
+
 ## 3.0.0-next.43
 
 ### Patch Changes

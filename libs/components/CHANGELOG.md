@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.98
+
+### Patch Changes
+
+- A floating-label form field without an `<et-label>` keeps the placeholder of `et-input`, `et-textarea`, `et-select` and `et-cascader` visible.
+
 ## 1.0.0-next.97
 
 ### Patch Changes
