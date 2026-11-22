@@ -3,6 +3,8 @@ import { TitleBarComponent } from '../components/title-bar/title-bar.component';
 import {
   SKETCH_DRAWN_AS,
   SKETCH_LOOKS,
+  SKETCH_MANY_SAMPLE,
+  SKETCH_MANY_STATES,
   SKETCH_NARROW_SAMPLE,
   SKETCH_ROWS,
   SKETCH_SCREEN_SAMPLE,
@@ -13,6 +15,8 @@ import { SketchShotContext } from '../design-parts/sketches/sketches.component';
 import { ZoomChipComponent, ZoomControl, ZoomInteraction } from '../design-parts/zoom-chip/zoom-chip.component';
 
 const SCREEN_STATES = new Set(SKETCH_SCREEN_SAMPLE.rows.flatMap((row) => row.shots.map((shot) => shot.state)));
+
+const MANY_STATES = new Set(SKETCH_MANY_STATES);
 
 const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: string }) =>
   rows.find((row) => row.key === key)?.shots.find((shot) => shot.state === state)?.changed === true;
@@ -30,6 +34,12 @@ const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: stri
             product="studio"
             part="Title bar"
           />
+        } @else if (MANY_STATES.has(state)) {
+          <div
+            class="box-border flex h-225 w-360 items-center justify-center bg-et-surface-bg font-code text-ui-lg text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+          >
+            {{ state }}
+          </div>
         } @else if (screenHeightOf(row, state); as height) {
           <div [style.width.px]="row.width" [style.height.px]="height" class="bg-et-surface-bg"></div>
         } @else {
@@ -49,6 +59,7 @@ const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: stri
 export class DesignHarnessSketchShotsComponent {
   private shot = viewChild.required<TemplateRef<SketchShotContext>>('shot');
   protected readonly TITLE_BARS = SKETCH_TITLE_BARS;
+  protected readonly MANY_STATES = MANY_STATES;
 
   public templates() {
     return { shot: this.shot() };
@@ -68,12 +79,15 @@ export class DesignHarnessSketchShotsComponent {
   }
 
   protected lookOf(row: SketchRow, state: string) {
-    const wide = Object.hasOwn(SKETCH_TITLE_BARS, state);
+    const sample = Object.hasOwn(SKETCH_TITLE_BARS, state)
+      ? { rows: SKETCH_ROWS, looks: SKETCH_LOOKS }
+      : MANY_STATES.has(state)
+        ? SKETCH_MANY_SAMPLE
+        : SKETCH_NARROW_SAMPLE;
     const shot = row.shots.find((candidate) => candidate.state === state);
     const changed =
-      shot?.changed === true ||
-      (shot?.changed === null && changedIn(wide ? SKETCH_ROWS : SKETCH_NARROW_SAMPLE.rows, { key: row.key, state }));
+      shot?.changed === true || (shot?.changed === null && changedIn(sample.rows, { key: row.key, state }));
 
-    return changed ? ((wide ? SKETCH_LOOKS : SKETCH_NARROW_SAMPLE.looks)[row.key] ?? '') : '';
+    return changed ? (sample.looks[row.key] ?? '') : '';
   }
 }

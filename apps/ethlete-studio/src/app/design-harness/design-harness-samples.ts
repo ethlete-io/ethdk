@@ -37,6 +37,7 @@ import {
   SKETCH_COMMENT_DRAFT_TEXT,
   SKETCH_COMMENTS_SAMPLE,
   SKETCH_NARROW_SAMPLE,
+  SKETCH_MANY_SAMPLE,
   SKETCH_POINTS_SAMPLE,
   SKETCH_ROWS,
   SKETCH_SCREEN_SAMPLE,
@@ -114,6 +115,7 @@ const SKETCH_PART_SAMPLES: Record<string, { rows: SketchRow[]; looks: Record<str
   narrow: SKETCH_NARROW_SAMPLE,
   edit: SKETCH_EDIT_SAMPLE,
   neighbours: SKETCH_NEIGHBOURS_SAMPLE,
+  many: SKETCH_MANY_SAMPLE,
 };
 
 type FrameSize = { width: number; height: number };

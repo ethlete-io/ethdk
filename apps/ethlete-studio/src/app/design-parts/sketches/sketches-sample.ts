@@ -160,7 +160,7 @@ export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1
 
 export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'TB', count: 1 }];
 
-const SKETCH_COMPONENTS = ['title-bar', 'zoom-chip@edit', 'zoom-chip'];
+const SKETCH_COMPONENTS = ['many-states', 'title-bar', 'zoom-chip@edit', 'zoom-chip'];
 
 const componentsLayerOf = (selected?: string) => ({
   title: 'Components',
@@ -287,6 +287,43 @@ export const SKETCH_EDIT_SAMPLE = {
   round: 'edit',
   tree: {
     layers: [componentsLayerOf('zoom-chip@edit'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
+  } satisfies PartTree,
+};
+
+export const SKETCH_MANY_STATES = Array.from(
+  { length: 30 },
+  (_, index) => `state-${String(index + 1).padStart(2, '0')}`,
+);
+
+const MANY_WIDTH = 1440;
+
+const manyShotsOf = (changed: string[]) => shotsOf(changed, { height: () => 900, states: SKETCH_MANY_STATES });
+
+export const SKETCH_MANY_SAMPLE = {
+  part: 'components/many-states',
+  rows: [
+    { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: MANY_WIDTH, shots: manyShotsOf([]) },
+    {
+      key: 'a',
+      label: 'Entwurf 1',
+      note: 'Gerade Zustände ändern sich.',
+      model: { ...OPUS, when: '02.11. 11:02' },
+      width: MANY_WIDTH,
+      shots: manyShotsOf(SKETCH_MANY_STATES.filter((_, index) => index % 2 === 1)),
+    },
+    {
+      key: 'b',
+      label: 'Entwurf 2',
+      note: 'Ungerade Zustände ändern sich.',
+      model: { ...SOL, when: '02.11. 11:09' },
+      width: MANY_WIDTH,
+      shots: manyShotsOf(SKETCH_MANY_STATES.filter((_, index) => index % 2 === 0)),
+    },
+  ] satisfies SketchRow[],
+  looks: { a: '[&_div]:text-et-theme', b: '[&_div]:font-ui-strong' } as Record<string, string>,
+  rounds: [{ value: 'round-1', label: 'Runde 1 · Viele Zustände' }] satisfies SketchRound[],
+  tree: {
+    layers: [componentsLayerOf('many-states'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
   } satisfies PartTree,
 };
 

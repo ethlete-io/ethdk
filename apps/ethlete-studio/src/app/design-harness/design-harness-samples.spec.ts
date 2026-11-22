@@ -89,10 +89,20 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     const tree = sketchesOf({ part: 'edit' })['tree'] as PartTree;
 
     expect(tree.layers[0]?.parts.map(({ name, selected }) => (selected ? `${name}*` : name))).toEqual([
+      'many-states',
       'title-bar',
       'zoom-chip@edit*',
       'zoom-chip',
     ]);
+  });
+
+  it('draws the many part with 30 states in every row and selects it in the tree', () => {
+    const props = sketchesOf({ camera: 'fit', part: 'many' });
+    const tree = props['tree'] as PartTree;
+
+    expect(props['part']).toBe('components/many-states');
+    expect((props['rows'] as SketchRow[]).map((row) => row.shots.length)).toEqual([30, 30, 30]);
+    expect(tree.layers[0]?.parts.find(({ selected }) => selected)?.name).toBe('many-states');
   });
 
   it('turns the listing-error flag into the server reason', () => {
