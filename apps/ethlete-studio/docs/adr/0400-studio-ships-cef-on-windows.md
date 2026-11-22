@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B664
+open: B665
 decided: 2026-11-22
 source: doc-agent session 2026-11-22 (afternoon), after the B480 Windows spike
 ---
@@ -13,4 +13,4 @@ agent recommended to switch Windows as macOS did (ADR 0249) and to track the liv
 (German, verbatim): "q1ok".
 
 The Windows release switches to CEF. Every platform now runs one engine for the live view, the picture and the check
-(ADR 0242). Live frames that do not paint on Windows are row B664.
+(ADR 0242). Live frames that do not paint on Windows are row B664; the release switch is row B665.

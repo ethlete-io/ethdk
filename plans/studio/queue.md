@@ -23,3 +23,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 23. **GitHub-Issues Design-CLI (B648)** ⏳ #3190, #3191, #3195, #3197 geschlossen, #3194 war behoben; offen: #3196 wartet auf Reporter-Markup - Builder
 24. **Leere Warteschlange (B661)** ⏳ builder-agent-Skill: ohne startbaren Eintrag A, dann D, dann C, sonst Meldung an Doc (ADR 0388); bis zum Reset sortiert ein Recherche-Agent alle Einträge gegen git - Builder
 25. **Windows-Live-Frames (B664)** ⏳ CEF auf Windows malt 0 Live-Frames; im nächsten Windows-Durchgang auf rack (ADR 0400, 0401) - Builder
+26. **Windows-CEF-Release (B665)** ⏳ publish.yml und Windows-Bundle auf CEF, app-releases-Skill (ADR 0400); nach B664 - Builder
