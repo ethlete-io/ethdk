@@ -247,6 +247,7 @@ describe('SketchViewComponent', () => {
     const picture = () => iframe.parentElement!.querySelector('img[data-shot-picture]')!;
 
     expect(iframe.classList).toContain('opacity-0');
+    expect(iframe.hasAttribute('data-painted')).toBe(false);
     expect(picture().classList).not.toContain('opacity-0');
 
     window.dispatchEvent(
@@ -255,6 +256,7 @@ describe('SketchViewComponent', () => {
     await settle(fixture);
 
     expect(iframe.classList).not.toContain('opacity-0');
+    expect(iframe.hasAttribute('data-painted')).toBe(true);
     expect(picture().classList).toContain('opacity-0');
   });
 

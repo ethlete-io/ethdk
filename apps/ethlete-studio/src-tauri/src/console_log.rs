@@ -148,24 +148,23 @@ fn smoke_script(view: &str) -> String {
   const deadline = Date.now() + {SMOKE_PAINT_TIMEOUT_MS};
   const timer = setInterval(() => {{
     const view = document.querySelector('ethlete-sketch-view');
-    const frames = view ? view.querySelectorAll('ethlete-canvas-frame-cell') : [];
+    const frames = view ? view.querySelectorAll('iframe[data-state]') : [];
     const pictures = view ? view.querySelectorAll('img[data-shot-picture]') : [];
-    const painted =
-      [...frames].filter((frame) => frame.hasAttribute('data-painted')).length +
-      [...pictures].filter((picture) => picture.complete && picture.naturalWidth > 0).length;
-    if (!painted) {{
-      const alert = document.querySelector('[role="alert"]')?.innerText.replace(/\s+/g, ' ').trim();
-      const now = `${{location.pathname}} sketch view ${{view ? 'shown' : 'missing'}}, ${{frames.length}} live frames, ${{pictures.length}} pictures${{alert ? `, alert: ${{alert.slice(0, 300)}}` : ''}}`;
+    const paintedFrames = [...frames].filter((frame) => frame.hasAttribute('data-painted')).length;
+    const paintedPictures = [...pictures].filter((picture) => picture.complete && picture.naturalWidth > 0).length;
+    const alert = document.querySelector('[role="alert"]')?.innerText.replace(/\s+/g, ' ').trim();
+    const now = `${{location.pathname}} sketch view ${{view ? 'shown' : 'missing'}}, ${{frames.length}} live frames, ${{paintedPictures}} of ${{pictures.length}} pictures painted${{alert ? `, alert: ${{alert.slice(0, 300)}}` : ''}}`;
+    if (!paintedFrames && Date.now() <= deadline) {{
       if (now !== waiting) console.error(`{SMOKE_MARKER} waiting: ${{now}}`);
       waiting = now;
-      if (Date.now() > deadline) {{
-        clearInterval(timer);
-        console.error(`{SMOKE_MARKER} FAILED: nothing painted, ${{now}}`);
-      }}
       return;
     }}
     clearInterval(timer);
-    console.error(`{SMOKE_MARKER} painted ${{painted}} of ${{frames.length}} live frames and ${{pictures.length}} pictures`);
+    if (!paintedFrames && !paintedPictures) {{
+      console.error(`{SMOKE_MARKER} FAILED: nothing painted, ${{now}}`);
+      return;
+    }}
+    console.error(`{SMOKE_MARKER} painted ${{paintedFrames}} of ${{frames.length}} live frames and ${{paintedPictures}} of ${{pictures.length}} pictures`);
   }}, 500);
 }})();"#
     )
@@ -203,6 +202,22 @@ mod tests {
 
         assert!(guard < script.find("page loaded").unwrap());
         assert!(guard < script.find("localStorage").unwrap());
+    }
+
+    #[test]
+    fn the_smoke_probe_counts_the_live_frames_the_sketch_view_renders() {
+        let script = smoke_script("{}");
+
+        assert!(script.contains("view.querySelectorAll('iframe[data-state]')"));
+        assert!(script.contains("frame.hasAttribute('data-painted')"));
+        assert!(script.contains("painted ${paintedFrames} of ${frames.length} live frames"));
+    }
+
+    #[test]
+    fn the_smoke_probe_waits_for_a_live_frame_until_the_deadline() {
+        let script = smoke_script("{}");
+
+        assert!(script.contains("if (!paintedFrames && Date.now() <= deadline)"));
     }
 
     #[test]

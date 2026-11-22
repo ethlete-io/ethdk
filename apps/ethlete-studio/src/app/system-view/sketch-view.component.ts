@@ -334,6 +334,7 @@ const scrollOf = (data: unknown) =>
               [title]="key"
               [attr.data-variant]="row.key"
               [attr.data-state]="state"
+              [attr.data-painted]="paintedFrames().get(key)?.frame === shotFrame ? '' : null"
               [class.opacity-0]="paintedFrames().get(key)?.frame !== shotFrame"
               (paintedChange)="framePainted({ key, frame: shotFrame, src, painted: $event })"
               class="absolute inset-0 block size-full border-0 scheme-normal"
