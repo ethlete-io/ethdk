@@ -95,6 +95,7 @@ const task = (
     invocation: 'et design',
     load: async () => CHIP_STATES,
     diff,
+    last: () => null,
     compare,
     start,
     actions,
@@ -472,6 +473,43 @@ describe('part task', () => {
     expect(lines).toContain('  libs/other/x.ts');
     expect(lines).not.toContain('  libs/chip/chip.component.ts');
     expect(verifyRangeOf('abc')).toBe('abc^..abc');
+  });
+
+  it('verifies the last commit touching the part folder when no rev is given, and keeps an explicit rev', async () => {
+    const { target } = checkout();
+    const lines = output();
+
+    record(target);
+
+    const diff = vi.fn(() => ['libs/chip/chip.component.ts']);
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+    const last = vi.fn(() => ({ sha: 'abcdef1234567890', subject: 'feat(studio): Chip', isHead: false }));
+    const verify = (argv: string[]) =>
+      designTask({
+        target,
+        argv: ['components/chip', '--product', 'app-a', ...argv, '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        load: async () => CHIP_STATES,
+        diff,
+        last,
+        compare: green,
+        actions: vi.fn(async () => []),
+        inputs: () => GREEN,
+        refusals: vi.fn(async () => []),
+      });
+
+    expect(await verify(['--verify'])).toBe(0);
+    expect(last).toHaveBeenCalledWith({ root: target, paths: ['libs/chip/**'] });
+    expect(diff).toHaveBeenLastCalledWith({ root: target, range: 'abcdef1234567890^..abcdef1234567890' });
+    expect(lines).toContain("verifying abcdef123 feat(studio): Chip, the last commit that touches the part's files");
+
+    last.mockClear();
+    expect(await verify(['--verify', 'HEAD'])).toBe(0);
+    expect(last).not.toHaveBeenCalled();
+    expect(diff).toHaveBeenLastCalledWith({ root: target, range: 'HEAD^..HEAD' });
+
+    expect(await verify(['--verify', 'a1..b2'])).toBe(0);
+    expect(diff).toHaveBeenLastCalledWith({ root: target, range: 'a1..b2' });
   });
 
   it('refuses to verify a part whose component has no spec with own data or literal text, before compare runs', async () => {

@@ -216,6 +216,7 @@ describe('task --verify and the app stylesheet', () => {
         load: async () => ({ default: {} }),
         refusals: async () => [],
         diff: () => [stylesheet, 'libs/chip/chip.component.ts'],
+        last: () => null,
         patch: () => patch(changes),
         compare: vi.fn(async () => ({ green: true, states: {} })),
         actions: vi.fn(async () => []),

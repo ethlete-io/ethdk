@@ -17,6 +17,7 @@ import {
   designFilesOf,
   filesOutsideOf,
   gitDiffFilesOf,
+  gitLastCommitOf,
   gitFilesAtOf,
   gitTreeFilesOf,
   importersOf,
@@ -54,6 +55,11 @@ type ReadFile = (options: { root: string; range: string; file: string }) => stri
 
 type DiffPatch = (options: { root: string; range: string; file: string }) => string;
 
+type LastCommit = (options: {
+  root: string;
+  paths: string[];
+}) => { sha: string; subject: string; isHead: boolean } | null;
+
 type TreeFiles = (options: { root: string; rev: string; dir: string }) => string[];
 
 const loadStates: LoadStates = async ({ target, product, file }) => {
@@ -77,7 +83,7 @@ const loadStates: LoadStates = async ({ target, product, file }) => {
 const verifyOf = (argv: string[]) => {
   const index = argv.indexOf('--verify');
 
-  if (index === -1) return { rest: argv, rev: null };
+  if (index === -1) return { rest: argv, rev: null, bare: false };
 
   const next = argv[index + 1];
   const given = next !== undefined && !next.startsWith('--');
@@ -85,11 +91,12 @@ const verifyOf = (argv: string[]) => {
   return {
     rest: argv.filter((_, at) => at !== index && !(given && at === index + 1)),
     rev: given ? next : 'HEAD',
+    bare: !given,
   };
 };
 
 /**
- * `et design task <layer>/<name> …` prints what implementing a build-ready part takes, or its blockers; `--verify [<rev>]`
+ * `et design task <layer>/<name> …` prints what implementing a build-ready part takes, or its blockers; `--verify [<rev>]` (no rev: the last commit touching the part's folder)
  * needs a holding check record and checks the files of a commit or range against the files the task allows, runs compare and the actions check, and records the part as
  * implemented when all pass. Several parts verify one commit as one task: their allowed files join, and each part needs
  * its own green compare and actions check before any is recorded.
@@ -103,6 +110,7 @@ export const designTask = async (options: {
   patch?: DiffPatch;
   read?: ReadFile;
   tree?: TreeFiles;
+  last?: LastCommit;
   compare?: ComparePart;
   start?: StartHarnessServer;
   actions?: PartActionFailures;
@@ -110,7 +118,7 @@ export const designTask = async (options: {
   refusals?: ImplementedRefusals;
 }) => {
   const { target, invocation } = options;
-  const { rest, rev } = verifyOf(options.argv);
+  const { rest, rev, bare } = verifyOf(options.argv);
   const args = argsOf(rest, { values: ['--product', '--url'], switches: [] });
 
   if (typeof args === 'string' || args.positional.length === 0 || (rev === null && args.positional.length > 1)) {
@@ -229,7 +237,18 @@ export const designTask = async (options: {
       return 1;
     }
 
-    const range = verifyRangeOf(rev);
+    let chosen = rev;
+
+    if (bare && tasks.length === 1) {
+      const last = (options.last ?? gitLastCommitOf)({ root, paths: allowed.slice(0, 1) });
+
+      if (last !== null && !last.isHead) {
+        chosen = last.sha;
+        console.log(`verifying ${last.sha.slice(0, 9)} ${last.subject}, the last commit that touches the part's files`);
+      }
+    }
+
+    const range = verifyRangeOf(chosen);
     let files: string[];
     let outside: string[];
     let wired: string[];
@@ -284,7 +303,7 @@ export const designTask = async (options: {
 
       if (owners.length > 0) {
         console.error(
-          `verify together: ${invocation} task ${[...parts, ...owners].join(' ')} --product ${product.name} --verify ${rev}`,
+          `verify together: ${invocation} task ${[...parts, ...owners].join(' ')} --product ${product.name} --verify ${chosen}`,
         );
       }
 

@@ -329,6 +329,21 @@ export const wiringFilesOf = (options: {
   return options.files.filter((file) => wiring.has(file));
 };
 
+/** The newest commit touching a path with its subject, and whether it is HEAD; null when none does. */
+export const gitLastCommitOf = (options: { root: string; paths: string[] }) => {
+  const cwd = options.root;
+  const line = git(['log', '-1', '--format=%H %s', '--', ...options.paths.map((path) => `:(glob)${path}`)], {
+    cwd,
+    stdio: 'pipe',
+  }).trim();
+
+  if (line === '') return null;
+
+  const [sha = '', ...subject] = line.split(' ');
+
+  return { sha, subject: subject.join(' '), isHead: git(['rev-parse', 'HEAD'], { cwd, stdio: 'pipe' }).trim() === sha };
+};
+
 /** The files git tracks under a folder at a revision. */
 export const gitTreeFilesOf = (options: { root: string; rev: string; dir: string }) =>
   git(['ls-tree', '-r', '--name-only', options.rev, '--', options.dir], { cwd: options.root, stdio: 'pipe' })

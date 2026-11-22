@@ -576,7 +576,7 @@ without an `implements` link, or with only a route link: add the `component` of 
 allowed folder is the folder of that component.
 `.ethlete/design/<product>/implemented.json` keeps the part hash and a props hash per state of the last implementation;
 when the part changed but no state's props did, the task lists all states. `--verify [<rev>]` checks the files of a
-commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. When the
+commit (default: the last commit touching the part folder) or a range `a..b` against the allowed files and exits 1 with any file outside them. When the
 files pass, it runs compare over all states, on `--url` or a server it starts as compare does, and only when every
 state is ok it records the part hash, the time and a props hash per state in `implemented.json`.
 
