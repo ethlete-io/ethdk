@@ -46,7 +46,9 @@ export const settledPanesScript = `(() => {
   return window.__etSettledFrames >= ${SETTLED_FRAMES};
 })()`;
 
-const PANES_NOW = `document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)}).length`;
+const LEAVING_PANE = ['leave-from', 'leave-active', 'leave-to'].map((phase) => `.et-animation-${phase}`).join(', ');
+
+const PANES_NOW = `[...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})].filter((pane) => !pane.matches(${JSON.stringify(LEAVING_PANE)})).length`;
 
 /**
  * Waits up to `PANE_COUNT_TIMEOUT_MS` for at least `count` overlay panes, or, unless `hovered`, until the open ones settle with no new one,

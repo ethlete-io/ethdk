@@ -584,12 +584,22 @@ export const boxedHarnessShotOf = (options: HarnessDrive): Promise<{ png: Buffer
         await page.setViewportSize(covering);
         await page.evaluate('scrollTo(0, 0); window.__etSettledFrames = 0');
 
-        if (!(await settledPanesOf({ page, count: 0, timeout })).settled)
+        // The resize and scroll move the page under a resting pointer, so a hover or press forced before it lands
+        // elsewhere and a pane it opened closes; the panes are counted only after the pointer is back.
+        for (const { interaction, element } of forcedTargets)
+          if (interaction === 'hover' || interaction === 'active') await element.hover({ timeout });
+
+        const { settled, opened } = await settledPanesOf({
+          page,
+          count: options.panes ?? 0,
+          timeout,
+          hovered: forcedTargets.length > 0,
+        });
+
+        if (!settled)
           throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
 
-        // The resize and scroll move the page under a resting pointer, so a hover forced before it lands elsewhere.
-        for (const { interaction, element } of forcedTargets)
-          if (interaction === 'hover') await element.hover({ timeout });
+        if (opened !== null) throw new MissingPanesError(missingPanesProblemOf({ drawn: options.panes ?? 0, opened }));
       });
       clip = await boxNow();
     }

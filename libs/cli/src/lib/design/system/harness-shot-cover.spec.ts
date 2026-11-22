@@ -40,6 +40,38 @@ const HOVER_PAGE = `<!doctype html>
 </style>
 <div data-design-harness-host><div class="part"><button aria-label="low"></button></div></div>`;
 
+const TOOLTIP_PAGE = `<!doctype html>
+<style>
+  body { margin: 0; }
+  [data-design-harness-host] { display: block; }
+  .part { position: relative; width: 300px; height: 1000px; background: rgb(255 255 255); }
+  button { position: absolute; top: 950px; left: 0; width: 300px; height: 50px; border: 0; background: rgb(0 0 0); }
+  .et-overlay-runtime-pane { position: fixed; top: 0; left: 0; width: 300px; height: 100px; background: rgb(200 0 0); }
+</style>
+<div data-design-harness-host><div class="part"><button aria-label="low"></button></div></div>
+<script>
+  const button = document.querySelector('button');
+  let timer;
+
+  button.addEventListener('pointerenter', () => {
+    timer = setTimeout(() => {
+      const pane = document.createElement('div');
+
+      pane.className = 'et-overlay-runtime-pane';
+      document.body.append(pane);
+    }, 100);
+  });
+  button.addEventListener('pointerleave', () => {
+    clearTimeout(timer);
+    const pane = document.querySelector('.et-overlay-runtime-pane');
+
+    pane?.classList.add('et-animation-leave-active');
+    setTimeout(() => pane?.remove(), 60);
+  });
+</script>`;
+
+const PAGES: Record<string, string> = { '/hover': HOVER_PAGE, '/tooltip': TOOLTIP_PAGE };
+
 const redRowsOf = (png: Buffer) => {
   const image = decodePng(png);
   const rows: number[] = [];
@@ -74,7 +106,7 @@ describe('harnessShotOf on a part taller than the viewport', () => {
     });
 
     server = createServer((request, response) =>
-      response.writeHead(200, { 'content-type': 'text/html' }).end(request.url === '/hover' ? HOVER_PAGE : PAGE),
+      response.writeHead(200, { 'content-type': 'text/html' }).end(PAGES[request.url ?? ''] ?? PAGE),
     );
     await new Promise<void>((done) => server?.listen(0, '127.0.0.1', done));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -102,6 +134,16 @@ describe('harnessShotOf on a part taller than the viewport', () => {
 
     expect([...image.data.subarray(at, at + 3)]).toEqual([0, 200, 0]);
   });
+
+  for (const interaction of ['hover', 'active'])
+    it(`keeps the pane a forced ${interaction} opens on an element below the first viewport`, async (context) => {
+      if (!browser) return context.skip();
+
+      const forced = [{ interaction, label: 'low', role: 'button', text: '' }];
+      const png = await harnessShotOf({ browser, url: `${base}/tooltip`, forced, panes: 1 });
+
+      expect(redRowsOf(png)).toHaveLength(100);
+    });
 
   it('grows the viewport only to cover the box', () => {
     const viewport = { width: 1280, height: 800 };
