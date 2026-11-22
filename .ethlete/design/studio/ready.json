@@ -149,7 +149,7 @@
     "pid": 2595881
   },
   "components/comment-flow": {
-    "hash": "80970a880ffc05b3",
+    "hash": "c92fc584aff33b02",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
@@ -183,7 +183,7 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "89f125f94d8c2c8a",
+      ".ethlete/design/studio/components/comment-draft/comment-draft.ts": "02a52781b8dd2c37",
       ".ethlete/design/studio/components/comment-flow/comment-flow.ts": "7f1fcc2500d279ed",
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "14c0ec1f9d318718",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "b08948834ba9cd53",
@@ -219,7 +219,7 @@
       "libs/components/src/lib/forms/textarea/textarea.component.css": "0983f19962cc1c64",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
       "libs/components/src/lib/icon/headless/icon-styles.component.css": "95703f321e08a70b",
-      "libs/components/src/lib/kbd/kbd.component.css": "0b05236f4d7e9572",
+      "libs/components/src/lib/kbd/kbd.component.css": "7f4f6d2ff65975aa",
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
@@ -230,8 +230,8 @@
     "embedded": {
       "components/comment-draft": "070b17aa95c2c416",
       "components/comment-pin": "3b7e8a256db57a11",
-      "components/comment-row": "79f379432607f7a9",
-      "components/comment-target": "5c19877d30eb77dc"
+      "components/comment-row": "f8377ad44ac52418",
+      "components/comment-target": "dc9d45d5b90c2c88"
     },
     "actions": [
       "comment-mode",
@@ -247,10 +247,10 @@
       "rest"
     ],
     "builder": "designer",
-    "at": "2026-11-21T05:31:04.646Z",
+    "at": "2026-11-22T17:30:37.105Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2112616
+    "pid": 2240935
   },
   "components/comment-pin": {
     "hash": "31f56ef76a14e8e8",
