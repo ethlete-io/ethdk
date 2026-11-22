@@ -5,7 +5,15 @@ set -uo pipefail
 target=$(cd "${1:?usage: prove-isolation.sh <target-dir>}" && pwd)
 if [ -z "${CLEAN_SLATE_SANDBOX:-}" ]; then
   self=$(readlink -f "$0")
-  exec "$(dirname "$self")/sandbox.sh" "$target" -- bash -s -- "$target" < "$self"
+  listeners=()
+  for port in 4402 4221 4492; do
+    node -e "require('net').createServer((c)=>c.end('HTTP/1.1 200 OK\\r\\nContent-Length: 0\\r\\n\\r\\n')).listen(+process.argv[1],'127.0.0.1').on('error',()=>process.exit(0))" "$port" &
+    listeners+=($!)
+  done
+  trap 'kill "${listeners[@]}" 2>/dev/null' EXIT
+  sleep 1
+  "$(dirname "$self")/sandbox.sh" "$target" -- bash -s -- "$target" < "$self"
+  exit $?
 fi
 
 cd "$target"
@@ -44,8 +52,13 @@ for token in film-detail login-dialog shell-main studio-lab; do
 done
 
 github=https://raw.githubusercontent.com/ethlete-io/ethdk/next/README.md
+no_curl() { ! curl -sS --max-time 8 -o /dev/null "$1"; }
+via_proxy() { node -e "fetch(process.argv[1],{signal:AbortSignal.timeout(15000)}).then((r)=>process.exit(r.status<600?0:1),()=>process.exit(1))" "$1"; }
 check "network: node cannot fetch $github" "no egress filter" no_fetch "$github"
 check "network: python3 urllib cannot fetch $github" "no egress filter" no_urllib "$github"
+command -v curl >/dev/null && check "network: curl cannot fetch $github" "no egress filter" no_curl "$github"
+check "network: api.anthropic.com reachable through the proxy" "proxy dead" via_proxy https://api.anthropic.com/
+check "network: no direct route, proxy env points at loopback" "" bash -c '[ "$HTTPS_PROXY" = http://127.0.0.1:3128 ] && ! (exec 3<>/dev/tcp/1.1.1.1/443) 2>/dev/null'
 for port in 4402 4221 4492; do
   check "loopback: host Studio port $port not reachable" "loopback is shared with the host" no_fetch "http://127.0.0.1:$port/"
 done
