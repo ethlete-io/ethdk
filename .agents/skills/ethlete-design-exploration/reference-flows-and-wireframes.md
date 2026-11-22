@@ -7,12 +7,12 @@ It is `<product>/flows/<name>.json`; `position` and `label` are optional:
 
 ```json
 {
-  "frames": [{ "part": "pages/library", "state": "empty", "position": { "x": 0, "y": 0 } }],
+  "frames": [{ "part": "pages/projects", "state": "empty", "position": { "x": 0, "y": 0 } }],
   "lines": [
     {
-      "from": { "part": "pages/library", "state": "empty" },
-      "to": { "part": "pages/film-detail", "state": "default" },
-      "label": "user adds a film"
+      "from": { "part": "pages/projects", "state": "empty" },
+      "to": { "part": "pages/project-detail", "state": "default" },
+      "label": "user adds a project"
     }
   ]
 }
@@ -73,6 +73,4 @@ a row `stackBelow: <px>`, the width below which it stacks its children, instead 
 that only fit the desktop. Never use `vh`, `dvh` or `svh` in a part: a part has no viewport of its own, so the unit measures Studio's frame, not the page. A full page is a frame of a fixed size. Put titles in `heading`, never in hand-written markup. Studio lists such a page under
 "Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-main`); draw a rough one with the kit, so each
 page imports the shell instead of repeating it, and a shell pick lands in one file.
-A dialog without its own URL is an element that a page state shows ("login open"). Examples in
-`.ethlete/design/studio-lab`: `pages/film-detail`, `elements/shell-main`, `elements/login-dialog`,
-`flows/sign-in.json`.
+A dialog without its own URL is an element that a page state shows ("login open").

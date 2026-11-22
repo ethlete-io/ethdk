@@ -15,7 +15,7 @@ each stage draws with what the stages before it settled (the wireframes draw wit
    ```ts
    inventory: [
      { part: 'Search field', sdk: 'et-input' },
-     { part: 'Match card', new: true, call: 'tomflix/components/match-card' },
+     { part: 'Match card', new: true, call: 'my-app/components/match-card' },
    ],
    ```
 
