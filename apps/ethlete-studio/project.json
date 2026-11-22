@@ -24,7 +24,9 @@
         "production",
         "^production",
         "{workspaceRoot}/.ethlete/design/studio/foundations/**/*.css",
-        "{workspaceRoot}/.ethlete/design/studio/assets/**/*"
+        "{workspaceRoot}/.ethlete/design/studio/assets/**/*",
+        "{workspaceRoot}/.ethlete/design/config.json",
+        "{workspaceRoot}/apps/timetrack/src-tauri/icons/128x128.png"
       ],
       "defaultConfiguration": "production",
       "options": {
@@ -32,8 +34,12 @@
         "outputPath": "dist/apps/ethlete-studio",
         "index": "apps/ethlete-studio/src/index.html",
         "tsConfig": "apps/ethlete-studio/tsconfig.app.json",
-        "assets": [{ "glob": "**/*", "input": ".ethlete/design/studio/assets", "output": "@assets" }],
+        "assets": [
+          { "glob": "**/*", "input": ".ethlete/design/studio/assets", "output": "@assets" },
+          { "glob": "128x128.png", "input": "apps/timetrack/src-tauri/icons", "output": "@assets/timetrack" }
+        ],
         "externalDependencies": ["@assets"],
+        "loader": { ".svg": "dataurl" },
         "styles": ["apps/ethlete-studio/src/styles.css"]
       },
       "configurations": {

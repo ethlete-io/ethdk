@@ -7,6 +7,7 @@ import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, DesignServerStatus, StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { ServerCrash, ShellMainComponent, ShellSection, StartPhase } from './shell-main.component';
+import { railLogos } from './rail-logos';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
 export type ShellState = {
@@ -40,6 +41,7 @@ export type ShellAction =
 export const SHELL_SAMPLE: ShellState = {
   product: 'studio',
   products: ['studio', 'studio-lab', 'sdk', 'timetrack', 'docs'],
+  logos: railLogos(['studio', 'studio-lab', 'sdk', 'timetrack', 'docs']),
   project: 'ethlete-sdk',
   projects: ['ethlete-sdk', 'fut-frontend', 'design-playground'],
   panel: 'open',
