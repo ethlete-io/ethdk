@@ -70,7 +70,34 @@ describe('agent-sessions', () => {
     dir = mkdtempSync(join(tmpdir(), 'agent-mailbox-'));
   });
 
+  const isAlive = (pid: number) => {
+    try {
+      process.kill(pid, 0);
+
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // A restart starts the dispatcher session of the checkout, which keeps writing the mailbox in `dir`: it must be
+  // gone before `dir` is removed, or the removal fails with ENOTEMPTY.
+  const stopDispatcher = () => {
+    const session = `=mailbox-dispatch@${basename(dir)}`;
+    const pids = spawnSync('tmux', ['list-panes', '-s', '-t', session, '-F', '#{pane_pid}'], { encoding: 'utf8' })
+      .stdout.split('\n')
+      .filter(Boolean)
+      .map(Number);
+
+    spawnSync('tmux', ['kill-session', '-t', session]);
+
+    const end = Date.now() + 5_000;
+
+    while (pids.some(isAlive) && Date.now() < end) spawnSync('sleep', ['0.05']);
+  };
+
   afterEach(() => {
+    if (hasTmux) stopDispatcher();
     rmSync(dir, { recursive: true, force: true });
   });
 
