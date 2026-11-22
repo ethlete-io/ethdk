@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B480
+built: e2f2e92b7
 decided: 2026-11-10
 source: grill session 2026-11-10 (Mac night shift)
 ---

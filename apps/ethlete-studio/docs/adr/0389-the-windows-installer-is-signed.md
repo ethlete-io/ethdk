@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B480
+open: B666
 decided: 2026-11-20
 source: grill session 2026-11-20 (afternoon), B480
 ---

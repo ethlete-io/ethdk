@@ -1,6 +1,6 @@
 ---
 status: superseded by 0273
-open: B480
+built: e2f2e92b7
 decided: 2026-11-11
 source: chat with the doc agent 2026-11-11 (afternoon)
 ---
