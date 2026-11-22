@@ -153,7 +153,7 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
       ${busy ? busyTrigger(trigger) : trigger}
       <div
         id="studio-menu-surface"
-        class="st-studio-menu absolute top-0 left-14 z-20 w-62"
+        class="st-studio-menu et-overlay-runtime-pane absolute top-0 left-14 z-20 w-62"
         data-overlay-placement="right-start"
         data-studio-menu
         data-et-surface="studio-menu.open"
