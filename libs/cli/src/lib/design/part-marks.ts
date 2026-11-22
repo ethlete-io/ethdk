@@ -1,3 +1,4 @@
+import { realpathSync } from 'fs';
 import { resolve } from 'path';
 import { assetRoot } from './package-root';
 import { partKeyOf } from './system/resolve-product';
@@ -33,9 +34,25 @@ export const markPartSource = (options: { code: string; key: string; marker: str
   );
 };
 
+const realOf = (file: string) => {
+  try {
+    return realpathSync(file);
+  } catch {
+    return null;
+  }
+};
+
 /** A Vite `transform` that marks the root element of every part a product or a sketch variant draws. */
 export const partMarksTransform = (system: SystemModules) => {
   const marker = fsUrl(resolve(assetRoot(), 'mark-part.ts'));
+  const reals = new Map<string, string>();
+  const cachedRealOf = (file: string) => {
+    const real = reals.get(file) ?? realOf(file);
+
+    if (real) reals.set(file, real);
+
+    return real ?? file;
+  };
 
   return (code: string, id: string) => {
     const product = productOfModuleId(id);
@@ -43,7 +60,11 @@ export const partMarksTransform = (system: SystemModules) => {
     if (!product || id.startsWith('\0')) return null;
 
     const file = fileOfModuleId(id);
-    const part = system.drawnOf(product, sketchOfModuleId(id))?.parts.find((candidate) => candidate.file === file);
+    const parts = system.drawnOf(product, sketchOfModuleId(id))?.parts ?? [];
+    const real = cachedRealOf(file);
+    const part =
+      parts.find((candidate) => candidate.file === file) ??
+      parts.find((candidate) => cachedRealOf(candidate.file) === real);
 
     return part ? markPartSource({ code, key: partKeyOf(part), marker }) : null;
   };

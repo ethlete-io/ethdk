@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -18,15 +18,19 @@ afterEach(async () => {
 
 type Drawn = { default: { states: Record<string, unknown>; render: (props: unknown) => Promise<{ body: string }> } };
 
-const acme = async (files: Record<string, string> = {}) => {
-  const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-marks-')));
+const acme = async (files: Record<string, string> = {}, options: { linked?: boolean } = {}) => {
+  const real = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-marks-')));
 
-  cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+  cpSync(join(__dirname, 'system/__fixtures__'), real, { recursive: true });
 
   for (const [file, text] of Object.entries(files)) {
-    mkdirSync(dirname(join(target, '.ethlete/design/acme', file)), { recursive: true });
-    writeFileSync(join(target, '.ethlete/design/acme', file), text);
+    mkdirSync(dirname(join(real, '.ethlete/design/acme', file)), { recursive: true });
+    writeFileSync(join(real, '.ethlete/design/acme', file), text);
   }
+
+  const target = options.linked ? `${real}-link` : real;
+
+  if (options.linked) symlinkSync(real, target, 'dir');
 
   const config = readConfig(target) ?? {};
   const system = createSystemModules({ target, config });
@@ -137,6 +141,12 @@ describe('the design server marks part roots', () => {
     expect(body).toContain('<section data-et-part="elements/hero" class="acme-hero">');
     expect(body).toContain('<article data-et-part="components/card" class="acme-card">');
     expect(body).toMatch(/data-et-part="components\/button"/u);
+  });
+
+  it('marks the root of a part it loads directly when the checkout lies behind a symlink', async () => {
+    const { bodyOf } = await acme({}, { linked: true });
+
+    expect(await bodyOf('pages/home', 'default')).toMatch(/^<main data-et-part="pages\/home">/u);
   });
 
   it('marks a part as a sketch variant draws it with the sketch target', async () => {
