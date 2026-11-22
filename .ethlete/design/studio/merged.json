@@ -51,10 +51,10 @@
     "at": "2026-11-21T02:52:36.165Z"
   },
   "components/shortcuts-dialog": {
-    "hash": "dfd91c29cb39b7fd",
+    "hash": "6bf3eb58b2194f69",
     "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-20T15:25:05.294Z"
+    "decidedBy": "builder",
+    "at": "2026-11-22T16:18:06.211Z"
   },
   "components/sketch-status-badge": {
     "hash": "82ad184840368dac",
