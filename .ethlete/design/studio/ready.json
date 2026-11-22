@@ -1070,14 +1070,14 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "187654fdf0a243d4",
+    "app": "f7037830dbfae0b5",
     "embedded": {
       "components/error-toast": "c866d29b02b80731",
       "components/shell-collapse": "d20573209002ca4d",
       "components/shell-resize-handle": "51c79e9eea6a27fa",
       "components/shell-system-picker": "36e05b581954b8a9",
-      "components/title-bar": "a39add3bbf31a1a8",
-      "components/title-search": "5de5ea156d1f9a03"
+      "components/title-bar": "9c9ade42e3ff6228",
+      "components/title-search": "f3deb42a01158619"
     },
     "actions": [
       "closed",
@@ -1099,7 +1099,7 @@
     "at": "2026-11-22T15:09:16.500Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1027592
+    "pid": 2037221
   },
   "elements/studio-menu": {
     "hash": "4ae3f97e6b56418a",
