@@ -2111,7 +2111,7 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "4b7b9aace4725bcf",
+    "app": "b6c4923d1f3b487e",
     "embedded": {
       "components/canvas-viewport": "193484d55b7df4cf",
       "components/comment-draft": "070b17aa95c2c416",
@@ -2176,7 +2176,7 @@
     "at": "2026-11-22T16:50:17.752Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1907831
+    "pid": 1999822
   },
   "pages/start": {
     "hash": "9b9f8eb0fa83c826",
