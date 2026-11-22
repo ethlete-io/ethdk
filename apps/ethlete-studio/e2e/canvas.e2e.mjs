@@ -5345,7 +5345,14 @@ const work = async () => {
             ? ` (cause: ${[error.cause.code, error.cause.message].filter(Boolean).join(' ')})`
             : '';
 
-          result = { ok: false, detail: `${String(error).split('\n')[0]}${cause}` };
+          const at = (error?.stack ?? '')
+            .split('\n')
+            .filter((line) => line.includes('canvas.e2e.mjs'))
+            .slice(0, 4)
+            .map((line) => line.trim().replace(/^at /, ''))
+            .join(' < ');
+
+          result = { ok: false, detail: `${String(error).split('\n')[0]}${cause}${at ? ` at ${at}` : ''}` };
         }
 
         if (!CASES[job.case].open && !CASES[job.case].listingMayPend) result = heldListings.check(result);
