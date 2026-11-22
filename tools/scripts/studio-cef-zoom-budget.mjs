@@ -10,9 +10,10 @@ import { FRAME, measureZoom, ZOOM_BUDGET } from '../../apps/ethlete-studio/e2e/z
 import { serveStatic } from './verify-studio-headless.mjs';
 
 const USAGE =
-  'usage: node tools/scripts/studio-cef-zoom-budget.mjs --build <studio build dir> --checkout <zoom fixture checkout> [--runs 3] [--screen 1920x1080] [--chromium-flags "<flags>"]';
+  'usage: node tools/scripts/studio-cef-zoom-budget.mjs --checkout <zoom fixture checkout> [--build <studio build dir, Linux only>] [--runs 3] [--screen 1920x1080] [--chromium-flags "<flags>"] [--binary <host binary>]';
 const root = resolve(fileURLToPath(import.meta.url), '../../..');
-const binary = join(root, 'apps/ethlete-studio/src-tauri/target/debug/ethlete-studio');
+const macOS = process.platform === 'darwin';
+const debugDir = join(root, 'apps/ethlete-studio/src-tauri/target/debug');
 const DEV_URL_PORT = Number(
   JSON.parse(readFileSync(join(root, 'apps/ethlete-studio/src-tauri/tauri.conf.json'), 'utf8'))
     .build.devUrl.split(':')
@@ -25,6 +26,12 @@ const NAMESPACED = 'STUDIO_CEF_ZOOM_NAMESPACED';
 const VIEW_KEY = 'ethlete-studio.call-view';
 const READY_MS = 120000;
 const CELLS_MS = Number(value('--cells-ms', 240000));
+const binary = value(
+  '--binary',
+  macOS
+    ? join(debugDir, 'bundle/macos/Ethlete Studio.app/Contents/MacOS/ethlete-studio')
+    : join(debugDir, 'ethlete-studio'),
+);
 
 const wait = (ms) => new Promise((done) => setTimeout(done, ms));
 
@@ -60,7 +67,10 @@ const launchHost = (checkout, screen, flags) => {
   const home = mkdtempSync(join(tmpdir(), 'studio-cef-zoom-'));
   const stderrFile = join(home, 'stderr.log');
   const stderrFd = openSync(stderrFile, 'w');
-  const child = spawn('xvfb-run', ['-a', '-s', `-screen 0 ${screen}x24`, binary, ...flags], {
+  const [command, ...commandArgs] = macOS
+    ? [binary, ...flags]
+    : ['xvfb-run', '-a', '-s', `-screen 0 ${screen}x24`, binary, ...flags];
+  const child = spawn(command, commandArgs, {
     cwd: root,
     detached: true,
     stdio: ['ignore', stderrFd, stderrFd],
@@ -101,7 +111,7 @@ const studioPage = async (browser) => {
     const page = browser
       .contexts()
       .flatMap((context) => context.pages())
-      .find((candidate) => candidate.url().includes(`:${DEV_URL_PORT}`));
+      .find((candidate) => candidate.url().includes(macOS ? '//tauri.localhost' : `:${DEV_URL_PORT}`));
 
     if (page) return page;
     if (Date.now() > deadline) throw new Error('no Studio page in the CEF host');
@@ -109,12 +119,16 @@ const studioPage = async (browser) => {
   }
 };
 
+const FOLDED = '[data-sk-folded] button[aria-expanded="false"]';
+
 const cellsShown = async (page) => {
   const deadline = Date.now() + CELLS_MS;
   let last = '';
   let stableSince = Date.now();
 
   for (;;) {
+    await page.evaluate((FOLDED) => document.querySelector(FOLDED)?.click(), FOLDED);
+
     const state = await page.evaluate(
       ({ FRAME, CANVAS }) => ({
         cells: document.querySelectorAll(`ethlete-sketch-view ${FRAME}`).length,
@@ -141,14 +155,14 @@ const main = async () => {
   const build = value('--build');
   const checkout = value('--checkout');
 
-  if (!build || !checkout) throw new Error(USAGE);
+  if ((!build && !macOS) || !checkout) throw new Error(USAGE);
 
   const runs = Number(value('--runs', 3));
   const screen = value('--screen', '1920x1080');
   const flags = value('--chromium-flags', '').split(' ').filter(Boolean);
-  const server = serveStatic(resolve(build, 'browser'));
+  const server = macOS ? undefined : serveStatic(resolve(build, 'browser'));
 
-  await new Promise((done) => server.listen(DEV_URL_PORT, '::', done));
+  if (server) await new Promise((done) => server.listen(DEV_URL_PORT, '::', done));
 
   const host = launchHost(resolve(checkout), screen, flags);
   let browser;
@@ -168,6 +182,11 @@ const main = async () => {
     const start = page.getByRole('button', { name: /starten/i }).first();
     const shown = await Promise.race([
       start.waitFor({ timeout: READY_MS }).then(() => 'start'),
+      page
+        .locator(FOLDED)
+        .first()
+        .waitFor({ timeout: READY_MS })
+        .then(() => 'folded'),
       page
         .locator(`ethlete-sketch-view ${FRAME}`)
         .first()
@@ -220,12 +239,12 @@ const main = async () => {
     process.exitCode = 1;
   } finally {
     killGroup(host.child.pid);
-    server.close();
+    server?.close();
     if (process.exitCode) console.error(`host home kept: ${host.home}`);
     else rmSync(host.home, { recursive: true, force: true });
   }
 };
 
-if (process.platform !== 'linux') throw new Error('the CEF zoom measurement runs on Linux under Xvfb');
-if (process.env[NAMESPACED]) await main();
+if (!['linux', 'darwin'].includes(process.platform)) throw new Error('the CEF zoom measurement runs on Linux or macOS');
+if (macOS || process.env[NAMESPACED]) await main();
 else reExecNamespaced();
