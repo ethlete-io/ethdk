@@ -147,3 +147,4 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - host-signal under CI (CI, 20.11., 454d99322): `studio:e2e:host-signal` sigint/sigterm left 8 processes after 5 s, sigint-inherited-ignore 4.9 s; rerun green, local 4/4. Suspect: 6e0b50cd4 pre_exec (fork instead of posix_spawn) or a slow runner.
 - scratch checkout lost files (machinery, 20.11.): a builder scratch checkout lost 16274 tracked files between two design server runs, once; restored. Suspect, first time.
 - apps-bundle without timeout (machinery, 21.11.): the job in publish.yml has no `timeout-minutes`; a hung rust-cache post step held the next_environment CI queue ~2 h. Build only on red CI.
+- section-hover frame (CI, 22.11., run 45024841908): Studio e2e 4/8 "every live sketch frame sits at 0/0" failed with "a section-hover: no frame document" at load 13.8 on 2 workers. Suspect: load. First time.
