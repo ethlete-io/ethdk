@@ -71,6 +71,6 @@ shell `fill: true` so it is as tall as the frame, instead of a hand-written `min
 every preset, not one width: give a picture a `ratio` (`'2/3'`) instead of a fixed height, and give
 a row `stackBelow: <px>`, the width below which it stacks its children, instead of fixed widths
 that only fit the desktop. Never use `vh`, `dvh` or `svh` in a part: a part has no viewport of its own, so the unit measures Studio's frame, not the page. A full page is a frame of a fixed size. Put titles in `heading`, never in hand-written markup. Studio lists such a page under
-"Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-main`); draw a rough one with the kit, so each
+"Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-primary`); draw a rough one with the kit, so each
 page imports the shell instead of repeating it, and a shell pick lands in one file.
 A dialog without its own URL is an element that a page state shows ("login open").
