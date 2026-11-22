@@ -452,7 +452,9 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
 
   const offset = { x: 0, y: 0 };
   const pan = (x: number, y: number) => {
-    const roomX = Math.max(0, world.scrollWidth - list.clientWidth);
+    const row = world.querySelector<HTMLElement>('[data-sk-row]');
+    const inset = row && world.scrollWidth > world.clientWidth ? parseFloat(getComputedStyle(row).paddingRight) : 0;
+    const roomX = Math.max(0, world.scrollWidth + inset - list.clientWidth);
     const roomY = Math.max(0, world.offsetHeight - list.clientHeight);
     const inside = panInsideRoom({ x: -(offset.x + x), y: -(offset.y + y) }, { x: roomX, y: roomY });
     offset.x = -inside.x;
