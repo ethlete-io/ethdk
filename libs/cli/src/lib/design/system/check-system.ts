@@ -9,7 +9,7 @@ import { autoAcceptOf, DrawStates } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
-import { actionLostProblemsOf, declaredPartActionsOf } from './action-lost';
+import { actionLostProblemsOf, declaredPartActionsOf, withPartLoader } from './action-lost';
 import { pageStateInnerProblemsOf } from './rules/page-state-inner';
 import { refreshHarnessMap } from './harness-map';
 import { runningCliBuildLine, runningCliStaleWarning } from '../stale-cli-dist';
@@ -44,6 +44,7 @@ import { partKeyOf, partOfFile, PRODUCT_PART_KEY, resolveProduct, ResolvedProduc
 import { canonicalClassesOf } from './rules/canonical-class';
 import { prefetchPartClassFactsOf } from './rules/tailwind-classes';
 import { embeddedPartsOf } from './embedded-actions';
+import { statesHoldingPartOf } from './embedder-states';
 import { componentCopiesOf } from './rules/component-copy';
 import { deniedClassesOf } from './rules/denied-class';
 import { nativeTitlesOf } from './rules/native-title';
@@ -900,7 +901,7 @@ const prefetchPartChecks = (options: CheckOptions & { part: string; typechecks: 
   );
 
 const renderSystem = async (
-  options: CheckOptions & { embedder?: boolean },
+  options: CheckOptions & { embedder?: boolean; states?: Record<string, string[]> },
 ): Promise<{
   code: number;
   rendered: RenderIssue[] | null;
@@ -947,7 +948,16 @@ const renderSystem = async (
       ...options,
       cached: true,
       onProgress: (line) => console.log(line),
-      jobs: options.products.map((product) => ({ product, sketch: null, parts: options.part ? [options.part] : null })),
+      jobs: options.products.map((product) => {
+        const states = options.part ? options.states?.[product] : undefined;
+
+        return {
+          product,
+          sketch: null,
+          parts: options.part ? [options.part] : null,
+          ...(options.part && states ? { only: { [options.part]: states } } : {}),
+        };
+      }),
     }),
   );
 
@@ -1191,7 +1201,7 @@ const checkEmbedders = async (
   const failed: string[] = [];
 
   for (const { part, products } of embedders) {
-    const checked = await checkSystemRenderedOn({ ...options, products, part, embedder: true });
+    const checked = await checkSystemRenderedOn({ ...options, products, part, embedder: true, embedded: options.part });
 
     if (checked !== 0) failed.push(part);
   }
@@ -1216,11 +1226,35 @@ const checkEmbedders = async (
   return 1;
 };
 
-const checkEmbedderOn = async (options: CheckOptions & { warm: WarmDraw; tally: Tally; part?: string }) =>
-  (await embedderRunOf(options)).exit;
+type EmbedderRun = CheckOptions & { warm: WarmDraw; tally: Tally; part?: string; embedded?: string };
 
-const embedderRunOf = async (options: CheckOptions & { warm: WarmDraw; tally: Tally; part?: string }) => {
-  const { code, notDrawn } = await renderSystem({ ...options, embedder: true });
+const checkEmbedderOn = async (options: EmbedderRun) => (await embedderRunOf(options)).exit;
+
+const statesHoldingEmbeddedOf = async (options: EmbedderRun) => {
+  const { part, embedded } = options;
+
+  if (!part || !embedded) return undefined;
+
+  const states: Record<string, string[]> = {};
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+    const product = entry ? resolveProduct({ target: options.target, name, config: entry }) : null;
+    const held = product
+      ? await withPartLoader(options, (load) => statesHoldingPartOf({ load, product, embedder: part, part: embedded }))
+      : null;
+
+    if (!held) continue;
+
+    states[name] = held;
+  }
+
+  return states;
+};
+
+const embedderRunOf = async (options: EmbedderRun) => {
+  const states = await timedPhase('embedder-states', () => statesHoldingEmbeddedOf(options));
+  const { code, notDrawn } = await renderSystem({ ...options, embedder: true, states });
   let failed = 0;
 
   for (const name of options.products) {
@@ -1291,7 +1325,12 @@ export const deniedLineOf = (id: string) =>
   `SERVE-DENIED ${id}: the design server answered 403, the file is outside its allow list, so a drawing got other content`;
 
 const checkSystemRenderedOn = async (
-  options: CheckOptions & { warm: WarmDraw; afterEdits?: (part: string | undefined) => void; embedder?: boolean },
+  options: CheckOptions & {
+    warm: WarmDraw;
+    afterEdits?: (part: string | undefined) => void;
+    embedder?: boolean;
+    embedded?: string;
+  },
 ) => {
   const tally: Tally = new Map();
 

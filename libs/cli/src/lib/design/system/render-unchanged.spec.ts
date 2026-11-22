@@ -48,4 +48,21 @@ describe('render check of unchanged states', () => {
       'components/two other',
     ]);
   }, 120_000);
+
+  it('inspects only the states a job names in only', async (context) => {
+    const target = checkout();
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [{ product: 'shop', sketch: null, parts: null, only: { 'components/one': ['other'] } }],
+    });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    expect(rendered.drawn.map(({ part, state }) => `${part} ${state}`)).toEqual([
+      'components/one other',
+      'components/two default',
+      'components/two other',
+    ]);
+  }, 120_000);
 });
