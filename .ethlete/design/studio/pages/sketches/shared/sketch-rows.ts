@@ -336,6 +336,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   const blocks = Number(world.dataset['blocks'] ?? 1);
   let mode = zoom;
   let fitAt = 0;
+  const grows = !world.classList.contains('w-max');
 
   const textAt = (size: number, scale: number) => {
     const floor = Math.max(MIN_TEXT, size * fitAt);
@@ -432,9 +433,11 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   };
 
   const fit = () => {
+    if (grows) world.classList.remove('w-max', 'min-w-full');
     fitAt = 0;
     fitAt = fitScale();
     const scale = mode === 'fit' ? fitAt : mode;
+    if (grows && mode !== 'fit') world.classList.add('w-max', 'min-w-full');
     apply(scale);
     pan(0, 0);
     if (label) label.textContent = `${Math.round(scale * 100)} %`;
@@ -452,9 +455,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
 
   const offset = { x: 0, y: 0 };
   const pan = (x: number, y: number) => {
-    const row = world.querySelector<HTMLElement>('[data-sk-row]');
-    const inset = row && world.scrollWidth > world.clientWidth ? parseFloat(getComputedStyle(row).paddingRight) : 0;
-    const roomX = Math.max(0, world.scrollWidth + inset - list.clientWidth);
+    const roomX = Math.max(0, world.scrollWidth - list.clientWidth);
     const roomY = Math.max(0, world.offsetHeight - list.clientHeight);
     const inside = panInsideRoom({ x: -(offset.x + x), y: -(offset.y + y) }, { x: roomX, y: roomY });
     offset.x = -inside.x;
