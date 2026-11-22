@@ -267,9 +267,10 @@ describe('ShellMainComponent', () => {
       const tooltips = fixture.debugElement
         .queryAll(By.directive(TooltipDirective))
         .filter((el) => (el.nativeElement as HTMLElement).closest('nav'))
-        .map((el) => el.injector.get(TooltipDirective).content());
+        .map((el) => el.injector.get(TooltipDirective))
+        .map((tooltip) => `${tooltip.content()} ${tooltip.placement()}`);
 
-      expect(tooltips).toEqual(['studio', 'studio-lab', 'sdk']);
+      expect(tooltips).toEqual(['studio right', 'studio-lab right', 'sdk right']);
     });
   });
 
