@@ -59,7 +59,7 @@ export const SHORTCUT_GROUPS = [
               @for (row of group.rows; track row.label) {
                 <div class="flex items-center justify-between gap-space-3 py-space-1 text-ui-sm">
                   <dt class="text-et-surface">{{ row.label }}</dt>
-                  <dd class="m-0"><et-kbd [keys]="row.keys" /></dd>
+                  <dd class="m-0 flex"><et-kbd [keys]="row.keys" /></dd>
                 </div>
               }
             </dl>
