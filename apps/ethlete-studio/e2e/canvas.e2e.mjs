@@ -5615,7 +5615,9 @@ const lead = async () => {
 
       child.stdout.on('data', (chunk) => {
         output += chunk;
-        for (const line of String(chunk).split('\n')) if (line.startsWith('[ci-timing]')) console.log(line);
+        for (const line of String(chunk).split('\n'))
+          if (line.startsWith('[ci-timing]'))
+            console.log(process.env['GITHUB_ACTIONS'] ? `::notice title=ci-timing::${line}` : line);
       });
       child.stderr.on('data', (chunk) => (output += chunk));
       child.on('message', (message) => {
