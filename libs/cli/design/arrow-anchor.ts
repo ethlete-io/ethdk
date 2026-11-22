@@ -106,8 +106,9 @@ const aim = (root: HTMLElement, pane: HTMLElement) => {
     ? (anchorRect.left + anchorRect.width / 2 - paneRect.left) / scale - pane.clientLeft
     : (anchorRect.top + anchorRect.height / 2 - paneRect.top) / scale - pane.clientTop;
   const size = vertical ? arrow.offsetWidth : arrow.offsetHeight;
-  const room = (vertical ? pane.clientWidth : pane.clientHeight) - size - ARROW_PADDING;
-  const offset = toDevicePixel(Math.min(Math.max(centre - size / 2, ARROW_PADDING), room));
+  const client = vertical ? pane.clientWidth : pane.clientHeight;
+  const padding = Math.min(ARROW_PADDING, client / 2 - size / 2 - 1);
+  const offset = toDevicePixel(Math.min(Math.max(centre - size / 2, padding), client - size - padding));
 
   arrow.style.setProperty(vertical ? 'left' : 'top', '0');
   arrow.style.setProperty(
