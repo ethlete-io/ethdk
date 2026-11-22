@@ -720,11 +720,13 @@ describe('SketchesComponent', () => {
     it('wraps 30 tall states into blocks that fit the viewport by height and width, and keeps few states in one block', () => {
       const options = { columns: 3, frameWidth: 1440 };
       const many = matrixBlocksOf(Array(30).fill(900), { ...options, viewport: { width: 1100, height: 720 } });
+      const page = matrixBlocksOf(Array(30).fill(900), { ...options, viewport: { width: 1076, height: 740 } });
       const wider = matrixBlocksOf(Array(30).fill(900), { ...options, viewport: { width: 1570, height: 740 } });
       const few = matrixBlocksOf(Array(3).fill(900), { ...options, viewport: { width: 1100, height: 720 } });
       const unmeasured = matrixBlocksOf(Array(30).fill(900), { ...options, viewport: { width: 0, height: 0 } });
 
       expect(many).toEqual([10, 10, 10]);
+      expect(page).toEqual([10, 10, 10]);
       expect(wider.length).toBeGreaterThan(many.length);
       expect(wider.reduce((sum, size) => sum + size, 0)).toBe(30);
       expect(few).toEqual([3]);

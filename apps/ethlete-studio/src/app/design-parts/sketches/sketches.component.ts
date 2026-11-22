@@ -484,9 +484,7 @@ export class SketchesComponent {
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
   protected labelFont = computed(() => textAt(LABEL_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected labelSize = computed(() =>
-    this.labelFont() < MIN_LABEL || (this.transposed() && this.widest() * this.scale() < MATRIX_LABEL_MIN)
-      ? null
-      : this.labelFont(),
+    this.labelsHiddenAt({ scale: this.scale(), label: this.labelFont() }) ? null : this.labelFont(),
   );
   protected shownStatus = computed(() =>
     (this.agent() && !this.agent()?.failed) || this.port()
@@ -1000,6 +998,10 @@ export class SketchesComponent {
     return scale;
   }
 
+  private labelsHiddenAt({ scale, label }: { scale: number; label: number }) {
+    return label < MIN_LABEL || (this.transposed() && this.widest() * scale < MATRIX_LABEL_MIN);
+  }
+
   private matrixColumnsAt({ columns, blocks }: { columns: number; blocks: number }, scale: number) {
     const frame = `${this.widest() * scale}px`;
     const first = `max-content repeat(${columns}, max(${frame}, ${MATRIX_HEAD_MIN}px))`;
@@ -1065,7 +1067,7 @@ export class SketchesComponent {
 
     for (const element of notes) setStyle(element, { fontSize: `${note}px` });
     for (const element of labels) setStyle(element, { fontSize: `${label}px` });
-    for (const row of labelRows) this.renderer.toggleClass(row, 'hidden', label < MIN_LABEL);
+    for (const row of labelRows) this.renderer.toggleClass(row, 'hidden', this.labelsHiddenAt({ scale, label }));
     for (const stage of stages) {
       const inner = frames.find((frame) => stage.contains(frame))?.firstElementChild;
 
