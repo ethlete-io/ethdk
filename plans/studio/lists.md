@@ -49,7 +49,7 @@ Zu [STATUS.md](STATUS.md).
   Inventar-Panel gebaut (INVPANEL d385c7029..642313681): Kopf-Überlappung, Marker im nächsten freien Platz mit
   Mindestabstand und Theme-Text, deklarierte Controls deutsch beschriftet, Titelsuche-Komma an der Quelle behoben.
   Suspect: Marker-Berührungen an Rahmenunterkanten.
-- **A34** Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42). Erster Schritt gebaut: „Panel ausblenden“ (642313681); alle festen Strings in Label-Dateien (f44a3ba90, 84c1233ec). Nächster Schritt wartet auf Tom (Sprachumschalter oder ruhen).
+- **A34** Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42). Erster Schritt gebaut: „Panel ausblenden“ (642313681); alle festen Strings in Label-Dateien (f44a3ba90, 84c1233ec). Ruht bis ein englischsprachiger Nutzer Studio braucht (ADR 0406).
 - **A35** Motion-Editor.
 - **A37** Design-Editor nach A35: der Designer passt im Sketch selbst an (echte Editor-Controls). Dazu Komfort wie in
   Figma: einzelne Komponenten anklicken und ihren Zustand sehen, in verschachtelte Komponenten hineinklicken. Großes
