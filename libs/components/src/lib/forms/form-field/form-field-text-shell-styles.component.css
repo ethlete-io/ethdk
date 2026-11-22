@@ -195,7 +195,7 @@
           transition: color 150ms ease;
         }
 
-        &:not([data-label-floated]) {
+        &[data-has-label]:not([data-label-floated]) {
           .et-form-field-control-slot :is(input, textarea)::placeholder,
           :is(.et-select-value, .et-cascader-value)[data-placeholder] {
             color: transparent;

@@ -185,6 +185,8 @@ centred, and the control takes the remaining width. It replaces `labelMode` with
 (floating and inline labels do not apply), and hints and errors stay under the control. It only
 applies to text-field controls such as `et-input` and `et-select`.
 
+In `floating-inside` and `floating-outside`, the placeholder stays hidden until the label floats. A field without an `<et-label>` has nothing to float, so its placeholder stays visible.
+
 The label column and the control column are `auto` and `minmax(0, 1fr)`. Set
 `--et-form-field-label-column: 1fr` and `--et-form-field-control-column: auto` to give the free
 space to the label instead. `--et-form-field-label-gap` (default `12px`) sets the space between them.

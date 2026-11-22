@@ -267,6 +267,47 @@ test.describe('form-field / floating label', () => {
   });
 });
 
+test.describe('form-field / floating label placeholder', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: computed colour');
+
+  const SELECT_STORY_ID = 'components-forms-select--default';
+
+  for (const labelMode of ['floating-inside', 'floating-outside']) {
+    test(`${labelMode} without a label keeps the input placeholder visible`, async ({ page }) => {
+      const root = await openStory(page, INPUT_STORY_ID, {
+        args: { labelMode, label: '', ariaLabel: 'Search', placeholder: 'Search…' },
+      });
+      const placeholder = fieldParts(root).control;
+
+      await expect
+        .poll(() => placeholder.evaluate((el) => getComputedStyle(el, '::placeholder').color))
+        .not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+    });
+
+    test(`${labelMode} without a label keeps the select placeholder visible`, async ({ page }) => {
+      const root = await openStory(page, SELECT_STORY_ID, { args: { labelMode, label: '' } });
+      const placeholder = root.locator('.et-select-value[data-placeholder]');
+
+      await expect(placeholder).toBeVisible();
+      await expect
+        .poll(() => placeholder.evaluate((el) => getComputedStyle(el).color))
+        .not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+    });
+
+    test(`${labelMode} with a label hides the placeholder until the label floats`, async ({ page }) => {
+      const root = await openStory(page, INPUT_STORY_ID, { args: { labelMode, placeholder: 'Search…' } });
+      const { control } = fieldParts(root);
+      const color = () => control.evaluate((el) => getComputedStyle(el, '::placeholder').color);
+
+      await expect.poll(color).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+
+      await pressKey(page, 'Tab');
+      await expect(control).toBeFocused();
+      await expect.poll(color).not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+    });
+  }
+});
+
 test.describe('form-field / support region', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard editing');
 

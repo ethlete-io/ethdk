@@ -96,6 +96,10 @@ export const Mixed: Story = {
   },
 };
 
+export const NoLabelFloating: Story = {
+  args: { labelMode: 'floating-inside', label: '' },
+};
+
 export const NullOptionFloatingLabel: Story = {
   args: { labelMode: 'floating-inside', label: 'Fruit', nullOptionLabel: 'All fruits', value: null },
 };

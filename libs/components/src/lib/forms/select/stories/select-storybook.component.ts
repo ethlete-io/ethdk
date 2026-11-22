@@ -44,9 +44,12 @@ const FRUIT_OPTIONS = [
         [labelMode]="labelMode()"
         [labelPosition]="labelPosition()"
       >
-        <et-label>{{ label() }}</et-label>
+        @if (label()) {
+          <et-label>{{ label() }}</et-label>
+        }
         <et-select
           [(mixed)]="mixedState"
+          [aria-label]="label() ? null : 'Fruit'"
           [formField]="demoForm.value"
           [mixedLabel]="mixedLabel()"
           [placeholder]="placeholder()"
