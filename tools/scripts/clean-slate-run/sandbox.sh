@@ -20,7 +20,7 @@ cp "$here/proxy-forward.mjs" "$home/.proxy/forward.mjs"
 proxy_port=3128
 proxy_url=http://127.0.0.1:$proxy_port
 
-[ -e "$config/.credentials.json" ] || { [ ! -f "$real_home/.claude/.credentials.json" ] || cp "$real_home/.claude/.credentials.json" "$config/.credentials.json"; }
+[ ! -f "$real_home/.claude/.credentials.json" ] || install -m 600 "$real_home/.claude/.credentials.json" "$config/.credentials.json"
 [ -e "$config/.claude.json" ] || echo '{"hasCompletedOnboarding":true}' > "$config/.claude.json"
 [ -d "$home/.cache/node/corepack" ] || cp -a "$real_home/.cache/node/corepack" "$home/.cache/node/corepack"
 
@@ -57,7 +57,7 @@ args=(
 rm -f "$home/.proxy/proxy.sock"
 node "$here/proxy-host.mjs" "$home/.proxy/proxy.sock" "$home/.proxy/refused.log" "$allow" &
 proxy_pid=$!
-trap 'kill "$proxy_pid" 2>/dev/null || true' EXIT
+trap 'kill "$proxy_pid" 2>/dev/null || true; rm -f "$config/.credentials.json"' EXIT
 for _ in $(seq 50); do [ -S "$home/.proxy/proxy.sock" ] && break; sleep 0.1; done
 [ -S "$home/.proxy/proxy.sock" ] || die "proxy did not start"
 
