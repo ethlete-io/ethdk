@@ -521,7 +521,15 @@ const liveFrameFaultsOf = async (page, frame) => {
     wrong.push(`${frame.key}: iframe ${frame.frameWidth} px in a ${frame.cellWidth} px cell`);
   if (!frame.inView || !frame.picture) return { wrong, gap: null };
 
-  const answer = await page.request.get(frame.picture, { timeout: WAIT_MS, headers: OWN_CONNECTION });
+  const requestedAt = Date.now();
+  const answer = await page.request.get(frame.picture, { timeout: WAIT_MS, headers: OWN_CONNECTION }).catch((error) => {
+    console.log(
+      `[ci-timing] sideways frame picture request failed: ${Date.now() - requestedAt} ms (${error.message.split('\n')[0]})`,
+    );
+    throw error;
+  });
+
+  console.log(`[ci-timing] sideways frame picture request: ${Date.now() - requestedAt} ms`);
   const live = await page.screenshot({ clip: frame.clip });
   const gap = await livePaintGapOf(page, {
     live: live.toString('base64'),
@@ -2352,9 +2360,21 @@ const CASES = [
 
       if (process.env['STUDIO_E2E_SHOTS'])
         await page.screenshot({ path: join(process.env['STUDIO_E2E_SHOTS'], 'open-points-part-row.png') });
+      const clickedAt = Date.now();
+
       await row.click();
       await settle(page);
       await page.unroute('**/__design/open-points?*');
+
+      const dialogOpen = () =>
+        page.evaluate(() => !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'));
+      let stillOpen = await dialogOpen();
+
+      for (; stillOpen && Date.now() - clickedAt < 30000; stillOpen = await dialogOpen())
+        await page.waitForTimeout(100);
+      console.log(
+        `[ci-timing] open-points row dialog closed after row click: ${stillOpen ? 'still open after 30000' : Date.now() - clickedAt} ms`,
+      );
 
       const after = await page.evaluate(() => ({
         open: !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'),
@@ -5593,7 +5613,10 @@ const lead = async () => {
         child.send({ job: current ?? null });
       };
 
-      child.stdout.on('data', (chunk) => (output += chunk));
+      child.stdout.on('data', (chunk) => {
+        output += chunk;
+        for (const line of String(chunk).split('\n')) if (line.startsWith('[ci-timing]')) console.log(line);
+      });
       child.stderr.on('data', (chunk) => (output += chunk));
       child.on('message', (message) => {
         if (message.type === 'result') {
