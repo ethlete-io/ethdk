@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B665
+built: e2f2e92b7
 decided: 2026-11-22
 source: doc-agent session 2026-11-22 (afternoon), after the B480 Windows spike
 ---
