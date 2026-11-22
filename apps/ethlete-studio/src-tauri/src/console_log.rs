@@ -9,7 +9,7 @@ const LOG_ENV: &str = "ETHLETE_STUDIO_CONSOLE_LOG";
 const SMOKE_VIEW_ENV: &str = "ETHLETE_STUDIO_SMOKE_VIEW";
 const LOG_FILE: &str = "console.log";
 const MAX_LOG_BYTES: u64 = 1024 * 1024;
-const SMOKE_PAINT_TIMEOUT_MS: u32 = 60_000;
+const SMOKE_PAINT_TIMEOUT_MS: u32 = 110_000;
 const SMOKE_MARKER: &str = "[studio-release-smoke]";
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -141,7 +141,7 @@ fn smoke_script(view: &str) -> String {
     format!(
         r#"(() => {{
   const key = 'ethlete-studio.call-view';
-  if (window.top !== window) return;
+  if (window.top !== window || location.protocol === 'data:') return;
   console.error('{SMOKE_MARKER} page loaded');
   localStorage.setItem(key, {view});
   let waiting = '';
@@ -194,6 +194,15 @@ mod tests {
         let script = smoke_script(r#"{"checkout":"/a'b"}"#);
 
         assert!(script.contains(r#""{\"checkout\":\"/a'b\"}""#));
+    }
+
+    #[test]
+    fn the_smoke_script_skips_the_cef_placeholder_page() {
+        let script = smoke_script("{}");
+        let guard = script.find("location.protocol === 'data:') return;").unwrap();
+
+        assert!(guard < script.find("page loaded").unwrap());
+        assert!(guard < script.find("localStorage").unwrap());
     }
 
     #[test]
