@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B403
+built: e0adb0b6b
 decided: 2026-11-22
 source: doc-agent session 2026-11-22 (evening), Design-Drift studio-menu
 ---
