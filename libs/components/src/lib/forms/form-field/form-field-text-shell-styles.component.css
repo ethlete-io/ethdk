@@ -252,7 +252,9 @@
         }
 
         .et-form-field-control-slot {
-          font-size: calc(var(--et-form-field-control-font-size) * 0.96);
+          font-size: calc(
+            var(--et-form-field-control-font-size) * var(--et-form-field-floating-inside-control-font-scale, 0.96)
+          );
         }
       }
 

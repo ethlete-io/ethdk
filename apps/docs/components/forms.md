@@ -1036,6 +1036,10 @@ et-form-field {
 `--et-form-field-control-border-radius` is read from any ancestor, `:root` included; unset, the
 radius follows `size` (`4px` / `5px` / `6px` for `sm` / `md` / `lg`).
 
+In `floating-inside`, the control text renders at `--et-form-field-control-font-size` times
+`--et-form-field-floating-inside-control-font-scale`. The scale is read from any ancestor and
+defaults to `0.96`. Set it to `1` for the same text size as the other label modes.
+
 On a touch device (`pointer: coarse`), the text of a native input or textarea inside a field
 never renders below `16px`, whatever `--et-form-field-control-font-size` says. Below that size,
 iOS Safari zooms the page when the field takes focus.

@@ -19,6 +19,12 @@ const insetRules = (source: string) =>
   );
 
 describe('form-field tokens', () => {
+  it('scales the floating-inside control font by a token that defaults to 0.96', () => {
+    expect(css.replace(/\s+/g, '')).toContain(
+      'font-size:calc(var(--et-form-field-control-font-size)*var(--et-form-field-floating-inside-control-font-scale,0.96))',
+    );
+  });
+
   it('drives the supporting inset of errors, warnings, description, hint and the static label from one token', () => {
     expect(css).toMatch(
       /--_et-form-field-supporting-inset:\s*var\(\s*--et-form-field-supporting-inset,\s*calc\(var\(--et-form-field-control-padding-inline\) \+ var\(--et-form-field-control-border-width\)\)/,
