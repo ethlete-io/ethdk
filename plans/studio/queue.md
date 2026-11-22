@@ -22,3 +22,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 22. **Zoom-Budget im Canvas (B356)** ⏳ Budget gilt für die CEF-App, Mac und Linux (ADR 0390). Safari-Aufnahmen: p95 586 ms beim Zoomen, Suspect Live-Vorschauen starten während der Geste neu; Bite 0c368fd15 friert Live-Frames während der Geste ein: Linux-Chromium max 67-83 -> 17-33 ms, Neustarts 5 -> 0. Offen: CEF Linux (Toms Studio 5 min zu) und Mac messen - Builder
 23. **GitHub-Issues Design-CLI (B648)** ⏳ #3190, #3191, #3195, #3197 geschlossen, #3194 war behoben; offen: #3196 wartet auf Reporter-Markup - Builder
 24. **Leere Warteschlange (B661)** ⏳ builder-agent-Skill: ohne startbaren Eintrag A, dann D, dann C, sonst Meldung an Doc (ADR 0388); bis zum Reset sortiert ein Recherche-Agent alle Einträge gegen git - Builder
+25. **Windows-Live-Frames (B664)** ⏳ CEF auf Windows malt 0 Live-Frames; im nächsten Windows-Durchgang auf rack (ADR 0400, 0401) - Builder
