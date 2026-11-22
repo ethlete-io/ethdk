@@ -1,5 +1,28 @@
 # ethlete-studio
 
+## 0.2.0-next.32
+
+### Patch Changes
+
+- The release smoke probe counts the live frames the sketch view renders (`iframe[data-state]` with `data-painted`) and reports painted frames and pictures apart.
+- Run Ethlete Studio on the CEF runtime on Windows too, so every platform renders with Chromium.
+- A Studio sketch cell that is still loading no longer lets its Lädt text spill out of a very short frame: the text goes first, then the spinner.
+- design compare checks the part root and each open overlay pane as boxes of their own (size, offset from the root, pixels), and a fitted design frame grows left over a pane drawn before its root
+- Inventory canvas markers keep the marker gap from the frame edges instead of touching them.
+- Show the product rail tooltip on the right of its logo, as the shell-main design draws it.
+- Keep each shortcuts dialog row as tall as its 18 px key cap.
+- The Sketches harness sample draws focused zoom-chip shots 30 px tall like the design, without the old tooltip room.
+- The Sketches view draws the auto-merge badge in the success colour like the design.
+- The Sketches design keeps the row's right inset in the pan room, like the app, when its frames overflow.
+- The Sketches design sizes its rows to their frames when zoomed, like the app, so a row's comment pin sits at
+  its frames' right edge.
+- The Sketches harness neighbourhood sample shows its own round and the neighbour variants' looks.
+- The Sketches page no longer refits when a listing or shot answer repeats the same rows, and it reads frame sizes before it writes styles, so the page stays responsive while shots arrive.
+- The Sketches harness sample puts its comment pins and draft at the design's spots again after the 30 px chip shots.
+- A Sketches matrix of 30 wide states now wraps into 3 blocks in the real 1076 px list and keeps its cell labels hidden after Fit.
+- The shell page sample shows the product logos from the design config, so the bottom rail matches the design.
+- The release smoke probe skips the CEF placeholder page and waits 110 s, inside the smoke's 120 s, for a cold design server before it reports nothing painted.
+
 ## 0.2.0-next.31
 
 ### Patch Changes

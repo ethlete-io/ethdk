@@ -1,5 +1,24 @@
 # @ethlete/cli
 
+## 3.0.0-next.43
+
+### Patch Changes
+
+- Design arrow aiming: the arrow keeps its padding off a pane corner only as far as floating-ui does (capped at half the pane minus half the arrow), so an arrow on a short pane lands on its anchor centre.
+- Design compare keeps a tooltip that a forced hover or press opens on a part taller than the viewport.
+- design compare checks the part root and each open overlay pane as boxes of their own (size, offset from the root, pixels), and a fitted design frame grows left over a pane drawn before its root
+- design check --slow and design actions compare the part root and each open overlay pane as boxes of their own, as design compare does
+- Point the base-system parts in a product's editor `tsconfig.json` at the installed `@ethlete/cli`, not at the running server's package snapshot, so two design servers no longer rewrite it in turns and force a Vite full reload each time.
+- Design check `--part`: each embedding part is now drawn only in the states whose markup holds the checked part, directly or nested; a state whose markup cannot be read is still drawn.
+- `design check --part` also draws every embedder state whose drawing runs a `setup`, since that script can draw the part in the browser where the markup check cannot see it.
+- Design compare: a forced element that never appears waits the full draw timeout again; the 1 s quiet-DOM end is reverted.
+- Design compare: a forced element that never appears now fails once the page DOM has been quiet for 1 s, instead of idling the full 15 s draw timeout.
+- `et design check` records timed sub-phases of its open-points step and of the slow run (`ETHLETE_DESIGN_PHASES=1` prints them), and a part-scoped slow run hashes the inputs of the asked parts only.
+- `design` marks the parts it loads directly also when the checkout lies behind a symlink.
+- `et design sketch rebase` keeps a picked sketch's picked variant judged when it only ports product changes into it, so `sketch merge` goes on.
+- `design check` and the slow run of `design serve` run the app specs while the harness app starts and compares, instead of before it, so a part check finishes sooner with the same findings.
+- `et design task <part> --verify` without a rev verifies the last commit that touches the part's folder instead of HEAD.
+
 ## 3.0.0-next.42
 
 ### Patch Changes
