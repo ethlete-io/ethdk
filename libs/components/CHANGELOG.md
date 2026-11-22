@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.97
+
+### Patch Changes
+
+- Design mock: an `et-overlay-arrow` drawn outside the `anchoredDialog()` pane now keeps the pane's border width, so its clip matches the bordered pane.
+- Kbd: the key cap is now exactly 18px tall (was 18.5px), so a row of caps no longer lands on a half pixel.
+
 ## 1.0.0-next.96
 
 ### Patch Changes

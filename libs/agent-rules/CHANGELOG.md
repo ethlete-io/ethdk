@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.43
+
+### Patch Changes
+
+- Use neutral example names in the design exploration skill instead of parts from a real product.
+
 ## 0.1.0-next.42
 
 ### Patch Changes
