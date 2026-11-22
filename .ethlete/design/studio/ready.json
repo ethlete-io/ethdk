@@ -1162,16 +1162,16 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "eb021e6fca4a8430",
+    "app": "5b752e9e9333a17e",
     "actions": ["closed", "open", "studio-menu.busy", "studio-menu.busy-open"],
     "builder": "developer",
     "builderReasons": [
       "injects through injectStudioMenuDialogs() (apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts)"
     ],
-    "at": "2026-11-21T23:16:25.853Z",
+    "at": "2026-11-22T20:01:23.489Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2368492
+    "pid": 2432228
   },
   "elements/variant-cell": {
     "hash": "86b4ee0fb3755bf9",
