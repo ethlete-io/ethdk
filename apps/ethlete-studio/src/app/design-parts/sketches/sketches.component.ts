@@ -168,12 +168,26 @@ type FitDom = {
   sections: HTMLElement[];
   stages: HTMLElement[];
   frames: HTMLElement[];
+  frameSizes: ({ width: number; height: number } | null)[];
   notes: HTMLElement[];
   labels: HTMLElement[];
   labelRows: HTMLElement[];
   gutters: HTMLElement[];
   matrix: HTMLElement | null;
   fold: HTMLElement | null;
+};
+
+const frameSizeOf = (frame: HTMLElement) => {
+  const inner = frame.firstElementChild;
+
+  if (!(inner instanceof HTMLElement)) return null;
+
+  const grows = !frame.hasAttribute('data-sk-cropped') && inner.scrollWidth > inner.offsetWidth;
+
+  return {
+    width: grows ? inner.scrollWidth : parseFloat(inner.style.width),
+    height: parseFloat(inner.style.height),
+  };
 };
 
 const frameKeyOf = (row: SketchRow, state: string) => `${row.key} ${state}`;
@@ -345,7 +359,9 @@ export class SketchesComponent {
   private confirmRef: { close: () => void } | null = null;
   private confirmOrigin: HTMLElement | null = null;
   private fitAt = signal<{ scale: number; fonts: number } | null>(null);
-  private fitInputs: unknown[] | null = null;
+  private fitKey: string | null = null;
+  private fitElements: (HTMLElement | null)[] | null = null;
+  private appliedKey: string | null = null;
   // fonts.ready resolves before the gutter's mono face loads; without loadingdone the fit keeps the fallback's gutter.
   // Chromium re-fires loadingdone with faces it already loaded whenever new text renders, so only a new face counts:
   // a counted re-fire would re-base the held note fit and move every frame at a user zoom.
@@ -631,43 +647,17 @@ export class SketchesComponent {
       // A fit taken under a zoom preview reads the boxes scaled by its transform.
       if (!this.listMeasured() || this.canvas.preview()) return;
 
-      const inputs = [
-        this.fontLoads(),
-        this.listSize(),
-        this.shownRows(),
-        this.matrixRows(),
-        this.matrixBlocks().length,
-        this.sections(),
-        this.stages(),
-        this.frames(),
-        this.notes(),
-        this.labels(),
-        this.labelRows(),
-        this.gutters(),
-        this.transposed(),
-        this.columns(),
-        this.matrix(),
-        this.fold(),
-        this.atFit(),
-      ];
-
-      const fitted = untracked(this.fitAt);
-      // A user zoom holds the fit; a refit there lays every cell out twice, 40 ms per row change on WebKit.
-      const refit =
-        (this.atFit() || fitted?.fonts !== this.fontLoads()) &&
-        !this.fitInputs?.every((input, index) => input === inputs[index]);
-
-      this.fitInputs = inputs;
-
       const list: HTMLElement = this.list().nativeElement;
       const elementsOf = (refs: readonly ElementRef<HTMLElement>[]) => refs.map(({ nativeElement }) => nativeElement);
+      const frames = elementsOf(this.frames());
       const dom: FitDom = {
         columns: this.transposed() ? this.matrixRows().length : this.columns(),
         blocks: this.transposed() ? this.matrixBlocks().length : 1,
         list,
         sections: elementsOf(this.sections()),
         stages: elementsOf(this.stages()),
-        frames: elementsOf(this.frames()),
+        frames,
+        frameSizes: frames.map(frameSizeOf),
         notes: elementsOf(this.notes()),
         labels: elementsOf(this.labels()),
         labelRows: elementsOf(this.labelRows()),
@@ -676,9 +666,50 @@ export class SketchesComponent {
         fold: this.fold()?.nativeElement ?? null,
       };
 
+      // Listing and shot answers hand in new arrays of equal content; a refit per answer blocks the page for seconds.
+      const key = JSON.stringify({
+        fonts: this.fontLoads(),
+        list: this.listSize(),
+        rows: this.shownRows(),
+        matrixRows: this.matrixRows().map((row) => row.key),
+        blocks: this.matrixBlocks().length,
+        transposed: this.transposed(),
+        columns: this.columns(),
+        atFit: this.atFit(),
+        sizes: dom.frameSizes,
+      });
+      const elements = [
+        dom.sections,
+        dom.stages,
+        dom.frames,
+        dom.notes,
+        dom.labels,
+        dom.labelRows,
+        dom.gutters,
+        [dom.matrix, dom.fold],
+      ].flat();
+      const sameElements =
+        this.fitElements?.length === elements.length &&
+        this.fitElements.every((element, index) => element === elements[index]);
+      const changed = key !== this.fitKey || !sameElements;
+
+      const fitted = untracked(this.fitAt);
+      // A user zoom holds the fit; a refit there lays every cell out twice, 40 ms per row change on WebKit.
+      const refit = (this.atFit() || fitted?.fonts !== this.fontLoads()) && changed;
+
+      this.fitKey = key;
+      this.fitElements = elements;
+
       untracked(() => {
         if (refit) this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
-        this.applyScale({ scale: this.scale(), note: this.noteSize(), label: this.labelFont() }, dom);
+
+        const applied = { scale: this.scale(), note: this.noteSize(), label: this.labelFont() };
+        const appliedKey = JSON.stringify(applied);
+
+        if (!changed && appliedKey === this.appliedKey) return;
+
+        this.appliedKey = appliedKey;
+        this.applyScale(applied, dom);
       });
     });
 
@@ -1055,7 +1086,7 @@ export class SketchesComponent {
 
   private applyScale(
     { scale, note, label }: { scale: number; note: number; label: number },
-    { columns, blocks, stages, frames, notes, labels, labelRows, gutters, matrix }: FitDom,
+    { columns, blocks, stages, frames, frameSizes, notes, labels, labelRows, gutters, matrix }: FitDom,
   ) {
     const { setStyle } = this.renderer;
 
@@ -1078,19 +1109,11 @@ export class SketchesComponent {
         });
       }
     }
-    for (const frame of frames) {
-      const inner = frame.firstElementChild;
+    frames.forEach((frame, index) => {
+      const size = frameSizes[index];
 
-      if (inner instanceof HTMLElement) {
-        const grows = !frame.hasAttribute('data-sk-cropped') && inner.scrollWidth > inner.offsetWidth;
-        const width = grows ? inner.scrollWidth : parseFloat(inner.style.width);
-
-        setStyle(frame, {
-          width: `${width * scale}px`,
-          height: `${parseFloat(inner.style.height) * scale}px`,
-        });
-      }
-    }
+      if (size) setStyle(frame, { width: `${size.width * scale}px`, height: `${size.height * scale}px` });
+    });
   }
 
   private gridFit(scale: number, { columns, list, sections, stages, frames }: FitDom) {

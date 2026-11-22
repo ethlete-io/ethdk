@@ -875,6 +875,23 @@ describe('SketchesComponent', () => {
     expect(columns()).toBe(before);
   });
 
+  it('keeps the fit when a listing answer repeats the same rows', async () => {
+    const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
+    const fixture = await render({ rows: wide, camera: 'fit' });
+    const root: HTMLElement = fixture.nativeElement;
+    const columns = () => root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns;
+    const before = columns();
+
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return new DOMRect(this.matches('section[data-sk-row]') ? 2000 : 0, 0, 0, 0);
+    });
+
+    fixture.componentRef.setInput('rows', structuredClone(wide));
+    await fixture.whenStable();
+
+    expect(columns()).toBe(before);
+  });
+
   it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
     const pending = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) }));
     const fixture = await render({ camera: '100', rows: pending });
