@@ -1927,14 +1927,10 @@
       "comments-draft",
       "comments-mode",
       "emit:activate",
-      "emit:close",
       "emit:collapse",
       "emit:discard",
       "emit:expandedChange",
-      "emit:fit",
-      "emit:maximize",
       "emit:merge",
-      "emit:minimize",
       "emit:openChange",
       "emit:pick",
       "emit:pinToggle",
@@ -1948,16 +1944,14 @@
       "emit:sideWidthChange",
       "emit:statesToggle",
       "emit:withdrawnToggle",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
       "open",
       "opens:command-palette",
+      "opens:components/update-dialog",
       "sketch-only-points",
       "sketch-only-points-open",
       "system-picker"
     ],
-    "at": "2026-11-21T18:16:43.951Z"
+    "at": "2026-11-22T16:13:46.688Z"
   },
   "pages/start": {
     "hash": "9b9f8eb0fa83c826",

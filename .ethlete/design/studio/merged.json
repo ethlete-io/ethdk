@@ -169,10 +169,10 @@
     "at": "2026-11-21T03:22:49.823Z"
   },
   "pages/sketches": {
-    "hash": "bca808361666b2e6",
-    "variant": "a",
-    "decidedBy": "user",
-    "at": "2026-11-21T05:03:59.360Z"
+    "hash": "ff859b91d47d1088",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-22T16:49:07.025Z"
   },
   "pages/start": {
     "hash": "5848f0d35df00eee",
