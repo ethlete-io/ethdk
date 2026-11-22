@@ -185,12 +185,7 @@ const CHIP_STATES = [
 
 const CHIP_HEIGHT = 30;
 
-const CHIP_TOOLTIP_HEIGHT = 82;
-
-const chipHeightOf = (state: string) => (state.endsWith('-focus-visible') ? CHIP_TOOLTIP_HEIGHT : CHIP_HEIGHT);
-
-const chipShotsOf = (changed: string[]) =>
-  shotsOf(changed, { height: (_, state) => chipHeightOf(state), states: CHIP_STATES });
+const chipShotsOf = (changed: string[]) => shotsOf(changed, { height: () => CHIP_HEIGHT, states: CHIP_STATES });
 
 export const SKETCH_WITHDRAWN = {
   key: 'b',
@@ -238,7 +233,7 @@ export const SKETCH_WIDE_STATE = {
   state: 'reset-focus-tooltip',
   key: 'b',
   width: 197,
-  height: chipHeightOf(WIDE_DRAWN_AS),
+  height: CHIP_HEIGHT,
 };
 
 /** The chip state the harness draws for a narrow sample state no chip state names. */
