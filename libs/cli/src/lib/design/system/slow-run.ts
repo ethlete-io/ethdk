@@ -25,7 +25,7 @@ import { derivedLinksOf, writeDerivedLinks } from './derived-links';
 import { liveUncoveredOf, UncoveredState } from './live-uncovered';
 import { appComponentsOf } from './slot-hosts';
 import { droppedPropProblemsOf, pagePropTakerOf } from './dropped-props';
-import { compareLineOf, comparePngs } from './part-compare';
+import { shotCompareLinesOf, shotCompareOf } from './part-compare';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { RecordSettledRequest, recordSettledBuildReady } from './record-settled';
@@ -122,7 +122,8 @@ const merge = (into: Map<string, Problem[]>, from: Map<string, Problem[]>) => {
   for (const [part, problems] of from) into.set(part, [...(into.get(part) ?? []), ...problems]);
 };
 
-const comparedProblemsOf = async (options: {
+/** @internal The compare problems of a part: one per failing state, or per failing box of a state compared by its boxes. */
+export const comparedProblemsOf = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
@@ -160,9 +161,9 @@ const comparedProblemsOf = async (options: {
   return shot.shots.flatMap((state): Problem[] => {
     if ('problem' in state) return [problemOf(`${state.state}: ${state.problem}`)];
 
-    const result = comparePngs({ design: state.design, app: state.app });
+    const compared = shotCompareOf(state);
 
-    return result.kind === 'ok' ? [] : [problemOf(compareLineOf(state.state, result))];
+    return compared.ok ? [] : shotCompareLinesOf(state.state, compared).map(problemOf);
   });
 };
 

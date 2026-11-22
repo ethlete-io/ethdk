@@ -53,6 +53,7 @@ import {
 } from './action-press';
 import { waitForHarnessHost } from './harness-host-wait';
 import { compareFrameOf } from './harness-shot';
+import { compareBoxesIn, compareBoxesScriptOf } from './compare-boxes';
 import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { componentOutputsOf, modelChangesForOf } from './component-outputs';
 import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
@@ -63,8 +64,6 @@ import { harnessStaleOf } from './harness-map';
 import { inOrderAtOnce } from './in-order-at-once';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
-  compareLineOf,
-  comparePngs,
   drawnSurfacesOf,
   forcedElementsOf,
   HARNESS_HOST_SELECTOR,
@@ -72,6 +71,8 @@ import {
   hostBoxScriptOf,
   OVERLAY_PANES,
   pointerOpensOf,
+  shotCompareLinesOf,
+  shotCompareOf,
 } from './part-compare';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
@@ -132,6 +133,11 @@ const expandedScanOf = async (page: Page, roots: string[]) =>
     `${actionScanScriptOf(roots)}.map((found) => ({ key: found.key, expanded: document.querySelector('[data-et-action-probe="' + found.probe + '"]')?.getAttribute('aria-expanded') ?? null }))`,
   )) as { key: string; expanded: string | null }[];
 
+const APP_BOXES_SCRIPT = compareBoxesScriptOf({
+  root: `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})`,
+  panes: OVERLAY_PANES,
+});
+
 const shotOf = async (options: { page: Page; size: DesignPreset | null; room: boolean; timeout: number }) => {
   const { page, size, room, timeout } = options;
   const host = page.locator(HARNESS_HOST_SELECTOR).first();
@@ -145,7 +151,7 @@ const shotOf = async (options: { page: Page; size: DesignPreset | null; room: bo
 
     await page.evaluate(checkerScriptOf(origin));
 
-    return await host.screenshot({ type: 'png', animations: 'disabled', timeout });
+    return { png: await host.screenshot({ type: 'png', animations: 'disabled', timeout }), boxes: null };
   }
 
   await host.scrollIntoViewIfNeeded({ timeout });
@@ -154,9 +160,11 @@ const shotOf = async (options: { page: Page; size: DesignPreset | null; room: bo
     (await page.evaluate(hostBoxScriptOf({ up: room }))) as { x: number; y: number; width: number; height: number },
   );
 
+  const boxes = size ? null : compareBoxesIn(await page.evaluate(APP_BOXES_SCRIPT), clip);
+
   await page.evaluate(checkerScriptOf(clip));
 
-  return await page.screenshot({ type: 'png', fullPage: true, animations: 'disabled', clip, timeout });
+  return { png: await page.screenshot({ type: 'png', fullPage: true, animations: 'disabled', clip, timeout }), boxes };
 };
 
 /**
@@ -251,9 +259,15 @@ export const runActionInput = async (options: {
     const after = expanded ? await expandedScanOf(page, roots) : null;
     if (shoot?.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(shoot.frozen));
 
-    const app = shoot ? await shotOf({ page, size, room, timeout }) : null;
+    const shot = shoot ? await shotOf({ page, size, room, timeout }) : null;
 
-    return { emitted: [...emitted, ...embedded], prevented, app, ...(after && { after }) };
+    return {
+      emitted: [...emitted, ...embedded],
+      prevented,
+      app: shot?.png ?? null,
+      ...(shot?.boxes && { appBoxes: shot.boxes }),
+      ...(after && { after }),
+    };
   } finally {
     await context.close();
   }
@@ -737,7 +751,14 @@ export const checkActions = async (options: {
                   }),
                 ),
               );
-              const result = goalPicture && run.app ? comparePngs({ design: goalPicture.png, app: run.app }) : null;
+              const shotCompare = (picture: Picture, app: Buffer) =>
+                shotCompareOf({
+                  design: picture.png,
+                  app,
+                  boxes: picture.boxes && run.appBoxes ? { design: picture.boxes, app: run.appBoxes } : null,
+                });
+              const compared = goalPicture && run.app ? shotCompare(goalPicture, run.app) : null;
+              const result = compared?.result ?? null;
               const outcome: ActionOutcome = {
                 emitted: run.emitted,
                 prevented: run.prevented,
@@ -748,13 +769,18 @@ export const checkActions = async (options: {
                         expected: await expectedFor(owner, goal),
                         after: run.after ?? [],
                       })
-                    : result
-                      ? { ok: result.kind === 'ok', detail: compareLineOf(goal, result).slice(goal.length + 1) }
+                    : compared
+                      ? {
+                          ok: compared.ok,
+                          detail: shotCompareLinesOf(goal, compared)
+                            .map((line) => line.slice(goal.length + 1))
+                            .join('; '),
+                        }
                       : null,
               };
               const app = run.app;
 
-              if (action.kind === 'state' && result && result.kind !== 'ok' && goalPicture && app)
+              if (action.kind === 'state' && compared && !compared.ok && goalPicture && app)
                 outcome.reached = await timedPhase('actions-reached', () =>
                   reachedStateOf({
                     goal,
@@ -763,9 +789,9 @@ export const checkActions = async (options: {
                       if (candidate === goal) return result;
 
                       const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
-                      const picture = await drawFor(reopened ? state : candidate, reopened);
+                      const reached = shotCompare(await drawFor(reopened ? state : candidate, reopened), app);
 
-                      return comparePngs({ design: picture.png, app });
+                      return reached.ok || reached.result.kind !== 'ok' ? reached.result : null;
                     },
                   }),
                 );
@@ -789,15 +815,24 @@ export const checkActions = async (options: {
                     : [],
               });
 
-              if (failure !== null && result && result.kind !== 'ok' && goalPicture && run.app) {
+              if (failure !== null && compared && !compared.ok && goalPicture && run.app) {
                 wrotePictures = true;
                 dir ??= mkdtempSync(join(tmpdir(), 'et-design-actions-'));
 
                 const stem = `${state}--${name}--${input}`.replace(/[^\w.-]/g, '-');
+                const boxes = [
+                  {
+                    name: stem,
+                    ...(compared.boxed?.root ?? { design: goalPicture.png, app: run.app, result: compared.result }),
+                  },
+                  ...(compared.boxed?.panes ?? []).map((pane, at) => ({ name: `${stem}.pane-${at + 1}`, ...pane })),
+                ];
 
-                writeDesignFile(join(dir, `${stem}.design.png`), goalPicture.png);
-                writeDesignFile(join(dir, `${stem}.app.png`), run.app);
-                writeDesignFile(join(dir, `${stem}.diff.png`), result.diff);
+                for (const box of boxes) {
+                  writeDesignFile(join(dir, `${box.name}.design.png`), box.design);
+                  writeDesignFile(join(dir, `${box.name}.app.png`), box.app);
+                  if (box.result.kind !== 'ok') writeDesignFile(join(dir, `${box.name}.diff.png`), box.result.diff);
+                }
               }
 
               out.push({ state, element: name, input, failure });

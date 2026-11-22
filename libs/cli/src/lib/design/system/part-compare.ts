@@ -674,6 +674,30 @@ export const stateCompareLinesOf = (state: string, compared: StateCompare) => {
     : [compareLineOf(state, compared.root.result), ...paneLines];
 };
 
+/** A state's pictures compared box by box where both sides measured their boxes, else as whole pictures. */
+export type ShotCompare = { result: PixelCompare; boxed: StateCompare | null; ok: boolean };
+
+/**
+ * Compares the design and app pictures of a state by their root and overlay pane boxes when both carry `boxes`, else
+ * whole; `result` is the root's or the whole picture's, `ok` holds only when every box matches.
+ */
+export const shotCompareOf = (options: {
+  design: Buffer;
+  app: Buffer;
+  boxes?: { design: CompareBoxes; app: CompareBoxes } | null;
+  compare?: (pictures: { design: Buffer; app: Buffer }) => PixelCompare;
+}): ShotCompare => {
+  const { boxes, compare = comparePngs } = options;
+  const boxed = boxes ? stateCompareOf({ ...options, boxes, compare }) : null;
+  const result = boxed ? boxed.root.result : compare(options);
+
+  return { result, boxed, ok: result.kind === 'ok' && (!boxed || paneLinesOf('', boxed).length === 0) };
+};
+
+/** The lines `design compare` prints for a state compared by `shotCompareOf`. */
+export const shotCompareLinesOf = (state: string, compared: ShotCompare) =>
+  compared.boxed ? stateCompareLinesOf(state, compared.boxed) : [compareLineOf(state, compared.result)];
+
 /**
  * The props of `state` that compare reproduces without a component input, so the harness may drop them: `class`,
  * a prop every state sets to the same value (no state differs by it), each prop a pointer open toggles (it clicks
