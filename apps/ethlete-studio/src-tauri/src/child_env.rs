@@ -32,6 +32,7 @@ pub fn command(program: impl AsRef<OsStr>) -> Command {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
     use super::*;
 
     #[cfg(unix)]

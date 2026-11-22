@@ -555,6 +555,7 @@ fn cli_source_hash(cli_root: &Path) -> String {
     hash.finalize().iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
+#[cfg(unix)]
 fn pids_on_port(port: u16) -> Vec<i32> {
     let lsof = std::process::Command::new("lsof")
         .args(["-nP", "-t", &format!("-iTCP:{port}"), "-sTCP:LISTEN"])
@@ -581,6 +582,7 @@ fn pids_on_port(port: u16) -> Vec<i32> {
     parse_ss_pids(&String::from_utf8_lossy(&output.stdout))
 }
 
+#[cfg(unix)]
 fn parse_ss_pids(text: &str) -> Vec<i32> {
     let mut pids: Vec<i32> = text
         .split("pid=")
@@ -996,6 +998,7 @@ pub fn cli_entry(checkout: &Path) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use tokio::process::Command;
 
     fn fixture() -> PathBuf {
@@ -1383,6 +1386,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&bare);
     }
 
+    #[cfg(unix)]
     #[test]
     fn the_pids_are_read_out_of_ss_output() {
         let text = "LISTEN 0 511 [::1]:4402 [::]:* users:((\"node\",pid=4242,fd=19),(\"node\",pid=4243,fd=20))\n";
