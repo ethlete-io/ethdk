@@ -543,11 +543,11 @@
     "pid": 1818731
   },
   "components/shortcuts-dialog": {
-    "hash": "22075035c01905d2",
+    "hash": "d91c8dfa995ee44a",
     "files": {
       ".ethlete/design/studio/components/shortcuts-dialog/shortcuts-dialog.css": "4225c7b23774175e",
-      ".ethlete/design/studio/components/shortcuts-dialog/shortcuts-dialog.ts": "5b5e2a9c2dba48c1",
-      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "bcab7b399e6abba8",
+      ".ethlete/design/studio/components/shortcuts-dialog/shortcuts-dialog.ts": "4d453e1598b25911",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/dialog.ts": "424aeadd7dbf0dad",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -571,13 +571,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "81bb929859a4f296",
+    "app": "21b5ffbf8b8394fb",
     "actions": ["emit:close"],
     "builder": "designer",
-    "at": "2026-11-21T05:35:12.006Z",
+    "at": "2026-11-22T16:21:36.551Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2150109
+    "pid": 1765284
   },
   "components/sketch-question": {
     "hash": "d0f087f184b46b69",
