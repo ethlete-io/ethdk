@@ -665,7 +665,7 @@ const printProductOpenPoints = async (
 
   if (rendered === null && options.notDrawn) countCannotDraw({ ...options, product, why: options.notDrawn });
 
-  const allPoints = readOpenPoints(product, findings);
+  const allPoints = timedPhase('open-points read', () => readOpenPoints(product, findings));
   const points = allPoints.filter(({ part }) => !options.part || part === options.part);
 
   for (const { part, points: ofPart } of points) {
@@ -682,14 +682,16 @@ const printProductOpenPoints = async (
 
   if (unlinked.length > 0) console.log(`UNLINKED ${name}: ${unlinked.join(', ')}`);
 
-  instantLinesOf(
-    product,
-    options.part
-      ? [options.part]
-      : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+  timedPhase('open-points instant', () =>
+    instantLinesOf(
+      product,
+      options.part
+        ? [options.part]
+        : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+    ),
   ).forEach((line) => console.log(line));
 
-  const upgraded = upgradeLegacyMarksOf({ product, only: options.part });
+  const upgraded = timedPhase('open-points upgrade-marks', () => upgradeLegacyMarksOf({ product, only: options.part }));
 
   const rehashed = upgraded
     .map(({ part, marks }) => ({ part, marks: marks.filter((mark) => mark !== 'dropped') }))
@@ -714,20 +716,26 @@ const printProductOpenPoints = async (
     parts: options.part
       ? [options.part]
       : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
-    inputs: withFoundRules(
-      buildReadyInputsOf(product, {
-        points: allPoints,
-        problems: ruleProblemsOf(product, options.part ? readyInputPartsOf(product, options.part) : undefined),
-      }),
-      (part) => options.tally?.get(name)?.get(part)?.problems ?? [],
+    inputs: timedPhase('open-points inputs', () =>
+      withFoundRules(
+        buildReadyInputsOf(product, {
+          points: allPoints,
+          problems: ruleProblemsOf(product, options.part ? readyInputPartsOf(product, options.part) : undefined),
+        }),
+        (part) => options.tally?.get(name)?.get(part)?.problems ?? [],
+      ),
     ),
     ...(rendered === null
       ? {}
       : {
           actionsOf: (part: string) =>
-            partActionFailuresOf({ target, config, product, part, ...(options.part ? { onNote: console.log } : {}) }),
+            timedPhase('open-points actions', () =>
+              partActionFailuresOf({ target, config, product, part, ...(options.part ? { onNote: console.log } : {}) }),
+            ),
           declaredActionsOf: async (part: string) => {
-            const declared = await declaredPartActionsOf({ target, config, product, part, warm: options.warm });
+            const declared = await timedPhase('open-points declared-actions', () =>
+              declaredPartActionsOf({ target, config, product, part, warm: options.warm }),
+            );
 
             if (typeof declared === 'string') console.log(`ACTIONS NOT RECORDED ${name} ${part}: ${declared}`);
 
@@ -739,7 +747,7 @@ const printProductOpenPoints = async (
   });
 
   for (const [part] of recorded) {
-    const warnings = unjudgedStateWarningsOf({ product, parts: [part] });
+    const warnings = timedPhase('open-points unjudged', () => unjudgedStateWarningsOf({ product, parts: [part] }));
     const counted = warnings.length > 0 ? tallyOf(options.tally, { product: name, part }) : null;
 
     warnings.forEach((line) => console.warn(line));
@@ -752,16 +760,18 @@ const printProductOpenPoints = async (
 
   if (waiting > 0) console.log(slowWaitingLineOf({ product: name, count: waiting }));
 
-  const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);
+  const ready = timedPhase('open-points ready', () => readyPartsOf(product)).filter(
+    (key) => !options.part || key === options.part,
+  );
 
   if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
 
-  developerPartLinesOf({ product, ...(options.part ? { parts: [options.part] } : {}) }).forEach((line) =>
-    console.log(line),
-  );
+  timedPhase('open-points developer', () =>
+    developerPartLinesOf({ product, ...(options.part ? { parts: [options.part] } : {}) }),
+  ).forEach((line) => console.log(line));
 
   for (const part of ready) {
-    const embedded = actionsRerunOf({ product, part });
+    const embedded = timedPhase('open-points rerun', () => actionsRerunOf({ product, part }));
 
     if (embedded.length === 0) continue;
 
@@ -772,7 +782,9 @@ const printProductOpenPoints = async (
     if (counted) counted.open += 1;
   }
 
-  stalePartsOf({ product, only: options.part }).forEach((stale) => console.log(staleLineOf(name, stale)));
+  timedPhase('open-points stale', () => stalePartsOf({ product, only: options.part })).forEach((stale) =>
+    console.log(staleLineOf(name, stale)),
+  );
 };
 
 const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>

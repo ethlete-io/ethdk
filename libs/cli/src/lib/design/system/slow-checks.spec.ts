@@ -200,6 +200,16 @@ describe('the draw rules in the slow set', { timeout: 30_000 }, () => {
     expect(inputs['components/button']).toBeUndefined();
   });
 
+  it('hashes only the asked parts, at the hashes of a whole run, unless the product is asked', () => {
+    const { product } = drawable();
+    const whole = slowInputsOf({ product: product() });
+
+    expect(slowInputsOf({ product: product(), only: ['components/chip'] })).toEqual({
+      'components/chip': whole['components/chip'],
+    });
+    expect(slowInputsOf({ product: product(), only: ['components/chip', '(product)'] })).toEqual(whole);
+  });
+
   it('keys the product inputs on the recorded actions, not on the rest of ready.json', () => {
     const { dir, product } = drawable();
     const productHash = () => slowInputsOf({ product: product() })['(product)']?.hash;

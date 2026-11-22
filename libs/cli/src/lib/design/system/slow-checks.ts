@@ -295,16 +295,25 @@ const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>
   };
 };
 
-/** The slow inputs of every part of the product that has a slow rule, and of `(product)`. */
-export const slowInputsOf = (options: { product: ResolvedProduct }): Record<string, SlowInputs> => {
+/** The slow inputs of every part of the product that has a slow rule, and of `(product)`; with `only` naming no `(product)`, of those parts alone. */
+export const slowInputsOf = (options: {
+  product: ResolvedProduct;
+  only?: readonly string[];
+}): Record<string, SlowInputs> => {
   const context = contextOf(options.product);
   const parts: Record<string, SlowInputs> = {};
+  const { only } = options;
+  const partsOnly = only !== undefined && !only.includes(PRODUCT_PART);
 
   for (const part of options.product.parts) {
+    if (partsOnly && !only.includes(partKeyOf(part))) continue;
+
     const inputs = partInputsOf(context, part);
 
     if (inputs.rules.length > 0) parts[partKeyOf(part)] = inputs;
   }
+
+  if (partsOnly) return parts;
 
   const product = productInputsOf(context, parts);
 

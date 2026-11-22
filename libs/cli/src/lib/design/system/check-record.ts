@@ -1,4 +1,5 @@
 import { DesignConfig } from '../design-config';
+import { timedPhase } from '../phase-timing';
 import { recordBuildReady } from './part-build-ready';
 import { ResolvedProduct } from './resolve-product';
 import { slowProblemsOf } from './slow-checks';
@@ -18,9 +19,14 @@ export const recordCheckedBuildReady = async (
 ) => {
   const { target, config, product, settle, runners, ...record } = options;
 
-  if (product.config.harness) await settlePendingSlowOf({ target, config, product, parts: settle, runners });
+  if (product.config.harness)
+    await timedPhase('open-points settle-slow', () =>
+      settlePendingSlowOf({ target, config, product, parts: settle, runners }),
+    );
 
-  return recordBuildReady({ product, by: 'et design check', cmd: 'check', ...record });
+  return timedPhase('open-points record', () =>
+    recordBuildReady({ product, by: 'et design check', cmd: 'check', ...record }),
+  );
 };
 
 /** The line `design check` prints when parts of a product still wait for their slow rules, naming the commands that settle them. */
@@ -35,7 +41,9 @@ const settlePendingSlowOf = async (options: {
   runners: Partial<SlowRunners> | undefined;
 }) => {
   const { target, config, product, runners } = options;
-  const pending = options.parts.filter((part) => slowProblemsOf({ product, part }) === 'pending');
+  const pending = timedPhase('slow pending', () =>
+    options.parts.filter((part) => slowProblemsOf({ product, part }) === 'pending'),
+  );
 
   if (pending.length > 0)
     await runSlowChecks({ target, config, product, parts: pending, ...(runners ? { runners } : {}) });

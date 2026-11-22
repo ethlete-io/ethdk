@@ -1,3 +1,4 @@
+import { timedPhase } from '../phase-timing';
 import { exhaustMap, from, interval } from 'rxjs';
 import { openUndesignedSketches, ShootBuilt, shootBuiltState } from './sketch/undesigned-sketch';
 import { relative, resolve } from 'path';
@@ -181,7 +182,9 @@ export const runSlowChecks = async (options: {
   const runners = { ...defaultRunners, ...options.runners };
   const root = repoRootOf(product);
   const inputs = Object.fromEntries(
-    Object.entries(slowInputsOf({ product })).filter(([part]) => !options.parts || options.parts.includes(part)),
+    Object.entries(timedPhase('slow inputs', () => slowInputsOf({ product, only: options.parts }))).filter(
+      ([part]) => !options.parts || options.parts.includes(part),
+    ),
   );
   const keys = Object.keys(inputs).filter((part) => part !== PRODUCT_PART);
   const whole = !options.parts;
@@ -227,18 +230,43 @@ export const runSlowChecks = async (options: {
     );
 
   if (ruled(CONTROL_STATE_RULE).length > 0)
-    merge(results, byPart(await runners.controlState({ target, config, product, parts: ruled(CONTROL_STATE_RULE) })));
+    merge(
+      results,
+      byPart(
+        await timedPhase('slow control-state', () =>
+          runners.controlState({ target, config, product, parts: ruled(CONTROL_STATE_RULE) }),
+        ),
+      ),
+    );
 
   if (ruled(CONTRAST_PAIR_RULE).length > 0)
-    merge(results, byPart(await runners.contrastPairs({ target, config, product, parts: ruled(CONTRAST_PAIR_RULE) })));
+    merge(
+      results,
+      byPart(
+        await timedPhase('slow contrast-pairs', () =>
+          runners.contrastPairs({ target, config, product, parts: ruled(CONTRAST_PAIR_RULE) }),
+        ),
+      ),
+    );
 
   if (ruled(DROPPED_PROP_RULE).length > 0)
-    merge(results, byPart(await runners.droppedProps({ target, config, product, parts: ruled(DROPPED_PROP_RULE) })));
+    merge(
+      results,
+      byPart(
+        await timedPhase('slow dropped-props', () =>
+          runners.droppedProps({ target, config, product, parts: ruled(DROPPED_PROP_RULE) }),
+        ),
+      ),
+    );
 
   if (ruled(PAGE_STATE_INNER_RULE).length > 0)
     merge(
       results,
-      byPart(await runners.pageStateInner({ target, config, product, parts: ruled(PAGE_STATE_INNER_RULE) })),
+      byPart(
+        await timedPhase('slow page-state-inner', () =>
+          runners.pageStateInner({ target, config, product, parts: ruled(PAGE_STATE_INNER_RULE) }),
+        ),
+      ),
     );
 
   if (ruled(NO_VISIBLE_CHANGE_RULE).length > 0) {
@@ -250,17 +278,21 @@ export const runSlowChecks = async (options: {
         : [],
     );
 
-    for (const problem of await runners.noVisibleChange({ target, config, product, sketches: judged }))
+    for (const problem of await timedPhase('slow no-visible-change', () =>
+      runners.noVisibleChange({ target, config, product, sketches: judged }),
+    ))
       results.set(problem.part ?? PRODUCT_PART, [...(results.get(problem.part ?? PRODUCT_PART) ?? []), problem]);
   }
 
   if (inputs[PRODUCT_PART]?.rules.includes(ACTION_LOST_RULE)) {
-    const lost = await runners.actionLost({
-      target,
-      config,
-      product,
-      invocation: repoInvocation({ root: target, subcommand: 'design' }),
-    });
+    const lost = await timedPhase('slow action-lost', () =>
+      runners.actionLost({
+        target,
+        config,
+        product,
+        invocation: repoInvocation({ root: target, subcommand: 'design' }),
+      }),
+    );
 
     merge(
       results,
@@ -303,7 +335,9 @@ export const runSlowChecks = async (options: {
     specsApplied?.catch(() => undefined);
 
     const harnessResults = new Map<string, Problem[]>();
-    const server: HarnessServer | string = await runners.start({ target, product });
+    const server: HarnessServer | string = await timedPhase('slow harness-start', () =>
+      runners.start({ target, product }),
+    );
 
     if (typeof server === 'string') {
       merge(
@@ -324,13 +358,15 @@ export const runSlowChecks = async (options: {
     } else {
       try {
         if (harness.live && (ruled(UNCOVERED_REGION_RULE).length > 0 || whole)) {
-          const states = await runners.live({
-            target,
-            config,
-            product,
-            url: server.url,
-            pages: whole ? undefined : ruled(UNCOVERED_REGION_RULE),
-          });
+          const states = await timedPhase('slow live', () =>
+            runners.live({
+              target,
+              config,
+              product,
+              url: server.url,
+              pages: whole ? undefined : ruled(UNCOVERED_REGION_RULE),
+            }),
+          );
 
           merge(
             harnessResults,
@@ -354,18 +390,20 @@ export const runSlowChecks = async (options: {
         }
 
         for (const part of ruled(COMPARE_RULE)) {
-          const problems = await comparedProblemsOf({
-            target,
-            config,
-            product,
-            part,
-            file: fileOf(part),
-            url: server.url,
-            shoot,
-            designOnly: inputs[part]?.designOnly === true,
-            panesOnly: inputs[part]?.panesOnly === true,
-            component: componentOf(part),
-          });
+          const problems = await timedPhase('slow compare', () =>
+            comparedProblemsOf({
+              target,
+              config,
+              product,
+              part,
+              file: fileOf(part),
+              url: server.url,
+              shoot,
+              designOnly: inputs[part]?.designOnly === true,
+              panesOnly: inputs[part]?.panesOnly === true,
+              component: componentOf(part),
+            }),
+          );
 
           if (problems.length > 0) merge(harnessResults, new Map([[part, problems]]));
         }
@@ -374,7 +412,7 @@ export const runSlowChecks = async (options: {
       }
     }
 
-    (await specsApplied)?.();
+    (await timedPhase('slow specs-wait', () => specsApplied))?.();
     merge(results, harnessResults);
   }
 
