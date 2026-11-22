@@ -56,7 +56,7 @@
     font: inherit;
     font-size: var(--et-kbd-font-size);
     font-weight: var(--et-kbd-font-weight);
-    line-height: 1.5;
+    line-height: 16px;
     white-space: nowrap;
   }
 }
