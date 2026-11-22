@@ -84,10 +84,10 @@
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
   "components/zoom-chip": {
-    "hash": "02661d27585c2eb2",
+    "hash": "99a38ecebede39be",
     "variant": "new",
     "decidedBy": "user",
-    "at": "2026-11-17T17:55:04.370Z"
+    "at": "2026-11-22T14:53:22.326Z"
   },
   "elements/canvas-frames": {
     "hash": "80b8417344e01e01",
