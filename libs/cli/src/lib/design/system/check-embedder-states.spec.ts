@@ -61,7 +61,7 @@ export default definePart({
 import { frameBox } from '@system/components/frame';
 import { holderBox } from '@system/elements/holder';
 
-type Props = { show: 'direct' | 'nested' | 'none' | 'broken' };
+type Props = { show: 'direct' | 'nested' | 'none' | 'broken' | 'scripted' };
 
 const bodyOf = ({ show }: Props) => {
   if (show === 'broken') throw new Error('needs a browser');
@@ -71,9 +71,26 @@ const bodyOf = ({ show }: Props) => {
 
 export default definePart({
   note: 'Embeds the frame in some states.',
-  states: { direct: { show: 'direct' }, nested: { show: 'nested' }, bare: { show: 'none' }, broken: { show: 'broken' } },
-  describe: { direct: 'The frame.', nested: 'The frame in a holder.', bare: 'An empty holder.', broken: 'Throws outside a browser.' },
-  render: (props: Props) => drawing({ body: html\`<main>\${bodyOf(props)}</main>\`, styles: '' }),
+  states: {
+    direct: { show: 'direct' },
+    nested: { show: 'nested' },
+    bare: { show: 'none' },
+    broken: { show: 'broken' },
+    scripted: { show: 'scripted' },
+  },
+  describe: {
+    direct: 'The frame.',
+    nested: 'The frame in a holder.',
+    bare: 'An empty holder.',
+    broken: 'Throws outside a browser.',
+    scripted: 'An empty holder its setup may fill in the browser.',
+  },
+  render: (props: Props) =>
+    drawing({
+      body: html\`<main>\${bodyOf(props)}</main>\`,
+      styles: '',
+      ...(props.show === 'scripted' ? { setup: () => undefined } : {}),
+    }),
 });
 `,
   'pages/plain': `import { definePart, drawing, html } from '@design-system';
@@ -130,7 +147,7 @@ describe('design check --part draws an embedder only in the states that hold the
     vi.mocked(renderIssuesOf).mockClear();
   });
 
-  it('draws the states that hold the part directly or through a nested part, and fails on a problem in one', async () => {
+  it('draws the states that hold the part directly, nested or possibly through a setup, and fails on a problem in one', async () => {
     const target = checkout();
 
     vi.mocked(renderIssuesOf).mockImplementation(async ({ jobs }) => ({
@@ -155,7 +172,7 @@ describe('design check --part draws an embedder only in the states that hold the
 
     const { code, lines } = await run(target, 'components/frame');
 
-    expect(onlyOf('pages/inbox')).toEqual([['direct', 'nested', 'broken']]);
+    expect(onlyOf('pages/inbox')).toEqual([['direct', 'nested', 'broken', 'scripted']]);
     expect(onlyOf('elements/holder')).toEqual([['framed']]);
     expect(onlyOf('pages/plain')).toEqual([[]]);
     expect(onlyOf('components/frame')).toEqual([null]);

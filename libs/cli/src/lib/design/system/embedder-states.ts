@@ -10,6 +10,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 const marksPart = (markup: string, part: string) =>
   [...markup.matchAll(PART_MARK)].some((match) => (match[1] ?? match[2] ?? '').split(/\s+/u).includes(part));
 
+const runsSetup = (drawn: unknown) => isRecord(drawn) && [drawn['setup'] ?? []].flat().length > 0;
+
 const holdsPart = async (options: {
   definition: Record<string, unknown>;
   props: unknown;
@@ -24,7 +26,7 @@ const holdsPart = async (options: {
     const drawn = await render(props);
     const body = isRecord(drawn) ? drawn['body'] : undefined;
 
-    if (typeof body !== 'string') return null;
+    if (typeof body !== 'string' || runsSetup(drawn)) return null;
 
     const framed = frame ? frame(body, props) : body;
 
@@ -57,7 +59,8 @@ const holdingByStateOf = async (definition: Definition, part: string) => {
 
 /**
  * The states of the part `embedder` whose drawing holds the part `part`, directly or through a nested part, read from
- * the markup its `render` returns outside a browser. A state whose markup cannot be read counts as holding it; `null`
+ * the markup its `render` returns outside a browser. A state whose markup cannot be read, or whose drawing runs a
+ * `setup` that can draw more in the browser, counts as holding it; `null`
  * when every state counts: the embedder does not load, or no state shows `part` while `part` does not show its own mark.
  */
 export const statesHoldingPartOf = async (options: {
