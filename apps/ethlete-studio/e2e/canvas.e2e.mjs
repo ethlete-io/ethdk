@@ -29,6 +29,7 @@ import { copyPart } from './copy-part.mjs';
 import { shootProducts } from './product-matrix.mjs';
 import { settleLayout } from './settle-wait.mjs';
 import { shardShareOf } from './shard-share.mjs';
+import { FRAME, measureZoom, ZOOM_BUDGET } from './zoom-budget.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
 
@@ -233,7 +234,6 @@ const NARROW = { width: 1440, height: 900 };
 const WIDE = { width: 2000, height: 1100 };
 const CHIP_INSET = 12;
 
-const FRAME = 'ethlete-canvas-frame, [data-canvas-frame], [data-sk-frame]';
 const ARROW_STEP = 80;
 const SETTLE_MS = 600;
 const EDGE_ROOM = 200;
@@ -1229,10 +1229,6 @@ const withEditSketch = async (page, designPort, run) => {
   }
 };
 
-const ZOOM_BUDGET = { cells: 100, steps: 90, deltaY: 20, p50: 20, p95: 33 };
-
-const percentile = (sorted, share) => sorted[Math.max(0, Math.ceil(share * sorted.length) - 1)] ?? Infinity;
-
 const CASES = [
   {
     name: 'ctrl-wheel zoom over 100 cells keeps the frame interval budget',
@@ -1247,49 +1243,13 @@ const CASES = [
       if (cells < ZOOM_BUDGET.cells)
         return { ok: false, detail: `${cells} cells, the budget needs ${ZOOM_BUDGET.cells}` };
 
-      const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+      const { before, zoomedIn, zoomed, p50, p95, frames } = await measureZoom(page, cells);
 
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await page.evaluate((FRAME) => {
-        const stamps = [];
-        const frame = document.querySelector(`ethlete-sketch-view :is(${FRAME})`);
-
-        window.__zoomWidths = [];
-        const record = (now) => {
-          stamps.push(now);
-          window.__zoomWidths.push(frame.getBoundingClientRect().width);
-          window.__zoomFrame = requestAnimationFrame(record);
-        };
-
-        window.__zoomStamps = stamps;
-        window.__zoomFrame = requestAnimationFrame(record);
-      }, FRAME);
-      await page.keyboard.down('Control');
-      for (let step = 0; step < ZOOM_BUDGET.steps; step++) {
-        await page.mouse.wheel(0, step < ZOOM_BUDGET.steps / 2 ? -ZOOM_BUDGET.deltaY : ZOOM_BUDGET.deltaY);
-      }
-      await page.keyboard.up('Control');
-
-      const { stamps, widths } = await page.evaluate(() => {
-        cancelAnimationFrame(window.__zoomFrame);
-
-        return { stamps: window.__zoomStamps, widths: window.__zoomWidths };
-      });
-      const before = Math.round(widths[0]);
-      const zoomedIn = Math.round(Math.max(...widths));
-      const intervals = stamps
-        .slice(1)
-        .map((stamp, index) => stamp - stamps[index])
-        .sort((a, b) => a - b);
-      const p50 = percentile(intervals, 0.5);
-      const p95 = percentile(intervals, 0.95);
-
-      if (zoomedIn <= before * 1.5)
-        return { ok: false, detail: `the wheel did not zoom: frame ${before} -> ${zoomedIn} px` };
+      if (!zoomed) return { ok: false, detail: `the wheel did not zoom: frame ${before} -> ${zoomedIn} px` };
 
       return {
         ok: p50 <= ZOOM_BUDGET.p50,
-        detail: `${engine}, ${cells} cells, frame ${before} -> ${zoomedIn} px, ${ZOOM_BUDGET.steps} steps: frame interval p50 ${p50.toFixed(1)} ms (<= ${ZOOM_BUDGET.p50}), p95 ${p95.toFixed(1)} ms (target ${ZOOM_BUDGET.p95}, not enforced), ${intervals.length} frames`,
+        detail: `${engine}, ${cells} cells, frame ${before} -> ${zoomedIn} px, ${ZOOM_BUDGET.steps} steps: frame interval p50 ${p50.toFixed(1)} ms (<= ${ZOOM_BUDGET.p50}), p95 ${p95.toFixed(1)} ms (target ${ZOOM_BUDGET.p95}, not enforced), ${frames} frames`,
       };
     },
   },
