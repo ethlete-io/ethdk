@@ -263,6 +263,8 @@ export const SKETCH_NEIGHBOURS_SAMPLE = {
     a: '[&_[data-camera-reset]_button]:text-et-theme',
     b: '[&_[data-camera-fit]_button]:rounded-full',
   } as Record<string, string>,
+  rounds: [{ value: 'round-3', label: 'Runde 3 · Nachbarschaft einer Änderung' }] satisfies SketchRound[],
+  round: 'round-3',
 };
 
 export const SKETCH_EDIT_SAMPLE = {

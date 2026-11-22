@@ -6,6 +6,7 @@ import {
   SKETCH_MANY_SAMPLE,
   SKETCH_MANY_STATES,
   SKETCH_NARROW_SAMPLE,
+  SKETCH_NEIGHBOURS_SAMPLE,
   SKETCH_ROWS,
   SKETCH_SCREEN_SAMPLE,
   SKETCH_TITLE_BARS,
@@ -17,6 +18,11 @@ import { ZoomChipComponent, ZoomControl, ZoomInteraction } from '../design-parts
 const SCREEN_STATES = new Set(SKETCH_SCREEN_SAMPLE.rows.flatMap((row) => row.shots.map((shot) => shot.state)));
 
 const MANY_STATES = new Set(SKETCH_MANY_STATES);
+
+const chipSampleOf = (row: SketchRow) =>
+  SKETCH_NEIGHBOURS_SAMPLE.rows.some((candidate) => candidate.key === row.key && candidate.note === row.note)
+    ? SKETCH_NEIGHBOURS_SAMPLE
+    : SKETCH_NARROW_SAMPLE;
 
 const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: string }) =>
   rows.find((row) => row.key === key)?.shots.find((shot) => shot.state === state)?.changed === true;
@@ -83,7 +89,7 @@ export class DesignHarnessSketchShotsComponent {
       ? { rows: SKETCH_ROWS, looks: SKETCH_LOOKS }
       : MANY_STATES.has(state)
         ? SKETCH_MANY_SAMPLE
-        : SKETCH_NARROW_SAMPLE;
+        : chipSampleOf(row);
     const shot = row.shots.find((candidate) => candidate.state === state);
     const changed =
       shot?.changed === true || (shot?.changed === null && changedIn(sample.rows, { key: row.key, state }));
