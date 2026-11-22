@@ -1,10 +1,4 @@
 @layer components {
-  et-form-field[data-text-shell] {
-    --et-form-field-control-border-color: transparent;
-    --et-form-field-value-color: var(--et-surface-color-muted-solid, currentColor);
-    --et-form-field-value-color-active: var(--et-surface-color-solid, currentColor);
-  }
-
   et-form-field:where(:not([data-readonly]):not([data-disabled])) .et-form-field-control-frame:active {
     border-color: var(--et-surface-interaction-active-solid, currentColor);
   }
