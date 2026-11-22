@@ -21,4 +21,4 @@ Fortsetzung der Warteschlange in [STATUS.md](STATUS.md), eine Liste (ADR 0351, 0
 21. **Zoom-Budget im Canvas (B356)** ⏳ Budget gilt für die CEF-App, Mac und Linux (ADR 0390). Safari-Aufnahmen: p95 586 ms beim Zoomen, Suspect Live-Vorschauen starten während der Geste neu; Bite 0c368fd15 friert Live-Frames während der Geste ein: Linux-Chromium max 67-83 -> 17-33 ms, Neustarts 5 -> 0. Offen: CEF Linux (Toms Studio 5 min zu) und Mac messen - Builder
 22. **GitHub-Issues Design-CLI (B648)** ⏳ #3190, #3191, #3195, #3197 geschlossen, #3194 war behoben; offen: #3196 wartet auf Reporter-Markup - Builder
 23. **Leere Warteschlange (B661)** ⏳ builder-agent-Skill: ohne startbaren Eintrag A, dann D, dann C, sonst Meldung an Doc (ADR 0388); bis zum Reset sortiert ein Recherche-Agent alle Einträge gegen git - Builder
-24. **Windows-Signatur (B666)** ⏳ Installer in CI signieren (ADR 0389); wartet auf Toms Zertifikat oder Signaturdienst - Tom, dann Builder
+24. **App-Signatur (B666)** ⏳ Windows (Azure Trusted Signing) und macOS in einem Rutsch mit Tom (ADR 0389, 0404) - Tom, dann Builder
