@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 289c67603
 decided: 2026-11-18
 source: chat of the human with the analysis session (ethlete-sdk-3f) 2026-11-18, its fifagg consumer review approved by the human, relayed by the analysis session

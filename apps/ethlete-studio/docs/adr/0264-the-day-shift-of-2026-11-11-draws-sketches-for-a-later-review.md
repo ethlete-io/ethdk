@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: d01f388d2
 decided: 2026-11-11
 source: grill session 2026-11-11 (phone, late morning)

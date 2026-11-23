@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 0a4f4d36b
 decided: 2026-11-11
 source: chat with the doc agent 2026-11-11 (evening), findings 864 and 865

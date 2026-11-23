@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 3182bd02f
 governs: ['.github/workflows/*']
 decided: 2026-11-05

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: none
 decided: 2026-11-04
 source: the decisions-latest log of the parallel backlog (deleted in B597, ADR 0369), "Decision records and plan size" (finding 385) item 3

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: none
 governs: ['.husky/pre-push']
 decided: 2026-11-04

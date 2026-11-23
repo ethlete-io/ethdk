@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: b99850fe6
 decided: 2026-11-19
 source: doc-agent session 2026-11-19, after the fifagg session waited for an SDK prerelease

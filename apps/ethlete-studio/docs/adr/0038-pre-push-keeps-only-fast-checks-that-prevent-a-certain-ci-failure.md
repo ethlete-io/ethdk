@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: none
 governs: ['.husky/*', 'tools/scripts/*gate*', 'tools/scripts/push-suite.mjs']
 decided: 2026-11-04

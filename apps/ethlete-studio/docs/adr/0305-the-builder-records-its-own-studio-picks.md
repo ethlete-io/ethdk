@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: eb3519bd5
 decided: 2026-11-15
 source: doc-agent session 2026-11-15, evening, Q1 of the open round

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 91fc4fb8e
 decided: 2026-11-12
 source: decisions of the human, about 11:40 local, relayed by the analysis session (claude2)

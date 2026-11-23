@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: B356
 decided: 2026-11-22
 source: doc-agent session 2026-11-22 (evening), B356

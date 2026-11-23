@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 770a24376
 decided: 2026-11-18
 source: process review of the analysis session (ethlete-sdk-3f) 2026-11-18, Package D, its proposal approved by the human with "klingt gut", relayed through the doc agent

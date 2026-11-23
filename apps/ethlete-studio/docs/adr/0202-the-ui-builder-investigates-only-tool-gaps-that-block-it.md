@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: B403
 decided: 2026-11-06
 source: grill session 2026-11-06

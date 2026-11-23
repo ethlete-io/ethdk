@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: cd6bea2a5
 decided: 2026-11-13
 source: grill round with the doc agent 2026-11-13, evening

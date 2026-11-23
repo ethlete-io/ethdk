@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: ebd3eacb0
 decided: 2026-11-18
 source: process review of the analysis session (ethlete-sdk-3f) 2026-11-18, its proposal approved by the human with "ok" ("1, 2 und 4 sofort, 3 und 5 danach" was the proposal), relayed through the doc agent

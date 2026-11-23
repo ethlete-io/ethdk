@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: none
 decided: 2026-11-04
 source: grill session 2026-11-04, the human: "mein rechner hier ist ja ziemlich stark, das hat kaum einer. der mac ist eher ein realer testcase"

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 0afe96985
 decided: 2026-11-11
 source: grill session 2026-11-11 (morning round)

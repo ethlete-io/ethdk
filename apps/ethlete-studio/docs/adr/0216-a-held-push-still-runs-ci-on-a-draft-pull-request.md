@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: B416
 governs: ['.husky/pre-push', '.github/workflows/*']
 decided: 2026-11-06

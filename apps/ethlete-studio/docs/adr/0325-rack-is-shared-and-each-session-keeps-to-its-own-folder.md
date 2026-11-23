@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 88392b87a
 decided: 2026-11-16
 source: doc-agent session 2026-11-16 (late), after the fifagg session started its first e2e gate on rack

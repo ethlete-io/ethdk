@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: a277e1c3e
 governs: ['.husky/pre-push']
 decided: 2026-11-07

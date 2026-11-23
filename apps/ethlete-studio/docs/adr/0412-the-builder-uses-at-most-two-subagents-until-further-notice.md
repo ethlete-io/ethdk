@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 7ccb411aa
 decided: 2026-11-23
 amends: 0376

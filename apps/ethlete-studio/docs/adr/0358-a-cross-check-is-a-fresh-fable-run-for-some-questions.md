@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 9a09543c8
 decided: 2026-11-18
 source: chat of the human with the analysis session (ethlete-sdk-3f) 2026-11-18, its proposal approved by the human, relayed by the analysis session; supersedes ADR 0287

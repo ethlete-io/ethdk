@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 7dfa6dde7
 decided: 2026-11-07
 source: doc-agent session, grill round after finding 544

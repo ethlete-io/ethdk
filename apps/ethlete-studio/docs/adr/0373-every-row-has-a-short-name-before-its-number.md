@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: a9d41d5d2
 decided: 2026-11-18
 source: wish of the human 2026-11-18, form proposed by the analysis session (ethlete-sdk-3f) and approved by the human with "ok passt", relayed through the doc agent

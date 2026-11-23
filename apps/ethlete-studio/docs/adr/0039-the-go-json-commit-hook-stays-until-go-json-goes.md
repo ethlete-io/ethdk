@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 77e87c6b2
 governs: ['.husky/pre-commit']
 decided: 2026-11-04

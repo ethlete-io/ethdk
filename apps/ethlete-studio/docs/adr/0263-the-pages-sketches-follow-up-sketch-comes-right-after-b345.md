@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: b81d52c88
 decided: 2026-11-11
 source: grill session 2026-11-11 (phone round), finding 792

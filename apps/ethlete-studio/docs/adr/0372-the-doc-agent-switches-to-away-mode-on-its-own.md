@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 10303153c
 decided: 2026-11-18
 source: proposal of the analysis session (ethlete-sdk-3f) 2026-11-18, approved by the human with "das klingt prima", relayed through the doc agent

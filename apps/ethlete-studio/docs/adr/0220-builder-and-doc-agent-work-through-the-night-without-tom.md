@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: c9dc8788d
 decided: 2026-11-06
 source: doc-agent session 2026-11-06, 22:30

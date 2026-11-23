@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 open: B661
 decided: 2026-11-20
 amends: 0376

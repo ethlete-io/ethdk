@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 64b875ca1
 decided: 2026-11-20
 amends: 0038, 0245

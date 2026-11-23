@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 70df2bb6e
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, after two quiet windows for the Studio e2e speed proof (ADR 0237, 0240)

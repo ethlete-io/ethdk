@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: fb3994aeb
 decided: 2026-11-16
 source: doc-agent session 2026-11-16, night, Q1

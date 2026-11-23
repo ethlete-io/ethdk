@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 014e1fd75
 decided: 2026-11-18
 source: process review of the analysis session (ethlete-sdk-3f) 2026-11-18, point C5, approved by the human with "c5ok", relayed by the analysis session; supersedes point 3 of ADR 0286

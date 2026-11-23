@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0424
 built: 737701fb1
 decided: 2026-11-10
 source: grill session 2026-11-10 (late evening), finding 751
