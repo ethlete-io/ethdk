@@ -956,7 +956,9 @@ export class SketchViewComponent {
     );
   });
 
-  protected activeShot = linkedSignal<ListedSketch, string | null>({ source: this.sketch, computation: () => null });
+  private sketchDir = computed(() => this.sketch().dir);
+
+  protected activeShot = linkedSignal<string, string | null>({ source: this.sketchDir, computation: () => null });
 
   private currentLiveShots = computed(() => {
     const live =
