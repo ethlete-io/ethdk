@@ -70,11 +70,6 @@ const withHint = (markup: string, text: string | undefined, { force }: Props) =>
     ? `<span class="relative inline-flex">${force?.control === 'notice' ? markup : openedByHover(markup)}<span class="st-notice-hint absolute top-full right-0 left-0 z-10 mt-2 flex justify-end">${tooltip({ text, placement: 'bottom-end' })}</span></span>`
     : markup;
 
-const dirtyText = ({ notice, noticeText }: Props) =>
-  !notice && noticeText
-    ? `<span class="whitespace-nowrap text-et-surface-muted" data-code-notice>${noticeText}</span>`
-    : '';
-
 const failedToast = async ({ restart }: Props) =>
   restart === 'failed'
     ? `<div class="flex justify-end px-space-3 pt-space-3">${
@@ -179,16 +174,6 @@ export default definePart({
       'The Windows bar with the tonal Neu starten button and its CLI geändert hint; check the hint under the bar and Update beside it.',
     'macos-notice':
       'The macOS bar with the tonal Neu starten button and its CLI geändert hint; check the hint under the bar and Update beside it.',
-    'linux-full-cli-dirty':
-      'The Linux bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
-    'linux-left-cli-dirty':
-      'The left-hand Linux bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
-    'linux-close-cli-dirty':
-      'The close-only Linux bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
-    'windows-cli-dirty':
-      'The Windows bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
-    'macos-cli-dirty':
-      'The macOS bar with the muted CLI-dirty text; check that the long text stays on one line and does not reach the search field.',
     'linux-full-update-hover':
       'Update hovered in the Linux bar; check its hover fill and that the bar keeps its height.',
     'linux-full-update-active': 'Update pressed in the Linux bar; check its press fill.',
@@ -238,7 +223,7 @@ export default definePart({
               { imports },
             )}${search.body}
             <div class="flex items-center justify-end gap-2 ${props.os === 'windows' ? 'self-stretch' : ''}">
-              ${dirtyText(props)}${props.notice ? await notice(props) : ''}${await ng(
+              ${props.notice ? await notice(props) : ''}${await ng(
                 `${props.update ? update(props) : ''}${sideControls(props, props.right)}`,
                 { imports },
               )}
