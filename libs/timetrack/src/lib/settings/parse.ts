@@ -243,6 +243,9 @@ export const parseExclusionRule = (value: unknown): TimetrackExclusionRule | nul
 /** A call naming read as the stored settings read it; `null` without an application or a target. */
 export const parseCallNaming = (value: unknown): CallNaming | null => asCallNaming(value);
 
+/** A meeting naming read as the stored settings read it; `null` without a series key or an issue. */
+export const parseMeetingNaming = (value: unknown): MeetingNaming | null => asMeetingNaming(value);
+
 /** An attribution rule read field by field, as the stored settings read it; `null` without an id. */
 export const parseAttributionRule = (value: unknown): AttributionRule | null =>
   asText(asRecord(value)['id']) ? asAttributionRule(value, 0) : null;

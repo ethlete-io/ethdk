@@ -1,6 +1,7 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
 import { CheckoutKeys, translatePeerPath } from '../model/peer-path';
 import { CallNaming } from '../model/call-naming';
+import { MeetingNaming } from '../model/meeting-naming';
 import { StandIn, StandInRefusal } from '../model/stand-in';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import {
@@ -12,7 +13,14 @@ import {
 } from '../review/shared-stamp';
 import { SharedStamp } from '../review/model';
 import { TimetrackCallRules, TimetrackSettings } from './model';
-import { parseAttributionRule, parseCallNaming, parseExclusionRule, parseStandIn, parseStandInRefusal } from './parse';
+import {
+  parseAttributionRule,
+  parseCallNaming,
+  parseExclusionRule,
+  parseMeetingNaming,
+  parseStandIn,
+  parseStandInRefusal,
+} from './parse';
 
 /**
  * The `day` the settings that travel are stored under beside the day rows. A day key is a date, so this
@@ -29,6 +37,7 @@ export type SharedSettingsEntry = { id: string; atMs: number } & (
   | { kind: 'exclusion'; exclusion: TimetrackExclusionRule }
   | { kind: 'call-rule'; list: CallRuleList; pattern: string }
   | { kind: 'call-naming'; naming: CallNaming }
+  | { kind: 'meeting-naming'; naming: MeetingNaming }
   | { kind: 'deleted' }
 );
 
@@ -48,6 +57,7 @@ const refusalIdOf = (refusal: StandInRefusal) =>
 const EXCLUSION = 'exclusion:';
 const CALL_RULE = 'call-rule:';
 const CALL_NAMING = 'call-naming:';
+const MEETING_NAMING = 'meeting-naming:';
 
 const exclusionIdOf = (rule: TimetrackExclusionRule) =>
   `${EXCLUSION}${rule.kind}:${rule.kind === 'app-id' ? rule.appId : rule.pattern}`;
@@ -56,6 +66,8 @@ const callRuleIdOf = (list: CallRuleList, pattern: string) => `${CALL_RULE}${lis
 
 const callNamingIdOf = (naming: CallNaming) =>
   `${CALL_NAMING}${[naming.appId, naming.weekday, naming.durationBand, naming.after ?? '', naming.startMinute].join('\n')}`;
+
+const meetingNamingIdOf = (naming: MeetingNaming) => `${MEETING_NAMING}${naming.seriesKey}`;
 
 const CALL_RULE_LISTS: readonly CallRuleList[] = ['countsAsWork', 'neverCountsAsWork'];
 
@@ -129,6 +141,10 @@ const liveEntriesOf = (settings: TimetrackSettings): Map<string, LiveEntry> =>
       callNamingIdOf(naming),
       { id: callNamingIdOf(naming), atMs: 0, kind: 'call-naming', naming: callNamingOf(naming) },
     ]),
+    ...settings.meetingNamings.map((naming): [string, LiveEntry] => [
+      meetingNamingIdOf(naming),
+      { id: meetingNamingIdOf(naming), atMs: 0, kind: 'meeting-naming', naming: { ...naming } },
+    ]),
     ...settings.noStandInCheckouts.map((refusal): [string, LiveEntry] => [
       refusalIdOf(refusal),
       { id: refusalIdOf(refusal), atMs: 0, kind: 'refusal', refusal: refusalOf(refusal) },
@@ -142,6 +158,7 @@ const wireOf = (entry: SharedSettingsEntry) => {
     case 'stand-in':
       return { ...entry, standIn: { ...entry.standIn, createdAt: entry.standIn.createdAt.getTime() } };
     case 'call-naming':
+    case 'meeting-naming':
       return { ...entry, naming: { ...entry.naming, createdAt: entry.naming.createdAt.getTime() } };
     default:
       return entry;
@@ -234,6 +251,7 @@ const outgoingOf = (entry: SharedSettingsEntry, keys: CheckoutKeys): SharedSetti
       return travels([entry.refusal.repoPath, entry.refusal.workPath], keys) ? entry : null;
     case 'exclusion':
     case 'call-rule':
+    case 'meeting-naming':
       return entry;
     case 'call-naming':
       return travels([entry.naming.after, entry.naming.label], keys) ? entry : null;
@@ -313,6 +331,11 @@ const parseEntry = (value: unknown): SharedSettingsEntry | null => {
       return naming && id === callNamingIdOf(naming)
         ? { id, atMs, kind: 'call-naming', naming: callNamingOf(naming) }
         : null;
+    }
+    case 'meeting-naming': {
+      const naming = parseMeetingNaming(record['naming']);
+
+      return naming && id === meetingNamingIdOf(naming) ? { id, atMs, kind: 'meeting-naming', naming } : null;
     }
     case 'refusal': {
       const refusal = parseStandInRefusal(record['refusal']);
@@ -416,6 +439,8 @@ const mapEntry = (options: Keys & { entry: SharedSettingsEntry }): SharedSetting
 
       return { ...entry, id: callNamingIdOf(naming), naming };
     }
+    case 'meeting-naming':
+      return entry;
     case 'refusal': {
       const repoPath = localTextOf({ ...options, text: entry.refusal.repoPath });
       const workPath = entry.refusal.workPath ? localTextOf({ ...options, text: entry.refusal.workPath }) : undefined;
@@ -506,6 +531,7 @@ export const withPeerSharedSettings = (options: {
     ),
   );
   const namings = new Map(settings.callNamings.map((naming) => [callNamingIdOf(naming), naming]));
+  const meetingNamings = new Map(settings.meetingNamings.map((naming) => [meetingNamingIdOf(naming), naming]));
   const latest = latestPeerEntries(options.peers);
   let peerStandInAt = -Infinity;
 
@@ -523,6 +549,7 @@ export const withPeerSharedSettings = (options: {
       exclusions.delete(id);
       callPatterns.delete(id);
       namings.delete(id);
+      meetingNamings.delete(id);
       changed[id] = { atMs: entry.atMs, deleted: true };
       continue;
     }
@@ -534,6 +561,7 @@ export const withPeerSharedSettings = (options: {
     else if (entry.kind === 'exclusion') exclusions.set(id, entry.exclusion);
     else if (entry.kind === 'call-rule') callPatterns.set(id, { list: entry.list, pattern: entry.pattern });
     else if (entry.kind === 'call-naming') namings.set(id, entry.naming);
+    else if (entry.kind === 'meeting-naming') meetingNamings.set(id, entry.naming);
     else standIns.set(id, withLocalDays(entry.standIn, standIns.get(id)));
 
     changed[id] = { atMs: entry.atMs };
@@ -558,6 +586,7 @@ export const withPeerSharedSettings = (options: {
         .map((entry) => entry.pattern),
     },
     callNamings: [...namings.values()],
+    meetingNamings: [...meetingNamings.values()],
     sharedStamps: { ...stamps, ...changed },
   };
 };

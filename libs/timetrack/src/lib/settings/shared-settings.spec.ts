@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule } from '../model/attribution';
 import { CallNaming } from '../model/call-naming';
+import { MeetingNaming } from '../model/meeting-naming';
 import { StandIn } from '../model/stand-in';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings } from './model';
@@ -346,6 +347,29 @@ describe('shared settings', () => {
           peers: [sent({ settings: tank, localKeys: { '/Users/human/dev/other': 'gitlab.com/ethlete/other' } })],
         }),
       ).toBe(DEFAULT_TIMETRACK_SETTINGS);
+    });
+  });
+
+  describe('meeting namings', () => {
+    const meetingNaming = (overrides: Partial<MeetingNaming> = {}): MeetingNaming => ({
+      seriesKey: 'series-1',
+      issueKey: 'BD-2049',
+      title: 'Weekly sync',
+      createdAt: CREATED,
+      ...overrides,
+    });
+
+    it('travel to the peer and are taken back with a tombstone', () => {
+      const tank = stamped({ after: { meetingNamings: [meetingNaming()] }, atMs: 1_000 });
+      const mac = withPeerSharedSettings({ settings: DEFAULT_TIMETRACK_SETTINGS, peers: [sent({ settings: tank })] });
+
+      expect(mac.meetingNamings).toEqual([meetingNaming()]);
+
+      const removed = stamped({ before: tank, after: { meetingNamings: [] }, atMs: 2_000 });
+      const after = withPeerSharedSettings({ settings: mac, peers: [sent({ settings: removed })] });
+
+      expect(after.meetingNamings).toEqual([]);
+      expect(withPeerSharedSettings({ settings: after, peers: [sent({ settings: tank })] })).toBe(after);
     });
   });
 
