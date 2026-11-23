@@ -79,7 +79,7 @@ export const SKETCHES_LABELS = {
     notReady: 'Noch nicht bereit',
     failed: 'Render fehlgeschlagen',
   },
-  notReadyUnknown: 'Grund unbekannt - führe sketch ready aus',
+  notReadyUnknown: 'Grund unbekannt - der Agent hat den Sketch noch nicht geprüft',
   holdUntil: (until: string) => `Wartet auf ${until}`,
   lastChange: (by: string, since: string) =>
     by || since ? [by ? `Letzte Änderung von ${by}` : 'Letzte Änderung', since].filter(Boolean).join(' · ') : '',
