@@ -1,11 +1,13 @@
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import { DEFAULT_RETENTION_POLICY, repoPathsOfEvents } from '@ethlete/timetrack';
 import { map, merge, switchMap, timer } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { receiveSharedSettings$, sendSharedSettings$ } from './shared-settings';
 
 const RECEIVE_EVERY_MS = 30_000;
+const DAY_MS = 24 * 60 * 60_000;
 
 const SHARED_SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -24,6 +26,13 @@ const SHARED_SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
           sendSharedSettings$({
             settings$,
             ownKeys$: () => ports.peers.receivedSettings$().pipe(map((received) => received.ownRepoKeys)),
+            carriedPaths$: () => {
+              const now = Date.now();
+
+              return ports.events
+                .eventsBetween$(new Date(now - DEFAULT_RETENTION_POLICY.rawEventDays * DAY_MS), new Date(now))
+                .pipe(map(repoPathsOfEvents));
+            },
             send$: ports.peers.setSharedSettings$,
           }),
         ),

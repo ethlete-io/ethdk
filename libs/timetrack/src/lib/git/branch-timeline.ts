@@ -151,6 +151,11 @@ const pathsOf = (event: CollectedEvent): (string | undefined)[] => {
   }
 };
 
+/** The distinct machine paths the events name: their checkouts, worktrees and working directories. */
+export const repoPathsOfEvents = (events: readonly CollectedEvent[]): string[] => [
+  ...new Set(events.flatMap(pathsOf).filter((path): path is string => !!path)),
+];
+
 const isUnder = (path: string | undefined, root: string) =>
   !!path && (path === root || path.startsWith(`${root}/`) || path.startsWith(`${root}\\`));
 

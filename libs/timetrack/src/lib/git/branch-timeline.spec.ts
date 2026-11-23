@@ -5,8 +5,9 @@ import {
   encodeBranchTimelines,
   parseBranchTimelines,
   peerHeadBranches,
+  repoPathsOfEvents,
 } from './branch-timeline';
-import { OriginEvent } from '../model/event';
+import { CollectedEvent, OriginEvent } from '../model/event';
 import { GIT_FIELD_SEPARATOR } from './format';
 import { parseHeadBranchAt } from './head';
 
@@ -96,5 +97,18 @@ describe('peerHeadBranches', () => {
       byMachine: { 'peer-1': { [REPO]: 'feature/abc-12-x' } },
       local: [],
     });
+  });
+});
+
+describe('repoPathsOfEvents', () => {
+  it('lists each path the events name once', () => {
+    const at = new Date('2026-11-18T10:00:00Z');
+    const events = [
+      { source: 'git', kind: 'git-checkout', at, repoPath: '/a', branch: 'x' },
+      { source: 'git', kind: 'git-checkout', at, repoPath: '/a', branch: 'y' },
+      { source: 'editor', kind: 'editor-heartbeat', at, reporter: 'vscode', directory: '/b' },
+    ] as unknown as CollectedEvent[];
+
+    expect(repoPathsOfEvents(events)).toEqual(['/a', '/b']);
   });
 });

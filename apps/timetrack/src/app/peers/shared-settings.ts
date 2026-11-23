@@ -14,7 +14,9 @@ import {
   debounceTime,
   distinctUntilChanged,
   exhaustMap,
+  forkJoin,
   map,
+  of,
   switchMap,
   take,
 } from 'rxjs';
@@ -26,15 +28,21 @@ const SEND_DEBOUNCE_MS = 2_000;
 export const sendSharedSettings$ = (options: {
   settings$: Observable<TimetrackSettings>;
   ownKeys$: () => Observable<CheckoutKeys>;
+  carriedPaths$?: () => Observable<readonly string[]>;
   send$: (entries: readonly SharedSettingsEntry[]) => Observable<void>;
   debounceMs?: number;
 }): Observable<void> =>
   options.settings$.pipe(
     debounceTime(options.debounceMs ?? SEND_DEBOUNCE_MS),
     switchMap((settings) =>
-      options.ownKeys$().pipe(
-        take(1),
-        map((ownKeys) => sharedSettingsEntriesOf({ settings, ownKeys })),
+      forkJoin([
+        options.ownKeys$().pipe(take(1)),
+        (options.carriedPaths$?.() ?? of([])).pipe(
+          take(1),
+          catchError(() => of([])),
+        ),
+      ]).pipe(
+        map(([ownKeys, carriedPaths]) => sharedSettingsEntriesOf({ settings, ownKeys, carriedPaths })),
         catchError(() => EMPTY),
       ),
     ),

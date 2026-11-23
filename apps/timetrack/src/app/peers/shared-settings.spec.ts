@@ -1,9 +1,11 @@
 import {
+  AttributionRule,
   DEFAULT_TIMETRACK_SETTINGS,
   PeerSharedSettings,
   SharedSettingsEntry,
   StandIn,
   TimetrackSettings,
+  stampSharedSettings,
 } from '@ethlete/timetrack';
 import { Subject, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -49,6 +51,45 @@ describe('sendSharedSettings$', () => {
 
     expect(sent).toHaveLength(1);
     subscription.unsubscribe();
+  });
+
+  it('sends the rule of a removed worktree that the events still carry', () => {
+    const removed = '/home/human/dev/fifa-wt-gone';
+    const removedRule: AttributionRule = {
+      id: `repo:${removed}@feat/gone#3`,
+      repoPath: removed,
+      branch: 'feat/gone',
+      target: { kind: 'stand-in', standInId: STAND_IN.id },
+      author: 'app',
+      createdAt: STAND_IN.createdAt,
+    };
+    const settings = stampSharedSettings({
+      before: DEFAULT_TIMETRACK_SETTINGS,
+      after: { ...DEFAULT_TIMETRACK_SETTINGS, attributionRules: [removedRule] },
+      atMs: 1_000,
+    });
+    const run = (carried: string[]) => {
+      const sent: (readonly SharedSettingsEntry[])[] = [];
+      const subscription = sendSharedSettings$({
+        settings$: of(settings),
+        ownKeys$: () => of({}),
+        carriedPaths$: () => of(carried),
+        send$: (entries) => {
+          sent.push(entries);
+
+          return of(undefined);
+        },
+        debounceMs: 100,
+      }).subscribe();
+
+      vi.advanceTimersByTime(100);
+      subscription.unsubscribe();
+
+      return sent.flat().map((entry) => entry.id);
+    };
+
+    expect(run([])).toEqual([]);
+    expect(run([removed])).toEqual([`rule:${removedRule.id}`]);
   });
 
   it('keeps sending after the host failed once', () => {
