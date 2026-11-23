@@ -60,7 +60,6 @@ import {
   multiPartTargetsOf,
   partKeyOf,
   sketchKeyOf,
-  isSketchKey,
   pickedPartKeyOf,
   sketchLabelOf,
   treeOf,
@@ -274,8 +273,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [themeSwitches]="themeSwitches()"
         [noted]="canvasNote() !== null"
         [noteTitle]="noteTitle()"
-        [noteHint]="sketchMissing() ? '' : (canvasNote() ?? '')"
-        [sketchMissing]="sketchMissing()"
+        [noteHint]="canvasNote() ?? ''"
         [empty]="canvasNote() === null && !partShown"
         [part]="partShown?.key ?? ''"
         [openPoints]="openPointGroups()"
@@ -812,11 +810,6 @@ export class SystemViewComponent {
     );
   });
 
-  /** True once the lists are read and the picked sketch key matches neither a listed sketch nor its target part. */
-  protected sketchMissing = computed(
-    () => isSketchKey(this.picked()) && this.listsRead() && !this.sketch() && !this.pickedPart(),
-  );
-
   /** The line the canvas shows instead of a part: `''` keeps it blank, `null` shows the part or the empty card. */
   protected canvasNote = computed(() => {
     if (!this.port()) return this.LABELS.startServer;
@@ -830,15 +823,11 @@ export class SystemViewComponent {
     if (!read) return '';
     if (read.error) return read.error;
     if (this.sketchShown() || this.flowShown() || this.awaitingPicked()) return '';
-    if (this.sketchMissing()) return this.EMPTY_LABELS.sketchMissing;
-
     return null;
   });
 
   protected noteTitle = computed(() => {
     if (!this.port()) return this.EMPTY_LABELS.serverDown;
-    if (this.sketchMissing()) return this.EMPTY_LABELS.sketchMissing;
-
     const call = this.call();
 
     if (call) return call.slug;
@@ -853,9 +842,7 @@ export class SystemViewComponent {
     const first = treeOf(parts)[0]?.entries[0]?.key;
     const listed =
       this.pickedPart() ??
-      (this.awaitingPicked() || this.sketchMissing()
-        ? undefined
-        : parts.find((candidate) => partKeyOf(candidate) === first));
+      (this.awaitingPicked() ? undefined : parts.find((candidate) => partKeyOf(candidate) === first));
 
     return listed ? { key: partKeyOf(listed), listed } : null;
   });

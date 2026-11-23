@@ -2047,12 +2047,13 @@ describe('SystemViewComponent on a tree pick', () => {
     expect(posts).toEqual(['POST http://localhost:4402/__design/transfer?call=web%2Fstart']);
   });
 
-  it('says the sketch is not found once the lists are read without it, instead of showing another part', async () => {
+  it('falls back to the first part for a remembered sketch the lists no longer have', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/gone' });
     const element: HTMLElement = fixture.nativeElement;
 
-    expect(element.querySelector('[data-sketch-missing]')?.textContent?.trim()).toBe(SYSTEM_LABELS.sketchMissing);
-    expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
+    expect(element.querySelector('[data-sketch-missing]')).toBeNull();
+    expect(element.querySelector('[data-canvas-note]')).toBeNull();
+    expect(fixture.componentInstance['part']()?.key).toBeTruthy();
   });
 
   it('shows the target part of a gone edit sketch', async () => {
