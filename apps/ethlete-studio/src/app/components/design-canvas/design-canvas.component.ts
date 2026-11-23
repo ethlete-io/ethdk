@@ -22,7 +22,20 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, FocusRingDirective, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
-import { EMPTY, Subject, buffer, debounceTime, exhaustMap, map, startWith, switchMap, tap, timer } from 'rxjs';
+import {
+  EMPTY,
+  Subject,
+  buffer,
+  debounceTime,
+  exhaustMap,
+  finalize,
+  map,
+  startWith,
+  switchMap,
+  takeUntil,
+  tap,
+  timer,
+} from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrameDirective } from './canvas-frame.directive';
 import { CanvasFrame, FrameCrop, cropPointOf, pagePointOfCrop, placeableFramesOf, schemeBoxOf } from './canvas-frame';
@@ -211,7 +224,9 @@ const isInteractive = (target: EventTarget | null) => {
     '(dblclick)': 'focusProjectedFrame($event)',
     '(window:keydown)': 'handleShortcut($event)',
     '(window:keyup)': 'releaseSpace($event)',
-    '(window:blur)': 'spaceHeld.set(false)',
+    '(lostpointercapture)': 'panEnd$.next()',
+    '(window:blur)': 'spaceHeld.set(false); panEnd$.next()',
+    '(document:visibilitychange)': 'panEnd$.next()',
   },
 })
 export class DesignCanvasComponent {
@@ -233,6 +248,9 @@ export class DesignCanvasComponent {
 
   /** The camera to show instead of the opening view, read when `cameraKey` changes. */
   public restoredCamera = input<Camera | null>(null);
+
+  /** Where a key without a restored camera opens: `'all'` fits every frame, `'start'` shows the first frames at 100 %. */
+  public opening = input<'all' | 'start'>('all');
 
   /** Where the world's top left corner opens at 100 %, in canvas pixels; `null` opens the first frames past the covered edge. */
   public origin = input<Point | null>(null);
@@ -324,6 +342,8 @@ export class DesignCanvasComponent {
   });
   protected spaceHeld = signal(false);
   protected panning = signal(false);
+
+  protected panEnd$ = new Subject<void>();
   private wheel$ = new Subject<void>();
   protected wheeling = toSignal(
     this.wheel$.pipe(
@@ -641,6 +661,11 @@ export class DesignCanvasComponent {
 
   constructor() {
     effect(() => {
+      this.cameraKey();
+      untracked(() => this.panEnd$.next());
+    });
+
+    effect(() => {
       const bounds = this.bounds();
       const viewport = this.viewport();
       const key = this.cameraKey();
@@ -683,14 +708,16 @@ export class DesignCanvasComponent {
 
         this.fittedFor = key;
         this.coveredAtFit = covered;
-        this.following = restored === null ? 'start' : null;
-        this.followsResize = false;
+        const opening = this.opening();
+
+        this.following = restored === null ? opening : null;
+        this.followsResize = restored === null && opening === 'all';
         this.followedBounds = bounds;
         this.restoredUnchecked = restored !== null;
         if (restored) {
           this.camera.set(restored);
           if (bounds) this.fitWhenEmpty(viewport);
-        } else if (bounds) this.camera.set(this.fitted({ bounds, viewport, fit: 'start' }));
+        } else if (bounds) this.camera.set(this.fitted({ bounds, viewport, fit: opening }));
       });
     });
 
@@ -748,7 +775,10 @@ export class DesignCanvasComponent {
     this.panStart$
       .pipe(
         exhaustMap(({ event, threshold }) =>
-          dragGestureFrom(event, this.host.nativeElement, { commitThreshold: threshold }),
+          dragGestureFrom(event, this.host.nativeElement, { commitThreshold: threshold }).pipe(
+            takeUntil(this.panEnd$),
+            finalize(() => this.panning.set(false)),
+          ),
         ),
         tap((gesture) => {
           if (gesture.type === 'start') this.swallowNextClick = true;

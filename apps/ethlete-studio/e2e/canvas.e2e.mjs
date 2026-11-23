@@ -3878,6 +3878,61 @@ const CASES = [
     },
   },
   {
+    name: 'double-click makes a frame live',
+    pages: ['System'],
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const live = await page.evaluate(() => {
+        const frame = document.querySelector('[data-active]');
+        const frames = [...(frame?.querySelectorAll('iframe:not(.opacity-0)') ?? [])];
+
+        return {
+          active: !!frame,
+          interactive: frames.some((shown) => getComputedStyle(shown).pointerEvents !== 'none'),
+        };
+      });
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const ended = await page.evaluate(() => !document.querySelector('[data-active]'));
+      const by = { x: 60, y: 30 };
+      const panAfter = async (from) => {
+        const before = await probe(page);
+
+        await page.keyboard.down('Space');
+        await drag(page, from, by);
+        await page.keyboard.up('Space');
+        const after = await readUntil(
+          page,
+          () => probe(page),
+          (after) => moved(before, after, by),
+        );
+
+        return moved(before, after, by);
+      };
+      const box = await page.locator(CANVAS).first().boundingBox();
+      const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      const pansAfterEsc = await panAfter(centre);
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      await page
+        .locator('[role="treeitem"]')
+        .filter({ hasNotText: /^\s*system\s*$/ })
+        .first()
+        .click();
+      await settle(page);
+      const pansAfterSwitch = await panAfter(centre);
+
+      return {
+        ok: live.active && live.interactive && ended && pansAfterEsc && pansAfterSwitch,
+        detail: `active=${live.active} interactive=${live.interactive} endedByEsc=${ended} pansAfterEsc=${pansAfterEsc} pansAfterSwitch=${pansAfterSwitch}`,
+      };
+    },
+  },
+  {
     name: 'Space+drag pans',
     run: async (page, state) => {
       const from = state.frame ?? state.empty;

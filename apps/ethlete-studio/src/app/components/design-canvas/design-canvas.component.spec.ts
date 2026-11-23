@@ -255,38 +255,35 @@ describe('DesignCanvasComponent', () => {
       vi.restoreAllMocks();
     });
 
-    it('opens at 100 % with the frames at the panel edge plus the opening padding', async () => {
+    it('fits all frames on the first open', async () => {
       const { canvas, resizeTo } = await setup();
 
-      expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
+      const opened = canvas.camera();
+
+      canvas.fitAll();
+
+      expect(opened).toEqual(canvas.camera());
+      expect(opened.zoom).toBeLessThan(1);
 
       await resizeTo(600);
 
-      expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
+      expect(canvas.camera().zoom).toBeLessThan(1);
     });
 
     it('keeps the frames in place when the panel hides', async () => {
       const { canvas, hidePanel } = await setup();
 
-      await hidePanel();
-
-      expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
-    });
-
-    it('keeps the opening camera when the canvas resizes', async () => {
-      const { canvas, resizeTo, hidePanel } = await setup();
-
       const opened = canvas.camera();
 
-      await resizeTo(600);
       await hidePanel();
-      await resizeTo(1500);
 
       expect(canvas.camera()).toEqual(opened);
     });
 
     it('shifts the camera by the move of its left edge, so the frames keep their screen position', async () => {
       const { fixture, canvas, resizeTo } = await setup();
+
+      canvas.moveTo(canvas.camera());
 
       const opened = canvas.camera();
       const left = { value: 0 };
@@ -1009,6 +1006,60 @@ describe('DesignCanvasComponent', () => {
       const fixture = await open('acme components/a', { x: -9000, y: -9000, zoom: 1 });
 
       expect(showsFrame(fixture)).toBe(true);
+    });
+  });
+
+  describe('a pan whose pointer never comes back', () => {
+    const pointer = (type: string, init: { clientX: number; button?: number }) => {
+      const event = new MouseEvent(type, { bubbles: true, clientY: 10, button: 1, ...init });
+
+      Object.defineProperty(event, 'pointerId', { value: 1 });
+      Object.defineProperty(event, 'pointerType', { value: 'mouse' });
+
+      return event;
+    };
+
+    const startPan = async (fixture: ComponentFixture<DesignCanvasComponent>) => {
+      const host: HTMLElement = fixture.nativeElement;
+
+      host.dispatchEvent(pointer('pointerdown', { clientX: 10 }));
+      document.dispatchEvent(pointer('pointermove', { clientX: 40 }));
+      await fixture.whenStable();
+
+      return host;
+    };
+
+    it.each([
+      ['window blur', () => window.dispatchEvent(new Event('blur'))],
+      ['a lost pointer capture', (host: HTMLElement) => host.dispatchEvent(new Event('lostpointercapture'))],
+    ])('ends on %s and pans again after it', async (_name, end) => {
+      const fixture = await render([FITTED]);
+      const host = await startPan(fixture);
+
+      expect(host.classList.contains('cursor-grabbing')).toBe(true);
+
+      end(host);
+      await fixture.whenStable();
+
+      expect(host.classList.contains('cursor-grabbing')).toBe(false);
+
+      const before = fixture.componentInstance.camera();
+
+      host.dispatchEvent(pointer('pointerdown', { clientX: 10 }));
+      document.dispatchEvent(pointer('pointermove', { clientX: 50 }));
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.camera().x).toBeGreaterThan(before.x);
+    });
+
+    it('ends when another part opens', async () => {
+      const fixture = await render([FITTED]);
+      const host = await startPan(fixture);
+
+      fixture.componentRef.setInput('cameraKey', 'acme components/other');
+      await fixture.whenStable();
+
+      expect(host.classList.contains('cursor-grabbing')).toBe(false);
     });
   });
 });

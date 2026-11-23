@@ -165,6 +165,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
             <ethlete-design-canvas
               [origin]="opened()?.origin ?? null"
               [cameraKey]="opened()?.key ?? null"
+              opening="start"
               zoomChipClass="absolute right-space-3 bottom-space-3 z-3"
             >
               <div [style.width.px]="graph().width" [style.height.px]="graph().height" class="relative">
