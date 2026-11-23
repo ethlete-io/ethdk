@@ -392,7 +392,10 @@ describe('CanvasFrameGridComponent', () => {
     };
 
     const settle = async (fixture: Awaited<ReturnType<typeof renderShots>>, index: number, type: 'load' | 'error') => {
-      fixture.nativeElement.querySelectorAll('img')[index].dispatchEvent(new Event(type));
+      const image = fixture.nativeElement.querySelectorAll('img')[index];
+
+      image.dispatchEvent(new Event(type));
+      if (type === 'error') image.dispatchEvent(new Event(type));
       await fixture.whenStable();
     };
 

@@ -1,12 +1,25 @@
-import { Component, Directive, ViewEncapsulation, computed, effect, input, linkedSignal, signal } from '@angular/core';
+import {
+  Component,
+  Directive,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ProvideColorDirective, defineRootProvider, injectSemanticColorTheme, toInjectFn } from '@ethlete/core';
 import { CANVAS_LABELS } from '../../../i18n/canvas-labels';
-import { map, switchMap, tap, timer } from 'rxjs';
+import { Subject, filter, map, switchMap, tap, timer } from 'rxjs';
 
 export type ShotState = 'loading' | 'slow' | 'loaded' | 'failed';
 
 export const SLOW_SHOT_MS = 2000;
+
+export const SHOT_RETRY_MS = 1000;
 
 export const FAILED_SHOT_SIZE = { width: 320, height: 160 };
 
@@ -21,13 +34,19 @@ export const injectFailedShots = /* @__PURE__ */ toInjectFn(FAILED_SHOTS_DEF);
     '[src]': 'src()',
     '[attr.data-shot-state]': 'state()',
     '(load)': 'settled.set("loaded")',
-    '(error)': 'settled.set("failed")',
+    '(error)': 'retryOrFail()',
   },
 })
 export class ShotStateDirective {
+  private image = inject<ElementRef<HTMLImageElement>>(ElementRef);
+
   public src = input.required<string>();
 
   protected settled = linkedSignal<string, 'loaded' | 'failed' | null>({ source: this.src, computation: () => null });
+
+  private retried = linkedSignal<string, boolean>({ source: this.src, computation: () => false });
+
+  private retries$ = new Subject<string>();
 
   private slowSrc = signal<string | null>(null);
 
@@ -43,6 +62,15 @@ export class ShotStateDirective {
       onCleanup(() => failedShots.count.update((count) => count - 1));
     });
 
+    this.retries$
+      .pipe(
+        switchMap((src) => timer(SHOT_RETRY_MS).pipe(map(() => src))),
+        filter((src) => src === this.src()),
+        tap(() => (this.image.nativeElement.src = this.src())),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     toObservable(this.src)
       .pipe(
         switchMap((src) => timer(SLOW_SHOT_MS).pipe(map(() => src))),
@@ -50,6 +78,17 @@ export class ShotStateDirective {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  protected retryOrFail() {
+    if (this.retried()) {
+      this.settled.set('failed');
+
+      return;
+    }
+
+    this.retried.set(true);
+    this.retries$.next(this.src());
   }
 }
 

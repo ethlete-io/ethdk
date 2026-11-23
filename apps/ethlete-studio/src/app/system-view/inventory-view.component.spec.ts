@@ -131,6 +131,7 @@ describe('InventoryViewComponent', () => {
     const { fixture, element } = await render(inventoryOf([control(1, 'save', 'declared')]));
 
     element.querySelector('img')?.dispatchEvent(new Event('error'));
+    element.querySelector('img')?.dispatchEvent(new Event('error'));
     await settle(fixture);
 
     expect(element.querySelector('figure [data-shot-failed]')?.textContent).toContain('Zeichnen fehlgeschlagen');

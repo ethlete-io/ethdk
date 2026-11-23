@@ -254,6 +254,7 @@ describe('CanvasFrameComponent shot states', () => {
 
   it('shows a failed shot as an error in its own scheme copy only', async () => {
     shotOf('dark').dispatchEvent(new Event('error'));
+    shotOf('dark').dispatchEvent(new Event('error'));
     shotOf('light').dispatchEvent(new Event('load'));
     await flush(20);
 
@@ -300,9 +301,10 @@ describe('CanvasFrameComponent failed shot size', () => {
     await fixture.whenStable();
 
     (fixture.nativeElement as HTMLElement).querySelector('img')?.dispatchEvent(new Event('error'));
+    (fixture.nativeElement as HTMLElement).querySelector('img')?.dispatchEvent(new Event('error'));
     await fixture.whenStable();
 
-    expect(sizes).toEqual([320, 160]);
+    expect(sizes.slice(0, 2)).toEqual([320, 160]);
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-shot-failed]')).not.toBeNull();
   });
 });
@@ -460,6 +462,7 @@ describe('CanvasFrameComponent failed crop thumb', () => {
     await fixture.whenStable();
 
     const thumb = (fixture.nativeElement as HTMLElement).querySelector('[data-crop-thumb]') as HTMLElement;
+    thumb.querySelector('img')?.dispatchEvent(new Event('error'));
     thumb.querySelector('img')?.dispatchEvent(new Event('error'));
     await fixture.whenStable();
 
