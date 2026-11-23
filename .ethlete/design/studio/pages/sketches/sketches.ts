@@ -809,8 +809,6 @@ export default definePart<Props>({
     'agent-round': { camera: 'fit', part: 'narrow', agent: 'round' },
     'agent-variant': { camera: 'fit', part: 'narrow', agent: 'variant' },
     'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed' },
-    folded: { camera: 'fit', part: 'narrow', question: QUESTION },
-    'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
     picked: { camera: 'fit', part: 'narrow', status: 'picked', selected: 'b' },
     'sketch-only-points': { camera: 'fit', part: 'narrow', fresh: true, status: 'picked', selected: 'b', points: true },
     'sketch-only-points-open': {
@@ -898,10 +896,6 @@ export default definePart<Props>({
     'agent-variant':
       'An agent drawing one variant; check the agent line with its task beside the picker and the zeichnet badge.',
     'agent-failed': 'A failed agent run; check that the dot stops pulsing and the task turns to the error colour.',
-    folded:
-      'A sketch round with an open question; check the question line above the canvas and that the grid moves down below it.',
-    'question-only':
-      'A round that only asks a question; check Wo soll der Reset-Knopf der Zoom-Pille stehen? above the canvas, not over the cells.',
     picked: 'Variant b picked; check Variante gewählt in the header and the picked mark on row b.',
     'sketch-only-points':
       'A picked new part with open points; check the open-points chip beside Übernehmen in the head of b.',
@@ -956,7 +950,7 @@ export default definePart<Props>({
     },
     {
       label: 'Agent und Runden',
-      states: ['agent-round', 'agent-variant', 'folded', 'question-only', 'change-crop', 'change-crop-whole'],
+      states: ['agent-round', 'agent-variant', 'change-crop', 'change-crop-whole'],
     },
     {
       label: 'Vergleich',
@@ -1113,16 +1107,14 @@ export default definePart<Props>({
       withdrawn: hiddenCount > 0 ? { count: hiddenCount, shown: withdrawn === 'shown' } : undefined,
     });
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
-    const parts = { body: '', styles: '', lift: 0 };
-    const lifted = (top: number) => (parts.lift ? `style="top: calc(var(--spacing) * ${top + parts.lift})"` : '');
+    const parts = { body: '', styles: '' };
     const content = html`<div
       class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
       data-sketches-page
     >
       ${head.body} ${parts.body}
       <div
-        class="absolute ${question ? 'top-37' : 'top-27'} right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
-        ${lifted(question ? 37 : 27)}
+        class="relative -mr-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip border-t border-et-surface-border pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
       >
         ${canvasViewport({
           class: 'size-full',

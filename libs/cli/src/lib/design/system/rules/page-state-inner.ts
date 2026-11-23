@@ -146,6 +146,33 @@ const repeatsProps = (state: unknown, base: unknown) =>
   isRecord(base) &&
   Object.entries(base).every(([name, value]) => name in state && sameValue(state[name], value));
 
+/**
+ * Whether one prop that `state` changes against `base` leaves the drawn markup of `base` as it is: its effect lives
+ * outside the markup (for example in a setup), so markup alone cannot show the state stays inside one part.
+ */
+const changesUnseenProp = async (options: {
+  render: (props: unknown) => unknown;
+  props: Record<string, unknown>;
+  baseProps: Record<string, unknown>;
+  baseBody: string;
+}) => {
+  const { render, props, baseProps, baseBody } = options;
+  const names = new Set([...Object.keys(props), ...Object.keys(baseProps)]);
+
+  for (const name of names) {
+    if (sameValue(props[name], baseProps[name])) continue;
+
+    const changed = { ...baseProps };
+
+    if (name in props) changed[name] = props[name];
+    else delete changed[name];
+
+    if ((await bodyOf(render, changed)) === baseBody) return true;
+  }
+
+  return false;
+};
+
 export type InnerOnlyState = { state: string; base: string; part: string };
 
 /**
@@ -165,10 +192,12 @@ export const innerOnlyStatesOf = async (options: { own: string; definition: unkn
 
   const [first] = states;
 
-  return states.slice(1).flatMap(([state, props]): InnerOnlyState[] => {
+  const found: InnerOnlyState[] = [];
+
+  for (const [state, props] of states.slice(1)) {
     const body = bodies.get(state);
 
-    if (!body) return [];
+    if (!body) continue;
 
     for (const [base, baseProps] of states) {
       const baseBody = bodies.get(base);
@@ -178,11 +207,16 @@ export const innerOnlyStatesOf = async (options: { own: string; definition: unkn
 
       const part = innerOnlyPartOf({ own, base: baseBody, state: body });
 
-      if (part) return [{ state, base, part }];
-    }
+      if (!part) continue;
+      if (isRecord(props) && isRecord(baseProps) && (await changesUnseenProp({ render, props, baseProps, baseBody })))
+        continue;
 
-    return [];
-  });
+      found.push({ state, base, part });
+      break;
+    }
+  }
+
+  return found;
 };
 
 /** A PAGE-STATE-INNER problem for each state of `parts` that changes only one inner part, by {@link innerOnlyStatesOf}. */

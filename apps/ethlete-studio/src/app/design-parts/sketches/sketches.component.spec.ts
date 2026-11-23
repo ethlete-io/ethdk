@@ -1672,19 +1672,19 @@ describe('SketchesComponent', () => {
     expect(fixture.componentInstance.transposed()).toBe(flips);
   });
 
-  it('draws the question line above the pickers and moves the pickers and rows down', async () => {
+  it('draws the question line above the pickers in the head, above the rows', async () => {
     const root: HTMLElement = (await render({ camera: '100', question: 'Wohin mit dem Knopf?' })).nativeElement;
     const question = root.querySelector('[data-sk-question]');
 
     expect(question?.tagName).toBe('P');
     expect(textOf(question)).toBe('Wohin mit dem Knopf?');
-    expect(question?.nextElementSibling?.classList.contains('top-19')).toBe(true);
-    expect(root.querySelector('[data-sk-rows]')?.parentElement?.classList.contains('top-37')).toBe(true);
+    expect(question?.nextElementSibling?.querySelector('et-select')).not.toBeNull();
+    expect(root.querySelector('[data-sk-head] + div [data-sk-rows]')).not.toBeNull();
 
     const plain: HTMLElement = (await render({ camera: '100' })).nativeElement;
 
     expect(plain.querySelector('[data-sk-question]')).toBeNull();
-    expect(plain.querySelector('[data-sk-rows]')?.parentElement?.classList.contains('top-27')).toBe(true);
+    expect(plain.querySelector('[data-sk-head] + div [data-sk-rows]')).not.toBeNull();
   });
 
   it('shows a running agent with its model, task and step and marks the sketch as drawing', async () => {

@@ -1,4 +1,4 @@
-<header class="absolute top-0 right-0 left-0 z-3 flex items-center gap-space-3">
+<header class="relative z-3 flex items-center gap-space-3">
   <span class="text-ui-lg font-ui-strong">{{ heading() }}</span>
   @if (fresh()) {
     <div class="flex flex-wrap items-center">
@@ -105,15 +105,11 @@
   }
 </header>
 @if (question(); as question) {
-  <p class="absolute top-9 right-0 left-0 z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface" data-sk-question>
+  <p class="relative z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface" data-sk-question>
     {{ question }}
   </p>
 }
-<div
-  [class.top-9]="!question()"
-  [class.top-19]="!!question()"
-  class="absolute right-0 left-0 z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
->
+<div class="relative z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto">
   <et-form-field size="sm" variant="ghost">
     <et-select
       [value]="round()"

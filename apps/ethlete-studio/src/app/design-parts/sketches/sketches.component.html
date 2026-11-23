@@ -74,9 +74,7 @@
       (discard)="askDiscard()"
     />
     <div
-      [class.top-27]="!question()"
-      [class.top-37]="!!question()"
-      class="absolute right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+      class="relative -mr-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip border-t border-et-surface-border pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
     >
       <ethlete-canvas-viewport
         #list

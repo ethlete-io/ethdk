@@ -42,9 +42,7 @@ export type SketchMergeHold = { reason: string; dirty?: string[] };
     SketchStatusBadgeComponent,
   ],
   host: {
-    class: 'relative block',
-    '[class.h-22]': '!question()',
-    '[class.h-32]': '!!question()',
+    class: 'relative flex flex-col gap-space-2',
     'data-sk-head': '',
   },
 })

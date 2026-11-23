@@ -1742,6 +1742,121 @@ const CASES = [
     },
   },
   {
+    name: 'no sketch frame lies under the sketch head, also after a pan',
+    pages: ['Sketches'],
+    engines: ['chromium', 'webkit'],
+    run: async (page, state) => {
+      const { view } = state;
+      const overlaps = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME }) => {
+            const sketches = document.querySelector('ethlete-sketches [data-sketches-page]');
+            const headBox = sketches?.querySelector('[data-sk-head]')?.getBoundingClientRect();
+
+            if (!headBox?.height) return { error: 'no sketch head' };
+            const canvas = [...(sketches?.querySelectorAll(CANVAS) ?? [])].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const clips = (frame) => {
+              const found = [];
+
+              for (let at = frame.parentElement; at && at !== sketches; at = at.parentElement) {
+                const style = getComputedStyle(at);
+
+                if (style.overflow === 'visible') continue;
+                const box = at.getBoundingClientRect();
+                const edge = (side) => Number.parseFloat(style[`border${side}Width`]) || 0;
+                found.push({
+                  left: box.left + edge('Left'),
+                  top: box.top + edge('Top'),
+                  right: box.right - edge('Right'),
+                  bottom: box.bottom - edge('Bottom'),
+                });
+              }
+
+              return found;
+            };
+            const drawnEdgeAt = (frame, y) => {
+              for (let at = frame.parentElement; at && at !== sketches; at = at.parentElement) {
+                const width = Number.parseFloat(getComputedStyle(at).borderTopWidth) || 0;
+
+                if (width > 0 && Math.abs(at.getBoundingClientRect().top + width - y) <= 1) return true;
+              }
+
+              return false;
+            };
+            const frames = [...(canvas?.querySelectorAll(FRAME) ?? [])].map((frame) => {
+              const box = frame.getBoundingClientRect();
+              const shown = clips(frame).reduce(
+                (shown, clip) => ({
+                  left: Math.max(shown.left, clip.left),
+                  top: Math.max(shown.top, clip.top),
+                  right: Math.min(shown.right, clip.right),
+                  bottom: Math.min(shown.bottom, clip.bottom),
+                }),
+                { left: box.left, top: box.top, right: box.right, bottom: box.bottom },
+              );
+              const visible = shown.right - shown.left > 0.5 && shown.bottom - shown.top > 0.5;
+              const cut = visible && shown.top - box.top > 0.5;
+
+              return { shown, visible, cut, edge: cut && drawnEdgeAt(frame, shown.top) };
+            });
+            const under = frames.filter(
+              ({ shown, visible }) =>
+                visible &&
+                Math.min(shown.right, headBox.right) - Math.max(shown.left, headBox.left) > 0.5 &&
+                Math.min(shown.bottom, headBox.bottom) - Math.max(shown.top, headBox.top) > 0.5,
+            );
+
+            return {
+              frames: frames.length,
+              head: Math.round(headBox.bottom),
+              under: under.map(({ shown }) => `frame shown from y ${Math.round(shown.top)}`),
+              cuts: frames.filter(({ cut }) => cut).length,
+              unmarked: frames
+                .filter(({ cut, edge }) => cut && !edge)
+                .map(({ shown }) => `cut at y ${Math.round(shown.top)} with no drawn edge`),
+            };
+          },
+          { CANVAS, FRAME },
+        );
+
+      await settled(page, FRAME);
+      const faults = [];
+      const check = async (when) => {
+        const read = await overlaps();
+
+        if (read.error) faults.push(`${when}: ${read.error}`);
+        else if (!read.frames) faults.push(`${when}: no frames`);
+        else if (read.under.length)
+          faults.push(`${when}: ${read.under.length} frame(s) under the head (bottom ${read.head}), ${read.under[0]}`);
+        else if (read.unmarked.length)
+          faults.push(`${when}: a frame looks hidden under the head (bottom ${read.head}), ${read.unmarked[0]}`);
+        cuts += read.cuts ?? 0;
+
+        return read;
+      };
+      let cuts = 0;
+
+      const first = await check('at rest');
+      await page.mouse.move((view.left + view.right) / 2, (view.top + view.bottom) / 2);
+      for (const delta of [120, 120, 240, -360]) {
+        await page.mouse.wheel(0, delta);
+        await settle(page);
+        await check(`after a wheel pan of ${delta}`);
+      }
+
+      if (!cuts) faults.push('no pan cut a frame at the canvas edge');
+
+      return {
+        ok: faults.length === 0,
+        detail:
+          faults.slice(0, 4).join('; ') ||
+          `${first.frames} frames, head bottom ${first.head}, ${cuts} cut(s) in 4 pans`,
+      };
+    },
+  },
+  {
     name: 'no state is marked before the compare answers',
     pages: ['Sketches'],
     labels: ['Chip'],

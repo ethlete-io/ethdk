@@ -60,13 +60,13 @@ describe('SketchHeadComponent', () => {
     expect(root.querySelector('header')?.textContent).toContain('pages/home');
     expect(line.textContent?.trim()).toBe(host.question());
     expect(line.classList).toContain('truncate');
-    expect(root.querySelector('ethlete-sketch-head')?.classList).toContain('h-32');
+    expect(line.nextElementSibling?.querySelector('et-select')).not.toBeNull();
 
     host.question.set('');
     await fixture.whenStable();
 
     expect(root.querySelector('[data-sk-question]')).toBeNull();
-    expect(root.querySelector('ethlete-sketch-head')?.classList).toContain('h-22');
+    expect(root.querySelector('header')?.nextElementSibling?.querySelector('et-select')).not.toBeNull();
   });
 
   it('emits discard and retry, and toggles the withdrawn rows', async () => {

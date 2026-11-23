@@ -165,8 +165,8 @@ export const sketchHead = async ({
         checked: withdrawn.shown,
       })) as { body: string; styles: string })
     : undefined;
-  const body = html`<div class="relative ${question ? 'h-32' : 'h-22'}" data-sk-head>
-    <header class="absolute top-0 right-0 left-0 z-3 flex items-center gap-space-3">
+  const body = html`<div class="relative flex flex-col gap-space-2" data-sk-head>
+    <header class="relative z-3 flex items-center gap-space-3">
       <span class="text-ui-lg font-ui-strong">${title}</span>
       ${freshTag?.body ?? ''} ${state.body}
       ${
@@ -202,15 +202,12 @@ export const sketchHead = async ({
     </header>
     ${
       question
-        ? html`<p
-            class="absolute top-9 right-0 left-0 z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface"
-            data-sk-question
-          >
+        ? html`<p class="relative z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface" data-sk-question>
             ${question}
           </p>`
         : ''
     }
-    <div class="zr-picker absolute ${question ? 'top-19' : 'top-9'} left-0 z-2 flex items-center gap-space-4">
+    <div class="zr-picker relative z-2 flex items-center gap-space-4">
       ${withAction(picker.body, { action: 'emit:roundChange', on: '.et-select-trigger' })}
       ${agent ? agentLine(agent) : ''} ${port ? portLine(port) : ''}
       ${toggle ? withAction(control(toggle.body, 'withdrawn'), { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}

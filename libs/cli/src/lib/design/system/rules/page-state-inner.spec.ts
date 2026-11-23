@@ -79,6 +79,17 @@ describe('innerOnlyStatesOf', () => {
     ]);
   });
 
+  it('allows a state that also changes a prop the markup does not show', async () => {
+    const withCamera = {
+      states: { ...definition.states, 'paused-open-far': { status: 'paused', open: true, camera: 0.1 } },
+      render: definition.render,
+    };
+
+    expect(await innerOnlyStatesOf({ own: OWN, definition: withCamera })).toEqual([
+      { state: 'paused-open', base: 'paused', part: 'components/hold' },
+    ]);
+  });
+
   it('places each hit at its state', async () => {
     const problems = await pageStateInnerOf({
       load: async () => ({ default: definition }),
