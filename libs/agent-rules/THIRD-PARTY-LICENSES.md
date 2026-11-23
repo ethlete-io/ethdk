@@ -6,11 +6,11 @@ To update one, copy it again from upstream and record the new commit here.
 ## [mattpocock/skills](https://github.com/mattpocock/skills)
 
 Commit `3cca18b` (2026-09-04). Vendored skills, kept as written upstream apart from the
-generator's own link syntax:
+generator's own link syntax and the local changes named below:
 
-- `content/skills/grill-with-docs` - the entry point; calls the other two.
+- `content/skills/grill-with-docs` - the entry point; calls the other two. Its description names tests, not ADRs.
 - `content/skills/grilling` - plus our own section "Local addition" after the upstream footer.
-- `content/skills/domain-modeling`
+- `content/skills/domain-modeling` - our change: a decision becomes a test or a tool, never an ADR; `ADR-FORMAT.md` is gone.
 
 MIT License
 

@@ -13,8 +13,8 @@ yarn agents:sync                                       # then regenerate
 ```
 
 A few content files are vendored from another repository. Keep them as written upstream,
-apart from the generator's link syntax - `libs/agent-rules/THIRD-PARTY-LICENSES.md` names
-each one, its upstream commit and its license.
+apart from the generator's link syntax and the local changes `libs/agent-rules/THIRD-PARTY-LICENSES.md`
+names, with each file's upstream commit and its license.
 
 `content/output-styles/` is the exception: a Claude Code output style is a machine-level
 file, so `sync` never emits it and `agents:check` never diffs it. It is installed on
