@@ -179,6 +179,7 @@ const PAGES = [
     view: { systemProduct: 'studio', systemEntry: 'pages/system' },
     shows: 'ethlete-system-view ethlete-open-points-chip',
     hides: 'ethlete-sketch-view',
+    fullSize: true,
   },
   {
     name: 'Edited',
@@ -365,6 +366,14 @@ const markPartLeaves = (page) =>
   }, NOT_PART_GROUPS);
 
 const settle = (page) => page.waitForTimeout(SETTLE_MS);
+
+const toFullSize = async (page) => {
+  await page
+    .locator('ethlete-system-view ethlete-design-canvas ethlete-zoom-chip [data-camera-reset] button')
+    .first()
+    .click();
+  await settle(page);
+};
 
 const underPanel = (page) =>
   page.evaluate(
@@ -1000,6 +1009,7 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
   }
 
   await page.waitForTimeout(3000);
+  await toFullSize(page);
 
   const shown = await page.evaluate((part) => {
     const frames = [...document.querySelectorAll('iframe')].map((frame) => new URL(frame.src, location.href));
@@ -5393,6 +5403,7 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
   await page.setViewportSize(testCase.viewport ?? NARROW);
   await waitForFirstFrame(page, studioUrl, designPort, target.frame ?? FRAME);
   await settled(page, target.frame ?? FRAME);
+  if (target.fullSize) await toFullSize(page);
 
   const shown = await page.evaluate(
     ({ shows, hides }) => !!document.querySelector(shows) && !(hides && document.querySelector(hides)),
