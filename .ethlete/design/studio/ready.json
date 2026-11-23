@@ -579,19 +579,6 @@
     "cmd": "ready",
     "pid": 1765284
   },
-  "components/sketch-question": {
-    "hash": "d0f087f184b46b69",
-    "files": {
-      ".ethlete/design/studio/components/sketch-question/sketch-question.ts": "e8e64652ef545b50"
-    },
-    "app": "d91e1fc66985e515",
-    "actions": [],
-    "builder": "designer",
-    "at": "2026-11-21T05:35:33.029Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 2152842
-  },
   "components/sketch-status-badge": {
     "hash": "79c1863cee8b019a",
     "files": {

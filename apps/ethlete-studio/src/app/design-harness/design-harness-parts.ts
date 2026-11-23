@@ -34,8 +34,8 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     ),
   'components/shortcuts-dialog': () =>
     import('../design-parts/shortcuts-dialog/shortcuts-dialog.component').then((m) => m.ShortcutsDialogComponent),
-  'components/sketch-question': () =>
-    import('../design-parts/sketch-question/sketch-question.component').then((m) => m.SketchQuestionComponent),
+  'components/sketch-head': () =>
+    import('../design-parts/sketch-head/sketch-head.component').then((m) => m.SketchHeadComponent),
   'components/sketch-status-badge': () =>
     import('../design-parts/sketch-status-badge/sketch-status-badge.component').then(
       (m) => m.SketchStatusBadgeComponent,

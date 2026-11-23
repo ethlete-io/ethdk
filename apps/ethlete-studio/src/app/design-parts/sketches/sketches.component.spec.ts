@@ -1676,9 +1676,9 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = (await render({ camera: '100', question: 'Wohin mit dem Knopf?' })).nativeElement;
     const question = root.querySelector('[data-sk-question]');
 
-    expect(question?.tagName).toBe('ETHLETE-SKETCH-QUESTION');
+    expect(question?.tagName).toBe('P');
     expect(textOf(question)).toBe('Wohin mit dem Knopf?');
-    expect(question?.nextElementSibling?.classList.contains('top-24')).toBe(true);
+    expect(question?.nextElementSibling?.classList.contains('top-19')).toBe(true);
     expect(root.querySelector('[data-sk-rows]')?.parentElement?.classList.contains('top-37')).toBe(true);
 
     const plain: HTMLElement = (await render({ camera: '100' })).nativeElement;

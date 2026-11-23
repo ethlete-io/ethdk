@@ -13,34 +13,19 @@ import {
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import { icon } from '@system/foundations/icons';
-import select from '@system/components/select';
-import switchPart from '@system/components/switch';
-import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
-import { holdTrigger, holdTriggerStyles } from '@system/components/hold-trigger';
-import { type SketchBadgeStatus as BadgeStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
+import { type MergePort, type SketchHeadStatus, sketchHead } from '@system/components/sketch-head';
 import { variantCell, variantCellStyles } from '@system/elements/variant-cell';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
-import { sketchQuestion } from '@system/components/sketch-question';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
-import below from './below.css?inline';
-import {
-  AGENT_RUNS,
-  type AgentProgress,
-  type AgentRun,
-  HOLD,
-  IDLE,
-  drawingPlaceholder,
-  modelName,
-  toggleHold,
-} from './shared/sketch-status';
+import { AGENT_RUNS, type AgentRun, drawingPlaceholder } from './shared/sketch-status';
 import {
   PARTS,
   type PartKind,
@@ -87,9 +72,7 @@ import {
 import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 import { BUILD_READY_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
-type MergePort = 'one' | 'two';
-
-type SketchStatus = Exclude<BadgeStatus, 'idle'>;
+type SketchStatus = SketchHeadStatus;
 
 type ScreenMode = 'crop' | 'whole';
 
@@ -156,8 +139,6 @@ const LIST_HEIGHT = 720;
 const LIST_VIEWPORT = { width: LIST_WIDTH, height: LIST_HEIGHT };
 
 const LIST_ERROR = 'missing build: pages/sketches';
-const NOT_READY_REASON = 'components/title-bar b: SHOT-NOT-VIEWED default draws a pixel diff nobody viewed';
-const NOT_READY_UNKNOWN = SKETCHES_LABELS.notReadyUnknown;
 const FAILED_REASON = 'b · default: boom is not defined';
 const ADDED_SKIPS: AddedSkips = {
   a: [{ part: 'components/zoom-chip', classes: 'WRAP' }],
@@ -312,81 +293,18 @@ const treeOf = (key: string, multi: MultiTargets | undefined, status: SketchStat
 
 const pagePin = commentPinMark(pinProps(PAGE_PIN));
 
-const pickerOf = async (label: string) => {
-  const picker = await select.render({
-    label: '',
-    size: 'sm',
-    variant: 'ghost',
-    clearable: false,
-    value: 'round-1',
-    options: [{ value: 'round-1', label }],
-  });
-  return {
-    ...picker,
-    body: withAction(picker.body, { action: 'emit:roundChange', on: '.et-select-trigger' }),
-  };
+const ROUNDS: Record<PartKind | 'screen', string> = {
+  wide: 'Runde 1 · Suche und Update',
+  narrow: 'Runde 1 · Reset control: SDK button or own part',
+  neighbours: 'Runde 3 · Nachbarschaft einer Änderung',
+  edit: BUILD_READY_LABELS.groups['direct-edit'],
+  many: 'Runde 1 · Viele Zustände',
+  screen: 'Runde 2 · Port nach dem Merge',
 };
 
-const tag = async (label: string) =>
-  (await badge.render({ badges: [{ label, variant: 'tonal', size: 'sm' }] })) as { body: string; styles: string };
 const controlsOf = async () => ({
-  discard: await button.render({
-    label: SKETCHES_LABELS.discard,
-    variant: 'transparent',
-    size: 'sm',
-    color: 'danger',
-  }),
   chip: await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' }),
-  pickers: {
-    wide: await pickerOf('Runde 1 · Suche und Update'),
-    narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
-    neighbours: await pickerOf('Runde 3 · Nachbarschaft einer Änderung'),
-    edit: await pickerOf(BUILD_READY_LABELS.groups['direct-edit']),
-    many: await pickerOf('Runde 1 · Viele Zustände'),
-    screen: await pickerOf('Runde 2 · Port nach dem Merge'),
-  },
-  tags: {
-    drawing: await sketchStatusBadge('drawing'),
-    waiting: await sketchStatusBadge('waiting'),
-    picked: await sketchStatusBadge('picked'),
-    paused: await sketchStatusBadge('paused'),
-    'not-ready': await sketchStatusBadge('not-ready'),
-    failed: await sketchStatusBadge('failed'),
-    fresh: await tag('neu'),
-  },
 });
-
-type Tags = Awaited<ReturnType<typeof controlsOf>>['tags'];
-
-const statusMarkup = (status: SketchStatus, tags: Tags, readyReason?: string) => {
-  if (status === 'paused') {
-    return holdTrigger({
-      content: tags.paused.body,
-      open: false,
-      reason: html`<span class="font-ui-medium text-et-surface">Wartet auf ${HOLD.until}</span>
-        <span>·</span>${modelName(HOLD.by)}<span>· ${HOLD.since}</span>`,
-    });
-  }
-  if (status === 'failed') {
-    return html`<span class="flex min-w-0 items-center gap-space-2"
-      >${tags.failed.body}
-      ${
-        readyReason
-          ? html`<span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-failed
-              >${readyReason}</span
-            >`
-          : ''
-      }</span
-    >`;
-  }
-  const after =
-    status === 'not-ready'
-      ? html`<span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-not-ready
-          >${readyReason ?? NOT_READY_UNKNOWN} · ${IDLE.last} · ${IDLE.since}</span
-        >`
-      : '';
-  return html`<span class="flex items-center gap-space-2">${tags[status].body} ${after}</span>`;
-};
 
 const drawingMark = html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
   ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
@@ -401,42 +319,6 @@ const drawingStage = (row: Row, place = '') =>
   >
     ${row.model ? drawingPlaceholder({ name: row.model.short, agent: row.model.agent }) : ''}
   </div>`;
-
-const agentLine = (run: AgentProgress) =>
-  html`<span
-    class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
-    data-sk-agent
-    ${run.failed ? 'data-et-semantic-color="error"' : ''}
-  >
-    <span
-      class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid) ${run.failed ? '' : 'animate-pulse'}"
-    ></span>
-    ${modelName(run.by)}
-    <span class="font-ui-medium ${run.failed ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'}"
-      >${run.task}</span
-    >
-    <span>· ${run.step} · ${run.since}</span>
-  </span>`;
-
-const MERGE_PORTS: Record<MergePort, { merged: string[]; since: string }> = {
-  one: { merged: ['components/button'], since: 'seit 1 Min' },
-  two: { merged: ['components/sketch-status-badge', 'elements/variant-cell'], since: 'seit 1 Min' },
-};
-
-const portLine = (port: MergePort) =>
-  html`<span
-    class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
-    data-sk-merge-port
-  >
-    <span
-      class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
-      data-et-semantic-color="warning"
-    ></span>
-    <span class="truncate font-ui-medium text-et-surface"
-      >Agent portiert nach Merge von ${MERGE_PORTS[port].merged.join(', ')}</span
-    >
-    <span>· ${MERGE_PORTS[port].since}</span>
-  </span>`;
 
 const pointsChip = async (open: boolean) => {
   const drawn = await button.render({
@@ -823,8 +705,6 @@ const screenWorld = async (view: View, mode: ScreenMode) => {
   </div>`;
 };
 
-const screenControl = async () => ({ body: '', styles: '' });
-
 const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom);
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
@@ -897,8 +777,6 @@ export default definePart<Props>({
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
     drawing: { camera: 'fit', status: 'drawing' },
     paused: { camera: 'fit', status: 'paused' },
-    'not-ready': { camera: 'fit', status: 'not-ready', readyReason: NOT_READY_REASON },
-    'not-ready-unknown': { camera: 'fit', status: 'not-ready' },
     failed: { camera: 'fit', status: 'failed', errored: ['b'], readyReason: FAILED_REASON },
     'added-skips': { camera: 'fit', part: 'narrow', skips: ADDED_SKIPS },
     'picked-errored': { camera: 'fit', part: 'narrow', status: 'picked', selected: 'b', errored: ['a'] },
@@ -933,8 +811,6 @@ export default definePart<Props>({
     'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed' },
     folded: { camera: 'fit', part: 'narrow', question: QUESTION },
     'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
-    'port-after-merge': { camera: 'fit', part: 'narrow', port: 'one' },
-    'port-after-merge-long': { camera: 'fit', part: 'narrow', port: 'two' },
     picked: { camera: 'fit', part: 'narrow', status: 'picked', selected: 'b' },
     'sketch-only-points': { camera: 'fit', part: 'narrow', fresh: true, status: 'picked', selected: 'b', points: true },
     'sketch-only-points-open': {
@@ -967,10 +843,6 @@ export default definePart<Props>({
       'The sketch zoomed to 60 % and panned with variant a selected; check that the row heads stay pinned at the left edge, opaque over the cells.',
     drawing: 'A variant still drawing; check the zeichnet badge in the header and that Übernehmen is missing.',
     paused: 'A paused sketch; check the Pausiert badge in the header.',
-    'not-ready':
-      'A sketch that failed sketch ready; check Noch nicht bereit with the first line of its rejection and that Übernehmen is missing.',
-    'not-ready-unknown':
-      'A sketch never run through sketch ready; check Noch nicht bereit with the hint to run sketch ready.',
     failed:
       'Variant b failed to render; check Render fehlgeschlagen in the error colour with b · default: and the error, and no Übernehmen in any row.',
     'added-skips':
@@ -1030,10 +902,6 @@ export default definePart<Props>({
       'A sketch round with an open question; check the question line above the canvas and that the grid moves down below it.',
     'question-only':
       'A round that only asks a question; check Wo soll der Reset-Knopf der Zoom-Pille stehen? above the canvas, not over the cells.',
-    'port-after-merge':
-      'The agent porting after one merge; check Agent portiert nach Merge von with the merged part beside the picker.',
-    'port-after-merge-long':
-      'The agent porting after two merges; check that the longer port line stays on one line and does not hit the picker.',
     picked: 'Variant b picked; check Variante gewählt in the header and the picked mark on row b.',
     'sketch-only-points':
       'A picked new part with open points; check the open-points chip beside Übernehmen in the head of b.',
@@ -1079,8 +947,6 @@ export default definePart<Props>({
       states: [
         'drawing',
         'paused',
-        'not-ready',
-        'not-ready-unknown',
         'picked',
         'auto-merge',
         'added-skips',
@@ -1090,16 +956,7 @@ export default definePart<Props>({
     },
     {
       label: 'Agent und Runden',
-      states: [
-        'agent-round',
-        'agent-variant',
-        'port-after-merge',
-        'port-after-merge-long',
-        'folded',
-        'question-only',
-        'change-crop',
-        'change-crop-whole',
-      ],
+      states: ['agent-round', 'agent-variant', 'folded', 'question-only', 'change-crop', 'change-crop-whole'],
     },
     {
       label: 'Vergleich',
@@ -1175,12 +1032,7 @@ export default definePart<Props>({
       });
       return drawing({ body: shell.body, setup: [menu.setup], styles: shell.styles + menu.styles });
     }
-    const { discard, chip, pickers, tags } = await controlsOf();
-    const autoMark = autoMerge
-      ? html`<span class="flex w-fit" data-et-semantic-color="success" data-sk-auto-merge
-          >${(await badge.render({ badges: [{ label: SKETCHES_LABELS.autoMerge, variant: 'tonal', size: 'sm' }] })).body}</span
-        >`
-      : '';
+    const { chip } = await controlsOf();
     const reload = await button.render({
       label: SKETCHES_LABELS.reload,
       variant: 'outline',
@@ -1236,14 +1088,6 @@ export default definePart<Props>({
         ? html`<span class="flex" data-sk-points>${pointsButton.body}</span>${popover?.body ?? ''}`
         : '',
     };
-    const showWithdrawn =
-      hiddenCount > 0
-        ? ((await switchPart.render({
-            label: `Zurückgezogene (${hiddenCount})`,
-            size: 'sm',
-            checked: withdrawn === 'shown',
-          })) as { body: string; styles: string })
-        : { body: '', styles: '' };
     const transposed = isTransposed(part, LIST_WIDTH);
     const columns = transposed && sameOpen ? rows.length : shown.length;
     const world = screen
@@ -1252,7 +1096,22 @@ export default definePart<Props>({
         ? matrix(part, shown, same, view, sameOpen)
         : shown.map((row) => gridRow(part, row, view)).join('') + sameRows(part, same, view, sameOpen);
     const folded = screen ? UNCHANGED_COUNT : hidden.length;
-    const control = screen ? await screenControl() : { body: '', styles: '' };
+    const head = await sketchHead({
+      title: multi ? MULTI_PART.title : screen ? SCREEN_KEY : part.key,
+      round: ROUNDS[screen ? 'screen' : kind],
+      status,
+      readyReason,
+      fresh,
+      autoMerge,
+      question,
+      discardable: kind !== 'edit' || !!screen,
+      retry: !!listError,
+      commentToggle: commentToggle?.body,
+      discardDialog: confirm === 'discard' ? dialog?.body : undefined,
+      agent: run,
+      port,
+      withdrawn: hiddenCount > 0 ? { count: hiddenCount, shown: withdrawn === 'shown' } : undefined,
+    });
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
     const parts = { body: '', styles: '', lift: 0 };
     const lifted = (top: number) => (parts.lift ? `style="top: calc(var(--spacing) * ${top + parts.lift})"` : '');
@@ -1260,44 +1119,7 @@ export default definePart<Props>({
       class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
       data-sketches-page
     >
-      <header
-        class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
-      >
-        <span class="text-ui-lg font-ui-strong">${multi ? MULTI_PART.title : screen ? SCREEN_KEY : part.key}</span>
-        ${fresh ? tags.fresh.body : ''}
-        ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, tags, readyReason)} ${autoMark}
-        <span class="flex-1"></span>
-        <span class="w-56 flex-none" data-sk-view-toggle-room></span>
-        ${
-          kind === 'edit' && !screen
-            ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
-                >${SKETCHES_LABELS.editHint}</span
-              >`
-            : (commentToggle?.body ?? '') +
-              retry +
-              html`<span class="relative flex" data-sk-discard
-                >${withAction(discard.body, 'emit:discard')}${confirm === 'discard' ? (dialog?.body ?? '') : ''}</span
-              >`
-        }
-      </header>
-      ${parts.body}
-      ${
-        question
-          ? sketchQuestion({
-              question,
-              class: 'absolute z-2 top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))]',
-              attrs: lifted(14),
-            })
-          : ''
-      }
-      <div
-        class="zr-picker absolute z-2 ${question ? 'top-24' : 'top-14'} left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
-        ${lifted(question ? 24 : 14)}
-      >
-        ${pickers[screen ? 'screen' : kind].body} ${run ? agentLine(run) : ''} ${port ? portLine(port) : ''}
-        ${control.body}
-        ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
-      </div>
+      ${head.body} ${parts.body}
       <div
         class="absolute ${question ? 'top-37' : 'top-27'} right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
         ${lifted(question ? 37 : 27)}
@@ -1347,17 +1169,14 @@ export default definePart<Props>({
         (root: HTMLElement) => {
           mountFit(root, zoomOf(camera), startOf(camera));
         },
-        toggleHold,
+        head.setup,
       ],
       styles:
         shell.styles +
         menu.styles +
         side.styles +
-        discard.styles +
         reload.styles +
-        pickers.wide.styles +
-        showWithdrawn.styles +
-        control.styles +
+        head.styles +
         (toggle as { styles: string }).styles +
         take.styles +
         (pointsButton?.styles ?? '') +
@@ -1368,15 +1187,10 @@ export default definePart<Props>({
         (commentToggle?.styles ?? '') +
         layers.map(([, layer]) => layer.styles).join('') +
         rowStyles +
-        Object.values(tags)
-          .map((entry) => entry.styles)
-          .join('') +
         variantCellStyles +
         canvasViewportStyles +
         kit +
-        styles +
-        holdTriggerStyles +
-        below,
+        styles,
     });
   },
 });

@@ -41,12 +41,7 @@ import {
 } from 'rxjs';
 import {
   anchoredDialogOverlayStrategy,
-  BADGE_IMPORTS,
   BUTTON_IMPORTS,
-  CHOICE_FIELD_IMPORTS,
-  FORM_FIELD_IMPORTS,
-  SELECT_IMPORTS,
-  SWITCH_IMPORTS,
   injectOverlayManager,
   TOOLTIP_IMPORTS,
 } from '@ethlete/components';
@@ -62,13 +57,11 @@ import { Camera } from '../../components/design-canvas/canvas-math';
 import { FrameZoom, frameZoomCamera } from '../../components/design-canvas/frame-zoom-camera';
 import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
-import { SketchQuestionComponent } from '../sketch-question/sketch-question.component';
+import { SketchHeadComponent, SketchMergeHold } from '../sketch-head/sketch-head.component';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
-import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
+import { SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
-import { HoldTriggerComponent } from '../hold-trigger/hold-trigger.component';
-import { SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
 import { VariantCellComponent } from '../variant-cell/variant-cell.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { CommentTargetComponent } from '../comment-target/comment-target.component';
@@ -115,8 +108,6 @@ import {
 } from './sketches-sample';
 
 const MOVE_REST_MS = 200;
-
-export type SketchMergeHold = { reason: string; dirty?: string[] };
 
 export type SketchAddedSkip = { part: string; classes: string };
 
@@ -221,20 +212,13 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
   templateUrl: './sketches.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    BADGE_IMPORTS,
     BUTTON_IMPORTS,
     ProvideColorDirective,
-    FORM_FIELD_IMPORTS,
-    SELECT_IMPORTS,
-    CHOICE_FIELD_IMPORTS,
-    SWITCH_IMPORTS,
     TOOLTIP_IMPORTS,
     NgTemplateOutlet,
     AgentLogoComponent,
-    HoldTriggerComponent,
-    SketchStatusBadgeComponent,
     CanvasViewportComponent,
-    SketchQuestionComponent,
+    SketchHeadComponent,
     CommentPinComponent,
     VariantCellComponent,
     CommentTargetComponent,
@@ -251,7 +235,6 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   protected warningTheme = injectSemanticColorTheme('warning');
-  protected successTheme = injectSemanticColorTheme('success');
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private injector = inject(Injector);
@@ -331,7 +314,7 @@ export class SketchesComponent {
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
   private cells = viewChildren(VariantCellComponent);
   private takes = viewChildren('take', { read: ElementRef<HTMLElement> });
-  private discardAnchor = viewChild('discardAnchor', { read: ElementRef<HTMLElement> });
+  private head = viewChild.required(SketchHeadComponent);
   private gutters = viewChildren('gutter', { read: ElementRef<HTMLElement> });
   private notes = viewChildren('note', { read: ElementRef<HTMLElement> });
   public viewport = computed(() => this.list().nativeElement as HTMLElement);
@@ -341,7 +324,6 @@ export class SketchesComponent {
   private listSize = signalElementDimensions(this.list);
 
   protected readonly LABELS = SKETCHES_LABELS;
-  protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
   protected readonly IS_WITHDRAWN = isWithdrawn;
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
@@ -897,10 +879,6 @@ export class SketchesComponent {
     return draft && draft.variant === row.key && draft.shot === state ? draft : null;
   }
 
-  protected toggleComments() {
-    this.commentMode.update((on) => !on);
-  }
-
   protected startComment(trigger: Event, row: SketchRow) {
     const event = trigger instanceof MouseEvent && trigger.type === 'click' ? trigger : null;
     const frames = row.shots.flatMap((candidate) => {
@@ -935,10 +913,6 @@ export class SketchesComponent {
     this.commentStart.emit({ variant: row.key, shot, point });
   }
 
-  protected selectRound(value: unknown) {
-    if (typeof value === 'string') this.roundChange.emit(value);
-  }
-
   protected fit() {
     this.canvas.fit();
     this.userCamera$.next(null);
@@ -966,7 +940,7 @@ export class SketchesComponent {
     const origin =
       kind === 'merge'
         ? this.takes().find((take) => take.nativeElement.getAttribute('data-sk-take') === key)?.nativeElement
-        : this.discardAnchor()?.nativeElement;
+        : this.head().discardAnchor()?.nativeElement;
 
     return origin && (kind === 'discard' || row) ? { origin, row } : null;
   }

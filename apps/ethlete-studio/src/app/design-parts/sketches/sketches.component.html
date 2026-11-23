@@ -47,187 +47,32 @@
     class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
     data-sketches-page
   >
-    <header
-      class="absolute top-space-5 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-3 flex items-center gap-space-3"
-    >
-      <span class="text-ui-lg font-ui-strong">{{ heading() ?? part() }}</span>
-      @if (fresh()) {
-        <div class="flex flex-wrap items-center">
-          <et-badge variant="tonal" size="sm">{{ LABELS.fresh }}</et-badge>
-        </div>
-      }
-      @switch (shownStatus()) {
-        @case ('paused') {
-          <span class="flex min-w-0 items-center gap-space-2">
-            <ethlete-hold-trigger
-              [content]="holdContent"
-              [reason]="holdReason"
-              [open]="reasonOpen()"
-              (openChange)="reasonOpen.set($event)"
-            />
-          </span>
-          <ng-template #holdContent><ethlete-sketch-status-badge [status]="shownStatus()" /></ng-template>
-          <ng-template #holdReason>
-            <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
-            <span>·</span>
-            <span class="inline-flex items-center gap-space-1"
-              ><svg [agent]="hold().by.agent" class="size-3 flex-none" ethlete-agent-logo></svg
-              >{{ hold().by.short }}</span
-            >
-            <span>· {{ hold().since }}</span>
-          </ng-template>
-        }
-        @case ('waiting') {
-          <span class="flex items-center gap-space-2">
-            <ethlete-sketch-status-badge [status]="shownStatus()" />
-            @if (heldMerge(); as held) {
-              <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-merge-hold>{{
-                LABELS.mergeHold(held)
-              }}</span>
-            }
-          </span>
-        }
-        @case ('picked') {
-          <span class="flex items-center gap-space-2">
-            <ethlete-sketch-status-badge [status]="shownStatus()" data-sk-picked />
-          </span>
-        }
-        @case ('failed') {
-          <span class="flex min-w-0 items-center gap-space-2">
-            <ethlete-sketch-status-badge [status]="shownStatus()" data-sk-render-error />
-            @if (readyReason(); as reason) {
-              <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-failed>{{ reason }}</span>
-            }
-          </span>
-        }
-        @case ('drawing') {
-          <span class="flex items-center gap-space-2">
-            <ethlete-sketch-status-badge [status]="shownStatus()" />
-          </span>
-        }
-        @case ('not-ready') {
-          <span class="flex items-center gap-space-2">
-            <ethlete-sketch-status-badge [status]="shownStatus()" />
-            <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-not-ready
-              >{{ readyReason() ?? LABELS.notReadyUnknown }}
-              @if (LABELS.lastChange(lastChange().by, lastChange().since); as lastChange) {
-                · {{ lastChange }}
-              }
-            </span>
-          </span>
-        }
-      }
-      @if (autoMerge()) {
-        <span [etProvideColor]="successTheme()" class="flex w-fit" data-sk-auto-merge>
-          <div class="flex flex-wrap items-center">
-            <et-badge variant="tonal" size="sm">{{ LABELS.autoMerge }}</et-badge>
-          </div>
-        </span>
-      }
-      <span class="flex-1"></span>
-      <span class="w-56 flex-none"></span>
-      @if (!errorInRow() && error(); as error) {
-        <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert">{{ error }}</p>
-      }
-      @if (comments() !== null && discardable()) {
-        <button
-          [pressed]="commentMode()"
-          (click)="toggleComments()"
-          et-button
-          type="button"
-          variant="outline"
-          size="sm"
-        >
-          {{ SYSTEM_LABELS.comment }}
-        </button>
-      }
-      @if (listError()) {
-        <button
-          (click)="retry.emit()"
-          et-button
-          type="button"
-          variant="outline"
-          color="surface"
-          size="sm"
-          data-sk-retry
-        >
-          {{ LABELS.reload }}
-        </button>
-      }
-      @if (discardable()) {
-        <span #discardAnchor class="relative flex" data-sk-discard>
-          <button [color]="errorTheme()" (click)="askDiscard()" et-button type="button" variant="transparent" size="sm">
-            {{ LABELS.discard }}
-          </button>
-        </span>
-      } @else {
-        <span class="text-ui-sm whitespace-nowrap text-et-surface-muted" data-sk-edit-hint>{{ LABELS.editHint }}</span>
-      }
-    </header>
-    @if (question(); as question) {
-      <ethlete-sketch-question
-        [question]="question"
-        class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2"
-      />
-    }
-    <div
-      [class.top-14]="!question()"
-      [class.top-24]="!!question()"
-      class="absolute right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
-    >
-      <et-form-field size="sm" variant="ghost">
-        <et-select
-          [value]="round()"
-          clearable="false"
-          [aria-label]="LABELS.roundSelect"
-          (valueChange)="selectRound($event)"
-        >
-          @for (option of rounds(); track option.value) {
-            <et-select-option [value]="option.value" [label]="option.label">{{ option.label }}</et-select-option>
-          }
-        </et-select>
-      </et-form-field>
-      @if (agent(); as run) {
-        <span
-          [etProvideColor]="run.failed ? errorTheme() : undefined"
-          class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
-          data-sk-agent
-        >
-          <span
-            [class.animate-pulse]="!run.failed"
-            class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
-          ></span>
-          <span class="inline-flex items-center gap-space-1"
-            ><svg [agent]="run.by.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ run.by.short }}</span
-          >
-          <span
-            [class]="run.failed ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'"
-            class="font-ui-medium"
-            >{{ run.task }}</span
-          >
-          <span>· {{ run.step }}{{ run.since ? ' · ' + run.since : '' }}</span>
-        </span>
-      }
-      @if (port(); as merge) {
-        <span
-          class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
-          data-sk-merge-port
-        >
-          <span
-            [etProvideColor]="warningTheme()"
-            class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
-          ></span>
-          <span class="truncate font-ui-medium text-et-surface">{{ LABELS.mergePort(merge.merged) }}</span>
-          <span>· {{ merge.since }}</span>
-        </span>
-      }
-      @if (withdrawnCount() > 0) {
-        <et-choice-field size="sm" color="brand" data-sk-withdrawn-toggle>
-          <et-switch [checked]="withdrawn() === 'shown'" (checkedChange)="withdrawn.set($event ? 'shown' : 'hidden')" />
-          <et-label>{{ LABELS.withdrawnToggle(withdrawnCount()) }}</et-label>
-        </et-choice-field>
-      }
-    </div>
+    <ethlete-sketch-head
+      [(reasonOpen)]="reasonOpen"
+      [(commentMode)]="commentMode"
+      [(withdrawn)]="withdrawn"
+      [heading]="heading() ?? part()"
+      [fresh]="fresh()"
+      [status]="shownStatus()"
+      [readyReason]="readyReason()"
+      [hold]="hold()"
+      [lastChange]="lastChange()"
+      [heldMerge]="heldMerge()"
+      [autoMerge]="autoMerge()"
+      [error]="errorInRow() ? null : error()"
+      [commentable]="comments() !== null"
+      [discardable]="discardable()"
+      [listError]="!!listError()"
+      [question]="question()"
+      [rounds]="rounds()"
+      [round]="round()"
+      [agent]="agent()"
+      [port]="port()"
+      [withdrawnCount]="withdrawnCount()"
+      (roundChange)="roundChange.emit($event)"
+      (retry)="retry.emit()"
+      (discard)="askDiscard()"
+    />
     <div
       [class.top-27]="!question()"
       [class.top-37]="!!question()"
