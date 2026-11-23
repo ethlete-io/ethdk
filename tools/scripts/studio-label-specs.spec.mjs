@@ -28,6 +28,17 @@ test('reports every spec line that asserts a removed text', () => {
   assert.equal(hits[0].literal, 'Go ist veraltet');
 });
 
+test('lets a spec assert that a removed text stays absent', () => {
+  const hits = staleSpecHits(['Go ist veraltet'], () => [
+    'a.spec.ts:3:expect(x).not.toContain("Go ist veraltet")',
+    'a.spec.ts:4:expect(x).toContain("Go ist veraltet")',
+  ]);
+  assert.deepEqual(
+    hits.map(({ hit }) => hit),
+    ['a.spec.ts:4:expect(x).toContain("Go ist veraltet")'],
+  );
+});
+
 const script = fileURLToPath(new URL('./studio-label-specs.mjs', import.meta.url));
 const labels = 'apps/ethlete-studio/src/app/i18n/studio-labels.ts';
 const spec = 'apps/ethlete-studio/src/app/go.spec.ts';

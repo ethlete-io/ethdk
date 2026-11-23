@@ -36,8 +36,14 @@ export const removedLiterals = (diff, headText) =>
     ),
   ].filter((text) => !headText.includes(text));
 
+const assertsAbsence = (hit) => /\.not\.to/.test(hit);
+
 export const staleSpecHits = (literals, grep) =>
-  literals.flatMap((literal) => grep(literal).map((hit) => ({ literal, hit })));
+  literals.flatMap((literal) =>
+    grep(literal)
+      .filter((hit) => !assertsAbsence(hit))
+      .map((hit) => ({ literal, hit })),
+  );
 
 const pushedRange = () => {
   const base = process.env.NX_BASE;
