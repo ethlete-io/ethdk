@@ -26,12 +26,16 @@ const SHARED_SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
           sendSharedSettings$({
             settings$,
             ownKeys$: () => ports.peers.receivedSettings$().pipe(map((received) => received.ownRepoKeys)),
-            carriedPaths$: () => {
+            carriedPaths$: (unkeyedIds) => {
               const now = Date.now();
 
               return ports.events
                 .eventsBetween$(new Date(now - DEFAULT_RETENTION_POLICY.rawEventDays * DAY_MS), new Date(now))
-                .pipe(map(repoPathsOfEvents));
+                .pipe(
+                  map((events) =>
+                    repoPathsOfEvents(events).filter((path) => unkeyedIds.some((id) => id.includes(path))),
+                  ),
+                );
             },
             send$: ports.peers.setSharedSettings$,
           }),

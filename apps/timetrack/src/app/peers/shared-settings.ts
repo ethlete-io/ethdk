@@ -5,6 +5,7 @@ import {
   TimetrackSettings,
   encodeSharedSettings,
   sharedSettingsEntriesOf,
+  unkeyedEntryIdsOf,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -14,7 +15,6 @@ import {
   debounceTime,
   distinctUntilChanged,
   exhaustMap,
-  forkJoin,
   map,
   of,
   switchMap,
@@ -28,21 +28,27 @@ const SEND_DEBOUNCE_MS = 2_000;
 export const sendSharedSettings$ = (options: {
   settings$: Observable<TimetrackSettings>;
   ownKeys$: () => Observable<CheckoutKeys>;
-  carriedPaths$?: () => Observable<readonly string[]>;
+  carriedPaths$?: (unkeyedIds: readonly string[]) => Observable<readonly string[]>;
   send$: (entries: readonly SharedSettingsEntry[]) => Observable<void>;
   debounceMs?: number;
 }): Observable<void> =>
   options.settings$.pipe(
     debounceTime(options.debounceMs ?? SEND_DEBOUNCE_MS),
     switchMap((settings) =>
-      forkJoin([
-        options.ownKeys$().pipe(take(1)),
-        (options.carriedPaths$?.() ?? of([])).pipe(
-          take(1),
-          catchError(() => of([])),
-        ),
-      ]).pipe(
-        map(([ownKeys, carriedPaths]) => sharedSettingsEntriesOf({ settings, ownKeys, carriedPaths })),
+      options.ownKeys$().pipe(
+        take(1),
+        switchMap((ownKeys) => {
+          const unkeyedIds = options.carriedPaths$ ? unkeyedEntryIdsOf({ settings, ownKeys }) : [];
+          const carried$ =
+            options.carriedPaths$ && unkeyedIds.length
+              ? options.carriedPaths$(unkeyedIds).pipe(
+                  take(1),
+                  catchError(() => of([])),
+                )
+              : of([]);
+
+          return carried$.pipe(map((carriedPaths) => sharedSettingsEntriesOf({ settings, ownKeys, carriedPaths })));
+        }),
         catchError(() => EMPTY),
       ),
     ),

@@ -88,6 +88,26 @@ describe('sendSharedSettings$', () => {
       return sent.flat().map((entry) => entry.id);
     };
 
+    const calls: (readonly string[])[] = [];
+    const keyedRun = () => {
+      const subscription = sendSharedSettings$({
+        settings$: of(settings),
+        ownKeys$: () => of({ [removed]: removed }),
+        carriedPaths$: (ids) => {
+          calls.push(ids);
+
+          return of([]);
+        },
+        send$: () => of(undefined),
+        debounceMs: 100,
+      }).subscribe();
+
+      vi.advanceTimersByTime(100);
+      subscription.unsubscribe();
+    };
+
+    keyedRun();
+    expect(calls).toEqual([]);
     expect(run([])).toEqual([]);
     expect(run([removed])).toEqual([`rule:${removedRule.id}`]);
   });

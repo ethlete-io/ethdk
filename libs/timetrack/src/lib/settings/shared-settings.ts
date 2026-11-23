@@ -292,6 +292,15 @@ export const sharedSettingsEntriesOf = (options: {
   ].flatMap((entry) => outgoingOf(entry, keys) ?? []);
 };
 
+/** The ids of the entries `ownKeys` alone cannot place: the only ones a carried path can change. */
+export const unkeyedEntryIdsOf = (options: { settings: TimetrackSettings; ownKeys: CheckoutKeys }): string[] => {
+  const live = liveEntriesOf(options.settings);
+
+  return [...live.values(), ...tombstonesOf(options.settings.sharedStamps ?? {}, live)]
+    .map((entry) => entry.id)
+    .filter((id) => !holdsOnlyKeyedPaths(id, options.ownKeys));
+};
+
 const SHARED_SETTINGS_VERSION = 1;
 
 /** The wire form of a machine's shared settings, stored as its rows of {@link SHARED_SETTINGS_DAY}. */
