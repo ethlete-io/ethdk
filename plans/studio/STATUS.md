@@ -33,14 +33,14 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 3. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
 4. **Timetrack nach Projekten (B641)** ⏳ Teil 1 gebaut (9dffd2970): eine Spalte ist ein Projekt. Beweis offen: Snapshot-Vergleich mit dem nächsten Release-Build, dann ein Bild vom Tag-Screen. Danach: Projekte nur in Timetrack, Browser-Reporter, Host-Liste - Builder
-5. **Zustände in Gruppen (B672)** ⏳ Entwurf nennt die Gruppen seiner Zustände, Zeile mit Überschrift und Anzahl, Ablauf-Reihenfolge, fehlende Gruppe = Befund (ADR 0407); zuerst pages/sketches - Builder
+5. **Zustände in Gruppen (B672)** ⏳ gebaut a847c0398. Offen: Überschrift klebt unter der Gruppe davor (Tom 23.11.), dann neues Live-Bild; offene Punkte von pages/sketches neu zählen - Builder
 6. **Familie im Teile-Baum (B673)** ⏳ Entwurf nennt die Familie eines Teils, Baum zeigt es darunter (ADR 0408); zuerst comment-pin, comment-row unter comment-flow - Builder
 7. **Ansicht je Teil (B674)** ⏳ Zoom/Position je Teil gemerkt, Fit beim ersten Öffnen und wenn kein Rahmen sichtbar; nie leere Fläche nach Baum-Wechsel (ADR 0409) - Builder
 8. **Änderung durch Abdunkeln (B675)** ⏳ keine Änderungs-Outline; Unverändertes dunkler, wie beim Sketch-Vergleich (ADR 0410) - Builder
 9. **Frame-Präsentation je Schicht (B676)** ⏳ Foundations Spec-Blatt, Components kompakt, Elements im Ausschnitt ihrer Umgebung, Pages nach Ablauf; Text-Teile werden Zustände; Sketch-Kopf als Komponente; nie die ganze Seite immer wieder (ADR 0411) - Builder
 10. **Logo ausarbeiten (B677)** ⏳ sechs Abschnitte im Logo-Teil, Animation aus dem Studio-Menü ins Logo, Sketch-Varianten nur eine Größe, Abschnitte erst nach dem Merge (ADR 0413) - Builder
 11. **Timetrack-Beschreibung (B602)** ⏳ Scrollen bestätigt (Tom 23.11.). Offen: Live-Messung, Endstück, doppelter Cherry-Pick, Anruf ohne Vorschlag - Builder
-12. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Neuer Build läuft auf tank und mac (Tom 23.11.). Offen: Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
+12. **Timetrack-Gleichstand (B616)** ⏳ Diagnose 23.11.: vier Causes (Pfad je Repo-Schlüssel, Regel gelöschter Worktrees, Meeting-Benennungen reisen nicht, Annehmen per Zeilen-ID). Fix 1 gebaut 32ad7a15e. Offen: heute fehlt auf dem Mac ein Meeting und es zeigt 30 min Pause (Tom); Fixes 3, 4, 2; neuer Vergleich - Builder
 13. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: frühestens 24.11. löscht Tom `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
 
 Geparkt: B105, B108, B109, B148, B312, B313.
