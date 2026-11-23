@@ -657,6 +657,19 @@ describe('SketchesComponent', () => {
     expect(stage?.style.gridTemplateColumns).toBe('repeat(2, minmax(400px, max-content))');
   });
 
+  it('puts a page state phone left of desktop and starts the next state on a new line', async () => {
+    const shots = ['default', 'loading'].flatMap((state) => [
+      { state: `${state} · phone`, changed: true, height: 844 },
+      { state: `${state} · desktop`, changed: true, height: 900, width: 1440 },
+    ]);
+    const root: HTMLElement = (
+      await render({ camera: '100', rows: [{ key: 'a', note: '', width: 390, perLine: 2, shots }] })
+    ).nativeElement;
+    const stage = root.querySelector<HTMLElement>('[data-sk-row="a"] [data-sk-stage]');
+
+    expect(stage?.style.gridTemplateColumns).toBe('repeat(2, minmax(390px, max-content))');
+  });
+
   it('keeps a part as wide as the window in one column', async () => {
     const wide = ROWS.map((row) => ({ ...row, width: 1440 }));
     const root: HTMLElement = (await render({ camera: '100', rows: wide })).nativeElement;

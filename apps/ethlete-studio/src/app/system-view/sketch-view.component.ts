@@ -614,6 +614,7 @@ export class SketchViewComponent {
           ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }
           : {}),
         width,
+        ...(row.perLine ? { perLine: row.perLine } : {}),
         sized: known !== undefined,
         shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight }) => {
           const ratio = ratios[`${row.key} ${state}`];

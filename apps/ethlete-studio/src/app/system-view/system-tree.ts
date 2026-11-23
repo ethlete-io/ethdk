@@ -1411,7 +1411,7 @@ export type SketchRowShot = {
   height?: number;
 };
 
-export type SketchRowOf = { key: string; width: number | null; shots: SketchRowShot[] };
+export type SketchRowOf = { key: string; width: number | null; perLine?: number; shots: SketchRowShot[] };
 
 /**
  * One row for the part as it is now (when it exists) and one per shown variant, each with every state in the
@@ -1449,6 +1449,7 @@ export const sketchRowsOf = ({
     return {
       key,
       width: cell.width ?? null,
+      ...(sizes.length > 1 ? { perLine: sizes.length } : {}),
       shots: states.flatMap((state) =>
         sizes.map((size) => {
           const sized = cellSizeOf(product, size);

@@ -438,6 +438,9 @@ export class SketchesComponent {
     const rows = this.shownRows();
     const widest = Math.max(1, ...rows.map((row) => row.width));
     const most = Math.max(1, this.stageStates().length);
+    const perLine = Math.max(0, ...rows.map((row) => row.perLine ?? 0));
+
+    if (perLine > 0) return Math.min(perLine, most);
 
     return Math.max(1, Math.min(MAX_COLUMNS, most, Math.floor(WRAP_WIDTH / widest)));
   });

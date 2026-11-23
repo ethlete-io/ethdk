@@ -22,6 +22,7 @@ export type SketchRow = {
   model?: SketchModel;
   width: number;
   sized?: boolean;
+  perLine?: number;
   withdrawn?: string;
   shots: SketchShot[];
 };
