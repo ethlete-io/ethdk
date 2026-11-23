@@ -281,7 +281,7 @@ const drawingStage = (row: Row, place = '') =>
     data-sk-placeholder-row
     style="${place}"
   >
-    ${row.model ? drawingPlaceholder({ name: row.model.short, agent: row.model.agent }) : ''}
+    ${drawingPlaceholder()}
   </div>`;
 
 const pointsChip = async (open: boolean) => {

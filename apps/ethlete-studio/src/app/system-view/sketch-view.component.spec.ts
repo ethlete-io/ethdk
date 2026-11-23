@@ -859,7 +859,8 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('Variante b');
   });
 
-  it('draws every in-progress variant live with the latest report line, never as a placeholder or a finished one', async () => {
+  // B695: the agent's report text is not something the human acts on, so no drawing row repeats it.
+  it('draws every in-progress variant live with the drawing mark and no report text, never as a placeholder', async () => {
     const updatedAt = new Date(Date.now() - 2 * 60_000).toISOString();
     const { fixture, root } = await render(
       {
@@ -883,14 +884,16 @@ describe('SketchViewComponent', () => {
     root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
     await settle(fixture);
     const row = (variant: string) => root.querySelector(`[data-sk-row="${variant}"]`);
-    const lineOf = (variant: string) => row(variant)?.querySelector('[data-sk-drawing-line]')?.textContent ?? null;
+    const textOf = (variant: string) => row(variant)?.textContent ?? '';
 
     expect(root.querySelector('[data-sk-placeholder-row]')).toBeNull();
+    expect(root.querySelector('[data-sk-drawing-line]')).toBeNull();
     expect(row('b')?.querySelector('[data-shot]')).not.toBeNull();
     expect(row('c')?.querySelector('[data-shot]')).not.toBeNull();
-    expect(lineOf('b')).toContain('baut Runde 3');
-    expect(lineOf('c')).toContain('baut Runde 3');
-    expect(lineOf('a')).toBeNull();
+    expect(textOf('b')).toContain(SKETCHES_LABELS.drawingMark);
+    expect(textOf('c')).toContain(SKETCHES_LABELS.drawingMark);
+    expect(textOf('a')).not.toContain(SKETCHES_LABELS.drawingMark);
+    expect(textOf('b') + textOf('c')).not.toContain('baut Runde 3');
     expect(row('c')?.querySelector('[data-sk-merge]')).toBeNull();
   });
 

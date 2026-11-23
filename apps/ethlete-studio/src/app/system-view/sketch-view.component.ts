@@ -692,7 +692,6 @@ export class SketchViewComponent {
     const tallest = tallestOf();
     const partWidth = widestOf(sizes.map(([, size]) => size.width));
 
-    const drawingLine = this.sketch().report?.message;
     const unreported = new Set(
       this.drawnVariant() === null || !sketch.rounds?.length
         ? []
@@ -715,7 +714,7 @@ export class SketchViewComponent {
       return {
         key: row.key,
         note: row.key === CURRENT ? '' : (sketch.variantInfo?.[row.key]?.note ?? ''),
-        ...(row.key === this.drawnVariant() || unreported.has(row.key) ? { drawing: { line: drawingLine ?? '' } } : {}),
+        ...(row.key === this.drawnVariant() || unreported.has(row.key) ? { drawing: true as const } : {}),
         ...(rejection?.status === 'withdrawn' ? { withdrawn: rejection.reason ?? '' } : {}),
         ...(author && agent
           ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }

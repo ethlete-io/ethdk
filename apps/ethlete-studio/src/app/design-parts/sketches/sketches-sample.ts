@@ -23,7 +23,7 @@ export type SketchRow = {
   label?: string;
   note: string;
   model?: SketchModel;
-  drawing?: { line: string };
+  drawing?: true;
   width: number;
   sized?: boolean;
   perLine?: number;

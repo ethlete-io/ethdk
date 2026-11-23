@@ -599,8 +599,9 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
 
-  it('draws the in-progress variant live with the in-progress mark and the report line, never as finished', async () => {
-    const rows = ROWS.map((row) => (row.key === 'x' ? { ...row, drawing: { line: 'baut Runde 3' } } : row));
+  // B695: the agent's report text is not something the human acts on, so the drawing row shows only the mark.
+  it('draws the in-progress variant live with the in-progress mark and no report text, never as finished', async () => {
+    const rows = ROWS.map((row) => (row.key === 'x' ? { ...row, drawing: true as const } : row));
     const root: HTMLElement = (await render({ rows, status: 'drawing', drawn: 'x', camera: '100' })).nativeElement;
     const row = root.querySelector('[data-sk-row="x"]');
 
@@ -608,7 +609,7 @@ describe('SketchesComponent', () => {
     expect(row?.querySelector('[data-sk-placeholder-row]')).toBeNull();
     expect(row?.querySelector('[data-sk-stage]')).not.toBeNull();
     expect(textOf(row)).toContain(LABELS.drawingMark);
-    expect(textOf(row?.querySelector('[data-sk-drawing-line]'))).toBe('baut Runde 3');
+    expect(row?.querySelector('[data-sk-drawing-line]')).toBeNull();
     expect(row?.querySelector('[data-sk-merge]')).toBeNull();
   });
 

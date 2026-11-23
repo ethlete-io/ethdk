@@ -435,14 +435,6 @@
           ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
           >{{ LABELS.drawingMark }}</span
         >
-        @if (row.drawing?.line; as line) {
-          <span
-            [style.font-size.px]="noteSize()"
-            class="leading-[1.35] text-et-surface-muted wrap-anywhere"
-            data-sk-drawing-line
-            >{{ line }}</span
-          >
-        }
       } @else {
         <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
       }
