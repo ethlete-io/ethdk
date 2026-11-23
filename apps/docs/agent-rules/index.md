@@ -228,6 +228,19 @@ the user knows whether the task is judgment-heavy. Two calls pass untouched, bec
 would change nothing: a fork, which always inherits the parent model, and an agent type whose
 own definition under `.claude/agents/` sets a model.
 
+### `design-live-check`
+
+Claude Code only. After each `Edit`, `Write` or `MultiEdit` of a `.ts`, `.css` or `.html` file under
+`.ethlete/design/`, it runs `et design lint <file>`: the static design rules of the part or sketch variant the
+file belongs to, and eslint on it - no draw and no type check. Each finding goes back to the agent at once, one
+line each with what to change, so a sketch never reaches a human with open findings. A clean file stays silent.
+
+It runs `et` the way the `ethlete-design` server in `.mcp.json` does, with `lint` in place of `mcp`, else
+`node_modules/.bin/et`; a repo with neither gets no check. Besides the rules `et design check` runs, the live
+check flags an `et-surface--*` or `et-color--*` class outside foundations (`THEME-CLASS`: a part takes its
+surface from `data-et-auto-surface` and its colour from the inherited theme), and a page that calls
+`anchoredDialog()` while the product has a `components/anchored-dialog` part (`PAGE-ANCHORED-DIALOG`).
+
 Hooks can be turned off per machine - see the local config below.
 
 ## Git hooks
