@@ -174,10 +174,10 @@
     "at": "2026-11-22T17:17:57.242Z"
   },
   "pages/start": {
-    "hash": "5848f0d35df00eee",
-    "variant": "a",
+    "hash": "c64a95d26c294b69",
+    "variant": "new",
     "decidedBy": "builder",
-    "at": "2026-11-20T06:52:42.718Z"
+    "at": "2026-11-23T11:37:17.464Z"
   },
   "pages/system": {
     "hash": "a93887d610b95cdd",
