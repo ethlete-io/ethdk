@@ -1858,6 +1858,54 @@ const CASES = [
     },
   },
   {
+    name: 'the sketch canvas clips its frames at the bottom of the shell main area',
+    pages: ['Sketches'],
+    engines: ['chromium', 'webkit'],
+    run: async (page) => {
+      await settled(page, FRAME);
+      const read = await page.evaluate((CANVAS) => {
+        const sketches = document.querySelector('ethlete-sketches [data-sketches-page]');
+        const main = sketches?.closest('main');
+        const canvas = [...(sketches?.querySelectorAll(CANVAS) ?? [])].sort(
+          (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+        )[0];
+
+        if (!sketches || !main || !canvas) return { error: 'no sketches page, shell main or canvas' };
+        let clip = Infinity;
+
+        for (let at = canvas; at && at !== main; at = at.parentElement) {
+          const style = getComputedStyle(at);
+
+          if (style.overflowY === 'visible') continue;
+          clip = Math.min(clip, at.getBoundingClientRect().bottom - (Number.parseFloat(style.borderBottomWidth) || 0));
+        }
+
+        return {
+          main: main.getBoundingClientRect().bottom,
+          page: sketches.getBoundingClientRect().bottom,
+          clip,
+        };
+      }, CANVAS);
+
+      if (read.error) return { ok: false, detail: read.error };
+      const faults = [
+        ...(Math.abs(read.page - read.main) <= 1
+          ? []
+          : [`the sketches page ends at y ${Math.round(read.page)}, the shell main at y ${Math.round(read.main)}`]),
+        ...(Math.abs(read.clip - read.main) <= 1
+          ? []
+          : [
+              `the canvas clips its frames at y ${Math.round(read.clip)}, the shell main ends at y ${Math.round(read.main)}`,
+            ]),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `canvas clip and page end at y ${Math.round(read.main)}`,
+      };
+    },
+  },
+  {
     name: 'no state is marked before the compare answers',
     pages: ['Sketches'],
     labels: ['Chip'],
@@ -4732,6 +4780,66 @@ const CASES = [
       return {
         ok: complete && before.every((m) => m.badge) && overlap <= 0.5 && moved <= 0.5,
         detail: `widths ${WIDTHS.join('/')}: overlap while loading ${before.map((m) => m?.overlap.toFixed(1)).join('/')} px, row top/height and frame top moved at load end by at most ${moved.toFixed(1)} px, frame top ${before.map((m) => m?.frameTop.toFixed(1)).join('/')} -> ${after.map((m) => m?.frameTop.toFixed(1)).join('/')}`,
+      };
+    },
+  },
+  {
+    name: 'a narrow cell wraps its label so the state name and the chips stay whole',
+    pages: ['Sketches'],
+    labels: ['Large', 'Sketches'],
+    run: async (page) => {
+      const LONG_LABEL = 'series-new-season-focus-visible · 112';
+      const WIDTHS = [100, 160];
+
+      await page.waitForSelector('[data-sk-state] [data-sk-label-text]', { state: 'attached', timeout: WAIT_MS });
+      const measured = [];
+
+      for (const width of WIDTHS) {
+        measured.push(
+          await page.evaluate(
+            ({ width, LONG_LABEL }) => {
+              const cell = document.querySelector('[data-sk-state]');
+              const row = cell?.querySelector('[data-sk-label]');
+              const text = row?.querySelector('[data-sk-label-text]');
+
+              if (!cell || !row || !text) return null;
+
+              cell.style.width = `${width}px`;
+              cell.style.maxWidth = `${width}px`;
+              row.classList.remove('hidden');
+              text.style.fontSize = '13px';
+              const name = text.firstElementChild;
+
+              name?.classList.remove('hidden');
+              if (name) name.textContent = LONG_LABEL;
+              if (!row.querySelector('[data-probe-chip]')) {
+                const chip = document.createElement('span');
+
+                chip.className = 'shrink-0 rounded-full px-space-2 text-ui-xs';
+                chip.dataset['probeChip'] = '';
+                chip.textContent = 'geändert';
+                row.append(chip);
+              }
+
+              const box = row.getBoundingClientRect();
+              const cut = [...row.children].filter((child) => {
+                const b = child.getBoundingClientRect();
+
+                return (
+                  child.scrollWidth > child.clientWidth + 1 || b.right > box.right + 1 || b.bottom > box.bottom + 1
+                );
+              });
+
+              return { cut: cut.length, scroll: row.scrollWidth - row.clientWidth, shown: text.textContent };
+            },
+            { width, LONG_LABEL },
+          ),
+        );
+      }
+
+      return {
+        ok: measured.every((m) => m && m.cut === 0 && m.scroll <= 1 && m.shown.includes(LONG_LABEL)),
+        detail: `widths ${WIDTHS.join('/')}: cut parts ${measured.map((m) => m?.cut).join('/')}, row overflow ${measured.map((m) => m?.scroll).join('/')} px`,
       };
     },
   },
