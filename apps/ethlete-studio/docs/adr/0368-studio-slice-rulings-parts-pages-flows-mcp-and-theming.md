@@ -83,3 +83,5 @@ source: plans/studio/design-system/decisions-core.md and decisions-wireframes.md
   reason is optional. An agent may reject a variant itself when the human says so in chat; each rejection and each reason
   stores who wrote it (`by: 'designer' | 'agent'`). A rejected variant counts as decided and drops out of the pick and
   merge choice but stays visible. A newer round's prose is never a verdict.
+
+Amended by ADR 0410: a change is shown by dimming what did not change, not by an outline.
