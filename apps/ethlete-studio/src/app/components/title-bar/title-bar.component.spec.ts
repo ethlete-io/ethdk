@@ -277,4 +277,12 @@ describe('TitleBarComponent', () => {
       expect(element.querySelector('ethlete-error-toast')).toBeNull();
     });
   });
+
+  // The title bar shows the push state and the open count, and no CI state.
+  it('shows no CI state', () => {
+    const { element } = render({ ...linux([], ['close']), push: { unpushed: 2, age: '3 Min' }, uncommitted: ['a.ts'] });
+
+    expect(element.textContent).not.toMatch(/\bCI\b/i);
+    expect(element.querySelector('[data-ci-state]')).toBeNull();
+  });
 });

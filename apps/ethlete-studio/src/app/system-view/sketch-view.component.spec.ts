@@ -196,6 +196,16 @@ describe('SketchViewComponent', () => {
     expect(root.textContent).toContain('Calmer');
   });
 
+  // The sketch view has no reject control, so a human comments or picks.
+  it('draws no reject button on a variant', async () => {
+    const { root } = await render(ROUNDED, noComments);
+    const names = [...root.querySelectorAll('button')].map(
+      (button) => `${button.getAttribute('aria-label') ?? ''} ${button.textContent ?? ''}`,
+    );
+
+    expect(names.filter((name) => /ablehn|reject/i.test(name))).toEqual([]);
+  });
+
   it('keeps at most twelve near cells live and the stored picture in every cell', async () => {
     const states = ['default', 'hover', 'focus', 'active', 'disabled'];
     const wide = {

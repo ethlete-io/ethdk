@@ -50,3 +50,26 @@ test('a colour block added to the colours part becomes a theme in every generate
     rmSync(out, { recursive: true, force: true });
   }
 });
+
+// The colours part declares no sunken surface level.
+test('the colours part declares no surface-sunken token', () => {
+  assert.doesNotMatch(readFileSync(part, 'utf8'), /sunken/);
+});
+
+// The colours part defines text-subtle and an active and disabled token for every accent colour.
+test('the colours part defines text-subtle and the active and disabled tokens of every accent colour', () => {
+  const css = readFileSync(part, 'utf8');
+
+  assert.match(css, /--text-subtle:/);
+
+  for (const name of ['accent', 'success', 'warning', 'danger']) {
+    assert.match(css, new RegExp(`--${name}-active:`));
+    assert.match(css, new RegExp(`--${name}-disabled:`));
+    assert.match(css, new RegExp(`--on-${name}-disabled:`));
+  }
+});
+
+// The colours part holds hand-written custom properties only, with no generator output copied in.
+test('the colours part declares only custom properties and no generated theme classes', () => {
+  assert.doesNotMatch(readFileSync(part, 'utf8'), /\.et-color--|--color-et-/);
+});

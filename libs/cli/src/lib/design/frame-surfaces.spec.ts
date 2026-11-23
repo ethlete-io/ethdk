@@ -261,4 +261,16 @@ describe('surface interactive CSS', () => {
       ),
     );
   });
+
+  // A Studio row part draws its row on an interactive surface.
+  it.each([
+    'tree-row/shared/tree-row.ts',
+    'comment-row/comment-row.ts',
+    'disclosure/disclosure.ts',
+    'hold-trigger/hold-trigger.ts',
+  ])('marks the row of %s as an interactive surface', (path) => {
+    const source = readFileSync(resolve(__dirname, '../../../../../.ethlete/design/studio/components', path), 'utf8');
+
+    expect(source).toContain('data-et-surface-interactive');
+  });
 });

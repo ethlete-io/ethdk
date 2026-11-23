@@ -8,6 +8,7 @@ import { ListedCall } from '../../../host/design';
 import { callFramesOf } from '../../system-view/system-tree';
 import { Camera, rectsIntersect } from './canvas-math';
 import { CanvasFrame, SCHEME_GAP, SIDE_BY_SIDE_MAX_WIDTH } from './canvas-frame';
+import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
 import { DesignCanvasComponent } from './design-canvas.component';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
@@ -57,6 +58,13 @@ describe('DesignCanvasComponent', () => {
 
     expect(host.getAttribute('tabindex')).toBe('0');
     expect(host.getAttribute('aria-label')).toBe('Design Canvas');
+  });
+
+  // The canvas that draws every sketch carries the zoom chip part.
+  it('draws the zoom chip part', async () => {
+    const fixture = await render([FITTED]);
+
+    expect(fixture.debugElement.query(By.directive(ZoomChipComponent))).not.toBeNull();
   });
 
   it('leaves Space alone on a button inside the canvas', async () => {

@@ -19,8 +19,10 @@ const IDLE = { by: 'Sol', since: 'seit 2 Min' };
     [discardable]="discardable()"
     [listError]="listError()"
     [withdrawnCount]="3"
+    [rounds]="rounds"
     (discard)="discards = discards + 1"
     (retry)="retries = retries + 1"
+    round="r1"
     heading="pages/home"
   />`,
 })
@@ -31,6 +33,10 @@ class HostComponent {
   discardable = signal(true);
   listError = signal(true);
   withdrawn = signal<SketchWithdrawn>('hidden');
+  rounds = [
+    { value: 'r1', label: 'Runde 1' },
+    { value: 'r2', label: 'Runde 2' },
+  ];
   discards = 0;
   retries = 0;
 }
@@ -90,5 +96,15 @@ describe('SketchHeadComponent', () => {
 
     expect(root.querySelector('[data-sk-discard]')).toBeNull();
     expect(root.querySelector('[data-sk-edit-hint]')?.textContent?.trim()).toBe(SKETCHES_LABELS.editHint);
+  });
+
+  // The round picker is a ghost select with a selected round and no clear button.
+  it('shows the round picker as a ghost select without a clear button', async () => {
+    const { root } = await setup();
+    const field = root.querySelector('et-form-field')!;
+
+    expect(field.getAttribute('data-variant')).toBe('ghost');
+    expect(field.querySelector('et-select')?.textContent).toContain('Runde 1');
+    expect(field.querySelector('.et-input-clear')).toBeNull();
   });
 });

@@ -111,6 +111,21 @@ describe('BuildReadyFooterComponent', () => {
     expect(withTooltip(element, 'tsc bricht ab')?.textContent?.trim()).toBe('Agent fehlgeschlagen');
   });
 
+  // The agent progress also names a waiting and an interrupted agent.
+  it('shows the waiting and the interrupted agent beside the status', async () => {
+    const { fixture, element } = await render({ state: 'ready' });
+
+    fixture.componentRef.setInput('agent', { state: 'waiting', detail: 'wartet auf Tom' });
+    await fixture.whenStable();
+
+    expect(withTooltip(element, 'wartet auf Tom')?.textContent?.trim()).toBe('Agent wartet');
+
+    fixture.componentRef.setInput('agent', { state: 'interrupted', detail: 'abgebrochen' });
+    await fixture.whenStable();
+
+    expect(withTooltip(element, 'abgebrochen')?.textContent?.trim()).toBe('Agent unterbrochen');
+  });
+
   it('emits the direct edit from Sketch öffnen beside the status while the reasons stay closed', async () => {
     const edit: BuildBlocker = { kind: 'direct-edit', text: 'Bild ohne Sketch geändert' };
     const { fixture, element, toggle } = await render({ state: 'blocked', blockers: [edit] });

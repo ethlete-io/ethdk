@@ -389,3 +389,11 @@ test('an app build logs the app-build phase, an existing app copy logs none', ()
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// Studio renders through the CEF runtime on every platform, so the runtime is a plain dependency.
+test('the CEF runtime is a dependency of every platform', () => {
+  const cargo = readFileSync(new URL('../../apps/ethlete-studio/src-tauri/Cargo.toml', import.meta.url), 'utf8');
+  const common = cargo.split(/^\[target\./m)[0];
+
+  assert.match(common, /^tauri-runtime-cef = /m);
+});

@@ -274,6 +274,14 @@ describe('ShellMainComponent', () => {
     });
   });
 
+  // A rail section is a plain button element named by its aria-label.
+  it('draws every rail section as a button with an aria-label', async () => {
+    const { host } = await setup('open');
+    const rail = ['System', 'Flows'].map((label) => host.querySelector(`nav [aria-label="${label}"]`)?.tagName);
+
+    expect(rail).toEqual(['BUTTON', 'BUTTON']);
+  });
+
   it('hides the open panel when the active section is clicked', async () => {
     const { events, click } = await setup('open');
 

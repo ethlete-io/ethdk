@@ -14,6 +14,15 @@ const source = {
 const button = definePart(source);
 
 describe('definePart', () => {
+  // Every part declares a note.
+  it('requires a note', () => {
+    const withoutNote = { ...source, note: undefined };
+
+    // @ts-expect-error a part without a note
+    definePart(withoutNote);
+    expect(definePart(source).note).toBe('n');
+  });
+
   it('takes a component path or a route as implements, and keeps it on the part', () => {
     expect(definePart({ ...source, implements: 'src/app/x.component.ts' }).implements).toBe('src/app/x.component.ts');
     expect(definePart({ ...source, implements: { route: '/system' } }).implements).toEqual({ route: '/system' });

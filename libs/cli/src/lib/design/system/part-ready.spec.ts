@@ -157,6 +157,24 @@ describe('part ready', () => {
     expect(readyPartsOf(productOf(target))).toEqual([]);
   });
 
+  // A ready mark keys on the whole file of an import, so an unused export added to it drops the mark.
+  it('drops the mark when an unused export is added to a file the part imports', async () => {
+    const { target, dir } = checkout();
+
+    mkdirSync(join(dir, 'lib'), { recursive: true });
+    writeFileSync(join(dir, 'lib/shared.ts'), 'export const used = 1;\n');
+    appendFileSync(join(dir, 'components/chip/chip.ts'), "import { used } from '../../lib/shared';\nvoid used;\n");
+
+    const answer = await post(target, { part: 'components/chip', hash: hashOf(target) });
+
+    expect(answer.status).toBe(200);
+    expect(readyMarkOf({ product: productOf(target), part: 'components/chip' })).not.toBeNull();
+
+    appendFileSync(join(dir, 'lib/shared.ts'), 'export const unused = 2;\n');
+
+    expect(readyMarkOf({ product: productOf(target), part: 'components/chip' })).toBeNull();
+  });
+
   it('leaves an equal ready.json untouched when the same record is written again', () => {
     const { target, dir } = checkout();
     const file = join(dir, 'ready.json');
