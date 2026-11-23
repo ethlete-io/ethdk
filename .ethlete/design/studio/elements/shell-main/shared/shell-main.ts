@@ -169,10 +169,9 @@ const railItem = (
   kind: RailKind,
   panelHidden = false,
   force?: RailForce,
-  current = active,
 ) =>
   `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${railButton(
-    `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && current && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
+    `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && active && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
     label,
     kind,
     force,
@@ -193,7 +192,7 @@ const rail = (
   html`<nav class="st-shell-rail row-start-2 flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-bg">
     <div class="st-shell-slot relative flex justify-center w-full min-h-10" data-kind="logo">${studio}</div>
     ${sep}
-    ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === railSection(section), 'section', panelHidden, force, s === section)).join('')}
+    ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === railSection(section), 'section', panelHidden, force)).join('')}
     <div class="flex-1"></div>
     ${sep}
     ${RECENT_PRODUCTS.map((p, index) => railItem(railMark(logos, p, index), p, p === product, 'product', false, force)).join('')}

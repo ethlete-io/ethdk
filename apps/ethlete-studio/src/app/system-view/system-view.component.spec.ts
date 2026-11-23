@@ -993,7 +993,8 @@ describe('SystemViewComponent on a merge', () => {
     expect(fixture.nativeElement.querySelector('[data-merge]')).toBeNull();
   });
 
-  it('leaves an open sketch and marks System current on a System rail click', async () => {
+  // System is the marked rail item on a sketch, so its click toggles the tree like the marked Flows item.
+  it('hides the tree and keeps the open sketch on a click on the marked System rail item', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',
       status: 'ready',
@@ -1024,7 +1025,14 @@ describe('SystemViewComponent on a merge', () => {
     element.querySelector<HTMLButtonElement>('nav button[aria-label="System"]')?.click();
     await settle(fixture);
 
-    expect(element.querySelector('ethlete-sketch-view')).toBeNull();
+    expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
+    expect(fixture.componentInstance.panel()).toBe('hidden');
+
+    element.querySelector<HTMLButtonElement>('nav button[aria-label="System"]')?.click();
+    await settle(fixture);
+
+    expect(fixture.componentInstance.panel()).toBe('open');
+    expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
     expect(element.querySelector('nav button[aria-label="System"]')?.getAttribute('aria-current')).toBe('page');
   });
 

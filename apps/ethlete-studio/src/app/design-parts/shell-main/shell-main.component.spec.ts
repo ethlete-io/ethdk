@@ -320,14 +320,15 @@ describe('ShellMainComponent', () => {
     expect(host.querySelector('nav button[aria-current="page"]')?.getAttribute('aria-label')).toBe('System');
   });
 
-  it('leaves an open sketch on a System click instead of hiding the panel', async () => {
+  // The Sketches page marks System; a click on that marked item toggles the tree like on Flows.
+  it('hides the panel on a click on the marked System item while a sketch is open', async () => {
     const { events, click, fixture } = await setup('open');
 
     fixture.componentRef.setInput('section', 'Sketches');
     await fixture.whenStable();
     click('System');
 
-    expect(events).toEqual(['section:System']);
+    expect(events).toEqual(['collapse']);
   });
 
   describe('system picker', () => {
