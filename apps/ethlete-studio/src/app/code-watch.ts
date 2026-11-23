@@ -1,4 +1,5 @@
-import { computed, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { EMPTY, Subject, catchError, exhaustMap, tap, timer } from 'rxjs';
@@ -8,7 +9,7 @@ import { CODE_LABELS } from './i18n/shell-labels';
 
 export const CODE_WATCH_INTERVAL_MS = 10_000;
 
-export type CodeAction = 'restartStudio' | 'restartServer';
+export type CodeAction = 'restartStudio' | 'restartServer' | 'restartServerAndReload';
 
 export type RestartState = 'pending' | 'failed' | null;
 
@@ -33,7 +34,7 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
   if (cli.running && cli.latest && cli.running !== cli.latest) return { text: labels.cli, action: 'restartServer' };
 
   if (pageLoadedAt && frontend.latest && pageLoadedAt !== frontend.latest) {
-    return { text: labels.frontend, action: 'restartServer' };
+    return { text: labels.frontend, action: 'restartServerAndReload' };
   }
 
   return null;
@@ -73,9 +74,12 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const serverRestartRequests$ = new Subject<void>();
 
   const restart = signal<RestartState>(null);
+  const document = inject(DOCUMENT);
+  let reloadAfterRestart = false;
 
   const act = (action: CodeAction) => {
     restart.set('pending');
+    reloadAfterRestart = action === 'restartServerAndReload';
 
     if (action === 'restartStudio') {
       quitForRebuild$()
@@ -99,7 +103,17 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
     act,
     restart: restart.asReadonly(),
     failRestart: () => restart.set('failed'),
-    settleRestart: () => restart.update((state) => (state === 'pending' ? null : state)),
+    settleRestart: () => {
+      if (restart() !== 'pending') return;
+
+      if (reloadAfterRestart) {
+        document.defaultView?.location.reload();
+
+        return;
+      }
+
+      restart.set(null);
+    },
     dismissRestart: () => restart.set(null),
     serverRestarts$: serverRestartRequests$.asObservable(),
   };

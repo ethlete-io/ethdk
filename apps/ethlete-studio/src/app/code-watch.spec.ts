@@ -1,5 +1,10 @@
+import { DOCUMENT } from '@angular/common';
+import { TestBed } from '@angular/core/testing';
+import { NEVER } from 'rxjs';
 import { StudioCodeState } from '../host/studio-code';
-import { codeNoticeOf, pushNoticeOf } from './code-watch';
+import { codeNoticeOf, injectCodeWatch, pushNoticeOf } from './code-watch';
+
+vi.mock('../host/studio-code', () => ({ studioCodeState$: () => NEVER, quitForRebuild$: () => NEVER }));
 
 const A = 'a'.repeat(40);
 const B = 'b'.repeat(40);
@@ -40,7 +45,7 @@ describe('codeNoticeOf', () => {
   it('asks to restart the server after a commit to the app copy', () => {
     expect(codeNoticeOf({ ...settled, frontend: { latest: B } }, A)).toEqual({
       text: 'Oberfläche geändert - neu starten',
-      action: 'restartServer',
+      action: 'restartServerAndReload',
     });
   });
 
@@ -57,6 +62,44 @@ describe('codeNoticeOf', () => {
 
   it('asks nothing about the cli when Studio started no server from a copy', () => {
     expect(codeNoticeOf({ ...settled, cli: { running: null, latest: B, dirty: true } }, A)).toBeNull();
+  });
+});
+
+describe('the restart of a changed page', () => {
+  const setup = () => {
+    const reload = vi.fn();
+    const document = { defaultView: { location: { reload } } };
+
+    TestBed.configureTestingModule({ providers: [{ provide: DOCUMENT, useValue: document }] });
+
+    const watch = TestBed.runInInjectionContext(() => injectCodeWatch());
+    const restarts: void[] = [];
+
+    watch.serverRestarts$.subscribe(() => restarts.push(undefined));
+
+    return { watch, reload, restarts };
+  };
+
+  it('restarts the server, then reloads the page and stays pending until the new page is up', () => {
+    const { watch, reload, restarts } = setup();
+    const action = codeNoticeOf({ ...settled, frontend: { latest: B } }, A)?.action;
+
+    watch.act(action!);
+    watch.settleRestart();
+
+    expect(restarts).toHaveLength(1);
+    expect(reload).toHaveBeenCalledOnce();
+    expect(watch.restart()).toBe('pending');
+  });
+
+  it('only settles after a cli restart, with no page reload', () => {
+    const { watch, reload } = setup();
+
+    watch.act('restartServer');
+    watch.settleRestart();
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(watch.restart()).toBeNull();
   });
 });
 
