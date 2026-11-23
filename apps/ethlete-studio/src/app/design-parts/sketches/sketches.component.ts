@@ -875,30 +875,12 @@ export class SketchesComponent {
     return draft && draft.variant === row.key && draft.shot === state ? draft : null;
   }
 
-  protected startComment(trigger: Event, row: SketchRow) {
+  protected startComment(trigger: Event, { row, shot }: { row: SketchRow; shot: string }) {
     const event = trigger instanceof MouseEvent && trigger.type === 'click' ? trigger : null;
-    const frames = row.shots.flatMap((candidate) => {
-      const key = frameKeyOf(row, candidate.state);
-      const element = this.frames().find((frame) => frame.nativeElement.getAttribute('data-sk-frame') === key);
+    const key = frameKeyOf(row, shot);
+    const hit = this.frames().find((frame) => frame.nativeElement.getAttribute('data-sk-frame') === key)?.nativeElement;
 
-      return element ? [{ shot: candidate.state, element: element.nativeElement }] : [];
-    });
-    const found = event
-      ? frames.find(({ element }) => {
-          const box = element.getBoundingClientRect();
-
-          return (
-            event.clientX >= box.left &&
-            event.clientX <= box.right &&
-            event.clientY >= box.top &&
-            event.clientY <= box.bottom
-          );
-        })
-      : frames[0];
-    const hit = found?.element;
-    const shot = found?.shot;
-
-    if (!hit || !shot) return;
+    if (!hit) return;
 
     const box = hit.getBoundingClientRect();
     const natural = hit.firstElementChild instanceof HTMLElement ? hit.firstElementChild.offsetWidth : box.width;

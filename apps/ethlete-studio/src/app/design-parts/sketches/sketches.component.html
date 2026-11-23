@@ -335,13 +335,6 @@
             }
           }
         </div>
-        @if (commentTargeting() && row.key !== CURRENT) {
-          <ethlete-comment-target
-            [frame]="row.key"
-            (comment)="startComment($event, row)"
-            class="absolute inset-0 z-1"
-          />
-        }
       }
     </div>
   </section>
@@ -503,6 +496,13 @@
     [selected]="key === selectedFrame()"
   >
     <ng-container ngProjectAs="[overlay]">
+      @if (commentTargeting() && row.key !== CURRENT) {
+        <ethlete-comment-target
+          [frame]="key"
+          (comment)="startComment($event, { row, shot: item.state })"
+          class="absolute inset-0 z-2"
+        />
+      }
       @for (comment of commentsOn(row, item.state); track comment.id) {
         <span
           [style.left.px]="(comment.point?.x ?? 0) * scale()"
