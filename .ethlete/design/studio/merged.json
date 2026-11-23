@@ -180,9 +180,9 @@
     "at": "2026-11-20T06:52:42.718Z"
   },
   "pages/system": {
-    "hash": "6589872d7374d29c",
-    "variant": "float",
+    "hash": "a93887d610b95cdd",
+    "variant": "new",
     "decidedBy": "builder",
-    "at": "2026-11-20T22:50:25.340Z"
+    "at": "2026-11-23T09:07:22.391Z"
   }
 }
