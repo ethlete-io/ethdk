@@ -745,6 +745,9 @@ export class SketchViewComponent {
         shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight }) => {
           const ratio = ratios[`${row.key} ${state}`];
           const measuredWidth = sizeOf(state)?.width;
+          const shownWidth =
+            presetWidth ??
+            (presetHeight === undefined && measuredWidth !== undefined ? Math.max(measuredWidth, width) : width);
 
           return {
             state,
@@ -757,7 +760,7 @@ export class SketchViewComponent {
             height:
               (presetHeight === undefined ? undefined : Math.max(presetHeight, sizeOf(state)?.height ?? 0)) ??
               sizeOf(state)?.height ??
-              (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
+              (ratio ? Math.round(ratio * shownWidth) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
           };
         }),
       };

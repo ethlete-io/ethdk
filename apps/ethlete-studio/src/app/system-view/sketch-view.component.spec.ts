@@ -221,6 +221,27 @@ describe('SketchViewComponent', () => {
     expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(15);
   });
 
+  it('sizes a picture-only cell from its picture ratio at its own width, not the narrowest width', async () => {
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(168);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(287);
+
+    const drawn = {
+      ...SKETCH,
+      targets: SKETCH.variants.map((variant) => ({ variant, states: ['default'], interactions: [], unchanged: [] })),
+    } satisfies ListedSketch;
+    const { fixture, root } = await render(drawn, noComments, { ...CARD, widths: [112, 168] });
+
+    root.querySelectorAll('img[data-shot-picture]').forEach((picture) => picture.dispatchEvent(new Event('load')));
+    await settle(fixture);
+
+    const shots = (fixture.componentInstance['rows']() as { shots: { width?: number; height: number }[] }[]).flatMap(
+      (row) => row.shots,
+    );
+
+    expect(shots.filter((shot) => shot.width === 168).map((shot) => shot.height)).toEqual([287, 287, 287]);
+    expect(shots.filter((shot) => shot.width === undefined).map((shot) => shot.height)).toEqual([191, 191, 191]);
+  });
+
   it('keeps the live frames while a zoom gesture runs and updates them once it rests', async () => {
     vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(100);
     vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(50);
