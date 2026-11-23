@@ -3939,15 +3939,20 @@ const CASES = [
       if (!state.frame) return { ok: false, detail: 'no frame point' };
       await page.mouse.dblclick(state.frame.x, state.frame.y);
       await settle(page);
-      const live = await page.evaluate(() => {
-        const frame = document.querySelector('[data-active]');
-        const frames = [...(frame?.querySelectorAll('iframe:not(.opacity-0)') ?? [])];
+      const live = await readUntil(
+        page,
+        () =>
+          page.evaluate(() => {
+            const frame = document.querySelector('[data-active]');
+            const frames = [...(frame?.querySelectorAll('iframe:not(.opacity-0)') ?? [])];
 
-        return {
-          active: !!frame,
-          interactive: frames.some((shown) => getComputedStyle(shown).pointerEvents !== 'none'),
-        };
-      });
+            return {
+              active: !!frame,
+              interactive: frames.some((shown) => getComputedStyle(shown).pointerEvents !== 'none'),
+            };
+          }),
+        (live) => live.active && live.interactive,
+      );
 
       await page.keyboard.press('Escape');
       await settle(page);
