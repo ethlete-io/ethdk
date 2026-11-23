@@ -613,7 +613,6 @@ export default definePart({
       'CLIPPED components/shadow-cut fitted',
       'CLIPPED components/underline-cut fitted',
       'GRID components/gridded -',
-      'OVERFLOW pages/tall desktop',
       'UNKNOWN-THEME components/themed fitted',
       'WRAP components/wrapped fitted',
       'ZERO-SIZE components/empty fitted',
@@ -1411,7 +1410,7 @@ export default definePart({
     mkdirSync(join(shop, 'pages/uses'), { recursive: true });
     mkdirSync(join(sketch, 'a/pages/uses'), { recursive: true });
     mkdirSync(join(sketch, 'a/components/clean'), { recursive: true });
-    writeFileSync(join(sketch, 'a/components/clean/clean.ts'), helper('<div style="height: 900px">Tall</div>'));
+    writeFileSync(join(sketch, 'a/components/clean/clean.ts'), helper('<div style="width: 3000px">Wide</div>'));
     writeFileSync(join(shop, 'components/clean/clean.ts'), helper('<p style="margin: 0">Short</p>'));
     writeFileSync(join(shop, 'pages/uses/uses.ts'), page);
     writeFileSync(join(sketch, 'a/pages/uses/uses.ts'), page);

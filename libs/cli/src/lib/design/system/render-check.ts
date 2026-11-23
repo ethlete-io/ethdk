@@ -343,12 +343,12 @@ ${VISUALLY_HIDDEN_STATEMENTS}
   const page = document.documentElement;
   const frame = options.fit ? root : page;
   const right = options.fit ? root.getBoundingClientRect().right : page.clientWidth;
-  if (frame.scrollWidth > frame.clientWidth || (options.fixed && page.scrollHeight > page.clientHeight)) {
+  if (frame.scrollWidth > frame.clientWidth) {
     let furthest = partRoot;
     let most = 0;
     for (const element of root.querySelectorAll('*')) {
       const rect = element.getBoundingClientRect();
-      const past = Math.max(rect.right + scrollX - right, options.fixed ? rect.bottom + scrollY - page.clientHeight : 0);
+      const past = rect.right + scrollX - right;
       if (past > 0 && past >= most) [furthest, most] = [element, past];
     }
     if (most === 0)

@@ -17,7 +17,8 @@ Once the other rules pass, the check draws every state in a headless Chromium on
 `sketch check` does the same for the open variants and the pages they show in. Each line names
 product, part, state, size and a selector path:
 
-- `OVERFLOW` - the frame scrolls: content wider than the frame, or taller than a preset height.
+- `OVERFLOW` - the frame scrolls sideways: content wider than the frame. A page taller than its preset
+  height is fine: it scrolls, so draw the whole list, not the films that fit.
 - `CLIPPED` - an element with `overflow: hidden|clip` cuts its content, unless it sets
   `text-overflow: ellipsis` or a line clamp.
 - `WRAP` - text in a button, tab, badge, chip or `white-space: nowrap` box runs onto a second line.
