@@ -18,6 +18,7 @@ import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './a
 import { designShot, SHOT_USAGE } from './shot-command';
 import { COMMIT_HUNKS_USAGE, designCommitHunks } from './commit-hunks';
 import { designMcp, MCP_USAGE } from './mcp-command';
+import { designLint, LINT_USAGE } from './lint-command';
 import { designMotion, MOTION_USAGE } from './motion-command';
 import { designSketch, SKETCH_USAGE, sketchFlagHelpOf, sketchUsageErrorOf } from './sketch-command';
 import { buildStampOf } from './stamp';
@@ -69,6 +70,11 @@ const helpOf = (invocation: string) =>
     `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]] [--receipt <path>]`,
     '  Find out why a call does not render: eslint, then tsc, then the live frames. --tsconfig also types each variant',
     '  of an open sketch. --receipt writes the call, the variant, ok, the time and the output to a JSON file.',
+    '',
+    `${invocation} ${LINT_USAGE}`,
+    '  The findings on design files as you write them: the static design rules of the part or sketch variant each file',
+    '  belongs to, and eslint on the file. No draw and no type check, so it takes about a second. Prints one line per',
+    '  finding with what to change, nothing when clean; exits 1 on a finding.',
     '',
     `${invocation} check [<layer>/<name> | --part <layer>/<name>] [--product <name>]`,
     "  Check a product's design system: layer dependencies, hard-coded colours, var() tokens nothing defines,",
@@ -620,6 +626,12 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designMotion({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'lint') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designLint({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'mcp') {
