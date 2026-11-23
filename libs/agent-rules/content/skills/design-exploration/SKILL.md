@@ -118,6 +118,9 @@ the Legacy tab as reference for moving them into a product, with no picks and no
   `anatomy`, `clear-space`, `minimum-size`, `colour-variants`, `misuse`, `motion`). The design check reports a missing section on a merged logo.
 - Mark a sketch `ready` only after you looked at a shot of each variant ({%resource:reference-shots.md%}).
 - Talk to the user about the product: screens, moods, content. Never name tools, commands or file paths.
+  A variant note is at most two short sentences in the words of the screen, never a field or prop name.
+- Work only from your repo and what the user hands you; never search the machine or other folders for
+  material. When an image or other material is missing, ask for it in one plain sentence.
 - Every interactive part (a poster card, a search field, a chip, a button) draws its own hover and focus-visible
   states next to rest. A page has none: it imports those parts and shows theirs, so never write a hover or
   focus rule only in a page's CSS.
