@@ -28,6 +28,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S40 (fifagg, 22.11.): ausgeliefert in @ethlete/components 1.0.0-next.98 (4103379e9): Variable `--et-form-field-floating-inside-control-font-scale` (Standard 0.96).
 - S41 (fifagg, 23.11.): kein SDK-Code: die Größen-Höhen sind ein Minimum (forms.md); fifaggs 9 px padding-block ergibt bei Skala 1 50,5 px. Antwort: padding-block 0.875rem oder Skala 0.96; Guide ergänzt 52e4f7310; fifagg bestätigt 50 px (B669 geschlossen).
 - S42 (fifagg, 23.11.): kein SDK-Code: der `data-text-shell`-Block in select.css wurde absichtlich entfernt (6f86022cf: ein Feld behält seinen Rand, außer bei ghost); Ersatz `variant="ghost"`; fifagg informiert.
+- S43 (fifagg, 23.11.): blockiert -> B671: et-button braucht eine dokumentierte Höhe (50 px unter sm, 65 px ab sm) statt `!h-*`; entschieden wie S40 (B668): neues Token `--et-button-min-height`, die App setzt die Werte je Breakpoint.
 - Dialog (Studio, 21.11.): die Dialog-Overlay-Strategie zentriert die Pane auf Bruchpixeln (302,5 px hoch -> top 40,25), was Textzeilen abwechselnd rundet (shortcuts-dialog 1694 px, die echte App zeigt es auch); Suspect bis zum Biss; Fix: ganzzahlige Zentrierung in der Strategie.
 
 ## Offene Plan-Dateien
