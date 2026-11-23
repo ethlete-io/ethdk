@@ -33,10 +33,6 @@ Zu [STATUS.md](STATUS.md).
 ## A. Studio: was man sieht
 
 - Suspect (23.11., Tomflix-Lauf): „Ordner nicht geöffnet – In diesem Ordner liegt keine Design-Arbeit.“ nennt weder den gewählten Ordner noch die fehlende `.ethlete/design/config.json`; unmöglich, wenn die Meldung beides nennt (B678 macht den Weg selten).
-- **A22** Flows: Pins, Entwürfe; der eine Canvas (Q66, Q125). Notizen (Liste verwaister Notizen, Ziehen, `jumpTo`)
-  gehören zu A25 (ADR 0120). Rest geteilt (ADR 0367, Impl Q125): A22a Flows-Seite auf ethlete-design-canvas (0 px),
-  A22b Pin und Entwurfszustände in pages/flows mit Kommentar-Store nach ADR 0367, A22c Sprung aus der Seitenleiste
-  zu einem Flow-Kommentar öffnet den Teil. A22a gebaut 03d391284 (compare 0 px, 4 Zustände, canvas e2e 9/9); A22b/c auf next grün (vitest 731, e2e flow 9/9), Push wartet auf A22C2 (Thread-Karte, 2x STATE-UNDESIGNED). NOTESFIX eadf2dadb, 32a6ee8c3 (Cause gemessen: `jumpTo` nahm 96 px Notizhöhe an, gerendert ~50). A22C3 750db69e9 zu; A22c zu (8728c25bb, 77a26d103, e71382a81; Cause gemessen: die App setzte die Thread-Karte relativ zur Pin-Box, das Design bei festen Offsets vom Pin-Punkt, die App folgt dem Design; check pages/flows 0 Funde, verify 0 px in 9 Zuständen, e2e flow 9/9); gepusht bis 8523b8aa7.
 - **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81). Chat zeigt den Zustand des Agenten
   (arbeitet, wartet, unterbrochen, fehlgeschlagen) mit Stopp und Fortsetzen, Anmeldung in Studio, Verweis auf Teil,
   Sketch oder Kommentar (designer-workflow.md, Abschnitt 1).
@@ -63,9 +59,10 @@ Zu [STATUS.md](STATUS.md).
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
   (existing-code-import.md; offene Entscheidungen dort).
 
-- Gruppe Design-Drift (vor 15cb74b16, COMPAREAFF f4d681652, f25c5da16; LABELSWEEP, LABELREADY/2 bis ed25ac512): zu 22.11.: compare misst Root und jede Pane einzeln (c201e8b4c, 585622a14); shell-main 23/23 (870acc717); about-dialog long-version (ebf8f845f, Logo als nacktes svg gequetscht); shortcuts-dialog 4/4 (991081e2b, Cause gemessen: dd nahm max(Zeilenhöhe, kbd) = 18,5 px; kbd jetzt 18 px); error-toast Spec 756040201; pages/sketches 56 -> 1 rot (ac162cd14, 6f86022cf Ghost-Look nur bei ghost nach ADR 0395, f9e54ff6a, 668a1fd6d, cebd4c7b8, 31680a9ab, 9be9ec1b0, a7ae27a9a). panned-zoomed zu (164f057ef, c47684fbe; Cause gemessen: Design-Zeilen blieben listenbreit 1076, App wächst w-max 1152); title-bar, title-search, shell-main, comment-row (a0a354fd5), comment-flow build-ready. studio-menu und pages/sketches build-ready (b5e57ae51; Cause gemessen: compare nahm im Entwurf nur et-menu ohne Pfeil, 248 gegen 258 px; ADR 0405 e0adb0b6b). Offen: Suspect: andere SDK-Designs mit text-shell-Feld; about-dialog Rest 15 px bleibt rot (nur eine Aufweitung der Antialias-Regel ADR 0341 bräuchte Tom).
+- Gruppe Design-Drift (gebaut bis b5e57ae51, Einzelheiten in git): Offen: Suspect: andere SDK-Designs mit text-shell-Feld; about-dialog Rest 15 px bleibt rot (nur eine Aufweitung der Antialias-Regel ADR 0341 bräuchte Tom).
 
-- Befund (23.11., Tom, Tomflix-Lauf 2, beim Builder als Fehler a-e): Start zeigt „Sketch nicht gefunden“; components/button: LIGHT-Zelle dunkel, disabled = default; Seiten-Varianten ungleich hoch (bis 0 px, Wahl blockiert); Kopfzeile nennt `sketch ready`. Unmöglich, wenn alle Varianten einer Seite einen Rahmen teilen.
+- Befund (23.11., Tom, Tomflix-Lauf 2): Seiten-Varianten ungleich hoch, nach Neustart 0 px (Wahl blockiert; d a4500fa48, a c1fc44a77, e ac5f61e8b gebaut, 0 px offen); Teil wechseln zeigt kurz in allen Zellen „Zeichnen fehlgeschlagen“ (unmöglich, wenn eine Zelle bis zum ersten Ergebnis neutral lädt); Seiten-Sketch zeigt nur den Telefon-Rahmen, obwohl ADR 0366 einer Seite alle Presets gibt (Builder baut Zeilen je Preset); Doppelklick macht keinen Rahmen mehr live, Canvas hängt im Greifen (Suspect: Ziehen endet nie). Unmöglich, wenn alle Varianten einer Seite einen Rahmen teilen.
+- Prüfer Lauf 2, Batch 1: verfehlt R3 (jede Stimmung zeichnet eigenen `<header>`, kein Shell-Teil) und R4 (Hover/Focus nur als CSS; Zustände gehören an die Teile, Regel im Skill widerspricht der Seitenregel). Suspect (Gruppe B): der Check lehnt Inhalt höher als der Telefon-Schirm ab, daher nur 4-7 Filme. Suspect: Google Fonts laden in der Sandbox nicht, Ready-Shots zeigen Systemschrift.
 
 ## B. Design-CLI: neue Prüfungen
 
