@@ -968,7 +968,12 @@ describe('SketchesComponent', () => {
       root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-state] .font-code')?.style.fontSize,
     ];
 
-    expect(sizes()).toEqual(['30px', '26px']);
+    expect(sizes()).toEqual(['30px', '12px']);
+
+    fixture.componentRef.setInput('camera', { zoom: 8, x: 0, y: 0 });
+    await fixture.whenStable();
+
+    expect(sizes()).toEqual(['120px', '12px']);
 
     fixture.componentRef.setInput('camera', { zoom: 0.25, x: 0, y: 0 });
     await fixture.whenStable();

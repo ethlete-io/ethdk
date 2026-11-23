@@ -502,7 +502,9 @@ export class SketchesComponent {
   });
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
-  protected labelFont = computed(() => textAt(LABEL_TEXT, { scale: this.scale(), fit: this.noteFit() }));
+  protected labelFont = computed(() =>
+    textAt(LABEL_TEXT, { scale: Math.min(this.scale(), this.noteFit()), fit: this.noteFit() }),
+  );
   protected labelSize = computed(() =>
     this.labelsHiddenAt({ scale: this.scale(), label: this.labelFont() }) ? null : this.labelFont(),
   );
