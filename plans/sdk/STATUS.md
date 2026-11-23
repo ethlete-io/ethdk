@@ -25,7 +25,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S37 (fifagg, 21.11.): ausgeliefert in @ethlete/components 1.0.0-next.96 (cf03fdca1, 22.11.), fifa informiert; war blockiert (88 visuelle Rots): der Pfeil im gefüllten Scroll-Button nimmt `--et-surface-interaction-solid` statt der Tinte des Buttons (grau statt weiß auf fifa-dark); Fix im SDK: gefüllter Button zeichnet das Icon in seiner Tinte -> Builder sofort, Prerelease danach (ADR 0377).
 - S38 (fifagg, 22.11.): ausgeliefert in @ethlete/components 1.0.0-next.98 (08251f2d5); war blockiert: Formularfeld ohne Label mit floating-Label-Modus blendete den Platzhalter aus.
 - S39 (fifagg, 22.11.): nicht blockiert, kein SDK-Code: `fill="sunken"` ist der dokumentierte Weg für ein vertieftes Feld; die Höhe kommt aus dem App-Token, das nur `data-fill=filled` trifft; fifagg informiert.
-- S40 (fifagg, 22.11.): gebaut 4103379e9: Variable `--et-form-field-floating-inside-control-font-scale` (Standard 0.96); kommt mit dem nächsten Prerelease.
+- S40 (fifagg, 22.11.): ausgeliefert in @ethlete/components 1.0.0-next.98 (4103379e9): Variable `--et-form-field-floating-inside-control-font-scale` (Standard 0.96).
 - Dialog (Studio, 21.11.): die Dialog-Overlay-Strategie zentriert die Pane auf Bruchpixeln (302,5 px hoch -> top 40,25), was Textzeilen abwechselnd rundet (shortcuts-dialog 1694 px, die echte App zeigt es auch); Suspect bis zum Biss; Fix: ganzzahlige Zentrierung in der Strategie.
 
 ## Offene Plan-Dateien
