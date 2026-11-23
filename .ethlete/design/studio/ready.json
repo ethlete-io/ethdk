@@ -1297,19 +1297,8 @@
     "pid": 2342738
   },
   "foundations/logo": {
-    "hash": "98572436a9da90ef",
-    "files": {
-      ".ethlete/design/studio/assets/studio-app-icon.svg": "d1927cc46bc95568",
-      ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
-      ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
-      ".ethlete/design/studio/foundations/logo/logo.ts": "7b41928bfc64e439"
-    },
     "actions": [],
-    "builder": "designer",
-    "at": "2026-11-17T13:28:23.600Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-17T13:28:23.600Z"
   },
   "foundations/motion": {
     "hash": "b74d37ee2116e228",
