@@ -284,6 +284,22 @@ const inTurns = <TItem, TResult>(
     }),
   );
 
+/** Maps `items` one after another, each in its own turn of the event loop, and stops once `signal` aborts. */
+const oneTurnEach = async <TItem, TResult>(
+  { items, signal }: { items: readonly TItem[]; signal?: AbortSignal | undefined },
+  run: (item: TItem, index: number) => TResult,
+) => {
+  const results: TResult[] = [];
+
+  for (const [index, item] of items.entries()) {
+    await setImmediate();
+    signal?.throwIfAborted();
+    results.push(run(item, index));
+  }
+
+  return results;
+};
+
 const keptOf = async (options: {
   product: ResolvedProduct;
   sketch: Sketch;
@@ -471,42 +487,44 @@ const listingOf = async ({
     dirs: sketches.map((sketch) => sketch.dir),
   });
 
+  const listedSketches = await oneTurnEach({ items: sketches, signal }, (sketch, index) => {
+    const targets = sketchTargets[index] ?? null;
+    const unchanged = checked && targets ? noChangedStateProblemsOf({ sketch, targets }) : [];
+    const variants = checked?.variants.filter((entry) => entry.target === sketch.target) ?? [];
+
+    return {
+      ...sketchOf({ sketch, target }),
+      staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
+      rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
+      addedSkips: sketch.decision ? [] : addedSkipsOf({ product, sketch }),
+      readyRefusal:
+        sketch.status === 'ready' && changedSinceReadyOf(sketch).length === 0
+          ? null
+          : recordedReadyRefusalOf({ productDir: product.dir, sketch }),
+      ...(checked
+        ? {
+            problems: [
+              ...variants,
+              ...unchanged
+                .filter(({ variant }) => !variants.some((entry) => entry.variant === variant))
+                .map(({ variant }) => ({ variant, problems: [] })),
+            ].map((entry) => ({
+              variant: entry.variant,
+              problems: [...entry.problems, ...unchanged.filter(({ variant }) => variant === entry.variant)].map(
+                (problem) => problemOf({ target, problem }),
+              ),
+            })),
+          }
+        : {}),
+      ...(targets ? { targets } : {}),
+      report: readSketchReport({ checkout: target, sketch }),
+    };
+  });
+
   return {
     status: 200,
     body: {
-      sketches: sketches.map((sketch, index) => {
-        const targets = sketchTargets[index] ?? null;
-        const unchanged = checked && targets ? noChangedStateProblemsOf({ sketch, targets }) : [];
-        const variants = checked?.variants.filter((entry) => entry.target === sketch.target) ?? [];
-
-        return {
-          ...sketchOf({ sketch, target }),
-          staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
-          rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
-          addedSkips: sketch.decision ? [] : addedSkipsOf({ product, sketch }),
-          readyRefusal:
-            sketch.status === 'ready' && changedSinceReadyOf(sketch).length === 0
-              ? null
-              : recordedReadyRefusalOf({ productDir: product.dir, sketch }),
-          ...(checked
-            ? {
-                problems: [
-                  ...variants,
-                  ...unchanged
-                    .filter(({ variant }) => !variants.some((entry) => entry.variant === variant))
-                    .map(({ variant }) => ({ variant, problems: [] })),
-                ].map((entry) => ({
-                  variant: entry.variant,
-                  problems: [...entry.problems, ...unchanged.filter(({ variant }) => variant === entry.variant)].map(
-                    (problem) => problemOf({ target, problem }),
-                  ),
-                })),
-              }
-            : {}),
-          ...(targets ? { targets } : {}),
-          report: readSketchReport({ checkout: target, sketch }),
-        };
-      }),
+      sketches: listedSketches,
       unreadable: unreadable.map((problem) => problemOf({ target, problem })),
     },
   };
