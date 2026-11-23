@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B681
+built: 1dde086fe
 decided: 2026-11-23
 source: doc-agent session 2026-11-23, tomflix run 2 mood round
 ---
