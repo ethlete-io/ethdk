@@ -29,7 +29,7 @@ origin, Liste in `.claude/handoffs/mac-tank-branches.md`.
 
 Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er ihn gegen git; ist er erledigt, nimmt er den nächsten. Nur der Doc-Agent ordnet die Liste. Ein neuer Befund unterbricht nur bei rotem CI (ADR 0230) oder wenn er den laufenden Eintrag blockiert. Die Zeile „wie gebaut“ steht nur in der Commit-Nachricht (ADR 0350).
 
-1. **Button-Mindesthöhe (B671)** ⏳ fifagg S43, blockiert: et-button hat kein Höhen-Token, die Größe ändert nur Padding und Schrift. Neu: Token `--et-button-min-height` (Standard: keine Mindesthöhe, also kein Unterschied), wie `--et-form-field-control-min-height`; fifagg setzt 5rem / 6.5rem ab sm selbst. Test, Doku, Changeset, dann Prerelease (ADR 0377) - Builder
+1. **Button-Mindesthöhe (B671)** ⏳ fifagg S43: kein SDK-Code; ein inneres Element wäre breaking (Studio-disclosure `[&>.et-button-contents]`). Antwort: `--et-button-line-height` (z. B. 1.5) und Block-Padding je Breakpoint ergeben 50/65 px mit und ohne Icon. Offen: fifagg bestätigt - fifagg
 2. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 3. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 4. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
