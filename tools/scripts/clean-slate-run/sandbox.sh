@@ -45,6 +45,12 @@ args=(
   --bind "$home" "$home"
   --bind "$target" "$target"
   --ro-bind "$target/node_modules" "$target/node_modules"
+)
+for dir in .design-explore .vite .vite-temp .cache; do
+  mkdir -p "$target/node_modules/$dir"
+  args+=(--bind "$target/node_modules/$dir" "$target/node_modules/$dir")
+done
+args+=(
   --chdir "$target"
   --clearenv
   --setenv HOME "$home" --setenv CLAUDE_CONFIG_DIR "$config" --setenv COREPACK_HOME "$home/.cache/node/corepack"
