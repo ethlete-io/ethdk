@@ -273,11 +273,18 @@ export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
 
 const UNUSED_KEY: SystemGroupKey = 'unused';
 
-/** The key of the one part that imports a part of the product's own, `null` for any other part. */
-export const nestingHostOf = (part: Pick<ListedPart, 'origin' | 'usedBy'>): string | null => {
+/** The key of the part a part of the product's own names as its family, else of its one user, `null` for any other part. */
+export const nestingHostOf = (
+  part: Pick<ListedPart, 'origin' | 'usedBy' | 'family'>,
+  isKnown: (key: string) => boolean = () => true,
+): string | null => {
+  if (part.origin === 'base') return null;
+
+  if (part.family && isKnown(part.family)) return part.family;
+
   const [user, ...others] = part.usedBy ?? [];
 
-  return part.origin !== 'base' && user !== undefined && others.length === 0 ? user : null;
+  return user !== undefined && others.length === 0 ? user : null;
 };
 
 const layerLabelOf = (layer: string) => SYSTEM_GROUPS.find((group) => group.key === layer)?.label ?? layer;
@@ -286,13 +293,17 @@ const layerLabelOf = (layer: string) => SYSTEM_GROUPS.find((group) => group.key 
 const nestedEntriesOf = (pool: ListedPart[], entryOf: (part: ListedPart) => TreeEntry) => {
   const byKey = new Map(pool.map((part) => [partKeyOf(part), part]));
   const hostOf = (part: ListedPart) => {
-    const host = nestingHostOf(part);
+    const host = nestingHostOf(part, (key) => byKey.has(key));
 
     if (host === null || !byKey.has(host)) return null;
 
     const seen = new Set<ListedPart>();
 
-    for (let next = byKey.get(host); next && !seen.has(next); next = byKey.get(nestingHostOf(next) ?? '')) {
+    for (
+      let next = byKey.get(host);
+      next && !seen.has(next);
+      next = byKey.get(nestingHostOf(next, (key) => byKey.has(key)) ?? '')
+    ) {
       if (next === part) return null;
 
       seen.add(next);

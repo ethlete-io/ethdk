@@ -261,6 +261,8 @@ export type ListedPart = {
   groups?: { label: string; states: string[] }[];
   /** The model ids that drew the part, empty when unknown. Missing from an `@ethlete/cli` older than agent authors. */
   madeBy?: string[];
+  /** The id of the part the part's design names as its family. Missing without one or from an `@ethlete/cli` older than part families. */
+  family?: string;
   /** The wireframe kit calls in a page's source. Missing from an `@ethlete/cli` older than the kit. */
   /** Set on a part with no control of its own that is no page. Missing from an `@ethlete/cli` older than composition parts. */
   composition?: true;

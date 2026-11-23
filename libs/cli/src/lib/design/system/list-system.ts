@@ -29,6 +29,8 @@ export type ListedPart = {
   note: string | null;
   /** The model ids that drew the part, written by the last sketch merge; empty when none is known. */
   madeBy: string[];
+  /** The id of the part the part's design names as its family, when it does. */
+  family?: string;
   states: string[];
   /** The sentence each state declares in `describe`, by state name; a state without one is missing. */
   descriptions?: Record<string, string>;
@@ -99,6 +101,7 @@ type PartModule = {
   default?: {
     note?: unknown;
     madeBy?: unknown;
+    family?: unknown;
     states?: unknown;
     describe?: unknown;
     widths?: unknown;
@@ -262,6 +265,7 @@ export const readPartModule = async (options: {
     return {
       note: typeof loaded.note === 'string' ? loaded.note : null,
       madeBy: madeByOf(loaded.madeBy),
+      ...(typeof loaded.family === 'string' && loaded.family !== '' ? { family: loaded.family } : {}),
       states: names,
       ...descriptionsOf(loaded.describe, names),
       ...widthsOf(loaded.widths),

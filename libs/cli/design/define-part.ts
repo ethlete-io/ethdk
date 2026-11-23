@@ -27,6 +27,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
 /**
  * One part of a product's design system. `note` records why the part has its current shape, and
  * `madeBy` the model ids that drew it, written by a sketch merge.
+ * `family` is the id of the part it belongs to, such as `components/comment-flow`; Studio's part tree shows the part
+ * under it whatever number of parts use it.
  * `states` names each state it is drawn in with the props for that state, and `render` draws it.
  * `describe` holds one sentence per state: what the state shows and what to check in it. Studio shows it under the
  * state's title; a missing or unknown state name in it does not compile.
@@ -61,6 +63,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
 export type Part<TProps, TState extends string = string> = {
   note: string;
   madeBy?: string[];
+  family?: string;
   states: Record<TState, TProps>;
   describe: Record<TState, string>;
   styles?: string;

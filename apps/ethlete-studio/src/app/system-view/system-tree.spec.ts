@@ -390,6 +390,36 @@ describe('a part nested under its one user', () => {
     ]);
   });
 
+  it('nests a part under its declared family whatever number of parts use it', () => {
+    const tree = treeOf([
+      part({ name: 'comment-flow', usedBy: [] }),
+      part({
+        name: 'comment-pin',
+        family: 'components/comment-flow',
+        usedBy: ['components/comment-flow', 'pages/inbox'],
+      }),
+      part({ name: 'comment-row', family: 'components/comment-flow', usedBy: [] }),
+      part({ layer: 'pages', name: 'inbox', usedBy: [] }),
+    ]);
+
+    expect(tree.map((group) => [group.key, keysOf(group.entries)])).toEqual([
+      ['components', [['components/comment-flow', ['components/comment-pin', 'components/comment-row']]]],
+      ['pages', ['pages/inbox']],
+    ]);
+  });
+
+  it('falls back to the one user when the declared family is not in the tree', () => {
+    const tree = treeOf([
+      part({ name: 'title-bar', usedBy: [] }),
+      part({ name: 'title-search', family: 'components/missing', usedBy: ['components/title-bar'] }),
+      part({ name: 'lonely', family: 'components/missing', usedBy: [] }),
+    ]);
+
+    expect(tree.map((group) => [group.key, keysOf(group.entries)])).toEqual([
+      ['components', [['components/title-bar', ['components/title-search']], 'components/lonely']],
+    ]);
+  });
+
   it('moves a part back to its layer once a second part uses it', () => {
     const page = part({ layer: 'pages', name: 'sketches', usedBy: [] });
     const trigger = part({ name: 'hold-trigger', usedBy: ['pages/sketches'] });

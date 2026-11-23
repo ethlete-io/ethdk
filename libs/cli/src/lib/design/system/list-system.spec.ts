@@ -108,6 +108,24 @@ describe('listSystem', () => {
     expect(usedBy('pages/home')).toEqual([]);
   });
 
+  it("lists the family a part's design names, and none for a part without one", async () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/components/pin/pin.ts',
+      `import { definePart, drawing } from '@design-system';
+export default definePart({ note: '', family: 'components/button', describe: { rest: 'at rest' }, states: { rest: {} }, render: () => drawing({ body: '<i></i>', styles: '' }) });
+`,
+    );
+
+    const [product] = await list(target, ['acme']);
+    const familyOf = (key: string) => product?.parts.find((part) => `${part.layer}/${part.name}` === key)?.family;
+
+    expect(familyOf('components/pin')).toBe('components/button');
+    expect(familyOf('components/button')).toBeUndefined();
+  });
+
   it('flags the base parts no part of the product imports as unused in the product', async () => {
     const target = acme();
     const home = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
