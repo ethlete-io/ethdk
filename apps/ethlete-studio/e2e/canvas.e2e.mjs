@@ -1058,8 +1058,9 @@ const discardAsksFirst = async (page) => {
   return { ok: true };
 };
 
-const EDIT_PART = 'components/comment-row';
-const EDIT_LABEL = { before: 'font-ui-medium">${c.author}</span>', after: 'font-ui-medium">${c.author}:</span>' };
+// No other part may embed EDIT_PART: `check --part` then checks each embedder too, which pushed the shard past its CI budget.
+const EDIT_PART = 'components/about-dialog';
+const EDIT_LABEL = { before: '>Version ${version}</span>', after: '>Version: ${version}</span>' };
 const EDIT_WAIT_MS = 120000;
 
 const namedWait = async (page, label, predicate, arg) => {
@@ -1098,7 +1099,7 @@ const slowestPhasesOf = (stderr) =>
 const withEditSketch = async (page, designPort, run) => {
   const studio = join(checkout, '.ethlete/design/studio');
   const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
-  const file = join(studio, EDIT_PART, 'comment-row.ts');
+  const file = join(studio, EDIT_PART, `${EDIT_PART.split('/')[1]}.ts`);
   const before = readFileSync(file, 'utf8');
   const git = (...gitArgs) => {
     try {
@@ -1225,6 +1226,7 @@ const withEditSketch = async (page, designPort, run) => {
   try {
     return await run({ edit, pick, file, studio, git, base, phaseLine });
   } finally {
+    console.log(`[ci-timing] edit sketch ${phaseLine()}`);
     rmSync(join(checkout, '.git'), { recursive: true, force: true });
     rmSync(studio, { recursive: true, force: true });
     cpSync(saved, studio, { recursive: true });
