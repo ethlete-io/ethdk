@@ -137,6 +137,7 @@ describe('PARSED_PART_FIELDS', () => {
       implements: 'apps/x/every.component.ts',
       data: 'list',
       dataStates: { loading: 'rest', error: 'rest', empty: 'rest' },
+      groups: [{ label: 'All', states: ['rest', 'open'] }],
       render: () => ({ body: '<div></div>', styles: '' }),
     });
 

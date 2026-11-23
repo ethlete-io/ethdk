@@ -524,6 +524,28 @@ describe('framesOf', () => {
     expect(framesOf({ port: 4402, product: product(), part: chip })[0]?.grid?.descriptions).toEqual(descriptions);
   });
 
+  it('draws each state group of a page as one headed row in group order, and a state in no group after them', () => {
+    const page = part({
+      layer: 'pages',
+      name: 'home',
+      states: ['error', 'open', 'default', 'loose'],
+      groups: [
+        { label: 'Normal', states: ['default', 'open'] },
+        { label: 'Fehler', states: ['error'] },
+      ],
+    });
+    const frames = framesOf({ port: 4402, product: product(), part: page, folded: new Set(['open']) });
+
+    expect(frames.map((frame) => [frame.label, frame.row, frame.rowHead])).toEqual([
+      ['default · phone', 'group:Normal', 'Normal · 1'],
+      ['default · desktop', 'group:Normal', 'Normal · 1'],
+      ['error · phone', 'group:Fehler', 'Fehler · 1'],
+      ['error · desktop', 'group:Fehler', 'Fehler · 1'],
+      ['loose · phone', 'loose', undefined],
+      ['loose · desktop', 'loose', undefined],
+    ]);
+  });
+
   it('leaves the folded states out of the frames and keeps their order', () => {
     const card = part({ name: 'card', states: ['part', 'empty', 'busy', 'error'], widths: [320] });
     const frames = framesOf({ port: 4402, product: product(), part: card, folded: new Set(['empty', 'busy']) });

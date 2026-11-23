@@ -61,6 +61,31 @@ export default definePart({
   note: 'Decided rules only',
   consumerAction: 'its buttons are actions the consumer projects',
   madeBy: ['claude-opus-5-5', 'design check'],
+  groups: [
+    {
+      label: 'Types',
+      states: ['info', 'success', 'warning', 'error', 'all'],
+    },
+    {
+      label: 'Variants',
+      states: ['without-dismiss', 'action'],
+    },
+    {
+      label: 'Interaction',
+      states: [
+        'close-hover',
+        'close-active',
+        'close-focus-visible',
+        'action-hover',
+        'action-active',
+        'action-focus-visible',
+      ],
+    },
+    {
+      label: 'Error interaction',
+      states: ['error-close-focus-visible', 'error-action-focus-visible'],
+    },
+  ],
   states: {
     info: { type: 'info' },
     success: { type: 'success' },

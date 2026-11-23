@@ -29,6 +29,39 @@ const markControl = (markup: string) =>
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
+  groups: [
+    {
+      label: 'Rest',
+      states: ['empty', 'placeholder', 'filled', 'hint', 'description', 'required'],
+    },
+    {
+      label: 'Interaction',
+      states: ['hover', 'hover-filled', 'focus', 'focus-filled', 'focus-hover'],
+    },
+    {
+      label: 'Sizing',
+      states: [
+        'long-autosize',
+        'long-max-rows',
+        'long-max-rows-scrolled',
+        'manual-resize',
+        'manual-resize-overflow',
+        'single-row',
+        'size-sm',
+        'size-lg',
+        'mixed',
+        'no-label',
+      ],
+    },
+    {
+      label: 'Disabled and readonly',
+      states: ['disabled', 'disabled-filled', 'readonly', 'readonly-focus'],
+    },
+    {
+      label: 'Errors',
+      states: ['invalid', 'invalid-hover', 'invalid-focus'],
+    },
+  ],
   states: {
     empty: message({ placeholder: undefined }),
     placeholder: message(),

@@ -20,6 +20,32 @@ const INVALID = {
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5', 'design check'],
+  groups: [
+    {
+      label: 'Rest',
+      states: ['empty', 'placeholder', 'filled', 'hint', 'description', 'required'],
+    },
+    {
+      label: 'Interaction',
+      states: ['hover', 'hover-filled', 'focus', 'focus-filled', 'focus-hover'],
+    },
+    {
+      label: 'Sizes and layout',
+      states: ['size-sm', 'size-lg', 'align-end', 'align-center', 'mixed', 'no-label', 'long'],
+    },
+    {
+      label: 'Affixes and types',
+      states: ['icon-affixes', 'text-affixes', 'text-prefix', 'search', 'password'],
+    },
+    {
+      label: 'Disabled and readonly',
+      states: ['disabled', 'disabled-filled', 'readonly', 'readonly-hover', 'readonly-focus'],
+    },
+    {
+      label: 'Errors',
+      states: ['invalid', 'invalid-hover', 'invalid-focus', 'invalid-focus-hover'],
+    },
+  ],
   states: {
     empty: email({ placeholder: undefined }),
     placeholder: email(),

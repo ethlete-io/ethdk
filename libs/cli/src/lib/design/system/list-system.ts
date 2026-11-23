@@ -42,6 +42,8 @@ export type ListedPart = {
   motions?: Record<string, ListedMotion>;
   /** The states the part draws as one table in rest, when it declares a `grid` that places any. */
   grid?: ListedGrid;
+  /** The groups of the part's states in the order it declares them, each with the known states it names first. */
+  groups?: ListedGroup[];
   /** The calls of wireframe kit parts in a page's source; a page with any is a wireframe. */
   kitUses: number;
   /** The pages that import the part, directly or through another part: of its own product, and of each product that draws it as its base part. */
@@ -62,6 +64,8 @@ export type ListedPart = {
 export type ListedMotion = { from: string; to: string; at?: number[]; interrupt?: number; viewTransition?: boolean };
 
 export type ListedGrid = { columns: string[]; rows: string[]; cells: { row: string; column: string; state: string }[] };
+
+export type ListedGroup = { label: string; states: string[] };
 
 export type PageUse = { product: string; part: string };
 
@@ -100,6 +104,7 @@ type PartModule = {
     widths?: unknown;
     interactions?: unknown;
     grid?: unknown;
+    groups?: unknown;
     motions?: unknown;
   };
 };
@@ -183,6 +188,26 @@ export const gridOf = (grid: unknown, states: string[]): Pick<ListedPart, 'grid'
   return { grid: { columns, rows: [...new Set(cells.map((cell) => cell.row))], cells } };
 };
 
+/** The declared groups with a string label, each with the known states no earlier group names; empty groups are left out. */
+export const groupsOf = (groups: unknown, states: string[]): Pick<ListedPart, 'groups'> => {
+  if (!Array.isArray(groups)) return {};
+
+  const placed = new Set<string>();
+  const listed = groups.flatMap((group): ListedGroup[] => {
+    if (!isRecord(group) || typeof group['label'] !== 'string' || !Array.isArray(group['states'])) return [];
+
+    const members = group['states'].filter(
+      (state): state is string => typeof state === 'string' && states.includes(state) && !placed.has(state),
+    );
+
+    members.forEach((state) => placed.add(state));
+
+    return members.length > 0 ? [{ label: group['label'], states: [...new Set(members)] }] : [];
+  });
+
+  return listed.length > 0 ? { groups: listed } : {};
+};
+
 const pageReachOf = (system: SystemModules) =>
   system.products().flatMap((name) => {
     const product = system.productOf(name);
@@ -242,6 +267,7 @@ export const readPartModule = async (options: {
       ...widthsOf(loaded.widths),
       interactions: interactionsOf(loaded.interactions),
       ...gridOf(loaded.grid, names),
+      ...groupsOf(loaded.groups, names),
       ...motionsOf(loaded.motions),
 
       problem: null,

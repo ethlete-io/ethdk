@@ -165,7 +165,12 @@ export type HangingBelow = Record<string, number>;
 
 export const layoutSheet = (
   frames: SheetFrame[],
-  { below = {}, ...spacing }: SheetSpacing & { below?: HangingBelow },
+  {
+    below = {},
+    headed = new Set(),
+    headRoom = 0,
+    ...spacing
+  }: SheetSpacing & { below?: HangingBelow; headed?: ReadonlySet<string>; headRoom?: number },
 ): SheetLayout => {
   const order: string[] = [];
   const byRow = new Map<string, SheetFrame[]>();
@@ -189,6 +194,8 @@ export const layoutSheet = (
     const members = byRow.get(name) ?? [];
     let x = 0;
 
+    if (headed.has(name)) y += headRoom;
+
     rows.push({ name, y });
 
     for (const frame of members) {
@@ -200,83 +207,6 @@ export const layoutSheet = (
   }
 
   return { frames: placed, rows };
-};
-
-const blockSizesOf = (count: number, blocks: number) => {
-  const base = Math.floor(count / blocks);
-
-  return Array.from({ length: blocks }, (_, index) => base + (index < count % blocks ? 1 : 0));
-};
-
-/** Within this share of the best fit scale, fewer blocks win, so a short sheet keeps one column of rows. */
-const WRAP_TIE = 0.9;
-
-/**
- * Splits the rows of a sheet into consecutive blocks laid side by side, so a tall sheet takes the shape of the
- * `room`. Picks the fewest blocks whose fit scale is within `WRAP_TIE` of the best one; one block stays as is.
- */
-export const wrapSheet = (
-  layout: SheetLayout,
-  { room, blockGap, below = {} }: { room: Size; blockGap: number; below?: HangingBelow },
-): SheetLayout => {
-  const { frames, rows } = layout;
-
-  if (rows.length < 2 || room.width <= 0 || room.height <= 0) return layout;
-
-  const extents = rows.map((row) => ({
-    ...row,
-    bottom: Math.max(
-      ...frames
-        .filter((frame) => frame.row === row.name)
-        .map((frame) => frame.y + frame.height + (below[frame.id] ?? 0)),
-    ),
-  }));
-  const blockWidth = Math.max(...frames.map((frame) => frame.x + frame.width));
-  const blocksOf = (sizes: number[]) => {
-    let start = 0;
-
-    return sizes.map((size) => {
-      const block = extents.slice(start, start + size);
-
-      start += size;
-
-      return block;
-    });
-  };
-  const heightOf = (block: typeof extents) =>
-    Math.max(...block.map((row) => row.bottom)) - Math.min(...block.map((row) => row.y));
-  const scaleOf = (blocks: (typeof extents)[]) =>
-    Math.min(
-      1,
-      room.width / (blocks.length * blockWidth + (blocks.length - 1) * blockGap),
-      room.height / Math.max(...blocks.map(heightOf)),
-    );
-  const candidates = rows.map((_, index) => blocksOf(blockSizesOf(rows.length, index + 1)));
-  const best = Math.max(...candidates.map(scaleOf));
-  const blocks = candidates.find((candidate) => scaleOf(candidate) >= best * WRAP_TIE) ?? [extents];
-
-  if (blocks.length === 1) return layout;
-
-  const placement = new Map<string, { block: number; top: number }>();
-  const placedRows: SheetRow[] = [];
-
-  blocks.forEach((block, index) => {
-    const top = Math.min(...block.map((row) => row.y));
-
-    for (const row of block) {
-      placement.set(row.name, { block: index, top });
-      placedRows.push({ name: row.name, y: row.y - top });
-    }
-  });
-
-  return {
-    frames: frames.map((frame) => {
-      const { block, top } = placement.get(frame.row) ?? { block: 0, top: 0 };
-
-      return { ...frame, x: frame.x + block * (blockWidth + blockGap), y: frame.y - top };
-    }),
-    rows: placedRows,
-  };
 };
 
 export type GridSpacing = SheetSpacing & { lineWidth: number };

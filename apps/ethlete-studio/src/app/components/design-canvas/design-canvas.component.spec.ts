@@ -519,33 +519,31 @@ describe('DesignCanvasComponent', () => {
     expect(rightEdges).toEqual([140, 140]);
   });
 
-  it('wraps the rows of a tall sheet into several columns, and keeps a short sheet in one', async () => {
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1440);
-    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(900);
+  it('heads a row with its rowHead and draws the frames of a group side by side in one row', async () => {
+    const frame = (id: string, row: string, rowHead?: string): CanvasFrame => ({
+      ...FITTED,
+      id,
+      row,
+      width: 200,
+      height: 100,
+      ...(rowHead === undefined ? {} : { rowHead }),
+    });
+    const fixture = await render([
+      frame('a', 'Vergleich', 'Vergleich · 2'),
+      frame('b', 'Vergleich', 'Vergleich · 2'),
+      frame('c', 'Fehler', 'Fehler · 1'),
+    ]);
+    const host = fixture.nativeElement as HTMLElement;
+    const heads = [...host.querySelectorAll<HTMLElement>('[data-row-head]')];
+    const [a, b, c] = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .map((placed) => placed.nativeElement as HTMLElement);
 
-    const column = (count: number) =>
-      Array.from({ length: count }, (_, index) => ({
-        ...FITTED,
-        id: `state-${index}`,
-        row: `state-${index}`,
-        width: 1440,
-        height: 900,
-      }));
-    const lefts = async (count: number) => {
-      const fixture = await render(column(count));
-
-      return new Set(
-        fixture.debugElement
-          .queryAll(By.directive(CanvasFrameComponent))
-          .map(({ nativeElement }) => nativeElement.style.left),
-      );
-    };
-
-    expect((await lefts(30)).size).toBeGreaterThan(3);
-
-    TestBed.resetTestingModule();
-
-    expect((await lefts(2)).size).toBe(1);
+    expect(heads.map((head) => head.textContent?.trim())).toEqual(['Vergleich · 2', 'Fehler · 1']);
+    expect(heads.map((head) => head.style.marginTop)).toEqual([a?.style.top, c?.style.top]);
+    expect(b?.style.top).toBe(a?.style.top);
+    expect(b?.style.left).not.toBe(a?.style.left);
+    expect(c?.style.left).toBe(a?.style.left);
   });
 
   it('draws no border on a fitted frame, but keeps it on a frame at a width', async () => {

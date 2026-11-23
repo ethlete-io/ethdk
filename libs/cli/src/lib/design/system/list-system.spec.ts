@@ -6,7 +6,7 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { createDesignServer } from '../serve';
 import { warningProblemsOf } from './check-system';
 import { gridReportOf } from './grid-report';
-import { listSystem } from './list-system';
+import { groupsOf, listSystem } from './list-system';
 import { resolveProduct } from './resolve-product';
 import { createSketch, variantDirOf } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
@@ -490,6 +490,30 @@ export default definePart({ note: '', describe: { rest: 'at rest' }, states: { r
     expect(loaded.default.render({ label: 'x' }).styles).toContain(
       '.acme-button:is(:hover, [data-et-force~="hover"], [data-et-force~="active"])',
     );
+  });
+});
+
+describe('groupsOf', () => {
+  it('keeps each known state in the first group that names it and drops a group left empty', () => {
+    const states = ['a', 'b', 'c'];
+
+    expect(groupsOf(undefined, states)).toEqual({});
+    expect(
+      groupsOf(
+        [
+          { label: 'Eins', states: ['a', 'gone', 'b'] },
+          { label: 'Zwei', states: ['b'] },
+          { label: 7, states: ['c'] },
+          { label: 'Drei', states: ['c'] },
+        ],
+        states,
+      ),
+    ).toEqual({
+      groups: [
+        { label: 'Eins', states: ['a', 'b'] },
+        { label: 'Drei', states: ['c'] },
+      ],
+    });
   });
 });
 

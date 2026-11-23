@@ -50,8 +50,6 @@ import {
   layoutGrid,
   layoutMatrix,
   layoutSheet,
-  wrapSheet,
-  SheetFrame,
   offsetWithin,
   panCamera,
   zoomAtPoint,
@@ -88,11 +86,11 @@ const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
 const FIT_PADDING = 64;
-const SHEET_BLOCK_GAP_FACTOR = 3;
 const START_PADDING = { x: 40, y: 48 };
 const CAPTION_ROOM = 40;
 const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
+const ROW_HEAD_ROOM = 240;
 const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
@@ -422,8 +420,22 @@ export class DesignCanvasComponent {
             spacing,
             emptyWidths,
           });
+    const rowHeadOf = new Map(
+      frames.flatMap((frame) => (frame.rowHead === undefined ? [] : [[frame.row ?? '', frame.rowHead] as const])),
+    );
     const sheet =
-      matrix ?? (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : this.sheetOf(sized));
+      matrix ??
+      (arrangement === 'grid'
+        ? layoutGrid(sized, { ...GRID_SPACING, rowGap })
+        : layoutSheet(sized, { ...SPACING, headed: new Set(rowHeadOf.keys()), headRoom: ROW_HEAD_ROOM }));
+    const rowHeads =
+      arrangement === 'sheet'
+        ? sheet.rows.flatMap((row) => {
+            const label = rowHeadOf.get(row.name);
+
+            return label === undefined ? [] : [{ key: row.name, label, y: row.y }];
+          })
+        : [];
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
       const column = columns.find((candidate) => candidate.key === placed.name);
 
@@ -443,6 +455,7 @@ export class DesignCanvasComponent {
     return {
       heads,
       groups,
+      rowHeads,
       frames: sheet.frames.flatMap((placed) => {
         const frame = byId.get(placed.id);
 
@@ -456,6 +469,8 @@ export class DesignCanvasComponent {
   protected columnHeadsNoted = computed(() => this.columns().some((column) => column.note && !column.folded));
 
   protected groupHeads = computed(() => this.layout().groups);
+
+  protected rowHeads = computed(() => this.layout().rowHeads);
 
   private projectedScene = computed(() => {
     const rects = this.projectedRects();
@@ -1074,18 +1089,6 @@ export class DesignCanvasComponent {
       x: this.covered() + (inset?.left ?? 0) + START_PADDING.x - bounds.x,
       y: (inset?.top ?? 0) + START_PADDING.y - bounds.y,
     };
-  }
-
-  private sheetOf(sized: (SheetFrame & { unsized: boolean })[]) {
-    const sheet = layoutSheet(sized, SPACING);
-    const { width, height } = this.viewport();
-
-    if (sized.some((frame) => frame.unsized)) return sheet;
-
-    return wrapSheet(sheet, {
-      room: { width: width - this.covered() - 2 * FIT_PADDING, height: height - 2 * FIT_PADDING },
-      blockGap: SPACING.columnGap * SHEET_BLOCK_GAP_FACTOR,
-    });
   }
 
   private scene(bounds: Rect | null, viewport: Size): CameraScene {

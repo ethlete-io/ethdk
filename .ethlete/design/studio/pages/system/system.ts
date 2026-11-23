@@ -340,6 +340,52 @@ export default definePart<{
     route: '/',
     component: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts',
   },
+  groups: [
+    {
+      label: 'Übersicht',
+      states: ['part', 'many-states', 'many-states-folded', 'fit', 'points-closed', 'nothing-open'],
+    },
+    {
+      label: 'Leer und Hinweise',
+      states: ['empty', 'canvas-note', 'sketch-missing'],
+    },
+    {
+      label: 'Kommentare',
+      states: [
+        'comment-mode',
+        'comment-draft',
+        'comment-draft-typed',
+        'comments',
+        'comments-mode',
+        'comments-draft',
+        'thread',
+        'thread-own',
+      ],
+    },
+    {
+      label: 'Prüfen und Bearbeiten',
+      states: [
+        'one-blocker',
+        'checking',
+        'blocked-checking',
+        'direct-edit',
+        'direct-edit-closed',
+        'blockers-open',
+        'developer-part',
+        'developer-part-blocked',
+        'call',
+        'call-transferred',
+      ],
+    },
+    {
+      label: 'Agent',
+      states: ['agent-working', 'agent-working-ready', 'agent-waiting', 'agent-interrupted'],
+    },
+    {
+      label: 'Fehler',
+      states: ['listing-error', 'send-error', 'send-rejected', 'agent-failed', 'agent-failed-ready'],
+    },
+  ],
   states: {
     part: {},
     empty: { empty: true },

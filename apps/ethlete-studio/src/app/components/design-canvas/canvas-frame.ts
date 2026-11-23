@@ -31,6 +31,8 @@ export type CanvasFrame = {
   height?: number;
   label: string;
   row?: string;
+  /** The heading of the frame's `sheet` row, such as a state group with its count. */
+  rowHead?: string;
   /** Shown beside the row instead of its name. */
   /** Rows of one group sit closer to each other than to the rows of the next group. */
   rowGroup?: string;

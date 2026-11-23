@@ -51,6 +51,23 @@ describe('definePart', () => {
     expect(button.grid).toBeUndefined();
   });
 
+  it('types the groups of its states against the state names, and keeps them on the part', () => {
+    const groups = [
+      { label: 'Gefüllt', states: ['filled'] },
+      { label: 'Umriss', states: ['outline-wide'] },
+    ] as const;
+    const grouped = definePart({ ...source, groups: [...groups] });
+
+    definePart({
+      ...source,
+      // @ts-expect-error a state the part does not have
+      groups: [{ label: 'Gedrückt', states: ['pressed'] }],
+    });
+
+    expect(grouped.groups).toEqual(groups);
+    expect(button.groups).toBeUndefined();
+  });
+
   it('types the surfaces of its controls against the state names, and keeps them on the part', () => {
     const controlled = definePart({
       ...source,

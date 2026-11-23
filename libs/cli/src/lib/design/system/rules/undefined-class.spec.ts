@@ -124,6 +124,18 @@ describe('undefinedClassesOf', { timeout: 120_000 }, () => {
     expect(messagesOf(target)).toEqual([]);
   });
 
+  it('reads the state names of the state groups as no classes', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/pages/home/home.ts',
+      `import { definePart } from '@design-system';\nexport default definePart({ note: '', groups: [{ label: 'Fehler', states: ['list-error'] }], states: {}, render: () => ({ body: '<div class="flex"></div>' }) });\n`,
+    );
+
+    expect(messagesOf(target)).toEqual([]);
+  });
+
   it('runs as part of design check', () => {
     const target = acme();
 

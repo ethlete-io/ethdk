@@ -54,6 +54,30 @@ export default definePart({
   note: 'Decided rules only',
   consumerAction: 'its buttons are actions the consumer projects',
   madeBy: ['claude-opus-5-5', 'design check'],
+  groups: [
+    {
+      label: 'Rest',
+      states: ['default', 'cancel', 'confirm', 'long-body'],
+    },
+    {
+      label: 'Interaction',
+      states: [
+        'close-hover',
+        'close-active',
+        'close-focus-visible',
+        'confirm-hover',
+        'confirm-active',
+        'confirm-focus-visible',
+        'cancel-hover',
+        'cancel-active',
+        'cancel-focus-visible',
+      ],
+    },
+    {
+      label: 'Alert',
+      states: ['alert', 'alert-cancel-focus-visible', 'alert-confirm-focus-visible'],
+    },
+  ],
   states: {
     default: { kind: 'dialog' },
     cancel: { kind: 'dialog' },

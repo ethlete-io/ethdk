@@ -176,10 +176,35 @@ const isDataStateName = (node: ts.Node) => {
   );
 };
 
+const isGroupStateName = (node: ts.Node) => {
+  const list = node.parent;
+  const states = list?.parent;
+  const groups = states?.parent?.parent?.parent;
+
+  return (
+    list !== undefined &&
+    ts.isArrayLiteralExpression(list) &&
+    states !== undefined &&
+    ts.isPropertyAssignment(states) &&
+    ts.isIdentifier(states.name) &&
+    states.name.text === 'states' &&
+    groups !== undefined &&
+    ts.isPropertyAssignment(groups) &&
+    ts.isIdentifier(groups.name) &&
+    groups.name.text === 'groups'
+  );
+};
+
 const classTextsOf = (node: ts.Node, renderers: Set<string>): string[] => {
   const literal = literalOf(node);
 
-  if (!literal || isCompared(literal.expression) || isDataStateName(literal.expression)) return [];
+  if (
+    !literal ||
+    isCompared(literal.expression) ||
+    isDataStateName(literal.expression) ||
+    isGroupStateName(literal.expression)
+  )
+    return [];
   if (!literal.text.includes('<') && isRendererOption(literal.expression, renderers)) return [];
   if (literal.text.includes('<'))
     return [...literal.text.matchAll(/\bclass=["']([^"']*)/gu)].map(([, value]) => value ?? '');

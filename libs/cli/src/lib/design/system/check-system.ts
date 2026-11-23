@@ -88,6 +88,7 @@ import { utilityCssOf } from './rules/utility-css';
 import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
 import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
 import { pendingStateWarningsOf } from './rules/pending-state';
+import { stateGroupProblemsOf } from './rules/state-groups';
 import { missingStateSentencesOf } from './rules/state-sentences';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { designCoverageOf } from './rules/design-coverage';
@@ -149,6 +150,7 @@ const RULES = [
   sdkAttributeValuesOf,
   sdkPrivateVarsOf,
   missingStateSentencesOf,
+  stateGroupProblemsOf,
 ];
 
 const PART_SCOPED_RULES: ((product: ResolvedProduct, only?: readonly string[]) => Problem[])[] = [

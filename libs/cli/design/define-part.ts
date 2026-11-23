@@ -38,6 +38,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * component or element is drawn at the size of its content, and a page at every viewport preset.
  * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
  * `grid` draws the states it names as one table in rest, see `StateGrid`.
+ * `groups` names the groups of its states in flow order, see `StateGroup`.
  * `controls` names each control the part draws, keyed by the id its markup carries in `data-et-control`; `design
  * complete` requires the states and surfaces its `kind` and `input` need, see `Control`.
  * `motions` names each motion between two of its states, see `Motion`; a rule in `rules` can name one.
@@ -67,6 +68,7 @@ export type Part<TProps, TState extends string = string> = {
   widths?: number[];
   interactions?: Interaction[];
   grid?: StateGrid<TState>;
+  groups?: StateGroup<TState>[];
   controls?: Record<string, Control<TState>>;
   checks?: { skip?: RenderCheck[] };
   scrolls?: TState[];
@@ -165,6 +167,13 @@ export type StateGrid<TState extends string = string, TColumn extends string = s
   rows: Record<string, Partial<Record<TColumn, TState>>>;
 };
 
+/**
+ * A group of a part's states, drawn in Studio as one row under its `label` and its count. A part lists its groups in
+ * flow order (the normal case first, then special cases, errors last); `design check` flags a state in no group or
+ * in two.
+ */
+export type StateGroup<TState extends string = string> = { label: string; states: readonly TState[] };
+
 /** How a control is operated: `pointer` requires a drawn hover and active (a `field` needs no active), `keyboard` a drawn focus-visible. */
 export type ControlInput = 'pointer' | 'keyboard';
 
@@ -225,6 +234,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   | 'states'
   | 'describe'
   | 'grid'
+  | 'groups'
   | 'controls'
   | 'motions'
   | 'unreachable'
@@ -250,6 +260,7 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
     states: Record<TState, NoInfer<TProps>>;
     describe: Record<NoInfer<TState>, string>;
     controls?: Record<string, Control<NoInfer<TState>>>;
+    groups?: StateGroup<NoInfer<TState>>[];
     grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
     render: (props: TProps) => Drawing | Promise<Drawing>;
   };

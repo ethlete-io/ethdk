@@ -46,6 +46,7 @@ export const PARSED_PART_FIELDS = [
   'implements',
   'data',
   'dataStates',
+  'groups',
 ] as const;
 
 type ParsedPartField = (typeof PARSED_PART_FIELDS)[number];
@@ -318,6 +319,33 @@ export const dataStatesOf = (source: string): { loading: string; error: string; 
   );
 
   return loading && error && empty ? { loading, error, empty } : null;
+};
+
+/**
+ * The groups a part file writes in `definePart({ groups: [...] })`, read without running it: `none` without the field,
+ * `unknown` when it is not a literal list of `{ label, states }` with string literal states.
+ */
+export const stateGroupsOf = (source: string): 'none' | 'unknown' | { label: string; states: string[] }[] => {
+  const { definition } = definitionOf(source);
+  const field = definition ? fieldOf(definition, 'groups') : undefined;
+
+  if (!field) return 'none';
+  if (!ts.isArrayLiteralExpression(field.initializer)) return 'unknown';
+
+  const groups = field.initializer.elements.map((element) => {
+    if (!ts.isObjectLiteralExpression(element)) return null;
+
+    const label = literalOf(propertyOf(element, 'label')?.initializer);
+    const states = propertyOf(element, 'states')?.initializer;
+
+    if (label === null || !states || !ts.isArrayLiteralExpression(states)) return null;
+
+    const names = states.elements.map((state) => (ts.isExpression(state) ? literalOf(state) : null));
+
+    return names.includes(null) ? null : { label, states: names as string[] };
+  });
+
+  return groups.includes(null) ? 'unknown' : (groups as { label: string; states: string[] }[]);
 };
 
 /** The module a part imports the app picture of `state` from, the placeholder look a merged `built` pick draws. */

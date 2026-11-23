@@ -645,9 +645,27 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
   const error = loadErrorOf(part.problems);
   const grid = part.layer === 'pages' || error ? undefined : part.grid;
   const gridded = new Set(grid?.cells.map((cell) => cell.state));
-  const states = statesOf(part, error).filter(
+  const shown = statesOf(part, error).filter(
     (state) => state === undefined || (!gridded.has(state) && !source.folded?.has(state)),
   );
+  const groupOf = new Map(
+    (part.groups ?? []).flatMap(({ label, states: members }) => {
+      const drawn = members.filter((state) => shown.includes(state));
+
+      return drawn.map((state) => [state, { label, count: drawn.length }] as const);
+    }),
+  );
+  const states = [
+    ...(part.groups ?? []).flatMap((group) =>
+      group.states.filter((state) => groupOf.get(state)?.label === group.label),
+    ),
+    ...shown.filter((state) => state === undefined || !groupOf.has(state)),
+  ];
+  const rowOf = ({ state }: Cell) => {
+    const group = state === undefined ? undefined : groupOf.get(state);
+
+    return group ? { row: `group:${group.label}`, rowHead: `${group.label} · ${group.count}` } : { row: state };
+  };
   const interactions = interactionsOf(part);
   const cells = states.flatMap((state) => interactions.map((interaction) => ({ state, interaction })));
   const addressOf = ({ state, interaction }: Cell) => ({
@@ -680,7 +698,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         height,
         label: stateSizeLabelOf(cell, preset),
         ...descriptionOf(cell),
-        row: cell.state,
+        ...rowOf(cell),
         screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
         schemes: schemesOf(product),
         error,
@@ -702,7 +720,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
           width,
           label: stateSizeLabelOf(cell, 'width'),
           ...descriptionOf(cell),
-          row: cell.state,
+          ...rowOf(cell),
           screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
           schemes,
           error,
