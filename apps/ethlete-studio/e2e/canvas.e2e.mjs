@@ -5002,7 +5002,7 @@ const CASES = [
     },
   },
   {
-    name: 'every nested target row of a sketch opens its part or hints why it opens none',
+    name: 'every nested target row of a sketch keeps the sketch view, also for a listed or undrawn part',
     listingMayPend: 'waits for the new sketch row itself and reads what each row click does, not the listing',
     pages: ['Sketches'],
     labels: ['Large'],
@@ -5050,21 +5050,9 @@ const CASES = [
         await label('components/e2e-unbuilt').click();
         await settle(page);
         results.unbuilt = await state();
-        await label('components/e2e-unbuilt').hover();
-        const hinted = await page
-          .getByRole('tooltip')
-          .filter({ hasText: 'nicht in der Sketch-Ansicht' })
-          .first()
-          .waitFor({ timeout: 5000 })
-          .then(
-            () => true,
-            () => false,
-          );
-
         await label('components/zoom-chip').click();
         await settle(page);
         results.zoomChip = await state();
-        await reopen();
         await label('elements/shell-main').click();
         await settle(page);
         results.shellMain = await state();
@@ -5073,13 +5061,12 @@ const CASES = [
           titled &&
           opened.sketchView &&
           results.unbuilt.sketchView &&
-          hinted &&
-          !results.zoomChip.sketchView &&
-          !results.shellMain.sketchView;
+          results.zoomChip.sketchView &&
+          results.shellMain.sketchView;
 
         return {
           ok,
-          detail: `sketch row shows title ${titled}; opened ${JSON.stringify(opened)}; undrawn row click ${JSON.stringify(results.unbuilt)}, hint tooltip ${hinted}; listed rows leave the sketch view: zoom-chip ${JSON.stringify(results.zoomChip)}, shell-main ${JSON.stringify(results.shellMain)}`,
+          detail: `sketch row shows title ${titled}; opened ${JSON.stringify(opened)}; undrawn row click ${JSON.stringify(results.unbuilt)}; listed rows keep the sketch view: zoom-chip ${JSON.stringify(results.zoomChip)}, shell-main ${JSON.stringify(results.shellMain)}`,
         };
       } finally {
         rmSync(sketchDir, { recursive: true, force: true });
