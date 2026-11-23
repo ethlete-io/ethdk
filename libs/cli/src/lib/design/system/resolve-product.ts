@@ -95,7 +95,7 @@ export const resolveProduct = (options: { target: string; name: string; config: 
     problems.push({ rule: 'HARNESS', file: configFile, message: `product "${name}": ${harnessProblem}` });
   }
 
-  if (!hasPresets(presets)) {
+  if (!hasPresets(presets) && parts.length > 0) {
     problems.push({
       rule: 'PRESETS',
       file: configFile,

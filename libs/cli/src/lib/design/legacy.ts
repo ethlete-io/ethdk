@@ -2,7 +2,15 @@ import { writeDesignFile } from './system/design-file';
 import { existsSync, readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { callFilesOf } from './calls';
-import { callsRootOf } from './design-config';
+import { callsRootOf, DesignConfig } from './design-config';
+
+export const withLegacyProducts = (target: string, config: DesignConfig): DesignConfig => {
+  const legacy = Object.entries(config.projects ?? {}).filter(
+    ([name]) => !config.products?.[name] && callFilesOf(join(callsRootOf(target), name)).length > 0,
+  );
+
+  return legacy.length === 0 ? config : { ...config, products: { ...config.products, ...Object.fromEntries(legacy) } };
+};
 
 const OPENING = /defineCall\(\{\n/;
 const HAS_STAGE = /^\s*stage\s*:/m;

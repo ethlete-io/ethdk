@@ -9,7 +9,7 @@ import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { exitWhenParentGone } from './parent-watch';
 import { watchHeap } from './heap-watch';
-import { markTransferred, TRANSFER_PATH } from './legacy';
+import { markTransferred, TRANSFER_PATH, withLegacyProducts } from './legacy';
 import { aliasPattern, fsUrl, isCallFile } from './vite-paths';
 import { loadedFilesOf, sourceChangedSince } from './frame-fresh';
 import {
@@ -799,7 +799,7 @@ const designExplore = ({
         if (!next) return;
 
         for (const key of Object.keys(config)) delete config[key as keyof DesignConfig];
-        Object.assign(config, next);
+        Object.assign(config, withLegacyProducts(target, next));
         system.forget();
         reload(`${VIRTUAL}/env`);
         reload(`${VIRTUAL}/system`);
@@ -1193,7 +1193,8 @@ export const createDesignServer = async (options: {
   checkSketches?: CheckSketches;
   chromiumOf?: ChromiumOf;
 }) => {
-  const { target, config, listen, sketchesRoot, checkSketches, chromiumOf } = options;
+  const { target, listen, sketchesRoot, checkSketches, chromiumOf } = options;
+  const config = withLegacyProducts(target, options.config);
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
   const port = own ? await freePortOf() : options.listenOn;
