@@ -147,10 +147,10 @@
   "components/select-panel": "e553115da7b919df",
   "components/skeleton": "b547ec192cd09ba0",
   "components/slider": {
-    "hash": "1f4bc49b73de137d",
-    "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-13T07:12:09.301Z"
+    "hash": "dbf5f9fd735b6e90",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-23T09:07:18.194Z"
   },
   "components/standings": "076d20d06cdc9777",
   "components/stat-tile": "f9e9fd60cf62d06e",
