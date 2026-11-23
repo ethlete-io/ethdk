@@ -54,9 +54,8 @@ The German grill/docs session talks with the user and records decisions. Talk En
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
   before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
   nothing runs it in pre-push or CI (ADR 0226).
-- A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
-- Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
-  `cd` lands the commit on `next` in the main checkout.
+- A CI step that renames or caches is done after two runs with real data (no sample line) on each OS it branches for.
+- In a bite or throwaway worktree, commit only with `git -C <worktree> commit`: a failed bare `cd` commits on `next`.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
 - Every subagent brief includes the lines of `subagent-brief.md` next to this skill.
 - You record the pick of your recommended sketch variant yourself (ADR 0305).
