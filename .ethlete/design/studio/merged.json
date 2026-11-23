@@ -90,11 +90,10 @@
     "at": "2026-11-22T14:53:22.326Z"
   },
   "elements/canvas-frames": {
-    "hash": "80b8417344e01e01",
-    "variant": "a",
-    "decidedBy": "plan",
-    "at": "2026-11-17T15:56:19.710Z",
-    "note": "builder: fix of 08e824394 drift"
+    "hash": "b2153089c7e8799f",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-23T11:44:44.722Z"
   },
   "elements/part-tree": {
     "hash": "1f197d3699ffc33b",

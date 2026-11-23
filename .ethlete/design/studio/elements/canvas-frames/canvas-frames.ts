@@ -249,7 +249,7 @@ const defaultFrames: Props = {
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts',
   note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. A click selects a frame (a 2 px primary outline), a second click on the selected frame, the double click, makes it live (a dashed outline and the Live · Esc badge in its head; Escape leaves it). A frame keeps following the size of its content; it has no size control. A frame whose page failed to load shows the reason and Neu laden on top of it. On the variant grid each round has a head: its title folds the round to one narrow column with its note, the switch beside it shows the unchanged states; a column head names the variant above its frames. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [1440],
   instant:
     'Selecting, going live, leaving with Escape, a failed load and every zoom state switch at once: the outline, the Live badge and the banner appear with no motion, and the canvas never moves between states.',
@@ -692,7 +692,7 @@ export default definePart({
     'round-folded':
       'A folded round at 75 %; check the one narrow column with the round note and that the other rounds stay open.',
     'diff-mark':
-      'The hold-trigger frame with the automatic difference mark; check that every state in an interaction outlines the region that differs from the rest state of its row and dims the rest of its cell, and both rest cells stay unmarked.',
+      'The hold-trigger frame with the automatic difference mark; check that every state in an interaction dims everything but the region that differs from the rest state of its row, draws no outline, and both rest cells are dimmed whole.',
   },
   controls: {
     button: { kind: 'button', part: 'components/button' },
