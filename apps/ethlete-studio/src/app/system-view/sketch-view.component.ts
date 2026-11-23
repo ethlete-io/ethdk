@@ -629,7 +629,7 @@ export class SketchViewComponent {
               ? { width: measuredWidth }
               : {}),
             height:
-              presetHeight ??
+              (presetHeight === undefined ? undefined : Math.max(presetHeight, sizeOf(state)?.height ?? 0)) ??
               sizeOf(state)?.height ??
               (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
           };

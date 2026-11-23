@@ -688,6 +688,13 @@ describe('SketchesComponent', () => {
     expect(unsized.querySelector('[data-sk-matrix]')).toBeNull();
   });
 
+  it('never turns the rows of a page with presets into columns', async () => {
+    const wide = ROWS.map((row) => ({ ...row, width: 4000, perLine: 2 }));
+    const root: HTMLElement = (await render({ rows: wide })).nativeElement;
+
+    expect(root.querySelector('[data-sk-matrix]')).toBeNull();
+  });
+
   it('sizes the world of a wide part to its matrix, not to the list, like the design', async () => {
     const wide = ROWS.map((row) => ({ ...row, width: 4000 }));
     const root: HTMLElement = (await render({ rows: wide })).nativeElement;

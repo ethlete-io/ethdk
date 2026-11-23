@@ -451,7 +451,10 @@ export class SketchesComponent {
     Math.max(0, ...this.shownRows().flatMap((row) => (row.sized === false ? [] : [row.width]))),
   );
   private fitTransposed = computed(
-    () => this.listWidth() > 0 && this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE,
+    () =>
+      this.listWidth() > 0 &&
+      this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE &&
+      !this.shownRows().some((row) => row.perLine),
   );
   // A user zoom holds the layout: a width change from the panel or the viewport would swap rows and columns under the camera.
   public transposed = linkedSignal<{ zoom: FrameZoom; measured: boolean; widest: number; fit: boolean }, boolean>({

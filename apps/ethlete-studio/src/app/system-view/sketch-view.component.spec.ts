@@ -261,7 +261,7 @@ describe('SketchViewComponent', () => {
     expect(picture().classList).toContain('opacity-0');
   });
 
-  it('draws every variant of a page sketch once per preset at its size, whatever its content measures', async () => {
+  it('draws every variant of a page sketch once per preset at its width, as tall as its content and at least its preset', async () => {
     const page: ListedSketch = {
       ...ROUNDED,
       target: 'pages/overview',
@@ -294,7 +294,7 @@ describe('SketchViewComponent', () => {
 
     expect(rows.map((row) => row.width)).toEqual([390, 390]);
     expect(rows.flatMap((row) => row.shots.map((shot) => [shot.state, shot.height, shot.width]))).toEqual([
-      ['default · phone', 844, undefined],
+      ['default · phone', 1550, undefined],
       ['default · desktop', 900, 1440],
       ['default · phone', 844, undefined],
       ['default · desktop', 900, 1440],
