@@ -147,3 +147,6 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - scratch checkout lost files (machinery, 20.11.): a builder scratch checkout lost 16274 tracked files between two design server runs, once; restored. Suspect, first time.
 - apps-bundle without timeout (machinery, 21.11.): the job in publish.yml has no `timeout-minutes`; a hung rust-cache post step held the next_environment CI queue ~2 h. Build only on red CI.
 - form-field heights (SDK, 23.11., B669 measurement): the sm field (token 32 px) is already 38.3 px at scale 0.96 and grows with the scale; the underline appearance ignores the height token (own min-height). Suspect, not checked whether intended. First time.
+- sketch writes outside the sketch (Studio, 23.11., tomflix examiner): a foundations subagent wrote themes and tokens to config.json and a Tailwind @theme to .ethlete/design/styles.css; discard keeps them. Contrast exception 3.85:1 logged instead of fixed; head.html loads unused Google fonts. Suspect, first time.
+- `sketch target add` usage (CLI, 23.11., tomflix examiner): usage "<layer>/<name> <layer>/<name>" hides that arg 1 is the sketch and one call adds one target; the agent failed 2x and read sketch-command.js. Suspect, first time.
+- examiner subagents hand back on full context (machinery, 23.11.): third run-2 subagent in one run. Suspect, first time.
