@@ -34,6 +34,7 @@ export class VariantCellComponent {
   public labelHidden = input(false);
   public stateHidden = input(false);
   public same = input(false);
+  public sameAsRest = input<readonly string[]>([]);
   public first = input(false);
   public marked = input(false);
   public loading = input(false);

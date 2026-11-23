@@ -551,6 +551,8 @@ export type SketchTarget = {
   changes?: SketchTargetChanges;
   /** Where each changed state differs from the part now, by state. Missing while no compare is kept and from an `@ethlete/cli` older than this field. */
   crops?: Record<string, SketchChange>;
+  /** Each state this variant draws the same as its grid row's rest state, with that rest state. Missing while no compare is kept. */
+  sameAsRest?: Record<string, string>;
   error?: string;
 };
 

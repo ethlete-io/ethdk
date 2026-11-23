@@ -14,6 +14,14 @@
     ><span [class.hidden]="stateHidden()">{{ state() }}{{ same() ? LABELS.stateSeparator : '' }}</span
     >{{ same() ? LABELS.unchanged : '' }}</span
   >
+  @if (sameAsRest().length > 0) {
+    <span
+      [style.font-size.px]="labelFont()"
+      class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+      data-sk-same-as-rest
+      >{{ LABELS.sameAsRest(sameAsRest()) }}</span
+    >
+  }
   @if (marked()) {
     <span
       class="shrink-0 rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-on-theme"

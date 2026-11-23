@@ -959,6 +959,11 @@ left after the states each variant draws unchanged fold away is new in the sketc
 It also warns `VARIANT-UNCHANGED` for a live variant whose every state draws the same pixels as Aktuell, in every
 frame: such a variant offers no decision.
 
+In each variant row, the Studio sketch view and `shot --states --variants` also fold a grid state that the variant draws
+the same as its row's `rest` state, in every width, preset and interaction frame. The rest cell then names the folded
+states (`film-hover, film-active = rest`), so a declared state that draws no difference stays visible. The sketch listing
+sends these as `sameAsRest` on each target, state to rest state; opening the folded states shows them all again.
+
 A page does not draw the interactions of its controls. A page control names the component or
 element that draws it in `part`, instead of `input`, and that part must be design complete
 itself. The page still draws the collapsed state and the body in its own placement:

@@ -742,7 +742,7 @@ export class SketchViewComponent {
         width,
         ...(row.perLine ? { perLine: row.perLine } : {}),
         sized: known !== undefined,
-        shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight }) => {
+        shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight, ...shot }) => {
           const ratio = ratios[`${row.key} ${state}`];
           const measuredWidth = sizeOf(state)?.width;
           const shownWidth =
@@ -753,6 +753,8 @@ export class SketchViewComponent {
             state,
             changed,
             ...(change ? { change } : {}),
+            ...(shot.sameAsRest ? { sameAsRest: true } : {}),
+            ...(shot.restOf ? { restOf: shot.restOf } : {}),
             ...(presetWidth !== undefined ? { width: presetWidth } : {}),
             ...(presetHeight === undefined && measuredWidth !== undefined && measuredWidth > width
               ? { width: measuredWidth }

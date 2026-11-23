@@ -7,9 +7,13 @@ import { resolveProduct } from '../resolve-product';
 import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
 import { PictureOf } from '../../merge-compare';
 import { encodePng } from '../part-compare';
+import { interactionRows } from '../../../../../design/interaction-rows';
+import { shownSketchRowsOf } from '../../sketch-frame-set';
 import {
   forgetUnchangedStates,
   keptComparisonOf,
+  keptSameAsRestOf,
+  sameAsRestOf,
   SketchPartLoader,
   unchangedForFoldOf,
   unchangedStatesOf,
@@ -443,5 +447,88 @@ describe('unchangedStatesOf', () => {
 
     expect(await unchangedStatesOf({ product, sketch, variant: 'a', load })).toEqual([]);
     expect(calls).toHaveLength(4);
+  });
+});
+
+describe('sameAsRestOf', () => {
+  const titleCard = () => {
+    const { states, grid } = interactionRows(
+      Object.fromEntries(
+        ['film', 'film-4k', 'series-new-season', 'series-episodes', 'long-title'].map((row) => [row, { row }]),
+      ) as Record<string, { row: string; interaction?: string }>,
+      {
+        interactions: ['hover', 'focus-visible', 'active'],
+        force: (props, interaction) => ({ ...props, interaction }),
+      },
+    );
+    const load: SketchPartLoader = async () => ({
+      default: {
+        states,
+        grid,
+        widths: [168, 112],
+        render: ({ row, interaction }: { row: string; interaction?: string }) => ({
+          body: `<a class="card ${interaction ?? ''}">${row}</a>`,
+          styles: '.card.focus-visible { outline: 3px solid teal; }',
+        }),
+      },
+    });
+    const drawn: string[] = [];
+    const pictureOf: PictureOf = async ({ state, width }) => {
+      drawn.push(`${state}@${width}`);
+
+      return {
+        png: Buffer.from(state.endsWith('-focus-visible') ? `${state} ring` : state.replace(/-(hover|active)$/u, '')),
+        marks: [],
+      };
+    };
+
+    return { load, pictureOf, drawn, states: Object.keys(states) };
+  };
+
+  it('names every interaction state of the title card that draws like its rest state at each width', async () => {
+    forgetUnchangedStates();
+    const { product, sketch } = acme();
+    const { load, pictureOf, drawn } = titleCard();
+
+    const same = await sameAsRestOf({ product, sketch, variant: 'a', load, pictureOf });
+
+    expect(Object.keys(same).sort()).toEqual(
+      ['film', 'film-4k', 'series-new-season', 'series-episodes', 'long-title']
+        .flatMap((row) => [`${row}-hover`, `${row}-active`])
+        .sort(),
+    );
+    expect(same['film-4k-hover']).toBe('film-4k');
+    expect(drawn).toContain('film-hover@112');
+    expect(await keptSameAsRestOf({ product, sketch, variant: 'a', pictured: true })).toEqual(same);
+  });
+
+  it('keeps a state that differs from rest at one width only', async () => {
+    forgetUnchangedStates();
+    const { product, sketch } = acme();
+    const { load } = titleCard();
+    const pictureOf: PictureOf = async ({ state, width }) => ({
+      png: Buffer.from(
+        state === 'film-hover' && width === 112 ? 'lifted' : state.replace(/-(hover|active|focus-visible)$/u, ''),
+      ),
+      marks: [],
+    });
+
+    const same = await sameAsRestOf({ product, sketch, variant: 'a', load, pictureOf });
+
+    expect(same['film-hover']).toBeUndefined();
+    expect(same['film-active']).toBe('film');
+  });
+
+  it('folds the title card to its rest and focus columns in the sketch view', async () => {
+    forgetUnchangedStates();
+    const { product, sketch } = acme();
+    const { load, pictureOf, states } = titleCard();
+    const same = await sameAsRestOf({ product, sketch, variant: 'a', load, pictureOf });
+    const shots = states.map((state) => ({ state, changed: true, ...(state in same ? { sameAsRest: true } : {}) }));
+
+    const [row] = shownSketchRowsOf({ listed: [{ key: 'a', shots }] });
+
+    expect(row?.shots.map((shot) => shot.state)).toEqual(states.filter((state) => !/-(hover|active)$/u.test(state)));
+    expect(shownSketchRowsOf({ listed: [{ key: 'a', shots }], open: true })[0]?.shots).toHaveLength(20);
   });
 });

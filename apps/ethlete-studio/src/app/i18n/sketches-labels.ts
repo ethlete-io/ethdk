@@ -41,6 +41,7 @@ export const SKETCHES_LABELS = {
   modelTitle: (id: string, when?: string) => [id, when].filter(Boolean).join(' · '),
   unchanged: 'unverändert',
   stateSeparator: ' · ',
+  sameAsRest: (states: readonly string[]) => `${states.join(', ')} = rest`,
   comparing: 'vergleicht …',
   compareFailed: (message: string) => `Vergleich fehlgeschlagen: ${message}`,
   reload: 'Erneut laden',

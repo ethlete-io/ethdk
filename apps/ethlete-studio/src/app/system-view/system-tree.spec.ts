@@ -1,3 +1,4 @@
+import { shownSketchRowsOf } from '@ethlete/cli/sketch-frames';
 import { ListedCall, ListedPart, ListedProduct, ListedSketch, ListedSketches, SHOT_SESSION } from '../../host/design';
 import listing from './__fixtures__/studio-listing.json';
 import studioPartUsers from './__fixtures__/studio-part-users.json';
@@ -1776,6 +1777,58 @@ describe('sketchRowsOf', () => {
       true,
       true,
     ]);
+  });
+
+  it('folds a title card state the variant draws like its rest state at every width, and names it on the rest cell', () => {
+    const rest = ['film', 'film-4k'];
+    const states = rest.flatMap((row) => [row, `${row}-hover`, `${row}-focus-visible`, `${row}-active`]);
+    const card = part({ layer: 'elements', name: 'title-card', states, widths: [168, 112] });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([card]),
+      part: card,
+      sketch: sketchScopedTo(
+        sketch({
+          target: 'foundations/colors',
+          layer: 'foundations',
+          name: 'colors',
+          variants: ['a'],
+          targetParts: ['foundations/colors', 'elements/title-card'],
+          targets: [
+            {
+              part: 'elements/title-card',
+              variant: 'a',
+              states,
+              widths: [168, 112],
+              unchanged: [],
+              sameAsRest: Object.fromEntries(
+                rest.flatMap((row) => [
+                  [`${row}-hover`, row],
+                  [`${row}-active`, row],
+                ]),
+              ),
+            },
+          ],
+        }),
+        'elements/title-card',
+      ),
+      variants: ['a'],
+      epoch: 1,
+      revision: 1,
+    });
+    const variant = shownSketchRowsOf({ listed: rows }).find((row) => row.key === 'a');
+
+    expect(variant?.shots.map((shot) => [shot.state, shot.restOf ?? []])).toEqual([
+      ['film · 112', ['film-hover', 'film-active']],
+      ['film · 168', ['film-hover', 'film-active']],
+      ['film-focus-visible · 112', []],
+      ['film-focus-visible · 168', []],
+      ['film-4k · 112', ['film-4k-hover', 'film-4k-active']],
+      ['film-4k · 168', ['film-4k-hover', 'film-4k-active']],
+      ['film-4k-focus-visible · 112', []],
+      ['film-4k-focus-visible · 168', []],
+    ]);
+    expect(shownSketchRowsOf({ listed: rows, open: true }).find((row) => row.key === 'a')?.shots).toHaveLength(16);
   });
 
   it('draws an element sketch state at every width the element declares, desktop as well as mobile', () => {

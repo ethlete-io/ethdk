@@ -15,7 +15,7 @@ import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from '.
 import { noteStep } from './run-deadline';
 import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
 import { shownSketchRowsOf, SketchFrameRow } from './sketch-frame-set';
-import { defaultFrameOf, SketchPartLoader, unchangedForFoldOf } from './system/sketch/unchanged-states';
+import { defaultFrameOf, sameAsRestOf, SketchPartLoader, unchangedForFoldOf } from './system/sketch/unchanged-states';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { partsReachedFrom } from './system/imports';
 import { gridOf, ListedGrid } from './system/list-system';
@@ -40,11 +40,15 @@ export type Axis = { label: string; sketch: SketchVariant | null };
 
 type Plan = { label: string; address: PartAddress; absent?: true };
 
-export type ComparedRow = { axis: Axis; names: string[]; unchanged: string[] };
+export type ComparedRow = { axis: Axis; names: string[]; unchanged: string[]; sameAsRest?: Record<string, string> };
 
-const frameRowOf = ({ axis, names, unchanged }: ComparedRow): SketchFrameRow => ({
+const frameRowOf = ({ axis, names, unchanged, sameAsRest = {} }: ComparedRow): SketchFrameRow => ({
   key: axis.sketch ? axis.sketch.variant : 'current',
-  shots: names.map((state) => ({ state, changed: axis.sketch ? !unchanged.includes(state) : false })),
+  shots: names.map((state) => ({
+    state,
+    changed: axis.sketch ? !unchanged.includes(state) : false,
+    ...(Object.keys(sameAsRest).includes(state) ? { sameAsRest: true } : {}),
+  })),
 });
 
 /** The states each listed row of a `--states --variants` shot draws: the fold the Studio sketch view applies. */
@@ -732,11 +736,11 @@ export const designShot = async (options: {
         if (!axis.sketch) return { axis, names, unchanged: names };
 
         const { variant } = axis.sketch;
-        const unchanged = resolved
-          ? await unchangedForFoldOf({ product: resolved, sketch, variant, load, part, pictureOf: shooter.pictureOf })
-          : [];
+        const compare = resolved && { product: resolved, sketch, variant, load, part, pictureOf: shooter.pictureOf };
+        const unchanged = compare ? await unchangedForFoldOf(compare) : [];
+        const sameAsRest = compare ? await sameAsRestOf(compare) : {};
 
-        return { axis, names, unchanged };
+        return { axis, names, unchanged, sameAsRest };
       };
 
       try {

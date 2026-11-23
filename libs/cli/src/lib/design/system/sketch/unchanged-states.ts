@@ -10,6 +10,7 @@ import { ChangeBox } from './change-box';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
 import { overlaySketch } from './overlay';
+import { comparePixelPair } from './pixel-pair';
 import { sharedDirOf, Sketch, variantDirOf } from './sketch';
 
 export type SketchPartLoader = (options: {
@@ -22,6 +23,7 @@ type LoadedPart = {
   states?: Record<string, unknown>;
   widths?: unknown;
   interactions?: unknown;
+  grid?: unknown;
   render?: (props: unknown) => unknown;
   frame?: (body: string, props: unknown) => string;
 };
@@ -36,6 +38,10 @@ type Kept = { unchanged: string[]; drawn: DrawnPart[]; changes: Record<string, C
 
 const cache = new Map<string, Kept>();
 
+type KeptRests = { same: Record<string, string>; drawn: DrawnPart[] };
+
+const restCache = new Map<string, KeptRests>();
+
 /**
  * Drops the kept results of every part `change` redraws, in the product or in the compared variant, so the next call
  * compares them again. Without `change` it drops them all.
@@ -43,6 +49,9 @@ const cache = new Map<string, Kept>();
 export const forgetUnchangedStates = (change: PartsChange = ALL_PARTS) => {
   for (const [key, { drawn }] of cache) {
     if (drawn.some((part) => redraws(change, part))) cache.delete(key);
+  }
+  for (const [key, { drawn }] of restCache) {
+    if (drawn.some((part) => redraws(change, part))) restCache.delete(key);
   }
 };
 
@@ -158,8 +167,9 @@ const keyOf = async (options: {
   pictured: boolean;
   compareFrames: boolean;
   states: string[] | undefined;
+  rests?: boolean;
 }) => {
-  const { product, overlaid, sketch, variant, compared, pictured, compareFrames, states } = options;
+  const { product, overlaid, sketch, variant, compared, pictured, compareFrames, states, rests = false } = options;
 
   return hashOf(
     JSON.stringify([
@@ -173,6 +183,7 @@ const keyOf = async (options: {
       pictured,
       compareFrames,
       states,
+      ...(rests ? ['rests'] : []),
     ]),
   );
 };
@@ -327,3 +338,134 @@ export const unchangedStatesOf = async (options: {
 /** The unchanged states the sketch shot and the Studio view both fold by, kept so either one reads the other's compare. */
 export const unchangedForFoldOf = (options: Omit<Parameters<typeof unchangedStatesOf>[0], 'keepPictures'>) =>
   unchangedStatesOf({ ...options, keepPictures: true });
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/** Each state a `grid` row places in a column other than `rest`, with the state the row places in `rest`. */
+export const restStatesOf = (grid: unknown, states: ReadonlySet<string>): Map<string, string> => {
+  const rows =
+    isRecord(grid) && Array.isArray(grid['columns']) && grid['columns'].includes('rest') ? grid['rows'] : null;
+
+  return new Map(
+    Object.values(isRecord(rows) ? rows : {}).flatMap((row) => {
+      const rest = isRecord(row) ? row['rest'] : undefined;
+
+      if (!isRecord(row) || typeof rest !== 'string' || !states.has(rest)) return [];
+
+      return Object.values(row)
+        .filter((state): state is string => typeof state === 'string' && state !== rest && states.has(state))
+        .map((state) => [state, rest] as const);
+    }),
+  );
+};
+
+const drawsLikeRest = async (options: {
+  pictureOf: PictureOf;
+  product: string;
+  key: string;
+  part: LoadedPart;
+  presets: string[] | null;
+  state: string;
+  rest: string;
+  sketch: SketchVariant;
+}) => {
+  const { pictureOf, product, key, part, presets, state, rest, sketch } = options;
+  const draw = (drawn: string, frame: ReturnType<typeof framesOf>[number]) =>
+    pictureOf({ product, part: key, state: drawn, ...frame, sketch, params: new URLSearchParams(), priority: 'low' });
+
+  try {
+    const pairs = await Promise.all(
+      framesOf(part, presets).map(async (frame) => {
+        const [before, after] = await Promise.all([draw(rest, frame), draw(state, frame)]);
+
+        return (await comparePixelPair(before.png, after.png)).same;
+      }),
+    );
+
+    return { result: pairs.every(Boolean) ? 'same' : 'different' } as const;
+  } catch {
+    return { result: 'failed' } as const;
+  }
+};
+
+const restKeyOf = (options: KeptOptions) => {
+  const { product, sketch, variant, pictured, part: compared = partKeyOf(sketch) } = options;
+
+  return keyOf({
+    product,
+    overlaid: overlaySketch({ product, sketch, variant }),
+    sketch,
+    variant,
+    compared,
+    pictured,
+    compareFrames: true,
+    states: undefined,
+    rests: true,
+  });
+};
+
+/** The states `sameAsRestOf` found drawn like their rest state for the same sources, or `null` while none is kept. */
+export const keptSameAsRestOf = async (options: KeptOptions): Promise<Record<string, string> | null> =>
+  restCache.get(await restKeyOf(options))?.same ?? null;
+
+/**
+ * Each state of the grid of the part `variant` draws that renders the same as its row's `rest` state, in every
+ * width, preset and interaction of the part, with that rest state: the same markup and styles, or with `pictureOf` the same
+ * pixels in the default theme. Kept by source hashes like `unchangedForFoldOf`; `forgetUnchangedStates` drops them.
+ */
+export const sameAsRestOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  load: SketchPartLoader;
+  pictureOf?: PictureOf;
+  part?: string;
+}): Promise<Record<string, string>> => {
+  const { product, sketch, variant, load, pictureOf, part: compared = partKeyOf(sketch) } = options;
+  const overlaid = overlaySketch({ product, sketch, variant });
+  const drawnPart = overlaid.parts.find((part) => partKeyOf(part) === compared);
+
+  if (!drawnPart) return {};
+
+  const key = await restKeyOf({ product, sketch, variant, pictured: !!pictureOf, part: compared });
+  const known = restCache.get(key)?.same;
+
+  if (known) return known;
+
+  const on = { target: sketch.target, variant };
+  const after = await renderedOf(() => load({ file: drawnPart.file, product: product.name, sketch: on }));
+
+  if (!after) return {};
+
+  const rests = [...restStatesOf(after.part.grid, new Set(after.states.keys()))];
+  const presets = drawnPart.layer === 'pages' ? Object.keys(product.presets) : null;
+  const compares = await Promise.all(
+    rests.map(async ([state, rest]) => {
+      const markup = after.states.get(state);
+      const restMarkup = after.states.get(rest);
+
+      if (markup && restMarkup && markup.body === restMarkup.body && markup.styles === restMarkup.styles)
+        return { result: 'same' } as const;
+
+      return pictureOf
+        ? drawsLikeRest({
+            pictureOf,
+            product: product.name,
+            key: compared,
+            part: after.part,
+            presets,
+            state,
+            rest,
+            sketch: on,
+          })
+        : ({ result: 'different' } as const);
+    }),
+  );
+  const same = Object.fromEntries(rests.filter((_, index) => compares[index]?.result === 'same'));
+
+  if (compares.some((entry) => entry.result === 'failed')) return same;
+  if (restCache.size >= CACHE_LIMIT) restCache.delete(restCache.keys().next().value ?? '');
+  restCache.set(key, { same, drawn: [{ product: product.name, part: compared, sketch: on }] });
+
+  return same;
+};

@@ -1411,6 +1411,9 @@ export type SketchRowShot = {
   src: string;
   picture: string;
   change?: SketchChange;
+  sameAsRest?: boolean;
+  /** The states this row folds as drawn like this rest state. */
+  restOf?: string[];
   place: { state: string; size?: string };
   width?: number;
   height?: number;
@@ -1471,11 +1474,15 @@ export const sketchRowsOf = ({
           };
 
           const change = key === CURRENT ? undefined : target?.crops?.[state];
+          const sameAsRest = Object.entries(target?.sameAsRest ?? {});
+          const restOf = sameAsRest.filter(([, rest]) => rest === state).map(([folded]) => folded);
 
           return {
             state: sizes.length > 1 ? `${state} · ${size}` : state,
             changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
             ...(change ? { change } : {}),
+            ...(sameAsRest.some(([folded]) => folded === state) ? { sameAsRest: true } : {}),
+            ...(restOf.length > 0 ? { restOf } : {}),
             src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),
             picture: partShotUrl({ ...address, preset: sized.preset, width: sized.width }),
             place: { state, ...(size === null ? {} : { size }) },

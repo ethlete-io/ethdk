@@ -482,6 +482,7 @@
     [labelHidden]="labelSize() === null"
     [stateHidden]="transposed()"
     [same]="isSame(row, item.changed)"
+    [sameAsRest]="statesOpen() ? [] : (item.restOf ?? [])"
     [first]="item.state === firstChangeOf(row)"
     [marked]="isMarked(row, item.changed)"
     [loading]="loadingShots().has(key)"

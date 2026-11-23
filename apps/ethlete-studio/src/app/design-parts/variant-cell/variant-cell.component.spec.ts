@@ -36,6 +36,18 @@ describe('VariantCellComponent', () => {
     expect(frame?.style.height).toBe('36px');
   });
 
+  it('names the folded states it stands in for beside the state name', async () => {
+    const cell = await setup({ state: 'film', width: 168, height: 250, sameAsRest: ['film-hover', 'film-active'] });
+
+    expect(cell.querySelector('[data-sk-same-as-rest]')?.textContent).toBe('film-hover, film-active = rest');
+  });
+
+  it('shows no rest note while it stands in for no folded state', async () => {
+    const cell = await setup({ state: 'film', width: 168, height: 250 });
+
+    expect(cell.querySelector('[data-sk-same-as-rest]')).toBeNull();
+  });
+
   it('wraps the label row at the frame width, so the full state name and the chips stay visible', async () => {
     const cell = await setup({
       state: 'default · phone',

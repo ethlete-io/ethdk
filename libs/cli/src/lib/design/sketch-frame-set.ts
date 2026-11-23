@@ -1,4 +1,5 @@
-export type SketchFrameShot = { state: string; changed: boolean | null };
+/** `sameAsRest` marks a shot that draws the same as its rest state in this row's variant. */
+export type SketchFrameShot = { state: string; changed: boolean | null; sameAsRest?: boolean };
 
 export type SketchFrameRow = { key: string; shots: readonly SketchFrameShot[] };
 
@@ -51,7 +52,8 @@ export const unknownStatesOf = (rows: readonly SketchFrameRow[]): ReadonlySet<st
 
 /**
  * The rows a sketch view draws, each with the shots left after the fold. `listed` are the visible rows, `hidden` the
- * withdrawn ones that still count toward the fold, `open` shows every state. The Studio sketch view and
+ * withdrawn ones that still count toward the fold, `open` shows every state. A row also drops each shot it draws the
+ * same as its rest state (`sameAsRest`). The Studio sketch view and
  * `et design shot --states --variants` both draw exactly this set.
  */
 export const shownSketchRowsOf = <T extends SketchFrameRow>(options: {
@@ -64,9 +66,12 @@ export const shownSketchRowsOf = <T extends SketchFrameRow>(options: {
   const all = [...listed, ...hidden];
   const folded = open ? new Set<string>() : pending ? unknownStatesOf(all) : foldedStatesOf(all);
 
-  if (folded.size === 0) return [...listed];
+  if (folded.size === 0 && !listed.some((row) => row.shots.some((shot) => shot.sameAsRest))) return [...listed];
 
-  return listed.map((row) => ({ ...row, shots: row.shots.filter((shot) => !folded.has(shot.state)) }));
+  return listed.map((row) => ({
+    ...row,
+    shots: row.shots.filter((shot) => !folded.has(shot.state) && (open || !shot.sameAsRest)),
+  }));
 };
 
 /** The `[row key, state]` frames of `shownSketchRowsOf`, in row then state order. */
