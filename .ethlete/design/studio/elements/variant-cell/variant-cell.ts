@@ -136,7 +136,7 @@ export const variantCell = (props: Props) => {
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span
         >${same ? SKETCHES_LABELS.unchanged : ''}</span
-      >${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">${SKETCHES_LABELS.firstChange}</span>` : ''}</span
+      >${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-on-theme" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">${SKETCHES_LABELS.firstChange}</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;

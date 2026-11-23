@@ -62,6 +62,15 @@ describe('VariantCellComponent', () => {
     expect(marked.querySelector('[data-sk-changed-mark]')?.textContent?.trim()).toBe('geändert');
   });
 
+  it('draws the geändert chip with on-theme text on the theme fill', async () => {
+    const marked = await setup({ state: 'rest-hover', marked: true, width: 200, height: 50 });
+    const chip = marked.querySelector('[data-sk-changed-mark]');
+
+    expect(chip?.classList.contains('bg-et-theme')).toBe(true);
+    expect(chip?.classList.contains('text-et-on-theme')).toBe(true);
+    expect(chip?.classList.contains('text-et-theme-ink')).toBe(false);
+  });
+
   it('draws no geändert chip without the mark', async () => {
     const plain = await setup({ state: 'rest-hover', width: 200, height: 50 });
 
