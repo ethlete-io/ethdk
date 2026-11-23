@@ -86,7 +86,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
 import { COMMAND_PALETTE_LABELS, SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
 import { START_LABELS } from '../i18n/start-labels';
-import { SYSTEM_LABELS } from '../i18n/system-labels';
+import { SYSTEM_LABELS, TREE_ROW_LABELS } from '../i18n/system-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
@@ -1095,21 +1095,19 @@ export class SystemViewComponent {
     const open = new Set(this.expandedValues());
     const shownTarget = this.shownTargetKey();
     const selected = shownTarget ?? this.selectedKey();
-    const marksOf = (entry: Pick<TreeEntry, 'key' | 'badges'>) => ({
-      key: entry.key,
-      selected: entry.key === selected,
-      ...(entry.badges.some(
-        (badge) =>
-          badge === 'error' ||
-          badge === 'needs rebase' ||
-          badge === 'composition' ||
-          badge === 'changed since ready' ||
-          badge === 'hold target ended' ||
-          badge === 'rebase not committed',
-      )
-        ? { warns: true }
-        : {}),
-    });
+    const marksOf = (entry: Pick<TreeEntry, 'key' | 'badges'>) => {
+      const warnings = entry.badges.filter(
+        (badge): badge is keyof typeof TREE_ROW_LABELS.warnings => badge in TREE_ROW_LABELS.warnings,
+      );
+
+      return {
+        key: entry.key,
+        selected: entry.key === selected,
+        ...(warnings.length
+          ? { warns: true, warnTitle: warnings.map((badge) => TREE_ROW_LABELS.warnings[badge]).join(' ') }
+          : {}),
+      };
+    };
     const partOf = (entry: TreeEntry): PartTreePart => ({
       name: entry.name,
       ...marksOf(entry),

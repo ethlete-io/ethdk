@@ -114,6 +114,15 @@ describe('PartTreeComponent', () => {
     expect(withTooltip(plain, 'nicht gezeichnet')).toBeNull();
   });
 
+  // The human wants a plain tooltip on the warning icon.
+  it('shows the warning text as the tooltip of the warning icon', async () => {
+    const fixture = await render([
+      { title: 'Components', open: true, parts: [{ name: 'select', warns: true, warnTitle: 'plain warning' }] },
+    ]);
+
+    expect(withTooltip(fixture.nativeElement, 'plain warning')).not.toBeNull();
+  });
+
   it('puts the open sketches on top as part@name and the Legacy projects at the bottom', async () => {
     const fixture = await render([{ title: 'Pages', open: false, parts: [] }], {
       sketches: {

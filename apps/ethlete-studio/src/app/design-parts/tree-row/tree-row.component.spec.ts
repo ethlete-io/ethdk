@@ -71,7 +71,23 @@ describe('TreeRowComponent', () => {
     const element: HTMLElement = fixture.nativeElement;
 
     expect(element.querySelector('svg path[d="M8 2.5 14 13H2z"]')).not.toBeNull();
-    expect(fixture.debugElement.queryAll(By.directive(TooltipDirective))).toHaveLength(1);
+  });
+
+  // The human wants a plain tooltip on the warning icon.
+  it('gives the warning icon the plain warning text as its tooltip', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(TreeRowComponent);
+    fixture.componentRef.setInput('rows', [
+      { label: 'a', depth: 1, kind: 'leaf', warning: true, warningTitle: 'plain warning' },
+    ]);
+    await fixture.whenStable();
+
+    const tips = fixture.debugElement.queryAll(By.directive(TooltipDirective));
+
+    expect(tips.map((tip) => tip.injector.get(TooltipDirective).content())).toContain('plain warning');
   });
 
   it('shows a hint as the tooltip of the label and draws no tag', async () => {

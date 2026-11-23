@@ -7,6 +7,15 @@ export const TREE_ROW_LABELS = {
   sketchChangedSinceReady: (variants: readonly string[]) => `Seit Freigabe geändert: ${variants.join(', ')}`,
   sketchHoldTargetEnded: (target: string, end: 'merged' | 'discarded') =>
     `Pausiert auf ${target}, das ${end === 'merged' ? 'übernommen' : 'verworfen'} ist: Pause aufheben`,
+  warnings: {
+    error: 'Beim Lesen dieses Entwurfs ist ein Fehler aufgetreten. Bitte deinen Agenten, ihn zu prüfen.',
+    'needs rebase': 'Teile haben sich seit dem Entwurf geändert. Bitte deinen Agenten, ihn zu aktualisieren.',
+    composition: 'Der Entwurf passt nicht mehr zu seiner Umgebung. Bitte deinen Agenten, ihn anzupassen.',
+    'changed since ready': 'Der Entwurf wurde nach der Freigabe geändert. Prüfe ihn erneut und gib ihn wieder frei.',
+    'hold target ended': 'Der Entwurf wartet auf einen Entwurf, der schon abgeschlossen ist. Hebe die Pause auf.',
+    'rebase not committed':
+      'Die Aktualisierung des Entwurfs ist noch nicht gespeichert. Bitte deinen Agenten, sie zu speichern.',
+  },
   openComments: (count: number) => (count === 1 ? '1 offener Kommentar' : `${count} offene Kommentare`),
 } as const;
 

@@ -13,6 +13,7 @@ export type TreeRow = {
   selected?: boolean;
   inert?: boolean;
   warning?: boolean;
+  warningTitle?: string;
   status?: TreeRowStatus;
   comments?: number;
   layer?: string;
@@ -63,7 +64,11 @@ const SELECTED_CLASS =
       <span [class]="'flex-none text-ui-xs ' + accentClass()">{{ row.layer }}</span>
     }
     @if (row.warning) {
-      <span [etProvideColor]="warningTheme()" class="flex flex-none text-et-theme">
+      <span
+        [etProvideColor]="warningTheme()"
+        [etTooltip]="row.warningTitle ?? null"
+        class="flex flex-none text-et-theme"
+      >
         <svg
           width="12"
           height="12"

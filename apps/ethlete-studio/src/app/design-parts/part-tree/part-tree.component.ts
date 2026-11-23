@@ -7,6 +7,7 @@ type Marks = {
   key?: string;
   selected?: boolean;
   warns?: boolean;
+  warnTitle?: string;
 };
 
 /** A part; one with `nested` parts is their host and opens unless `open` is false. */
@@ -41,7 +42,7 @@ export type PartTreeLegacy = { key?: string; open: boolean; projects: PartTreeLe
 
 export type PartTree = { layers: PartTreeLayer[]; sketches?: PartTreeSketches; legacy?: PartTreeLegacy };
 
-type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'warning' | 'status' | 'layer' | 'hint'>;
+type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'warning' | 'warningTitle' | 'status' | 'layer' | 'hint'>;
 
 const keyOf = (...names: string[]) => names.join('/');
 
@@ -71,6 +72,7 @@ const keyOf = (...names: string[]) => names.join('/');
             expanded: row.isExpanded,
             selected: marks?.selected,
             warning: marks?.warning,
+            warningTitle: marks?.warningTitle,
             status: marks?.status,
             layer: marks?.layer,
             hint: marks?.hint,
@@ -122,6 +124,7 @@ export class PartTreeComponent {
       kind,
       selected: own.selected,
       warning: own.warns,
+      warningTitle: own.warnTitle,
     });
 
     const partNode = (parentKey: string, part: PartTreePart): TreeNode<string> => {

@@ -25,6 +25,7 @@ const chevron = (open: boolean) => icon(open ? 'chevron-down' : 'chevron-right')
 
 const bubble = icon('comment', { size: 12 });
 
+const WARNING_TEXT = 'Teile haben sich seit dem Entwurf geändert. Bitte deinen Agenten, ihn zu aktualisieren.';
 const warningIcon = icon('warning', { size: 12 });
 
 const statusIcon = {
@@ -58,7 +59,7 @@ const rowMarkup = (r: Row) => {
         <span class="st-trow-lead flex flex-none items-center justify-center ${accent}">${lead(r)}</span>
         <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>
         ${r.layer ? `<span class="flex-none text-ui-xs ${accent}">${r.layer}</span>` : ''}
-        ${r.warning ? `<span class="flex flex-none text-et-theme" data-et-semantic-color="warning">${warningIcon}</span>` : ''}
+        ${r.warning ? `<span class="flex flex-none text-et-theme" data-et-semantic-color="warning" title="${r.warning.join(' ')}">${warningIcon}</span>` : ''}
         ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}">${statusIcon[r.status]}</span>` : ''}
         ${r.comments ? `<span class="flex flex-none items-center gap-0.5 ${accent} text-(length:--text-xs)">${bubble}</span>` : ''}
       </div>`;
@@ -77,7 +78,7 @@ const tree: Row[] = [
   { label: 'form-field', depth: 1, kind: 'part', expanded: true },
   { label: 'empty', depth: 2, kind: 'leaf', interaction: 'hover' },
   { label: 'filled', depth: 2, kind: 'leaf', inert: true },
-  { label: 'select', depth: 1, kind: 'part', expanded: false, warning: ['Render check: 1 warning'] },
+  { label: 'select', depth: 1, kind: 'part', expanded: false, warning: [WARNING_TEXT] },
   { label: 'tree-row', depth: 1, kind: 'leaf', status: 'in-progress' },
   { label: 'Elements', depth: 0, kind: 'group', expanded: true },
   { label: 'part-tree', depth: 1, kind: 'leaf', status: 'ready', comments: 3 },
@@ -97,7 +98,7 @@ const others = interactionRows(
     'leaf-flat': one({ label: 'Review a sketch', depth: 0, kind: 'leaf' }),
     'mark-in-progress': one({ ...button, label: 'tree-row', status: 'in-progress' }),
     'mark-ready': one({ ...button, label: 'part-tree', status: 'ready' }),
-    'mark-warning': one({ label: 'select', depth: 1, kind: 'part', warning: ['Render check: 1 warning'] }),
+    'mark-warning': one({ label: 'select', depth: 1, kind: 'part', warning: [WARNING_TEXT] }),
     'mark-comments': one({ ...button, label: 'part-tree', comments: 3 }),
     'selected-marks': one({ ...button, label: 'part-tree', selected: true, status: 'ready', comments: 3 }),
     inert: one({ label: 'filled', depth: 2, kind: 'leaf', inert: true }),
