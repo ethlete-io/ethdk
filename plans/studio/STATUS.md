@@ -35,8 +35,9 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 4. **Timetrack nach Projekten (B641)** ⏳ nach dem roten CI zuerst: Spalten im Tag zeigen wieder Worktrees (ethlete-sdk-wt-*, 21.11.), obwohl 279b3dc17 sie in die Spalte des Haupt-Checkouts legt; Suspect: keine verlinkten Worktrees oder alter Build. Danach Teil 1 von Timetrack ADR 0057: eine Spalte ist ein Projekt (Tom 23.11.: „sollten längst nur noch Projekte sein“). Browser-Reporter danach - Builder
 5. **Zustände in Gruppen (B672)** ⏳ Entwurf nennt die Gruppen seiner Zustände, Zeile mit Überschrift und Anzahl, Ablauf-Reihenfolge, fehlende Gruppe = Befund (ADR 0407); zuerst pages/sketches - Builder
 6. **Familie im Teile-Baum (B673)** ⏳ Entwurf nennt die Familie eines Teils, Baum zeigt es darunter (ADR 0408); zuerst comment-pin, comment-row unter comment-flow - Builder
-7. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Neuer Build läuft auf tank und mac (Tom 23.11.). Offen: Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
-8. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: frühestens 24.11. löscht Tom `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
+7. **Ansicht je Teil (B674)** ⏳ Zoom/Position je Teil gemerkt, Fit beim ersten Öffnen und wenn kein Rahmen sichtbar; nie leere Fläche nach Baum-Wechsel (ADR 0409) - Builder
+8. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Neuer Build läuft auf tank und mac (Tom 23.11.). Offen: Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
+9. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: frühestens 24.11. löscht Tom `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
 
 Geparkt: B105, B108, B109, B148, B312, B313.
 
