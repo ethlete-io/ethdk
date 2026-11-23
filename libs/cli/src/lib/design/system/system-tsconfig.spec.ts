@@ -83,6 +83,7 @@ const withRunningRoot = (root: string, run: () => void) => {
 };
 
 describe('editor tsconfigs', () => {
+  // The core writes a tsconfig per product with the paths for @design-system.
   it('writes the product tsconfig next to its parts', () => {
     const target = acme();
     const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });

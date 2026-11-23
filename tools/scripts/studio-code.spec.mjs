@@ -48,6 +48,7 @@ test('a dirty libs/cli builds the last commit when the kept copy is older', () =
   });
 });
 
+// A restart without a CLI copy builds it from the committed code only.
 test('a dirty libs/cli without any copy builds the committed state', () => {
   assert.deepEqual(cliCopyPlan({ latest: B, dirty: true, copies: [], distMatches: true }), {
     action: 'build',
@@ -55,6 +56,7 @@ test('a dirty libs/cli without any copy builds the committed state', () => {
   });
 });
 
+// A dirty libs/cli keeps the copy of the last commit.
 test('a dirty libs/cli keeps the copy of the last commit', () => {
   assert.deepEqual(cliCopyPlan({ latest: B, dirty: true, copies: [A, B], distMatches: true }), {
     action: 'use',

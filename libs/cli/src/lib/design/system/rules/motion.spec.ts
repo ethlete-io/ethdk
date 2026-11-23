@@ -30,6 +30,7 @@ describe('scriptedMotionOf', () => {
     expect(scriptedMotionOf(resolveAcme(acme()))).toEqual([]);
   });
 
+  // Scripted motion with requestAnimationFrame or setInterval is flagged.
   it('flags requestAnimationFrame and setInterval', () => {
     const target = acme();
 
@@ -113,6 +114,7 @@ describe('badMotionsOf', () => {
   const withMotions = (extra: string) =>
     `import { definePart } from '@design-system';\nexport default definePart({ note: '', states: { closed: {}, open: {} }, ${extra}, render: () => ({ body: '', styles: '' }) });\n`;
 
+  // A motion is declared in the motions field and checked against the states it names.
   it('passes the clean fixture and a motion between two states that a rule names', () => {
     const target = acme();
 

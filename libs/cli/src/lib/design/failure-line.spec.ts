@@ -37,6 +37,7 @@ describe('failure lines of the design commands', () => {
     vi.unstubAllEnvs();
   });
 
+  // A failure line in a design command makes it exit non-zero.
   it('make `sketch check` exit 1 when it could not render, even though it answered 0', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 

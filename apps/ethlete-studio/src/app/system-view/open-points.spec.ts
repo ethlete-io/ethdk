@@ -62,6 +62,7 @@ describe('openPointGroupsOf', () => {
     ]);
   });
 
+  // A sketch rule problem is listed as an error that names the rule.
   it('lists a rule problem of a sketch variant as an error that names the rule', () => {
     expect(
       openPointGroupsOf({
@@ -238,6 +239,7 @@ describe('buildReadyStatusOf', () => {
       ).toEqual({ state: 'checking' });
   });
 
+  // A definite blocker reads Nicht baubereit even while a check is pending.
   it('reads a definite blocker as blocked while a slow check still runs, without the pending check', () => {
     expect(
       buildReadyStatusOf({

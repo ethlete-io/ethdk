@@ -111,6 +111,7 @@ export default definePart({
     expect(lines[0]).toContain("'note'");
   });
 
+  // A product is checked on its base by path, and the built-in SDK base loads like a workspace.
   it('checks a product on the built-in @ethlete/components base', () => {
     const target = acme();
     const lines = output();
@@ -124,6 +125,7 @@ export default definePart({
     expect(lines).toEqual(['ok']);
   });
 
+  // An unknown product passed to design check is named with the declared products.
   it('names the declared products when asked for an unknown one', () => {
     const lines = output();
 

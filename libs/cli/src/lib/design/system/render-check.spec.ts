@@ -779,6 +779,7 @@ export default definePart({
     );
   }, 120_000);
 
+  // A part that scrolls lists the scrolling states, and an unlisted or unused scrolling state fails the check.
   it('flags a box that scrolls in a state not listed in scrolls, and a listed state where nothing scrolls', async (context) => {
     const lines = '<p style="margin: 0">One</p><p style="margin: 0">Two</p><p style="margin: 0">Three</p>';
     const scrolling = `<div style="width: 200px; height: 30px; overflow-y: auto">${lines}</div>`;

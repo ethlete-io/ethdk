@@ -8,6 +8,7 @@ import { acme, output } from './check-system.fixtures';
 describe('design check and the files of the removed go and accept', () => {
   afterEach(() => vi.restoreAllMocks());
 
+  // Build-ready replaces go and accept: their leftover files are no longer read and design check names them for deletion.
   it('warns once per product of a leftover go.json and accepted.json, naming each file to delete', async () => {
     const target = acme();
     const dir = join(target, DESIGN_DIR, 'acme');

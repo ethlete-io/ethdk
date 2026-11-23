@@ -36,6 +36,7 @@ const oldLayoutCheckout = () => {
 };
 
 describe('a checkout in the layout before products', () => {
+  // The legacy projects key is still read as a list of products.
   it('lists each project that has calls as a product, and none for a project without calls', async () => {
     const { target, config } = oldLayoutCheckout();
     const server = await createDesignServer({ target, config, listen: true, port: 0 });

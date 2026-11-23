@@ -417,6 +417,7 @@ describe('controlStateGapsOf', () => {
     ]);
   });
 
+  // Interaction states belong to the part that owns the control and are never allowed on a page.
   it('allows interaction states on a part that declares a control of a checked kind, never on a page', () => {
     const states = ['rest', 'rest-hover', 'selected'];
 
@@ -506,6 +507,7 @@ describe('completenessGapsOf', () => {
     ]);
   });
 
+  // design complete refuses an interactive element with no declared control.
   it('refuses an interactive element that declares no data-et-action, unless an embedded part owns it', () => {
     const control = (found: Partial<FoundControl>): FoundControl => ({
       kind: 'control',

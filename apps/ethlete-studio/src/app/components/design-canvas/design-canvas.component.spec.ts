@@ -813,6 +813,7 @@ describe('DesignCanvasComponent', () => {
     expect(switched).not.toContain('r1');
   });
 
+  // A changed-area crop is enlarged at most twice.
   it('draws a cropped frame as a small whole page with the crop outlined, above the crop enlarged twice', async () => {
     const crop = { areas: [{ x: 100, y: 200, width: 72, height: 54 }], frame: { width: 1440, height: 900 } };
     TestBed.configureTestingModule({
@@ -876,6 +877,7 @@ describe('DesignCanvasComponent', () => {
     });
   });
 
+  // A click on a grid cell selects that cell and a second click keeps it.
   it('selects the cell clicked in a grid frame, keeps it on a second click, and moves it to another cell', async () => {
     const cell = (id: string) => ({ id, row: 'filled', column: id, label: id, src: 'about:blank', width: 100 });
     const fixture = await render([

@@ -47,6 +47,7 @@ describe('covered controls in the frame discovery', () => {
 
   const coveredOf = (label: string) => found?.find((control) => control.label === label)?.covered;
 
+  // A control fully covered is marked covered, a partly covered one counts as visible.
   it('marks a control fully under another element, not a partly covered or free one', (context) => {
     if (!found) return context.skip('no browser');
 

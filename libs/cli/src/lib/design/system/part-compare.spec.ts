@@ -357,6 +357,7 @@ describe('part compare', () => {
     });
   });
 
+  // Compare passes an isolated anti-aliased pixel on a round pane or round corner and fails a one pixel shift.
   it('passes the anti-aliased pixel of a round edge and fails a 1 px shift of the same edge', () => {
     const grey = (v: number) => ((v << 24) | (v << 16) | (v << 8) | 0xff) >>> 0;
     const switchArc = [

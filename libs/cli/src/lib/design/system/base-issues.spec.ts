@@ -65,6 +65,7 @@ describe('oldRenderIssuesOf', () => {
     expect([...runOf(root, issues)]).toEqual(issues);
   });
 
+  // Ready blocks only on issues the merged part does not already hold, and base issues are marked old.
   it('marks only the issues the stored base shows once the working tree changes the part', () => {
     const root = repoWith({ 'design/canvas-frames/part.ts': 'a', '.gitignore': 'node_modules\n' });
     const shown = clipped('rounds');

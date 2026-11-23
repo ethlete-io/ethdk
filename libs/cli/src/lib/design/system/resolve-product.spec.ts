@@ -22,6 +22,7 @@ const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
 describe('resolveProduct', () => {
+  // Parts resolve from the product, layer and part folders in layer order.
   it('lists own parts, base parts and overrides, in layer order', () => {
     const product = resolveAcme(acme());
 
@@ -53,6 +54,7 @@ describe('resolveProduct', () => {
     expect(product.parts.find((part) => part.name === 'button')?.origin).toBe('overridden');
   });
 
+  // A product takes its base and presets from config.json.
   it('takes the presets of the base when the product has none', () => {
     const target = acme();
 

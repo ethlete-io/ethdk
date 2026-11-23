@@ -88,6 +88,7 @@ describe('InboxComponent', () => {
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
+  // The inbox shows the real server message when a load fails.
   it('shows the server message of a failed load', async () => {
     const { fixture, text } = await render(COMMENTS, 'error');
 

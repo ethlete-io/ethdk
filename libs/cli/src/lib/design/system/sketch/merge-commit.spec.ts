@@ -95,6 +95,7 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     expect(existsSync(hero.dir)).toBe(false);
   });
 
+  // A merge commits only the files it wrote, in one commit per merge.
   it('commits only its own entries of merged.json and leaves a foreign edit of it in the tree', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -127,6 +128,7 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     expect(git('diff', '--', merged).stdout).toContain('bbbbbbbbbbbbbbbb');
   });
 
+  // A command that writes ready.json commits it formatted.
   it('commits its own entries of a foreign-edited ready.json formatted', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);

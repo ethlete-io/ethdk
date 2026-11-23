@@ -82,6 +82,7 @@ describe('recordRun', () => {
     expect(Date.parse(line?.start ?? '')).not.toBeNaN();
   });
 
+  // Phase timings print only with ETHLETE_DESIGN_PHASES=1.
   it('prints the PHASE line to stderr only with ETHLETE_DESIGN_PHASES=1', async () => {
     vi.stubEnv('ETHLETE_DESIGN_PHASES', '1');
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);

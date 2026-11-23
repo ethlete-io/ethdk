@@ -79,6 +79,7 @@ describe('entryOf', () => {
 });
 
 describe('a missing dist', () => {
+  // A missing dist fails at once and names the folder and the nx build command.
   it('fails at once naming the folder and the build command', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'dist/libs/core');
 

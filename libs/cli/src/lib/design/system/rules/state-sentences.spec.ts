@@ -36,6 +36,7 @@ describe('missingStateSentencesOf', () => {
     ]);
   });
 
+  // Each state needs one sentence.
   it('names each state whose sentence is missing or blank', () => {
     expect(messagesOf(productOf({ source: partWith("describe: { rest: '  ' },") }))).toEqual([
       'STATE-SENTENCE /p/part-0.ts state without a sentence in describe: rest, open',

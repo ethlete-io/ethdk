@@ -59,6 +59,7 @@ describe('CanvasFrameComponent swap between shot and page', () => {
     vi.restoreAllMocks();
   });
 
+  // A frame keeps its shot until the page has painted, then switches to the page in one step.
   it('keeps the shot until the page says it painted, then shows the page in one step', async () => {
     post({ type: 'design-explore:loading' });
     post({ type: 'design-explore:height', height: 200 });
@@ -75,6 +76,7 @@ describe('CanvasFrameComponent swap between shot and page', () => {
     expect(fixture.nativeElement.querySelector('[data-loading-badge]')).toBeNull();
   });
 
+  // A frame leaving live keeps the page until the shot has decoded, then shows the shot in one step.
   it('keeps the page after it leaves live until the shot decoded, then shows the shot in one step', async () => {
     post({ type: 'design-explore:painted' });
     await flush();

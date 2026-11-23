@@ -182,6 +182,7 @@ describe('SketchViewComponent', () => {
     localStorage.clear();
   });
 
+  // The sketch view shows one round at a time and opens the newest.
   it('draws the current page and the variants of the newest round, each as a live frame', async () => {
     const { root } = await render(ROUNDED, noComments);
 
@@ -584,6 +585,7 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
   });
 
+  // A sketch round shows its note as the question line.
   it('shows the note of the open round as the question line', async () => {
     const { fixture, root } = await render(
       { ...ROUNDED, rounds: [ROUNDED.rounds[0]!, { key: 'r2', title: 'Second', note: 'Wo steht der Status?' }] },

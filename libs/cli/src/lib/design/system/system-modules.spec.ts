@@ -22,6 +22,7 @@ const acme = () => {
 };
 
 describe('createSystemModules', () => {
+  // @system imports resolve to the product part, else to the base part, also inside base parts.
   it('resolves @system imports inside a base part to the parts of the product that draws it', () => {
     const { target, system } = acme();
     const design = join(target, DESIGN_DIR);

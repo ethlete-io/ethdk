@@ -21,6 +21,7 @@ describe('codeNoticeOf', () => {
     expect(codeNoticeOf(null, A)).toBeNull();
   });
 
+  // A commit in the host shows a notice to restart Studio.
   it('asks to restart Studio after a commit in the host', () => {
     expect(codeNoticeOf({ ...settled, host: { running: A, latest: B } }, A)).toEqual({
       text: 'Host geändert - Studio neu starten',
@@ -28,6 +29,7 @@ describe('codeNoticeOf', () => {
     });
   });
 
+  // A commit in the cli shows a restart notice, and only the click restarts the server.
   it('asks to restart the server after a commit in the cli', () => {
     expect(codeNoticeOf({ ...settled, cli: { running: A, latest: B, dirty: false } }, A)).toEqual({
       text: 'CLI geändert - neu starten',
@@ -35,6 +37,7 @@ describe('codeNoticeOf', () => {
     });
   });
 
+  // A dirty libs/cli keeps the last copy running and the notice names its commit, with no click.
   it('names the commit it runs on while the cli has uncommitted changes, and offers no click', () => {
     expect(codeNoticeOf({ ...settled, cli: { running: A, latest: B, dirty: true } }, A)).toEqual({
       text: 'CLI hat uncommittete Änderungen, Studio läuft auf Stand aaaaaaa',

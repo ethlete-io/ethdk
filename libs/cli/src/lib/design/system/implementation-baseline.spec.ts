@@ -126,6 +126,7 @@ describe('implementation baseline (ADR 0205)', () => {
     expect(status).toBe(1);
   });
 
+  // The implementation drift baseline only shrinks and an entry for a part that is no longer uncompared fails.
   it('fails an entry whose part is no longer uncompared, so the list shrinks', () => {
     const { target, commit, writeBaseline } = checkout();
 

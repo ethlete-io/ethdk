@@ -11,6 +11,7 @@ const page = (inner: string, extra = '') =>
   `<main data-et-part="${OWN}"><h1>Sketch</h1>${extra}${inner}<input value="a"><img src="x.png"/></main>`;
 
 describe('innerOnlyPartOf', () => {
+  // A page state must change the page itself, not one inner part.
   it('names the one inner part that holds every difference', () => {
     expect(innerOnlyPartOf({ own: OWN, base: page(trigger(false)), state: page(trigger(true)) })).toBe(
       'components/hold',

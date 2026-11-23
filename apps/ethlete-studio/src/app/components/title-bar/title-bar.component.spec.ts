@@ -41,6 +41,7 @@ const render = (props: Props) => {
 const linux = (left: WindowChrome['left'], right: WindowChrome['right']): Props => ({ os: 'linux', left, right });
 
 describe('TitleBarComponent', () => {
+  // Linux draws round window buttons, and a layout that lists only close leaves the close button on the right.
   it('draws only a round close button on the right for appmenu:close', () => {
     const { bar, buttons, names } = render(linux([], ['close']));
 
@@ -49,6 +50,7 @@ describe('TitleBarComponent', () => {
     expect(bar?.lastElementChild?.contains(buttons[0] ?? null)).toBe(true);
   });
 
+  // Linux window buttons follow the side and order of the gnome button layout.
   it('draws the buttons on the side and in the order the layout gives', () => {
     const { bar, names } = render(linux(['close', 'minimize'], []));
 
@@ -56,6 +58,7 @@ describe('TitleBarComponent', () => {
     expect(bar?.firstElementChild?.querySelectorAll('[data-window-button]').length).toBe(2);
   });
 
+  // Windows draws square caption tiles with the close tile in the error colour.
   it('draws caption tiles on Windows, the close tile on the error colour', () => {
     const { buttons, names } = render({ os: 'windows', left: ['close'], right: ['minimize', 'maximize'] });
 
@@ -65,6 +68,7 @@ describe('TitleBarComponent', () => {
     expect(buttons[0]?.parentElement?.className).toContain('--et-window-control-button-close-background');
   });
 
+  // macOS reserves space for the traffic lights and Studio draws no buttons of its own.
   it('reserves the traffic light space on macOS and draws no buttons', () => {
     const { element, names } = render({ os: 'macos', left: [], right: [] });
 

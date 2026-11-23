@@ -275,6 +275,7 @@ describe('a sketch with several targets', () => {
 });
 
 describe('createSketch on a part the product overrides', () => {
+  // A sketch of an SDK base part needs --override or --into-base.
   it('refuses without --override or --into-base and names both', () => {
     const target = acme();
     const refused = createSketch({

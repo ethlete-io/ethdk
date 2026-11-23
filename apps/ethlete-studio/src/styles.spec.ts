@@ -49,6 +49,7 @@ describe('styles.css', () => {
     expect(css).not.toMatch(/--font-ui: var\(--font-ui\)/);
   });
 
+  // The Studio themes are generated from the colours foundation and verified with --check.
   it('keeps the SDK themes generated from the colours part', () => {
     const css = compileStyles();
 

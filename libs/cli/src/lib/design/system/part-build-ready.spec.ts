@@ -319,6 +319,7 @@ describe('recordBuildReady', () => {
     expect(lines).toEqual(['NO RECORD app-a components/chip: the actions did not run']);
   });
 
+  // A part of a product without a harness gets the definite blocker no-harness.
   it('drops the record of each part of a product without a harness, with a definite blocker', async () => {
     const { target } = checkout();
     const product = resolveProduct({ target, name: 'app-a', config: {} });

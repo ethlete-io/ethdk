@@ -32,6 +32,7 @@ describe('componentCopiesOf', () => {
     expect(messagesOf(acme())).toEqual([]);
   });
 
+  // An element that restyles a component class is flagged as a component copy.
   it('flags an element that restyles a component class', () => {
     const target = acme();
 

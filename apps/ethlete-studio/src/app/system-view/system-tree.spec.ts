@@ -275,6 +275,7 @@ describe('treeOf with calls', () => {
     ]);
   });
 
+  // The explorer lists only parts: the Sketches group opens first, Legacy comes last and folded.
   it('puts the open sketches first and Legacy last, and hides Legacy without calls', () => {
     const tree = treeOf([part()], { calls: [call()], sketches: [sketch()] });
 
@@ -296,6 +297,7 @@ describe('isGroupOpen and isSectionOpen', () => {
   const context = { remembered: {}, hasProducts: true };
   const acme = legacy!.sections![0]!;
 
+  // Part groups open and Legacy folds by default.
   it('opens part groups and folds Legacy and its sections by default', () => {
     expect(isGroupOpen(parts!, context)).toBe(true);
     expect(isGroupOpen(legacy!, context)).toBe(false);
@@ -303,6 +305,7 @@ describe('isGroupOpen and isSectionOpen', () => {
     expect(isSectionOpen(acme, context)).toBe(false);
   });
 
+  // SDK base parts that no product part imports sit in a folded group.
   it('moves the base parts no part of the product imports into a folded group with an open section per layer', () => {
     const tree = treeOf(
       [
@@ -397,6 +400,7 @@ describe('a part nested under its one user', () => {
     expect(nestedOf('components/title-bar')?.[0]?.layer).toBeUndefined();
   });
 
+  // A part with exactly one user nests under that user.
   it('keeps a part whose one user is not in the tree in its own layer, and nests a part under it', () => {
     const tree = treeOf([
       part({ name: 'badge', usedBy: ['elements/card'] }),
@@ -408,6 +412,7 @@ describe('a part nested under its one user', () => {
     ]);
   });
 
+  // A part nests under its declared family whatever number of parts use it.
   it('nests a part under its declared family whatever number of parts use it', () => {
     const tree = treeOf([
       part({ name: 'comment-flow', usedBy: [] }),
@@ -991,11 +996,13 @@ describe('a sketch with several parts', () => {
     rounds,
   });
 
+  // A sketch of several parts is headed by the title of the shown round, or by the target while that round has none.
   it('heads it with the shown round title, and with the target while that round has none', () => {
     expect(sketchHeadTitleOf(several, 'r2')).toBe('Teileliste außerhalb des Kopfs');
     expect(sketchHeadTitleOf(several, 'r1')).toBeNull();
   });
 
+  // A sketch of one part keeps the part name as its head.
   it('keeps the target as head and lists no targets for a sketch with one part', () => {
     const single = sketch({ targetParts: ['components/button'], rounds });
 

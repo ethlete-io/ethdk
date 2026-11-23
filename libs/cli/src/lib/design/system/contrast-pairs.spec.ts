@@ -9,6 +9,7 @@ import { slowInputsOf, slowProblemsOf } from './slow-checks';
 import { runSlowChecks } from './slow-run';
 
 describe('lowContrastPairsOf', () => {
+  // Contrast is measured on theme token pairs, not per picture.
   it('reads each pair the drawing marks low, with the ratio its chip shows', () => {
     const markup = readFileSync(join(__dirname, '..', '__fixtures__', 'contrast-pairs-text-muted-low.html'), 'utf8');
 

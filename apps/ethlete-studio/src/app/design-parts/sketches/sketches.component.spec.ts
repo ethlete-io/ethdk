@@ -436,6 +436,7 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-withdrawn-toggle]')).toBeNull();
   });
 
+  // Picking a variant opens a confirm dialog and merges only on confirm.
   it('asks to confirm Übernehmen and emits merge with the variant only once confirmed', async () => {
     const fixture = await render({ part: 'components/very-long-part-name' });
     const merged: string[] = [];
@@ -562,6 +563,7 @@ describe('SketchesComponent', () => {
     expect(textOf(root.querySelector('header'))).toContain(LABELS.fresh);
   });
 
+  // A sketch forecast to merge itself shows a mark in the Studio header.
   it('shows the auto-merge mark in the header only when the forecast says the sketch merges itself', async () => {
     const mark = (root: HTMLElement) => root.querySelector('header [data-sk-auto-merge]');
 
@@ -1415,6 +1417,7 @@ describe('SketchesComponent', () => {
       },
     ];
 
+    // A change crop is labelled with a count of Stellen, not of cells.
     it('shows states with the same change once, cropped and enlarged, with the count, the reason and a locator', async () => {
       const root: HTMLElement = (await render({ rows: cropRows, camera: '100' })).nativeElement;
       const gutters = [...root.querySelectorAll('[data-sk-gutter]')];
@@ -1487,6 +1490,7 @@ describe('SketchesComponent', () => {
       expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(true);
     });
 
+    // A crop is the union of the variant change boxes, with one reason line per variant.
     it('names each variant reason on its own line when the variants of one crop differ, one line when they agree', async () => {
       const [current, x] = cropRows;
 

@@ -296,6 +296,7 @@ describe('looksTheSame', () => {
     expect(draw).toHaveBeenCalledTimes(2);
   });
 
+  // Compare draws a fresh second pair only when the first pair came from the cache.
   it('draws only the cached picture of a differing pair fresh, and the fresh pair decides', async () => {
     const draw = vi.fn(async (sketch: unknown, fresh: boolean) =>
       fresh

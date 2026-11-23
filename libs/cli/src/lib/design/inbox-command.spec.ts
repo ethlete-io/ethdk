@@ -286,6 +286,7 @@ describe('designComment and designInbox', () => {
     expect(lines.pop()).toBe('no open comment "nope"');
   });
 
+  // Addressed comments of ended sketches resolve once with the note sketch ended.
   it('resolves the addressed comments of ended sketches and keeps the rest', () => {
     const target = acme();
     const lines = output();

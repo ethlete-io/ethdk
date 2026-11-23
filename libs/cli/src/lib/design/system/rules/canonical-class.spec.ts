@@ -127,6 +127,7 @@ describe('canonicalClassesOf', { timeout: 240_000 }, () => {
     expect(messagesOf(target)).toEqual([]);
   });
 
+  // The canonical Tailwind class check runs on the Studio app templates.
   it('flags a class with a canonical form in the templates and class strings of the harness app', () => {
     const target = acme('html { font-size: 62.5%; }\n@theme { --spacing: 0.4rem; }\n');
 

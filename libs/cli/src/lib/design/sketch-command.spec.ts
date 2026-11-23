@@ -3082,6 +3082,7 @@ export default definePart({
       });
     });
 
+    // A person name in --decided-by is refused before any write.
     it('refuses a person name in --decided-by on merge and pick before any write', async () => {
       const { target, lines } = await readied('a,b');
       const file = join(sketchDir(target), 'sketch.json');
@@ -3497,6 +3498,7 @@ describe('designSketch new under noteLanguage', { timeout: 120_000 }, () => {
       'acme',
     );
 
+  // A round note is written in the product language.
   it('refuses a round note in another language than the product notes', async () => {
     const target = german();
     const lines = output();

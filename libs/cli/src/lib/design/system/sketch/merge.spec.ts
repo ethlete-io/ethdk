@@ -457,6 +457,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     return git;
   };
 
+  // A merge checks in a clean copy of HEAD, so uncommitted edits outside the sketch do not block it.
   it('checks in a clean copy of HEAD, so uncommitted edits outside the sketch neither block nor fail it', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -719,6 +720,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(addressedOf(askedByFlag)).toBeUndefined();
   }, 120_000);
 
+  // A merge or discard resolves the comments it addressed with a note, and an addressed comment without a sketch resolves with the next merge of its part.
   it('resolves the addressed comments on the sketch and on the merged part, and leaves the open ones addressed only', () => {
     const target = acme();
     const found = readySketch(target);

@@ -154,6 +154,7 @@ fn smoke_script(view: &str) -> String {
 mod tests {
     use super::*;
 
+    // A console error is written as one line that names its source.
     #[test]
     fn a_console_error_is_one_line_naming_its_source() {
         assert_eq!(

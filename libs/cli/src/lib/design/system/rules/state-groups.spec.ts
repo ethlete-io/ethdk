@@ -24,6 +24,7 @@ describe('stateGroupProblemsOf', () => {
     expect(messagesOf(productOf(partWith(namesOf(MAX_UNGROUPED_STATES))))).toEqual([]);
   });
 
+  // A part with many states and no state groups is a design check finding.
   it('names a part with many states and no groups', () => {
     expect(messagesOf(productOf(partWith(namesOf(MAX_UNGROUPED_STATES + 1))))).toEqual([
       expect.stringMatching(/^STATE-GROUPS 13 states and no groups/u),

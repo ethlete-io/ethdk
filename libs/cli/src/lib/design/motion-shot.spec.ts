@@ -121,6 +121,7 @@ type Track = {
 const isMissingBrowser = (error: unknown) => error instanceof Error && /chromium|playwright/i.test(error.message);
 
 describe('keyframeTimesOf', () => {
+  // A motion shot takes its keyframes at the fixed fractions and the declared times.
   it('takes 0, 25, 50, 75 and 100 % of the end plus the at times, sorted and once each', () => {
     expect(keyframeTimesOf(400, [100, 250, -5])).toEqual([0, 100, 200, 250, 300, 400]);
   });

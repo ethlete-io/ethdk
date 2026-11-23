@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const part = join(root, '.ethlete/design/studio/foundations/colors/colors.css');
 
+// The generated themes register the warning theme next to brand, danger and success.
 test('a colour block added to the colours part becomes a theme in every generated stylesheet', () => {
   mkdirSync(join(root, 'tmp'), { recursive: true });
   const out = mkdtempSync(join(root, 'tmp/studio-themes-'));

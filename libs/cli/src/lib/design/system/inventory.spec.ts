@@ -143,6 +143,7 @@ describe('inventoryFramesOf', () => {
     ]);
   });
 
+  // A control inside an embedded part belongs to that part.
   it('lists the controls an embedded part draws as owned, so a page of owned buttons shows them and stays approvable', () => {
     const box = (y: number) => ({ x: 0, y, width: 10, height: 10 });
     const owned = (path: string, y: number) => ({
@@ -178,6 +179,7 @@ describe('inventoryFramesOf', () => {
     );
   });
 
+  // Inventory controls are keyed on path plus label.
   it('numbers two controls at the same path apart by their label, once across frames', () => {
     const owned = (label: string) => ({
       kind: 'control' as const,
@@ -300,6 +302,7 @@ describe('inventoryFramesOf declared labels', () => {
 });
 
 describe('inventoryFramesOf items', () => {
+  // The inventory lists assets and open overlays as owned by a foundation or part, and as a finding when inline or mocked.
   it('numbers assets and overlays per kind and marks the ownerless ones as findings', () => {
     const item = (kind: 'asset' | 'overlay', y: number, owner: string | null) => ({
       kind,
@@ -351,6 +354,7 @@ describe('inventory endpoints', () => {
     expect(answer.body).toMatchObject({ part: 'pages/home', hash: 'h1', state: { state: 'none' } });
   });
 
+  // Inventory approval refuses an undeclared or unclassified control and writes the ids, the hash and the approver.
   it('refuses to approve a page with an undeclared or unclassified control, or a hash that changed', async () => {
     const { target, dir } = checkout();
     const approve = (body: unknown, findings: number) =>

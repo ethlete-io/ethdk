@@ -27,6 +27,7 @@ afterEach(() => {
 });
 
 describe('compareBoxesScriptOf with the drawn panes', () => {
+  // A drawn wrapper with data-overlay-placement counts as the pane in compare.
   it('takes a drawn wrapper that declares its overlay placement as the pane, with the arrow beside the menu', () => {
     document.body.innerHTML =
       '<div id="root"><div id="wrapper" data-overlay-placement="right-start">' +

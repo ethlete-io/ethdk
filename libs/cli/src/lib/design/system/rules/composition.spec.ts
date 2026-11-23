@@ -21,6 +21,7 @@ const acmeWith = (fields: string, imports = TWO_PARTS) => {
 };
 
 describe('compositionWithInteractionsOf', () => {
+  // A part without controls of its own that declares interactions is flagged as a composition.
   it('flags a part without controls that declares interactions', () => {
     expect(compositionWithInteractionsOf(acmeWith("interactions: ['hover'],"))).toEqual([
       expect.objectContaining({ rule: 'COMPOSITION', message: expect.stringContaining('elements/hero') }),

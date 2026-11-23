@@ -35,6 +35,7 @@ describe('hardCodedColoursOf', () => {
     expect(messagesOf(acme())).toEqual([]);
   });
 
+  // A hard-coded colour in component or element CSS is flagged.
   it('flags hex colours and colour functions in component and element CSS, var() fallbacks too', () => {
     const target = acme();
 

@@ -87,6 +87,7 @@ describe('openEditSketch', () => {
     expect(statesOf('new')?.[0]?.message).toContain('drops the state empty');
   });
 
+  // Picking old of an edit sketch writes the HEAD copy back and records it.
   it('merges a pick of old like any sketch: the part is back at HEAD and recorded', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -223,6 +224,7 @@ describe('openEditSketch', () => {
     );
   });
 
+  // An edit sketch for a change HEAD already holds is not opened.
   it('opens no sketch for a committed edit, which HEAD holds as its merged design', async () => {
     const { target, css } = acme();
 
@@ -247,6 +249,7 @@ describe('openEditSketch', () => {
     expect(readFileSync(join(sketch.dir, 'new', HERO, 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 0; }\n');
   });
 
+  // An edit with no old design opens a sketch with only the new one and answers EDIT-OLD-NOT-FOUND.
   it('opens a ready sketch with only new and answers EDIT-OLD-NOT-FOUND when HEAD holds no file of the part', async () => {
     const { target } = acme();
 

@@ -325,6 +325,7 @@ describe('CommentStore', () => {
       expect(store.draft()).toBeNull();
     });
 
+    // Esc discards an open draft first and then leaves comment mode.
     it('discards an open draft on Esc first, then leaves comment mode on the next Esc', () => {
       const { store } = setup();
 

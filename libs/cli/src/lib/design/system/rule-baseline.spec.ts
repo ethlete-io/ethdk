@@ -117,6 +117,7 @@ describe('rule baseline (ADR 0201)', () => {
     ).toEqual([]);
   });
 
+  // The rule baseline only shrinks and a new hit fails.
   it('fails an entry added after the baseline was first committed, so the list only shrinks', () => {
     const { product, hitOn, commit, writeBaseline } = checkout();
 

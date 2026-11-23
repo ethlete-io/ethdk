@@ -56,6 +56,7 @@ const standAloneViolation = (text: string) => {
 };
 
 describe('standAloneViolation', () => {
+  // Design CLI texts name no ADR, plan row or SDK path.
   it('flags an ADR, a plan row and an SDK path', () => {
     expect(standAloneViolation('add a group (ADR 0407)')).toBe('names an ADR');
     expect(standAloneViolation('see B685 for the rest')).toBe('names a plan row');

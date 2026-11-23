@@ -175,6 +175,7 @@ describe('StudioMenuComponent', () => {
     expect(events).toEqual([]);
   });
 
+  // Studio menu rows without a target are hidden.
   it('hides the rows without a target: no submenu, no Einstellungen', async () => {
     const { rows } = await openMenu({ project: 'a', projects: ['a'] });
 

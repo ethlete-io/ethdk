@@ -121,6 +121,7 @@ describe('withFlowGroup', () => {
 });
 
 describe('frameRatioOf', () => {
+  // Frames on the flows canvas take their box ratio from the preset.
   it('takes the ratio of the preset, so a phone box is taller than wide', () => {
     expect(frameRatioOf(product.presets['phone'], 0.625)).toBeCloseTo(844 / 390);
     expect(frameRatioOf(product.presets['desktop'], 0.625)).toBe(0.625);

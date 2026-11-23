@@ -36,6 +36,7 @@ describe('BuildReadyFooterComponent', () => {
     expect(host?.classList.contains('block')).toBe(false);
   });
 
+  // The footer reads Baubereit for a ready part.
   it('shows Baubereit without a Gründe toggle', async () => {
     const { element, toggle } = await render({ state: 'ready' });
 
@@ -61,6 +62,7 @@ describe('BuildReadyFooterComponent', () => {
     expect((await render({ state: 'ready' })).element.textContent).not.toContain('Entwickler-Part');
   });
 
+  // The footer reads Wird geprüft while a check runs.
   it('shows Wird geprüft while checking', async () => {
     const { element, toggle } = await render({ state: 'checking' });
 
@@ -68,6 +70,7 @@ describe('BuildReadyFooterComponent', () => {
     expect(toggle()).toBeNull();
   });
 
+  // The footer reads Nicht baubereit with the number of blockers.
   it('counts the blockers and opens them grouped by kind', async () => {
     const { fixture, element, toggle } = await render({
       state: 'blocked',

@@ -50,6 +50,7 @@ describe('actions', () => {
     expect(parseAction('shut', ['rest'])).toBe('data-et-action="shut" names no state of the part - its states: rest');
   });
 
+  // The action opens:<part> names the part it opens.
   it('parses opens:<part> as an action that opens another part, and finds that part by key or name', () => {
     expect(parseAction('opens:command-palette', [])).toEqual({ kind: 'opens', part: 'command-palette' });
     expect(parseAction('opens:components/command-palette', ['rest'])).toEqual({
