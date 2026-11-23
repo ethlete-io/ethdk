@@ -19,6 +19,9 @@ product, part, state, size and a selector path:
 
 - `OVERFLOW` - the frame scrolls sideways: content wider than the frame. A page taller than its preset
   height is fine: it scrolls, so draw the whole list, not the films that fit.
+- `FONT-FACE` - a font the design names did not load in the shot (an `@font-face` that fails, or a family no
+  stylesheet delivers, e.g. a Google Fonts link the sandbox blocks). Self-host it: a woff2 file in the product's
+  `assets/` and an `@font-face` rule, never a CDN link.
 - `CLIPPED` - an element with `overflow: hidden|clip` cuts its content, unless it sets
   `text-overflow: ellipsis` or a line clamp.
 - `WRAP` - text in a button, tab, badge, chip or `white-space: nowrap` box runs onto a second line.

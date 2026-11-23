@@ -575,6 +575,28 @@ export default definePart({
     expect(faces).toEqual(['a fitted', 'b fitted']);
   }, 120_000);
 
+  it('flags a font the design names that did not load, and tells the agent to self-host it', async (context) => {
+    const target = checkout({
+      'components/named-font': { body: '<p style="margin: 0; font-family: \'Ghostly Serif\', serif">Title</p>' },
+      'components/system-font': { body: '<p style="margin: 0; font-family: Georgia, serif">Title</p>' },
+      'components/hosted-font': { body: `<p style="margin: 0; font-family: ${FIXTURE_FONT}">Title</p>` },
+    });
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [{ product: 'shop', sketch: null, parts: null }],
+    });
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+    const faces = rendered.issues.filter((issue) => issue.rule === 'FONT-FACE');
+
+    expect(faces.map((issue) => issue.part)).toEqual(['components/named-font']);
+    expect(faces[0]?.detail).toContain('"Ghostly Serif"');
+    expect(faces[0]?.detail).toContain('self-host');
+  }, 120_000);
+
   it('names the states whose render is busy or holds a loading button, and keeps them out of the issues', async (context) => {
     const target = checkout({
       'components/send-busy': { body: '<button type="button" aria-busy="true">Senden</button>', states: 'sending: {}' },
