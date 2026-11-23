@@ -623,8 +623,11 @@ export class SketchViewComponent {
             state,
             changed,
             ...(change ? { change } : {}),
-            ...(measuredWidth !== undefined && measuredWidth > width ? { width: measuredWidth } : {}),
+            ...(row.height === null && measuredWidth !== undefined && measuredWidth > width
+              ? { width: measuredWidth }
+              : {}),
             height:
+              row.height ??
               sizeOf(state)?.height ??
               (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
           };

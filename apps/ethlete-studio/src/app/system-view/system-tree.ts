@@ -1408,7 +1408,7 @@ export type SketchRowShot = {
   change?: SketchChange;
 };
 
-export type SketchRowOf = { key: string; width: number | null; shots: SketchRowShot[] };
+export type SketchRowOf = { key: string; width: number | null; height: number | null; shots: SketchRowShot[] };
 
 /**
  * One row for the part as it is now (when it exists) and one per shown variant, each with every state in the
@@ -1445,6 +1445,7 @@ export const sketchRowsOf = ({
     return {
       key,
       width: cell.width ?? null,
+      height: sketch.layer === 'pages' ? (cell.height ?? null) : null,
       shots: states.map((state) => {
         const address = {
           port,

@@ -93,7 +93,8 @@ const CARD: ListedPart = {
 const render = async (
   sketch: ListedSketch,
   fetch: (url: string, init?: RequestInit) => Promise<Response>,
-  part: ListedPart = CARD,
+  part: ListedPart | null = CARD,
+  product: ListedProduct = PRODUCT,
 ) => {
   vi.stubGlobal('fetch', fetch);
   TestBed.runInInjectionContext(() => injectCommentStore()).connect(
@@ -103,7 +104,7 @@ const render = async (
   const fixture = TestBed.createComponent(SketchViewComponent);
 
   fixture.componentRef.setInput('port', 4402);
-  fixture.componentRef.setInput('product', PRODUCT);
+  fixture.componentRef.setInput('product', product);
   fixture.componentRef.setInput('sketch', sketch);
   fixture.componentRef.setInput('part', part);
   fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
@@ -260,6 +261,44 @@ describe('SketchViewComponent', () => {
     expect(picture().classList).toContain('opacity-0');
   });
 
+  it('draws every variant of a page sketch at the page frame size, whatever its content measures', async () => {
+    const page: ListedSketch = {
+      ...ROUNDED,
+      target: 'pages/overview',
+      layer: 'pages',
+      name: 'overview',
+      dir: 'pages-overview',
+      rounds: [{ key: 'r1', title: 'First', note: '' }],
+      variantInfo: { a: { round: 'r1' }, b: { round: 'r1' } },
+      targets: ['a', 'b'].map((variant) => ({ variant, states: ['default'], interactions: [], unchanged: [] })),
+    };
+    const { fixture, root } = await render(page, noComments, null, {
+      ...PRODUCT,
+      presets: { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } },
+    });
+
+    const report = async (variant: string, height: number, width: number) => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: root.querySelector<HTMLIFrameElement>(`iframe[data-variant="${variant}"]`)!.contentWindow,
+          data: { type: 'design-explore:height', height, width, viewport: { width: 390, height: 844 } },
+        }),
+      );
+      await settle(fixture);
+    };
+
+    await report('a', 1550, 310);
+    await report('b', 0, 740);
+
+    const rows = fixture.componentInstance['rows']();
+
+    expect(rows.map((row) => row.width)).toEqual([390, 390]);
+    expect(rows.flatMap((row) => row.shots.map((shot) => [shot.height, shot.width]))).toEqual([
+      [844, undefined],
+      [844, undefined],
+    ]);
+  });
+
   it('shows the picture, not a painted frame, while the frame page is narrower than its cell or scrolled', async () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
     const { fixture, root } = await render(ROUNDED, noComments);
@@ -369,6 +408,7 @@ describe('SketchViewComponent', () => {
     const row = (key: string, shots: [string, boolean | null][]) => ({
       key,
       width: null,
+      height: null,
       shots: shots.map(([state, changed]) => ({ state, changed, src: '', picture: '' })),
     });
 
