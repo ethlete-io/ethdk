@@ -20,6 +20,7 @@ const ALLOWED: [Allowed; 10] = [
         command: "git",
         operations: &[
             "branch",
+            "cat-file",
             "config",
             "fetch",
             "for-each-ref",
@@ -301,6 +302,7 @@ mod tests {
         assert!(check("git", &args(&["log", "--branches", "--format=%H"])).is_ok());
         assert!(check("git", &args(&["reflog", "show", "-n30"])).is_ok());
         assert!(check("git", &args(&["patch-id", "--stable"])).is_ok());
+        assert!(check("git", &args(&["cat-file", "-e", "cd0a050ee00a^{commit}"])).is_ok());
         assert!(check("git", &args(&["config", "--get", "user.email"])).is_ok());
         assert!(check("claude", &args(&["--print", "--safe-mode"])).is_ok());
         assert!(check("codex", &args(&["exec", "--json", "-"])).is_ok());
