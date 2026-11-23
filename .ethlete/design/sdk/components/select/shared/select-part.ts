@@ -14,6 +14,8 @@ export type SelectProps = {
   pointerActive?: boolean;
   disabled?: boolean;
   size?: 'sm' | 'lg';
+  variant?: 'default' | 'ghost';
+  clearable?: boolean;
   interaction?: FieldInteraction;
 };
 
@@ -64,9 +66,11 @@ export const selectBody = (props: SelectProps) =>
       open: props.open,
       disabled: props.disabled,
       size: props.size,
+      variant: props.variant,
       control: select({
         options: props.options ?? OPTIONS,
         value: props.value,
+        clearable: props.clearable,
         active: props.active,
         placeholder: 'Pick a status',
         ariaLabel: props.ariaLabel,

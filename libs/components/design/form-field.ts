@@ -56,6 +56,8 @@ export type FormFieldMockOptions = {
   fill?: 'transparent' | 'filled';
   labelMode?: 'static' | 'inline' | 'floating-inside' | 'floating-outside';
   size?: 'sm' | 'md' | 'lg';
+  /** `'ghost'` draws no resting border, as the real form field does for a text-field control. */
+  variant?: 'default' | 'ghost';
   /** A color theme name the app registers. */
   color?: string;
   /** A surface theme name the app registers. */
@@ -216,6 +218,7 @@ export const formField = (options: FormFieldMockOptions) => {
     options.label && 'data-has-label=""',
     `data-label-mode="${labelMode}"`,
     `data-size="${size}"`,
+    options.variant === 'ghost' && 'data-variant="ghost"',
     'data-text-shell="true"',
     options.style && `style="${options.style}"`,
   ]);
