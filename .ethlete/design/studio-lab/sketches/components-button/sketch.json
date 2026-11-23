@@ -31,5 +31,14 @@
       "authors": ["gpt-5.6-sol", "claude-opus-5-5"],
       "round": "r1"
     }
+  },
+  "portAfterMerge": {
+    "merged": ["components/card"],
+    "parts": ["components/button"],
+    "reasons": [
+      "a: components/button - no commit holds the state the baseline recorded, port it by hand",
+      "b: components/button - no commit holds the state the baseline recorded, port it by hand"
+    ],
+    "at": "2026-11-23T17:44:27.005Z"
   }
 }

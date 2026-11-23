@@ -14,14 +14,14 @@ export default definePart<Props>({
   },
   describe: {
     default:
-      'A card with a short title and one body line; check the padding, the rounded corners and the gap under the title at each width.',
+      'A card with a short title and one body line; check the wide padding, the rounded corners and the gap under the title at each width.',
     long: 'A card with a long title and a multi-line body; check that both wrap inside the card at the narrow width without overflowing.',
   },
   render: ({ title, body }) =>
     drawing({
       body: `<article class="lab-card box-border font-ui"><h3 class="m-0">${title}</h3><p class="m-0">${body}</p></article>`,
       styles: `
-        .lab-card { padding: 16px; border-radius: 10px; background: var(--lab-surface); color: var(--lab-ink); }
+        .lab-card { padding: 32px; border-radius: 10px; background: var(--lab-surface); color: var(--lab-ink); }
         .lab-card h3 { margin-bottom: 6px; font-size: 16px; }
         .lab-card p { font-size: 14px; }
       `,
