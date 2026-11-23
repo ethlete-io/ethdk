@@ -40,10 +40,6 @@ import { START_LABELS } from '../../i18n/start-labels';
           <button (click)="copyPrompt.emit()" et-button type="button" variant="outline" size="sm">
             {{ LABELS.copyPrompt }}
           </button>
-          <p class="m-0 text-et-surface-muted">
-            {{ LABELS.orTerminal }}
-            <code class="font-code">{{ LABELS.command }}</code>
-          </p>
         } @else {
           <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noRepo }}</p>
           <p class="m-0 text-et-surface-muted">{{ LABELS.repoExplainer }}</p>

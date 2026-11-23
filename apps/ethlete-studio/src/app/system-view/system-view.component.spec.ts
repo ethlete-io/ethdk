@@ -269,7 +269,7 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(lines).toEqual([
       ['Wartet auf den Agenten', 'hover'],
-      ['Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen', 'stale-record'],
+      ['Kein Prüfergebnis zum aktuellen Design - der Agent hat es noch nicht geprüft', 'stale-record'],
       ['rest → hover', 'motion'],
     ]);
 

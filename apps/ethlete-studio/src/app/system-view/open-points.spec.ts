@@ -45,7 +45,7 @@ describe('openPointGroupsOf', () => {
         icon: 'error',
         lines: [
           {
-            text: 'Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen',
+            text: 'Kein Prüfergebnis zum aktuellen Design - der Agent hat es noch nicht geprüft',
             detail: 'stale-record',
           },
           {

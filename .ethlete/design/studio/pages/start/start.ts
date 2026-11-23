@@ -43,14 +43,11 @@ const noProducts = (copy: string, repo: string) =>
       <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
         Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.
       </p>
-      ${withAction(copy, 'emit:copyPrompt')}
-      <p class="m-0 text-et-surface-muted">
-        ${START_LABELS.orTerminal} <code class="font-code">${START_LABELS.command}</code>
-      </p>`,
+      ${withAction(copy, 'emit:copyPrompt')}`,
   );
 
 export default definePart<Props>({
-  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent, a copy button and the real CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331).',
+  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331).',
   madeBy: ['claude-opus-5-5'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
