@@ -46,7 +46,7 @@ import {
 import { streamDay$ } from './day-build/build-day';
 import { HostPorts, NOTHING_RECEIVED } from '../host';
 import { streamDayOptionsOf } from './stream-day-options';
-import { receivedDayRowsOn, withReceivedSharedRows } from './peers/day-rows';
+import { engineRowsOf, receivedDayRowsOn, withReceivedSharedRows } from './peers/day-rows';
 import { heardChunksOf, transcriptBetween$ } from './transcript-chunks';
 
 const MINUTE_MS = 60_000;
@@ -171,14 +171,19 @@ export const readDay$ = (options: DayReadOptions & { day: string; memo?: DayRead
           heard: heardChunksOf(transcript),
           day: key,
         });
-        const stored = pinnedOntoDay({
-          edits: withReceivedSharedRows({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, received, day: key }),
-          day: key,
-          boundary,
-        });
 
         return streamDay$({ events: merged, options: dayOptions }).pipe(
           map((day) => {
+            const stored = pinnedOntoDay({
+              edits: withReceivedSharedRows({
+                edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
+                received,
+                day: key,
+                localRows: engineRowsOf(day.rows),
+              }),
+              day: key,
+              boundary,
+            });
             const reviewWith = (current: DayReviewEdits) =>
               reviewDay({
                 rows: day.rows,

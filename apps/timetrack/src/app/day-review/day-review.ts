@@ -146,7 +146,7 @@ import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
 import { injectStandInVerdicts } from '../stand-ins/stand-in-verdicts';
-import { ownDayRowsOf, receivedDayRowsOn, withReceivedSharedRows } from '../peers/day-rows';
+import { engineRowsOf, ownDayRowsOf, receivedDayRowsOn, withReceivedSharedRows } from '../peers/day-rows';
 import { reloadableLedger$ } from './reloadable-ledger';
 
 /** How long typing settles before a day's edits are written. */
@@ -450,7 +450,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const received = evidence()?.received;
 
     return pinnedOntoDay({
-      edits: received ? withReceivedSharedRows({ edits: held, received, day: day() }) : held,
+      edits: received
+        ? withReceivedSharedRows({ edits: held, received, day: day(), localRows: engineRowsOf(streamed()?.rows) })
+        : held,
       day: day(),
       boundary: boundary(),
     });

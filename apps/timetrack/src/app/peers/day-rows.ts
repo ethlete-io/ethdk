@@ -1,5 +1,7 @@
 import {
   DayReviewEdits,
+  DayRows,
+  LocalEngineRow,
   PeerDayRows,
   ReviewedRow,
   StandIn,
@@ -45,18 +47,24 @@ export const receivedDayRowsOn = (options: {
       ]),
   );
 
+export const engineRowsOf = (rows: DayRows | undefined): LocalEngineRow[] =>
+  rows ? [...rows.proposals, ...rows.unnamed] : [];
+
 export const withReceivedSharedRows = (options: {
   edits: DayReviewEdits;
   received: HostReceivedRange;
   day: string;
+  localRows?: readonly LocalEngineRow[];
 }): DayReviewEdits => {
   const offsets = new Map(options.received.dayRows.map((sent) => [sent.machineId, sent.clockOffsetMs ?? 0]));
 
   return withPeerSharedEntries({
     edits: options.edits,
+    localRows: options.localRows,
     peers: Object.entries(receivedDayRowsOn(options)).map(([machineId, rows]) => ({
       entries: rows.shared ?? [],
       clockOffsetMs: offsets.get(machineId) ?? 0,
+      rows: rows.rows,
     })),
   });
 };

@@ -354,4 +354,24 @@ describe('shared row edits', () => {
       { id: NOON, minutes: 60, description: 'work on FIFAGG-2' },
     ]);
   });
+
+  it('applies a peer edit to the local row with the same lane and start when the names differ', () => {
+    const tank = stampSharedEdits({
+      before: EMPTY_DAY_REVIEW_EDITS,
+      after: edited({ [MORNING]: { issueKey: 'FIFAGG-7', state: 'accepted' } }),
+      atMs: 1_000,
+    });
+    const lane = 'repo:/Users/human/dev/fifa';
+    const macId = `unnamed:repo:/Users/human/dev/fifa@${at('09:00').toISOString()}`;
+    const localRows = [
+      { id: macId, laneKey: lane, from: at('09:00') },
+      { id: NOON, laneKey: lane, from: at('12:00') },
+    ];
+    const peer = { ...sent({ edits: tank }), rows: [{ laneKey: lane, from: at('09:00') }] };
+
+    const mac = withPeerSharedEntries({ edits: EMPTY_DAY_REVIEW_EDITS, peers: [peer], localRows });
+
+    expect(mac.overrides).toEqual({ [macId]: { issueKey: 'FIFAGG-7', state: 'accepted' } });
+    expect(mac.stamps).toEqual({ [macId]: { atMs: 1_000 } });
+  });
 });

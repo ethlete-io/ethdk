@@ -51,7 +51,51 @@ export type SharedEntry = { id: string; atMs: number } & (
 );
 
 /** A paired machine's shared entries of a day and how far its clock is ahead of this one's. */
-export type PeerSharedEntries = { entries: readonly SharedEntry[]; clockOffsetMs: number };
+export type PeerSharedEntries = {
+  entries: readonly SharedEntry[];
+  clockOffsetMs: number;
+  /** The paired machine's rows in this machine's lanes, to place an engine row id its names differ on. */
+  rows?: readonly { laneKey: string; from: Date }[];
+};
+
+/** A row this machine built from the day's events, which a peer's engine row id is placed onto. */
+export type LocalEngineRow = { id: string; laneKey?: string; from: Date };
+
+const START_OF_ID = /@(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)$/;
+
+const placedOnLocalRows = (options: { peer: PeerSharedEntries; localRows: readonly LocalEngineRow[] }) => {
+  const { peer, localRows } = options;
+  const localIds = new Set(localRows.map((row) => row.id));
+
+  const place = (id: string) => {
+    if (localIds.has(id) || id.startsWith('pin:') || id.startsWith('manual:')) return id;
+
+    const start = START_OF_ID.exec(id)?.[1];
+
+    if (!start) return id;
+
+    const lanes = new Set(
+      (peer.rows ?? []).filter((row) => row.from.toISOString() === start).map((row) => row.laneKey),
+    );
+    const [lane] = lanes;
+    const matches = lane ? localRows.filter((row) => row.laneKey === lane && row.from.toISOString() === start) : [];
+
+    return lanes.size === 1 && matches.length === 1 ? (matches[0]?.id ?? id) : id;
+  };
+
+  return {
+    ...peer,
+    entries: peer.entries.map((entry) => {
+      const id = place(entry.id);
+
+      if (entry.kind === 'built-row') {
+        return { ...entry, id, row: { ...entry.row, replaces: entry.row.replaces.map(place) } };
+      }
+
+      return { ...entry, id };
+    }),
+  };
+};
 
 type LiveEntry = Exclude<SharedEntry, { kind: 'deleted' }>;
 
@@ -207,9 +251,12 @@ const overlaps = (left: readonly string[], right: readonly string[]) => left.som
 export const withPeerSharedEntries = (options: {
   edits: DayReviewEdits;
   peers: readonly PeerSharedEntries[];
+  localRows?: readonly LocalEngineRow[];
 }): DayReviewEdits => {
-  const { edits } = options;
-  const latest = latestPeerEntries(options.peers);
+  const { edits, localRows } = options;
+  const latest = latestPeerEntries(
+    localRows ? options.peers.map((peer) => placedOnLocalRows({ peer, localRows })) : options.peers,
+  );
 
   const live = liveEntriesOf(edits);
   const pinnedById = new Map(edits.pinned.map((row) => [row.id, row]));
