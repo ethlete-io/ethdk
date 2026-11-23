@@ -54,7 +54,12 @@
     "note": "merged without a pick: allowed by B584: fill the missing control states of components/card"
   },
   "components/carousel": "bf2221bf653d1be4",
-  "components/chart": "7484c4d80d418295",
+  "components/chart": {
+    "hash": "0bc8c9131311f27f",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-23T09:07:05.772Z"
+  },
   "components/checkbox": {
     "hash": "8a5db649d9ee9401",
     "variant": "new",
