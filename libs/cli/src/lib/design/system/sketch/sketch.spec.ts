@@ -1,4 +1,14 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'fs';
 import { originOf } from '../write-origin';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
@@ -239,6 +249,28 @@ describe('a sketch with several targets', () => {
         like: { folder: '', name: 'hero', shared: null },
       }),
     ).toContain('--like starts one target');
+  });
+
+  it('refuses a foundation next to another layer, and more than four targets, and writes nothing', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketches = join(target, DESIGN_DIR, 'acme/sketches');
+    const mixed = createSketch({
+      product,
+      sketch: { layer: 'foundations', name: 'colors' },
+      others: [{ layer: 'elements', name: 'hero' }],
+      variants: ['a'],
+    });
+    const many = createSketch({
+      product,
+      sketch: { layer: 'pages', name: 'home' },
+      others: ['one', 'two', 'three', 'four'].map((name) => ({ layer: 'components' as const, name })),
+      variants: ['a'],
+    });
+
+    expect(mixed).toContain('foundations/colors and elements/hero together (SKETCH-SCOPE)');
+    expect(many).toContain('cannot target 5 parts (SKETCH-SCOPE)');
+    expect(existsSync(sketches) ? readdirSync(sketches) : []).toEqual([]);
   });
 });
 

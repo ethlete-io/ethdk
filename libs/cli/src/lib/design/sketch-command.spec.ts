@@ -3405,6 +3405,21 @@ describe('sketch target remove', () => {
     expect(jsonOf(target, 'elements-hero')).toBe(before);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero/a/elements/other'))).toBe(false);
   });
+
+  it('makes target add refuse a foundation in a sketch of another layer, and writes nothing', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(await acmeWrite(target, 'new', 'components/button', '--variants', 'a', '--override'), lines.join('\n')).toBe(
+      0,
+    );
+
+    const before = jsonOf(target, 'components-button');
+
+    expect(await acmeWrite(target, 'target', 'add', 'components/button', 'foundations/palette')).toBe(1);
+    expect(lines.pop()).toContain('SKETCH-SCOPE');
+    expect(jsonOf(target, 'components-button')).toBe(before);
+  });
 });
 
 describe('sketch new --name', () => {

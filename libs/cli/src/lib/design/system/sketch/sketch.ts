@@ -1034,6 +1034,10 @@ export const createSketch = (options: {
   const targets = all.map(partKeyOf);
 
   if (new Set(targets).size !== targets.length) return 'name each target once';
+
+  const scopeProblem = scopeProblemOf(targets);
+
+  if (scopeProblem) return scopeProblem;
   if (like && all.length > 1) return '--like starts one target - open a sketch with several targets without it';
 
   const taken = all.find(
@@ -1114,6 +1118,10 @@ export const addTarget = (options: {
 
   if (sketch.targets.includes(key)) return `${sketch.target} targets ${key} already`;
 
+  const scopeProblem = scopeProblemOf([...sketch.targets, key]);
+
+  if (scopeProblem) return scopeProblem;
+
   const layerProblem = layerProblemOf({ sketch, part });
 
   if (layerProblem) return layerProblem;
@@ -1141,6 +1149,29 @@ export const addTarget = (options: {
   writeSketchFile(added, { base: sketch });
 
   return added;
+};
+
+const MAX_SKETCH_TARGETS = 4;
+
+/**
+ * Why `targets` do not fit one sketch question, or `undefined`: a foundation never shares a sketch with a
+ * part of another layer, and a sketch holds at most `MAX_SKETCH_TARGETS` parts.
+ */
+export const scopeProblemOf = (targets: string[]) => {
+  const [first = ''] = targets;
+  const onePerPart = 'open one sketch per part (`sketch new <layer>/<name>` for each)';
+  const foundation = targets.find((key) => key.startsWith('foundations/'));
+  const other = targets.find((key) => !key.startsWith('foundations/'));
+
+  if (foundation && other) {
+    return `${first} cannot target ${foundation} and ${other} together (SKETCH-SCOPE): a foundation is a question of its own - ${onePerPart}`;
+  }
+
+  if (targets.length > MAX_SKETCH_TARGETS) {
+    return `${first} cannot target ${targets.length} parts (SKETCH-SCOPE): a sketch answers one question with at most ${MAX_SKETCH_TARGETS} parts - ${onePerPart}`;
+  }
+
+  return undefined;
 };
 
 const layerProblemOf = (options: { sketch: Sketch; part: SketchTarget }) => {
