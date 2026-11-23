@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B674
+built: 6766cc06c
 decided: 2026-11-23
 source: doc-agent session 2026-11-23 (morning), B674
 ---
