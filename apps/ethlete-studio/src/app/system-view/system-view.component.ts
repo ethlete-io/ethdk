@@ -162,7 +162,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     @if (startPage(); as start) {
       <ethlete-start
         [repo]="start.repo"
+        [repos]="projects()"
         [busy]="busy()"
+        (projectChange)="projectChange.emit($event)"
         (copyPrompt)="copyText(START_LABELS.prompt(start.repo ?? ''))"
         (otherRepo)="openProject.emit()"
         (openRepo)="openProject.emit()"

@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, input, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { START_LABELS } from '../../i18n/start-labels';
 
@@ -40,12 +40,46 @@ import { START_LABELS } from '../../i18n/start-labels';
           <button (click)="copyPrompt.emit()" et-button type="button" variant="outline" size="sm">
             {{ LABELS.copyPrompt }}
           </button>
+          @if (others().length) {
+            <p class="m-0 text-et-surface-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
+            <div class="flex flex-wrap justify-center gap-space-2">
+              @for (name of others(); track name) {
+                <button
+                  [disabled]="busy()"
+                  (click)="projectChange.emit(name)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                >
+                  {{ name }}
+                </button>
+              }
+            </div>
+          }
         } @else {
           <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noRepo }}</p>
           <p class="m-0 text-et-surface-muted">{{ LABELS.repoExplainer }}</p>
           <button [loading]="busy()" (click)="openRepo.emit()" et-button type="button" variant="filled">
             {{ LABELS.openRepo }}
           </button>
+          @if (others().length) {
+            <p class="m-0 text-et-surface-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
+            <div class="flex flex-wrap justify-center gap-space-2">
+              @for (name of others(); track name) {
+                <button
+                  [disabled]="busy()"
+                  (click)="projectChange.emit(name)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                >
+                  {{ name }}
+                </button>
+              }
+            </div>
+          }
         }
       </div>
     </div>
@@ -56,10 +90,14 @@ import { START_LABELS } from '../../i18n/start-labels';
 })
 export class StartComponent {
   public repo = input<string | undefined>();
+  public repos = input<readonly string[]>([]);
   public busy = input(false, { transform: booleanAttribute });
   public openRepo = output();
   public otherRepo = output();
   public copyPrompt = output();
+  public projectChange = output<string>();
+
+  protected others = computed(() => this.repos().filter((name) => name !== this.repo()));
 
   protected readonly LABELS = START_LABELS;
 }

@@ -3,7 +3,7 @@ import button from '@system/components/button';
 import { studioMark } from '@system/foundations/logo';
 import { START_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/start-labels';
 
-type Props = { repo?: string; busy?: boolean };
+type Props = { repo?: string; repos?: string[]; busy?: boolean };
 
 const header = (other: string, repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
@@ -20,17 +20,23 @@ const card = (inner: string) =>
     <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">${inner}</div>
   </div>`;
 
-const noRepo = (open: string) =>
+const knownRepos = (buttons: string[]) =>
+  buttons.length
+    ? html`<p class="m-0 text-et-surface-muted text-ui-sm">${START_LABELS.knownRepos}</p>
+        <div class="flex flex-wrap justify-center gap-space-2">${buttons.join('')}</div>`
+    : '';
+
+const noRepo = (open: string, known: string[]) =>
   card(
     html`<p class="m-0 text-et-surface font-ui-strong text-ui-md">${START_LABELS.noRepo}</p>
       <p class="m-0 text-et-surface-muted">
         Studio liest das Design-System aus einem Git-Checkout. Öffne den Ordner eines Repos, in dem die Produkte liegen
         oder entstehen sollen.
       </p>
-      ${withAction(open, 'emit:openRepo')}`,
+      ${withAction(open, 'emit:openRepo')} ${knownRepos(known)}`,
   );
 
-const noProducts = (copy: string, repo: string) =>
+const noProducts = (copy: string, repo: string, known: string[]) =>
   card(
     html`<div class="flex items-center gap-space-2" aria-hidden="true">
         ${ghostProduct}${ghostProduct}${ghostProduct}
@@ -43,25 +49,31 @@ const noProducts = (copy: string, repo: string) =>
       <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
         Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.
       </p>
-      ${withAction(copy, 'emit:copyPrompt')}`,
+      ${withAction(copy, 'emit:copyPrompt')} ${knownRepos(known)}`,
   );
 
 export default definePart<Props>({
-  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331).',
+  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
   madeBy: ['claude-opus-5-5'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
   states: {
     'no-repo': {},
     'no-products': { repo: 'ethlete-sdk' },
+    'no-repo-known': { repos: ['ethlete-sdk', 'tomflix'] },
+    'no-products-known': { repo: 'tomflix', repos: ['ethlete-sdk', 'tomflix', 'fifagg-frontend'] },
   },
   describe: {
     'no-repo':
       'The start page without a repo; check the mark, the centred Kein Repo geöffnet card and the filled Repo öffnen button, without the shell.',
     'no-products':
       'A repo without products; check the repo name in the header, Noch keine Produkte with the et design product new shop prompt and Prompt kopieren.',
+    'no-repo-known':
+      'No repo open but two known: check the Zuletzt geöffnet label and one small outline button per repo below Repo öffnen.',
+    'no-products-known':
+      'A repo without products and two other known repos: check the Zuletzt geöffnet row below Prompt kopieren, without the current repo.',
   },
-  render: async ({ repo, busy }) => {
+  render: async ({ repo, repos = [], busy }) => {
     const open = await button.render({ label: START_LABELS.openRepo, variant: 'filled', loading: busy });
     const copy = await button.render({ label: START_LABELS.copyPrompt, variant: 'outline', size: 'sm' });
     const other = await button.render({
@@ -71,9 +83,20 @@ export default definePart<Props>({
       loading: busy,
     });
 
+    const known = await Promise.all(
+      repos
+        .filter((name) => name !== repo)
+        .map(async (name) =>
+          withAction(
+            (await button.render({ label: name, variant: 'outline', size: 'sm', disabled: busy })).body,
+            'emit:projectChange',
+          ),
+        ),
+    );
+
     return drawing({
       body: html`<div class="h-full min-h-225 flex flex-col bg-et-surface-bg">
-        ${header(other.body, repo)} ${repo ? noProducts(copy.body, repo) : noRepo(open.body)}
+        ${header(other.body, repo)} ${repo ? noProducts(copy.body, repo, known) : noRepo(open.body, known)}
       </div>`,
       styles: open.styles + copy.styles + other.styles,
     });

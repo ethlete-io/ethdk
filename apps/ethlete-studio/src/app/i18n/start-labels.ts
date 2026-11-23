@@ -10,4 +10,5 @@ export const START_LABELS = {
     'Ein Produkt ist ein eigenes Design-System, zum Beispiel für eine App, mit Teilen, Sketches und Flows. Dein Agent legt es an. Bitte ihn zum Beispiel so:',
   prompt: (repo: string) => `Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.`,
   copyPrompt: 'Prompt kopieren',
+  knownRepos: 'Zuletzt geöffnet',
 } as const;

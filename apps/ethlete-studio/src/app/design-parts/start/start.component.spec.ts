@@ -2,13 +2,14 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { StartComponent } from './start.component';
 
-const render = async (repo?: string, busy = false) => {
+const render = async (repo?: string, busy = false, repos: string[] = []) => {
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
 
   const fixture = TestBed.createComponent(StartComponent);
 
   fixture.componentRef.setInput('repo', repo);
   fixture.componentRef.setInput('busy', busy);
+  fixture.componentRef.setInput('repos', repos);
   await fixture.whenStable();
 
   const element = fixture.nativeElement as HTMLElement;
@@ -73,5 +74,31 @@ describe('StartComponent', () => {
 
     expect(button?.getAttribute('aria-busy')).toBe('true');
     expect(other).toBe(0);
+  });
+
+  it('lists the other known repos in both cards and emits the picked name', async () => {
+    const known = ['ethlete-sdk', 'tomflix', 'fifagg-frontend'];
+    const withRepo = await render('tomflix', false, known);
+    const picked: string[] = [];
+
+    withRepo.fixture.componentInstance.projectChange.subscribe((name) => picked.push(name));
+    withRepo.button('fifagg-frontend')?.click();
+
+    expect(withRepo.element.textContent).toContain('Zuletzt geöffnet');
+    expect(withRepo.button('tomflix')).toBeUndefined();
+    expect(withRepo.button('ethlete-sdk')).toBeDefined();
+    expect(picked).toEqual(['fifagg-frontend']);
+
+    TestBed.resetTestingModule();
+    const noRepo = await render(undefined, true, known);
+
+    expect(noRepo.element.textContent).toContain('Zuletzt geöffnet');
+    expect(noRepo.button('tomflix')?.disabled).toBe(true);
+  });
+
+  it('shows no label without known repos', async () => {
+    const { element } = await render('solo', false, ['solo']);
+
+    expect(element.textContent).not.toContain('Zuletzt geöffnet');
   });
 });
