@@ -49,3 +49,5 @@ Die Eintragstabelle zu [STATUS.md](STATUS.md) (ADR 0354).
 | B679 | Neues Produkt startet mit echtem Bildschirm | Design-Skill für Produkt-Repos: zuerst ein echter Bildschirm in zwei bis drei fertigen Stimmungen mit echten Inhalten; Aufbau und Menü entscheidet der Agent; keine Wireframe-Runde; danach frischer Tomflix-Lauf (ADR 0415). | ⏳ | - | Builder |
 | B680 | Rundenwähler ohne Rahmen | Der Rundenwähler im Sketch nutzt den Ghost-Select, so breit wie der Rundenname, ohne Leeren-X (ADR 0417). | ⏳ | - | Builder |
 | B682 | Neustart startet Agent | `agent-sessions restart` startet nur claude oder codex, nie eine nackte Shell; der Footer „↓ to manage“ allein ist keine Hintergrundarbeit (S44, fifagg). | ⏳ | - | Builder |
+| B683 | Altes Projekt öffnen | Ein Repo mit alten Entwürfen und ohne Produkt erscheint auf der Startseite als Produkt mit seinen alten Entwürfen; leerer Zustand mittig (Tom 23.11., altes Tomflix). | ⏳ | - |
+| B684 | Bekannte Repos wählen | Startseite und Kopf zeigen die Repos, die Studio schon geöffnet hat (ADR 0419). | ⏳ | - |
