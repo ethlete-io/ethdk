@@ -1,4 +1,5 @@
 import { TypecheckResult } from '../../typecheck';
+import { isEditOldBaseFile } from './edit-old-base';
 import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
 import { relative } from 'path';
@@ -112,6 +113,7 @@ export const variantProblemsOf = (options: {
     );
     const wasThere = (problem: Problem) =>
       carriedWasThere.has(problem) ||
+      isEditOldBaseFile(problem.file) ||
       had.has(keyOf(relative(variantDir, problem.file).startsWith('..') ? options.product.dir : variantDir, problem));
     const found = [...laidOver, ...carried.map(({ problem }) => problem)];
     const target = overlaid.parts.find((part) => partKeyOf(part) === partKeyOf(options.sketch));

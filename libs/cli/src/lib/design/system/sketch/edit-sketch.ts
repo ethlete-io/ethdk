@@ -23,8 +23,9 @@ import {
   variantSharedDirOf,
   writeSketchFile,
 } from './sketch';
+import { EDIT_OLD } from './edit-old-base';
 
-export const EDIT_OLD = 'old';
+export { EDIT_OLD };
 const NEW = 'new';
 const EDIT_ROUND_TITLE = 'Direkte Änderung';
 const EDIT_VARIANT_NOTES = { [EDIT_OLD]: 'der zuletzt gemergte Stand', [NEW]: 'die Änderung außerhalb eines Sketches' };
@@ -410,4 +411,8 @@ const writeOld = ({ sketch, resolved }: { sketch: Sketch; resolved: ResolvedPart
     cpSync(resolve(oldDir, SHARED_FOLDER), variantSharedDirOf(sketch, EDIT_OLD), { recursive: true });
     rmSync(resolve(oldDir, SHARED_FOLDER), { recursive: true });
   }
+
+  const editOldCommit = git(partDir, ['rev-parse', '--verify', 'HEAD']).trim();
+
+  if (editOldCommit !== sketch.editOldCommit) writeSketchFile({ ...sketch, editOldCommit }, { base: sketch });
 };

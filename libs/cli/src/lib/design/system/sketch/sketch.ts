@@ -113,6 +113,8 @@ export type SketchFile = {
   baseline?: Record<string, string>;
   /** The git tree of the product folders the baseline was recorded from, for a rebase when no commit holds that state. */
   baselineTree?: string;
+  /** The commit the `old` variant of an edit sketch was taken from; `old` draws the parts it holds no copy of as that commit holds them. */
+  editOldCommit?: string;
   /** The content hash of each part `shared/` file the sketch lifted into its own, keyed `<layer>/<name>/shared/<path>`, when it was created or rebased. */
   sharedBase?: Record<string, string>;
   decision?: SketchDecision;
@@ -638,6 +640,8 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: createdBy must be { cmd: string, session?: string }`;
   if (parsed.baselineTree !== undefined && (typeof parsed.baselineTree !== 'string' || !parsed.baselineTree))
     return `${file}: baselineTree must be a git tree id`;
+  if (parsed.editOldCommit !== undefined && (typeof parsed.editOldCommit !== 'string' || !parsed.editOldCommit))
+    return `${file}: editOldCommit must be a git commit id`;
   if (
     parsed.sharedBase !== undefined &&
     (!parsed.sharedBase ||
@@ -749,6 +753,7 @@ const sketchFileOf = (sketch: Sketch): SketchFile => ({
   ...(sketch.createdBy ? { createdBy: sketch.createdBy } : {}),
   ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
   ...(sketch.baselineTree ? { baselineTree: sketch.baselineTree } : {}),
+  ...(sketch.editOldCommit ? { editOldCommit: sketch.editOldCommit } : {}),
   ...(sketch.sharedBase && Object.keys(sketch.sharedBase).length > 0 ? { sharedBase: sketch.sharedBase } : {}),
   ...(sketch.decision ? { decision: sketch.decision } : {}),
   rounds: sketch.rounds,

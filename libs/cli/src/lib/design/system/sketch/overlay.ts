@@ -5,6 +5,7 @@ import { Layer, LAYER_USES, LAYERS } from '../layers';
 import { fixturesOf, partFilesOf } from '../product';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { editOldBaseOf } from './edit-old-base';
 import { changesOnlyImports, importsAnyOf } from './host-edit';
 import { Sketch, sharedDirOf, variantDirOf, variantSharedDirOf } from './sketch';
 
@@ -34,7 +35,8 @@ export const overlaySketch = (options: {
   sketch: Sketch;
   variant: string;
 }): SketchedProduct => {
-  const { product, sketch, variant } = options;
+  const { sketch, variant } = options;
+  const product = editOldBaseOf(options);
   const dir = variantDirOf(sketch, variant);
   const own = partFilesOf(dir);
   const baseKeys = new Set(product.parts.filter((part) => part.origin !== 'product').map(partKeyOf));
