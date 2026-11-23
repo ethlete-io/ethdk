@@ -1135,7 +1135,8 @@ describe('SystemViewComponent on a merge', () => {
     await settle(fixture);
 
     expect(view.selectedKey()).toBe('sketch:foundations/colors');
-    expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(true);
+    expect(element.querySelector('[data-sk-frame="a default"]')?.hasAttribute('data-selected')).toBe(true);
+    expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(false);
   });
 
   // A target row stays in the sketch view, also for a part the product lists, and carries no hint.
@@ -1148,7 +1149,8 @@ describe('SystemViewComponent on a merge', () => {
     await settle(fixture);
 
     expect(view.selectedKey()).toBe('sketch:foundations/colors');
-    expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(true);
+    expect(element.querySelector('[data-sk-frame="a default"]')?.hasAttribute('data-selected')).toBe(true);
+    expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(false);
     expect(view['partTree']().sketches?.items[0]?.nested?.some((row) => 'hint' in row)).toBe(false);
   });
 

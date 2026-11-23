@@ -245,7 +245,7 @@ describe('SketchesComponent', () => {
     expect(framesOf()).toEqual(['x rest', 'x open', 'x busy']);
   });
 
-  it('selects and activates a frame by key and reports a key it does not draw', async () => {
+  it('selects a frame by key without activating it, so the wheel keeps panning, and reports a key it does not draw', async () => {
     const fixture = await render({ camera: '100', statesOpen: true });
     const root: HTMLElement = fixture.nativeElement;
     const activated = vi.fn();
@@ -255,7 +255,7 @@ describe('SketchesComponent', () => {
     expect(fixture.componentInstance.focusFrame('x open')).toBe(true);
     await fixture.whenStable();
     expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-selected')).toBe(true);
-    expect(activated).toHaveBeenCalledWith('x open');
+    expect(activated).not.toHaveBeenCalled();
     expect(fixture.componentInstance.focusFrame('x nowhere')).toBe(false);
   });
 
