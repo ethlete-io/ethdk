@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isBriefPath, noVerifyFindings } from './check-no-verify-briefs.mjs';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { isBriefPath, noVerifyFindings, noVerifyProblems } from './check-no-verify-briefs.mjs';
 
 test('flags an instruction to commit with --no-verify', () => {
   assert.deepEqual(noVerifyFindings('a\nrun the commit with --no-verify -m x'), [
@@ -41,4 +44,11 @@ test('checks only the brief paths it is given', () => {
   assert.equal(isBriefPath('.agents/skills/x/notes.md'), false);
   assert.equal(isBriefPath('libs/agent-rules/content/rules/a.md'), true);
   assert.equal(isBriefPath('apps/docs/a.md'), false);
+});
+
+// A tracked brief deleted in the working tree has nothing to check and never stops the run.
+test('skips a tracked brief that is deleted on disk', () => {
+  const root = mkdtempSync(join(tmpdir(), 'no-verify-'));
+
+  assert.deepEqual(noVerifyProblems(root, ['.agents/skills/gone/SKILL.md']), []);
 });

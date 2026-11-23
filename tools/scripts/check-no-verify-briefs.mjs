@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,7 +41,7 @@ const trackedFiles = (root) =>
 
 export const noVerifyProblems = (root, files = trackedFiles(root)) =>
   files
-    .filter(isBriefPath)
+    .filter((file) => isBriefPath(file) && existsSync(join(root, file)))
     .flatMap((file) =>
       noVerifyFindings(readFileSync(join(root, file), 'utf8')).map(
         (f) => `${file}:${f.line}: an agent brief must not tell agents to skip hooks with --no-verify: ${f.text}`,
