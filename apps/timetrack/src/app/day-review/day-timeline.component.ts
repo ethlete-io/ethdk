@@ -61,7 +61,9 @@ import {
   laneKeyOfRow,
   peerBandLabel,
   peerLabelKey,
-  worktreeColumnOf,
+  drawKeyOfLane,
+  laneColumnOf,
+  laneTitleOf,
 } from './lanes';
 import {
   TimelineEntry,
@@ -81,6 +83,7 @@ import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
 import { SubagentLayout, subagentLayoutOf } from './subagent-layout';
 import { foldUnattended } from './unattended-fold';
+import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectGitCollector } from '../../collectors';
 
@@ -235,7 +238,7 @@ type RowDrag = {
               <div
                 [style.flexGrow]="growOf(lane)"
                 [style.minWidth.rem]="minRemOf(lane)"
-                [title]="lane.key"
+                [title]="LANE_TITLE_OF(lane)"
                 class="basis-0 truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-muted"
                 data-lane-header
               >
@@ -941,10 +944,11 @@ export class DayTimelineComponent {
   private ticket = injectRowTicket();
   private settings = injectTimetrackSettings();
   private git = injectGitCollector();
+  private projectLinks = injectProjectLinks();
   protected approvals = injectApprovalQueue();
   protected bandApprovals = injectBandApprovals();
-
   public focusedDate = input.required<Date>();
+
   public rows = input.required<readonly ReviewedRow[]>();
   /** The day's breaks, as the rows leave them. They get a lane of their own, and no gesture. */
   public breaks = input<readonly BreakWindow[]>([]);
@@ -955,12 +959,11 @@ export class DayTimelineComponent {
   public behind = input<readonly BehindStretch[]>([]);
   /** A paired machine's work on a frozen day, drawn in its lane and read-only. */
   public peers = input<readonly PeerBand[]>([]);
-
   /** Where two adjacent rows should meet instead. */
   public boundaryMove = output<BoundaryMove>();
+
   /** Where a row was dragged to, whole or by one end. */
   public rowReschedule = output<RowReschedule>();
-
   /** A break the reviewer pressed, which says they were at the machine for the stretch it covered. */
   public breakClear = output<TimeWindow>();
 
@@ -968,10 +971,12 @@ export class DayTimelineComponent {
   public breakDraw = output<TimeWindow>();
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
+
   private bands = viewChildren<ElementRef<HTMLElement>>('band');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
   public grid = viewChild(SchedulerTimeGridDirective);
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
+  protected readonly LANE_TITLE_OF = laneTitleOf;
 
   private scrollDay = computed(() => dayKeyOfDate(this.focusedDate()));
   private scrollTarget = linkedSignal<string, TimelineScroll | 'first-band' | null>({
@@ -1032,7 +1037,7 @@ export class DayTimelineComponent {
   });
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
-  private columnOf = computed(() => worktreeColumnOf(this.git.worktrees()));
+  private columnOf = computed(() => laneColumnOf({ worktrees: this.git.worktrees(), links: this.projectLinks() }));
 
   protected lanes = computed<DayLane[]>(() =>
     lanesOf({
@@ -1969,10 +1974,12 @@ export class DayTimelineComponent {
       return;
     }
 
+    const drawn = lane ? this.lanes().find((other) => other.key === lane) : undefined;
+
     this.surface.openDraft({
       from: draft.start,
       to: draft.end,
-      laneKey: lane && lane !== NO_LANE_KEY ? lane : undefined,
+      laneKey: drawn && drawn.key !== NO_LANE_KEY ? drawKeyOfLane(drawn) : undefined,
     });
   }
 

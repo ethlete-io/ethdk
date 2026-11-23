@@ -1,6 +1,6 @@
-import { PeerBand } from '@ethlete/timetrack';
+import { BehindStretch, PeerBand, TimetrackProjectLink } from '@ethlete/timetrack';
 import { describe, expect, it } from 'vitest';
-import { isPeerLaneKey, lanesOf, peerBandLabel, peerLabelKey } from './lanes';
+import { isPeerLaneKey, laneColumnOf, laneTitleOf, lanesOf, peerBandLabel, peerLabelKey } from './lanes';
 
 const SDK = 'repo:/home/human/dev/ethlete-sdk';
 const MODELS = 'repo:/home/human/dev/3d-projekte';
@@ -82,5 +82,79 @@ describe('the labels of bands that share a column', () => {
 
   it('hides nothing when no label height is given', () => {
     expect(hiddenIn([quarter(0, 30), quarter(10, 40)])?.size).toBe(0);
+  });
+});
+
+describe('a project is one lane', () => {
+  const API = 'repo:/home/human/dev/api';
+  const WEB = 'repo:/home/human/dev/web';
+  const SIDE = 'repo:/home/human/dev/side';
+  const API_TREE = 'repo:/home/human/dev/api-tree';
+
+  const link = (path: string, target: TimetrackProjectLink['target']): TimetrackProjectLink => ({
+    id: path,
+    path,
+    target,
+    createdAt: new Date(2026, 0, 1),
+  });
+
+  const stretch = (laneKey: string): BehindStretch => ({ from: AT(9), to: AT(10), issueKey: 'FIP-1', laneKey });
+
+  const lanes = (options: { keys: string[]; links: TimetrackProjectLink[]; worktrees?: Record<string, string> }) =>
+    lanesOf({
+      blocks: [],
+      breaks: [],
+      behind: options.keys.map(stretch),
+      dayStart: DAY,
+      columnOf: laneColumnOf({ worktrees: options.worktrees ?? {}, links: options.links }),
+    }).filter((lane) => lane.key !== 'lane:break');
+
+  const project = link('/home/human/dev/api', { kind: 'project', projectKey: 'FIP' });
+
+  it('draws two checkouts linked to one project in one lane labelled with the key', () => {
+    const both = [project, link('/home/human/dev/web', { kind: 'project', projectKey: 'FIP' })];
+    const drawn = lanes({ keys: [API, WEB], links: both });
+
+    expect(drawn.map((lane) => [lane.key, lane.label])).toEqual([['project:FIP', 'FIP']]);
+  });
+
+  it('names the checkouts of a project lane in its title', () => {
+    const both = [project, link('/home/human/dev/web', { kind: 'project', projectKey: 'FIP' })];
+    const drawn = lanes({ keys: [API, WEB, SIDE], links: both });
+
+    expect(drawn.map(laneTitleOf).sort()).toEqual(['api, web', SIDE]);
+  });
+
+  it('keeps a checkout with no link in its own lane', () => {
+    const drawn = lanes({ keys: [API, SIDE], links: [project] });
+
+    expect(drawn.map((lane) => lane.label).sort()).toEqual(['FIP', 'side']);
+  });
+
+  it('keeps a checkout with a private link in its own lane', () => {
+    const drawn = lanes({ keys: [API, SIDE], links: [project, link('/home/human/dev/side', { kind: 'private' })] });
+
+    expect(drawn.map((lane) => lane.key).sort()).toEqual(['project:FIP', SIDE]);
+  });
+
+  it('draws a worktree of a linked checkout in the project lane', () => {
+    const drawn = lanes({
+      keys: [API, API_TREE],
+      links: [project],
+      worktrees: { '/home/human/dev/api-tree': '/home/human/dev/api' },
+    });
+
+    expect(drawn.map((lane) => lane.key)).toEqual(['project:FIP']);
+  });
+
+  it('never maps a lane that holds no checkout', () => {
+    const column = laneColumnOf({ worktrees: {}, links: [project] });
+
+    expect(['lane:call', 'lane:timer', 'lane:none', 'app:slack'].map(column)).toEqual([
+      'lane:call',
+      'lane:timer',
+      'lane:none',
+      'app:slack',
+    ]);
   });
 });

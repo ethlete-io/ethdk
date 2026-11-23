@@ -7,6 +7,8 @@ import {
   ReviewedRow,
   TIMER_LANE_KEY,
   TimeWindow,
+  TimetrackProjectLink,
+  matchProjectLink,
   sharingTicket,
   streamKey,
   streamKeyLabel,
@@ -51,7 +53,12 @@ const rankOf = (key: string) => {
 
 const peerLaneKeyOf = (band: PeerBand) => `${PEER_LANE_PREFIX}${band.machineId}`;
 
-const labelOf = (key: string) => TRAILING_LABELS[key] ?? streamKeyLabel(key);
+const PROJECT_LANE_PREFIX = 'project:';
+
+const isProjectLaneKey = (key: string) => key.startsWith(PROJECT_LANE_PREFIX);
+
+const labelOf = (key: string) =>
+  TRAILING_LABELS[key] ?? (isProjectLaneKey(key) ? key.slice(PROJECT_LANE_PREFIX.length) : streamKeyLabel(key));
 
 const DAY_MS = 24 * 60 * 60_000;
 
@@ -227,21 +234,44 @@ const hiddenLabelsOf = (options: {
 export const laneKeyOfRow = (row: ReviewedRow) => row.laneKey ?? NO_LANE_KEY;
 
 /**
- * The column a row's lane is drawn in: a linked worktree's lane is drawn in its main checkout's, so
- * the two read as one repository. The row keeps its own lane key, which is what its stand-in, its
- * branch and its naming history are kept by.
+ * The column a row's lane is drawn in: a linked worktree's lane is drawn in its main checkout's, and a
+ * checkout a project link covers is drawn in that project's, so the checkouts of one project read as
+ * one lane. A checkout with no link, or a `private` one, keeps its own. The row keeps its own lane key,
+ * which is what its stand-in, its branch and its naming history are kept by.
  */
-export const worktreeColumnOf = (worktrees: Readonly<Record<string, string>>) => (laneKey: string) => {
-  const main = worktrees[streamKeyRepoPath(laneKey) ?? ''];
+export const laneColumnOf =
+  (options: { worktrees: Readonly<Record<string, string>>; links: readonly TimetrackProjectLink[] }) =>
+  (laneKey: string) => {
+    const main = options.worktrees[streamKeyRepoPath(laneKey) ?? ''];
+    const checkout = main ? streamKey({ repoPath: main }) : laneKey;
+    const repoPath = streamKeyRepoPath(checkout);
+    const target = repoPath ? matchProjectLink({ context: { repoPath }, links: options.links })?.target : undefined;
 
-  return main ? streamKey({ repoPath: main }) : laneKey;
-};
+    return target?.kind === 'project' ? `${PROJECT_LANE_PREFIX}${target.projectKey}` : checkout;
+  };
+
+/** The lane key a row drawn on empty grid in `lane` is filed under: a project lane files it under its first checkout. */
+export const drawKeyOfLane = (lane: DayLane) =>
+  isProjectLaneKey(lane.key) ? (lane.blocks[0] ? laneKeyOfBlock(lane.blocks[0].block) : undefined) : lane.key;
 
 const laneKeyOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => {
   const entry = rowEntryOf(block.node.appointment);
 
   return entry ? laneKeyOfRow(entry.row) : NO_LANE_KEY;
 };
+
+/** The lane header's tooltip: a project lane names the checkouts it holds, any other lane its own key. */
+export const laneTitleOf = (lane: DayLane) =>
+  isProjectLaneKey(lane.key)
+    ? [
+        ...new Set(
+          [
+            ...lane.blocks.map((placed) => laneKeyOfBlock(placed.block)),
+            ...lane.behind.map((band) => band.stretch.laneKey),
+          ].map(streamKeyLabel),
+        ),
+      ].join(', ')
+    : lane.key;
 
 type Timed = {
   block: SchedulerTimeGridBlock<TimelineEntry>;
