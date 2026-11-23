@@ -73,7 +73,7 @@
     "components/shell-system-picker": "4259cf38cf4acfc5",
     "components/shortcuts-dialog": "6bf3eb58b2194f69",
     "components/skeleton": "05507b79c084a190",
-    "components/sketch-head": "40199c30ac05f4f6",
+    "components/sketch-head": "573aa9a00a7ee046",
     "components/sketch-status-badge": "fb8a93c49f140906",
     "components/slider": "dbf5f9fd735b6e90",
     "components/standings": "78634e0d7745e9bd",
@@ -100,19 +100,19 @@
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
-    "pages/sketches": "ca55cb15ddba39de",
+    "pages/sketches": "893d3b3c46781d33",
     "pages/start": "c64a95d26c294b69",
     "pages/system": "1726d8b674da3ca2",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "0592933d5d357c6b82d6c440a1b19005aaeafae4",
+  "baselineTree": "535cb651288eb049672eb3f841ed5f73989818e0",
   "editOldCommit": "dfb704c4f68abaa2418eafbac6178a491ed1c68d",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
     "pages/sketches/shared/multi-part.ts": "baa5ef7f1cd1fb1c",
     "pages/sketches/shared/open-points.ts": "bdac23f08046b221",
     "pages/sketches/shared/sketch-rows.ts": "79ac1cba1559433b",
-    "pages/sketches/shared/sketch-status.ts": "af1aef97492bbcc4",
+    "pages/sketches/shared/sketch-status.ts": "e2a224398dad3c07",
     "pages/sketches/shared/withdrawn.ts": "ddbc2375f9aafde4"
   },
   "rounds": [
