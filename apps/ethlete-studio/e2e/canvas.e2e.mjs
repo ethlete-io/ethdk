@@ -139,7 +139,7 @@ const WIDE_SKETCH = {
   part: 'components/title-bar',
   name: 'notice-hint',
   variants: ['a', 'b', 'c'],
-  changed: 'push',
+  changed: 'linux-full-notice-failed',
 };
 
 const ZOOM_SKETCH = { part: 'pages/system', name: 'zoom-budget', variants: ['a', 'b', 'c', 'd'] };
@@ -5706,8 +5706,8 @@ const prepareCheckout = () => {
       join(wide, variant, wideTs),
       replaceOnce(
         readFileSync(join(wide, variant, wideTs), 'utf8'),
-        "styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\\n'),",
-        `styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\\n') + (props.push ? '.st-title-bar { opacity: ${0.4 + index * 0.2}; }' : ''),`,
+        "styles: [styles, tooltipStyles, loaderStyles, notificationStyles].join('\\n'),",
+        `styles: [styles, tooltipStyles, loaderStyles, notificationStyles].join('\\n') + (props.restart === 'failed' ? '.st-title-bar { opacity: ${0.4 + index * 0.2}; }' : ''),`,
       ),
     );
   });
