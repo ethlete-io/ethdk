@@ -217,6 +217,16 @@ const PAGES = [
     shows: 'ethlete-sketch-view ethlete-sketches',
   },
   {
+    name: 'Switch',
+    view: {
+      systemProduct: 'sdk',
+      systemEntry: 'components/input',
+      movedCameras: { 'sdk components/notification': { x: -20000, y: -20000, zoom: 1 } },
+    },
+    shows: 'ethlete-system-view ethlete-open-points-chip',
+    hides: 'ethlete-sketch-view',
+  },
+  {
     name: 'Inbox',
     view: { systemProduct: 'studio', systemEntry: 'pages/system', commentsOpen: true },
     shows: 'ethlete-inbox',
@@ -1826,6 +1836,52 @@ const CASES = [
       }
 
       return { ok: false, detail: `no frame shows content: ${JSON.stringify(texts.map((text) => text.slice(0, 60)))}` };
+    },
+  },
+  {
+    name: 'a tree switch to a part whose remembered view shows no frame fits instead',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the canvas frame boxes',
+    pages: ['Switch'],
+    run: async (page) => {
+      await page
+        .locator('[role="treeitem"]', { hasText: /^\s*notification\s*$/ })
+        .first()
+        .click();
+      await listingAnswered(page);
+      await page.waitForSelector('ethlete-canvas-frame', { timeout: WAIT_MS });
+      await settle(page);
+
+      const visible = await readUntil(
+        page,
+        () =>
+          page.evaluate(() => {
+            const view = document.querySelector('ethlete-design-canvas')?.getBoundingClientRect();
+
+            return [...document.querySelectorAll('ethlete-canvas-frame')].filter((frame) => {
+              const box = frame.getBoundingClientRect();
+
+              return (
+                !!view &&
+                box.width > 0 &&
+                box.left < view.right &&
+                box.right > view.left &&
+                box.top < view.bottom &&
+                box.bottom > view.top
+              );
+            }).length;
+          }),
+        (count) => count > 0,
+      );
+
+      const where = await page.evaluate(() => ({
+        selected: document
+          .querySelector('[role="treeitem"][data-selected], [role="treeitem"][aria-selected="true"]')
+          ?.textContent?.trim(),
+        frames: document.querySelectorAll('ethlete-canvas-frame').length,
+        chip: document.querySelector('ethlete-zoom-chip')?.textContent?.trim(),
+      }));
+
+      return { ok: visible > 0, detail: `${visible} frames in the canvas after the switch ${JSON.stringify(where)}` };
     },
   },
   {

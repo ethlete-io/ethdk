@@ -6,6 +6,7 @@ import { THEMES } from '../../../themes';
 import { rememberedView } from '../../studio-view/remembered';
 import { ListedCall } from '../../../host/design';
 import { callFramesOf } from '../../system-view/system-tree';
+import { Camera, rectsIntersect } from './canvas-math';
 import { CanvasFrame, SCHEME_GAP, SIDE_BY_SIDE_MAX_WIDTH } from './canvas-frame';
 import { DesignCanvasComponent } from './design-canvas.component';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
@@ -964,5 +965,50 @@ describe('DesignCanvasComponent', () => {
     }
 
     expect([fixture.componentInstance.selectedId(), fixture.componentInstance.selectedCellId()]).toEqual(['grid', 'b']);
+  });
+
+  describe('a part switch', () => {
+    const open = async (key: string, restored: Camera | null) => {
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
+      vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+      });
+
+      const fixture = TestBed.createComponent(DesignCanvasComponent);
+
+      fixture.componentRef.setInput('frames', [{ ...FITTED, id: 'a', width: 400, height: 300 }]);
+      fixture.componentRef.setInput('cameraKey', key);
+      fixture.componentRef.setInput('restoredCamera', restored);
+      await fixture.whenStable();
+
+      return fixture;
+    };
+
+    const showsFrame = (fixture: ComponentFixture<DesignCanvasComponent>) => {
+      const { x, y, zoom } = fixture.componentInstance.camera();
+      const view = { x: -x / zoom, y: -y / zoom, width: 800 / zoom, height: 600 / zoom };
+
+      return fixture.componentInstance['placedFrames']().some(({ x: fx, y: fy, width, height }) =>
+        rectsIntersect({ x: fx, y: fy, width, height }, view),
+      );
+    };
+
+    it('opens a part never seen with its frame in view', async () => {
+      expect(showsFrame(await open('acme components/a', null))).toBe(true);
+    });
+
+    it('returns to the remembered zoom and position when they show a frame', async () => {
+      const fixture = await open('acme components/a', { x: 20, y: 30, zoom: 1.5 });
+
+      expect(fixture.componentInstance.camera()).toEqual({ x: 20, y: 30, zoom: 1.5 });
+    });
+
+    it('fits when the remembered view shows no frame', async () => {
+      const fixture = await open('acme components/a', { x: -9000, y: -9000, zoom: 1 });
+
+      expect(showsFrame(fixture)).toBe(true);
+    });
   });
 });

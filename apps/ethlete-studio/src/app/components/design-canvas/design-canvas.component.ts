@@ -52,6 +52,8 @@ import {
   layoutSheet,
   offsetWithin,
   panCamera,
+  rectsIntersect,
+  visibleWorldRect,
   zoomAtPoint,
 } from './canvas-math';
 import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
@@ -629,6 +631,8 @@ export class DesignCanvasComponent {
 
   private followsResize = false;
 
+  private restoredUnchecked = false;
+
   private followedBounds: Rect | null = null;
 
   private hostLeft = 0;
@@ -653,6 +657,8 @@ export class DesignCanvasComponent {
         const shift = this.hostLeft - hostLeft;
 
         this.hostLeft = hostLeft;
+
+        if (this.restoredUnchecked && bounds && this.fitWhenEmpty(viewport)) return;
 
         if (this.fittedFor === key && bounds) {
           if (shift !== 0) this.camera.update((camera) => ({ ...camera, x: camera.x + shift }));
@@ -680,8 +686,11 @@ export class DesignCanvasComponent {
         this.following = restored === null ? 'start' : null;
         this.followsResize = false;
         this.followedBounds = bounds;
-        if (restored) this.camera.set(restored);
-        else if (bounds) this.camera.set(this.fitted({ bounds, viewport, fit: 'start' }));
+        this.restoredUnchecked = restored !== null;
+        if (restored) {
+          this.camera.set(restored);
+          if (bounds) this.fitWhenEmpty(viewport);
+        } else if (bounds) this.camera.set(this.fitted({ bounds, viewport, fit: 'start' }));
       });
     });
 
@@ -1038,6 +1047,19 @@ export class DesignCanvasComponent {
     this.swallowNextClick = false;
 
     return swallow;
+  }
+
+  private fitWhenEmpty(viewport: Size) {
+    this.restoredUnchecked = false;
+
+    const view = visibleWorldRect({ camera: this.camera(), viewport, margin: 0 });
+    const frames = this.projected().length > 0 ? this.projectedRects() : this.layout().frames;
+
+    if (frames.length === 0 || frames.some((frame) => rectsIntersect(frame, view))) return false;
+
+    this.fitAll();
+
+    return true;
   }
 
   private storeMeasure(id: string, size: FrameSize) {
