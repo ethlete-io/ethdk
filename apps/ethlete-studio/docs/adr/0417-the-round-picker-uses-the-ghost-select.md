@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B680
+built: ffb92149e
 decided: 2026-11-23
 source: doc-agent session 2026-11-23, the human's shot of the tomflix run 2 sketch header
 ---
