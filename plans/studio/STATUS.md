@@ -31,7 +31,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
-3. **Formularfeld-Höhe bei Schriftgröße 1 (B669)** ⏳ fifagg S41, nicht blockiert: mit `--et-form-field-floating-inside-control-font-scale: 1` wird das floating-inside-Feld 1 px höher (50 -> 51 px); die Höhe muss beim Höhen-Token bleiben. Erst Test, dann Fix - Builder
+3. **Formularfeld-Höhe bei Schriftgröße 1 (B669)** ⏳ fifagg S41, nicht blockiert: mit `--et-form-field-floating-inside-control-font-scale: 1` wird das floating-inside-Feld 1 px höher (50 -> 51 px); die Höhe muss beim Höhen-Token bleiben. Im SDK nicht nachgestellt (md bleibt 50 px bei 0.96/1/1.1); Suspect: fifagg-CSS. Wartet auf fifagg-Messwerte (Spielersuche, in 1-2 h), dann Test und Fix - fifagg, dann Builder
 4. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
 5. **Timetrack-Beschreibung (B602)** ⏳ Host-Speicher geschlossen: Cause (gemessen) glibc-Arena, mit Grenze nach 2 h 1,60 GB flach (alt 6,36 GB nach 26 min). Tag-Aufbau: Sliver-Patch 187be7874 (740 -> 410 ms). Offen: Toms nächstes Tagesbild, serve.perf 354 > 224 ms, Tom bestätigt Scrollen; Anruf ohne Vorschlag - Builder
 6. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Offen: beide Rechner auf neuem Build prüfen, Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
