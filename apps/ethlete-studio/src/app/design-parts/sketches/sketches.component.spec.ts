@@ -614,15 +614,18 @@ describe('SketchesComponent', () => {
     expect(refused.querySelector('[data-sk-merge]')).toBeNull();
   });
 
-  it('shows In Arbeit and the drawing placeholder for the drawn variant', async () => {
-    const root: HTMLElement = (await render({ status: 'drawing', drawn: 'x' })).nativeElement;
+  it('draws the in-progress variant live with the in-progress mark and the report line, never as finished', async () => {
+    const rows = ROWS.map((row) => (row.key === 'x' ? { ...row, drawing: { line: 'baut Runde 3' } } : row));
+    const root: HTMLElement = (await render({ rows, status: 'drawing', drawn: 'x', camera: '100' })).nativeElement;
+    const row = root.querySelector('[data-sk-row="x"]');
 
     expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
-    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-placeholder-row]'))).toContain(
-      `Sonnet 5.5 ${LABELS.drawingVariant}`,
-    );
-    expect(root.querySelector('[data-sk-row="x"] [data-sk-stage]')).toBeNull();
-    expect(textOf(root.querySelector('[data-sk-row="x"]'))).toContain(LABELS.drawingMark);
+    expect(row?.querySelector('[data-sk-placeholder-row]')).toBeNull();
+    expect(row?.querySelector('[data-sk-stage]')).not.toBeNull();
+    expect(textOf(row)).toContain(LABELS.drawingMark);
+    expect(textOf(row?.querySelector('[data-sk-drawing-line]'))).toBe('baut Runde 3');
+    expect(row?.querySelector('[data-sk-changed-mark]')).toBeNull();
+    expect(row?.querySelector('[data-sk-merge]')).toBeNull();
   });
 
   it('toggles the hold reason of a paused sketch', async () => {

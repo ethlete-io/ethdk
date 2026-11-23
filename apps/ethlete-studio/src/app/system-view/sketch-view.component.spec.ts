@@ -829,9 +829,9 @@ describe('SketchViewComponent', () => {
     expect(parts).toEqual(['', 'Sonnet 5.5', 'baut Runde 3', `· Variante b · ${SKETCHES_LABELS.since(7)}`]);
   });
 
-  it('draws a variant the agent has not reported on yet as in progress with the latest report line, never as a finished one', async () => {
+  it('draws every in-progress variant live with the latest report line, never as a placeholder or a finished one', async () => {
     const updatedAt = new Date(Date.now() - 2 * 60_000).toISOString();
-    const { root } = await render(
+    const { fixture, root } = await render(
       {
         ...SKETCH,
         status: 'in progress',
@@ -850,12 +850,18 @@ describe('SketchViewComponent', () => {
       },
       noComments,
     );
-    const placeholderOf = (variant: string) =>
-      root.querySelector(`[data-sk-row="${variant}"] [data-sk-placeholder-row]`)?.textContent ?? null;
+    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
+    await settle(fixture);
+    const row = (variant: string) => root.querySelector(`[data-sk-row="${variant}"]`);
+    const lineOf = (variant: string) => row(variant)?.querySelector('[data-sk-drawing-line]')?.textContent ?? null;
 
-    expect(placeholderOf('b')).not.toBeNull();
-    expect(placeholderOf('c')).toContain('baut Runde 3');
-    expect(placeholderOf('a')).toBeNull();
+    expect(root.querySelector('[data-sk-placeholder-row]')).toBeNull();
+    expect(row('b')?.querySelector('[data-shot]')).not.toBeNull();
+    expect(row('c')?.querySelector('[data-shot]')).not.toBeNull();
+    expect(lineOf('b')).toContain('baut Runde 3');
+    expect(lineOf('c')).toContain('baut Runde 3');
+    expect(lineOf('a')).toBeNull();
+    expect(row('c')?.querySelector('[data-sk-merge]')).toBeNull();
   });
 
   it('shows the variant step of a report that names a state, and no agent line once the report stalls', async () => {

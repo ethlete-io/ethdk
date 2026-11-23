@@ -331,28 +331,19 @@
                       >
                     }
                   </section>
-                  @if (isDrawn(row)) {
-                    <div
-                      [style.grid-column]="offset + column + 2"
-                      [style.grid-row]="matrixTop() + 1 + ' / span ' + block.states.length * 2"
-                    >
-                      <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
-                    </div>
-                  } @else {
-                    @for (item of row.shots; track item.state) {
-                      @if (block.states.includes(item.state)) {
-                        <ng-container
-                          *ngTemplateOutlet="
-                            cellTemplate;
-                            context: {
-                              $implicit: row,
-                              item,
-                              column: offset + column + 2,
-                              line: matrixLineOf(block.states, item.state),
-                            }
-                          "
-                        />
-                      }
+                  @for (item of row.shots; track item.state) {
+                    @if (block.states.includes(item.state)) {
+                      <ng-container
+                        *ngTemplateOutlet="
+                          cellTemplate;
+                          context: {
+                            $implicit: row,
+                            item,
+                            column: offset + column + 2,
+                            line: matrixLineOf(block.states, item.state),
+                          }
+                        "
+                      />
                     }
                   }
                 }
@@ -433,7 +424,6 @@
   </div>
 </ethlete-shell-page>
 <ng-template #rowTemplate let-row>
-  @let drawn = isDrawn(row);
   <section
     #section
     [attr.data-sk-row]="row.key"
@@ -457,9 +447,7 @@
           </span>
         }
       }
-      @if (drawn) {
-        <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
-      } @else if (row.shots.length > 0 || (row.key === CURRENT && stageStates().length > 0)) {
+      @if (row.shots.length > 0 || (row.key === CURRENT && stageStates().length > 0)) {
         <div
           #stage
           [style.grid-template-columns]="gridOf(row)"
@@ -582,25 +570,6 @@
     </p>
   }
 </ng-template>
-<ng-template #placeholderTemplate let-row>
-  <div
-    class="flex h-full min-h-24 items-center justify-center rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
-    data-sk-placeholder-row
-  >
-    <div class="flex size-full flex-col items-center justify-center gap-space-2 text-et-surface-muted">
-      <span class="flex items-center gap-space-2 text-ui-lg font-ui-medium">
-        <span class="size-2 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
-        @if (row.model; as model) {
-          <span class="inline-flex items-center gap-space-1"
-            ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
-          >
-        }
-        {{ LABELS.drawingVariant }}
-      </span>
-      <span class="text-ui-sm" data-sk-drawing-line>{{ row.drawing?.line || LABELS.drawingHint }}</span>
-    </div>
-  </div>
-</ng-template>
 <ng-template #headTemplate let-row>
   @let drawn = isDrawn(row);
   @if (headHidden()) {
@@ -661,12 +630,20 @@
           ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
           >{{ LABELS.drawingMark }}</span
         >
+        @if (row.drawing?.line; as line) {
+          <span
+            [style.font-size.px]="noteSize()"
+            class="leading-[1.35] text-et-surface-muted wrap-anywhere"
+            data-sk-drawing-line
+            >{{ line }}</span
+          >
+        }
       } @else {
         <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
       }
     }
   </div>
-  @if (!drawn && !IS_WITHDRAWN(row) && comments() === null) {
+  @if (!IS_WITHDRAWN(row) && comments() === null) {
     @if (pinOf(row.key); as pin) {
       <span [class.hidden]="headHidden()" class="absolute top-space-1 right-space-1 z-1 flex">
         <ethlete-comment-pin

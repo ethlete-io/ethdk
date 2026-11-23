@@ -850,7 +850,7 @@ export class SketchesComponent {
   }
 
   protected isSame(row: SketchRow, unchanged: boolean | null) {
-    return !isBaseRow(row) && unchanged === false && !this.isPending(row);
+    return !isBaseRow(row) && unchanged === false && !this.isPending(row) && !this.isDrawn(row);
   }
 
   protected isPending(row: SketchRow) {
@@ -858,11 +858,11 @@ export class SketchesComponent {
   }
 
   protected isMarked(row: SketchRow, changed: boolean | null) {
-    return !isBaseRow(row) && changed === true && !this.isPending(row) && !this.screenMode();
+    return !isBaseRow(row) && changed === true && !this.isPending(row) && !this.isDrawn(row) && !this.screenMode();
   }
 
   protected firstChangeOf(row: SketchRow) {
-    return isBaseRow(row) || this.isPending(row) || this.screenMode()
+    return isBaseRow(row) || this.isPending(row) || this.isDrawn(row) || this.screenMode()
       ? null
       : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
   }
@@ -1159,7 +1159,7 @@ export class SketchesComponent {
 
   private shownZoom() {
     const zoom = this.canvas.zoom();
-    const row = this.shownRows().find((candidate) => !this.isDrawn(candidate) && candidate.shots.length > 0);
+    const row = this.shownRows().find((candidate) => candidate.shots.length > 0);
 
     return zoom === 'fit' ? (row || this.transposed() ? this.scale() : 1) : zoom;
   }
