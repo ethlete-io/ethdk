@@ -7,7 +7,8 @@ each stage draws with what the stages before it settled:
 
 1. **Foundations**: colours, colour themes and surface themes (the project's `themes` in
    `config.json`), plus the type scale, spacing and radius.
-2. **Logo and CI**, if the project needs them.
+2. **Logo and CI**, if the project needs them. A logo sketch variant shows only the mark at one size; the six sections
+   (anatomy, clear space, minimum size, colour variants, misuse, motion) come after the merge of the picked variant.
 3. **Components**, from the SDK ones rendered with `ng()`, themed and set up for the project.
    Each accepted one becomes a design-system entry.
 4. **Larger elements**: the shell, the navigation, headers, lists, built from the entries.

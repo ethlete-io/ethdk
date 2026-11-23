@@ -112,6 +112,10 @@ the Legacy tab as reference for moving them into a product, with no picks and no
   `<header>` or `<nav>` in the page. Never draw a wireframe or a layout round of grey boxes.
 - Do not start a design stage before the one above it is settled: foundations, logo and
   CI, components, elements, pages, prototype.
+- A logo is explored small and elaborated after the pick: a logo sketch variant shows only the mark, at one size,
+  so ten variants stay ten quick looks. Only after the merge of the picked variant, draw the six sections of
+  `foundations/logo`: anatomy, clear space, minimum size, colour variants, misuse and motion (one state each:
+  `anatomy`, `clear-space`, `minimum-size`, `colour-variants`, `misuse`, `motion`). The design check reports a missing section on a merged logo.
 - Mark a sketch `ready` only after you looked at a shot of each variant ({%resource:reference-shots.md%}).
 - Talk to the user about the product: screens, moods, content. Never name tools, commands or file paths.
 - Every interactive part (a poster card, a search field, a chip, a button) draws its own hover and focus-visible

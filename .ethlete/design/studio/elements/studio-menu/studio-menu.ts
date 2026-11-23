@@ -4,7 +4,7 @@ import type { MenuMockRow } from '@ethlete/components/design/menu';
 import { action, type MenuInteraction, studioTrigger } from './shared/studio-menu-rows';
 import anchoredDialog from '@system/components/anchored-dialog';
 import menu from '@system/components/menu';
-import { studioMark } from '@system/foundations/logo';
+import logo, { studioBusyMark, studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
 import styles from './studio-menu.css?inline';
 import { DESIGN_SERVER_LABELS, STUDIO_MENU_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
@@ -121,17 +121,8 @@ const studioPanel = (server: Server, busy: boolean, interaction?: MenuInteractio
     forced: interaction === 'focus-visible' ? undefined : interaction,
   });
 
-const busyMark = `<svg data-et-drawing class="st-studio-busy block" width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
-  <rect width="32" height="32" rx="8" fill="var(--st-tile)" />
-  <g class="st-studio-busy-bubble" color="var(--st-on-tile)">
-    <path fill="currentColor" d="M11.5 5.5H24.1C26 5.5 27 6.9 26.4 8.7L22.8 20.9C22.5 22 21.8 22.9 20.8 23.4L8 28L9 21.6L5.9 17.4C5.2 16.5 5.2 15.2 5.9 14.2L9.4 6.8C9.8 6 10.6 5.5 11.5 5.5Z" />
-    <path class="st-studio-busy-eye" fill="var(--st-tile)" d="M12.8 11.5C12 11.3 11.2 11.8 11 12.6L10.2 15.7C10 16.5 10.5 17.3 11.3 17.5C12.1 17.7 12.9 17.2 13.1 16.4L13.9 13.3C14.1 12.5 13.6 11.7 12.8 11.5Z" />
-    <path class="st-studio-busy-eye" fill="var(--st-tile)" d="M20.1 10.6C19.3 10.4 18.5 10.9 18.3 11.7L17.5 14.8C17.3 15.6 17.8 16.4 18.6 16.6C19.4 16.8 20.2 16.3 20.4 15.5L21.2 12.4C21.4 11.6 20.9 10.8 20.1 10.6Z" />
-  </g>
-</svg>`;
-
 const busyTrigger = (trigger: string) =>
-  trigger.replace(/^<button /, '<button aria-busy="true" ').replace(studioMark(40), busyMark);
+  trigger.replace(/^<button /, '<button aria-busy="true" ').replace(studioMark(40), studioBusyMark(40));
 
 export const studioMenu = async ({ open, server = 'running', interaction, option, busy = false }: Props) => {
   const panel =
@@ -162,7 +153,7 @@ export const studioMenu = async ({ open, server = 'running', interaction, option
         ${panel.body} ${arrowMarkup}
       </div>
     </div>`,
-    styles: arrow.styles + styles + buttonStyles + panel.styles,
+    styles: arrow.styles + styles + logo.styles + buttonStyles + panel.styles,
     setup: setupStudioMenu,
   };
 };
@@ -218,7 +209,7 @@ export default definePart({
   },
   grid: menuRows.grid,
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
-  styles: styles + buttonStyles,
+  styles: styles + logo.styles + buttonStyles,
   implements: 'apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts',
   render: async (props: Props) => {
     const menu = await studioMenu(props);
