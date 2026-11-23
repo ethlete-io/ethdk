@@ -929,7 +929,7 @@
     "pid": 1070872
   },
   "elements/part-tree": {
-    "hash": "c6576969ca378b3f",
+    "hash": "ecb89982f137f343",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -956,19 +956,19 @@
       ".ethlete/design/studio/elements/part-tree/part-tree.ts": "cac27f8ffda99432",
       ".ethlete/design/studio/elements/part-tree/shared/tree.ts": "4e638acdfffbc1ee",
       ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/system-labels.ts": "74ce6232071bd10b",
+      "apps/ethlete-studio/src/app/i18n/system-labels.ts": "59e319b587dae47f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "94e9a15e38d78d80",
+    "app": "77a99dfdd6cb891f",
     "embedded": {
-      "components/tree-row": "31af25b6fa2d2b10"
+      "components/tree-row": "bd4cbdb4f3c0625c"
     },
     "actions": ["emit:activate", "emit:expandedChange"],
     "builder": "designer",
-    "at": "2026-11-21T05:40:17.309Z",
+    "at": "2026-11-23T14:05:53.289Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2192762
+    "pid": 2364031
   },
   "elements/shell-main": {
     "hash": "5b2f6840a324ec8a",
