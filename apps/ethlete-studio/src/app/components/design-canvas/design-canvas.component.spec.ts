@@ -541,6 +541,7 @@ describe('DesignCanvasComponent', () => {
 
     expect(heads.map((head) => head.textContent?.trim())).toEqual(['Vergleich · 2', 'Fehler · 1']);
     expect(heads.map((head) => head.style.marginTop)).toEqual([a?.style.top, c?.style.top]);
+    expect(heads[0]?.className).toContain('top-[calc(-0.8rem*var(--et-design-canvas-label-scale))]');
     expect(b?.style.top).toBe(a?.style.top);
     expect(b?.style.left).not.toBe(a?.style.left);
     expect(c?.style.left).toBe(a?.style.left);
