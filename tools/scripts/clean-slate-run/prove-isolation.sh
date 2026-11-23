@@ -32,6 +32,8 @@ for path in /home/tom/dev/ethlete-sdk /home/tom/dev/tomflix /home/tom/.claude /h
   check "unreachable: $path" "" absent "$path"
 done
 
+check "host tmux socket unreachable" "" absent "/tmp/tmux-$(id -u)/default"
+check "no TMUX or TMUX_PANE from the host" "" test -z "${TMUX:-}${TMUX_PANE:-}"
 check "no studio-lab dir or file reachable" "" no_output find / -xdev \( -path /proc -o -path /sys \) -prune -o -name 'studio-lab*' -print
 check "git: exactly one commit in every ref" "" test "$(git rev-list --all | wc -l)" = 1
 check "git: exactly one commit object in the store" "" test "$(git cat-file --batch-all-objects --batch-check | grep -c ' commit ')" = 1

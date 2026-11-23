@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # usage: sandbox.sh <target-dir> -- <command...>      e.g. sandbox.sh ~/dev/tomflix-clean -- claude
 # env: SANDBOX_ALLOW_HOSTS=host,host,...  HTTPS hosts (port 443) the sandbox may reach through the proxy
+# On a terminal the command runs in a tmux server of its own inside the sandbox, so `agent-sessions restart`
+# works in it while the host tmux socket stays unreachable.
 set -euo pipefail
 
 die() { echo "sandbox: $*" >&2; exit 1; }
@@ -18,6 +20,8 @@ allow=${SANDBOX_ALLOW_HOSTS:-api.anthropic.com,statsig.anthropic.com,registry.np
 here=$(dirname "$(readlink -f "$0")")
 cp "$here/proxy-forward.mjs" "$home/.proxy/forward.mjs"
 proxy_port=3128
+session=$([ -n "${TMUX_PANE:-}" ] && tmux display-message -p -t "$TMUX_PANE" '#{session_name}' 2>/dev/null || true)
+session=${session:-agent@$(basename "$target")}
 proxy_url=http://127.0.0.1:$proxy_port
 
 [ ! -f "$real_home/.claude/.credentials.json" ] || install -m 600 "$real_home/.claude/.credentials.json" "$config/.credentials.json"
@@ -54,11 +58,18 @@ args+=(
   --chdir "$target"
   --clearenv
   --setenv HOME "$home" --setenv CLAUDE_CONFIG_DIR "$config" --setenv COREPACK_HOME "$home/.cache/node/corepack"
-  --setenv PATH "$node_root/bin:/opt/bin:/usr/bin" --setenv TERM "${TERM:-xterm-256color}" --setenv LANG "${LANG:-C.UTF-8}"
+  --setenv PATH "$node_root/bin:/opt/bin:/usr/bin" --setenv SHELL /usr/bin/bash --setenv TERM "${TERM:-xterm-256color}" --setenv LANG "${LANG:-C.UTF-8}"
   --setenv HTTPS_PROXY "$proxy_url" --setenv HTTP_PROXY "$proxy_url" --setenv https_proxy "$proxy_url" --setenv http_proxy "$proxy_url"
   --setenv NO_PROXY localhost,127.0.0.1 --setenv no_proxy localhost,127.0.0.1 --setenv NODE_USE_ENV_PROXY 1 --setenv YARN_HTTP_PROXY "$proxy_url" --setenv YARN_HTTPS_PROXY "$proxy_url"
-  --setenv CLEAN_SLATE_SANDBOX 1 --setenv NX_NO_CLOUD true --setenv NX_DAEMON false --setenv COREPACK_ENABLE_DOWNLOAD_PROMPT 0
+  --setenv CLEAN_SLATE_SANDBOX 1 --setenv SANDBOX_SESSION "$session" --setenv NX_NO_CLOUD true --setenv NX_DAEMON false --setenv COREPACK_ENABLE_DOWNLOAD_PROMPT 0
 )
+
+cat > "$home/.tmux.conf" <<'TMUX'
+set -g status off
+set -g prefix None
+set -g prefix2 None
+set -g escape-time 0
+TMUX
 
 rm -f "$home/.proxy/proxy.sock"
 node "$here/proxy-host.mjs" "$home/.proxy/proxy.sock" "$home/.proxy/refused.log" "$allow" &
@@ -69,7 +80,8 @@ for _ in $(seq 50); do [ -S "$home/.proxy/proxy.sock" ] && break; sleep 0.1; don
 
 inner='node "$HOME/.proxy/forward.mjs" "$HOME/.proxy/proxy.sock" '$proxy_port' &
 for _ in $(seq 50); do (exec 3<>/dev/tcp/127.0.0.1/'$proxy_port') 2>/dev/null && break; sleep 0.1; done
-exec "$@"'
+[ -t 0 ] || exec "$@"
+exec tmux -f "$HOME/.tmux.conf" new-session -s "$SANDBOX_SESSION" "$@"'
 
 set +e
 bwrap "${args[@]}" bash -c "$inner" sandbox "$@"
