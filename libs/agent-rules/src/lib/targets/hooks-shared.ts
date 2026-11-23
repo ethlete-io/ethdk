@@ -57,6 +57,12 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
     timeout: 10,
     agents: ['claude'],
   },
+  'design-live-check': {
+    events: [{ event: 'PostToolUse', matcher: 'Edit|Write|MultiEdit' }],
+    file: 'design-live-check.py',
+    timeout: 60,
+    agents: ['claude'],
+  },
   'git-safety': {
     events: [{ event: 'PreToolUse', matcher: 'Bash' }],
     file: 'git-safety.py',
