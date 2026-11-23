@@ -1,4 +1,5 @@
 import { writeDesignFile } from '../design-file';
+import { foundationSkeletonOf } from './foundation-skeletons';
 import { gitStatusOf } from '../../git-reader';
 import { createHash } from 'crypto';
 import { cpSync, Dirent, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'fs';
@@ -971,6 +972,7 @@ const seedTarget = (options: {
   const { product, dir, variant, target, author, like } = options;
   const folder = resolve(dir, variant, target.layer, target.name);
   const existing = product.parts.find((part) => partKeyOf(part) === partKeyOf(target));
+  const skeleton = foundationSkeletonOf(partKeyOf(target));
 
   mkdirSync(folder, { recursive: true });
 
@@ -998,6 +1000,11 @@ const seedTarget = (options: {
   } else if (target.layer === 'pages') {
     const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
     writeDesignFile(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
+  } else if (skeleton) {
+    Object.entries(skeleton.files).forEach(([file, source]) => writeDesignFile(resolve(folder, file), source));
+    Object.entries(skeleton.assets).forEach(([file, source]) =>
+      writeDesignFile(resolve(dir, variant, ASSETS_FOLDER, file), source),
+    );
   } else {
     writeDesignFile(resolve(folder, `${target.name}.ts`), stubOf(target.name));
     writeDesignFile(resolve(folder, `${target.name}.css`), '');
@@ -1010,7 +1017,7 @@ const alreadySketched = (target: string) =>
 /**
  * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
  * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
- * sketch's `shared/` folder - else from the part the product resolves for the target, or from an empty part when the
+ * sketch's `shared/` folder - else from the part the product resolves for the target, or from a foundation skeleton or an empty part when the
  * target is new. A part's own `shared/` folder becomes the sketch's, imported as `@shared/`. A target holds one open
  * sketch at a time, or one per sketch name when `sketch.sketch` names it. Each of `others` joins every variant the same way, as a further target; `like` takes one target only.
  * A target the product overrides in its base needs `merge`: `override` or `into-base`.
