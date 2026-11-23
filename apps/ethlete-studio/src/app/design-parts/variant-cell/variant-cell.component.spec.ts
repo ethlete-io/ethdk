@@ -36,7 +36,7 @@ describe('VariantCellComponent', () => {
     expect(frame?.style.height).toBe('36px');
   });
 
-  it('never wraps the label row, and truncates the state name at the frame width so the chips stay whole', async () => {
+  it('wraps the label row at the frame width, so the full state name and the chips stay visible', async () => {
     const cell = await setup({
       state: 'default · phone',
       marked: true,
@@ -47,11 +47,11 @@ describe('VariantCellComponent', () => {
     });
     const row = cell.querySelector<HTMLElement>('[data-sk-label]');
 
-    expect(row?.classList.contains('flex-wrap')).toBe(false);
-    expect(row?.classList.contains('whitespace-nowrap')).toBe(true);
-    expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('wrap-anywhere')).toBe(false);
-    expect(row?.classList.contains('overflow-hidden')).toBe(true);
-    expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('truncate')).toBe(true);
+    expect(row?.classList.contains('flex-wrap')).toBe(true);
+    expect(row?.classList.contains('whitespace-nowrap')).toBe(false);
+    expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('wrap-anywhere')).toBe(true);
+    expect(row?.classList.contains('overflow-hidden')).toBe(false);
+    expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('truncate')).toBe(false);
     expect(cell.querySelector('[data-sk-changed-mark]')?.classList.contains('shrink-0')).toBe(true);
     expect(cell.querySelector('[data-sk-first-change]')?.classList.contains('shrink-0')).toBe(true);
   });
