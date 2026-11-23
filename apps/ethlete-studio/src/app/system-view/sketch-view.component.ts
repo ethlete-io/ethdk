@@ -1041,12 +1041,7 @@ export class SketchViewComponent {
 
     if (key === undefined) return false;
 
-    // SketchesComponent has no API to focus a frame; its canvas focuses the frame it gets a double click on.
-    this.shotCellRefs()
-      .find((ref) => ref.nativeElement.dataset['shot'] === key)
-      ?.nativeElement.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-
-    return true;
+    return this.sketches()?.focusFrame(key) ?? false;
   }
 
   public showVariant(variant: string) {

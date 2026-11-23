@@ -930,6 +930,18 @@ export class SketchesComponent {
     this.zoomTo(this.shownZoom() / ZOOM_STEP);
   }
 
+  /** Selects the frame with `key`, moves the camera onto it and activates it as a double click does; `false` when the canvas draws none. */
+  public focusFrame(key: string) {
+    const frame = this.frames().find((candidate) => candidate.nativeElement.getAttribute('data-sk-frame') === key);
+
+    if (!frame) return false;
+
+    this.selectedFrame.set(key);
+    this.show({ kind: 'focused' }, frame.nativeElement);
+
+    return true;
+  }
+
   private shownRowsOf(open: boolean) {
     return shownSketchRowsOf({ listed: this.listedRows(), hidden: this.hiddenWithdrawnRows(), open });
   }

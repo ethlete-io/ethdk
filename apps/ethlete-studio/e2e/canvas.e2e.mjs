@@ -4986,6 +4986,91 @@ const CASES = [
     },
   },
   {
+    name: 'every nested target row of a sketch opens its part or hints why it opens none',
+    listingMayPend: 'waits for the new sketch row itself and reads what each row click does, not the listing',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const title = 'Runde Baumzeilen';
+      const studio = join(checkout, '.ethlete/design/studio');
+      const sketchDir = join(studio, 'sketches/elements-shell-main.tree-rows');
+      const targets = ['elements/shell-main', 'components/zoom-chip', 'components/e2e-unbuilt'];
+      const row = (text) => page.locator('ethlete-part-tree [etTreeNode]').filter({ hasText: text }).first();
+      const label = (text) => row(text).locator('.text-ellipsis');
+      const state = () =>
+        page.evaluate(() => ({
+          sketchView: !!document.querySelector('[data-sk-rows]'),
+          selected: document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') ?? null,
+          live: document.querySelector('[data-sk-frame][data-active]')?.getAttribute('data-sk-frame') ?? null,
+        }));
+      const reopen = async () => {
+        await row(title).click();
+        await page.waitForSelector('[data-sk-rows] [data-sk-frame]', { timeout: 2 * FULL_COMPARE_MS });
+        await settle(page);
+      };
+      const results = {};
+
+      try {
+        for (const target of targets.slice(0, 2)) {
+          copyPart(join(studio, target), join(sketchDir, 'a', target));
+        }
+        writeFileSync(
+          join(sketchDir, 'sketch.json'),
+          JSON.stringify({
+            target: 'elements/shell-main@tree-rows',
+            targets,
+            status: 'ready',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            rounds: [{ key: 'r1', title, note: 'canvas e2e' }],
+            variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+          }),
+        );
+        await row(title).waitFor({ timeout: 2 * FULL_COMPARE_MS });
+        const titled = (await row(title).textContent())?.includes(title) ?? false;
+
+        await reopen();
+        const opened = await state();
+
+        await label('components/e2e-unbuilt').click();
+        await settle(page);
+        results.unbuilt = await state();
+        await label('components/e2e-unbuilt').hover();
+        const hinted = await page
+          .getByRole('tooltip')
+          .filter({ hasText: 'nicht in der Sketch-Ansicht' })
+          .first()
+          .waitFor({ timeout: 5000 })
+          .then(
+            () => true,
+            () => false,
+          );
+
+        await label('components/zoom-chip').click();
+        await settle(page);
+        results.zoomChip = await state();
+        await reopen();
+        await label('elements/shell-main').click();
+        await settle(page);
+        results.shellMain = await state();
+
+        const ok =
+          titled &&
+          opened.sketchView &&
+          results.unbuilt.sketchView &&
+          hinted &&
+          !results.zoomChip.sketchView &&
+          !results.shellMain.sketchView;
+
+        return {
+          ok,
+          detail: `sketch row shows title ${titled}; opened ${JSON.stringify(opened)}; undrawn row click ${JSON.stringify(results.unbuilt)}, hint tooltip ${hinted}; listed rows leave the sketch view: zoom-chip ${JSON.stringify(results.zoomChip)}, shell-main ${JSON.stringify(results.shellMain)}`,
+        };
+      } finally {
+        rmSync(sketchDir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
     name: 'first load creates one iframe per frame and aborts no frame request',
     quiet: true,
     listingMayPend:
