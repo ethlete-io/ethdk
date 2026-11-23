@@ -32,7 +32,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
 3. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
-4. **Timetrack nach Projekten (B641)** ⏳ nach dem roten CI zuerst: Spalten im Tag zeigen wieder Worktrees (ethlete-sdk-wt-*, 21.11.), obwohl 279b3dc17 sie in die Spalte des Haupt-Checkouts legt; Suspect: keine verlinkten Worktrees oder alter Build. Danach Teil 1 von Timetrack ADR 0057: eine Spalte ist ein Projekt (Tom 23.11.: „sollten längst nur noch Projekte sein“). Browser-Reporter danach - Builder
+4. **Timetrack nach Projekten (B641)** ⏳ Teil 1 gebaut (9dffd2970): eine Spalte ist ein Projekt. Beweis offen: Snapshot-Vergleich mit dem nächsten Release-Build, dann ein Bild vom Tag-Screen. Danach: Projekte nur in Timetrack, Browser-Reporter, Host-Liste - Builder
 5. **Zustände in Gruppen (B672)** ⏳ Entwurf nennt die Gruppen seiner Zustände, Zeile mit Überschrift und Anzahl, Ablauf-Reihenfolge, fehlende Gruppe = Befund (ADR 0407); zuerst pages/sketches - Builder
 6. **Familie im Teile-Baum (B673)** ⏳ Entwurf nennt die Familie eines Teils, Baum zeigt es darunter (ADR 0408); zuerst comment-pin, comment-row unter comment-flow - Builder
 7. **Ansicht je Teil (B674)** ⏳ Zoom/Position je Teil gemerkt, Fit beim ersten Öffnen und wenn kein Rahmen sichtbar; nie leere Fläche nach Baum-Wechsel (ADR 0409) - Builder
