@@ -316,6 +316,8 @@ const pickerOf = async (label: string) => {
   const picker = await select.render({
     label: '',
     size: 'sm',
+    variant: 'ghost',
+    clearable: false,
     value: 'round-1',
     options: [{ value: 'round-1', label }],
   });

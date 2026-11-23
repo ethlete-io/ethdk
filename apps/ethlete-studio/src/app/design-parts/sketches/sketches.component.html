@@ -175,8 +175,13 @@
       [class.top-24]="!!question()"
       class="absolute right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
     >
-      <et-form-field size="sm">
-        <et-select [value]="round()" [aria-label]="LABELS.roundSelect" (valueChange)="selectRound($event)">
+      <et-form-field size="sm" variant="ghost">
+        <et-select
+          [value]="round()"
+          clearable="false"
+          [aria-label]="LABELS.roundSelect"
+          (valueChange)="selectRound($event)"
+        >
           @for (option of rounds(); track option.value) {
             <et-select-option [value]="option.value" [label]="option.label">{{ option.label }}</et-select-option>
           }
