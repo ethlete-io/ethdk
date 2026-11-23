@@ -829,6 +829,35 @@ describe('SketchViewComponent', () => {
     expect(parts).toEqual(['', 'Sonnet 5.5', 'baut Runde 3', `· Variante b · ${SKETCHES_LABELS.since(7)}`]);
   });
 
+  it('draws a variant the agent has not reported on yet as in progress with the latest report line, never as a finished one', async () => {
+    const updatedAt = new Date(Date.now() - 2 * 60_000).toISOString();
+    const { root } = await render(
+      {
+        ...SKETCH,
+        status: 'in progress',
+        decision: undefined,
+        variants: ['a', 'b', 'c'],
+        rounds: [
+          { key: 'r1', title: '', note: '' },
+          { key: 'r2', title: '', note: '' },
+        ],
+        report: { message: 'baut Runde 3', updatedAt, variant: 'b', author: 'claude-sonnet-5-5' },
+        variantInfo: {
+          a: { authors: ['claude-sonnet-5-5'], round: 'r1' },
+          b: { authors: ['claude-sonnet-5-5'], round: 'r2' },
+          c: { round: 'r2' },
+        },
+      },
+      noComments,
+    );
+    const placeholderOf = (variant: string) =>
+      root.querySelector(`[data-sk-row="${variant}"] [data-sk-placeholder-row]`)?.textContent ?? null;
+
+    expect(placeholderOf('b')).not.toBeNull();
+    expect(placeholderOf('c')).toContain('baut Runde 3');
+    expect(placeholderOf('a')).toBeNull();
+  });
+
   it('shows the variant step of a report that names a state, and no agent line once the report stalls', async () => {
     const open = { ...SKETCH, status: 'in progress' as const, decision: undefined };
     const drawing = await render(

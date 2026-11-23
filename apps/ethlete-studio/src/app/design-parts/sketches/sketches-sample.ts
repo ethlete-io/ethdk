@@ -20,6 +20,7 @@ export type SketchRow = {
   label?: string;
   note: string;
   model?: SketchModel;
+  drawing?: { line: string };
   width: number;
   sized?: boolean;
   perLine?: number;

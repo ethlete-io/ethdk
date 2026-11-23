@@ -36,6 +36,22 @@ describe('VariantCellComponent', () => {
     expect(frame?.style.height).toBe('36px');
   });
 
+  it('never wraps the label row, so a narrow frame lets it run wider', async () => {
+    const cell = await setup({
+      state: 'default · phone',
+      marked: true,
+      first: true,
+      width: 300,
+      height: 90,
+      scale: 0.2,
+    });
+    const row = cell.querySelector<HTMLElement>('[data-sk-label]');
+
+    expect(row?.classList.contains('flex-wrap')).toBe(false);
+    expect(row?.classList.contains('whitespace-nowrap')).toBe(true);
+    expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('wrap-anywhere')).toBe(false);
+  });
+
   it('marks a changed cell with the geändert chip only when asked', async () => {
     const marked = await setup({ state: 'rest-hover', marked: true, width: 200, height: 50 });
 

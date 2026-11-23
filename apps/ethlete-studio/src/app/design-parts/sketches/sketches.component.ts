@@ -518,7 +518,7 @@ export class SketchesComponent {
         ? 'failed'
         : this.status(),
   );
-  protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
+  public drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
 
   private sameRowsSource = computed(() => ({
     part: this.part(),
@@ -844,6 +844,10 @@ export class SketchesComponent {
     return reason ? SYSTEM_TREE_LABELS.withdrawnWith(reason) : SYSTEM_TREE_LABELS.withdrawnLabel;
   }
 
+  protected isDrawn(row: SketchRow) {
+    return row.key === this.drawnKey() || (this.status() === 'drawing' && row.drawing !== undefined);
+  }
+
   protected isSame(row: SketchRow, unchanged: boolean | null) {
     return !isBaseRow(row) && unchanged === false && !this.isPending(row);
   }
@@ -1154,7 +1158,7 @@ export class SketchesComponent {
 
   private shownZoom() {
     const zoom = this.canvas.zoom();
-    const row = this.shownRows().find((candidate) => candidate.key !== this.drawnKey() && candidate.shots.length > 0);
+    const row = this.shownRows().find((candidate) => !this.isDrawn(candidate) && candidate.shots.length > 0);
 
     return zoom === 'fit' ? (row || this.transposed() ? this.scale() : 1) : zoom;
   }

@@ -2,14 +2,14 @@
   #labelRow
   [class.hidden]="labelHidden()"
   [class.opacity-50]="same()"
-  class="relative row-start-1 flex w-0 min-w-full flex-wrap items-center gap-x-space-2"
+  class="relative row-start-1 flex w-0 min-w-full items-center gap-x-space-2 whitespace-nowrap"
   data-sk-label
   ><span
     #stateLabel
     [class.text-et-surface]="!same()"
     [class.text-et-surface-muted]="same()"
     [style.font-size.px]="labelFont()"
-    class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere"
+    class="font-code text-(length:--sk-label) leading-[1.35]"
     data-sk-label-text
     ><span [class.hidden]="stateHidden()">{{ state() }}{{ same() ? LABELS.stateSeparator : '' }}</span
     >{{ same() ? LABELS.unchanged : '' }}</span

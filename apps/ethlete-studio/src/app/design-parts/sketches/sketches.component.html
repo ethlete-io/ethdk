@@ -331,7 +331,7 @@
                       >
                     }
                   </section>
-                  @if (row.key === drawnKey()) {
+                  @if (isDrawn(row)) {
                     <div
                       [style.grid-column]="offset + column + 2"
                       [style.grid-row]="matrixTop() + 1 + ' / span ' + block.states.length * 2"
@@ -433,7 +433,7 @@
   </div>
 </ethlete-shell-page>
 <ng-template #rowTemplate let-row>
-  @let drawn = row.key === drawnKey();
+  @let drawn = isDrawn(row);
   <section
     #section
     [attr.data-sk-row]="row.key"
@@ -587,22 +587,22 @@
     class="flex h-full min-h-24 items-center justify-center rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
     data-sk-placeholder-row
   >
-    @if (row.model; as model) {
-      <div class="flex size-full flex-col items-center justify-center gap-space-2 text-et-surface-muted">
-        <span class="flex items-center gap-space-2 text-ui-lg font-ui-medium">
-          <span class="size-2 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
+    <div class="flex size-full flex-col items-center justify-center gap-space-2 text-et-surface-muted">
+      <span class="flex items-center gap-space-2 text-ui-lg font-ui-medium">
+        <span class="size-2 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
+        @if (row.model; as model) {
           <span class="inline-flex items-center gap-space-1"
             ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
           >
-          {{ LABELS.drawingVariant }}
-        </span>
-        <span class="text-ui-sm">{{ LABELS.drawingHint }}</span>
-      </div>
-    }
+        }
+        {{ LABELS.drawingVariant }}
+      </span>
+      <span class="text-ui-sm" data-sk-drawing-line>{{ row.drawing?.line || LABELS.drawingHint }}</span>
+    </div>
   </div>
 </ng-template>
 <ng-template #headTemplate let-row>
-  @let drawn = row.key === drawnKey();
+  @let drawn = isDrawn(row);
   @if (headHidden()) {
     <span
       class="inline-flex w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"

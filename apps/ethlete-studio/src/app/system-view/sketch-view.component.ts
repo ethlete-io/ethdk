@@ -583,61 +583,6 @@ export class SketchViewComponent {
     { initialValue: {} as Record<string, FrameSize> },
   );
 
-  protected rows = computed<SketchRow[]>(() => {
-    const sketch = this.sketch();
-    const measured = this.measured();
-    const ratios = this.pictureRatios();
-    const sizes = Object.entries(measured);
-    const tallestOf = (state?: string) =>
-      widestOf(
-        sizes.filter(([key]) => state === undefined || key.endsWith(` ${state}`)).map(([, size]) => size.height),
-      );
-    const tallest = tallestOf();
-    const partWidth = widestOf(sizes.map(([, size]) => size.width));
-
-    return this.sketchRows().map((row) => {
-      const author = row.key === CURRENT ? undefined : sketch.variantInfo?.[row.key]?.authors?.[0];
-      const agent = author ? senderOf('agent', author).agent : undefined;
-      const sizeOf = (state: string) => measured[`${row.key} ${state}`];
-      const when = sketch.report?.variant === row.key ? whenOf(sketch.report.updatedAt) : undefined;
-
-      const known = row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? partWidth;
-      const width = known ?? FALLBACK_SIZE.width;
-
-      const rejection = row.key === CURRENT ? null : rejectionOf(sketch, row.key);
-
-      return {
-        key: row.key,
-        note: row.key === CURRENT ? '' : (sketch.variantInfo?.[row.key]?.note ?? ''),
-        ...(rejection?.status === 'withdrawn' ? { withdrawn: rejection.reason ?? '' } : {}),
-        ...(author && agent
-          ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }
-          : {}),
-        width,
-        ...(row.perLine ? { perLine: row.perLine } : {}),
-        sized: known !== undefined,
-        shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight }) => {
-          const ratio = ratios[`${row.key} ${state}`];
-          const measuredWidth = sizeOf(state)?.width;
-
-          return {
-            state,
-            changed,
-            ...(change ? { change } : {}),
-            ...(presetWidth !== undefined ? { width: presetWidth } : {}),
-            ...(presetHeight === undefined && measuredWidth !== undefined && measuredWidth > width
-              ? { width: measuredWidth }
-              : {}),
-            height:
-              (presetHeight === undefined ? undefined : Math.max(presetHeight, sizeOf(state)?.height ?? 0)) ??
-              sizeOf(state)?.height ??
-              (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
-          };
-        }),
-      };
-    });
-  });
-
   private frameRetries = toSignal(
     merge(
       toObservable(computed(() => this.sketch().target)).pipe(map((): SketchFrameEvent => ({ kind: 'reset' }))),
@@ -748,6 +693,71 @@ export class SketchViewComponent {
   protected wholeScreens = signal<readonly string[]>([]);
 
   protected drawnVariant = computed(() => this.matrix().columns.find((column) => column.drawing)?.key ?? null);
+
+  protected rows = computed<SketchRow[]>(() => {
+    const sketch = this.sketch();
+    const measured = this.measured();
+    const ratios = this.pictureRatios();
+    const sizes = Object.entries(measured);
+    const tallestOf = (state?: string) =>
+      widestOf(
+        sizes.filter(([key]) => state === undefined || key.endsWith(` ${state}`)).map(([, size]) => size.height),
+      );
+    const tallest = tallestOf();
+    const partWidth = widestOf(sizes.map(([, size]) => size.width));
+
+    const drawingLine = this.sketch().report?.message;
+    const unreported = new Set(
+      this.drawnVariant() === null || !sketch.rounds?.length
+        ? []
+        : (sketchRoundsOf(sketch).at(-1)?.variants ?? []).filter(
+            (variant) => !sketch.variantInfo?.[variant]?.authors?.length,
+          ),
+    );
+
+    return this.sketchRows().map((row) => {
+      const author = row.key === CURRENT ? undefined : sketch.variantInfo?.[row.key]?.authors?.[0];
+      const agent = author ? senderOf('agent', author).agent : undefined;
+      const sizeOf = (state: string) => measured[`${row.key} ${state}`];
+      const when = sketch.report?.variant === row.key ? whenOf(sketch.report.updatedAt) : undefined;
+
+      const known = row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? partWidth;
+      const width = known ?? FALLBACK_SIZE.width;
+
+      const rejection = row.key === CURRENT ? null : rejectionOf(sketch, row.key);
+
+      return {
+        key: row.key,
+        note: row.key === CURRENT ? '' : (sketch.variantInfo?.[row.key]?.note ?? ''),
+        ...(row.key === this.drawnVariant() || unreported.has(row.key) ? { drawing: { line: drawingLine ?? '' } } : {}),
+        ...(rejection?.status === 'withdrawn' ? { withdrawn: rejection.reason ?? '' } : {}),
+        ...(author && agent
+          ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }
+          : {}),
+        width,
+        ...(row.perLine ? { perLine: row.perLine } : {}),
+        sized: known !== undefined,
+        shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight }) => {
+          const ratio = ratios[`${row.key} ${state}`];
+          const measuredWidth = sizeOf(state)?.width;
+
+          return {
+            state,
+            changed,
+            ...(change ? { change } : {}),
+            ...(presetWidth !== undefined ? { width: presetWidth } : {}),
+            ...(presetHeight === undefined && measuredWidth !== undefined && measuredWidth > width
+              ? { width: measuredWidth }
+              : {}),
+            height:
+              (presetHeight === undefined ? undefined : Math.max(presetHeight, sizeOf(state)?.height ?? 0)) ??
+              sizeOf(state)?.height ??
+              (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
+          };
+        }),
+      };
+    });
+  });
 
   protected agentRun = computed<SketchAgentRun | null>(() => {
     const report = this.sketch().report;
