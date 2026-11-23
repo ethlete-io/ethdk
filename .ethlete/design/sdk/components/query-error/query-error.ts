@@ -91,7 +91,28 @@ const render = ({ shape, alwaysAllowRetry, slots, color = 'danger', retry }: Pro
 
 export default definePart({
   note: 'Decided rules only',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'design check'],
+  groups: [
+    {
+      label: 'Shapes',
+      states: ['message', 'violations', 'class-validator', 'retryable', 'empty-body', 'echoes-title', 'network'],
+    },
+    {
+      label: 'Variants',
+      states: ['always-allow-retry', 'long-message', 'custom-slots', 'brand-color'],
+    },
+    {
+      label: 'Interaction',
+      states: [
+        'retry-hover',
+        'retry-active',
+        'retry-focus-visible',
+        'slot-retry-focus-visible',
+        'brand-retry-hover',
+        'brand-retry-focus-visible',
+      ],
+    },
+  ],
   states: {
     message: { shape: 'message' },
     violations: { shape: 'violations' },

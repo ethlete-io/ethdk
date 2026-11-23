@@ -118,7 +118,12 @@
   "components/pagination": "cfc2751b1701c58d",
   "components/picture": "264a88e52f520c13",
   "components/progress-steps": "769f3d13373d699c",
-  "components/query-error": "6229941c4f9f6dfa",
+  "components/query-error": {
+    "hash": "a03ba920be258dec",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-23T09:07:14.068Z"
+  },
   "components/radio-group": {
     "hash": "479c67f0bc561019",
     "variant": "new",
